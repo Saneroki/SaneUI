@@ -354,9 +354,8 @@ function Read.Rest()
         if line.used or IsFeedback(line.left) or Read.IsIdLine(line) or Added(line, index) then
             -- nothing
         elseif line.left == Core.UNCONFIRMED then
-            -- What the tooltip shows is not yet confirmed by the game: a divider of its own, a red ! at each side
-            Read.Caption(Core.UNCONFIRMED_WORDS).mark = true
-            line.used = true
+            -- What the tooltip shows is not yet confirmed by the game: a note at the panel's bottom (ns.Read)
+            ctx.unconfirmed, line.used = true, true
         elseif ctx.nested and kind == NESTED then
             caption = true
         elseif line.blank or kind == BLANK or kind == SEPARATOR then
@@ -454,6 +453,13 @@ local function Details()
     row.right = right
 end
 
+-- A note at the panel's bottom: small grey words in the middle, without rules (Panel.lua: a caption that is bare).
+local function Note(words)
+    local row = Read.Row()
+    row.kind, row.left, row.font, row.bare = "caption", words, "hint", true
+    return row
+end
+
 local broken = {} -- [a kind's reader] = true: it failed; its tooltips are the game's own from then on
 
 -- Fills model from the tooltip. Returns false when the tooltip cannot be read (the game hides a
@@ -471,6 +477,7 @@ function ns.Read(tooltip, data, model, options)
     ctx.rule, ctx.gap, ctx.section, ctx.name, ctx.flat = false, false, nil, nil, false
     ctx.each, ctx.nested, ctx.nestedIcon = nil, nil, nil
     ctx.look = not data and Core.LookOf and Core.LookOf(tooltip) or nil
+    ctx.unconfirmed = false
     ctx.head.tag = Tag(tooltip)
     ctx.head.compared = ctx.head.tag ~= "" or nil -- what you wear, beside what you look at
     local kind = ctx.kind ~= nil and ns.KINDS[ctx.kind] or ctx.look and ns.Figure or Read.Generic
@@ -484,15 +491,15 @@ function ns.Read(tooltip, data, model, options)
         return false
     end
     -- With Alt held, last: the technical details, then, apart from everything of the panel's own,
-    -- other addons' lines. Without it, a tiny line at the bottom says that Alt shows more, between two
-    -- rules like a section's name (on a tooltip of the game's data: a hint somebody wrote has nothing
-    -- more to show).
-    if IsAltKeyDown() then
+    -- other addons' lines. Then the notes at the bottom, small grey words in the middle, no rules (Note):
+    -- that what it shows is not yet confirmed by the game, a red ! at each side; without Alt, that Alt
+    -- shows more (on a tooltip of the game's data: a hint somebody wrote has nothing more to show).
+    local alt = IsAltKeyDown()
+    if alt then
         Details()
         Others()
-    elseif data or ctx.look then
-        local row = Read.Row()
-        row.kind, row.left, row.font = "caption", TEXT.MORE_INFO, "hint"
     end
+    if ctx.unconfirmed then Note(Core.UNCONFIRMED_WORDS).mark = true end
+    if not alt and (data or ctx.look) then Note(TEXT.MORE_INFO) end
     return true, Model.Commit(model)
 end

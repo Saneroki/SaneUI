@@ -101,6 +101,7 @@ local DRAGON_LEFT = 4
 -- dark see-through shade (COLOR.GROOVE, its alpha in Pools.GROOVE), so they look pressed into the ground
 -- rather than drawn on it. A table's values are white.
 local LABEL, VALUE, TAG, GROOVE = COLOR.DETAIL, COLOR.WHITE, COLOR.GOLD, COLOR.GROOVE
+local NOTE = COLOR.ASIDE -- a section's name and the notes at the bottom: grey
 -- The background: the game's own tooltip ground, taken toward the panel's colour TOP_TINT of the
 -- way at the top; at the bottom the ground darkened by FOOT_DARK, then FOOT_TINT of the way.
 local TOP_TINT, FOOT_TINT, FOOT_DARK = 0.28, 0.06, 0.55
@@ -151,12 +152,14 @@ local FONTS = {
     -- At the default size the small ones are 10, as the game's own small font (GameFontNormalSmall)
     small = { font = "GameTooltipText", add = -4, least = 8 },   -- another addon's lines, the details with Alt
     -- In the groove's shade (alpha: Pools.GROOVE) with a faint light edge under them (Pools.GROOVE_LIGHT): a
-    -- table's captions, a section's name between its rules, the tiny line at the bottom that Alt shows more
+    -- table's captions
     caption = { font = "GameTooltipText", add = -4, least = 8, groove = true },
-    section = { font = "GameTooltipText", add = -4, least = 8, groove = true },
-    hint = { font = "GameTooltipText", add = -6, least = 7, groove = true },
+    -- In grey (NOTE): a section's name between its rules, and the notes at the bottom (Unconfirmed Data, Hold
+    -- ALT for more), smaller, without rules (Saneroki, 2026-10-23: the groove's black read badly)
+    section = { font = "GameTooltipText", add = -4, least = 8 },
+    hint = { font = "GameTooltipText", add = -6, least = 7 },
     detail = { font = "GameTooltipText", add = -4, least = 8 },  -- a unit's kind, PvP
-    mark = { font = "GameTooltipHeaderText", add = -2, least = 9 }, -- the red ! beside Unconfirmed Data
+    mark = { font = "GameTooltipHeaderText", add = -5, least = 8 }, -- the red ! beside Unconfirmed Data
     inside = { font = "GameTooltipText", add = -4, least = 8 },  -- the numbers inside a health bar
 }
 
@@ -622,7 +625,8 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
         elseif kind == "caption" then
             -- In the middle, with a rule at each side
             local font = FONTS[row.font] or FONTS.section
-            local caption = Text(panel, font, row.caps and Upper(row.left) or row.left, GROOVE[1], GROOVE[2], GROOVE[3], "CENTER")
+            local shade = font.groove and GROOVE or NOTE
+            local caption = Text(panel, font, row.caps and Upper(row.left) or row.left, shade[1], shade[2], shade[3], "CENTER")
             panel.left[index] = caption
             local marks = 0
             if row.mark then
@@ -632,7 +636,7 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
                 panel.right[index] = Text(panel, FONTS.mark, "!", red[1], red[2], red[3], "CENTER")
                 marks = 2 * (Width(panel.after[index]) + CAPTION_GAP)
             end
-            wanted = math.max(wanted, Width(caption) + marks + 2 * (CAPTION_GAP + CAPTION_RULE))
+            wanted = math.max(wanted, Width(caption) + marks + (row.bare and 0 or 2 * (CAPTION_GAP + CAPTION_RULE)))
         end
     end
     return wanted, tag
@@ -843,12 +847,12 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
                 mark = Width(before)
                 outer = mark + CAPTION_GAP
                 -- On the name's base line: the marks' text is larger
-                local drop = (FONTS.section.size - FONTS.mark.size) * BASE_LINE
+                local drop = ((FONTS[row.font] or FONTS.section).size - FONTS.mark.size) * BASE_LINE
                 Place(panel, before, left - outer, y + drop, mark)
                 Place(panel, after, left + wide + CAPTION_GAP, y + drop, mark)
             end
             local rule = left - outer - ox - SIDE - CAPTION_GAP
-            if rule >= CAPTION_RULE then
+            if rule >= CAPTION_RULE and not row.bare then
                 local middle = y + math.floor(height / 2)
                 Rule(panel, ox + SIDE, middle, rule, hairline)
                 Rule(panel, left + wide + outer + CAPTION_GAP, middle, rule, hairline)

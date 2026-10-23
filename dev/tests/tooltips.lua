@@ -236,7 +236,7 @@ local function row(panel, index) return panel.model.shown.rows[index] or {} end
 local function hinted(panel)
     local shown = panel.model.shown
     local last = shown.rows[shown.n]
-    return shown.n > 0 and last.font == "hint"
+    return shown.n > 0 and last.font == "hint" and last.left == "Hold ALT for more"
 end
 local function count(panel) return panel.model.shown.n - (hinted(panel) and 1 or 0) end
 -- Its rows in short: a section's caption by its name in capitals, every other row by its kind
@@ -408,20 +408,20 @@ check(color(panel.texts[9]) == table.concat(COLOR.WHITE, " ") and color(caption)
 check(caption._shadowX == 0 and caption._shadowY == -1 and caption._shadowColor[1] == 1 and caption._shadowColor[4] == ns.Pools.GROOVE_LIGHT,
     "with a faint light edge one dot of the screen below them, as cut letters catch the light, so they read on a dark ground")
 local named = panel.texts[5]
-check(color(named) == GROOVE and named._textAlpha == ns.Pools.GROOVE and named.dressed.groove and named._shadowY == -1
+check(color(named) == table.concat(COLOR.ASIDE, " ") and named._textAlpha ~= ns.Pools.GROOVE and not named.dressed.groove
     and math.abs(named._points[1][4] + named._width / 2 - panel:GetWidth() / 2) <= 1 and panel.texts[3]._shadowX ~= 0,
-    "a section's name in the same shade, in the middle; the texts that are no groove keep their font's shadow")
+    "a section's name in grey, which reads on the dark ground, in the middle; the texts that are no groove keep their font's shadow")
 local grooves, rules = 0, {}
 for index = 1, panel.lines.taken do
     local line = panel.lines[index]
     if line._color and line._color[4] == ns.Pools.GROOVE then grooves = grooves + 1 end
     if line._height == 1 and line._width > 1 then rules[#rules + 1] = line end
 end
-check(#rules == 4 and rules[1]._points[1][4] == 12 and rules[2]._points[1][4] + rules[2]._width == panel:GetWidth() - 12
+check(#rules == 2 and rules[1]._points[1][4] == 12 and rules[2]._points[1][4] + rules[2]._width == panel:GetWidth() - 12
     and rules[1]._points[1][4] + rules[1]._width < panel.texts[5]._points[1][4],
-    "a rule at each side of the section's name, from the panel's edge to the name, one hairline each (and two round the "
+    "a rule at each side of the section's name, from the panel's edge to the name, one hairline each (none round the "
     .. "line that Alt shows more)")
-check(grooves >= 5, "the rules and the lines between the table's cells all in the groove's shade")
+check(grooves >= 3, "the rules and the lines between the table's cells all in the groove's shade")
 local function size(label) return label.dressed and label.dressed.size end -- the size its font was given
 check(size(panel.texts[1]) == 14 and size(panel.texts[14]) == 14 and size(panel.texts[9]) == 12 and size(panel.texts[8]) == 10,
     "name and lines in the text size, the table's values two smaller, captions as small as the game's small font")
@@ -442,9 +442,9 @@ W.alt = false
 tip:Fill({ type = TYPE.Spell, id = 5 }, elune)
 check(count(panel) == 5 and hinted(panel), "let go of Alt, and the details and the other addons' lines are gone again")
 local hint = row(panel, 6)
-check(hint.kind == "caption" and hint.left == "Hold ALT for more" and not hint.caps and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size
-    and ns.Panel.FONTS.hint.groove,
-    "without Alt a tiny line at the bottom, as written, between two rules like a section's name: that Alt shows more")
+check(hint.kind == "caption" and hint.left == "Hold ALT for more" and not hint.caps and hint.bare
+    and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size and not ns.Panel.FONTS.hint.groove,
+    "without Alt a tiny grey line in the middle at the bottom, as written, without rules: that Alt shows more")
 
 -- Filled again with the same lines
 W.methods.SetJustifyH = function(self, side) self._justify = side end
@@ -1746,9 +1746,11 @@ for index = 1, panel.texts.taken do
     local label = panel.texts[index]
     if label._text == "!" then marks[#marks + 1] = label end
 end
-check(shape(panel) == "text text UNCONFIRMED DATA" and row(panel, 3).caps and row(panel, 3).mark and #marks == 2
+check(shape(panel) == "text text UNCONFIRMED DATA" and not row(panel, 3).caps and row(panel, 3).bare and row(panel, 3).mark
+    and row(panel, 3).left == "Unconfirmed Data" and #marks == 2
     and marks[1]._color[1] == ns.COLOR.RED[1] and marks[1]._points[1][4] < marks[2]._points[1][4],
-    "a line Core marks as not confirmed by the game is a divider of its own, Unconfirmed Data, with a red ! at each side")
+    "a line Core marks as not confirmed by the game is a quiet note at the bottom, grey in the middle as written, no rules, "
+    .. "a red ! at each side")
 -- A creature that is no unit of the game's (Core.TipLook: a boss on a dungeon's map): a creature's panel
 local GOLDEN = { 1, 0.82, 0 }
 tip:Fill(nil, { { "Rattlegore", nil, { 1, 0.3, 0.25 } }, { "Scholomance" }, { "Boss", nil, GOLDEN }, { "Abilities", nil, GOLDEN },

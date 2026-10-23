@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Tooltips: section names grey; Unconfirmed Data and Hold ALT for more as quiet notes (Saneroki, 2026-10-23)
+- `Panel.lua`: a section's name grey (`NOTE`, `COLOR.ASIDE`), no longer the groove's black (it read badly), as
+  Saneroki asked; its rules stay in the groove's shade. A caption row that is `bare` (`Model.lua`) has no rules.
+- `Read.lua`: *Unconfirmed Data* (Core's line) as written, no capitals, and *Hold ALT for more*: small grey notes in
+  the middle at the panel's very bottom, without rules (`Note`); the unconfirmed one after Alt's details and other
+  addons' lines, its red *!* at each side (`FONTS.mark` as small as the note).
+- READMEs (Tooltips, Navigation), `Core/Kit.lua`'s comment; `dev/tests/tooltips.lua` (the grey name, the bare notes).
+
 ### Tooltips and Navigation: columns, Unconfirmed Data, pins by role, bosses as creatures (Saneroki, 2026-10-23)
 - Tooltips, `Panel.lua`: a panel taller than the screen (`Tallest`: `UIParent`'s height in the panel's units, less
   `SCREEN_MARGIN` and the soft edge) is laid again in columns (`Columns`, `ox`): each ends before the row that would

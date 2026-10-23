@@ -10,10 +10,10 @@ opacity can be set, and a switch anchors tooltips to the mouse cursor. An item's
 quests that need it, the professions that use it, which of your characters have it (each by first name and
 surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
 what to do with it for gold, what its materials bring if you disenchant it, and with Alt the price to post
-it at. Every section has its name in the middle of its divider (*INFO*, *QUEST*, *GOLD*, ...), name and
-divider a dark see-through shade, as if pressed into the ground; a thing's own lines (its numbers, what it
+it at. Every section has its name in the middle of its divider (*INFO*, *QUEST*, *GOLD*, ...), the name in
+grey, the divider a dark see-through shade, as if pressed into the ground; a thing's own lines (its numbers, what it
 does, its description, its durability) are one section, *Info*; a spell's numbers are a table of four
-columns and two rows. A tiny line at the bottom, between two such rules, says that Alt shows more: the technical details, which of your characters
+columns and two rows. A tiny grey line in the middle at the bottom says that Alt shows more: the technical details, which of your characters
 have the item (*Inventory*), and what other addons write into a tooltip, wherever they write it, in one
 section of its own at the end, *Addons*, never among the panel's own lines. Where a thing has a 3D model (a
 creature, a player, a mount, a pet) it stands in the picture's place; over a piece of gear, Alt shows your
@@ -54,10 +54,10 @@ only read.
   | **Anything else** the game fills from data (things in the world such as a mailbox or a chest, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and its lines under it as the game has them, no sections (an empty line is a small gap); a panel without a colour of its own, whatever colour the name has |
 
   **Sections:** every part of a panel under its header is a section with its name on its divider, in small
-  capitals in the middle with a rule at each side (*——— GOLD ———*), name and rules in one dark see-through
-  shade, the same as the lines between a table's cells, so they look like grooves in the ground rather than
-  lines drawn on it; the words with a faint light edge under them, as cut letters catch the light, so they
-  read on the dark ground: there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
+  capitals in the middle with a rule at each side (*——— GOLD ———*), the name in grey (Saneroki, 2026-10-23:
+  the dark shade read badly), the rules in a dark see-through shade, the same as the lines between a table's
+  cells, so they look like grooves in the ground rather than lines drawn on it: there is no divider without a
+  name. A thing's own lines are *Info*: an item's numbers, what it
   does, its description and its durability; a spell's facts and its description; a buff's and a quest's
   text. An item's *Set*, *Creates* (a recipe's thing), *Quest*, *Professions* (also the node that gives it),
   *Inventory* (with Alt), *Gold*; a herb's or an ore's *Professions*; a unit's *Status* and *Quest*; a buff's
@@ -66,16 +66,16 @@ only read.
   (the game's empty line between them is a small gap).
 
   **Unconfirmed Data:** a tooltip about something the game has not confirmed yet (a map's pin from Sane UI's
-  data, a boss's abilities and loot) ends with a divider of its own, *——— ! UNCONFIRMED DATA ! ———*, the marks in
-  the game's red, the words in a section's shade.
+  data, a boss's abilities and loot) ends with a quiet note at its very bottom, *! Unconfirmed Data !*: small grey
+  words in the middle, as written, no rules, the marks in the game's red (Saneroki, 2026-10-23).
 
   **Too tall for the screen:** a panel that would not fit the screen's height goes on in a second column beside
   the first (and a third...), each as wide as the first, a fine groove between them; no column is taller than the
   screen, and a section's name never stays alone at a column's foot. The icon or portrait stays at the first
   column's corner.
 
-  **Hold ALT for more:** at the bottom of every panel of the game's data, while Alt is not held, a tiny line
-  between two rules like a section's name (*——— Hold ALT for more ———*) says so; with Alt it gives way to what
+  **Hold ALT for more:** at the bottom of every panel of the game's data, while Alt is not held, a tiny grey
+  line in the middle, without rules, says so (under *Unconfirmed Data* where both are there); with Alt it gives way to what
   Alt shows. A button's hint has none: Alt shows
   nothing more there.
 
@@ -244,8 +244,10 @@ only read.
   above and below), each column ends before the row that would run past it (a caption goes on with its rows), the
   lines and icons of the first laying are given back (`Pools.Rewind`) and the rows laid again, each column starting
   at the top `width` further right (`ox`); the panel is `width` times the columns wide, a groove between two.
-- **Unconfirmed Data** (`Read.Rest`): a line that is Core's `Core.UNCONFIRMED` is a caption row with `mark`: a red
-  *!* (`FONTS.mark`, `COLOR.RED`) at each side of the name, between it and its rules.
+- **Notes at the bottom** (`Read.lua`, `Note`): a line that is Core's `Core.UNCONFIRMED` is left out where it stands
+  (`Read.Rest`) and becomes, after everything else (Alt's details and other addons' lines too), a caption row that
+  is `bare` (no rules) in the font kind `hint` and grey (`NOTE`, `COLOR.ASIDE`), with `mark`: a red *!*
+  (`FONTS.mark`, `COLOR.RED`) at each side of the words; then, without Alt, *Hold ALT for more* the same way.
 - **A creature on a map** (`ns.Figure`, in `Kinds/Unit.lua`): a tooltip without the game's data that carries a look
   of Core's (`Core.LookOf`: `display`, `dragon`, `badge`, `sections` by line) is read as a creature's: its model as
   the head's `display` model (zoom 1: the face), the skull (`SKULL`) while none loads; each line after a heading of
@@ -282,8 +284,8 @@ only read.
   of the way. The opacity setting is its alpha. Its shape has round corners and an edge that fades out
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
   border, no band behind the name, no boxes. The only dividers are the sections' captions: a section's name
-  stands in the middle in small capitals, and a rule runs from each side of the panel to it, one hairline
-  each, 6 from the name; name and rules in the groove's shade (`COLOR.GROOVE`, black, seen at `Pools.GROOVE`,
+  stands in the middle in small capitals, grey (`NOTE`), and a rule runs from each side of the panel to it, one
+  hairline each, 6 from the name; the rules in the groove's shade (`COLOR.GROOVE`, black, seen at `Pools.GROOVE`,
   60 %), as are a table's captions and the lines between its cells; the groove's words have a light edge one
   dot of the screen under them (their shadow: white at `Pools.GROOVE_LIGHT`, 15 %, `Core.Pixels`); a hairline is one unit of
   the interface rounded to whole dots of the screen (`Core.Pixels`, by the game's `PixelUtil.GetNearestPixelSize`). An empty line of the
@@ -373,8 +375,8 @@ only read.
   high, flat and half see-through, under the panel's mask for round corners) with the word and the numbers
   written inside (`BarText`, left and right); its values are plain, so it is set like any bar.
 - **The line that Alt shows more** (`Read.lua`): the last row of every panel of the game's data while Alt is
-  not held, a caption as written (no `caps`) in the font kind `hint`, with its rules; with Alt the details and
-  other addons' lines come in its place.
+  not held, a `bare` caption as written (no `caps`, no rules) in the font kind `hint`, grey; with Alt the details
+  and other addons' lines come in its place.
 - **A spell's table** (`Kinds/Spell.lua`, `Panel.lua`): two rows of the kind `strip`, four cells each (one row
   for a spell that neither hurts nor heals), every cell filled (`TEXT.NONE` where nothing is known). The
   columns of all of a panel's tables are alike, each a quarter of the panel, which is made wide enough for
@@ -389,8 +391,8 @@ only read.
   followed; the size is set by us (`SetFont`), because it is the player's setting. Name and lines have
   that size, a weapon's number 4 more, subtitles and the strip's values 2 less; another addon's lines,
   captions and a unit's details 4 less (10 at the default size, as the game's own small font); the line that
-  Alt shows more 6 less (8 at the default size, never under 7). The groove's kinds of text (`section`,
-  `caption`, `hint`: `groove`) have the light edge as their shadow; `Pools.lua` sets every other kind's shadow
+  Alt shows more 6 less (8 at the default size, never under 7). The groove's kind of text (`caption`:
+  `groove`) has the light edge as its shadow; `Pools.lua` sets every other kind's shadow
   back to its font's own (offset and colour).
 - **Colours.** The panel's colour is the game's own for the thing: `ITEM_QUALITY_COLORS`,
   `RAID_CLASS_COLORS`, the colour of what takes an aura away (`AuraUtil.GetDebuffDisplayInfoTable`, the
@@ -400,8 +402,8 @@ only read.
   writes descriptions in), which is made lighter. Every other colour of ours (`ns.COLOR` in `Model.lua`)
   is one of the game's font colours (`HIGHLIGHT_FONT_COLOR`, `NORMAL_FONT_COLOR`, `GRAY_FONT_COLOR`,
   `RED_FONT_COLOR`, `GREEN_FONT_COLOR`, ...) moved part of the way toward another of them (`Tone`): a
-  name nearly white, a table's values white, what is said about a thing light grey, a section's name, its
-  rules, a table's captions and its lines the groove's dark see-through shade, what is done green, what you
+  name nearly white, a table's values white, what is said about a thing light grey, a section's name and the
+  notes at the bottom grey, its rules, a table's captions and its lines the groove's dark see-through shade, what is done green, what you
   cannot do red. A physical spell is the game's red (its combat log has physical yellow, too close to holy). A line's colour is known by being close to one of
   the game's (`ns.Like`). A colour inside a line is written by `ns.Hex`.
 - **Five pictures are ours,** made by `dev/tools/tooltip-art` (the game has none like them):
@@ -596,6 +598,8 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-23 — Section names grey; *! Unconfirmed Data !* and *Hold ALT for more* small grey notes in the middle
+  at the bottom, without rules, as written (Saneroki).
 - 2026-10-23 — A tooltip too tall for the screen goes on in columns beside the first. *! Unconfirmed Data !* as a
   divider of its own, the marks red. A boss on a dungeon's map drawn as a creature: its model, the boss's dragon,
   *??*, its abilities and loot in sections (Saneroki).

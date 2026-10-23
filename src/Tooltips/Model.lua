@@ -23,7 +23,8 @@ local _, ns = ...
 --               written inside it (an item's durability); flush: no gap above
 --    "caption"  left: a section's name in the middle, a rule at each side; font: its kind of text;
 --               caps: in capitals (a section's name; the line that Alt shows more is as written);
---               mark: a red ! at each side of the name (Unconfirmed Data: Core.UNCONFIRMED)
+--               bare: no rules (a note at the bottom: Unconfirmed Data, Hold ALT for more);
+--               mark: a red ! at each side of the words (Unconfirmed Data: Core.UNCONFIRMED)
 --    "auras"    the unit's buffs and debuffs (Live.lua)
 --  Every row: space (a little room above it: the game's empty line inside a
 --  section), bar colour br, bg, bb. A panel's only dividers are its sections'
@@ -106,7 +107,7 @@ end
 --  The two copies
 -------------------------------------------------------------------------------
 local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb", "space", "label", "labelFont", "icon",
-    "iconRight", "indent", "caps", "prose", "live", "inside", "value", "max", "flush", "mark", "br", "bg", "bb" }
+    "iconRight", "indent", "caps", "prose", "live", "inside", "value", "max", "flush", "mark", "bare", "br", "bg", "bb" }
 local HEAD = { "tag", "compared", "accent", "ar", "ag", "ab", "icon", "portrait", "badge", "badgeR", "badgeG", "badgeB",
     "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers",
     "model", "modelKind", "modelZoom", "modelTurn", "dress" }

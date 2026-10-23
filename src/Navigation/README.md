@@ -50,7 +50,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
   herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place
   the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in Sane UI's tooltips a
-  divider of its own). A tooltip says what it is: an NPC by what it is, never by its own name (Saneroki,
+  quiet grey note at the bottom). A tooltip says what it is: an NPC by what it is, never by its own name (Saneroki,
   2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
   *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
   yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other

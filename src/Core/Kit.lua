@@ -85,7 +85,7 @@ end
 -- A region with that tooltip while the mouse is on it. Its own OnEnter and OnLeave stay: these come after.
 -- The line a tooltip ends with where what it shows is not yet confirmed by the game (imported, the older game's):
 -- the words between two red marks (the game's red), in the game's grey. Sane UI's tooltips (the module Tooltips)
--- know it by its words and draw it as a section's divider, the marks red.
+-- know it by its words and draw it as a quiet grey note at the panel's bottom, the marks red.
 Core.UNCONFIRMED_WORDS = "Unconfirmed Data"
 do
     local red = rawget(_G, "RED_FONT_COLOR")
