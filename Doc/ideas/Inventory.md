@@ -164,6 +164,13 @@ model (`dev/imagegen/sets/bags/arrow.txt`, stroke-1, Saneroki's pick; `assets/in
 centred and a little thicker by `dev/tools/journal-art` (Core's piece `arrow`), the sidebar's head and the groups'
 rows alike.
 
+**Built (2026-10-23), Saneroki asked:** a pencil drawing of our own for every row of the bags' sidebar in place
+of the game's tiny icons (the views, Pinned, Recent, every built-in category and group, Add Category, a category of
+the player's own without an icon): simple, bold and readable at the sidebar's size, made with an image model
+(`dev/imagegen/sets/bags/categories.txt`, the chosen seeds noted there; `assets/interface/categories/`) and made
+the game's textures by `dev/tools/category-art` (`SaneUI_Inventory/Art/Categories/`). A group's members' names as
+dark as the categories' heads (`Canvas.MEMBER_COLOR`).
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.

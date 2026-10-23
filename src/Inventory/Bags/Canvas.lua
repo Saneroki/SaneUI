@@ -24,8 +24,8 @@ local Sheet = {}   -- a canvas's functions
 Sheet.__index = Sheet
 
 Canvas.INSET = 8   -- from the scroll area's left to the items
-Canvas.HEAD_COLOR = ns.Paper.SOFT     -- a category's head: graphite, a group's member lighter
-Canvas.MEMBER_COLOR = ns.Paper.FAINT
+Canvas.HEAD_COLOR = ns.Paper.SOFT     -- a category's head: graphite; a group's member as dark, smaller and not bold
+Canvas.MEMBER_COLOR = ns.Paper.SOFT   -- (Saneroki, 2026-10-23: darker, to be read)
 
 local Layout, Cells, Columns, Menus, Categories = ns.Layout, ns.Cells, ns.Columns, ns.Menus, ns.Categories
 

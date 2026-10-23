@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: pencil drawings of our own for the sidebars' rows; a group's members darker (Saneroki, 2026-10-23)
+- **The drawings:** `dev/imagegen/sets/bags/categories.txt` (Qwen turbo, one prompt a row, four seeds; a pilot of
+  six settled the words: a few thick confident outlines, a simple silhouette, little shading), one chosen a row and
+  noted in the list, kept as `assets/interface/categories/<key>.png`. The new `dev/tools/category-art`
+  (`saneui makecategoryart`) makes each the game's texture: graphite from its darkness and alpha, cropped, laid
+  into a 512 square with `ROOM` round it, thickened by a 15 px max filter, 64 x 64 BLP2 with mipmaps
+  (`assets/optimized/Inventory/Art/Categories/<key>.blp`, into `SaneUI_Inventory/Art/`).
+- **The code:** `Categories.ART` and the key is every built-in category's icon (the game's icons and atlases gone
+  from `Categories.LIST`), `Categories.GroupIcon` a group's (a built-in group its own drawing, else its first
+  member's), `Categories.Icon` a category of the player's own its chosen game icon or the drawing `own`;
+  `Categories.Drawn` tells ours from the game's. `Views.FIXED` the three views' drawings; Add Category `add`. The
+  sidebar's `Icon` draws ours whole (the game's still cut by `Cells.ZOOM`). The alts' Storage sidebar shows the
+  categories' drawings too.
+- **Darker members:** `Canvas.MEMBER_COLOR` is `Paper.SOFT` (was `FAINT`): a group's members' names as dark as a
+  category's head, smaller and not bold.
+- Tests: `dev/tests/bags.lua` 316 checks (the rows' drawings by key and drawn whole, a group's own, the player's own
+  category with and without a chosen icon).
+
 ### Nameplates: the evade a figure leaning out of an arrow's way (Saneroki, 2026-10-23)
 - `dev/tools/combat-art`: the evade is a figure facing you, leaning hard to its side, the arrow that flew at its face
   flying on through where the head was, two marks for the head's swing (in place of the see-through figure; the

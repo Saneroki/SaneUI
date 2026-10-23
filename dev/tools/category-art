@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Makes the bags' category icons (Inventory: the rows of the bags' and the alts' sidebars) from the chosen pencil
+drawings.
+
+The drawings are made with an image model (dev/imagegen/sets/bags/categories.txt, its chosen seeds noted there);
+the chosen one of each row is kept as assets/interface/categories/<key>.png, by its key: a view's (all, one, each),
+a built-in category's or group's (src/Inventory/Bags/Categories.lua), "add" (Add Category) and "own" (a category
+of the player's own without an icon of its own). Each becomes a pencil drawing on the page in the game: its lines
+and their grain in the journal's graphite (the darker a pixel, the more graphite), a little thicker so they hold at
+the sidebar's size, centred in a square with a little room round it; a BLP2 of SIDE x SIDE (dev/tools/art's
+writer) in assets/optimized/Inventory/Art/Categories/<key>.blp, which dev/build puts into SaneUI_Inventory/Art/.
+
+Usage:  dev/tools/category-art [key ...]     (no key: every chosen drawing)
+"""
+import importlib.machinery
+import importlib.util
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageFilter
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "assets/interface/categories"
+OUT = ROOT / "assets/optimized/Inventory/Art/Categories"
+SIDE = 64            # the texture's side
+WORK = 512           # the square the drawing is laid into first
+ROOM = 0.06          # the room round the drawing, of the square's side
+THICK = 15           # its lines made thicker by a max filter this wide, in the WORK square
+INK = (30, 23, 17)   # Core.Journal.INK
+
+_loader = importlib.machinery.SourceFileLoader("art", str(ROOT / "dev/tools/art"))
+_spec = importlib.util.spec_from_loader("art", _loader)
+art = importlib.util.module_from_spec(_spec)
+_loader.exec_module(art)
+
+
+def drawing(path):
+    """The drawing as graphite in its WORK square: (WORK, WORK) alpha, 0-1."""
+    rgba = np.asarray(Image.open(path).convert("RGBA"), dtype=np.float32)
+    lum = rgba[..., :3].mean(axis=-1)
+    ink = np.clip((235 - lum) / 110, 0, 1) ** 0.5 * (rgba[..., 3] / 255)
+    picture = Image.fromarray((ink * 255).astype(np.uint8))
+    picture = picture.crop(picture.getbbox())
+    inner = round(WORK * (1 - 2 * ROOM))
+    k = inner / max(picture.size)
+    picture = picture.resize((max(1, round(picture.width * k)), max(1, round(picture.height * k))), Image.LANCZOS)
+    square = Image.new("L", (WORK, WORK))
+    square.paste(picture, ((WORK - picture.width) // 2, (WORK - picture.height) // 2))
+    return np.asarray(square.filter(ImageFilter.MaxFilter(THICK)), dtype=np.float64) / 255
+
+
+def texture(key, alpha):
+    """The BLP2 of the drawing (graphite, premultiplied while it is made smaller), with its mipmaps."""
+    canvas = np.zeros(alpha.shape + (4,))
+    canvas[..., :3] = np.array(INK) / 255 * alpha[..., None]
+    canvas[..., 3] = alpha
+    canvas = art.resize(canvas, SIDE, SIDE)
+    levels, first, k = [], None, 0
+    while True:
+        size = max(1, SIDE >> k)
+        image = art.straight(canvas if k == 0 else art.resize(canvas, size, size))
+        first = first or image
+        levels.append(art.dxt5(image))
+        if size == 1:
+            break
+        k += 1
+    target = OUT / f"{key}.blp"
+    target.write_bytes(art.blp(levels, SIDE, SIDE))
+    psnr, _ = art.check(target, first)
+    print(f"{key}: {SIDE} x {SIDE} (read back {psnr:.1f} dB)")
+
+
+def main(keys):
+    OUT.mkdir(parents=True, exist_ok=True)
+    paths = [SOURCE / f"{key}.png" for key in keys] if keys else sorted(SOURCE.glob("*.png"))
+    for path in paths:
+        if not path.exists():
+            sys.exit(f"no drawing chosen for {path.stem}: {path}")
+        texture(path.stem, drawing(path))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

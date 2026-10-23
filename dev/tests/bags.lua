@@ -50,6 +50,7 @@ function methods:RegisterForClicks(...) self._clicks = { ... } end
 function methods:IsProtected() return self._protected or false end
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
 function methods:SetRotation(radians) self._rotation = radians end
+function methods:SetTexCoord(...) self._coords = { ... } end
 function methods:GetStringWidth() return #(self._text or "") * 6 end
 function methods:GetTextWidth() return #(self._text or "") * 6 end
 function methods:SetVerticalScroll(value) self._scrolled = value end
@@ -413,6 +414,12 @@ check(potion.category == "consumables", "taken out: where the rules put it")
 local own = Categories.New("Tonics")
 check(own == "own1" and Categories.Word(own) == "Tonics" and Categories.Own(own)
     and Categories.rank[own] == Categories.rank.misc - 1, "a category of the player's own, made before Miscellaneous")
+do
+    local spare = Categories.New("Spare", Categories.OWN_ICON)
+    check(Categories.Icon(own) == Categories.ART .. "own" and Categories.Icon(spare) == Categories.ART .. "own",
+        "a category of the player's own without an icon chosen: the pencil drawing for it")
+    Categories.Delete(spare)
+end
 Categories.Assign(118, own)
 Reclassify()
 check(potion.category == own, "an item put into it")
@@ -753,6 +760,19 @@ check(RowNamed("All Items") and RowNamed("One Bag") and RowNamed("Each Bag") and
     and RowNamed("The Armory") and RowNamed("Head") and RowNamed("Weapons") and RowNamed("Potions") and RowNamed("Professions")
     and RowNamed("Add Category") and not RowNamed("Quest Items"),
     "the sidebar: the views, Pinned, every category switched on (empty ones too), a group's members, Add Category")
+do
+    local ART = Categories.ART
+    local function Drawn(word, key)
+        local icon = RowNamed(word).icon
+        return icon._texture == ART .. key and icon._coords[1] == 0 and icon._coords[2] == 1
+    end
+    check(ART == "Interface\\AddOns\\SaneUI_Inventory\\Art\\Categories\\" and Drawn("All Items", "all")
+        and Drawn("Each Bag", "each") and Drawn("Pinned Items", "pinned") and Drawn("Head", "head")
+        and Drawn("Potions", "potions") and Drawn("Add Category", "add"),
+        "the rows' icons Sane UI's own pencil drawings, by their keys, drawn whole")
+    check(Drawn("The Armory", "armory") and Categories.GroupIcon("prep") == ART .. "prep",
+        "a built-in group its own drawing, not its first member's")
+end
 check(RowNamed("Professions").count._text == "0" and RowNamed("Professions").label._text == "Professions",
     "an empty category by its name, its count 0")
 check(RowNamed("All Items").bar:IsShown() and not RowNamed("One Bag").bar:IsShown() and RowNamed("Junk").count._text == "1",
@@ -1009,6 +1029,8 @@ menu = RowMenu("Flasks")
 local third = Line(menu, "Icon").sub[3]
 third.fn(third.data)
 check(kept.own[1].icon == Categories.ICONS[3], "its icon chosen")
+check(RowNamed("Flasks").icon._texture == Categories.ICONS[3] and RowNamed("Flasks").icon._coords[1] > 0,
+    "the player's own category with the game's icon it chose: that icon, cut a little round its edge")
 menu = RowMenu("Flasks")
 Choose(Line(menu, "Create Group With").sub, "Trade Goods")
 check(RowNamed("Trade Goods & Flasks") and Categories.GroupOf("own1"), "grouped with another from the menu")

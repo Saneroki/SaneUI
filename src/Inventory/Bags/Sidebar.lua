@@ -179,9 +179,11 @@ local function MakeRow(rail)
     return row
 end
 
--- An icon: an atlas where the game has it, else a texture, cut a little round its edge.
+-- An icon: one of Sane UI's pencil drawings whole, an atlas where the game has it, else the game's texture, cut a
+-- little round its edge.
 local function Icon(texture, file, atlas)
     texture:SetTexCoord(0, 1, 0, 1)
+    if Categories.Drawn(file) then return texture:SetTexture(file) end
     if atlas and texture:SetAtlas(atlas) then return end
     texture:SetTexture(file)
     texture:SetTexCoord(ns.Cells.ZOOM, 1 - ns.Cells.ZOOM, ns.Cells.ZOOM, 1 - ns.Cells.ZOOM)
@@ -591,10 +593,8 @@ function Bag.Refresh(counts, viewing, options)
         if not (def and def.fixed) and not Categories.Off(key) then
             if group and not done[group] then
                 done[group] = true
-                local first = Categories.Members(group)[1]
-                local file, atlas = Categories.Icon(first)
-                local row = rail:Row(Categories.GroupWord(group), counts["group:" .. group] or 0, file, atlas, 0,
-                    viewing == "group:" .. group)
+                local row = rail:Row(Categories.GroupWord(group), counts["group:" .. group] or 0,
+                    Categories.GroupIcon(group), nil, 0, viewing == "group:" .. group)
                 row.view, row.group, row.drag = "group:" .. group, group, true
                 row.takes = ns.Menus.Takes("group:" .. group)
                 local folded = Categories.Folded(group)
@@ -618,7 +618,7 @@ function Bag.Refresh(counts, viewing, options)
         end
     end
     if options.addCategory ~= false then
-        local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.OWN_ICON, nil, 0, false)
+        local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.ART .. "add", nil, 0, false)
         row.add = true
         row.icon:SetAlpha(0.5)
         row.label:SetAlpha(0.4)

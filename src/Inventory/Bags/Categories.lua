@@ -82,6 +82,9 @@ Categories.PINNED, Categories.RECENT, Categories.JUNK = "pinned", "recent", "jun
 Categories.CATCH_ALL = "misc"
 Categories.LETTERS = 30   -- the most a name may have
 Categories.OWN_ICON = ICONS .. "INV_Misc_QuestionMark"
+-- Sane UI's own pencil drawings of the sidebars' rows (dev/tools/category-art): a built-in category, view or group
+-- by its key, "add" (Add Category) and "own" (a category of the player's own that has no icon of its own).
+Categories.ART = "Interface\\AddOns\\SaneUI_Inventory\\Art\\Categories\\"
 -- The icons a category of the player's own may take (the dialog's choice).
 Categories.ICONS = {
     "INV_Misc_QuestionMark", "INV_Misc_Bag_10", "INV_Misc_Gem_01", "INV_Potion_54", "INV_Misc_Herb_19",
@@ -112,68 +115,67 @@ end
 -- The built-in categories in their first order. fixed: at the top, never moved or grouped; last: after every
 -- other; alone: never in a group; take: what puts an item there besides its class (Categories.Classify).
 Categories.LIST = {
-    { key = "pinned", word = ns.TEXT.bagsPinned, atlas = "Waypoint-MapPin-Tracked", icon = ICONS .. "INV_Misc_Note_01",
+    { key = "pinned", word = ns.TEXT.bagsPinned,
       fixed = true, alone = true, view = true },
-    { key = "recent", word = ns.TEXT.bagsRecent, atlas = "auctionhouse-icon-clock", icon = ICONS .. "INV_Misc_PocketWatch_01",
+    { key = "recent", word = ns.TEXT.bagsRecent,
       fixed = true, alone = true, view = true },
     -- the gear by its slot (the game's words for the slots), the gear no slot takes, the sets' gear
-    { key = "head", word = Core.Word("INVTYPE_HEAD", "Head"), icon = ICONS .. "INV_Helmet_01", group = "armory",
+    { key = "head", word = Core.Word("INVTYPE_HEAD", "Head"), group = "armory",
       equip = Set("INVTYPE_HEAD") },
-    { key = "neck", word = Core.Word("INVTYPE_NECK", "Neck"), icon = ICONS .. "INV_Jewelry_Necklace_01", group = "armory",
+    { key = "neck", word = Core.Word("INVTYPE_NECK", "Neck"), group = "armory",
       equip = Set("INVTYPE_NECK") },
-    { key = "shoulder", word = Core.Word("INVTYPE_SHOULDER", "Shoulder"), icon = ICONS .. "INV_Shoulder_01", group = "armory",
+    { key = "shoulder", word = Core.Word("INVTYPE_SHOULDER", "Shoulder"), group = "armory",
       equip = Set("INVTYPE_SHOULDER") },
-    { key = "back", word = Core.Word("INVTYPE_CLOAK", "Back"), icon = ICONS .. "INV_Misc_Cape_01", group = "armory",
+    { key = "back", word = Core.Word("INVTYPE_CLOAK", "Back"), group = "armory",
       equip = Set("INVTYPE_CLOAK") },
-    { key = "chest", word = Core.Word("INVTYPE_CHEST", "Chest"), icon = ICONS .. "INV_Chest_Chain", group = "armory",
+    { key = "chest", word = Core.Word("INVTYPE_CHEST", "Chest"), group = "armory",
       equip = Set("INVTYPE_CHEST", "INVTYPE_ROBE") },
-    { key = "wrist", word = Core.Word("INVTYPE_WRIST", "Wrist"), icon = ICONS .. "INV_Bracer_01", group = "armory",
+    { key = "wrist", word = Core.Word("INVTYPE_WRIST", "Wrist"), group = "armory",
       equip = Set("INVTYPE_WRIST") },
-    { key = "hands", word = Core.Word("INVTYPE_HAND", "Hands"), icon = ICONS .. "INV_Gauntlets_01", group = "armory",
+    { key = "hands", word = Core.Word("INVTYPE_HAND", "Hands"), group = "armory",
       equip = Set("INVTYPE_HAND") },
-    { key = "waist", word = Core.Word("INVTYPE_WAIST", "Waist"), icon = ICONS .. "INV_Belt_01", group = "armory",
+    { key = "waist", word = Core.Word("INVTYPE_WAIST", "Waist"), group = "armory",
       equip = Set("INVTYPE_WAIST") },
-    { key = "legs", word = Core.Word("INVTYPE_LEGS", "Legs"), icon = ICONS .. "INV_Pants_01", group = "armory",
+    { key = "legs", word = Core.Word("INVTYPE_LEGS", "Legs"), group = "armory",
       equip = Set("INVTYPE_LEGS") },
-    { key = "feet", word = Core.Word("INVTYPE_FEET", "Feet"), icon = ICONS .. "INV_Boots_01", group = "armory",
+    { key = "feet", word = Core.Word("INVTYPE_FEET", "Feet"), group = "armory",
       equip = Set("INVTYPE_FEET") },
-    { key = "finger", word = ns.TEXT.bagsRings, icon = ICONS .. "INV_Jewelry_Ring_01", group = "armory",
+    { key = "finger", word = ns.TEXT.bagsRings, group = "armory",
       equip = Set("INVTYPE_FINGER") },
-    { key = "trinket", word = ns.TEXT.bagsTrinkets, icon = ICONS .. "INV_Trinket_Naxxramas01", group = "armory",
+    { key = "trinket", word = ns.TEXT.bagsTrinkets, group = "armory",
       equip = Set("INVTYPE_TRINKET") },
-    { key = "weapons", word = ns.TEXT.bagsWeapons, icon = ICONS .. "INV_Sword_04", group = "armory",
+    { key = "weapons", word = ns.TEXT.bagsWeapons, group = "armory",
       equip = Set("INVTYPE_WEAPON", "INVTYPE_2HWEAPON", "INVTYPE_WEAPONMAINHAND") },
-    { key = "offhand", word = Core.Word("INVTYPE_WEAPONOFFHAND", "Off Hand"), icon = ICONS .. "INV_Shield_04",
+    { key = "offhand", word = Core.Word("INVTYPE_WEAPONOFFHAND", "Off Hand"),
       group = "armory", equip = Set("INVTYPE_SHIELD", "INVTYPE_HOLDABLE", "INVTYPE_WEAPONOFFHAND") },
-    { key = "ranged", word = Core.Word("INVTYPE_RANGED", "Ranged"), icon = ICONS .. "INV_Weapon_Bow_02", group = "armory",
+    { key = "ranged", word = Core.Word("INVTYPE_RANGED", "Ranged"), group = "armory",
       equip = Set("INVTYPE_RANGED", "INVTYPE_RANGEDRIGHT", "INVTYPE_THROWN", "INVTYPE_RELIC") },
-    { key = "armor", word = ns.TEXT.bagsOtherGear, icon = ICONS .. "INV_Shirt_01", group = "armory",
+    { key = "armor", word = ns.TEXT.bagsOtherGear, group = "armory",
       classes = Set(CLASS.Weapon or 2, CLASS.Armor or 4) },
-    { key = "sets", word = ns.TEXT.bagsSets, icon = ICONS .. "INV_Chest_Plate06", group = "armory", take = "set" },
+    { key = "sets", word = ns.TEXT.bagsSets, group = "armory", take = "set" },
     -- the consumables by their kind (the game's subclasses, Enum.ItemConsumableSubclass), the rest by their class
-    { key = "potions", word = ns.TEXT.bagsPotions, icon = ICONS .. "INV_Potion_51", group = "prep",
+    { key = "potions", word = ns.TEXT.bagsPotions, group = "prep",
       classes = Set(CLASS.Consumable or 0), subclasses = Set(SUB.Potion or 1) },
-    { key = "enhance", word = ns.TEXT.bagsBuffs, icon = ICONS .. "INV_Potion_25", group = "prep",
+    { key = "enhance", word = ns.TEXT.bagsBuffs, group = "prep",
       classes = Set(CLASS.Consumable or 0, CLASS.Gem or 3, CLASS.ItemEnhancement or 8),
       subclasses = Set(SUB.Elixir or 2, SUB.Flasksphials or 3, SUB.Scroll or 4, SUB.Itemenhancement or 6,
           SUB.ItemenhancementTemporary or 15),
       whole = Set(CLASS.Gem or 3, CLASS.ItemEnhancement or 8), lasting = true },
-    { key = "camp", word = ns.TEXT.bagsCamp, icon = ICONS .. "Ability_Racial_MakeCamp", group = "prep", take = "camp" },
-    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables"), icon = ICONS .. "INV_Misc_Food_15",
+    { key = "camp", word = ns.TEXT.bagsCamp, group = "prep", take = "camp" },
+    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables"),
       group = "prep", classes = Set(CLASS.Consumable or 0) },
-    { key = "trade", word = Core.Word("AUCTION_CATEGORY_TRADE_GOODS", "Trade Goods"), icon = ICONS .. "INV_Fabric_Linen_01",
+    { key = "trade", word = Core.Word("AUCTION_CATEGORY_TRADE_GOODS", "Trade Goods"),
       classes = Set(CLASS.Tradegoods or 7, CLASS.Reagent or 5) },
-    { key = "professions", word = Core.Word("TRADE_SKILLS", "Professions"), icon = ICONS .. "INV_Scroll_03",
+    { key = "professions", word = Core.Word("TRADE_SKILLS", "Professions"),
       classes = Set(CLASS.Recipe or 9, CLASS.Profession) },
-    { key = "reagent", word = ns.TEXT.bagsReagentBag, icon = ICONS .. "INV_Misc_Bag_33", alone = true, take = "reagent",
+    { key = "reagent", word = ns.TEXT.bagsReagentBag, alone = true, take = "reagent",
       unassignable = true },
-    { key = "misc", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous"), icon = ICONS .. "INV_Box_01",
+    { key = "misc", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous"),
       catchAll = true },
-    { key = "quest", word = Core.Word("AUCTION_CATEGORY_QUEST_ITEMS", "Quest Items"), atlas = "QuestNormal",
-      icon = ICONS .. "INV_Misc_Note_02", take = "quest" },
-    { key = "special", word = ns.TEXT.bagsSpecial, icon = ICONS .. "INV_Misc_Bag_EnchantedRunecloth", alone = true,
+    { key = "quest", word = Core.Word("AUCTION_CATEGORY_QUEST_ITEMS", "Quest Items"), take = "quest" },
+    { key = "special", word = ns.TEXT.bagsSpecial, alone = true,
       take = "special", unassignable = true, late = true },
-    { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk"), icon = ICONS .. "INV_Misc_Coin_01", alone = true,
+    { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk"), alone = true,
       last = true },
 }
 Categories.DEF = {}
@@ -396,10 +398,22 @@ function Categories.Word(key)
 end
 
 function Categories.Icon(key)
-    local def = Categories.DEF[key]
-    if def then return def.icon, def.atlas end
+    if Categories.DEF[key] then return Categories.ART .. key end
     local own = Own(key)
-    return own and own.icon or Categories.OWN_ICON
+    if own and own.icon and own.icon ~= Categories.OWN_ICON then return own.icon end
+    return Categories.ART .. "own"
+end
+
+-- A group's icon: a built-in group's own drawing, else its first member's.
+function Categories.GroupIcon(group)
+    if Categories.GROUPS[group] then return Categories.ART .. group end
+    local first = Categories.Members(group)[1]
+    return first and Categories.Icon(first) or Categories.ART .. "own"
+end
+
+-- Whether an icon is one of Sane UI's own drawings (drawn whole), not one of the game's (cut a little round its edge).
+function Categories.Drawn(file)
+    return type(file) == "string" and file:sub(1, #Categories.ART) == Categories.ART
 end
 
 -- A group's name: the player's, else its own first name, else its members' ("A & B", "A, B, & C").

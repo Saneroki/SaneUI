@@ -52,6 +52,7 @@ GROUPS = {
         "makeimages": (["dev/tools/imagegen"], "a list of prompts through ComfyUI", 'prompts through ComfyUI'),
         "makeart": (["dev/tools/art"], "the game's textures from the drawings", None),
         "makejournalart": (["dev/tools/journal-art"], "the journal look's textures for Core (Art/Journal)", None),
+        "makecategoryart": (["dev/tools/category-art"], "the bags' category icons, pencil, from the chosen drawings", None),
         "measureart": (["dev/tools/art-measure"], "how sharp the game draws a picture", None),
         "makeflipbook": (["dev/tools/flipbook"], "a clip's frames as a flipbook", None),
         "makeshapes": (["dev/tools/shape-art"], "the masks of Core's round shapes", None),

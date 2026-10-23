@@ -1,0 +1,50 @@
+# Bags: an icon for every row of the bags' sidebar (the views, Pinned and Recent, each built-in category, the two
+# groups, Add Category and a category of the player's own without an icon of its own): a pencil drawing on the page,
+# simple and bold enough to be read at the sidebar's size (16 to 18 units). Code lays it on the page in graphite.
+#   dev/tools/imagegen dev/imagegen/sets/bags/categories.txt
+# chosen (one a row, kept as assets/interface/categories/<key>.png; dev/tools/category-art):
+#   all-1 one-3 each-1 pinned-1 recent-4 armory-2 head-2 neck-2 shoulder-3 back-2 chest-2 wrist-4 hands-2 waist-1
+#   legs-2 feet-1 finger-1 trinket-2 weapons-1 offhand-2 ranged-3 armor-2 sets-2 prep-2 potions-1 enhance-1 camp-2
+#   consumables-1 trade-3 professions-2 reagent-1 misc-3 quest-3 special-1 junk-3 add-2 own-3
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=0.6
+count: 4
+out: assets/generated/bags/categories
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. A simple bold icon drawn in graphite pencil as in an adventurer's journal: a few thick confident dark pencil outlines, a clear simple silhouette, very little shading, no colour, no paper texture, no background, one single object alone, straight on, centred and filling most of the picture, readable at a tiny size, no text, no letters:
+all: a big bulging leather backpack with a flap and two straps.
+one: one small leather pouch tied shut with a cord.
+each: three small leather pouches standing side by side.
+pinned: one round-headed pushpin, slightly tilted.
+recent: one round pocket watch with its lid open, two hands on the dial.
+armory: two swords crossed in an X, their points up.
+head: one knight's helmet seen from the front, a visor slit.
+neck: one necklace hanging in a loop with a round pendant.
+shoulder: one rounded armour pauldron for a shoulder, a few rivets.
+back: one long cloak hanging from a clasp at its top.
+chest: one breastplate of armour seen from the front.
+wrist: one leather bracer for a forearm with two laces.
+hands: one leather glove seen from the back, fingers together.
+waist: one belt in a loose loop with a square buckle.
+legs: one pair of trousers seen from the front.
+feet: one tall leather boot seen from the side.
+finger: one ring with a round gem on top.
+trinket: one round medallion charm on a small loop, a star engraved in it.
+weapons: one straight sword standing upright, its point up.
+offhand: one heater shield seen from the front.
+ranged: one curved hunting bow with an arrow nocked.
+armor: one simple shirt with short sleeves seen from the front.
+sets: one wooden clothes hanger holding a tunic.
+prep: one old lantern with a handle on top and a candle flame inside.
+potions: one round-bellied potion flask with a cork.
+enhance: one tall slender elixir vial with three small sparkles around it.
+camp: one small campfire, crossed logs and a flame.
+consumables: one roasted chicken drumstick.
+trade: two metal ingots stacked one on the other.
+professions: a hammer and a pickaxe crossed in an X.
+reagent: one mortar with a pestle in it.
+misc: one small wooden crate with planks.
+quest: one bold exclamation mark.
+special: one leather quiver full of arrows.
+junk: a small stack of three plain round coins seen a little from the side, no marks on them.
+add: one bold plus sign.
+own: one bold question mark.

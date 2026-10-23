@@ -75,7 +75,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
     the other views it is the game's *Clean Up Bags*.
   - **The sidebar** at the left (its arrow at the top folds it to a narrow edge and the strip of your bags with
-    it; the arrow or the bags' button unfolds it, kept): *All Items* (every item by category, the categories side by side, as many to a
+    it; the arrow or the bags' button unfolds it, kept; every row with a small pencil drawing of its own: a
+    backpack for All Items, a helmet for Head, a flask for Potions ...): *All Items* (every item by category, the categories side by side, as many to a
     line as fit; every category that takes items shown with its items and an empty slot after them, also while
     it holds nothing; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
@@ -400,10 +401,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (`Contents.Junk`): in Junk with a price, not in a special bag, not in an equipment set, not pinned, not
     refundable (`GetContainerItemPurchaseInfo`).
   - **The categories** (`Bags/Categories.lua`, no frames): the built-in ones (`Categories.LIST`: their rules,
-    icons from the game's own classic icons and atlases, `fixed`, `last`, `alone`, the first groups), the
+    `fixed`, `last`, `alone`, the first groups), the
     player's own (`own1`, `own2`, …), the order (`Categories.Order`: Pinned and Recent first, the movable ones in
     the player's order, a new built-in one before Miscellaneous, a late one at the end, Junk last while the junk
-    marker is on), the groups (`GroupOf`, `Members`, `GroupWord`: its own name, its first name, else its members'
+    marker is on), the icons (`Categories.Icon`, `GroupIcon`: Sane UI's own pencil drawings, `Categories.ART` and
+    the key, made by `dev/tools/category-art` from `assets/interface/categories/`, for every built-in category,
+    view and group, Add Category and a category of the player's own without an icon chosen; one of the game's
+    icons the player chose for one of their own stays; `Drawn` tells them apart, the sidebar draws ours whole and
+    the game's cut a little round their edge), the groups (`GroupOf`, `Members`, `GroupWord`: its own name, its first name, else its members'
     "A & B"; a group of one is none), an item's category (`Categories.Classify`: the reagent bag's, a special
     bag's, the player's, Camp Items by the game's item IDs, Quest Items, Junk for grey, Item Set Gear, then by
     class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). Kept by item
