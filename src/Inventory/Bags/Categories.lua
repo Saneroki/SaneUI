@@ -9,12 +9,19 @@ local _, ns = ...
 --  The built-in categories, in their first order (Categories.LIST):
 --      Pinned, Recent       at the very top, never moved: a second look at
 --                           items that stay in their own category too
---      Weapons / Trinkets   weapons, and trinkets
---      Armor                armor but trinkets
+--      the gear by its slot (Head, Neck, Shoulder, Back, Chest, Wrist,
+--                           Hands, Waist, Legs, Feet, Rings, Trinkets,
+--                           Weapons, Off Hand, Ranged), then Shirts, Tabards
+--                           & Other Gear (the gear no slot takes)
 --      Item Set Gear        weapons and armor of one of the character's
 --                           equipment sets
---      Consumables, Gear Enhancements (gems, enchantments), Camp Items (the
---                           game's camp items, by item ID)
+--      Potions              the consumables the game calls potions
+--      Buffs                what lasts a while: elixirs, flasks, scrolls,
+--                           gems and enchantments, and any other consumable
+--                           whose effect lasts Categories.LASTING or longer
+--                           (Core's data: the item's use spell, its aura)
+--      Camp Items           the game's camp items, by item ID
+--      Consumables          the other consumables (food and drink, bandages)
 --      Trade Goods          trade goods and reagents
 --      Professions          recipes and profession items
 --      Reagent Bag          whatever is in the reagent bag
@@ -27,8 +34,9 @@ local _, ns = ...
 --                           junk marker is on (Categories.Marker)
 --  An item goes to the first that takes it: the reagent bag's, a special
 --  bag's, the category the player put it into, Camp Items, Quest Items, Junk
---  (grey), Item Set Gear, then by its class in the categories' order, else
---  Miscellaneous. A category switched off sends its items to Miscellaneous.
+--  (grey), Item Set Gear, then by its slot or its kind of consumable (the
+--  categories that ask more than the class), then by its class, each in the
+--  categories' order, else Miscellaneous. A category switched off sends its items to Miscellaneous.
 --
 --  The player may move a category up or down (Categories.Move: past a
 --  whole group, a group's member among its members; MoveGroup: a group as
@@ -38,8 +46,8 @@ local _, ns = ...
 --  named by its members, "A & B", until the player names it; a group left
 --  with one member is no more), make categories of their own (a name and an
 --  icon; they hold only what is put into them) and delete them. At first
---  Weapons / Trinkets, Armor and Item Set Gear are the group The Armory,
---  Consumables, Gear Enhancements and Camp Items the group Adventure Prep.
+--  the gear's categories and Item Set Gear are the group The Armory, Potions,
+--  Buffs, Camp Items and Consumables the group Adventure Prep.
 --
 --  An item is pinned by its item ID, put into a category (assigned), or
 --  marked as junk (put into Junk; unmarked, it goes back where it was).
@@ -63,6 +71,7 @@ local Categories = {}
 ns.Categories = Categories
 
 local CLASS = Enum and Enum.ItemClass or {}
+local SUB = Enum and Enum.ItemConsumableSubclass or {}
 local ICONS = "Interface\\Icons\\"
 
 Categories.PINNED, Categories.RECENT, Categories.JUNK = "pinned", "recent", "junk"
@@ -85,6 +94,8 @@ for _, item in ipairs({
     279976, 279978, 279979, 279981, 279982, 279985, 279987, 279988, 279989, 279990,
 }) do Categories.CAMP[item] = true end
 
+Categories.LASTING = 15 * 60 * 1000   -- a consumable whose aura lasts this long (ms) is a buff
+
 local function Set(...)
     local set = {}
     for index = 1, select("#", ...) do
@@ -101,16 +112,51 @@ Categories.LIST = {
       fixed = true, alone = true, view = true },
     { key = "recent", word = ns.TEXT.bagsRecent, atlas = "auctionhouse-icon-clock", icon = ICONS .. "INV_Misc_PocketWatch_01",
       fixed = true, alone = true, view = true },
+    -- the gear by its slot (the game's words for the slots), the gear no slot takes, the sets' gear
+    { key = "head", word = Core.Word("INVTYPE_HEAD", "Head"), icon = ICONS .. "INV_Helmet_01", group = "armory",
+      equip = Set("INVTYPE_HEAD") },
+    { key = "neck", word = Core.Word("INVTYPE_NECK", "Neck"), icon = ICONS .. "INV_Jewelry_Necklace_01", group = "armory",
+      equip = Set("INVTYPE_NECK") },
+    { key = "shoulder", word = Core.Word("INVTYPE_SHOULDER", "Shoulder"), icon = ICONS .. "INV_Shoulder_01", group = "armory",
+      equip = Set("INVTYPE_SHOULDER") },
+    { key = "back", word = Core.Word("INVTYPE_CLOAK", "Back"), icon = ICONS .. "INV_Misc_Cape_01", group = "armory",
+      equip = Set("INVTYPE_CLOAK") },
+    { key = "chest", word = Core.Word("INVTYPE_CHEST", "Chest"), icon = ICONS .. "INV_Chest_Chain", group = "armory",
+      equip = Set("INVTYPE_CHEST", "INVTYPE_ROBE") },
+    { key = "wrist", word = Core.Word("INVTYPE_WRIST", "Wrist"), icon = ICONS .. "INV_Bracer_01", group = "armory",
+      equip = Set("INVTYPE_WRIST") },
+    { key = "hands", word = Core.Word("INVTYPE_HAND", "Hands"), icon = ICONS .. "INV_Gauntlets_01", group = "armory",
+      equip = Set("INVTYPE_HAND") },
+    { key = "waist", word = Core.Word("INVTYPE_WAIST", "Waist"), icon = ICONS .. "INV_Belt_01", group = "armory",
+      equip = Set("INVTYPE_WAIST") },
+    { key = "legs", word = Core.Word("INVTYPE_LEGS", "Legs"), icon = ICONS .. "INV_Pants_01", group = "armory",
+      equip = Set("INVTYPE_LEGS") },
+    { key = "feet", word = Core.Word("INVTYPE_FEET", "Feet"), icon = ICONS .. "INV_Boots_01", group = "armory",
+      equip = Set("INVTYPE_FEET") },
+    { key = "finger", word = ns.TEXT.bagsRings, icon = ICONS .. "INV_Jewelry_Ring_01", group = "armory",
+      equip = Set("INVTYPE_FINGER") },
+    { key = "trinket", word = ns.TEXT.bagsTrinkets, icon = ICONS .. "INV_Trinket_Naxxramas01", group = "armory",
+      equip = Set("INVTYPE_TRINKET") },
     { key = "weapons", word = ns.TEXT.bagsWeapons, icon = ICONS .. "INV_Sword_04", group = "armory",
-      classes = Set(CLASS.Weapon or 2), slots = Set("INVTYPE_TRINKET") },
-    { key = "armor", word = Core.Word("ARMOR", "Armor"), icon = ICONS .. "INV_Chest_Chain_05", group = "armory",
-      classes = Set(CLASS.Armor or 4), notSlots = Set("INVTYPE_TRINKET") },
+      equip = Set("INVTYPE_WEAPON", "INVTYPE_2HWEAPON", "INVTYPE_WEAPONMAINHAND") },
+    { key = "offhand", word = Core.Word("INVTYPE_WEAPONOFFHAND", "Off Hand"), icon = ICONS .. "INV_Shield_04",
+      group = "armory", equip = Set("INVTYPE_SHIELD", "INVTYPE_HOLDABLE", "INVTYPE_WEAPONOFFHAND") },
+    { key = "ranged", word = Core.Word("INVTYPE_RANGED", "Ranged"), icon = ICONS .. "INV_Weapon_Bow_02", group = "armory",
+      equip = Set("INVTYPE_RANGED", "INVTYPE_RANGEDRIGHT", "INVTYPE_THROWN", "INVTYPE_RELIC") },
+    { key = "armor", word = ns.TEXT.bagsOtherGear, icon = ICONS .. "INV_Shirt_01", group = "armory",
+      classes = Set(CLASS.Weapon or 2, CLASS.Armor or 4) },
     { key = "sets", word = ns.TEXT.bagsSets, icon = ICONS .. "INV_Chest_Plate06", group = "armory", take = "set" },
-    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables"), icon = ICONS .. "INV_Potion_51",
-      group = "prep", classes = Set(CLASS.Consumable or 0) },
-    { key = "enhance", word = ns.TEXT.bagsEnhance, icon = ICONS .. "INV_Misc_Gem_Ruby_01", group = "prep",
-      classes = Set(CLASS.Gem or 3, CLASS.ItemEnhancement or 8) },
+    -- the consumables by their kind (the game's subclasses, Enum.ItemConsumableSubclass), the rest by their class
+    { key = "potions", word = ns.TEXT.bagsPotions, icon = ICONS .. "INV_Potion_51", group = "prep",
+      classes = Set(CLASS.Consumable or 0), subclasses = Set(SUB.Potion or 1) },
+    { key = "enhance", word = ns.TEXT.bagsBuffs, icon = ICONS .. "INV_Potion_25", group = "prep",
+      classes = Set(CLASS.Consumable or 0, CLASS.Gem or 3, CLASS.ItemEnhancement or 8),
+      subclasses = Set(SUB.Elixir or 2, SUB.Flasksphials or 3, SUB.Scroll or 4, SUB.Itemenhancement or 6,
+          SUB.ItemenhancementTemporary or 15),
+      whole = Set(CLASS.Gem or 3, CLASS.ItemEnhancement or 8), lasting = true },
     { key = "camp", word = ns.TEXT.bagsCamp, icon = ICONS .. "Ability_Racial_MakeCamp", group = "prep", take = "camp" },
+    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables"), icon = ICONS .. "INV_Misc_Food_15",
+      group = "prep", classes = Set(CLASS.Consumable or 0) },
     { key = "trade", word = Core.Word("AUCTION_CATEGORY_TRADE_GOODS", "Trade Goods"), icon = ICONS .. "INV_Fabric_Linen_01",
       classes = Set(CLASS.Tradegoods or 7, CLASS.Reagent or 5) },
     { key = "professions", word = Core.Word("TRADE_SKILLS", "Professions"), icon = ICONS .. "INV_Scroll_03",
@@ -133,6 +179,7 @@ Categories.GROUPS = { armory = ns.TEXT.bagsArmory, prep = ns.TEXT.bagsPrep }
 Categories.OFF = { quest = true }
 
 local kept = {}
+local First        -- the first category whose rules take a record (Classify)
 local order = {}   -- the categories now, in order: { key, ... } (Categories.Order)
 local rank = {}    -- [key] = its place in order
 local groupOf = {} -- [key] = its group now (nil: none)
@@ -363,6 +410,46 @@ end
 -------------------------------------------------------------------------------
 --  Sorting an item in
 -------------------------------------------------------------------------------
+-- Whether a consumable's use lasts a while: the aura of its use spell lasts Categories.LASTING or longer (Core's
+-- data: Items' effects, Auras' durations; unknown: no).
+local items, auras
+local function Lasting(item)
+    local data = Core.Data
+    if not (data and data.Set and item) then return false end
+    items, auras = items or data.Set("Items"), auras or data.Set("Auras")
+    if not (items:Ready() and auras:Ready()) then return false end
+    local effects = items:Get(item, "effects")
+    for _, effect in ipairs(type(effects) == "table" and effects or {}) do
+        local duration = type(effect) == "table" and effect.trigger == "use" and auras:Get(effect.spell, "duration")
+        if type(duration) == "number" and duration >= Categories.LASTING then return true end
+    end
+    return false
+end
+
+-- Whether a category's rules take a record: by its slot (equip: gear only), by its class and kind (subclasses;
+-- whole: a class taken whole; lasting: a consumable whose use lasts), or by its class alone.
+local function Rules(def, record)
+    if def.equip then return ns.Contents.GEAR[record.class] and def.equip[record.equip] or false end
+    if not (def.classes and def.classes[record.class]) then return false end
+    if def.subclasses then
+        return def.subclasses[record.subclass] or def.whole and def.whole[record.class]
+            or def.lasting and record.class == (CLASS.Consumable or 0) and Lasting(record.item) or false
+    end
+    return true
+end
+
+-- The first category in order whose rules take a record: of those that ask more than the class (a slot, a kind:
+-- specific) or of those that do not.
+First = function(record, specific)
+    for _, key in ipairs(order) do
+        local def = Categories.DEF[key]
+        if def and (def.equip or def.classes) and ((def.equip or def.subclasses) and true or false) == specific
+            and Rules(def, record) then
+            return key
+        end
+    end
+end
+
 -- Where a record with an item goes now: record.category; whether it is junk (record.junk: in Junk with a price,
 -- the marker on, not pinned); whether it is pinned.
 function Categories.Classify(record)
@@ -387,14 +474,7 @@ function Categories.Classify(record)
         elseif record.set and ns.Contents.GEAR[record.class] then
             key = "sets"
         else
-            for _, other in ipairs(order) do
-                local def = Categories.DEF[other]
-                if def and def.classes and (def.classes[record.class] or def.slots and def.slots[record.equip])
-                    and not (def.notSlots and def.notSlots[record.equip]) then
-                    key = other
-                    break
-                end
-            end
+            key = First(record, true) or First(record, false)
         end
     end
     if not key or not rank[key] or Categories.Off(key) then key = Categories.CATCH_ALL end

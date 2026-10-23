@@ -15,6 +15,11 @@ The bigger changes of each version, newest first.
   the count, the junk marker, the bags, the clean-up and View on the
   window's title line, the three buttons round; the categories' column
   folds away, the bags' slots with it; empty bag slots stay empty.
+- Inventory: The Armory sorts your gear by its slot, Adventure Prep
+  into Potions, Buffs, Camp Items and Consumables, each shown as its
+  own part with one empty slot to drop into; rounder icons. The
+  character's model stands still and larger on plain paper, the top
+  slots match the others and the strips show each item's stats.
 - Navigation: on a dungeon's map each boss stands as its 3D model
   alone; hold Alt over it to read its abilities' descriptions and its
   items' stats and effects in the tooltip, and which of their looks

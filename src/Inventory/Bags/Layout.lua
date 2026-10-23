@@ -7,18 +7,20 @@ local _, ns = ...
 --  lines where these say.
 --      grid     the blocks side by side in bands, as many as fit across the
 --               room, each under its head (its name, how many): its cells,
---               then its empty slots (block.plus: an item let go on one goes
---               into the block's category), at least one, as many as fill its
---               last line; a block as wide as its cells and its first empty
---               slot, or as its head's words (measure), never wider than the
---               room (more cells: more lines)
+--               then one empty slot (block.plus: an item let go on it goes
+--               into the block's category); a block takes as much room as its
+--               cells or its head's words (measure), whichever is wider,
+--               never more than the room (more cells: more lines). A group's
+--               title (block.title) goes over the whole width, its members'
+--               blocks side by side under it
 --      list     each block under its head, a line per cell: the item at the
 --               left, its words in columns
 --      compact  the blocks side by side in bands, its name over each: which
 --               blocks share a band, and how wide each is, planned so that
 --               the whole takes the fewest lines (a block that is not the
---               last of its band at least three cells wide), its empty slots
---               after its cells as in the grid
+--               last of its band at least three cells wide), its empty slot
+--               after its cells as in the grid, a group's title over the
+--               whole width
 --  A part's head (the bags, the bank) goes over the whole width.
 --
 --      local count, height = Layout.Lay(look, blocks, width, out, measure)
@@ -77,8 +79,8 @@ local function Slots(block)
     return #block.entries + (block.plus and 1 or 0)
 end
 
--- A block's cells in lines from x and top, columns to a line, then its empty slots (block.plus), as many as make
--- its last line whole; returns the lines taken.
+-- A block's cells in lines from x and top, columns to a line, then its empty slot (block.plus); returns the lines
+-- taken.
 local function Cells(block, x, top, columns)
     local step = Layout.SIZE + Layout.GAP
     local column, line = 0, 0
@@ -97,14 +99,12 @@ local function Cells(block, x, top, columns)
             column = 0
             line = line + 1
         end
-        repeat
-            local place = Place("plus")
-            place.x, place.y, place.width, place.height = x + column * step, top + line * step, Layout.SIZE, Layout.SIZE
-            place.size, place.block = Layout.SIZE, block
-            column = column + 1
-        until column >= columns
+        local place = Place("plus")
+        place.x, place.y, place.width, place.height = x + column * step, top + line * step, Layout.SIZE, Layout.SIZE
+        place.size, place.block = Layout.SIZE, block
+        column = column + 1
     end
-    return column > 0 and line + 1 or 0
+    return (column > 0 or line > 0) and line + 1 or 0
 end
 
 local function Columns(width)
@@ -124,40 +124,47 @@ local function Grid(blocks, width, measure)
     local columns = Columns(width)
     local step = Layout.SIZE + Layout.GAP
     top, across, lines, high = y, 0, 0, 0
+    local member = false -- the band under way holds a group's members
     for index = 1, blocks.count do
         local block = blocks[index]
         local slots = Slots(block)
-        if block.level == 1 then
+        if block.level == 1 or block.title then
             Close()
             Head(block, width)
-            top = y
+            top, member = y, false
         elseif slots > 0 then
-            local words = measure and measure(block) or 0
-            local wide = math.min(columns, math.max(slots, math.ceil((words + Layout.GAP) / step)))
-            if across > 0 and across + wide * step - Layout.GAP > width then Close() end
+            if block.level ~= 3 and member then Close() end -- a group's members keep their lines to themselves
+            member = block.level == 3
+            local wide = math.min(columns, slots)
+            local room = math.min(width, math.max(wide * step - Layout.GAP, measure and measure(block) or 0))
+            if across > 0 and across + room > width then Close() end
             local height = block.level == 3 and Layout.MEMBER or Layout.HEAD
             local place = Place("head")
-            place.x, place.y, place.width, place.height = across, top, wide * step, height
+            place.x, place.y, place.width, place.height = across, top, room, height
             place.block, place.level = block, block.level
             lines = math.max(lines, Cells(block, across, top + height + Layout.HEAD_GAP, wide))
             high = math.max(high, height)
-            across = across + wide * step - Layout.GAP + Layout.BAND_GAP
+            across = across + room + Layout.BAND_GAP
         end
     end
     Close()
 end
 
 local function List(blocks, width)
+    local hiding = false -- under a folded group's title: its members left out
     for index = 1, blocks.count do
         local block = blocks[index]
-        Head(block, width)
-        for _, entry in ipairs(block.folded and NONE or block.entries) do
-            local place = Place("row")
-            place.x, place.y, place.width, place.height, place.size = 0, y, width, Layout.ROW, Layout.ICON
-            place.entry, place.block = entry, block
-            y = y + Layout.ROW
+        if block.level ~= 3 then hiding = block.title and block.folded or false end
+        if not (hiding and block.level == 3) then
+            Head(block, width)
+            for _, entry in ipairs(block.folded and NONE or block.entries) do
+                local place = Place("row")
+                place.x, place.y, place.width, place.height, place.size = 0, y, width, Layout.ROW, Layout.ICON
+                place.entry, place.block = entry, block
+                y = y + Layout.ROW
+            end
+            if block.level ~= 1 then y = y + Layout.APART end
         end
-        if block.level ~= 1 then y = y + Layout.APART end
     end
 end
 
@@ -236,7 +243,7 @@ end
 local function Compact(blocks, width)
     for index = 1, blocks.count do
         local block = blocks[index]
-        if block.level == 1 then
+        if block.level == 1 or block.title then
             Bands(width)
             Head(block, width)
         elseif Slots(block) > 0 then

@@ -3,8 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags - Canvas
 --  Where a window of items (the bags, the bank) draws what Layout.lua laid
---  out, in its scroll area's child: the heads (a part's, a block's, a group
---  member's: its words and number, a thin line to the right edge), the
+--  out, in its scroll area's child: the heads (a part's and a group's title
+--  with a pencil rule under them, a block's and a group member's: its words
+--  and number), the
 --  compact display's labels, a block's empty slots (a "+" in each), the
 --  list's lines (a word for each column shown, Columns.lua) and the item
 --  buttons (the window's pool, Cells.lua). Each window has its own
@@ -142,7 +143,9 @@ function Sheet:Head(place)
     if place.level == 1 then head.word:SetTextColor(ink[1], ink[2], ink[3]) else head.word:SetTextColor(color[1], color[2], color[3], color[4]) end
     head.number:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
     head.number:SetText(block.number and "(" .. tostring(block.number) .. ")" or "")
-    head.line:SetAlpha(place.level == 3 and 0.35 or ns.Paper.RULE_ALPHA)
+    -- the pencil rule only under a part's head and a group's title; a category's name stands right over its cells
+    head.line:SetShown(place.level == 1 or block.title == true)
+    head.line:SetAlpha(ns.Paper.RULE_ALPHA)
     head.key, head.group = block.key, block.group
     local list = self.owner.store.look == "list" and place.level ~= 1
     head.fold = list and Fold(block) or nil

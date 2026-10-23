@@ -7,16 +7,16 @@ local _, ns = ...
 --  (Core's Art/Journal/doll, made by dev/tools/journal-art), its gear slots in
 --  two arcs round the hero's place, a paper strip beside seven of each side's
 --  slots and under the weapons, hanging out over the leather. Code puts the
---  live content in: the game's item buttons in the slots, the items' words on
---  the strips (the name in its quality's colour, the slot and item level, its
---  two largest stats), the character's live model in the hero's place.
+--  live content in: the game's item buttons in the slots, the items' stats on
+--  the strips (centred: DPS, armor, the primary stats, then the rest), the
+--  character's live model in the hero's place, on the page's plain paper.
 --
 --  Where things stand on it, in the pixels of a 1080p layout (its own pixels
 --  halved), from its top left: dev/tools/journal-art prints them.
 --
 --      Doll.Build(parent)         -- the picture in parent (sized Doll.WIDTH x Doll.HEIGHT units)
 --      Doll.Rect(rect)            -- a rect of the doll's in units: left, top, width, height
---      Doll.Strip(parent, rect)   -- a strip's three lines; strip:Fill(name, color, line, stats) or strip:Empty(word)
+--      Doll.Strip(parent, rect)   -- a strip's lines; strip:Fill(stats) (a list of words) or strip:Empty()
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local J = Core.Journal
@@ -28,7 +28,7 @@ Doll.PIXELS = { 680, 902 }              -- its size in a 1080p layout's pixels
 Doll.WIDTH, Doll.HEIGHT = Doll.PIXELS[1] * PX, Doll.PIXELS[2] * PX
 
 -- The slots { left, top, right, bottom }, each with its strip; by the game's slot names in Slots.COLUMNS' order.
-Doll.TOP = { { 138, 44, 228, 134 }, { 433, 44, 528, 134 } }   -- head and hands: no strip
+Doll.TOP = { { 149, 64, 213, 128 }, { 465, 64, 529, 128 } }   -- head and hands, as large as the others: no strip
 Doll.LEFT = {
     { { 155, 146, 219, 210 }, { 45, 142, 151, 212 } },
     { { 145, 228, 209, 292 }, { 35, 224, 141, 294 } },
@@ -58,7 +58,7 @@ Doll.NAME_Y, Doll.LEVEL_Y, Doll.MODEL_TOP = 40, 64, 84
 Doll.CLOSE = { 485, 30 }                -- the X's middle, on the right strap
 Doll.HEAD = 30                          -- the top a window is dragged by
 -- An item's icon in its slot: so much inside the slot's painted box, each side.
-Doll.INSET = { top = 12, side = 7, weapon = 14, ammo = 5 }
+Doll.INSET = { top = 7, side = 7, weapon = 14, ammo = 5 }
 
 local PICTURE = J.PIECES.doll
 
@@ -86,58 +86,53 @@ local function Fit(fs, text, size, least, bold, flags)
     end
 end
 
--- A line of a strip, its top that far under the strip's top.
-local function Line(strip, size, bold, top)
+Doll.STAT_SIZE, Doll.STAT_LEAST = 13, 9   -- a stat's words (1080p pixels), and the least they are brought down to
+Doll.LINE = 15                           -- a line's height (1080p pixels)
+
+-- A strip's line: centred across the strip.
+local function Line(strip)
     local fs = strip:CreateFontString(nil, "OVERLAY")
-    J.Font(fs, size, bold)
-    fs:SetJustifyH("LEFT")
+    J.Font(fs, Doll.STAT_SIZE)
+    fs:SetJustifyH("CENTER")
     fs:SetWordWrap(false)
-    fs:SetPoint("TOPLEFT", 5 * PX, -top)
-    fs:SetPoint("TOPRIGHT", -3 * PX, -top)
+    fs:SetTextColor(J.INK[1], J.INK[2], J.INK[3], 0.9)
     return fs
 end
 
-local SIZES = { 14, 12, 12 }   -- the name, the slot and level, the stats (1080p pixels)
-local function FillStrip(strip, name, color, line, stats)
-    local lines = strip.lines
-    Fit(lines[1], name, SIZES[1], 9, true, "OUTLINE")
-    lines[1]:SetTextColor(color and color.r or 1, color and color.g or 1, color and color.b or 1, 1)
-    Fit(lines[2], line, SIZES[2], 9)
-    lines[2]:SetTextColor(J.INK[1], J.INK[2], J.INK[3], 0.85)
-    Fit(lines[3], stats, SIZES[3], 9)
-    lines[3]:SetTextColor(J.INK[1], J.INK[2], J.INK[3], 0.85)
+-- The stats on the strip, centred both ways: one to a line while they fit, else as many to a line as needed.
+local function FillStrip(strip, stats)
+    local lines, n = strip.lines, #strip.lines
+    local count = math.min(#stats, n)
+    local per = count > 0 and math.ceil(#stats / count) or 0
+    local height = Doll.LINE * PX
+    local top = (strip:GetHeight() - count * height) / 2
+    for i, fs in ipairs(lines) do
+        if i <= count then
+            fs:ClearAllPoints()
+            fs:SetPoint("TOPLEFT", 4 * PX, -(top + (i - 1) * height))
+            fs:SetPoint("TOPRIGHT", -4 * PX, -(top + (i - 1) * height))
+            Fit(fs, table.concat(stats, "  ", (i - 1) * per + 1, math.min(#stats, i * per)), Doll.STAT_SIZE, Doll.STAT_LEAST)
+            fs:SetTextColor(J.INK[1], J.INK[2], J.INK[3], 0.9)
+        else
+            fs:SetText("")
+        end
+    end
 end
 
--- An empty slot: its word, faint, on the strip's first line.
-local function EmptyStrip(strip, word)
-    local lines = strip.lines
-    Fit(lines[1], word, SIZES[2], 9)
-    lines[1]:SetTextColor(J.INK[1], J.INK[2], J.INK[3], 0.45)
-    lines[2]:SetText("")
-    lines[3]:SetText("")
+-- An empty slot: a blank strip (its tooltip names the slot).
+local function EmptyStrip(strip)
+    for _, fs in ipairs(strip.lines) do fs:SetText("") end
 end
 
--- A strip's three lines over its paper; a weapon's strip (wide and low) has two.
+-- A strip's lines over its paper: three, a weapon's strip (wide and low) two.
 function Doll.Strip(parent, rect, wide)
     local strip = CreateFrame("Frame", nil, parent)
     local x, y, w, h = Doll.Rect(rect)
     strip:SetPoint("TOPLEFT", x, -y)
     strip:SetSize(w, h)
     strip.lines = {}
-    local count = wide and 2 or 3
-    for i = 1, 3 do
-        strip.lines[i] = Line(strip, SIZES[i], i == 1, (i - 1) * (h / count) + (wide and 2 or 4) * PX)
-    end
-    if wide then
-        -- the weapon's: the name over the level and stats on one line
-        strip.lines[3]:Hide()
-        strip.wide = true
-    end
+    for i = 1, wide and 2 or 3 do strip.lines[i] = Line(strip) end
+    strip.wide = wide or false
     strip.Fill, strip.Empty = FillStrip, EmptyStrip
-    if wide then
-        function strip.Fill(self, name, color, line, stats)
-            FillStrip(self, name, color, (line or "") .. ((stats and stats ~= "") and ("  ·  " .. stats) or ""), nil)
-        end
-    end
     return strip
 end

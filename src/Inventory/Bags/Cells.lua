@@ -18,7 +18,7 @@ local _, ns = ...
 --
 --  The look, Sane UI's own (Core.Journal): each cell a pencil slot on the
 --  paper, the icon in it covering its inner line, cut a little round its
---  edge, without a border, its corners rounded by the game's own icon mask
+--  edge, without a border, its corners rounded by Core's icon mask
 --  (Cells.ROUNDED; the highlight and the press too), the game's highlight,
 --  a warm glow while pressed; over it, above the cooldown's swipe, the count
 --  at the bottom right, the item level of gear at the top left in its
@@ -37,7 +37,7 @@ ns.Cells = Cells
 
 Cells.TEMPLATE = "ContainerFrameItemButtonTemplate"
 Cells.ZOOM = 0.08                       -- the icon's edge cut away, on each side
-Cells.ROUNDED = "Interface\\Common\\common-iconmask" -- the game's mask of an item button's icon: its corners rounded
+Cells.ROUNDED = Core.Journal.ART .. "icon-mask"  -- an icon's mask: its corners well rounded (Core's art)
 Cells.CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
 Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its pencil slot, a breath of graphite

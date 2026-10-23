@@ -8,7 +8,7 @@ local _, ns = ...
 --  look: the doll (Doll.lua), its own leather frame and paper, the equipment
 --  slots in their arcs with the items' strips (Slots.lua), and in the hero's
 --  place the character's name with its title, the level line under it and the
---  character's live model (Model.lua) standing on the doll's stony ground. The
+--  character's live model (Model.lua) standing on the page's plain paper. The
 --  doll's top is the head it is dragged by, the X on its right strap. The rest
 --  of the game's sheet stands in windows
 --  of its own beside it: the stats and the sidebar (Sidebar.lua), and what the
@@ -164,8 +164,14 @@ function Sheet.Build(made)
     local right, bottom = At(hero[3], hero[4])
     local place = CreateFrame("Frame", nil, holder)
     place:SetPoint("TOPLEFT", holder, "TOPLEFT", left, modelTop)
-    place:SetPoint("BOTTOMRIGHT", holder, "TOPLEFT", right, bottom)
+    place:SetSize(right - left, modelTop - bottom)
     ns.Model.Build(place)
+    -- the name and the level over the model, which is drawn larger than its place
+    local words = CreateFrame("Frame", nil, holder)
+    words:SetAllPoints()
+    words:SetFrameLevel(holder:GetFrameLevel() + 12)
+    panel.title:SetParent(words)
+    level:SetParent(words)
 
     local items = CreateFrame("Frame", nil, holder)
     items:SetAllPoints()

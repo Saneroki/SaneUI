@@ -296,6 +296,26 @@ for _, widget in ipairs(W.frames) do
     if widget._kind == "ModelScene" then scene = widget end
 end
 check(scene, "the character's model scene stands in the left pane")
+local place = scene:GetParent()
+check(scene._template == "NonInteractableModelSceneMixinTemplate" and math.abs(scene:GetHeight() - place:GetHeight() * 1.25) < 0.01,
+    "the model still (no turning, zooming or moving, no buttons for it), a quarter larger than its place")
+do
+    local controls
+    for _, widget in ipairs(W.frames) do
+        if widget._template == "ModelSceneControlFrameTemplate" then controls = widget end
+    end
+    check(not controls, "no turn, zoom or reset buttons")
+    local stats = rawget(_G, "GetItemStats")
+    GetItemStats = function()
+        return { ITEM_MOD_STAMINA_SHORT = 8, RESISTANCE0_NAME = 62, ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 12.46,
+            ITEM_MOD_CRIT_RATING_SHORT = 1, ITEM_MOD_INTELLECT_SHORT = 3 }
+    end
+    ITEM_MOD_STAMINA_SHORT, RESISTANCE0_NAME, ITEM_MOD_DAMAGE_PER_SECOND_SHORT = "Stamina", "Armor", "Damage Per Second"
+    ITEM_MOD_CRIT_RATING_SHORT, ITEM_MOD_INTELLECT_SHORT, STAT_DPS_SHORT = "Critical Strike", "Intellect", "DPS"
+    check(table.concat(ns.Slots.Stats("|Hitem:1|h[x]|h"), ",") == "12.5 DPS,62 Armor,+8 Stamina,+3 Intellect,+1 Critical Strike",
+        "a strip's stats: DPS, armor, the primary stats, then the rest")
+    GetItemStats = stats
+end
 -- An item let go over the model is put on, as on the game's sheet: by the left button or a drop, where it can be.
 do
     local equipped = 0

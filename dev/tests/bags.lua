@@ -326,13 +326,14 @@ check(arrows.special and herb.reagentBag and key.special and not sword.special, 
 -------------------------------------------------------------------------------
 --  The categories, without a frame
 -------------------------------------------------------------------------------
-check(sword.category == "sets" and ring.category == "armor" and linen.category == "trade" and potion.category == "consumables",
-    "set gear, armor, trade goods, consumables")
+check(sword.category == "sets" and ring.category == "finger" and linen.category == "trade" and potion.category == "consumables",
+    "set gear, a ring in Rings (gear by its slot), trade goods, consumables")
 check(fang.category == "junk" and fang.junk and pelt.category == "misc" and arrows.category == "special"
     and herb.category == "reagent" and key.category == "special",
     "grey: junk; a quest item in Miscellaneous while Quest Items is off; the special bags' and the reagent bag's")
 check(table.concat(Categories.order, ",") ==
-    "pinned,recent,weapons,armor,sets,consumables,enhance,camp,trade,professions,reagent,misc,quest,special,junk",
+    "pinned,recent,head,neck,shoulder,back,chest,wrist,hands,waist,legs,feet,finger,trinket,weapons,offhand,ranged,armor,sets,"
+    .. "potions,enhance,camp,consumables,trade,professions,reagent,misc,quest,special,junk",
     "the first order: Pinned and Recent first, Junk last")
 check(Categories.GroupOf("weapons") == "armory" and Categories.GroupOf("sets") == "armory" and Categories.GroupOf("consumables") == "prep"
     and Categories.GroupWord("armory") == "The Armory", "the first groups: The Armory, Adventure Prep")
@@ -344,7 +345,16 @@ Put(0, 6, 4002)
 Put(0, 7, 279978)
 local charm = Contents.Read(0, 6, "bags")
 local tent = Contents.Read(0, 7, "bags")
-check(charm.category == "weapons" and tent.category == "camp", "a trinket with the weapons, a camp item in Camp Items")
+check(charm.category == "trinket" and tent.category == "camp", "a trinket in Trinkets, a camp item in Camp Items")
+local function Kind(class, subclass, equip)
+    return Categories.Classify({ item = 99999, class = class, subclass = subclass, equip = equip })
+end
+check(Kind(0, 1) == "potions" and Kind(0, 2) == "enhance" and Kind(0, 3) == "enhance" and Kind(0, 4) == "enhance"
+    and Kind(3, 0) == "enhance" and Kind(0, 5) == "consumables" and Kind(0, 7) == "consumables",
+    "consumables by kind: potions; elixirs, flasks, scrolls and gems are buffs; food and bandages the rest")
+check(Kind(4, 1, "INVTYPE_HEAD") == "head" and Kind(2, 7, "INVTYPE_SHIELD") == "offhand" and Kind(2, 2, "INVTYPE_RANGEDRIGHT") == "ranged"
+    and Kind(4, 0, "INVTYPE_BODY") == "armor" and Kind(4, 1, "INVTYPE_ROBE") == "chest",
+    "gear by its slot; a shirt with the other gear")
 bags[0][6], bags[0][7] = nil, nil
 Contents.Read(0, 6, "bags")
 Contents.Read(0, 7, "bags")
@@ -399,8 +409,8 @@ Categories.Assign(118, nil)
 Reclassify()
 check(potion.category == "consumables", "taken out: where the rules put it")
 -- The player's own categories, groups, names, order.
-local own = Categories.New("Potions")
-check(own == "own1" and Categories.Word(own) == "Potions" and Categories.Own(own)
+local own = Categories.New("Tonics")
+check(own == "own1" and Categories.Word(own) == "Tonics" and Categories.Own(own)
     and Categories.rank[own] == Categories.rank.misc - 1, "a category of the player's own, made before Miscellaneous")
 Categories.Assign(118, own)
 Reclassify()
@@ -411,36 +421,40 @@ Categories.Rename("trade", "")
 check(Categories.Word("trade") == "Trade Goods", "no name: its own again")
 local before = Categories.rank.trade
 Categories.Move("trade", 1)
-check(Categories.rank.trade == before + 1 and kept.order[1] == "weapons", "moved down one, the order kept")
+check(Categories.rank.trade == before + 1 and kept.order[1] == "head", "moved down one, the order kept")
 Categories.Move("trade", -1)
 -- A group moves as one; a category passes a whole group in one step; a group's member moves among its members.
+local ARMORY = "head,neck,shoulder,back,chest,wrist,hands,waist,legs,feet,finger,trinket,weapons,offhand,ranged,armor,sets"
+local PREP = "potions,enhance,camp,consumables"
 Categories.MoveGroup("armory", 1)
-check(table.concat(kept.order, ",", 1, 6) == "consumables,enhance,camp,weapons,armor,sets",
+check(table.concat(kept.order, ",", 1, 21) == PREP .. "," .. ARMORY,
     "a group moved down: past the next group, its members together")
 Categories.Move("trade", -1)
-check(table.concat(kept.order, ",", 1, 7) == "consumables,enhance,camp,trade,weapons,armor,sets",
+check(table.concat(kept.order, ",", 1, 22) == PREP .. ",trade," .. ARMORY,
     "a category moved up: past a whole group at once")
 Categories.Move("armor", -1)
 Categories.Move("armor", -1)
-check(table.concat(kept.order, ",", 4, 7) == "trade,armor,weapons,sets" and Categories.GroupOf("armor") == "armory",
-    "a group's member moved among its members, never out of its group")
+check(Categories.rank.armor == Categories.rank.weapons + 1 and Categories.rank.offhand == Categories.rank.armor + 1
+    and Categories.GroupOf("armor") == "armory", "a group's member moved among its members, never out of its group")
+Categories.Move("head", -1)
+check(kept.order[6] == "head" and Categories.GroupOf("head") == "armory", "the first member stays first: never out of its group")
 -- What is switched off (not in the sidebar) is stepped over: every move moves something seen.
 Categories.SwitchOff("professions", true)
 Categories.Move("reagent", -1)
-check(table.concat(kept.order, ",", 4, 7) == "trade,reagent,professions,armor",
+check(table.concat(kept.order, ",", 5, 8) == "trade,reagent,professions,head",
     "a category moved up past one switched off: past the group before that at once")
 Categories.SwitchOff("weapons", true)
 Categories.Move("armor", 1)
-check(table.concat(kept.order, ",", 7, 9) == "sets,weapons,armor", "a group's member past a member switched off")
+check(Categories.rank.armor == Categories.rank.offhand + 1, "a group's member past a member switched off")
 Categories.SwitchOff("professions", false)
 Categories.SwitchOff("weapons", false)
 kept.order = nil
 Categories.Order()
 local group = Categories.GroupWith("trade", own)
-check(Categories.GroupOf("trade") == group and Categories.GroupOf(own) == group and Categories.GroupWord(group) == "Trade Goods & Potions",
+check(Categories.GroupOf("trade") == group and Categories.GroupOf(own) == group and Categories.GroupWord(group) == "Trade Goods & Tonics",
     "two categories made a group, named by its members")
 Categories.Join("professions", group)
-check(Categories.GroupWord(group) == "Trade Goods, Potions, & Professions", "a third joins it")
+check(Categories.GroupWord(group) == "Trade Goods, Tonics, & Professions", "a third joins it")
 Categories.RenameGroup(group, "Crafting")
 check(Categories.GroupWord(group) == "Crafting", "the group named")
 Categories.Ungroup("professions")
@@ -466,8 +480,8 @@ check(next(wrong.assigned) == nil and next(wrong.pinned) == nil and #wrong.own =
 for k in pairs(kept) do kept[k] = nil end
 Categories.Use(kept)
 local rank, order = Categories.rank, Categories.order
-Categories.Place("professions", "weapons", false)
-check(rank.professions == rank.weapons - 1 and Categories.GroupOf("professions") == nil and kept.order[1] == "professions",
+Categories.Place("professions", "head", false)
+check(rank.professions == rank.head - 1 and Categories.GroupOf("professions") == nil and kept.order[1] == "professions",
     "a category put before another, the order kept")
 Categories.Place("professions", "armor", true, "armory")
 check(Categories.GroupOf("professions") == "armory" and rank.professions == rank.armor + 1,
@@ -476,7 +490,7 @@ Categories.Place("weapons", nil, true)
 check(Categories.GroupOf("weapons") == nil and order[#order] == "junk" and order[#order - 1] == "weapons",
     "to the end: before Junk, out of its group")
 Categories.PlaceGroup("prep", "armor", false)
-check(rank.consumables < rank.armor and rank.camp < rank.armor and rank.camp == rank.consumables + 2
+check(rank.consumables < rank.armor and rank.potions < rank.armor and rank.consumables == rank.potions + 3
     and Categories.GroupOf("enhance") == "prep", "a group moved as a whole")
 Categories.Place("junk", "weapons", false)
 Categories.Place("pinned", nil, true)
@@ -529,10 +543,14 @@ local function Words(blocks)
     return table.concat(list, ",")
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
-check(Words(blocks) == "Pinned Items=0,The Armory=2,Adventure Prep=1,Trade Goods=1,Professions=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
-    "All Items: Pinned (with its +, empty too), a block per category, a group's members as one, the empty ones shown too (slots to drop into): " .. Words(blocks))
-check(blocks[1].plus and blocks[4].plus and blocks[4].key == "trade" and not blocks[6].plus and not blocks[2].plus,
-    "a + after Pinned and after a category that takes items; not after the reagent bag's, not after a group")
+check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,Adventure Prep=0,Consumables=1,Trade Goods=1,"
+    .. "Professions=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
+    "All Items: Pinned (with its +, empty too), a block per category, a group's title over its members that hold "
+    .. "something, the empty categories shown too (a slot to drop into): " .. Words(blocks))
+check(blocks[1].plus and blocks[7].plus and blocks[7].key == "trade" and not blocks[9].plus and blocks[2].title
+    and not blocks[2].plus and blocks[2].number == 2 and blocks[3].plus and blocks[3].level == 3 and blocks[3].key == "finger",
+    "a + after Pinned and after a category that takes items, a group's members too; not after the reagent bag's, "
+    .. "not after a group's title (its count: its members')")
 local function Named(list, word)
     for index = 1, list.count do
         if list[index].word == word then return list[index] end
@@ -540,8 +558,8 @@ local function Named(list, word)
 end
 local trade = Named(blocks, "Trade Goods")
 check(trade.entries[1].count == 27 and trade.number == 1, "the stacks of one item merged into one cell, the count of them all")
-check(Named(blocks, "The Armory").entries[1].record.name == "Steel Sword" and Named(blocks, "The Armory").group == "armory",
-    "gear by item level first")
+check(Named(blocks, "Item Set Gear").entries[1].record.name == "Steel Sword" and Named(blocks, "The Armory").group == "armory",
+    "a group's title, its members' blocks under it")
 options.merge = false
 blocks = Views.Build("all", { section }, nil, "default", options)
 check(#Named(blocks, "Trade Goods").entries == 2, "stacks not merged when the player says so")
@@ -569,7 +587,7 @@ check(Words(blocks) == "Pinned Items=0,Backpack=16,Small Pouch=8,Quiver=4,Reagen
 blocks = Views.Build("cat:trade", { section }, nil, "default", options)
 check(Words(blocks) == "Trade Goods=1", "a category by itself")
 blocks = Views.Build("group:armory", { section }, nil, "default", options)
-check(Words(blocks) == "Armor=1,Item Set Gear=1" and blocks[1].level == 3, "a group: its members each a block")
+check(Words(blocks) == "Rings=1,Item Set Gear=1" and blocks[1].level == 3, "a group: its members each a block")
 local counts = Views.Counts(section)
 check(counts.trade == 1 and counts["group:armory"] == 2 and counts.junk == 1 and counts.pinned == 0, "how many each category holds")
 counts = Views.Counts(section, { merge = false })
@@ -602,25 +620,32 @@ blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
 for index = 1, count do kinds[places[index].kind] = (kinds[places[index].kind] or 0) + 1 end
-check(kinds.head == 10 and kinds.cell == 9 and kinds.plus == 6 and not kinds.pad,
-    "grid: a head per block, its cells, one empty slot after them where it takes items, nothing more")
+check(kinds.head == 13 and kinds.cell == 9 and kinds.plus == 9 and not kinds.pad,
+    "grid: a head per block and group title, its cells, one empty slot after them where it takes items, nothing more")
 local quest
 for index = 1, count do
     local place = places[index]
     if place.kind == "plus" and place.block and place.block.word == "Quest Items" then quest = place end
 end
 check(quest and quest.block.key == "quest", "an empty category: its empty slot alone, knowing its block")
-check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0 and places[2].y == Layout.HEAD + Layout.HEAD_GAP
-    and places[3].kind == "head" and places[3].y == 0 and places[3].x == Layout.SIZE + Layout.BAND_GAP,
-    "Pinned empty: its empty slot under its head, the next block beside it on the same line")
-local armory
-for index = 1, count do
-    if places[index].kind == "head" and places[index].block.word == "The Armory" then armory = index end
+local function HeadAt(word)
+    for index = 1, count do
+        if places[index].kind == "head" and places[index].block.word == word then return index, places[index] end
+    end
 end
-local top = places[armory].y + Layout.HEAD + Layout.HEAD_GAP
-check(places[armory + 1].kind == "cell" and places[armory + 1].y == top
-    and places[armory + 2].x == places[armory + 1].x + Layout.SIZE + Layout.GAP and places[armory + 3].kind == "head",
-    "a block's cells under its head, side by side; a group takes no items: no empty slot")
+local armory, title = HeadAt("The Armory")
+local _, rings = HeadAt("Rings")
+local _, setGear = HeadAt("Item Set Gear")
+check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0 and places[2].y == Layout.HEAD + Layout.HEAD_GAP
+    and title.x == 0 and title.width == width and title.y > places[2].y,
+    "Pinned empty: its one empty slot under its head; a group's title on a line of its own, the whole width")
+check(rings.y == title.y + Layout.HEAD + Layout.HEAD_GAP and rings.x == 0 and setGear.y == rings.y and setGear.x > rings.x
+    and places[armory + 2].kind == "cell" and places[armory + 3].kind == "plus"
+    and places[armory + 3].x == places[armory + 2].x + Layout.SIZE + Layout.GAP,
+    "the group's members side by side under its title, each its cells and its empty slot")
+local _, tradeHead = HeadAt("Trade Goods")
+local _, consumablesHead = HeadAt("Consumables")
+check(tradeHead.x == 0 and tradeHead.y > consumablesHead.y, "after a group's members: a line of its own")
 local lastY = 0
 for index = 1, count do lastY = math.max(lastY, places[index].y) end
 check(lastY > 0, "what does not fit on a line goes on the next")
@@ -629,8 +654,8 @@ local pinnedSlots = 0
 for index = 1, count do
     if places[index].kind == "plus" and places[index].block.word == "Pinned Items" then pinnedSlots = pinnedSlots + 1 end
 end
-check(pinnedSlots == 3 and places[1].width == 3 * (Layout.SIZE + Layout.GAP),
-    "a block as wide as its head's words, its line filled with empty slots that take items as the first does")
+check(pinnedSlots == 1 and places[1].width == 100,
+    "a head wider than its cells: the block takes its room, still one empty slot")
 local narrow = 2 * (Layout.SIZE + Layout.GAP) - Layout.GAP
 count = Layout.Lay("grid", blocks, narrow, places)
 local wrapped = true
@@ -639,14 +664,15 @@ for index = 1, count do
 end
 check(wrapped, "a narrow room: a block to a line")
 count = Layout.Lay("list", blocks, width, places)
-check(places[2].kind == "head" and places[3].kind == "row" and places[3].size == Layout.ICON and places[3].width == width,
-    "list: a line per cell (Pinned empty: its head only)")
+check(places[2].kind == "head" and places[2].block.title and places[4].kind == "row" and places[4].size == Layout.ICON
+    and places[4].width == width, "list: a line per cell (Pinned empty: its head only; a group's title, then its members)")
 check(select(1, Layout.Shape(9, 10)) == 3 and select(1, Layout.Shape(2, 10)) == 2 and select(2, Layout.Shape(10, 10)) == 3,
     "compact: each block near square")
 count = Layout.Lay("compact", blocks, width, places)
-check(places[1].kind == "label" and places[1].block.word == "Pinned Items" and places[2].kind == "plus" and places[3].kind == "label"
-    and places[3].x > 0 and places[4].kind == "cell",
-    "compact: the blocks side by side, each with its name over it, an empty one its empty slot")
+check(places[1].kind == "label" and places[1].block.word == "Pinned Items" and places[2].kind == "plus"
+    and places[3].kind == "head" and places[3].block.title and places[4].kind == "label" and places[5].kind == "cell"
+    and places[6].kind == "plus" and places[7].kind == "label" and places[7].x > 0 and places[7].y == places[4].y,
+    "compact: the blocks side by side, each with its name over it and its empty slot; a group's title over its members")
 
 -------------------------------------------------------------------------------
 --  The window
@@ -689,9 +715,10 @@ check(Text("7 / 24 Items"), "the bar: the slots of the bags taken, of how many")
 local swordButton = Cells.Button(0, 1)
 check(swordButton and swordButton:IsShown() and swordButton:GetParent():GetID() == 0 and swordButton:GetID() == 1,
     "the game's item button, its holder carrying the bag, the button the slot")
-check(drawn[swordButton].texture == "icon2001" and HeadNamed("The Armory")
-    and Y(swordButton) == -HeadNamed("The Armory")._points[1][5] + Layout.HEAD + Layout.HEAD_GAP,
-    "All Items at first: the sword under its group's head")
+check(drawn[swordButton].texture == "icon2001" and HeadNamed("The Armory") and HeadNamed("Item Set Gear")
+    and Y(swordButton) == -HeadNamed("Item Set Gear")._points[1][5] + Layout.MEMBER + Layout.HEAD_GAP
+    and not HeadNamed("Item Set Gear").line:IsShown() and HeadNamed("The Armory").line:IsShown(),
+    "All Items at first: the sword under its category's head (no rule under it), under its group's title (ruled)")
 local levelText
 for _, widget in ipairs(W.frames) do
     if widget._kind == "FontString" and widget._text == 20 or widget._text == "20" then levelText = widget end
@@ -707,7 +734,7 @@ local function RowNamed(word)
     end
 end
 check(RowNamed("All Items") and RowNamed("One Bag") and RowNamed("Each Bag") and RowNamed("Pinned Items")
-    and RowNamed("The Armory") and RowNamed("Armor") and RowNamed("Weapons / Trinkets") and RowNamed("Professions")
+    and RowNamed("The Armory") and RowNamed("Head") and RowNamed("Weapons") and RowNamed("Potions") and RowNamed("Professions")
     and RowNamed("Add Category") and not RowNamed("Quest Items"),
     "the sidebar: the views, Pinned, every category switched on (empty ones too), a group's members, Add Category")
 check(RowNamed("Professions").count._text == "0" and RowNamed("Professions").label._text == "Professions",
@@ -727,7 +754,8 @@ check(HeadNamed("Junk"), "back to All Items")
 
 -- The search.
 ns.Board.Search("linen")
-check(HeadNamed("Trade Goods") and not HeadNamed("Junk") and not swordButton:IsShown() or Cells.Record(swordButton).item == 2589,
+check(HeadNamed("Trade Goods") and not HeadNamed("Junk")
+    and (not swordButton:GetParent():IsShown() or (Cells.Record(swordButton) or {}).item == 2589),
     "searching: only what is found")
 ns.Board.Search("")
 check(HeadNamed("Junk"), "the search cleared: all again")
@@ -776,21 +804,21 @@ menu = ItemMenu(Cells.Button(0, 3))
 Choose(Line(menu, "Put Into").sub, "New Category")
 local popup = W.popups[#W.popups]
 check(popup.which == "GENERIC_INPUT_BOX", "a new category named in the game's dialog")
-popup.data.callback("Potions")
-check(kept.assigned[118] == "own1" and HeadNamed("Potions"), "made, the item in it")
+popup.data.callback("Tonics")
+check(kept.assigned[118] == "own1" and HeadNamed("Tonics"), "made, the item in it")
 menu = ItemMenu(Cells.Button(0, 3))
 Choose(menu, "Junk")
-check(kept.assigned[118] == "junk" and HeadNamed("Potions"), "marked as junk; its own category stays (the player's own, empty)")
+check(kept.assigned[118] == "junk" and HeadNamed("Tonics"), "marked as junk; its own category stays (the player's own, empty)")
 Choose(ItemMenu(Cells.Button(0, 3)), "Junk")
 check(kept.assigned[118] == "own1", "unmarked: back where it was put")
 
 -- Let go over a head or a row.
-local head = HeadNamed("Potions")
+local head = HeadNamed("Tonics")
 head:GetScript("OnEnter")(head)
 check(not head.lit:IsShown(), "nothing held: the head is not lit")
 head:GetScript("OnLeave")(head)
 holding = 2589
-head = HeadNamed("Potions")
+head = HeadNamed("Tonics")
 head:GetScript("OnEnter")(head)
 check(head.lit:IsShown(), "an item brought over a category's head: lit")
 head:GetScript("OnReceiveDrag")(head)
@@ -891,13 +919,13 @@ local function RowMenu(word)
     target:GetScript("OnClick")(target, "RightButton")
     return W.menus[#W.menus]
 end
-menu = RowMenu("Potions")
-check(menu[1].title == "Potions" and Line(menu, "Rename") and Line(menu, "Move Up") and Line(menu, "Create Group With")
+menu = RowMenu("Tonics")
+check(menu[1].title == "Tonics" and Line(menu, "Rename") and Line(menu, "Move Up") and Line(menu, "Create Group With")
     and Line(menu, "Hide in All Items") and Line(menu, "Switch Off") and Line(menu, "Icon") and Line(menu, "Delete"),
     "a right click on the player's own category: its menu")
 Choose(menu, "Rename")
 popup = W.popups[#W.popups]
-check(popup.box.text == "Potions", "renamed in the game's dialog, the name in it")
+check(popup.box.text == "Tonics", "renamed in the game's dialog, the name in it")
 popup.data.callback("Flasks")
 check(HeadNamed("Flasks") and RowNamed("Flasks"), "renamed")
 menu = RowMenu("Flasks")
@@ -912,7 +940,7 @@ check(Line(menu, "Disband Group") and Line(menu, "Hide in All Items"), "the grou
 Choose(menu, "Disband Group")
 check(not Categories.GroupOf("own1"), "disbanded")
 Choose(RowMenu("The Armory"), "Move Down")
-check(RowNamed("Adventure Prep").top < RowNamed("The Armory").top and RowNamed("Camp Items").top < RowNamed("Weapons / Trinkets").top,
+check(RowNamed("Adventure Prep").top < RowNamed("The Armory").top and RowNamed("Camp Items").top < RowNamed("Weapons").top,
     "a group's Move Down: past the next group at once, its members with it")
 Choose(RowMenu("The Armory"), "Move Up")
 check(RowNamed("The Armory").top < RowNamed("Adventure Prep").top, "and up again")
@@ -980,7 +1008,7 @@ check(not Categories.GroupOf("professions") and not Categories.GroupOf("trade")
     and Categories.rank.professions == Categories.rank.misc - 1, "a member dragged out of its group; a group of one is none")
 Over("Miscellaneous", 0.9)
 Land(Lift("The Armory"))
-check(Categories.rank.weapons > Categories.rank.misc and Categories.rank.sets == Categories.rank.weapons + 2
+check(Categories.rank.head == Categories.rank.misc + 1 and Categories.rank.sets == Categories.rank.head + 16
     and Categories.GroupOf("armor") == "armory", "a group dragged: its members together, after that row")
 Over("Junk", 0.9)
 Land(Lift("Trade Goods"))
@@ -995,7 +1023,7 @@ held = Lift("Pinned Items")
 check(not side.ghost:IsShown(), "Pinned is not dragged")
 held = Lift("Junk")
 check(not side.ghost:IsShown(), "nor Junk")
-Over("Armor", 0.5)
+Over("Head", 0.5)
 Land(Lift("Trade Goods"))
 check(Categories.GroupOf("trade") == "armory", "let go over a group's member: into that group")
 Over("Trade Goods", 0.5)

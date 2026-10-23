@@ -33,10 +33,11 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
   - *Character*: Sane UI's own doll, a page of paper in a shaped leather frame (`Doc/guides/interface-style.md`):
-    your model in the middle standing on a pencil sketch of stony ground (drag to turn it, the wheel or the buttons
-    over it to zoom), your name and level above it, your gear in two arcs of pencil slots round it with a paper
-    strip beside each piece saying its name in its quality's colour, its slot and item level and its two largest
-    stats, the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
+    your model in the middle, standing still on the page's plain paper, a quarter larger than its place (no
+    turning or zooming), your name and level above it, your gear in two arcs of pencil slots round it (the head
+    and the hands at the top as large as the others; the icons without a border, their corners rounded) with a
+    paper strip beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
+    Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
     Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
     Using an equipped item with a right click stays on the game's own sheet and the action bars.
   - *Character Stats*: your stats as the game lists them, with its tooltips (in a fight they show what they were
@@ -78,11 +79,15 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
     *Pinned Items* and *Recent Items*, then every category switched on, by name, with how many items it holds
     (empty ones too). A click shows it.
-  - **Categories:** *Weapons / Trinkets*, *Armor* and *Item Set Gear* (gear of one of your equipment sets) are
-    the group *The Armory*; *Consumables*, *Gear Enhancements* and *Camp Items* the group *Adventure Prep*; then
+  - **Categories:** your gear by its slot (*Head*, *Neck*, *Shoulder*, *Back*, *Chest*, *Wrist*, *Hands*,
+    *Waist*, *Legs*, *Feet*, *Rings*, *Trinkets*, *Weapons*, *Off Hand*, *Ranged*, then *Shirts, Tabards & Other
+    Gear*) and *Item Set Gear* (gear of one of your equipment sets) are the group *The Armory*; *Potions*, *Buffs*
+    (elixirs, flasks, scrolls, gems and enchantments, and other consumables whose effect lasts 15 minutes or
+    more), *Camp Items* and *Consumables* (the rest: food and drink, bandages) the group *Adventure Prep*; then
     *Trade Goods*, *Professions*, *Reagent Bag*, *Miscellaneous*, *Quest Items* (off at first: those items are in
     Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag) and *Junk* last. A group shows
-    as one part in All Items, its members set in under it in the sidebar. *Pinned Items* and *Recent Items* (what
+    in All Items as its name over the whole width, its members that hold something side by side under it, each
+    with its items and its empty slot; in the sidebar its members are set in under it. *Pinned Items* and *Recent Items* (what
     came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
     item show as one with their count added up (gear never; not at a vendor, the bank, the mail, a trade or the
     auction house, where each stack is its own).
@@ -200,13 +205,16 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo`. Drawn as
     `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while
     broken or unusable, grey while locked; empty: no picture, the doll's sketch shows). Its strip (`Doll.Strip`):
-    the item's name in its quality's colour, outlined; the slot's word and `ITEM_LEVEL_ABBR`; the two largest of
-    `GetItemStats` by the game's short names; empty, the slot's word, faint.
+    the item's stats, centred both ways, one to a line while they fit (`Slots.Stats`: `GetItemStats` by the game's
+    words, `Slots.FIRST` first: DPS as `STAT_DPS_SHORT`, armor, the primary stats; the rest by their size);
+    empty, nothing. The icon without the template's quality border (`IconBorder` hidden), its corners rounded by
+    `Cells.ROUNDED` in place of the template's mask, the highlight too.
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
-  - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `PanningModelSceneMixinTemplate` set up by
-    `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`, the game's turn and zoom
-    buttons (`ModelSceneControlFrameTemplate`), on the doll's own paper and ground (no race background); an item
+  - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `NonInteractableModelSceneMixinTemplate` (not turned,
+    zoomed or moved) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`,
+    `Model.LARGER` (1.25) times its place, its foot at the place's foot, the name and level drawn over it; on the
+    doll's plain paper (no race background, no frame behind it); an item
     let go over it (a drop, or the left button) where
     `C_PaperDollInfo.CanAutoEquipCursorItem` says it can be: `AutoEquipCursorItem`.
   - **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, at the
@@ -388,7 +396,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     goes to the front of `Recent.list` (at most `Recent.MOST`, until a `/reload`). Not counted while the bank is
     open; `Recent.SETTLE` seconds after it closes, counted anew without anything new.
   - **The views** (`Bags/Views.lua`, no frames: `Views.Build`): the sidebar's choice as blocks: *all* (Pinned,
-    Recent, then a block per category in order, a group's members as one, hidden ones left out, empty ones shown
+    Recent, then a block per category in order, a group as its title (`block.title`) and its members that hold
+    something as blocks of their own (level 3), hidden ones left out, empty ones shown
     but not while searching nor in the bank), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
     reagent bag), *each* (every bag), `cat:<key>`, `group:<group>` (its members each a block). Stacks of an item
     that is no gear merge into one entry with their counts added (`Views.Merging`: not while talking to a vendor,
@@ -396,12 +405,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (`Views.split`). What the search does not find is left out, or faded in *one* and *each*. `Views.Counts`: how
     many cells each category and group shows (Pinned and Recent too, stacks merged as they are shown), for the sidebar.
   - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (the blocks side by side in bands,
-    `BAND_GAP` apart, as many as fit across, the next on a new band; each under its head as wide as the block:
-    its cells `Layout.SIZE` 34 and `GAP` 4 apart, then where it takes items (`block.plus`) its empty slots, the
-    first right after its cells and more only to make its last line whole; a block as wide as its cells and that
-    first empty slot, or as its head's words (the canvas measures them), at most the room, more cells in more
-    lines; a block with nothing to show left out. Every empty slot is the same: an item let go or clicked on it
-    goes into the block's category, `Menus.Drop` with `stow`), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
+    `BAND_GAP` apart, as many as fit across, the next on a new band; each under its head (no rule under it): its
+    cells `Layout.SIZE` 34 and `GAP` 4 apart, then where it takes items (`block.plus`) one empty slot; a block
+    takes the room of its cells or of its head's words (the canvas measures them), whichever is wider, at most the
+    room, more cells in more lines; a block with nothing to show left out. A group's title (and a part's head)
+    over the whole width with a pencil rule, its members' blocks side by side under it, a line of their own. An
+    empty slot: an item let go or clicked on it goes into the block's category, `Menus.Drop` with `stow`), *list*
+    (a line `Layout.ROW` high per cell, a folded block its head only, a folded group's title its members too),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
     takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
     least three wide; on a tie the fuller band first; the empty slots after the cells as in the grid). The display and the window's Sort By are kept (`store.bags`:
@@ -563,7 +573,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule, the leather dropdown |
 | `Sheet/Doll.lua` | The character's doll: its picture, its slots and strips, a strip's words |
 | `Sheet/Slots.lua` | The character sheet's equipment slots, in the doll's slots, and their strips |
-| `Sheet/Model.lua` | The character sheet's model and its buttons, in the doll's hero's place |
+| `Sheet/Model.lua` | The character sheet's model, still, in the doll's hero's place |
 | `Sheet/Stats.lua` | The stats, the player's and the pet's: the game's list and rows, put together by our code |
 | `Sheet/List.lua` | A window's scrolling list in the game's look |
 | `Sheet/Side.lua` | The side pane at a window's right, as the game lays it out |

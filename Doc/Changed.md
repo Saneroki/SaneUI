@@ -26,6 +26,32 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: the Armory by slot, Adventure Prep by kind; one empty slot; the doll still, on plain paper (2026-10-23)
+- Categories (`Bags/Categories.lua`): The Armory is the gear by its slot (`head` ... `ranged` by `def.equip`, the
+  game's `INVTYPE_` words), `armor` now *Shirts, Tabards & Other Gear*, then `sets`; Adventure Prep is `potions`
+  (Consumable subclass Potion), `enhance` now *Buffs* (elixirs, flasks, scrolls, enchantments by subclass, gems and
+  item enhancements whole, and a consumable whose use aura lasts `Categories.LASTING`, 15 minutes, by Core's Items
+  and Auras), `camp`, `consumables` (the rest). The rules that ask more than the class (a slot, a kind) are tried
+  first (`First`, `Rules`).
+- All Items (`Bags/Views.lua`): a group is its title (`block.title`, its members' count) and its members that hold
+  something as level-3 blocks, each with its empty slot; an empty group is left out.
+- The grid (`Bags/Layout.lua`): one empty slot a block, never more (a wide name widens the block's room, not its
+  slots); a group's title over the whole width, its members a line of their own; in the list a folded title folds
+  its members. No rule under a block's or member's head, only under a part's head and a group's title
+  (`Bags/Canvas.lua`).
+- Rounder icons: Core's own mask `Art/Journal/icon-mask` (`dev/tools/journal-art`: a square with corners of
+  `ROUND` 0.2 of its side), `Cells.ROUNDED`.
+- The doll (`Sheet/`): the turn and zoom buttons gone and the scene the game's `NonInteractableModelSceneMixinTemplate`,
+  `Model.LARGER` 1.25 times its place, its foot kept, the name and level over it; the head and hands slots as large
+  as the others (`Doll.TOP`, `INSET.top`); the slot icons without `IconBorder`, rounded by `Cells.ROUNDED`; the
+  strips the item's stats, centred (`Slots.Stats`, `Slots.FIRST`; `Doll.Strip`'s `Fill(stats)`).
+- The doll's art (`dev/tools/journal-art`, `doll.blp`): the two large top boxes covered with the page's paper and
+  redrawn at a row's size with their sketch (`small_tops`, `LARGE`, `TOP`), and the hero's column with its frame,
+  wedges and stony ground covered with the page's paper (`paper_over`, `MIDDLE`).
+- Tests: `dev/tests/bags.lua` (the new categories and their order, groups' titles and members, one slot),
+  `dev/tests/inventory.lua` (the still model, no buttons, the strips' stats); `wowstub.lua` keeps a frame's
+  template (`_template`).
+
 ### Inventory: the bags' bar on the title line; borderless rounded icons; the sidebar folds (2026-10-23)
 - Items (`Bags/Cells.lua`, `Alts/Items.lua`): no border any more (`Cells.QUEST`, `NEUTRAL`, `EMPTY_EDGE` and the
   setting `borders`, *Quality Borders*, gone); the icon, the empty slot's graphite, the highlight and the press share

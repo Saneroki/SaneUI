@@ -445,6 +445,7 @@ function W.Install(env)
     env.CreateFrame = function(kind, name, parent, template)
         local widget = NewWidget(kind, name, parent)
         if name then env[name] = widget end
+        widget._template = template -- the template it was made from (the tests ask)
         if template and W.templates[template] then W.templates[template](widget) end
         return widget
     end

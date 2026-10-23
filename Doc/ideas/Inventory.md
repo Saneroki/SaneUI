@@ -126,6 +126,15 @@ marker, the bags and the clean-up, then *View*); the sidebar folds to a narrow e
 with it; an empty bag slot in the strip the pencil slot alone, a bag's icon rounded without a border. The setting
 *Quality Borders* is gone with the borders.
 
+**Built (2026-10-23), Saneroki asked:** one empty slot a category, never more; no rule under a category's name;
+the icons' corners rounder (Core's own mask). The Armory by the gear's slot (Head ... Ranged, then shirts, tabards
+and other gear, and Item Set Gear), Adventure Prep as Potions, Buffs (elixirs, flasks, scrolls, gems, enchantments,
+and consumables lasting 15 minutes or more by Core's data), Camp Items and Consumables; a group in All Items as its
+title over its members that hold something, each its own block with its slot. The character doll: no turn and
+zoom buttons, the model still and a quarter larger on the page's plain paper (the column behind it painted over),
+the head and hands slots as large as the others, the icons without the quality border, the strips the item's stats
+in their middle (DPS, armor, the primary stats, then the rest).
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.

@@ -6,8 +6,9 @@ local _, ns = ...
 --  without a frame (Layout.lua lays them out):
 --      all        All Items: Pinned and Recent first (a second look: those
 --                 items are in their own category too), then a block per
---                 category in the categories' order, a group's members
---                 together as one block under the group's name; a category
+--                 category in the categories' order, a group under its
+--                 name (a title) with each of its members holding items as
+--                 a block of its own (the empty ones left out); a category
 --                 hidden from All Items left out; an empty one shown too (a
 --                 line of empty slots to drop an item into), but not while
 --                 searching nor in the bank; the free slots are not shown
@@ -32,7 +33,8 @@ local _, ns = ...
 --      store: { blocks = {}, entries = {} } a window's own, used again (nil: the bags')
 --      blocks[i] = { word, number, level (1 a part, 2 a block, 3 a group's
 --          member), entries = { { record, count, faded } }, key (a
---          category's: its head takes items), group (a group's), own (the
+--          category's: its head takes items), group (a group's), title (a
+--          group's name over its members: no cells), own (the
 --          player's own: shown when empty), slots (the bags as they are:
 --          empty slots are cells too), plus (a "+" after its cells, to put
 --          an item in: Pinned, a category that takes items) }
@@ -68,7 +70,7 @@ local function Block(word, level)
     for index = #block.entries, 1, -1 do block.entries[index] = nil end
     block.word, block.level, block.number = word, level or 2, nil
     block.key, block.group, block.own, block.slots, block.section, block.spare = nil, nil, false, false, nil, false
-    block.plus = false
+    block.plus, block.title = false, false
     return block
 end
 
@@ -190,17 +192,18 @@ local function ByCategories(section, query, order, merge)
             done[group or key] = true
             if group then
                 if not Categories.Hidden(group) or query then
-                    local block = Block(Categories.GroupWord(group))
-                    block.group = group
-                    Clear(byLink)
+                    local title = Block(Categories.GroupWord(group))
+                    title.group, title.title = group, true
+                    local first, cells = used, 0
                     for _, member in ipairs(Categories.Members(group)) do
-                        for _, record in ipairs(lists[member] or {}) do
-                            if Contents.Found(record, query) then Add(block, record, merge) end
-                        end
+                        local block = Fill(Block(Categories.Word(member), 3), lists[member] or {}, query, order, merge)
+                        block.key = member
+                        block.plus = plus and firstSection and Categories.Takes(member)
+                        cells = cells + #block.entries
+                        if #block.entries == 0 then used = used - 1 end
                     end
-                    Contents.Sort(block.entries, order)
-                    block.number = #block.entries
-                    if #block.entries == 0 and (query or not firstSection) then used = used - 1 end
+                    title.number = cells
+                    if used == first then used = used - 1 end -- no member holds anything: no title either
                 end
             elseif not Categories.Hidden(key) or query then
                 local block = Fill(Block(Categories.Word(key)), lists[key] or {}, query, order, merge)

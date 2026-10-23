@@ -214,8 +214,10 @@ Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bu
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):
   - its shaped leather frame;
-  - the hero in the middle: the game's live 3D model in the game. No pencil rectangle behind him; a pencil line
-    drawing of stony ground fills the bottom of his place, under his feet (Saneroki, 2026-10-21);
+  - the hero in the middle: the game's live 3D model in the game, standing still, a quarter larger than his place.
+    Nothing behind him but the page's own paper: no rectangle, no frame, no stony ground (Saneroki, 2026-10-23;
+    `dev/tools/journal-art` covers the column with the page's paper);
+  - the two top slots (head, hands) as large as the others (Saneroki, 2026-10-23);
   - the gear slots in a rounded layout, eight a side: each row shifted outward a little more toward the middle
     rows, so the slots form an arc round the hero, not a straight column (Saneroki, 2026-10-21);
   - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,
