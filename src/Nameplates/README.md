@@ -67,13 +67,13 @@ fails, every plate is the game's own again.
   size; selected or let go it moves quickly; it grows in from nothing when it appears. No transparency of ours. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
-  (Kalam Bold, outlined): damage in white (a spell's in the colour of its school), a critical hit larger with a short
+  (Kalam Bold, outlined): auto attacks and physical damage in white, spell damage in red, a critical hit larger with a short
   swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a
   pencil drawing instead of a word, in white (an arrow flying over a target, a figure bending far back under an
   arrow, crossed swords, a shield, a figure leaning hard to its side, the arrow at its face flying past where the head was) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
 - **Over your character:** the same for what you take, rising from about your character's feet, below the middle of
-  the screen, where your character stands (your character has no plate in this client): damage in red with a "-". While ours shows, the
+  the screen, where your character stands (your character has no plate in this client): damage with a "-". While ours shows, the
   game's own combat text is off (*Instead of the game's*): its numbers over units and its scrolling text about you,
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay.
@@ -235,9 +235,8 @@ fails, every plate is the game's own again.
   (`CombatText.PICTURES`: MISS, DODGE, PARRY and DEFLECT, BLOCK, EVADE, IMMUNE; a WOUND of 0 is a miss, or a block
   by its flags) is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (30) square, white or tinted by `CombatText.TINTS`
   (`SetVertexColor`: the immunity bright red); the word from
-  `CombatFeedbackText` where it has none or `SetTexture` finds no file. Colours: physical white (red over you, with a
-  "-"), a school the game's combat log colour (`CombatText.SCHOOLS`, the first bit set), heals the game's combat
-  text green. Amounts in the game's abbreviation (`AbbreviateNumbers` with `Text.STEPS`), written with
+  `CombatFeedbackText` where it has none or `SetTexture` finds no file. Colours, three only: physical white (school mask 1, or none told), any spell school red
+  (`CombatText.SPELL`), heals green (both the game's combat text colours); over you with a "-". Amounts in the game's abbreviation (`AbbreviateNumbers` with `Text.STEPS`), written with
   `SetFormattedText`; a hidden kind or amount (secret values) is written as it is, white, nothing compared. The
   game's CVars (`CombatText.CVARS`): `floatingCombatTextCombatDamage_v2` and `...CombatHealing_v2` at 0 while *Over
   nameplates* and *Instead of the game's* are on, `enableFloatingCombatText` at 0 while *Over your character* and

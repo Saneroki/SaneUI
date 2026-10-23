@@ -773,8 +773,8 @@ check(CVar("nameplateSelectedScale") == "1", "on again")
     check(hit and hit._parent == dress and hit.text._text[1].abbreviated == 1234 and hit.text._font[2] == CombatText.HEIGHT * CombatText.CRIT,
         "a critical hit rises over the plate, larger, in the game's abbreviation")
     check(hit.text._font[1] == Core.Journal.FONT_BOLD and hit.text._font[3] == "OUTLINE", "in Kalam Bold, outlined")
-    check(hit.text._color[1] == 1 and hit.text._color[2] == 0.5 and hit.motion._playing and hit.swell._scale[1] == CombatText.SWELL,
-        "fire's colour, and it swells once")
+    check(hit.text._color[1] == 1 and hit.text._color[2] == 0.1 and hit.motion._playing and hit.swell._scale[1] == CombatText.SWELL,
+        "a spell's damage (fire) red, and it swells once")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 0, 1)
     local miss = dress.numbers[2]
     check(miss.picture:IsShown() and not miss.text:IsShown() and miss.picture._texture == CombatText.ART .. "miss"
@@ -829,9 +829,13 @@ check(CVar("nameplateSelectedScale") == "1", "on again")
     end
     local mine = you.numbers and you.numbers[1]
     check(mine and you._points[1][1] == "CENTER" and you._points[1][5] == CombatText.SELF and mine.text._text.form == "-%s"
-        and mine.text._color[1] == 1 and mine.text._color[2] < 0.5, "a hit on you: red with a minus, about at your feet")
+        and mine.text._color[2] == 1 and mine.text._color[3] == 1, "a blow on you: white with a minus, about at your feet")
+    W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 32)
+    check(you.numbers[2].text._color[1] == 1 and you.numbers[2].text._color[2] == 0.1, "a spell on you (shadow): red")
+    W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 33)
+    check(you.numbers[3].text._color[2] == 0.1, "physical and a spell school at once: red")
     W.Fire("UNIT_COMBAT", "player", "DODGE", "", 0, 1)
-    check(you.numbers[2].picture._texture == CombatText.ART .. "dodge", "your dodge: its drawing")
+    check(you.numbers[4].picture._texture == CombatText.ART .. "dodge", "your dodge: its drawing")
     Core.Set(ns.name, "combatSelf", false)
     W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 1)
     check(#you.numbers == 0 and CVar("enableFloatingCombatText") == "1", "over your character off: none, the game's text about you back")

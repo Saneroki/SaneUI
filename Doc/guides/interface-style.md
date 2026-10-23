@@ -208,8 +208,8 @@ colour.
 
 What a unit takes, rising over its nameplate and over your character (Saneroki, 2026-10-23):
 
-- **Numbers in Kalam Bold**, outlined, in the game's colours (white, a school's colour, green heals, red damage on
-  you).
+- **Numbers in Kalam Bold**, outlined, in three colours only: auto attacks and physical damage white, spell damage
+  red, heals green (Saneroki, 2026-10-23: a school's own colour confused).
 - **What did no harm is a drawing, not a word:** a miss, dodge, parry, block, evade or immunity is a pencil line
   drawing, large, with thick lines, white in the game (an immunity, a bubble with an "i", bright red: tinted by
   code), on transparency with a dark edge round its lines so it reads over any ground, as the outlined numbers do.

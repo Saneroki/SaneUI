@@ -16,7 +16,7 @@ local _, ns = ...
 --  display is a panel of Edit Mode, not over the character), so yours rise
 --  from a point of ours under the screen's middle, about at your character's
 --  feet, where the camera keeps it (CombatText.SELF; Saneroki, 2026-10-23).
---  Your damage taken is red with a minus.
+--  Your damage taken has a minus.
 --
 --  Numbers in Sane UI's own font, Kalam Bold, outlined. What did no harm is a
 --  pencil drawing in white, an immunity's in bright red (dev/tools/combat-art:
@@ -31,8 +31,8 @@ local _, ns = ...
 --  stand side by side; no more than CombatText.MOST on a host (the oldest goes).
 --
 --  Sizes as the game's own combat feedback has them: a critical hit or heal
---  half again as large, a glancing blow smaller. Damage white when physical,
---  else in the game's colour for its school; heals in the game's green. In a
+--  half again as large, a glancing blow smaller. Three colours: physical
+--  damage (auto attacks) white, spell damage red, heals green. In a
 --  fight the game may hide the event from addons (secret values): a hidden
 --  amount is written as it is, in the game's abbreviation, and a hidden kind
 --  as a plain white number.
@@ -78,19 +78,12 @@ CombatText.CVARS = {
     self = { "enableFloatingCombatText" },
 }
 
+-- Three colours only (Saneroki, 2026-10-23: a school's own colour confused): physical damage (auto attacks and
+-- physical abilities) white, spell damage red, heals green; the red and green are the game's in its combat text.
 CombatText.WHITE = { 1, 1, 1 }
-CombatText.HURT = { 1, 0.1, 0.1 }  -- the game's colour for the damage you take, in its combat text
-CombatText.HEAL = { 0.1, 1, 0.1 }  -- the game's colour for heals in its combat text
--- Each school's bit and the game's colour for it (its combat log's), physical left as it is; a hit of several
--- schools takes the first of them here.
-CombatText.SCHOOLS = {
-    { 2, { 1, 0.9, 0.5 } },   -- holy
-    { 4, { 1, 0.5, 0 } },     -- fire
-    { 8, { 0.3, 1, 0.3 } },   -- nature
-    { 16, { 0.5, 1, 1 } },    -- frost
-    { 32, { 0.5, 0.5, 1 } },  -- shadow
-    { 64, { 1, 0.5, 1 } },    -- arcane
-}
+CombatText.SPELL = { 1, 0.1, 0.1 }
+CombatText.HEAL = { 0.1, 1, 0.1 }
+CombatText.PHYSICAL = 1 -- the physical school's bit (the game's SCHOOL_MASK_PHYSICAL)
 -- What a hit of nothing says (UNIT_COMBAT's flags).
 CombatText.NOTHING = { ABSORB = true, BLOCK = true, RESIST = true }
 
@@ -130,15 +123,12 @@ local function Amount(amount)
     return ""
 end
 
--- The colour of damage of a school (its bits): plain (white over others, red over you) for physical alone or where
--- it cannot be told.
-local function School(mask, plain)
+-- The colour of damage of a school (its bits): white for physical alone or where it cannot be told, red for any
+-- spell school.
+local function School(mask)
     mask = Plain(mask)
-    if type(mask) ~= "number" then return plain end
-    for _, school in ipairs(CombatText.SCHOOLS) do
-        if math.floor(mask / school[1]) % 2 == 1 then return school[2] end
-    end
-    return plain
+    if type(mask) ~= "number" or mask == 0 or mask == CombatText.PHYSICAL then return CombatText.WHITE end
+    return CombatText.SPELL
 end
 
 local function Release(number)
@@ -251,7 +241,7 @@ function CombatText.Nothing(host, kind)
 end
 
 -- What a host's unit took (UNIT_COMBAT: its kind, flags, amount and school), as a number or a drawing over it; mine:
--- the host is your character's (damage red with a minus).
+-- the host is your character's (damage with a minus).
 local function Took(host, mine, kind, flags, amount, school)
     local options = ns.options or {}
     kind, flags = Plain(kind), Plain(flags)
@@ -267,7 +257,7 @@ local function Took(host, mine, kind, flags, amount, school)
         local size = critical and CombatText.CRIT or flags == "GLANCING" and CombatText.SMALL or 1
         local form = mine and "-%s" or "%s"
         if flags == "BLOCK_REDUCED" then form = Core.Word("COMBAT_TEXT_BLOCK_REDUCED", "%s (blocked)") end
-        CombatText.Show(host, form, Amount(amount), School(school, mine and CombatText.HURT or CombatText.WHITE), size, critical)
+        CombatText.Show(host, form, Amount(amount), School(school), size, critical)
     elseif kind == "HEAL" then
         if options.combatHeals == false then return end
         local critical = flags == "CRITICAL"
