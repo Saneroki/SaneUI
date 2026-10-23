@@ -55,6 +55,7 @@ Bags.SCROLL = 20     -- room at the right for the game's scroll bar (the bank's)
 Bags.RIGHT = 6       -- room at the right of the bags' items (no scroll bar there)
 Bags.STEP = 56       -- the wheel's step: a line of items
 Bags.TRASH = 84      -- the waste bin's room at the sidebar's foot
+Bags.TRASH_FOLDED = 52 -- the sidebar folded: just wide enough for the bin, which always shows
 Bags.BAR = 18        -- the bar on the title line, inside the label's pencil lines
 Bags.PAGE_BAR = 35   -- a bar on the page (the bank's)
 Bags.BAR_BUTTON = 24 -- a button on a bar of the page (the bank's, the alts')
@@ -629,7 +630,7 @@ end
 function Bags.Bin()
     local bin = Bags.trash
     if not bin then return end
-    local size = math.max(16, math.min(Bags.TRASH - 12, Sidebar.Width() - 12))
+    local size = math.min(Bags.TRASH - 12, Sidebar.Width() - 8)
     bin.picture:SetSize(size, size)
 end
 

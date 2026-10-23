@@ -1422,7 +1422,8 @@ do
 end
 local sideFrame = ns.BagSidebar.frame
 ns.Bags.Fold(true)
-check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.FOLDED,
+check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Bags.TRASH_FOLDED
+    and Bags.trash:IsShown() and Bags.trash.picture:GetWidth() == ns.Bags.TRASH_FOLDED - 8,
     "the sidebar folded to its edge: the strip of the bags hidden with it, kept")
 toggle:GetScript("OnClick")(toggle)
 check(kept.side and Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.WIDTH,

@@ -286,6 +286,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: the waste bin shows with the sidebar folded (2026-10-23)
+- Folded, the bags' sidebar is `Bags.TRASH_FOLDED` (52) wide (the rail's `narrow`), the bin's drawing 44 in it.
+
 ### Inventory: the bags' cells a quarter smaller (2026-10-23)
 - `Layout.SIZE` 51 (was 68), `GAP` 5; the cells' words (count and item level 13, BoE 12, the set 10), the quest
   mark 22 and the coin 16, the "+" 27, `Bags.STEP` 56; the bags' strip with them.
