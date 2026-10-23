@@ -7,6 +7,7 @@ of its own, so they can all be open at once.
   127.0.0.1 port 8772   instance maps      dev/tools/world-map serve --only instances (saneui showinstancemaps)
   127.0.0.1 port 8773   world map          dev/tools/world-map serve (saneui showworldmap)
   127.0.0.1 port 8774   interface lab      dev/tools/ui-lab serve (saneui showuilab)
+  127.0.0.1 port 8775   task board         dev/tools/board serve (saneui showboard)
   and the pages of ~/.config/saneui/pages.json: {"pages": [{"name": ..., "port": ..., "folder": ...}]}, folders
   served as they are (pages kept outside the project)
 
@@ -36,6 +37,7 @@ PAGES = [   # name, port, what serves it: a tool's command, or a folder served a
     ("instance maps", 8772, ["dev/tools/world-map", "serve", "--only", "instances"]),
     ("world map", 8773, ["dev/tools/world-map", "serve"]),
     ("interface lab", 8774, ["dev/tools/ui-lab", "serve"]),
+    ("task board", 8775, ["dev/tools/board", "serve"]),
 ]
 
 

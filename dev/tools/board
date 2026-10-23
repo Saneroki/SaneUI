@@ -1,0 +1,363 @@
+#!/usr/bin/env python3
+"""The task board (Saneroki, 2026-10-23): every todo and idea of Sane UI as a card that goes from Backlog to
+Finalized, shared by Saneroki's page and the sessions' command line.
+
+  Backlog -> Next up -> In progress -> Review -> Finalized
+
+The board is one file, board.json in the private folder (~/.config/saneui/private.json, like
+dev/tools/private-folder), written under a lock by whoever changes it: the page through this tool's server, a
+session through the commands below. Each change also writes Backlog.md beside it, the same cards as text, so
+the board reads in a diff and in a new chat. A card holds its title, notes, priority (high, medium, low), area,
+column, who made and changed it, and a short log of its steps.
+
+Usage:
+  dev/tools/board [list]  [--all] [--column C] [--area A]   the cards, by column (Finalized only with --all)
+  dev/tools/board show ID                                    one card, its notes and log
+  dev/tools/board add TITLE [--priority P] [--area A] [--notes N] [--column C]
+  dev/tools/board edit ID [--title T] [--priority P] [--area A] [--notes N]
+  dev/tools/board move ID COLUMN [--top]                     e.g. move 12 doing; columns: backlog next doing review done
+  dev/tools/board start|review|done ID                       the same as move ID doing|review|done
+  dev/tools/board delete ID
+  dev/tools/board import FILE                                the cards of a Markdown list (## priority, ### area, - [ ])
+  dev/tools/board serve [--port 8775]                        the page, 127.0.0.1 port 8775 (saneui showboard)
+
+--by NAME says who made a change (default: Claude on the command line, Saneroki on the page).
+"""
+import argparse
+import contextlib
+import fcntl
+import json
+import os
+import re
+import sys
+import time
+from datetime import datetime
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+PAGE = ROOT / "dev" / "tools" / "board-page" / "index.html"
+PRIVATE = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "saneui" / "private.json"
+PORT = 8775
+COLUMNS = [   # key, name, what it means
+    ("backlog", "Backlog", "everything not yet planned"),
+    ("next", "Next up", "chosen, to be started"),
+    ("doing", "In progress", "being built"),
+    ("review", "Review", "built, to try in the game"),
+    ("done", "Finalized", "tried and kept"),
+]
+KEYS = [key for key, _, _ in COLUMNS]
+PRIORITIES = ["high", "medium", "low"]
+LOG_KEEP = 30   # a card's log keeps its newest steps only
+
+
+def board_file():
+    """board.json: SANEUI_BOARD for tests, else in the private folder."""
+    if os.environ.get("SANEUI_BOARD"):
+        return Path(os.environ["SANEUI_BOARD"])
+    if not PRIVATE.is_file():
+        sys.exit(f"board: no private folder set ({PRIVATE})")
+    return Path(json.loads(PRIVATE.read_text())["folder"]).expanduser() / "board.json"
+
+
+def now():
+    return datetime.now().strftime("%Y-%m-%d %H:%M")
+
+
+def empty():
+    return {"version": 0, "next": 1, "cards": []}
+
+
+def read(path):
+    return json.loads(path.read_text()) if path.is_file() else empty()
+
+
+@contextlib.contextmanager
+def changing(path):
+    """The board under the lock; written back, with Backlog.md, when the block ends without an error."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path.with_suffix(".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        board = read(path)
+        yield board
+        board["version"] += 1
+        temp = path.with_suffix(".tmp")
+        temp.write_text(json.dumps(board, indent=1, ensure_ascii=False) + "\n")
+        temp.replace(path)
+        path.with_name("Backlog.md").write_text(markdown(board))
+
+
+def find(board, cid):
+    for card in board["cards"]:
+        if card["id"] == int(cid):
+            return card
+    raise KeyError(f"no card {cid}")
+
+
+def column(value):
+    """A column by its key or its name ("In progress", "doing")."""
+    value = value.strip().lower()
+    for key, name, _ in COLUMNS:
+        if value in (key, name.lower()):
+            return key
+    raise ValueError(f"no column {value!r}; one of {', '.join(KEYS)}")
+
+
+def priority(value):
+    value = (value or "medium").strip().lower()
+    if value not in PRIORITIES:
+        raise ValueError(f"no priority {value!r}; one of {', '.join(PRIORITIES)}")
+    return value
+
+
+def note(card, by, text):
+    card["updated"], card["by"] = now(), by
+    card["log"] = (card.get("log", []) + [[now(), by, text]])[-LOG_KEEP:]
+
+
+def place(board, card, key, before=None, top=False):
+    """Puts a card into a column: before another card, at its top, or at its end."""
+    cards = board["cards"]
+    if card in cards:
+        cards.remove(card)
+    card["column"] = key
+    others = [i for i, c in enumerate(cards) if c["column"] == key]
+    if before is not None:
+        at = next((i for i, c in enumerate(cards) if c["id"] == int(before)), None)
+    elif top and others:
+        at = others[0]
+    else:
+        at = None
+    if at is None:
+        at = others[-1] + 1 if others else len(cards)
+    cards.insert(at, card)
+
+
+def apply(board, op, by):
+    """One change, as the page and the commands send it. Returns the card it touched (None for a delete)."""
+    kind = op["op"]
+    if kind == "add":
+        title = (op.get("title") or "").strip()
+        if not title:
+            raise ValueError("a card needs a title")
+        card = {"id": board["next"], "title": title, "notes": (op.get("notes") or "").strip(),
+                "priority": priority(op.get("priority")), "area": (op.get("area") or "").strip(),
+                "column": "backlog", "created": now(), "made": by}
+        board["next"] += 1
+        key = column(op.get("column") or "backlog")
+        place(board, card, key, op.get("before"), op.get("top", False))
+        note(card, by, f"made in {name_of(key)}")
+        return card
+    card = find(board, op["id"])
+    if kind == "edit":
+        changed = []
+        for field in ("title", "notes", "area", "priority"):
+            if field in op and op[field] is not None:
+                value = priority(op[field]) if field == "priority" else op[field].strip()
+                if field == "title" and not value:
+                    raise ValueError("a card needs a title")
+                if value != card.get(field, ""):
+                    card[field] = value
+                    changed.append(f"{field} {value}" if field == "priority" else field)
+        if changed:
+            note(card, by, "changed " + ", ".join(changed))
+        return card
+    if kind == "move":
+        key, was = column(op["column"]), card["column"]
+        place(board, card, key, op.get("before"), op.get("top", False))
+        note(card, by, f"moved to {name_of(key)}" if key != was else f"reordered in {name_of(key)}")
+        return card
+    if kind == "delete":
+        board["cards"].remove(card)
+        return None
+    raise ValueError(f"no change {kind!r}")
+
+
+def name_of(key):
+    return next(name for k, name, _ in COLUMNS if k == key)
+
+
+def markdown(board):
+    """The board as text: Backlog.md, written with every change."""
+    lines = ["# Backlog", "",
+             "Written by the task board with every change (`saneui board`, the page on 127.0.0.1 port 8775); "
+             "change the board, not this file.", ""]
+    for key, name, means in COLUMNS:
+        cards = [c for c in board["cards"] if c["column"] == key]
+        lines += [f"## {name} ({len(cards)})", "", f"*{means}*", ""]
+        for card in cards:
+            box = "x" if key == "done" else " "
+            area = f" {card['area']}:" if card.get("area") else ""
+            lines.append(f"- [{box}] #{card['id']} **{card['priority']}**{area} {card['title']}")
+            for line in card.get("notes", "").splitlines():
+                lines.append(f"      {line}" if line.strip() else "")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def parse_markdown(text):
+    """Cards of a ranked Markdown list: '## High' sets the priority, '### Area' the area, '- [ ] ...' a card,
+    with its indented lines as notes; '- [x]' cards go to Finalized."""
+    cards, prio, area = [], "medium", ""
+    for line in text.splitlines():
+        head = re.match(r"^(#{2,3})\s+(.*)", line)
+        if head:
+            if head.group(1) == "##":
+                word = head.group(2).split()[0].lower()
+                prio, area = (word if word in PRIORITIES else prio), ""
+            else:
+                area = re.sub(r"\s*\(.*?\)|,.*$|`", "", head.group(2)).strip()
+            continue
+        item = re.match(r"^- \[([ xX])\]\s+(.*)", line)
+        if item:
+            cards.append({"title": item.group(2).strip(), "priority": prio, "area": area,
+                          "column": "done" if item.group(1) != " " else "backlog", "notes": ""})
+        elif cards and line.startswith("  ") and line.strip():
+            cards[-1]["title"] += " " + line.strip()
+    for card in cards:   # a long item: its first sentence the title, the rest its notes
+        title = card["title"]
+        cut = re.search(r"(?<=[.:;?])\s+(?=[A-Z(])", title) if len(title) > 90 else None
+        if cut:
+            card["title"], card["notes"] = title[:cut.start()].rstrip(":;"), title[cut.end():]
+    return cards
+
+
+# --- The page --------------------------------------------------------------------------------------
+
+class Handler(BaseHTTPRequestHandler):
+    path_board = None
+
+    def log_message(self, *args):
+        pass
+
+    def send(self, code, body, kind="application/json"):
+        data = body if isinstance(body, bytes) else json.dumps(body, ensure_ascii=False).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", kind + "; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def state(self):
+        return {"board": read(self.path_board), "columns": [{"key": k, "name": n, "means": m} for k, n, m in COLUMNS],
+                "priorities": PRIORITIES}
+
+    def do_GET(self):
+        if self.path in ("/", "/index.html"):
+            return self.send(200, PAGE.read_bytes(), "text/html")
+        if self.path.startswith("/api/board"):
+            after = re.search(r"after=(\d+)", self.path)
+            board = read(self.path_board)
+            if after and board["version"] == int(after.group(1)):
+                return self.send(200, {"same": True})
+            return self.send(200, self.state())
+        self.send(404, {"error": "not found"})
+
+    def do_POST(self):
+        if self.path != "/api/op":
+            return self.send(404, {"error": "not found"})
+        try:
+            op = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            with changing(self.path_board) as board:
+                apply(board, op, op.get("by") or "Saneroki")
+        except (KeyError, ValueError, TypeError) as error:
+            return self.send(400, {"error": str(error).strip("'\"")})
+        self.send(200, self.state())
+
+
+def serve(port):
+    Handler.path_board = board_file()
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    print(f"The task board: 127.0.0.1 port {port} ({Handler.path_board})", flush=True)
+    with contextlib.suppress(KeyboardInterrupt):
+        server.serve_forever()
+
+
+# --- The commands ----------------------------------------------------------------------------------
+
+def line(card):
+    area = f"  [{card['area']}]" if card.get("area") else ""
+    return f"  #{card['id']:<4} {card['priority']:<6} {card['title']}{area}"
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(prog="board", description=__doc__.split("\n\n")[0])
+    parser.add_argument("--by", default="Claude")
+    sub = parser.add_subparsers(dest="cmd")
+    p = sub.add_parser("list")
+    p.add_argument("--all", action="store_true")
+    p.add_argument("--column")
+    p.add_argument("--area")
+    sub.add_parser("show").add_argument("id")
+    p = sub.add_parser("add")
+    p.add_argument("title")
+    for field in ("priority", "area", "notes", "column"):
+        p.add_argument("--" + field)
+    p = sub.add_parser("edit")
+    p.add_argument("id")
+    for field in ("title", "priority", "area", "notes"):
+        p.add_argument("--" + field)
+    p = sub.add_parser("move")
+    p.add_argument("id")
+    p.add_argument("column")
+    p.add_argument("--top", action="store_true")
+    for verb in ("start", "review", "done", "delete"):
+        sub.add_parser(verb).add_argument("id")
+    sub.add_parser("import").add_argument("file")
+    sub.add_parser("serve").add_argument("--port", type=int, default=PORT)
+    args = parser.parse_args(argv)
+    path = board_file() if args.cmd != "serve" else None
+
+    try:
+        if args.cmd in (None, "list"):
+            board = read(path)
+            keys = [column(args.column)] if getattr(args, "column", None) else \
+                KEYS if getattr(args, "all", False) else KEYS[:-1]
+            for key in keys:
+                cards = [c for c in board["cards"] if c["column"] == key
+                         and (not getattr(args, "area", None) or args.area.lower() in c.get("area", "").lower())]
+                print(f"{name_of(key)} ({len(cards)})")
+                for card in cards:
+                    print(line(card))
+            if not getattr(args, "all", False):
+                print(f"Finalized: {sum(c['column'] == 'done' for c in board['cards'])} (--all shows them)")
+        elif args.cmd == "show":
+            card = find(read(path), args.id)
+            print(f"#{card['id']} {card['title']}\n  {name_of(card['column'])} · {card['priority']}"
+                  f"{' · ' + card['area'] if card.get('area') else ''} · made {card['created']} by {card['made']}")
+            if card.get("notes"):
+                print("\n" + card["notes"])
+            print()
+            for when, by, text in card.get("log", []):
+                print(f"  {when}  {by}: {text}")
+        elif args.cmd == "serve":
+            serve(args.port)
+        elif args.cmd == "import":
+            cards = parse_markdown(Path(args.file).read_text())
+            with changing(path) as board:
+                for card in cards:
+                    apply(board, {"op": "add", **card}, args.by)
+            print(f"{len(cards)} cards added")
+        else:
+            if args.cmd == "add":
+                op = {"op": "add", "title": args.title, "priority": args.priority, "area": args.area,
+                      "notes": args.notes, "column": args.column}
+            elif args.cmd == "edit":
+                op = {"op": "edit", "id": args.id, "title": args.title, "priority": args.priority,
+                      "area": args.area, "notes": args.notes}
+            elif args.cmd == "move":
+                op = {"op": "move", "id": args.id, "column": args.column, "top": args.top}
+            elif args.cmd == "delete":
+                op = {"op": "delete", "id": args.id}
+            else:
+                op = {"op": "move", "id": args.id, "column": {"start": "doing"}.get(args.cmd, args.cmd)}
+            with changing(path) as board:
+                card = apply(board, op, args.by)
+            print(f"deleted #{args.id}" if card is None else f"{line(card).strip()}  ({name_of(card['column'])})")
+    except (KeyError, ValueError) as error:
+        sys.exit(f"board: {str(error).strip(chr(39))}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

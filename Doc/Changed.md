@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: the task board, every todo a card from Backlog to Finalized (Saneroki, 2026-10-23)
+- **`dev/tools/board`** (`saneui board`, `saneui showboard`): one board in the private folder (`board.json`, set by
+  `~/.config/saneui/private.json`), columns Backlog, Next up, In progress, Review (built, to try in the game) and
+  Finalized; a card has a title, notes, priority (high, medium, low), area, who changed it last and a log of its
+  steps. Every change, from the page or the command line, goes through one locked write and writes `Backlog.md`
+  beside it as text. `import` reads a ranked Markdown list (`##` priority, `###` area, `- [ ]` items).
+- **The page** (`dev/tools/board-page/index.html`, 127.0.0.1 port 8775, in `saneui webpages` and
+  `.claude/launch.json`): cards dragged by pointer (mouse and touch, a line where it lands, the lists and board
+  scrolled at their edges), quick add at a column's top (Enter adds, the priority beside it), a card's editor
+  (title, notes, priority, column, area, its log, delete), search, filters by priority and area, sorting a column
+  by priority, light and dark; it asks the server every 1.5 seconds, so a session's changes show by themselves,
+  briefly lit.
+- Tests: `dev/tests/board.py` 19 checks.
+
 ### Art: ComfyUI's window shows every job, templates and apps of ours; test pictures out of the repository (Saneroki, 2026-10-23)
 - **Every job a workflow in ComfyUI:** `Server.queue` (`dev/tools/imagegen`, used by the Atlas and the map layers too)
   sends each job's graph in the canvas' form beside the API form (`ui_workflow`: slots before widgets, a seed's

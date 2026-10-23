@@ -25,6 +25,7 @@
 #   map_layers.py   the maps' three levels: frames, the buildings' indoor maps placed, the words, the checks
 #   gpu_runner.py   the GPU runner: its jobs in order, the claims, what counts as the card wanted elsewhere
 #   saneui.py       dev/saneui: every command's script is there, its names, the greeting card, the completion
+#   board.py        the task board: cards made, moved, edited, deleted; Backlog.md; a ranked list read in
 #   walk.py         the walking data's tools: floors, surfaces, rectangles, openings, blocks, regions, the coarse layer; flights' paths
 #   map_data.py     dev/tools/map-data: world positions on zone maps (terrain, buildings, boxes), Places' keys, zones
 #   data check      the master of Core's data framework (assets/data) fits its rules
@@ -63,6 +64,7 @@ python3 -I dev/tests/atlas.py
 python3 -I dev/tests/map_layers.py
 python3 -I dev/tests/gpu_runner.py
 python3 -I dev/tests/saneui.py
+python3 -I dev/tests/board.py
 python3 -I dev/tests/walk.py
 python3 -I dev/tests/map_data.py
 dev/tools/data check

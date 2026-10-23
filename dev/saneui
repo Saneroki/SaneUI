@@ -98,6 +98,12 @@ GROUPS = {
         "voicedb": (["dev/tools/voicedb"], "the texts of the game that get a voice", None),
         "makevoices": (["dev/tools/voicegen"], "voice overs and window sounds", None),
     },
+    "Plans": {
+        "board": (["dev/tools/board"], "the task board: every todo as a card, backlog to finalized (list add move done)",
+                  "task board: list add move"),
+        "showboard": (["dev/tools/board", "serve"], "the task board in the browser: drag, create, edit, prioritize",
+                      "task board in the browser"),
+    },
 }
 COMMANDS = {name: entry for group in GROUPS.values() for name, entry in group.items()}
 VERBS = ("start", "pause", "resume", "stop", "status")
