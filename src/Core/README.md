@@ -84,7 +84,7 @@ but for a window to try those with (`/sane window`).
   (*Social*, *Abilities*, *Tooltips*). On every full screen the cog in its title bar shows them there too
   (*General*, *Appearance* and the modules' pages, the full screen's own module first); the question mark beside
   it will hold a tour of that full screen.
-- **General switches:** on the page *General*: *Errors in chat* (on): a line in chat for each kind of problem.
+- **General switches:** on the page *General*: *Errors in chat* (on): a line in chat for each kind of problem. *Hotcorner requires leftclick* (off): a docked window fills the screen, and goes back, only by a left click at its screen edge or corner, not when the mouse merely reaches it.
   On the page *Appearance*, under *Windows*: *Animation type* (Glide): how every window docked to a screen
   edge fills the screen and goes back, and how a window opens while the mouse rests on it: *Glide* (quick,
   settling softly), *Swing* (a little past, then back), *Even* (a gentle start and end), *Instant* (no motion). A window can have its own type,

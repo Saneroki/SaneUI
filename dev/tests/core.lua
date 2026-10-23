@@ -243,8 +243,9 @@ check(profilesPage.name == "Profiles" and general.name == "General" and appearan
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
     "under it first Sane UI's own pages: Profiles, General, Appearance")
 local resetRow = general.items[4]
-check(#general.items == 4 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
-    and resetRow and resetRow.button == "Reset window positions", "General: the switches of no module, and a button that puts every window back")
+check(#general.items == 5 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
+    and resetRow and resetRow.button == "Reset window positions" and general.items[5].setting.name == "Hotcorner requires leftclick",
+    "General: the switches of no module, a button that puts every window back, and the hotcorner's click")
 local resetAll, resets = Core.Window.ResetAll, 0
 Core.Window.ResetAll = function() resets = resets + 1 end
 resetRow.click()

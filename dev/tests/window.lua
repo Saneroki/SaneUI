@@ -675,7 +675,7 @@ wideStore.place.dock = "LEFT"
 wideWindow:Place()
 local shown = strips()
 local strip = shown[1]
-check(#shown == 1 and along(strip) == "TOPLEFT BOTTOMLEFT" and math.abs(strip._width - 2 * 768 / 2160) < 1e-9 and strip._mouse == nil,
+check(#shown == 1 and along(strip) == "TOPLEFT BOTTOMLEFT" and math.abs(strip._width - 2 * 768 / 2160) < 1e-9 and not strip._mouse,
     "docked at the left edge, one strip along it, two of the screen's pixels wide, that takes no clicks")
 
 at(wide, 0, 410)
@@ -902,6 +902,34 @@ do -- A module's section, followed by itself
     Core.Set("EdgeTest", "expand", true)
     check(ownWindow.edge.strips.bottom:IsShown(), "and back")
     own:Hide()
+end
+
+do -- Hotcorner requires leftclick: the edge fills the screen by a left click only
+    local click = CreateFrame("Frame", nil, UIParent)
+    local clickWindow = Window.New(click, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
+        dock = true, edge = { expand = true, motion = "off", expandOpacity = 50, expandTexture = "solid" },
+        first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+    local clickEdge = clickWindow.edge
+    clickWindow:Place()
+    W.Wait(1)
+    at(click, 860, 0)
+    local bottom = clickEdge.strips.bottom
+    Core.Set(Core.name, "edgeClick", true)
+    check(bottom._mouse == true, "with Hotcorner requires leftclick the strip takes clicks")
+    bottom:GetScript("OnEnter")(bottom)
+    check(not clickEdge.full, "the mouse reaching the edge does nothing then")
+    bottom:GetScript("OnMouseDown")(bottom, "RightButton")
+    check(not clickEdge.full, "nor a right click")
+    bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
+    check(clickEdge.full, "a left click there fills the screen")
+    bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
+    check(not clickEdge.full, "and another brings it back")
+    Core.Set(Core.name, "edgeClick", false)
+    check(not bottom._mouse, "switched off, clicks go through the strip again")
+    bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
+    check(not clickEdge.full, "and a click there does nothing")
+    clickWindow:Place()
+    click:Hide()
 end
 
 local tall = CreateFrame("Frame", nil, UIParent)

@@ -92,6 +92,11 @@ local Core = SaneUI.Core
 --  only once the mouse has gone some way from that edge or corner (the window's
 --  motion moves the strip from under the mouse and back, which is no new push);
 --  meanwhile a look a few times a second sees whether it has gone.
+--
+--  With Hotcorner requires leftclick (Sane UI > General, Core.general.edgeClick)
+--  the mouse's coming does nothing: a left click in the strip or the square
+--  fills the screen, and another there brings the window back. The strips take
+--  the left clicks then (nothing under them gets them).
 -------------------------------------------------------------------------------
 local Edge = {}
 Core.Edge = Edge
@@ -132,7 +137,7 @@ function Edge.Options(list, at, tab, under)
     local section = {
         { key = "expand", default = Edge.DEFAULTS.expand, text = "Can expand to fullscreen", header = "Expand window",
           headerTip = "Docked to a screen edge, the window can fill the whole screen and go back.",
-          tip = "Push the mouse against the screen edge or corner the window is docked to and it fills the screen. Push there again and it goes back. Off: the edge does nothing." },
+          tip = "Push the mouse against the screen edge or corner the window is docked to and it fills the screen. Push there again and it goes back (with Hotcorner requires leftclick under Sane UI > General: left-click there). Off: the edge does nothing." },
         { key = "motion", default = Edge.DEFAULTS.motion, text = "Animation type", parent = "expand", choices = Core.Motion.Choices(true),
           tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under Sane UI > Appearance." },
         { key = "expandOpacity", default = Edge.DEFAULTS.expandOpacity, min = 0, max = 100, step = 5, unit = "%", text = "Background opacity", parent = "expand",
@@ -177,6 +182,11 @@ local function Pixels(frame, count)
     return count * 768 / pixels / scale
 end
 
+-- Whether a strip wants a left click instead of the mouse's coming (the general switch).
+local function Clicks()
+    return Core.general and Core.general.edgeClick == true
+end
+
 -- The strip along a side (left, right, top, bottom), or the square in a corner (corner).
 local function Strip(edge, key)
     local strip = edge.strips[key]
@@ -186,7 +196,11 @@ local function Strip(edge, key)
     strip:SetFrameStrata("DIALOG")
     if strip.SetFixedFrameStrata then strip:SetFixedFrameStrata(true) end
     if strip.SetMouseMotionEnabled then strip:SetMouseMotionEnabled(true) else strip:EnableMouse(true) end
+    if strip.SetMouseClickEnabled then strip:SetMouseClickEnabled(Clicks()) end -- clicks go through, unless wanted
     strip:SetScript("OnEnter", function() Core.Safe("full screen", edge.Pushed, edge, key) end)
+    strip:SetScript("OnMouseDown", Core.Guard("full screen", function(_, button)
+        if button == "LeftButton" then edge:Clicked() end
+    end))
     local corners = SIDES[key]
     if corners and edge.window.options.strip then
         -- A share of the screen's side, in its middle (its length: Strips).
@@ -464,12 +478,20 @@ end
 -- window was placed under it a moment ago, nor while a button is held (a drag), nor in Edit Mode, where
 -- windows are arranged.
 function methods:Pushed(key)
-    if self.pushed then return end
+    if self.pushed or Clicks() then return end
     if GetTime() < self.quiet or IsMouseButtonDown() or Core.EditMode.active then return end
     local usable = self.window.options.usable
     if usable and not usable() then return end
     self.pushed = key or "corner"
     C_Timer.After(Edge.LOOK, self.looking) -- unguarded: self.looking is made by Core.Guard (Edge.New)
+    self:Fill(not self.full)
+end
+
+-- A left click in a strip, while the general switch wants one: each click is one change. Not in Edit Mode.
+function methods:Clicked()
+    if not Clicks() or Core.EditMode.active then return end
+    local usable = self.window.options.usable
+    if usable and not usable() then return end
     self:Fill(not self.full)
 end
 
@@ -507,6 +529,10 @@ end
 -- If it may fill the screen (the section's first switch): docked along a screen edge, the window's
 -- side there has its strip; docked in a corner, that corner has its square. Nothing else has one.
 local function Strips(edge)
+    local clicks = Clicks()
+    for _, strip in pairs(edge.strips) do
+        if strip.SetMouseClickEnabled then strip:SetMouseClickEnabled(clicks) end
+    end
     local zone = edge.zone and edge.settings.expand and Core.Dock.ZONES[edge.zone]
     local corner = zone and (zone.left or zone.right) and (zone.top or zone.bottom) and zone[1] -- TOPLEFT, ...
     local width = zone and Pixels(edge.frame, corner and Edge.CORNER or Edge.PIXELS)
@@ -580,6 +606,19 @@ local function Resized()
 end
 Core.On("DISPLAY_SIZE_CHANGED", Resized)
 Core.On("UI_SCALE_CHANGED", Resized)
+
+-- The general switch Hotcorner requires leftclick changed: every strip takes clicks, or lets them through.
+local general = Core.described[Core.name]
+local own = general.changed
+general.changed = function(key, ...)
+    if key == "edgeClick" then
+        for edge in pairs(edges) do
+            edge.pushed = nil
+            Core.Safe("full screen", Strips, edge)
+        end
+    end
+    if own then return own(key, ...) end
+end
 
 -- A switch of the section changed in a module's settings: every window that reads them is as set now.
 local function Changed(name)
