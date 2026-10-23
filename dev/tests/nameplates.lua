@@ -50,6 +50,7 @@ function methods:SetBlendMode(mode) self._blend = mode end
 -- Text measured as the game would, six wide a letter, ten high; a hidden value has no width the test can know.
 function methods:GetStringWidth() return type(self._text) == "string" and #self._text * 6 or 0 end
 methods.GetUnboundedStringWidth = methods.GetStringWidth
+function methods:SetReverseFill(on) self._reverse = on end
 function methods:SetFont(file, height, flags) self._font = { file, height, flags } return true end
 -- The game's font for its plates' names: its face, height and outline.
 SystemFont_NamePlate_Outlined = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 14, "OUTLINE" end }
@@ -929,6 +930,8 @@ end)()
 local Cast = ns.Cast
 local castBar = dress.cast
 local gameCast = plates.nameplate1.UnitFrame.CastBarsContainer
+-- How far a status bar is filled, as a share.
+local function Share(bar) return (bar._value - bar._min) / (bar._max - bar._min) end
 casts.nameplate1 = { name = "Fireball", icon = 135812, starts = (W.clock - 1) * 1000, ends = (W.clock + 2) * 1000, target = "Bran Stoneheart" }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
 check(castBar:IsShown() and castBar._points[1][2] == dress and castBar._points[1][3] == "BOTTOMLEFT" and castBar._points[1][5] == 0,
@@ -937,38 +940,40 @@ check(castBar._height == dress._height and castBar.icon._width == castBar.icon._
     "as high as the bar, its icon square inside its border")
 check(castBar.icon._texture == 135812 and castBar.text._text == "Fireball  Bran Stoneheart" and (castBar.text._width or 0) == 0
     and castBar.text._points[2][3] == "RIGHT", "the spell's icon; its name, then its target's, cut where the bar ends")
-check(castBar.fill._barColor[1] == Cast.CAST[1] and Near(castBar.fill._value, 1 / 3) and castBar.timer._text == "2.0",
-    "a third done, two seconds left in the icon, in the cast's colour")
+check(castBar.fill._barColor[1] == Cast.CAST[1] and castBar.fill._min == casts.nameplate1.starts and castBar.fill._max == casts.nameplate1.ends
+    and Near(Share(castBar.fill), 1 / 3) and castBar.timer._text == "2.0" and castBar.lock._alpha == 0,
+    "from its start to its end, a third done, two seconds left in the icon, in the cast's colour")
 check(castBar.timer._points[1][2] == castBar.icon, "the seconds inside the icon")
 check(gameCast._alpha == 0, "the game's own cast bar out of sight under ours")
 W.clock = W.clock + 1
 castBar:GetScript("OnUpdate")(castBar, 1)
-check(Near(castBar.fill._value, 2 / 3) and castBar.timer._text == "1.0", "on its way: two thirds, a second left")
+check(Near(Share(castBar.fill), 2 / 3) and castBar.timer._text == "1.0", "on its way: two thirds, a second left")
 W.clock = W.clock + 1.1
 castBar:GetScript("OnUpdate")(castBar, 1.1)
-check(castBar:IsShown() and castBar.fill._value == 1 and castBar.timer._text == "", "done: full, no seconds, still there")
+check(castBar:IsShown() and Share(castBar.fill) == 1 and castBar.timer._text == "", "done: full, no seconds, still there")
 W.clock = W.clock + Cast.HOLD
 castBar:GetScript("OnUpdate")(castBar, Cast.HOLD)
 check(not castBar:IsShown(), "half a second later: gone")
 casts.nameplate1 = { name = "Drain Life", channel = true, locked = true, starts = W.clock * 1000, ends = (W.clock + 4) * 1000 }
 W.Fire("UNIT_SPELLCAST_CHANNEL_START", "nameplate1")
-check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.LOCKED[1] and Near(castBar.fill._value, 1) and castBar.text._text == "Drain Life",
-    "a channel that cannot be interrupted: grey, full, emptying; no target")
+check(castBar:IsShown() and castBar.fill._reverse and castBar.background._vertex[1] == Cast.CHANNEL[1] and castBar.lock._alpha == 1
+    and castBar.lockBack._vertex[1] == Cast.LOCKED[1] and Share(castBar.fill) == 0 and castBar.text._text == "Drain Life",
+    "a channel that cannot be interrupted: grey over it, emptying from its end; no target")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "nameplate1")
-check(castBar:IsShown() and castBar.fill._value == 0, "the channel ended: empty, staying")
+check(castBar:IsShown() and Share(castBar.fill) == 1 and castBar.fill._reverse, "the channel ended: empty, staying")
 W.clock = W.clock + Cast.HOLD + 0.1
 castBar:GetScript("OnUpdate")(castBar, 0.5)
 check(not castBar:IsShown(), "then gone")
 -- Interrupted: full and red, saying so and by whom, for half a second.
 casts.nameplate1 = { name = "Fireball", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
-check(castBar.fill._barColor[1] == Cast.CAST[1], "an interruptible cast: its colour, whatever your own interrupts")
+check(castBar.fill._barColor[1] == Cast.CAST[1] and not castBar.fill._reverse, "an interruptible cast: its colour")
 UnitTokenFromGUID = function(guid) return guid == "Player-party1" and "party1" or nil end
 local unitName = UnitName
 UnitName = function(unit) if unit == "party1" then return "Bran" end return unitName(unit) end
 W.Fire("UNIT_SPELLCAST_INTERRUPTED", "nameplate1", "cast", 133, "Player-party1")
-check(castBar.fill._barColor[1] == Cast.BROKEN[1] and castBar.fill._value == 1 and castBar.text._text == Cast.INTERRUPTED .. ": Bran",
+check(castBar.fill._barColor[1] == Cast.BROKEN[1] and Share(castBar.fill) == 1 and castBar.text._text == Cast.INTERRUPTED .. ": Bran",
     "interrupted: full and red, saying so, and by whom")
 UnitName = unitName
 casts.nameplate1 = nil
@@ -982,16 +987,28 @@ casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.cloc
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
-check(castBar:IsShown() and castBar.fill._value == 1, "stopped: done, full, staying")
+check(castBar:IsShown() and Share(castBar.fill) == 1, "stopped: done, full, staying")
 casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
-check(castBar:IsShown() and castBar.fill._value < 1, "a new cast at once: shown from its start")
+check(castBar:IsShown() and Share(castBar.fill) < 1, "a new cast at once: shown from its start")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
 check(not castBar:IsShown(), "failed: gone at once")
-casts.nameplate1 = { name = "Fireball", starts = Secret(), ends = Secret() }
+-- Its times and its lock hidden from addons: ours all the same, the game drawing its progress; the seconds reckoned.
+C_Spell.GetSpellInfo = function(id) if id == 133 then return { castTime = 2500 } end return { minRange = 0, maxRange = 5 } end
+local starts, ends, lockedHidden = Secret(), Secret(), Secret()
+casts.nameplate1 = { name = Secret(), icon = Secret(), starts = starts, ends = ends, locked = lockedHidden }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
-check(not castBar:IsShown() and gameCast._alpha == 1, "its times hidden from addons: the game's own cast bar shows it")
+check(castBar:IsShown() and gameCast._alpha == 0 and castBar.fill._min == starts and castBar.fill._max == ends
+    and castBar.fill._value == W.clock * 1000, "its times hidden: ours, from its start to its end as the game has them")
+check(type(castBar.lock._alpha) == "table" and castBar.lock._alpha.from == lockedHidden, "whether it can be interrupted: as the game says, hidden")
+check(castBar.timer._text == "2.5", "the seconds reckoned from the spell's cast time")
+W.clock = W.clock + 2.5 + Cast.WAIT + 0.1
+castBar:GetScript("OnUpdate")(castBar, 0.1)
+check(castBar.cast.held, "no word from the game long past its reckoned end: done all the same")
+casts.nameplate1 = nil
+W.clock = W.clock + Cast.HOLD + 0.1
+castBar:GetScript("OnUpdate")(castBar, 0.1)
 casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 Core.Set(ns.name, "castBar", false)
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")

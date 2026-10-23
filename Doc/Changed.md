@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: our cast bar also for casts the game hides from addons (Saneroki, 2026-10-23)
+- **Why the game's showed:** in this client a nameplate unit's cast times come hidden from addons (secret values), and
+  ours stood back for such casts. Now (`Cast.lua`) the fill runs from the cast's start to its end as the game gives
+  them (`SetMinMaxValues`, hidden or not) and is given the time now each frame, so the game draws the progress; a
+  channel fills from its end in the dark over its colour (`SetReverseFill`). Not interruptible: a grey bar over the
+  fill seen by the game's answer (`SetAlphaFromBoolean` where it is hidden). The seconds: from the end where it may be
+  read, else reckoned from the spell's cast time (none for a channel); a reckoned end passed by a second without the
+  game's word counts as done. The game's own cast bar shows only with the setting off.
+- Tests: 212 checks (hidden times and lock).
+
 ### Nameplates: the power line a third of the bar (Saneroki, 2026-10-23)
 - `Bar.LINE` 1/3 (was 1/5): the unit's mana, rage or energy a third of the bar's height; your combo points as high,
   on top of it.

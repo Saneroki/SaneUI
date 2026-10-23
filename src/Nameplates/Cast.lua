@@ -16,11 +16,15 @@ local _, ns = ...
 --  What the game says of the cast (UnitCastingInfo, UnitChannelInfo: name,
 --  icon, start and end, whether it can be interrupted; UnitSpellTargetName)
 --  is read when it starts and changes (the unit's UNIT_SPELLCAST_* events,
---  Plate.lua). Its progress and seconds are worked out from its start and
---  end on the bar's own OnUpdate, only while it shows. Where the game hides
---  the start or end from addons (a secret value), ours stays away for that
---  cast and the game's own cast bar shows instead; otherwise the game's is
---  out of sight under ours (Plate.HIDDEN).
+--  Plate.lua). The game may hide any of it from addons (secret values); the
+--  bar takes them as they are: its fill runs from the cast's start to its
+--  end (SetMinMaxValues) and is given the time now on its own OnUpdate, so
+--  the game draws the progress whether we may read it or not; a cast that
+--  cannot be interrupted lays a grey bar over it, seen by the game's answer
+--  (SetAlphaFromBoolean). The seconds left need the end itself: where it is
+--  hidden they come from the spell's cast time counted from when the cast
+--  began (none for a channel), and the cast ends with the game's word that
+--  it stopped. The game's own cast bar is out of sight (Plate.HIDDEN).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -32,6 +36,7 @@ Cast.CHANNEL = { 0.35, 0.75, 1 } -- a channel's
 Cast.LOCKED = { 0.6, 0.6, 0.6 }  -- one that cannot be interrupted
 Cast.BROKEN = { 1, 0.15, 0.1 }   -- an interrupted one
 Cast.HOLD = 0.5                  -- seconds a cast stays after it was done or interrupted
+Cast.WAIT = 1                    -- seconds past a reckoned end before a cast counts as done without the game's word
 Cast.INTERRUPTED = rawget(_G, "INTERRUPTED") or "Interrupted" -- the game's word
 Cast.GAP = 3                     -- between the icon and the text
 -- The events of a unit's casts; each reads the cast anew (Plate.lua registers them on each plate).
@@ -42,11 +47,40 @@ local listened = {}
 for _, event in ipairs(Cast.EVENTS) do listened[event] = true end
 Cast.Heard = listened
 
--- The fill's colour for the cast on a bar: grey where it cannot be interrupted.
+-- The fill's colours for the cast on a bar: a cast fills in its colour; a channel empties (its colour behind, the
+-- dark filling from its end). A cast that cannot be interrupted is grey: the grey bar over the fill seen by the
+-- game's answer, hidden or not.
 local function Paint(bar)
     local cast = bar.cast
-    local colour = cast.locked and Cast.LOCKED or cast.channel and Cast.CHANNEL or Cast.CAST
-    bar.fill:SetStatusBarColor(colour[1], colour[2], colour[3])
+    local colour = cast.channel and Cast.CHANNEL or Cast.CAST
+    local dark = ns.Bar.BACKGROUND
+    for _, layer in ipairs({ bar.fill, bar.lock }) do
+        layer:SetReverseFill(cast.channel)
+        layer:SetMinMaxValues(cast.starts, cast.ends)
+    end
+    if cast.channel then
+        bar.fill:SetStatusBarColor(dark[1], dark[2], dark[3])
+        bar.background:SetVertexColor(colour[1], colour[2], colour[3], 1)
+        bar.lock:SetStatusBarColor(dark[1], dark[2], dark[3])
+        bar.lockBack:SetVertexColor(Cast.LOCKED[1], Cast.LOCKED[2], Cast.LOCKED[3], 1)
+    else
+        bar.fill:SetStatusBarColor(colour[1], colour[2], colour[3])
+        bar.background:SetVertexColor(dark[1], dark[2], dark[3], dark[4])
+        bar.lock:SetStatusBarColor(Cast.LOCKED[1], Cast.LOCKED[2], Cast.LOCKED[3])
+        bar.lockBack:SetVertexColor(0, 0, 0, 0)
+    end
+    local locked = cast.locked
+    if Core.Secret(locked) then
+        if not pcall(bar.lock.SetAlphaFromBoolean, bar.lock, locked) then bar.lock:SetAlpha(0) end
+    else
+        bar.lock:SetAlpha(locked and 1 or 0)
+    end
+end
+
+-- The bar at a moment of the cast (milliseconds, as the game counts its start and end).
+local function Fill(bar, value)
+    bar.fill:SetValue(value)
+    bar.lock:SetValue(value)
 end
 
 -- A cast done: the bar as it ends (a cast full, a channel empty), no seconds, staying Cast.HOLD seconds.
@@ -54,11 +88,11 @@ local function Done(bar)
     local cast = bar.cast
     if not cast or cast.held then return end
     cast.held = GetTime() + Cast.HOLD
-    bar.fill:SetValue(cast.channel and 0 or 1)
+    Fill(bar, cast.ends)
     bar.timer:SetText("")
 end
 
--- The seconds left of the cast on a bar, its fill, its timer; hidden when it is over.
+-- The seconds left of the cast on a bar, its fill, its timer; done when its end (known or reckoned) has passed.
 local function Tick(bar)
     local cast = bar.cast
     if not cast then return bar:Hide() end
@@ -70,11 +104,15 @@ local function Tick(bar)
         end
         return
     end
-    local left = cast.ends - now
-    if left <= 0 then return Done(bar) end
-    local length = cast.ends - cast.starts
-    local done = length > 0 and (now - cast.starts) / length or 1
-    bar.fill:SetValue(cast.channel and 1 - done or done)
+    Fill(bar, now * 1000)
+    local ends = cast.plainEnd or cast.reckoned
+    if not ends then return bar.timer:SetText("") end
+    local left = ends - now
+    if left <= 0 then
+        -- Its end known: done; only reckoned (from the spell's cast time): wait a little for the game's word.
+        if cast.plainEnd or left < -Cast.WAIT then return Done(bar) end
+        return bar.timer:SetText("")
+    end
     bar.timer:SetFormattedText(left < 10 and "%.1f" or "%.0f", left)
 end
 local OnUpdate = ns.Guard(function(bar) Tick(bar) end)
@@ -97,13 +135,24 @@ function Cast.Make(dress)
     background:SetTexture(ns.Bar.WHITE)
     background:SetVertexColor(ns.Bar.BACKGROUND[1], ns.Bar.BACKGROUND[2], ns.Bar.BACKGROUND[3], ns.Bar.BACKGROUND[4])
     background:SetAllPoints(fill)
-    bar.border, bar.fill = border, fill
+    -- The grey of a cast that cannot be interrupted: a bar of its own over the fill, as long, seen by the game's answer.
+    local lock = CreateFrame("StatusBar", nil, bar)
+    lock:SetAllPoints(fill)
+    lock:SetFrameLevel(fill:GetFrameLevel() + 1)
+    lock:SetStatusBarTexture(ns.Bar.FILL)
+    lock:SetMinMaxValues(0, 1)
+    lock:SetValue(0)
+    lock:SetAlpha(0)
+    local lockBack = lock:CreateTexture(nil, "BACKGROUND")
+    lockBack:SetTexture(ns.Bar.WHITE)
+    lockBack:SetAllPoints(lock)
+    bar.border, bar.fill, bar.background, bar.lock, bar.lockBack = border, fill, background, lock, lockBack
     bar.outer = ns.Bar.Caps(bar, bar, border)
-    bar.caps = ns.Bar.Caps(fill, fill, fill:GetStatusBarTexture(), background)
+    bar.caps = ns.Bar.Caps(fill, fill, fill:GetStatusBarTexture(), background, lock:GetStatusBarTexture(), lockBack)
     -- The icon at the left end, inside the border, square; the seconds left inside it.
     local top = CreateFrame("Frame", nil, bar)
     top:SetAllPoints(bar)
-    top:SetFrameLevel(fill:GetFrameLevel() + 2)
+    top:SetFrameLevel(fill:GetFrameLevel() + 3)
     local icon = top:CreateTexture(nil, "ARTWORK")
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     local timer = top:CreateFontString(nil, "OVERLAY")
@@ -151,24 +200,37 @@ local function Game(dress, seen)
     if type(part) == "table" and part.SetAlpha then part:SetAlpha(seen and 1 or 0) end
 end
 
--- The cast as the game says it now: { starts, ends (seconds), channel, locked }, its name, icon and target; false
--- where the game hides its start or end; nil where the unit casts nothing.
+-- The cast as the game says it now: { starts, ends (milliseconds, hidden or not), channel, locked (hidden or not),
+-- plainEnd or reckoned (seconds) }, its name, icon and target; nil where the unit casts nothing. Its name, icon and
+-- target go to the bar as they are.
 local function Read(unit)
     local channel = false
-    local ok, name, _, icon, starts, ends, _, _, locked = pcall(UnitCastingInfo, unit)
+    local ok, name, _, icon, starts, ends, _, _, locked, spell = pcall(UnitCastingInfo, unit)
     if not ok or type(name) == "nil" then -- looked at with type() only: a hidden name is never compared
         channel = true
-        ok, name, _, icon, starts, ends, _, locked = pcall(UnitChannelInfo, unit)
+        ok, name, _, icon, starts, ends, _, locked, spell = pcall(UnitChannelInfo, unit)
         if not ok or type(name) == "nil" then return nil end
     end
-    starts, ends = Plain(starts), Plain(ends)
-    if type(starts) ~= "number" or type(ends) ~= "number" then return false end
+    if type(starts) == "nil" or type(ends) == "nil" then return nil end
+    local cast = { starts = starts, ends = ends, channel = channel, locked = locked }
+    local plainEnd = Plain(ends)
+    if type(plainEnd) == "number" then
+        cast.plainEnd = plainEnd / 1000
+    elseif not channel then
+        -- Its end hidden: the spell's cast time from now (or from its start where that may be read).
+        local id = Plain(spell)
+        local data = id and Core.Ask(C_Spell.GetSpellInfo, id)
+        local length = type(data) == "table" and Plain(data.castTime)
+        local began = Plain(starts)
+        if type(length) == "number" and length > 0 then
+            cast.reckoned = (type(began) == "number" and began / 1000 or GetTime()) + length / 1000
+        end
+    end
     local target = nil
     local shown = Core.Ask(rawget(_G, "UnitShouldDisplaySpellTargetName"), unit)
     local spellTarget = rawget(_G, "UnitSpellTargetName")
     if shown ~= false and spellTarget then target = ns.Bar.Raw(spellTarget, unit) end
-    return { starts = starts / 1000, ends = ends / 1000, channel = channel, locked = Plain(locked) == true },
-        name, icon, target
+    return cast, name, icon, target
 end
 
 -- Who interrupted a cast, by the GUID the game gives: a name, or nil.
@@ -194,8 +256,11 @@ function Cast.Update(dress, unit, event, _, _, interruptedBy)
     if event == "UNIT_SPELLCAST_INTERRUPTED" and bar.cast then
         -- A moment in red, then gone.
         bar.cast.held = GetTime() + Cast.HOLD
+        bar.fill:SetReverseFill(false)
         bar.fill:SetStatusBarColor(Cast.BROKEN[1], Cast.BROKEN[2], Cast.BROKEN[3])
+        bar.fill:SetMinMaxValues(0, 1)
         bar.fill:SetValue(1)
+        bar.lock:SetAlpha(0)
         bar.timer:SetText("")
         local who = Interrupter(Plain(interruptedBy))
         if type(who) == "nil" or not pcall(bar.text.SetFormattedText, bar.text, "%s: %s", Cast.INTERRUPTED, who) then
@@ -204,11 +269,6 @@ function Cast.Update(dress, unit, event, _, _, interruptedBy)
         return
     end
     local cast, name, icon, target = Read(unit)
-    if cast == false then -- hidden from addons: the game's own shows this one
-        bar.cast = nil
-        bar:Hide()
-        return Game(dress, true)
-    end
     Game(dress, false)
     if not cast then
         -- Over: done (stopped, its channel ended) it stays a moment; failed it goes at once; interrupted it stays red.

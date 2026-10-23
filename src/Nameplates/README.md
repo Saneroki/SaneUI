@@ -62,8 +62,9 @@ fails, every plate is the game's own again.
   seconds left inside it, then the spell's name and its target's on one line, cut where the bar ends (the start
   always shows); filling as a cast goes on, emptying as a channel does. Its colour says whether it can be interrupted:
   gold (a channel blue), grey where it cannot. Interrupted, it is full and red and says *Interrupted*, with who did it
-  where the game names them. Done or interrupted, it stays half a second; failed, it goes at once. Where the game hides a cast's times from addons, its own cast bar shows that one. Setting
-  *Cast bar*.
+  where the game names them. Done or interrupted, it stays half a second; failed, it goes at once. It shows every
+  cast, also those the game hides from addons in a fight: the game then draws its progress, and the seconds come from
+  the spell's cast time (none for a channel). Setting *Cast bar* (off: the game's own).
 - **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
   foe's buffs stand left of the icons there.
 - **Size by distance:** your target's plate is always *Nameplate size* (125% at first). Any other's depends on how
@@ -210,13 +211,18 @@ fails, every plate is the game's own again.
   (`SetWordWrap(false)`: cut short). `Cast.Update` reads the cast at each of the unit's `Cast.EVENTS`
   (`UNIT_SPELLCAST_*`, registered with Plate.EVENTS) and when a plate is filled: `UnitCastingInfo`, else
   `UnitChannelInfo` (name, icon, start, end, not interruptible), `UnitShouldDisplaySpellTargetName` and
-  `UnitSpellTargetName`; the bar's guarded `OnUpdate`, only while it shows, sets the fill from start, end and
-  `GetTime` and the seconds (`%.1f` under ten). Colours (`Paint`): `Cast.LOCKED` where not interruptible, else
-  `Cast.CHANNEL` or `Cast.CAST`. Interrupted (`UNIT_SPELLCAST_INTERRUPTED`): full in `Cast.BROKEN`, the text the game's
-  `INTERRUPTED` and the interrupter's name (its `interruptedBy` GUID: `UnitTokenFromGUID` and `UnitName`, else
-  `GetPlayerInfoByGUID`). Done (its time ran out, `UNIT_SPELLCAST_STOP`, `_CHANNEL_STOP`: `Done`, a cast full, a
-  channel empty) or interrupted, it stays `Cast.HOLD` (0.5) seconds; `UNIT_SPELLCAST_FAILED` hides it at once. Where the start or end is hidden (a secret value), or the setting is
-  off, ours hides and the game's `CastBarsContainer` (in `Plate.HIDDEN` otherwise) is at alpha 1 again.
+  `UnitSpellTargetName`, each taken as it is, hidden or not: the fill (and the grey bar over it, `bar.lock`) runs from
+  the cast's start to its end in the game's milliseconds (`SetMinMaxValues`) and the bar's guarded `OnUpdate`, only
+  while it shows, gives both the time now (`SetValue`), so the game draws the progress though we may not read it; a
+  channel fills from its end (`SetReverseFill`) in the dark over its colour, so it empties. Not interruptible: the grey
+  bar seen by the game's answer (`SetAlpha`, or `SetAlphaFromBoolean` where it is hidden). The seconds (`%.1f` under
+  ten): from the end where it may be read, else reckoned from the spell's `castTime` (`C_Spell.GetSpellInfo`) from the
+  start or from now; a reckoned end passed by `Cast.WAIT` (1) second without the game's word counts as done.
+  Interrupted (`UNIT_SPELLCAST_INTERRUPTED`): full in `Cast.BROKEN`, the text the game's `INTERRUPTED` and the
+  interrupter's name (its `interruptedBy` GUID: `UnitTokenFromGUID` and `UnitName`, else `GetPlayerInfoByGUID`). Done
+  (its end passed, `UNIT_SPELLCAST_STOP`, `_CHANNEL_STOP`: `Done`) or interrupted, it stays `Cast.HOLD` (0.5)
+  seconds; `UNIT_SPELLCAST_FAILED` hides it at once. With the setting off ours hides and the game's `CastBarsContainer` (in
+  `Plate.HIDDEN` otherwise) is at alpha 1 again.
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going, a power line coming or going), once a frame (`Core.Later`). Shown while the game gives combo
@@ -366,3 +372,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the cast bar's colour from the cast alone (Saneroki): interruptible or not, red when interrupted; it
   stays half a second after it was done or interrupted.
 - **2026-10-23:** the power line a third of the bar's height (Saneroki), the combo points as high on it.
+- **2026-10-23:** the cast bar also for casts whose times the game hides from addons (Saneroki): the game draws its
+  progress, the seconds are reckoned; the game's own cast bar no longer stands in.
