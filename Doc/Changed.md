@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the bags' categories share lines; one kind of empty slot (2026-10-23)
+- The grid (`Bags/Layout.lua`): the blocks flow side by side in bands, `BAND_GAP` apart, as many as fit across;
+  each under its own head as wide as it is: its cells, then (where it takes items, `block.plus`) its empty slots,
+  the first right after the cells and more only to make its last line whole. A block is as wide as its cells and
+  that slot, or as its head's words (`Layout.Lay`'s new `measure`, the canvas's hidden font string), at most the
+  room. A block with nothing to show (an empty group) is left out.
+- Every empty slot is the "+" slot (`Canvas.lua`'s `Sheet:Plus`, now lit while an item is held over it): let go
+  or clicked on, the item goes into the category (`Menus.Drop` with `stow`). The pads are gone (`Cells.Pad`,
+  `Pads`, `PAD_ALPHA`, `EMPTY_PAD_ALPHA`, `PAD_EDGE`). The compact display has its empty slots too.
+- `dev/tests/bags.lua`: the grid's bands, the head's width, a narrow room, the empty slots' drops.
+
 ### dev: the tools' web pages, each on its own port (2026-10-23)
 - `dev/tools/web-pages` (`saneui webpages`; `saneui start|stop|status webpages`): every page a tool serves, each on
   a port of its own so all can be open at once: interface pieces 8768, maps compared 8771, instance maps 8772, world

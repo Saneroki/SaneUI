@@ -5,21 +5,25 @@ local _, ns = ...
 --  Where the blocks of a view (Views.lua) go, as plain numbers, in one of
 --  three looks: no frame here, the window (Bags.lua) puts its buttons and
 --  lines where these say.
---      grid     each block under its head (its name, how many), its cells in
---               lines as wide as the room, then its "+" (to put an item in),
---               the last line made whole with pads (empty slots: an item let
---               go on one goes into the block's category); an empty block a
---               line of pads
+--      grid     the blocks side by side in bands, as many as fit across the
+--               room, each under its head (its name, how many): its cells,
+--               then its empty slots (block.plus: an item let go on one goes
+--               into the block's category), at least one, as many as fill its
+--               last line; a block as wide as its cells and its first empty
+--               slot, or as its head's words (measure), never wider than the
+--               room (more cells: more lines)
 --      list     each block under its head, a line per cell: the item at the
 --               left, its words in columns
 --      compact  the blocks side by side in bands, its name over each: which
 --               blocks share a band, and how wide each is, planned so that
 --               the whole takes the fewest lines (a block that is not the
---               last of its band at least three cells wide)
+--               last of its band at least three cells wide), its empty slots
+--               after its cells as in the grid
 --  A part's head (the bags, the bank) goes over the whole width.
 --
---      local count, height = Layout.Lay(look, blocks, width, out)
---      out: the places, used again: out[i] = { kind = "head" | "cell" | "plus" | "pad" | "row" | "label", x, y,
+--      local count, height = Layout.Lay(look, blocks, width, out, measure)
+--      measure(block): how wide its head's words are (the grid; nil: as wide as its cells)
+--      out: the places, used again: out[i] = { kind = "head" | "cell" | "plus" | "row" | "label", x, y,
 --           width, height, size (a cell's, a row's item), entry (a cell's or row's), block (a head's,
 --           a label's, a cell's), level (a head's: 1 a part, 2 a block, 3 a group's member) }
 -------------------------------------------------------------------------------
@@ -34,7 +38,7 @@ Layout.HEAD = 20         -- a head line
 Layout.HEAD_GAP = 2      -- under it
 Layout.APART = 6         -- room after a block
 Layout.MEMBER = 16       -- a group's member's head
-Layout.BAND_GAP = 14     -- between two blocks side by side (compact)
+Layout.BAND_GAP = 14     -- between two blocks side by side
 Layout.LABEL = 15        -- a block's name over it (compact)
 Layout.LABEL_GAP = 3
 
@@ -68,11 +72,15 @@ local function Head(block, width)
     y = y + height + Layout.HEAD_GAP
 end
 
--- A block's cells in lines from x, columns to a line, the last one made whole with pads (pads: whether);
--- returns the lines taken.
-local function Cells(block, x, columns, pads)
+-- How many cells a block shows: its items, and its first empty slot (block.plus).
+local function Slots(block)
+    return #block.entries + (block.plus and 1 or 0)
+end
+
+-- A block's cells in lines from x and top, columns to a line, then its empty slots (block.plus), as many as make
+-- its last line whole; returns the lines taken.
+local function Cells(block, x, top, columns)
     local step = Layout.SIZE + Layout.GAP
-    local n = #block.entries
     local column, line = 0, 0
     for _, entry in ipairs(block.entries) do
         if column >= columns then
@@ -80,29 +88,23 @@ local function Cells(block, x, columns, pads)
             line = line + 1
         end
         local place = Place("cell")
-        place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
+        place.x, place.y, place.width, place.height = x + column * step, top + line * step, Layout.SIZE, Layout.SIZE
         place.size, place.entry, place.block = Layout.SIZE, entry, block
         column = column + 1
     end
-    if pads and block.plus then
+    if block.plus then
         if column >= columns then
             column = 0
             line = line + 1
         end
-        local place = Place("plus")
-        place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
-        place.size, place.block = Layout.SIZE, block
-        column = column + 1
-    end
-    if pads then
-        while column < columns do
-            local place = Place("pad")
-            place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
+        repeat
+            local place = Place("plus")
+            place.x, place.y, place.width, place.height = x + column * step, top + line * step, Layout.SIZE, Layout.SIZE
             place.size, place.block = Layout.SIZE, block
             column = column + 1
-        end
+        until column >= columns
     end
-    return (n > 0 or pads) and line + 1 or 0
+    return column > 0 and line + 1 or 0
 end
 
 local function Columns(width)
@@ -110,17 +112,39 @@ local function Columns(width)
 end
 Layout.Columns = Columns
 
-local function Grid(blocks, width)
+-- The grid's band under way: its top, where its next block goes, its lines of cells, its heads' height.
+local top, across, lines, high = 0, 0, 0, 0
+
+local function Close()
+    if across > 0 then y = top + high + Layout.HEAD_GAP + lines * (Layout.SIZE + Layout.GAP) - Layout.GAP + Layout.APART end
+    top, across, lines, high = y, 0, 0, 0
+end
+
+local function Grid(blocks, width, measure)
     local columns = Columns(width)
     local step = Layout.SIZE + Layout.GAP
+    top, across, lines, high = y, 0, 0, 0
     for index = 1, blocks.count do
         local block = blocks[index]
-        Head(block, width)
-        if block.level ~= 1 then
-            local lines = Cells(block, 0, columns, true)
-            y = y + lines * step - (lines > 0 and Layout.GAP or 0) + Layout.APART
+        local slots = Slots(block)
+        if block.level == 1 then
+            Close()
+            Head(block, width)
+            top = y
+        elseif slots > 0 then
+            local words = measure and measure(block) or 0
+            local wide = math.min(columns, math.max(slots, math.ceil((words + Layout.GAP) / step)))
+            if across > 0 and across + wide * step - Layout.GAP > width then Close() end
+            local height = block.level == 3 and Layout.MEMBER or Layout.HEAD
+            local place = Place("head")
+            place.x, place.y, place.width, place.height = across, top, wide * step, height
+            place.block, place.level = block, block.level
+            lines = math.max(lines, Cells(block, across, top + height + Layout.HEAD_GAP, wide))
+            high = math.max(high, height)
+            across = across + wide * step - Layout.GAP + Layout.BAND_GAP
         end
     end
+    Close()
 end
 
 local function List(blocks, width)
@@ -157,11 +181,11 @@ end
 local function Lines(run, first, last, width)
     local step = Layout.SIZE + Layout.GAP
     local most = 0
-    for index = first, last do most = math.max(most, #run[index].entries) end
+    for index = first, last do most = math.max(most, Slots(run[index])) end
     for lines = 1, most do
         local total = Layout.BAND_GAP * (last - first)
         for index = first, last do
-            total = total + Wide(#run[index].entries, lines, index == last) * step - Layout.GAP
+            total = total + Wide(Slots(run[index]), lines, index == last) * step - Layout.GAP
         end
         if total <= width then return lines end
     end
@@ -197,11 +221,10 @@ local function Bands(width)
         local top, x = y, 0
         for index = first, last do
             local block = run[index]
-            local wide = Wide(#block.entries, lines, index == last)
+            local wide = Wide(Slots(block), lines, index == last)
             local label = Place("label")
             label.x, label.y, label.width, label.height, label.block = x, top, wide * step - Layout.GAP, Layout.LABEL, block
-            y = top + Layout.LABEL + Layout.LABEL_GAP
-            Cells(block, x, wide, false)
+            Cells(block, x, top + Layout.LABEL + Layout.LABEL_GAP, wide)
             x = x + wide * step - Layout.GAP + Layout.BAND_GAP
         end
         y = top + Layout.LABEL + Layout.LABEL_GAP + lines * step - Layout.GAP + Layout.APART
@@ -216,7 +239,7 @@ local function Compact(blocks, width)
         if block.level == 1 then
             Bands(width)
             Head(block, width)
-        elseif #block.entries > 0 then
+        elseif Slots(block) > 0 then
             run[#run + 1] = block
         end
     end
@@ -224,12 +247,12 @@ local function Compact(blocks, width)
 end
 
 -- The places of the blocks in a look ("grid", "list", "compact") in a room so wide; how many and how high.
-function Layout.Lay(look, blocks, width, places)
+function Layout.Lay(look, blocks, width, places, measure)
     out, count, y = places, 0, 0
     width = math.max(width, Layout.SIZE)
     if look == "list" then List(blocks, width)
     elseif look == "compact" then Compact(blocks, width)
-    else Grid(blocks, width) end
+    else Grid(blocks, width, measure) end
     for index = count + 1, #places do places[index].kind = nil end
     return count, y
 end

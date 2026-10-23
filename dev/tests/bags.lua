@@ -602,31 +602,51 @@ blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
 for index = 1, count do kinds[places[index].kind] = (kinds[places[index].kind] or 0) + 1 end
-check(kinds.head == 10 and kinds.cell == 9 and kinds.plus == 6 and kinds.pad == 10 * 10 - 9 - 6,
-    "grid: a head per block, its cells, its +, every last line made whole with pads (an empty block a line of them)")
-local padOf
+check(kinds.head == 10 and kinds.cell == 9 and kinds.plus == 6 and not kinds.pad,
+    "grid: a head per block, its cells, one empty slot after them where it takes items, nothing more")
+local quest
 for index = 1, count do
     local place = places[index]
-    if place.kind == "pad" and place.block and place.block.word == "Quest Items" then padOf = place end
+    if place.kind == "plus" and place.block and place.block.word == "Quest Items" then quest = place end
 end
-check(padOf and padOf.block.key, "an empty category's pads know their block, to take an item let go on them")
-check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0 and places[3].kind == "pad",
-    "Pinned empty: its + first, then pads")
+check(quest and quest.block.key == "quest", "an empty category: its empty slot alone, knowing its block")
+check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0 and places[2].y == Layout.HEAD + Layout.HEAD_GAP
+    and places[3].kind == "head" and places[3].y == 0 and places[3].x == Layout.SIZE + Layout.BAND_GAP,
+    "Pinned empty: its empty slot under its head, the next block beside it on the same line")
 local armory
 for index = 1, count do
     if places[index].kind == "head" and places[index].block.word == "The Armory" then armory = index end
 end
 local top = places[armory].y + Layout.HEAD + Layout.HEAD_GAP
-check(places[armory + 1].kind == "cell" and places[armory + 1].y == top and places[armory + 2].x == Layout.SIZE + Layout.GAP
-    and places[armory + 3].kind == "pad", "a block's cells under its head, side by side")
+check(places[armory + 1].kind == "cell" and places[armory + 1].y == top
+    and places[armory + 2].x == places[armory + 1].x + Layout.SIZE + Layout.GAP and places[armory + 3].kind == "head",
+    "a block's cells under its head, side by side; a group takes no items: no empty slot")
+local lastY = 0
+for index = 1, count do lastY = math.max(lastY, places[index].y) end
+check(lastY > 0, "what does not fit on a line goes on the next")
+count = Layout.Lay("grid", blocks, width, places, function() return 100 end)
+local pinnedSlots = 0
+for index = 1, count do
+    if places[index].kind == "plus" and places[index].block.word == "Pinned Items" then pinnedSlots = pinnedSlots + 1 end
+end
+check(pinnedSlots == 3 and places[1].width == 3 * (Layout.SIZE + Layout.GAP),
+    "a block as wide as its head's words, its line filled with empty slots that take items as the first does")
+local narrow = 2 * (Layout.SIZE + Layout.GAP) - Layout.GAP
+count = Layout.Lay("grid", blocks, narrow, places)
+local wrapped = true
+for index = 1, count do
+    if places[index].kind == "head" and places[index].x ~= 0 then wrapped = false end
+end
+check(wrapped, "a narrow room: a block to a line")
 count = Layout.Lay("list", blocks, width, places)
 check(places[2].kind == "head" and places[3].kind == "row" and places[3].size == Layout.ICON and places[3].width == width,
     "list: a line per cell (Pinned empty: its head only)")
 check(select(1, Layout.Shape(9, 10)) == 3 and select(1, Layout.Shape(2, 10)) == 2 and select(2, Layout.Shape(10, 10)) == 3,
     "compact: each block near square")
 count = Layout.Lay("compact", blocks, width, places)
-check(places[1].kind == "label" and places[1].block.word == "The Armory" and places[2].kind == "cell" and places[4].kind == "label"
-    and places[4].x > 0, "compact: the blocks side by side, each with its name over it (an empty one left out)")
+check(places[1].kind == "label" and places[1].block.word == "Pinned Items" and places[2].kind == "plus" and places[3].kind == "label"
+    and places[3].x > 0 and places[4].kind == "cell",
+    "compact: the blocks side by side, each with its name over it, an empty one its empty slot")
 
 -------------------------------------------------------------------------------
 --  The window
@@ -672,7 +692,6 @@ check(swordButton and swordButton:IsShown() and swordButton:GetParent():GetID() 
 check(drawn[swordButton].texture == "icon2001" and HeadNamed("The Armory")
     and Y(swordButton) == -HeadNamed("The Armory")._points[1][5] + Layout.HEAD + Layout.HEAD_GAP,
     "All Items at first: the sword under its group's head")
-check(Cells.Pads() > 0, "the blocks made whole with pads")
 local levelText
 for _, widget in ipairs(W.frames) do
     if widget._kind == "FontString" and widget._text == 20 or widget._text == "20" then levelText = widget end
@@ -819,25 +838,21 @@ ns.Select.Click(Cells.Button(0, 3))
 check(kept.pinned[118] and ns.Select.Mode() == nil, "the next item clicked is pinned; the choosing ends")
 Categories.Pin(118, false)
 Bags.Refresh()
--- An empty slot of a category (a pad): an item let go there goes into that category; Junk marks it, another
--- category takes the mark off; an item from outside the bags goes into a free slot of them.
-local function PadOf(key)
-    for _, widget in ipairs(W.frames) do
-        if widget.lit and widget.border and widget.back and widget.key == key and widget:IsShown() then return widget end
-    end
-end
-local junkPad, tradePad = PadOf("junk"), PadOf("trade")
-check(junkPad and tradePad and junkPad._mouse ~= false, "a category's empty slots take what is let go on them")
+-- A category's empty slot: an item let go there goes into that category; Junk marks it, another category takes
+-- the mark off; an item from outside the bags goes into a free slot of them.
+local junkPlus, tradePlus = PlusOf("junk"), PlusOf("trade")
+check(junkPlus and tradePlus, "every category that takes items: an empty slot")
 holding = 118
-junkPad:GetScript("OnEnter")(junkPad)
-check(junkPad.lit:IsShown(), "an item brought over an empty slot: lit")
-junkPad:GetScript("OnLeave")(junkPad)
-junkPad:GetScript("OnReceiveDrag")(junkPad)
+junkPlus:GetScript("OnEnter")(junkPlus)
+check(junkPlus.lit:IsShown(), "an item brought over an empty slot: lit")
+junkPlus:GetScript("OnLeave")(junkPlus)
+check(not junkPlus.lit:IsShown(), "and dark again when it leaves")
+junkPlus:GetScript("OnReceiveDrag")(junkPlus)
 check(kept.assigned[118] == "junk" and Categories.Junk(118, 1) and holding == nil, "let go on Junk's empty slot: marked as junk")
 Bags.Refresh()
-tradePad = PadOf("trade")
+tradePlus = PlusOf("trade")
 holding = 118
-tradePad:GetScript("OnMouseUp")(tradePad, "LeftButton")
+tradePlus:GetScript("OnClick")(tradePlus, "LeftButton")
 check(kept.assigned[118] == "trade" and not Categories.Junk(118, 1) and holding == nil,
     "clicked onto another category's empty slot: into it, the junk mark off")
 do
@@ -845,7 +860,7 @@ do
     C_Container.PickupContainerItem = function(bag, slot) placed, holding, cursor = bag .. ":" .. slot, nil, false end
     holding, cursor = 6001, true
     Bags.Refresh()
-    PadOf("trade"):GetScript("OnReceiveDrag")(PadOf("trade"))
+    PlusOf("trade"):GetScript("OnReceiveDrag")(PlusOf("trade"))
     check(kept.assigned[6001] == "trade" and placed and holding == nil, "an item from outside the bags: into a free slot of them")
     C_Container.PickupContainerItem, cursor = pickup, false
 end

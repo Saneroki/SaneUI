@@ -5,15 +5,16 @@ local _, ns = ...
 --  Where a window of items (the bags, the bank) draws what Layout.lua laid
 --  out, in its scroll area's child: the heads (a part's, a block's, a group
 --  member's: its words and number, a thin line to the right edge), the
---  compact display's labels, the "+" cells, the list's lines (a word for
---  each column shown, Columns.lua), the pads and the item buttons (the
---  window's pool, Cells.lua). Each window has its own (Canvas.New).
+--  compact display's labels, a block's empty slots (a "+" in each), the
+--  list's lines (a word for each column shown, Columns.lua) and the item
+--  buttons (the window's pool, Cells.lua). Each window has its own
+--  (Canvas.New).
 --
 --  A block's head takes an item let go over it and opens the category's menu
 --  at a right click (Menus.lua); in the list a click folds the block, Shift
---  and a click every block (kept in the window's store: folded). A "+" takes
---  an item brought to it, or (the bags) starts choosing one by a click
---  (Select.lua).
+--  and a click every block (kept in the window's store: folded). An empty
+--  slot takes an item brought to it (lit while one is held over it), or (the
+--  bags) clicked with nothing starts choosing one by a click (Select.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Canvas = {}
@@ -196,8 +197,9 @@ function Sheet:Label(place)
     label:Show()
 end
 
--- A block's "+": an item brought to it (picked up and clicked here, or dragged here) goes into its category
--- (Pinned's: pinned); clicked with nothing, the next item clicked does (Select.lua).
+-- A block's empty slot, a "+" in it: an item brought to it (picked up and clicked here, or dragged here) goes into
+-- its category (Pinned's: pinned; Junk's: marked as junk); clicked with nothing, the next item clicked does
+-- (Select.lua).
 local function PlusClick(plus)
     if GetCursorInfo() == "item" then return Menus.Drop(plus.key, plus.canvas.owner.stow) end
     ns.Select.Start("put", plus.key)
@@ -205,6 +207,7 @@ end
 
 local function PlusEnter(plus)
     plus.sign:SetAlpha(1)
+    plus.lit:SetShown(GetCursorInfo() == "item")
     GameTooltip:SetOwner(plus, "ANCHOR_TOP")
     GameTooltip:SetText(Categories.Word(plus.key), 1, 0.82, 0)
     Menus.Hint(GameTooltip, ns.TEXT.bagsPlusTip)
@@ -213,6 +216,7 @@ end
 
 local function PlusLeave(plus)
     plus.sign:SetAlpha(0.5)
+    plus.lit:Hide()
     GameTooltip:Hide()
 end
 
@@ -220,6 +224,11 @@ local function MakePlus(canvas)
     local plus = CreateFrame("Button", nil, canvas.child)
     plus.canvas = canvas
     Core.Journal.Slot(plus, 1, "BACKGROUND")
+    local shade = ns.Paper.SHADE
+    plus.lit = plus:CreateTexture(nil, "BORDER")
+    plus.lit:SetAllPoints()
+    plus.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
+    plus.lit:Hide()
     plus.sign = plus:CreateFontString(nil, "ARTWORK")
     plus.sign:SetFontObject(Fonts().plus)
     plus.sign:SetPoint("CENTER")
@@ -239,6 +248,7 @@ function Sheet:Plus(place)
     plus:SetSize(place.size, place.size)
     plus:SetFrameLevel(self.child:GetFrameLevel() + 3)
     plus.key = place.block.key
+    plus.lit:Hide()
     plus:Show()
 end
 
@@ -309,6 +319,21 @@ end
 -------------------------------------------------------------------------------
 --  A drawing
 -------------------------------------------------------------------------------
+-- How wide a block's head's words are (its name and how many), so that the grid makes the block as wide.
+local function Measure(canvas, block)
+    local text = canvas.measure
+    if not text then
+        text = canvas.child:CreateFontString(nil, "ARTWORK")
+        text:Hide()
+        canvas.measure = text
+    end
+    local font = Fonts()
+    local object = block.level == 3 and font.member or font.head
+    if object then text:SetFontObject(object) end
+    text:SetText((block.word or "") .. (block.number and " (" .. tostring(block.number) .. ")" or ""))
+    return (text:GetStringWidth() or 0) + 4
+end
+
 -- The blocks of a view drawn in a room so wide, in the window's display (store.look), each cell as how says
 -- (Cells.Draw); returns the height they take.
 function Sheet:Draw(blocks, room, how)
@@ -323,7 +348,7 @@ function Sheet:Draw(blocks, room, how)
         if list then Columns.Sort(block.entries) end
     end
     local places = self.places
-    local count, height = Layout.Lay(look, blocks, room - Canvas.INSET, places)
+    local count, height = Layout.Lay(look, blocks, room - Canvas.INSET, places, self.measurer)
     local cells = self.cells
     self.heads:Begin()
     self.rows:Begin()
@@ -338,8 +363,6 @@ function Sheet:Draw(blocks, room, how)
             self:Head(place)
         elseif place.kind == "label" then
             self:Label(place)
-        elseif place.kind == "pad" then
-            cells:Pad(place.x + x, place.y, place.size, place.block, self.owner.stow)
         elseif place.kind == "plus" then
             self:Plus(place)
         else
@@ -379,5 +402,6 @@ function Canvas.New(child, owner)
     canvas.rows = Core.Pool(function() return MakeRow(canvas) end)
     canvas.labels = Core.Pool(function() return MakeLabel(canvas) end)
     canvas.pluses = Core.Pool(function() return MakePlus(canvas) end)
+    canvas.measurer = function(block) return Measure(canvas, block) end
     return canvas
 end

@@ -25,10 +25,8 @@ local _, ns = ...
 --  quality's colour, BoE at the bottom left on gear not yet bound, the
 --  equipment set's name at the bottom, a quest mark on an item that starts a
 --  quest, a coin on junk. An item the character cannot use is tinted red.
---  An empty slot is the pencil slot alone; a pad (Cells.Pad) is one that
---  fills a row: of a category that takes items it takes an item let go on it
---  (into that category), else it is drawn fainter and takes no mouse. What a
---  search does not find is faded.
+--  An empty slot is the pencil slot alone. What a search does not find is
+--  faded.
 --
 --  Made out of a fight only: a button first needed in a fight waits for its
 --  end (Cells.short tells the window).
@@ -43,10 +41,8 @@ Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
 Cells.NEUTRAL = { 0.12, 0.09, 0.07 }    -- the border of an item without a quality's colour: graphite
 Cells.QUEST = { 1, 0.82, 0 }            -- a quest item's border
 Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its pencil slot, a breath of graphite
-Cells.EMPTY_ALPHA, Cells.PAD_ALPHA = 0.04, 0.45
-Cells.EMPTY_PAD_ALPHA = 0.8                -- a pad that takes items: its slot drawn nearly as a real one
+Cells.EMPTY_ALPHA = 0.04
 Cells.EMPTY_EDGE = { 0, 0, 0, 0 }
-Cells.PAD_EDGE = { 0, 0, 0, 0 }
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 16, 12         -- the quest mark, the junk coin
@@ -101,7 +97,7 @@ end
 -- A pool of buttons standing in parent (a scroll area's child), its window owner (its Hover and Clicked; nil:
 -- the bags).
 function Cells.New(parent, owner)
-    return setmetatable({ parent = parent, owner = owner, buttons = {}, pads = {}, taken = 0, padded = 0, at = {},
+    return setmetatable({ parent = parent, owner = owner, buttons = {}, taken = 0, at = {},
         short = false }, Pool)
 end
 
@@ -365,58 +361,6 @@ function Pool:Place(button, x, y, size, reach)
     button:Show()
 end
 
--- An empty slot of a category (a pad): an item let go on it, or clicked onto it, goes into the block's category
--- (Menus.Drop; stow: in the bags' window, into the bags); lit while an item the category takes is over it.
-local function PadDrop(pad)
-    if GetCursorInfo() == "item" and pad.key then ns.Menus.Drop(pad.key, pad.stow) end
-end
-
-local function PadEnter(pad)
-    local takes = GetCursorInfo() == "item"
-    pad.lit:SetShown(takes)
-    ns.Menus.Tip(pad, pad.key)
-end
-
-local function PadLeave(pad)
-    pad.lit:Hide()
-    GameTooltip:Hide()
-end
-
--- A pad: an empty slot that fills a row; of a block whose category takes items (block.key), it takes them.
-function Pool:Pad(x, y, size, block, stow)
-    self.padded = self.padded + 1
-    local pad = self.pads[self.padded]
-    if not pad then
-        pad = CreateFrame("Frame", nil, self.parent)
-        pad.back = Core.Journal.Slot(pad, 1, "BACKGROUND")
-        pad.border = Border(pad, "ARTWORK")
-        local shade = ns.Paper.SHADE
-        pad.lit = pad:CreateTexture(nil, "BORDER")
-        pad.lit:SetPoint("TOPLEFT", size * Core.Journal.SLOT_ICON, -size * Core.Journal.SLOT_ICON)
-        pad.lit:SetPoint("BOTTOMRIGHT", -size * Core.Journal.SLOT_ICON, size * Core.Journal.SLOT_ICON)
-        pad.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
-        pad.lit:Hide()
-        pad:SetScript("OnReceiveDrag", ns.Guard(PadDrop))
-        pad:SetScript("OnMouseUp", ns.Guard(PadDrop))
-        pad:SetScript("OnEnter", ns.Guard(PadEnter))
-        pad:SetScript("OnLeave", ns.Guard(PadLeave))
-        self.pads[self.padded] = pad
-    end
-    local key = block and block.key
-    local takes = key ~= nil and ns.Menus.Takes(key)
-    pad.key, pad.stow = takes and key or nil, stow
-    pad:EnableMouse(takes)
-    pad.back:SetAlpha(takes and Cells.EMPTY_PAD_ALPHA or Cells.PAD_ALPHA)
-    pad.lit:Hide()
-    local edge = Cells.PAD_EDGE
-    Cells.Edge(pad.border, edge[1], edge[2], edge[3], edge[4], Core.Pixels(pad, 1))
-    pad:ClearAllPoints()
-    pad:SetPoint("TOPLEFT", self.parent, "TOPLEFT", x, -y)
-    pad:SetSize(size, size)
-    pad:Show()
-    return pad
-end
-
 -- One slot's lock changed (an item picked up or put down): grey or not, as the game shows it.
 function Pool:Lock(record)
     for index = 1, self.taken do
@@ -449,7 +393,7 @@ end
 -------------------------------------------------------------------------------
 -- A new drawing: what is not taken in it goes out of sight at Done.
 function Pool:Begin()
-    self.taken, self.padded = 0, 0
+    self.taken = 0
     for key in pairs(self.at) do self.at[key] = nil end
     self.short = false
     if self.default then Cells.short = false end
@@ -463,7 +407,6 @@ function Pool:Done()
         local mark = Part(button, "BagIndicator")
         if mark and mark.Hide then mark:Hide() end
     end
-    for index = self.padded + 1, #self.pads do self.pads[index]:Hide() end
 end
 
 -- The buttons of this drawing, in their order.
@@ -512,11 +455,6 @@ function Cells.Round(button, on)
     end
 end
 
--- How many pads stand now (the tests).
-function Pool:Pads()
-    return self.padded
-end
-
 -- Every button out of sight (the module stood down, or the panel hidden).
 function Pool:HideAll()
     self:Begin()
@@ -524,8 +462,8 @@ function Pool:HideAll()
 end
 
 -- Cells' own functions are the bags' pool's.
-for _, name in ipairs({ "Take", "Draw", "Place", "Pad", "Lock", "Cooldowns", "Light", "Begin", "Done", "Each", "Button",
-                        "Shown", "Pads", "HideAll" }) do
+for _, name in ipairs({ "Take", "Draw", "Place", "Lock", "Cooldowns", "Light", "Begin", "Done", "Each", "Button",
+                        "Shown", "HideAll" }) do
     Cells[name] = function(...)
         local pool = Cells.bags
         if pool then return pool[name](pool, ...) end

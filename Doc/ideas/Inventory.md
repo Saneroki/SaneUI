@@ -101,7 +101,7 @@ game's, else item by item), a grey item unmarked and kept. Kept for the account 
 
 **Built (2026-10-20), the bags made over (Saneroki asked for a much richer bag view):** a flat, dark look (items
 34 wide in a thin border of their quality's colour, quest items in gold, item level, BoE, a quest's mark, red for
-what the character cannot use; pads that fill a category's last line); a bar with the slots taken, the bags in a
+what the character cannot use); a bar with the slots taken, the bags in a
 strip, the clean-up and the dropdown *View*; a sidebar with *All Items*, *One Bag*, *Each Bag*, Pinned, Recent and
 every category with its count; new categories (Weapons / Trinkets, Armor, Item Set Gear, Consumables, Gear
 Enhancements, Camp Items, Trade Goods, Professions, Reagent Bag, Miscellaneous, Quest Items, Special Bags, Junk) in
@@ -115,6 +115,10 @@ stacks joined first; the other views keep the game's clean-up); categories and g
 the bags' sidebar, or onto another to group them; the bank as a list under its own column head, a tab's settings
 (its name, what it takes, left out of the clean-up) by the game's call, and Buy Tab with the game's own purchase
 button over it (`src/Inventory/README.md`, *The bags*).
+
+**Built (2026-10-23), Saneroki asked:** in the grid the categories share lines, as many side by side as fit; each
+category that takes items shows its items and one empty slot after them, more only to fill its last line, all
+alike: an item let go or clicked on any goes into that category.
 
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the

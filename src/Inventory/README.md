@@ -69,8 +69,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     first, the empty slots last; the reagent bag, the keyring and bags for one kind of item stay as they are. The
     button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
     the other views it is the game's *Clean Up Bags*.
-  - **The sidebar** at the left: *All Items* (every item by category, every category shown with at least one line
-    of empty slots, also while it holds nothing; the free slots are not shown), *One Bag*
+  - **The sidebar** at the left: *All Items* (every item by category, the categories side by side, as many to a
+    line as fit; every category that takes items shown with its items and an empty slot after them, also while
+    it holds nothing; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
     *Pinned Items* and *Recent Items*, then every category switched on, by name, with how many items it holds
     (empty ones too). A click shows it.
@@ -391,13 +392,16 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     a banker of any kind the client has, the mailbox, a trade partner, nor while the auction house is open); a split item stays apart while the window is open
     (`Views.split`). What the search does not find is left out, or faded in *one* and *each*. `Views.Counts`: how
     many cells each category and group shows (Pinned and Recent too, stacks merged as they are shown), for the sidebar.
-  - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (a head per block, its cells
-    `Layout.SIZE` 34 and `GAP` 4 apart, the "+", the last line filled with pads; an empty block a line of pads; a
-    pad knows its block, and in the bags' window one of a category that takes items takes an item let go or
-    clicked on it, `Cells.Pad`, `Menus.Drop` with `stow`), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
+  - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (the blocks side by side in bands,
+    `BAND_GAP` apart, as many as fit across, the next on a new band; each under its head as wide as the block:
+    its cells `Layout.SIZE` 34 and `GAP` 4 apart, then where it takes items (`block.plus`) its empty slots, the
+    first right after its cells and more only to make its last line whole; a block as wide as its cells and that
+    first empty slot, or as its head's words (the canvas measures them), at most the room, more cells in more
+    lines; a block with nothing to show left out. Every empty slot is the same: an item let go or clicked on it
+    goes into the block's category, `Menus.Drop` with `stow`), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
     takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
-    least three wide; on a tie the fuller band first). The display and the window's Sort By are kept (`store.bags`:
+    least three wide; on a tie the fuller band first; the empty slots after the cells as in the grid). The display and the window's Sort By are kept (`store.bags`:
     `look`, `sort`; `order` is the categories').
   - **The splitter** (`Bags/Split.lua`): a dialog of ours in the flat look, opened by `Bags.Clicked` after the
     template's own Shift-click, only where that opened the game's `StackSplitFrame` for that button (then hidden:
@@ -445,8 +449,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     highlight to the icon's size, a warm glow pressed; ours beside them in a table of our own: a thin
     border of the screen's own pixels in the quality's colour (`Cells.QUEST`, twice as thick, on a quest item),
     above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
-    that starts a quest, the junk coin; an empty slot the pencil slot alone; a pad (`Cells.Pad`) one drawn fainter
-    that takes no mouse.
+    that starts a quest, the junk coin; an empty slot the pencil slot alone.
     Drawn by the template's own functions (`SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`,
     `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
     `OnClick` and `OnMouseUp` light a list's line, open the item's menu (Alt and the right button, which the
@@ -457,8 +460,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     and foot dimmed (a click there ends it); a click puts the item in (then the mode ends) or marks or unmarks it
     as junk (the mode stays); a right click, Esc (`SetPropagateKeyboardInput` for every other key) or
     `PLAYER_REGEN_DISABLED` ends it. The game's item buttons never see those clicks.
-  - **The "+" cells** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Bags.lua`'s `DrawPlus`): after
-    Pinned (shown when empty too) and every category that takes items (`Categories.Takes`), in the grid; an item
+  - **The empty slots** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Canvas.lua`'s `Sheet:Plus`):
+    after Pinned (shown when empty too) and every category that takes items (`Categories.Takes`; not Recent, the
+    reagent bag's, the special bags' or a group, which take none), in the grid and the compact display; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
     journal's look, `Sidebars.WIDTH` wide, the names in Kalam always shown (one cut short whole in its tooltip), the
@@ -475,7 +479,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Recent take nothing, Junk only before it, a group goes before or after a group as a whole.
   - **The drawing** (`Bags/Canvas.lua`): `ns.Canvas.New(child, owner)` a window's: the heads (a right click
     `Menus.Row`, an item let go `Menus.Drop`, in the list a click folds: `folded` in the owner's store), the compact
-    display's labels, the "+" cells, the list's lines, the pads and the item buttons (the owner's pool), drawn as
+    display's labels, a block's empty slots (a "+" in each, lit while an item is held over it), the list's lines
+    and the item buttons (the owner's pool), drawn as
     `Layout.Lay` places them (`canvas:Draw`). `Views.Build` takes a window's own store of blocks.
   - **The bank's window** (`Bags/Bank.lua`, the part `bank`, `Present` while `Contents.bankOpen`; the board leaves
     it out while away and the first layout too: `Board.lua`'s `spec.present`, `Window.Reboard` at the banker's
@@ -568,7 +573,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Bags/Categories.lua` | The bags' categories, without frames: the built-in ones and their rules, the player's own, their order, names and groups; pins, items put into a category, junk marks |
 | `Bags/Recent.lua` | What came into the bags lately, without frames: counted from the login on |
 | `Bags/Views.lua` | What each view of the sidebar shows, without frames: blocks of cells, stacks merged, the search |
-| `Bags/Layout.lua` | The bags' displays (grid, list, compact): where each cell, pad, line, head and label goes, as plain numbers |
+| `Bags/Layout.lua` | The bags' displays (grid, list, compact): where each cell, empty slot, line, head and label goes, as plain numbers |
 | `Bags/Cells.lua` | The bags' item buttons: the game's own, a pool, in the flat look, drawn the game's way |
 | `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
 | `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
@@ -577,7 +582,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
-| `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, "+", the list's lines, pads, the item buttons |
+| `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, the empty slots, the list's lines, the item buttons |
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
 | `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |

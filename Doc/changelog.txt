@@ -6,8 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Inventory: every category in your bags stays visible with a row of
-  empty slots. Drag an item onto a category's empty slot to put it in
+- Inventory: the categories in your bags share lines, as many side by
+  side as fit, and each stays visible with its items and an empty slot
+  after them. Drag an item onto a category's empty slot to put it in
   your bags under that category; onto Junk to mark it as junk, onto
   any other category to take the junk mark off.
 - Navigation: routes no longer ride a lift up and straight back down
