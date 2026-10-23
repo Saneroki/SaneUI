@@ -93,6 +93,8 @@ local function Font()
     return font
 end
 
+Text.Font = Font
+
 local function Line(host, justify)
     local look = Font()
     local text = host:CreateFontString(nil, "OVERLAY", look.name)

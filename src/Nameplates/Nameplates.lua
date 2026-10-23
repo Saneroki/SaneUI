@@ -59,6 +59,8 @@ ns.TEXT = {
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
     distance = "Size by distance",
     distanceTip = "Nameplates by their distance from your character alone: full size within 10 yards, half at 40, a quarter at 60; they grow in when they appear. Off: the game's own scaling and fading.",
+    castBar = "Cast bar",
+    castBarTip = "Under a nameplate's bar: what its unit casts, with the seconds left in the spell's icon and the name of its target. Off: the game's own cast bar.",
     size = "Nameplate size",
     sizeTip = "How large nameplates are within 10 yards.",
     combatHeader = "Combat text",
@@ -89,6 +91,7 @@ local OPTIONS = {
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
     { key = "foundCVars", default = {} }, -- the game's nameplate CVars as they were before ours (Scale.lua)
+    { key = "castBar", default = true, text = ns.TEXT.castBar, tip = ns.TEXT.castBarTip },
     { key = "plateSize", default = 125, min = 50, max = 300, step = 5, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
     { key = "combatText", default = true, text = ns.TEXT.combatText, tip = ns.TEXT.combatTextTip, header = ns.TEXT.combatHeader },
     { key = "combatSelf", default = true, text = ns.TEXT.combatSelf, tip = ns.TEXT.combatSelfTip },

@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: our own cast bar (Saneroki, 2026-10-23)
+- **Cast bar** (`Cast.lua`, new in the TOC): under the plate's bar, no gap, as wide and as high as it, round like it;
+  the spell's icon at its left end with the seconds left inside it; the spell's name and its target's on one line
+  cut where the bar ends. Filling for a cast, emptying for a channel, grey when it cannot be interrupted, red for a
+  moment when interrupted. Read from `UnitCastingInfo`, `UnitChannelInfo` and `UnitSpellTargetName` at the unit's
+  `UNIT_SPELLCAST_*` events (registered in Plate.lua), its fill and seconds from start and end on its own `OnUpdate`.
+  The game's `CastBarsContainer` out of sight while ours shows (`Plate.HIDDEN`); where the game hides a cast's times,
+  or the new setting *Cast bar* is off, the game's shows. `Text.Font` exposed for it.
+- Tests: 202 checks.
+
 ### Nameplates: words in place of the drawings; the combat text's CVars back when off and at logout (Saneroki, 2026-10-23)
 - New setting *Drawings for what did no harm* (`combatPictures`, on): off, a miss, dodge, parry, block, evade or
   immunity is the game's word, as a resist is.

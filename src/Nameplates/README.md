@@ -58,6 +58,11 @@ fails, every plate is the game's own again.
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
   picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
+- **Cast bar:** under the bar, without a gap, as wide and as high as it: the spell's icon at its left end with the
+  seconds left inside it, then the spell's name and its target's on one line, cut where the bar ends (the start
+  always shows); filling as a cast goes on, emptying as a channel does, grey where it cannot be interrupted, a moment
+  red when interrupted. Where the game hides a cast's times from addons, its own cast bar shows that one. Setting
+  *Cast bar*.
 - **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
   foe's buffs stand left of the icons there.
 - **Size by distance:** your target's plate is always *Nameplate size* (125% at first). Any other's depends on how
@@ -198,6 +203,16 @@ fails, every plate is the game's own again.
   for nothing); cleared when the plate goes; its border red (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
   `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
   the distance found, and each of your attacks with its reach and the game's answer.
+- **Cast** (`Cast.lua`): a frame of ours under the dress (`TOPLEFT` on its `BOTTOMLEFT`, as high as it, `Cast.Fit`),
+  a pixel's border and a `StatusBar` cut round by `Bar.Caps`, the icon square at its left end inside the border, a
+  font string of the seconds on the icon, one of the spell's and its target's names from the icon to the bar's end
+  (`SetWordWrap(false)`: cut short). `Cast.Update` reads the cast at each of the unit's `Cast.EVENTS`
+  (`UNIT_SPELLCAST_*`, registered with Plate.EVENTS) and when a plate is filled: `UnitCastingInfo`, else
+  `UnitChannelInfo` (name, icon, start, end, not interruptible), `UnitShouldDisplaySpellTargetName` and
+  `UnitSpellTargetName`; the bar's guarded `OnUpdate`, only while it shows, sets the fill from start, end and
+  `GetTime` and the seconds (`%.1f` under ten). Colours `Cast.CAST`, `Cast.CHANNEL`, `Cast.LOCKED`; interrupted,
+  `Cast.BROKEN` for `Cast.HOLD` (0.4) seconds. Where the start or end is hidden (a secret value), or the setting is
+  off, ours hides and the game's `CastBarsContainer` (in `Plate.HIDDEN` otherwise) is at alpha 1 again.
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going, a power line coming or going), once a frame (`Core.Later`). Shown while the game gives combo
@@ -274,6 +289,7 @@ fails, every plate is the game's own again.
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
 | `Marks.lua` | The raid marker, in the line |
 | `Resource.lua` | Your combo points on the power line of your target's bar |
+| `Cast.lua` | A unit's cast under its plate's bar: the icon with the seconds left, the spell and its target, cut to fit |
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character; drawings for what did no harm |
@@ -339,3 +355,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   settings and a profile's, and whenever one changes.
 - **2026-10-23:** the game's nameplate CVars ours only while the module and the setting are on (Saneroki): what they had
   before goes back when it is switched off and at every logout.
+- **2026-10-23:** our own cast bar (Saneroki): under the bar, as high as it, the seconds in the spell's icon, the
+  spell and its target cut to fit; the game's out of sight while ours shows.

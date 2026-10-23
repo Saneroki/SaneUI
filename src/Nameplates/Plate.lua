@@ -39,7 +39,7 @@ ns.Plate = Plate
 -- The parts of the game's plate (keys of its unit frame) ours stand in for.
 Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
                  "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
-                 "aggroHighlightAdditive" }
+                 "aggroHighlightAdditive", "CastBarsContainer" }
 -- A bar wider than this is a measurement gone wrong; it gets Plate.PLAIN until it is measured again.
 Plate.WIDEST, Plate.PLAIN = 1000, 120
 -- What each dress hears of its own unit.
@@ -77,6 +77,7 @@ local function Fill(dress)
     ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")), dress.out)
     ns.Text.Set(dress, unit)
     ns.Marks.Raid(dress, unit)
+    ns.Cast.Update(dress, unit)
     ns.Auras.Set(dress, unit)
 end
 
@@ -123,6 +124,8 @@ local function Heard(dress, event, _, ...)
     if not unit or ns.off then return end
     if event == "UNIT_COMBAT" then -- what it took: kind, flags, amount, school
         ns.CombatText.Hit(dress, ...)
+    elseif ns.Cast.Heard[event] then
+        ns.Cast.Update(dress, unit, event)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.Bar.Health(dress, unit)
         ns.Text.Health(dress, unit)
@@ -172,6 +175,7 @@ local function Fit(dress)
     Plate.Place(dress)
     ns.Bar.Fit(dress)
     ns.Resource.Fit(dress)
+    ns.Cast.Fit(dress)
     if dress.unit then ns.Auras.Set(dress, dress.unit) end
 end
 local OnSizeChanged = ns.Guard(Fit)
@@ -185,6 +189,7 @@ local function Make(plate)
     ns.Bar.Make(dress)
     ns.Text.Make(dress)
     ns.Marks.Make(dress)
+    ns.Cast.Make(dress)
     ns.Auras.Make(dress)
     dress:SetScript("OnEvent", OnEvent)
     dress:SetScript("OnSizeChanged", OnSizeChanged)
@@ -230,6 +235,7 @@ local function Off(dress)
     ns.Safe("auras", ns.Auras.Set, dress, nil)
     ns.Safe("combo points", ns.Resource.Leave, dress)
     ns.Safe("combat text", ns.CombatText.Clear, dress)
+    ns.Safe("cast", ns.Cast.Update, dress, nil)
 end
 
 local function Added(unit)
@@ -248,6 +254,7 @@ local function Added(unit)
     Follow(frame, bar)
     dress.row, dress.want = nil, nil -- placed anew over this row, as wide as its line once laid out
     for _, event in ipairs(Plate.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
+    for _, event in ipairs(ns.Cast.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
     Fit(dress)
     Wear(dress) -- shown before it is filled: its texts measured while they show
     Fill(dress)

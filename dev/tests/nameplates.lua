@@ -160,6 +160,20 @@ C_Item = {
     end,
 }
 UnitExists = function(unit) return unit == "target" and plates.target ~= nil end
+-- Casts: what each unit casts, as the game says it (times in milliseconds, as it gives them).
+local casts = {}
+UnitCastingInfo = function(unit)
+    local cast = casts[unit]
+    if not cast or cast.channel then return nil end
+    return cast.name, cast.name, cast.icon, cast.starts, cast.ends, false, "cast", cast.locked, 133
+end
+UnitChannelInfo = function(unit)
+    local cast = casts[unit]
+    if not cast or not cast.channel then return nil end
+    return cast.name, cast.name, cast.icon, cast.starts, cast.ends, false, cast.locked, 134
+end
+UnitShouldDisplaySpellTargetName = function(unit) return casts[unit] ~= nil and casts[unit].target ~= nil end
+UnitSpellTargetName = function(unit) return casts[unit] and casts[unit].target end
 -- Inspecting players: the questions asked, the item levels the server answers.
 local inspected = {}
 NotifyInspect = function(unit) inspected[#inspected + 1] = unit end
@@ -222,7 +236,7 @@ local function GamePlate()
     frame.HealthBarsContainer = W.NewWidget("Frame", nil, frame)
     frame.HealthBarsContainer:SetSize(120, 20)
     frame.HealthBarsContainer.healthBar = W.NewWidget("StatusBar", nil, frame.HealthBarsContainer)
-    for _, key in ipairs({ "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame", "LevelFrame" }) do
+    for _, key in ipairs({ "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame", "LevelFrame", "CastBarsContainer" }) do
         frame[key] = W.NewWidget("Frame", nil, frame)
     end
     frame.name = W.NewWidget("FontString", nil, frame)
@@ -908,6 +922,56 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
     check(CVar("floatingCombatTextCombatDamage_v2") == "0", "after that, switched off: left alone")
     Core.Set(ns.name, "combatGame", true)
 end)()
+
+-------------------------------------------------------------------------------
+--  A unit's cast: under its bar, as high, the seconds in the icon, the spell and its target cut to fit
+-------------------------------------------------------------------------------
+local Cast = ns.Cast
+local castBar = dress.cast
+local gameCast = plates.nameplate1.UnitFrame.CastBarsContainer
+casts.nameplate1 = { name = "Fireball", icon = 135812, starts = (W.clock - 1) * 1000, ends = (W.clock + 2) * 1000, target = "Bran Stoneheart" }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(castBar:IsShown() and castBar._points[1][2] == dress and castBar._points[1][3] == "BOTTOMLEFT" and castBar._points[1][5] == 0,
+    "a cast: under the bar, no gap")
+check(castBar._height == dress._height and castBar.icon._width == castBar.icon._height and castBar.icon._width < castBar._height,
+    "as high as the bar, its icon square inside its border")
+check(castBar.icon._texture == 135812 and castBar.text._text == "Fireball  Bran Stoneheart" and (castBar.text._width or 0) == 0
+    and castBar.text._points[2][3] == "RIGHT", "the spell's icon; its name, then its target's, cut where the bar ends")
+check(castBar.fill._barColor[1] == Cast.CAST[1] and Near(castBar.fill._value, 1 / 3) and castBar.timer._text == "2.0",
+    "a third done, two seconds left in the icon, in the cast's colour")
+check(castBar.timer._points[1][2] == castBar.icon, "the seconds inside the icon")
+check(gameCast._alpha == 0, "the game's own cast bar out of sight under ours")
+W.clock = W.clock + 1
+castBar:GetScript("OnUpdate")(castBar, 1)
+check(Near(castBar.fill._value, 2 / 3) and castBar.timer._text == "1.0", "on its way: two thirds, a second left")
+W.clock = W.clock + 1.5
+castBar:GetScript("OnUpdate")(castBar, 1.5)
+check(not castBar:IsShown(), "over: gone")
+casts.nameplate1 = { name = "Drain Life", channel = true, locked = true, starts = W.clock * 1000, ends = (W.clock + 4) * 1000 }
+W.Fire("UNIT_SPELLCAST_CHANNEL_START", "nameplate1")
+check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.LOCKED[1] and Near(castBar.fill._value, 1) and castBar.text._text == "Drain Life",
+    "a channel that cannot be interrupted: grey, full, emptying; no target")
+W.Fire("UNIT_SPELLCAST_INTERRUPTED", "nameplate1")
+check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.BROKEN[1], "interrupted: a moment in red")
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "nameplate1")
+check(castBar:IsShown(), "still red for that moment")
+W.clock = W.clock + Cast.HOLD + 0.1
+castBar:GetScript("OnUpdate")(castBar, 0.5)
+check(not castBar:IsShown(), "then gone")
+casts.nameplate1 = { name = "Fireball", starts = Secret(), ends = Secret() }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(not castBar:IsShown() and gameCast._alpha == 1, "its times hidden from addons: the game's own cast bar shows it")
+casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+Core.Set(ns.name, "castBar", false)
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(not castBar:IsShown() and gameCast._alpha == 1, "the setting off: the game's own cast bar")
+Core.Set(ns.name, "castBar", true)
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(castBar:IsShown() and gameCast._alpha == 0, "on again: ours")
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
+check(not castBar:IsShown(), "stopped: gone")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
