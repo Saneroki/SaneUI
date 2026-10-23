@@ -25,6 +25,7 @@ local ADDON, ns = ...
 --                  containers (hidden values and all)
 --    Marks.lua     the raid marker, in the line
 --    Scale.lua     every plate's size and transparency by distance, springing in
+--    Range.lua     your target out of reach of all your attacks: its border red
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
@@ -48,6 +49,8 @@ ns.TEXT = {
     powerTip = "Along the bottom of each bar, inside it: the unit's mana, rage or energy.",
     resource = "Combo points in your target's bar",
     resourceTip = "While you have combo points to build (a rogue, a druid in cat form), they show in your target's health bar, on its power line, one segment each.",
+    range = "Out of reach: red border",
+    rangeTip = "Your target's border turns red while none of your attacks reach it (as the game checks your spells; beyond 40 yards for a character without any).",
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
     distance = "Size by distance",
@@ -65,12 +68,15 @@ local OPTIONS = {
     { key = "control", default = true, text = ns.TEXT.control, tip = ns.TEXT.controlTip },
     { key = "power", default = true, text = ns.TEXT.power, tip = ns.TEXT.powerTip },
     { key = "resource", default = true, text = ns.TEXT.resource, tip = ns.TEXT.resourceTip },
+    { key = "range", default = true, text = ns.TEXT.range, tip = ns.TEXT.rangeTip },
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "resource" then
         ns.Guarded(ns.Resource.Update)
+    elseif key == "range" then
+        ns.Guarded(ns.Range.Update)
     elseif key == "distance" then
         ns.Guarded(ns.Scale.Update)
     else
@@ -92,4 +98,5 @@ function ns.OnLogin()
     ns.Plate.Start()
     ns.Resource.Start()
     ns.Scale.Start()
+    ns.Range.Start()
 end

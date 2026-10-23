@@ -23,8 +23,9 @@ local _, ns = ...
 --    the power    the unit's mana, rage or energy, a thin line along the bar's
 --                 bottom, in the game's colour for that power; no background:
 --                 spent power shows nothing
---    the border   one pixel: black; white on your target, orange on your
---                 focus (the game's colours for them)
+--    the border   one pixel: black; white on your target (red while it is
+--                 out of reach of all your attacks: Range.lua), orange on
+--                 your focus (the game's colours for them)
 --  and behind the border, from the same inner edge but reaching farther:
 --    the rank     a line in the rank's colour: gold and thick on a boss, gold
 --                 on an elite, silver on a rare
@@ -306,8 +307,11 @@ function Bar.Clear(dress)
     Bar.Glow(dress, false)
 end
 
--- The border: white on your target, orange on your focus ("target", "focus"), else black (nil).
+-- The border: white on your target, red on your target out of your reach, orange on your focus ("target", "far",
+-- "focus"), else black (nil).
+Bar.FAR = { 1, 0.12, 0.08, 1 }
 function Bar.Border(dress, lit)
-    local colour = lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or Bar.BORDER
+    local colour = lit == "target" and Bar.TARGET or lit == "far" and Bar.FAR or lit == "focus" and Bar.FOCUS
+        or Bar.BORDER
     dress.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
 end

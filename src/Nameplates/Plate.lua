@@ -58,9 +58,10 @@ local function PlateOf(unit)
     return type(plate) == "table" and plate or nil
 end
 
--- The border's light for a plate: your target's, your focus's, or none.
+-- The border's light for a plate: your target's (red while it is out of your reach: Range.lua), your focus's, or
+-- none.
 local function Lit(plate, target, focus)
-    if plate == target then return "target" end
+    if plate == target then return ns.Range.out and "far" or "target" end
     if plate == focus then return "focus" end
     return nil
 end
@@ -263,6 +264,8 @@ local function Borders()
         Wear(dress)
     end
 end
+
+Plate.Borders = Borders
 
 -- Your group, guild or friends changed: every plate shown or not.
 local function People()

@@ -43,7 +43,9 @@ fails, every plate is the game's own again.
   is then shortened by the game in the same steps, the threat in grey. The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
 - **The border:** one thin outline: black, white on your target, orange on your focus (the game's colours for
-  them). Behind it, from the same edge but reaching farther, a line for the unit's rank: gold and thick on a boss,
+  them). Your target's turns red while none of your attacks reach it: as the game checks your own spells (a
+  warrior's strikes, Charge, and Shoot only with a bow; a mage's bolts), or beyond 40 yards for a character
+  without any. Behind it, from the same edge but reaching farther, a line for the unit's rank: gold and thick on a boss,
   gold and thin on an elite (the game's gold dragon), silver and thin on a rare (its silver dragon, also a rare
   elite); and behind that, the red glow.
 - **The power line:** along the bottom of the bar, inside it, a fifth of its height: the unit's mana, rage or
@@ -66,7 +68,7 @@ fails, every plate is the game's own again.
   you have not targeted fades out over the last 5 yards before the game takes it away. The game's larger target,
   larger elites and its own fading of plates are off meanwhile (fading behind walls stays the game's).
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points in your target's bar*, *Only players you know*, *Size by distance*. The plates' size, style and
+  *Combo points in your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*. The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
 ## Technical details
@@ -165,6 +167,14 @@ fails, every plate is the game's own again.
 - **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, outside the bar left of the
   quest's icon (`Text.size` square, placed by `Text.Layout`), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
   secret: only its type is looked at).
+- **Range** (`Range.lua`): your attacks are the spellbook's spells (`C_SpellBook`, not passive, not off-spec) the game
+  calls harmful and gives a range (`C_Spell.IsSpellHarmful`, `SpellHasRange`), made anew at `SPELLS_CHANGED`; the
+  game is asked to tell when each goes in or out of reach of your target (`C_Spell.EnableSpellRangeCheck`,
+  `SPELL_RANGE_CHECK_UPDATE`; those gone no longer). On that, `PLAYER_TARGET_CHANGED` and `UNIT_FACTION` (once a
+  frame): a target you can attack is out of reach (`Range.out`) when one of them says false (`C_Spell.IsSpellInRange`)
+  and none true; when none can tell (all nil), beyond `Range.FALLBACK` (40) yards by `Scale.Yards` (the distance read
+  from the game's scaling), looked at every `Range.EVERY` (0.25) seconds while that is so (a ticker frame, hidden
+  otherwise). A change lights the borders anew (`Plate.Borders`: `"far"`, `Bar.FAR` red).
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going, a power line coming or going), once a frame (`Core.Later`). Shown while the game gives combo
@@ -210,6 +220,7 @@ fails, every plate is the game's own again.
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
 | `Marks.lua` | The raid marker, in the line |
 | `Resource.lua` | Your combo points on the power line of your target's bar |
+| `Range.lua` | Your target out of reach of all your attacks: its border red |
 | `Scale.lua` | Every plate's size and transparency by distance (read from the game's own scaling), springing in, fading out |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
 
@@ -254,3 +265,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   target and its fading off.
 - **2026-10-23:** the quest's icon and the raid marker outside the bar, left of it, the count inside; long names
   make the bar longer (Saneroki).
+- **2026-10-23:** your target's border red while none of your attacks reach it (Saneroki): your own spells' range
+  checks, 40 yards for a character without any.

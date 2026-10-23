@@ -100,6 +100,25 @@ C_BattleNet = { GetAccountInfoByGUID = function() return nil end }
 Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
 C_QuestLog = { UnitIsRelatedToActiveQuest = function(unit) return Unit(unit).quest ~= nil end }
 C_TooltipInfo = { GetUnit = function(unit) return { lines = Unit(unit).quest or {} } end }
+-- Your spellbook and the game's range checks: a strike, a shot that reaches with a bow, a heal, a passive one.
+Enum.SpellBookSpellBank = { Player = 0 }
+Enum.SpellBookItemType = { Spell = 1 }
+local book = { { spellID = 100, itemType = 1 }, { spellID = 101, itemType = 1 }, { spellID = 102, itemType = 1 },
+               { spellID = 103, itemType = 1, isPassive = true } }
+local harmful = { [100] = true, [101] = true, [103] = true }
+local reach, watching = {}, {} -- [spell] = in range of your target (true, false, nil); [spell] = the game tells us
+C_SpellBook = {
+    GetNumSpellBookSkillLines = function() return 1 end,
+    GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = #book } end,
+    GetSpellBookItemInfo = function(index) return book[index] end,
+}
+C_Spell = {
+    IsSpellHarmful = function(id) return harmful[id] == true end,
+    SpellHasRange = function() return true end,
+    IsSpellInRange = function(id) return reach[id] end,
+    EnableSpellRangeCheck = function(id, on) watching[id] = on end,
+}
+UnitExists = function(unit) return unit == "target" and plates.target ~= nil end
 -- Inspecting players: the questions asked, the item levels the server answers.
 local inspected = {}
 NotifyInspect = function(unit) inspected[#inspected + 1] = unit end
@@ -604,6 +623,49 @@ check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == 
     and W.cvars.nameplateNotSelectedAlpha == "0.5", "after it: the game's defaults")
 Core.Set(ns.name, "distance", true)
 check(W.cvars.nameplateMinScale == "0.25" and Scale.driver:IsShown(), "on again")
+
+-------------------------------------------------------------------------------
+--  Your target out of reach: its border red
+-------------------------------------------------------------------------------
+local Range = ns.Range
+check(watching[100] and watching[101] and not watching[102] and not watching[103],
+    "the game asked to tell about your attacks: the strike and the shot, not the heal or a passive one")
+units.target, plates.target = units.nameplate1, plates.nameplate1
+units.nameplate1.friend = nil
+reach[100], reach[101] = false, true
+W.Fire("PLAYER_TARGET_CHANGED")
+W.Wait(0)
+check(dress.border._vertex[1] == 1 and dress.border._vertex[2] == 1 and Range.out == false, "the shot reaches it: white")
+reach[101] = false
+W.Fire("SPELL_RANGE_CHECK_UPDATE", 101, false, true)
+W.Wait(0)
+check(Range.out == true and dress.border._vertex[1] == Bar.FAR[1] and dress.border._vertex[2] == Bar.FAR[2],
+    "none of your attacks reaches it: red")
+reach[100] = true
+W.Fire("SPELL_RANGE_CHECK_UPDATE", 100, true, true)
+W.Wait(0)
+check(Range.out == false and dress.border._vertex[2] == 1, "in reach of the strike again: white")
+-- None of your spells can tell: beyond 40 yards by the distance, looked at while that is so.
+reach[100], reach[101] = nil, nil
+plates.nameplate1:SetScale(1 - 0.75 * 45 / 60) -- 45 yards
+W.Fire("SPELL_RANGE_CHECK_UPDATE", 100, false, false)
+W.Wait(0)
+check(Range.out == true and Range.guessing and dress.border._vertex[2] == Bar.FAR[2], "none can tell: beyond 40 yards, red")
+plates.nameplate1:SetScale(1 - 0.75 * 30 / 60) -- 30 yards
+check(Range.ticker:IsShown(), "the distance looked at while it decides")
+Range.ticker:GetScript("OnUpdate")(Range.ticker, 1)
+check(Range.out == false and dress.border._vertex[2] == 1, "it comes within 40: white (the distance looked at)")
+plates.nameplate1:SetScale(1)
+reach[100] = false
+Core.Set(ns.name, "range", false)
+check(Range.out == false and dress.border._vertex[2] == 1, "the setting off: white")
+Core.Set(ns.name, "range", true)
+W.Wait(0)
+check(Range.out == true, "on again")
+units.target, plates.target = nil, nil
+W.Fire("PLAYER_TARGET_CHANGED")
+W.Wait(0)
+check(Range.out == false, "no target: nothing out of reach")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down

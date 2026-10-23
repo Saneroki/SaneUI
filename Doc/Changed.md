@@ -10,6 +10,15 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
   (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
 
+### Nameplates: your target's border red while out of reach of all your attacks (Saneroki, 2026-10-23)
+- **Range** (`Range.lua`, new in the TOC): your attacks are your spellbook's harmful spells with a range (melee
+  strikes, Charge, Shoot with a bow, bolts), made anew when your spells change; the game tells when each goes in or
+  out of reach (`C_Spell.EnableSpellRangeCheck`, `SPELL_RANGE_CHECK_UPDATE`). Out of reach when one says no and
+  none yes; where none can tell, beyond 40 yards by the distance read from the game's scaling (`Scale.Yards`).
+- **Border** (`Bar.Border` `"far"`, `Bar.FAR`): red on your target then, white otherwise; only targets you can attack.
+- **Setting:** *Out of reach: red border*.
+- Tests: 137 checks (which spells are watched, red and white by them, the 40-yard fallback, the setting).
+
 ### Nameplates: the quest's icon and the raid marker outside the bar; long names longer bars (Saneroki, 2026-10-23)
 - **Outside** (`Text.lua`, `Marks.lua`): the quest's sword or sack and the raid marker stand left of the bar, outside
   it (`Text.OUTSIDE` 4 from it and each other, the marker outermost); the quest's count stays first in the line. A

@@ -23,5 +23,7 @@ Marks.lua
 Resource.lua
 # Plates smaller far away: their own size at your feet, half at 40 yards, a quarter at 60
 Scale.lua
+# Your target out of reach of all your attacks: its border red
+Range.lua
 # Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it
 Plate.lua

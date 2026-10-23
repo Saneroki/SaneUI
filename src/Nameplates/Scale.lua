@@ -91,6 +91,15 @@ function Scale.Distance(scale, reach)
     return math.min(math.max(share, 0), 1) * reach
 end
 
+-- How far a unit with a plate is, in yards, while our curve is on (the game's line known); nil otherwise.
+function Scale.Yards(unit)
+    if not active or ns.off then return nil end
+    local plate = Core.Ask(C_NamePlate.GetNamePlateForUnit, unit)
+    local scale = type(plate) == "table" and Plain(plate:GetScale())
+    if type(scale) ~= "number" or scale <= 0 then return nil end
+    return Scale.Distance(scale, Reach())
+end
+
 -- The share of Scale.FULL a plate has at that distance.
 function Scale.Size(yards)
     local curve = Scale.CURVE
