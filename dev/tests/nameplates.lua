@@ -1,8 +1,9 @@
 -- Runs the Nameplates module against the stand-in client (wowstub.lua): our dress on the game's plates as the
 -- game shows and takes them back, the game's parts out of sight under it and back, a plate shown by name only,
--- the bar's health (hidden values passed on untouched), colours and border, the name, the rare's mark and the
--- raid marker, the aura containers and their room, the combo points on your target's bar, the settings, and
--- standing down. The look can only be judged in the game.
+-- the bar's health (hidden values passed on untouched), colours, the border by rank, the ring on your target and
+-- focus, the glow, the power line, the texts inside the bar (level, threat, name, health), the raid marker, the
+-- aura containers around the bar, the combo points on your target's bar, strangers' plates out of sight, the
+-- scaling by distance, the settings, and standing down. The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/nameplates.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -33,6 +34,14 @@ function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
 function methods:SetSpriteSheetCell(cell, rows, columns) self._cell = { cell, rows, columns } end
 function methods:SetTexture(file, wrapH, wrapV) self._texture, self._wrap = file, { wrapH, wrapV } end
 function methods:UnregisterAllEvents() self._events, self._units = {}, nil end
+function methods:SetFormattedText(form, ...)
+    for index = 1, select("#", ...) do
+        if type((select(index, ...))) == "table" then self._text = { form = form, ... } return end
+    end
+    self._text = form:format(...)
+end
+function methods:SetAlphaFromBoolean(value, yes, no) self._alpha = { from = value, yes = yes, no = no } end
+function methods:SetFrameLevel(level) self._level = level end
 
 -- A hidden value of the game's: a table here, never compared.
 issecretvalue = function(value) return type(value) == "table" and value.secret == true end
@@ -40,8 +49,16 @@ local function Secret() return { secret = true } end
 
 -- The game's own colours and constants the module takes.
 NamePlateConstants = { TARGET_BORDER_COLOR = { r = 1, g = 1, b = 1 }, FOCUS_TARGET_BORDER_COLOR = { r = 1, g = 0.49, b = 0.039 } }
+NORMAL_FONT_COLOR = { r = 1, g = 0.82, b = 0 }
 RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
-PowerBarColor = { COMBO_POINTS = { r = 1, g = 0.96, b = 0.41 } }
+PowerBarColor = { COMBO_POINTS = { r = 1, g = 0.96, b = 0.41 }, MANA = { r = 0, g = 0, b = 1 }, RAGE = { r = 1, g = 0, b = 0 } }
+UNIT_LEVEL_NON_ATTACKABLE = { r = 0.3, g = 0.3, b = 0.3 }
+GetRelativeDifficultyColor = function(mine, theirs)
+    return theirs - mine >= 5 and { r = 1, g = 0.1, b = 0.1 } or { r = 1, g = 1, b = 0 }
+end
+CurveConstants = { ScaleTo100 = {} }
+AbbreviateNumbers = function(value) return { abbreviated = value } end
+UnitHealthPercent = function(unit) return { percent = unit } end
 AnchorUtil = { FlowDirection = { Left = -1, Right = 1, Up = 1, Down = -1 } }
 Enum.PowerType = { Mana = 0, Energy = 3, ComboPoints = 4 }
 W.cvars.nameplateShowClassColor, W.cvars.nameplateShowFriendlyClassColor = "1", "1"
@@ -56,7 +73,26 @@ C_NamePlate = {
 UnitName = function(unit) return Unit(unit).name, Unit(unit).surname end
 UnitIsPlayer = function(unit) return Unit(unit).player or false end
 UnitIsFriend = function(_, unit) return Unit(unit).friend or false end
-UnitCanAttack = function(_, unit) return not Unit(unit).friend end
+UnitCanAttack = function(a, b)
+    if a == "player" then return not Unit(b).friend end
+    return not Unit(a).friend and Unit(a).player == true -- a player who may attack you
+end
+UnitReaction = function(unit) return Unit(unit).reaction or 2 end
+UnitIsBossMob = function(unit) return Unit(unit).boss or false end
+UnitLevel = function(unit) if unit == "player" then return 20 end return Unit(unit).level end
+UnitIsUnit = function(a, b) return b == "target" and plates[a] ~= nil and plates[a] == plates.target end
+UnitInParty = function(unit) return Unit(unit).party or false end
+UnitInRaid = function() return nil end
+UnitIsInMyGuild = function(unit) return Unit(unit).guild or false end
+UnitGUID = function(unit) return "Player-" .. unit end
+local friendOf
+C_FriendList = { IsFriend = function(guid) return guid == "Player-" .. (friendOf or "") end }
+C_BattleNet = { GetAccountInfoByGUID = function() return nil end }
+UnitDetailedThreatSituation = function(_, unit)
+    local threat = Unit(unit).threat
+    if not threat then return nil end
+    return threat[1], threat[2], threat[3]
+end
 UnitIsTapDenied = function(unit) return Unit(unit).tapped or false end
 UnitSelectionColor = function(unit) local c = Unit(unit).colour or { 1, 0, 0 } return c[1], c[2], c[3], 1 end
 UnitClassification = function(unit) return Unit(unit).classification or "normal" end
@@ -68,8 +104,15 @@ UnitHealth = function(unit) return Unit(unit).health end
 UnitHealthMax = function(unit) return Unit(unit).most end
 GetRaidTargetIndex = function(unit) return Unit(unit).raid end
 local power, combo = 3, 2
-UnitPowerType = function() return power end
-UnitPowerMax = function(_, kind) return kind == Enum.PowerType.ComboPoints and 5 or 100 end
+UnitPowerType = function(unit)
+    if unit == "player" then return power end
+    return 0, Unit(unit).powerToken
+end
+UnitPowerMax = function(unit, kind)
+    if unit == "player" then return kind == Enum.PowerType.ComboPoints and 5 or 100 end
+    return Unit(unit).powerMost or 0
+end
+UnitPower = function(unit) return Unit(unit).powerNow end
 GetComboPoints = function() return combo end
 
 -- The game's container of auras for addons: it calls back for each frame it makes, records what it is told.
@@ -99,11 +142,10 @@ local function GamePlate()
     local frame = W.NewWidget("Button", nil, plate)
     frame.HealthBarsContainer = W.NewWidget("Frame", nil, frame)
     frame.HealthBarsContainer.healthBar = W.NewWidget("StatusBar", nil, frame.HealthBarsContainer)
-    for _, key in ipairs({ "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame" }) do
+    for _, key in ipairs({ "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame", "LevelFrame" }) do
         frame[key] = W.NewWidget("Frame", nil, frame)
     end
     frame.name = W.NewWidget("FontString", nil, frame)
-    frame.PlayerLevelDiffFrame:Hide()
     plate.UnitFrame = frame
     return plate
 end
@@ -118,19 +160,24 @@ end
 -- Whether every part of the game's plate ours stands in for is at that alpha.
 local function Faded(plate, alpha)
     local frame = plate.UnitFrame
-    for _, key in ipairs({ "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame" }) do
+    for _, key in ipairs({ "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame",
+                           "LevelFrame", "PlayerLevelDiffFrame" }) do
         if frame[key]._alpha ~= alpha then return false end
     end
     return true
 end
 
+for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", nameplateMaxScaleDistance = "10",
+                             nameplateMinScaleDistance = "10" }) do
+    W.cvarInfo[name] = { default = default }
+end
 W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Nameplates", "SaneUI_Nameplates")
 W.Fire("ADDON_LOADED", "SaneUI_Nameplates")
 W.Fire("PLAYER_LOGIN")
 local Core = SaneUI.Core
-local Bar, Auras, Marks, Resource = ns.Bar, ns.Auras, ns.Marks, ns.Resource
+local Bar, Auras, Resource, Text, Scale = ns.Bar, ns.Auras, ns.Resource, ns.Text, ns.Scale
 
 check(Bar.FOCUS[2] == 0.49 and Bar.TARGET[1] == 1, "the border's colours for your target and focus are the game's")
 check(Core.Shape.CAP_LEFT:match("SaneUI\\Art\\cap%-left$") and Core.Shape.CAP_RIGHT:match("cap%-right$"), "Core names the caps' files")
@@ -139,22 +186,33 @@ check(Core.Shape.CAP_LEFT:match("SaneUI\\Art\\cap%-left$") and Core.Shape.CAP_RI
 --  A creature's plate
 -------------------------------------------------------------------------------
 local wolf = Secret()
-units.nameplate1 = { name = "Young Wolf", health = wolf, most = Secret(), colour = { 1, 0, 0 }, classification = "rare" }
+units.nameplate1 = { name = "Young Wolf", health = wolf, most = Secret(), reaction = 2, classification = "rare", level = 22,
+                     powerMost = 100, powerNow = 40, powerToken = "MANA" }
 plates.nameplate1 = GamePlate()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
 local dress = DressOf(plates.nameplate1)
 check(dress and dress:IsShown() and dress.unit == "nameplate1", "the plate the game shows gets our dress")
-check(Faded(plates.nameplate1, 0), "the game's bar row, name, auras and marks go out of sight under it")
-check(plates.nameplate1.UnitFrame.PlayerLevelDiffFrame._alpha == 1, "its level box stays as the game has it")
+check(Faded(plates.nameplate1, 0), "the game's bar row, name, auras, marks and level boxes go out of sight under it")
 check(dress._points[1][2] == plates.nameplate1.UnitFrame.HealthBarsContainer and dress._points[2][2] == plates.nameplate1.UnitFrame.HealthBarsContainer,
     "laid exactly over the game's health bar row")
 check(dress.health._value == wolf and dress.health._max == units.nameplate1.most, "hidden health goes to the bar as the game gives it")
-check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a foe in the game's colour for what it is to you")
-check(dress.name._text == "Young Wolf", "its name above the bar")
-check(dress.rare:IsShown() and dress.rare._atlas == Marks.ATLAS.rare, "a rare: the game's star")
-check(dress.rare._points[1][2] == dress and not dress.raid:IsShown(), "right of the bar; no raid marker")
+check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
+check(dress.name._text == "Young Wolf", "its name inside the bar")
+check(dress.name._points[1][1] == "CENTER", "in the bar's middle")
+check(dress.level._text == 22 and dress.level._color[2] == 1, "its level at the left, in the game's colour for it")
+check(dress.level._points[1][1] == "LEFT" and dress.threat._points[1][2] == dress.level, "the threat next to the level")
+check(dress.threat._text == "", "no threat while you are not on its list")
+check(type(dress.value._text) == "table" and dress.value._text.form == "%s | %d%%", "hidden health: the game's abbreviation and percent")
+check(dress.value._points[1][1] == "RIGHT", "health at the right")
+check(dress.border._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare, "a rare: a thin silver border")
+check(not dress.raid:IsShown(), "no raid marker")
+check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
+    "its mana along the bar's bottom, in the game's colour")
+check(dress.halo[1]._alpha == 0, "no glow")
+check(not dress.ring:IsShown(), "no ring: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
-    and #dress.background._masks == 2 and #dress.border._masks == 2, "the fill, its background and the border each cut at both ends")
+    and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
+    "the fill, its background, the power line and the border each cut at both ends")
 check(dress.caps[1]._texture == Core.Shape.CAP_LEFT and dress.caps[1]._wrap[1] == "CLAMPTOWHITE"
     and dress.caps[2]._texture == Core.Shape.CAP_RIGHT, "by Core's caps, white beyond them")
 
@@ -162,44 +220,103 @@ check(dress.caps[1]._texture == Core.Shape.CAP_LEFT and dress.caps[1]._wrap[1] =
 dress:SetSize(190, 20)
 dress:GetScript("OnSizeChanged")(dress)
 local edge = Core.Pixels(dress, 1)
-check(dress.outerCaps[1]._width == 20 * Bar.CAP and dress.caps[2]._width == (20 - 2 * edge) * Bar.CAP,
+check(dress.border.caps[1]._width == 20 * Bar.CAP and dress.caps[2]._width == (20 - 2 * edge) * Bar.CAP,
     "each cap as wide as a quarter of what it rounds")
 check(dress.health._points[1][4] == edge and dress.health._points[2][4] == -edge, "the bar a pixel inside its border")
+check(dress.power._height == (20 - 2 * edge) * Bar.LINE, "the power line a fifth of the bar's height")
+check(dress.name._width == 190 * Text.NAME, "the name's room")
+
+-- A boss: a thick golden border, the bar further in; a level too high to tell: the skull.
+units.nameplate1.boss, units.nameplate1.level = true, -1
+W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
+W.Fire("UNIT_LEVEL", "nameplate1")
+check(dress.rank == Bar.RANKS.boss and dress.border._vertex[2] == 0.82 and dress.health._points[1][4] == 3 * edge,
+    "a boss: thick and golden")
+check(dress.level._text == Text.SKULL, "the skull for its level")
+units.nameplate1.boss, units.nameplate1.classification = false, "elite"
+W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
+check(dress.rank == Bar.RANKS.elite and dress.border._vertex[2] == 0.82 and dress.health._points[1][4] == edge, "an elite: thin and golden")
+units.nameplate1.classification = "normal"
+W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
+check(dress.rank == Bar.PLAIN and dress.border._vertex[1] == 0, "a plain one: black")
 
 -- Health and name as they change.
-units.nameplate1.health = 40
+units.nameplate1.health, units.nameplate1.most = 1325000, 1325000
 W.Fire("UNIT_HEALTH", "nameplate1")
-check(dress.health._value == 40, "health followed")
+check(dress.health._value == 1325000 and dress.value._text == "1m325k | 100%", "health followed, short, and its percent")
+check(Text.Short(850) == "850" and Text.Short(12999) == "12k" and Text.Short(2000000) == "2m" and Text.Short(1132400) == "1m132k",
+    "under a thousand as it is, then thousands, then millions and thousands")
+check(Text.Percent(1, 1000) == 1 and Text.Percent(999, 1000) == 99 and Text.Percent(0, 10) == 0, "whole percent, 1 while any is left")
 units.nameplate1.name = Secret()
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
 check(dress.name._text == units.nameplate1.name, "a hidden name goes to the text as it is")
 units.nameplate1.tapped = true
 W.Fire("UNIT_FLAGS", "nameplate1")
-check(dress.health._barColor[1] == Bar.TAPPED[1], "tapped by others: grey, as the game's plates")
+check(dress.health._barColor[1] == Bar.TAPPED[1], "tapped by others: grey")
+units.nameplate1.tapped, units.nameplate1.reaction = false, 4
+W.Fire("UNIT_FLAGS", "nameplate1")
+check(dress.health._barColor[3] == Bar.CALM[3], "one that does not attack on sight: light yellow")
+units.nameplate1.reaction = 2
+W.Fire("UNIT_FLAGS", "nameplate1")
+
+-- Threat: grey, orange, red with the glow; a hidden answer goes to the glow as it is.
+units.nameplate1.threat = { false, 0, 40 }
+W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
+check(dress.threat._text == "40%" and dress.threat._color[1] == Text.THREAT[0][1] and dress.halo[1]._alpha == 0, "low threat: grey")
+units.nameplate1.threat = { false, 1, 95 }
+W.Fire("UNIT_THREAT_SITUATION_UPDATE", "player")
+W.Wait(0)
+check(dress.threat._text == "95%" and dress.threat._color[2] == Text.THREAT[1][2], "about to take its aggro: orange")
+units.nameplate1.threat = { true, 3, 100 }
+W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
+check(dress.threat._color[2] == Text.THREAT[3][2] and dress.halo[1]._alpha == 1 and dress.halo[3]._alpha == 1, "aggro: red, and the bar glows")
+local hidden = Secret()
+units.nameplate1.threat = { hidden, Secret(), Secret() }
+W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
+check(type(dress.halo[1]._alpha) == "table" and dress.halo[1]._alpha.from == hidden, "a hidden answer: the glow takes it as it is")
+units.nameplate1.threat = nil
+W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
+check(dress.threat._text == "" and dress.halo[1]._alpha == 0, "off its list: none")
+
+-- Power that changes, and a unit without any.
+units.nameplate1.powerNow = 70
+W.Fire("UNIT_POWER_UPDATE", "nameplate1", "MANA")
+check(dress.power._value == 70, "power followed")
+units.nameplate1.powerMost = 0
+W.Fire("UNIT_MAXPOWER", "nameplate1")
+check(not dress.power:IsShown(), "no power: no line")
+units.nameplate1.powerMost = 100
+W.Fire("UNIT_MAXPOWER", "nameplate1")
 
 -------------------------------------------------------------------------------
 --  The auras: the game's containers, set up once
 -------------------------------------------------------------------------------
-local own, foes = dress.own, dress.foes
-check(own and foes and own._groups.own.filter == Auras.OWN and foes._groups.foes.filter == Auras.FOES,
-    "your debuffs and a foe's buffs, each in a container of the game's with its filter")
-check(own._corner == "BOTTOMLEFT" and own._growth[1] == AnchorUtil.FlowDirection.Right
-    and foes._corner == "BOTTOMRIGHT" and foes._growth[1] == AnchorUtil.FlowDirection.Left, "debuffs from the left, buffs from the right")
-check(own._points[1][2] == dress.name and own._points[1][3] == "TOPLEFT" and foes._points[1][3] == "TOPRIGHT", "above the name")
-check(own._unit == "nameplate1" and foes._unit == "nameplate1" and own:IsShown() and foes:IsShown(), "set to the plate's unit")
+local own, foes, control = dress.own, dress.foes, dress.control
+check(own and foes and control and own._groups.own.filter == Auras.OWN and foes._groups.foes.filter == Auras.FOES
+    and control._groups.control.filter == Auras.CC, "your debuffs, a foe's buffs and crowd control, each in a container of the game's")
+check(Auras.OWN:find("!CROWD_CONTROL", 1, true), "your crowd control shows once, with the others'")
+check(own._points[1][1] == "BOTTOMLEFT" and own._points[1][2] == dress and own._points[1][3] == "TOPLEFT" and own._points[1][5] == 0,
+    "your debuffs right above the bar, no gap")
+check(foes._points[1][1] == "BOTTOMRIGHT" and foes._points[1][3] == "BOTTOMLEFT" and foes._growth[1] == AnchorUtil.FlowDirection.Left,
+    "buffs left of the bar, growing away from it")
+check(control._points[1][3] == "BOTTOMRIGHT" and control._points[1][2] == dress and control._growth[1] == AnchorUtil.FlowDirection.Right,
+    "crowd control right of the bar")
+check(own._unit == "nameplate1" and foes._unit == "nameplate1" and control._unit == "nameplate1", "set to the plate's unit")
 local icon = own._groups.own.frames[1]
 check(icon._icon and icon._cooldown and icon._count and icon._width == Auras.SIZE, "each frame the container makes gets its icon, time and count once")
-check(Auras.Slots(190) == 8 and own._groups.own.most == 5 and foes._groups.foes.most == Auras.BUFFS,
-    "eight over a bar 190 wide: three for buffs, five for your debuffs")
+check(Auras.Slots(190) == 8 and own._groups.own.most == 8 and foes._groups.foes.most == Auras.BUFFS, "eight debuffs over a bar 190 wide, three buffs")
 Core.Set(ns.name, "buffs", false)
-check(not foes:IsShown() and foes._unit == "none" and own._groups.own.most == 8, "buffs off: your debuffs have the whole row")
+check(not foes:IsShown() and foes._unit == "none", "buffs off")
 Core.Set(ns.name, "buffs", true)
 Core.Set(ns.name, "debuffs", false)
 check(not own:IsShown() and foes:IsShown(), "your debuffs off")
 Core.Set(ns.name, "debuffs", true)
+Core.Set(ns.name, "control", false)
+check(not control:IsShown(), "crowd control off")
+Core.Set(ns.name, "control", true)
 
 -------------------------------------------------------------------------------
---  A friend shown by name only, a player, the raid marker, the border
+--  A friend shown by name only, players, the raid marker, the ring
 -------------------------------------------------------------------------------
 local bar = plates.nameplate1.UnitFrame.HealthBarsContainer.healthBar
 bar:Hide() -- the game shows the plate by name only now
@@ -207,34 +324,61 @@ check(not dress:IsShown() and Faded(plates.nameplate1, 1), "the game's health ba
 bar:Show()
 check(dress:IsShown() and Faded(plates.nameplate1, 0), "back")
 
-units.nameplate2 = { name = "Bran", surname = "Stoneheart", player = true, class = "WARRIOR", friend = true, health = 10, most = 10, raid = 8 }
+units.nameplate2 = { name = "Bran", surname = "Stoneheart", player = true, class = "WARRIOR", friend = true, health = 10,
+                     most = 10, raid = 8, party = true, level = 20 }
 plates.nameplate2 = GamePlate()
-plates.nameplate2.UnitFrame.PlayerLevelDiffFrame:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 local friend = DressOf(plates.nameplate2)
+check(friend:IsShown() and plates.nameplate2.UnitFrame._alpha == 1, "a player in your group: shown")
 check(friend.health._barColor[1] == 0.78 and friend.name._text == "Bran Stoneheart", "a player: the class colour, first name and surname")
+check(friend.level._color[1] == 0.3, "the level of someone you cannot attack in the game's colour for that")
 check(not friend.foes:IsShown() and friend.own:IsShown(), "no buffs on someone you cannot attack")
 check(friend.raid:IsShown() and friend.raid._cell[1] == 8 and friend.raid._cell[2] == 4 and friend.raid._cell[3] == 4,
     "a raid marker: the game's icon at its index")
-check(friend.raid._points[1][2] == plates.nameplate2.UnitFrame.PlayerLevelDiffFrame, "right of the game's level box where there is one")
+check(friend.raid._points[1][2] == friend and friend.control._points[1][2] == friend.raid, "right of the bar, the crowd control after it")
 units.nameplate2.raid = Secret()
 W.Fire("RAID_TARGET_UPDATE")
 check(friend.raid:IsShown() and friend.raid._cell[1] == units.nameplate2.raid, "an index hidden from addons goes to the icon as it is")
 units.nameplate2.raid = nil
 W.Fire("RAID_TARGET_UPDATE")
-check(not friend.raid:IsShown(), "no marker: none")
-units.nameplate2.raid, units.nameplate2.friend = 8, false
-W.Fire("RAID_TARGET_UPDATE")
-check(not friend.raid:IsShown(), "a player you could fight shows none, as on the game's plates")
-units.nameplate2.friend = true
+check(not friend.raid:IsShown() and friend.control._points[1][2] == friend, "no marker: none, the crowd control by the bar")
 
+-- A stranger: out of sight, unless a friend, guild member or your target; a player you can fight: shown, glowing.
+units.nameplate2.party = false
+W.Fire("GROUP_ROSTER_UPDATE")
+W.Wait(0)
+check(not friend:IsShown() and plates.nameplate2.UnitFrame._alpha == 0, "a player you do not know: no plate at all")
+units.nameplate2.guild = true
+W.Fire("GUILD_ROSTER_UPDATE")
+W.Wait(0)
+check(friend:IsShown() and plates.nameplate2.UnitFrame._alpha == 1, "in your guild: shown")
+units.nameplate2.guild = false
+friendOf = "nameplate2"
+W.Fire("FRIENDLIST_UPDATE")
+W.Wait(0)
+check(friend:IsShown(), "on your friends list: shown")
+friendOf = nil
+W.Fire("FRIENDLIST_UPDATE")
+W.Wait(0)
+check(not friend:IsShown(), "not any more")
+Core.Set(ns.name, "players", false)
+check(friend:IsShown(), "the setting off: every player's plate")
+Core.Set(ns.name, "players", true)
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
-check(friend.border._vertex[1] == 1 and friend.border._vertex[2] == 1 and dress.border._vertex[1] == Bar.BORDER[1],
-    "your target's border lit, the others' dark")
+check(friend:IsShown() and friend.ring:IsShown() and friend.ring._vertex[1] == 1 and not dress.ring:IsShown(),
+    "your target: shown, its ring lit, the others' not")
 units.focus, plates.focus = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_FOCUS_CHANGED")
-check(dress.border._vertex[2] == 0.49, "your focus's in the game's colour for it")
+check(dress.ring:IsShown() and dress.ring._vertex[2] == 0.49, "your focus's ring in the game's colour for it")
+units.nameplate2.friend, units.nameplate2.raid = false, 8
+W.Fire("UNIT_FACTION", "nameplate2")
+check(friend:IsShown() and friend.halo[1]._alpha == 1, "a player who may attack you: shown, glowing")
+W.Fire("RAID_TARGET_UPDATE")
+check(not friend.raid:IsShown(), "and no raid marker, as on the game's plates")
+units.nameplate2.friend, units.nameplate2.party = true, true
+W.Fire("UNIT_FACTION", "nameplate2")
+check(friend.halo[1]._alpha == 0, "a friend again: no glow")
 
 -------------------------------------------------------------------------------
 --  Combo points in your target's bar
@@ -244,11 +388,19 @@ W.Fire("PLAYER_TARGET_CHANGED")
 W.Wait(0)
 local strip = dress.strip
 check(strip and strip:IsShown() and strip._value == 2 and strip._min == 0 and strip._max == 5, "on your target's bar: two of five")
-check(strip._points[1][2] == dress.health and strip._height == (20 - 2 * edge) * Resource.SHARE, "along the bar's bottom, a third of its height")
+check(strip._points[1][2] == dress.power and strip._points[1][3] == "TOPLEFT" and strip._height == dress.line,
+    "right on top of the power line, as high as it")
 check(#strip:GetStatusBarTexture()._masks == 2 and strip:GetStatusBarTexture()._masks[1] == dress.caps[1], "its corners the bar's own")
 local lines = 0
 for _, line in ipairs(strip.lines) do if line:IsShown() then lines = lines + 1 end end
 check(lines == 4, "a line between each two of the five")
+units.nameplate1.powerMost = 0
+W.Fire("UNIT_MAXPOWER", "nameplate1")
+W.Wait(0)
+check(strip._points[1][2] == dress.health and strip._points[1][3] == "BOTTOMLEFT", "no power line: along the bar's bottom")
+units.nameplate1.powerMost = 100
+W.Fire("UNIT_MAXPOWER", "nameplate1")
+W.Wait(0)
 combo = Secret()
 W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
 W.Wait(0)
@@ -273,12 +425,26 @@ Core.Set(ns.name, "resource", true)
 W.Wait(0)
 
 -------------------------------------------------------------------------------
+--  Smaller far away: the game's CVars, its defaults back when off
+-------------------------------------------------------------------------------
+check(W.cvars.nameplateMinScale == Scale.CVARS.nameplateMinScale and W.cvars.nameplateMinScaleDistance == "5",
+    "the game's scaling by distance set to ours")
+W.combat = true
+Core.Set(ns.name, "distance", false)
+check(W.cvars.nameplateMinScale == Scale.CVARS.nameplateMinScale, "not in a fight")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == "10", "after it: the game's defaults")
+Core.Set(ns.name, "distance", true)
+check(W.cvars.nameplateMinScale == Scale.CVARS.nameplateMinScale, "on again")
+
+-------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
 -------------------------------------------------------------------------------
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 check(not friend:IsShown() and Faded(plates.nameplate2, 1) and friend.unit == nil and next(friend._events) == nil,
     "the plate taken back: ours off, the game's parts in sight again, nothing listened to")
-check(friend.own._unit == "none", "its containers let go of the unit")
+check(friend.own._unit == "none" and friend.name._text == "" and friend.value._text == "", "its containers and texts let go of the unit")
 check(friend.health._max == 1 and friend.health._value == 1, "its bar as made again: nothing of that unit's health is left on it")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate3") -- a plate the game keeps from addons: none for us
 check(units.nameplate3 == nil and plates.nameplate3 == nil, "a plate the game does not give: nothing made")
@@ -291,11 +457,13 @@ check(DressOf(plates.nameplate2) == friend and friend:IsShown() and friend.name.
 -- game's parts come back first all the same, on every plate, and on every unit frame of the game's ours lay over.
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate4")
 plates.nameplate2.UnitFrame.name:SetAlpha(0) -- a unit frame of the game's pool, left out of sight
+plates.nameplate2.UnitFrame:SetAlpha(0)
 dress.own.SetUnit = function() error("the game's container changed") end
 ns.StandDown("a test")
-check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1),
-    "standing down, every plate is the game's own again, though a step of ours failed")
+check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
+    and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
+check(W.cvars.nameplateMinScale == "1", "the game's scaling by distance its own again")
 bar:Hide()
 bar:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")

@@ -2,22 +2,25 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Auras
---  Above a plate's name, one row: from its left the debuffs you put on the
---  unit, from its right up to three buffs of a unit you can attack, as the game
---  picks buffs for its own plates (the filter its plates use).
+--  Around a plate's bar, without a gap:
+--    above   the debuffs and damage over time you put on the unit, from the
+--            bar's left, as many as fit over its width
+--    left    up to three of its buffs, on a unit you can attack, as the game
+--            picks buffs for its own plates, growing away from the bar
+--    right   the crowd control on it (stuns, fears, roots, by anyone), right
+--            of the raid marker where there is one, growing away from the bar
+--  Your crowd control shows on the right only, not twice.
 --
---  Both are the game's own aura containers (CustomAuraContainerTemplate,
---  Blizzard_AuraContainer), one per side and plate, made with the plate's dress
---  and kept with it. The game fills them: which auras, their icons, times and
---  stacks, in a fight too, where aura data is hidden from addons; our code only
---  says the filter, how many, where they start and which way they grow, and
---  draws each icon once, when the container makes its frame (Dress): the icon
---  cut by the mask of the game's own nameplate auras, their border and their
---  swipe, the stack count above the swipe. Nothing runs per aura change.
---
---  The row holds as many icons as fit over the bar's width; the buffs keep
---  their three places on the right, your debuffs have the rest. A plate the
---  game reuses for another unit gets its containers set to that unit.
+--  All are the game's own aura containers (CustomAuraContainerTemplate,
+--  Blizzard_AuraContainer), one per place and plate, made with the plate's
+--  dress and kept with it. The game fills them: which auras, their icons,
+--  times and stacks, in a fight too, where aura data is hidden from addons;
+--  our code only says the filter, how many, where they start and which way
+--  they grow, and draws each icon once, when the container makes its frame
+--  (Dress): the icon cut by the mask of the game's own nameplate auras, their
+--  border and their swipe, the stack count above the swipe. Nothing runs per
+--  aura change. A plate the game reuses for another unit gets its containers
+--  set to that unit.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -25,10 +28,12 @@ local Auras = {}
 ns.Auras = Auras
 
 Auras.SIZE = 20 -- an icon, square
-Auras.GAP = 2   -- between icons, and between the row and the name
+Auras.GAP = 2   -- between icons
 Auras.BUFFS = 3 -- a foe's buffs at most
-Auras.OWN = "HARMFUL|PLAYER"                      -- the debuffs you put on it
+Auras.CONTROL = 2 -- crowd control at most
+Auras.OWN = "HARMFUL|PLAYER|!CROWD_CONTROL"       -- the debuffs you put on it, but your crowd control
 Auras.FOES = "HELPFUL|INCLUDE_NAME_PLATE_ONLY"    -- a foe's buffs, as the game's own plates pick them
+Auras.CC = "HARMFUL|CROWD_CONTROL"                -- crowd control on it, by anyone
 -- The game's own nameplate auras' look: the icon's mask, its border (reaching past a 25-unit icon by these
 -- shares), the swipe of the time gone.
 Auras.MASK = "UI-HUD-CoolDownManager-Mask"
@@ -84,7 +89,6 @@ local function Container(dress, corner, growth, key, filter, most)
     container:SetFlowLayoutGrowthDirection(flow[growth], flow.Up)
     container:AddAuraGroup(key, filter, { maxFrameCount = most, initializeFrame = Dressed,
                                           layout = { elementSpacing = Auras.GAP } })
-    container:SetPoint(corner, dress.name, "TOP" .. (corner:match("LEFT") or "RIGHT"), 0, Auras.GAP)
     container.key, container.most = key, most
     return container
 end
@@ -92,17 +96,29 @@ end
 function Auras.Make(dress)
     dress.own = Container(dress, "BOTTOMLEFT", "Right", "own", Auras.OWN, 0)
     dress.foes = Container(dress, "BOTTOMRIGHT", "Left", "foes", Auras.FOES, Auras.BUFFS)
+    dress.control = Container(dress, "BOTTOMLEFT", "Right", "control", Auras.CC, Auras.CONTROL)
+    if dress.own then dress.own:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", 0, 0) end
+    if dress.foes then dress.foes:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -Auras.GAP, 0) end
+    Auras.Place(dress)
+end
+
+-- The crowd control right of the raid marker while it shows, else right of the bar (Marks.lua calls it).
+function Auras.Place(dress)
+    local control = dress.control
+    if not control then return end
+    local raid = dress.raid
+    control:ClearAllPoints()
+    if raid and raid:IsShown() then
+        control:SetPoint("BOTTOMLEFT", raid, "BOTTOMRIGHT", Auras.GAP, 0)
+    else
+        control:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", Auras.GAP, 0)
+    end
 end
 
 -- How many icons fit side by side over a bar that wide.
 function Auras.Slots(width)
     width = Plain(width) or 0
     return math.max(math.floor((width + Auras.GAP) / (Auras.SIZE + Auras.GAP)), 0)
-end
-
--- How many of your debuffs: the places the buffs leave (all of them where the buffs are switched off).
-function Auras.Room(width, buffs)
-    return math.max(Auras.Slots(width) - (buffs and Auras.BUFFS or 0), 0)
 end
 
 local function Most(container, most)
@@ -122,7 +138,8 @@ end
 function Auras.Set(dress, unit)
     local options = ns.options or {}
     local foe = unit and Plain(UnitCanAttack("player", unit)) ~= false
-    Most(dress.own, Auras.Room(dress:GetWidth(), options.buffs ~= false))
+    Most(dress.own, Auras.Slots(dress:GetWidth()))
     Shown(dress.own, unit, unit ~= nil and options.debuffs ~= false)
     Shown(dress.foes, unit, unit ~= nil and foe and options.buffs ~= false)
+    Shown(dress.control, unit, unit ~= nil and options.control ~= false)
 end

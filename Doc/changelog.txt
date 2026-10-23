@@ -6,6 +6,15 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Nameplates: everything on one line inside the bar: the level and
+  your threat at the left (grey, orange when you are about to pull,
+  red with a red glow around the plate when you have aggro), the name
+  in the middle, health and its percent at the right. The unit's mana,
+  rage or energy as a thin line along the bottom, your combo points on
+  it. A gold border on bosses and elites, silver on rares. Your
+  debuffs right on top of the bar, a foe's buffs left, crowd control
+  right. Plates of players you do not know are hidden, and plates are
+  smaller the farther away they are.
 - Navigation: a click on the map pings the place to your party or
   raid, as a click on the game's minimap does, and their pings show
   on the map where they are; a double click puts the map pin there.

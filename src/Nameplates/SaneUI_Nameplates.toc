@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Nameplates
-## Notes: The game's nameplates in Sane UI's dress: a health bar with round corners, in your target's your combo points along its bottom, the name above it, your own debuffs and up to three of a foe's buffs, a mark on rares and the raid marker. Everything else of the game's plates stays as it is.
+## Notes: The game's nameplates in Sane UI's dress: a round-cornered health bar with level, threat, name and health inside it, the unit's power and your combo points along its bottom, a border by rank, a red glow on aggro, your debuffs above it, a foe's buffs left and crowd control right of it. Plates of players you do not know are hidden; plates shrink far away.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -11,13 +11,17 @@
 
 # The module's own table, its words and settings. First: the other files will add to that table.
 Nameplates.lua
-# The health bar: round at both ends, in the game's colours, its border lit on your target and focus
+# The health bar: round at both ends, its border by rank, a ring on your target and focus, the power line, the glow
 Bar.lua
-# Your debuffs and a foe's buffs, in the game's own aura containers
+# Inside the bar: level and threat, the name, health
+Text.lua
+# Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers
 Auras.lua
-# The mark on rares and the raid marker, right of the bar
+# The raid marker, right of the bar
 Marks.lua
-# Your combo points along the bottom of your target's bar
+# Your combo points on the power line of your target's bar
 Resource.lua
+# Plates smaller far away
+Scale.lua
 # Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it
 Plate.lua

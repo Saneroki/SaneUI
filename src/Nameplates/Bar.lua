@@ -4,20 +4,30 @@ local _, ns = ...
 --  Sane UI - Nameplates - Bar
 --  The health bar of our dress on a plate: a rectangle round at its corners,
 --  as large as the game's own health bar under it (the game's nameplate size
---  and style), with a thin border around it.
+--  and style), framed by a border that tells the unit's rank, with the unit's
+--  power as a thin line along its bottom, inside it.
 --
---  How it is round: the bar's fill, its background and a strip inside it are
---  masked at both ends by Core's caps (Shape.CAP_LEFT, CAP_RIGHT), a quarter
---  of the bar's height wide, wrapped with white beyond them, so the fill keeps
---  its round left corners however short it is and meets the right ones when
---  full. The border is a plate one pixel larger, cut by caps of its own size.
+--  How it is round: the bar's fill, its background and the lines inside it
+--  are masked at both ends by Core's caps (Shape.CAP_LEFT, CAP_RIGHT), a
+--  quarter of the bar's height wide, wrapped with white beyond them, so the
+--  fill keeps its round left corners however short it is and meets the right
+--  ones when full. Every plate around it (the border, the ring of your target
+--  or focus, the glow) is cut by caps of its own size.
 --
---  Health goes to the bar as the game gives it (a secret value in a fight:
---  the bar takes it as it is, nothing is computed with it). The colours are
---  the game's: a player's class colour where the game's nameplate settings
---  colour by class, grey for a creature tapped by others, else the game's
---  colour for what the unit is to you (UnitSelectionColor). The border is lit
---  on your target and your focus, in the game's colours for them.
+--  From the inside out:
+--    the bar      health as the game gives it (a secret value in a fight: the
+--                 bar takes it as it is, nothing is computed with it); a
+--                 player's class colour, grey when tapped by others, a light
+--                 yellow for a creature that does not attack on sight, red
+--                 for one that does, the game's colour for friends
+--    the power    the unit's mana, rage or energy, a thin line along the bar's
+--                 bottom, in the game's colour for that power
+--    the border   black; gold and thick on a boss, gold and thin on an elite,
+--                 silver and thin on a rare
+--    the ring     a pixel outside the border, on your target and your focus,
+--                 in the game's colours for them
+--    the glow     red, around it all: you have the unit's aggro (Text.lua
+--                 says), or it is a player who may attack you
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -27,19 +37,36 @@ ns.Bar = Bar
 Bar.FILL = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" -- the game's raid frames' health fill
 Bar.WHITE = "Interface\\Buttons\\WHITE8X8"
 Bar.CAP = 1 / 4 -- a cap's width, as a share of the height of what it rounds
+Bar.LINE = 1 / 5 -- the power line's height (and the combo points'), a share of the bar's
 Bar.BACKGROUND = { 0.07, 0.07, 0.09, 0.85 } -- where health is missing
 Bar.BORDER = { 0, 0, 0, 0.9 }
-Bar.TAPPED = { 0.9, 0.9, 0.9 } -- as the game's own plates colour a creature tapped by others
+Bar.TAPPED = { 0.5, 0.5, 0.5 }      -- tapped by others
+Bar.CALM = { 1, 0.93, 0.55 }        -- a creature that does not attack on sight (neutral to you)
+Bar.HOSTILE = { 1, 0, 0 }           -- one that does
+Bar.GLOW = { 1, 0.08, 0.05 }
+-- The glow's layers: how far each reaches beyond the ring, in screen pixels, and how strong it is.
+Bar.HALO = { { 2, 0.5 }, { 4, 0.28 }, { 7, 0.12 } }
 
--- The game's colours for the border of your target's plate and your focus's; ours where it has none.
-local function GameColour(name, r, g, b)
-    local constants = rawget(_G, "NamePlateConstants")
-    local colour = type(constants) == "table" and constants[name]
+-- A colour of the game's as { r, g, b, 1 }; ours where it has none.
+local function GameColour(colour, r, g, b)
     if type(colour) == "table" and type(colour.r) == "number" then return { colour.r, colour.g, colour.b, 1 } end
     return { r, g, b, 1 }
 end
-Bar.TARGET = GameColour("TARGET_BORDER_COLOR", 1, 1, 1)
-Bar.FOCUS = GameColour("FOCUS_TARGET_BORDER_COLOR", 1, 0.49, 0.04)
+local constants = rawget(_G, "NamePlateConstants")
+constants = type(constants) == "table" and constants or {}
+Bar.TARGET = GameColour(constants.TARGET_BORDER_COLOR, 1, 1, 1)
+Bar.FOCUS = GameColour(constants.FOCUS_TARGET_BORDER_COLOR, 1, 0.49, 0.04)
+local GOLD = GameColour(rawget(_G, "NORMAL_FONT_COLOR"), 1, 0.82, 0)
+local SILVER = { 0.8, 0.82, 0.88, 1 }
+
+-- A unit's rank, by its border: its colour and how many screen pixels wide.
+Bar.RANKS = {
+    boss = { colour = GOLD, width = 3 },
+    elite = { colour = GOLD, width = 1 },
+    rare = { colour = SILVER, width = 1 },
+}
+Bar.PLAIN = { colour = Bar.BORDER, width = 1 }
+local RANK_OF = { worldboss = "boss", elite = "elite", rare = "rare", rareelite = "rare" }
 
 -- Two caps on host, at the left and right ends of rect, over each of the textures. They are sized by Fit.
 local function Caps(host, rect, ...)
@@ -63,11 +90,35 @@ function Bar.SizeCaps(caps, height)
     for _, mask in ipairs(caps) do mask:SetWidth(width) end
 end
 
--- The bar's pieces on the dress: the border behind, the status bar inside it, its background and fill.
+-- A plate of one colour on the dress, behind the bar, cut round by caps of its own.
+local function Plate(dress, sublevel)
+    local texture = dress:CreateTexture(nil, "BACKGROUND", nil, sublevel)
+    texture:SetTexture(Bar.WHITE)
+    texture.caps = Caps(dress, texture, texture)
+    return texture
+end
+
+-- A plate reaching that far beyond the dress on every side, its caps sized for it.
+local function Around(texture, dress, reach, height)
+    texture:ClearAllPoints()
+    texture:SetPoint("TOPLEFT", dress, "TOPLEFT", -reach, reach)
+    texture:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", reach, -reach)
+    Bar.SizeCaps(texture.caps, height + 2 * reach)
+end
+
+-- The bar's pieces on the dress: the glow, the ring and the border behind, the status bar inside them with its
+-- background, fill and power line.
 function Bar.Make(dress)
-    local border = dress:CreateTexture(nil, "BACKGROUND", nil, -8)
-    border:SetTexture(Bar.WHITE)
-    border:SetAllPoints(dress)
+    dress.halo = {}
+    for index, layer in ipairs(Bar.HALO) do
+        local glow = Plate(dress, -9 + index)
+        glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], layer[2])
+        glow:SetAlpha(0)
+        dress.halo[index] = glow
+    end
+    dress.ring = Plate(dress, -4)
+    dress.ring:Hide()
+    dress.border = Plate(dress, -3)
     local health = CreateFrame("StatusBar", nil, dress)
     health:SetStatusBarTexture(Bar.FILL)
     health:SetMinMaxValues(0, 1)
@@ -76,54 +127,114 @@ function Bar.Make(dress)
     background:SetTexture(Bar.WHITE)
     background:SetVertexColor(unpack(Bar.BACKGROUND))
     background:SetAllPoints(health)
-    dress.border, dress.health, dress.background = border, health, background
-    dress.outerCaps = Caps(dress, dress, border)
+    dress.health, dress.background = health, background
     dress.caps = Caps(health, health, health:GetStatusBarTexture(), background)
+    -- The unit's power: a line along the bar's bottom, inside it, its corners the bar's own.
+    local power = CreateFrame("StatusBar", nil, health)
+    power:SetPoint("BOTTOMLEFT", health, "BOTTOMLEFT")
+    power:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT")
+    power:SetStatusBarTexture(Bar.FILL)
+    power:SetMinMaxValues(0, 1)
+    power:SetValue(0)
+    local empty = power:CreateTexture(nil, "BACKGROUND")
+    empty:SetTexture(Bar.WHITE)
+    empty:SetVertexColor(0, 0, 0, 0.6)
+    empty:SetAllPoints(power)
+    for _, mask in ipairs(dress.caps) do
+        power:GetStatusBarTexture():AddMaskTexture(mask)
+        empty:AddMaskTexture(mask)
+    end
+    power:Hide()
+    dress.power = power
+    dress.rank = Bar.PLAIN
     Bar.Border(dress, nil)
 end
 
--- Laid out for the dress's size: the bar a pixel inside its border, the caps a quarter of each height.
+-- Laid out for the dress's size and the unit's rank: the bar inside its border, the ring a pixel outside it,
+-- the glow beyond, the power line a fifth of the bar's height, every cap a quarter of what it rounds.
 function Bar.Fit(dress)
     local height = Plain(dress:GetHeight()) or 0
-    local edge = Core.Pixels(dress, 1)
+    local pixel = Core.Pixels(dress, 1)
+    local edge = pixel * dress.rank.width
     dress.edge = edge
     local health = dress.health
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", dress, "TOPLEFT", edge, -edge)
     health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -edge, edge)
-    Bar.SizeCaps(dress.outerCaps, height)
-    Bar.SizeCaps(dress.caps, height - 2 * edge)
+    Around(dress.border, dress, 0, height)
+    Around(dress.ring, dress, pixel, height)
+    for index, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (1 + Bar.HALO[index][1]), height) end
+    local inner = height - 2 * edge
+    Bar.SizeCaps(dress.caps, inner)
+    dress.line = math.max(inner * Bar.LINE, pixel * 2)
+    dress.power:SetHeight(dress.line)
 end
 
--- Whether the game's nameplate settings colour this player's bar by class (for friends, for foes).
-local function ByClass(unit)
-    if Plain(UnitIsFriend("player", unit)) then return GetCVarBool("nameplateShowFriendlyClassColor") end
-    return GetCVarBool("nameplateShowClassColor")
+-- A unit's rank as its border shows it ("boss", "elite", "rare"), or nil.
+function Bar.Rank(unit)
+    if Core.Ask(rawget(_G, "UnitIsBossMob"), unit) then return "boss" end
+    local classification = Plain(UnitClassification(unit))
+    return type(classification) == "string" and RANK_OF[classification] or nil
 end
 
--- The bar's colour for a unit, as the game's own plates choose it: r, g, b.
+-- The bar's colour for a unit: r, g, b.
 function Bar.Colour(unit)
-    if Plain(UnitIsPlayer(unit)) and ByClass(unit) then
+    if Plain(UnitIsPlayer(unit)) then
         local _, class = UnitClass(unit)
         class = Plain(class)
         local colours = rawget(_G, "RAID_CLASS_COLORS")
         local colour = type(class) == "string" and colours and colours[class]
         if colour then return colour.r, colour.g, colour.b end
+    elseif Plain(UnitIsTapDenied(unit)) then
+        return Bar.TAPPED[1], Bar.TAPPED[2], Bar.TAPPED[3]
+    else
+        local reaction = Core.Ask(UnitReaction, unit, "player")
+        if reaction == 4 then return Bar.CALM[1], Bar.CALM[2], Bar.CALM[3] end
+        if reaction and reaction < 4 then return Bar.HOSTILE[1], Bar.HOSTILE[2], Bar.HOSTILE[3] end
     end
-    if Plain(UnitIsTapDenied(unit)) then return Bar.TAPPED[1], Bar.TAPPED[2], Bar.TAPPED[3] end
     local r, g, b = Core.Ask(UnitSelectionColor, unit, true)
     if r and g and b then return r, g, b end
-    return 1, 0, 0
+    return Bar.HOSTILE[1], Bar.HOSTILE[2], Bar.HOSTILE[3]
 end
 
+-- A player who may attack you: the glow, as when you have aggro.
+function Bar.Danger(unit)
+    return Plain(UnitIsPlayer(unit)) == true and Core.Ask(UnitCanAttack, unit, "player") == true
+end
+
+-- The bar's colour, the border's rank and the glow of a player who may attack you, as the unit is now.
 function Bar.Paint(dress, unit)
     dress.health:SetStatusBarColor(Bar.Colour(unit))
+    local rank = Bar.RANKS[Bar.Rank(unit)] or Bar.PLAIN
+    if rank ~= dress.rank then
+        dress.rank = rank
+        Bar.Fit(dress)
+    end
+    local colour = rank.colour
+    dress.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+    dress.danger = Bar.Danger(unit)
+    Bar.Glow(dress, dress.aggro)
+end
+
+-- The glow on while you have the unit's aggro (true, false, or the game's answer hidden: the textures take it as it
+-- is) or while the unit is a player who may attack you.
+function Bar.Glow(dress, aggro)
+    dress.aggro = aggro
+    for _, glow in ipairs(dress.halo) do
+        if dress.danger or aggro == true then
+            glow:SetAlpha(1)
+        elseif Core.Secret(aggro) then
+            if not pcall(glow.SetAlphaFromBoolean, glow, aggro, 1, 0) then glow:SetAlpha(0) end
+        else
+            glow:SetAlpha(0)
+        end
+    end
 end
 
 -- A game function's first answer as it is, hidden (a secret value) or not; nil where it failed (a unit
 -- the game keeps from addons in some places). Tested with type() only: a secret is never compared.
-local function Raw(fn, unit)
-    local ok, value = pcall(fn, unit)
+local function Raw(fn, ...)
+    local ok, value = pcall(fn, ...)
     if ok then return value end
     return nil
 end
@@ -138,15 +249,48 @@ function Bar.Health(dress, unit)
     health:SetValue(now)
 end
 
--- The bar as made, full: a plate the game hands out again never shows the last unit's health, even where the
--- next unit's cannot be read.
+-- The game's colour for a power, by its token ("MANA", "RAGE", "ENERGY"); ours where it has none.
+local function PowerColour(token)
+    local colours = rawget(_G, "PowerBarColor")
+    local colour = type(colours) == "table" and type(token) == "string" and colours[token]
+    if type(colour) == "table" and type(colour.r) == "number" then return colour.r, colour.g, colour.b end
+    return 0, 0.55, 1
+end
+
+-- The unit's power along the bar's bottom, as the game gives it; none where the unit has none (a most of 0, as
+-- far as can be told: a hidden most shows the line) or the setting is off. Tells the combo points when the line
+-- came or went: they stand on it.
+function Bar.Power(dress, unit)
+    local power = dress.power
+    local most = nil
+    if unit and (ns.options or {}).power ~= false then most = Raw(UnitPowerMax, unit) end
+    local on = type(most) ~= "nil" and Plain(most) ~= 0
+    if on then
+        local _, token = Core.Ask(UnitPowerType, unit)
+        power:SetStatusBarColor(PowerColour(token))
+        power:SetMinMaxValues(0, most)
+        local now = Raw(UnitPower, unit)
+        if type(now) ~= "nil" then power:SetValue(now) end
+    end
+    if power:IsShown() ~= on then
+        power:SetShown(on)
+        ns.Resource.Again()
+    end
+end
+
+-- The bar as made, full, without power, glow or rank: a plate the game hands out again never shows the last
+-- unit's, even where the next unit's cannot be read.
 function Bar.Clear(dress)
     dress.health:SetMinMaxValues(0, 1)
     dress.health:SetValue(1)
+    dress.power:Hide()
+    dress.danger = false
+    Bar.Glow(dress, false)
 end
 
--- The border: "target", "focus" or nil (dark).
+-- The ring around the border: "target", "focus" or nil (none).
 function Bar.Border(dress, lit)
-    local colour = lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or Bar.BORDER
-    dress.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+    local colour = lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or nil
+    if colour then dress.ring:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
+    dress.ring:SetShown(colour ~= nil)
 end

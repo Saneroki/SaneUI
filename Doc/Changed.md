@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Nameplates: everything inside the bar, the power line, borders by rank, a glow on aggro, auras around the bar, strangers hidden, smaller far away (Saneroki, 2026-10-23)
+- **Inside the bar** (`Text.lua`, new in the TOC): on one line, at the left the unit's level (the game's
+  `GetRelativeDifficultyColor`, its skull where too high) and your threat on it (`UnitDetailedThreatSituation`: grey,
+  orange about to take aggro, red having it), the name in the middle (cut short past `Text.NAME` of the width), at
+  the right its health short (`Text.Short`: "850", "12k", "1m325k") and `| 100%`; hidden values in a fight go to
+  the texts as they are (`AbbreviateNumbers` with our steps, `UnitHealthPercent` by the game's curve). The name
+  above the bar and the game's level box (`LevelFrame`, `PlayerLevelDiffFrame`) are gone.
+- **The bar** (`Bar.lua`): health red for creatures that attack on sight, light yellow for those that do not
+  (`UnitReaction` 4), grey when tapped, the class colour for every player; the unit's power as a line a fifth of
+  the bar's height along its bottom, inside it (`Bar.Power`, the game's `PowerBarColor`); the border by rank
+  (`Bar.RANKS`: boss gold and 3 pixels, elite gold, rare and rare elite silver, else black) in place of the rare's
+  mark; target and focus as a ring a pixel outside the border; a red glow of three round plates around it all while
+  you have the unit's aggro (a hidden answer by `SetAlphaFromBoolean`) or it is a player who may attack you.
+- **Combo points** (`Resource.lua`) as high as the power line, right on top of it.
+- **Auras** (`Auras.lua`): your debuffs right on the bar's top (`HARMFUL|PLAYER|!CROWD_CONTROL`, the whole width);
+  a foe's three buffs left of the bar; a third container for crowd control (`HARMFUL|CROWD_CONTROL`, two) right of
+  it, after the raid marker (`Marks.lua`: the rare's mark gone).
+- **Strangers' plates** (`Plate.Wanted`): a player you cannot attack shows only while in your group or guild, a
+  friend or your target; the game's unit frame at alpha 0 otherwise. Setting *Only players you know*.
+- **Smaller far away** (`Scale.lua`, new in the TOC): the game's `nameplateMinScale`, `MaxScale`, `MinScaleDistance`
+  and `MaxScaleDistance` CVars set to ours (0.55 far away, full within ten yards), their defaults back when the
+  setting is off or the module stands down; never in a fight.
+- **Settings:** *Crowd control*, *Power line*, *Only players you know*, *Smaller far away* added.
+- Tests: `dev/tests/nameplates.lua`, 96 checks (the texts and their short forms, threat's colours and the glow,
+  the ranks, the ring, the power line, the auras' places, strangers' plates, the CVars in and out of a fight).
 
 ### Inventory: the doll's model on the strap, a quarter larger again, turned and zoomed, back after ten seconds (Saneroki, 2026-10-23)
 - **On the strap** (`Sheet/Model.lua`, `Sheet.lua`, `Doll.lua`): the model's place reaches from under the level line

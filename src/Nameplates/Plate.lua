@@ -5,17 +5,23 @@ local _, ns = ...
 --  Our dress on each plate the game shows: a frame of ours on the game's plate
 --  (so it follows the plate's place, scale and fading), laid exactly over the
 --  game's health bar row (HealthBarsContainer: its size is the game's nameplate
---  size and style), holding our bar (Bar.lua), the name above it, the auras
---  above the name (Auras.lua), the marks right of it (Marks.lua) and, on your
---  target, the combo points (Resource.lua).
+--  size and style), holding our bar (Bar.lua), the texts inside it (Text.lua),
+--  the auras around it (Auras.lua), the raid marker right of it (Marks.lua)
+--  and, on your target, the combo points (Resource.lua).
 --
 --  The game's parts ours stand in for (its health bar row, name, auras, raid
---  marker and classification mark) go out of sight while ours shows: their
---  alpha 0, set by calls only, nothing of theirs written, and 1 again when the
---  plate goes, when its health bar goes (a friendly player shown by name only,
---  a plate of widgets only: the game's own plate then stays as it is) and when
---  the module stands down. The rest of the game's plate stays: its cast bar,
---  level box, threat glow, widgets and soft target icon, and what clicks it.
+--  marker, classification mark, level boxes, selection and threat glow) go out
+--  of sight while ours shows: their alpha 0, set by calls only, nothing of
+--  theirs written, and 1 again when the plate goes, when its health bar goes (a
+--  friendly player shown by name only, a plate of widgets only: the game's own
+--  plate then stays as it is) and when the module stands down. The rest of the
+--  game's plate stays: its cast bar, widgets and soft target icon, and what
+--  clicks it.
+--
+--  The plate of a player you cannot attack is out of sight altogether (the
+--  game's unit frame on it at alpha 0) unless the player is in your group,
+--  your guild or on your friends list, or is your target. Players you can
+--  attack keep theirs.
 --
 --  One dress per plate, made the first time the game shows it and kept: the
 --  game hands its plates out again for other units, and takes its unit frames
@@ -30,25 +36,18 @@ local Plate = {}
 ns.Plate = Plate
 
 -- The parts of the game's plate (keys of its unit frame) ours stand in for.
-Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame" }
--- The game's own: the gap between the health bar and the name above it, and its plates' font for names.
-Plate.NAME_GAP = 2
-Plate.FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFontHighlightSmall" }
+Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
+                 "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
+                 "aggroHighlightAdditive" }
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
-                 "UNIT_CLASSIFICATION_CHANGED" }
+                 "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
+                 "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER" }
 
 local dresses = {} -- [the game's plate] = our dress on it
 local shown = {}   -- [unit token] = the dress on that unit's plate, while the game shows it
 local owners = setmetatable({}, { __mode = "k" }) -- [the game's unit frame] = the dress over it now
 local bars = setmetatable({}, { __mode = "k" })   -- [the game's health bar] = its unit frame, once followed
-
-local function Font()
-    for _, name in ipairs(Plate.FONTS) do
-        if rawget(_G, name) then return name end
-    end
-    return nil
-end
 
 -- The game's plate for a unit, where addons may have it; nil for one it keeps from them.
 local function PlateOf(unit)
@@ -63,23 +62,31 @@ local function Lit(plate, target, focus)
     return nil
 end
 
-local function Name(dress, unit)
-    local text = Plain(UnitIsPlayer(unit)) and Core.FullName(unit)
-    if type(text) ~= "string" then text = ns.Bar.Raw(UnitName, unit) end -- hidden or not: the text takes it
-    if type(text) == "nil" then text = "" end
-    dress.name:SetText(text)
-end
-
 -- Everything for the dress's unit, as the game says it now.
 local function Fill(dress)
     local unit = dress.unit
     ns.Bar.Paint(dress, unit)
     ns.Bar.Health(dress, unit)
+    ns.Bar.Power(dress, unit)
     ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")))
-    Name(dress, unit)
-    ns.Marks.Rare(dress, unit)
+    ns.Text.Set(dress, unit)
     ns.Marks.Raid(dress, unit)
     ns.Auras.Set(dress, unit)
+end
+
+-- Whether a unit's plate shows: every plate but that of a player you cannot attack who is a stranger to you (not
+-- in your group or guild, not on your friends list, not your target). Where the game does not say, it shows.
+function Plate.Wanted(unit)
+    if (ns.options or {}).players == false or Plain(UnitIsPlayer(unit)) ~= true then return true end
+    if Core.Ask(UnitCanAttack, "player", unit) ~= false then return true end
+    if Plain(UnitIsUnit(unit, "target")) ~= false then return true end
+    if Core.Ask(UnitInParty, unit) or Core.Ask(UnitInRaid, unit) or Core.Ask(UnitIsInMyGuild, unit) then return true end
+    local guid = Core.Ask(UnitGUID, unit)
+    local friends = rawget(_G, "C_FriendList")
+    if guid and friends and Core.Ask(friends.IsFriend, guid) then return true end
+    local bnet = rawget(_G, "C_BattleNet")
+    local account = guid and bnet and Core.Ask(bnet.GetAccountInfoByGUID, guid)
+    return type(account) == "table" and account.isFriend == true
 end
 
 -- The game's parts of a unit frame ours stand in for at that alpha: 0 out of sight under ours, 1 as the game has them.
@@ -90,14 +97,18 @@ local function Parts(frame, alpha)
     end
 end
 
--- Ours shown and the game's parts out of sight while the game shows its health bar on the plate; the game's
--- own plate as it is otherwise.
+-- A plate of a stranger out of sight altogether; else ours shown and the game's parts out of sight while the
+-- game shows its health bar on the plate, the game's own plate as it is otherwise.
 local function Wear(dress)
     local frame = dress.frame
     local row = frame and rawget(frame, "HealthBarsContainer")
     local bar = type(row) == "table" and rawget(row, "healthBar")
-    local on = not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
-    Parts(frame, on and 0 or 1)
+    local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit)
+    local on = wanted and not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
+    if frame then
+        frame:SetAlpha(wanted and 1 or 0)
+        Parts(frame, on and 0 or 1)
+    end
     dress:SetShown(on)
 end
 
@@ -106,21 +117,31 @@ local function Heard(dress, event)
     if not unit or ns.off then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.Bar.Health(dress, unit)
+        ns.Text.Health(dress, unit)
+    elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
+        ns.Bar.Power(dress, unit)
+    elseif event == "UNIT_THREAT_LIST_UPDATE" then
+        ns.Text.Threat(dress, unit)
     elseif event == "UNIT_NAME_UPDATE" then
-        Name(dress, unit)
+        ns.Text.Name(dress, unit)
+    elseif event == "UNIT_LEVEL" then
+        ns.Text.Level(dress, unit)
     elseif event == "UNIT_CLASSIFICATION_CHANGED" then
-        ns.Marks.Rare(dress, unit)
+        ns.Bar.Paint(dress, unit)
     else -- UNIT_FACTION, UNIT_FLAGS: friend or foe, tapped
         ns.Bar.Paint(dress, unit)
+        ns.Text.Level(dress, unit)
         ns.Auras.Set(dress, unit)
+        Wear(dress)
     end
 end
 local OnEvent = ns.Guard(Heard)
 
--- Laid out anew for its size: the bar, the strip, the room for auras.
+-- Laid out anew for its size: the bar, the strip, the name's room, the room for auras.
 local function Fit(dress)
     ns.Bar.Fit(dress)
     ns.Resource.Fit(dress)
+    ns.Text.Fit(dress)
     if dress.unit then ns.Auras.Set(dress, dress.unit) end
 end
 local OnSizeChanged = ns.Guard(Fit)
@@ -129,13 +150,7 @@ local function Make(plate)
     local dress = CreateFrame("Frame", nil, plate)
     dress.plate, dress.edge = plate, 0
     ns.Bar.Make(dress)
-    local name = dress:CreateFontString(nil, "OVERLAY", Font())
-    name:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", 0, Plate.NAME_GAP)
-    name:SetPoint("BOTTOMRIGHT", dress, "TOPRIGHT", 0, Plate.NAME_GAP)
-    name:SetJustifyH("CENTER")
-    name:SetWordWrap(false)
-    name:SetTextColor(1, 1, 1)
-    dress.name = name
+    ns.Text.Make(dress)
     ns.Marks.Make(dress)
     ns.Auras.Make(dress)
     dress:SetScript("OnEvent", OnEvent)
@@ -171,10 +186,12 @@ local function Off(dress)
     dress.unit, dress.frame = nil, nil
     dress:Hide()
     if frame then
+        frame:SetAlpha(1)
         Parts(frame, 1)
         if owners[frame] == dress then owners[frame] = nil end
     end
     ns.Bar.Clear(dress)
+    ns.Text.Set(dress, nil)
     ns.Safe("auras", ns.Auras.Set, dress, nil)
     ns.Safe("combo points", ns.Resource.Leave, dress)
 end
@@ -209,12 +226,32 @@ local function Removed(unit)
     ns.Resource.Again()
 end
 
--- Target or focus changed: every border as it is now.
+-- Target or focus changed: every ring as it is now, and every plate shown or not (your target always is).
 local function Borders()
     if ns.off then return end
     local target, focus = PlateOf("target"), PlateOf("focus")
-    for _, dress in pairs(shown) do ns.Bar.Border(dress, Lit(dress.plate, target, focus)) end
+    for _, dress in pairs(shown) do
+        ns.Bar.Border(dress, Lit(dress.plate, target, focus))
+        Wear(dress)
+    end
 end
+
+-- Your group, guild or friends changed: every plate shown or not.
+local function People()
+    if ns.off then return end
+    for _, dress in pairs(shown) do Wear(dress) end
+end
+local people = Core.Later(People)
+
+-- Your threat changed somewhere (or a fight ended, or you went up a level): every plate's threat and level.
+local function Threats()
+    if ns.off then return end
+    for unit, dress in pairs(shown) do
+        ns.Text.Threat(dress, unit)
+        ns.Text.Level(dress, unit)
+    end
+end
+local threats = Core.Later(Threats)
 
 local function Raids()
     if ns.off then return end
@@ -230,13 +267,19 @@ end
 
 -- Every dress filled anew (a setting changed).
 function Plate.Refresh()
-    for _, dress in pairs(shown) do Fill(dress) end
+    for _, dress in pairs(shown) do
+        Fill(dress)
+        Wear(dress)
+    end
 end
 
 -- The game's plates as they were: the parts of every unit frame ours ever lay over in sight again (the game hands
 -- them out again from its pool, and sets their alpha nowhere), then every dress off, each by itself.
 function Plate.GiveBack()
-    for _, frame in pairs(bars) do ns.Safe("give back", Parts, frame, 1) end
+    for _, frame in pairs(bars) do
+        ns.Safe("give back", frame.SetAlpha, frame, 1)
+        ns.Safe("give back", Parts, frame, 1)
+    end
     for _, dress in pairs(dresses) do
         if dress.unit then ns.Safe("give back", Off, dress) end
     end
@@ -248,6 +291,13 @@ function Plate.Start()
     ns.On("PLAYER_TARGET_CHANGED", Borders)
     ns.On("PLAYER_FOCUS_CHANGED", Borders)
     ns.On("RAID_TARGET_UPDATE", Raids)
+    ns.On("GROUP_ROSTER_UPDATE", people)
+    ns.On("FRIENDLIST_UPDATE", people)
+    ns.On("GUILD_ROSTER_UPDATE", people)
+    ns.On("BN_FRIEND_INFO_CHANGED", people)
+    ns.On("UNIT_THREAT_SITUATION_UPDATE", threats)
+    ns.On("PLAYER_REGEN_ENABLED", threats)
+    ns.On("PLAYER_LEVEL_UP", threats)
     -- The plates the game shows already (after a /reload they are there before us).
     local plates = Core.Ask(C_NamePlate.GetNamePlates)
     for _, plate in ipairs(type(plates) == "table" and plates or {}) do

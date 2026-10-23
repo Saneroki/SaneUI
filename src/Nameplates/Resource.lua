@@ -3,8 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Resource
 --  Your combo points inside your target's health bar, along its bottom: a
---  strip a third of the bar's height, one segment per point, lit in the
---  game's colour for combo points as you build them. In this client combo
+--  thin line, as high as the power line (Bar.lua) and right on top of it
+--  where the unit has power, one segment per point, lit in the game's colour
+--  for combo points as you build them. In this client combo
 --  points are the one class resource, kept on your target (GetComboPoints of
 --  "player" on "target", as the game's own combo frame reads them; at most
 --  five). So the strip is on your target's plate only, while you build them
@@ -22,7 +23,6 @@ local Plain = Core.Plain
 local Resource = {}
 ns.Resource = Resource
 
-Resource.SHARE = 1 / 3 -- the strip's height, a share of the bar's
 Resource.MOST = 5      -- the most points, as the game's own combo frame counts them
 Resource.EMPTY = { 0, 0, 0, 0.55 } -- a point not built: the bar under it darkened
 Resource.CLASSES = { ROGUE = true, DRUID = true }
@@ -79,8 +79,6 @@ end
 local function Make(dress)
     local health = dress.health
     local strip = CreateFrame("StatusBar", nil, health)
-    strip:SetPoint("BOTTOMLEFT", health, "BOTTOMLEFT")
-    strip:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT")
     strip:SetStatusBarTexture(ns.Bar.FILL)
     strip:SetStatusBarColor(Colour())
     strip:SetMinMaxValues(0, most)
@@ -104,11 +102,17 @@ local function Make(dress)
     dress.strip = strip
 end
 
--- Laid out for the dress's size (Plate's Fit): a third of the bar's height, the lines at their places.
+-- Laid out for the dress's size (Plate's Fit): as high as the power line, on top of it while it shows, else
+-- along the bar's bottom; the lines at their places.
 function Resource.Fit(dress)
-    if not dress.strip then return end
-    local height = (Plain(dress:GetHeight()) or 0) - 2 * dress.edge
-    dress.strip:SetHeight(math.max(height * Resource.SHARE, 0.01))
+    local strip = dress.strip
+    if not strip then return end
+    local below = dress.power:IsShown() and dress.power or dress.health
+    local edge = below == dress.power and "TOP" or "BOTTOM"
+    strip:ClearAllPoints()
+    strip:SetPoint("BOTTOMLEFT", below, edge .. "LEFT")
+    strip:SetPoint("BOTTOMRIGHT", below, edge .. "RIGHT")
+    strip:SetHeight(dress.line or 1)
     Lines(dress)
 end
 
@@ -123,10 +127,8 @@ function Resource.Update()
         holder = dress
     end
     if not dress then return end
-    if not dress.strip then
-        Make(dress)
-        Resource.Fit(dress)
-    end
+    if not dress.strip then Make(dress) end
+    Resource.Fit(dress) -- the power line may have come or gone under it
     local strip = dress.strip
     if Plain(UnitCanAttack("player", "target")) == false then return strip:Hide() end
     local ok, points = pcall(GetComboPoints, "player", "target")
