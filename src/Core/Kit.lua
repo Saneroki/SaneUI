@@ -12,7 +12,8 @@ local Core = SaneUI.Core
 --      Core.Pixels(frame, 2)                -- two of the screen's pixels in the frame's units
 --      Core.Tip(region, title, text, anchor) -- its tooltip (title and text may be functions)
 --      Core.ShowTip(owner, title, text, anchor), Core.HideTip()
---      Core.Unconfirmed(tooltip)            -- the line under a fact the game has not confirmed (Core.UNCONFIRMED)
+--      Core.Unconfirmed(tooltip)            -- the line under a fact the game has not confirmed (Core.UNCONFIRMED);
+--                                           -- Core.UNCONFIRMED_MARK before each such thing's name in a tooltip
 --      Core.TipLook(tooltip, look)          -- a creature that is no unit of the game's, drawn like one (below);
 --      Core.TipSection(tooltip, words)      -- a line that heads a section of it; Core.LookOf(tooltip)
 --      local pool = Core.Pool(make)         -- pool:Take() a part, made by make() when none is free;
@@ -91,6 +92,9 @@ do
     local red = rawget(_G, "RED_FONT_COLOR")
     local hex = type(red) == "table" and type(red.r) == "number" and Core.Hex(red.r, red.g, red.b) or "FF2020"
     Core.UNCONFIRMED = ("|cff%s!|r  %s  |cff%s!|r"):format(hex, Core.UNCONFIRMED_WORDS, hex)
+    -- Before the name of each thing a tooltip lists that is not yet confirmed (a boss's item, a quest), so the red ! of
+    -- the line Unconfirmed Data says which (Saneroki, 2026-10-23)
+    Core.UNCONFIRMED_MARK = ("|cff%s!|r "):format(hex)
 end
 
 function Core.Unconfirmed(tooltip)

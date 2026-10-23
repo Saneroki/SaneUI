@@ -62,7 +62,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
   herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place
   the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in Sane UI's tooltips a
-  quiet grey note at the bottom), until the game confirms it in play: you or somebody of your guild or group sees
+  quiet grey note at the bottom), and a red ! before the name of each thing in it that is not confirmed (the pin's
+  own thing, a quest it offers, each of a gathered pin's), until the game confirms it in play: you or somebody of your guild or group sees
   the NPC at its place, talks to it, opens the mailbox there (Core's watchers), and the note goes. A tooltip says what it is: an NPC by what it is, never by its own name (Saneroki,
   2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
   *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
@@ -131,8 +132,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   past the view's edge). Its tooltip is a creature's: its name in a foe's red, under it the dungeon and *Boss*, its
   model in the portrait's place with the boss's dragon and *??* for its level (in Sane UI's tooltips); then the
   sections *Abilities* and *Loot*, each with its icon and name as the game has them (an item in its quality's
-  colour; at most ten of each, then how many more), and *! Unconfirmed Data !* while any of them is not yet
-  confirmed by the game (a boss's loot is confirmed by looting it after the kill, its abilities by seeing them cast,
+  colour; at most ten of each, then how many more; a red ! between the icon and the name of each one not yet
+  confirmed), and *! Unconfirmed Data !* while any of them is not yet confirmed by the game (a boss's loot is confirmed by looting it after the kill, its abilities by seeing them cast,
   here or by the guild or the group); an item or ability confirmed so that the data does not name joins the list;
   an item the game keeps hidden shows its name and, with Alt, its stats as Core's data has them (learned in play); hold Alt for each ability's
   description and, under each item, *Uncollected* first while you lack its look, then its effects (Use, Equip,
@@ -671,6 +672,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-23, a red ! for each:** in a tooltip the red ! stands before the name of each thing not yet confirmed (a
+  boss's ability or item, an enemy, a pin's thing, its quests), so *! Unconfirmed Data !* says which (Saneroki).
 - **2026-10-23, confirmed in play:** a pin's and a boss's *Unconfirmed Data* follow Core's marks and what the
   game confirmed in play, here or by the guild or the group (`Pins.Unverified`, `Bosses:Unverified` per item and
   ability); a boss's items and abilities confirmed that the data lacks join its lists; an item the game keeps hidden

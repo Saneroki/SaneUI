@@ -67,7 +67,9 @@ only read.
 
   **Unconfirmed Data:** a tooltip about something the game has not confirmed yet (a map's pin from Sane UI's
   data, a boss's abilities and loot) ends with a quiet note at its very bottom, *! Unconfirmed Data !*: small grey
-  words in the middle, as written, no rules, the marks in the game's red (Saneroki, 2026-10-23).
+  words in the middle, as written, no rules, the marks in the game's red (Saneroki, 2026-10-23). In such a tooltip a
+  red ! stands before the name of each thing not yet confirmed (Core's `Core.UNCONFIRMED_MARK`), so the note says
+  which.
 
   **Too tall for the screen:** a panel that would not fit the screen's height goes on in a second column beside
   the first (and a third...), each as wide as the first, a fine groove between them; no column is taller than the
@@ -599,6 +601,8 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-23 — A red ! before the name of each thing not yet confirmed in a tooltip that ends with *! Unconfirmed
+  Data !* (Saneroki).
 - 2026-10-23 — Section names grey; *! Unconfirmed Data !* and *Hold ALT for more* small grey notes in the middle
   at the bottom, without rules, as written (Saneroki).
 - 2026-10-23 — A tooltip too tall for the screen goes on in columns beside the first. *! Unconfirmed Data !* as a

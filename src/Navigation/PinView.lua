@@ -67,9 +67,11 @@ local function Say(words, r, g, b, wrap)
     GameTooltip:AddLine(words, r, g, b, wrap)
 end
 
--- A pin's name with its icon before it, as its pin shows it (a grey one grey, a tinted one in its colour).
+-- A pin's name with its icon before it, as its pin shows it (a grey one grey, a tinted one in its colour); one not yet
+-- confirmed by the game with the red ! between them (Core.UNCONFIRMED_MARK).
 local function Iconed(pin, words)
     local size = PinView.TIP_ICON
+    if pin.doubt then words = Core.UNCONFIRMED_MARK .. words end
     if not pin.atlas then return words end
     local tint = pin.tint or (pin.grey or pin.dim) and { 0.6, 0.6, 0.6 } or nil
     if tint then
@@ -86,8 +88,11 @@ local function Tip(button)
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     wipe(said)
     if pin.gathered then
-        -- What is there, one under the other, each with its own pin's icon: the first as the heading
+        -- What is there, one under the other, each with its own pin's icon: the first as the heading; Unconfirmed Data
+        -- under them where one is not yet confirmed
+        local doubt = false
         for index, each in ipairs(pin.gathered) do
+            if each.doubt then doubt = true end
             if index > 12 then break end
             local words = each.role or each.name or "?"
             if index == 1 then
@@ -98,11 +103,12 @@ local function Tip(button)
                 GameTooltip:AddLine(Iconed(each, words), 1, 0.82, 0)
             end
         end
+        if doubt then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
         return GameTooltip:Show()
     end
     local heading = pin.role or pin.name or "?"
     said[heading] = true
-    GameTooltip:SetText(heading, 1, 1, 1)
+    GameTooltip:SetText(pin.doubt and Core.UNCONFIRMED_MARK .. heading or heading, 1, 1, 1)
     if pin.kind == "log" and pin.quest then
         if pin.complete then GameTooltip:AddLine(Pins.TEXT.turnIn, 0.2, 1, 0.2) end
         local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, pin.quest)

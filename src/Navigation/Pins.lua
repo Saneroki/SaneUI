@@ -18,7 +18,8 @@ local _, ns = ...
 --  "npc:69", as the game's pins are keyed: the game's word hides every one of Core's for the same thing, *One
 --  pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own map, 0 to 1),
 --  atlas or texture, size, name, role (an NPC's: what it is, its tooltip's heading in place of its name: Bowyer,
---  Warrior Trainer), lines (its tooltip's further lines), and by kind: quest (its ID), complete,
+--  Warrior Trainer), doubt (the thing is not yet confirmed by the game: the red ! before its name), unverified (its
+--  tooltip shows something not yet confirmed: it, or one of its quests), lines (its tooltip's further lines), and by kind: quest (its ID), complete,
 --  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), grey
 --  (a quest too low), tint (its icon's colour: a quest for later, a flight point not yet found), order (drawn over
 --  a lower one).
@@ -344,11 +345,15 @@ local function Trainer(title)
 end
 
 -- A quest's lines in a pin's tooltip: its name and level, and why it is grey (tables: words and their colour).
+-- A quest not yet confirmed by the game has the red ! before its name (Core.UNCONFIRMED_MARK); true then.
 local function QuestLines(lines, id, reason, grey)
     local level = QUESTS:Get(id, "level")
     local name = level and Pins.TEXT.quest:format(QuestName(id), level) or QuestName(id)
+    local doubt = QUESTS:Unverified(id)
+    if doubt then name = Core.UNCONFIRMED_MARK .. name end
     lines[#lines + 1] = grey and { name, 0.6, 0.6, 0.6 } or { name, 1, 0.82, 0 }
     if reason then lines[#lines + 1] = { "  " .. reason, 0.6, 0.6, 0.6 } end
+    return doubt
 end
 
 -- Whether the game has not confirmed a place of Core's data yet: its spawn or what it is (Core's marks, and what was
@@ -366,7 +371,10 @@ Pins.Unverified = Unverified
 -- A place of Core's data as a pin: what it is says its kind and its look; nil for what the map does not show.
 local function FromData(place)
     local what, kind = place.what, place.kind
-    local pin = { key = place.key, name = place.name, unverified = Unverified(place) or nil }
+    -- doubt: the thing itself is not yet confirmed (the red ! before its name); unverified: something its tooltip
+    -- shows is not (it, or a quest of it), so the tooltip ends with Unconfirmed Data
+    local doubt = Unverified(place) or nil
+    local pin = { key = place.key, name = place.name, unverified = doubt, doubt = doubt }
     if kind == "npc" then
         -- Its quests by where they stand for this character: offered, too low or for later (its pin red while one
         -- is for later), done.
@@ -426,18 +434,20 @@ local function FromData(place)
             -- Only quests this character has done: a pin of the kind Done quests (off at first), grey.
             pin.kind, pin.atlas, pin.grey = "done", Pins.ICONS.done, true
             lines[#lines + 1] = Pins.TEXT.done
-            for _, quest in ipairs(done) do QuestLines(lines, quest, nil, true) end
+            for _, quest in ipairs(done) do
+                if QuestLines(lines, quest, nil, true) then pin.unverified = true end
+            end
         else
             return nil
         end
         -- What it offers, and what it will offer: a click shows them in the quest log.
         pin.quests = {}
         for _, quest in ipairs(offers) do
-            QuestLines(lines, quest, nil, false)
+            if QuestLines(lines, quest, nil, false) then pin.unverified = true end
             pin.quests[#pin.quests + 1] = quest
         end
         for _, entry in ipairs(greys) do
-            QuestLines(lines, entry[1], entry[2], true)
+            if QuestLines(lines, entry[1], entry[2], true) then pin.unverified = true end
             pin.quests[#pin.quests + 1] = entry[1]
         end
         if #pin.quests > 0 then
@@ -471,7 +481,7 @@ local function FromData(place)
         pin.kind, pin.atlas, pin.name = "travel", WAYS[what] or WAYS.boat, pin.name or Pins.WAY_WORDS[what]
         if place.towards then
             -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
-            pin.unverified, pin.lines = nil, {}
+            pin.unverified, pin.doubt, pin.lines = nil, nil, {}
             for _, there in ipairs(place.towards) do
                 pin.lines[#pin.lines + 1] = Pins.TEXT.towards:format(Towards(there))
             end

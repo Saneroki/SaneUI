@@ -1683,9 +1683,11 @@ check(marker and #marker.pin.gathered == 2 and marker.icon._atlas == ns.PinView.
     .. "game's plus (their icons differ), no number")
 GameTooltip._lines = nil
 marker._scripts.OnEnter(marker)
-check(GameTooltip._text:find("^|A:innkeeper:16:16|a ") and GameTooltip._lines and #GameTooltip._lines == 1
-    and GameTooltip._lines[1]:find("^|A:professions_tracking_herb:16:16|a "),
-    "its tooltip: each thing there with its own pin's icon before its name")
+check(GameTooltip._text == "|A:innkeeper:16:16|a " .. Core.UNCONFIRMED_MARK .. "Innkeeper" and GameTooltip._lines
+    and #GameTooltip._lines == 2 and GameTooltip._lines[1] == "|A:professions_tracking_herb:16:16|a Silverleaf"
+    and GameTooltip._lines[2] == Pins.TEXT.unverified,
+    "its tooltip: each thing there with its own pin's icon before its name, the red ! after it where the thing is not "
+    .. "yet confirmed (the innkeeper, not the herb), and then Unconfirmed Data")
 check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,
@@ -4000,7 +4002,7 @@ end)()
     local pin = Drawn(true)["travel:10"]
     GameTooltip._text, GameTooltip._lines = nil, nil
     if pin then pin._scripts.OnEnter(pin) end
-    check(pin and pin.icon._atlas == "poi-door-up" and GameTooltip._text == Pins.WAY_WORDS.lift
+    check(pin and pin.icon._atlas == "poi-door-up" and GameTooltip._text == Core.UNCONFIRMED_MARK .. Pins.WAY_WORDS.lift
         and GameTooltip._lines and GameTooltip._lines[1] == Pins.TEXT.unverified,
         "a lift's pin: its look, named a lift, not yet confirmed by the game")
     full:Show(was[1], was[2], was[3], was[4])
@@ -4412,6 +4414,9 @@ end)()
     check(lines[1] == "Deep Halls" and lines[2] == Dungeons.TEXT.boss and look and look.dragon == "boss" and look.badge == "??"
         and look.display == marks[1].display,
         "drawn as a creature's: under its name the dungeon and Boss; its model, the boss's dragon, ?? for its level")
+    check(lines[4] == "|T132338:16:16:0:0:64:64:5:59:5:59|t " .. Core.UNCONFIRMED_MARK .. "Cleave"
+        and lines[6]:find("|t " .. Core.UNCONFIRMED_MARK .. "Item 901", 1, true),
+        "each ability and item not yet confirmed: the red ! between its icon and its name")
     loaded[902] = true
     GameTooltip._lines = nil -- (the stand-in keeps its lines; the game's tooltip starts anew at SetOwner)
     W.Fire("ITEM_DATA_LOAD_RESULT", 902, true)
@@ -4467,8 +4472,9 @@ end)()
     GameTooltip._lines = nil
     Frames(1)
     lines = GameTooltip._lines or {}
-    check(lines[#lines] ~= Dungeons.TEXT.unverified and lines[7] and lines[7]:find("Item 902", 1, true),
-        "everything it shows confirmed: no Unconfirmed Data")
+    check(lines[#lines] ~= Dungeons.TEXT.unverified and lines[7] and lines[7]:find("Item 902", 1, true)
+        and lines[4] == "|T132338:16:16:0:0:64:64:5:59:5:59|t Cleave" and not lines[7]:find(Core.UNCONFIRMED_MARK, 1, true),
+        "everything it shows confirmed: no red !, no Unconfirmed Data")
     check(Data.Confirm("Bosses", 700, "l903"), "an item looted from the boss that the set does not name: confirmed too")
     GameTooltip._lines = nil
     Frames(1)

@@ -478,15 +478,16 @@ local function SpellDetails(id)
 end
 
 -- A spell's line: its icon and name as the game has them; nil where the game does not know it.
-local function SpellLine(id)
+-- mark: what goes before the name (Core.UNCONFIRMED_MARK for one not yet confirmed), after the icon.
+local function SpellLine(id, mark)
     local info = Core.Ask(C_Spell.GetSpellInfo, id)
     if type(info) ~= "table" or not info.name then return nil end
-    return Iconed(info.iconID, info.name)
+    return Iconed(info.iconID, (mark or "") .. info.name)
 end
 
 -- An item's line, its words and colour: its icon and its name in its quality's colour; asked of the game while it
 -- has not loaded it (nil meanwhile: the tooltip is drawn again once it has).
-local function ItemLine(id)
+local function ItemLine(id, mark)
     local name, _, quality = Core.Ask(C_Item.GetItemInfo, id)
     if not name then
         Core.Ask(C_Item.RequestLoadItemDataByID, id)
@@ -497,12 +498,12 @@ local function ItemLine(id)
         local r, g, b = 1, 1, 1
         local colour = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
         if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
-        return Iconed(known.icon, name), r, g, b
+        return Iconed(known.icon, (mark or "") .. name), r, g, b
     end
     local r, g, b = 1, 1, 1
     local colour = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
     if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
-    return Iconed(Core.Ask(C_Item.GetItemIconByID, id), name), r, g, b
+    return Iconed(Core.Ask(C_Item.GetItemIconByID, id), (mark or "") .. name), r, g, b
 end
 
 -- A boss's abilities or items (kind "a" or "l"): the set's, then those confirmed in play that it does not name (Core's
@@ -527,21 +528,22 @@ local function Parts(encounter, field, kind)
 end
 
 -- Up to Dungeons.LINES lines of a list under its title, and how many more there are; with Alt held, each one's
--- details under it (details: nil for none). True when a line shown is not yet confirmed by the game (kind: the
--- part's letter, Bosses:Unverified).
+-- details under it (details: nil for none). One not yet confirmed by the game (kind: the part's letter,
+-- Bosses:Unverified) has the red ! before its name; true when any shown is.
 local function Listed(title, ids, line, details, encounter, kind)
     local shown, more, unconfirmed = 0, 0, false
     for _, id in ipairs(ids or {}) do
         if shown >= Dungeons.LINES then
             more = more + 1
         else
-            local words, r, g, b = line(id)
+            local doubt = BOSSES:Unverified(encounter, kind .. id)
+            local words, r, g, b = line(id, doubt and Core.UNCONFIRMED_MARK or nil)
             if words then
                 if shown == 0 then Core.TipSection(GameTooltip, title) end
                 shown = shown + 1
                 GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
                 if details then details(id) end
-                if BOSSES:Unverified(encounter, kind .. id) then unconfirmed = true end
+                if doubt then unconfirmed = true end
             end
         end
     end
@@ -675,8 +677,11 @@ end
 local function FoeTip(foe)
     GameTooltip:SetOwner(foe, "ANCHOR_RIGHT")
     local red = Dungeons.FOE
-    GameTooltip:SetText(foe.npc and NPCS:Get(foe.npc, "name") or Dungeons.TEXT.enemy, red[1], red[2], red[3])
-    Core.Unconfirmed(GameTooltip)
+    local name = foe.npc and NPCS:Get(foe.npc, "name") or Dungeons.TEXT.enemy
+    -- Where it stands is the set Dungeons' (its instance's entry), and so is whether that is confirmed
+    local doubt = SET:Unverified(foe.instance)
+    GameTooltip:SetText((doubt and Core.UNCONFIRMED_MARK or "") .. name, red[1], red[2], red[3])
+    if doubt then Core.Unconfirmed(GameTooltip) end
     GameTooltip:Show()
 end
 
@@ -695,11 +700,12 @@ end
 -- Each enemy's mark where it stands, as the bosses' are placed, under them; those of no enemy hidden.
 function Dungeons.PlaceEnemies(art, scale)
     local enemies = shown and Dungeons.Enemies(shown) or {}
+    local _, floor = Entry(shown)
     local base = over:GetFrameLevel()
     for index, enemy in ipairs(enemies) do
         local foe = foes[index] or Foe()
         foes[index] = foe
-        foe.npc = enemy.npc
+        foe.npc, foe.instance = enemy.npc, floor and floor.instance
         foe:ClearAllPoints()
         foe:SetPoint("CENTER", frame, "CENTER", panX + (enemy.x - 0.5) * art.width * scale,
             panY - (enemy.y - 0.5) * art.height * scale)

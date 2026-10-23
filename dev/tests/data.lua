@@ -1155,6 +1155,15 @@ do
     W.Fire("GOSSIP_SHOW")
     check(not Spawns:Unverified("object:1617") and not Objects:Unverified(1617), "a thing used at its spawn: both confirmed")
 
+    -- A quest taken: the set's quest confirmed (the game's ID, the last number of its event)
+    W.AddSets(MakeSets("VerifyQuests", { ["Quests.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Quests", { game = "forever", hash = "00000024", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
+        .. 'if not S then return end\nS.rows[77] = "65000\\t\\tWolves"\nS.rows[78] = "65000\\t\\tBears"\nS.unverified = "77\\03078"\n' }))
+    Frame()
+    local Quests = Data.Set("Quests")
+    W.Fire("QUEST_ACCEPTED", 3, 77)
+    W.Fire("QUEST_TURNED_IN", 78, 450, 0)
+    check(not Quests:Unverified(77) and not Quests:Unverified(78), "a quest taken, and one handed in: confirmed")
+
     -- A boss killed, then its loot: an item the set names confirmed; one it does not only from a corpse of its name
     W.Fire("ENCOUNTER_START", 700, "The First Boss", 1, 5)
     W.Fire("UNIT_SPELLCAST_START", "boss1", "Cast-1", 801)

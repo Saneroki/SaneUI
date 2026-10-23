@@ -197,6 +197,17 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   player's under the game's minimap, gone after its time; pins clicked and double clicked; the quest log's click
   and double click; Follow me ticked, dragged, standing, walking on, opening on the player, unticked; a found herb).
 
+### A red ! before each thing not yet confirmed; quests confirmed when taken or handed in (Saneroki, 2026-10-23)
+- Core, `Kit.lua`: `Core.UNCONFIRMED_MARK` (the red ! and a space), for the name of each thing a tooltip lists that is
+  not yet confirmed, so *! Unconfirmed Data !* says which, as Saneroki asked.
+- Navigation: a boss's abilities and items (`Listed`: `SpellLine`, `ItemLine` take the mark, between the icon and the
+  name), an enemy (`FoeTip`: by its instance's entry in the set Dungeons; *Unconfirmed Data* only then), a pin's own
+  thing (`pin.doubt`, its heading; each of a gathered pin's, `Iconed`, with *Unconfirmed Data* under them) and a
+  pin's quests (`QuestLines`: the set Quests; the pin's tooltip ends with *Unconfirmed Data* then, `pin.unverified`).
+- `Data/Watchers.lua`: a quest taken or handed in (`QUEST_ACCEPTED`, `QUEST_TURNED_IN`) confirms the set Quests' quest.
+- READMEs (Navigation, Tooltips, Core), `Doc/guides/data.md`; tests: `navigation.lua` (the marks, gone once
+  confirmed), `data.lua` 232 (a quest taken and handed in).
+
 ### Core: what the game confirms in play, kept, shared and harvested; items' stats learned (Saneroki, 2026-10-23)
 - The master: a version's `verified` mark (`{"day","times"}`, after `src`; `master.py`, `schema.py`), `Master.confirmed`
   (a source of the kind game or hand, or the mark). The compiler lists each set's entries not yet verified in its file

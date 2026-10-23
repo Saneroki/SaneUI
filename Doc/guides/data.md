@@ -599,7 +599,8 @@ Data.Learn("Travel", 4297659, record)   -- Core's watchers only: record, the set
 ### Verified (`Data.Confirm`) *(Saneroki, 2026-10-23)*
 
 What a batch alone says (not the game's tables, our crawls or a person) is unverified, and a view says so
-(*! Unconfirmed Data !*, Core's `Core.Unconfirmed`). The game confirms it in play: then it is kept, shared and
+(*! Unconfirmed Data !*, Core's `Core.Unconfirmed`, and a red ! before the name of each thing not yet confirmed in a
+tooltip that lists several: `Core.UNCONFIRMED_MARK`). The game confirms it in play: then it is kept, shared and
 harvested, and the next release ships the entry verified.
 
 ```lua
@@ -619,7 +620,8 @@ Data.Share("Items", 16801)               -- a row learned here (Data.Learn) shar
   `Watchers.NEAR` yards of one of its points (`C_Map.GetPlayerMapPosition`, `GetMapWorldSize`), and itself (*NPCs*)
   when it offers nothing to talk to; talked to or used (the game's unit `npc`: a vendor, a trainer, a flight master, a
   quest giver, a mailbox) the creature or object and its spawn; a mailbox opened the set *Places*' mailbox within
-  `Watchers.MAILBOX` yards; a zone left the crossing within `Watchers.CROSSING` yards. **A boss's loot:** within
+  `Watchers.MAILBOX` yards; a zone left the crossing within `Watchers.CROSSING` yards; a quest taken or handed in
+  (`QUEST_ACCEPTED`, `QUEST_TURNED_IN`) the set *Quests*' quest. **A boss's loot:** within
   `Watchers.LOOT` seconds after the game said it was killed (`ENCOUNTER_END`) and in its instance, an item the set
   *Bosses* names for it; any item of a corpse of the boss's name (the target, dead): the game tells no place inside an
   instance, nor whose corpse a loot is (no `GetLootSourceInfo`), so the time, the instance and the corpse's name hold

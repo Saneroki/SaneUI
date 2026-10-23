@@ -14,6 +14,7 @@ local Core = SaneUI.Core
 --                   points
 --      a mailbox    opened: the set Places' mailbox within Watchers.MAILBOX yards
 --      a crossing   a zone left near the set Places' crossing (within Watchers.CROSSING yards)
+--      a quest      taken or handed in: the set Quests' quest (the game names it by its ID)
 --      a boss       its loot: within Watchers.LOOT seconds after the game said the boss was killed (ENCOUNTER_END)
 --                   and in its instance, an item the set Bosses names for it; any item of a corpse of the boss's
 --                   name (the target, dead): the game tells no place inside an instance, nor whose corpse a loot is,
@@ -38,6 +39,7 @@ Watchers.AURAS = 40      -- a boss's buffs looked at, at most
 
 local Spawns, NPCs, Objects, Places = Data.Set("Spawns"), Data.Set("NPCs"), Data.Set("Objects"), Data.Set("Places")
 local Bosses, Encounters, Items = Data.Set("Bosses"), Data.Set("Encounters"), Data.Set("Items")
+local Quests = Data.Set("Quests")
 
 local sqrt, floor = math.sqrt, math.floor
 
@@ -252,6 +254,19 @@ end)
 Core.On("ZONE_CHANGED_NEW_AREA", function()
     if not Core.Restricted() then PlacesNear("crossing", Watchers.CROSSING) end
 end)
+
+-- A quest taken or handed in: the game names it by its ID (the last number its event gives: some clients give the
+-- quest log's line first).
+local function Quest(...)
+    local id
+    for index = 1, select("#", ...) do
+        local value = Core.Plain((select(index, ...)))
+        if type(value) == "number" then id = value end
+    end
+    if id and Quests:Unverified(id) then Data.Confirm("Quests", id) end
+end
+Core.On("QUEST_ACCEPTED", Quest)
+Core.On("QUEST_TURNED_IN", function(id) Quest(id) end)
 
 -------------------------------------------------------------------------------
 --  Items: their stats as the game gives them
