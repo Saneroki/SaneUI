@@ -303,6 +303,15 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
   and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
+- **Follow me on the full map (Saneroki, 2026-10-23; built):** a checkbox left of the pin filter on the full map's
+  bar, off at first. Ticked, the full map pans by itself so the player is always in its middle: it opens on the
+  player, and dragged away (or moved to a quest) it comes back once the player walks on and the mouse has left it
+  alone for *Follow again after*. Off, the full map works as before: it stays where it is left.
+- **Pings as on the game's minimap (Saneroki, 2026-10-23; built):** a click on our map pings the place to the party
+  and raid through the game's own ping (`Minimap:PingLocation`, the one ping the game has: Forever's client loads no
+  ping wheel), so members see it on their minimaps as if the game's minimap was clicked; every ping of theirs (and
+  one's own) shows on our map where it was pinged, in the game's minimap ping. The game pings only inside its
+  minimap's widest view around the player.
 - **The minimap fills its window (Saneroki, 2026-10-20):** the small window shows the map over its whole shape,
   not a square in it: our map fills it, and the game's minimap over it (for its live dots) is cut to the window's
   shape, so it covers all of it and nothing past it.
@@ -323,8 +332,9 @@ When the window fills the screen:
   - **No scroll bar:** the mouse over the list and its wheel scroll it. Only while the list is longer than fits
     and the mouse is on it, a scroll bar shows, on the side the window is docked to (at the left edge: its left).
   - **Each quest's icon at its left,** as its pin on the map has it.
-  - **A click puts the game's map pin on the quest's objective:** the quest's mark on the map (its question mark)
-    or the area where its foes are.
+  - **A click moves the map to the quest's area (Saneroki, 2026-10-23; built):** its objective, the quest's mark
+    on the map (its question mark) or the area where its foes are, in the middle at the zoom the map has; the
+    game's arrow leads to it. **A double click puts the game's map pin there** (until 2026-10-23 a click did).
   - **The right button:** the quest's text (its dialogue: objectives and story), or the map moved to its
     objective (and the game's track, share and abandon).
 - **A bar on top** of the map with:
@@ -367,6 +377,10 @@ When the window fills the screen:
 - **Every pin is clicked for the map pin, the minimap's too (Saneroki, 2026-10-21):** on the small map and on the
   game's own minimap the icons Sane UI draws, the gathering nodes found around the player among them, take a
   click and put the game's map pin there. (The game's own minimap dots take no clicks of an addon.)
+- **A double click for the map pin (Saneroki, 2026-10-23; built):** a double click on a pin, on the map or on a quest
+  in the quest log puts the game's map pin there, in place of Ctrl and a click (which still works, as on the game's
+  map). A single click is a pin's own (a quest's text, a giver's quests, a gathered marker zoomed in), else the
+  map's: a ping there.
 - **Rares:** Blizzard's own rare marker, and on a click the area where the rare can spawn.
 - **One pin per thing (Saneroki, 2026-10-16):** the same quest, NPC or place can be known several ways
   (our shipped data, learned in play, shared by the guild, the game live). One pin is kept for it, not
@@ -714,8 +728,9 @@ Three spaces, converted only in `Coords.lua`:
 ### Input
 
 - **Drag** with the left button pans (and stops following). **Wheel** zooms. No right-click to step
-  out a map (Saneroki, 2026-10-21; built: `Canvas.lua` still steps out on a right-click, to be taken out). **Ctrl-click** sets or clears the map pin,
-  as on Blizzard's map. A click on a pin does the pin's thing.
+  out a map (Saneroki, 2026-10-21; built: `Canvas.lua` still steps out on a right-click, to be taken out). **A
+  double click** sets the map pin (Saneroki, 2026-10-23), and so does **Ctrl-click**, as on Blizzard's map. A click
+  on a pin does the pin's thing; a click that opens nothing pings (built 2026-10-23: `Canvas.lua`, `Ping.lua`).
 - **Small view and the native minimap:** the native `Minimap` must keep the mouse's movement for its own
   tooltips over its dots, and our canvas needs the wheel and the drag. An overlay of our own above the
   minimap takes wheel and clicks and lets the movement through (`SetPropagateMouseMotion`,
@@ -1039,8 +1054,9 @@ hidden but what the small view needs.
   `WowScrollBoxList` with a tree view, zones as headers, quests under them, objectives under those; from
   `C_QuestLog.GetNumQuestLogEntries`, `GetInfo`, `GetQuestObjectives`; built again once a frame after
   `QUEST_LOG_UPDATE`.
-- **Actions:** a click puts the game's map pin on its objective (`GetQuestsOnMap`, else `GetNextWaypoint`; a
-  preview's at its giver) and focuses it (`C_SuperTrack.SetSuperTrackedQuestID`), the camera staying; the right
+- **Actions:** a click focuses it (`C_SuperTrack.SetSuperTrackedQuestID`) and moves the camera to its objective
+  (`GetQuestsOnMap`, else `GetNextWaypoint`; a preview's at its giver), its zoom kept (`Canvas.LookAt`; 2026-10-23);
+  a double click puts the game's map pin there (the row's `OnDoubleClick`); the right
   button: its text below the list (`GetQuestLogQuestText`, shown only once asked for), show on the map (the camera
   goes to the objective), track (`AddQuestWatch`, `RemoveQuestWatch`), share, abandon (`SetAbandonQuest`,
   `AbandonQuest`, after a question of our own). Built 2026-10-21.
@@ -1095,7 +1111,7 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
 
 ### The map pin
 
-- Ctrl-click on our map sets the game's map pin (`C_Map.SetUserWaypoint` with
+- A double click on our map or a pin (2026-10-23), or Ctrl-click, sets the game's map pin (`C_Map.SetUserWaypoint` with
   `UiMapPoint.CreateFromCoordinates`, where `C_Map.CanSetUserWaypointOnMap` allows it) and tracks it
   (`C_SuperTrack.SetSuperTrackedUserWaypoint(true)`); the game's own on-screen marker follows it
   (`C_Navigation`). Navigation reads it on `USER_WAYPOINT_UPDATED`.

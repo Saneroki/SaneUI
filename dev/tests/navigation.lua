@@ -1217,11 +1217,45 @@ check(small.follow and near(small.u, 500) and minimap._shown, "then it follows a
     check(zoned and placed == 1, "a zone entered: the pins placed anew, not the whole map; what is explored lays it out")
 end)()
 
--- A plain click on the game's minimap pings; Ctrl and a click puts the map pin there.
-cursorX, cursorY = 120, 110
-frame._scripts.OnMouseDown(frame, "LeftButton")
-frame._scripts.OnMouseUp(frame, "LeftButton")
-check(minimap._ping and minimap._ping[1] == 20 and minimap._ping[2] == 10, "a click: the game's ping, where it was clicked")
+-- A plain click in a zone pings there, once the time of a double click has passed; a double click puts the map pin
+-- there instead; Ctrl and a click puts it there too.
+;(function()
+    cursorX, cursorY = 120, 110
+    minimap._ping = nil
+    local step = minimap._zoom
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    local owed = minimap._ping == nil
+    W.Wait(ns.Ping.DOUBLE)
+    check(owed and minimap._ping and near(minimap._ping[1], 20) and near(minimap._ping[2], 10) and minimap._zoom == step,
+        "a click: the game's ping where it was clicked (its yards from the player, in its minimap's units), once no second came")
+    do
+        -- Past the view the game's minimap has (step 2: 160 yards): at the nearest step that reaches it for the moment
+        -- (step 0: 240 yards), then back at its own.
+        local steps = {}
+        local zoom = minimap.SetZoom
+        minimap._zoom = 2
+        function minimap:SetZoom(each) steps[#steps + 1] = each return zoom(self, each) end
+        minimap._ping = nil
+        check(ns.Ping.Send(small.map, small.u + 220, small.v) and near(minimap._ping[1], 220 * 100 / 240)
+            and near(minimap._ping[2], 0) and steps[1] == 0 and steps[2] == 2 and minimap._zoom == 2,
+            "a ping farther than the game's minimap reaches: at its nearest step that reaches it, then its own step again")
+        check(not ns.Ping.Send(small.map, small.u + 300, small.v) and #steps == 2, "past its widest view: no ping")
+        minimap.SetZoom = zoom
+        minimap._zoom = step
+    end
+    waypoint, minimap._ping = nil, nil
+    W.Wait(1) -- the first click long past: the next is no second of it
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    W.Wait(0.1)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    W.Wait(ns.Ping.DOUBLE)
+    check(waypoint and waypoint.uiMapID == 1429 and not minimap._ping and not tracked,
+        "a double click: the game's map pin there, not yet followed, and no ping")
+    waypoint = nil
+end)()
 ctrl = true
 cursorX, cursorY = 100, 100
 frame._scripts.OnMouseDown(frame, "LeftButton")
@@ -1330,6 +1364,35 @@ do
     check(minimap._shown, "on again: there")
     check(not Hybrid.Ping(0, 0), "a click on the full map is no ping: the game's minimap is not in its middle there")
 end
+-- A ping of the group on the full map: its mark at its place (its share of the game's minimap's width from its middle,
+-- the player, at that minimap's zoom), who pinged under it in their class colour; none where the game's minimap
+-- covers it (it draws its own); gone after Ping.TIME.
+;(function()
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local _, u, v = Live.Player()
+    local radius = radii[minimap._zoom]
+    local function Pinged()
+        local list = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Frame" and widget.turn and widget.grow and widget.ping and widget._shown then
+                list[#list + 1] = widget
+            end
+        end
+        return list
+    end
+    W.Fire("MINIMAP_PING", "party1", 0.7, -0.2) -- past the game's minimap's square (its half: 0.5)
+    W.Fire("MINIMAP_PING", "player", 0.05, 0)
+    local marks = Pinged()
+    local mark = marks[1]
+    local x, y = (u + 1.4 * radius - Canvas.view.u) * full.k, (v - 0.4 * radius - Canvas.view.v) * full.k
+    check(#marks == 1 and mark._points[1][2] == holder and near(mark._points[1][4], x) and near(mark._points[1][5], y)
+        and mark.name._text == Core.FullName("party1") and mark.name._color[1] == RAID_CLASS_COLORS.WARRIOR.r
+        and #ns.Ping.List(GetTime()) == 2,
+        "a ping of the party: at its place on the map, who pinged under it; the player's own under the game's minimap: its own")
+    W.Wait(ns.Ping.TIME)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(#Pinged() == 0 and #ns.Ping.List(GetTime()) == 0, "gone after its time")
+end)()
 local bar
 for _, widget in ipairs(W.frames) do if widget.key == "terrain" then bar = widget._parent end end
 check(bar and bar._shown, "full: the view buttons")
@@ -1783,13 +1846,20 @@ check(rows[2].icon._shown and rows[2].icon._atlas == Pins.ICONS.log and rows[4].
     QuestLog.Refresh()
 end)()
 do
-    local was, saved = { map = full.map, u = full.u, v = full.v, k = full.k }, waypoint
+    local was, saved = { map = full.map, u = full.u, v = full.v, k = full.k, follow = full.follow }, waypoint
+    local u, v = Coords.MapToPlane(1429, 0.4, 0.4, Coords.PlaneOf(1429))
     waypoint = nil
     rows[2]._scripts.OnClick(rows[2], "LeftButton")
-    check(focused == 7 and waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4)
-        and full.map == was.map and full.u == was.u and full.v == was.v and full.k == was.k,
-        "a click: the game's map pin on its objective, the game's arrow leads to it; the map stays as it is")
+    check(focused == 7 and not waypoint and full.map == Coords.PlaneOf(1429) and near(full.u, u) and near(full.v, v)
+        and full.k == was.k and not full.follow,
+        "a click: the game's arrow leads to it, the map moves to its objective at the zoom it has; no map pin")
+    rows[2]._scripts.OnDoubleClick(rows[2], "LeftButton")
+    check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4),
+        "a double click: the game's map pin on its objective")
     waypoint = saved
+    full:Show(was.map, was.u, was.v, was.k)
+    full.follow = was.follow
+    Canvas.Layout()
 end
 rows = logBox:Draw()
 check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
@@ -1933,45 +2003,69 @@ do
     full.follow = was.follow
     Canvas.Layout()
 end
--- A click on any pin puts the game's map pin where it stands, on the full map and the small one; Shift and a click
--- on one that leads into another map opens that map instead.
+-- A double click on any pin puts the game's map pin where it stands, on the full map and the small one; a click is
+-- the pin's own where it has one (Shift and a click on one that leads into another map opens that map, a quest
+-- giver's on the full map shows its quests), else the map's: a ping there.
 do
     local was = { map = full.map, u = full.u, v = full.v, k = full.k, follow = full.follow }
     full:Show(1415, 0, -9250, 0.4)
     Canvas.Layout()
     local saved = waypoint
+    local function Click(button)
+        button._scripts.OnMouseDown(button, "LeftButton")
+        button._scripts.OnMouseUp(button, "LeftButton")
+    end
+    local function Double(button)
+        Click(button)
+        W.Wait(0.1)
+        Click(button)
+    end
     local mailbox = Drawn()["place:2"]
+    local sent
+    local send = ns.Ping.Send
+    ns.Ping.Send = function(map, u, v) sent = { map, u, v } return true end
     waypoint = nil
-    mailbox._scripts.OnMouseDown(mailbox, "LeftButton")
-    mailbox._scripts.OnMouseUp(mailbox, "LeftButton")
+    W.Wait(1)
+    Click(mailbox)
+    W.Wait(ns.Ping.DOUBLE)
+    check(not waypoint and sent and sent[1] == full.map, "a click on a pin with nothing of its own: the map's, a ping there")
+    W.Wait(1)
+    sent = nil
+    Double(mailbox)
+    W.Wait(ns.Ping.DOUBLE)
     check(waypoint and waypoint.uiMapID == mailbox.pin.map and near(waypoint.position.x, mailbox.pin.x)
-        and near(waypoint.position.y, mailbox.pin.y), "a click on a pin: the game's map pin where it stands")
+        and near(waypoint.position.y, mailbox.pin.y) and not sent,
+        "a double click on a pin: the game's map pin where it stands, no ping")
+    ns.Ping.Send = send
     local opened
     local show = ns.Canvas.Show
     ns.Canvas.Show = function(map) opened = map return true end
     local entrance = Drawn()["place:1"]
     waypoint = nil
+    W.Wait(1)
     IsShiftKeyDown = function() return true end
-    entrance._scripts.OnMouseDown(entrance, "LeftButton")
-    entrance._scripts.OnMouseUp(entrance, "LeftButton")
+    Click(entrance)
     IsShiftKeyDown = function() return false end
     check(opened == 500 and not waypoint, "Shift and a click on an entrance: its map opens, no map pin")
-    entrance._scripts.OnMouseDown(entrance, "LeftButton")
-    entrance._scripts.OnMouseUp(entrance, "LeftButton")
-    check(waypoint and waypoint.uiMapID == 1429, "a plain click on it: the map pin there, as on every pin")
+    Double(entrance)
+    check(waypoint and waypoint.uiMapID == 1429, "a double click on it: the map pin there, as on every pin")
     local previewed
     local preview = ns.QuestLog.Preview
     ns.QuestLog.Preview = function(quests) previewed = quests end
     local giver = Drawn()["npc:72"]
     Canvas.Use(ns.Window.small)
     waypoint = nil
-    giver._scripts.OnMouseDown(giver, "LeftButton")
-    giver._scripts.OnMouseUp(giver, "LeftButton")
-    check(waypoint and not previewed, "on the small map a quest giver's pin: the map pin only, the quest log stays shut")
+    W.Wait(1)
+    Click(giver)
+    check(not waypoint and not previewed, "on the small map a click on a quest giver's pin: the quest log stays shut")
     Canvas.Use(full)
-    giver._scripts.OnMouseDown(giver, "LeftButton")
-    giver._scripts.OnMouseUp(giver, "LeftButton")
-    check(previewed and previewed[1] == 100, "on the full map: the map pin, and its quests in the quest log")
+    W.Wait(1)
+    Click(giver)
+    check(previewed and previewed[1] == 100 and not waypoint, "on the full map: its quests in the quest log")
+    W.Wait(0.1)
+    Click(giver)
+    check(waypoint and waypoint.uiMapID == giver.pin.map, "and a double click: the map pin at the giver too")
+    W.Wait(1)
     ns.QuestLog.Preview = preview
     ns.Canvas.Show = show
     waypoint = saved
@@ -1993,6 +2087,67 @@ function W.SmallAndBack(between)
     Window.frame._group:Run(1)
     for key, value in pairs(kept) do small[key] = value end
 end
+
+-- The box Follow me left of the pin filter: off at first. Ticked, the full map on the player and following; dragged
+-- away, it follows again once the player walks on and the mouse has left it alone for Follow again after (not while
+-- the player stands); the full map opens on the player. Not ticked: it stays where it is left.
+;(function()
+    local box, pinMenu
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "CheckButton" and widget.title == ns.TEXT.followMap then box = widget end
+        if widget._override == ns.TopBar.TEXT.pins then pinMenu = widget end
+    end
+    check(box and not box._checked and not ns.options.followMap and box.Text._text == ns.TEXT.followMap
+        and box._points[1][2] == box.Text and box.Text._points[1][1] == "RIGHT" and box.Text._points[1][2] == pinMenu,
+        "the box Follow me, its words between it and the pin filter: off at first")
+    full.follow = false
+    full:Look(full.u + 400, full.v)
+    Canvas.Layout()
+    box._checked = true
+    box._scripts.OnClick(box)
+    local _, u, v = Live.Player()
+    check(ns.options.followMap and full.follow and near(full.u, u) and near(full.v, v) and box._checked,
+        "ticked: the full map on the player, following")
+    cursorX, cursorY = 800, 434
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    cursorX = 700
+    frame._scripts.OnUpdate(frame, 0.016)
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    cursorX = 800
+    check(not full.follow, "dragged away: no longer following")
+    W.Wait(ns.options.followAgain + 1)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not full.follow, "the player standing: it stays where it was dragged")
+    local wasX = player.x
+    player.x = wasX + 0.002
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    _, u, v = Live.Player()
+    check(full.follow and near(full.u, u) and near(full.v, v), "the player walks on: back on the player, following")
+    -- Back small and full again after a drag: it opens on the player.
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    cursorX = 700
+    frame._scripts.OnUpdate(frame, 0.016)
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    cursorX = 800
+    W.SmallAndBack()
+    check(full.follow and near(full.u, u) and near(full.v, v), "ticked, the full map opens on the player")
+    box._checked = false
+    box._scripts.OnClick(box)
+    local stood = full.u
+    player.x = wasX
+    frame._mouseOver = true -- the full map fills the screen: the mouse is on it
+    W.Wait(ns.options.followAgain + 1)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    frame._mouseOver = false
+    check(not ns.options.followMap and not full.follow and full.u == stood and not box._checked,
+        "not ticked: the map stays where it is, the player walking or not")
+    full.follow = true
+    tracker._scripts.OnUpdate(tracker, 0.016)
+end)()
 
 -- The dungeons' maps: chosen in the bar, over the map, by floor; the mouse; back to the map.
 ;(function()
@@ -4131,11 +4286,24 @@ do
     check(spot and spot._points[1][1] == "TOPLEFT" and spot._points[1][2] == herbs[1], "the picture takes the mouse, as a pin does")
     spot._scripts.OnEnter(spot)
     check(GameTooltip._text == "Silverleaf", "its tooltip names the herb")
-    local saved = waypoint
+    local saved, sent = waypoint, nil
+    local send = ns.Ping.Send
+    ns.Ping.Send = function(map, u, v) sent = { map, u, v } return true end
     waypoint = nil
+    W.Wait(1)
     spot._scripts.OnClick(spot)
+    W.Wait(ns.Ping.DOUBLE)
+    local entry = spot.entry
+    check(not waypoint and sent and sent[1] == entry.plane and sent[2] == entry.u and sent[3] == entry.v,
+        "a click: a ping where it is, once no second click came")
+    sent = nil
+    spot._scripts.OnClick(spot)
+    spot._scripts.OnDoubleClick(spot)
+    W.Wait(ns.Ping.DOUBLE)
     check(waypoint and waypoint.uiMapID == 1429 and waypoint.position.x > 0 and waypoint.position.x < 1
-        and waypoint.position.y > 0 and waypoint.position.y < 1, "a click: the game's map pin where it is, on its zone's map")
+        and waypoint.position.y > 0 and waypoint.position.y < 1 and not sent,
+        "a double click: the game's map pin where it is, on its zone's map; no ping")
+    ns.Ping.Send = send
     waypoint = saved
 end
 gather.dots[1] = nil

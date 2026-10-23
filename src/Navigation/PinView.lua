@@ -10,25 +10,27 @@ local _, ns = ...
 --
 --      every pin   its own icon from the game's map icons (Pins.ICONS and the kinds' tables): no discs, no
 --                  numbers. A quest in your log: the yellow question mark (the one the game's arrow leads to with
---                  a glow); a click shows it in the quest log and lets the arrow lead to it (QuestLog.lua). A
---                  quest giver of Core's data: the yellow exclamation mark, grey for a quest too low, a red
---                  question mark for one for later; a click shows its quests in the quest log as previews
---                  (QuestLog.Preview)
+--                  a glow); on the full map a click shows it in the quest log and lets the arrow lead to it
+--                  (QuestLog.lua). A quest giver of Core's data: the yellow exclamation mark, grey for a quest too
+--                  low, a red question mark for one for later; on the full map a click shows its quests in the
+--                  quest log as previews (QuestLog.Preview)
 --      gathered    pins that would cover each other: one marker, in their icon where all have the same one (two
 --                  trainers: the trainer's), else the game's plus (PinView.PLUS; Saneroki, 2026-10-23); its
---                  tooltip what is there, each with its own pin's icon before its name; a click zooms in
+--                  tooltip what is there, each with its own pin's icon before its name; a click zooms in, a double
+--                  click puts the game's map pin on the first
 --      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
---      a click     the game's map pin where it stands, on the small map and the full one (Act); on the
---                  full map a quest also shows in the quest log; Shift and a click on one that leads into
---                  another map opens that map
+--      a click     its own, where it has one (Act; above): Shift and a click on one that leads into another
+--                  map opens that map; else as a click on the map there (Canvas.lua: the map under it opens, or
+--                  a ping). A double click, on the small map and the full one: the game's map pin where it
+--                  stands, as Ctrl and a click
 --
 --  Placed against the canvas' holder like the map's layers, so a drag moves them
 --  with the map; laid out again with the map. A pin shows only while it lies
 --  wholly inside the canvas (Fit: the game does not cut a button at its edge, nor
 --  its clicks). A press on a pin is the map's (a drag that starts on a pin moves
---  the map); a plain click is the pin's.
+--  the map), and so is a click, which asks the pin first (Canvas.Release).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Pins = ns.Pins
@@ -137,16 +139,29 @@ function PinView.Drop(pin)
     end
 end
 
--- A plain click, on the small map and the full one: the game's map pin there; a gathered marker zooms in too, and
--- on the full map a quest shows in the quest log (in the log: the arrow leads to it; a giver's: its quests as
--- previews). Shift and a click: a pin that leads into another map opens it.
-local function Act(pin)
-    if IsShiftKeyDown() and pin.to then return ns.Canvas.Show(pin.to) end
-    PinView.Drop(pin)
-    if pin.gathered then return ns.Canvas.ZoomTo(pin.pu, pin.pv, 3) end
-    if ns.Canvas.camera ~= ns.Window.full then return end
-    if pin.click == "quest" and pin.quest then return ns.QuestLog.Focus(pin.quest) end
-    if pin.click == "preview" and pin.quests then return ns.QuestLog.Preview(pin.quests, pin.map, pin.x, pin.y) end
+-- A click's own for a pin (Canvas.lua asks first; a double click puts the game's map pin there, as Ctrl and a click
+-- does): Shift and a click on a pin that leads into another map opens it; a gathered marker zooms in; on the full map
+-- a quest shows in the quest log (in the log: the arrow leads to it; a giver's: its quests as previews). False where
+-- the pin has none: the click is the map's there.
+function PinView.Act(pin)
+    if IsShiftKeyDown() and pin.to then
+        ns.Canvas.Show(pin.to)
+        return true
+    end
+    if pin.gathered then
+        ns.Canvas.ZoomTo(pin.pu, pin.pv, 3)
+        return true
+    end
+    if ns.Canvas.camera ~= ns.Window.full then return false end
+    if pin.click == "quest" and pin.quest then
+        ns.QuestLog.Focus(pin.quest)
+        return true
+    end
+    if pin.click == "preview" and pin.quests then
+        ns.QuestLog.Preview(pin.quests, pin.map, pin.x, pin.y)
+        return true
+    end
+    return false
 end
 
 -- A rare's creature (its NPC ID), from its pin's key ("npc:<id>": Core's data, or the game's mark of it).
@@ -210,7 +225,7 @@ local function Down(button, mouse)
 end
 
 local function Up(button, mouse)
-    if ns.Canvas.Release(mouse) and button.pin then Act(button.pin) end
+    ns.Canvas.Release(mouse, button.pin)
 end
 
 -- A pin's level: over the layer, a higher kind over a lower one, and still under the marks (Canvas.LEVELS).

@@ -43,6 +43,7 @@ Window.WIDTH, Window.HEIGHT = 200, 200 -- small, about as large as the game's mi
 local frame, handle, inside, canvas
 local resting = false -- out of sight: the game's own minimap is chosen (Rest)
 local going           -- on the way: true to the full screen, false back, nil standing
+local aimed = false   -- the full view was just set to a map the game was asked for (OpenTo): it opens there
 local small, full = ns.Camera.New(), ns.Camera.New() -- each view's camera
 Window.small, Window.full = small, full
 
@@ -107,9 +108,12 @@ end
 
 -- On its way to the full screen (full) or back, the window to be width x height: the map goes with it,
 -- into the other view's camera; the quest log fades in and out with it (but pinned), the bar and a dungeon's
--- map wait until it stands. Resting, it comes into sight first.
+-- map wait until it stands. Resting, it comes into sight first. With the full map's box Follow me ticked, it
+-- opens on the player (but at a map the game was asked for).
 local function Filled(on, width, height)
     if resting then Rest(false) end
+    if on and ns.options.followMap and not aimed then ns.Canvas.Center(full) end
+    aimed = false
     going = on
     ns.TopBar.SetShown(false)
     ns.Dungeons.Close()
@@ -226,6 +230,7 @@ function Window.OpenTo(map, x, y)
     if map then
         local width, height = Window.FullSize()
         ns.Canvas.Fit(full, map, width, height)
+        aimed = true
         local plane = x and ns.Coords.PlaneOf(map)
         if plane and plane == full.map then
             local u, v = ns.Coords.MapToPlane(map, x, y, plane)

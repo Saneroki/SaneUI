@@ -6,6 +6,39 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: pings as on the game's minimap, a double click for the map pin, the quest log moves the map, Follow me (Saneroki, 2026-10-23)
+- **Pings** (`Ping.lua`, new in the TOC, no frames): a plain click on the map where it opens nothing pings there to the
+  party and raid through the game's own ping (`Minimap:PingLocation`; Forever's client loads no ping wheel): the
+  place's yards from the player in the game's minimap's units (`Hybrid.PingAt`: its width over twice its view's
+  radius; where the view it has does not reach so far, at the nearest step measured that does for the moment, its
+  zoom set back at once; none past the widest), sent `Ping.DOUBLE` (0.3) seconds later unless a second click came
+  (`Ping.Soon`, `Ping.Cancel`). `MINIMAP_PING` (shares of the minimap's width from its middle) is kept as a place on
+  the player's plane for `Ping.TIME` (5) seconds and drawn by `Marks.Pings` in the game's minimap ping art (its ring
+  turning, its wave growing; who pinged under it in their class colour, not the player), faded out at the end,
+  hidden where the game's minimap covers it (`Hybrid.Covers`); turned with the game's own minimap where it turns.
+  The small view's old ping on the game's minimap (`Hybrid.Ping`) stays only in an instance.
+- **A double click puts the game's map pin** (`Canvas.lua`): two plain left clicks on the same (a pin, or the map)
+  within `Ping.DOUBLE` and `Canvas.NEAR` (8) units, at the first click's place (`Where`, taken before a zone it
+  opened). Ctrl and a click still puts it at once (on a pin: where the pin stands). A click on a pin is its own
+  first (`PinView.Act`, now public and false where a pin has none: gathered markers zoom in, quests and givers on
+  the full map show in the quest log, Shift opens a linked map), else the map's; `Canvas.Release(button, pin)` takes
+  the whole click. A found herb's or ore's picture (`Found.lua`): a click pings it, `OnDoubleClick` the map pin.
+- **The quest log** (`QuestLog.lua`): a click on a quest (or a preview) leads the arrow to it and moves the map to
+  its objective at the zoom it has (`Canvas.LookAt`: no longer following, as after a drag; a dungeon's map over the
+  full map goes); the row's `OnDoubleClick` puts the map pin there (a header's, or a modified second click, as a
+  click).
+- **Follow me** (the setting `followMap`, off; its box on the full map's bar left of the pin filter, `TopBar.lua`;
+  `Canvas.Following`, `Canvas.Center`): ticked, the full map is on the player and follows; the window filling the
+  screen puts it on the player again (`Window.lua`: not at a map the game was asked for, `aimed`); the tracker's
+  `Again` follows again on the full map once the player moved since the last look, no button is held and the mouse
+  left the map alone for *Follow again after*. Unticked, the full map as before.
+- **The bar:** the view buttons `TopBar.VIEW_WIDTH` (90) and the pin filter `TopBar.PINS_WIDTH` (110) wide, so the
+  bar with the box still fits a screen 1366 units wide.
+- Tests: `dev/tests/navigation.lua` (584 checks: a ping where clicked once no second came, at a wider step past the
+  view, none past the widest; a double click's map pin and no ping; the party's ping on the full map and the
+  player's under the game's minimap, gone after its time; pins clicked and double clicked; the quest log's click
+  and double click; Follow me ticked, dragged, standing, walking on, opening on the player, unticked; a found herb).
+
 ### Core: what the game confirms in play, kept, shared and harvested; items' stats learned (Saneroki, 2026-10-23)
 - The master: a version's `verified` mark (`{"day","times"}`, after `src`; `master.py`, `schema.py`), `Master.confirmed`
   (a source of the kind game or hand, or the mark). The compiler lists each set's entries not yet verified in its file

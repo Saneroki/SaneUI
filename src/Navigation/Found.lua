@@ -33,8 +33,9 @@ local _, ns = ...
 --  each frame you or its zoom moved.
 --
 --  Each picture takes the mouse, as the pins do: its tooltip names the herb or
---  ore, and a click puts the game's map pin where it is (its zone's map), so the
---  game's arrow leads there.
+--  ore, a click pings it to the group as a click on the game's minimap there
+--  would (Ping.lua), and a double click puts the game's map pin where it is (its
+--  zone's map) instead, so the game's arrow leads there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Nodes = ns.Coords, ns.Nodes
@@ -300,10 +301,18 @@ local function OnMap(entry)
     return zone, x, y
 end
 
--- A click on a picture: the game's map pin where it is (PinView.Drop says so where the game takes none).
+-- A click on a picture: a ping there, once no second click came. A double click: the game's map pin where it is
+-- instead (PinView.Drop says so where the game takes none); the game's button tells the second click as one of its
+-- own, after the first's OnClick.
 local function Clicked(button)
     local entry = button.entry
+    if entry then ns.Ping.Soon({ map = entry.plane, u = entry.u, v = entry.v }) end
+end
+
+local function DoubleClicked(button)
+    local entry = button.entry
     if not entry then return end
+    ns.Ping.Cancel()
     local map, x, y = OnMap(entry)
     ns.PinView.Drop({ map = map, x = x, y = y })
 end
@@ -331,6 +340,7 @@ local function Picture(index)
     local button = CreateFrame("Button", nil, overlay)
     button:SetAllPoints(icon)
     button:SetScript("OnClick", ns.Guard(Clicked))
+    button:SetScript("OnDoubleClick", ns.Guard(DoubleClicked))
     button:SetScript("OnEnter", ns.Guard(Tip))
     button:SetScript("OnLeave", GameTooltip_Hide)
     picture = { icon = icon, mask = mask, ring = ring, button = button }

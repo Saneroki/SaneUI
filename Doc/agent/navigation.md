@@ -304,10 +304,19 @@ only, steps aimed at its next gate, `Search.AIM`). `Search.Price` gives cost, re
 without its openings (`Walk.Links` works them out when needed; a rectangle's `surface` kept for the parts). Measured
 with the routes harness outside the project (as 2026-10-21, above).
 
+Clicks, pings and following (2026-10-23; the plan, *Follow me on the full map*, *Pings as on the game's minimap*, *A
+double click for the map pin*): every click on the map and on a pin goes through `Canvas.lua`'s `Clicked` (a pin's
+own first, `PinView.Act`; a double click within `Ping.DOUBLE`, the map pin; else the map under it opens, else
+`Ping.Soon`). `Ping.lua` (no frames) sends a place by its yards from the player through `Hybrid.PingAt`
+(`Minimap:PingLocation`, a wider step for the moment where needed) and keeps `MINIMAP_PING`'s places, which
+`Marks.Pings` draws. The quest log's click moves the map (`Canvas.LookAt`), its `OnDoubleClick` pins. *Follow me*
+(`followMap`): the box on the bar, `Canvas.Following`, `Canvas.Center`, the tracker's `Again`.
+
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 524 with the 2026-10-21 changes; 527 with the whole city below; 528 with no walk after a walk at a flight
-point; 530 with the routing finalized; 551 with the coarse layer; 555 with no ride straight back), `dev/tests/walk.py`
+point; 530 with the routing finalized; 551 with the coarse layer; 555 with no ride straight back; 584 with pings,
+double clicks and Follow me), `dev/tests/walk.py`
 (125; 130 with the
 teleports' tool; 147 with the walking data's openings; 159 with the coarse layer).
 

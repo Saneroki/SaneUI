@@ -20,9 +20,10 @@ local _, ns = ...
 --                   in again it takes the widest step; in past the narrowest our map goes on alone
 --                   too, up to its own nearest zoom (Camera.NEAR), and out again it takes the
 --                   narrowest step (Wheel)
---      clicks       the left and right button go through to our map (drag, Ctrl-click, one map out);
---                   a plain left click on it pings, as the game's does (Ping); the mouse's moves stay
---                   the game's, for its tooltips
+--      clicks       the left and right button go through to our map (drag, a click, one map out): a
+--                   plain left click pings there as on the game's, by the place's yards from the player
+--                   (Ping.lua, PingAt), so on our map wherever its view reaches (in an instance, on it:
+--                   Ping); the mouse's moves stay the game's, for its tooltips
 --      indoors      a cave, a building: its own ground stays off as outdoors (it would draw the
 --                   indoor plan on black over our map, Saneroki 2026-10-20); our map and its dots show
 --      an instance  a dungeon, a raid, a battleground: the game tells no place of the player in our
@@ -386,7 +387,8 @@ function Hybrid.Wheel(camera, notches, size)
     return true
 end
 
--- A plain left click at x, y units from the view's middle: the game's ping, where its minimap shows.
+-- A plain left click at x, y units from the view's middle where the game tells no place of the player (an
+-- instance: its minimap alone is the map, Canvas.lua): the game's ping, where its minimap shows.
 function Hybrid.Ping(x, y)
     if wide or not Hybrid.Shown() then return false end
     local minimap = Parts()
@@ -394,4 +396,42 @@ function Hybrid.Ping(x, y)
     if math.abs(x) > half or math.abs(y) > half then return false end
     minimap:PingLocation(x, y)
     return true
+end
+
+-- The game's ping at a place right, up yards from the player (Ping.lua), as a click on its minimap there: at its zoom
+-- now, or where its view does not reach so far, at the nearest step measured that does, for the moment (what the
+-- game says of the step meanwhile is ours, as while measuring). False where no step reaches so far (the game pings
+-- only inside its view), or the game took no ping.
+function Hybrid.PingAt(right, up)
+    local minimap = Parts()
+    if not minimap or not minimap.PingLocation then return false end
+    local far = math.sqrt(right * right + up * up)
+    local was = minimap:GetZoom()
+    local step, radius = was, Core.Plain(Core.Ask(C_Minimap.GetViewRadius))
+    if type(radius) ~= "number" or radius <= 0 or far > radius then
+        step, radius = nil, nil
+        for each, reach in pairs(radii[IsIndoors() and true or false]) do
+            if reach >= far and (not radius or reach < radius) then step, radius = each, reach end
+        end
+        if not step then return false end
+    end
+    local scale = minimap:GetWidth() / 2 / radius -- its units per yard at that step
+    surveying = true
+    if step ~= was then minimap:SetZoom(step) end
+    local sent = pcall(minimap.PingLocation, minimap, right * scale, up * scale)
+    if step ~= was then minimap:SetZoom(was) end
+    surveying = false
+    return sent
+end
+
+-- Whether the game's minimap, where it shows over our map, covers a point x, y of the canvas' holder (its units):
+-- it draws a ping there itself (Marks.lua).
+function Hybrid.Covers(x, y)
+    if not Hybrid.Shown() then return false end
+    local half = Parts():GetWidth() / 2
+    local edge = ns.Canvas.edge
+    local middleX, middleY = -edge.x, -edge.y -- the small view: in the canvas' middle
+    if wide then middleX, middleY = wide.x, wide.y end -- the full map: on the player
+    if not middleX then return false end
+    return math.abs(x - middleX) <= half and math.abs(y - middleY) <= half
 end

@@ -11,19 +11,20 @@ local _, ns = ...
 --
 --      a header      a click folds it in or out, as the game's own log keeps it
 --      a quest       its mark at the left, as its pin on the map has it (the yellow question mark). A click:
---                    the game's map pin on its objective, where the map shows it (its question mark, or the
---                    middle of the area where its foes are), and the game's arrow leads to it; the map stays
---                    as it is. Shift and a click: watched or not (the game's objective tracker); the chat
---                    link's modifier: its link into the chat; the right button: a menu (its text below the
---                    list, the map moved to its objective, watch, share, abandon after a question). The mouse
---                    over it: its area on the map (Areas.lua)
+--                    the game's arrow leads to it, and the map moves to its objective, where the map shows it
+--                    (its question mark, or the middle of the area where its foes are), at the zoom it has, as
+--                    a drag would move it (Canvas.LookAt). A double click: the game's map pin there too. Shift
+--                    and a click: watched or not (the game's objective tracker); the chat link's modifier: its
+--                    link into the chat; the right button: a menu (its text below the list, the map at its
+--                    objective with its zone whole, watch, share, abandon after a question). The mouse over
+--                    it: its area on the map (Areas.lua)
 --      below         a quest's text, chosen from its menu (or by a click on its pin on the map): its
 --                    objectives' words and its story, and its buttons; its X closes it
 --      previews      quests of Core's data a click on their giver's pin showed (QuestLog.Preview): on top,
 --                    under Not in your log, grey, each with its giver's mark and the game's red X that takes
 --                    it out again; what the data knows of it below (why it is not for you yet, its level, who
---                    gives and takes it, what it asks first, its objectives, its rewards); a click puts the
---                    game's map pin at its giver. Kept until the next /reload
+--                    gives and takes it, what it asks first, its objectives, its rewards); a click moves the
+--                    map to its giver, a double click puts the game's map pin there. Kept until the next /reload
 --
 --  No scroll bar at rest: the mouse wheel scrolls the list. While the mouse is on the window and the list is
 --  longer than its room, the game's thin scroll bar shows at the side the window stands at (docked at the
@@ -230,14 +231,21 @@ local function Lead(quest)
     end
 end
 
--- A click on a quest in the list: the game's map pin on its objective (a preview's: at its giver), the arrow
--- leads to it, lit in the list; the map stays as it is.
-local function Pin(quest)
+-- A click on a quest in the list: the arrow leads to it, lit in the list, and the map at its objective (a preview's:
+-- at its giver) in the middle, at the zoom it has.
+local function Look(quest)
     Lead(quest)
+    chosen = quest
+    local map, x, y = Place(quest)
+    if map then ns.Canvas.LookAt(map, x, y) end
+    QuestLog.Refresh()
+end
+
+-- A double click on it (the game's button tells the second click as one of its own, after the first's OnClick):
+-- the game's map pin there too.
+local function Pin(quest)
     local map, x, y = Place(quest)
     ns.PinView.Drop({ map = map, x = x, y = y })
-    chosen = quest
-    QuestLog.Refresh()
 end
 
 -- A click on its pin on the map: the arrow leads to it, its text below the list.
@@ -302,7 +310,7 @@ local function Clicked(element, mouse)
     end
     local quest = row.quest
     if mouse == "RightButton" then return Menu(element, quest) end
-    if row.kind == "preview" then return Pin(quest) end
+    if row.kind == "preview" then return Look(quest) end
     if IsModifiedClick("CHATLINK") then
         local link = rawget(_G, "GetQuestLink") and GetQuestLink(quest)
         local chat = rawget(_G, "ChatFrameUtil")
@@ -310,7 +318,16 @@ local function Clicked(element, mouse)
         return
     end
     if IsShiftKeyDown() then return Watch(quest, not row.watched) end
-    Pin(quest)
+    Look(quest)
+end
+
+-- The second click of a double click: on a quest, plain and with the left button, the map pin; else a click as the
+-- first was (a header folds back, a quest watched is watched no more).
+local function DoubleClicked(element, mouse)
+    local row = element.row
+    local plain = mouse == "LeftButton" and not IsShiftKeyDown() and not IsModifiedClick("CHATLINK")
+    if plain and row and row.quest and (row.kind == "quest" or row.kind == "preview") then return Pin(row.quest) end
+    Clicked(element, mouse)
 end
 
 local function Entered(element)
@@ -369,6 +386,7 @@ local function Draw(element, row)
         element.remove:SetScript("OnLeave", GameTooltip_Hide)
         element:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         element:SetScript("OnClick", ns.Guard(Clicked))
+        element:SetScript("OnDoubleClick", ns.Guard(DoubleClicked))
         element:SetScript("OnEnter", ns.Guard(Entered))
         element:SetScript("OnLeave", ns.Guard(Left))
     end

@@ -37,11 +37,15 @@ local _, ns = ...
 --  The mouse, the same in both views: a drag with the left button moves the map
 --  (and stops following); the wheel zooms around the mouse (the game's minimap's
 --  steps first while following, Hybrid.lua); a right click steps one map out
---  (zone, continent, world); Ctrl and a left click puts the game's map pin there;
---  a plain left click on the game's minimap pings. Over a continent shown whole
---  the zone under the mouse lights up, over the world the continent (Art.Light),
---  and a plain click opens it, as on the game's map. A plane of its own (Zephras
---  Isle) is drawn as a continent is, as a zone (Camera.lua).
+--  (zone, continent, world); a double click puts the game's map pin there (on a
+--  pin: where the pin stands), and so does Ctrl and a click, the game's own way.
+--  Over a continent shown whole the zone under the mouse lights up, over the world
+--  the continent (Art.Light), and a plain click opens it, as on the game's map;
+--  where a click opens nothing, it pings there to the group as a click on the
+--  game's minimap does (Ping.lua), once the time of a double click has passed
+--  without a second (Ping.Soon). A click on a pin is the pin's first, where
+--  it has one of its own (PinView.Act). A plane of its own (Zephras Isle) is drawn
+--  as a continent is, as a zone (Camera.lua).
 --
 --  On the window's way to the full screen and back the map goes with it (Morph): laid
 --  out once, at the start, for the whole way, it is only scaled and moved on the
@@ -51,7 +55,10 @@ local _, ns = ...
 --  The tracker asks where the player is: every frame while the view follows
 --  (three questions to the game and one SetPoint; the zone in the middle a few
 --  times a second), else a few times a second; and after some time without the
---  mouse on the map (the setting Follow again after) the view follows again.
+--  mouse on the map (the setting Follow again after) the view follows again. The
+--  full map, which is always under the mouse, follows again only while its box
+--  Follow me is ticked (the setting followMap, TopBar.lua): once the player moves
+--  on and the mouse has left the map alone for that time.
 --  Nothing else runs while nothing moves. Where the game tells no place of the
 --  player (an instance) the small view draws nothing of ours but the sea: the
 --  game's minimap, with its own ground, is the map there (Hybrid.lua).
@@ -71,6 +78,8 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
+Canvas.DOUBLE = ns.Ping.DOUBLE -- a second click so many seconds after the first, near where it was, is a double click
+Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a double click
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
 Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, indoors = 5, light = 6, areas = 7, route = 8, pins = 12,
                   marks = 20 }
@@ -96,6 +105,8 @@ local known = false -- the player's place is known in the view's plane
 -- minimap alone is the map there, and nothing of ours is drawn but the sea (Lost; Hybrid.Place).
 local lost = false
 local lastInput = 0 -- when the mouse last did something to the map
+local pressed -- the mouse button held on the map (Down), nil while none
+local seenU, seenV -- the player's place at the tracker's last look
 local overX, overY -- where the mouse was at the last look for the highlight (nil: look again)
 local nextLook = 0
 local nextZone = 0 -- while the view moves, when the zone in its middle is next asked of the game (Moved)
@@ -300,6 +311,7 @@ local function Draw()
     ns.Safe("route", ns.Route.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
+    ns.Safe("marks", ns.Marks.Pings, view, GetTime())
 end
 
 -- The player's place in the holder's units while it is on the view's plane (map, u, v from Live.Player), else nil.
@@ -396,6 +408,18 @@ end
 -------------------------------------------------------------------------------
 --  The player
 -------------------------------------------------------------------------------
+-- Whether a view that does not follow the player follows again (walked: the player moved since the last look). The
+-- full map with its box Follow me ticked: once the player moves on, the mouse no button held and the map left alone
+-- for the setting Follow again after (0: at once); the mouse is always on it. Else once the mouse has been off the
+-- map for so long (0: never).
+local function Again(now, walked)
+    local after = ns.options.followAgain
+    if camera == ns.Window.full and ns.options.followMap then
+        return walked and not pressed and now - lastInput >= after
+    end
+    return after > 0 and now - lastInput > after and not frame:IsMouseOver()
+end
+
 local function Track()
     local now = GetTime()
     if not camera.follow and now < nextLook then return end
@@ -407,6 +431,8 @@ local function Track()
         if laid and view.level == "zone" and Zone() ~= view.zone then return Canvas.Layout() end
     end
     local map, u, v, facing = Live.Player()
+    local walked = u ~= seenU or v ~= seenV
+    seenU, seenV = u, v
     local was, followed = known, camera.follow
     known = u ~= nil and map == camera.map
     if Lost(u) ~= lost then return Canvas.Layout() end -- into an instance or out of it: drawn anew (Draw, Hybrid)
@@ -418,8 +444,7 @@ local function Track()
             camera:Look(u, v)
             Canvas.Moved()
         end
-    elseif not camera.follow and ns.options.followAgain > 0 and now - lastInput > ns.options.followAgain
-        and not frame:IsMouseOver() then
+    elseif not camera.follow and Again(now, u ~= nil and walked) then
         -- The next look puts the player in the middle; in an instance (no place) the game's minimap comes back.
         camera.follow = true
         nextLook = 0
@@ -427,7 +452,10 @@ local function Track()
     if was ~= known or followed ~= camera.follow then Native() end
     ns.Hybrid.Follow(holder, Here(map, u, v))
     ns.Marks.Player(view, map, u, v, facing, ns.Hybrid.Shown())
-    if not lost then ns.Marks.Group(view, now) end -- in an instance the game's minimap shows the party itself
+    if not lost then
+        ns.Marks.Group(view, now) -- in an instance the game's minimap shows the party and the pings itself
+        ns.Marks.Pings(view, now)
+    end
     ns.Route.Track(map, u, v, now)
     if laid and not lost then ns.Indoors.Track(view, now) end
 end
@@ -436,7 +464,7 @@ local tracking = ns.Guard(Track) -- made once
 -------------------------------------------------------------------------------
 --  The mouse
 -------------------------------------------------------------------------------
-local pressed, pressX, pressY, lastX, lastY, moved
+local pressX, pressY, lastX, lastY, moved
 
 -- The mouse in the canvas' units.
 local function Cursor()
@@ -477,24 +505,21 @@ local function Down(_, button)
     if button == "LeftButton" then frame:SetScript("OnUpdate", dragging) end
 end
 
--- The game's map pin where the mouse is: on the zone there, else the continent (as the game's map puts it
--- on the map it shows); at the world, on the continent (or the plane of its own) under the mouse.
-local function Pin(x, y)
+-- Where the game's map pin goes for the mouse at x, y from the view's middle: on the zone there, else the continent
+-- (as the game's map puts it on the map it shows); at the world, on the continent (or the plane of its own) under
+-- the mouse. { map, x, y } (PinView.Drop takes it), or { } where there is none.
+local function Where(x, y)
     local u, v = camera.u + x / camera.k, camera.v + y / camera.k
     local plane = camera.map
     if camera.level == "world" then
         local under = Coords.PlaneAt(camera.map, u, v)
         local link = under and Coords.Link(camera.map, under)
-        if not link then return UIErrorsFrame:AddMessage(ns.TEXT.noPin, 1, 0.1, 0.1) end
+        if not link then return {} end
         plane, u, v = under, link.du + link.su * u, link.dv + link.sv * v
     end
     local map = Coords.ZoneAt(plane, u, v) or plane
     local mapX, mapY = Coords.ToMap(Coords.Box(map), u, v)
-    if Live.SetWaypoint(map, mapX, mapY) then
-        ns.Marks.Sound("UI_MAP_WAYPOINT_CONTROL_CLICK")
-    else
-        UIErrorsFrame:AddMessage(ns.TEXT.noPin, 1, 0.1, 0.1)
-    end
+    return { map = map, x = mapX, y = mapY }
 end
 
 -- A plain click on a map the view shows whole: the zone under the mouse at a continent, the continent (or the
@@ -524,20 +549,44 @@ local function Finish(button)
     return true
 end
 
--- A click on the map itself: Ctrl puts the map pin there, else the game's minimap pings or the map under the
--- mouse opens; the right button steps one map out.
-local function Clicked(button)
+-- The last plain left click, for a double click: when, where the mouse was (from the view's middle), and what the
+-- map pin goes on then: the pin clicked, else the place on the map as it was (Where).
+local last
+
+-- A click on the map, or on a pin (pin: its record, PinView.lua). The right button steps one map out; Ctrl and the
+-- left puts the game's map pin there. Two plain left clicks on the same (a pin, or the map) within Canvas.DOUBLE,
+-- near each other: the map pin where the first was (the view may have changed in between). One: the pin's own
+-- (PinView.Act), else the map under the mouse opens, else a ping there, owed until no second click came (Ping.Soon).
+-- In an instance our map is not drawn: no place to pin, the game's minimap pings itself.
+local function Clicked(button, pin)
     local x, y = FromMiddle()
     if not x then return end
-    if button == "LeftButton" then
-        if IsControlKeyDown() then
-            if not lost then Pin(x, y) end -- in an instance our map is not drawn: no place to pin
-        elseif not ns.Hybrid.Ping(x, y) then
-            Into(x, y)
-        end
-    elseif button == "RightButton" and camera:StepOut() then
-        Canvas.Layout()
+    if button == "RightButton" then
+        last = nil
+        if camera:StepOut() then Canvas.Layout() end
+        return
     end
+    if button ~= "LeftButton" then return end
+    if IsControlKeyDown() then
+        last = nil
+        if not lost then ns.PinView.Drop(pin or Where(x, y)) end
+        return
+    end
+    local now = GetTime()
+    if last and last.pin == pin and now - last.at < Canvas.DOUBLE
+        and math.abs(x - last.x) + math.abs(y - last.y) <= Canvas.NEAR then
+        local first = last
+        last = nil
+        ns.Ping.Cancel() -- the first click's ping is not sent
+        if not lost then ns.PinView.Drop(first.pin or first.spot) end
+        return
+    end
+    -- Shift and a click is a pin's own (a map opened), never half of a double click.
+    last = not IsShiftKeyDown() and { at = now, x = x, y = y, pin = pin, spot = not lost and Where(x, y) } or nil
+    if pin and ns.PinView.Act(pin) then return end
+    if lost then return ns.Ping.Soon({ x = x, y = y }) end
+    if Into(x, y) then return end
+    ns.Ping.Soon({ map = camera.map, u = camera.u + x / camera.k, v = camera.v + y / camera.k })
 end
 
 local function Up(_, button)
@@ -545,17 +594,13 @@ local function Up(_, button)
 end
 
 -- A pin was pressed (PinView.lua): the map takes the press as its own, so a drag that starts on a pin moves
--- the map. Let go: true for a plain left click, the pin's own; a drag is the map's, and so are a right click
--- and Ctrl and a click, as anywhere on the map.
+-- the map. Let go: a drag is the map's; a click as on the map, but the pin's own first (Clicked).
 function Canvas.Press(button)
     Down(nil, button)
 end
 
-function Canvas.Release(button)
-    if not Finish(button) then return false end
-    if button == "LeftButton" and not IsControlKeyDown() then return true end
-    Clicked(button)
-    return false
+function Canvas.Release(button, pin)
+    if Finish(button) then Clicked(button, pin) end
 end
 
 -- Zooms in around a point of the view's plane (a gathered marker clicked), by notches of the wheel.
@@ -565,6 +610,43 @@ function Canvas.ZoomTo(u, v, notches)
     camera:Look(u, v)
     camera:ZoomAt(notches, 0, 0)
     Canvas.Layout()
+end
+
+-- Looks at a point of a map (x, y: 0 to 1 on it; a quest chosen in the quest log): there in the middle, at the zoom
+-- the view has, in its plane; the view no longer follows, as after a drag. A dungeon's map over the full map goes.
+-- False where the map has no place on our planes.
+function Canvas.LookAt(map, x, y)
+    if not laid or held or lost then return false end
+    local plane = Coords.PlaneOf(map)
+    local u, v
+    if plane and x and y then u, v = Coords.MapToPlane(map, x, y, plane) end
+    if not u then return false end
+    ns.Dungeons.Close()
+    camera.follow = false
+    lastInput = GetTime()
+    if plane == camera.map then camera:Look(u, v) else camera:Show(plane, u, v) end
+    Canvas.Layout()
+    return true
+end
+
+-- A view on the player and following (the full map opened with its box Follow me ticked): at once where the game
+-- tells the player's place, else from the tracker's next look.
+function Canvas.Center(viewCamera)
+    viewCamera.follow = true
+    local map, u, v = Live.Player()
+    if not u or not viewCamera.map then return end
+    if map == viewCamera.map then viewCamera:Look(u, v) else viewCamera:Show(map, u, v) end
+end
+
+-- The full map's box Follow me ticked or not (TopBar.lua, the settings): ticked, on the player at once and following;
+-- not, it stays where it is and no longer follows.
+function Canvas.Following()
+    local full = ns.Window.full
+    if ns.options.followMap then Canvas.Center(full) else full.follow = false end
+    if camera == full and laid and not held then
+        nextLook = 0
+        Canvas.Layout()
+    end
 end
 
 -- Shows a map whole (a pin that leads into another map), as a click on a zone does; a dungeon's on the full map
@@ -681,7 +763,9 @@ function Canvas.Build(parent)
     frame:SetScript("OnSizeChanged", ns.Guard(function() if laid and not held then Canvas.Layout() end end))
     ns.Listen("LIVE", function(what)
         local drawn = Canvas.Laid() -- laid out, and not standing aside for the game's minimap (an instance)
-        if what == "waypoint" then
+        if what == "ping" then
+            if drawn then ns.Safe("marks", ns.Marks.Pings, view, GetTime()) end
+        elseif what == "waypoint" then
             if drawn then ns.Marks.Pin(view) end
             -- The game's arrow may lead to another quest now: its pins (the game's alone) and area.
             ns.Pins.Changed("waypoint")

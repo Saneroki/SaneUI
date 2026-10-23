@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: a click on the map pings the place to your party or
+  raid, as a click on the game's minimap does, and their pings show
+  on the map where they are; a double click puts the map pin there.
+  A click on a quest in the quest log moves the map to it. The box
+  Follow me on the full map's bar keeps you in the map's middle.
 - Data you can trust: what Sane UI's data has not had confirmed by
   the game says "Unconfirmed Data" until you or somebody of your
   guild or group sees it in play: an NPC at its place, a mailbox

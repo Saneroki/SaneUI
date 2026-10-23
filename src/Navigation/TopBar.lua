@@ -11,6 +11,8 @@ local _, ns = ...
 --                        Z): the map shows it whole; each says what the map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
+--      Follow me         a checkbox left of the pin filter: the full map keeps you in its middle as you move
+--                        (the setting followMap; Canvas.lua), off at first
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
 --                        travel, towns, rares and treasures, gathering): a checkbox per kind of pin with its
 --                        icon large before its words (the setting Pins on the map), and at its right a slider
@@ -29,7 +31,9 @@ TopBar.HEIGHT = 34
 TopBar.INSET = 12    -- from the map's top left corner
 TopBar.GAP = 4       -- between two buttons
 TopBar.BUTTON_WIDTH, TopBar.BUTTON_HEIGHT = 110, 24
+TopBar.VIEW_WIDTH = 90 -- a view's button: its one word (narrower, so the box Follow me fits a screen 1366 units wide)
 TopBar.MENU_WIDTH = 170
+TopBar.PINS_WIDTH = 110 -- the pin filter's dropdown: Pins
 -- The pin filter's rows: a size slider this wide, room right of it for its words (150%), the checkbox's room left
 -- of the kind's name, the row's height, and its icon's size.
 TopBar.SIZER, TopBar.SIZE_LABEL, TopBar.CHECK, TopBar.ROW, TopBar.ICON = 120, 44, 40, 30, 24
@@ -37,13 +41,15 @@ TopBar.TEXT = {
     questLog = Core.Word("QUEST_LOG", "Quest Log"),
     questLogTip = "The quest log's window over the map, or the map alone. Its pin keeps it on the screen while the map is small too.",
     pins = "Pins",
+    follow = ns.TEXT.followMap,
+    followTip = ns.TEXT.followMapTip,
     world = Core.Word("WORLD", "World"),
     zones = "Zone",
 }
 TopBar.DUNGEON_WIDTH, TopBar.FLOOR_WIDTH = 150, 110 -- narrower: the bar fits a screen 1366 units wide
 TopBar.LIST_HEIGHT = 440 -- the dungeons' list scrolls past so high
 
-local bar, buttons, logButton, continentMenu, zoneMenu, dungeonMenu, floorMenu, pinMenu
+local bar, buttons, logButton, continentMenu, zoneMenu, dungeonMenu, floorMenu, pinMenu, followBox
 local shownMap, shownZone -- what the selector says now
 local shownFloor          -- the dungeon's floor the bar says is shown
 
@@ -85,7 +91,7 @@ end
 
 local function ViewButton(key)
     local button = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
-    button:SetSize(TopBar.BUTTON_WIDTH, TopBar.BUTTON_HEIGHT)
+    button:SetSize(TopBar.VIEW_WIDTH, TopBar.BUTTON_HEIGHT)
     button:SetText(ns.TEXT.views[key])
     button.key, button.title, button.tip = key, ns.TEXT.views[key], ns.TEXT.viewTips[key]
     button:SetScript("OnClick", ns.Guard(Choose))
@@ -244,6 +250,32 @@ function TopBar.LogShown()
     return ns.store.questLog ~= false
 end
 
+-- The box Follow me, kept in the settings (Canvas.Following takes it in).
+local function Follow(box)
+    Core.Set(ns.name, "followMap", box:GetChecked() and true or false)
+end
+
+-- The box Follow me left of the pin filter, its words between them (the game's checkbox, as on the options pages).
+local function FollowBox()
+    local box = CreateFrame("CheckButton", nil, bar, "UICheckButtonTemplate")
+    box:SetSize(TopBar.BUTTON_HEIGHT, TopBar.BUTTON_HEIGHT)
+    local words = box.Text or box.text
+    if type(words) == "table" then
+        words:SetFontObject("GameFontHighlight")
+        words:SetText(TopBar.TEXT.follow)
+        words:ClearAllPoints()
+        words:SetPoint("RIGHT", pinMenu, "LEFT", -TopBar.GAP * 3, 0)
+        box:SetPoint("RIGHT", words, "LEFT", -TopBar.GAP, 0)
+    else
+        box:SetPoint("RIGHT", pinMenu, "LEFT", -TopBar.GAP * 3, 0)
+    end
+    box.title, box.tip = TopBar.TEXT.follow, TopBar.TEXT.followTip
+    box:SetScript("OnClick", ns.Guard(Follow))
+    box:SetScript("OnEnter", ns.Guard(Tip))
+    box:SetScript("OnLeave", GameTooltip_Hide)
+    return box
+end
+
 -- The bar over the canvas' top edge, above the map, its pins and the game's minimap (Canvas.LEVELS).
 function TopBar.Build(canvas)
     bar = CreateFrame("Frame", nil, canvas:GetParent())
@@ -269,8 +301,9 @@ function TopBar.Build(canvas)
     floorMenu = Dropdown(TopBar.FLOOR_WIDTH, FloorList, ns.Dungeons.TEXT.floor)
     floorMenu:SetPoint("LEFT", dungeonMenu, "RIGHT", TopBar.GAP, 0)
     floorMenu:Hide()
-    pinMenu = Dropdown(TopBar.MENU_WIDTH - 40, Filter, TopBar.TEXT.pins)
+    pinMenu = Dropdown(TopBar.PINS_WIDTH, Filter, TopBar.TEXT.pins)
     pinMenu:SetPoint("RIGHT")
+    followBox = FollowBox()
     TopBar.Arrange()
     bar:Hide()
     return bar
@@ -292,6 +325,7 @@ function TopBar.Update()
     local map = camera.level == "world" and Coords.WorldMap() or camera.map
     local zone = camera.level == "zone" and ns.Canvas.view.zone or nil
     logButton:SetButtonState(TopBar.LogShown() and "PUSHED" or "NORMAL", TopBar.LogShown())
+    followBox:SetChecked(ns.options.followMap and true or false)
     local floor, floors = ns.Dungeons.Shown()
     if floor ~= shownFloor then
         shownFloor = floor

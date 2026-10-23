@@ -49,7 +49,7 @@ ns.TEXT = {
     nativeMap = "Show the game's map",
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
     pins = "Pins on the map",
-    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Route to the map pin: a golden line leads from you to the game's map pin (Ctrl and a click on the map), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Books and treasures only full screen; services on the small map only near you.",
+    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Books and treasures only full screen; services on the small map only near you.",
     route = "Route to the map pin",
     minimap = "Minimap dots",
     log = "Quests in your log",
@@ -66,8 +66,10 @@ ns.TEXT = {
     nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
     nodeTurns = "Find Herbs and Find Minerals in turn",
     nodeTurnsTip = "With Found herbs and Found ore both on in the pin filter and both spells known: the other one every so many seconds while you move, without a sound, so the map finds both. 0: never.",
+    followMap = "Follow me",
+    followMapTip = "The full map keeps you in its middle as you move. Dragged away, or moved to a quest, it comes back to you once you walk on and the mouse has left it alone for Follow again after. Off: it stays where you leave it.",
     followAgain = "Follow again after",
-    followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long. 0: only when you zoom it with the mouse wheel close in.",
+    followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long (the full map with Follow me ticked: once you walk on and the mouse has left it alone so long). 0: only when you zoom it with the mouse wheel close in (Follow me: as soon as you walk on).",
     seconds = "seconds",
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
@@ -172,6 +174,8 @@ local OPTIONS = {
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
     { key = "pinSizes", default = {} },
+    -- The full map keeps the player in its middle; also the box beside the pin filter on its bar (TopBar.lua).
+    { key = "followMap", default = false, text = ns.TEXT.followMap, tip = ns.TEXT.followMapTip },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
     { key = "tripView", default = true, text = ns.TEXT.tripView, tip = ns.TEXT.tripViewTip },
@@ -234,6 +238,10 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
         return ns.Guarded(ns.Native.Update)
     end
     if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
+    if key == "followMap" then
+        ns.Guarded(ns.Canvas.Following)
+        return ns.Guarded(ns.TopBar.Update)
+    end
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
     if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end

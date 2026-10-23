@@ -30,11 +30,23 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   - **right click:** one map out (a zone, its continent, the world), as on the game's map;
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map;
-  - **Ctrl and a click:** the game's map pin there; a click on the pin makes the game's arrow on the screen
-    lead to it, Ctrl and a click takes it away, Shift and a click writes it into the chat;
-  - **a click** on the game's minimap (while it shows) pings, as there.
+  - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
+    as a click on the game's minimap does, and on this map too (below). It goes out once the time of a double
+    click has passed without a second, so a double click sends none. The game pings only as far as its minimap's
+    widest view reaches around you, so a place farther off is not pinged;
+  - **a double click:** the game's map pin there (on a pin: where the pin stands); **Ctrl and a click** puts it
+    there too, as on the game's map. The pin has two states, as the game's own: *tracked* (gold, the game's
+    arrow on the screen leads to it with its distance) and *untracked* (only on the map). A click on the pin
+    switches between them, Ctrl and a click takes it away, Shift and a click writes it into the chat.
+- **Pings:** every ping of your party or raid (and your own) shows on the map where it was pinged, in the game's
+  minimap ping, for five seconds, who pinged under it in their class colour; where the game's minimap lies over
+  the map it draws its own there. The game plays its sound.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
-  has been off it for a while (*Follow again after*).
+  has been off it for a while (*Follow again after*). The full map, which the mouse never leaves, stays where you
+  leave it, unless the box **Follow me** on its bar is ticked (left of *Pins*, off at first; also the setting
+  *Follow me*): then it opens on you and keeps you in its middle as you move; dragged away or moved to a quest, it
+  comes back to you once you walk on and the mouse has left it alone for *Follow again after* (standing still, you
+  can look around).
 - **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
   steps. Out of it, our map is back.
@@ -57,11 +69,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
   show as one: in their icon where all have the same (two trainers: the trainer's), else the game's round plus;
   its tooltip what is there, each with its own pin's icon before its name, each name once (two Priest Trainers:
-  one line); no tooltip says a word twice. **A click on any pin**, on the small map and the
-  full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so); a
-  gathered one zooms in too; on
-  the full map a quest in your log also leads the game's arrow to it, and a quest giver's quests show in the quest
-  log (below). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
+  one line); no tooltip says a word twice. **A double click on any pin**, on the small map and the
+  full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so). **A
+  click** on a gathered one zooms in; on the full map a quest in your log leads the game's arrow to it and shows
+  its text, and a quest giver's quests show in the quest log (below); on any other pin it is a click on the map
+  there (a ping). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
   whole shows only travel and places; the minimap no
   books or treasures, services only near you. The party and raid in their class colours.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
@@ -82,7 +94,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   known they take turns while you move (the setting *Find Herbs and Find Minerals in turn*: every 6 seconds of
   moving at first, 0 never), silently too, and the ones of the finder that is off meanwhile stay on the map until
   you gather one, go far from it or it is five minutes old. As the pins do, each takes the mouse: its tooltip
-  names it, and a click puts the game's map pin where it is, so the game's arrow leads there.
+  names it, a click pings it to your group and a double click puts the game's map pin where it is, so the game's
+  arrow leads there.
 - **Indoor maps:** inside a building or a cave, its indoor map lies over the map at the floor you stand on (the
   game's own indoor pictures, without their black). Only inside buildings and caves, never on a street: Stormwind's
   and Orgrimmar's streets and squares keep the city's own map, though the game counts each city as one building.
@@ -99,14 +112,16 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   their level and state, each with its mark at the left as its pin on the map has it (the yellow question mark),
   their objectives under them. No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
-  left). A click puts the game's map pin on the quest's objective (its question mark on the map, or the middle of
-  the area where its foes are) and the arrow leads to it; the map stays as it is. Shift and a click tracks it. The
+  left). A click leads the arrow to the quest and moves the map to its objective (its question mark on the map, or
+  the middle of the area where its foes are), at the zoom it has; a double click puts the game's map pin there too.
+  Shift and a click tracks it. The
   right button: *Quest Details* (its objectives and story below the list, with *Track*, *Share* and *Abandon*; its
   X closes it), *Show Map* (the map at its objective), *Track*, *Share* and *Abandon*. A click on a quest's pin on
   the map shows its text too. A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out,
   each with its giver's mark (the yellow exclamation mark, grey for a quest too low, the red question mark for one
   for later) and a red X that takes it out again; below what the data knows of it: why it is not for you yet,
-  its level, who gives and takes it, its objectives and rewards. A click on one puts the map pin at its giver.
+  its level, who gives and takes it, its objectives and rewards. A click on one moves the map to its giver, a double
+  click puts the map pin there.
   They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
@@ -133,7 +148,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
   terrain, the open sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on
   the continents. The painted map does not cover the isle yet: *Atlas* shows the terrain there.
-- **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there from where you stand,
+- **Routes:** put the game's map pin (a double click, or Ctrl and a click) and a golden line leads you there from where you stand,
   pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
   into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
   city in a mountain, a building's storeys), and by the flights your character has found where that is quicker:
@@ -366,15 +381,41 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   watched; objectives), built again on `QUEST_LOG_UPDATE` once
   a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
   has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
-  screen's half its middle is in); a click: the map pin at `Where` (the game's quest on a map, `GetQuestsOnMap`; a
-  preview's giver) through `PinView.Drop`, and the quest super-tracked; a quest's text from `GetQuestLogQuestText`
+  screen's half its middle is in); a click: the quest super-tracked and the map at `Where` (the game's quest on a
+  map, `GetQuestsOnMap`; a preview's giver) through `Canvas.LookAt`, its zoom kept; the button's `OnDoubleClick`
+  (the game sends the second click there, after the first's `OnClick`): the map pin there through `PinView.Drop`;
+  a quest's text from `GetQuestLogQuestText`
   with its buttons, shown only once asked for (`open`: the menu's *Quest Details*, a click on its pin); abandon
   after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map (their
   details window is opened by the game's panel manager, which our call would leave tainted).
 - **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
   game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
-  Z, the isle itself on the isle), the dungeons and the floors of the one shown, and the pin filter
-  (checkboxes); it says what the map shows after each layout.
+  Z, the isle itself on the isle), the dungeons and the floors of the one shown, the box *Follow me* (the game's
+  `UICheckButtonTemplate`, its words between it and the pin filter; the setting `followMap`) and the pin filter
+  (checkboxes); it says what the map shows after each layout. The view buttons are `TopBar.VIEW_WIDTH` wide and the
+  pin filter `TopBar.PINS_WIDTH`, so the whole bar fits a screen 1366 units wide (1080p at the game's scale).
+- **Clicks and pings** (`Canvas.lua`, `Ping.lua`, no frames of its own): every click on the map and on a pin comes to
+  `Canvas` (a pin's press and release are the map's, `Canvas.Release(button, pin)`): Ctrl puts the map pin at once;
+  two plain left clicks on the same (a pin, or the map) within `Ping.DOUBLE` seconds and `Canvas.NEAR` units are a
+  double click, the map pin where the first was (the pin, or the map's place as it was: a first click may have
+  opened a zone); one is the pin's own (`PinView.Act`), else opens the map under it (`Into`), else owes a ping
+  (`Ping.Soon`), sent once no second click came. The game's one way to show a place to the group is its minimap's
+  ping: `Ping.Send` takes the place's yards from the player and `Hybrid.PingAt` turns them into the minimap's units
+  (its width over twice its view's radius, `C_Minimap.GetViewRadius`) and calls `Minimap:PingLocation`; where the
+  view it has does not reach so far, at the nearest step measured that does, for the moment (its zoom set back at
+  once; what the game says of it meanwhile is ours), and none past its widest. `MINIMAP_PING` (unit, x, y: shares of
+  the minimap's width and height from its middle, the receiver's own player) comes back as yards (twice the radius
+  times each share) on the player's plane, kept `Ping.TIME` seconds (`Ping.List`) and drawn by `Marks.Pings` at each
+  look of the tracker: the game's minimap ping art (`UI-Minimap-Ping-Center`, `-Rotate` turning, `-Expand` growing),
+  faded out at its end, hidden where the game's minimap covers it (`Hybrid.Covers`: it draws its own). Its values
+  can be secrets in a fight: then nothing. The game's own minimap turns with the player where its setting says so
+  and it is the game's (ours holds it north up): a ping's place is turned with it, both ways. In an instance (our map
+  not drawn) a click on the game's minimap pings it there itself (`Hybrid.Ping`).
+- **Following on the full map:** the tracker follows again where `Again` says: the small view once the mouse has
+  been off it for *Follow again after*; the full map only with *Follow me* ticked, once the player moved since the
+  last look, no button is held and the mouse left the map alone that long (`lastInput`; a quest moved to counts as
+  a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at
+  a map the game was asked for, `Window.OpenTo`) and when the box is ticked; unticked, it no longer follows.
 - **Walk** (`Walk.lua`, no frames): Core's set *Walking* (read with Core at the login, as all its sets), made by
   `dev/tools/walk-data` from the game's terrain, buildings, doodads (fences, rocks, trees, piers, the game's invisible
   walls) and water: per terrain tile a block (base64, deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces
@@ -548,7 +589,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   from the game. Taken out of combat, every part kept first and given back exactly. On the full map it stands
   around the player at the map's own zoom (`Hybrid.Follow`, each step of the canvas' tracker): square, at its
   widest step whose square takes at most `Hybrid.ROOM` (half) of the canvas' shorter side (none at a zoom too
-  close for its narrowest), shown while wholly inside the canvas (`Hybrid.Keep`); a click there is no ping. Only
+  close for its narrowest), shown while wholly inside the canvas (`Hybrid.Keep`); a click there pings as anywhere
+  on the map (`Ping.lua`). Only
   while the pin filter's *Minimap dots* is on, in both views. In an instance, where the game tells no place of
   yours, the small view's game minimap is the map alone: in its middle at the view's step (the game's own while
   the view has none), its ground on (`C_Minimap.SetDrawGroundTextures`), whatever the pin filter says; off again
@@ -585,6 +627,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them; the terrain's grid; the player's place. No frames |
 | `Camera.lua` | Where a view looks: middle, zoom, following, the level its zoom shows; drag, wheel, one map out. No frames |
 | `Live.lua` | What the game tells while playing, read when it changes. No frames |
+| `Ping.lua` | The game's minimap ping on our map: a click's ping sent by the place's yards from you (after a double click's time), the group's pings kept where they are. No frames |
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
 | `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand |
@@ -602,18 +645,18 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's 3D model beside its tooltip with Alt |
-| `Marks.lua` | The player's arrow, the map pin, the party |
+| `Marks.lua` | The player's arrow, the map pin, the party, the pings |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
-| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: the map pin there) |
+| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
 | `TripView.lua` | The travel overlay, two thirds up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly, *Request Stop* on a flight |
-| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the pin filter |
+| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
