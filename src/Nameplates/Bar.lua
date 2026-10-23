@@ -47,10 +47,11 @@ Bar.CALM = { 1, 0.93, 0.55 }        -- a creature that does not attack on sight 
 Bar.HOSTILE = { 1, 0, 0 }           -- one that does
 Bar.GLOW = { 1, 0.08, 0.05 }
 -- The glow: a red edge around the bar, solid where it meets the border and fading to nothing outwards. Drawn as
--- Bar.HALO round plates a pixel apart, each reaching a pixel farther; Bar.Fade says how solid the glow is in each
--- pixel's band (1 the innermost, falling off softly), and each plate is as strong as that band needs over the
--- plates beyond it.
-Bar.HALO = 8
+-- Bar.HALO round plates a screen pixel apart, each reaching a pixel farther; Bar.Fade says how solid the glow is in
+-- each pixel's band (1 the innermost, falling off softly), and each plate is as strong as that band needs over the
+-- plates beyond it. The plates' strengths are their vertex colours' alpha, which a texture's own alpha would
+-- replace: so they stand on a frame of their own (dress.glow), and only that frame's alpha switches the glow.
+Bar.HALO = 6
 function Bar.Fade(band)
     local share = 1 - (band - 1) / Bar.HALO
     return share * share
@@ -105,10 +106,10 @@ function Bar.SizeCaps(caps, height)
 end
 
 -- A plate of one colour on the dress, behind the bar, cut round by caps of its own.
-local function Plate(dress, sublevel)
-    local texture = dress:CreateTexture(nil, "BACKGROUND", nil, sublevel)
+local function Plate(host, sublevel)
+    local texture = host:CreateTexture(nil, "BACKGROUND", nil, sublevel)
     texture:SetTexture(Bar.WHITE)
-    texture.caps = Caps(dress, texture, texture)
+    texture.caps = Caps(host, texture, texture)
     return texture
 end
 
@@ -123,11 +124,15 @@ end
 -- The bar's pieces on the dress: the glow, the ring and the border behind, the status bar inside them with its
 -- background, fill and power line.
 function Bar.Make(dress)
-    dress.halo = {}
+    -- The glow's frame, a level under the dress's: behind the border and the bar.
+    local holder = CreateFrame("Frame", nil, dress)
+    holder:SetAllPoints(dress)
+    holder:SetFrameLevel(math.max((Plain(dress:GetFrameLevel()) or 1) - 1, 0))
+    holder:SetAlpha(0)
+    dress.glow, dress.halo = holder, {}
     for band = 1, Bar.HALO do
-        local glow = Plate(dress, -8)
+        local glow = Plate(holder, 0)
         glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], Bar.Strength(band))
-        glow:SetAlpha(0)
         dress.halo[band] = glow
     end
     dress.ring = Plate(dress, -4)
@@ -171,7 +176,7 @@ function Bar.Fit(dress)
     health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -edge, edge)
     Around(dress.border, dress, 0, height)
     Around(dress.ring, dress, pixel, height)
-    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (1 + band), height) end
+    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * band, height) end
     local inner = height - 2 * edge
     Bar.SizeCaps(dress.caps, inner)
     dress.line = math.max(inner * Bar.LINE, pixel * 2)
@@ -228,16 +233,14 @@ end
 -- is, never compared: a hidden boolean in a comparison is an error) or while the unit is a player who may attack you.
 function Bar.Glow(dress, aggro)
     dress.aggro = aggro
-    local hidden = Core.Secret(aggro)
-    for _, glow in ipairs(dress.halo) do
-        if dress.danger then
-            glow:SetAlpha(1)
-        elseif hidden then
-            -- The game's own alphas for true and false (full, none).
-            if not pcall(glow.SetAlphaFromBoolean, glow, aggro) then glow:SetAlpha(0) end
-        else
-            glow:SetAlpha(aggro and 1 or 0)
-        end
+    local glow = dress.glow
+    if dress.danger then
+        glow:SetAlpha(1)
+    elseif Core.Secret(aggro) then
+        -- The game's own alphas for true and false (full, none).
+        if not pcall(glow.SetAlphaFromBoolean, glow, aggro) then glow:SetAlpha(0) end
+    else
+        glow:SetAlpha(aggro and 1 or 0)
     end
 end
 

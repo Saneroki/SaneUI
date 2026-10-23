@@ -60,7 +60,8 @@ fails, every plate is the game's own again.
   at `NAME_PLATE_UNIT_ADDED`; none for a forbidden plate or your own), a child of the plate (its place, scale and
   fading are ours too), `SetAllPoints` on the plate's `UnitFrame.HealthBarsContainer`, made once and kept: the
   game hands plates out again and takes its unit frames from a pool, so each add looks at the plate's unit frame
-  anew (read with `rawget`, never written). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
+  anew (read with `rawget`, never written); as high as that row and `Plate.WIDE` (1.5) times as wide, centred on
+  it (`Place`, at every fit, the row's width read in the dress's units). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
   `name`, `AurasFrame`, `RaidTargetFrame`, `ClassificationFrame`, `LevelFrame`, `PlayerLevelDiffFrame`,
   `selectionHighlight`, `aggroHighlight*`) are at alpha 0, and 1 again when the plate goes
   (`NAME_PLATE_UNIT_REMOVED`), when the game hides its health bar (hooks after its `OnShow` and `OnHide`, once per
@@ -77,9 +78,11 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
-- **The bar** (`Bar.lua`): from the back, `Bar.HALO` (8) glow plates in `Bar.GLOW`, reaching 2 to 9 screen
-  pixels beyond the border, each as strong (`Bar.Strength`) as its band needs so that together they are solid at
-  the border and fade outwards (`Bar.Fade`: one minus the band's share, squared), the ring (a pixel outside the border, shown on target and focus in the
+- **The bar** (`Bar.lua`): from the back, `Bar.HALO` (6) glow plates in `Bar.GLOW`, reaching 1 to 6 screen
+  pixels beyond the border, each as strong (`Bar.Strength`, its vertex colour's alpha) as its band needs so that
+  together they are solid at the border and fade to nothing outwards (`Bar.Fade`: one minus the band's share,
+  squared); they stand on a frame of their own a level under the dress (`dress.glow`), whose alpha alone switches
+  the glow (a texture's own alpha would replace its vertex alpha), the ring (a pixel outside the border, shown on target and focus in the
   game's `NamePlateConstants.TARGET_BORDER_COLOR` and `FOCUS_TARGET_BORDER_COLOR`), the border (the dress's
   size, `Bar.RANKS` by `UnitIsBossMob` and `UnitClassification`: boss 3 pixels in the game's `NORMAL_FONT_COLOR`,
   elite 1 pixel in it, rare and rare elite 1 pixel silver; `Bar.PLAIN` black, 1), then inside the border a
@@ -187,3 +190,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the size by distance on a curve of two steps (Saneroki): twice at your feet, its own size at 40
   yards, half at 60, read from the game's own scaling and laid over it.
 - **2026-10-23:** the red glow solid at the bar's edge and fading out, a blurred edge (Saneroki).
+- **2026-10-23:** the glow a real fade on a frame of its own, narrower (six pixels); our bar half as wide again as
+  the game's (Saneroki).

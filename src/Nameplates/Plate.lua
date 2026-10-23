@@ -3,11 +3,12 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Plate
 --  Our dress on each plate the game shows: a frame of ours on the game's plate
---  (so it follows the plate's place, scale and fading), laid exactly over the
---  game's health bar row (HealthBarsContainer: its size is the game's nameplate
---  size and style), holding our bar (Bar.lua), the texts inside it (Text.lua),
---  the auras around it (Auras.lua), the raid marker right of it (Marks.lua)
---  and, on your target, the combo points (Resource.lua).
+--  (so it follows the plate's place, scale and fading), laid over the game's
+--  health bar row (HealthBarsContainer: its height is the game's nameplate
+--  size and style) and half as wide again (Plate.WIDE), holding our bar
+--  (Bar.lua), the texts inside it (Text.lua), the auras around it (Auras.lua),
+--  the raid marker right of it (Marks.lua) and, on your target, the combo
+--  points (Resource.lua).
 --
 --  The game's parts ours stand in for (its health bar row, name, auras, raid
 --  marker, classification mark, level boxes, selection and threat glow) go out
@@ -39,6 +40,8 @@ ns.Plate = Plate
 Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
                  "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
                  "aggroHighlightAdditive" }
+-- Our bar wider than the game's health bar row, by this much, as much past each of its ends.
+Plate.WIDE = 1.5
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
@@ -138,8 +141,25 @@ local function Heard(dress, event)
 end
 local OnEvent = ns.Guard(Heard)
 
--- Laid out anew for its size: the bar, the strip, the name's room, the room for auras.
+-- The dress over the game's health bar row: as high, Plate.WIDE times as wide, centred on it. The row's width read
+-- in the dress's own units (the two may be scaled apart for a moment). Placed anew only when that changed.
+local function Place(dress)
+    local row = dress.frame and rawget(dress.frame, "HealthBarsContainer")
+    if type(row) ~= "table" then return end
+    local width = Plain(row:GetWidth()) or 0
+    local ours, theirs = Plain(dress:GetEffectiveScale()), Plain(row:GetEffectiveScale())
+    if ours and theirs and ours > 0 then width = width * theirs / ours end
+    local extra = width * (Plate.WIDE - 1) / 2
+    if dress.row == row and dress.extra and math.abs(dress.extra - extra) < 0.01 then return end
+    dress.row, dress.extra = row, extra
+    dress:ClearAllPoints()
+    dress:SetPoint("TOPLEFT", row, "TOPLEFT", -extra, 0)
+    dress:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", extra, 0)
+end
+
+-- Laid out anew for its size: its place over the game's row, the bar, the strip, the name's room, the room for auras.
 local function Fit(dress)
+    Place(dress)
     ns.Bar.Fit(dress)
     ns.Resource.Fit(dress)
     ns.Text.Fit(dress)
@@ -212,8 +232,7 @@ local function Added(unit)
     dress.unit, dress.frame = unit, frame
     shown[unit], owners[frame] = dress, dress
     Follow(frame, bar)
-    dress:ClearAllPoints()
-    dress:SetAllPoints(row)
+    dress.row = nil -- placed anew over this row
     for _, event in ipairs(Plate.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
     Fit(dress)
     Fill(dress)

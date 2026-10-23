@@ -209,7 +209,7 @@ check(dress.border._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare, "a rare: 
 check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
     "its mana along the bar's bottom, in the game's colour")
-check(dress.halo[1]._alpha == 0, "no glow")
+check(dress.glow._alpha == 0, "no glow")
 -- What the glow's plates add up to in each band: those reaching it and beyond, laid over each other.
 local function Solid(band)
     local clear = 1
@@ -221,6 +221,8 @@ for band = 2, #dress.halo do
     fading = fading and Solid(band) < Solid(band - 1) and math.abs(Solid(band) - Bar.Fade(band)) < 1e-9
 end
 check(fading and Solid(#dress.halo) < 0.05, "the glow: solid at the border, fading to almost nothing outwards")
+check(dress.halo[1]._parent == dress.glow and dress.glow._level < (dress._level or 1) or dress.glow._level == 0,
+    "on a frame of its own, behind the dress")
 check(not dress.ring:IsShown(), "no ring: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
     and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
@@ -237,6 +239,10 @@ check(dress.border.caps[1]._width == 20 * Bar.CAP and dress.caps[2]._width == (2
 check(dress.health._points[1][4] == edge and dress.health._points[2][4] == -edge, "the bar a pixel inside its border")
 check(dress.power._height == (20 - 2 * edge) * Bar.LINE, "the power line a fifth of the bar's height")
 check(dress.name._width == 190 * Text.NAME, "the name's room")
+plates.nameplate1.UnitFrame.HealthBarsContainer:SetSize(120, 20)
+dress:GetScript("OnSizeChanged")(dress)
+check(dress._points[1][1] == "TOPLEFT" and dress._points[1][4] == -30 and dress._points[2][4] == 30 and dress._points[2][5] == 0,
+    "half as wide again as the game's row, as much past each end, as high")
 
 -- A boss: a thick golden border, the bar further in; a level too high to tell: the skull.
 units.nameplate1.boss, units.nameplate1.level = true, -1
@@ -275,22 +281,25 @@ W.Fire("UNIT_FLAGS", "nameplate1")
 -- Threat: grey, orange, red with the glow; a hidden answer goes to the glow as it is.
 units.nameplate1.threat = { false, 0, 40 }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(dress.threat._text == "40%" and dress.threat._color[1] == Text.THREAT[0][1] and dress.halo[1]._alpha == 0, "low threat: grey")
+check(dress.threat._text == "40%" and dress.threat._color[1] == Text.THREAT[0][1] and dress.glow._alpha == 0, "low threat: grey")
 units.nameplate1.threat = { false, 1, 95 }
 W.Fire("UNIT_THREAT_SITUATION_UPDATE", "player")
 W.Wait(0)
 check(dress.threat._text == "95%" and dress.threat._color[2] == Text.THREAT[1][2], "about to take its aggro: orange")
 units.nameplate1.threat = { true, 3, 100 }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(dress.threat._color[2] == Text.THREAT[3][2] and dress.halo[1]._alpha == 1 and dress.halo[3]._alpha == 1, "aggro: red, and the bar glows")
+check(dress.threat._color[2] == Text.THREAT[3][2] and dress.glow._alpha == 1, "aggro: red, and the bar glows")
+local untouched = true
+for _, layer in ipairs(dress.halo) do untouched = untouched and layer._alpha == 1 end
+check(untouched, "switched by its frame's alpha: the layers' own strengths never overwritten")
 local hidden = Secret()
 units.nameplate1.threat = { hidden, Secret(), Secret() }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(type(dress.halo[1]._alpha) == "table" and dress.halo[1]._alpha.from == hidden and dress.halo[1]._alpha.yes == nil,
+check(type(dress.glow._alpha) == "table" and dress.glow._alpha.from == hidden and dress.glow._alpha.yes == nil,
     "a hidden answer: the glow takes it as it is, never compared, with the game's own alphas")
 units.nameplate1.threat = nil
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(dress.threat._text == "" and dress.halo[1]._alpha == 0, "off its list: none")
+check(dress.threat._text == "" and dress.glow._alpha == 0, "off its list: none")
 
 -- Power that changes, and a unit without any.
 units.nameplate1.powerNow = 70
@@ -387,12 +396,12 @@ W.Fire("PLAYER_FOCUS_CHANGED")
 check(dress.ring:IsShown() and dress.ring._vertex[2] == 0.49, "your focus's ring in the game's colour for it")
 units.nameplate2.friend, units.nameplate2.raid = false, 8
 W.Fire("UNIT_FACTION", "nameplate2")
-check(friend:IsShown() and friend.halo[1]._alpha == 1, "a player who may attack you: shown, glowing")
+check(friend:IsShown() and friend.glow._alpha == 1, "a player who may attack you: shown, glowing")
 W.Fire("RAID_TARGET_UPDATE")
 check(not friend.raid:IsShown(), "and no raid marker, as on the game's plates")
 units.nameplate2.friend, units.nameplate2.party = true, true
 W.Fire("UNIT_FACTION", "nameplate2")
-check(friend.halo[1]._alpha == 0, "a friend again: no glow")
+check(friend.glow._alpha == 0, "a friend again: no glow")
 
 -------------------------------------------------------------------------------
 --  Combo points in your target's bar
