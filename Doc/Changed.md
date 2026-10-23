@@ -55,6 +55,22 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: drops on the paper; one slot a group; groups fold and divide; a small title line (2026-10-23)
+- An item let go over the bags' paper (the scroll child, `Canvas`: `PaperDrop`, `Menus.Home`): into the bags
+  (`Stow`), its assignment taken off, so it lands where the rules put it.
+- A group divided has one empty slot for the whole group (`Views`: a `bare` block with `drop` "group:<group>";
+  `Layout`: no head, level with the members' cells, none above it when alone), its members none. An item let go
+  there, on a group's head or its sidebar row (`Menus.Takes`/`Drop`, `Select`): `Categories.Into`, the member
+  `Categories.Rule` gives it there (the rules by `Contents.Instant`), else the group's first member.
+- A group whole (`Categories.Divided` off, `store.bags.whole`): one block of all its members' items, one slot.
+- The sidebar's group rows (`Rail:Toggles`): an arrow (the game's small arrows in graphite) folds the members
+  into the row (`Categories.Folded`, `store.bags.folded`), a pencil box with a check divides or joins the group in
+  All Items.
+- The title line: `Bags.BAR` 18, round buttons `Bags.TITLE_BUTTON` 15, *View* `Bags.TITLE_MENU` 74 wide; the bank's
+  bar keeps its height (`Bags.PAGE_BAR`) and buttons (`BAR_BUTTON`). `Paper.Dropdown` is a pencil box with graphite
+  words (the bank's and the alts' too); *Sell All Junk Items* on the title line a pencil box (`Foot.ACT_LIT` gone).
+- `dev/tests/bags.lua`: the paper drop, the group's slot, folding and dividing from the sidebar, a group whole.
+
 ### Inventory: the Armory by slot, Adventure Prep by kind; one empty slot; the doll still, on plain paper (2026-10-23)
 - Categories (`Bags/Categories.lua`): The Armory is the gear by its slot (`head` ... `ranged` by `def.equip`, the
   game's `INVTYPE_` words), `armor` now *Shirts, Tabards & Other Gear*, then `sets`; Adventure Prep is `potions`

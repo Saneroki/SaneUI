@@ -135,6 +135,11 @@ zoom buttons, the model still and a quarter larger on the page's plain paper (th
 the head and hands slots as large as the others, the icons without the quality border, the strips the item's stats
 in their middle (DPS, armor, the primary stats, then the rest).
 
+**Built (2026-10-23), Saneroki asked:** an item let go over the bags' paper goes into the bags, into the category the
+rules give it; a group has one empty slot for the whole group; its sidebar row folds its members away (an arrow)
+and ticks whether All Items divides it into its members or shows it whole (a box); the bar's buttons small enough
+for the title line's pencil lines, *View* and *Sell All Junk Items* pencil boxes on the paper.
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.

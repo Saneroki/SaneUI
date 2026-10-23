@@ -543,14 +543,22 @@ local function Words(blocks)
     return table.concat(list, ",")
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
-check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,Adventure Prep=0,Consumables=1,Trade Goods=1,"
+check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,?=0,Adventure Prep=0,Consumables=1,?=0,Trade Goods=1,"
     .. "Professions=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
     "All Items: Pinned (with its +, empty too), a block per category, a group's title over its members that hold "
     .. "something, the empty categories shown too (a slot to drop into): " .. Words(blocks))
-check(blocks[1].plus and blocks[7].plus and blocks[7].key == "trade" and not blocks[9].plus and blocks[2].title
-    and not blocks[2].plus and blocks[2].number == 2 and blocks[3].plus and blocks[3].level == 3 and blocks[3].key == "finger",
-    "a + after Pinned and after a category that takes items, a group's members too; not after the reagent bag's, "
-    .. "not after a group's title (its count: its members')")
+check(blocks[1].plus and blocks[9].plus and blocks[9].key == "trade" and not blocks[11].plus and blocks[2].title
+    and not blocks[2].plus and blocks[2].number == 2 and not blocks[3].plus and blocks[3].level == 3 and blocks[3].key == "finger"
+    and blocks[5].bare and blocks[5].plus and blocks[5].drop == "group:armory",
+    "a + after Pinned and after a category that takes items; a group divided: one + for the whole group after its "
+    .. "members (a bare block), none on each member; not after the reagent bag's (a group's count: its members')")
+Categories.Divide("armory", false)
+blocks = Views.Build("all", { section }, nil, "default", options)
+check(Words(blocks):find("^Pinned Items=0,The Armory=2,Adventure Prep=0,") and blocks[2].group == "armory" and blocks[2].plus
+    and blocks[2].drop == "group:armory" and not Categories.Divided("armory"),
+    "a group whole: one block of its members' items, one +")
+Categories.Divide("armory", true)
+blocks = Views.Build("all", { section }, nil, "default", options)
 local function Named(list, word)
     for index = 1, list.count do
         if list[index].word == word then return list[index] end
@@ -620,7 +628,7 @@ blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
 for index = 1, count do kinds[places[index].kind] = (kinds[places[index].kind] or 0) + 1 end
-check(kinds.head == 13 and kinds.cell == 9 and kinds.plus == 9 and not kinds.pad,
+check(kinds.head == 13 and kinds.cell == 9 and kinds.plus == 8 and not kinds.pad,
     "grid: a head per block and group title, its cells, one empty slot after them where it takes items, nothing more")
 local quest
 for index = 1, count do
@@ -640,9 +648,10 @@ check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0
     and title.x == 0 and title.width == width and title.y > places[2].y,
     "Pinned empty: its one empty slot under its head; a group's title on a line of its own, the whole width")
 check(rings.y == title.y + Layout.HEAD + Layout.HEAD_GAP and rings.x == 0 and setGear.y == rings.y and setGear.x > rings.x
-    and places[armory + 2].kind == "cell" and places[armory + 3].kind == "plus"
-    and places[armory + 3].x == places[armory + 2].x + Layout.SIZE + Layout.GAP,
-    "the group's members side by side under its title, each its cells and its empty slot")
+    and places[armory + 2].kind == "cell" and places[armory + 3].kind == "head" and places[armory + 5].kind == "plus"
+    and places[armory + 5].block.drop == "group:armory" and places[armory + 5].y == places[armory + 4].y
+    and places[armory + 5].x > places[armory + 4].x,
+    "the group's members side by side under its title, then the group's one empty slot level with their cells")
 local _, tradeHead = HeadAt("Trade Goods")
 local _, consumablesHead = HeadAt("Consumables")
 check(tradeHead.x == 0 and tradeHead.y > consumablesHead.y, "after a group's members: a line of its own")
@@ -671,7 +680,8 @@ check(select(1, Layout.Shape(9, 10)) == 3 and select(1, Layout.Shape(2, 10)) == 
 count = Layout.Lay("compact", blocks, width, places)
 check(places[1].kind == "label" and places[1].block.word == "Pinned Items" and places[2].kind == "plus"
     and places[3].kind == "head" and places[3].block.title and places[4].kind == "label" and places[5].kind == "cell"
-    and places[6].kind == "plus" and places[7].kind == "label" and places[7].x > 0 and places[7].y == places[4].y,
+    and places[6].kind == "label" and places[6].x > 0 and places[6].y == places[4].y and places[8].kind == "plus"
+    and places[8].block.bare,
     "compact: the blocks side by side, each with its name over it and its empty slot; a group's title over its members")
 
 -------------------------------------------------------------------------------
@@ -891,6 +901,46 @@ do
     PlusOf("trade"):GetScript("OnReceiveDrag")(PlusOf("trade"))
     check(kept.assigned[6001] == "trade" and placed and holding == nil, "an item from outside the bags: into a free slot of them")
     C_Container.PickupContainerItem, cursor = pickup, false
+end
+-- An item let go over the page's paper: into the bags, where the rules put it (what it was put into taken off).
+do
+    Categories.Assign(4001, "trade")
+    holding, cursor = 4001, true
+    local child = ns.Bags.canvas.child
+    child:GetScript("OnReceiveDrag")(child)
+    check(kept.assigned[4001] == nil and holding == nil, "let go over the paper: back to where the rules put it, in the bags")
+    cursor = false
+end
+-- A group divided has one + for the whole group: an item let go there goes into the member the rules give it
+-- there, else into the group's first member.
+do
+    local groupPlus = PlusOf("group:armory")
+    check(groupPlus and not PlusOf("finger"), "a group's one + (none on its members)")
+    holding, cursor = 4001, true
+    groupPlus:GetScript("OnReceiveDrag")(groupPlus)
+    check(kept.assigned[4001] == nil, "a ring let go on The Armory's +: the rules put it into Rings, nothing to keep")
+    Bags.Refresh()
+    holding, cursor = 118, true
+    PlusOf("group:armory"):GetScript("OnReceiveDrag")(PlusOf("group:armory"))
+    check(kept.assigned[118] == "head", "a potion let go there: into the group's first member")
+    Categories.Assign(118, nil)
+    cursor = false
+    Bags.Refresh()
+end
+-- The sidebar: a group's arrow folds its members into its row; its box divides it in All Items or shows it whole.
+do
+    local armoryRow = RowNamed("The Armory")
+    check(armoryRow.arrow:IsShown() and armoryRow.box:IsShown() and armoryRow.box.check:IsShown() and RowNamed("Head"),
+        "a group's row: its arrow and its box (ticked: divided)")
+    armoryRow.arrow:GetScript("OnClick")(armoryRow.arrow)
+    check(Categories.Folded("armory") and not RowNamed("Head") and RowNamed("The Armory"), "folded: its members not listed")
+    RowNamed("The Armory").arrow:GetScript("OnClick")(RowNamed("The Armory").arrow)
+    check(RowNamed("Head"), "unfolded again")
+    RowNamed("The Armory").box:GetScript("OnClick")(RowNamed("The Armory").box)
+    check(not Categories.Divided("armory") and not RowNamed("The Armory").box.check:IsShown() and PlusOf("group:armory")
+        and not HeadNamed("Rings") and HeadNamed("The Armory"), "unticked: the group whole in All Items, one +")
+    RowNamed("The Armory").box:GetScript("OnClick")(RowNamed("The Armory").box)
+    check(Categories.Divided("armory") and HeadNamed("Rings"), "ticked again: divided")
 end
 Categories.Assign(118, nil)
 Categories.Assign(6001, nil)

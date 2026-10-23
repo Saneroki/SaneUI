@@ -141,6 +141,7 @@ local function Instant(item)
     if not ok then return nil end
     return Plain(class), Plain(subclass), Plain(equip)
 end
+Contents.Instant = Instant
 
 -- An item's level, for gear only; nil while the game does not know it yet.
 local function Level(link, class)

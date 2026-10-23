@@ -6,9 +6,12 @@ local _, ns = ...
 --  without a frame (Layout.lua lays them out):
 --      all        All Items: Pinned and Recent first (a second look: those
 --                 items are in their own category too), then a block per
---                 category in the categories' order, a group under its
---                 name (a title) with each of its members holding items as
---                 a block of its own (the empty ones left out); a category
+--                 category in the categories' order; a group divided
+--                 (Categories.Divided): its name (a title), each of its
+--                 members holding items as a block of its own (the empty
+--                 ones left out), then one empty slot for the whole group (a
+--                 bare block: no head); a group whole: one block of all its
+--                 members' items under its name; a category
 --                 hidden from All Items left out; an empty one shown too (a
 --                 line of empty slots to drop an item into), but not while
 --                 searching nor in the bank; the free slots are not shown
@@ -34,7 +37,9 @@ local _, ns = ...
 --      blocks[i] = { word, number, level (1 a part, 2 a block, 3 a group's
 --          member), entries = { { record, count, faded } }, key (a
 --          category's: its head takes items), group (a group's), title (a
---          group's name over its members: no cells), own (the
+--          group's name over its members: no cells), bare (no head: the
+--          group's one empty slot), drop (where an item let go on its
+--          empty slot goes: "group:<group>"; else its key), own (the
 --          player's own: shown when empty), slots (the bags as they are:
 --          empty slots are cells too), plus (a "+" after its cells, to put
 --          an item in: Pinned, a category that takes items) }
@@ -70,7 +75,7 @@ local function Block(word, level)
     for index = #block.entries, 1, -1 do block.entries[index] = nil end
     block.word, block.level, block.number = word, level or 2, nil
     block.key, block.group, block.own, block.slots, block.section, block.spare = nil, nil, false, false, nil, false
-    block.plus, block.title = false, false
+    block.plus, block.title, block.bare, block.drop = false, false, false, nil
     return block
 end
 
@@ -190,7 +195,7 @@ local function ByCategories(section, query, order, merge)
         local group = Categories.GroupOf(key)
         if not (def and def.fixed) and not done[group or key] then
             done[group or key] = true
-            if group then
+            if group and Categories.Divided(group) then
                 if not Categories.Hidden(group) or query then
                     local title = Block(Categories.GroupWord(group))
                     title.group, title.title = group, true
@@ -198,12 +203,31 @@ local function ByCategories(section, query, order, merge)
                     for _, member in ipairs(Categories.Members(group)) do
                         local block = Fill(Block(Categories.Word(member), 3), lists[member] or {}, query, order, merge)
                         block.key = member
-                        block.plus = plus and firstSection and Categories.Takes(member)
                         cells = cells + #block.entries
                         if #block.entries == 0 then used = used - 1 end
                     end
                     title.number = cells
-                    if used == first then used = used - 1 end -- no member holds anything: no title either
+                    local slot = plus and firstSection and not query
+                    if slot then
+                        local block = Block(nil, 3)
+                        block.bare, block.plus, block.drop = true, true, "group:" .. group
+                    end
+                    if used == first then used = used - 1 end -- nothing under the title: no title either
+                end
+            elseif group then
+                if not Categories.Hidden(group) or query then
+                    local block = Block(Categories.GroupWord(group))
+                    block.group, block.drop = group, "group:" .. group
+                    block.plus = plus and firstSection
+                    Clear(byLink)
+                    for _, member in ipairs(Categories.Members(group)) do
+                        for _, record in ipairs(lists[member] or {}) do
+                            if Contents.Found(record, query) then Add(block, record, merge) end
+                        end
+                    end
+                    Contents.Sort(block.entries, order)
+                    block.number = #block.entries
+                    if #block.entries == 0 and (query or not firstSection) then used = used - 1 end
                 end
             elseif not Categories.Hidden(key) or query then
                 local block = Fill(Block(Categories.Word(key)), lists[key] or {}, query, order, merge)

@@ -61,9 +61,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   bound in stitched leather, everything on it drawn in pencil, the words in a hand-printed font): each item in a
   pencil slot, its icon without a border, its corners rounded, its item level at the top left in its quality's
   colour, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
-  - **The bar** on the window's title line, after *Bags*: how many of your bags' slots are taken (every bag's in its
-    tooltip); at the line's end *Sell All Junk Items* at a vendor, then three round buttons with a soft edge (the
-    junk marker, the bags' button, the clean-up) and the dropdown *View*. Your bags stand in a strip at the top of
+  - **The bar** on the window's title line, after *Bags*, inside its pencil lines: how many of your bags' slots
+    are taken (every bag's in its tooltip); at the line's end *Sell All Junk Items* at a vendor (a pencil box),
+    then three small round buttons with a soft edge (the junk marker, the bags' button, the clean-up) and the
+    dropdown *View*, a pencil box on the paper. Your bags stand in a strip at the top of
     the page, at first; the bags' button hides it or shows it again: each bag's icon in a pencil slot with its corners
     rounded and its free slots on it, an empty bag slot the pencil slot alone; point at one to light its items,
     drop a bag on a slot to put it on, click one to pick it up. The clean-up
@@ -86,8 +87,12 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     more), *Camp Items* and *Consumables* (the rest: food and drink, bandages) the group *Adventure Prep*; then
     *Trade Goods*, *Professions*, *Reagent Bag*, *Miscellaneous*, *Quest Items* (off at first: those items are in
     Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag) and *Junk* last. A group shows
-    in All Items as its name over the whole width, its members that hold something side by side under it, each
-    with its items and its empty slot; in the sidebar its members are set in under it. *Pinned Items* and *Recent Items* (what
+    in All Items as its name over the whole width, its members that hold something side by side under it, then
+    one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
+    the group's first member). In the sidebar its members are set in under it; the arrow on its row folds them
+    into the row, and its box, ticked, divides the group into its members in All Items; unticked, the group is
+    one part with all its items and one empty slot. An item let go over the page's paper (not on a slot or a
+    name) goes into your bags, into the category the rules give it (what you put it into taken off). *Pinned Items* and *Recent Items* (what
     came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
     item show as one with their count added up (gear never; not at a vendor, the bank, the mail, a trade or the
     auction house, where each stack is its own).
@@ -397,7 +402,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     open; `Recent.SETTLE` seconds after it closes, counted anew without anything new.
   - **The views** (`Bags/Views.lua`, no frames: `Views.Build`): the sidebar's choice as blocks: *all* (Pinned,
     Recent, then a block per category in order, a group as its title (`block.title`) and its members that hold
-    something as blocks of their own (level 3), hidden ones left out, empty ones shown
+    something as blocks of their own (level 3) and the group's one empty slot (`block.bare`, `block.drop`
+    "group:<group>"), or, with `Categories.Divided` off (`store.bags.whole`), one block of all its members' items,
+    hidden ones left out, empty ones shown
     but not while searching nor in the bank), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
     reagent bag), *each* (every bag), `cat:<key>`, `group:<group>` (its members each a block). Stacks of an item
     that is no gear merge into one entry with their counts added (`Views.Merging`: not while talking to a vendor,
@@ -526,7 +533,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     ink's alpha one, two, three pixels out, the highlight and checked light cut to the circle), the strip of the
     bags at the body's top (kept: `strip`; hidden while the sidebar is folded, `Bags.Fold`, kept: `side`), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
-    the compact display's labels, the list's lines; the dropdown *View* (`WowStyle1DropdownTemplate`) with the
+    the compact display's labels, the list's lines; the dropdown *View* (`Paper.Dropdown`: the game's `DropdownButton` in a pencil box) with the
     displays, the orders and the switches (`showPinned`, `showRecent`, `merge`, `first`, the
     categories switched off). The view chosen holds while the window is open (`Bags.Choose`); it opens with
     `first`.
@@ -570,7 +577,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Bindings.xml` | Inventory's key in the game's key bindings |
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which wear the journal (`Board.DRESS`), their bodies' sizes |
-| `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule, the leather dropdown |
+| `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule, the dropdown in a pencil box |
 | `Sheet/Doll.lua` | The character's doll: its picture, its slots and strips, a strip's words |
 | `Sheet/Slots.lua` | The character sheet's equipment slots, in the doll's slots, and their strips |
 | `Sheet/Model.lua` | The character sheet's model, still, in the doll's hero's place |

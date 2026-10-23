@@ -53,30 +53,31 @@ function Paper.Color(fs, r, g, b, plain, outlined)
     end
 end
 
--- A dropdown button of the leather patch, its word pressed in (the game's intrinsic DropdownButton, so SetupMenu
--- works as on the game's): menu:OverrideText(text) sets its word (menu.word).
+-- A dropdown button on the paper: a pencil box, its word and arrow in graphite (the style's rule: on the paper,
+-- pencil, never leather), the box drawn stronger under the mouse (the game's intrinsic DropdownButton, so
+-- SetupMenu works as on the game's): menu:OverrideText(text) sets its word (menu.word).
 function Paper.Dropdown(parent, width, height)
     local menu = CreateFrame("DropdownButton", nil, parent)
     height = height or 24
     menu:SetSize(width, height)
-    J.Patch(menu, height)
+    local box = J.Box(menu, 0.5)
     local label = menu:CreateFontString(nil, "OVERLAY")
-    J.Press(label, 14)
-    label:SetPoint("LEFT", 10, 1)
-    label:SetPoint("RIGHT", -16, 1)
+    J.Font(label, 14)
+    label:SetPoint("LEFT", 7, 0)
+    label:SetPoint("RIGHT", -14, 0)
     label:SetJustifyH("LEFT")
     label:SetWordWrap(false)
     local arrow = menu:CreateFontString(nil, "OVERLAY")
-    J.Press(arrow, 12)
-    arrow:SetPoint("RIGHT", -9, 1)
+    J.Font(arrow, 12, true)
+    arrow:SetPoint("RIGHT", -6, 0)
     arrow:SetText("v")
-    menu.label = label
+    menu.label, menu.box = label, box
     function menu.OverrideText(self, text)
         self.word = text
         label:SetText(text or "")
     end
-    menu:HookScript("OnEnter", ns.Guard(function() label:SetTextColor(J.LIT[1], J.LIT[2], J.LIT[3], 1) end))
-    menu:HookScript("OnLeave", ns.Guard(function() label:SetTextColor(J.LEATHER[1], J.LEATHER[2], J.LEATHER[3], 0.85) end))
+    menu:HookScript("OnEnter", ns.Guard(function() box:SetStrong(true) end))
+    menu:HookScript("OnLeave", ns.Guard(function() box:SetStrong(false) end))
     return menu
 end
 

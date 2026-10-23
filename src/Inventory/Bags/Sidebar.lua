@@ -20,7 +20,9 @@ local _, ns = ...
 --  Bag, Each Bag; the one the window opens with first), then Pinned and
 --  Recent, a line, every category in the categories' order with how many
 --  cells it holds (a group: its name with its members set in under it, each
---  with its own count), Add Category at the foot. Every category switched
+--  with its own count; on its row an arrow folds its members into it or
+--  lists them again, and a box ticks whether All Items divides it into its
+--  members or shows it whole), Add Category at the foot. Every category switched
 --  on is listed, empty ones too. A click shows that view, category or group; an item brought
 --  over a row (picked up, or dragged) and let go there goes into that
 --  category (over Pinned: pinned); a right click opens the row's menu
@@ -239,6 +241,8 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row.icon:SetAlpha(1)
     row.label:SetText(word)
     row.label:SetAlpha(shown and 1 or Sidebar.DIM)
+    row.label:SetPoint("RIGHT", -30, 0)
+    if row.arrow then row.arrow:Hide(); row.box:Hide() end
     row.count:SetText(number and tostring(number) or "")
     local ink = ns.Paper.INK
     row.bar:SetColorTexture(ink[1], ink[2], ink[3], 0.8)
@@ -249,6 +253,58 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row:Show()
     self.y = self.y + Sidebar.ROW + Sidebar.ROW_GAP
     return row
+end
+
+-- A group's row: its arrow (folded: its members not listed) and its box (ticked: divided into its members in All
+-- Items); fold(row) and tick(row) answer their clicks.
+local function ArrowOf(button) button.row.rail.folder(button.row) end
+local function BoxOf(button) button.row.rail.ticker(button.row) end
+local function ToggleTip(button)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    GameTooltip:SetText(button.tip, 1, 1, 1)
+    GameTooltip:Show()
+end
+
+local function Toggle(row, click, size)
+    local button = CreateFrame("Button", nil, row)
+    button:SetSize(size, size)
+    button.row = row
+    button:SetScript("OnClick", function(self) ns.Safe("bags", click, self) end)
+    button:SetScript("OnEnter", function(self) ns.Safe("bags", ToggleTip, self) end)
+    button:SetScript("OnLeave", GameTooltip_Hide)
+    return button
+end
+
+function Rail:Toggles(row, folded, ticked, fold, tick)
+    self.folder, self.ticker = fold, tick
+    if not row.arrow then
+        local ink = ns.Paper.INK
+        row.arrow = Toggle(row, ArrowOf, 13)
+        -- the game's small arrow, in graphite
+        row.arrow.mark = row.arrow:CreateTexture(nil, "ARTWORK")
+        row.arrow.mark:SetAllPoints()
+        row.arrow.mark:SetDesaturated(true)
+        row.arrow.mark:SetVertexColor(ink[1], ink[2], ink[3], 0.85)
+        row.box = Toggle(row, BoxOf, 14)
+        local box = Core.Journal.Box(row.box, 0.4)
+        box:SetStrong(true)
+        row.box.check = row.box:CreateTexture(nil, "OVERLAY")
+        row.box.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+        row.box.check:SetDesaturated(true)
+        row.box.check:SetVertexColor(ink[1], ink[2], ink[3], 0.9)
+        row.box.check:SetPoint("TOPLEFT", -2, 2)
+        row.box.check:SetPoint("BOTTOMRIGHT", 2, -2)
+        row.box:SetPoint("RIGHT", row.count, "LEFT", -6, 0)
+        row.arrow:SetPoint("RIGHT", row.box, "LEFT", -3, 0)
+    end
+    row.arrow.mark:SetTexture(folded and "Interface\\Buttons\\Arrow-Down-Up" or "Interface\\Buttons\\Arrow-Up-Up")
+    row.arrow.mark:SetDesaturated(true)
+    row.arrow.tip = folded and ns.TEXT.bagsGroupUnfold or ns.TEXT.bagsGroupFold
+    row.box.check:SetShown(ticked)
+    row.box.tip = ticked and ns.TEXT.bagsGroupWhole or ns.TEXT.bagsGroupDivide
+    row.arrow:Show()
+    row.box:Show()
+    row.label:SetPoint("RIGHT", row.arrow, "LEFT", -2, 0)
 end
 
 function Rail:Divider()
@@ -523,8 +579,11 @@ function Bag.Refresh(counts, viewing, options)
                 local row = rail:Row(Categories.GroupWord(group), counts["group:" .. group] or 0, file, atlas, 0,
                     viewing == "group:" .. group)
                 row.view, row.group, row.drag = "group:" .. group, group, true
+                row.takes = ns.Menus.Takes("group:" .. group)
+                local folded = Categories.Folded(group)
+                rail:Toggles(row, folded, Categories.Divided(group), Bag.FoldGroup, Bag.DivideGroup)
                 for _, member in ipairs(Categories.Members(group)) do
-                    if not Categories.Off(member) then
+                    if not Categories.Off(member) and not folded then
                         local mfile, matlas = Categories.Icon(member)
                         local memberRow = rail:Row(Categories.Word(member), counts[member] or 0, mfile, matlas, 1,
                             viewing == "cat:" .. member)
@@ -552,6 +611,20 @@ end
 
 function Bag.Width()
     return rail and rail:Width() or Sidebar.WIDTH
+end
+
+-- A group's arrow: its members folded into its row, or listed again (kept).
+function Bag.FoldGroup(row)
+    Categories.Fold(row.group, not Categories.Folded(row.group))
+    ns.Bags.Refresh()
+end
+
+-- A group's box: All Items divides it into its members, or shows it whole (kept).
+function Bag.DivideGroup(row)
+    Categories.Divide(row.group, not Categories.Divided(row.group))
+    Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+    ns.Bags.Refresh()
+    if ns.Bank then ns.Bank.Refresh() end
 end
 
 -- Folded or unfolded (Bags.Fold keeps it).
@@ -633,7 +706,7 @@ function Bag.Build(body, top, bottom, bags)
     rail = Sidebar.New(body, top, bottom, {
         word = ns.TEXT.bagsCategories,
         choose = function(view) ns.Bags.Choose(view) end,
-        drop = function(row) ns.Menus.Drop(row.key, true) end,
+        drop = function(row) ns.Menus.Drop(row.key or row.group and ("group:" .. row.group), true) end,
         menu = function(row) if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end end,
         add = function(row) ns.Menus.Add(row) end,
         aim = Bag.Aim,

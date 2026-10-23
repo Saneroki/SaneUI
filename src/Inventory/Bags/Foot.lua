@@ -43,9 +43,8 @@ Foot.TOKENS = 3        -- the currencies the game lets the backpack watch (MAX_W
 Foot.TOKEN = 17        -- a currency's icon
 Foot.TOKEN_CUT = 5 / 64
 Foot.TOKEN_GAP = 5
-Foot.ACT = 22          -- the bar's button for what can be done here: a leather patch
+Foot.ACT = 22          -- the bank bar's button for what can be done there: a leather patch
 Foot.ACT_COLOR = { Core.Journal.LEATHER[1], Core.Journal.LEATHER[2], Core.Journal.LEATHER[3] } -- pressed into the patch
-Foot.ACT_LIT = Core.Journal.LIT
 Foot.STEP = 0.08       -- seconds between two items sold
 
 local Contents = ns.Contents
@@ -266,7 +265,7 @@ Foot.Deposits = Deposit
 function Foot.Act()
     doing = Junk() and "junk" or nil
     if doing == "junk" then act.text:SetText(Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")) end
-    act:SetWidth(math.max(58, (act.text:GetStringWidth() or 0) + 24))
+    act:SetWidth(math.max(40, (act.text:GetStringWidth() or 0) + 14))
     act:SetShown(doing ~= nil)
 end
 
@@ -402,9 +401,9 @@ local function Label(parent, font)
     return frame
 end
 
+-- The button on the title line: a pencil box on the paper, its box drawn stronger under the mouse.
 local function ActLit(on)
-    local color = on and Foot.ACT_LIT or Foot.ACT_COLOR
-    act.text:SetTextColor(color[1], color[2], color[3])
+    act.box:SetStrong(on)
 end
 
 -- The foot in the window's body; the button for what can be done here left of beside (on the bar); the bags in
@@ -439,10 +438,11 @@ function Foot.Build(body, beside, holder)
         tokens[index] = token
     end
     act = CreateFrame("Button", nil, beside:GetParent())
-    act:SetHeight(Foot.ACT)
+    act:SetHeight(ns.Bags.BAR)
     act:SetPoint("RIGHT", beside, "LEFT", -ns.Bags.BAR_GAP, 0)
     act.text = act:CreateFontString(nil, "ARTWORK")
-    ns.Paper.Leather(act, act.text, Foot.ACT)
+    Core.Journal.Font(act.text, 14)
+    act.box = Core.Journal.Box(act, 0.5)
     act.text:SetPoint("CENTER")
     ActLit(false)
     act:SetScript("OnClick", function() ns.Safe("bags", Act) end)

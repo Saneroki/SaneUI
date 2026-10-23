@@ -65,6 +65,10 @@ local _, ns = ...
 --                                      members')
 --      off       { [key] = true }      switched off (nil: Quest Items off)
 --      hidden    { [key or group] = true }   not in All Items
+--      whole     { [group] = true }  a group shown as one part in All Items,
+--                                      not divided into its members
+--      folded    { [group] = true }  a group's members not listed in the
+--                                      sidebar
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Categories = {}
@@ -249,9 +253,11 @@ function Categories.Check(bags)
     for key, on in pairs(bags.off or {}) do
         if not Known(key) or type(on) ~= "boolean" then bags.off[key] = nil end
     end
-    local hidden = Table(bags, "hidden")
-    for key, on in pairs(hidden) do
-        if type(key) ~= "string" or on ~= true then hidden[key] = nil end
+    for _, name in ipairs({ "hidden", "whole", "folded" }) do
+        local map = Table(bags, name)
+        for key, on in pairs(map) do
+            if type(key) ~= "string" or on ~= true then map[key] = nil end
+        end
     end
     if type(bags.order) == "table" then
         local orderSeen = {}
@@ -660,6 +666,47 @@ end
 
 function Categories.Hidden(key)
     return (kept.hidden or {})[key] == true
+end
+
+-- A group divided into its members in All Items (at first), or shown whole, as one part.
+function Categories.Divided(group)
+    return (kept.whole or {})[group] ~= true
+end
+
+function Categories.Divide(group, on)
+    kept.whole = kept.whole or {}
+    kept.whole[group] = (not on) or nil
+end
+
+-- A group's members listed under it in the sidebar (at first), or folded into its row.
+function Categories.Folded(group)
+    return (kept.folded or {})[group] == true
+end
+
+function Categories.Fold(group, on)
+    kept.folded = kept.folded or {}
+    kept.folded[group] = on and true or nil
+end
+
+-- Where the rules put an item, whatever the player chose for it (by the game's instant item info): Camp Items,
+-- then by its slot or kind, then by its class, else Miscellaneous.
+function Categories.Rule(item)
+    if Categories.CAMP[item] then return "camp" end
+    local class, subclass, equip = ns.Contents.Instant(item)
+    local key = class and (First({ item = item, class = class, subclass = subclass, equip = equip }, true)
+        or First({ item = item, class = class, subclass = subclass, equip = equip }, false))
+    if not key or not rank[key] or Categories.Off(key) then key = Categories.CATCH_ALL end
+    return key
+end
+
+-- An item let go over a group: the member the rules put it into, if it is that group's (nil: nothing to put it
+-- into, the rules do it); else the group's first member that takes items.
+function Categories.Into(group, item)
+    local rule = Categories.Rule(item)
+    if groupOf[rule] == group then return nil end
+    for _, member in ipairs(Categories.Members(group)) do
+        if Categories.Takes(member) and not Categories.Off(member) then return member end
+    end
 end
 
 -- Whether a category may be in a group (not Pinned, Recent, Junk, the bags' own).

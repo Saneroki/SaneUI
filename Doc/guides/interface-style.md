@@ -127,7 +127,8 @@ with as little room for frame and ornament as the look allows.
   repeating its middle for wider buttons, and presses the label in. The earlier patch (round 1 #23) is dropped.
 - **Dropdown buttons:** a leather band hanging down from the top, with a buckle: the band of the kit
   (`kit/kit3-09.png`). Its inside is plain leather for the code's inlay. A band opens an overlay.
-- **On the paper:** pencil boxes (*Pencil pieces*), never leather.
+- **On the paper:** pencil boxes (*Pencil pieces*), never leather; a dropdown or button on the paper (the bags'
+  *View* on the title line) is a pencil box with its words in graphite (Saneroki, 2026-10-23).
 
 ### Kit parts
 

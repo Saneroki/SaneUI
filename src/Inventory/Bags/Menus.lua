@@ -272,8 +272,15 @@ function Menus.Row(owner, key, group)
     MenuUtil.CreateContextMenu(owner, RowMenu)
 end
 
--- Whether items can be let go over a category: Pinned, Junk, the categories items are put into.
+-- Whether items can be let go over a category: Pinned, Junk, the categories items are put into, a group
+-- ("group:<group>", one of whose members takes them).
 function Menus.Takes(key)
+    if type(key) == "string" and key:find("^group:") then
+        for _, member in ipairs(Categories.Members(key:sub(7))) do
+            if Categories.Takes(member) then return true end
+        end
+        return false
+    end
     return key == Categories.PINNED or key ~= nil and Categories.Takes(key)
 end
 
@@ -307,13 +314,28 @@ function Menus.Drop(key, stow)
     local kind, id = Core.Ask(rawget(_G, "GetCursorInfo"))
     id = Core.Plain(id)
     if kind ~= "item" or type(id) ~= "number" then return false end
-    if key == Categories.PINNED then
+    local group = key:match("^group:(.+)$")
+    if group then
+        Categories.Assign(id, Categories.Into(group, id))
+    elseif key == Categories.PINNED then
         Categories.Pin(id, true)
     elseif key == Categories.JUNK then
         Categories.MarkJunk(id, true)
     else
         Categories.Assign(id, key)
     end
+    if stow then Stow(id) else ClearCursor() end
+    Changed()
+    return true
+end
+
+-- The item on the cursor let go over the page's paper (no slot, no head): into the bags (stow), in the category
+-- the rules give it (what the player put it into, or marked it as, taken off).
+function Menus.Home(stow)
+    local kind, id = Core.Ask(rawget(_G, "GetCursorInfo"))
+    id = Core.Plain(id)
+    if kind ~= "item" or type(id) ~= "number" then return false end
+    Categories.Assign(id, nil)
     if stow then Stow(id) else ClearCursor() end
     Changed()
     return true

@@ -606,7 +606,7 @@ function Bank.Build(made)
     bar = CreateFrame("Frame", nil, body)
     bar:SetPoint("TOPLEFT")
     bar:SetPoint("TOPRIGHT")
-    bar:SetHeight(Bags.BAR)
+    bar:SetHeight(Bags.PAGE_BAR)
     Bags.Band(bar, "BOTTOM")
     bar.count = bar:CreateFontString(nil, "ARTWORK")
     local font = Bags.Fonts().count

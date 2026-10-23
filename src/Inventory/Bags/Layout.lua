@@ -12,7 +12,8 @@ local _, ns = ...
 --               cells or its head's words (measure), whichever is wider,
 --               never more than the room (more cells: more lines). A group's
 --               title (block.title) goes over the whole width, its members'
---               blocks side by side under it
+--               blocks side by side under it, then its one empty slot (a
+--               bare block: no head, its slot level with the members' cells)
 --      list     each block under its head, a line per cell: the item at the
 --               left, its words in columns
 --      compact  the blocks side by side in bands, its name over each: which
@@ -136,12 +137,16 @@ local function Grid(blocks, width, measure)
             if block.level ~= 3 and member then Close() end -- a group's members keep their lines to themselves
             member = block.level == 3
             local wide = math.min(columns, slots)
-            local room = math.min(width, math.max(wide * step - Layout.GAP, measure and measure(block) or 0))
+            local words = not block.bare and measure and measure(block) or 0
+            local room = math.min(width, math.max(wide * step - Layout.GAP, words))
             if across > 0 and across + room > width then Close() end
             local height = block.level == 3 and Layout.MEMBER or Layout.HEAD
-            local place = Place("head")
-            place.x, place.y, place.width, place.height = across, top, room, height
-            place.block, place.level = block, block.level
+            if block.bare and across == 0 then height = 0 end -- alone on its line: no room for heads above it
+            if not block.bare then
+                local place = Place("head")
+                place.x, place.y, place.width, place.height = across, top, room, height
+                place.block, place.level = block, block.level
+            end
             lines = math.max(lines, Cells(block, across, top + height + Layout.HEAD_GAP, wide))
             high = math.max(high, height)
             across = across + room + Layout.BAND_GAP
@@ -155,7 +160,7 @@ local function List(blocks, width)
     for index = 1, blocks.count do
         local block = blocks[index]
         if block.level ~= 3 then hiding = block.title and block.folded or false end
-        if not (hiding and block.level == 3) then
+        if not (hiding and block.level == 3) and not block.bare then
             Head(block, width)
             for _, entry in ipairs(block.folded and NONE or block.entries) do
                 local place = Place("row")
@@ -229,8 +234,10 @@ local function Bands(width)
         for index = first, last do
             local block = run[index]
             local wide = Wide(Slots(block), lines, index == last)
-            local label = Place("label")
-            label.x, label.y, label.width, label.height, label.block = x, top, wide * step - Layout.GAP, Layout.LABEL, block
+            if not block.bare then
+                local label = Place("label")
+                label.x, label.y, label.width, label.height, label.block = x, top, wide * step - Layout.GAP, Layout.LABEL, block
+            end
             Cells(block, x, top + Layout.LABEL + Layout.LABEL_GAP, wide)
             x = x + wide * step - Layout.GAP + Layout.BAND_GAP
         end

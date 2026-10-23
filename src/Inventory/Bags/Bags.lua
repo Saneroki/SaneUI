@@ -50,12 +50,15 @@ ns.Bags = Bags
 Bags.EDGE = 6        -- from the panel's sides to what is in it
 Bags.INSET = 8       -- from the scroll area's left to the items
 Bags.SCROLL = 20     -- room at the right for the game's scroll bar
-Bags.BAR = 30        -- the bar on the title line
-Bags.BAR_BUTTON = 24 -- a button on it
-Bags.BAR_GAP = 8
+Bags.BAR = 18        -- the bar on the title line, inside the label's pencil lines
+Bags.PAGE_BAR = 35   -- a bar on the page (the bank's)
+Bags.BAR_BUTTON = 24 -- a button on a bar of the page (the bank's, the alts')
+Bags.TITLE_BUTTON = 15 -- a round button on the title line
+Bags.BAR_GAP = 7
 Bags.BAR_END = 34    -- from the title line's end to the bar's last button
 Bags.SOFT = { 0.42, 0.2, 0.08 } -- a round button's soft edge: the ink's alpha one, two, three pixels out
 Bags.MENU_WIDTH = 110
+Bags.TITLE_MENU = 74   -- the dropdown View on the title line
 Bags.RULE = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.3 } -- the line by the sidebar
 Bags.COUNT_COLOR = ns.Paper.SOFT    -- the bar's count
 Bags.LEAST = { 560, 320 }
@@ -158,8 +161,8 @@ function Bags.Round(parent, file, checkable, size)
 end
 
 -- The clean-up button, round, a broom (Bags.Round), for the bags or a bank (Bank.lua).
-local function CleanButton(parent, click, enter)
-    local button = Bags.Round(parent, "Interface\\Icons\\INV_Pet_Broom")
+local function CleanButton(parent, click, enter, size)
+    local button = Bags.Round(parent, "Interface\\Icons\\INV_Pet_Broom", false, size)
     button:SetScript("OnClick", function(self) ns.Safe("bags", click, self) end)
     button:SetScript("OnEnter", function(self) ns.Safe("bags", enter, self) end)
     button:SetScript("OnLeave", GameTooltip_Hide)
@@ -538,20 +541,20 @@ local function Bar(body)
     hover:SetAllPoints(bar.count)
     hover:SetScript("OnEnter", function(self) ns.Safe("bags", Foot.FreeTip, self) end)
     hover:SetScript("OnLeave", GameTooltip_Hide)
-    menu = ns.Paper.Dropdown(bar, Bags.MENU_WIDTH, Bags.BAR_BUTTON)
+    menu = ns.Paper.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
     menu:SetPoint("RIGHT")
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(ViewMenu)
-    sort = CleanButton(bar, Clean, CleanTip)
+    sort = CleanButton(bar, Clean, CleanTip, Bags.TITLE_BUTTON)
     sort:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
     bar.sort = sort
-    local bags = Bags.Round(bar, "Interface\\Icons\\INV_Misc_Bag_08", true)
+    local bags = Bags.Round(bar, "Interface\\Icons\\INV_Misc_Bag_08", true, Bags.TITLE_BUTTON)
     bags:SetPoint("RIGHT", sort, "LEFT", -Bags.BAR_GAP, 0)
     bags:SetScript("OnClick", function() ns.Safe("bags", ToggleStrip) end)
     bags:SetScript("OnEnter", function(self) ns.Safe("bags", BagsTip, self) end)
     bags:SetScript("OnLeave", GameTooltip_Hide)
     bar.bags = bags
-    coin = Bags.Round(bar, "Interface\\Icons\\INV_Misc_Coin_02", true)
+    coin = Bags.Round(bar, "Interface\\Icons\\INV_Misc_Coin_02", true, Bags.TITLE_BUTTON)
     coin:SetPoint("RIGHT", bags, "LEFT", -Bags.BAR_GAP, 0)
     coin:SetScript("OnClick", function() ns.Safe("bags", CoinClick) end)
     coin:SetScript("OnReceiveDrag", function() ns.Safe("bags", CoinClick) end)
