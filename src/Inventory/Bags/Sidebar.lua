@@ -56,6 +56,9 @@ Sidebar.EDGE = 0.25        -- a row's top and foot quarter: before or after it; 
 Sidebar.GHOST = 0.85       -- the dragged row's ghost
 Sidebar.LIFTED = 0.35      -- the dragged row itself meanwhile
 Sidebar.INTO = 0.2         -- the row it would go into, shaded
+Sidebar.MARK = 0.6         -- the pencil marks (the arrows, a box's tick) drawn lightly; under the mouse whole
+Sidebar.TICK = 25          -- a box's tick, in 1080p pixels: Kalam's root sign, a tick drawn by hand
+Sidebar.BOX = 0.8          -- a box's pencil square
 
 local Categories = ns.Categories
 local Rail = {}            -- a sidebar's functions
@@ -66,6 +69,17 @@ local function Fonts()
         label = ns.Paper.Font("SaneUIBagsSideLabel", 15),
         count = ns.Paper.Font("SaneUIBagsSideCount", 13),
     }
+end
+
+-- The sidebar's pencil arrow: Kalam's "<" in graphite, drawn lightly; turned where it points another way.
+local function Arrow(parent)
+    local mark = parent:CreateFontString(nil, "ARTWORK")
+    mark:SetFontObject(ns.Paper.Font("SaneUIBagsSideArrow", 16, true))
+    mark:SetTextColor(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3])
+    mark:SetAlpha(Sidebar.MARK)
+    mark:SetPoint("CENTER")
+    mark:SetText("<")
+    return mark
 end
 
 -------------------------------------------------------------------------------
@@ -211,7 +225,7 @@ local function ArrowClick(arrow)
 end
 
 local function ArrowLeave(arrow)
-    arrow.text:SetAlpha(0.6)
+    arrow.text:SetAlpha(Sidebar.MARK)
     GameTooltip:Hide()
 end
 
@@ -259,10 +273,17 @@ end
 -- Items); fold(row) and tick(row) answer their clicks.
 local function ArrowOf(button) button.row.rail.folder(button.row) end
 local function BoxOf(button) button.row.rail.ticker(button.row) end
-local function ToggleTip(button)
+-- Under the mouse its pencil mark drawn whole, and its tooltip.
+local function ToggleEnter(button)
+    button.mark:SetAlpha(1)
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     GameTooltip:SetText(button.tip, 1, 1, 1)
     GameTooltip:Show()
+end
+
+local function ToggleLeave(button)
+    button.mark:SetAlpha(Sidebar.MARK)
+    GameTooltip:Hide()
 end
 
 local function Toggle(row, click, size)
@@ -270,35 +291,36 @@ local function Toggle(row, click, size)
     button:SetSize(size, size)
     button.row = row
     button:SetScript("OnClick", function(self) ns.Safe("bags", click, self) end)
-    button:SetScript("OnEnter", function(self) ns.Safe("bags", ToggleTip, self) end)
-    button:SetScript("OnLeave", GameTooltip_Hide)
+    button:SetScript("OnEnter", function(self) ns.Safe("bags", ToggleEnter, self) end)
+    button:SetScript("OnLeave", function(self) ns.Safe("bags", ToggleLeave, self) end)
     return button
 end
+
+-- The head's arrow turned: down while the group's members are folded into it, up while they are listed.
+local DOWN, UP = math.pi / 2, -math.pi / 2
 
 function Rail:Toggles(row, folded, ticked, fold, tick)
     self.folder, self.ticker = fold, tick
     if not row.arrow then
         local ink = ns.Paper.INK
         row.arrow = Toggle(row, ArrowOf, 13)
-        -- the game's small arrow, in graphite
-        row.arrow.mark = row.arrow:CreateTexture(nil, "ARTWORK")
-        row.arrow.mark:SetAllPoints()
-        row.arrow.mark:SetDesaturated(true)
-        row.arrow.mark:SetVertexColor(ink[1], ink[2], ink[3], 0.85)
+        row.arrow.mark = Arrow(row.arrow)
+        -- a square drawn in pencil, a tick in it drawn by hand (Kalam's root sign), both light
         row.box = Toggle(row, BoxOf, 14)
-        local box = Core.Journal.Box(row.box, 0.4)
-        box:SetStrong(true)
-        row.box.check = row.box:CreateTexture(nil, "OVERLAY")
-        row.box.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
-        row.box.check:SetDesaturated(true)
-        row.box.check:SetVertexColor(ink[1], ink[2], ink[3], 0.9)
-        row.box.check:SetPoint("TOPLEFT", -2, 2)
-        row.box.check:SetPoint("BOTTOMRIGHT", 2, -2)
+        local square = Core.Journal.Texture(row.box, "pencil-slot", "BORDER")
+        square:SetAllPoints()
+        square:SetAlpha(Sidebar.BOX)
+        row.box.check = row.box:CreateFontString(nil, "OVERLAY")
+        row.box.check:SetFontObject(ns.Paper.Font("SaneUIBagsSideTick", Sidebar.TICK))
+        row.box.check:SetTextColor(ink[1], ink[2], ink[3])
+        row.box.check:SetAlpha(Sidebar.MARK)
+        row.box.check:SetPoint("CENTER", 1, 1)
+        row.box.check:SetText("\226\136\154") -- U+221A
+        row.box.mark = row.box.check
         row.box:SetPoint("RIGHT", row.count, "LEFT", -6, 0)
         row.arrow:SetPoint("RIGHT", row.box, "LEFT", -3, 0)
     end
-    row.arrow.mark:SetTexture(folded and "Interface\\Buttons\\Arrow-Down-Up" or "Interface\\Buttons\\Arrow-Up-Up")
-    row.arrow.mark:SetDesaturated(true)
+    row.arrow.mark:SetRotation(folded and DOWN or UP)
     row.arrow.tip = folded and ns.TEXT.bagsGroupUnfold or ns.TEXT.bagsGroupFold
     row.box.check:SetShown(ticked)
     row.box.tip = ticked and ns.TEXT.bagsGroupWhole or ns.TEXT.bagsGroupDivide
@@ -509,11 +531,7 @@ function Sidebar.New(body, top, bottom, options)
         arrow:SetSize(Sidebar.FOLDED - 4, Sidebar.HEAD - 4)
         arrow:SetFrameLevel(head:GetFrameLevel() + 2)
         arrow.rail = rail
-        arrow.text = arrow:CreateFontString(nil, "ARTWORK")
-        arrow.text:SetFontObject(ns.Paper.Font("SaneUIBagsSideArrow", 16, true))
-        arrow.text:SetTextColor(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3])
-        arrow.text:SetAlpha(0.6)
-        arrow.text:SetPoint("CENTER")
+        arrow.text = Arrow(arrow)
         arrow:SetScript("OnClick", function(self) ns.Safe("bags", ArrowClick, self) end)
         arrow:SetScript("OnEnter", function(self) ns.Safe("bags", ArrowEnter, self) end)
         arrow:SetScript("OnLeave", function(self) ns.Safe("bags", ArrowLeave, self) end)

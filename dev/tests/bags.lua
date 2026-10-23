@@ -49,6 +49,7 @@ function methods:GetAttribute(name) return self._attributes and self._attributes
 function methods:RegisterForClicks(...) self._clicks = { ... } end
 function methods:IsProtected() return self._protected or false end
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
+function methods:SetRotation(radians) self._rotation = radians end
 function methods:GetStringWidth() return #(self._text or "") * 6 end
 function methods:GetTextWidth() return #(self._text or "") * 6 end
 function methods:SetVerticalScroll(value) self._scrolled = value end
@@ -942,8 +943,20 @@ do
     local armoryRow = RowNamed("The Armory")
     check(armoryRow.arrow:IsShown() and armoryRow.box:IsShown() and armoryRow.box.check:IsShown() and RowNamed("Head"),
         "a group's row: its arrow and its box (ticked: divided)")
+    local Side = ns.Sidebars
+    local function near(a, b) return a and math.abs(a - b) < 1e-6 end
+    check(armoryRow.arrow.mark:GetText() == "<" and near(armoryRow.arrow.mark._rotation, -math.pi / 2)
+        and armoryRow.arrow.mark:GetAlpha() == Side.MARK,
+        "its arrow the sidebar's pencil arrow, turned up while its members are listed, drawn lightly")
+    check(armoryRow.box.check:GetText() == "\226\136\154" and armoryRow.box.check:GetAlpha() == Side.MARK,
+        "its tick drawn by hand in pencil, lightly")
+    armoryRow.box:GetScript("OnEnter")(armoryRow.box)
+    check(armoryRow.box.check:GetAlpha() == 1, "under the mouse the tick drawn whole")
+    armoryRow.box:GetScript("OnLeave")(armoryRow.box)
+    check(armoryRow.box.check:GetAlpha() == Side.MARK, "and lightly again when it leaves")
     armoryRow.arrow:GetScript("OnClick")(armoryRow.arrow)
     check(Categories.Folded("armory") and not RowNamed("Head") and RowNamed("The Armory"), "folded: its members not listed")
+    check(near(RowNamed("The Armory").arrow.mark._rotation, math.pi / 2), "folded: the arrow turned down")
     RowNamed("The Armory").arrow:GetScript("OnClick")(RowNamed("The Armory").arrow)
     check(RowNamed("Head"), "unfolded again")
     RowNamed("The Armory").box:GetScript("OnClick")(RowNamed("The Armory").box)

@@ -90,8 +90,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag) and *Junk* last. A group shows
     in All Items as its name over the whole width, its members that hold something side by side under it, then
     one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
-    the group's first member). In the sidebar its members are set in under it; the arrow on its row folds them
-    into the row, and its box, ticked, divides the group into its members in All Items; unticked, the group is
+    the group's first member). In the sidebar its members are set in under it; the pencil arrow on its row (the sidebar's
+    own, turned down or up) folds them into the row, and its pencil box, ticked, divides the group into its members in All Items; unticked, the group is
     one part with all its items and one empty slot. An item let go anywhere over the window where nothing else
     takes it (the paper, the title line, the foot) goes into your bags, into the category the rules give it
     (what you put it into taken off). The items scroll with the mouse wheel; no scroll bar. Items and empty slots
@@ -499,7 +499,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
     journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
-    narrow edge `Sidebars.FOLDED` with the arrow alone), the names in Kalam always shown (one cut short whole in its tooltip), the
+    narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Kalam's "<" in graphite at `Sidebars.MARK`, whole
+    under the mouse; a group's row has the same arrow turned down while folded, up while listed, and a square
+    drawn in pencil, `pencil-slot`, with Kalam's root sign as a tick drawn by hand, as light), the names in Kalam always shown (one cut short whole in its tooltip), the
     view shown shaded in pencil with a graphite bar at its left; scrolled by the wheel; `Begin`, `Row`,
     `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
     category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a

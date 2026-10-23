@@ -6,6 +6,15 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the sidebar's group rows with the pencil arrow, turned, and a pencil box (Saneroki, 2026-10-23)
+- `Bags/Sidebar.lua`: the head's arrow made by one helper (`Arrow`: Kalam Bold's "<" in graphite at
+  `Sidebar.MARK`, 0.6); a group's row has it too in place of the game's arrows, turned (`FontString:SetRotation`)
+  down while its members are folded, up while they are listed. Its box: the square pencil piece (`pencil-slot`,
+  `Sidebar.BOX` 0.8) in place of the stretched pencil box drawn strong, the tick Kalam's root sign
+  (`Sidebar.TICK`, 25) at `Sidebar.MARK` in place of the game's check mark at 0.9. Under the mouse the arrow or the
+  tick is drawn whole; the tooltip as before.
+- Tests: `dev/tests/bags.lua` 310 checks (the arrow's glyph, its turn either way, the tick's glyph and lightness).
+
 ### Core: Hotcorner requires leftclick per window (Saneroki, 2026-10-23)
 - The switch moved from General into each module's section *Expand window* (`expandClick`, off, under *Can expand
   to fullscreen*; `Edge.DEFAULTS`, `Edge.KEYS`): the bags may want a click while the map does not. The general

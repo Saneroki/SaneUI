@@ -129,6 +129,10 @@ with as little room for frame and ornament as the look allows.
   (`kit/kit3-09.png`). Its inside is plain leather for the code's inlay. A band opens an overlay.
 - **On the paper:** pencil boxes (*Pencil pieces*), never leather; a dropdown or button on the paper (the bags'
   *View* on the title line) is a pencil box with its words in graphite (Saneroki, 2026-10-23).
+- **Arrows and ticks on the paper:** one pencil arrow, Kalam's "<" in graphite, drawn lightly and whole under the
+  mouse, turned to point where it must (the bags' sidebar folds by it, a group's row turns it down or up); a
+  checkbox is a square drawn in pencil with a light tick drawn by hand (Kalam's root sign), never the game's dark
+  check mark (Saneroki, 2026-10-23).
 
 ### Kit parts
 
