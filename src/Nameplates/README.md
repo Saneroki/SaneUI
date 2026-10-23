@@ -77,8 +77,9 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
-- **The bar** (`Bar.lua`): from the back, seven glow plates (`Bar.HALO`: 1 to 7 screen pixels beyond the
-  ring, `Bar.GLOW` at falling strengths, blend mode `ADD`: together a thin glow fading out), the ring (a pixel outside the border, shown on target and focus in the
+- **The bar** (`Bar.lua`): from the back, `Bar.HALO` (8) glow plates in `Bar.GLOW`, reaching 2 to 9 screen
+  pixels beyond the border, each as strong (`Bar.Strength`) as its band needs so that together they are solid at
+  the border and fade outwards (`Bar.Fade`: one minus the band's share, squared), the ring (a pixel outside the border, shown on target and focus in the
   game's `NamePlateConstants.TARGET_BORDER_COLOR` and `FOCUS_TARGET_BORDER_COLOR`), the border (the dress's
   size, `Bar.RANKS` by `UnitIsBossMob` and `UnitClassification`: boss 3 pixels in the game's `NORMAL_FONT_COLOR`,
   elite 1 pixel in it, rare and rare elite 1 pixel silver; `Bar.PLAIN` black, 1), then inside the border a
@@ -185,3 +186,4 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   background, the points as segments of their own; the red glow thin and fading out, not an outline (Saneroki).
 - **2026-10-23:** the size by distance on a curve of two steps (Saneroki): twice at your feet, its own size at 40
   yards, half at 60, read from the game's own scaling and laid over it.
+- **2026-10-23:** the red glow solid at the bar's edge and fading out, a blurred edge (Saneroki).

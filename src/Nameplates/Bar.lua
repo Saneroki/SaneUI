@@ -27,9 +27,9 @@ local _, ns = ...
 --                 silver and thin on a rare
 --    the ring     a pixel outside the border, on your target and your focus,
 --                 in the game's colours for them
---    the glow     red, thin and fading out, around it all: you have the
---                 unit's aggro (Text.lua says), or it is a player who may
---                 attack you
+--    the glow     red, solid at the border and fading out, around it all:
+--                 you have the unit's aggro (Text.lua says), or it is a
+--                 player who may attack you
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -46,10 +46,20 @@ Bar.TAPPED = { 0.5, 0.5, 0.5 }      -- tapped by others
 Bar.CALM = { 1, 0.93, 0.55 }        -- a creature that does not attack on sight (neutral to you)
 Bar.HOSTILE = { 1, 0, 0 }           -- one that does
 Bar.GLOW = { 1, 0.08, 0.05 }
--- The glow's layers: how far each reaches beyond the ring, in screen pixels, and how strong it is. A pixel apart
--- and each fainter than the one inside it: laid over each other they fade out softly, strongest at the border and
--- nearly nothing seven pixels out, a glow rather than an outline.
-Bar.HALO = { { 1, 0.22 }, { 2, 0.18 }, { 3, 0.14 }, { 4, 0.1 }, { 5, 0.07 }, { 6, 0.045 }, { 7, 0.025 } }
+-- The glow: a red edge around the bar, solid where it meets the border and fading to nothing outwards. Drawn as
+-- Bar.HALO round plates a pixel apart, each reaching a pixel farther; Bar.Fade says how solid the glow is in each
+-- pixel's band (1 the innermost, falling off softly), and each plate is as strong as that band needs over the
+-- plates beyond it.
+Bar.HALO = 8
+function Bar.Fade(band)
+    local share = 1 - (band - 1) / Bar.HALO
+    return share * share
+end
+-- How strong the plate of a band is, so that it and those beyond it together are as solid as Bar.Fade says.
+function Bar.Strength(band)
+    local beyond = band < Bar.HALO and Bar.Fade(band + 1) or 0
+    return 1 - (1 - Bar.Fade(band)) / (1 - beyond)
+end
 
 -- A colour of the game's as { r, g, b, 1 }; ours where it has none.
 local function GameColour(colour, r, g, b)
@@ -114,12 +124,11 @@ end
 -- background, fill and power line.
 function Bar.Make(dress)
     dress.halo = {}
-    for index, layer in ipairs(Bar.HALO) do
-        local glow = Plate(dress, math.min(-9 + index, -5))
-        glow:SetBlendMode("ADD") -- light added to what is behind: it glows
-        glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], layer[2])
+    for band = 1, Bar.HALO do
+        local glow = Plate(dress, -8)
+        glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], Bar.Strength(band))
         glow:SetAlpha(0)
-        dress.halo[index] = glow
+        dress.halo[band] = glow
     end
     dress.ring = Plate(dress, -4)
     dress.ring:Hide()
@@ -162,7 +171,7 @@ function Bar.Fit(dress)
     health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -edge, edge)
     Around(dress.border, dress, 0, height)
     Around(dress.ring, dress, pixel, height)
-    for index, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (1 + Bar.HALO[index][1]), height) end
+    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (1 + band), height) end
     local inner = height - 2 * edge
     Bar.SizeCaps(dress.caps, inner)
     dress.line = math.max(inner * Bar.LINE, pixel * 2)

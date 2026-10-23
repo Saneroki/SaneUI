@@ -210,11 +210,17 @@ check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
     "its mana along the bar's bottom, in the game's colour")
 check(dress.halo[1]._alpha == 0, "no glow")
-local fading = #dress.halo == #Bar.HALO and #dress.halo >= 5
-for index, glow in ipairs(dress.halo) do
-    fading = fading and glow._blend == "ADD" and (index == 1 or glow._vertex[4] < dress.halo[index - 1]._vertex[4])
+-- What the glow's plates add up to in each band: those reaching it and beyond, laid over each other.
+local function Solid(band)
+    local clear = 1
+    for outer = band, #dress.halo do clear = clear * (1 - dress.halo[outer]._vertex[4]) end
+    return 1 - clear
 end
-check(fading, "the glow: thin layers, each fainter outwards, added light")
+local fading = #dress.halo == Bar.HALO and math.abs(Solid(1) - 1) < 1e-9 and dress.halo[1]._blend ~= "ADD"
+for band = 2, #dress.halo do
+    fading = fading and Solid(band) < Solid(band - 1) and math.abs(Solid(band) - Bar.Fade(band)) < 1e-9
+end
+check(fading and Solid(#dress.halo) < 0.05, "the glow: solid at the border, fading to almost nothing outwards")
 check(not dress.ring:IsShown(), "no ring: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
     and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
