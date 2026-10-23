@@ -84,7 +84,7 @@ WORKFLOWS = [ROOT / "dev" / "imagegen" / "workflows",
 NAME = re.compile(r"^[A-Za-z0-9_-]+$")
 REF_TITLE = re.compile(r"^ref\s*(\d+)$", re.IGNORECASE)
 SEED_INPUTS = ("seed", "noise_seed")
-UPLOAD_FOLDER = "saneui"  # inside ComfyUI's input folder
+UPLOAD_FOLDER = ""        # ComfyUI's input folder itself: its Load Image offers only the pictures there, so a job opened there runs
 THUMB = 256               # side of a picture in contact.png and of a clip's preview
 CHECK_FILES = True        # reference pictures must exist (the tests read lists without them)
 
@@ -239,6 +239,157 @@ def check(graph, jobs):
         fail(f"The list gives up to {most} reference pictures, the workflow has {len(ref_nodes(graph))} Load Image nodes.")
 
 
+# --- The graph as ComfyUI's canvas shows it ----------------------------------------------------------
+
+# The API form holds only what runs; ComfyUI's canvas wants the full form: nodes with their slots, widget
+# values in the order the node shows them, links and places. A job sent with it can be opened from ComfyUI's
+# queue and history like a workflow made there, and its pictures carry it (dragged into ComfyUI, they open).
+# Made from the node definitions ComfyUI serves (/object_info), the same way its own "load API JSON" does.
+
+WIDGET_TYPES = {"INT", "FLOAT", "STRING", "BOOLEAN", "COMBO", "COMFY_DYNAMICCOMBO_V3"}
+UPLOADS = {"image_upload": "image", "video_upload": "video", "audio_upload": "audio"}
+COLUMN, GAP = 420, 40     # the canvas' layout: a column per step from the loaders on, nodes stacked in it
+
+
+def is_link(val):
+    return isinstance(val, list) and len(val) == 2 and isinstance(val[0], str) and isinstance(val[1], int)
+
+
+def ui_id(node_id):
+    """The canvas' id of an API node: a number stays one; a node of a flattened subgraph (459:451) gets 459_451."""
+    return int(node_id) if str(node_id).isdigit() else str(node_id).replace(":", "_")
+
+
+def spec_kind(spec):
+    """An input's type and options from its definition: ["INT", {...}], [["a", "b"], {...}], ["COMBO", {...}]."""
+    kind = spec[0] if spec else "*"
+    options = spec[1] if len(spec) > 1 and isinstance(spec[1], dict) else {}
+    return ("COMBO" if isinstance(kind, list) else kind), options
+
+
+def definition_inputs(info):
+    """A node's inputs by name, required and optional ones, in the order the node shows them."""
+    groups = info.get("input", {})
+    order = info.get("input_order") or {g: list(groups.get(g, {})) for g in ("required", "optional")}
+    for group in ("required", "optional"):
+        for name in order.get(group, []):
+            if name in groups.get(group, {}):
+                yield name, groups[group][name]
+
+
+def ui_node(node_id, node, info):
+    """One node in the canvas' form; its slots' names, for the links."""
+    inputs, values, named, slots = [], [], {}, []
+    given = node.get("inputs", {})
+
+    def widget(name, kind, options, default=None):
+        val = given.get(name, options.get("default", default))
+        linked = is_link(val)
+        if linked:
+            val = options.get("default", default)
+        inputs.append({"name": name, "type": kind, "widget": {"name": name}, "link": None})
+        slots.append((name, given[name] if linked else None))
+        values.append(val)
+        named[name] = val
+        if kind == "INT" and options.get("control_after_generate"):
+            values.append("fixed")  # the seed stays as sent when the job is opened and run again
+            named["control_after_generate"] = "fixed"
+        for flag, what in UPLOADS.items():
+            if options.get(flag):
+                inputs.append({"name": "upload", "type": what.upper() + "UPLOAD", "widget": {"name": "upload"}, "link": None})
+                slots.append(("upload", None))
+                values.append(what)
+                named["upload"] = what
+
+    widgets = []
+    for name, spec in definition_inputs(info):
+        kind, options = spec_kind(spec)
+        if kind == "COMFY_AUTOGROW_V3":  # numbered slots (images.image_1, ...): the linked ones and one free
+            template = options.get("template", {})
+            sub_kind = next((spec_kind(s)[0] for g in template.get("input", {}).values() for s in g.values()), "*")
+            names = template.get("names") or [f"{name}{i}" for i in range(template.get("max", 16))]
+            used = [n for n in names if f"{name}.{n}" in given]
+            for n in names[:len(used) + 1]:
+                inputs.append({"name": f"{name}.{n}", "type": sub_kind, "shape": 7, "link": None})
+                slots.append((f"{name}.{n}", given.get(f"{name}.{n}")))
+        elif kind in WIDGET_TYPES and not options.get("forceInput"):
+            widgets.append((name, kind, options))
+        else:
+            inputs.append({"name": name, "type": kind, "link": None})
+            slots.append((name, given.get(name)))
+    for name, kind, options in widgets:  # the widgets after the slots, as the canvas lists them
+        widget(name, kind, options)
+        if kind == "COMFY_DYNAMICCOMBO_V3":  # the chosen option's own inputs follow it (format.bit_depth)
+            chosen = next((o for o in options.get("options", []) if o.get("key") == named[name]), {})
+            for sub, sub_spec in definition_inputs({"input": chosen.get("inputs", {})}):
+                sub_kind, sub_options = spec_kind(sub_spec)
+                widget(f"{name}.{sub}", sub_kind, sub_options)
+    outputs = [{"name": out_name, "type": out_type, "links": []}
+               for out_type, out_name in zip(info.get("output", []), info.get("output_name") or info.get("output", []))]
+    lines = sum(1 for _, k, o in widgets if o.get("multiline")) * 3 + len(values) + len(inputs) - len(widgets)
+    ui = {"id": ui_id(node_id), "type": node["class_type"], "pos": [0, 0], "size": [360, 60 + 26 * max(lines, 1)],
+          "flags": {}, "order": 0, "mode": 0, "inputs": inputs, "outputs": outputs,
+          "properties": {"Node name for S&R": node["class_type"]}, "widgets_values": values, "widgets_values_named": named}
+    title = node.get("_meta", {}).get("title")
+    if title and title != info.get("display_name", node["class_type"]):
+        ui["title"] = title
+    return ui, slots
+
+
+PRIMITIVES = {"STRING": "PrimitiveStringMultiline", "INT": "PrimitiveInt", "FLOAT": "PrimitiveFloat", "BOOLEAN": "PrimitiveBoolean"}
+
+
+def with_primitives(graph, definitions):
+    """A value given to an input the canvas shows only as a slot (forceInput) comes from a node of its own there."""
+    graph = dict(graph)
+    for node_id, node in list(graph.items()):
+        specs = dict(definition_inputs(definitions.get(node["class_type"], {})))
+        for name, val in node.get("inputs", {}).items():
+            kind, options = spec_kind(specs.get(name, []))
+            if options.get("forceInput") and not is_link(val) and kind in PRIMITIVES:
+                node = graph[node_id] = {**node, "inputs": {**node["inputs"], name: [f"{node_id}_{name}", 0]}}
+                graph[f"{node_id}_{name}"] = {"class_type": PRIMITIVES[kind], "inputs": {"value": val},
+                                              "_meta": {"title": name}}
+    return graph
+
+
+def ui_workflow(graph, definitions, title=None):
+    """The API graph in the canvas' form, laid out from left to right."""
+    nodes, links, depth = {}, [], {}
+    graph = with_primitives(graph, definitions)
+    for node_id, node in graph.items():
+        info = definitions.get(node["class_type"])
+        if info is None:
+            return None  # a node ComfyUI does not know: the job runs without its canvas form
+        nodes[node_id] = ui_node(node_id, node, info)
+
+    def column(node_id, seen=()):
+        if node_id not in depth:
+            sources = [val[0] for _, val in nodes[node_id][1] if is_link(val) and val[0] in nodes and val[0] not in seen]
+            depth[node_id] = 1 + max((column(s, seen + (node_id,)) for s in sources), default=-1)
+        return depth[node_id]
+
+    heights = {}
+    for order, node_id in enumerate(sorted(nodes, key=lambda n: (column(n), natural(n)))):
+        ui, slots = nodes[node_id]
+        x = column(node_id)
+        ui["pos"], ui["order"] = [100 + x * COLUMN, 100 + heights.get(x, 0)], order
+        heights[x] = heights.get(x, 0) + ui["size"][1] + GAP
+        for slot, (name, val) in enumerate(slots):
+            if is_link(val) and val[0] in nodes:
+                source = nodes[val[0]][0]
+                if val[1] >= len(source["outputs"]):
+                    continue
+                links.append([len(links) + 1, source["id"], val[1], ui["id"], slot, source["outputs"][val[1]]["type"]])
+                ui["inputs"][slot]["link"] = len(links)
+                source["outputs"][val[1]]["links"].append(len(links))
+    numbers = [n[0]["id"] for n in nodes.values() if isinstance(n[0]["id"], int)]
+    return {"id": str(uuid.uuid4()), "revision": 0, "last_node_id": max(numbers, default=0),
+            "last_link_id": len(links), "nodes": [n[0] for n in nodes.values()], "links": links,
+            "groups": [], "config": {}, "extra": {"ds": {"scale": 0.6, "offset": [0, 0]}, **({"title": title} if title else {})},
+            "version": 0.4}
+
+
 # --- ComfyUI's server ----------------------------------------------------------------------------
 
 class Server:
@@ -246,6 +397,7 @@ class Server:
         self.url = address.rstrip("/") if "://" in address else "http://" + address.rstrip("/")
         # its pictures in ComfyUI's queue go by this name: dev/tools/gpu-runner names its jobs' to tell them from others'
         self.client = os.environ.get("IMAGEGEN_CLIENT") or str(uuid.uuid4())
+        self._definitions = None
 
     def call(self, path, data=None, headers=None):
         request = urllib.request.Request(self.url + path, data=data, headers=headers or {})
@@ -282,8 +434,19 @@ class Server:
                                       {"Content-Type": f"multipart/form-data; boundary={boundary}"}))
         return f"{answer['subfolder']}/{answer['name']}" if answer.get("subfolder") else answer["name"]
 
-    def queue(self, graph):
-        body = json.dumps({"prompt": graph, "client_id": self.client}).encode()
+    def definitions(self):
+        """ComfyUI's node definitions, fetched once."""
+        if self._definitions is None:
+            self._definitions = json.loads(self.call("/object_info"))
+        return self._definitions
+
+    def queue(self, graph, title=None):
+        """Queues a job, with the graph in the canvas' form too, so ComfyUI's queue shows and opens it (title: its name there)."""
+        body = {"prompt": graph, "client_id": self.client}
+        workflow = ui_workflow(graph, self.definitions(), title)
+        if workflow:
+            body["extra_data"] = {"extra_pnginfo": {"workflow": workflow}}
+        body = json.dumps(body).encode()
         return json.loads(self.call("/prompt", body, {"Content-Type": "application/json"}))["prompt_id"]
 
     def free(self):
@@ -383,6 +546,15 @@ def contact(out, shown):
 
 # --- Main ----------------------------------------------------------------------------------------
 
+def library():
+    """ComfyUI's templates and apps of Sane UI made anew when a workflow or recipe changed (dev/tools/comfy-library)."""
+    import subprocess
+    try:
+        subprocess.run([str(ROOT / "dev" / "tools" / "comfy-library"), "--if-changed"], timeout=120, check=False)
+    except (OSError, subprocess.SubprocessError) as error:
+        print(f"Note: ComfyUI's templates were not made anew ({error})", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Many pictures at once with ComfyUI (see the file's head).")
     parser.add_argument("files", nargs="+", metavar="[workflow.json] list.txt")
@@ -425,13 +597,14 @@ def main():
         return
 
     server = Server(args.server)
+    library()
     uploaded, queued = {}, []
     for job in jobs:
         for ref in job["refs"]:
             if ref not in uploaded:
                 uploaded[ref] = server.upload(ref, run["flatten"])
         for seed in range(first, first + count):
-            queued.append((job, seed, server.queue(fill(graph, job, seed, run["set"], uploaded))))
+            queued.append((job, seed, server.queue(fill(graph, job, seed, run["set"], uploaded), f"{job['name']}-{seed}")))
     print(f"Queued {len(queued)} jobs ({len(jobs)} prompts x {count}) on {workflow.stem}.")
     if not run["out"]:
         return

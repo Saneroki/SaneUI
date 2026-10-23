@@ -100,6 +100,32 @@ check("a part ends with its framing", jobs[0]["prompt"].endswith("fills most of 
 _, jobs = ig.read_list("dev/imagegen/sets/example/parts-new.txt")
 check("a new part has the house style", jobs[0]["prompt"].endswith("no watermark."), True)
 
+# The canvas' form sent with every job: slots before widgets, a seed's "fixed", an upload, links, forced inputs
+definitions = {
+    "Load": {"input": {"required": {"image": [["a.png"], {"image_upload": True}]}}, "output": ["IMAGE", "MASK"]},
+    "Text": {"input": {"required": {"text": ["STRING", {"multiline": True}], "system": ["STRING", {"forceInput": True}]}},
+             "output": ["COND"]},
+    "Sample": {"input": {"required": {"cond": ["COND", {}], "seed": ["INT", {"control_after_generate": True}],
+                                      "image": ["IMAGE", {}]}}, "output": ["IMAGE"], "display_name": "Sample"},
+    "PrimitiveStringMultiline": {"input": {"required": {"value": ["STRING", {"multiline": True}]}}, "output": ["STRING"]},
+}
+graph = {"1": {"class_type": "Load", "inputs": {"image": "b.png"}, "_meta": {"title": "ref1"}},
+         "2": {"class_type": "Text", "inputs": {"text": "a test", "system": "be brief"}},
+         "3:4": {"class_type": "Sample", "inputs": {"cond": ["2", 0], "seed": 7, "image": ["1", 0]}, "_meta": {"title": "Sample"}}}
+ui = ig.ui_workflow(graph, definitions, "test")
+nodes = {n["id"]: n for n in ui["nodes"]}
+check("canvas: a subgraph's node id", "3_4" in nodes, True)
+check("canvas: seed then fixed", nodes["3_4"]["widgets_values"], [7, "fixed"])
+check("canvas: slots first", [i["name"] for i in nodes["3_4"]["inputs"]], ["cond", "image", "seed"])
+check("canvas: the upload widget", nodes[1]["widgets_values"], ["b.png", "image"])
+check("canvas: a ref's title", nodes[1].get("title"), "ref1")
+check("canvas: no title like the name", "title" not in nodes["3_4"], True)
+check("canvas: a forced input's own node", nodes["2_system"]["widgets_values"], ["be brief"])
+check("canvas: links", sorted(str(link[1:5]) for link in ui["links"]),
+      sorted(str(link) for link in ([2, 0, "3_4", 0], [1, 0, "3_4", 1], ["2_system", 0, 2, 0])))
+check("canvas: left to right", nodes[1]["pos"][0] < nodes["3_4"]["pos"][0], True)
+check("canvas: an unknown node leaves it out", ig.ui_workflow({"1": {"class_type": "Nope", "inputs": {}}}, definitions), None)
+
 # Flipbook: frame sides as dev/tools/art sizes, power-of-two grids, loops
 check("side of 40 units", fb.side(40), 128)
 check("side of 24 units", fb.side(24), 64)

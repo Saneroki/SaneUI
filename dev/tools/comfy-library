@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Puts Sane UI's image work into ComfyUI's own window, to follow it and to work on it there
+(Doc/guides/image-generation.md, *In ComfyUI's window*):
+
+  Templates   ComfyUI's Templates > Extensions > saneui: every workflow (dev/imagegen/workflows/ and the
+              ComfyUI folder's workflows/) and every recipe (dev/imagegen/recipes/), its settings, words
+              and reference pictures filled in. Opened, a template is a new workflow to change and save.
+  Apps        ComfyUI's Workflows > Sane UI: every recipe as an app (ComfyUI's App mode): the prompt, the
+              reference pictures, the size and the seed to fill in, Run, the pictures beside it. An app
+              changed and saved in ComfyUI is kept: it is not written again until it is deleted there.
+
+The words to replace in a template or app stand in square brackets: [what to make]. Every job that
+dev/tools/imagegen (and the tools built on it) sends carries its whole graph too, so ComfyUI's queue shows
+it and opens it as a workflow; that needs nothing from here.
+
+The templates are served by a small pack in ComfyUI's custom_nodes/saneui (no nodes of its own): ComfyUI
+serves a new pack's templates after its next start. Run this after adding or changing a workflow or a
+recipe; dev/tools/imagegen runs it by itself when one is newer than the last run.
+
+Usage:  dev/tools/comfy-library [--server ADDR] [--if-changed]
+  --server ADDR   where ComfyUI runs (default 127.0.0.1:8188)
+  --if-changed    only when a workflow, recipe or the house style changed since the last run
+"""
+import argparse
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+import os
+import sys
+import tempfile
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+HOME = Path(os.environ.get("IMAGEGEN_HOME", "/data/Projects/ImageGen"))
+PACK = HOME / "custom_nodes" / "saneui"
+TEMPLATES = PACK / "example_workflows"
+APPS = HOME / "user" / "default" / "workflows" / "Sane UI"
+WRITTEN = PACK / "written.json"       # what was written last: the apps' hashes, to keep the ones changed in ComfyUI
+RECIPES = ROOT / "dev" / "imagegen" / "recipes"
+BLANK = "[what to make]"
+APP_INPUTS = {"width", "height", "length", "seed", "noise_seed"}  # an app's fields besides the prompt and pictures
+THUMB = 512
+
+
+def imagegen():
+    loader = importlib.machinery.SourceFileLoader("imagegen", str(ROOT / "dev" / "tools" / "imagegen"))
+    spec = importlib.util.spec_from_loader("imagegen", loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+ig = imagegen()
+
+
+def sources():
+    """Every file the library is made from."""
+    files = [ROOT / "dev" / "imagegen" / "style.txt", Path(__file__)]
+    files += sorted(RECIPES.glob("*.txt"))
+    for folder in ig.WORKFLOWS:
+        files += sorted(folder.glob("*.json"))
+    return [f for f in files if f.is_file()]
+
+
+def workflows():
+    """The workflows by name; ours win over the ComfyUI folder's, as in dev/tools/imagegen."""
+    found = {}
+    for folder in ig.WORKFLOWS:
+        for path in sorted(folder.glob("*.json")):
+            found.setdefault(path.stem, path)
+    return found
+
+
+def recipe(path):
+    """A recipe's run settings and its one job, the prompt left open."""
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as listing:
+        listing.write(f"include: {path}\nexample: {BLANK}\n")
+    try:
+        run, jobs = ig.read_list(listing.name)
+    finally:
+        os.unlink(listing.name)
+    return run, jobs[0]
+
+
+def as_app(workflow):
+    """The workflow opened in ComfyUI's App mode: its prompt, pictures, size and seed as the app's fields."""
+    fields, outputs = [], []
+    for node in workflow["nodes"]:
+        for name, val in node.get("widgets_values_named", {}).items():
+            if (isinstance(val, str) and BLANK in val) or name in APP_INPUTS \
+                    or (node["type"] == "LoadImage" and name == "image"):
+                fields.append([node["id"], name])
+        if node["type"].startswith("Save"):
+            outputs.append(node["id"])
+    workflow["extra"].update(linearMode=True, linearData={"inputs": fields, "outputs": outputs})
+    return workflow
+
+
+def thumbnail(picture, target):
+    """The template's picture in ComfyUI's list: the recipe's first reference, else none."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    image = Image.open(picture)
+    image.thumbnail((THUMB, THUMB))
+    under = Image.new("RGB", image.size, (40, 40, 40))
+    under.paste(image, mask=image.convert("RGBA").split()[3])
+    under.save(target, "JPEG", quality=85)
+
+
+def digest(path):
+    return hashlib.sha1(path.read_bytes()).hexdigest()
+
+
+def write_json(path, data):
+    path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Sane UI's workflows and recipes as ComfyUI templates and apps.")
+    parser.add_argument("--server", default="127.0.0.1:8188")
+    parser.add_argument("--if-changed", action="store_true")
+    args = parser.parse_args()
+    if args.if_changed and WRITTEN.is_file() and \
+            max(f.stat().st_mtime for f in sources()) <= WRITTEN.stat().st_mtime:
+        return
+
+    server = ig.Server(args.server)
+    definitions = server.definitions()
+    written = json.loads(WRITTEN.read_text()) if WRITTEN.is_file() else {}
+    TEMPLATES.mkdir(parents=True, exist_ok=True)
+    APPS.mkdir(parents=True, exist_ok=True)
+    (PACK / "__init__.py").write_text("# Sane UI's templates for ComfyUI's Templates window, written by Sane UI's\n"
+                                      "# dev/tools/comfy-library. No nodes of its own.\n"
+                                      "NODE_CLASS_MAPPINGS = {}\n", encoding="utf-8")
+    templates, apps, kept = set(), {}, []
+    found = workflows()
+
+    for name, path in found.items():
+        graph = json.loads(path.read_text(encoding="utf-8"))
+        job = {"name": name, "prompt": BLANK, "refs": []}
+        ui = ig.ui_workflow(ig.fill(graph, job, 1, {}, {}), definitions, f"Workflow {name}")
+        if ui:
+            write_json(TEMPLATES / f"Workflow {name}.json", ui)
+            templates.add(f"Workflow {name}")
+
+    for path in sorted(RECIPES.glob("*.txt")):
+        run, job = recipe(path)
+        if run["workflow"] not in found:
+            print(f"{path.name}: no workflow {run['workflow']}, left out", file=sys.stderr)
+            continue
+        graph = json.loads(found[run["workflow"]].read_text(encoding="utf-8"))
+        uploaded = {ref: server.upload(ref, run["flatten"]) for ref in job["refs"]}
+        job["name"] = path.stem
+        filled = ig.fill(graph, job, run["seed"] or 1, run["set"], uploaded)
+        title = f"Recipe {path.stem}"
+        ui = ig.ui_workflow(filled, definitions, title)
+        if not ui:
+            continue
+        write_json(TEMPLATES / f"{title}.json", ui)
+        templates.add(title)
+        if job["refs"]:
+            thumbnail(job["refs"][0], TEMPLATES / f"{title}.jpg")
+        app = APPS / f"{path.stem}.app.json"
+        if app.is_file() and written.get(app.name) not in (None, digest(app)):
+            kept.append(app.name)  # changed in ComfyUI: Saneroki's now
+            apps[app.name] = written[app.name]
+            continue
+        write_json(app, as_app(ui))
+        apps[app.name] = digest(app)
+
+    for old in TEMPLATES.iterdir():  # the folder is this tool's own
+        if old.stem not in templates:
+            old.unlink()
+    for name, sha in written.items():
+        old = APPS / name
+        if name not in apps and old.is_file() and digest(old) == sha:
+            old.unlink()
+    write_json(WRITTEN, apps)
+
+    print(f"{len(templates)} templates (Templates > Extensions > saneui), {len(apps)} apps (Workflows > Sane UI)"
+          + (f"; kept as changed in ComfyUI: {', '.join(kept)}" if kept else ""))
+    probe = f"{server.url}/api/workflow_templates/saneui/{urllib.parse.quote(min(templates))}.json"
+    try:
+        urllib.request.urlopen(probe, timeout=5).close()
+    except OSError:  # the pack is served from ComfyUI's next start on
+        print("ComfyUI shows the templates after its next start (comfyui stop, comfyui start).")
+
+
+if __name__ == "__main__":
+    main()

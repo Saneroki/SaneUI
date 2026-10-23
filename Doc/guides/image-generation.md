@@ -90,6 +90,37 @@ qwen21-turbo-edit-1ref`); `dev/imagegen/workflows/` is looked in first, for work
    title to rename it), wired as in the template.
 5. Menu *Workflow* > *Export (API)*, saved as `dev/imagegen/workflows/<model>-<task>.json`.
 
+### In ComfyUI's window (a hard rule, Saneroki, 2026-10-23)
+
+Every job Sane UI sends to ComfyUI can be seen in ComfyUI's own window, and everything general is there as a
+template or an app, so Saneroki can follow the work and go on with it there himself:
+
+- **Every job is a workflow there.** `dev/tools/imagegen`'s `Server.queue` sends each job's graph in the canvas'
+  form too (`ui_workflow`, made from ComfyUI's node definitions as its own "load API JSON" does), named after
+  the picture (`concept-3`, `atlas-…`). ComfyUI's queue panel shows it; a click opens it as a workflow on the
+  canvas, its values as sent and its seed fixed; its pictures carry it (dragged into ComfyUI, they open). Every
+  tool that talks to ComfyUI goes through `Server.queue` (the Atlas, the map layers, the GPU runner's jobs); a
+  new one does too, never its own `/prompt` call.
+- **Reference pictures** go into ComfyUI's input folder itself (not a folder in it): its Load Image offers only
+  those, and a job opened there would otherwise stop at "media input missing".
+- **Templates and apps:** `dev/tools/comfy-library` (`saneui makecomfyapps`) writes every workflow and every
+  recipe as a template (Templates > Extensions > saneui; the pack `custom_nodes/saneui` holds them, which
+  ComfyUI serves after its next start) and every recipe as an app (Workflows > Sane UI, opened in ComfyUI's
+  App mode: the prompt, the reference pictures, the size and the seed, then Run). The words to fill in stand as
+  `[what to make]`. An app changed and saved in ComfyUI is Saneroki's: the tool leaves it until it is deleted
+  there. `dev/tools/imagegen` runs the tool by itself when a workflow, recipe or the house style is newer than
+  its last run; a session that adds a workflow or recipe (anything general) runs it in the same work.
+
+## Where pictures go (a hard rule, Saneroki, 2026-10-23)
+
+- **Test and concept pictures** (every candidate, try, contact sheet, render run, unpicked alternative) are
+  written under `assets/generated/`, which is the private work folder's (a link to it on this computer): never
+  committed here.
+- **`assets/` holds only** what the addon uses (the sources and the game textures made from them), the pictures
+  ComfyUI and the tools read as input (the anchor, the decided picks in `assets/Concept art/UI style/`), the
+  data and the fonts. A pick that nothing reads any more moves to `assets/generated/picks/`, the example set's
+  pictures are there too.
+
 ## The house style
 
 The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md) (Saneroki,
@@ -164,7 +195,7 @@ A set is a folder `dev/imagegen/sets/<set>/` with a list per step. To start one,
    ```
 
    ```bash
-   dev/tools/flipbook assets/generated/example/anim/star-glint-1 assets/Example-star-glint.png --loop drop-last --glow --fps 16 --drawn 24
+   dev/tools/flipbook assets/generated/example/anim/star-glint-1 assets/generated/picks/Example/star-glint.png --loop drop-last --glow --fps 16 --drawn 24
    ```
 
 4. **Finish in code:** cut what stretches (*From a picture to pieces*, below), add each picture to

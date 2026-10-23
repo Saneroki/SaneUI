@@ -23,7 +23,7 @@ desktop.ini
 /.claude/
 
 # What the image models make (dev/tools/imagegen): many large candidates, the chosen ones move to assets/
-/assets/generated/
+/assets/generated
 # Release archives are made from BUILD, not part of it
 *.zip
 # The voice database is made again by dev/tools/voicedb build from its staging files; the voice packs are

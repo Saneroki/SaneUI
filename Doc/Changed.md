@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Art: ComfyUI's window shows every job, templates and apps of ours; test pictures out of the repository (Saneroki, 2026-10-23)
+- **Every job a workflow in ComfyUI:** `Server.queue` (`dev/tools/imagegen`, used by the Atlas and the map layers too)
+  sends each job's graph in the canvas' form beside the API form (`ui_workflow`: slots before widgets, a seed's
+  `fixed`, an upload's widget, dynamic options and numbered slots, an input that takes only a link fed by a primitive
+  node, laid out left to right), named after its picture. ComfyUI's queue opens it; its pictures carry it. All 27
+  workflows tried in ComfyUI's canvas: it turns each back into exactly the graph sent.
+- **Reference pictures** go into ComfyUI's input folder itself: its Load Image offers only those.
+- **`dev/tools/comfy-library`** (`saneui makecomfyapps`), new: every workflow and recipe as a template (Templates >
+  Extensions > saneui, the pack `custom_nodes/saneui`), every recipe as an app in ComfyUI's App mode (Workflows >
+  Sane UI); an app changed in ComfyUI is kept. `dev/tools/imagegen` runs it when a workflow or recipe changed.
+- **Where pictures go:** `assets/generated/` is a link into the private work folder; the example set's pictures and
+  eight unpicked alternatives of the UI style (four edges, band, buckle, chat bubble, class fan) moved to
+  `assets/generated/picks/`, out of the repository. Guide: `Doc/guides/image-generation.md`, *In ComfyUI's window*,
+  *Where pictures go*.
+- Tests: `dev/tests/imagegen.py` 142 checks.
+
 ### Nameplates: combo points on the plate that holds them, none while empty (Saneroki, 2026-10-23)
 - **Resource.Update**: every shown plate of a unit you can attack asks `GetComboPoints("player", unit)`; its row shows
   while the count is above 0, on your target's plate or another's, and hides at 0. A hidden count (the game restricts

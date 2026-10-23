@@ -844,7 +844,7 @@ class Painter:
         Image.fromarray(picture).save(path)
         uploaded = {path: self.server.upload(path)}
         graph = ig.fill(self.graph, {"prompt": prompt, "name": f"atlas-{name}", "refs": [path]}, seed, SETTINGS, uploaded)
-        self.prompt_id = self.server.queue(graph)
+        self.prompt_id = self.server.queue(graph, f"atlas-{name}")
         try:
             while True:
                 if self.shared.quit:

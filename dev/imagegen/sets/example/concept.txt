@@ -2,7 +2,7 @@
 # copy this folder and change the names (example, Example) and the prompts.
 # Doc/guides/image-generation.md, *A set, step by step*.
 #
-# 1. Concept: run, look at contact.png, copy the chosen one to assets/Concept art/Example/concept.png.
+# 1. Concept: run, look at contact.png, copy the chosen one to assets/generated/picks/Example/concept.png.
 #      dev/tools/imagegen dev/imagegen/sets/example/concept.txt
 include: dev/imagegen/recipes/concept.txt
 out: assets/generated/example/concept

@@ -232,7 +232,7 @@ Bubbles appear in two places:
 - **On a chat window's paper:** a column of bubbles, each anchored left, right or in the middle of the page.
 - **Floating:** over the game world.
 
-Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bubble is:
+Built on `assets/generated/picks/UI style/chat-bubble.png` (paper #133's top bubble), made more compact. Each bubble is:
 
 - one piece of paper, drawn in code, in this silhouette:
   - a low rounded body;
@@ -273,7 +273,7 @@ Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bu
   only: no tabs (Saneroki, 2026-10-23).
 - **Bags and bank:** `bags-page.png`. A condensed page cut into close sections, each with a pencil-ruled header
   and a dense grid of item icons. Tabs down the left change the content.
-- **Choosing a class or specialisation:** `class-fan.png`. Its layout and look (cards fanned out over the page)
+- **Choosing a class or specialisation:** `assets/generated/picks/UI style/class-fan.png`. Its layout and look (cards fanned out over the page)
   are kept for a view such as a spellbook's class choice.
 - **Guild window:** `guild-top.png` (paper #120). Its paper top area (the guild's emblem, name and member count on
   the paper) and its row of tabs fit the guild window. Its leather panel headers on the paper do not (*The idea*).

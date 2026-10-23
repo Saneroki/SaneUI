@@ -711,7 +711,7 @@ def run_one(server, workflow, refs, prompt, name, seed, settings):
     graph = json.loads(ig.find_workflow(workflow).read_text())
     uploaded = {path: server.upload(path) for path in refs}
     entry = server.wait(server.queue(ig.fill(graph, {"prompt": prompt, "name": name, "refs": refs}, seed, settings,
-                                             uploaded)))
+                                             uploaded), name))
     if entry.get("status", {}).get("status_str") == "error":
         raise RuntimeError(f"ComfyUI failed on {name}: {json.dumps(entry.get('status'))[:300]}")
     text = next((t for output in entry.get("outputs", {}).values() for t in output.get("text", [])), None)
