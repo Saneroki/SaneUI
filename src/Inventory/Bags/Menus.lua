@@ -297,7 +297,9 @@ local function Stow(id)
     local holding = rawget(_G, "CursorHasItem")
     if pickup and holding then
         for _, record in ipairs(carried.slots) do
-            if not record.item and record.bag ~= ns.Contents.KEYRING and not ns.Contents.Reagent(record.bag) then
+            -- only the ordinary bags: a quiver's, a soul or herb bag's slot (the game's bag family) would refuse
+            -- the item with an error, the keyring's and the reagent bag's too
+            if not record.item and record.kind == "bags" then
                 Core.Ask(pickup, record.bag, record.slot)
                 if not Core.Ask(holding) then return end
             end
