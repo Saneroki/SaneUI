@@ -8,11 +8,14 @@ local _, ns = ...
 --  line along its bottom, inside it.
 --
 --  How it is round: the bar's fill, its background and the lines inside it
---  are masked at both ends by Core's caps (Shape.CAP_LEFT, CAP_RIGHT), a
---  quarter of the bar's height wide, wrapped with white beyond them, so the
---  fill keeps its round left corners however short it is and meets the right
---  ones when full. Every plate around it (the border, the rank's line, the
---  glow) is cut by caps of its own size.
+--  are masked at both ends (Bar.End): by Core's caps (Shape.CAP_LEFT,
+--  CAP_RIGHT), a quarter of the bar's height wide, or, while its cast bar is
+--  under it, by Core's corner masks at its top alone (Shape.CORNER); wrapped
+--  with white beyond them, so the fill keeps its round left corners however
+--  short it is and meets the right ones when full. Every plate around it (the
+--  border, the rank's line, the glow) is two halves, each round at its own
+--  corners by corner masks, so its round is the same whatever its height; the
+--  rounds fit each other (Bar.Radius).
 --
 --  From the inside out:
 --    the bar      health as the game gives it (a secret value in a fight: the
@@ -109,22 +112,89 @@ function Bar.SizeCaps(caps, height)
     for _, mask in ipairs(caps) do mask:SetWidth(width) end
 end
 
--- A plate of one colour on the dress, behind the bar, cut round by caps of its own.
-local function Plate(host, sublevel)
-    local texture = host:CreateTexture(nil, "BACKGROUND", nil, sublevel)
-    texture:SetTexture(Bar.WHITE)
-    texture.caps = Caps(host, texture, texture)
-    return texture
+-- One end's mask (the left or right one of Caps) laid over rect for what that end of it should be:
+--   "both"    round at its top and bottom (a cap, a quarter of the height wide: its round is a quarter of the height)
+--   "top"     round at its top alone, by radius (a corner mask): square below, where something meets it
+--   "bottom"  round at its bottom alone
+--   "none"    square (the mask white all over)
+function Bar.End(mask, rect, side, mode, radius, height)
+    local shape = Core.Shape
+    mask:ClearAllPoints()
+    if mode == "both" then
+        mask:SetTexture(side == "LEFT" and shape.CAP_LEFT or shape.CAP_RIGHT, "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint("TOP" .. side, rect, "TOP" .. side)
+        mask:SetPoint("BOTTOM" .. side, rect, "BOTTOM" .. side)
+        mask:SetWidth(math.max((height or 0) * Bar.CAP, 0.01))
+    elseif mode == "top" or mode == "bottom" then
+        local corner = (mode == "top" and "TOP" or "BOTTOM") .. side
+        mask:SetTexture(shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint(corner, rect, corner)
+        mask:SetSize(math.max(radius, 0.01), math.max(radius, 0.01))
+    else
+        mask:SetTexture(Bar.WHITE, "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint("TOP" .. side, rect, "TOP" .. side)
+        mask:SetPoint("BOTTOM" .. side, rect, "BOTTOM" .. side)
+        mask:SetWidth(1)
+    end
 end
 
--- A plate reaching that far beyond the dress on every side, its caps sized for it.
+-- Both ends of rect (its Caps, rect that high): left as left says, right as right says.
+function Bar.Ends(caps, rect, left, right, radius, height)
+    Bar.End(caps[1], rect, "LEFT", left, radius, height)
+    Bar.End(caps[2], rect, "RIGHT", right, radius, height)
+end
+
+-- A plate of one colour around the dress (the border, the rank's line, a band of the glow), in two halves, each
+-- rounding its own two corners by a corner mask: its round the same, however tall the plate (the bar alone, or the
+-- bar and its cast bar). Coloured and shown as one.
+local Halves = {}
+Halves.__index = Halves
+function Halves:SetVertexColor(r, g, b, a)
+    for _, half in ipairs(self) do half:SetVertexColor(r, g, b, a) end
+end
+function Halves:SetShown(on)
+    for _, half in ipairs(self) do half:SetShown(on) end
+end
+function Halves:Show() self:SetShown(true) end
+function Halves:Hide() self:SetShown(false) end
+function Halves:IsShown() return self[1]:IsShown() end
+
+local function Plate(host, sublevel)
+    local plate = setmetatable({}, Halves)
+    for index, corners in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } }) do
+        local half = host:CreateTexture(nil, "BACKGROUND", nil, sublevel)
+        half:SetTexture(Bar.WHITE)
+        half.corners = {}
+        for _, corner in ipairs(corners) do
+            local mask = host:CreateMaskTexture()
+            mask:SetTexture(Core.Shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+            mask:SetPoint(corner, half, corner)
+            half:AddMaskTexture(mask)
+            half.corners[#half.corners + 1] = mask
+        end
+        plate[index] = half
+    end
+    return plate
+end
+
 -- A plate reaching that far beyond the dress on every side, down to the bottom of below (the dress, or its cast bar
--- under it while a cast shows), its caps sized for it.
-local function Around(texture, dress, reach, height, below)
-    texture:ClearAllPoints()
-    texture:SetPoint("TOPLEFT", dress, "TOPLEFT", -reach, reach)
-    texture:SetPoint("BOTTOMRIGHT", below or dress, "BOTTOMRIGHT", reach, -reach)
-    Bar.SizeCaps(texture.caps, height + 2 * reach)
+-- under it while a cast shows), tall high from the dress's top to below's bottom: its halves each half of it, its
+-- corners round by radius and the reach (around a round edge, the round grows by what lies between).
+local function Around(plate, dress, reach, tall, below, radius)
+    local half = (tall + 2 * reach) / 2
+    local upper, lower = plate[1], plate[2]
+    upper:ClearAllPoints()
+    upper:SetPoint("TOPLEFT", dress, "TOPLEFT", -reach, reach)
+    upper:SetPoint("TOPRIGHT", dress, "TOPRIGHT", reach, reach)
+    upper:SetHeight(half)
+    lower:ClearAllPoints()
+    lower:SetPoint("BOTTOMLEFT", below or dress, "BOTTOMLEFT", -reach, -reach)
+    lower:SetPoint("BOTTOMRIGHT", below or dress, "BOTTOMRIGHT", reach, -reach)
+    lower:SetHeight(half)
+    local round = math.min(radius + reach, half)
+    for _, piece in ipairs(plate) do
+        for _, mask in ipairs(piece.corners) do mask:SetSize(round, round) end
+    end
 end
 
 -- The bar's pieces on the dress, each layer on a frame of its own one level above the last, so none can cover the
@@ -150,12 +220,6 @@ function Bar.Make(dress)
     dress.rankLine = Plate(edges, -4)
     dress.rankLine:Hide()
     dress.border = Plate(edges, -3)
-    -- Behind where the bar meets the cast bar under it: the bar's dark, so no border shows between them (Bar.Outline).
-    local seam = edges:CreateTexture(nil, "BACKGROUND", nil, -2)
-    seam:SetTexture(Bar.WHITE)
-    seam:SetVertexColor(Bar.BACKGROUND[1], Bar.BACKGROUND[2], Bar.BACKGROUND[3], 1)
-    seam:Hide()
-    dress.seam = seam
     local health = CreateFrame("StatusBar", nil, dress)
     health:SetFrameLevel(level + 3)
     health:SetStatusBarTexture(Bar.FILL)
@@ -197,33 +261,32 @@ function Bar.Fit(dress)
 end
 
 -- The outline (the border, the rank's line, the glow) around the bar, and around its cast bar too while a cast
--- shows (Cast.lua calls it as one shows or goes): one frame for both, nothing of it between them.
+-- shows (Cast.lua calls it as one shows or goes): one frame for both, nothing of it between them. Every round fits
+-- the outline's (Bar.Radius): the outline's corners a quarter of the bar's height, the plates beyond them that much
+-- rounder by their reach, the bar inside a pixel less; the bar round at its bottom only while nothing is under it.
+function Bar.Radius(dress)
+    return (Plain(dress:GetHeight()) or 0) * Bar.CAP
+end
+
 function Bar.Outline(dress)
     local height = Plain(dress:GetHeight()) or 0
     local pixel = Core.Pixels(dress, 1)
     local below = dress.cast and dress.cast:IsShown() and dress.cast or dress
     local tall = height + (below ~= dress and (Plain(below:GetHeight()) or 0) or 0)
-    Around(dress.border, dress, 0, tall, below)
+    local radius = Bar.Radius(dress)
+    Around(dress.border, dress, 0, tall, below, radius)
     local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
-    Around(dress.rankLine, dress, pixel * reach, tall, below)
-    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below) end
-    -- The bar a pixel inside the outline; down to the cast bar while one shows, the bar's dark behind where they meet
-    -- (their round corners), so nothing of the outline shows between them.
+    Around(dress.rankLine, dress, pixel * reach, tall, below, radius)
+    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below, radius) end
+    -- The bar a pixel inside the outline; down to the cast bar while one shows, square there, so nothing of the
+    -- outline shows between them.
     local casting = below ~= dress
     local health = dress.health
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", dress, "TOPLEFT", pixel, -pixel)
     health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, casting and 0 or pixel)
-    local inner = height - (casting and 1 or 2) * pixel
-    Bar.SizeCaps(dress.caps, inner)
-    local seam = dress.seam
-    if casting then
-        local round = inner * Bar.CAP
-        seam:ClearAllPoints()
-        seam:SetPoint("TOPLEFT", dress, "BOTTOMLEFT", pixel, round)
-        seam:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, -round)
-    end
-    seam:SetShown(casting)
+    local mode = casting and "top" or "both"
+    Bar.Ends(dress.caps, health, mode, mode, math.max(radius - pixel, 0.01), height - (casting and 1 or 2) * pixel)
     dress.outlined = below
 end
 

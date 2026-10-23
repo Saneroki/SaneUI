@@ -323,7 +323,7 @@ units.guess = { level = 30, player = true }
 check(Text.Guess("guess") == "8.8k", "a player's about a hundred a level")
 units.guess = { level = 8 }
 check(Text.Guess("guess") == "888", "a low creature's under a thousand")
-check(dress.rankLine:IsShown() and dress.rankLine._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare and dress.border._vertex[1] == 0,
+check(dress.rankLine:IsShown() and dress.rankLine[1]._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare and dress.border[1]._vertex[1] == 0,
     "a rare: a thin silver line behind the black border")
 check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
@@ -332,29 +332,36 @@ check(dress.glow._alpha == 0, "no glow")
 -- What the glow's plates add up to in each band: those reaching it and beyond, laid over each other.
 local function Solid(band)
     local clear = 1
-    for outer = band, #dress.halo do clear = clear * (1 - dress.halo[outer]._vertex[4]) end
+    for outer = band, #dress.halo do clear = clear * (1 - dress.halo[outer][1]._vertex[4]) end
     return 1 - clear
 end
-local fading = #dress.halo == Bar.HALO and math.abs(Solid(1) - 1) < 1e-9 and dress.halo[1]._blend ~= "ADD"
+local fading = #dress.halo == Bar.HALO and math.abs(Solid(1) - 1) < 1e-9 and dress.halo[1][1]._blend ~= "ADD"
 for band = 2, #dress.halo do
     fading = fading and Solid(band) < Solid(band - 1) and math.abs(Solid(band) - Bar.Fade(band)) < 1e-9
 end
 check(fading and Solid(#dress.halo) < 0.05, "the glow: solid at the border, fading to almost nothing outwards")
-check(dress.halo[1]._parent == dress.glow and dress.border._parent == dress.rankLine._parent
-    and dress.glow._level < dress.border._parent._level and dress.border._parent._level < dress.health._level,
+check(dress.halo[1][1]._parent == dress.glow and dress.border[1]._parent == dress.rankLine[1]._parent
+    and dress.glow._level < dress.border[1]._parent._level and dress.border[1]._parent._level < dress.health._level,
     "each layer on a frame of its own: the glow under the outline, the outline under the bar")
-check(dress.border._vertex[1] == Bar.BORDER[1] and dress.border._vertex[4] == Bar.BORDER[4], "the border black: not your target")
+check(dress.border[1]._vertex[1] == Bar.BORDER[1] and dress.border[1]._vertex[4] == Bar.BORDER[4], "the border black: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
-    and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
-    "the fill, its background, the power line and the border each cut at both ends")
+    and #dress.background._masks == 2 and #dress.border[1]._masks == 2 and #dress.border[2]._masks == 2
+    and #dress.power:GetStatusBarTexture()._masks == 2,
+    "the fill, its background and the power line cut at both ends; the border two halves, each at its two corners")
+check(dress.border[1].corners[1]._texture == Core.Shape.CORNER.TOPLEFT and dress.border[2].corners[2]._texture == Core.Shape.CORNER.BOTTOMRIGHT,
+    "by Core's corner masks")
 check(dress.caps[1]._texture == Core.Shape.CAP_LEFT and dress.caps[1]._wrap[1] == "CLAMPTOWHITE"
     and dress.caps[2]._texture == Core.Shape.CAP_RIGHT, "by Core's caps, white beyond them")
 
+local function Near(a, b) return math.abs(a - b) < 1e-6 end
 -- Its size: the caps a quarter of each height, the bar a pixel inside its border.
 dress:GetScript("OnSizeChanged")(dress)
 local edge = Core.Pixels(dress, 1)
-check(dress.border.caps[1]._width == high * Bar.CAP and dress.caps[2]._width == (high - 2 * edge) * Bar.CAP,
-    "each cap as wide as a quarter of what it rounds")
+check(dress.border[1].corners[1]._width == high * Bar.CAP and dress.caps[2]._width == (high - 2 * edge) * Bar.CAP
+    and Near(dress.border[1]._height, high / 2) and Near(dress.border[2]._height, high / 2),
+    "the outline round by a quarter of the bar's height, its halves half of it each; the bar's caps a quarter of its own")
+local reachOut = -dress.halo[3][1]._points[1][4] -- how far its top left corner stands out
+check(Near(dress.halo[3][1].corners[1]._width, high * Bar.CAP + reachOut), "a band of the glow rounder by its reach: around the round")
 check(dress.health._points[1][4] == edge and dress.health._points[2][4] == -edge, "the bar a pixel inside its border")
 check(dress.power._height == (high - 2 * edge) * Bar.LINE, "the power line a third of the bar's height")
 row:SetSize(120, 26)
@@ -369,18 +376,18 @@ W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
 W.Fire("UNIT_LEVEL", "nameplate1")
 -- How far a plate reaches beyond the dress (its top left corner's offset).
 local function Reach(texture) return texture._points[1][5] end
-check(dress.rank == Bar.RANKS.boss and dress.rankLine._vertex[2] == 0.82 and Reach(dress.rankLine) == 3 * edge
-    and dress.health._points[1][4] == edge and Reach(dress.border) == 0,
+check(dress.rank == Bar.RANKS.boss and dress.rankLine[1]._vertex[2] == 0.82 and Reach(dress.rankLine[1]) == 3 * edge
+    and dress.health._points[1][4] == edge and Reach(dress.border[1]) == 0,
     "a boss: a thick golden line behind the border, from the same edge; the bar where it was")
-check(Reach(dress.halo[1]) == 4 * edge and Reach(dress.halo[#dress.halo]) == (3 + #dress.halo) * edge, "the glow beyond the line")
+check(Reach(dress.halo[1][1]) == 4 * edge and Reach(dress.halo[#dress.halo][1]) == (3 + #dress.halo) * edge, "the glow beyond the line")
 check(dress.level._text == Text.SKULL, "the skull for its level")
 units.nameplate1.boss, units.nameplate1.classification = false, "elite"
 W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
-check(dress.rank == Bar.RANKS.elite and dress.rankLine._vertex[2] == 0.82 and Reach(dress.rankLine) == edge
-    and Reach(dress.halo[1]) == 2 * edge, "an elite: a thin golden line, a pixel past the border")
+check(dress.rank == Bar.RANKS.elite and dress.rankLine[1]._vertex[2] == 0.82 and Reach(dress.rankLine[1]) == edge
+    and Reach(dress.halo[1][1]) == 2 * edge, "an elite: a thin golden line, a pixel past the border")
 units.nameplate1.classification = "normal"
 W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
-check(dress.rank == Bar.PLAIN and not dress.rankLine:IsShown() and Reach(dress.halo[1]) == edge, "a plain one: the border only")
+check(dress.rank == Bar.PLAIN and not dress.rankLine:IsShown() and Reach(dress.halo[1][1]) == edge, "a plain one: the border only")
 units.nameplate1.level = 22
 W.Fire("UNIT_LEVEL", "nameplate1")
 
@@ -429,7 +436,7 @@ units.nameplate1.threat = { true, 3, 100 }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(dress.threat._color[2] == Text.THREAT[3][2] and dress.glow._alpha == 1, "aggro: red, and the bar glows")
 local untouched = true
-for _, layer in ipairs(dress.halo) do untouched = untouched and layer._alpha == 1 end
+for _, layer in ipairs(dress.halo) do untouched = untouched and layer[1]._alpha == 1 and layer[2]._alpha == 1 end
 check(untouched, "switched by its frame's alpha: the layers' own strengths never overwritten")
 local hidden = Secret()
 units.nameplate1.threat = { hidden, Secret(), Secret() }
@@ -571,11 +578,11 @@ check(friend:IsShown(), "the setting off: every player's plate")
 Core.Set(ns.name, "players", true)
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
-check(friend:IsShown() and friend.border._vertex[1] == 1 and friend.border._vertex[4] == 1 and dress.border._vertex[1] == 0,
+check(friend:IsShown() and friend.border[1]._vertex[1] == 1 and friend.border[1]._vertex[4] == 1 and dress.border[1]._vertex[1] == 0,
     "your target: shown, its border white, the others' black")
 units.focus, plates.focus = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_FOCUS_CHANGED")
-check(dress.border._vertex[2] == 0.49, "your focus's border in the game's colour for it")
+check(dress.border[1]._vertex[2] == 0.49, "your focus's border in the game's colour for it")
 units.nameplate2.friend, units.nameplate2.raid = false, 8
 W.Fire("UNIT_FACTION", "nameplate2")
 check(friend:IsShown() and friend.glow._alpha == 1, "a player who may attack you: shown, glowing")
@@ -733,17 +740,17 @@ Settle()
 check(Near(dress._scale * 1.3, full) and Near(plates.nameplate1.UnitFrame._scale * 1.3, 1), "a scale the game still gives a plate: undone")
 plates.nameplate1:SetScale(1)
 Settle()
-check(dress.border._vertex[1] == 1 and dress.border._vertex[2] == 1, "the shot reaches it: your target's border white")
+check(dress.border[1]._vertex[1] == 1 and dress.border[1]._vertex[2] == 1, "the shot reaches it: your target's border white")
 yards.nameplate1 = 38
 Settle()
-check(dress.out == true and dress.border._vertex[2] == Bar.FAR[2] and Near(dress._scale, full),
+check(dress.out == true and dress.border[1]._vertex[2] == Bar.FAR[2] and Near(dress._scale, full),
     "38 yards: out of reach of all your attacks, red; your target still full size")
 units.target, plates.target = nil, nil
 W.Fire("PLAYER_TARGET_CHANGED")
-check(dress.border._vertex[2] == Bar.FAR[2], "not your target, still out of reach: red over the black")
+check(dress.border[1]._vertex[2] == Bar.FAR[2], "not your target, still out of reach: red over the black")
 yards.nameplate1 = 3
 Settle()
-check(dress.out == false and dress.border._vertex[1] == Bar.BORDER[1], "in reach of the strike: black again")
+check(dress.out == false and dress.border[1]._vertex[1] == Bar.BORDER[1], "in reach of the strike: black again")
 Core.Set(ns.name, "plateSize", 300)
 Settle()
 check(Near(dress._scale, 3), "the setting Nameplate size: 300%")
@@ -764,7 +771,7 @@ units.target, plates.target = nil, nil
 yards.nameplate1 = 38
 Core.Set(ns.name, "range", false)
 Settle()
-check(dress.out == false and dress.border._vertex[1] == Bar.BORDER[1], "the red border switched off: black")
+check(dress.out == false and dress.border[1]._vertex[1] == Bar.BORDER[1], "the red border switched off: black")
 Core.Set(ns.name, "range", true)
 yards.nameplate1 = 3
 Settle()
@@ -944,10 +951,15 @@ local function Atlas(bar) return bar._barTexture end
 check(Atlas(castBar.fill) == Cast.ART.cast and castBar.fill._min == casts.nameplate1.starts and castBar.fill._max == casts.nameplate1.ends
     and Near(Share(castBar.fill), 1 / 3) and castBar.timer._text == "2.0" and castBar.lock._alpha == 0,
     "from its start to its end, a third done, two seconds left in the icon, in the game's golden cast art")
-check(dress.border._points[2][2] == castBar and dress.halo[1]._points[2][2] == castBar and dress.rankLine._points[2][2] == castBar
-    and Near(dress.border.caps[1]._width, 2 * dress._height * Bar.CAP), "one outline, glow and rank line around the bar and the cast bar")
-check(dress.health._points[2][5] == 0 and dress.seam:IsShown() and dress.seam._points[1][3] == "BOTTOMLEFT",
-    "the bar down to the cast bar, the bar's dark behind where they meet: no line between them")
+check(dress.border[2]._points[1][2] == castBar and dress.halo[1][2]._points[1][2] == castBar and dress.rankLine[2]._points[1][2] == castBar
+    and Near(dress.border[1].corners[1]._width, dress._height * Bar.CAP) and Near(dress.border[2]._height, dress._height),
+    "one outline, glow and rank line around the bar and the cast bar, as round as around the bar alone")
+check(dress.health._points[2][5] == 0 and dress.caps[1]._texture == Core.Shape.CORNER.TOPLEFT
+    and dress.caps[2]._texture == Core.Shape.CORNER.TOPRIGHT, "the bar down to the cast bar, round only at its top: nothing between them")
+local inner = dress._height * Bar.CAP - Core.Pixels(dress, 1)
+check(castBar.caps[1]._texture == Bar.WHITE and castBar.caps[2]._texture == Core.Shape.CORNER.BOTTOMRIGHT
+    and Near(castBar.caps[2]._width, inner) and castBar.corner._texture == Core.Shape.CORNER.BOTTOMLEFT and Near(castBar.corner._width, inner),
+    "the cast bar round only at its bottom: the icon's left corner, the fill's right one, a pixel less than the outline")
 check(castBar.timer._points[1][2] == castBar.icon, "the seconds inside the icon")
 check(gameCast._alpha == 0, "the game's own cast bar out of sight under ours")
 W.clock = W.clock + 1
@@ -987,9 +999,10 @@ check(castBar:IsShown() and Atlas(castBar.fill) == Cast.ART.broken, "its stop af
 W.clock = W.clock + Cast.HOLD + 0.01
 castBar:GetScript("OnUpdate")(castBar, 1)
 check(not castBar:IsShown(), "gone after half a second")
-check(dress.border._points[2][2] == dress and Near(dress.border.caps[1]._width, dress._height * Bar.CAP),
+check(dress.border[2]._points[1][2] == dress and Near(dress.border[1].corners[1]._width, dress._height * Bar.CAP),
     "no cast: the outline around the bar alone again")
-check(dress.health._points[2][5] == Core.Pixels(dress, 1) and not dress.seam:IsShown(), "and the bar a pixel inside it all round")
+check(dress.health._points[2][5] == Core.Pixels(dress, 1) and dress.caps[1]._texture == Core.Shape.CAP_LEFT,
+    "and the bar a pixel inside it all round, round at both ends")
 -- Stopped early by the game (cast done): stays half a second; failed: at once.
 casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")

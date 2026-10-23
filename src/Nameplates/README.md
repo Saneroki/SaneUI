@@ -209,8 +209,8 @@ fails, every plate is the game's own again.
   the distance found, and each of your attacks with its reach and the game's answer.
 - **Cast** (`Cast.lua`): a frame of ours under the dress (`TOPLEFT` on its `BOTTOMLEFT`, as high as it, `Cast.Fit`),
   inside the dress's outline (`Bar.Outline`, run as it shows or hides: the border, the rank's line and the glow
-  anchored down to its bottom, their caps for both heights; the bar then reaches down to it, the bar's dark behind
-  where they meet, `dress.seam`, so nothing of the outline shows between them), a `StatusBar` cut round by `Bar.Caps` filled in the
+  anchored down to its bottom, each in two halves round at their corners by Core's corner masks, as round as without
+  it; the bar then reaches down to it, square at its bottom, so nothing of the outline shows between them), a `StatusBar` cut round by `Bar.Caps` filled in the
   game's cast bar atlases (`Cast.ART`, through `SetStatusBarTexture` as the game's own: `ui-castingbar-filling-standard`,
   `-filling-channel`, `ui-castingbar-uninterruptable`, `ui-castingbar-interrupted`), the icon square at its left end inside the border, a
   font string of the seconds on the icon, one of the spell's and its target's names from the icon to the bar's end
@@ -384,3 +384,7 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   rank line and glow go around the bar and the cast bar together while a cast shows.
 - **2026-10-23:** no line between the bar and the cast bar (Saneroki): the bar reaches down to it, the bar's dark
   behind their corners.
+- **2026-10-23:** every round fits (Saneroki): the outline and the plates around it round the same with or without a
+  cast bar (two halves, Core's corner masks), the glow and the rank's line that much rounder by their reach, the bar
+  and the cast bar a pixel less; the bar square at its bottom and the cast bar at its top where they meet, the icon
+  round at the bottom left, the cast fill at the bottom right. The seam is gone.

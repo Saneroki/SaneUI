@@ -6,6 +6,19 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: every round fits; Core's corner masks (Saneroki, 2026-10-23)
+- **Core** (`Shape.CORNER`, `Art/corner-tl.blp`, `-tr`, `-bl`, `-br`, new from `dev/tools/shape-art`): one corner of a
+  rectangle cut round, laid over that corner as large as the radius: that corner alone round, at any radius and height.
+- **Outline** (`Bar.lua`): the border, the rank's line and each band of the glow are two halves (`Halves`), each round
+  at its own corners by corner masks, so the outline is as round around the bar and its cast bar as around the bar
+  alone (the cap masks had made it twice as round with a cast); the plates beyond the border that much rounder by
+  their reach, concentric (`Bar.Radius`: a quarter of the bar's height).
+- **Inside:** the bar's ends by `Bar.End` (`Bar.Ends`): round at both corners alone (the caps), only at the top while
+  the cast bar is under it (corner masks), a pixel less round than the outline. The cast bar round only at its bottom:
+  the icon's bottom left (a corner mask on the icon), the fill's bottom right; square where icon, fill and bar meet.
+  The seam behind their corners is gone.
+- Tests: 219 checks.
+
 ### Nameplates: no line between the bar and the cast bar (Saneroki, 2026-10-23)
 - **Bar.Outline** (`Bar.lua`): while a cast shows, the bar reaches down to the cast bar (no pixel of the outline under
   it), and a seam in the bar's dark (`dress.seam`) lies behind where their round corners meet; the white border of a

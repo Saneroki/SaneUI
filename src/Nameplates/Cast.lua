@@ -178,6 +178,12 @@ function Cast.Make(dress)
     top:SetFrameLevel(fill:GetFrameLevel() + 3)
     local icon = top:CreateTexture(nil, "ARTWORK")
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    -- The plate's bottom left corner is the icon's: round there alone, as the outline around it (Cast.Fit).
+    local corner = top:CreateMaskTexture()
+    corner:SetTexture(Core.Shape.CORNER.BOTTOMLEFT, "CLAMPTOWHITE", "CLAMPTOWHITE")
+    corner:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT")
+    icon:AddMaskTexture(corner)
+    bar.corner = corner
     local timer = top:CreateFontString(nil, "OVERLAY")
     timer:SetPoint("CENTER", icon, "CENTER")
     local text = top:CreateFontString(nil, "OVERLAY")
@@ -202,9 +208,10 @@ function Cast.Make(dress)
     Cast.Fit(dress)
 end
 
--- Laid out for the dress's size (Plate's Fit): as high as its bar, inside the plate's one outline (Bar.Outline: a
--- pixel of it under the bar, between the two, and along the cast bar's ends and bottom), the icon square at its left
--- end, the caps a quarter of each height.
+-- Laid out for the dress's size (Plate's Fit): as high as its bar, inside the plate's one outline (Bar.Outline:
+-- along the cast bar's ends and bottom, nothing between it and the bar), the icon square at its left end; round only
+-- where the outline is, at its bottom corners, a pixel less than the outline (Bar.Radius): the icon's bottom left,
+-- the fill's bottom right; square where they meet each other and the bar.
 function Cast.Fit(dress)
     local bar = dress.cast
     if not bar then return end
@@ -218,7 +225,9 @@ function Cast.Fit(dress)
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint("TOPLEFT", bar.icon, "TOPRIGHT", 0, 0)
     bar.fill:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -edge, edge)
-    ns.Bar.SizeCaps(bar.caps, inner)
+    local radius = math.max(ns.Bar.Radius(dress) - edge, 0.01)
+    bar.corner:SetSize(radius, radius)
+    ns.Bar.Ends(bar.caps, bar.fill, "none", "bottom", radius, inner)
 end
 
 -- The game's own cast bar on the plate seen (true: ours cannot show this cast) or out of sight under ours.

@@ -65,6 +65,14 @@ Shape.HOLE = "Interface\\AddOns\\" .. ADDON .. "\\Art\\circle-hole"
 -- their outer side, round with that radius; laid over the bar's ends with CLAMPTOWHITE (dev/tools/shape-art).
 Shape.CAP_LEFT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\cap-left"
 Shape.CAP_RIGHT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\cap-right"
+-- One corner of a rectangle cut round (dev/tools/shape-art): laid over that corner as large as the radius, wrapped with
+-- white beyond it, it rounds that corner alone, at any radius, on a shape of any height.
+Shape.CORNER = {
+    TOPLEFT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\corner-tl",
+    TOPRIGHT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\corner-tr",
+    BOTTOMLEFT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\corner-bl",
+    BOTTOMRIGHT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\corner-br",
+}
 Shape.PORTRAIT = "Interface\\CharacterFrame\\TempPortraitAlphaMask" -- the game's round mask, should ours be missing
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local HOLLOW = 0.01 -- a hole too small to see: an arc no wider than the trim is a whole quarter disc
