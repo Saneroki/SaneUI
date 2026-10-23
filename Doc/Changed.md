@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: one line inside the bar, each piece only while it shows; the bar as wide as the line (Saneroki, 2026-10-23)
+- **The line** (`Text.lua`): left to right the quest objective (the game's sword or sack and "0/7", from
+  `Core.UnitQuest`), the raid marker (`Marks.lua`, no longer right of the bar), the level, a player's item level
+  ("i32", from `Core.Inspect`), the threat, the name, the health; each piece has its room only while it shows
+  (`dress.room`), `Text.Layout` places them one after another, and the bar is as wide as the line and its insets
+  (`Plate.Place`, centred on the game's row; `Plate.WIDE` is gone). Widths from a ruler font string that never gets
+  a hidden value; hidden health takes the room of its most, a hidden name the last plain one's, threat that of
+  "100%", so the bar keeps its width as values change in a fight.
+- **Item levels** asked for when a player's plate comes and again while one is missing, Core pacing the questions.
+- **Settings:** *Quest progress*, *Item level*.
+- **Core** (`Objectives.lua`, `Inspect.lua`, new in its TOC): `Core.UnitQuest(unit)`, moved from Combat's quest
+  marks, and `Core.Inspect` (`Level`, `Talents`, `Watch`), moved from Tooltips (which now reads Core's); game data
+  is Core's. Combat's quest mark beside a plate steps aside while Nameplates runs.
+- Tests: 115 checks in `dev/tests/nameplates.lua` (the line's order and rooms, the width, quests, item levels);
+  the tooltips test loads Core's `Inspect.lua`.
+
 ### Nameplates: the glow fades for real, narrower; the bar half as wide again (Saneroki, 2026-10-23)
 - **Fixed glow** (`Bar.lua`): turning the glow on set each plate's own alpha to 1, which in the game replaces a
   texture's vertex alpha, so every plate was solid and the glow a thick red block. The plates now stand on a frame

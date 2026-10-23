@@ -43,6 +43,9 @@ end
 function methods:SetAlphaFromBoolean(value, yes, no) self._alpha = { from = value, yes = yes, no = no } end
 function methods:SetFrameLevel(level) self._level = level end
 function methods:SetBlendMode(mode) self._blend = mode end
+-- Text measured as the game would, six wide a letter, ten high; a hidden value has no width the test can know.
+function methods:GetStringWidth() return type(self._text) == "string" and #self._text * 6 or 0 end
+function methods:GetStringHeight() return 10 end
 
 -- A hidden value of the game's: a table here, never compared.
 issecretvalue = function(value) return type(value) == "table" and value.secret == true end
@@ -89,6 +92,17 @@ UnitGUID = function(unit) return "Player-" .. unit end
 local friendOf
 C_FriendList = { IsFriend = function(guid) return guid == "Player-" .. (friendOf or "") end }
 C_BattleNet = { GetAccountInfoByGUID = function() return nil end }
+-- Quests: what the game says of a creature in its tooltip data.
+Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
+C_QuestLog = { UnitIsRelatedToActiveQuest = function(unit) return Unit(unit).quest ~= nil end }
+C_TooltipInfo = { GetUnit = function(unit) return { lines = Unit(unit).quest or {} } end }
+-- Inspecting players: the questions asked, the item levels the server answers.
+local inspected = {}
+NotifyInspect = function(unit) inspected[#inspected + 1] = unit end
+CanInspect = function(unit) return Unit(unit).player == true end
+CheckInteractDistance = function() return true end
+C_PaperDollInfo = { GetInspectItemLevel = function(unit) return Unit(unit).gear end }
+ClearInspectPlayer = function() end
 UnitDetailedThreatSituation = function(_, unit)
     local threat = Unit(unit).threat
     if not threat then return nil end
@@ -142,6 +156,7 @@ local function GamePlate()
     local plate = W.NewWidget("Frame", nil, UIParent)
     local frame = W.NewWidget("Button", nil, plate)
     frame.HealthBarsContainer = W.NewWidget("Frame", nil, frame)
+    frame.HealthBarsContainer:SetSize(120, 20)
     frame.HealthBarsContainer.healthBar = W.NewWidget("StatusBar", nil, frame.HealthBarsContainer)
     for _, key in ipairs({ "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame", "LevelFrame" }) do
         frame[key] = W.NewWidget("Frame", nil, frame)
@@ -194,17 +209,22 @@ W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
 local dress = DressOf(plates.nameplate1)
 check(dress and dress:IsShown() and dress.unit == "nameplate1", "the plate the game shows gets our dress")
 check(Faded(plates.nameplate1, 0), "the game's bar row, name, auras, marks and level boxes go out of sight under it")
-check(dress._points[1][2] == plates.nameplate1.UnitFrame.HealthBarsContainer and dress._points[2][2] == plates.nameplate1.UnitFrame.HealthBarsContainer,
-    "laid exactly over the game's health bar row")
+local row = plates.nameplate1.UnitFrame.HealthBarsContainer
+check(dress._points[1][1] == "CENTER" and dress._points[1][2] == row and dress._height == 20, "centred on the game's health bar row, as high")
 check(dress.health._value == wolf and dress.health._max == units.nameplate1.most, "hidden health goes to the bar as the game gives it")
 check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
 check(dress.name._text == "Young Wolf", "its name inside the bar")
-check(dress.name._points[1][1] == "CENTER", "in the bar's middle")
-check(dress.level._text == 22 and dress.level._color[2] == 1, "its level at the left, in the game's colour for it")
-check(dress.level._points[1][1] == "LEFT" and dress.threat._points[1][2] == dress.level, "the threat next to the level")
-check(dress.threat._text == "", "no threat while you are not on its list")
+check(dress.level._text == "22" and dress.level._color[2] == 1, "its level, in the game's colour for it")
+check(dress.threat._text == "" and dress.room.threat == nil and dress.room.quest == nil and dress.room.raid == nil
+    and dress.room.gear == nil, "no threat, quest, marker or item level: they take no room")
 check(type(dress.value._text) == "table" and dress.value._text.form == "%s | %d%%", "hidden health: the game's abbreviation and percent")
-check(dress.value._points[1][1] == "RIGHT", "health at the right")
+-- The line: level, name, health, one after the other; the bar as wide as it and its insets.
+local function X(region) return region._points[1][4] end
+local I, G = Text.INSET, Text.GAP
+check(X(dress.level) == I and X(dress.name) == I + 12 + G and X(dress.value) == I + 12 + G + 60 + G,
+    "the level first, then the name, then the health")
+check(dress.room.value == 13 * 6, "hidden health keeps the room of the widest it can show")
+check(dress.want == I + 12 + G + 60 + G + 78 + I and dress._width == dress.want, "the bar as wide as its line, no wider")
 check(dress.border._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare, "a rare: a thin silver border")
 check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
@@ -231,18 +251,17 @@ check(dress.caps[1]._texture == Core.Shape.CAP_LEFT and dress.caps[1]._wrap[1] =
     and dress.caps[2]._texture == Core.Shape.CAP_RIGHT, "by Core's caps, white beyond them")
 
 -- Its size: the caps a quarter of each height, the bar a pixel inside its border.
-dress:SetSize(190, 20)
 dress:GetScript("OnSizeChanged")(dress)
 local edge = Core.Pixels(dress, 1)
 check(dress.border.caps[1]._width == 20 * Bar.CAP and dress.caps[2]._width == (20 - 2 * edge) * Bar.CAP,
     "each cap as wide as a quarter of what it rounds")
 check(dress.health._points[1][4] == edge and dress.health._points[2][4] == -edge, "the bar a pixel inside its border")
 check(dress.power._height == (20 - 2 * edge) * Bar.LINE, "the power line a fifth of the bar's height")
-check(dress.name._width == 190 * Text.NAME, "the name's room")
-plates.nameplate1.UnitFrame.HealthBarsContainer:SetSize(120, 20)
+row:SetSize(120, 26)
 dress:GetScript("OnSizeChanged")(dress)
-check(dress._points[1][1] == "TOPLEFT" and dress._points[1][4] == -30 and dress._points[2][4] == 30 and dress._points[2][5] == 0,
-    "half as wide again as the game's row, as much past each end, as high")
+check(dress._height == 26 and dress._width == dress.want, "the game's row higher (its style): as high, as wide as the line")
+row:SetSize(120, 20)
+dress:GetScript("OnSizeChanged")(dress)
 
 -- A boss: a thick golden border, the bar further in; a level too high to tell: the skull.
 units.nameplate1.boss, units.nameplate1.level = true, -1
@@ -257,18 +276,28 @@ check(dress.rank == Bar.RANKS.elite and dress.border._vertex[2] == 0.82 and dres
 units.nameplate1.classification = "normal"
 W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
 check(dress.rank == Bar.PLAIN and dress.border._vertex[1] == 0, "a plain one: black")
+units.nameplate1.level = 22
+W.Fire("UNIT_LEVEL", "nameplate1")
 
 -- Health and name as they change.
 units.nameplate1.health, units.nameplate1.most = 1325000, 1325000
 W.Fire("UNIT_HEALTH", "nameplate1")
 check(dress.health._value == 1325000 and dress.value._text == "1.32m | 100%", "health followed, short, and its percent")
+check(dress.room.value == 12 * 6 and dress._width == I + 12 + G + 60 + G + 72 + I, "its room the most it shows: the bar narrower")
+units.nameplate1.health = 4000
+W.Fire("UNIT_HEALTH", "nameplate1")
+check(dress.value._text == "4k | 1%" and dress.room.value == 12 * 6, "health going down: the bar keeps its width")
+units.nameplate1.health = 1325000
+W.Fire("UNIT_HEALTH", "nameplate1")
 check(Text.Short(850) == "850" and Text.Short(1250) == "1.2k" and Text.Short(12999) == "12.9k" and Text.Short(1000) == "1k"
     and Text.Short(2000000) == "2m" and Text.Short(1329999) == "1.32m" and Text.Short(1300000) == "1.3m",
     "under a thousand as it is, then thousands to one place, then millions to two, cut, no zeros at the end")
 check(Text.Percent(1, 1000) == 1 and Text.Percent(999, 1000) == 99 and Text.Percent(0, 10) == 0, "whole percent, 1 while any is left")
 units.nameplate1.name = Secret()
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
-check(dress.name._text == units.nameplate1.name, "a hidden name goes to the text as it is")
+check(dress.name._text == units.nameplate1.name and dress.room.name == 60, "a hidden name goes to the text as it is, in the room of the last")
+units.nameplate1.name = "Young Wolf"
+W.Fire("UNIT_NAME_UPDATE", "nameplate1")
 units.nameplate1.tapped = true
 W.Fire("UNIT_FLAGS", "nameplate1")
 check(dress.health._barColor[1] == Bar.TAPPED[1], "tapped by others: grey")
@@ -282,6 +311,7 @@ W.Fire("UNIT_FLAGS", "nameplate1")
 units.nameplate1.threat = { false, 0, 40 }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(dress.threat._text == "40%" and dress.threat._color[1] == Text.THREAT[0][1] and dress.glow._alpha == 0, "low threat: grey")
+check(X(dress.threat) == I + 12 + G and X(dress.name) == I + 12 + G + 24 + G, "on the list: the threat between the level and the name")
 units.nameplate1.threat = { false, 1, 95 }
 W.Fire("UNIT_THREAT_SITUATION_UPDATE", "player")
 W.Wait(0)
@@ -299,7 +329,24 @@ check(type(dress.glow._alpha) == "table" and dress.glow._alpha.from == hidden an
     "a hidden answer: the glow takes it as it is, never compared, with the game's own alphas")
 units.nameplate1.threat = nil
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(dress.threat._text == "" and dress.glow._alpha == 0, "off its list: none")
+check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + 12 + G,
+    "off its list: none, and no room for it")
+
+-- A quest: the sword and the count first in the line; done, gone.
+units.nameplate1.quest = { { type = 17, leftText = "Wolves Across the Border" }, { type = 8, leftText = "Young Wolf slain: 3/8" } }
+W.Fire("QUEST_LOG_UPDATE")
+W.Wait(0)
+check(dress.quest:IsShown() and dress.quest._texture == Text.QUEST.kill and dress.count._text == "3/8"
+    and X(dress.quest) == I and X(dress.count) == I + Text.size + Text.NEAR and X(dress.level) == I + Text.size + Text.NEAR + 18 + G,
+    "an objective to kill it: the sword and 3/8 before the level")
+units.nameplate1.quest[2] = { type = 8, leftText = "Wolf Pelt: 0/7" }
+W.Fire("UNIT_QUEST_LOG_CHANGED", "player")
+W.Wait(0)
+check(dress.quest._texture == Text.QUEST.loot and dress.count._text == "0/7", "something to loot from it: the sack")
+units.nameplate1.quest = nil
+W.Fire("QUEST_LOG_UPDATE")
+W.Wait(0)
+check(not dress.quest:IsShown() and dress.room.quest == nil and dress.room.count == nil and X(dress.level) == I, "done: gone, no room")
 
 -- Power that changes, and a unit without any.
 units.nameplate1.powerNow = 70
@@ -327,7 +374,8 @@ check(control._points[1][3] == "BOTTOMRIGHT" and control._points[1][2] == dress 
 check(own._unit == "nameplate1" and foes._unit == "nameplate1" and control._unit == "nameplate1", "set to the plate's unit")
 local icon = own._groups.own.frames[1]
 check(icon._icon and icon._cooldown and icon._count and icon._width == Auras.SIZE, "each frame the container makes gets its icon, time and count once")
-check(Auras.Slots(190) == 8 and own._groups.own.most == 8 and foes._groups.foes.most == Auras.BUFFS, "eight debuffs over a bar 190 wide, three buffs")
+check(Auras.Slots(190) == 8 and own._groups.own.most == Auras.Slots(dress._width) and foes._groups.foes.most == Auras.BUFFS,
+    "as many debuffs as fit over the bar (eight over 190), three buffs")
 Core.Set(ns.name, "buffs", false)
 check(not foes:IsShown() and foes._unit == "none", "buffs off")
 Core.Set(ns.name, "buffs", true)
@@ -354,17 +402,28 @@ W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 local friend = DressOf(plates.nameplate2)
 check(friend:IsShown() and plates.nameplate2.UnitFrame._alpha == 1, "a player in your group: shown")
 check(friend.health._barColor[1] == 0.78 and friend.name._text == "Bran Stoneheart", "a player: the class colour, first name and surname")
+-- Its item level: asked for (Core paces it), shown when the server answered, after the level.
+units.nameplate2.gear = 32
+check(inspected[#inspected] == "nameplate2" and friend.room.gear == nil, "a player: inspected, nothing shown before the answer")
+W.Fire("INSPECT_READY", "Player-nameplate2")
+check(friend.gear._text == "i32" and X(friend.gear) == X(friend.level) + 12 + G and X(friend.name) == X(friend.gear) + 18 + G,
+    "the answer: i32 between the level and the name")
+Core.Set(ns.name, "gear", false)
+check(friend.room.gear == nil and friend.gear._text == "", "the setting off: none, no room")
+Core.Set(ns.name, "gear", true)
+check(friend.gear._text == "i32", "on again: from what was kept")
 check(friend.level._color[1] == 0.3, "the level of someone you cannot attack in the game's colour for that")
 check(not friend.foes:IsShown() and friend.own:IsShown(), "no buffs on someone you cannot attack")
 check(friend.raid:IsShown() and friend.raid._cell[1] == 8 and friend.raid._cell[2] == 4 and friend.raid._cell[3] == 4,
     "a raid marker: the game's icon at its index")
-check(friend.raid._points[1][2] == friend and friend.control._points[1][2] == friend.raid, "right of the bar, the crowd control after it")
+check(X(friend.raid) == I and X(friend.level) == I + Text.size + G and friend.control._points[1][2] == friend,
+    "in the line before the level; the crowd control right of the bar")
 units.nameplate2.raid = Secret()
 W.Fire("RAID_TARGET_UPDATE")
 check(friend.raid:IsShown() and friend.raid._cell[1] == units.nameplate2.raid, "an index hidden from addons goes to the icon as it is")
 units.nameplate2.raid = nil
 W.Fire("RAID_TARGET_UPDATE")
-check(not friend.raid:IsShown() and friend.control._points[1][2] == friend, "no marker: none, the crowd control by the bar")
+check(not friend.raid:IsShown() and friend.room.raid == nil and X(friend.level) == I, "no marker: none, no room")
 
 -- A stranger: out of sight, unless a friend, guild member or your target; a player you can fight: shown, glowing.
 units.nameplate2.party = false

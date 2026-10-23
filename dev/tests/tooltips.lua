@@ -274,7 +274,7 @@ GetMoney = function() return 12345 end
 
 -- The addons: Core (with its data framework), then the module -------------------------------------------
 -- Of Core only what the module uses: its tools, the kit (pools, pixels, a frame lent), the saved settings
--- and where they live (Profiles), Fuzzy for a text without its codes, and the data framework.
+-- and where they live (Profiles), Fuzzy for a text without its codes, the data framework, and the inspections.
 W.Load(root, "SaneUI", "Core/Core", {})
 W.Load(root, "SaneUI", "Core/Kit", {})
 W.Load(root, "SaneUI", "Core/Serial", {})
@@ -284,6 +284,7 @@ W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
 for _, file in ipairs({ "Steps", "Codec", "Data", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
+W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
 W.AddSets(folder .. "/Sets") -- the set files, at the end of Core's TOC
 local Core = SaneUI.Core
 local Data = Core.Data

@@ -17,12 +17,13 @@ local ADDON, ns = ...
 --    Bar.lua       the health bar, round at both ends (Core's cap masks), its
 --                  border by the unit's rank, a ring on your target and focus,
 --                  the unit's power along its bottom, a red glow on aggro
---    Text.lua      inside the bar: level and threat, the name, health
+--    Text.lua      the line inside the bar: quest, raid marker, level, item
+--                  level, threat, name, health; the bar as wide as the line
 --    Resource.lua  your combo points on the power line of your target's bar
 --    Auras.lua     your own debuffs above the bar, up to three of a foe's buffs
 --                  left of it, crowd control right of it, in the game's own aura
 --                  containers (hidden values and all)
---    Marks.lua     the raid marker, right of the bar
+--    Marks.lua     the raid marker, in the line
 --    Scale.lua     plates smaller far away, on a curve of two steps
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
@@ -37,6 +38,10 @@ ns.TEXT = {
     debuffsTip = "Right above a nameplate's bar, from its left: the debuffs and damage over time you put on that creature or player, with the time each has left.",
     buffs = "Buffs on foes",
     buffsTip = "Left of the bar of a creature or player you can attack: up to three of its buffs, as the game picks them for nameplates.",
+    quest = "Quest progress",
+    questTip = "Inside the bar of a creature you have a quest objective for: a sword to kill it or a sack to loot it, and how many of how many.",
+    gear = "Item level",
+    gearTip = "Inside a player's bar, after the level: their item level (\"i32\"), once the game has let Sane UI inspect them (out of a fight, near enough).",
     control = "Crowd control",
     controlTip = "Right of the bar: stuns, fears, roots and the like on that creature or player, by anyone.",
     power = "Power line",
@@ -55,6 +60,8 @@ ns.GIVEN_BACK = "the nameplates are the game's own again"
 local OPTIONS = {
     { key = "debuffs", default = true, text = ns.TEXT.debuffs, tip = ns.TEXT.debuffsTip },
     { key = "buffs", default = true, text = ns.TEXT.buffs, tip = ns.TEXT.buffsTip },
+    { key = "quest", default = true, text = ns.TEXT.quest, tip = ns.TEXT.questTip },
+    { key = "gear", default = true, text = ns.TEXT.gear, tip = ns.TEXT.gearTip },
     { key = "control", default = true, text = ns.TEXT.control, tip = ns.TEXT.controlTip },
     { key = "power", default = true, text = ns.TEXT.power, tip = ns.TEXT.powerTip },
     { key = "resource", default = true, text = ns.TEXT.resource, tip = ns.TEXT.resourceTip },

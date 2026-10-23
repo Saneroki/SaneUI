@@ -81,6 +81,9 @@ Data\Confirm.lua
 Data\Watchers.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)
 People.lua
+# What the game says about a unit for every view: its quest objective, a player's item level and talents (paced inspections)
+Objectives.lua
+Inspect.lua
 # Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game
 # and a few for what is on none (Edit Mode layout, chat windows, own channels). Pages.lua is made
 # by dev/tools/sync-pages from Blizzard's options code.

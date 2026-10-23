@@ -2,20 +2,31 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Text
---  The words inside a plate's bar, on one line over its middle:
---    left    the unit's level in the game's colour for how hard it is to you
---            (a skull where it is too high to tell), and next to it your
---            threat on it: grey while low, orange when you are about to take
---            its aggro, red while you have it (and then the bar glows)
---    middle  its name: a player's first name and surname
---    right   its health, short ("850", "1.2k", "1.32m"), and how much of it
---            is left ("| 100%")
+--  The line inside a plate's bar, left to right, each piece taking room only
+--  while it shows:
+--    quest    the game's sword (to kill) or sack (to loot) and the count
+--             ("0/7") while the unit belongs to a quest in your log with an
+--             objective still open (Core.UnitQuest)
+--    marker   the raid marker (Marks.lua)
+--    level    the unit's level in the game's colour for how hard it is to you
+--             (a skull where it is too high to tell)
+--    gear     a player's item level ("i32"), once inspected (Core.Inspect)
+--    threat   your threat on it while you are on its threat list: grey while
+--             low, orange when you are about to take its aggro, red while you
+--             have it (and then the bar glows)
+--    name     its name: a player's first name and surname
+--    health   short ("850", "1.2k", "1.32m") and how much is left ("| 100%")
+--  The bar is as wide as the line and its insets (Text.Layout, Plate.Place).
 --
---  In a fight the game may hide health and threat from addons (secret
---  values). The texts then take them as they are, formatted by the game:
---  the percentages as numbers, the health by the game's abbreviation in
---  the same steps, the threat in grey (its kind cannot be told),
---  and the glow follows the game's hidden answer (Bar.Glow).
+--  Widths are measured on a ruler of our own (a font string never given a
+--  hidden value: one that was would answer its width hidden too). In a fight
+--  the game may hide health, threat and a name from addons (secret values).
+--  The texts then take them as they are, formatted by the game: the
+--  percentages as numbers, the health by the game's abbreviation in the same
+--  steps, the threat in grey (its kind cannot be told), and the glow follows
+--  the game's hidden answer (Bar.Glow). Their room is kept as the plain ones
+--  had it: health as wide as its most ("1.32m | 100%"), threat as "100%", a
+--  hidden name as wide as the last plain one (Text.NAME without one).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -24,10 +35,16 @@ ns.Text = Text
 
 -- The game's own font for its plates' names.
 Text.FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFontHighlightSmall" }
-Text.INSET = 4   -- from the bar's ends to the texts at its sides
-Text.GAP = 3     -- between the level and the threat
-Text.NAME = 0.44 -- the name's room, a share of the bar's width (it is cut short beyond it)
+Text.INSET = 5   -- from the bar's ends to the line
+Text.GAP = 4     -- between two pieces of the line
+Text.NEAR = 1    -- between the quest's icon and its count
+Text.ICON = 1.3  -- an icon's size, times the font's height
+Text.NAME = 80   -- the room of a name the game hides, before a plain one was seen
+Text.MOST = 180  -- the most room a name takes (cut short beyond it)
+Text.GEAR = { 0.75, 0.75, 0.75 } -- the item level's colour
 Text.SKULL = "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:0|t" -- the game's mark for a level too high to tell
+-- The game's mouse cursors for a creature to fight and one to loot, as Sane UI shows objectives elsewhere.
+Text.QUEST = { kill = "Interface\\CURSOR\\Attack", loot = "Interface\\CURSOR\\LootAll" }
 -- Threat by the game's kinds (UnitDetailedThreatSituation's status): 0 low, 1 about to take aggro, 2 and 3 having it.
 Text.THREAT = {
     [0] = { 0.55, 0.55, 0.55 },
@@ -57,26 +74,63 @@ local function Line(host, justify)
     return text
 end
 
+local ruler -- a font string of ours that only measures, never shown, never given a hidden value
+
+-- How wide a plain text is in the plates' font.
+function Text.Width(text)
+    ruler:SetText(text)
+    return Plain(ruler:GetStringWidth()) or 0
+end
+
 -- The texts on the dress, on a frame of their own above the bar and its lines.
 function Text.Make(dress)
     local top = CreateFrame("Frame", nil, dress)
     top:SetAllPoints(dress)
     top:SetFrameLevel(dress.health:GetFrameLevel() + 3)
-    local level = Line(top, "LEFT")
-    level:SetPoint("LEFT", top, "LEFT", Text.INSET, 0)
-    local threat = Line(top, "LEFT")
-    threat:SetPoint("LEFT", level, "RIGHT", Text.GAP, 0)
-    local value = Line(top, "RIGHT")
-    value:SetPoint("RIGHT", top, "RIGHT", -Text.INSET, 0)
-    local name = Line(top, "CENTER")
-    name:SetPoint("CENTER", top, "CENTER", 0, 0)
-    dress.level, dress.threat, dress.value, dress.name = level, threat, value, name
+    if not ruler then
+        ruler = Line(top, "LEFT")
+        ruler:Hide()
+        ruler:SetText("0")
+        Text.size = math.floor((Plain(ruler:GetStringHeight()) or 10) * Text.ICON + 0.5)
+    end
+    local quest = top:CreateTexture(nil, "OVERLAY")
+    quest:SetSize(Text.size, Text.size)
+    quest:Hide()
+    dress.top, dress.quest, dress.count = top, quest, Line(top, "LEFT")
+    dress.level, dress.gear, dress.threat = Line(top, "LEFT"), Line(top, "LEFT"), Line(top, "LEFT")
+    dress.name, dress.value = Line(top, "LEFT"), Line(top, "LEFT")
+    dress.gear:SetTextColor(Text.GEAR[1], Text.GEAR[2], Text.GEAR[3])
+    dress.room = {} -- [piece] = its room on the line now; none while it does not show
 end
 
--- The name's room for the dress's width (Plate's Fit).
-function Text.Fit(dress)
-    local width = Plain(dress:GetWidth()) or 0
-    dress.name:SetWidth(math.max(width * Text.NAME, 1))
+-- A piece's room on the line (nil: it takes none), and the line laid out anew when it changed.
+local function Room(dress, piece, width)
+    if dress.room[piece] == width then return end
+    dress.room[piece] = width
+    if not dress.holding then Text.Layout(dress) end
+end
+Text.Room = Room
+
+-- The pieces of the line in their order: the region, and the key of its room.
+local ORDER = { { "quest", "quest" }, { "count", "count" }, { "raid", "raid" }, { "level", "level" }, { "gear", "gear" },
+                { "threat", "threat" }, { "name", "name" }, { "value", "value" } }
+
+-- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place).
+function Text.Layout(dress)
+    local top, room = dress.top, dress.room
+    local x, last = Text.INSET, nil
+    for _, entry in ipairs(ORDER) do
+        local region, width = dress[entry[1]], room[entry[2]]
+        if region and width then
+            if last then x = x + (last == "quest" and Text.NEAR or Text.GAP) end
+            region:ClearAllPoints()
+            region:SetPoint("LEFT", top, "LEFT", x, 0)
+            if region.SetWordWrap then region:SetWidth(width) end
+            x, last = x + width, entry[2]
+        end
+    end
+    dress.want = x + Text.INSET
+    ns.Plate.Place(dress)
 end
 
 function Text.Name(dress, unit)
@@ -84,6 +138,12 @@ function Text.Name(dress, unit)
     if type(text) ~= "string" then text = ns.Bar.Raw(UnitName, unit) end -- hidden or not: the text takes it
     if type(text) == "nil" then text = "" end
     dress.name:SetText(text)
+    local plain = Plain(text)
+    if type(plain) == "string" then
+        dress.nameRoom = plain ~= "" and math.min(Text.Width(plain), Text.MOST) or nil
+        return Room(dress, "name", dress.nameRoom)
+    end
+    Room(dress, "name", dress.nameRoom or Text.NAME)
 end
 
 -- The game's colour for a level as it is to you: by difficulty for a unit you can attack, the game's colour for
@@ -101,16 +161,48 @@ end
 
 function Text.Level(dress, unit)
     local level = Core.Ask(UnitLevel, unit)
-    local text = dress.level
+    local text, shown = dress.level, nil
     if type(level) ~= "number" then
         text:SetText("")
     elseif level > 0 then
-        text:SetText(level)
+        shown = tostring(level)
         text:SetTextColor(LevelColour(unit, level))
     else
-        text:SetText(Text.SKULL)
+        shown = Text.SKULL
         text:SetTextColor(1, 1, 1)
     end
+    if shown then text:SetText(shown) end
+    Room(dress, "level", shown and Text.Width(shown) or nil)
+end
+
+-- A player's item level ("i32"), as Core's inspections have it (asked for while it has not come); none for
+-- creatures, or with the setting off.
+function Text.Gear(dress, unit)
+    local text, shown = dress.gear, nil
+    if (ns.options or {}).gear ~= false and Plain(UnitIsPlayer(unit)) then
+        local level = Core.Inspect.Level(unit, Core.Ask(UnitGUID, unit))
+        if type(level) == "number" and level > 0 then shown = "i" .. level end
+    end
+    text:SetText(shown or "")
+    Room(dress, "gear", shown and Text.Width(shown) or nil)
+    return shown ~= nil
+end
+
+-- What is still to do about the unit for a quest: the icon and the count, or none. Kept as it was while the game
+-- hides it. None for players, or with the setting off.
+function Text.Quest(dress, unit)
+    local kind, count = nil, nil
+    if (ns.options or {}).quest ~= false and not Plain(UnitIsPlayer(unit)) then
+        kind, count = Core.UnitQuest(unit)
+        if kind == false then return end
+    end
+    local icon, text = dress.quest, dress.count
+    if kind then icon:SetTexture(Text.QUEST[kind]) end
+    icon:SetShown(kind ~= nil)
+    count = kind and count or ""
+    text:SetText(count)
+    Room(dress, "quest", kind and Text.size or nil)
+    Room(dress, "count", count ~= "" and Text.Width(count) or nil)
 end
 
 -- Your threat on the unit, and the glow while you have its aggro. Nothing while you are not on its threat list.
@@ -119,8 +211,10 @@ function Text.Threat(dress, unit)
     local ok, tanking, kind, share = pcall(UnitDetailedThreatSituation, "player", unit)
     if not ok or type(kind) == "nil" or type(share) == "nil" then
         text:SetText("")
+        Room(dress, "threat", nil)
         return ns.Bar.Glow(dress, false)
     end
+    Room(dress, "threat", Text.Width("100%"))
     if not pcall(text.SetFormattedText, text, "%d%%", share) then text:SetText("") end
     local plain = Plain(kind)
     local colour = Text.THREAT[plain] or Text.THREAT[0]
@@ -169,22 +263,38 @@ end
 function Text.Health(dress, unit)
     local text = dress.value
     local now, most = ns.Bar.Raw(UnitHealth, unit), ns.Bar.Raw(UnitHealthMax, unit)
-    if type(now) == "nil" or type(most) == "nil" then return text:SetText("") end
+    if type(now) == "nil" or type(most) == "nil" then
+        text:SetText("")
+        return Room(dress, "value", nil)
+    end
     local plainNow, plainMost = Plain(now), Plain(most)
+    -- Its room: as wide as the most it can show (so the bar does not change width as health goes), kept while the
+    -- most is hidden.
+    if type(plainMost) == "number" then dress.valueRoom = Text.Width(Text.Short(plainMost) .. " | 100%") end
+    Room(dress, "value", dress.valueRoom or Text.Width("888.8k | 100%"))
     if type(plainNow) == "number" and type(plainMost) == "number" then
         return text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
     end
     Hidden(text, unit, now)
 end
 
--- Every text for the unit (or none).
+-- Every piece for the unit (or none: a plate taken back keeps nothing of its last unit).
 function Text.Set(dress, unit)
     if not unit then
-        for _, text in ipairs({ dress.level, dress.threat, dress.value, dress.name }) do text:SetText("") end
+        for _, text in ipairs({ dress.count, dress.level, dress.gear, dress.threat, dress.value, dress.name }) do text:SetText("") end
+        dress.quest:Hide()
+        dress.raid:Hide()
+        dress.nameRoom, dress.valueRoom = nil, nil
+        for piece in pairs(dress.room) do dress.room[piece] = nil end
         return
     end
-    Text.Name(dress, unit)
+    dress.holding = true -- laid out once, after all of them
+    Text.Quest(dress, unit)
     Text.Level(dress, unit)
+    Text.Gear(dress, unit)
+    Text.Name(dress, unit)
     Text.Threat(dress, unit)
     Text.Health(dress, unit)
+    dress.holding = false
+    Text.Layout(dress)
 end

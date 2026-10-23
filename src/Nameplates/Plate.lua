@@ -3,12 +3,12 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Plate
 --  Our dress on each plate the game shows: a frame of ours on the game's plate
---  (so it follows the plate's place, scale and fading), laid over the game's
+--  (so it follows the plate's place, scale and fading), centred on the game's
 --  health bar row (HealthBarsContainer: its height is the game's nameplate
---  size and style) and half as wide again (Plate.WIDE), holding our bar
---  (Bar.lua), the texts inside it (Text.lua), the auras around it (Auras.lua),
---  the raid marker right of it (Marks.lua) and, on your target, the combo
---  points (Resource.lua).
+--  size and style) and as wide as the line inside it wants (Plate.Place),
+--  holding our bar (Bar.lua), the line inside it (Text.lua, the raid marker
+--  in it from Marks.lua), the auras around it (Auras.lua) and, on your
+--  target, the combo points (Resource.lua).
 --
 --  The game's parts ours stand in for (its health bar row, name, auras, raid
 --  marker, classification mark, level boxes, selection and threat glow) go out
@@ -40,8 +40,6 @@ ns.Plate = Plate
 Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
                  "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
                  "aggroHighlightAdditive" }
--- Our bar wider than the game's health bar row, by this much, as much past each of its ends.
-Plate.WIDE = 1.5
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
@@ -52,6 +50,7 @@ local shown = {}   -- [unit token] = the dress on that unit's plate, while the g
 Plate.shown = shown -- read by Scale.lua (never written there)
 local owners = setmetatable({}, { __mode = "k" }) -- [the game's unit frame] = the dress over it now
 local bars = setmetatable({}, { __mode = "k" })   -- [the game's health bar] = its unit frame, once followed
+local gear -- asks for players' item levels again, a little later (made below, with Gear)
 
 -- The game's plate for a unit, where addons may have it; nil for one it keeps from them.
 local function PlateOf(unit)
@@ -141,28 +140,30 @@ local function Heard(dress, event)
 end
 local OnEvent = ns.Guard(Heard)
 
--- The dress over the game's health bar row: as high, Plate.WIDE times as wide, centred on it. The row's width read
--- in the dress's own units (the two may be scaled apart for a moment). Placed anew only when that changed.
-local function Place(dress)
+-- The dress over the game's health bar row: as high, centred on it, as wide as its line wants (Text.Layout); as the
+-- row before the line is laid out. The row's size read in the dress's own units (the two may be scaled apart for a
+-- moment). Placed anew only when that changed.
+function Plate.Place(dress)
     local row = dress.frame and rawget(dress.frame, "HealthBarsContainer")
     if type(row) ~= "table" then return end
-    local width = Plain(row:GetWidth()) or 0
+    local width, height = Plain(row:GetWidth()) or 0, Plain(row:GetHeight()) or 0
     local ours, theirs = Plain(dress:GetEffectiveScale()), Plain(row:GetEffectiveScale())
-    if ours and theirs and ours > 0 then width = width * theirs / ours end
-    local extra = width * (Plate.WIDE - 1) / 2
-    if dress.row == row and dress.extra and math.abs(dress.extra - extra) < 0.01 then return end
-    dress.row, dress.extra = row, extra
+    if ours and theirs and ours > 0 then width, height = width * theirs / ours, height * theirs / ours end
+    width = dress.want or width
+    if dress.row == row and dress.wide and math.abs(dress.wide - width) < 0.01 and math.abs(dress.high - height) < 0.01 then
+        return
+    end
+    dress.row, dress.wide, dress.high = row, width, height
     dress:ClearAllPoints()
-    dress:SetPoint("TOPLEFT", row, "TOPLEFT", -extra, 0)
-    dress:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", extra, 0)
+    dress:SetPoint("CENTER", row, "CENTER")
+    dress:SetSize(width, height)
 end
 
--- Laid out anew for its size: its place over the game's row, the bar, the strip, the name's room, the room for auras.
+-- Laid out anew for its size: its place over the game's row, the bar, the strip, the room for auras.
 local function Fit(dress)
-    Place(dress)
+    Plate.Place(dress)
     ns.Bar.Fit(dress)
     ns.Resource.Fit(dress)
-    ns.Text.Fit(dress)
     if dress.unit then ns.Auras.Set(dress, dress.unit) end
 end
 local OnSizeChanged = ns.Guard(Fit)
@@ -232,13 +233,14 @@ local function Added(unit)
     dress.unit, dress.frame = unit, frame
     shown[unit], owners[frame] = dress, dress
     Follow(frame, bar)
-    dress.row = nil -- placed anew over this row
+    dress.row, dress.want = nil, nil -- placed anew over this row, as wide as its line once laid out
     for _, event in ipairs(Plate.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
     Fit(dress)
     Fill(dress)
     Wear(dress)
     ns.Resource.Again()
     ns.Scale.Again()
+    if dress.room.gear == nil and Plain(UnitIsPlayer(unit)) then gear() end
 end
 
 local function Removed(unit)
@@ -275,6 +277,33 @@ local function Threats()
     end
 end
 local threats = Core.Later(Threats)
+
+-- The quest log changed: every creature's quest piece as the game says now.
+local function Quests()
+    if ns.off then return end
+    for unit, dress in pairs(shown) do ns.Text.Quest(dress, unit) end
+end
+local quests = Core.Later(Quests)
+
+-- Players' item levels: asked for again (Core paces the questions) while some shown player has none, a little
+-- after the next question may go; nothing more once all have one or none is left to ask for.
+local function Gear()
+    if ns.off then return end
+    local missing = false
+    for unit, dress in pairs(shown) do
+        if dress.room.gear == nil and Plain(UnitIsPlayer(unit)) and not ns.Text.Gear(dress, unit) then missing = true end
+    end
+    if missing then gear() end
+end
+gear = Core.Later(Gear, Core.Inspect.GAP + 0.25)
+
+-- A player's item level came: their plate's piece.
+local function Arrived(guid)
+    if ns.off then return end
+    for unit, dress in pairs(shown) do
+        if Core.Ask(UnitGUID, unit) == guid then ns.Text.Gear(dress, unit) end
+    end
+end
 
 local function Raids()
     if ns.off then return end
@@ -323,6 +352,10 @@ function Plate.Start()
     ns.On("UNIT_THREAT_SITUATION_UPDATE", threats)
     ns.On("PLAYER_REGEN_ENABLED", threats)
     ns.On("PLAYER_LEVEL_UP", threats)
+    ns.On("PLAYER_REGEN_ENABLED", gear)
+    ns.On("QUEST_LOG_UPDATE", quests)
+    ns.On("UNIT_QUEST_LOG_CHANGED", quests)
+    Core.Inspect.Watch(ns.Guard(Arrived))
     -- The plates the game shows already (after a /reload they are there before us).
     local plates = Core.Ask(C_NamePlate.GetNamePlates)
     for _, plate in ipairs(type(plates) == "table" and plates or {}) do

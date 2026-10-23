@@ -159,10 +159,11 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 - **Quest marks** (`QuestMarks.lua`): on `NAME_PLATE_UNIT_ADDED` a frame of ours on the plate the game gives
   (`C_NamePlate.GetNamePlateForUnit`: none for a forbidden plate; none for players), left of its health bar
   where it has one (its fields read with `rawget`, never written), one per plate, kept while it shows.
-  `QuestMarks.Read`: `C_QuestLog.UnitIsRelatedToActiveQuest` first, then the tooltip data's lines of the kind
-  `QuestObjective` (`C_TooltipInfo.GetUnit`): the first not `completed` and not full ("8/8") is the mark, the
-  sword (`Interface\CURSOR\Attack`) where its text names the creature, else the sack
-  (`Interface\CURSOR\LootAll`), the count left of it. A secret value (a fight) leaves the mark as it was.
+  `QuestMarks.Read` is Core's `Core.UnitQuest` (`src/Core/Objectives.lua`): `C_QuestLog.UnitIsRelatedToActiveQuest`
+  first, then the tooltip data's lines of the kind `QuestObjective` (`C_TooltipInfo.GetUnit`): the first not
+  `completed` and not full ("8/8") is the mark, the sword (`Interface\CURSOR\Attack`) where its text names the
+  creature, else the sack (`Interface\CURSOR\LootAll`), the count left of it. None while the module Nameplates runs
+  (`SaneUI.Nameplates`, not stood down): it shows the same inside its bar. A secret value (a fight) leaves the mark as it was.
   Looked at again on `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame (`Core.Later`).
 - **Standing down** (`ns.GiveBack`): the keys are the game's again first, then each part gives back what it lent
   (the planner) and hides what is protected (the book's secure buttons, now or after the fight), the window hides,

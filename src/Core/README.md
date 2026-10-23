@@ -512,6 +512,8 @@ but for a window to try those with (`/sane window`).
 | `Bar.lua` | A progress bar whose value and size move |
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
+| `Objectives.lua` | `Core.UnitQuest(unit)`: what is still to do about a creature for a quest in your log, as the game says it in its tooltip data (`C_QuestLog.UnitIsRelatedToActiveQuest`, then `C_TooltipInfo.GetUnit`'s lines of the kind `QuestObjective`): `"kill"` or `"loot"` and the count of the first objective still open; `false` while the game hides it. Read by Nameplates and Combat's quest marks |
+| `Inspect.lua` | `Core.Inspect`: a player's item level and talents for every view (`Level`, `Talents`, `Watch(fn)`), by paced inspections: out of a fight, `CanInspect` and `CheckInteractDistance`, the game's inspect window closed, one question at a time 2 seconds after anybody's last (`NotifyInspect` hooked), the same player not again for 15 seconds, an answer kept 5 minutes. Read by Tooltips and Nameplates |
 | `People.lua` | Aliases and notes of players: *Set Alias* and *Set Note* (and *Remove Alias*, *Remove Note* for one that is there) in the game's menu of a player (`Menu.ModifyMenu` on its `MENU_UNIT_*` tags), kept in `SaneUIDB.modules.Core.people` by the player's key |
 | `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a set's row into a record, and a record learned into a row), `Data.lua` (the sets, the answers, the data's saved variables, what Core learns in play), `Map.lua` (what the data puts on a map), `Ships.lua` (the ships' timetables and times), `Trips.lua` (the trip underway), `Teleports.lua` (where a teleport of *Travel* brought the player, learnt), `Characters.lua` (what the account's characters have), `Wire.lua` (Sane UI's addon messages: messages and blocks, the queue that keeps to the game's budget, the inbox), `Guild.lua` (the guild's records: the roster, its history, what members share with the guild), `Confirm.lua` (what the game confirmed in play of the data not yet verified, kept and shared with the guild and the group), `Watchers.lua` (Core's watchers: creatures, things, mailboxes, crossings, a boss's loot and casts, the stats of the items the character has) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
@@ -679,3 +681,6 @@ but for a window to try those with (`/sane window`).
 - 2026-10-14 — 0.2.0: Core is the main addon and every module an addon of its own. The saved settings
   moved here from Settings (`Saved.lua`). First general switch.
 - 2026-10-14 — First version (Sane UI 0.1.0). The tools came out of Actionbar Organizer's `Core.lua`.
+- 2026-10-23 — What the game says about a unit, for every view (Saneroki: data is Core's): a creature's quest
+  objective (`Objectives.lua`, from Combat's quest marks) and players' item level and talents by paced inspections
+  (`Inspect.lua`, from Tooltips).

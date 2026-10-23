@@ -5,12 +5,13 @@
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
 nameplate settings), where they stand and stack, what clicks them, their cast bar and widgets. Over the game's
-health bar it lays its own: a rectangle with round corners, everything on one line inside it: at the left the
-unit's level and your threat on it, in the middle its name, at the right its health and how much is left
-("12 100%" · "Young Wolf" · "1.32m | 100%"). Along its bottom a thin line of the unit's mana, rage or energy,
+health bar it lays its own: a rectangle with round corners, everything on one line inside it, each piece only
+while it shows: your quest objective on the unit (a sword or a sack, "0/7"), its raid marker, its level, a
+player's item level ("i32"), your threat on it, its name, its health and how much is left ("1.32m | 100%"). The
+bar is as wide as that line, no wider. Along its bottom a thin line of the unit's mana, rage or energy,
 and on your target your combo points on top of it. Its border tells the unit's rank, a ring around it your
 target and focus, a red glow your aggro or a player who may attack you. Right above the bar your own debuffs,
-left of it up to three of a foe's buffs, right of it the raid marker and the crowd control on the unit. Plates
+left of it up to three of a foe's buffs, right of it the crowd control on the unit. Plates
 of players you cannot attack and do not know are hidden; every plate is smaller the farther away it is. When it
 fails, every plate is the game's own again.
 
@@ -26,13 +27,21 @@ fails, every plate is the game's own again.
 - **The bar:** round at its corners, a quarter of its height. Health: a player's class colour; grey for a
   creature tapped by another player; light yellow for a creature that does not attack on sight; red for one
   that does; the game's colour for friends.
-- **Inside the bar:** at the left the unit's level in the game's colour for how hard it is to you (a skull where
-  it is too high to tell), next to it your threat on it while you are on its threat list: grey while low, orange
-  when you are about to take its aggro, red while you have it, and then the whole bar glows red. In the middle
-  its name (a player's first name and surname), cut short where it is too long. At the right its health,
+- **Inside the bar:** one line, left to right, each piece taking room only while it shows, and the bar as wide
+  as the line and a little inset, no wider:
+  - *quest:* while the unit belongs to a quest in your log with an objective still open, the game's sword (to
+    kill it) or sack (to loot it) and the count ("0/7");
+  - *raid marker*;
+  - *level* in the game's colour for how hard it is to you (a skull where it is too high to tell);
+  - *item level* of a player ("i32"), once the game let Sane UI inspect them (out of a fight, near enough);
+  - *threat* while you are on its threat list: grey while low, orange when you are about to take its aggro, red
+    while you have it, and then the whole bar glows red;
+  - *name* (a player's first name and surname), cut short past 180;
+  - *health*,
   short (under a thousand as it is, then thousands to one place, "1.2k", then millions to two, "1.32m"; cut,
   not rounded), and "| 100%" how much is left. In a fight the game hides some of these from addons: the health
-  is then shortened by the game in the same steps, the threat in grey.
+  is then shortened by the game in the same steps, the threat in grey. The health takes the room of the most it
+  can show, so the bar does not change width as health goes down.
 - **The border:** black; gold and thick on a boss, gold and thin on an elite (the game's gold dragon), silver
   and thin on a rare (its silver dragon, also a rare elite). A white ring a pixel outside it on your target, an
   orange one on your focus (the game's colours for them).
@@ -45,23 +54,23 @@ fails, every plate is the game's own again.
 - **Auras:** right above the bar, without a gap, from its left the debuffs and damage over time you put on the
   unit, with the time each has left and its stacks, as many as fit over the bar (eight on the game's medium
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
-  picks buffs for its own plates. Right of the bar (after the raid marker) up to two crowd controls on it, by
+  picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
-- **Raid marker:** right of the bar (none on a player you could fight, as on the game's plates).
+- **Raid marker:** in the line (none on a player you could fight, as on the game's plates).
 - **Smaller far away:** twice their size at your feet, slowly down to their own size at 40 yards, then faster to
   half their size at 60, the farthest the game shows plates of units you have not targeted (its limit, however
   far its setting says). Your target's plate, which the game shows farther, stays at half beyond that.
-- **Settings:** *Sane UI > Nameplates*: *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
+- **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Only players you know*, *Smaller far away*. The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
 ## Technical details
 - **Our dress** (`Plate.lua`): one frame of ours per plate the game hands out (`C_NamePlate.GetNamePlateForUnit`
   at `NAME_PLATE_UNIT_ADDED`; none for a forbidden plate or your own), a child of the plate (its place, scale and
-  fading are ours too), `SetAllPoints` on the plate's `UnitFrame.HealthBarsContainer`, made once and kept: the
-  game hands plates out again and takes its unit frames from a pool, so each add looks at the plate's unit frame
-  anew (read with `rawget`, never written); as high as that row and `Plate.WIDE` (1.5) times as wide, centred on
-  it (`Place`, at every fit, the row's width read in the dress's units). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
+  fading are ours too), centred on the plate's `UnitFrame.HealthBarsContainer`, made once and kept: the game hands
+  plates out again and takes its unit frames from a pool, so each add looks at the plate's unit frame anew (read
+  with `rawget`, never written); as high as that row and as wide as its line wants (`Plate.Place`, at every fit
+  and line change, the row's size read in the dress's units; the row's width until the line is laid out). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
   `name`, `AurasFrame`, `RaidTargetFrame`, `ClassificationFrame`, `LevelFrame`, `PlayerLevelDiffFrame`,
   `selectionHighlight`, `aggroHighlight*`) are at alpha 0, and 1 again when the plate goes
   (`NAME_PLATE_UNIT_REMOVED`), when the game hides its health bar (hooks after its `OnShow` and `OnHide`, once per
@@ -101,32 +110,46 @@ fails, every plate is the game's own again.
   bar's height (two pixels at least), from 0 to `UnitPowerMax`, at `UnitPower` (both as the game gives them), in
   the game's `PowerBarColor` for `UnitPowerType`'s token; hidden where the most is a plain 0 or the setting is
   off; no background. Its coming or going moves the combo points (`Resource.Again`).
-- **The texts** (`Text.lua`): on a frame above the bar's (its level three above the bar's), the game's nameplate
-  font (`SystemFont_NamePlate_Outlined`), one line each: the level at `LEFT` (`Text.INSET` in), the threat right of
-  it (`Text.GAP`), the name at `CENTER` (white, `Text.NAME` of the bar's width, cut short beyond it), the health
-  at `RIGHT`. Level: `UnitLevel`, coloured by the game's `GetRelativeDifficultyColor` against yours on a unit you
-  can attack, `UNIT_LEVEL_NON_ATTACKABLE` otherwise, the game's skull (`Text.SKULL`) for a level below 1.
-  Threat: `UnitDetailedThreatSituation("player", unit)`: nothing without a status; the scaled percentage as
-  `%d%%` (`SetFormattedText`, hidden or not); its colour by the status (`Text.THREAT`: 0 grey, 1 orange, 2 and 3
-  red), grey where the status is hidden; aggro from `Text.AGGRO` (2) up, or the hidden `isTanking` as it is. Name:
-  `Core.FullName` for players, else `UnitName` as it is. Health: plain, `Text.Short` and `Text.Percent` ("1.32m |
-  100%"); hidden, `AbbreviateNumbers` with `Text.STEPS` as its breakpoints (the game's own form where it takes
-  none) and `UnitHealthPercent(unit, true, CurveConstants.ScaleTo100)`, both into `SetFormattedText`.
+- **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), the game's nameplate
+  font (`SystemFont_NamePlate_Outlined`). Each piece has its room (`dress.room[piece]`, none while it does not
+  show); `Text.Layout` places the pieces from `Text.INSET` in, `Text.GAP` apart (`Text.NEAR` between the quest's
+  icon and count), each at `LEFT` of the frame at its x, and wants the bar as wide as the line and its insets
+  (`dress.want`, `Plate.Place`). Rooms are measured on a ruler of ours (`Text.Width`: a font string never shown and
+  never given a hidden value, since one that was would answer its width hidden too); icons are `Text.ICON` times
+  the font's height (`Text.size`). Several pieces set at once lay out once (`dress.holding`). The pieces:
+  - *quest*: `Core.UnitQuest(unit)` (`src/Core/Objectives.lua`), not for players: the icon `Text.QUEST` (the game's
+    cursors `Attack` and `LootAll`) and the count; kept as it was while the game hides it; again on
+    `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame.
+  - *raid marker* (`Marks.lua`).
+  - *level*: `UnitLevel`, coloured by the game's `GetRelativeDifficultyColor` against yours on a unit you can
+    attack, `UNIT_LEVEL_NON_ATTACKABLE` otherwise, the game's skull (`Text.SKULL`) for a level below 1.
+  - *gear*: `Core.Inspect.Level(unit, UnitGUID(unit))` for players, "i" and the level in `Text.GEAR`. Asked for when
+    the plate comes and, while a shown player has none, again `Core.Inspect.GAP` and a quarter seconds later (Core
+    paces the questions) and at a fight's end; an answer (`Core.Inspect.Watch`) fills that player's plate.
+  - *threat*: `UnitDetailedThreatSituation("player", unit)`: nothing without a status; the scaled percentage as
+    `%d%%` (`SetFormattedText`, hidden or not) in the room of "100%"; its colour by the status (`Text.THREAT`: 0
+    grey, 1 orange, 2 and 3 red), grey where the status is hidden; aggro from `Text.AGGRO` (2) up, or the hidden
+    `isTanking` as it is.
+  - *name*: `Core.FullName` for players, else `UnitName` as it is; its room the plain name's (at most `Text.MOST`),
+    a hidden one the last plain one's (`Text.NAME` before any).
+  - *health*: plain, `Text.Short` and `Text.Percent` ("1.32m | 100%"); hidden, `AbbreviateNumbers` with
+    `Text.STEPS` as its breakpoints (the game's own form where it takes none) and `UnitHealthPercent(unit, true,
+    CurveConstants.ScaleTo100)`, both into `SetFormattedText`. Its room that of the most health in that form
+    (kept while the most is hidden; "888.8k | 100%" before any).
 - **Auras** (`Auras.lua`): three of the game's aura containers per dress (`CreateFrame("AuraContainer", ...,
   "CustomAuraContainerTemplate")`, `Blizzard_AuraContainer`): `own`, `Auras.OWN` (`HARMFUL|PLAYER|!CROWD_CONTROL`),
   its `BOTTOMLEFT` on the dress's `TOPLEFT`, growing right, as many as `Auras.Slots` of the dress's width; `foes`,
   `HELPFUL|INCLUDE_NAME_PLATE_ONLY` (the filter of the game's own plates), at most `Auras.BUFFS`, its
   `BOTTOMRIGHT` left of the dress's `BOTTOMLEFT`, growing left; `control`, `Auras.CC` (`HARMFUL|CROWD_CONTROL`), at
-  most `Auras.CONTROL`, its `BOTTOMLEFT` right of the raid marker while it shows, else of the dress
-  (`Auras.Place`), growing right; up a row each. The game assigns the auras, icons, times and stacks (hidden values
+  most `Auras.CONTROL`, its `BOTTOMLEFT` right of the dress (`Auras.Place`), growing right; up a row each. The game assigns the auras, icons, times and stacks (hidden values
   and all); our code runs only when a container makes a frame (`Dress`, its `initializeFrame`, guarded): a
   `Auras.SIZE` square icon cut by the game's nameplate aura mask (`UI-HUD-CoolDownManager-Mask`), its border
   (`UI-HUD-CoolDownManager-IconOverlay`), a `CooldownFrameTemplate` with the game's swipe, the count in a frame
   above it, handed to the frame with `SetIcon`, `SetDurationCooldown`, `SetApplicationCount`. A plate taken back
   sets its containers to `"none"`, disabled. Without the template the plates show no auras (noted once).
-- **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, `Marks.RAID` square,
-  right of the bar, `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be secret:
-  only its type is looked at); each change places the crowd control anew.
+- **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, a piece of the line
+  (`Text.size` square), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
+  secret: only its type is looked at).
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going, a power line coming or going), once a frame (`Core.Later`). Shown while the game gives combo
@@ -162,9 +185,9 @@ fails, every plate is the game's own again.
 | `SaneUI_Nameplates.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Nameplates.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings, `GiveBack`, the start |
 | `Bar.lua` | The health bar: round at both ends, its border by rank, a ring on your target and focus, the power line, the glow |
-| `Text.lua` | Inside the bar: level and threat, the name, health |
+| `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
-| `Marks.lua` | The raid marker, right of the bar |
+| `Marks.lua` | The raid marker, in the line |
 | `Resource.lua` | Your combo points on the power line of your target's bar |
 | `Scale.lua` | Plates smaller far away, on a curve of two steps over the game's own scaling |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
@@ -192,3 +215,6 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the red glow solid at the bar's edge and fading out, a blurred edge (Saneroki).
 - **2026-10-23:** the glow a real fade on a frame of its own, narrower (six pixels); our bar half as wide again as
   the game's (Saneroki).
+- **2026-10-23:** one line inside the bar, each piece taking room only while it shows: quest objective, raid
+  marker, level, item level, threat, name, health; the bar as wide as the line (Saneroki). Combat's quest marks
+  step aside meanwhile; the quest reading and the inspections are Core's now.

@@ -6,10 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Nameplates: everything on one line inside the bar: the level and
-  your threat at the left (grey, orange when you are about to pull,
-  red with a red glow around the plate when you have aggro), the name
-  in the middle, health and its percent at the right. The unit's mana,
+- Nameplates: everything on one line inside the bar, each part only
+  when there is something to show, and the bar just as wide as the
+  line: your quest objective on the creature (a sword or a sack and
+  "0/7"), its raid marker, its level, a player's item level ("i32"),
+  your threat (grey, orange when you are about to pull, red with a red
+  glow around the plate when you have aggro), the name, and health
+  with its percent ("1.32m | 100%"). The unit's mana,
   rage or energy as a thin line along the bottom, your combo points on
   it. A gold border on bosses and elites, silver on rares. Your
   debuffs right on top of the bar, a foe's buffs left, crowd control

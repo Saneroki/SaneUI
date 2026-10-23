@@ -430,7 +430,8 @@ only read.
   hides (a unit's health in a fight) answers every question about its size with a hidden number from then
   on. The texts `Live.lua` writes are therefore not from the pool: one for each use (`LiveText` in
   `Pools.lua`), never measured, never used for another line.
-- **Another player's item level** (`Inspect.lua`) can only be had by inspecting them: the game asks the
+- **Another player's item level** (`Inspect.lua`, Core's `Core.Inspect` since 2026-10-23, `src/Core/Inspect.lua`,
+  shared with the nameplates) can only be had by inspecting them: the game asks the
   server (`NotifyInspect`) and says when the answer is there (`INSPECT_READY`, then
   `C_PaperDollInfo.GetInspectItemLevel`). Paced: only out of a fight, when `CanInspect` and
   `CheckInteractDistance` allow it and the game's inspect window is closed; one question at a time, 2
@@ -587,7 +588,7 @@ only read.
 | `Kinds/Aura.lua` | Buffs and debuffs |
 | `Kinds/Quest.lua` | Quests |
 | `Kinds/Object.lua` | Things in the world: their name and lines; a herb's or an ore's Gathering |
-| `Inspect.lua` | Another player's item level, by inspecting them, paced and kept |
+| `Inspect.lua` | Another player's item level and talents: Core's (`Core.Inspect`), its arrivals redraw the panel |
 | `Auction.lua` | The lowest auction price of each thing, noted as you browse the auction house, kept |
 | `Quests.lua` | The quest lists of a creature, an NPC or an item, from Core's quest data (the sets Quests and Drops) and your quest log, kept until the log or the data changes; whether you may take a quest; a quest's name and level as a row |
 | `Numbers.lua` | Numbers that follow from what the game says: a spell's damage per second, per mana and crit; a swing; experience per kill |

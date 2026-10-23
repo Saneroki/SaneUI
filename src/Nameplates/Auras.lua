@@ -7,8 +7,8 @@ local _, ns = ...
 --            bar's left, as many as fit over its width
 --    left    up to three of its buffs, on a unit you can attack, as the game
 --            picks buffs for its own plates, growing away from the bar
---    right   the crowd control on it (stuns, fears, roots, by anyone), right
---            of the raid marker where there is one, growing away from the bar
+--    right   the crowd control on it (stuns, fears, roots, by anyone),
+--            growing away from the bar
 --  Your crowd control shows on the right only, not twice.
 --
 --  All are the game's own aura containers (CustomAuraContainerTemplate,
@@ -102,17 +102,12 @@ function Auras.Make(dress)
     Auras.Place(dress)
 end
 
--- The crowd control right of the raid marker while it shows, else right of the bar (Marks.lua calls it).
+-- The crowd control right of the bar.
 function Auras.Place(dress)
     local control = dress.control
     if not control then return end
-    local raid = dress.raid
     control:ClearAllPoints()
-    if raid and raid:IsShown() then
-        control:SetPoint("BOTTOMLEFT", raid, "BOTTOMRIGHT", Auras.GAP, 0)
-    else
-        control:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", Auras.GAP, 0)
-    end
+    control:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", Auras.GAP, 0)
 end
 
 -- How many icons fit side by side over a bar that wide.

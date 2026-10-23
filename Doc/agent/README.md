@@ -18,7 +18,7 @@ Use current source and the user's instructions when they differ from a note.
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, dungeon maps with their bosses; the guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
 | Combat: its window at the bottom middle, its full screen with our own spellbook and talents (built), as the game's; your spellbook and talents keys open them; unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
-| Nameplates: the game's plates in our dress (built: round-cornered health bar with level, threat, name and health inside, the unit's power and combo points along its bottom, border by rank, glow on aggro, own debuffs above, a foe's buffs left, crowd control right, raid marker; strangers' plates hidden; smaller far away) | `src/Nameplates/README.md` |
+| Nameplates: the game's plates in our dress (built: round-cornered health bar as wide as its one line inside (quest, raid marker, level, item level, threat, name, health), the unit's power and combo points along its bottom, border by rank, glow on aggro, own debuffs above, a foe's buffs left, crowd control right, raid marker; strangers' plates hidden; smaller far away) | `src/Nameplates/README.md` |
 | Guild: the guild window on Social's full screen or alone (built: the page with all tabs, overview, roster, equipment, the guild key; Core's wire and guild records; the other views to come) | `src/Guild/README.md`, then `Doc/ideas/Guild.md` |
 | Inventory: own character sheet, bags, alts' snapshots on its full screen (built: window in the bottom right corner, its full screen and board; the windows to come; never the game's panels, which taint the window manager) | `src/Inventory/README.md`, then `Doc/ideas/Inventory.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
@@ -37,7 +37,7 @@ opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities
 reserves action slots. Tooltips draws panels over native tooltips. Social supplies a messenger-style
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
 channels as chosen on its page. Nameplates (2026-10-20) dresses the game's own plates: a round-cornered
-health bar over the game's with level, threat, name and health inside it, the unit's power and your combo points
+health bar over the game's, as wide as its one line inside (quest, raid marker, level, item level, threat, name, health), the unit's power and your combo points
 along its bottom, a border by rank, a red glow on aggro; own debuffs above it, a foe's buffs left, crowd control
 right, in the game's aura containers; the raid marker; strangers' player plates hidden; smaller far away (the
 game's CVars); the game's parts under it at alpha 0 (`src/Nameplates/README.md`).

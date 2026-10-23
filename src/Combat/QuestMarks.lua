@@ -4,12 +4,11 @@ local _, ns = ...
 --  Sane UI - Combat - QuestMarks
 --  A small mark beside a creature's nameplate while it belongs to a quest in your
 --  log with an objective still to do, as the game itself says in the creature's
---  tooltip data (C_TooltipInfo.GetUnit: its lines of the kind QuestObjective,
---  each with its text and whether it is done; C_QuestLog.UnitIsRelatedToActiveQuest
---  first): the game's sword where the objective names the creature (to kill),
---  its sack otherwise (to loot), and left of it the count ("3/8") of the first
---  objective still open. Nothing is guessed: a creature the game says nothing
---  about has no mark.
+--  tooltip data (Core.UnitQuest, src/Core/Objectives.lua): the game's sword where
+--  the objective names the creature (to kill), its sack otherwise (to loot), and
+--  left of it the count ("3/8") of the first objective still open. Nothing is
+--  guessed: a creature the game says nothing about has no mark. While the module
+--  Nameplates runs, it shows the same inside its own bar, and there is no mark.
 --
 --  A frame of ours on the plate, kept per plate while the game shows it
 --  (NAME_PLATE_UNIT_ADDED, _REMOVED), looked at again when the quest log changes
@@ -30,34 +29,16 @@ QuestMarks.ICONS = { kill = "Interface\\CURSOR\\Attack", loot = "Interface\\CURS
 local shown = {}  -- [unit token] = the mark on its plate
 local byPlate = {} -- [plate] = its mark, made once per plate the game hands out (it reuses its plates)
 
--- What is still to do about a creature, as the game says: "kill" or "loot" and the count ("3/8", or ""); nil
--- when nothing; false when the game hides it now (a secret value).
+-- What is still to do about a creature, as the game says (Core.UnitQuest): "kill" or "loot" and the count ("3/8",
+-- or ""); nil when nothing; false when the game hides it now (a secret value).
 function QuestMarks.Read(unit)
-    local related = Core.Ask(C_QuestLog.UnitIsRelatedToActiveQuest, unit)
-    if Core.Secret(related) then return false end
-    if not related then return nil end
-    local data = Core.Ask(C_TooltipInfo.GetUnit, unit)
-    local lines = type(data) == "table" and data.lines
-    if Core.Secret(lines) then return false end
-    if type(lines) ~= "table" then return nil end
-    local name = Plain(UnitName(unit))
-    local kinds = rawget(_G, "Enum") and Enum.TooltipDataLineType
-    local objective = kinds and kinds.QuestObjective
-    for _, line in ipairs(lines) do
-        if objective and Plain(line.type) == objective then
-            local text, right = Plain(line.leftText), Plain(line.rightText)
-            if type(text) == "string" then
-                local count = text:match("(%d+%s*/%s*%d+)") or (type(right) == "string" and right:match("(%d+%s*/%s*%d+)")) or ""
-                local have, need = count:match("^(%d+)%s*/%s*(%d+)$")
-                local full = have and tonumber(need) > 0 and tonumber(have) >= tonumber(need)
-                if Plain(line.completed) ~= true and not full then
-                    local kind = (type(name) == "string" and name ~= "" and text:find(name, 1, true)) and "kill" or "loot"
-                    return kind, count:gsub("%s", "")
-                end
-            end
-        end
-    end
-    return nil
+    return Core.UnitQuest(unit)
+end
+
+-- Whether the module Nameplates shows the quest inside its own bar: then no mark beside the plate.
+local function Dressed()
+    local plates = rawget(SaneUI, "Nameplates")
+    return type(plates) == "table" and not plates.off
 end
 
 local function Make(plate)
@@ -87,7 +68,7 @@ end
 
 -- Plates come and go after the module stood down too (the events still come): then nothing is marked.
 local function Added(unit)
-    if ns.off or not unit or Plain(UnitIsPlayer(unit)) then return end
+    if ns.off or not unit or Plain(UnitIsPlayer(unit)) or Dressed() then return end
     local plate = Core.Ask(C_NamePlate.GetNamePlateForUnit, unit)
     if type(plate) ~= "table" then return end -- a plate the game forbids to addons
     local mark = byPlate[plate] or Make(plate)

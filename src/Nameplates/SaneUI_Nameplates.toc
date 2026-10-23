@@ -13,11 +13,11 @@
 Nameplates.lua
 # The health bar: round at both ends, its border by rank, a ring on your target and focus, the power line, the glow
 Bar.lua
-# Inside the bar: level and threat, the name, health
+# The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line
 Text.lua
 # Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers
 Auras.lua
-# The raid marker, right of the bar
+# The raid marker, in the line
 Marks.lua
 # Your combo points on the power line of your target's bar
 Resource.lua
