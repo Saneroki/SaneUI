@@ -10,7 +10,7 @@ letters do:
     dodge    a figure bending far back, an arrow flying over it
     parry    two swords crossed, sparks where they meet
     block    a shield, an arrow's strike glancing off its edge
-    evade    an arrow flying through a see-through figure (nothing there to hit)
+    evade    a figure leaning hard to its side, the arrow at its face flying past where the head was
     immune   a bubble with its shine, an "i" in its middle
 dev/tools/art makes the game's textures of them (assets/optimized/Nameplates/Art/<name>.blp, drawn 48 x 48). A
 drawing by hand can take a picture's place in assets/CombatText/ under the same name.
@@ -236,9 +236,14 @@ def ghost(s, x=0.50):
 
 
 def evade(s):
-    # Nothing there to hit: an arrow flies through a see-through figure.
-    ghost(s)
-    arrow(s, (0.08, 0.45), (0.94, 0.45))
+    # Facing you, leaning hard to its side: the arrow that flew at its face flies on through where the head was.
+    hips = (0.40, 0.68)
+    figure(s, head=(0.76, 0.44), neck=(0.65, 0.50), hips=hips,
+           hands=[[(0.50, 0.54), (0.36, 0.62)], [(0.76, 0.62), (0.82, 0.74)]],
+           feet=[[(0.32, 0.81), (0.28, 0.94)], [(0.50, 0.81), (0.54, 0.94)]])
+    arrow(s, (0.11, 0.27), (0.94, 0.27))
+    for radius in (0.30, 0.23):  # the swing of the head out of its way, from upright
+        s.stroke(arc(hips[0], hips[1], radius, -84, -56, 16), 0.45)
 
 
 def evade_swing(s):

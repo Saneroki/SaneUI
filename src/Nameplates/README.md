@@ -70,7 +70,7 @@ fails, every plate is the game's own again.
   (Kalam Bold, outlined): damage in white (a spell's in the colour of its school), a critical hit larger with a short
   swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a
   pencil drawing instead of a word, in white (an arrow flying over a target, a figure bending far back under an
-  arrow, crossed swords, a shield, an arrow flying through a see-through figure) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
+  arrow, crossed swords, a shield, a figure leaning hard to its side, the arrow at its face flying past where the head was) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
 - **Over your character:** the same for what you take, rising from just over the middle of the screen, where your
   character stands (your character has no plate in this client): damage in red with a "-". While ours shows, the

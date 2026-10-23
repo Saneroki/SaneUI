@@ -210,8 +210,8 @@ What a unit takes, rising over its nameplate and over your character (Saneroki, 
   code), on transparency with a dark edge round its lines so it reads over any ground, as the outlined numbers do.
   Drawn by code for now (`dev/tools/combat-art`, in the pencil pieces' manner: strokes running past their ends, a
   lighter second pass).
-- **A dodge** is a figure bending far back under an arrow; **an evade** an arrow flying through a see-through figure
-  (faint white with a lighter edge: nothing there to hit) (Saneroki, 2026-10-23).
+- **A dodge** is a figure bending far back under an arrow; **an evade** a figure facing you, leaning hard to
+  its side, the arrow that flew at its face flying on through where the head was (Saneroki, 2026-10-23).
 
 ### Chat bubbles
 
