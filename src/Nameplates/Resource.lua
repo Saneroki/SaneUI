@@ -29,7 +29,7 @@ local Resource = {}
 ns.Resource = Resource
 
 Resource.MOST = 5      -- the most points, as the game's own combo frame counts them
-Resource.SHARE = 0.5   -- the row's height, a share of the bar's
+Resource.SHARE = 1 / 3 -- the row's height, a share of the bar's (Saneroki, 2026-10-23: as thin as the power line)
 Resource.CLASSES = { ROGUE = true, DRUID = true }
 
 local holder -- the dress the strip shows on now (your target's)

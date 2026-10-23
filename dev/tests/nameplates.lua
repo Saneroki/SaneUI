@@ -622,7 +622,7 @@ end
 check(strip and strip:IsShown() and #strip.segments == 5 and Lit() == 2, "on your target's bar: two of five")
 check(strip.segments[3]._min == 2 and strip.segments[3]._max == 3, "each segment a status bar of its own point")
 check(strip._points[1][2] == dress and strip._points[1][3] == "BOTTOMLEFT" and strip._height == dress._height * Resource.SHARE,
-    "a row of its own under the bar, half as high")
+    "a row of its own under the bar, a third as high")
 check(#strip.segments[1]:GetStatusBarTexture()._masks == 2 and strip.segments[5]:GetStatusBarTexture()._masks[2] == strip.caps[2]
     and strip.caps[1]._texture == Core.Shape.CORNER.BOTTOMLEFT and strip.caps[2]._texture == Core.Shape.CORNER.BOTTOMRIGHT,
     "the lowest row: round at its bottom corners alone")

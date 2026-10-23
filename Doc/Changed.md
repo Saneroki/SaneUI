@@ -6,6 +6,9 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the combo points' row thinner (Saneroki, 2026-10-23)
+- `Resource.SHARE` a third of the bar's height (was half), as the power line.
+
 ### Nameplates: combo points in a row of their own, the cast bar under them (Saneroki, 2026-10-23)
 - **Resource.lua**: the combo points no longer sit on the power line inside the health bar but in a row of their own
   under your target's bar (`Resource.SHARE`, half its height), over the bar's dark, its segments masked by the row's

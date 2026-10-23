@@ -52,7 +52,7 @@ fails, every plate is the game's own again.
   energy in the game's colours, without a background: spent power shows nothing, the bar is seen through it.
   None on a unit without power.
 - **Combo points:** as a rogue, or a druid in cat form, your combo points on your target show in a row of their
-  own right under its bar, half as high, inside the same outline (a cast's bar comes under them), one segment
+  own right under its bar, a third as high, inside the same outline (a cast's bar comes under them), one segment
   each (five), a pixel apart, lit as you build them; a point not built shows the bar's dark. Only on a target
   you can attack.
 - **Auras:** right above the bar, without a gap, from its left the debuffs and damage over time you put on the
@@ -238,7 +238,7 @@ fails, every plate is the game's own again.
   coming or going), once a frame (`Core.Later`). Shown while the game gives combo
   points (`UnitPowerMax("player", Enum.PowerType.ComboPoints)`, at most `Resource.MOST`) and energy is the power
   shown, on the dress of `C_NamePlate.GetNamePlateForUnit("target")` while `UnitCanAttack` allows. A row of its own
-  under the dress (`TOPLEFT` on its `BOTTOMLEFT`, `Resource.SHARE` (half) of its height, `Resource.Fit`), inside
+  under the dress (`TOPLEFT` on its `BOTTOMLEFT`, `Resource.SHARE` (a third) of its height, `Resource.Fit`), inside
   its outline: `Bar.Outline` (run as the row or the cast shows or hides) puts the cast under it and anchors the
   border, the rank's line and the glow down to the lowest row; the health bar square at its bottom then, the
   row round at its bottom corners only while it is the lowest (`Resource.Shape`, Core's corner masks), square
@@ -402,3 +402,4 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   colour; orange only where the game shows how high your threat is.
 - **2026-10-23:** the combo points in a row of their own under your target's bar (Saneroki), half its height,
   inside the same outline; a cast's bar under them.
+- **2026-10-23:** the combo points' row thinner (Saneroki): a third of the bar's height, as the power line.
