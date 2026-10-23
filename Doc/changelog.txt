@@ -39,8 +39,10 @@ The bigger changes of each version, newest first.
 - Inventory: The Armory sorts your gear by its slot, Adventure Prep
   into Potions, Buffs, Camp Items and Consumables, each shown as its
   own part with one empty slot to drop into; rounder icons. The
-  character's model stands still and larger on plain paper, the top
-  slots match the others and the strips show each item's stats.
+  character's model stands larger on plain paper, on the strap drawn
+  under it: drag it to turn it, the wheel zooms, and after ten seconds
+  it turns back. The top slots match the others and the strips show
+  each item's stats.
 - Inventory: drop an item anywhere on the bags' window and it goes into
   your bags, into its own category; the bags scroll with the wheel,
   without a scroll bar. The Armory and Adventure Prep have

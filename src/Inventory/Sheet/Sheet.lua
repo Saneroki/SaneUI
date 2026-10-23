@@ -161,7 +161,7 @@ function Sheet.Build(made)
     panel.close:SetFrameLevel(holder:GetFrameLevel() + 30)
 
     local left, modelTop = At(hero[1], Doll.MODEL_TOP)
-    local right, bottom = At(hero[3], hero[4])
+    local right, bottom = At(hero[3], Doll.GROUND)
     local place = CreateFrame("Frame", nil, holder)
     place:SetPoint("TOPLEFT", holder, "TOPLEFT", left, modelTop)
     place:SetSize(right - left, modelTop - bottom)

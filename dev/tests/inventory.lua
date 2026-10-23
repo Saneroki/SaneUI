@@ -114,8 +114,35 @@ UnitEffectiveLevel = function() return W.level end
 RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92, colorStr = "ff3fc7eb" } }
 PLAYER_LEVEL_NO_SPEC = "Level %s |c%s%s|r"
 DressUpTexturePath = function(race) return "bg-" .. race end
+function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
+C_Timer.NewTimer = function(delay, fn)
+    local timer = {}
+    function timer:Cancel() self.cancelled = true end
+    C_Timer.After(delay, function() if not timer.cancelled then fn(timer) end end)
+    return timer
+end
+-- The game's model scene that takes the mouse: its orbit camera (scene 595's: looking level at 1.02 from 3.9), turned
+-- by the left button's drag and zoomed by the wheel; its field of view across the scene's diagonal.
+local FOV = 0.9
+W.templates.ModelSceneMixinTemplate = function(widget)
+    local camera = { target = 1.02, downs = 0, ups = 0, wheels = 0 }
+    function camera:GetYaw() return self.yaw end
+    function camera:SetYaw(yaw) self.yaw = yaw end
+    function camera:GetZoomDistance() return self.zoom end
+    function camera:SetZoomDistance(zoom) self.zoom = zoom end
+    function camera:GetTarget() return 0, 0, self.target end
+    function widget:GetActiveCamera() return camera end
+    function widget:GetCameraFieldOfView() return FOV end
+    widget:SetScript("OnMouseDown", function() camera.downs = camera.downs + 1 end)
+    widget:SetScript("OnMouseUp", function() camera.ups = camera.ups + 1 end)
+    widget:SetScript("OnMouseWheel", function(_, delta) camera.wheels = camera.wheels + 1 camera.zoom = camera.zoom - delta * 0.19 end)
+end
 local scenes = 0
-ModelSceneUtil = { SetUpCharacterSheetScene = function() scenes = scenes + 1 end }
+ModelSceneUtil = { SetUpCharacterSheetScene = function(scene)
+    scenes = scenes + 1
+    local camera = scene:GetActiveCamera()
+    camera.yaw, camera.zoom = 1.8325957, 3.9
+end }
 
 -- The game's side tabs (LargeSideTabButtonTemplate): an icon, checked or not, a handler for the left button let go.
 W.templates.LargeSideTabButtonTemplate = function(widget)
@@ -297,8 +324,44 @@ for _, widget in ipairs(W.frames) do
 end
 check(scene, "the character's model scene stands in the left pane")
 local place = scene:GetParent()
-check(scene._template == "NonInteractableModelSceneMixinTemplate" and math.abs(scene:GetHeight() - place:GetHeight() * 1.25) < 0.01,
-    "the model still (no turning, zooming or moving, no buttons for it), a quarter larger than its place")
+check(scene._template == "ModelSceneMixinTemplate" and math.abs(scene:GetHeight() - place:GetHeight() * 1.5625) < 0.01
+    and scene:IsMouseEnabled() and scene:IsMouseWheelEnabled(),
+    "the model turned by a drag and zoomed by the wheel (the game's scene that takes the mouse), a quarter larger twice")
+do
+    local Doll, PX = ns.Doll, SaneUI.Core.Journal.PX
+    local point = place._points[1]
+    check(point[1] == "TOPLEFT" and near(point[5], -Doll.MODEL_TOP * PX)
+        and near(place:GetHeight(), (Doll.GROUND - Doll.MODEL_TOP) * PX),
+        "the model's place: from under the level line down to the strap drawn under the hero's column")
+    local width, height = scene:GetSize()
+    local below = 1.02 / 3.9 * math.sqrt(width * width + height * height) / (2 * math.tan(FOV / 2))
+    local feet = scene._points[1]
+    check(feet[1] == "BOTTOM" and feet[2] == place and feet[3] == "BOTTOM" and feet[4] == 0
+        and near(feet[5], -(height / 2 - below)), "its feet (the scene's floor, by its camera) on the place's foot, the strap")
+    local hit = scene._hit
+    check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - below)
+        and near(height - hit[3] - hit[4], place:GetHeight()), "it takes the mouse only over its place, though drawn larger")
+end
+-- Turned or zoomed, the model goes back to how it stood once left alone for Model.REST seconds; never while dragged.
+do
+    local camera, Model = scene:GetActiveCamera(), ns.Model
+    scene:GetScript("OnMouseDown")(scene, "LeftButton")
+    camera.yaw = 1.8325957 + 2 * math.pi + 0.5 -- dragged once round and a little more
+    W.Wait(Model.REST * 2)
+    check(camera.downs == 1 and near(camera.yaw, 1.8325957 + 2 * math.pi + 0.5),
+        "the game's own drag goes on under ours; while the button is held the model stays as turned")
+    scene:GetScript("OnMouseUp")(scene, "LeftButton")
+    check(camera.ups == 1, "the button let go: the game's camera told so too")
+    W.Wait(Model.REST - 0.5)
+    scene:GetScript("OnMouseWheel")(scene, 1)
+    check(camera.wheels == 1 and near(camera.zoom, 3.9 - 0.19), "the wheel zooms, as the game's camera does")
+    W.Wait(Model.REST - 0.5)
+    check(near(camera.zoom, 3.9 - 0.19) and near(camera.yaw, 1.8325957 + 2 * math.pi + 0.5),
+        "a turn of the wheel starts the wait anew")
+    W.Wait(1)
+    check(near(camera.zoom, 3.9) and near(camera.yaw, 1.8325957 + 2 * math.pi),
+        "left alone: back to its first distance, turned the short way round to its first side")
+end
 do
     local controls
     for _, widget in ipairs(W.frames) do

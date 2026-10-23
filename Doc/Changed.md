@@ -3,8 +3,24 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Inventory: the doll's model on the strap, a quarter larger again, turned and zoomed, back after ten seconds (Saneroki, 2026-10-23)
+- **On the strap** (`Sheet/Model.lua`, `Sheet.lua`, `Doll.lua`): the model's place reaches from under the level line
+  down to `Doll.GROUND` (713, the top of the strap drawn under the hero's column), and the scene stands with its
+  floor there: where the floor is drawn worked out from its camera (the target's height over its distance, the
+  field of view across the scene's diagonal), `Model.FEET` (0.08 of its height) when the camera cannot tell.
+- **Larger:** `Model.LARGER` 1.5625 (a quarter larger, and a quarter again) times its place.
+- **Turned and zoomed:** the game's `ModelSceneMixinTemplate` in place of the one that takes no mouse: its orbit
+  camera turns the model by the left button's drag and zooms by the wheel; mouse and wheel enabled, only over the
+  hero's place (`SetHitRectInsets`), our scripts hooked on after the game's (`HookScript`; the item let go over it
+  is still put on).
+- **Back after ten seconds:** `Model.REST` (10) seconds after the last drag or turn of the wheel (a `C_Timer`
+  timer, started anew by each, never running while the button is held) the camera glides back to its first
+  distance and its first side the short way round (`home`, read after `SetUpCharacterSheetScene`).
+- Tests: the inventory test's stand-in scene has the game's camera and scripts; 132 checks (the size, the place,
+  the feet, the mouse's area, the game's scripts kept, the wait, its new start by the wheel, the way back).
 
 ### Navigation: pings as on the game's minimap, a double click for the map pin, the quest log moves the map, Follow me (Saneroki, 2026-10-23)
 - **Pings** (`Ping.lua`, new in the TOC, no frames): a plain click on the map where it opens nothing pings there to the

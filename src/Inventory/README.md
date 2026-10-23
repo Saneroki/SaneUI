@@ -33,8 +33,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
   - *Character*: Sane UI's own doll, a page of paper in a shaped leather frame (`Doc/guides/interface-style.md`):
-    your model in the middle, standing still on the page's plain paper, a quarter larger than its place (no
-    turning or zooming), your name and level above it, your gear in two arcs of pencil slots round it (the head
+    your model in the middle on the page's plain paper, its feet on the strap drawn under it, a quarter larger
+    than its place and a quarter again (drag it with the left button to turn it, the wheel zooms; left alone for
+    ten seconds it goes back to how it stood), your name and level above it, your gear in two arcs of pencil slots round it (the head
     and the hands at the top as large as the others; the icons without a border, their corners rounded) with a
     paper strip beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
     Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
@@ -217,10 +218,15 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `Cells.ROUNDED` in place of the template's mask, the highlight too.
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
-  - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `NonInteractableModelSceneMixinTemplate` (not turned,
-    zoomed or moved) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`,
-    `Model.LARGER` (1.25) times its place, its foot at the place's foot, the name and level drawn over it; on the
-    doll's plain paper (no race background, no frame behind it); an item
+  - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `ModelSceneMixinTemplate` (its orbit camera: the
+    left button's drag turns it, the wheel zooms) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
+    at `UNIT_MODEL_CHANGED`, `Model.LARGER` (1.5625) times its place (from under the level line to `Doll.GROUND`,
+    the strap drawn under the hero's column); its feet on the place's foot, where the scene's floor is drawn by the
+    camera's target, distance and field of view (across the scene's diagonal; `Model.FEET` of its height when the
+    camera cannot tell). It takes the mouse only over its place (`SetHitRectInsets`); our scripts are hooked on
+    after the game's. Left alone `Model.REST` (10) seconds after the last drag or turn of the wheel (never while the
+    button is held), the camera glides back to its first distance and its first side, the short way round. The name
+    and level drawn over it; on the doll's plain paper (no race background, no frame behind it); an item
     let go over it (a drop, or the left button) where
     `C_PaperDollInfo.CanAutoEquipCursorItem` says it can be: `AutoEquipCursorItem`.
   - **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, at the
