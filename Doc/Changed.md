@@ -403,6 +403,13 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   player's under the game's minimap, gone after its time; pins clicked and double clicked; the quest log's click
   and double click; Follow me ticked, dragged, standing, walking on, opening on the player, unticked; a found herb).
 
+### Tooltips: rules, a table's captions and its lines in the grey of the section names (Saneroki, 2026-10-23)
+- `Model.lua`: `COLOR.NOTE` (the grey of a section's name, `Tone(GREY, WHITE, 0.3)`) in place of the dark
+  see-through `COLOR.GROOVE`. `Panel.lua`: a section's rules, a table's captions (a spell's *Mana*, *Range*, *Dmg*,
+  *DPS*, ...), the lines between its cells and between two columns in it, as Saneroki asked; the values keep their
+  colours. `Pools.lua`: `Pools.GROOVE`, `GROOVE_LIGHT` and the groove's light edge gone; every text its font's shadow.
+- README.md; `dev/tests/tooltips.lua` (the captions, rules and lines grey).
+
 ### A red ! before each thing not yet confirmed; quests confirmed when taken or handed in (Saneroki, 2026-10-23)
 - Core, `Kit.lua`: `Core.UNCONFIRMED_MARK` (the red ! and a space), for the name of each thing a tooltip lists that is
   not yet confirmed, so *! Unconfirmed Data !* says which, as Saneroki asked.

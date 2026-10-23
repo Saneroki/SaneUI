@@ -97,11 +97,10 @@ local DRAGON_RING, DRAGON_COVER = 56.3, 2
 local DRAGON_LEFT = 4
 
 -- The panel's own colours (Model.lua has the palette).
--- The groove: a section's rules, its name, a table's captions and the lines between its cells, all one
--- dark see-through shade (COLOR.GROOVE, its alpha in Pools.GROOVE), so they look pressed into the ground
--- rather than drawn on it. A table's values are white.
-local LABEL, VALUE, TAG, GROOVE = COLOR.DETAIL, COLOR.WHITE, COLOR.GOLD, COLOR.GROOVE
-local NOTE = COLOR.ASIDE -- a section's name and the notes at the bottom: grey
+-- One grey (COLOR.NOTE) for a section's name and its rules, a table's captions and the lines between its cells, the
+-- groove between two columns and the notes at the bottom (Saneroki, 2026-10-23: a dark see-through shade read badly).
+-- A table's values keep their colour.
+local LABEL, VALUE, TAG, NOTE = COLOR.DETAIL, COLOR.WHITE, COLOR.GOLD, COLOR.NOTE
 -- The background: the game's own tooltip ground, taken toward the panel's colour TOP_TINT of the
 -- way at the top; at the bottom the ground darkened by FOOT_DARK, then FOOT_TINT of the way.
 local TOP_TINT, FOOT_TINT, FOOT_DARK = 0.28, 0.06, 0.55
@@ -151,11 +150,9 @@ local FONTS = {
     badge = { font = "GameTooltipHeaderText", add = -1, outline = true }, -- on its gold plaque, outlined
     -- At the default size the small ones are 10, as the game's own small font (GameFontNormalSmall)
     small = { font = "GameTooltipText", add = -4, least = 8 },   -- another addon's lines, the details with Alt
-    -- In the groove's shade (alpha: Pools.GROOVE) with a faint light edge under them (Pools.GROOVE_LIGHT): a
-    -- table's captions
-    caption = { font = "GameTooltipText", add = -4, least = 8, groove = true },
-    -- In grey (NOTE): a section's name between its rules, and the notes at the bottom (Unconfirmed Data, Hold
-    -- ALT for more), smaller, without rules (Saneroki, 2026-10-23: the groove's black read badly)
+    -- In grey (NOTE): a table's captions, a section's name between its rules, and the notes at the bottom
+    -- (Unconfirmed Data, Hold ALT for more), smaller, without rules
+    caption = { font = "GameTooltipText", add = -4, least = 8 },
     section = { font = "GameTooltipText", add = -4, least = 8 },
     hint = { font = "GameTooltipText", add = -6, least = 7 },
     detail = { font = "GameTooltipText", add = -4, least = 8 },  -- a unit's kind, PvP
@@ -617,7 +614,7 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
             -- widest cell of them all
             cells[index] = panel.texts.taken + 1
             for cell = 1, #row, 2 do
-                local caption = Text(panel, FONTS.caption, Upper(row[cell]), GROOVE[1], GROOVE[2], GROOVE[3], "CENTER")
+                local caption = Text(panel, FONTS.caption, Upper(row[cell]), NOTE[1], NOTE[2], NOTE[3], "CENTER")
                 local value = Text(panel, FONTS.value, row[cell + 1], VALUE[1], VALUE[2], VALUE[3], "CENTER")
                 widestCell = math.max(widestCell, math.max(Width(caption), Width(value)) + 2 * CELL_INSET)
             end
@@ -625,8 +622,7 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
         elseif kind == "caption" then
             -- In the middle, with a rule at each side
             local font = FONTS[row.font] or FONTS.section
-            local shade = font.groove and GROOVE or NOTE
-            local caption = Text(panel, font, row.caps and Upper(row.left) or row.left, shade[1], shade[2], shade[3], "CENTER")
+            local caption = Text(panel, font, row.caps and Upper(row.left) or row.left, NOTE[1], NOTE[2], NOTE[3], "CENTER")
             panel.left[index] = caption
             local marks = 0
             if row.mark then
@@ -732,7 +728,7 @@ local function StripRow(panel, row, index, y, inner, hairline)
         Place(panel, panel.texts[first + 2 * cell - 2], x, y, wide)
         Place(panel, panel.texts[first + 2 * cell - 1], x, valueTop, wide)
         if cell > 1 then
-            local separator = Line(panel, GROOVE[1], GROOVE[2], GROOVE[3], Pools.GROOVE)
+            local separator = Line(panel, NOTE[1], NOTE[2], NOTE[3], 1)
             separator:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -(y + 1))
             separator:SetSize(hairline, height - 2)
         end
@@ -980,7 +976,7 @@ function Panel.Draw(panel)
     panel:SetHeight(height)
     for column = 2, columns do
         -- A groove between two columns
-        local groove = Line(panel, GROOVE[1], GROOVE[2], GROOVE[3], Pools.GROOVE)
+        local groove = Line(panel, NOTE[1], NOTE[2], NOTE[3], 1)
         groove:SetPoint("TOPLEFT", panel, "TOPLEFT", (column - 1) * width, -SIDE)
         groove:SetSize(hairline, height - 2 * SIDE)
     end

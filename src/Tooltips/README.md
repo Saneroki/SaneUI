@@ -11,7 +11,7 @@ quests that need it, the professions that use it, which of your characters have 
 surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
 what to do with it for gold, what its materials bring if you disenchant it, and with Alt the price to post
 it at. Every section has its name in the middle of its divider (*INFO*, *QUEST*, *GOLD*, ...), the name in
-grey, the divider a dark see-through shade, as if pressed into the ground; a thing's own lines (its numbers, what it
+grey, its rules the same grey; a thing's own lines (its numbers, what it
 does, its description, its durability) are one section, *Info*; a spell's numbers are a table of four
 columns and two rows. A tiny grey line in the middle at the bottom says that Alt shows more: the technical details, which of your characters
 have the item (*Inventory*), and what other addons write into a tooltip, wherever they write it, in one
@@ -54,10 +54,9 @@ only read.
   | **Anything else** the game fills from data (things in the world such as a mailbox or a chest, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and its lines under it as the game has them, no sections (an empty line is a small gap); a panel without a colour of its own, whatever colour the name has |
 
   **Sections:** every part of a panel under its header is a section with its name on its divider, in small
-  capitals in the middle with a rule at each side (*——— GOLD ———*), the name in grey (Saneroki, 2026-10-23:
-  the dark shade read badly), the rules in a dark see-through shade, the same as the lines between a table's
-  cells, so they look like grooves in the ground rather than lines drawn on it: there is no divider without a
-  name. A thing's own lines are *Info*: an item's numbers, what it
+  capitals in the middle with a rule at each side (*——— GOLD ———*), name and rules in one grey, as a table's
+  captions and the lines between its cells (Saneroki, 2026-10-23: the dark see-through shade they had read
+  badly); a table's values keep their colour: there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
   does, its description and its durability; a spell's facts and its description; a buff's and a quest's
   text. An item's *Set*, *Creates* (a recipe's thing), *Quest*, *Professions* (also the node that gives it),
   *Inventory* (with Alt), *Gold*; a herb's or an ore's *Professions*; a unit's *Status* and *Quest*; a buff's
@@ -287,9 +286,8 @@ only read.
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
   border, no band behind the name, no boxes. The only dividers are the sections' captions: a section's name
   stands in the middle in small capitals, grey (`NOTE`), and a rule runs from each side of the panel to it, one
-  hairline each, 6 from the name; the rules in the groove's shade (`COLOR.GROOVE`, black, seen at `Pools.GROOVE`,
-  60 %), as are a table's captions and the lines between its cells; the groove's words have a light edge one
-  dot of the screen under them (their shadow: white at `Pools.GROOVE_LIGHT`, 15 %, `Core.Pixels`); a hairline is one unit of
+  hairline each, 6 from the name; the rules in the same grey (`COLOR.NOTE`), as are a table's captions, the lines
+  between its cells and the line between two columns; a hairline is one unit of
   the interface rounded to whole dots of the screen (`Core.Pixels`, by the game's `PixelUtil.GetNearestPixelSize`). An empty line of the
   game's inside a section is a small gap (a row's `space`).
 - **The icon** (or a unit's portrait) is 64 large and stands out over the panel's top right corner, 10 past
@@ -393,9 +391,8 @@ only read.
   followed; the size is set by us (`SetFont`), because it is the player's setting. Name and lines have
   that size, a weapon's number 4 more, subtitles and the strip's values 2 less; another addon's lines,
   captions and a unit's details 4 less (10 at the default size, as the game's own small font); the line that
-  Alt shows more 6 less (8 at the default size, never under 7). The groove's kind of text (`caption`:
-  `groove`) has the light edge as its shadow; `Pools.lua` sets every other kind's shadow
-  back to its font's own (offset and colour).
+  Alt shows more 6 less (8 at the default size, never under 7). Every kind of text has its font's own shadow
+  (offset and colour, `Pools.lua`).
 - **Colours.** The panel's colour is the game's own for the thing: `ITEM_QUALITY_COLORS`,
   `RAID_CLASS_COLORS`, the colour of what takes an aura away (`AuraUtil.GetDebuffDisplayInfoTable`, the
   game's for the borders of debuffs), the colours the game's combat log gives the spell schools,
@@ -404,8 +401,8 @@ only read.
   writes descriptions in), which is made lighter. Every other colour of ours (`ns.COLOR` in `Model.lua`)
   is one of the game's font colours (`HIGHLIGHT_FONT_COLOR`, `NORMAL_FONT_COLOR`, `GRAY_FONT_COLOR`,
   `RED_FONT_COLOR`, `GREEN_FONT_COLOR`, ...) moved part of the way toward another of them (`Tone`): a
-  name nearly white, a table's values white, what is said about a thing light grey, a section's name and the
-  notes at the bottom grey, its rules, a table's captions and its lines the groove's dark see-through shade, what is done green, what you
+  name nearly white, a table's values white, what is said about a thing light grey, a section's name, its rules,
+  a table's captions and its lines and the notes at the bottom one grey (`COLOR.NOTE`), what is done green, what you
   cannot do red. A physical spell is the game's red (its combat log has physical yellow, too close to holy). A line's colour is known by being close to one of
   the game's (`ns.Like`). A colour inside a line is written by `ns.Hex`.
 - **Five pictures are ours,** made by `dev/tools/tooltip-art` (the game has none like them):
@@ -601,6 +598,8 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-23 — A section's rules, a table's captions and the lines between its cells (a spell's numbers) in the grey
+  of the section names, the values in their colours (Saneroki).
 - 2026-10-23 — A red ! before the name of each thing not yet confirmed in a tooltip that ends with *! Unconfirmed
   Data !* (Saneroki).
 - 2026-10-23 — Section names grey; *! Unconfirmed Data !* and *Hold ALT for more* small grey notes in the middle

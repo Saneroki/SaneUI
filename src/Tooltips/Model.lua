@@ -78,8 +78,8 @@ ns.COLOR = {
     ASIDE = Tone(GREY, WHITE, 0.3),     -- another addon's lines, the details Alt shows, a heading over a list
     NEUTRAL = Tone(GREY, WHITE, 0.2),   -- a panel without a colour of its own; a dead or offline unit's
     SILVER = Tone(GREY, WHITE, 0.6),    -- a rare creature's rank, as its silver dragon
-    GROOVE = BLACK,                     -- a section's rules and name, a table's captions and the lines between
-                                        -- its cells: black, see-through (Pools.GROOVE), as if pressed in
+    NOTE = Tone(GREY, WHITE, 0.3),      -- a section's name and its rules, a table's captions and the lines between
+                                        -- its cells, the notes at the bottom: one grey (Saneroki, 2026-10-23)
     PROSE = Tone(GOLD, WHITE, 0.4),     -- a description, which the game writes in its gold: lighter
     PLAQUE = Tone(GOLD, WHITE, 0.75),   -- words on the gold plaque of a level (Panel.lua): almost white
     DONE = Tone(GREEN, GREY, 0.2),      -- an objective that is done, a quest to turn in, a good price

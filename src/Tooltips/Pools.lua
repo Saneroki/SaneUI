@@ -25,9 +25,6 @@ local VALUE, HEALTH = COLOR.TITLE, COLOR.HEALTH
 local Pools = {}
 ns.Pools = Pools
 
-Pools.GROOVE = 0.6       -- how strongly the groove's shade is seen: a section's rules and name, a table's lines
-Pools.GROOVE_LIGHT = 0.15 -- the light edge one dot of the screen under a groove's words, as cut letters catch the
-                          -- light: dark words on a dark ground read by it
 Pools.ICON_CROP = 4 / 64 -- the dark rim round the game's icons: four of their 64 texels each side
 local LIVE_ALPHA = 0.5   -- a unit's bars: a flat colour, half see-through
 local WHITE = "Interface\\Buttons\\WHITE8X8"
@@ -80,13 +77,12 @@ function Pools.Restyle()
 end
 
 -- A text's font: the game's font object (its shadow and spacing), then the file and size of the
--- kind of text (Panel.lua, FONTS). A font file that does not load leaves the game's own size. A groove's
--- words get their light edge in Pools.Text; every other kind has its font's own shadow, also on a text
--- that was a groove's before.
+-- kind of text (Panel.lua, FONTS). A font file that does not load leaves the game's own size. Every kind has
+-- its font's own shadow.
 local function Dress(label, kind)
     if kind.object then label:SetFontObject(kind.object) end
     if kind.path then label:SetFont(kind.path, kind.size, kind.flags or "") end
-    if not kind.groove and kind.object and kind.object.GetShadowOffset then
+    if kind.object and kind.object.GetShadowOffset then
         local x, y = kind.object:GetShadowOffset()
         if x then label:SetShadowOffset(x, y) end
         local r, g, b, a = kind.object:GetShadowColor()
@@ -111,12 +107,7 @@ function Pools.Text(panel, kind, text, r, g, b, align)
         label.dressed, label.style = kind, style
         Dress(label, kind)
     end
-    label:SetTextColor(r or VALUE[1], g or VALUE[2], b or VALUE[3], kind.groove and Pools.GROOVE or 1)
-    if kind.groove then
-        -- In the groove's shade, with a faint light edge one dot of the screen below (the panel's scale)
-        label:SetShadowColor(1, 1, 1, Pools.GROOVE_LIGHT)
-        label:SetShadowOffset(0, -Core.Pixels(panel, 1))
-    end
+    label:SetTextColor(r or VALUE[1], g or VALUE[2], b or VALUE[3], 1)
     label:SetJustifyH(align or "LEFT")
     label:SetWordWrap(true)
     label:SetWidth(0) -- unbounded, so its natural width can be asked
@@ -195,11 +186,11 @@ function Pools.Line(panel, r, g, b, a)
     return line
 end
 
--- A divider from x over width at y: one hairline in the groove's dark see-through shade, as the section's
--- name beside it and the lines between a table's cells.
+-- A divider from x over width at y: one hairline in the grey of the section's name beside it (COLOR.NOTE), as the
+-- lines between a table's cells.
 function Pools.Rule(panel, x, y, width, hairline)
-    local groove = ns.COLOR.GROOVE
-    local line = Pools.Line(panel, groove[1], groove[2], groove[3], Pools.GROOVE)
+    local note = ns.COLOR.NOTE
+    local line = Pools.Line(panel, note[1], note[2], note[3], 1)
     line:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -y)
     line:SetSize(width, hairline)
 end

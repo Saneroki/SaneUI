@@ -401,28 +401,27 @@ check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utili
     and shown[11] == "3 min" and shown[14]:find("^Increases"),
     "drawn: the name in capitals, then the section's name, the table's captions, each over its value")
 local function color(label) local r, g, b = label:GetTextColor() return r .. " " .. g .. " " .. b end
-local GROOVE = table.concat(COLOR.GROOVE, " ")
+local NOTE = table.concat(COLOR.NOTE, " ")
 local caption = panel.texts[8]
-check(color(panel.texts[9]) == table.concat(COLOR.WHITE, " ") and color(caption) == GROOVE and caption._textAlpha == ns.Pools.GROOVE
-    and ns.Pools.GROOVE == 0.6 and caption.dressed.groove,
-    "the table's values white; its captions the groove's dark see-through shade")
-check(caption._shadowX == 0 and caption._shadowY == -1 and caption._shadowColor[1] == 1 and caption._shadowColor[4] == ns.Pools.GROOVE_LIGHT,
-    "with a faint light edge one dot of the screen below them, as cut letters catch the light, so they read on a dark ground")
+check(color(panel.texts[9]) == table.concat(COLOR.WHITE, " ") and color(caption) == NOTE and caption._textAlpha == 1,
+    "the table's values white; its captions in the grey of a section's name")
 local named = panel.texts[5]
-check(color(named) == table.concat(COLOR.ASIDE, " ") and named._textAlpha ~= ns.Pools.GROOVE and not named.dressed.groove
-    and math.abs(named._points[1][4] + named._width / 2 - panel:GetWidth() / 2) <= 1 and panel.texts[3]._shadowX ~= 0,
-    "a section's name in grey, which reads on the dark ground, in the middle; the texts that are no groove keep their font's shadow")
-local grooves, rules = 0, {}
+check(color(named) == NOTE and math.abs(named._points[1][4] + named._width / 2 - panel:GetWidth() / 2) <= 1
+    and panel.texts[3]._shadowX ~= 0 and caption._shadowX ~= 0,
+    "a section's name in the same grey, in the middle; every text keeps its font's shadow")
+local greys, rules = 0, {}
 for index = 1, panel.lines.taken do
     local line = panel.lines[index]
-    if line._color and line._color[4] == ns.Pools.GROOVE then grooves = grooves + 1 end
+    if line._color and table.concat({ line._color[1], line._color[2], line._color[3] }, " ") == NOTE and line._color[4] == 1 then
+        greys = greys + 1
+    end
     if line._height == 1 and line._width > 1 then rules[#rules + 1] = line end
 end
 check(#rules == 2 and rules[1]._points[1][4] == 12 and rules[2]._points[1][4] + rules[2]._width == panel:GetWidth() - 12
     and rules[1]._points[1][4] + rules[1]._width < panel.texts[5]._points[1][4],
     "a rule at each side of the section's name, from the panel's edge to the name, one hairline each (none round the "
     .. "line that Alt shows more)")
-check(grooves >= 3, "the rules and the lines between the table's cells all in the groove's shade")
+check(greys >= 3, "the rules and the lines between the table's cells all in the grey of a section's name")
 local function size(label) return label.dressed and label.dressed.size end -- the size its font was given
 check(size(panel.texts[1]) == 14 and size(panel.texts[14]) == 14 and size(panel.texts[9]) == 12 and size(panel.texts[8]) == 10,
     "name and lines in the text size, the table's values two smaller, captions as small as the game's small font")
@@ -444,7 +443,7 @@ tip:Fill({ type = TYPE.Spell, id = 5 }, elune)
 check(count(panel) == 5 and hinted(panel), "let go of Alt, and the details and the other addons' lines are gone again")
 local hint = row(panel, 6)
 check(hint.kind == "caption" and hint.left == "Hold ALT for more" and not hint.caps and hint.bare
-    and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size and not ns.Panel.FONTS.hint.groove,
+    and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size,
     "without Alt a tiny grey line in the middle at the bottom, as written, without rules: that Alt shows more")
 
 -- Filled again with the same lines
