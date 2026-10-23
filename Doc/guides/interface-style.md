@@ -264,6 +264,13 @@ Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bu
     under them.
 
   The harness's character view is this picture itself, with code putting the live content in (*The harness*).
+- **Character stats** (Saneroki, 2026-10-23): a page, not a long narrow list. Each of the game's stat categories
+  is a section (its head in Kalam Bold with a pencil rule under it, a line a stat: the name in soft graphite at the
+  left, the value in bold graphite at the right, every other line a faint stripe). The sections stand in as many
+  columns as the window's width holds (none narrower than 240 units, none wider than 360, kept together in the
+  page's middle), one list when it is narrow. Where all five fit side by side over the columns, the primary
+  attributes are five pencil boxes, the name small at the top, the value large under it. The window's tabs (Stats,
+  Equipment Manager, Titles, Pet) are drawn tabs on the paper.
 - **Bags and bank:** `bags-page.png`. A condensed page cut into close sections, each with a pencil-ruled header
   and a dense grid of item icons. Tabs down the left change the content.
 - **Choosing a class or specialisation:** `class-fan.png`. Its layout and look (cards fanned out over the page)
@@ -384,7 +391,7 @@ How the look reaches the game (2026-10-22, Saneroki asked for the inventory's wi
 - **Colours on the paper:** graphite for words; a game colour (a quality's, a class's) outlined where it stands
   alone (a name), darkened toward the graphite inside a line of words (the class in a level line); the pencil's
   light shading for a row under the mouse or chosen.
-- **In the look:** the character (the doll), the bags, the bank and the alts (Inventory). The other windows keep
+- **In the look:** the character (the doll), the stats, the bags, the bank and the alts (Inventory). The other windows keep
   Core's dark plate until they are made over.
 
 ## The harness

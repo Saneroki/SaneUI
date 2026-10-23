@@ -2,19 +2,20 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Titles
---  The titles of the stats' window's sidebar (Sidebar.lua), as the game's
---  sheet lists them (Camelot's TitleManagerPane): None first, then every title
---  you know by name, in the game's rows (a stripe on every other one, a tick
---  and the game's bar on the one you wear, its blue light under the mouse). A
---  click wears that title (SetCurrentTitle, the game's own call).
+--  The titles of the stats' window (Sidebar.lua), as the game's sheet lists
+--  them (Camelot's TitleManagerPane): None first, then every title you know by
+--  name, in lines on the journal's page (a light stripe on every other one,
+--  the pencil's tick and shading on the one you wear, its light shading under
+--  the mouse). A click wears that title (SetCurrentTitle, the game's own call).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Titles = {}
 ns.Titles = Titles
 
--- The game's sizes (PaperDollFrame.xml): a row, the tick; the list in the pane as the game sets it in.
-Titles.ROW, Titles.CHECK = 22, 16
-Titles.INSET = { 10, 8, 30, 30 }
+-- A row, the tick's room; the list in the pane.
+Titles.ROW, Titles.CHECK = ns.Paper.Fit(22), ns.Paper.Fit(18)
+Titles.INSET = { 10, 4, 24, 10 }
+Titles.TICK = "\226\136\154" -- the tick drawn by hand: Kalam's root sign (the style's checkbox)
 Titles.NONE = -1
 
 local list
@@ -44,24 +45,29 @@ local function Wear(row)
     Game("SetCurrentTitle", row.data.id)
 end
 
--- A row of the game's look (PlayerTitleButtonTemplate), made once.
+-- A line on the paper, made once: its stripe, its shading while worn and under the mouse, the tick, the name.
 local function Parts(row)
     if row.text then return end
+    local paper = ns.Paper
     row:RegisterForClicks("LeftButtonUp")
     row.stripe = row:CreateTexture(nil, "BACKGROUND")
-    row.stripe:SetAtlas("UI-Character-Info-Line-Bounce2", true)
-    row.stripe:SetPoint("CENTER")
-    row.check = row:CreateTexture(nil, "ARTWORK")
-    row.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
-    row.check:SetSize(Titles.CHECK, Titles.CHECK)
-    row.check:SetPoint("LEFT", 6, 0)
-    row.chosen = row:CreateTexture(nil, "ARTWORK")
-    row.chosen:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
-    row.chosen:SetBlendMode("ADD")
-    row.chosen:SetAlpha(0.4)
+    row.stripe:SetAllPoints()
+    row.stripe:SetColorTexture(paper.ZEBRA[1], paper.ZEBRA[2], paper.ZEBRA[3], paper.ZEBRA[4])
+    row.chosen = row:CreateTexture(nil, "BACKGROUND", nil, 1)
     row.chosen:SetAllPoints()
-    row:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar-Blue", "ADD")
-    row.text = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmallLeft")
+    row.chosen:SetColorTexture(paper.CHOSEN[1], paper.CHOSEN[2], paper.CHOSEN[3], paper.CHOSEN[4])
+    local light = row:CreateTexture(nil, "HIGHLIGHT")
+    light:SetAllPoints()
+    light:SetColorTexture(paper.SHADE[1], paper.SHADE[2], paper.SHADE[3], paper.SHADE[4])
+    row.check = row:CreateFontString(nil, "ARTWORK")
+    row.check:SetFontObject(paper.Font("SaneUITitlesTick", 15, true))
+    row.check:SetWidth(Titles.CHECK)
+    row.check:SetPoint("LEFT", 4, 0)
+    row.check:SetText(Titles.TICK)
+    row.text = row:CreateFontString(nil, "ARTWORK")
+    row.text:SetFontObject(paper.Font("SaneUITitlesName", 14))
+    row.text:SetJustifyH("LEFT")
+    row.text:SetWordWrap(false)
     row.text:SetPoint("LEFT", row.check, "RIGHT", 3, 0)
     row.text:SetPoint("RIGHT", -3, 0)
     row:SetScript("OnClick", function(self) ns.Safe("character", Wear, self) end)
@@ -92,13 +98,9 @@ function Titles.Refresh()
     ns.List.Fill(list, known)
 end
 
--- The pane under the stone: the game's inside frame round the list.
+-- The pane under the tabs: the list on the page.
 function Titles.Build(pane)
-    local border = pane:CreateTexture(nil, "BORDER")
-    border:SetAtlas("common-insideframe")
-    border:SetPoint("TOPLEFT", 1, 1)
-    border:SetPoint("BOTTOMRIGHT", -4, 2)
-    list = ns.List.New(pane, { inset = Titles.INSET, extent = Extent, draw = Draw })
+    list = ns.List.New(pane, { inset = Titles.INSET, extent = Extent, draw = Draw, paper = true })
 end
 
 -- Whether there is a title to choose (the game's sidebar greys its tab out with only None).

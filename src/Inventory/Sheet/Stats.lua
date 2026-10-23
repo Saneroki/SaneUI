@@ -2,40 +2,66 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Stats
---  The stats in the stats' window (Sidebar.lua), as the game's sheet lists
---  them (Camelot's CharacterStatsPaneScrollBox, and its pet's): under the stone, the
---  game's scrolling list (CharacterStatsPaneScrollBoxTemplate) of its
---  categories (PAPERDOLL_STATCATEGORIES: general, attributes, weapons,
---  modifiers, defense) and then the resistances. Every row is the game's
---  (its element templates), filled by the game's own function for that stat
---  (PAPERDOLL_STATINFO: its words, its value, its tooltip). The list itself is
---  put together by our code as the game puts its own together
---  (CharacterStatsPaneScrollBoxMixin:UpdateStats), with frames of ours: the
---  game's sheet and its frames are never touched.
+--  The stats in the stats' window (Sidebar.lua), the player's and the pet's,
+--  on the journal's page in Sane UI's own look (Doc/guides/interface-style.md):
+--  each of the game's categories (PAPERDOLL_STATCATEGORIES: general,
+--  attributes, weapons, modifiers, defense; then the resistances) a section
+--  with its head written in pencil and ruled, its stats in lines under it
+--  (the name at the left, the value at the right). The sections stand in as
+--  many columns as the window's width holds, in the game's order down each
+--  column and on to the next, the columns as even in height as the order
+--  lets them be: a narrow window is one list, a wide one a page of columns
+--  (never wider than Stats.COLUMN_MOST each, together in the page's middle).
+--  Where all five fit side by side over the columns, the primary attributes
+--  stand above them as five boxes with their value written large.
+--
+--  What a stat says is the game's: each line is filled by the game's own
+--  function for its stat (PAPERDOLL_STATINFO: its name, its value, its
+--  tooltip), as the game fills its own rows, and its tooltip is the game's.
+--  Which stats show is decided as the game decides it (its specs, roles and
+--  show functions; a stat at its hideAt value left out). The game's colours in
+--  a value (green for a bonus, red for a malus) are darkened to read on the
+--  paper.
 --
 --  While the game restricts addons (a fight, an encounter: Core.Restricted)
 --  stats are secret to addon code and the game's functions cannot do their
---  sums on them: the list stays as it was, and is drawn anew once the
+--  sums on them: the page stays as it was, and is drawn anew once the
 --  restriction is over. Drawn when shown, and when the game says a stat
 --  changed: a frame later, however many such events come at once.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
+local J = Core.Journal
+local Paper = ns.Paper
 local Stats = {}
 ns.Stats = Stats
 
-Stats.BOTTOM = 8 -- room under the last row, as the game's list keeps it
+local Fit = Paper.Fit
+Stats.PAD = Fit(12)        -- the page's margin round the sections
+Stats.COLUMN = Fit(200)    -- the least width of a column; a window this wide (and its margins) is one list
+Stats.COLUMN_MOST = Fit(300) -- the most: on a wider page the columns stand together in its middle
+Stats.GAP = Fit(26)        -- between two columns
+Stats.SPACE = Fit(14)      -- between two sections in a column
+Stats.HEAD = Fit(26)       -- a section's head with its rule
+Stats.ROW = Fit(20)        -- a stat's line
+Stats.TILE = { Fit(78), Fit(60) } -- a primary attribute's box: its least width, its height
+Stats.TILE_GAP = Fit(10)
+Stats.STEP = Fit(40)       -- the wheel scrolls this far
 
--- The resistances under the stats, as the game lists them: its school's words, its damage class, its atlas.
-Stats.RESISTANCES = {
-    { word = "DAMAGE_SCHOOL7", class = "Arcane", atlas = "UI-Character-Info-Resistance-Arcane" },
-    { word = "DAMAGE_SCHOOL3", class = "Fire", atlas = "UI-Character-Info-Resistance-Fire" },
-    { word = "DAMAGE_SCHOOL5", class = "Frost", atlas = "UI-Character-Info-Resistance-Frost" },
-    { word = "DAMAGE_SCHOOL4", class = "Nature", atlas = "UI-Character-Info-Resistance-Nature" },
-    { word = "DAMAGE_SCHOOL6", class = "Shadow", atlas = "UI-Character-Info-Resistance-Shadow" },
+-- The primary attributes (the game's stat names): written large in boxes while all of them fit side by side.
+Stats.PRIMARY = { STRENGTH = true, AGILITY = true, STAMINA = true, INTELLECT = true, SPIRIT = true }
+
+-- The resistances under the stats, as the game lists them: its damage class.
+Stats.RESISTANCES = { "Arcane", "Fire", "Frost", "Nature", "Shadow" }
+
+local Fonts = {
+    head = Paper.Font("SaneUIStatsHead", 15, true),
+    label = Paper.Font("SaneUIStatsLabel", 14),
+    value = Paper.Font("SaneUIStatsValue", 14, true),
+    tileLabel = Paper.Font("SaneUIStatsTileLabel", 13),
+    tileValue = Paper.Font("SaneUIStatsTileValue", 24, true),
 }
 
-local lists = {} -- [unit] = the game's scrolling list, ours: the player's, the pet's
-local scratch    -- a row of ours the game's functions fill to tell whether a stat shows (its value)
+local views = {}   -- [unit] = the page for the player, for the pet
 local owed = false -- a refresh was asked for under a restriction
 
 local function Game(name, ...)
@@ -43,28 +69,9 @@ local function Game(name, ...)
     if type(fn) == "function" then return fn(...) end
 end
 
--- The row a list element is drawn with: the game's for a category's head, for a stat with an icon, for one without.
-local function Template(element)
-    if element.isHeader then return "CharacterStatFrameCategoryScrollBoxElementTemplate" end
-    if element.texture or element.atlas then return "CharacterStatFrameScrollBoxIconElementTemplate" end
-    return "CharacterStatFrameScrollBoxLabelElementTemplate"
-end
-
--- A row drawn by the game's Init, which works its stat out anew: while the game restricts addons the stats are
--- secret to addon code (as Stats.Refresh waits), so a row the list lays out again then is left as it is.
-local function Draw(row, element)
-    if Core.Restricted() then return end
-    row:Init(element)
-end
-
-local function Initialize(row, element)
-    ns.Safe("character", Draw, row, element)
-end
-
-local function Make(factory, element)
-    factory(Template(element), Initialize)
-end
-
+-------------------------------------------------------------------------------
+--  Which stats show, as the game decides it
+-------------------------------------------------------------------------------
 -- The character's specialization and its role, where the game has them (a stat may show for some only).
 local function Spec()
     local specs = rawget(_G, "C_SpecializationInfo")
@@ -90,84 +97,340 @@ local function Shown(stat, spec, role, unit)
     return true
 end
 
--- The list's elements for a unit, as the game makes its own: each category of that unit's (the player's, or the
--- pet's) with its head once a stat of it shows, then its stats whose value is not the one they hide at; then the
--- resistances.
-local function Elements(unit)
-    local elements = {}
+-------------------------------------------------------------------------------
+--  A stat's line (or box): the game's function fills it
+-------------------------------------------------------------------------------
+-- The game's colours in a value darkened to read on the paper; the label's colon taken off (the line sets it apart).
+local function Inked(text)
+    return (tostring(text or ""):gsub("|c(%x%x)(%x%x)(%x%x)(%x%x)", function(_, r, g, b)
+        return "|c" .. Paper.InkHex(tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255)
+    end))
+end
+
+local function Bare(label)
+    return (tostring(label or ""):gsub("%s*[:：]%s*$", ""))
+end
+
+-- The game's tooltip for the stat, as its rows show it: the stat's own function, else its tooltip lines.
+local function Enter(row)
+    row.shade:Show()
+    if row.onEnterFunc then return row:onEnterFunc() end
+    if rawget(_G, "PaperDollStatTooltip") then return PaperDollStatTooltip(row) end
+    if not row.tooltip then return end
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+    GameTooltip:SetText(row.tooltip)
+    if row.tooltip2 then GameTooltip:AddLine(row.tooltip2, 1, 0.82, 0, true) end
+    GameTooltip:Show()
+end
+
+local function Leave(row)
+    row.shade:Hide()
+    GameTooltip:Hide()
+end
+
+-- A line of ours with what the game's functions write into (Label, Value, the tooltip's fields): its shading under
+-- the mouse, every other line's light stripe, and a pencil box for when it stands as an attribute's box.
+local function Row(view)
+    local row = CreateFrame("Button", nil, view.child)
+    row.zebra = row:CreateTexture(nil, "BACKGROUND")
+    row.zebra:SetAllPoints()
+    row.zebra:SetColorTexture(Paper.ZEBRA[1], Paper.ZEBRA[2], Paper.ZEBRA[3], Paper.ZEBRA[4])
+    row.shade = row:CreateTexture(nil, "BACKGROUND", nil, 1)
+    row.shade:SetAllPoints()
+    row.shade:SetColorTexture(Paper.SHADE[1], Paper.SHADE[2], Paper.SHADE[3], Paper.SHADE[4])
+    row.shade:Hide()
+    row.Label = row:CreateFontString(nil, "ARTWORK")
+    row.Label:SetWordWrap(false)
+    row.Value = row:CreateFontString(nil, "ARTWORK")
+    row.Value:SetWordWrap(false)
+    row.box = J.Box(row, 0.5)
+    row:SetScript("OnEnter", ns.Guard(Enter))
+    row:SetScript("OnLeave", ns.Guard(Leave))
+    return row
+end
+
+-- A line as a line: the name at the left, the value at the right, in graphite.
+local function AsLine(row, striped)
+    row.Label:SetFontObject(Fonts.label)
+    row.Label:SetTextColor(Paper.SOFT[1], Paper.SOFT[2], Paper.SOFT[3], 1)
+    row.Label:ClearAllPoints()
+    row.Label:SetPoint("LEFT", Fit(5), 0)
+    row.Label:SetPoint("RIGHT", row.Value, "LEFT", -Fit(6), 0)
+    row.Label:SetJustifyH("LEFT")
+    row.Value:SetFontObject(Fonts.value)
+    row.Value:ClearAllPoints()
+    row.Value:SetPoint("RIGHT", -Fit(5), 0)
+    row.Value:SetJustifyH("RIGHT")
+    row.zebra:SetShown(striped)
+    for _, part in ipairs(row.box.parts) do part:Hide() end
+end
+
+-- A line as an attribute's box: the name small at its top, the value large under it, a pencil box round it.
+local function AsTile(row)
+    row.Label:SetFontObject(Fonts.tileLabel)
+    row.Label:SetTextColor(Paper.SOFT[1], Paper.SOFT[2], Paper.SOFT[3], 1)
+    row.Label:ClearAllPoints()
+    row.Label:SetPoint("TOPLEFT", Fit(4), -Fit(7))
+    row.Label:SetPoint("TOPRIGHT", -Fit(4), -Fit(7))
+    row.Label:SetJustifyH("CENTER")
+    row.Value:SetFontObject(Fonts.tileValue)
+    row.Value:ClearAllPoints()
+    row.Value:SetPoint("BOTTOM", 0, Fit(6))
+    row.Value:SetJustifyH("CENTER")
+    row.zebra:Hide()
+    for index, part in ipairs(row.box.parts) do part:SetShown(index ~= 5) end
+end
+
+-- A line taken for a stat, its tooltip's fields as the game's rows start them.
+local function Take(view)
+    local row = table.remove(view.spare) or Row(view)
+    row.onEnterFunc, row.UpdateTooltip, row.tooltip, row.tooltip2, row.tooltip3 = nil, nil, nil, nil, nil
+    row.numericValue = nil
+    row.Label:SetText("")
+    row.Value:SetText("")
+    row:Show()
+    return row
+end
+
+local function Give(view, row)
+    row:Hide()
+    row:ClearAllPoints()
+    view.spare[#view.spare + 1] = row
+end
+
+-- Filled by the game's function for its stat: shown unless the game hides it or it is at the value it hides at.
+local function Fill(view, unit, stat, info)
+    local row = Take(view)
+    local value = Core.Plain(info.updateFunc(row, unit, stat.id))
+    if not row:IsShown() or (stat.hideAt ~= nil and value == stat.hideAt) then
+        Give(view, row)
+        return nil
+    end
+    row.Label:SetText(Bare(row.Label:GetText()))
+    row.Value:SetText(Inked(row.Value:GetText()))
+    row.stat = stat.stat
+    return row
+end
+
+-- A resistance's line, filled by the game's own function for it (else as it fills one: the name, the value with
+-- its bonus, the tooltip).
+local function Resistance(view, unit, name)
+    local class = Enum and Enum.Damageclass and Enum.Damageclass[name]
+    if not class then return nil end
+    local row = Take(view)
+    if rawget(_G, "PaperDollFrame_SetResistance") then
+        PaperDollFrame_SetResistance(row, unit, class)
+    else
+        local _, _, effective, bonus = UnitResistance(unit, class)
+        local word = Core.Word("RESISTANCE" .. class .. "_NAME", name)
+        row.Label:SetText(word)
+        local text = Game("BreakUpLargeNumbers", effective) or tostring(effective or "")
+        row.Value:SetText(Game("PaperDollFrame_FormatBonusValue", text, bonus or 0) or text)
+        Game("PaperDollFrame_SetResistanceTooltips", row, word, effective, unit, class)
+    end
+    row.Label:SetText(Bare(row.Label:GetText()))
+    row.Value:SetText(Inked(row.Value:GetText()))
+    row.stat = nil
+    return row
+end
+
+-------------------------------------------------------------------------------
+--  The sections: what the page holds now
+-------------------------------------------------------------------------------
+local function Head(view, index)
+    local head = view.heads[index]
+    if not head then
+        head = CreateFrame("Frame", nil, view.child)
+        head:SetHeight(Stats.HEAD)
+        head.text = head:CreateFontString(nil, "ARTWORK")
+        head.text:SetFontObject(Fonts.head)
+        head.text:SetPoint("BOTTOMLEFT", Fit(3), Fit(5))
+        head.text:SetPoint("BOTTOMRIGHT", -Fit(3), Fit(5))
+        head.text:SetJustifyH("LEFT")
+        head.text:SetWordWrap(false)
+        Paper.Rule(head, "BOTTOM")
+        view.heads[index] = head
+    end
+    head:Show()
+    return head
+end
+
+-- Every line given back, then the sections anew: each category of the unit's with the stats that show, then the
+-- resistances. A section of the primary attributes alone is marked: it may stand as boxes.
+local function Sections(view)
+    for _, section in ipairs(view.sections) do
+        for _, row in ipairs(section.rows) do Give(view, row) end
+    end
+    local sections, unit = {}, view.unit
     local categories, info = rawget(_G, "PAPERDOLL_STATCATEGORIES"), rawget(_G, "PAPERDOLL_STATINFO")
-    if type(categories) ~= "table" or type(info) ~= "table" then return elements end
-    local spec, role = Spec()
-    for _, category in ipairs(categories) do
-        if (category.unit or "player") == unit then
-            local stats = {}
-            for _, stat in ipairs(category.stats or {}) do
-                if info[stat.stat] and Shown(stat, spec, role, unit) then stats[#stats + 1] = stat end
-            end
-            if #stats > 0 then
-                elements[#elements + 1] = { isHeader = true, name = category.categoryName }
-                local index = 1
-                for _, stat in ipairs(stats) do
-                    local value = Core.Plain(info[stat.stat].updateFunc(scratch, unit, stat.id))
-                    if value == nil or value ~= stat.hideAt then
-                        elements[#elements + 1] = {
-                            isHeader = false, unit = unit, name = stat.stat, id = stat.id, statIndex = index,
-                            texture = stat.texture, textureCoordL = stat.textureCoordL, textureCoordR = stat.textureCoordR,
-                            textureCoordT = stat.textureCoordT, textureCoordB = stat.textureCoordB, hideAt = stat.hideAt,
-                        }
-                        index = index + 1
+    if type(categories) == "table" and type(info) == "table" then
+        local spec, role = Spec()
+        for _, category in ipairs(categories) do
+            if (category.unit or "player") == unit then
+                local section = { name = category.categoryName, rows = {}, primary = true }
+                for _, stat in ipairs(category.stats or {}) do
+                    if info[stat.stat] and Shown(stat, spec, role, unit) then
+                        local row = Fill(view, unit, stat, info[stat.stat])
+                        if row then
+                            section.rows[#section.rows + 1] = row
+                            section.primary = section.primary and Stats.PRIMARY[stat.stat] or false
+                        end
                     end
                 end
+                if #section.rows > 0 then sections[#sections + 1] = section end
             end
         end
     end
-    elements[#elements + 1] = { isHeader = true, name = Core.Word("STAT_CATEGORY_RESISTANCE", "Resistance") }
-    local classes = Enum and Enum.Damageclass or {}
-    for index, school in ipairs(Stats.RESISTANCES) do
-        local class = classes[school.class]
-        local _, _, effective, bonus = UnitResistance(unit, class)
-        local name = Core.Word(school.word, school.class)
-        local tips = {}
-        Game("PaperDollFrame_SetResistanceTooltips", tips, name, effective, unit, class)
-        local text = Game("BreakUpLargeNumbers", effective) or tostring(effective or "")
-        text = Game("PaperDollFrame_FormatBonusValue", text, bonus) or text
-        elements[#elements + 1] = {
-            isHeader = false, statIndex = index, atlas = school.atlas, labelText = name, valueText = text,
-            numericValue = effective, tooltip = tips.tooltip, tooltip2 = tips.tooltip2, tooltip3 = tips.tooltip3,
-        }
+    local resist = { name = Core.Word("STAT_CATEGORY_RESISTANCE", "Resistances"), rows = {} }
+    for _, name in ipairs(Stats.RESISTANCES) do
+        resist.rows[#resist.rows + 1] = Resistance(view, unit, name)
     end
-    return elements
+    if #resist.rows > 0 then sections[#sections + 1] = resist end
+    view.sections = sections
 end
 
--- The game's list for a unit (the player's, or the pet's) under the pane's stone, to the pane's bottom right; the
--- rows the game's. Returns it.
-function Stats.Build(pane, stone, unit)
-    local made, frame = pcall(CreateFrame, "Frame", nil, pane, "CharacterStatsPaneScrollBoxTemplate")
-    if not made then return ns.Report("character", "this client has no stats list: " .. tostring(frame)) end
-    frame:SetPoint("TOPLEFT", stone, "BOTTOMLEFT")
-    frame:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT")
-    local view = CreateScrollBoxListLinearView(0, Stats.BOTTOM, 0, 0, 0)
-    view:SetElementFactory(function(factory, element) ns.Safe("character", Make, factory, element) end)
-    ScrollUtil.InitScrollBoxListWithScrollBar(frame.ScrollBox, frame.ScrollBar, view)
-    if not scratch then
-        scratch = CreateFrame("Frame", nil, pane, "CharacterStatFrameTemplate")
-        scratch:Hide()
-    end
-    frame.unit = unit or "player"
-    lists[frame.unit] = frame
-    return frame
+-------------------------------------------------------------------------------
+--  The layout: as many columns as the width holds
+-------------------------------------------------------------------------------
+local function Height(section)
+    return Stats.HEAD + #section.rows * Stats.ROW
 end
 
--- The lists shown drawn as the stats are now, unless the game restricts addons: then once it no longer does.
+-- The sections (in order) cut into n runs, one a column, so that the highest column is as low as it can be:
+-- returns the index each column starts at. The sections are few, so every cut is tried.
+local function Cuts(heights, n)
+    local count = #heights
+    local best, bestStarts = math.huge, nil
+    local starts = {}
+    local function Try(column, from, tallest)
+        if tallest >= best then return end
+        starts[column] = from
+        if column == n then
+            local h = -Stats.SPACE
+            for i = from, count do h = h + heights[i] + Stats.SPACE end
+            tallest = math.max(tallest, h)
+            if tallest < best then
+                best = tallest
+                bestStarts = { unpack(starts, 1, n) }
+            end
+            return
+        end
+        local h = -Stats.SPACE
+        for upto = from, count - (n - column) do
+            h = h + heights[upto] + Stats.SPACE
+            Try(column + 1, upto + 1, math.max(tallest, h))
+        end
+    end
+    Try(1, 1, 0)
+    return bestStarts or { 1 }
+end
+
+-- Everything put in its place for the page's width now: the columns first (how many, how wide, where the block
+-- of them starts), then the attributes' boxes over the block's width, then the sections down the columns.
+local function Layout(view)
+    local width = view.scroll:GetWidth() or 0
+    if width <= 0 then return end
+    local inner = width - 2 * Stats.PAD
+    view.child:SetWidth(width)
+    local tiled, rest = nil, {}
+    for _, section in ipairs(view.sections) do
+        if section.primary and #section.rows > 1 and not tiled then tiled = section else rest[#rest + 1] = section end
+    end
+    local function Columns(count)
+        local columns = math.max(1, math.min(count, math.floor((inner + Stats.GAP) / (Stats.COLUMN + Stats.GAP))))
+        local columnWidth = math.min(Stats.COLUMN_MOST, (inner - (columns - 1) * Stats.GAP) / columns)
+        return columns, columnWidth, columns * columnWidth + (columns - 1) * Stats.GAP
+    end
+    local columns, columnWidth, block = Columns(#rest)
+    -- the attributes as boxes only where all of them fit side by side over the block; else a section like the others
+    if tiled and #tiled.rows * Stats.TILE[1] + (#tiled.rows - 1) * Stats.TILE_GAP > block then
+        table.insert(rest, 1, tiled)
+        tiled = nil
+        columns, columnWidth, block = Columns(#rest)
+    end
+    local left = Stats.PAD + math.floor((inner - block) / 2)
+    local y = Stats.PAD
+    if tiled then
+        local n = #tiled.rows
+        local w = (block - (n - 1) * Stats.TILE_GAP) / n
+        for index, row in ipairs(tiled.rows) do
+            AsTile(row)
+            row:ClearAllPoints()
+            row:SetSize(w, Stats.TILE[2])
+            row:SetPoint("TOPLEFT", left + (index - 1) * (w + Stats.TILE_GAP), -y)
+        end
+        y = y + Stats.TILE[2] + Stats.SPACE
+    end
+    for _, head in ipairs(view.heads) do head:Hide() end
+    local heights = {}
+    for index, section in ipairs(rest) do heights[index] = Height(section) end
+    local starts = Cuts(heights, columns)
+    local tallest, column = y, 0
+    local x, top = left, y
+    for index, section in ipairs(rest) do
+        if starts[column + 1] == index then
+            column = column + 1
+            x = left + (column - 1) * (columnWidth + Stats.GAP)
+            y = top
+        else
+            y = y + Stats.SPACE
+        end
+        local head = Head(view, index)
+        head.text:SetText(section.name or "")
+        head:ClearAllPoints()
+        head:SetPoint("TOPLEFT", x, -y)
+        head:SetWidth(columnWidth)
+        y = y + Stats.HEAD
+        for line, row in ipairs(section.rows) do
+            AsLine(row, line % 2 == 0)
+            row:ClearAllPoints()
+            row:SetSize(columnWidth, Stats.ROW)
+            row:SetPoint("TOPLEFT", x, -y)
+            y = y + Stats.ROW
+        end
+        tallest = math.max(tallest, y)
+    end
+    view.child:SetHeight(math.max(1, tallest + Stats.PAD))
+    local most = math.max(0, view.child:GetHeight() - (view.scroll:GetHeight() or 0))
+    if view.scroll:GetVerticalScroll() > most then view.scroll:SetVerticalScroll(most) end
+end
+
+-- The wheel over the page: a step up or down, never past the ends.
+local function Wheel(view, delta)
+    local most = math.max(0, (view.child:GetHeight() or 0) - (view.scroll:GetHeight() or 0))
+    view.scroll:SetVerticalScroll(math.max(0, math.min(most, view.scroll:GetVerticalScroll() - delta * Stats.STEP)))
+end
+
+-------------------------------------------------------------------------------
+--  The page
+-------------------------------------------------------------------------------
+-- The page for a unit (the player's, or the pet's) filling pane: a scrolling page of sections. Returns its frame.
+function Stats.Build(pane, unit)
+    local view = { unit = unit or "player", sections = {}, heads = {}, spare = {} }
+    local scroll = CreateFrame("ScrollFrame", nil, pane)
+    scroll:SetAllPoints()
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", ns.Guard(function(_, delta) Wheel(view, delta) end))
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetSize(1, 1)
+    scroll:SetScrollChild(child)
+    scroll:SetScript("OnSizeChanged", ns.Guard(function() Layout(view) end))
+    view.scroll, view.child = scroll, child
+    views[view.unit] = view
+    return scroll
+end
+
+-- The pages shown drawn as the stats are now, unless the game restricts addons: then once it no longer does.
 function Stats.Refresh()
     if Core.Restricted() then
         owed = true
         return
     end
     owed = false
-    for unit, list in pairs(lists) do
-        if list:IsVisible() and (unit == "player" or UnitExists(unit)) then
-            list.ScrollBox:SetDataProvider(CreateDataProvider(Elements(unit)), ScrollBoxConstants.RetainScrollPosition)
+    for unit, view in pairs(views) do
+        if view.scroll:IsVisible() and (unit == "player" or UnitExists(unit)) then
+            Sections(view)
+            Layout(view)
         end
     end
 end
@@ -175,6 +438,11 @@ end
 -- Whether a refresh waits for a restriction to end.
 function Stats.Owed()
     return owed
+end
+
+-- A unit's page: its scroll frame, its sections and their lines (for the tests).
+function Stats.View(unit)
+    return views[unit or "player"]
 end
 
 local later = Core.Later(function() ns.Safe("character", Stats.Refresh) end)

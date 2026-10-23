@@ -251,6 +251,15 @@ function SceneAPI.Blizzard(name)
     Lab.LoadBlizzardAddOn(name)
     Lab.blizzardLoading = nil
 end
+-- Some files of one of Blizzard's addons alone (the newest export's, by their paths in the addon's folder), where the
+-- whole addon is more than the lab can load: what they define at their load, as the game runs them.
+function SceneAPI.BlizzardFiles(name, ...)
+    Lab.blizzardLoading = true
+    for i = 1, select("#", ...) do
+        Lab.RunBlizzardFile(name, Lab.blizzardCode .. "/Interface/AddOns/" .. name .. "/" .. select(i, ...))
+    end
+    Lab.blizzardLoading = nil
+end
 function SceneAPI.OnLogin(fn) logins[#logins + 1] = fn end
 function SceneAPI.Say(kind, from, text, channel) Lab.World.Chat(kind, from, text, channel) end
 function SceneAPI.Fire(event, ...) Lab.Fire(event, ...) end

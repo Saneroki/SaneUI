@@ -182,21 +182,16 @@ ModelSceneUtil = { SetUpCharacterSheetScene = function(scene)
     for actor in pairs(actors) do actor.requested, actor.aggressiveness, actor.position = 2, 4.8, { 0, 0, 0.04 } end
 end }
 
+-- The stats' page scrolls; the stats' tabs are as wide as their words (six a letter).
+W.methods.SetVerticalScroll = function(self, offset) self._scroll = offset end
+W.methods.GetVerticalScroll = function(self) return self._scroll or 0 end
+W.methods.GetUnboundedStringWidth = function(self) return #(self._text or "") * 6 end
 -- The game's side tabs (LargeSideTabButtonTemplate): an icon, checked or not, a handler for the left button let go.
 W.templates.LargeSideTabButtonTemplate = function(widget)
     widget.Icon = W.NewWidget("Texture", nil, widget)
     function widget:SetCustomOnMouseUpHandler(fn) self._mouseUp = fn end
 end
--- The game's stats list (the right pane): its scrolling list and rows, its table of stats, the resistances.
-W.templates.CharacterStatsPaneScrollBoxTemplate = function(widget)
-    widget.ScrollBox = W.NewWidget("Frame", nil, widget)
-    widget.ScrollBox.sets = 0
-    function widget.ScrollBox:SetDataProvider(provider) self.provider, self.sets = provider, self.sets + 1 end
-    widget.ScrollBar = W.NewWidget("Frame", nil, widget)
-end
-W.templates.CharacterStatFrameTemplate = function(widget)
-    widget.Label, widget.Value = W.NewWidget("FontString", nil, widget), W.NewWidget("FontString", nil, widget)
-end
+-- The game's stats: its table of stats, the resistances.
 CreateScrollBoxListLinearView = function()
     local view = {}
     function view:SetElementFactory(fn) self.factory = fn end
@@ -512,59 +507,66 @@ Slots.Place()
 -------------------------------------------------------------------------------
 --  The stats
 -------------------------------------------------------------------------------
-local list
-for _, widget in ipairs(W.frames) do
-    if rawget(widget, "unit") == "player" and type(rawget(widget, "ScrollBox")) == "table" then list = widget end
-end
-check(list and list._points[1][1] == "TOPLEFT" and list._points[1][2]._atlas == "UI-Character-Info-Stat-StoneBG3",
-    "the game's stats list under the stone of the stats' window")
+local Stats = ns.Stats
+local view = Stats.View("player")
+check(view and view.scroll:IsVisible(), "the stats' page in the stats' window, under the tabs")
 local function Names()
     local names = {}
-    for _, element in ipairs(list.ScrollBox.provider.elements) do
-        names[#names + 1] = element.isHeader and ("[" .. element.name .. "]") or (element.name or element.labelText)
+    for _, section in ipairs(view.sections) do
+        names[#names + 1] = "[" .. section.name .. "]"
+        for _, row in ipairs(section.rows) do names[#names + 1] = row.stat or row.Label._text end
     end
     return table.concat(names, " ")
 end
 check(Names() == "[General] HEALTH MOVESPEED [Modifiers] CRITCHANCE [Resistance] Arcane Fire Frost Nature Shadow",
     "the game's categories for the player, a stat at the value it hides at left out, a category with none shown left out, then the resistances: " .. Names())
-local fire = list.ScrollBox.provider.elements[8]
-check(fire.atlas == "UI-Character-Info-Resistance-Fire" and fire.valueText == "15" and fire.tooltip == "Fire 15",
-    "a resistance: the game's atlas, value and tooltip")
--- The rows are the game's: the list makes each with the game's template for it, and the game's Init fills it.
-local made = {}
-local function Factory(template, init)
-    local row = { inits = 0 }
-    function row:Init(element) self.inits, self.element = self.inits + 1, element end
-    init(row, list.ScrollBox.provider.elements[#made + 1])
-    made[#made + 1] = { template = template, row = row }
+local fire = view.sections[3].rows[2]
+check(fire.Value._text == "15" and fire.tooltip == "Fire 15", "a resistance: the game's value and tooltip")
+-- The lines are ours, filled by the game's function for their stat; the tooltip is the game's.
+local health = view.sections[1].rows[1]
+check(health.Value._text == "120" and health:GetParent() == view.child, "a stat's line filled by the game's function for it")
+health.onEnterFunc = function(row) GameTooltip._stat = row end
+health:GetScript("OnEnter")(health)
+check(GameTooltip._stat == health and health.shade:IsShown(), "its tooltip the game's own, the line shaded under the mouse")
+health:GetScript("OnLeave")(health)
+
+-- The layout: one list in a narrow window, columns in a wide one, as even as the order lets them be.
+local function Columns()
+    local xs, seen = {}, {}
+    for index in ipairs(view.sections) do
+        local x = view.heads[index]._points[1][4]
+        if not seen[x] then seen[x] = true xs[#xs + 1] = x end
+    end
+    return #xs
 end
-for _, element in ipairs(list.ScrollBox.provider.elements) do list.ScrollBox.view.factory(Factory, element) end
-check(made[1].template == "CharacterStatFrameCategoryScrollBoxElementTemplate" and made[2].template == "CharacterStatFrameScrollBoxLabelElementTemplate"
-    and made[7].template == "CharacterStatFrameScrollBoxIconElementTemplate" and made[2].row.inits == 1,
-    "each row the game's template for it: a category's head, a stat, a resistance with its icon; filled by the game's Init")
+view.scroll:SetWidth(Stats.COLUMN + 2 * Stats.PAD)
+view.scroll:GetScript("OnSizeChanged")(view.scroll)
+check(Columns() == 1, "a narrow window: one list")
+view.scroll:SetWidth(3 * Stats.COLUMN + 2 * Stats.GAP + 2 * Stats.PAD)
+view.scroll:GetScript("OnSizeChanged")(view.scroll)
+check(Columns() == 3 and view.heads[2]._points[1][4] > view.heads[1]._points[1][4], "a wide one: as many columns as fit, in the game's order")
+view.scroll:SetWidth(10 * Stats.COLUMN)
+view.scroll:GetScript("OnSizeChanged")(view.scroll)
+check(Columns() == 3, "never more columns than sections")
+check(health._width == view.heads[1]._width and health._height == Stats.ROW, "a line as wide as its column")
 
 -- A stat changes: drawn anew a frame later, once however many events come.
-local sets = list.ScrollBox.sets
 statValues.HASTE, shield = 3, true
 W.Fire("UNIT_STATS", "player")
 W.Fire("COMBAT_RATING_UPDATE")
 W.Wait(0)
-check(list.ScrollBox.sets == sets + 1 and Names():find("HASTE") and Names():find("%[Defense%] BLOCK"),
-    "a stat changed: the list drawn anew, once, a frame later")
--- Under a restriction the stats are secret to addon code: the list waits, and is drawn once it is over.
-sets = list.ScrollBox.sets
+check(Names():find("HASTE") and Names():find("%[Defense%] BLOCK"), "a stat changed: the page drawn anew a frame later")
+-- Under a restriction the stats are secret to addon code: the page waits, and is drawn once it is over.
+local before = Names()
 W.combat = true
 statValues.CRITCHANCE = 0
 W.Fire("UNIT_STATS", "player")
 W.Wait(0)
-check(list.ScrollBox.sets == sets and ns.Stats.Owed(), "in a fight the list stays as it was")
-local laidOut = made[2].row.inits
-list.ScrollBox.view.factory(function(_, init) init(made[2].row, made[2].row.element) end, made[2].row.element)
-check(made[2].row.inits == laidOut, "a row the list lays out again in a fight is left as it is: its stat is secret then")
+check(Names() == before and ns.Stats.Owed(), "in a fight the page stays as it was")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Wait(0)
-check(list.ScrollBox.sets == sets + 1 and not ns.Stats.Owed() and not Names():find("CRITCHANCE"), "the fight over: drawn anew")
+check(not ns.Stats.Owed() and not Names():find("CRITCHANCE"), "the fight over: drawn anew")
 
 -------------------------------------------------------------------------------
 --  The other characters
@@ -857,10 +859,11 @@ Stand()
 worn[2].texture = "other"
 W.Fire("PLAYER_EQUIPMENT_CHANGED", 2, false)
 check(drawn[neck].texture == "amulet", "hidden, the sheet does not listen to the game")
-sets = list.ScrollBox.sets
+local firstLine = view.sections[1].rows[1]
+statValues.HEALTH = 999
 W.Fire("UNIT_STATS", "player")
 W.Wait(0)
-check(list.ScrollBox.sets == sets, "hidden, the stats do not listen either")
+check(firstLine.Value._text ~= "999", "hidden, the stats do not listen either")
 
 -- A part that fails is noted; the others and the module go on.
 local broken = { Build = function() error("a broken part") end, Show = function() error("a broken part") end }

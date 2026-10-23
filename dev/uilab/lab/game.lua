@@ -58,6 +58,12 @@ return function(Lab)
         end
         return unpack(out)
     end
+    -- The game's format takes %F as %f (C's printf); Lua 5.1's does not.
+    local plainFormat = string.format
+    function string.format(fmt, ...)
+        if type(fmt) == "string" and fmt:find("F", 1, true) then fmt = fmt:gsub("(%%[-+ #0]*%d*%.?%d*)F", "%1f") end
+        return plainFormat(fmt, ...)
+    end
     function string.join(sep, ...) return table.concat({ ... }, sep) end
     function string.rtgsub(s, ...) return s:gsub(...) end
     G.strsplit, G.strjoin, G.strtrim = string.split, string.join, string.trim

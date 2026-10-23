@@ -118,6 +118,10 @@ DressUpTexturePath = function(race) return "bg-" .. race end
 local scenes = 0
 ModelSceneUtil = { SetUpCharacterSheetScene = function() scenes = scenes + 1 end }
 
+-- The stats' page scrolls; the stats' tabs are as wide as their words (six a letter).
+W.methods.SetVerticalScroll = function(self, offset) self._scroll = offset end
+W.methods.GetVerticalScroll = function(self) return self._scroll or 0 end
+W.methods.GetUnboundedStringWidth = function(self) return #(self._text or "") * 6 end
 -- The game's side tabs (LargeSideTabButtonTemplate): an icon, checked or not, a handler for the left button let go.
 W.templates.LargeSideTabButtonTemplate = function(widget)
     widget.Icon = W.NewWidget("Texture", nil, widget)
@@ -448,12 +452,14 @@ local Sidebar = ns.Sidebar
 check(stats and stats:IsShown() and Sidebar.Chosen() == "stats" and stats.title._text == "Character Stats",
     "the stats' window, the stats tab chosen, the head says so")
 local statsTab, gearTab, titlesTab, petTab = Sidebar.Button("stats"), Sidebar.Button("gear"), Sidebar.Button("titles"), Sidebar.Button("pet")
-check(statsTab._checked and not petTab:IsShown() and gearTab:IsEnabled() and titlesTab:IsEnabled(),
-    "the game's sidebar tabs: Stats chosen, no pet's tab without a pet, gear sets and titles to choose")
-check(gearTab._points[1][1] == "TOP", "three tabs centred without a pet's, as the game centres them")
+check(statsTab.shade:IsShown() and not petTab:IsShown() and gearTab:IsEnabled() and titlesTab:IsEnabled()
+    and statsTab.text._text == "Stats" and gearTab.text._text == "Equipment Manager",
+    "the game's sidebar tabs drawn in pencil: Stats chosen (shaded), no pet's tab without a pet, gear sets and titles to choose")
+check(gearTab._points[1][2] == statsTab:GetParent() and gearTab._points[1][4] == statsTab._width + Sidebar.TAB_GAP,
+    "the tabs side by side, each as wide as its word")
 titlesTab:GetScript("OnClick")(titlesTab)
-check(Sidebar.Chosen() == "titles" and stats.title._text == "Titles" and titlesTab._checked and not statsTab._checked,
-    "Titles chosen: its tab checked, the head says Titles")
+check(Sidebar.Chosen() == "titles" and stats.title._text == "Titles" and titlesTab.shade:IsShown() and not statsTab.shade:IsShown(),
+    "Titles chosen: its tab shaded, the head says Titles")
 local titleList = ListIn(stats)
 local function TitleNames()
     local names = {}
@@ -462,10 +468,9 @@ local function TitleNames()
 end
 check(TitleNames() == "None*, Jenkins, the Patient", "None first and worn, then the titles you know by name: " .. TitleNames())
 local titlesDrawn = titleList.provider
-titlesTab:SetChecked(false) -- the game's button unchecks itself when clicked
 titlesTab:GetScript("OnClick")(titlesTab)
-check(Sidebar.Chosen() == "titles" and titlesTab._checked and titleList.provider == titlesDrawn,
-    "the tab chosen clicked again: all stays as it is, its button checked")
+check(Sidebar.Chosen() == "titles" and titlesTab.shade:IsShown() and titleList.provider == titlesDrawn,
+    "the tab chosen clicked again: all stays as it is")
 titleList.rows[3]:GetScript("OnClick")(titleList.rows[3])
 check(titleCalls.worn == 1, "a click wears the title, by the game's own call")
 titleWorn = 1
@@ -479,8 +484,9 @@ for _, widget in ipairs(W.frames) do
     local rows = rawget(widget, "rows")
     if type(rows) == "table" and widget.provider and rows[1] and rows[1].data and rows[1].data.name == "Heal" then gearList = widget end
 end
-check(gearList and gearList.rows[2].check:IsShown() and gearList.rows[1].text._color[1] == 1,
-    "the sets by name, a tick on the one worn, red with an item lost")
+local lostColor = gearList and gearList.rows[1].text._color
+check(gearList and gearList.rows[2].check:IsShown() and lostColor[1] > lostColor[2] and lostColor[1] > lostColor[3],
+    "the sets by name, a tick on the one worn, red ink with an item lost")
 gearList.rows[1]:GetScript("OnClick")(gearList.rows[1], "LeftButton")
 check(gearList.rows[1].chosen:IsShown(), "a click chooses a set")
 gearList.rows[1]:GetScript("OnDoubleClick")(gearList.rows[1])
@@ -516,7 +522,7 @@ end
 hasPet = true
 W.Fire("UNIT_PET", "player")
 W.Wait(0)
-check(petTab:IsShown() and gearTab._points[1][1] == "TOPRIGHT", "a pet: its tab comes, the four as the game sets them")
+check(petTab:IsShown() and petTab._points[1][4] > titlesTab._points[1][4], "a pet: its tab comes, after the others")
 petTab:GetScript("OnClick")(petTab)
 check(Sidebar.Chosen() == "pet" and stats.title._text == "Pet", "the pet's tab chosen")
 hasPet = false

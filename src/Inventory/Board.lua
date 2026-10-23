@@ -65,9 +65,9 @@ Board.ICONS = {
 }
 
 -- The windows in Sane UI's own look (Doc/guides/interface-style.md, Core.Journal): the character on its doll (its
--- own leather and paper, "bare"), the bags, the bank and the alts on the journal's page. The others keep Core's
--- dark plate for now.
-Board.DRESS = { character = "bare", bags = "journal", bank = "journal", alts = "journal" }
+-- own leather and paper, "bare"), the stats, the bags, the bank and the alts on the journal's page. The others keep
+-- Core's dark plate for now.
+Board.DRESS = { character = "bare", stats = "journal", bags = "journal", bank = "journal", alts = "journal" }
 
 -- The windows in the dropdown's order; those the first layout holds.
 Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "bank", "alts" }

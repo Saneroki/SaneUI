@@ -6,6 +6,32 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the character's stats a page of our own that follows its window (Saneroki, 2026-10-23)
+- **The stats' window on the journal's page** (`Board.DRESS.stats = "journal"`), no longer the game's right pane
+  (its stone, background and scrolling list of its rows). `Sheet/Stats.lua` anew: each stat a line of ours
+  (`Label`, `Value`, the tooltip's fields) filled by the game's own `PAPERDOLL_STATINFO[stat].updateFunc`, as the
+  game fills its rows; its colon taken off, the game's colour codes in a value darkened for the paper
+  (`Paper.InkHex`); its tooltip the game's (`onEnterFunc`, else `PaperDollStatTooltip`); the resistances by the
+  game's `PaperDollFrame_SetResistance`. A stat the game hides, or at its `hideAt`, is left out.
+- **Layout that follows the width:** the categories are sections (head in Kalam Bold with a pencil rule, lines with a
+  faint stripe on every other one) in as many columns as fit (`Stats.COLUMN` to `Stats.COLUMN_MOST` wide, the block
+  of them centred), cut in the game's order so the tallest column is as low as it can be (`Cuts`, every cut tried);
+  one column in a narrow window. The primary attributes (a section of only `Stats.PRIMARY`) stand over the columns
+  as five pencil boxes with the value large (`AsTile`) when they fit across the block, else a section like the
+  others. A `ScrollFrame` with the wheel; laid out again on every size change.
+- **The tabs** (`Sheet/Sidebar.lua`): drawn tabs in pencil (a pencil box, the word in Kalam; the chosen one strong
+  and shaded, one the game has nothing for faded) in a row with a rule under it, as wide as their words, squeezed to
+  share a narrow row. The window's least width is one column's.
+- **Gear sets and titles on the paper:** lines with the pencil's shading, the hand-drawn tick (Kalam's root sign), a
+  set's icon in a pencil slot, red ink for a set with an item lost; Equip, Save and New Set are pencil boxes
+  (`Gear.lua`, `Titles.lua`). `List.New` takes `paper = true` (without the game's long lines).
+- **The lab:** the inventory scene shows the stats, filled by the game's own character sheet files
+  (`Lab.BlizzardFiles`, new: some files of one of Blizzard's addons, from the newest export); the lab's client got
+  what those ask (`BreakUpLargeNumbers`, `GetUnitSpeed`, `LE_UNIT_STAT_*`, the ratings and enemy chances as zero, the
+  defense skill, `C_PaperDollInfo`'s armor share and shield) and `format`'s `%F`.
+- Tests: `dev/tests/inventory.lua` 143 checks (the sections, a resistance, the game's function and tooltip, one
+  column narrow and three wide, the restriction), `dev/tests/sheet.lua` 95 (the drawn tabs, red ink).
+
 ### Nameplates: the outline one screen pixel at every size (Saneroki, 2026-10-23)
 - **Fixed** (`Scale.lua`, `Plate.lua`): the border's pixel (and the bar's inset, the caps) was worked out at a plate's
   first size, so as plates grew in from nothing or shrank with distance it came out several pixels wide. A plate is

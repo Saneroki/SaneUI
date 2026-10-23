@@ -12,6 +12,7 @@ local _, ns = ...
 --          inset = { left, top, right, bottom },  -- from the parent's sides (List.INSET without)
 --          extent = function(element) return 30 end,  -- a row's height
 --          draw = function(row, element) end,         -- a row drawn for its element
+--          paper = true,                              -- on the journal's page: without the game's lines
 --      })
 --      ns.List.Fill(list, elements)   -- what it lists now, its scroll position kept
 --      ns.List.Redraw(list)           -- the rows on screen drawn anew (a choice or highlight changed)
@@ -48,8 +49,10 @@ function List.New(parent, options)
     local bar = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
     bar:SetPoint("TOPLEFT", box, "TOPRIGHT", 5, -2)
     bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 5, 4)
-    Line(box, "TOP")
-    Line(box, "BOTTOM")
+    if not options.paper then
+        Line(box, "TOP")
+        Line(box, "BOTTOM")
+    end
     list.init = function(row, element) ns.Safe("character", options.draw, row, element) end
     local view = CreateScrollBoxListLinearView()
     view:SetElementExtentCalculator(function(_, element)

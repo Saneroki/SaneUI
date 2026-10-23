@@ -56,7 +56,14 @@ Everything the game's (Camelot) character window has, in our panel:
   durability colour, the game's tooltip (`GameTooltip:SetInventoryItem`), and its clicks: pick up, put down,
   swap, link, compare (the game's own item functions, where the game lets addon code call them).
 - **The stats** as the game's right pane lists them (`PaperDollFrameStats.lua`): its categories, values and
-  tooltips.
+  tooltips, each stat filled by the game's own function for it, laid out our own way (*The stats' page*).
+- **The stats' page (Saneroki, 2026-10-23):** not a long narrow list but a page that fits its window: each of the
+  game's categories a section (its head written and ruled in pencil, a line a stat: name left, value right), the
+  sections in as many columns as the window's width holds (each 200 to 300 units at the words' first size, as even
+  in height as the game's order lets them be, together in the page's middle), one list in a narrow window. The
+  primary attributes stand over the columns as five pencil boxes with their value written large where they fit
+  side by side. The sidebar's tabs are drawn tabs in pencil over the page; the gear sets and titles are lines on
+  the paper. Built the same day.
 - **Its tabs:** Reputation, Skills, Honor (PvP rank), and what else Camelot's `CHARACTER_FRAME_TAB` lists, each
   as the game draws it.
 - **Windows of their own (Saneroki, 2026-10-20):** not one sheet with side tabs, but each part a window on the
@@ -66,8 +73,8 @@ Everything the game's (Camelot) character window has, in our panel:
   style (`Doc/guides/interface-style.md`), still sized on the board by dragging the lines between windows. Built
   the same day: the character on the doll (its own leather and paper; slots in arcs, strips with each item's
   words, the live model on the doll's ground), the bags, the bank and the alts on the journal's page (Core's
-  `Core.Journal`, the board's `dress`). The stats and the game's tabs' windows keep the game's art for now; they
-  are next.
+  `Core.Journal`, the board's `dress`). The stats followed on 2026-10-23 (*The stats' page*); the game's tabs'
+  windows keep the game's art for now; they are next.
 - **Built from Blizzard's code,** its behaviour, layout and sizes (and, for the windows not made over yet, its
   art by path), the game's words
   (`GlobalStrings`) and behaviour, rewritten for our panel where it must be:
@@ -218,7 +225,7 @@ character Core has not read slot by slot yet (it has not logged in since) shows 
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear
    on a paper doll.
 5. **Sane UI's own look** (built 2026-10-22): the character, the bags, the bank and the alts in the journal's
-   look; next the stats and the windows of the game's tabs.
+   look; the stats on 2026-10-23 (columns that follow the window's width); next the windows of the game's tabs.
 6. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
    of sight while ours is chosen), and *Classic windows* in the full window's dropdown for the game's own.
 

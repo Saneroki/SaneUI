@@ -248,6 +248,57 @@ return function(Lab)
         GetSpellBonusHealing = "healing", GetHitModifier = "hit", GetSpellHitModifier = "spellHit" }) do
         G[name] = function() return ((Lab.world.player or {}).stats or {})[field] or 0 end
     end
+    -- The client's numbers for the five attributes (UnitStat's index), and how the character moves now: on foot.
+    for i, name in ipairs({ "STRENGTH", "AGILITY", "STAMINA", "INTELLECT", "SPIRIT" }) do
+        if rawget(G, "LE_UNIT_STAT_" .. name) == nil then G["LE_UNIT_STAT_" .. name] = i end
+    end
+    G.IsSwimming = function() return false end
+    G.IsFlying = function() return false end
+    G.IsFalling = function() return false end
+    -- What the game's character sheet asks besides (its stats files): plain numbers of a character with no ratings,
+    -- what an attribute gives none of its own, its defense its level's skill, no enemy beyond its level.
+    local function zero() return 0 end
+    for _, name in ipairs({ "GetAttackPowerForStat", "GetRangedAttackPowerForStat", "GetCritChanceFromStat",
+        "GetSpellCritChanceFromStat", "GetDodgeChanceFromAttribute", "GetHealthRegenFromSpirit", "GetManaRegenFromSpirit",
+        "GetArmorPenetration", "GetCombatRating", "GetCombatRatingBonus", "GetExpertisePercent", "GetMeleeHaste",
+        "GetOffhandHitModifier", "GetRangedHitModifier", "GetShieldBlock", "UnitSpellHaste",
+        "GetSpellPenetration", "GetEnemyChanceToMiss", "GetEnemyCritChance", "GetEnemyCrushingBlowChance",
+        "GetEnemyDodgeChance", "GetEnemyParryChance", "GetEnemySkillDifference", "ExpectedSpellResistance",
+        "GetShapeshiftForm" }) do
+        G[name] = zero
+    end
+    G.GetHealthRegen = function() return 0, 0 end
+    G.GetExpertise = function() return 0, 0, 0 end
+    G.GetRangedHaste = function() return 0, 0 end
+    G.GetOverrideAPBySpellPower = zero
+    G.GetOverrideSpellPowerByAP = zero
+    G.IsDualWielding = function() return false end
+    G.IsRangedWeapon = function() return false end
+    G.UnitHPPerStamina = function() return 10 end
+    G.GetPVPGearStatRules = function() return false end
+    G.ClassicExpansionAtLeast = function(expansion) return (tonumber(expansion) or 0) <= 0 end
+    local function defense(unit) local level = (U(unit) or {}).level or 1; return level * 5, 0 end
+    G.UnitDefenseSkill = defense
+    -- The character sheet's own questions: armor's share of a hit taken off by an attacker's level (the old games'
+    -- formula), no target to weigh it against, no shield.
+    local paperDoll = rawget(G, "C_PaperDollInfo") or {}
+    G.C_PaperDollInfo = paperDoll
+    paperDoll.GetArmorEffectiveness = function(armor, level)
+        armor = tonumber(armor) or 0
+        return armor / (armor + 400 + 85 * (tonumber(level) or 1))
+    end
+    paperDoll.GetArmorEffectivenessAgainstTarget = function() return nil end
+    paperDoll.OffhandHasShield = function() return false end
+    G.GetEffectiveDefenseSkill = function() return defense("player") end
+    -- Running, flying and swimming as the game's base speed (7 yards a second) a walking character has.
+    G.GetUnitSpeed = function() return 0, 7, 7, 4.722 end
+    -- A number with the game's thousands separator (the client's own, here the English comma).
+    G.BreakUpLargeNumbers = function(n)
+        local text = tostring(math.floor((tonumber(n) or 0) + 0.5))
+        local sign, digits = text:match("^(-?)(%d+)$")
+        if not digits then return text end
+        return sign .. digits:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+    end
     G.GetManaRegen = function() local r = ((Lab.world.player or {}).stats or {}).regen or 0; return r, r end
 
     -- Items and spells: the game's own, from the data master (by the lab's server) ---------------------------------------------

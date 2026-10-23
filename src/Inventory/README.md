@@ -41,12 +41,21 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
     Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
     Using an equipped item with a right click stays on the game's own sheet and the action bars.
-  - *Character Stats*: your stats as the game lists them, with its tooltips (in a fight they show what they were
-    before it, and are brought up to date when it is over). On the stone at its top the game's sidebar tabs:
+  - *Character Stats*: your stats on the journal's page, with the game's values and tooltips (in a fight they show
+    what they were before it, and are brought up to date when it is over). Each of the game's categories (General,
+    Primary Attributes, Weapons, Modifiers, Defense, Resistances) is a section with its name written and ruled in
+    pencil, a line for each stat, its name at the left and its value at the right (a bonus in green, a malus in red,
+    darkened to read on the paper). The page follows the window: narrow, it is one list; wider, the sections stand
+    in as many columns as fit, in the game's order, the columns about even in height and kept together in the
+    middle; wide enough, your five attributes stand over the columns in pencil boxes with their value written large.
+    The wheel scrolls what does not fit. At its top the game's sidebar tabs, drawn in pencil (the chosen one shaded,
+    one with nothing to show faded, the reason in its tooltip):
     Stats; Equipment Manager (your gear sets: a click chooses one, a double click or Equip puts it on, Save stores
     what you wear in it after a question, leaving out the slots the set leaves out, New Set asks a name and leaves out
     your shirt and tabard, a right click renames or deletes; a new set's icon is changed on the game's own sheet);
-    Titles (a click wears one); Pet (your pet's stats, while you have one).
+    Titles (a click wears one); Pet (your pet's stats, while you have one). The gear sets and titles are lines on
+    the paper: a set's icon in a pencil slot, the one you wear or the title you carry ticked by hand, the buttons
+    pencil boxes.
   - *Reputation*: your factions as the game lists them: a click on a header folds or unfolds it, a click on a
     faction chooses it (its standing in numbers under the mouse); at the right the chosen faction, its standing,
     its description and the game's switches At War, Move to Inactive and Show as Experience Bar.

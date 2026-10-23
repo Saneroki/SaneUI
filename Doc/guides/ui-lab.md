@@ -72,14 +72,15 @@ prints its log.
   Lab.TOC("src/Core/SaneUI.toc")             -- an addon from its TOC, its Lua and XML files
   Lab.World("default")                       -- the fake server's world (default: default)
   Lab.Blizzard("Blizzard_FrameXMLUtil")     -- one more of Blizzard's addons than the lab loads itself
+  Lab.BlizzardFiles("Blizzard_UIPanels_Game", "Camelot/PaperDollFrame.lua")  -- only some files of one, in order
   Lab.OnLogin(function() ... end)            -- after PLAYER_LOGIN and PLAYER_ENTERING_WORLD
   Lab.Slash("/sane window")                  -- a slash command, as typed
   Lab.Say("GUILD", "Mirabel Ashgrove", "Hello")   -- a chat line from the server now
   ```
 
   The scenes: `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
-  and Inventory from their TOCs, the full screen with the character, the bags and the alts; the module is
-  `LabInventory` in the console), `xml-templates` (a window from the
+  and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
+  filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest
   the mouse on its free corner and it opens; `/sane options` in the console opens Core's options in the game's
   settings panel).
