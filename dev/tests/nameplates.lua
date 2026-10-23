@@ -112,11 +112,30 @@ C_SpellBook = {
     GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = #book } end,
     GetSpellBookItemInfo = function(index) return book[index] end,
 }
+-- How far each unit stands from your character, in yards (the test's world); the game answers range questions from it.
+local yards = {}
+local ranges = { [100] = { 0, 5 }, [101] = { 8, 30 }, [102] = { 0, 40 }, [103] = { 0, 5 } }
+local helpful = { [102] = true }
 C_Spell = {
     IsSpellHarmful = function(id) return harmful[id] == true end,
+    IsSpellHelpful = function(id) return helpful[id] == true end,
     SpellHasRange = function() return true end,
-    IsSpellInRange = function(id) return reach[id] end,
-    EnableSpellRangeCheck = function(id, on) watching[id] = on end,
+    GetSpellInfo = function(id) return { minRange = ranges[id][1], maxRange = ranges[id][2] } end,
+    IsSpellInRange = function(id, unit)
+        if reach[id] ~= nil then return reach[id] end -- the test says
+        local at = yards[unit]
+        if not at then return nil end
+        return at >= ranges[id][1] and at <= ranges[id][2]
+    end,
+}
+local itemRange = {}
+C_Item = {
+    RequestLoadItemDataByID = function() end,
+    IsItemInRange = function(item, unit)
+        local at = yards[unit]
+        if not at or not itemRange[item] then return nil end
+        return at <= itemRange[item]
+    end,
 }
 UnitExists = function(unit) return unit == "target" and plates.target ~= nil end
 -- Inspecting players: the questions asked, the item levels the server answers.
@@ -258,7 +277,7 @@ check(Text.Guess("nameplate1") == "8.8k" and dress.room.value == L(11),
     "the most hidden: room for a guess from its level and rank (22, a rare: about 4k)")
 check(dress.want == I + L(2) + G + L(10) + G + L(11) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
 check(dress.value._width == 0 and dress.name._width == L(10), "the health as wide as it is (never cut short), the others their room")
-check(dress.born ~= nil and dress._alpha == 0, "a plate that has just appeared: it springs in, unseen at first")
+check(dress.now == 0 and dress.showing == 0 and dress._alpha == 0, "a plate that has just appeared: it springs in from nothing, unseen at first")
 units.guess = { level = -1 }
 check(Text.Guess("guess") == "8.88m", "a boss's in millions")
 units.guess = { level = 30, player = true }
@@ -577,95 +596,89 @@ Core.Set(ns.name, "resource", true)
 W.Wait(0)
 
 -------------------------------------------------------------------------------
---  Smaller far away: the game's CVars, its defaults back when off
+--  Distance from your character: size by it alone, on a spring; out of reach: red
 -------------------------------------------------------------------------------
-check(W.cvars.nameplateMinScale == "0.25" and C_CVar.GetCVar("nameplateMaxScale") == "1" and W.cvars.nameplateMinScaleDistance == "0"
-    and W.cvars.nameplateMaxScaleDistance == "0" and W.cvars.nameplateSelectedScale == "1"
-    and W.cvars.nameplateNotSelectedAlpha == "1" and W.cvars.nameplateMinAlpha == "1",
-    "the game's scaling a straight line from 1 at your feet to a quarter at the farthest, nothing else in it, none of its fading")
+local Range = ns.Range
+for _, list in ipairs({ Range.ENEMY, Range.FRIEND }) do
+    for _, entry in ipairs(list) do itemRange[entry[2]] = entry[1] end
+end
+local CVar = C_CVar.GetCVar
+check(CVar("nameplateMinScale") == "1" and CVar("nameplateMaxScale") == "1" and CVar("nameplateSelectedScale") == "1"
+    and CVar("nameplateNotSelectedAlpha") == "1" and CVar("nameplateMinAlpha") == "1",
+    "the game's own scaling and fading off: nothing but the distance sizes a plate")
 local function Near(a, b) return math.abs(a - b) < 1e-6 end
 check(Near(Scale.Size(0), 1) and Near(Scale.Size(10), 1) and Near(Scale.Size(25), 0.75) and Near(Scale.Size(40), 0.5)
     and Near(Scale.Size(50), 0.375) and Near(Scale.Size(60), 0.25) and Near(Scale.Size(500), 0.25),
     "full within 10 yards, half at 40, a quarter at 60, straight between")
-check(Near(Scale.Distance(1, 60), 0) and Near(Scale.Distance(0.625, 60), 30) and Near(Scale.Distance(0.25, 60), 60),
-    "the distance read back from the game's scale")
-check(Scale.Fade(50, 60) == 1 and Near(Scale.Fade(57.5, 60), 0.5) and Scale.Fade(60, 60) == 0, "fading out over the last 5 yards")
-local first, alpha = Scale.Spring(0)
-local swing = 0
-for t = 0, Scale.SPRING.TIME, 0.01 do swing = math.max(swing, (Scale.Spring(t))) end
-check(Near(first, Scale.SPRING.FROM) and alpha == 0 and swing > 1.03 and Scale.Spring(Scale.SPRING.TIME) == 1,
-    "the spring: from smaller, swinging past its size, settled")
--- The game puts the wolf 30 yards away (its scale 0.625): ours at two thirds of full there, over the game's scale.
+-- The ladders: items and your spells, the shortest first; a spell with a least range stays out.
+Range.Rebuild()
+units.nameplate1.friend, units.target, plates.target, units.focus, plates.focus = nil, nil, nil, nil, nil
+reach[100], reach[101] = nil, nil
+yards.nameplate1 = 22
+check(select(1, Range.Check("nameplate1")) == 22.5 and select(2, Range.Check("nameplate1")) == true,
+    "22 yards: between the 20 and 25 yard items; the shot (8 to 30) reaches it")
+yards.nameplate1 = 3
+check(select(1, Range.Check("nameplate1")) == 2.5, "3 yards: within the 5 yard rung")
+yards.nameplate1 = 45
+check(select(1, Range.Check("nameplate1")) == 50 and select(2, Range.Check("nameplate1")) == false,
+    "45 yards: past the last rung (40), up to 60; none of your attacks reaches it")
+units.nameplate2.friend = true
+yards.nameplate2 = 47
+check(select(1, Range.Check("nameplate2")) == 47.5 and select(2, Range.Check("nameplate2")) == nil,
+    "a friend: on the friends' ladder (45, 50), no reach of attacks")
+-- The driver: distances looked at, each plate springing to its size, ours alone deciding.
 local tick = Scale.driver:GetScript("OnUpdate")
-W.clock = W.clock + 1
-plates.nameplate1:SetScale(0.625)
-tick(Scale.driver, 1)
-check(Scale.driver:IsShown() and Near(dress._scale, Scale.FULL * (2 / 3) / 0.625) and Near(plates.nameplate1.UnitFrame._scale, (2 / 3) / 0.625)
-    and dress._alpha == 1 and dress.born == nil, "30 yards: two thirds of full, the game's unit frame along, opaque, sprung")
-units.target, plates.target = nil, nil
-plates.nameplate1:SetScale(0.25 + 0.75 * 2.5 / 60) -- 57.5 yards
-tick(Scale.driver, 1)
-check(Near(dress._alpha, 0.5), "near the farthest reach: fading out")
-units.target, plates.target = units.nameplate1, plates.nameplate1
-tick(Scale.driver, 1)
-check(dress._alpha == 1, "your target: never faded")
-plates.nameplate1:SetScale(1.2) -- the game's target a little larger: still full, nothing larger
-tick(Scale.driver, 1)
-check(Near(dress._scale * 1.2, Scale.FULL), "a plate the game scales up shows no larger")
+local function Settle() for _ = 1, 200 do tick(Scale.driver, 0.02) end end
+yards.nameplate1 = 3
 plates.nameplate1:SetScale(1)
+Settle()
+local full = Scale.Full()
+check(Near(dress._scale, full) and Near(plates.nameplate1.UnitFrame._scale, 1) and dress._alpha == 1 and dress.showing == nil,
+    "3 yards: full size, seen, settled")
+check(full == 2.5, "full: the setting Nameplate size, 250% at first")
+units.target, plates.target = units.nameplate1, plates.nameplate1
+W.Fire("PLAYER_TARGET_CHANGED")
+Settle()
+check(Near(dress._scale, full), "your target: the same size at the same distance")
+plates.nameplate1:SetScale(1.3) -- whatever the game still does to a selected plate
+Settle()
+check(Near(dress._scale * 1.3, full) and Near(plates.nameplate1.UnitFrame._scale * 1.3, 1), "a scale the game still gives a plate: undone")
+plates.nameplate1:SetScale(1)
+yards.nameplate1 = 28
+local peak = 0
+for _ = 1, 200 do tick(Scale.driver, 0.02) peak = math.max(peak, full - dress._scale) end
+check(Near(dress._scale, full * Scale.Size(27.5)) and peak > full * (1 - Scale.Size(27.5)),
+    "28 yards (between 25 and 30): smaller on a spring, a little past its size, settled")
+check(dress.border._vertex[1] == 1 and dress.border._vertex[2] == 1, "the shot reaches it: your target's border white")
+yards.nameplate1 = 38
+Settle()
+check(dress.out == true and dress.border._vertex[2] == Bar.FAR[2], "out of reach of all your attacks: red")
+units.target, plates.target = nil, nil
+W.Fire("PLAYER_TARGET_CHANGED")
+check(dress.border._vertex[2] == Bar.FAR[2], "not your target, still out of reach: red over the black")
+yards.nameplate1 = 3
+Settle()
+check(dress.out == false and dress.border._vertex[1] == Bar.BORDER[1], "in reach of the strike: black again")
+Core.Set(ns.name, "size", 300)
+Settle()
+check(Near(dress._scale, 3), "the setting Nameplate size: 300%")
+Core.Set(ns.name, "size", 250)
+yards.nameplate1 = 38
+Core.Set(ns.name, "range", false)
+Settle()
+check(dress.out == false and dress.border._vertex[1] == Bar.BORDER[1], "the red border switched off: black")
+Core.Set(ns.name, "range", true)
+yards.nameplate1 = 3
+Settle()
 W.combat = true
 Core.Set(ns.name, "distance", false)
-check(W.cvars.nameplateMinScale == "0.25" and dress._scale == Scale.FULL and plates.nameplate1.UnitFrame._scale == 1
-    and not Scale.driver:IsShown(), "off in a fight: the plates without our curve at once, the CVars wait")
+check(CVar("nameplateSelectedScale") == "1" and Near(dress._scale, full) and plates.nameplate1.UnitFrame._scale == 1,
+    "size by distance off in a fight: the plates at full size at once, the CVars wait")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
-check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == "10" and W.cvars.nameplateSelectedScale == "1.2"
-    and W.cvars.nameplateNotSelectedAlpha == "0.5", "after it: the game's defaults")
+check(CVar("nameplateSelectedScale") == "1.2" and CVar("nameplateNotSelectedAlpha") == "0.5", "after it: the game's defaults")
 Core.Set(ns.name, "distance", true)
-check(W.cvars.nameplateMinScale == "0.25" and Scale.driver:IsShown(), "on again")
-
--------------------------------------------------------------------------------
---  Your target out of reach: its border red
--------------------------------------------------------------------------------
-local Range = ns.Range
-check(watching[100] and watching[101] and not watching[102] and not watching[103],
-    "the game asked to tell about your attacks: the strike and the shot, not the heal or a passive one")
-units.target, plates.target = units.nameplate1, plates.nameplate1
-units.nameplate1.friend = nil
-reach[100], reach[101] = false, true
-W.Fire("PLAYER_TARGET_CHANGED")
-W.Wait(0)
-check(dress.border._vertex[1] == 1 and dress.border._vertex[2] == 1 and Range.out == false, "the shot reaches it: white")
-reach[101] = false
-W.Fire("SPELL_RANGE_CHECK_UPDATE", 101, false, true)
-W.Wait(0)
-check(Range.out == true and dress.border._vertex[1] == Bar.FAR[1] and dress.border._vertex[2] == Bar.FAR[2],
-    "none of your attacks reaches it: red")
-reach[100] = true
-W.Fire("SPELL_RANGE_CHECK_UPDATE", 100, true, true)
-W.Wait(0)
-check(Range.out == false and dress.border._vertex[2] == 1, "in reach of the strike again: white")
--- None of your spells can tell: beyond 40 yards by the distance, looked at while that is so.
-reach[100], reach[101] = nil, nil
-plates.nameplate1:SetScale(1 - 0.75 * 45 / 60) -- 45 yards
-W.Fire("SPELL_RANGE_CHECK_UPDATE", 100, false, false)
-W.Wait(0)
-check(Range.out == true and Range.guessing and dress.border._vertex[2] == Bar.FAR[2], "none can tell: beyond 40 yards, red")
-plates.nameplate1:SetScale(1 - 0.75 * 30 / 60) -- 30 yards
-check(Range.ticker:IsShown(), "the distance looked at while it decides")
-Range.ticker:GetScript("OnUpdate")(Range.ticker, 1)
-check(Range.out == false and dress.border._vertex[2] == 1, "it comes within 40: white (the distance looked at)")
-plates.nameplate1:SetScale(1)
-reach[100] = false
-Core.Set(ns.name, "range", false)
-check(Range.out == false and dress.border._vertex[2] == 1, "the setting off: white")
-Core.Set(ns.name, "range", true)
-W.Wait(0)
-check(Range.out == true, "on again")
-units.target, plates.target = nil, nil
-W.Fire("PLAYER_TARGET_CHANGED")
-W.Wait(0)
-check(Range.out == false, "no target: nothing out of reach")
+check(CVar("nameplateSelectedScale") == "1", "on again")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
@@ -692,7 +705,7 @@ ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
     and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
-check(W.cvars.nameplateMinScale == "1" and plates.nameplate1.UnitFrame._scale == 1,
+check(C_CVar.GetCVar("nameplateSelectedScale") == "1.2" and plates.nameplate1.UnitFrame._scale == 1,
     "the game's scaling by distance its own again, its unit frames at their own scale")
 bar:Hide()
 bar:Show()

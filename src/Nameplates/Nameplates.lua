@@ -24,8 +24,9 @@ local ADDON, ns = ...
 --                  left of it, crowd control right of it, in the game's own aura
 --                  containers (hidden values and all)
 --    Marks.lua     the raid marker, in the line
---    Scale.lua     every plate's size and transparency by distance, springing in
---    Range.lua     your target out of reach of all your attacks: its border red
+--    Range.lua     how far each plate's unit is from your character, whether
+--                  your attacks reach it (its border red when not)
+--    Scale.lua     every plate's size by that distance alone, on a spring
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
@@ -50,11 +51,13 @@ ns.TEXT = {
     resource = "Combo points in your target's bar",
     resourceTip = "While you have combo points to build (a rogue, a druid in cat form), they show in your target's health bar, on its power line, one segment each.",
     range = "Out of reach: red border",
-    rangeTip = "Your target's border turns red while none of your attacks reach it (as the game checks your spells; beyond 40 yards for a character without any).",
+    rangeTip = "A foe's border turns red while none of your attacks reach it, as the game checks your own spells from your character.",
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
     distance = "Size by distance",
-    distanceTip = "Nameplates full size within 10 yards, half at 40, a quarter at 60, the farthest the game shows them; they spring in when they appear and fade out at the edge. Off: the game's own scaling and fading."
+    distanceTip = "Nameplates by their distance from your character alone: full size within 10 yards, half at 40, a quarter at 60; they spring in when they appear. Off: the game's own scaling and fading.",
+    size = "Nameplate size",
+    sizeTip = "How large nameplates are within 10 yards.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -71,13 +74,14 @@ local OPTIONS = {
     { key = "range", default = true, text = ns.TEXT.range, tip = ns.TEXT.rangeTip },
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
+    { key = "size", default = 250, min = 100, max = 500, step = 10, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "resource" then
         ns.Guarded(ns.Resource.Update)
     elseif key == "range" then
-        ns.Guarded(ns.Range.Update)
-    elseif key == "distance" then
+        ns.Guarded(ns.Range.Look)
+    elseif key == "distance" or key == "size" then
         ns.Guarded(ns.Scale.Update)
     else
         ns.Guarded(ns.Plate.Refresh)
@@ -97,6 +101,6 @@ end
 function ns.OnLogin()
     ns.Plate.Start()
     ns.Resource.Start()
-    ns.Scale.Start()
     ns.Range.Start()
+    ns.Scale.Start()
 end

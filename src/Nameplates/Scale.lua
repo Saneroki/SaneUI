@@ -2,54 +2,47 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Scale
---  One hand on every plate's size and transparency, so nothing else pulls at
---  them: Scale.FULL within ten yards, then down to half of it at forty yards
---  and a quarter at sixty (Scale.CURVE, straight between), the farthest the
---  game shows plates of units you have not targeted. Your target's plate,
---  which the game shows farther, stays at that quarter beyond. A plate
---  springs in when it appears (Scale.Spring), and one you have not targeted
---  fades out over the last yards before the game takes it away (Scale.FADE).
+--  Every plate's size, by how far its unit is from your character and by
+--  nothing else: Scale.Full() (the setting Nameplate size) within ten yards,
+--  then down to half of it at forty yards and a quarter at sixty
+--  (Scale.CURVE, straight between). Selected or not, rank, anything else:
+--  the same size at the same distance. No transparency of ours, but a plate
+--  appearing springs in from nothing.
 --
---  How far a unit is the game does not tell addons; but the game scales its
---  plates by distance itself, in a straight line, by its CVars for it. So this
---  file sets that line to run from 1 at your feet to Scale.LINE at the
---  farthest reach, with nothing else in it (no larger target, no larger
---  elites) and the game's own fading of plates off, and reads it back: the
---  scale the game gave a plate (its frame's scale) is how far its unit is.
---  Then our dress on the plate is scaled to its size on our curve (over the
---  game's scale, which it inherits), and the game's unit frame on the plate
---  (its cast bar) to the curve alone. Looked at a few times a second while
---  plates show, every frame while one springs; a plate scaled anew only when
---  its size changed by more than a little.
+--  The distance is Range.lua's (from your character, never the camera). The
+--  game's own scaling of plates (by the camera's distance, a larger target,
+--  larger elites) and its fading are switched off by its CVars (Scale.CVARS),
+--  and whatever scale the game still gives a plate is undone (our size over
+--  the plate's own scale), so ours is the only one.
 --
---  Switched off (or the module standing down) the game's defaults come back
---  and every plate is at Scale.FULL over the game's own scaling. CVars this
---  client does not have are left alone, and none is set in a fight (some of
---  the game's nameplate CVars are locked then): that waits for the fight's end.
+--  Each plate moves to its size on a spring (Scale.SPRING: a little past it,
+--  then settling), from nothing when it appears, from its last size when its
+--  distance changes. A driver frame looks at the distances every
+--  Range.EVERY seconds and moves the springs every frame while one moves;
+--  hidden while no plate shows. The game's unit frame on a plate (its cast
+--  bar) is scaled along, without our size setting.
+--
+--  Switched off (or the module standing down): the game's defaults come
+--  back, and every plate is at Scale.Full() over the game's own scaling.
+--  CVars this client does not have are left alone, and none is set in a
+--  fight (some of the game's nameplate CVars are locked then): that waits for
+--  the fight's end.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
 local Scale = {}
 ns.Scale = Scale
 
-Scale.FULL = 3     -- our bar's size within ten yards, over the plate's own (the size a target had before)
-Scale.CURVE = { { 10, 1 }, { 40, 0.5 }, { 60, 0.25 } } -- { yards, share of Scale.FULL }, straight between
-Scale.FAR = 60     -- the farthest the game shows plates of units not targeted, in yards (its limit)
-Scale.FADE = 5     -- yards before the farthest reach over which a plate not targeted fades out
-Scale.LINE = 0.25  -- the game's scale at the farthest reach: its line, read back for the distance
-Scale.EVERY = 0.05 -- seconds between looks while nothing springs
-Scale.STEP = 0.005 -- a change of scale smaller than this is left alone
--- The spring of a plate appearing: from FROM of its size, swinging past it and settling within TIME seconds, its
--- alpha up from none within SHOW seconds.
-Scale.SPRING = { FROM = 0.6, DECAY = 9, SWING = 16, TIME = 0.45, SHOW = 0.15 }
-
--- The game's CVars and ours for them: its scaling a straight line from 1 at no distance to Scale.LINE at the farthest
--- reach, nothing scaled for other reasons, and none of its fading (but behind walls, which stays the game's).
+Scale.SIZE = 250 -- the setting Nameplate size at first: our bar's size within ten yards, in percent
+Scale.CURVE = { { 10, 1 }, { 40, 0.5 }, { 60, 0.25 } } -- { yards, share of the full size }, straight between
+-- The spring a plate moves on: its pull to its size, its damping (a little past it, then settling), and when it is
+-- still (closer than REST, slower than REST).
+Scale.SPRING = { PULL = 170, DAMP = 15, REST = 0.002 }
+Scale.SHOW = 0.12 -- seconds a plate takes from unseen to seen as it appears
+-- The game's CVars and ours for them: none of its scaling, none of its fading (but behind walls, which stays its own).
 Scale.CVARS = {
     nameplateMaxScale = "1",
-    nameplateMinScale = tostring(Scale.LINE),
-    nameplateMaxScaleDistance = "0",
-    nameplateMinScaleDistance = "0",
+    nameplateMinScale = "1",
     nameplateSelectedScale = "1",
     nameplateLargerScale = "1",
     nameplateMinAlpha = "1",
@@ -61,7 +54,12 @@ Scale.CVARS = {
 local waiting = false
 local active = false -- the CVars ours: the plates on our curve
 local driver
-local springing = 0  -- plates springing now
+local moving = 0     -- plates on their spring now
+
+-- Our bar's size within ten yards, from the setting.
+function Scale.Full()
+    return ((ns.options or {}).size or Scale.SIZE) / 100
+end
 
 -- Each CVar ours (on) or the game's default (off), where this client has it. Whether all those there are ours.
 local function Apply(on)
@@ -78,29 +76,7 @@ local function Apply(on)
     return done
 end
 
--- The farthest the game draws plates of units not targeted, in yards: its CVar, no more than its limit.
-local function Reach()
-    local value = tonumber(Core.Ask(C_CVar.GetCVar, "nameplateMaxDistance"))
-    if not value or value <= 0 then return Scale.FAR end
-    return math.min(value, Scale.FAR)
-end
-
--- How far a plate's unit is, from the scale the game gave the plate (its straight line, read backwards).
-function Scale.Distance(scale, reach)
-    local share = (1 - scale) / (1 - Scale.LINE)
-    return math.min(math.max(share, 0), 1) * reach
-end
-
--- How far a unit with a plate is, in yards, while our curve is on (the game's line known); nil otherwise.
-function Scale.Yards(unit)
-    if not active or ns.off then return nil end
-    local plate = Core.Ask(C_NamePlate.GetNamePlateForUnit, unit)
-    local scale = type(plate) == "table" and Plain(plate:GetScale())
-    if type(scale) ~= "number" or scale <= 0 then return nil end
-    return Scale.Distance(scale, Reach())
-end
-
--- The share of Scale.FULL a plate has at that distance.
+-- The share of the full size a plate has at that distance.
 function Scale.Size(yards)
     local curve = Scale.CURVE
     if yards <= curve[1][1] then return curve[1][2] end
@@ -111,51 +87,44 @@ function Scale.Size(yards)
     return curve[#curve][2]
 end
 
--- How opaque a plate not targeted is at that distance: fully, but over the last Scale.FADE yards of the reach.
-function Scale.Fade(yards, reach)
-    return math.min(math.max((reach - yards) / Scale.FADE, 0), 1)
+-- A plate at its size now (a share of the full size): our dress at the full size times it, the game's unit frame at
+-- it alone, each over the scale the game gives the plate, which they inherit.
+local function Show(dress, share)
+    local own = Plain(dress.plate:GetScale())
+    if type(own) ~= "number" or own <= 0 then own = 1 end
+    dress:SetScale(math.max(Scale.Full() * share / own, 0.001))
+    if dress.frame then dress.frame:SetScale(math.max(share / own, 0.001)) end
 end
 
--- A plate springing in, that many seconds after it appeared: its size's share (past 1 and back) and its alpha.
-function Scale.Spring(seconds)
+-- One step of a plate's spring towards its size; whether it still moves.
+function Scale.Step(dress, elapsed)
     local spring = Scale.SPRING
-    if seconds >= spring.TIME then return 1, 1 end
-    local size = 1 - (1 - spring.FROM) * math.exp(-seconds * spring.DECAY) * math.cos(seconds * spring.SWING)
-    return size, math.min(seconds / spring.SHOW, 1)
+    local aim = dress.aim or 1
+    local now, speed = dress.now or aim, dress.speed or 0
+    elapsed = math.min(elapsed, 0.05) -- a long frame does not throw it
+    speed = speed + (spring.PULL * (aim - now) - spring.DAMP * speed) * elapsed
+    now = now + speed * elapsed
+    local still = math.abs(aim - now) < spring.REST and math.abs(speed) < spring.REST
+    if still then now, speed = aim, 0 end
+    dress.now, dress.speed = now, speed
+    Show(dress, now)
+    if dress.showing then
+        dress.showing = math.min(dress.showing + elapsed / Scale.SHOW, 1)
+        dress:SetAlpha(dress.showing)
+        if dress.showing >= 1 then dress.showing = nil end
+    end
+    return not still or dress.showing ~= nil
 end
 
--- A dress at that scale and alpha, the game's unit frame under it at its own scale; each only when it changed.
-local function Set(dress, scale, alpha, frame)
-    if math.abs((dress.scaled or 0) - scale) >= Scale.STEP then
-        dress.scaled = scale
-        dress:SetScale(scale)
-    end
-    if math.abs((dress.faded or -1) - alpha) >= 0.01 then
-        dress.faded = alpha
-        dress:SetAlpha(alpha)
-    end
-    if dress.frame and math.abs((dress.frameScaled or 0) - frame) >= Scale.STEP then
-        dress.frameScaled = frame
-        dress.frame:SetScale(frame)
-    end
-end
-
--- Every plate on our curve, a springing one on its spring.
-local function Look()
-    local reach, now = Reach(), GetTime()
-    springing = 0
-    for unit, dress in pairs(ns.Plate.shown) do
-        local scale = Plain(dress.plate:GetScale())
-        if type(scale) == "number" and scale > 0 then
-            local yards = Scale.Distance(scale, reach)
-            local size = Scale.Size(yards)
-            local alpha = Plain(UnitIsUnit(unit, "target")) and 1 or Scale.Fade(yards, reach)
-            local pop, shown = 1, 1
-            if dress.born then
-                pop, shown = Scale.Spring(now - dress.born)
-                if now - dress.born >= Scale.SPRING.TIME then dress.born = nil else springing = springing + 1 end
-            end
-            Set(dress, Scale.FULL * size * pop / scale, alpha * shown, size / scale)
+-- Every plate's size aimed at its distance's (Range.lua's; kept where it could not be told), and shown anew where
+-- the game changed the scale it gives the plate.
+local function Aim()
+    for _, dress in pairs(ns.Plate.shown) do
+        local aim = Scale.Size(dress.yards or 0)
+        local own = Plain(dress.plate:GetScale())
+        if aim ~= dress.aim or own ~= dress.given then
+            dress.aim, dress.given = aim, own
+            dress.moving = true
         end
     end
 end
@@ -163,34 +132,40 @@ end
 local since = 0
 local function Tick(_, elapsed)
     since = since + elapsed
-    if springing == 0 and since < Scale.EVERY then return end
-    since = 0
-    Look()
+    if since >= ns.Range.EVERY then
+        since = 0
+        ns.Range.Look()
+        if active then Aim() end
+    end
+    if not active then return end
+    for _, dress in pairs(ns.Plate.shown) do
+        if dress.moving then dress.moving = Scale.Step(dress, elapsed) end
+    end
 end
 
--- The looks running while ours is on and plates show; stopped otherwise.
+-- The driver running while plates show (it looks at their distances and reaches, and moves their springs).
 function Scale.Again()
     if not driver then return end
-    driver:SetShown(active and not ns.off and next(ns.Plate.shown) ~= nil)
+    driver:SetShown(not ns.off and next(ns.Plate.shown) ~= nil)
 end
 
--- A plate that has just appeared: it springs in (Plate.lua).
+-- A plate that has just appeared: it springs in from nothing, to the size of its distance once that is known.
 function Scale.Born(dress)
     if not active or ns.off then return end
-    dress.born = GetTime()
-    springing = springing + 1
+    dress.now, dress.speed, dress.aim, dress.moving = 0, 0, Scale.Size(dress.yards or 0), true
+    dress.showing = 0
     dress:SetAlpha(0)
-    dress.faded = 0
+    Show(dress, 0)
     Scale.Again()
 end
 
--- A dress as it is without our curve: Scale.FULL over the game's own scaling, opaque, the game's unit frame at its
--- own scale (a plate taken back, the setting off, standing down).
+-- A dress without our curve: the full size over the game's own scaling, seen, the game's unit frame at its own
+-- scale (a plate taken back, the setting off, standing down).
 function Scale.Leave(dress)
     if dress.frame then dress.frame:SetScale(1) end
-    dress:SetScale(Scale.FULL)
+    dress:SetScale(Scale.Full())
     dress:SetAlpha(1)
-    dress.scaled, dress.faded, dress.frameScaled, dress.born = Scale.FULL, 1, 1, nil
+    dress.now, dress.speed, dress.aim, dress.moving, dress.showing, dress.yards = nil, nil, nil, nil, nil, nil
 end
 
 local function Fought()
@@ -199,7 +174,8 @@ local function Fought()
     Scale.Update()
 end
 
--- As the setting says, now or at the end of the fight. Turned off, every plate without our curve at once.
+-- As the setting says, now or at the end of the fight. Turned off, every plate without our curve at once; the size
+-- setting changed, every plate at it.
 function Scale.Update()
     local on = not ns.off and (ns.options or {}).distance ~= false
     if not on then
@@ -210,6 +186,12 @@ function Scale.Update()
         waiting = true
     else
         active = Apply(on) and on
+    end
+    if active then
+        for _, dress in pairs(ns.Plate.shown) do
+            dress.moving = true
+            if not dress.now then dress.now = Scale.Size(dress.yards or 0) end
+        end
     end
     Scale.Again()
 end

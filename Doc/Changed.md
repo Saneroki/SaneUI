@@ -10,6 +10,23 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
   (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
 
+### Nameplates: distance from your character, size by it alone, no fading (Saneroki, 2026-10-23)
+- **Why:** the game's nameplate scaling, read back as the distance, measures from the camera: near plates read far
+  (faded, small) and the selected one huge. Now nothing of the game's sizes or fades a plate.
+- **Distance** (`Range.lua`, rewritten): each plate's unit asked against a ladder of range checks from your
+  character, the shortest first: items whose use reaches a foe (`Range.ENEMY`, 5 to 40 yards) or a friend
+  (`Range.FRIEND`, 5 to 50), picked from the game's own tables, and your spells with a range (harmful for foes,
+  helpful for friends); the unit stands between the last rung that did not reach and the first that did
+  (`Range.Check`), every 0.2 s for every plate (`Range.Look`).
+- **Size** (`Scale.lua`, rewritten): *Nameplate size* (new setting, 250%) within 10 yards, half at 40, a quarter at 60,
+  by distance alone; the game's scaling and fading off (`nameplateMinScale`, `MaxScale`, `SelectedScale`,
+  `LargerScale` and the alphas 1) and any scale it still gives a plate undone. Each plate moves on a spring
+  (`Scale.Step`), springs in from nothing when it appears (`Scale.Born`). No fading of ours.
+- **Red border** on any foe none of your harmful spells reaches (`dress.out`, `Plate.Light`, `Bar.Border`'s `out`),
+  from the same look; the event-driven target check is gone.
+- Tests: 135 checks (the ladder and the distances it gives, size by distance alone, the target the same, a game scale
+  undone, the spring, red and black by reach, the size setting, off in a fight).
+
 ### Nameplates: your target's border red while out of reach of all your attacks (Saneroki, 2026-10-23)
 - **Range** (`Range.lua`, new in the TOC): your attacks are your spellbook's harmful spells with a range (melee
   strikes, Charge, Shoot with a bow, bolts), made anew when your spells change; the game tells when each goes in or

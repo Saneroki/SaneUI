@@ -47,7 +47,7 @@ Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACT
 
 local dresses = {} -- [the game's plate] = our dress on it
 local shown = {}   -- [unit token] = the dress on that unit's plate, while the game shows it
-Plate.shown = shown -- read by Scale.lua (never written there)
+Plate.shown = shown -- read by Scale.lua and Range.lua (never written there)
 local owners = setmetatable({}, { __mode = "k" }) -- [the game's unit frame] = the dress over it now
 local bars = setmetatable({}, { __mode = "k" })   -- [the game's health bar] = its unit frame, once followed
 local gear -- asks for players' item levels again, a little later (made below, with Gear)
@@ -58,10 +58,10 @@ local function PlateOf(unit)
     return type(plate) == "table" and plate or nil
 end
 
--- The border's light for a plate: your target's (red while it is out of your reach: Range.lua), your focus's, or
--- none.
+-- The border's light for a plate: your target's, your focus's, or none (red over any of them while the unit is out
+-- of your reach: Range.lua, dress.out).
 local function Lit(plate, target, focus)
-    if plate == target then return ns.Range.out and "far" or "target" end
+    if plate == target then return "target" end
     if plate == focus then return "focus" end
     return nil
 end
@@ -72,7 +72,7 @@ local function Fill(dress)
     ns.Bar.Paint(dress, unit)
     ns.Bar.Health(dress, unit)
     ns.Bar.Power(dress, unit)
-    ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")))
+    ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")), dress.out)
     ns.Text.Set(dress, unit)
     ns.Marks.Raid(dress, unit)
     ns.Auras.Set(dress, unit)
@@ -173,7 +173,7 @@ local OnSizeChanged = ns.Guard(Fit)
 local function Make(plate)
     local dress = CreateFrame("Frame", nil, plate)
     dress.plate, dress.edge = plate, 0
-    dress:SetScale(ns.Scale.FULL) -- its size on the curve once Scale.lua has looked
+    dress:SetScale(ns.Scale.Full()) -- its size by distance once Scale.lua has looked
     ns.Bar.Make(dress)
     ns.Text.Make(dress)
     ns.Marks.Make(dress)
@@ -260,12 +260,18 @@ local function Borders()
     if ns.off then return end
     local target, focus = PlateOf("target"), PlateOf("focus")
     for _, dress in pairs(shown) do
-        ns.Bar.Border(dress, Lit(dress.plate, target, focus))
+        ns.Bar.Border(dress, Lit(dress.plate, target, focus), dress.out)
         Wear(dress)
     end
 end
 
 Plate.Borders = Borders
+
+-- One plate's border anew (its unit came in or went out of your reach: Range.lua).
+function Plate.Light(dress)
+    if ns.off or not dress.unit then return end
+    ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")), dress.out)
+end
 
 -- Your group, guild or friends changed: every plate shown or not.
 local function People()

@@ -2,45 +2,54 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Range
---  Whether your target is out of reach of everything you could attack it
---  with: then its plate's border is red instead of white (Bar.Border).
+--  How far each plate's unit is from your character, and whether any of your
+--  attacks reach it. The game tells addons no distance; it does tell whether
+--  a unit is within the range of an item's use (C_Item.IsItemInRange) or of
+--  one of your spells (C_Spell.IsSpellInRange), measured from your character.
+--  So each unit is asked against a ladder of ranges, the shortest first:
+--  items of the game whose use reaches that far (Range.ENEMY for foes,
+--  Range.FRIEND for friends: game facts, picked from its own item and spell
+--  tables), and your own spells with a range (harmful ones for foes, helpful
+--  ones for friends). The first that reaches it bounds the distance from
+--  above, the last that did not from below; the unit is taken to stand
+--  between (Range.Check). Nothing reaches it: beyond the last that did not,
+--  up to the farthest the game shows plates (Range.FAR).
 --
---  Your attacks: the spells of your spellbook (not passive) the game calls
---  harmful and gives a range (C_Spell.IsSpellHarmful, SpellHasRange): melee
---  strikes, a warrior's Charge and his Shoot (which reaches only with a bow,
---  as the game itself checks), a mage's bolts. The game says for each whether
---  it reaches your target now (C_Spell.IsSpellInRange: true, false, or nil
---  where it cannot tell, a Shoot without a bow, say); your target is in reach
---  while any of them does. The list is made anew when your spells change.
+--  Out of reach: a foe none of your harmful spells reaches now (one says no,
+--  none yes). Its border is red then (Bar.Border), your target's and every
+--  other foe's alike (the setting Out of reach: red border).
 --
---  The game tells when one of them goes in or out of reach of your target
---  (SPELL_RANGE_CHECK_UPDATE, asked for each by EnableSpellRangeCheck), so
---  nothing is looked at between. Where none of your spells can tell (a
---  character without any yet), the target is out of reach beyond
---  Range.FALLBACK yards, by the distance read from the game's scaling
---  (Scale.Yards), looked at every Range.EVERY seconds while that is so.
---  Only a target you can attack; a friend's border stays white.
+--  Looked at every Range.EVERY seconds for every plate shown (Scale.lua's
+--  driver calls Range.Look); a few questions per plate, the shortest ranges
+--  first. Where the game will not answer for an item (a foe in a fight, an
+--  item it has not loaded), the spells answer alone, and a distance that
+--  cannot be told keeps the last one.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
 local Range = {}
 ns.Range = Range
 
-Range.FALLBACK = 40 -- yards, where none of your spells can tell
-Range.EVERY = 0.25  -- seconds between looks at the distance, while it decides
+Range.FAR = 60     -- the farthest the game shows plates of units not targeted, in yards
+Range.EVERY = 0.2  -- seconds between looks
+-- Items whose use reaches a foe that far: { yards, item }, from the game's tables (its item effects, their spells'
+-- ranges and targets).
+Range.ENEMY = { { 5, 3912 }, { 8, 238736 }, { 10, 9606 }, { 15, 275347 }, { 20, 10645 }, { 25, 274414 },
+                { 30, 835 }, { 35, 1402 }, { 40, 4945 } }
+-- And a friend.
+Range.FRIEND = { { 5, 1970 }, { 10, 21267 }, { 15, 1251 }, { 20, 12450 }, { 25, 13289 }, { 30, 954 },
+                 { 35, 18904 }, { 40, 18662 }, { 45, 221316 }, { 50, 274093 } }
 
-local spells = {}   -- your attacks: their spell IDs
-local watched = {}  -- [spell ID] = true: the game tells us when it goes in or out of reach
-local ticker
+local ladders = { foe = {}, friend = {} } -- { yards, item = id } or { yards, spell = id }, the shortest first
+local attacks = {}                       -- your harmful spells with a range
 
--- Your attacks, as your spellbook has them now.
-local function Collect()
+-- Your spells with a range, as your spellbook has them now: harmful, helpful, each with its reach.
+local function Spells()
     local book, spell = rawget(_G, "C_SpellBook"), rawget(_G, "C_Spell")
-    local banks = rawget(_G, "Enum") and Enum.SpellBookSpellBank
-    local kinds = rawget(_G, "Enum") and Enum.SpellBookItemType
-    local found = {}
-    if not (book and spell and banks and kinds) then return found end
-    local bank = banks.Player
+    local enum = rawget(_G, "Enum")
+    local harmful, helpful = {}, {}
+    if not (book and spell and enum and enum.SpellBookSpellBank and enum.SpellBookItemType) then return harmful, helpful end
+    local bank, kind = enum.SpellBookSpellBank.Player, enum.SpellBookItemType.Spell
     for line = 1, Core.Ask(book.GetNumSpellBookSkillLines) or 0 do
         local info = Core.Ask(book.GetSpellBookSkillLineInfo, line)
         if type(info) == "table" and not info.shouldHide and (Plain(info.offSpecID) or 0) == 0 then
@@ -48,86 +57,106 @@ local function Collect()
             for index = first, first + (Plain(info.numSpellBookItems) or 0) - 1 do
                 local item = Core.Ask(book.GetSpellBookItemInfo, index, bank)
                 local id = type(item) == "table" and Plain(item.spellID)
-                if id and Plain(item.itemType) == kinds.Spell and not Plain(item.isPassive)
-                    and Core.Ask(spell.IsSpellHarmful, id) and Core.Ask(spell.SpellHasRange, id) then
-                    found[#found + 1] = id
+                if id and Plain(item.itemType) == kind and not Plain(item.isPassive) and Core.Ask(spell.SpellHasRange, id) then
+                    local data = Core.Ask(spell.GetSpellInfo, id)
+                    local most = type(data) == "table" and Plain(data.maxRange)
+                    local least = type(data) == "table" and Plain(data.minRange) or 0
+                    if type(most) == "number" and most > 0 then
+                        local entry = { most, spell = id, least = least }
+                        if Core.Ask(spell.IsSpellHarmful, id) then harmful[#harmful + 1] = entry end
+                        if Core.Ask(spell.IsSpellHelpful, id) then helpful[#helpful + 1] = entry end
+                    end
                 end
             end
         end
     end
-    return found
+    return harmful, helpful
 end
 
--- Whether your target is out of reach: true, false, or nil when none of your spells can tell.
-local function Asked()
-    local spell = rawget(_G, "C_Spell")
+-- A ladder: the items and the spells, the shortest reach first; spells that reach only from afar (a minimum range)
+-- say nothing of how near a unit is, and stay out.
+local function Ladder(items, spells)
+    local ladder = {}
+    for _, entry in ipairs(items) do ladder[#ladder + 1] = { entry[1], item = entry[2] } end
+    for _, entry in ipairs(spells) do
+        if (entry.least or 0) == 0 then ladder[#ladder + 1] = entry end
+    end
+    table.sort(ladder, function(a, b) return a[1] < b[1] end)
+    return ladder
+end
+
+-- The ladders and your attacks made anew (your spells changed), the items asked to load.
+function Range.Rebuild()
+    local harmful, helpful = Spells()
+    attacks = harmful
+    ladders.foe = Ladder(Range.ENEMY, harmful)
+    ladders.friend = Ladder(Range.FRIEND, helpful)
+    local items = rawget(_G, "C_Item")
+    local load = items and items.RequestLoadItemDataByID
+    if load then
+        for _, list in ipairs({ Range.ENEMY, Range.FRIEND }) do
+            for _, entry in ipairs(list) do pcall(load, entry[2]) end
+        end
+    end
+end
+
+-- Whether a rung reaches the unit: true, false, or nil where the game will not tell.
+local function Reaches(rung, unit)
+    if rung.spell then return Core.Ask(C_Spell.IsSpellInRange, rung.spell, unit) end
+    local items = rawget(_G, "C_Item")
+    local ask = items and items.IsItemInRange or rawget(_G, "IsItemInRange")
+    return Core.Ask(ask, rung.item, unit)
+end
+
+-- How far a unit is (yards, or nil where nothing could tell), and for a foe whether your attacks reach it (true,
+-- false, or nil where none of your spells could tell).
+function Range.Check(unit)
+    local foe = Core.Ask(UnitCanAttack, "player", unit) == true
+    local below, above = nil, nil
+    for _, rung in ipairs(foe and ladders.foe or ladders.friend) do
+        local reach = Reaches(rung, unit)
+        if reach == true then
+            above = rung[1]
+            break
+        elseif reach == false then
+            below = rung[1]
+        end
+    end
+    local yards
+    if above then
+        yards = ((below or 0) + above) / 2
+    elseif below then
+        yards = (below + Range.FAR) / 2
+    end
+    if not foe then return yards, nil end
     local told = false
-    for _, id in ipairs(spells) do
-        local reach = Core.Ask(spell.IsSpellInRange, id, "target")
-        if reach == true then return false end
+    for _, entry in ipairs(attacks) do
+        local reach = Core.Ask(C_Spell.IsSpellInRange, entry.spell, unit)
+        if reach == true then return yards, true end
         if reach == false then told = true end
     end
-    if told then return true end
-    return nil
+    if told then return yards, false end
+    return yards, nil
 end
 
--- Whether your target is out of reach now, by your spells, else by its distance.
-function Range.Out()
-    if Plain(UnitExists("target")) ~= true or Core.Ask(UnitCanAttack, "player", "target") ~= true then return false end
-    local out = Asked()
-    Range.guessing = out == nil
-    if out ~= nil then return out end
-    local yards = ns.Scale.Yards("target")
-    return yards ~= nil and yards > Range.FALLBACK
-end
-
--- Looked at anew: the border of your target's plate red or white, and the distance looked at while it decides.
-function Range.Update()
-    local out = not ns.off and (ns.options or {}).range ~= false and Range.Out()
-    if out ~= Range.out then
-        Range.out = out
-        ns.Plate.Borders()
-    end
-    if ticker then ticker:SetShown(Range.guessing == true and not ns.off) end
-end
-local again = Core.Later(Range.Update)
-
--- Your attacks made anew, the game asked to tell about each (and no more about those gone).
-local function Rebuild()
-    local spell = rawget(_G, "C_Spell")
-    local enable = spell and spell.EnableSpellRangeCheck
-    spells = Collect()
-    local now = {}
-    for _, id in ipairs(spells) do now[id] = true end
-    if enable then
-        for id in pairs(watched) do
-            if not now[id] then pcall(enable, id, false) end
-        end
-        for id in pairs(now) do
-            if not watched[id] then pcall(enable, id, true) end
+-- Every plate looked at: its distance (kept where it could not be told) and whether it is out of your reach; the
+-- borders lit anew where that changed.
+function Range.Look()
+    local on = (ns.options or {}).range ~= false
+    for unit, dress in pairs(ns.Plate.shown) do
+        local yards, reach = Range.Check(unit)
+        if yards then dress.yards = yards end
+        local out = on and reach == false
+        if out ~= (dress.out == true) then
+            dress.out = out
+            ns.Plate.Light(dress)
         end
     end
-    watched = now
-    again()
 end
-local rebuild = Core.Later(Rebuild)
 
-local since = 0
-local function Tick(_, elapsed)
-    since = since + elapsed
-    if since < Range.EVERY then return end
-    since = 0
-    Range.Update()
-end
+local rebuild = Core.Later(Range.Rebuild)
 
 function Range.Start()
-    ticker = CreateFrame("Frame")
-    ticker:Hide()
-    ticker:SetScript("OnUpdate", ns.Guard(Tick))
-    Range.ticker = ticker
     ns.On("SPELLS_CHANGED", rebuild)
-    ns.On("SPELL_RANGE_CHECK_UPDATE", again)
-    ns.On("PLAYER_TARGET_CHANGED", again)
-    ns.On("UNIT_FACTION", again)
-    Rebuild()
+    Range.Rebuild()
 end
