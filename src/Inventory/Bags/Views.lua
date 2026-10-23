@@ -4,8 +4,9 @@ local _, ns = ...
 --  Sane UI - Inventory - Bags - Views
 --  What the bag window shows for the view chosen in its sidebar, as blocks,
 --  without a frame (Layout.lua lays them out):
---      all        All Items: Pinned and Recent first (a second look: those
---                 items are in their own category too), then a block per
+--      all        All Items: Pinned and Recent first (a pinned item only
+--                 there while Pinned is shown, not in its own category too;
+--                 a recent one in its category as well), then a block per
 --                 category in the categories' order; a group divided
 --                 (Categories.Divided): its name (a title), each of its
 --                 members holding items as a block of its own (the empty
@@ -137,14 +138,16 @@ local function Fill(block, list, query, order, merge)
     return block
 end
 
--- The records of a section by category, used again: [key] = { record, ... }.
+-- The records of a section by category, used again: [key] = { record, ... }; a pinned item left out while the
+-- bags' Pinned is shown (apart: it stands there alone).
 local byKey = {}
+local apart = false
 local function ByCategory(section)
     for _, list in pairs(byKey) do
         for index = #list, 1, -1 do list[index] = nil end
     end
     for _, record in ipairs(section.slots) do
-        if record.item then
+        if record.item and not (apart and record.pinned) then
             local list = byKey[record.category]
             if not list then
                 list = {}
@@ -316,6 +319,7 @@ function Views.Build(view, sections, query, order, options, store)
         end
         firstSection = bags
         showPinned = options.showPinned ~= false
+        apart = bags and showPinned
         showRecent = options.showRecent ~= false
         if single then
             local lists = ByCategory(section)
@@ -356,7 +360,8 @@ function Views.Build(view, sections, query, order, options, store)
     return blocks
 end
 
--- How many cells each category would show in All Items (for the sidebar), groups summed, Pinned and Recent too:
+-- How many cells each category would show in All Items (for the sidebar), groups summed, Pinned and Recent too (a
+-- pinned item only Pinned's while Pinned is shown):
 -- [key] = count; stacks merged as Views.Build merges them (options: the window's settings, Merge Stacks).
 local counts, seen, recentItems = {}, {}, {} -- seen: [key] = { [link] = true } the stacks counted there
 local function Count(key, link)
@@ -381,9 +386,11 @@ function Views.Counts(section, options)
         if record.item then
             local link = merge and record.link and not Contents.GEAR[record.class] and not split[record.item] and record.link or nil
             local key = record.category
-            Count(key, link)
-            local group = Categories.GroupOf(key)
-            if group then Count("group:" .. group, link) end
+            if not (record.pinned and (options or {}).showPinned ~= false) then -- a pinned item is Pinned's alone
+                Count(key, link)
+                local group = Categories.GroupOf(key)
+                if group then Count("group:" .. group, link) end
+            end
             if record.pinned then Count(Categories.PINNED, link) end
             if recentItems[record.item] then Count(Categories.RECENT, link) end
         end

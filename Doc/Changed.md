@@ -308,6 +308,11 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: a pinned item only under Pinned (2026-10-23)
+- `Views`: while the bags' Pinned is shown (`apart`), `ByCategory` leaves pinned records out of their categories
+  and groups; `Views.Counts` counts them only for Pinned. Pinned hidden: in their categories as before.
+- `dev/tests/bags.lua`: a pinned item only under Pinned; Pinned off: in its category.
+
 ### Inventory: the waste bin is Junk's first slot (2026-10-23)
 - The bin leaves the sidebar (`MakeTrash`, `Bags.Bin`, `Bags.TRASH`, `TRASH_FOLDED`, the rail's `narrow`,
   `BagSidebar.Room` gone): Junk's block has `block.bin` (`Views`), the layout a `bin` place before its cells

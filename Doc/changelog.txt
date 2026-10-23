@@ -56,8 +56,9 @@ The bigger changes of each version, newest first.
   it turns back. The top slots match the others and the strips show
   each item's stats.
 - Inventory: the items and empty slots in your bags are half again as
-  large, the bags in the strip too; a waste bin at the bottom left: drop an
-  item on it and the game asks to destroy it.
+  large, the bags in the strip too; a waste bin as Junk's first slot:
+  drop an item on it and the game asks to destroy it. A pinned item
+  shows only under Pinned.
 - Inventory: drop an item anywhere on the bags' window and it goes into
   your bags, into its own category; the bags scroll with the wheel,
   without a scroll bar. The Armory and Adventure Prep have

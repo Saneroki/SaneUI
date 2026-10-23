@@ -577,7 +577,12 @@ Reclassify()
 Recent.list[1] = 118
 blocks = Views.Build("all", { section }, nil, "default", options)
 check(blocks[1].word == "Pinned Items" and #blocks[1].entries == 1 and blocks[2].word == "Recent Items" and blocks[3].word == "The Armory",
-    "Pinned and Recent first, their items in their own categories too")
+    "Pinned and Recent first")
+check(#Named(blocks, "Trade Goods").entries == 0 and (Views.Counts(section, options).trade or 0) == 0
+    and Views.Counts(section, options).pinned == 1, "a pinned item only under Pinned, not in its own category too")
+check(#Named(Views.Build("all", { section }, nil, "default", { showPinned = false }), "Trade Goods").entries == 1,
+    "Pinned not shown: the pinned item in its own category")
+blocks = Views.Build("all", { section }, nil, "default", options)
 Categories.Pin(2589, false)
 Reclassify()
 Recent.Clear()

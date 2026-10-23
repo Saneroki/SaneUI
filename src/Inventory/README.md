@@ -99,7 +99,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (a pencil drawing in a pencil slot; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
     `Menus.Destroy`): an item let go there or clicked onto it is offered to be destroyed in the game's own dialog, as when you
     drop it into the world (a rare item or better is typed out). *Pinned Items* and *Recent Items* (what
-    came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
+    came into your bags lately): a pinned item stands only under Pinned (while Pinned is shown), a recent one in
+    its own category too. Stacks of one
     item show as one with their count added up (gear never; not at a vendor, the bank, the mail, a trade or the
     auction house, where each stack is its own).
   - **Your own way:** a middle click on an item pins it (or unpins it; an item you put into a category is taken
