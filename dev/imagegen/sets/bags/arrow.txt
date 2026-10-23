@@ -1,6 +1,7 @@
 # Bags: the fold arrow of the sidebars (the sidebar's head folds the sidebar, a group's row its members), as large
 # as a box beside it. Drawn pointing down; code turns it where it must point and lays it on the page in graphite.
 #   dev/tools/imagegen dev/imagegen/sets/bags/arrow.txt
+# chosen: stroke-1 (Saneroki, 2026-10-23)
 workflow: qwen21-turbo-t2i
 set: aspect_ratio=1:1 (Square), megapixels=0.6
 count: 4
