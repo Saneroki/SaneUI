@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 136 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: no blocked action at login; Follow me follows as soon as you walk (Saneroki, 2026-10-23)
+- `Hybrid.lua`: the game's minimap over our map takes no clicks (`SetMouseClickEnabled(false)`, given back as it
+  was) in place of `SetPassThroughButtons`, which the game now blocks for addons (a blocked action at every login
+  and `/reload`).
+- `Canvas.lua` (`Again`): the full map with *Follow me* ticked follows again as soon as the player walks on, no mouse
+  button held; it no longer waits for *Follow again after*, which is the small view's alone now.
+- Tests: `dev/tests/navigation.lua` 587 checks (the minimap's clicks off and back; walking on right after a drag).
+
 ### Inventory: the doll's model between the lines, every race at one scale (Saneroki, 2026-10-23)
 - Saneroki's two lines on the doll: a full-grown character fills its place from under the level line
   (`Doll.MODEL_TOP`, 84) down to the ground (`Doll.GROUND`, 681, was the strap at 713); a smaller race stands on

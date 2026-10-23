@@ -123,7 +123,7 @@ local function Take()
         parent = minimap:GetParent(), points = Core.Points(minimap), strata = minimap:GetFrameStrata(),
         level = minimap:GetFrameLevel(), wheel = minimap:IsMouseWheelEnabled(), shown = minimap:IsShown(),
         zoom = minimap:GetZoom(), clusterAlpha = cluster:GetAlpha(), clusterMouse = cluster:IsMouseEnabled(),
-        backdropAlpha = backdrop and backdrop:GetAlpha(), mice = {}, buttons = {},
+        clicks = minimap:IsMouseClickEnabled(), backdropAlpha = backdrop and backdrop:GetAlpha(), mice = {}, buttons = {},
     }
     saved.width, saved.height = minimap:GetSize()
     taken = true -- from here on GiveBack undoes it, whatever fails next
@@ -134,7 +134,9 @@ local function Take()
     minimap:SetMaskTexture(Hybrid.MASK)
     cut = Hybrid.MASK
     minimap:EnableMouseWheel(false)
-    if minimap.SetPassThroughButtons then minimap:SetPassThroughButtons("LeftButton", "RightButton") end
+    -- Its clicks go to our map under it (its dots keep their tooltips). Not its pass-through buttons: the game
+    -- blocks those for addons.
+    minimap:SetMouseClickEnabled(false)
     for _, key in ipairs({ "ZoomIn", "ZoomOut" }) do
         local button = rawget(minimap, key)
         if button then
@@ -155,7 +157,7 @@ end
 local function Give()
     local minimap, cluster, backdrop = Parts()
     taken = false
-    if minimap.SetPassThroughButtons then minimap:SetPassThroughButtons() end
+    minimap:SetMouseClickEnabled(saved.clicks)
     minimap:EnableMouseWheel(saved.wheel)
     minimap:SetParent(saved.parent)
     Core.Repoint(minimap, saved.points)

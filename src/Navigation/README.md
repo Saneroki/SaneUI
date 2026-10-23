@@ -45,8 +45,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   has been off it for a while (*Follow again after*). The full map, which the mouse never leaves, stays where you
   leave it, unless the box **Follow me** on its bar is ticked (left of *Pins*, off at first; also the setting
   *Follow me*): then it opens on you and keeps you in its middle as you move; dragged away or moved to a quest, it
-  comes back to you once you walk on and the mouse has left it alone for *Follow again after* (standing still, you
-  can look around).
+  comes back to you as soon as you walk on (standing still, you can look around).
 - **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
   steps. Out of it, our map is back.
@@ -417,9 +416,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   and it is the game's (ours holds it north up): a ping's place is turned with it, both ways. In an instance (our map
   not drawn) a click on the game's minimap pings it there itself (`Hybrid.Ping`).
 - **Following on the full map:** the tracker follows again where `Again` says: the small view once the mouse has
-  been off it for *Follow again after*; the full map only with *Follow me* ticked, once the player moved since the
-  last look, no button is held and the mouse left the map alone that long (`lastInput`; a quest moved to counts as
-  a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at
+  been off it for *Follow again after*; the full map only with *Follow me* ticked, as soon as the player moved since
+  the last look and no button is held (a quest moved to counts as a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at
   a map the game was asked for, `Window.OpenTo`) and when the box is ticked; unticked, it no longer follows.
 - **Walk** (`Walk.lua`, no frames): Core's set *Walking* (read with Core at the login, as all its sets), made by
   `dev/tools/walk-data` from the game's terrain, buildings, doodads (fences, rocks, trees, piers, the game's invisible
@@ -589,7 +587,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   layers and under our marks (its layer and level set again each time it is placed), its ground off (as Blizzard's hybrid minimap does), so only its
   live dots and their tooltips show, indoors too (its own indoor plan on black stays off; our own indoor
   maps are to come). Its
-  left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
+  clicks go through to our map (`SetMouseClickEnabled(false)`: its pass-through buttons the game blocks for addons); its border, zoom buttons and the rest of the game's minimap
   cluster are out of sight and take no clicks (Edit Mode's selection keeps its). Each step's radius is read
   from the game. Taken out of combat, every part kept first and given back exactly. On the full map it stands
   around the player at the map's own zoom (`Hybrid.Follow`, each step of the canvas' tracker): square, at its

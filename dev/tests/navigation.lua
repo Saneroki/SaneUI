@@ -324,7 +324,10 @@ function minimap:GetZoom() return self._zoom end
 function minimap:SetZoom(step) self._zoom = step end
 function minimap:GetZoomLevels() return 6 end
 function minimap:SetMaskTexture(mask) self._mask = mask end
-function minimap:SetPassThroughButtons(...) self._through = { ... } end
+function minimap:SetPassThroughButtons() error("the game blocks SetPassThroughButtons for addons") end
+minimap._clicks = true
+function minimap:SetMouseClickEnabled(on) self._clicks = on end
+function minimap:IsMouseClickEnabled() return self._clicks end
 function minimap:PingLocation(x, y) self._ping, self._pings = { x, y }, (self._pings or 0) + 1 end
 minimap.ZoomIn = W.NewWidget("Button", nil, minimap)
 minimap.ZoomIn._mouse = true
@@ -901,7 +904,7 @@ local Window, Canvas, Hybrid = ns.Window, ns.Canvas, ns.Hybrid
 check(Window.frame and Canvas.frame and Window.frame:GetFrameStrata() == "LOW", "built at login, in the game's minimap's layer")
 check(Hybrid.Taken() and minimap:GetParent() == Canvas.frame and minimap._mask == Hybrid.MASK and not minimap._wheel,
     "the game's minimap is over our map, square, its wheel ours")
-check(minimap._through and minimap._through[1] == "LeftButton" and minimap._through[2] == "RightButton",
+check(minimap:IsMouseClickEnabled() == false,
     "its left and right clicks go through to our map")
 check(ground == false and ignoreRotation == true and backdrop._alpha == 0 and minimap.ZoomIn._alpha == 0 and not minimap.ZoomIn._mouse,
     "its ground off, its rotation ignored, its border and zoom buttons out of sight")
@@ -2098,8 +2101,7 @@ function W.SmallAndBack(between)
 end
 
 -- The box Follow me left of the pin filter: off at first. Ticked, the full map on the player and following; dragged
--- away, it follows again once the player walks on and the mouse has left it alone for Follow again after (not while
--- the player stands); the full map opens on the player. Not ticked: it stays where it is left.
+-- away, it follows again as soon as the player walks on (not while the player stands); the full map opens on the player. Not ticked: it stays where it is left.
 ;(function()
     local box, pinMenu
     for _, widget in ipairs(W.frames) do
@@ -2124,7 +2126,6 @@ end
     frame._scripts.OnMouseUp(frame, "LeftButton")
     cursorX = 800
     check(not full.follow, "dragged away: no longer following")
-    W.Wait(ns.options.followAgain + 1)
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
     check(not full.follow, "the player standing: it stays where it was dragged")
@@ -2681,7 +2682,7 @@ Window.Toggle()
 end)()
 check(not Window.handle.edge.away, "back in its corner")
 Core.Set(ns.name, "nativeMinimap", true)
-check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and #minimap._through == 0
+check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and minimap:IsMouseClickEnabled()
     and ground == true and ignoreRotation == false and configs > 0, "Show the game's minimap: its place, wheel, clicks, ground, rotation and mask back")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,
     "its cluster, border and buttons back")

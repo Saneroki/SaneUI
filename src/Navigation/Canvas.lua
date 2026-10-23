@@ -57,8 +57,8 @@ local _, ns = ...
 --  times a second), else a few times a second; and after some time without the
 --  mouse on the map (the setting Follow again after) the view follows again. The
 --  full map, which is always under the mouse, follows again only while its box
---  Follow me is ticked (the setting followMap, TopBar.lua): once the player moves
---  on and the mouse has left the map alone for that time.
+--  Follow me is ticked (the setting followMap, TopBar.lua): as soon as the player
+--  moves on, no mouse button held.
 --  Nothing else runs while nothing moves. Where the game tells no place of the
 --  player (an instance) the small view draws nothing of ours but the sea: the
 --  game's minimap, with its own ground, is the map there (Hybrid.lua).
@@ -409,14 +409,11 @@ end
 --  The player
 -------------------------------------------------------------------------------
 -- Whether a view that does not follow the player follows again (walked: the player moved since the last look). The
--- full map with its box Follow me ticked: once the player moves on, the mouse no button held and the map left alone
--- for the setting Follow again after (0: at once); the mouse is always on it. Else once the mouse has been off the
--- map for so long (0: never).
+-- full map with its box Follow me ticked: as soon as the player moves on, no mouse button held on it. Else once the
+-- mouse has been off the map for the setting Follow again after (0: never).
 local function Again(now, walked)
+    if camera == ns.Window.full and ns.options.followMap then return walked and not pressed end
     local after = ns.options.followAgain
-    if camera == ns.Window.full and ns.options.followMap then
-        return walked and not pressed and now - lastInput >= after
-    end
     return after > 0 and now - lastInput > after and not frame:IsMouseOver()
 end
 
