@@ -25,19 +25,21 @@ local _, ns = ...
 --      Trade Goods          trade goods and reagents
 --      Professions          recipes and profession items
 --      Reagent Bag          whatever is in the reagent bag
+--      Containers           bags and quivers lying in the bags (the game's
+--                           classes Container and Quiver: always empty there)
+--                           and what a right click opens (a lockbox, a
+--                           satchel: the game's hasLoot) (Saneroki, 2026-10-23)
 --      Miscellaneous        what no other category takes
 --      Quest Items          off at first (they are in Miscellaneous then)
---      Containers           bags, quivers and other containers (the game's
---                           classes Container and Quiver), and what is in a
---                           bag for one kind of item (a quiver, a soul or herb
---                           bag: the game's bag family) (Saneroki, 2026-10-23;
---                           its key stays "special")
+--      Special Bags         what is in a bag for one kind of item that is
+--                           worn (a quiver, a soul or herb bag: the game's bag
+--                           family)
 --      Junk                 the last: grey items not filed elsewhere, and
 --                           what the player marked as junk; only while the
 --                           junk marker is on (Categories.Marker)
 --  An item goes to the first that takes it: the reagent bag's, a special
 --  bag's, the category the player put it into, Camp Items, Quest Items, Junk
---  (grey), Item Set Gear, then by its slot or its kind of consumable (the
+--  (grey), Containers (what opens), Item Set Gear, then by its slot or its kind of consumable (the
 --  categories that ask more than the class), then by its class, each in the
 --  categories' order, else Miscellaneous. A category switched off sends its items to Miscellaneous.
 --
@@ -171,13 +173,15 @@ Categories.LIST = {
       classes = Set(CLASS.Tradegoods or 7, CLASS.Reagent or 5) },
     { key = "professions", word = Core.Word("TRADE_SKILLS", "Professions"),
       classes = Set(CLASS.Recipe or 9, CLASS.Profession) },
+    { key = "containers", word = Core.Word("AUCTION_CATEGORY_CONTAINERS", "Containers"),
+      classes = Set(CLASS.Container or 1, CLASS.Quiver or 11), take = "loot" },
     { key = "reagent", word = ns.TEXT.bagsReagentBag, alone = true, take = "reagent",
       unassignable = true },
     { key = "misc", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous"),
       catchAll = true },
     { key = "quest", word = Core.Word("AUCTION_CATEGORY_QUEST_ITEMS", "Quest Items"), take = "quest" },
-    { key = "special", word = Core.Word("AUCTION_CATEGORY_CONTAINERS", "Containers"), alone = true,
-      classes = Set(CLASS.Container or 1, CLASS.Quiver or 11), take = "special", late = true },
+    { key = "special", word = ns.TEXT.bagsSpecial, alone = true,
+      take = "special", unassignable = true, late = true },
     { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk"), alone = true,
       last = true },
 }
@@ -494,6 +498,8 @@ function Categories.Classify(record)
             key = "quest"
         elseif record.quality == ns.Contents.POOR and marker then
             key = Categories.JUNK
+        elseif record.loot then
+            key = "containers"
         elseif record.set and ns.Contents.GEAR[record.class] then
             key = "sets"
         else
@@ -509,7 +515,7 @@ end
 -------------------------------------------------------------------------------
 --  The player's choices for items
 -------------------------------------------------------------------------------
--- Whether an item may be put into a category (not Pinned, Recent, the reagent bag's).
+-- Whether an item may be put into a category (not Pinned, Recent, the reagent bag's, the special bags').
 function Categories.Takes(key)
     if not rank[key] then return false end
     local def = Categories.DEF[key]

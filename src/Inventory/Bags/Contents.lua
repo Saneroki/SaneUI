@@ -45,6 +45,7 @@ Contents.POOR = QUALITY.Poor or 0
 
 -- The classes whose items carry an item level worth showing: what is worn.
 Contents.GEAR = { [CLASS.Weapon or 2] = true, [CLASS.Armor or 4] = true }
+Contents.OPENS = {} -- [item] = true: seen in the bags as what a right click opens (the alts' items have no such word)
 
 -------------------------------------------------------------------------------
 --  The containers
@@ -259,6 +260,8 @@ function Contents.Read(bag, slot, place)
     record.icon = Plain(info.iconFileID)
     record.locked, record.bound = Bool(info.isLocked), Bool(info.isBound)
     record.worthless, record.readable = Bool(info.hasNoValue), Bool(info.isReadable)
+    record.loot = Bool(info.hasLoot) -- opened by a right click (a lockbox, a satchel, a clam)
+    if record.loot and record.item then Contents.OPENS[record.item] = true end
     local quest = api.GetContainerItemQuestInfo and Ask(api.GetContainerItemQuestInfo, bag, slot)
     quest = type(quest) == "table" and quest or nil
     record.quest = quest and Bool(quest.isQuestItem) or false

@@ -5,7 +5,7 @@
 # chosen (one a row, kept as assets/interface/categories/<key>.png; dev/tools/category-art):
 #   all-1 one-3 each-1 pinned-1 recent-4 armory-2 head-2 neck-2 shoulder-3 back-2 chest-2 wrist-4 hands-2 waist-1
 #   legs-2 feet-1 finger-1 trinket-2 weapons-1 offhand-2 ranged-3 armor-2 sets-2 prep-2 potions-1 enhance-1 camp-2
-#   consumables-1 trade-3 professions-2 reagent-1 misc-3 quest-3 special-1 junk-3 add-2 own-3
+#   consumables-1 trade-3 professions-2 reagent-1 misc-3 quest-3 special-1 junk-3 add-2 own-3 containers-1
 workflow: qwen21-turbo-t2i
 set: aspect_ratio=1:1 (Square), megapixels=0.6
 count: 4
@@ -45,6 +45,7 @@ reagent: one mortar with a pestle in it.
 misc: one small wooden crate with planks.
 quest: one bold exclamation mark.
 special: one leather quiver full of arrows.
+containers: one small wooden lockbox with iron bands and a keyhole on its front.
 junk: a small stack of three plain round coins seen a little from the side, no marks on them.
 add: one bold plus sign.
 own: one bold question mark.

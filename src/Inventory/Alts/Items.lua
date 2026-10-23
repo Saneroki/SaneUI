@@ -108,6 +108,7 @@ function Items.Record(item)
         record.level = type(level) == "number" and level > 0 and level or nil
     end
     record.reagentBag, record.special, record.set, record.bound = false, false, nil, false
+    record.loot = ns.Contents.OPENS[item] or false
     Categories.Classify(record)
     return record
 end

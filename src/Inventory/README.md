@@ -88,9 +88,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Gear*) and *Item Set Gear* (gear of one of your equipment sets) are the group *The Armory*; *Potions*, *Buffs*
     (elixirs, flasks, scrolls, gems and enchantments, and other consumables whose effect lasts 15 minutes or
     more), *Camp Items* and *Consumables* (the rest: food and drink, bandages) the group *Adventure Prep*; then
-    *Trade Goods*, *Professions*, *Reagent Bag*, *Miscellaneous*, *Quest Items* (off at first: those items are in
-    Miscellaneous then), *Containers* (bags, quivers and other containers, and what is in a quiver, a soul or
-    herb bag) and *Junk* last. A group shows
+    *Trade Goods*, *Professions*, *Containers* (bags and quivers lying in your bags, which are always empty there,
+    and what a right click opens: a lockbox, a satchel, a clam), *Reagent Bag*, *Miscellaneous*, *Quest Items*
+    (off at first: those items are in Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag
+    you wear) and *Junk* last. A group shows
     in All Items as its name over the whole width, its members that hold something side by side under it, then
     one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
     the group's first member). In the sidebar its members are set in under it; the pencil arrow on its row (the sidebar's

@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: Containers a category of its own; Special Bags as before (Saneroki, 2026-10-23)
+- 6fa115e had made Special Bags into Containers (bags and quivers besides what lies in a worn special bag). Saneroki
+  explained the game: a bag or quiver lying in the bags is an item like any other and always empty
+  (`ERR_BAG_IN_BAG`), only worn bags hold items. So:
+  - **Containers** (`containers`, new, after Professions; the game's `AUCTION_CATEGORY_CONTAINERS`): the classes
+    Container and Quiver, and what a right click opens: `Contents.Read` keeps the game's `hasLoot` as `record.loot`,
+    `Categories.Classify` sends it there after Quest Items and Junk (`take = "loot"`); it takes what is put into it.
+    Its drawing a lockbox (`dev/imagegen/sets/bags/categories.txt`, containers-1; `category-art containers`).
+  - **Special Bags** (`special`, `ns.TEXT.bagsSpecial` back): only what lies in a worn bag for one kind of item, as
+    before 6fa115e (`unassignable`, late, alone; the quiver's drawing).
+  - The alts' items: `Contents.OPENS` remembers the items seen in the bags as opened by a right click
+    (`Alts/Items.lua` sets `record.loot` from it), as their records have no such word of the game's.
+- Tests: `dev/tests/bags.lua` 322 checks (the order, bags and quivers and what opens in Containers, Special Bags
+  as before, the blocks and their empty slots).
+
 ### Nameplates: the combat text's drawings from the image model (Saneroki, 2026-10-23)
 - Saneroki's picks, kept in `assets/interface/combat-text/` (new) and traced by `dev/tools/combat-art`: dodge (round
   2's `house/dodge-2`, its arrow turned to fly left to right), evade (round 2's `picks/evade-2`, its arrow turned to

@@ -9,8 +9,9 @@ The bigger changes of each version, newest first.
 - Inventory: every row of the bags' sidebar has a small pencil drawing
   of its own instead of the game's tiny icons: a backpack for All
   Items, a helmet for Head, a flask for Potions, a campfire for Camp
-  Items. Special Bags is now Containers and holds your spare bags and
-  quivers too. The same drawing, in grey, marks each category's empty
+  Items. A new category, Containers, holds the bags and quivers you
+  carry and what you open with a right click (lockboxes, satchels,
+  clams). The same drawing, in grey, marks each category's empty
   slot in your bags, and all words in the bags, the bank and the alts
   are larger. A group's categories (The
   Armory, Adventure Prep) are written darker, so they are easier to
