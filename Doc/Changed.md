@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: the tools' web pages, each on its own port (2026-10-23)
+- `dev/tools/web-pages` (`saneui webpages`; `saneui start|stop|status webpages`): every page a tool serves, each on
+  a port of its own so all can be open at once: interface pieces 8768, maps compared 8771, instance maps 8772, world
+  map 8773, interface lab 8774, and folders of this computer named in `~/.config/saneui/pages.json`. `start` runs
+  the ones that are down in the background (a passing user unit); a port already served is left to its server.
+- `dev/tools/world-map serve --only instances` (`saneui showinstancemaps`, port 8772): the instance maps alone;
+  `--only world` the continents alone. `serve` copies the page in as it is now, not as the last build left it.
+
 ### dev: the finished maps compared (2026-10-23)
 - `dev/tools/map-compare` (`saneui showmaps`, 127.0.0.1 port 8771): every zone and instance with a painted level
   in one page, its levels (close, middle per floor, far) and the game's terrain and maps laid by their boxes over

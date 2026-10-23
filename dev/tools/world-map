@@ -19,11 +19,13 @@ And per instance of dev/tools/map-layers: its terrain, the game's maps of its fl
 Usage:
   dev/tools/world-map build [--layers terrain,gamemaps,far,middle,tiles,atlas,instances] [--continents 0,1]
                             [--tiles RUN] [--out DIR]
-  dev/tools/world-map serve [--port 8773] [--out DIR]
+  dev/tools/world-map serve [--port 8773] [--only world|instances] [--out DIR]
 
   build   what is missing of the layers (a layer's pictures made again only when its source is newer);
           world.json lists them all; the page (dev/tools/world-map-page/) copied in
-  serve   the page on this computer, 127.0.0.1 port 8773 (saneui showworldmap; a preview server's PORT)
+  serve   the page on this computer, 127.0.0.1 port 8773 (saneui showworldmap; a preview server's PORT); --only
+          instances: the instance maps alone, on 127.0.0.1 port 8772 (saneui showinstancemaps); --only world: the
+          continents alone
 
 Writes (default assets/generated/world-map, never committed): world.json, index.html, viewer.js, <layer>/<continent>/
 <level>/<row>_<column>.jpg for the block layers, <layer>/<continent>/<uiMapID>.webp for the zone layers, instances/.
@@ -63,6 +65,7 @@ RUN = ROOT / "assets" / "generated" / "world-tiles"   # the painted tiles' run (
 INDEX_LUA = ROOT / "dev" / "tools" / "world-map-index.lua"
 LUA = "lua5.1"
 PORT = 8773
+PORTS = {"world": 8773, "instances": 8772}   # --only's own port, so both can be open at once
 PIXELS = 512                    # a block's side (Atlas.lua's PIXELS)
 LEVELS = 9                      # the pack's levels: from the ninth on a block holds the whole grid
 TERRAIN_LEVEL = 3               # the game's minimap: 256 pixels a terrain tile, two tiles a block
@@ -305,9 +308,24 @@ def serve(args):
     out = Path(args.out)
     if not (out / "world.json").is_file():
         sys.exit("No world map built yet: saneui makeworldmap")
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(out))
-    print(f"The world map on 127.0.0.1 port {args.port}, in a browser (Ctrl+C stops it)")
-    http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler).serve_forever()
+    for page in PAGE.iterdir():   # the page as it is now, not as the last build copied it
+        shutil.copyfile(page, out / page.name)
+    port = args.port or PORTS.get(args.only, PORT)
+    only = {"world": "continent", "instances": "instance"}.get(args.only)
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def do_GET(self):
+            if only and self.path == "/":   # the page with one kind of map only (viewer.js reads ?only=)
+                self.send_response(302)
+                self.send_header("Location", f"/?only={only}")
+                self.end_headers()
+                return
+            super().do_GET()
+
+    handler = functools.partial(Handler, directory=str(out))
+    what = {"world": "The world map", "instances": "The instance maps"}.get(args.only, "The world map")
+    print(f"{what} on 127.0.0.1 port {port}, in a browser (Ctrl+C stops it)")
+    http.server.ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
 
 
 def main():
@@ -317,7 +335,8 @@ def main():
                         default={"terrain", "gamemaps", "far", "middle", "tiles", "atlas", "instances"})
     parser.add_argument("--continents", type=lambda t: [int(c) for c in t.split(",")], default=[0, 1])
     parser.add_argument("--tiles", default=str(RUN))
-    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", PORT)))   # a preview server's PORT
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 0)))   # a preview server's PORT; else --only's
+    parser.add_argument("--only", choices=("world", "instances"))
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args()
     {"build": build, "serve": serve}[args.command](args)

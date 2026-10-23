@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""The tools' web pages (Saneroki, 2026-10-23): every page a tool of Sane UI serves on this computer, each on a port
+of its own, so they can all be open at once.
+
+  127.0.0.1 port 8768   interface pieces   assets/generated/interface (the image models' interface candidates)
+  127.0.0.1 port 8771   maps compared      dev/tools/map-compare serve (saneui showmaps)
+  127.0.0.1 port 8772   instance maps      dev/tools/world-map serve --only instances (saneui showinstancemaps)
+  127.0.0.1 port 8773   world map          dev/tools/world-map serve (saneui showworldmap)
+  127.0.0.1 port 8774   interface lab      dev/tools/ui-lab serve (saneui showuilab)
+  and the pages of ~/.config/saneui/pages.json: {"pages": [{"name": ..., "port": ..., "folder": ...}]}, folders
+  served as they are (pages kept outside the project)
+
+Usage:
+  dev/tools/web-pages [list]   the pages, their ports and which are up (saneui webpages, saneui status webpages)
+  dev/tools/web-pages run      every page that is down, here; Ctrl+C stops them
+  dev/tools/web-pages start    run in the background (saneui start webpages), as a passing user unit
+  dev/tools/web-pages stop     the background run stopped (saneui stop webpages); pages started elsewhere stay
+
+A page whose port is taken already (its tool started by hand, or by a session) is left to that server.
+"""
+import json
+import os
+import signal
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "saneui" / "pages.json"
+UNIT = "saneui-web-pages"
+PAGES = [   # name, port, what serves it: a tool's command, or a folder served as it is
+    ("interface pieces", 8768, ROOT / "assets" / "generated" / "interface"),
+    ("maps compared", 8771, ["dev/tools/map-compare", "serve"]),
+    ("instance maps", 8772, ["dev/tools/world-map", "serve", "--only", "instances"]),
+    ("world map", 8773, ["dev/tools/world-map", "serve"]),
+    ("interface lab", 8774, ["dev/tools/ui-lab", "serve"]),
+]
+
+
+def pages():
+    found = list(PAGES)
+    if CONFIG.is_file():
+        found += [(p["name"], int(p["port"]), Path(p["folder"]).expanduser()) for p in json.loads(CONFIG.read_text())["pages"]]
+    return sorted(found, key=lambda p: p[1])
+
+
+def up(port):
+    with socket.socket() as s:
+        s.settimeout(0.3)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+def command(port, serves):
+    """The command that serves a page, or why it cannot."""
+    if isinstance(serves, Path):
+        if not serves.is_dir():
+            return None, f"{serves} is not there"
+        return [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(serves)], None
+    if not (ROOT / serves[0]).is_file():
+        return None, f"{serves[0]} is not there"
+    return [str(ROOT / serves[0]), *serves[1:], "--port", str(port)], None
+
+
+def show():
+    width = max(len(name) for name, _, _ in pages())
+    for name, port, serves in pages():
+        _, why = command(port, serves)
+        state = "up" if up(port) else f"down ({why})" if why else "down"
+        print(f"  127.0.0.1 port {port}   {name:<{width}}   {state}")
+    if not CONFIG.is_file():
+        print(f"(more pages, such as folders outside the project: {CONFIG})")
+
+
+def run():
+    running = []
+    for name, port, serves in pages():
+        if up(port):
+            print(f"{name}: port {port} is served already", flush=True)
+            continue
+        argv, why = command(port, serves)
+        if why:
+            print(f"{name}: left out, {why}", flush=True)
+            continue
+        print(f"{name}: 127.0.0.1 port {port}", flush=True)
+        running.append((name, subprocess.Popen(argv, cwd=ROOT, start_new_session=True)))
+
+    def stop(*_):
+        for _, process in running:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGTERM)
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    while running:
+        time.sleep(2)
+        for entry in [e for e in running if e[1].poll() is not None]:
+            print(f"{entry[0]}: stopped ({entry[1].returncode})", flush=True)
+            running.remove(entry)
+    print("No page left to serve.")
+
+
+def main():
+    verb = sys.argv[1] if len(sys.argv) > 1 else "list"
+    if verb in ("list", "status"):
+        show()
+        if verb == "status":
+            active = subprocess.run(["systemctl", "--user", "is-active", "--quiet", UNIT]).returncode == 0
+            print(f"The background run ({UNIT}): {'running' if active else 'not running'}")
+    elif verb == "run":
+        run()
+    elif verb == "start":
+        subprocess.run(["systemctl", "--user", "reset-failed", UNIT], capture_output=True)
+        env = [f"--setenv={k}={os.environ[k]}" for k in ("PATH", "HOME") if k in os.environ]
+        subprocess.run(["systemd-run", "--user", "--quiet", "--collect", f"--unit={UNIT}", f"--working-directory={ROOT}",
+                        *env, sys.executable, str(Path(__file__).resolve()), "run"], check=True)
+        time.sleep(3)
+        print(f"The pages start in the background ({UNIT}; its log: journalctl --user -u {UNIT}).")
+        show()
+    elif verb == "stop":
+        subprocess.run(["systemctl", "--user", "stop", UNIT], check=False)
+        print("The background run stopped.")
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

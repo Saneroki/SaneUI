@@ -68,6 +68,10 @@ GROUPS = {
                          "world map offline, layered"),
         "showmaps": (["dev/tools/map-compare", "serve"], "the finished maps in the browser, each level against the "
                      "game's, overlaid or side by side", "finished maps compared"),
+        "showinstancemaps": (["dev/tools/world-map", "serve", "--only", "instances"],
+                             "the instance maps offline in the browser, on a port of their own", None),
+        "webpages": (["dev/tools/web-pages"], "every tool's web page, each on its own port: which are up, run them all",
+                     "tools' web pages and ports"),
         "showuilab": (["dev/tools/ui-lab", "serve"], "the interface lab: Sane UI's Lua drawn in the browser with a fake "
                       "server", "interface lab: Lua in browser"),
         "checkuilab": (["dev/tools/ui-lab", "check"], "a scene of the interface lab run without the page, its log", None),
@@ -95,6 +99,7 @@ VERBS = ("start", "pause", "resume", "stop", "status")
 BACKGROUND = {
     "gpurunner": {"start": ["start"], "pause": ["pause"], "resume": ["resume"], "stop": ["stop"], "status": ["status"]},
     "comfyui": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
+    "webpages": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
 }
 LINK = Path.home() / "bin" / "saneui"
 GAME = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"

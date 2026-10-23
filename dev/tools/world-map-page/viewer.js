@@ -173,8 +173,9 @@ fetch("world.json").then((r) => r.json()).then((data) => {
     ...world.instances.map((i) => ({ ...i, id: i.name, kind: "instance", key: i.name, name: i.title,
                                      layers: i.layers.map((l) => ({ ...l, kind: "images", images: [{ file: l.file, box: l.box }] })) })),
   ];
+  const only = new URLSearchParams(location.search).get("only");   // one kind alone (world-map serve --only)
   const select = document.getElementById("place");   // the world's continents, then every instance: views of their own
-  for (const [label, kind] of [["World map", "continent"], ["Instances", "instance"]]) {
+  for (const [label, kind] of [["World map", "continent"], ["Instances", "instance"]].filter(([, k]) => !only || k === only)) {
     const group = document.createElement("optgroup");
     group.label = label;
     for (const p of places.filter((p) => p.kind === kind).sort((a, b) => kind === "instance" ? a.name.localeCompare(b.name) : 0)) {
@@ -188,5 +189,7 @@ fetch("world.json").then((r) => r.json()).then((data) => {
     const p = places.find((p) => p.key === select.value);
     show(p); store.set("place", p.key);
   });
-  show(places.find((p) => p.key === store.get("place", "c0")) || places[0]);
+  const shown = places.filter((p) => !only || p.kind === only);
+  if (only === "instance") document.title = document.querySelector("h1").textContent = "Instance Maps Offline";
+  show(shown.find((p) => p.key === store.get("place", "c0")) || shown[0]);
 });
