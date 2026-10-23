@@ -340,7 +340,7 @@ check(table.concat(Categories.order, ",") ==
     .. "potions,enhance,camp,consumables,trade,professions,containers,reagent,misc,quest,special,junk",
     "the first order: Pinned and Recent first, Junk last")
 check(Categories.GroupOf("weapons") == "armory" and Categories.GroupOf("sets") == "armory" and Categories.GroupOf("consumables") == "prep"
-    and Categories.GroupWord("armory") == "The Armory", "the first groups: The Armory, Adventure Prep")
+    and Categories.GroupWord("armory") == "The Armory", "the first groups: The Armory, Consumables")
 local function Reclassify()
     for _, record in ipairs(slots) do if record.item then Categories.Classify(record) end end
 end
@@ -558,7 +558,7 @@ local function Words(blocks)
     return table.concat(list, ",")
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
-check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,?=0,Adventure Prep=0,Consumables=1,?=0,Trade Goods=1,"
+check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,?=0,Consumables=0,Food=1,?=0,Trade Goods=1,"
     .. "Professions=0,Containers=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
     "All Items: Pinned (with its +, empty too), a block per category, a group's title over its members that hold "
     .. "something, the empty categories shown too (a slot to drop into): " .. Words(blocks))
@@ -569,7 +569,7 @@ check(blocks[1].plus and blocks[9].plus and blocks[9].key == "trade" and not blo
     .. "members (a bare block), none on each member; not after the reagent bag's (a group's count: its members')")
 Categories.Divide("armory", false)
 blocks = Views.Build("all", { section }, nil, "default", options)
-check(Words(blocks):find("^Pinned Items=0,The Armory=2,Adventure Prep=0,") and blocks[2].group == "armory" and blocks[2].plus
+check(Words(blocks):find("^Pinned Items=0,The Armory=2,Consumables=0,") and blocks[2].group == "armory" and blocks[2].plus
     and blocks[2].drop == "group:armory" and not Categories.Divided("armory"),
     "a group whole: one block of its members' items, one +")
 Categories.Divide("armory", true)
@@ -1062,10 +1062,10 @@ check(Line(menu, "Disband Group") and Line(menu, "Hide in All Items"), "the grou
 Choose(menu, "Disband Group")
 check(not Categories.GroupOf("own1"), "disbanded")
 Choose(RowMenu("The Armory"), "Move Down")
-check(RowNamed("Adventure Prep").top < RowNamed("The Armory").top and RowNamed("Camp Items").top < RowNamed("Weapons").top,
+check(RowNamed("Consumables").top < RowNamed("The Armory").top and RowNamed("Camp Items").top < RowNamed("Weapons").top,
     "a group's Move Down: past the next group at once, its members with it")
 Choose(RowMenu("The Armory"), "Move Up")
-check(RowNamed("The Armory").top < RowNamed("Adventure Prep").top, "and up again")
+check(RowNamed("The Armory").top < RowNamed("Consumables").top, "and up again")
 menu = RowMenu("Trade Goods")
 Choose(menu, "Hide in All Items")
 check(not HeadNamed("Trade Goods") and kept.hidden.trade, "hidden from All Items")

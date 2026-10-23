@@ -96,7 +96,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     *Waist*, *Legs*, *Feet*, *Rings*, *Trinkets*, *Weapons*, *Off Hand*, *Ranged*, then *Shirts, Tabards & Other
     Gear*) and *Item Set Gear* (gear of one of your equipment sets) are the group *The Armory*; *Potions*, *Buffs*
     (elixirs, flasks, scrolls, gems and enchantments, and other consumables whose effect lasts 15 minutes or
-    more), *Camp Items* and *Consumables* (the rest: food and drink, bandages) the group *Adventure Prep*; then
+    more), *Camp Items* and *Food* (the rest: food and drink, bandages) the group *Consumables*; then
     *Trade Goods*, *Professions*, *Containers* (bags and quivers lying in your bags, which are always empty there,
     and what a right click opens: a lockbox, a satchel, a clam), *Reagent Bag*, *Miscellaneous*, *Quest Items*
     (off at first: those items are in Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag

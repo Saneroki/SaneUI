@@ -21,7 +21,7 @@ local _, ns = ...
 --                           whose effect lasts Categories.LASTING or longer
 --                           (Core's data: the item's use spell, its aura)
 --      Camp Items           the game's camp items, by item ID
---      Consumables          the other consumables (food and drink, bandages)
+--      Food                 the other consumables (food and drink, bandages)
 --      Trade Goods          trade goods and reagents
 --      Professions          recipes and profession items
 --      Reagent Bag          whatever is in the reagent bag
@@ -52,7 +52,7 @@ local _, ns = ...
 --  with one member is no more), make categories of their own (a name and an
 --  icon; they hold only what is put into them) and delete them. At first
 --  the gear's categories and Item Set Gear are the group The Armory, Potions,
---  Buffs, Camp Items and Consumables the group Adventure Prep.
+--  Buffs, Camp Items and Food the group Consumables.
 --
 --  An item is pinned by its item ID, put into a category (assigned), or
 --  marked as junk (put into Junk; unmarked, it goes back where it was).
@@ -167,7 +167,7 @@ Categories.LIST = {
           SUB.ItemenhancementTemporary or 15),
       whole = Set(CLASS.Gem or 3, CLASS.ItemEnhancement or 8), lasting = true },
     { key = "camp", word = ns.TEXT.bagsCamp, group = "prep", take = "camp" },
-    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables"),
+    { key = "consumables", word = ns.TEXT.bagsFood,
       group = "prep", classes = Set(CLASS.Consumable or 0) },
     { key = "trade", word = Core.Word("AUCTION_CATEGORY_TRADE_GOODS", "Trade Goods"),
       classes = Set(CLASS.Tradegoods or 7, CLASS.Reagent or 5) },

@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the group Adventure Prep now Consumables, the category Consumables now Food (Saneroki, 2026-10-23)
+- **Names only** (`Inventory.lua`: `bagsPrep` the game's `AUCTION_CATEGORY_CONSUMABLES`, `bagsFood` new): the keys
+  (`prep`, `consumables`) stay, so what the player chose is kept; a name the player gave stays theirs.
+
 ### Nameplates: every round fits; Core's corner masks (Saneroki, 2026-10-23)
 - **Core** (`Shape.CORNER`, `Art/corner-tl.blp`, `-tr`, `-bl`, `-br`, new from `dev/tools/shape-art`): one corner of a
   rectangle cut round, laid over that corner as large as the radius: that corner alone round, at any radius and height.
