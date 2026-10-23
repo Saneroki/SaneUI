@@ -4215,7 +4215,25 @@ end)()
     -- Alt held: each ability's description under its name, each item's own tooltip read for its lines.
     local describe, read = C_Spell.GetSpellDescription, {}
     C_Spell.GetSpellDescription = function(id) return id == 801 and "Hits the target and those beside it." or "" end
-    W.methods.SetItemByID = function(_, id) read[#read + 1] = id end
+    -- An item's own tooltip as the game fills it: only its damage, damage per second, stats and effects are kept,
+    -- and that its look is not collected.
+    local ITEM_LINES = { "Item", "Binds when picked up", { "Two-Hand", "Axe" }, { "41 - 77 Damage", "Speed 3.60" },
+        "(16.4 damage per second)", "+12 Strength", "Durability 100 / 100", "Requires Level 40",
+        "Equip: Improves your chance to hit by 1%.", "You haven't collected this appearance", "Sell Price: 5",
+        '"Forged in the deep."' }
+    ITEM_SPELL_TRIGGER_ONEQUIP, TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN = "Equip:", "You haven't collected this appearance"
+    W.methods.SetItemByID = function(self, id)
+        read[#read + 1] = id
+        for index, line in ipairs(ITEM_LINES) do
+            local left, right = W.NewWidget("FontString"), W.NewWidget("FontString")
+            left:SetText(type(line) == "table" and line[1] or line)
+            right:SetText(type(line) == "table" and line[2] or nil)
+            right:SetShown(type(line) == "table")
+            _G["SaneUINavigationReaderTextLeft" .. index], _G["SaneUINavigationReaderTextRight" .. index] = left, right
+        end
+        self.NumLines = function() return #ITEM_LINES end
+    end
+    W.methods.AddDoubleLine = function(self, left, right) self:AddLine(left .. " | " .. right) end
     IsAltKeyDown = function() return true end
     GameTooltip._lines = nil
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
@@ -4224,12 +4242,18 @@ end)()
     check(lines[2] and lines[2]:find("Cleave", 1, true) and lines[3] == "Hits the target and those beside it."
         and lines[4] == Dungeons.TEXT.loot and read[1] == 901 and read[2] == 902,
         "Alt held: the tooltip drawn again, an ability's description under it, the items' own tooltips read")
+    check(lines[6] == "    41 - 77 Damage | Speed 3.60" and lines[7] == "    (16.4 damage per second)"
+        and lines[8] == "    +12 Strength" and lines[9] == "    Equip: Improves your chance to hit by 1%."
+        and lines[10] == "    " .. Dungeons.TEXT.uncollected and lines[11] and lines[11]:find("Item 902", 1, true),
+        "an item's details: its damage, speed, damage per second, stats and effects, and Uncollected; no binding, slot, "
+        .. "durability, requirement, price or lore")
     IsAltKeyDown = function() return false end
     GameTooltip._lines = nil
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
     Frames(1)
     check((GameTooltip._lines or {})[3] == Dungeons.TEXT.loot, "Alt let go: the names only again")
-    C_Spell.GetSpellDescription, W.methods.SetItemByID = describe, nil
+    C_Spell.GetSpellDescription, W.methods.SetItemByID, W.methods.AddDoubleLine = describe, nil, nil
+    ITEM_SPELL_TRIGGER_ONEQUIP, TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN = nil, nil
     marks[1]._mouseOver = false
     C_Spell.GetSpellInfo, C_Item.GetItemInfo, C_Item.GetItemIconByID, C_Item.RequestLoadItemDataByID =
         spellInfo, itemInfo, itemIcon, request

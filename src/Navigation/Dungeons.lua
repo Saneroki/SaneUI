@@ -63,6 +63,26 @@ Dungeons.LINES = 10 -- abilities, and items, a boss's tooltip lists at most
 Dungeons.ENEMY = "Interface\\COMMON\\Indicator-Red" -- an enemy's mark: the game's small red dot
 Dungeons.ENEMY_SIZE = 10
 Dungeons.ICON = 16  -- their icons' size in it
+Dungeons.TEXT.uncollected = "Uncollected"
+
+-- A sentence of the game with gaps ("%s Armor") as a pattern that finds it in a line; english where it has none.
+local function Sentence(name, english)
+    local words = rawget(_G, name)
+    words = type(words) == "string" and words or english
+    words = words:gsub("%%%d?%$?[%d%.]*[sdfg]", "\1"):gsub("[%(%)%.%+%-%*%?%[%]%^%$%%]", "%%%0")
+    return "^" .. words:gsub("\1", ".-") .. "$"
+end
+
+-- The lines of an item's tooltip a boss's tooltip keeps with Alt held: its damage, its speed and damage per second,
+-- its armour and block, its stats ("+5 Stamina") and its effects (Equip, Use, Chance on hit). Nothing else: no
+-- price, slot, binding, requirements, durability, set, lore.
+Dungeons.KEEP = {
+    Sentence("DAMAGE_TEMPLATE", "%s - %s Damage"), Sentence("SINGLE_DAMAGE_TEMPLATE", "%s Damage"),
+    Sentence("PLUS_DAMAGE_TEMPLATE", "+ %s - %s %s Damage"), Sentence("DPS_TEMPLATE", "(%s damage per second)"),
+    Sentence("ARMOR_TEMPLATE", "%s Armor"), Sentence("SHIELD_BLOCK_TEMPLATE", "%s Block"),
+    "^[%+%-]%s?%d",
+}
+Dungeons.EFFECTS = { "ITEM_SPELL_TRIGGER_ONEQUIP", "ITEM_SPELL_TRIGGER_ONUSE", "ITEM_SPELL_TRIGGER_ONPROC" }
 
 local KINDS = rawget(_G, "Enum") and Enum.UIMapType or {}
 local DUNGEON = KINDS.Dungeon or 4
@@ -348,12 +368,39 @@ local function Read(id)
     return reader:NumLines() or 0
 end
 
--- With Alt held, an item's lines under its name: all of its own tooltip's but the name, in its colours.
+-- A line of an item's tooltip the boss's keeps (Dungeons.KEEP, or one of the game's effects).
+local function Kept(words)
+    for _, pattern in ipairs(Dungeons.KEEP) do
+        if words:find(pattern) then return true end
+    end
+    for _, name in ipairs(Dungeons.EFFECTS) do
+        local start = rawget(_G, name)
+        if type(start) == "string" and words:sub(1, #start) == start then return true end
+    end
+    return false
+end
+
+-- Whether the player lacks the item's appearance (the game's collection; nil where it cannot tell).
+local function Uncollected(id)
+    local looks = rawget(_G, "C_TransmogCollection")
+    if type(looks) ~= "table" then return nil end
+    local _, source = Core.Ask(looks.GetItemInfo, id)
+    local info = source and Core.Ask(looks.GetAppearanceInfoBySource, source)
+    if type(info) ~= "table" or info.appearanceIsCollected == nil then return nil end
+    return not info.appearanceIsCollected
+end
+
+-- With Alt held, an item's lines under its name: its own tooltip's stats, damage, armour and effects (Kept), in
+-- their colours; and "Uncollected" while the player lacks its appearance.
 local function ItemDetails(id)
+    local missing = Uncollected(id)
+    local unknown = rawget(_G, "TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN")
     for index = 2, Read(id) do
         local left, right = _G["SaneUINavigationReaderTextLeft" .. index], _G["SaneUINavigationReaderTextRight" .. index]
         local words, other = left and left:GetText(), right and right:IsShown() and right:GetText()
-        if words and words ~= "" then
+        if words and words == unknown and missing == nil then
+            missing = true -- the game's tooltip says so where its collection could not be asked
+        elseif words and words ~= "" and Kept(words) then
             local r, g, b = left:GetTextColor()
             if other and other ~= "" then
                 local r2, g2, b2 = right:GetTextColor()
@@ -362,6 +409,12 @@ local function ItemDetails(id)
                 GameTooltip:AddLine("    " .. words, r, g, b, true)
             end
         end
+    end
+    if missing then
+        local colour = rawget(_G, "TRANSMOGRIFY_FONT_COLOR")
+        local r, g, b = 0.5, 0.5, 1
+        if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
+        GameTooltip:AddLine("    " .. Dungeons.TEXT.uncollected, r, g, b)
     end
 end
 

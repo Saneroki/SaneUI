@@ -109,7 +109,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   (the game's model of the boss's look; the game's boss mark only where it has no look, or its model would reach
   past the view's edge). Its tooltip: its name, its abilities and what it drops, each with its icon and name as the
   game has them (an item in its quality's colour; at most ten of each, then how many more), not yet confirmed by the
-  game; hold Alt for each ability's description and each item's stats under its name. Where the data knows them, the
+  game; hold Alt for each ability's description and, under each item, only its damage, speed and damage per
+  second, armour and block, stats and effects (Equip, Use, Chance on hit), and *Uncollected* while you lack its look
+  (no price, slot, binding, requirements, durability, set or lore). Where the data knows them, the
   enemies stand there too, each a small red dot under the bosses, its name in its tooltip (six dungeons so far). The wheel zooms it, a drag moves it, a right
   click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
@@ -324,8 +326,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   an item by `C_Item.GetItemInfo` (asked for with `RequestLoadItemDataByID` while not loaded; drawn again once on
   `ITEM_DATA_LOAD_RESULT`), each with its icon (`Dungeons.ICON`). With Alt held (`IsAltKeyDown`; drawn again on
   `MODIFIER_STATE_CHANGED`) each line gets its details under it: a spell's `C_Spell.GetSpellDescription` (asked for
-  with `RequestLoadSpellData`, drawn again on `SPELL_DATA_LOAD_RESULT`), an item's own tooltip lines but its name,
-  in their colours, read from a hidden tooltip (`SaneUINavigationReader`, `SetItemByID`).
+  with `RequestLoadSpellData`, drawn again on `SPELL_DATA_LOAD_RESULT`), an item's own tooltip lines, read from a
+  hidden tooltip (`SaneUINavigationReader`, `SetItemByID`), only those `Dungeons.KEEP` finds (the game's damage,
+  damage per second, armour and block sentences, a line starting with a number's sign) or that start with one of
+  the game's effects (`Dungeons.EFFECTS`), in their colours; then *Uncollected* while the player lacks its
+  appearance (`C_TransmogCollection.GetItemInfo`, `GetAppearanceInfoBySource`; else the game's line saying so).
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the

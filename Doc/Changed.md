@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: a boss's items with Alt show their stats and effects only (Saneroki, 2026-10-23)
+- `Dungeons.lua`: of an item's own tooltip lines only its damage, speed, damage per second, armour, block, stats
+  (`Dungeons.KEEP`) and effects (`Dungeons.EFFECTS`: Equip, Use, Chance on hit), as Saneroki asked; no price, slot,
+  binding, requirements, durability, set or lore. *Uncollected* under it while the player lacks its appearance
+  (`C_TransmogCollection`, else the game's line).
+- README.md (*Dungeons*), `dev/tests/navigation.lua` (an item's lines kept and dropped).
+
 ### Navigation: the bosses as their models alone; Alt for their abilities' and items' details (Saneroki, 2026-10-23)
 - `Dungeons.lua`: a boss's mark (`Dungeons.BOSS`) shows, and takes the mouse, only where no model stands on it (no
   look, or the model at the view's edge), as Saneroki asked. Its tooltip with Alt held: under each ability its
