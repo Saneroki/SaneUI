@@ -122,7 +122,7 @@ local function Heard(dress, event, _, ...)
     local unit = dress.unit
     if not unit or ns.off then return end
     if event == "UNIT_COMBAT" then -- what it took: kind, flags, amount, school
-        ns.Numbers.Hit(dress, ...)
+        ns.CombatText.Hit(dress, ...)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.Bar.Health(dress, unit)
         ns.Text.Health(dress, unit)
@@ -227,7 +227,7 @@ local function Off(dress)
     ns.Text.Set(dress, nil)
     ns.Safe("auras", ns.Auras.Set, dress, nil)
     ns.Safe("combo points", ns.Resource.Leave, dress)
-    ns.Safe("numbers", ns.Numbers.Clear, dress)
+    ns.Safe("combat text", ns.CombatText.Clear, dress)
 end
 
 local function Added(unit)

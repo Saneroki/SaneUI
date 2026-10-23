@@ -196,6 +196,17 @@ colour.
 - **Breaking the rectangles:** small details break up the straight edges: a folded corner, a note in the margin,
   a sketch.
 
+### Combat text
+
+What a unit takes, rising over its nameplate and over your character (Saneroki, 2026-10-23):
+
+- **Numbers in Kalam Bold**, outlined, in the game's colours (white, a school's colour, green heals, red damage on
+  you).
+- **What did no harm is a drawing, not a word:** a miss, dodge, parry, block, evade or immunity is a pencil line
+  drawing, large, with thick lines, white in the game (tinted by code where it needs a colour), on transparency
+  with a dark edge round its lines so it reads over any ground, as the outlined numbers do. Drawn by code for now
+  (`dev/tools/combat-art`, in the pencil pieces' manner: strokes running past their ends, a lighter second pass).
+
 ### Chat bubbles
 
 Bubbles appear in two places:

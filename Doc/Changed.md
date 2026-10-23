@@ -6,10 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 137 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
-### Inventory: the sidebars' arrow drawn from stroke-1 (Saneroki, 2026-10-23)
-- Saneroki picked stroke-1 of `dev/imagegen/sets/bags/arrow.txt` (one even pencil stroke bent into a chevron,
-  noted in the list): `assets/interface/bags-arrow.png` replaced, Core's `Art/Journal/arrow.blp` made anew by
-  `dev/tools/journal-art arrow` (the same steps, still 64 x 64); no code changed.
+### Nameplates: the combat text in Kalam, drawings for what did no harm, over your character (Saneroki, 2026-10-23)
+- `Numbers.lua` is `CombatText.lua` (`ns.CombatText`); the settings' section *Combat text*: *Over nameplates*
+  (`combatText`), *Over your character* (`combatSelf`), *Heals* (`combatHeals`), *Instead of the game's*
+  (`combatGame`).
+- The numbers in Kalam Bold, outlined (`Core.Journal.FONT_BOLD`; the game's combat text font where it cannot be set).
+- A miss, dodge, parry (and deflect), block, evade or immunity is a white pencil drawing, 48 square, in place of the
+  word: new `dev/tools/combat-art` (`saneui makecombatart`) draws them into `assets/CombatText/`; `dev/tools/art`
+  makes `assets/optimized/Nameplates/Art/combat-<name>.blp` (128, kind `combat`). The word stays where there is no
+  drawing (resist, absorb, reflect, interrupt) or its file is missing.
+- Over your character: your own `UNIT_COMBAT` (`Core.OnUnit`) rises from a point of ours `CombatText.SELF` over the
+  screen's middle (no plate of your own in this client: the resource display is a panel of Edit Mode); damage red
+  with a minus. *Instead of the game's* then also turns `enableFloatingCombatText` off.
+- `Doc/guides/interface-style.md`, *Combat text*: Saneroki's look for it.
+- Tests: `dev/tests/nameplates.lua` 169 checks (the font, the drawings and the word without one, your character's
+  text, each switch, no CVar set in a fight).
 
 ### Inventory: a pencil arrow of its own for the sidebars, centred and as large as a box (Saneroki, 2026-10-23)
 - **The picture:** `dev/imagegen/sets/bags/arrow.txt` (Qwen turbo, three prompts by four seeds), stroke-3 chosen

@@ -32,7 +32,11 @@ end
 function methods:AddMaskTexture(mask) self._masks = self._masks or {}; self._masks[#self._masks + 1] = mask end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
 function methods:SetSpriteSheetCell(cell, rows, columns) self._cell = { cell, rows, columns } end
-function methods:SetTexture(file, wrapH, wrapV) self._texture, self._wrap = file, { wrapH, wrapV } end
+-- A file of ours is found unless the test names it gone (W.gone).
+function methods:SetTexture(file, wrapH, wrapV)
+    self._texture, self._wrap = file, { wrapH, wrapV }
+    return not (W.gone and W.gone[file])
+end
 function methods:UnregisterAllEvents() self._events, self._units = {}, nil end
 function methods:SetFormattedText(form, ...)
     for index = 1, select("#", ...) do
@@ -46,7 +50,7 @@ function methods:SetBlendMode(mode) self._blend = mode end
 -- Text measured as the game would, six wide a letter, ten high; a hidden value has no width the test can know.
 function methods:GetStringWidth() return type(self._text) == "string" and #self._text * 6 or 0 end
 methods.GetUnboundedStringWidth = methods.GetStringWidth
-function methods:SetFont(file, height, flags) self._font = { file, height, flags } end
+function methods:SetFont(file, height, flags) self._font = { file, height, flags } return true end
 -- The game's font for its plates' names: its face, height and outline.
 SystemFont_NamePlate_Outlined = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 14, "OUTLINE" end }
 function methods:GetStringHeight() return 10 end
@@ -246,7 +250,8 @@ end
 for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", nameplateMaxScaleDistance = "10",
                              nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000",
                              nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6",
-                             floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1" }) do
+                             floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1",
+                             enableFloatingCombatText = "1" }) do
     W.cvarInfo[name] = { default = default }
 end
 W.LoadCore(root)
@@ -757,45 +762,86 @@ Core.Set(ns.name, "distance", true)
 check(CVar("nameplateSelectedScale") == "1", "on again")
 
 -------------------------------------------------------------------------------
---  Combat numbers over a plate
+--  Combat text over a plate and over your character
 -------------------------------------------------------------------------------
 ;(function()
-    local Numbers = ns.Numbers
-    check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "0",
-        "the game's own numbers over units off while ours show")
+    local CombatText = ns.CombatText
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "0"
+        and CVar("enableFloatingCombatText") == "0", "the game's own combat text off while ours shows")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "CRITICAL", 1234, 4)
     local hit = dress.numbers and dress.numbers[1]
-    check(hit and hit._parent == dress and hit.text._text[1].abbreviated == 1234 and hit.text._font[2] == Numbers.HEIGHT * Numbers.CRIT,
+    check(hit and hit._parent == dress and hit.text._text[1].abbreviated == 1234 and hit.text._font[2] == CombatText.HEIGHT * CombatText.CRIT,
         "a critical hit rises over the plate, larger, in the game's abbreviation")
-    check(hit.text._color[1] == 1 and hit.text._color[2] == 0.5 and hit.motion._playing and hit.swell._scale[1] == Numbers.SWELL,
+    check(hit.text._font[1] == Core.Journal.FONT_BOLD and hit.text._font[3] == "OUTLINE", "in Kalam Bold, outlined")
+    check(hit.text._color[1] == 1 and hit.text._color[2] == 0.5 and hit.motion._playing and hit.swell._scale[1] == CombatText.SWELL,
         "fire's colour, and it swells once")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 0, 1)
     local miss = dress.numbers[2]
-    check(miss.text._text == "Miss" and miss.text._font[2] == Numbers.HEIGHT * Numbers.SMALL and miss.text._color[2] == 1,
-        "a hit of nothing: the game's word, smaller, white")
+    check(miss.picture:IsShown() and not miss.text:IsShown() and miss.picture._texture == CombatText.ART .. "miss"
+        and miss.picture._width == CombatText.PICTURE, "a hit of nothing: the drawing of a miss, not a word")
     check(miss._points[1][4] ~= hit._points[1][4], "two at once stand side by side")
+    W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
+    check(dress.numbers[3].picture._texture == CombatText.ART .. "parry", "a parry: its drawing")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "BLOCK", 0, 1)
+    check(dress.numbers[4].picture._texture == CombatText.ART .. "block", "a blow blocked whole: the shield")
+    W.Fire("UNIT_COMBAT", "nameplate1", "RESIST", "", 0, 1)
+    check(dress.numbers[5].text:IsShown() and dress.numbers[5].text._text == "resist", "no drawing for a resist: the game's word")
+    W.gone = { [CombatText.ART .. "evade"] = true }
+    W.Fire("UNIT_COMBAT", "nameplate1", "EVADE", "", 0, 1)
+    check(dress.numbers[#dress.numbers].text:IsShown() and dress.numbers[#dress.numbers].text._text == "evade"
+        and not dress.numbers[#dress.numbers].picture:IsShown(), "a drawing's file missing: the word")
+    W.gone = nil
+    CombatText.Clear(dress)
     W.Fire("UNIT_COMBAT", "nameplate1", "HEAL", "", 80, 2)
-    check(dress.numbers[3].text._text.form == "+%s" and dress.numbers[3].text._color[2] == 1 and dress.numbers[3].text._color[1] < 0.5,
-        "a heal: green, with a plus")
+    check(dress.numbers[1].text._text.form == "+%s" and dress.numbers[1].text._color[2] == 1 and dress.numbers[1].text._color[1] < 0.5
+        and not dress.numbers[1].picture:IsShown(), "a heal: green, with a plus, no picture left from before")
     W.Fire("UNIT_COMBAT", "nameplate1", Secret(), Secret(), Secret(), Secret())
-    check(#dress.numbers == 4 and dress.numbers[4].text._color[3] == 1, "a hidden hit: written as it is, white, nothing compared")
+    check(#dress.numbers == 2 and dress.numbers[2].text._color[3] == 1, "a hidden hit: written as it is, white, nothing compared")
     W.Fire("UNIT_COMBAT", "nameplate1", "ENERGIZE", "", 10, 0)
-    check(#dress.numbers == 4, "power gained: nothing")
-    hit.motion:Finish()
-    check(#dress.numbers == 3 and not hit:IsShown(), "a number done goes back to the pool")
-    for _ = 1, Numbers.MOST + 2 do W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 5, 1) end
-    check(#dress.numbers == Numbers.MOST and dress.numbers[1].text._text[1].abbreviated == 5, "no more than Numbers.MOST on a plate: the oldest go")
-    ns.options.numbersHeal = false
+    check(#dress.numbers == 2, "power gained: nothing")
+    local first = dress.numbers[1]
+    first.motion:Finish()
+    check(#dress.numbers == 1 and not first:IsShown(), "a number done goes back to the pool")
+    for _ = 1, CombatText.MOST + 2 do W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 5, 1) end
+    check(#dress.numbers == CombatText.MOST and dress.numbers[1].text._text[1].abbreviated == 5, "no more than CombatText.MOST on a plate: the oldest go")
+    Core.Set(ns.name, "combatHeals", false)
     local last = dress.numbers[#dress.numbers]
     W.Fire("UNIT_COMBAT", "nameplate1", "HEAL", "", 80, 2)
     check(dress.numbers[#dress.numbers] == last, "heals switched off: none")
-    ns.options.numbersHeal = true
-    Core.Set("Nameplates", "numbersGame", false)
-    check(CVar("floatingCombatTextCombatDamage_v2") == "1", "Instead of the game's numbers off: the game's back")
-    Core.Set("Nameplates", "numbersGame", true)
-    check(CVar("floatingCombatTextCombatDamage_v2") == "0", "on again: off")
-    Numbers.Clear(dress)
+    Core.Set(ns.name, "combatHeals", true)
+    Core.Set(ns.name, "combatText", false)
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 7, 1)
+    check(dress.numbers[#dress.numbers] == last and CVar("floatingCombatTextCombatDamage_v2") == "1"
+        and CVar("enableFloatingCombatText") == "0", "over plates off: none there, the game's numbers over units back, its text about you still off")
+    Core.Set(ns.name, "combatText", true)
+    CombatText.Clear(dress)
     check(#dress.numbers == 0, "the plate going takes its numbers")
+
+    -- Your own character: no plate, a point over the screen's middle.
+    W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 1)
+    local you = W.frames[#W.frames]
+    for _, frame in ipairs(W.frames) do
+        if frame.numbers and frame ~= dress and frame.numbers[1] then you = frame end
+    end
+    local mine = you.numbers and you.numbers[1]
+    check(mine and you._points[1][1] == "CENTER" and you._points[1][5] == CombatText.SELF and mine.text._text.form == "-%s"
+        and mine.text._color[1] == 1 and mine.text._color[2] < 0.5, "a hit on you: red with a minus, over the screen's middle")
+    W.Fire("UNIT_COMBAT", "player", "DODGE", "", 0, 1)
+    check(you.numbers[2].picture._texture == CombatText.ART .. "dodge", "your dodge: its drawing")
+    Core.Set(ns.name, "combatSelf", false)
+    W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 1)
+    check(#you.numbers == 0 and CVar("enableFloatingCombatText") == "1", "over your character off: none, the game's text about you back")
+    Core.Set(ns.name, "combatSelf", true)
+    Core.Set(ns.name, "combatGame", false)
+    check(CVar("floatingCombatTextCombatDamage_v2") == "1" and CVar("enableFloatingCombatText") == "1", "Instead of the game's off: both of the game's back")
+    Core.Set(ns.name, "combatGame", true)
+    W.combat = true
+    Core.Set(ns.name, "combatGame", false)
+    check(CVar("enableFloatingCombatText") == "0", "in a fight no CVar is set")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(CVar("enableFloatingCombatText") == "1", "the fight over: set")
+    Core.Set(ns.name, "combatGame", true)
 end)()
 
 -------------------------------------------------------------------------------
@@ -825,7 +871,8 @@ check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.n
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
 check(C_CVar.GetCVar("nameplateSelectedScale") == "1.2" and plates.nameplate1.UnitFrame._scale == 1,
     "the game's scaling by distance its own again, its unit frames at their own scale")
-check(C_CVar.GetCVar("floatingCombatTextCombatDamage_v2") == "1", "the game's numbers over units back")
+check(C_CVar.GetCVar("floatingCombatTextCombatDamage_v2") == "1" and C_CVar.GetCVar("enableFloatingCombatText") == "1",
+    "the game's combat text back")
 bar:Hide()
 bar:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")

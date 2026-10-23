@@ -59,6 +59,7 @@ KINDS = {            # kind: (drawn width, height in UI units; set at the left, 
     "icon": (40, 40, False),
     "button": (24, 24, False),
     "logo": (96, 96, False),
+    "combat": (48, 48, False),  # the combat text's pictures over a nameplate (Nameplates, CombatText.lua)
 }
 # The pictures: (file in assets, a pattern; name in assets/optimized; kind; the module that ships it;
 # its file in that module's Art/, banner.blp if none is given).
@@ -73,6 +74,9 @@ PICTURES = [
     ("SaneTooltip-Icon.png", "SaneTooltip-Icon", "icon", None),
     ("SaneSocial-Smiley.png", "SaneSocial-Smiley", "button", "Social", "smiley.blp"),  # drawn by dev/tools/smiley-art
     ("SaneUI-BigLogo.png", "SaneUI-BigLogo", "logo", None),
+] + [  # drawn by dev/tools/combat-art
+    (f"CombatText/{name}.png", f"CombatText-{name}", "combat", "Nameplates", f"combat-{name}.blp")
+    for name in ("miss", "dodge", "parry", "block", "evade", "immune")
 ]
 
 

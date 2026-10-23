@@ -132,7 +132,8 @@ A plate's health, auras and cast are secret; drawing over a plate is display onl
 Threat (`UnitThreatSituation`, `UnitDetailedThreatSituation`) is plain for you, your pet or an ally against
 one unit. Combat text comes from `COMBAT_TEXT_UPDATE`, and what happened from
 `C_CombatText.GetCurrentEventInfo`, whose answers are secret: written into a text as they come, never added
-up or compared. The combat log is restricted, so combat text can't be built from it.
+up or compared. The combat log is restricted, so combat text can't be built from it. Each unit's own `UNIT_COMBAT`
+is open: the combat text is built on it, in the Nameplates module (`src/Nameplates/CombatText.lua`, 2026-10-23).
 
 ## How every part works
 

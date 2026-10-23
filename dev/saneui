@@ -56,6 +56,7 @@ GROUPS = {
         "makeflipbook": (["dev/tools/flipbook"], "a clip's frames as a flipbook", None),
         "makeshapes": (["dev/tools/shape-art"], "the masks of Core's round shapes", None),
         "makesmiley": (["dev/tools/smiley-art"], "Social's smiley", None),
+        "makecombatart": (["dev/tools/combat-art"], "the combat text's pictures (miss, parry, block ...)", None),
         "maketooltipart": (["dev/tools/tooltip-art"], "the Tooltips module's pictures", None),
         "maketerrain": (["dev/tools/terrain-art"], "Navigation's terrain, outlines and stitched map", None),
         "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),

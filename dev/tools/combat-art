@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""Draws the pictures of the combat text (Nameplates, CombatText.lua) for what a hit did not do: a miss, a dodge,
+a parry, a block, an evade, an immunity. assets/CombatText/<name>.png, 1024 x 1024.
+
+Pencil line drawings (Doc/guides/interface-style.md, *Pencil pieces*: clean lines, firm strokes running a little
+past their ends, a light second pass; nothing filled or shaded), in white on transparency, so the game can tint
+them, with thick lines and a dark edge round them, so they read over any ground as the combat text's outlined
+letters do:
+    miss     an arrow flying high over a target
+    dodge    an arrow swerving aside, speed lines behind it
+    parry    two swords crossed, sparks where they meet
+    block    a shield, an arrow's strike glancing off its edge
+    evade    a round arrow turning back on itself (the creature runs home)
+    immune   a bubble with its shine and a sparkle
+dev/tools/art makes the game's textures of them (assets/optimized/Nameplates/Art/<name>.blp, drawn 48 x 48). A
+drawing by hand can take a picture's place in assets/CombatText/ under the same name.
+
+Needs Python with Pillow and NumPy.
+
+Usage:  dev/tools/combat-art          writes assets/CombatText/*.png, then run dev/tools/art
+        dev/tools/combat-art <name>   that picture alone
+"""
+import math
+import random
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "assets" / "CombatText"
+N = 1024
+WIDTH = 0.058        # a stroke's width, a share of the picture
+SECOND = 0.5         # the second pass: its strength and its width, shares of the first
+WOBBLE = 0.004       # how far a hand's line strays, a share of the picture
+PAST = 0.035         # how far a straight stroke runs past its ends, a share of its length
+EDGE = 0.022         # the dark edge round the lines, a share of the picture
+EDGE_ALPHA = 0.75    # its strength
+
+
+def bend(points, steps=24):
+    """A smooth curve through the points (Catmull-Rom), as many points."""
+    if len(points) < 3:
+        return points
+    pts = [points[0]] + points + [points[-1]]
+    out = []
+    for i in range(1, len(pts) - 2):
+        p0, p1, p2, p3 = pts[i - 1], pts[i], pts[i + 1], pts[i + 2]
+        for s in range(steps):
+            t = s / steps
+            out.append(tuple(0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t * t
+                                    + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t ** 3) for k in (0, 1)))
+    out.append(points[-1])
+    return out
+
+
+def arc(cx, cy, r, start, stop, steps=48):
+    """Points on a circle, from start to stop (degrees, clockwise on the screen)."""
+    return [(cx + r * math.cos(math.radians(a)), cy + r * math.sin(math.radians(a)))
+            for a in np.linspace(start, stop, steps)]
+
+
+def past(points, share=PAST):
+    """A straight stroke run a little past both its ends, as a quick hand draws it."""
+    (x0, y0), (x1, y1) = points[0], points[-1]
+    dx, dy = (x1 - x0) * share, (y1 - y0) * share
+    return [(x0 - dx, y0 - dy)] + points[1:-1] + [(x1 + dx, y1 + dy)]
+
+
+class Sheet:
+    def __init__(self, seed):
+        self.lines = Image.new("L", (N, N), 0)
+        self.rand = random.Random(seed)
+
+    def stroke(self, points, width=1.0, curve=False):
+        """One stroke of the pencil through points (shares of the picture): tapered at its ends, its line a little
+        unsteady; a lighter, thinner second pass beside it."""
+        pts = bend(points) if curve else points
+        for alpha, wide, shift in ((1.0, width, 0.0), (SECOND, width * SECOND, 1.0)):
+            layer = Image.new("L", (N, N), 0)
+            draw = ImageDraw.Draw(layer)
+            dx, dy = (self.rand.uniform(-1, 1) * WOBBLE * 1.5 * shift for _ in range(2))
+            dense = []
+            for a, b in zip(pts, pts[1:]):
+                n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) * N / 2))
+                dense += [(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n) for i in range(n)]
+            dense.append(pts[-1])
+            phase = self.rand.uniform(0, math.tau)
+            for i, (x, y) in enumerate(dense):
+                t = i / max(1, len(dense) - 1)
+                taper = 0.6 + 0.4 * math.sin(math.pi * t)
+                r = WIDTH * N * wide * taper / 2
+                wob = WOBBLE * N * math.sin(t * 9 + phase)
+                cx, cy = (x + dx) * N + wob * 0.6, (y + dy) * N + wob
+                level = int(255 * alpha)
+                draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=level)
+            self.lines = ImageChops.lighter(self.lines, layer)  # where strokes cross, the stronger stays
+
+    def picture(self):
+        """White lines with a soft grain, on a dark edge, on transparency."""
+        line = np.asarray(self.lines, dtype=np.float32) / 255
+        grain = np.asarray(Image.effect_noise((N, N), 40).filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32) / 255
+        line = np.clip(line * (0.82 + 0.3 * grain), 0, 1)
+        k = int(EDGE * N) | 1
+        around = np.asarray(self.lines.filter(ImageFilter.MaxFilter(k)).filter(ImageFilter.GaussianBlur(k / 4)),
+                            dtype=np.float32) / 255
+        edge = np.clip(around * 1.4, 0, 1) * EDGE_ALPHA
+        alpha = line + edge * (1 - line)
+        grey = np.where(alpha > 0, line / np.maximum(alpha, 1e-6), 0)  # white over the dark edge
+        rgba = np.zeros((N, N, 4), dtype=np.uint8)
+        rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = np.clip(grey * 255, 0, 255).astype(np.uint8)
+        rgba[..., 3] = np.clip(alpha * 255, 0, 255).astype(np.uint8)
+        return Image.fromarray(rgba, "RGBA")
+
+
+def arrow_head(s, tip, back, size=0.11, spread=28, width=1.0):
+    """An arrow's head at tip, pointing away from back: two strokes."""
+    angle = math.atan2(tip[1] - back[1], tip[0] - back[0])
+    for side in (-1, 1):
+        a = angle + math.pi - math.radians(spread) * side
+        s.stroke(past([tip, (tip[0] + size * math.cos(a), tip[1] + size * math.sin(a))], 0.02), width)
+
+
+def miss(s):
+    # The target, low and left; the arrow high over it, away to the right, two swishes under its flight.
+    s.stroke(arc(0.38, 0.64, 0.25, -80, 285, 64), curve=False)
+    s.stroke(arc(0.38, 0.64, 0.11, 100, 465, 40), 0.85)
+    s.stroke(past([(0.08, 0.30), (0.88, 0.14)]), 1.0)
+    arrow_head(s, (0.90, 0.135), (0.08, 0.30), 0.12)
+    for off in (0.0, 0.05):  # the fletching
+        s.stroke([(0.11 + off, 0.295 - off * 0.2), (0.05 + off, 0.21 - off * 0.2)], 0.7)
+        s.stroke([(0.11 + off, 0.295 - off * 0.2), (0.08 + off, 0.38 - off * 0.2)], 0.7)
+    s.stroke([(0.52, 0.31), (0.76, 0.26)], 0.55)
+    s.stroke([(0.60, 0.37), (0.80, 0.33)], 0.45)
+
+
+def dodge(s):
+    # Coming straight, then swerving up and away; speed lines behind.
+    path = [(0.10, 0.70), (0.38, 0.70), (0.58, 0.62), (0.70, 0.42), (0.80, 0.20)]
+    s.stroke(path, 1.0, curve=True)
+    arrow_head(s, (0.805, 0.19), (0.74, 0.32), 0.14, 30)
+    for y, x0, x1 in ((0.58, 0.06, 0.26), (0.82, 0.08, 0.30), (0.70, 0.02, 0.08)):
+        s.stroke(past([(x0, y), (x1, y)]), 0.55)
+    s.stroke([(0.50, 0.86), (0.66, 0.80), (0.80, 0.66)], 0.5, curve=True)
+
+
+def sword(s, hilt, tip, width=1.0):
+    """A sword from the end of its grip to its point: its blade (two edges), the guard, the grip."""
+    ang = math.atan2(tip[1] - hilt[1], tip[0] - hilt[0])
+    ux, uy = math.cos(ang), math.sin(ang)
+    px, py = -uy, ux
+    grip = 0.13
+    guard = (hilt[0] + ux * grip, hilt[1] + uy * grip)
+    half = 0.03
+    s.stroke(past([(guard[0] + px * half, guard[1] + py * half), (tip[0] - ux * 0.05 + px * half * 0.6, tip[1] - uy * 0.05 + py * half * 0.6)], 0.01), width * 0.75)
+    s.stroke(past([(guard[0] - px * half, guard[1] - py * half), (tip[0] - ux * 0.05 - px * half * 0.6, tip[1] - uy * 0.05 - py * half * 0.6)], 0.01), width * 0.75)
+    s.stroke([(tip[0] - ux * 0.05 + px * half * 0.6, tip[1] - uy * 0.05 + py * half * 0.6), tip,
+              (tip[0] - ux * 0.05 - px * half * 0.6, tip[1] - uy * 0.05 - py * half * 0.6)], width * 0.75)
+    s.stroke(past([(guard[0] + px * 0.10, guard[1] + py * 0.10), (guard[0] - px * 0.10, guard[1] - py * 0.10)]), width)
+    s.stroke(past([hilt, guard], 0.0), width)
+
+
+def parry(s):
+    sword(s, (0.14, 0.88), (0.80, 0.16))
+    sword(s, (0.86, 0.88), (0.20, 0.16))
+    for a in (-120, -90, -60):  # sparks over the crossing
+        r0, r1 = 0.07, 0.17
+        c = (0.50, 0.42)
+        s.stroke([(c[0] + r0 * math.cos(math.radians(a)), c[1] + r0 * math.sin(math.radians(a))),
+                  (c[0] + r1 * math.cos(math.radians(a)), c[1] + r1 * math.sin(math.radians(a)))], 0.55)
+
+
+def block(s):
+    # A heater shield, its rim drawn once round, a band across; a strike glancing off its upper left.
+    rim = [(0.30, 0.22), (0.50, 0.17), (0.70, 0.22), (0.70, 0.50), (0.62, 0.70), (0.50, 0.84), (0.38, 0.70),
+           (0.30, 0.50), (0.30, 0.22)]
+    s.stroke(rim, 1.0, curve=True)
+    s.stroke(past([(0.50, 0.24), (0.50, 0.76)]), 0.7)
+    s.stroke(past([(0.34, 0.42), (0.66, 0.42)]), 0.7)
+    for (x0, y0), (x1, y1) in (((0.25, 0.22), (0.12, 0.12)), ((0.23, 0.30), (0.08, 0.30)), ((0.29, 0.16), (0.24, 0.04))):
+        s.stroke(past([(x0, y0), (x1, y1)]), 0.55)
+
+
+def evade(s):
+    # A round arrow turning back on itself, round a small mark: the place it returns to.
+    s.stroke(arc(0.50, 0.52, 0.30, -40, 250, 72), 1.0)
+    end = (0.50 + 0.30 * math.cos(math.radians(250)), 0.52 + 0.30 * math.sin(math.radians(250)))
+    before = (0.50 + 0.30 * math.cos(math.radians(232)), 0.52 + 0.30 * math.sin(math.radians(232)))
+    arrow_head(s, end, before, 0.14, 32)
+    s.stroke(past([(0.42, 0.52), (0.58, 0.52)]), 0.5)
+    s.stroke(past([(0.50, 0.44), (0.50, 0.60)]), 0.5)
+
+
+def immune(s):
+    # A bubble with its shine on the upper left, a sparkle at the upper right.
+    s.stroke(arc(0.48, 0.55, 0.33, 0, 362, 96), 1.0)
+    s.stroke(arc(0.48, 0.55, 0.23, 195, 255, 24), 0.6)
+    c, r = (0.82, 0.18), 0.12
+    s.stroke(past([(c[0], c[1] - r), (c[0], c[1] + r)], 0.0), 0.6)
+    s.stroke(past([(c[0] - r, c[1]), (c[0] + r, c[1])], 0.0), 0.6)
+
+
+DRAWINGS = {"miss": miss, "dodge": dodge, "parry": parry, "block": block, "evade": evade, "immune": immune}
+
+
+def main(names):
+    OUT.mkdir(parents=True, exist_ok=True)
+    for index, name in enumerate(DRAWINGS):
+        if names and name not in names:
+            continue
+        sheet = Sheet(index + 1)
+        DRAWINGS[name](sheet)
+        path = OUT / f"{name}.png"
+        sheet.picture().save(path)
+        print(f"{name}: {path.relative_to(ROOT)}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
