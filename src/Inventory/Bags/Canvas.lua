@@ -398,13 +398,8 @@ function Sheet:Draw(blocks, room, how)
     return height + Canvas.INSET
 end
 
--- An item let go over the page's paper (no slot, no head): into the bags, in the category the rules give it.
-local function PaperDrop(child)
-    if GetCursorInfo() == "item" then Menus.Home(child.canvas.owner.stow) end
-end
-
 -- A canvas in a scroll area's child; owner: { store (look, folded), redraw(), cells (its pool), stow (the bags':
--- an item let go over the paper goes into them) }.
+-- an item let go over a head or a slot goes into them) }.
 function Canvas.New(child, owner)
     local canvas = setmetatable({ child = child, owner = owner, rowOf = {}, places = {} }, Sheet)
     canvas.cells = owner.cells
@@ -413,11 +408,5 @@ function Canvas.New(child, owner)
     canvas.labels = Core.Pool(function() return MakeLabel(canvas) end)
     canvas.pluses = Core.Pool(function() return MakePlus(canvas) end)
     canvas.measurer = function(block) return Measure(canvas, block) end
-    if owner.stow then
-        child.canvas = canvas
-        child:EnableMouse(true)
-        child:SetScript("OnReceiveDrag", ns.Guard(PaperDrop))
-        child:SetScript("OnMouseUp", ns.Guard(PaperDrop))
-    end
     return canvas
 end

@@ -95,6 +95,14 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: the bags' items take the mouse again; drops anywhere on the window; no scroll bar (2026-10-23)
+- The items' scroll child took the mouse for drops on the paper and the item buttons lost their tooltips, drags
+  and clicks: it takes none now. An item let go where nothing else takes it goes to the panel itself and its head
+  (`Bags.lua`: `Back`, `Home`, `Menus.Home`): into the bags, where the rules put it.
+- The scroll area is a plain `ScrollFrame` (no `ScrollFrameTemplate`, no bar), the wheel scrolls it a line
+  (`Bags.STEP`), `Bags.RIGHT` its room at the right; the bank keeps its bar (`Bags.SCROLL`).
+- `dev/tests/bags.lua`: the scroll child takes no mouse, the window takes the drop, no scroll bar.
+
 ### Inventory: drops on the paper; one slot a group; groups fold and divide; a small title line (2026-10-23)
 - An item let go over the bags' paper (the scroll child, `Canvas`: `PaperDrop`, `Menus.Home`): into the bags
   (`Stow`), its assignment taken off, so it lands where the rules put it.

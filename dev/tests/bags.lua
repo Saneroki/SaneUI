@@ -906,9 +906,14 @@ end
 do
     Categories.Assign(4001, "trade")
     holding, cursor = 4001, true
-    local child = ns.Bags.canvas.child
-    child:GetScript("OnReceiveDrag")(child)
-    check(kept.assigned[4001] == nil and holding == nil, "let go over the paper: back to where the rules put it, in the bags")
+    local back = ns.Bags.canvas.child
+    check(not back._mouse, "the items' area takes no mouse itself: the item buttons keep it")
+    check(ns.Bags.scroll._template == nil and ns.Bags.scroll:GetScript("OnMouseWheel"),
+        "the items' scroll area: no scroll bar, the wheel scrolls it")
+    back = panel
+    back:GetScript("OnReceiveDrag")(back)
+    check(kept.assigned[4001] == nil and holding == nil,
+        "let go anywhere over the window that takes nothing itself: back to where the rules put it, in the bags")
     cursor = false
 end
 -- A group divided has one + for the whole group: an item let go there goes into the member the rules give it

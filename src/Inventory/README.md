@@ -91,8 +91,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
     the group's first member). In the sidebar its members are set in under it; the arrow on its row folds them
     into the row, and its box, ticked, divides the group into its members in All Items; unticked, the group is
-    one part with all its items and one empty slot. An item let go over the page's paper (not on a slot or a
-    name) goes into your bags, into the category the rules give it (what you put it into taken off). *Pinned Items* and *Recent Items* (what
+    one part with all its items and one empty slot. An item let go anywhere over the window where nothing else
+    takes it (the paper, the title line, the foot) goes into your bags, into the category the rules give it
+    (what you put it into taken off). The items scroll with the mouse wheel; no scroll bar. *Pinned Items* and *Recent Items* (what
     came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
     item show as one with their count added up (gear never; not at a vendor, the bank, the mail, a trade or the
     auction house, where each stack is its own).
@@ -531,7 +532,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`) on the journal's title line (anchored to `panel.title`,
     above the head that drags the window; its round buttons `Bags.Round`: the icon in a circle, `Bags.SOFT` the
     ink's alpha one, two, three pixels out, the highlight and checked light cut to the circle), the strip of the
-    bags at the body's top (kept: `strip`; hidden while the sidebar is folded, `Bags.Fold`, kept: `side`), the sidebar,
+    bags at the body's top (kept: `strip`; hidden while the sidebar is folded, `Bags.Fold`, kept: `side`), the panel itself
+    and its head taking an item let go where nothing above them does (`Menus.Home`; the items' scroll child takes
+    no mouse, so the item buttons keep theirs), the scroll area a plain `ScrollFrame` without a bar (`Bags.STEP`
+    the wheel's step, `Bags.RIGHT` its room at the right), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
     the compact display's labels, the list's lines; the dropdown *View* (`Paper.Dropdown`: the game's `DropdownButton` in a pencil box) with the
     displays, the orders and the switches (`showPinned`, `showRecent`, `merge`, `first`, the

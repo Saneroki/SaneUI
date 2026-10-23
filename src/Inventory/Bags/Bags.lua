@@ -22,7 +22,7 @@ local _, ns = ...
 --                   what sorts the items (Contents.ORDERS), what is shown
 --      the sidebar  at the left: the views and the categories (Sidebar.lua); folded by its
 --                   arrow to a narrow edge, the strip of the bags hidden with it (kept)
---      the body     a scroll area with the view chosen as its blocks laid out
+--      the body     a scroll area (no scroll bar: the wheel scrolls it) with the view chosen as its blocks laid out
 --                   (Views.lua, Layout.lua) and drawn (Canvas.lua), each item
 --                   the game's own item button (Cells.lua); the bank has a
 --                   window of its own (Bank.lua)
@@ -49,7 +49,9 @@ ns.Bags = Bags
 
 Bags.EDGE = 6        -- from the panel's sides to what is in it
 Bags.INSET = 8       -- from the scroll area's left to the items
-Bags.SCROLL = 20     -- room at the right for the game's scroll bar
+Bags.SCROLL = 20     -- room at the right for the game's scroll bar (the bank's)
+Bags.RIGHT = 6       -- room at the right of the bags' items (no scroll bar there)
+Bags.STEP = 38       -- the wheel's step: a line of items
 Bags.BAR = 18        -- the bar on the title line, inside the label's pencil lines
 Bags.PAGE_BAR = 35   -- a bar on the page (the bank's)
 Bags.BAR_BUTTON = 24 -- a button on a bar of the page (the bank's, the alts')
@@ -441,7 +443,7 @@ local function Strip()
     local list = kept.look == "list"
     columns:ClearAllPoints()
     columns:SetPoint("TOPLEFT", side, "TOPRIGHT", Bags.INSET, -Bags.EDGE)
-    columns:SetPoint("RIGHT", strip, "RIGHT", -(Bags.SCROLL + Bags.INSET), 0)
+    columns:SetPoint("RIGHT", strip, "RIGHT", -(Bags.RIGHT + Bags.INSET), 0)
     columns:SetShown(list)
     scroll:ClearAllPoints()
     if list then
@@ -449,7 +451,7 @@ local function Strip()
     else
         scroll:SetPoint("TOPLEFT", side, "TOPRIGHT", 0, -Bags.EDGE)
     end
-    scroll:SetPoint("BOTTOMRIGHT", Foot.frame, "TOPRIGHT", -Bags.SCROLL, Bags.EDGE)
+    scroll:SetPoint("BOTTOMRIGHT", Foot.frame, "TOPRIGHT", -Bags.RIGHT, Bags.EDGE)
     bar.bags:SetChecked(on)
     if list then columns:Refresh(math.max(1, (child:GetWidth() or 0) - Bags.INSET)) end
 end
@@ -569,8 +571,32 @@ local function Bar(body)
     Bags.strip = strip
 end
 
+-- An item let go anywhere over the window that takes nothing itself (the paper, the bar, the foot): into the bags,
+-- in the category the rules give it (Menus.Home).
+local function Home()
+    if GetCursorInfo() == "item" then Menus.Home(true) end
+end
+
+-- The panel itself takes that: it lies under everything in it, so the item buttons, heads, rows and slots keep
+-- the mouse for themselves.
+local function Back()
+    panel:EnableMouse(true)
+    for _, frame in ipairs({ panel, panel.head }) do -- the head: the window's top, dragged by
+        frame:HookScript("OnReceiveDrag", ns.Guard(Home))
+        frame:HookScript("OnMouseUp", ns.Guard(Home))
+    end
+end
+
+-- The wheel over the items: a line of them up or down, never past the ends.
+local function Wheel(delta)
+    local most = scroll.GetVerticalScrollRange and scroll:GetVerticalScrollRange()
+        or math.max(0, (child:GetHeight() or 0) - (scroll:GetHeight() or 0))
+    scroll:SetVerticalScroll(math.max(0, math.min(most, scroll:GetVerticalScroll() - delta * Bags.STEP)))
+end
+
 function Bags.Build(made)
     panel = made
+    Back()
     kept = Kept()
     local body = panel.body
     Bar(body)
@@ -578,7 +604,9 @@ function Bags.Build(made)
     side = Sidebar.Build(body, strip, Foot.frame, kept)
     Sidebar.Fold(kept.side == false)
     columns = Columns.Build(body, function() Bags.Redraw() end)
-    scroll = CreateFrame("ScrollFrame", nil, body, "ScrollFrameTemplate")
+    scroll = CreateFrame("ScrollFrame", nil, body)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(_, delta) ns.Safe("bags", Wheel, delta) end)
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(1, 1)
     scroll:SetScrollChild(child)
@@ -613,7 +641,7 @@ end
 function Bags.Size(newWidth, newHeight)
     if newWidth then width = ns.Board.Body("bags", newWidth, newHeight or 0) end
     if not child then return end
-    child:SetWidth(math.max(1, width - Sidebar.Width() - Bags.EDGE - Bags.SCROLL))
+    child:SetWidth(math.max(1, width - Sidebar.Width() - Bags.EDGE - Bags.RIGHT))
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
     Bags.Redraw()
 end
