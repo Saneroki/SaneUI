@@ -14,8 +14,9 @@ local _, ns = ...
 --                  quest giver of Core's data: the yellow exclamation mark, grey for a quest too low, a red
 --                  question mark for one for later; a click shows its quests in the quest log as previews
 --                  (QuestLog.Preview)
---      gathered    pins that would cover each other: one marker in the icon of the first (drawn highest), its
---                  tooltip what is there; a click zooms in
+--      gathered    pins that would cover each other: one marker, in their icon where all have the same one (two
+--                  trainers: the trainer's), else the game's plus (PinView.PLUS; Saneroki, 2026-10-23); its
+--                  tooltip what is there, each with its own pin's icon before its name; a click zooms in
 --      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
@@ -36,6 +37,8 @@ ns.PinView = PinView
 
 PinView.GLOW = "UI-QuestPoi-OuterGlow" -- behind the quest the game's arrow leads to
 PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
+PinView.PLUS = "Garr_Building-AddFollowerPlus" -- a gathered marker of pins with different icons: the game's round plus
+PinView.TIP_ICON = 16 -- a pin's icon before its name in a gathered marker's tooltip
 
 -- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
 -- stands over a lower one. Kinds that share a level are those Pins.Gather gathers where they would cover each other
@@ -62,21 +65,35 @@ local function Say(words, r, g, b, wrap)
     GameTooltip:AddLine(words, r, g, b, wrap)
 end
 
+-- A pin's name with its icon before it, as its pin shows it (a grey one grey, a tinted one in its colour).
+local function Iconed(pin, words)
+    local size = PinView.TIP_ICON
+    if not pin.atlas then return words end
+    local tint = pin.tint or (pin.grey or pin.dim) and { 0.6, 0.6, 0.6 } or nil
+    if tint then
+        return ("|A:%s:%d:%d:0:0:%d:%d:%d|a %s"):format(pin.atlas, size, size, math.floor(tint[1] * 255),
+            math.floor(tint[2] * 255), math.floor(tint[3] * 255), words)
+    end
+    return ("|A:%s:%d:%d|a %s"):format(pin.atlas, size, size, words)
+end
+PinView.Iconed = Iconed
+
 local function Tip(button)
     local pin = button.pin
     if not pin then return end
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     wipe(said)
     if pin.gathered then
-        -- What is there, one name under the other: the first as the heading
+        -- What is there, one under the other, each with its own pin's icon: the first as the heading
         for index, each in ipairs(pin.gathered) do
             if index > 12 then break end
             local words = each.role or each.name or "?"
             if index == 1 then
                 said[words] = true
-                GameTooltip:SetText(words, 1, 1, 1)
-            else
-                Say(words, 1, 0.82, 0)
+                GameTooltip:SetText(Iconed(each, words), 1, 1, 1)
+            elseif not said[words] then
+                said[words] = true
+                GameTooltip:AddLine(Iconed(each, words), 1, 0.82, 0)
             end
         end
         return GameTooltip:Show()
@@ -222,8 +239,21 @@ local function Make()
     return button
 end
 
--- A button's look for its pin: its icon, whatever its kind (a gathered marker: its first pin's, the one drawn
--- highest), at its kind's size from the pin filter's slider. A grey quest without its colour, a tinted one in its
+-- Whether the pins of a gathered marker all have the same icon (atlas and colour): then it shows that one.
+local function Alike(gathered)
+    local first = gathered[1]
+    for index = 2, #gathered do
+        local each = gathered[index]
+        if each.atlas ~= first.atlas or each.tint ~= first.tint or (each.grey or each.dim) ~= (first.grey or first.dim) then
+            return false
+        end
+    end
+    return true
+end
+PinView.Alike = Alike
+
+-- A button's look for its pin: its icon, whatever its kind (a gathered marker: its pins' where all have the same, else
+-- the game's plus, PinView.PLUS), at its kind's size from the pin filter's slider. A grey quest without its colour, a tinted one in its
 -- colour (a quest for later: red; a flight point not found yet: its colour taken out first, then red), the quest the
 -- game's arrow leads to with a glow
 -- behind it. Not made again while it is the same (the same first pin, size and glow: a pin's record is made anew
@@ -232,17 +262,20 @@ local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
     local size = (Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
     local glowing = first.focused and not pin.gathered and true or false
-    if button.first == first and button.size == size and button.glowing == glowing then return end
-    button.first, button.size, button.glowing = first, size, glowing
+    local plus = pin.gathered and not Alike(pin.gathered) or false
+    if button.first == first and button.size == size and button.glowing == glowing and button.plus == plus then return end
+    button.first, button.size, button.glowing, button.plus = first, size, glowing, plus
     button:SetSize(size, size)
     button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
     local icon, glow = button.icon, button.glow
     local grey, tint = first.grey or first.dim, first.tint
+    if plus then grey, tint = nil, nil end
     icon:SetDesaturated(grey and true or false)
     if tint then icon:SetVertexColor(tint[1], tint[2], tint[3], 1)
     else icon:SetVertexColor(1, 1, 1, grey and PinView.GREY or 1) end
-    icon:SetAtlas(first.atlas or Pins.ICONS.offer)
-    button.light:SetAtlas(first.atlas or Pins.ICONS.offer)
+    local atlas = plus and PinView.PLUS or first.atlas or Pins.ICONS.offer
+    icon:SetAtlas(atlas)
+    button.light:SetAtlas(atlas)
     glow:Hide()
     if glowing then
         glow:SetSize(size * 1.6, size * 1.6)

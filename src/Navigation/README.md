@@ -54,8 +54,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
   *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
   yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
-  show as one, in the first one's icon, its tooltip what is there, each name once (two Priest Trainers: one line);
-  no tooltip says a word twice. **A click on any pin**, on the small map and the
+  show as one: in their icon where all have the same (two trainers: the trainer's), else the game's round plus;
+  its tooltip what is there, each with its own pin's icon before its name, each name once (two Priest Trainers:
+  one line); no tooltip says a word twice. **A click on any pin**, on the small map and the
   full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so); a
   gathered one zooms in too; on
   the full map a quest in your log also leads the game's arrow to it, and a quest giver's quests show in the quest
@@ -618,6 +619,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-23, a plus for mixed pins:** pins with different icons that cover each other show as one plus, their
+  tooltip each one's icon and name (Saneroki).
 - **2026-10-23, no word twice:** a gathered marker's tooltip names what is there, without the sentence about a
   click, and a pin's tooltip says no words twice (Saneroki).
 - **2026-10-23, tooltips by role; bosses as creatures:** as Saneroki asked, an NPC's pin is named by what it is

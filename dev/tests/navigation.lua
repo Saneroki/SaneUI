@@ -1478,10 +1478,12 @@ check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of 
     end
     GameTooltip._lines = nil
     if marker then marker._scripts.OnEnter(marker) end
-    check(#now == 2 and riders == 1 and marker and #marker.pin.gathered == 2 and GameTooltip._text == marker.pin.gathered[1].name
-        and GameTooltip._lines == nil,
-        "herbs of a kind in one cell of the gather's grid: one goes on, the other rides with it; one marker of both, its "
-        .. "tooltip naming what is there once, no sentence about the click")
+    local herb = marker and marker.pin.gathered[1]
+    check(#now == 2 and riders == 1 and marker and #marker.pin.gathered == 2
+        and GameTooltip._text == "|A:" .. herb.atlas .. ":16:16|a " .. herb.name and GameTooltip._lines == nil
+        and marker.icon._atlas == herb.atlas,
+        "herbs of a kind in one cell of the gather's grid: one goes on, the other rides with it; one marker of both in "
+        .. "their own icon, its tooltip naming what is there once with its icon, no sentence about the click")
     reader.On = read
     Pins.DataChanged()
     Canvas.Layout()
@@ -1598,9 +1600,14 @@ do
         "its tooltip: where it sails to, the area and the zone in the game's words; the game's own way, not unconfirmed")
 end
 local marker = pins["gathered:npc:69"]
-check(marker and #marker.pin.gathered == 2 and marker.icon._atlas == "innkeeper" and not marker.count
-    and not pins["object:1617"], "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker in the "
-    .. "first one's icon, no number")
+check(marker and #marker.pin.gathered == 2 and marker.icon._atlas == ns.PinView.PLUS and not marker.count
+    and not pins["object:1617"], "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker, the "
+    .. "game's plus (their icons differ), no number")
+GameTooltip._lines = nil
+marker._scripts.OnEnter(marker)
+check(GameTooltip._text:find("^|A:innkeeper:16:16|a ") and GameTooltip._lines and #GameTooltip._lines == 1
+    and GameTooltip._lines[1]:find("^|A:professions_tracking_herb:16:16|a "),
+    "its tooltip: each thing there with its own pin's icon before its name")
 check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,

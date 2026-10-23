@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: a plus for pins of different icons gathered; their icons in its tooltip (Saneroki, 2026-10-23)
+- `PinView.lua`: a gathered marker shows its pins' icon where all have the same one (`Alike`: atlas, tint, grey),
+  else the game's round plus (`PinView.PLUS`), as Saneroki asked; its tooltip puts each pin's own icon before its
+  name (`Iconed`, `PinView.TIP_ICON`, a tinted or grey one in its colour).
+- README.md; `dev/tests/navigation.lua` 561 (two herbs: the herb's icon; an innkeeper and a herb: the plus, icons in
+  the tooltip).
+
 ### Navigation: a pin's tooltip says nothing twice, a gathered one no sentence about the click (Saneroki, 2026-10-23)
 - `PinView.lua`: a gathered marker's tooltip is headed by its first pin's name (or role), the others under it, each
   once; `Pins.TEXT.gathered` (*%d here: a click zooms in*) gone, as Saneroki asked. Every line of a pin's tooltip
