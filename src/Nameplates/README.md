@@ -1,6 +1,6 @@
 # Sane UI: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power and your combo points along its bottom, a border by rank, a ring on your target and focus, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power and your combo points along its bottom, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
@@ -9,8 +9,8 @@ health bar it lays its own: a rectangle with round corners, everything on one li
 while it shows: your quest objective on the unit (a sword or a sack, "0/7"), its raid marker, its level, a
 player's item level ("i32"), your threat on it, its name, its health and how much is left ("1.32m | 100%"). The
 bar is as wide as that line, no wider. Along its bottom a thin line of the unit's mana, rage or energy,
-and on your target your combo points on top of it. Its border tells the unit's rank, a ring around it your
-target and focus, a red glow your aggro or a player who may attack you. Right above the bar your own debuffs,
+and on your target your combo points on top of it. Its one border is lit on your target and focus, a line
+behind it tells the unit's rank, a red glow behind that your aggro or a player who may attack you. Right above the bar your own debuffs,
 left of it up to three of a foe's buffs, right of it the crowd control on the unit. Plates
 of players you cannot attack and do not know are hidden; every plate is smaller the farther away it is. When it
 fails, every plate is the game's own again.
@@ -42,9 +42,10 @@ fails, every plate is the game's own again.
   not rounded), and "| 100%" how much is left. In a fight the game hides some of these from addons: the health
   is then shortened by the game in the same steps, the threat in grey. The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
-- **The border:** black; gold and thick on a boss, gold and thin on an elite (the game's gold dragon), silver
-  and thin on a rare (its silver dragon, also a rare elite). A white ring a pixel outside it on your target, an
-  orange one on your focus (the game's colours for them).
+- **The border:** one thin outline: black, white on your target, orange on your focus (the game's colours for
+  them). Behind it, from the same edge but reaching farther, a line for the unit's rank: gold and thick on a boss,
+  gold and thin on an elite (the game's gold dragon), silver and thin on a rare (its silver dragon, also a rare
+  elite); and behind that, the red glow.
 - **The power line:** along the bottom of the bar, inside it, a fifth of its height: the unit's mana, rage or
   energy in the game's colours, without a background: spent power shows nothing, the bar is seen through it.
   None on a unit without power.
@@ -76,7 +77,7 @@ fails, every plate is the game's own again.
   (`NAME_PLATE_UNIT_REMOVED`), when the game hides its health bar (hooks after its `OnShow` and `OnHide`, once per
   bar: name only, widgets only) and when the module stands down. Each dress registers its unit's events on itself
   (`RegisterUnitEvent`): health, power, name, level, faction, flags, classification and its threat list;
-  `PLAYER_TARGET_CHANGED`, `PLAYER_FOCUS_CHANGED` (the rings, the strangers' plates), `RAID_TARGET_UPDATE`,
+  `PLAYER_TARGET_CHANGED`, `PLAYER_FOCUS_CHANGED` (the borders, the strangers' plates), `RAID_TARGET_UPDATE`,
   `GROUP_ROSTER_UPDATE`, `FRIENDLIST_UPDATE`, `GUILD_ROSTER_UPDATE`, `BN_FRIEND_INFO_CHANGED` (the strangers'
   plates), `UNIT_THREAT_SITUATION_UPDATE`, `PLAYER_REGEN_ENABLED` and `PLAYER_LEVEL_UP` (threat and level colours)
   go over all of them, the last five once a frame (`Core.Later`). After a `/reload` the plates already shown are
@@ -87,14 +88,14 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
-- **The bar** (`Bar.lua`): from the back, `Bar.HALO` (6) glow plates in `Bar.GLOW`, reaching 1 to 6 screen
-  pixels beyond the border, each as strong (`Bar.Strength`, its vertex colour's alpha) as its band needs so that
-  together they are solid at the border and fade to nothing outwards (`Bar.Fade`: one minus the band's share,
-  squared); they stand on a frame of their own a level under the dress (`dress.glow`), whose alpha alone switches
-  the glow (a texture's own alpha would replace its vertex alpha), the ring (a pixel outside the border, shown on target and focus in the
-  game's `NamePlateConstants.TARGET_BORDER_COLOR` and `FOCUS_TARGET_BORDER_COLOR`), the border (the dress's
-  size, `Bar.RANKS` by `UnitIsBossMob` and `UnitClassification`: boss 3 pixels in the game's `NORMAL_FONT_COLOR`,
-  elite 1 pixel in it, rare and rare elite 1 pixel silver; `Bar.PLAIN` black, 1), then inside the border a
+- **The bar** (`Bar.lua`): from the back, `Bar.HALO` (6) glow plates in `Bar.GLOW` on a frame of their own a level
+  under the dress (`dress.glow`, whose alpha alone switches the glow: a texture's own alpha would replace its vertex
+  alpha), reaching 1 to 6 screen pixels beyond the rank's line, each as strong (`Bar.Strength`) as its band needs so
+  that together they are solid at the bar's edge and fade to nothing outwards (`Bar.Fade`: one minus the band's
+  share, squared); the rank's line (`dress.rankLine`, `Bar.RANKS` by `UnitIsBossMob` and `UnitClassification`: from
+  the dress's edge, boss 4 pixels in the game's `NORMAL_FONT_COLOR`, elite 2 in it, rare and rare elite 2 silver;
+  none for `Bar.PLAIN`); the border, one pixel (the dress's size), `Bar.BORDER` black, on target and focus the
+  game's `NamePlateConstants.TARGET_BORDER_COLOR` and `FOCUS_TARGET_BORDER_COLOR` (`Bar.Border`); then inside the border a
   `StatusBar` with the game's raid frames' fill (`Interface\RaidFrame\Raid-Bar-Hp-Fill`) and a dark background.
   Round by Core's caps (`Core.Shape.CAP_LEFT`, `CAP_RIGHT`, `assets/optimized/Core/Art/cap-*.blp`, made by
   `dev/tools/shape-art`): two mask textures per rectangle, at its ends, `Bar.CAP` (a quarter) of its height wide,
@@ -187,7 +188,7 @@ fails, every plate is the game's own again.
 |---|---|
 | `SaneUI_Nameplates.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Nameplates.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings, `GiveBack`, the start |
-| `Bar.lua` | The health bar: round at both ends, its border by rank, a ring on your target and focus, the power line, the glow |
+| `Bar.lua` | The health bar: round at both ends, its border lit on your target and focus, the rank's line and the glow behind it, the power line |
 | `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
 | `Marks.lua` | The raid marker, in the line |
@@ -223,3 +224,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   step aside meanwhile; the quest reading and the inspections are Core's now.
 - **2026-10-23:** the line's text and icons smaller (Saneroki); each text measured whole on itself, so none is cut
   short and no room is left over.
+- **2026-10-23:** one border, black or lit on target and focus; the rank's line and the glow behind it from the same
+  edge (Saneroki); the ring is gone.

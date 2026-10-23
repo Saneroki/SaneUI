@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: one border; the rank's line and the glow behind it (Saneroki, 2026-10-23)
+- **One border** (`Bar.lua`): the ring outside the border is gone; the border itself (one pixel) is black, white on
+  your target, orange on your focus (`Bar.Border`).
+- **Behind it** from the same edge: the rank's line (`dress.rankLine`, `Bar.RANKS` widths from the bar's edge: boss
+  4, elite and rare 2), and the glow beyond that line. The bar no longer moves inward for a thicker rank.
+- Tests: 117 checks (the border's colours, the line's and the glow's reach).
+
 ### Nameplates: the line smaller, nothing cut short, no room left over (Saneroki, 2026-10-23)
 - **Smaller** (`Text.lua`): the line's font is the game's nameplate font's face and outline at `Text.SMALLER` (0.72)
   of its height, set on every text of ours (`SetFont`); icons `Text.ICON` 1.2 times that height.

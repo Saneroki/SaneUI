@@ -1,8 +1,8 @@
 -- Runs the Nameplates module against the stand-in client (wowstub.lua): our dress on the game's plates as the
 -- game shows and takes them back, the game's parts out of sight under it and back, a plate shown by name only,
--- the bar's health (hidden values passed on untouched), colours, the border by rank, the ring on your target and
--- focus, the glow, the power line, the texts inside the bar (level, threat, name, health), the raid marker, the
--- aura containers around the bar, the combo points on your target's bar, strangers' plates out of sight, the
+-- the bar's health (hidden values passed on untouched), colours, the border lit on your target and focus, the rank's
+-- line and the glow behind it, the power line, the line inside the bar and the bar's width from it, the raid marker,
+-- the aura containers around the bar, the combo points on your target's bar, strangers' plates out of sight, the
 -- scaling by distance, the settings, and standing down. The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/nameplates.lua
 
@@ -233,7 +233,8 @@ check(X(dress.level) == I and X(dress.name) == I + L(2) + G and X(dress.value) =
     "the level first, then the name, then the health")
 check(dress.room.value == L(13), "hidden health keeps the room of the widest it can show")
 check(dress.want == I + L(2) + G + L(10) + G + L(13) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
-check(dress.border._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare, "a rare: a thin silver border")
+check(dress.rankLine:IsShown() and dress.rankLine._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare and dress.border._vertex[1] == 0,
+    "a rare: a thin silver line behind the black border")
 check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
     "its mana along the bar's bottom, in the game's colour")
@@ -251,7 +252,7 @@ end
 check(fading and Solid(#dress.halo) < 0.05, "the glow: solid at the border, fading to almost nothing outwards")
 check(dress.halo[1]._parent == dress.glow and dress.glow._level < (dress._level or 1) or dress.glow._level == 0,
     "on a frame of its own, behind the dress")
-check(not dress.ring:IsShown(), "no ring: not your target")
+check(dress.border._vertex[1] == Bar.BORDER[1] and dress.border._vertex[4] == Bar.BORDER[4], "the border black: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
     and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
     "the fill, its background, the power line and the border each cut at both ends")
@@ -275,15 +276,20 @@ dress:GetScript("OnSizeChanged")(dress)
 units.nameplate1.boss, units.nameplate1.level = true, -1
 W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
 W.Fire("UNIT_LEVEL", "nameplate1")
-check(dress.rank == Bar.RANKS.boss and dress.border._vertex[2] == 0.82 and dress.health._points[1][4] == 3 * edge,
-    "a boss: thick and golden")
+-- How far a plate reaches beyond the dress (its top left corner's offset).
+local function Reach(texture) return texture._points[1][5] end
+check(dress.rank == Bar.RANKS.boss and dress.rankLine._vertex[2] == 0.82 and Reach(dress.rankLine) == 3 * edge
+    and dress.health._points[1][4] == edge and Reach(dress.border) == 0,
+    "a boss: a thick golden line behind the border, from the same edge; the bar where it was")
+check(Reach(dress.halo[1]) == 4 * edge and Reach(dress.halo[#dress.halo]) == (3 + #dress.halo) * edge, "the glow beyond the line")
 check(dress.level._text == Text.SKULL, "the skull for its level")
 units.nameplate1.boss, units.nameplate1.classification = false, "elite"
 W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
-check(dress.rank == Bar.RANKS.elite and dress.border._vertex[2] == 0.82 and dress.health._points[1][4] == edge, "an elite: thin and golden")
+check(dress.rank == Bar.RANKS.elite and dress.rankLine._vertex[2] == 0.82 and Reach(dress.rankLine) == edge
+    and Reach(dress.halo[1]) == 2 * edge, "an elite: a thin golden line, a pixel past the border")
 units.nameplate1.classification = "normal"
 W.Fire("UNIT_CLASSIFICATION_CHANGED", "nameplate1")
-check(dress.rank == Bar.PLAIN and dress.border._vertex[1] == 0, "a plain one: black")
+check(dress.rank == Bar.PLAIN and not dress.rankLine:IsShown() and Reach(dress.halo[1]) == edge, "a plain one: the border only")
 units.nameplate1.level = 22
 W.Fire("UNIT_LEVEL", "nameplate1")
 
@@ -395,7 +401,7 @@ check(not control:IsShown(), "crowd control off")
 Core.Set(ns.name, "control", true)
 
 -------------------------------------------------------------------------------
---  A friend shown by name only, players, the raid marker, the ring
+--  A friend shown by name only, players, the raid marker, the border lit
 -------------------------------------------------------------------------------
 local bar = plates.nameplate1.UnitFrame.HealthBarsContainer.healthBar
 bar:Hide() -- the game shows the plate by name only now
@@ -456,11 +462,11 @@ check(friend:IsShown(), "the setting off: every player's plate")
 Core.Set(ns.name, "players", true)
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
-check(friend:IsShown() and friend.ring:IsShown() and friend.ring._vertex[1] == 1 and not dress.ring:IsShown(),
-    "your target: shown, its ring lit, the others' not")
+check(friend:IsShown() and friend.border._vertex[1] == 1 and friend.border._vertex[4] == 1 and dress.border._vertex[1] == 0,
+    "your target: shown, its border white, the others' black")
 units.focus, plates.focus = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_FOCUS_CHANGED")
-check(dress.ring:IsShown() and dress.ring._vertex[2] == 0.49, "your focus's ring in the game's colour for it")
+check(dress.border._vertex[2] == 0.49, "your focus's border in the game's colour for it")
 units.nameplate2.friend, units.nameplate2.raid = false, 8
 W.Fire("UNIT_FACTION", "nameplate2")
 check(friend:IsShown() and friend.glow._alpha == 1, "a player who may attack you: shown, glowing")

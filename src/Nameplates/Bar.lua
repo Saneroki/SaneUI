@@ -4,15 +4,15 @@ local _, ns = ...
 --  Sane UI - Nameplates - Bar
 --  The health bar of our dress on a plate: a rectangle round at its corners,
 --  as large as the game's own health bar under it (the game's nameplate size
---  and style), framed by a border that tells the unit's rank, with the unit's
---  power as a thin line along its bottom, inside it.
+--  and style), framed by one thin border, with the unit's power as a thin
+--  line along its bottom, inside it.
 --
 --  How it is round: the bar's fill, its background and the lines inside it
 --  are masked at both ends by Core's caps (Shape.CAP_LEFT, CAP_RIGHT), a
 --  quarter of the bar's height wide, wrapped with white beyond them, so the
 --  fill keeps its round left corners however short it is and meets the right
---  ones when full. Every plate around it (the border, the ring of your target
---  or focus, the glow) is cut by caps of its own size.
+--  ones when full. Every plate around it (the border, the rank's line, the
+--  glow) is cut by caps of its own size.
 --
 --  From the inside out:
 --    the bar      health as the game gives it (a secret value in a fight: the
@@ -23,13 +23,14 @@ local _, ns = ...
 --    the power    the unit's mana, rage or energy, a thin line along the bar's
 --                 bottom, in the game's colour for that power; no background:
 --                 spent power shows nothing
---    the border   black; gold and thick on a boss, gold and thin on an elite,
---                 silver and thin on a rare
---    the ring     a pixel outside the border, on your target and your focus,
---                 in the game's colours for them
---    the glow     red, solid at the border and fading out, around it all:
---                 you have the unit's aggro (Text.lua says), or it is a
---                 player who may attack you
+--    the border   one pixel: black; white on your target, orange on your
+--                 focus (the game's colours for them)
+--  and behind the border, from the same inner edge but reaching farther:
+--    the rank     a line in the rank's colour: gold and thick on a boss, gold
+--                 on an elite, silver on a rare
+--    the glow     red, solid at the bar's edge and fading out beyond the
+--                 rank's line: you have the unit's aggro (Text.lua says), or
+--                 it is a player who may attack you
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -74,13 +75,14 @@ Bar.FOCUS = GameColour(constants.FOCUS_TARGET_BORDER_COLOR, 1, 0.49, 0.04)
 local GOLD = GameColour(rawget(_G, "NORMAL_FONT_COLOR"), 1, 0.82, 0)
 local SILVER = { 0.8, 0.82, 0.88, 1 }
 
--- A unit's rank, by its border: its colour and how many screen pixels wide.
+-- A unit's rank, by the line behind the border: its colour and how many screen pixels it reaches from the bar's edge
+-- (the border covers the first).
 Bar.RANKS = {
-    boss = { colour = GOLD, width = 3 },
-    elite = { colour = GOLD, width = 1 },
-    rare = { colour = SILVER, width = 1 },
+    boss = { colour = GOLD, width = 4 },
+    elite = { colour = GOLD, width = 2 },
+    rare = { colour = SILVER, width = 2 },
 }
-Bar.PLAIN = { colour = Bar.BORDER, width = 1 }
+Bar.PLAIN = { width = 1 } -- no line: only the border
 local RANK_OF = { worldboss = "boss", elite = "elite", rare = "rare", rareelite = "rare" }
 
 -- Two caps on host, at the left and right ends of rect, over each of the textures. They are sized by Fit.
@@ -121,8 +123,8 @@ local function Around(texture, dress, reach, height)
     Bar.SizeCaps(texture.caps, height + 2 * reach)
 end
 
--- The bar's pieces on the dress: the glow, the ring and the border behind, the status bar inside them with its
--- background, fill and power line.
+-- The bar's pieces on the dress: the glow, the rank's line and the border behind, the status bar inside them with
+-- its background, fill and power line.
 function Bar.Make(dress)
     -- The glow's frame, a level under the dress's: behind the border and the bar.
     local holder = CreateFrame("Frame", nil, dress)
@@ -135,8 +137,8 @@ function Bar.Make(dress)
         glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], Bar.Strength(band))
         dress.halo[band] = glow
     end
-    dress.ring = Plate(dress, -4)
-    dress.ring:Hide()
+    dress.rankLine = Plate(dress, -4)
+    dress.rankLine:Hide()
     dress.border = Plate(dress, -3)
     local health = CreateFrame("StatusBar", nil, dress)
     health:SetStatusBarTexture(Bar.FILL)
@@ -163,20 +165,22 @@ function Bar.Make(dress)
     Bar.Border(dress, nil)
 end
 
--- Laid out for the dress's size and the unit's rank: the bar inside its border, the ring a pixel outside it,
--- the glow beyond, the power line a fifth of the bar's height, every cap a quarter of what it rounds.
+-- Laid out for the dress's size and the unit's rank: the bar a pixel inside its border, the rank's line reaching
+-- out from the same edge, the glow beyond it, the power line a fifth of the bar's height, every cap a quarter of what
+-- it rounds.
 function Bar.Fit(dress)
     local height = Plain(dress:GetHeight()) or 0
     local pixel = Core.Pixels(dress, 1)
-    local edge = pixel * dress.rank.width
+    local edge = pixel
     dress.edge = edge
     local health = dress.health
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", dress, "TOPLEFT", edge, -edge)
     health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -edge, edge)
     Around(dress.border, dress, 0, height)
-    Around(dress.ring, dress, pixel, height)
-    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * band, height) end
+    local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
+    Around(dress.rankLine, dress, pixel * reach, height)
+    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), height) end
     local inner = height - 2 * edge
     Bar.SizeCaps(dress.caps, inner)
     dress.line = math.max(inner * Bar.LINE, pixel * 2)
@@ -224,7 +228,8 @@ function Bar.Paint(dress, unit)
         Bar.Fit(dress)
     end
     local colour = rank.colour
-    dress.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+    if colour then dress.rankLine:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
+    dress.rankLine:SetShown(colour ~= nil)
     dress.danger = Bar.Danger(unit)
     Bar.Glow(dress, dress.aggro)
 end
@@ -301,9 +306,8 @@ function Bar.Clear(dress)
     Bar.Glow(dress, false)
 end
 
--- The ring around the border: "target", "focus" or nil (none).
+-- The border: white on your target, orange on your focus ("target", "focus"), else black (nil).
 function Bar.Border(dress, lit)
-    local colour = lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or nil
-    if colour then dress.ring:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
-    dress.ring:SetShown(colour ~= nil)
+    local colour = lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or Bar.BORDER
+    dress.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
 end
