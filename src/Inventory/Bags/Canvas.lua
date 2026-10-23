@@ -256,9 +256,8 @@ function Sheet:Plus(place)
     plus:Show()
 end
 
--- Junk's first slot, the waste bin: a pencil slot with the bin's drawing in it; an item let go there (or clicked
--- onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
-Canvas.BIN = 0.12      -- the drawing so far inside the slot, each side (of its size)
+-- Junk's first slot, the waste bin: the bin's drawing alone, as large as a slot, no pencil slot around it; an item
+-- let go there (or clicked onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
 local function BinDrop()
     Menus.Destroy()
 end
@@ -280,13 +279,13 @@ end
 
 local function MakeBin(canvas)
     local bin = CreateFrame("Button", nil, canvas.child)
-    Core.Journal.Slot(bin, 1, "BACKGROUND")
     local shade = ns.Paper.SHADE
     bin.lit = bin:CreateTexture(nil, "BORDER")
     bin.lit:SetAllPoints()
     bin.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     bin.lit:Hide()
     bin.picture = Core.Journal.Texture(bin, "trash", "ARTWORK")
+    bin.picture:SetAllPoints()
     bin.picture:SetAlpha(0.7)
     bin:SetScript("OnClick", ns.Guard(BinDrop))
     bin:SetScript("OnReceiveDrag", ns.Guard(BinDrop))
@@ -301,10 +300,6 @@ function Sheet:Bin(place)
     bin:SetPoint("TOPLEFT", self.child, "TOPLEFT", place.x + Canvas.INSET, -place.y)
     bin:SetSize(place.size, place.size)
     bin:SetFrameLevel(self.child:GetFrameLevel() + 3)
-    local inset = place.size * Canvas.BIN
-    bin.picture:ClearAllPoints()
-    bin.picture:SetPoint("TOPLEFT", inset, -inset)
-    bin.picture:SetPoint("BOTTOMRIGHT", -inset, inset)
     bin.lit:Hide()
     bin:Show()
 end

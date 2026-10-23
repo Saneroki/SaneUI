@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the waste bin without a slot (Saneroki, 2026-10-23)
+- Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
+  (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
+
 ### Nameplates: one control over size and transparency; plates spring in (Saneroki, 2026-10-23)
 - **One hand** (`Scale.lua`): the game's scaling, its larger target and elites and its fading pulled at the plates'
   size apart from ours. Now the game's scaling is only a gauge: its CVars make it one straight line from 1 at your
