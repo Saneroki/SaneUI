@@ -348,6 +348,14 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Tests: the inventory test's stand-in scene has the game's camera and scripts; 132 checks (the size, the place,
   the feet, the mouse's area, the game's scripts kept, the wait, its new start by the wheel, the way back).
 
+### Navigation: the group's pings no longer heard, so the game blocks nothing at login (Saneroki, 2026-10-23)
+- The game still blocked an action of Navigation's at every login ("UNKNOWN()"; 3x at 14:29) after `SetPassThroughButtons`
+  had gone (71bd2aa): the blocks began with the callback for `MINIMAP_PING` (`RegisterEventCallback`, ece73bf), one of
+  the game's callback events with restrictions. `Ping.lua` no longer listens: it only sends. Gone with it: the marks
+  of received pings (`Marks.Pings`, the ping art), `Ping.List`, `Ping.TIME`, `Hybrid.Covers`, the message LIVE
+  "ping". The game's minimap draws the group's pings where it lies over our map.
+- Tests: `dev/tests/navigation.lua` (585 checks: nothing listens to `MINIMAP_PING`, neither a callback nor a frame).
+
 ### Navigation: a ping sent in the click itself (Saneroki, 2026-10-23)
 - The game blocked our pings ("the game blocked UNKNOWN()", three times): `Minimap:PingLocation` is taken only in the
   click's own handler, and the ping was sent from a timer (`Ping.Soon`, held back a double click's time). Now sent at

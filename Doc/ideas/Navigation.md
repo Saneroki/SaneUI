@@ -309,9 +309,10 @@ minimap) and the full-screen window (the world map) show the same map with the s
   alone for *Follow again after*. Off, the full map works as before: it stays where it is left.
 - **Pings as on the game's minimap (Saneroki, 2026-10-23; built):** a click on our map pings the place to the party
   and raid through the game's own ping (`Minimap:PingLocation`, the one ping the game has: Forever's client loads no
-  ping wheel), so members see it on their minimaps as if the game's minimap was clicked; every ping of theirs (and
-  one's own) shows on our map where it was pinged, in the game's minimap ping. The game pings only inside its
-  minimap's widest view around the player.
+  ping wheel), so members see it on their minimaps as if the game's minimap was clicked. The game pings only inside
+  its minimap's widest view around the player. Their pings show where the game's minimap lies over ours, drawn by the
+  game: the game does not let an addon hear them (`MINIMAP_PING`'s callback is blocked for addons; our own marks of
+  them, built 2026-10-23, were taken out again the same day).
 - **The minimap fills its window (Saneroki, 2026-10-20):** the small window shows the map over its whole shape,
   not a square in it: our map fills it, and the game's minimap over it (for its live dots) is cut to the window's
   shape, so it covers all of it and nothing past it.

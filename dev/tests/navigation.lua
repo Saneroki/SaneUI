@@ -1372,37 +1372,12 @@ do
     check(minimap._shown, "on again: there")
     check(not Hybrid.Ping(0, 0), "a click on the full map is no ping: the game's minimap is not in its middle there")
 end
--- A ping of the group on the full map: its mark at its place (its share of the game's minimap's width from its middle,
--- the player, at that minimap's zoom), who pinged under it in their class colour; none where the game's minimap
--- covers it (it draws its own); gone after Ping.TIME.
+-- The group's pings are not heard: MINIMAP_PING is one of the game's callback events with restrictions, whose
+-- callback the game blocks for an addon (a blocked action at every login); the game's minimap draws them itself.
 ;(function()
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    local _, u, v = Live.Player()
-    local radius = radii[minimap._zoom]
-    local function Pinged()
-        local list = {}
-        for _, widget in ipairs(W.frames) do
-            if widget._kind == "Frame" and widget.turn and widget.grow and widget.ping and widget._shown then
-                list[#list + 1] = widget
-            end
-        end
-        return list
-    end
     local listened = false
     for _, widget in ipairs(W.frames) do listened = listened or widget._events.MINIMAP_PING ~= nil end
-    check(W.callbacks.MINIMAP_PING and not listened, "MINIMAP_PING heard as the game's callback event, by no frame")
-    W.callbacks.MINIMAP_PING(nil, "party1", 0.7, -0.2) -- past the game's minimap's square (its half: 0.5)
-    W.callbacks.MINIMAP_PING(nil, "player", 0.05, 0)
-    local marks = Pinged()
-    local mark = marks[1]
-    local x, y = (u + 1.4 * radius - Canvas.view.u) * full.k, (v - 0.4 * radius - Canvas.view.v) * full.k
-    check(#marks == 1 and mark._points[1][2] == holder and near(mark._points[1][4], x) and near(mark._points[1][5], y)
-        and mark.name._text == Core.FullName("party1") and mark.name._color[1] == RAID_CLASS_COLORS.WARRIOR.r
-        and #ns.Ping.List(GetTime()) == 2,
-        "a ping of the party: at its place on the map, who pinged under it; the player's own under the game's minimap: its own")
-    W.Wait(ns.Ping.TIME)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    check(#Pinged() == 0 and #ns.Ping.List(GetTime()) == 0, "gone after its time")
+    check(not W.callbacks.MINIMAP_PING and not listened, "MINIMAP_PING: no callback of ours, no frame's event")
 end)()
 local bar
 for _, widget in ipairs(W.frames) do if widget.key == "terrain" then bar = widget._parent end end

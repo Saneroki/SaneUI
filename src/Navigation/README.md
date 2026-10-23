@@ -31,16 +31,16 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map;
   - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
-    as a click on the game's minimap does, and on this map too (below). It goes out at once, in the click (the
+    as a click on the game's minimap does (below: theirs). It goes out at once, in the click (the
     game takes a ping only from the click itself), so a double click pings too, with its first click. The game
     pings only as far as its minimap's widest view reaches around you, so a place farther off is not pinged;
   - **a double click:** the game's map pin there (on a pin: where the pin stands); **Ctrl and a click** puts it
     there too, as on the game's map. The pin has two states, as the game's own: *tracked* (gold, the game's
     arrow on the screen leads to it with its distance) and *untracked* (only on the map). A click on the pin
     switches between them, Ctrl and a click takes it away, Shift and a click writes it into the chat.
-- **Pings:** every ping of your party or raid (and your own) shows on the map where it was pinged, in the game's
-  minimap ping, for five seconds, who pinged under it in their class colour; where the game's minimap lies over
-  the map it draws its own there. The game plays its sound.
+- **Pings of your party and raid** (and your own) show where the game's own minimap lies over the map (around you:
+  the small map while it follows you at one of the game's zoom steps, the square around you on the full map), drawn
+  by the game, with its sound. Farther out the map shows none: the game does not let an addon hear its pings.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*). The full map, which the mouse never leaves, stays where you
   leave it, unless the box **Follow me** on its bar is ticked (left of *Pins*, off at first; also the setting
@@ -405,16 +405,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   player and `Hybrid.PingAt` turns them into the minimap's units (its width over twice its view's radius,
   `C_Minimap.GetViewRadius`) and calls `Minimap:PingLocation`; where the
   view it has does not reach so far, at the nearest step measured that does, for the moment (its zoom set back at
-  once; what the game says of it meanwhile is ours), and none past its widest. `MINIMAP_PING`, one of the game's
-  callback events (no frame's `RegisterEvent` takes it: it comes through the game's `RegisterEventCallback`, as to
-  Blizzard's own minimap, its first value the callback's owner, none; unit, x, y: shares of
-  the minimap's width and height from its middle, the receiver's own player) comes back as yards (twice the radius
-  times each share) on the player's plane, kept `Ping.TIME` seconds (`Ping.List`) and drawn by `Marks.Pings` at each
-  look of the tracker: the game's minimap ping art (`UI-Minimap-Ping-Center`, `-Rotate` turning, `-Expand` growing),
-  faded out at its end, hidden where the game's minimap covers it (`Hybrid.Covers`: it draws its own). Its values
-  can be secrets in a fight: then nothing. The game's own minimap turns with the player where its setting says so
-  and it is the game's (ours holds it north up): a ping's place is turned with it, both ways. In an instance (our map
-  not drawn) a click on the game's minimap pings it there itself (`Hybrid.Ping`).
+  once; what the game says of it meanwhile is ours), and none past its widest. The pings that come are not heard:
+  `MINIMAP_PING` is one of the game's callback events with restrictions (no frame's `RegisterEvent` takes it, and
+  the game blocks an addon's `RegisterEventCallback` for it: a blocked action at every login, 2026-10-23), so only
+  the game's minimap draws them, where it lies over ours. The game's own minimap turns with the player where its
+  setting says so and it is the game's (ours holds it north up): a ping's place is turned with it. In an instance
+  (our map not drawn) a click on the game's minimap pings it there itself (`Hybrid.Ping`).
 - **Following on the full map:** the tracker follows again where `Again` says: the small view once the mouse has
   been off it for *Follow again after*; the full map only with *Follow me* ticked, as soon as the player moved since
   the last look and no button is held (a quest moved to counts as a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at

@@ -425,15 +425,3 @@ function Hybrid.PingAt(right, up)
     surveying = false
     return sent
 end
-
--- Whether the game's minimap, where it shows over our map, covers a point x, y of the canvas' holder (its units):
--- it draws a ping there itself (Marks.lua).
-function Hybrid.Covers(x, y)
-    if not Hybrid.Shown() then return false end
-    local half = Parts():GetWidth() / 2
-    local edge = ns.Canvas.edge
-    local middleX, middleY = -edge.x, -edge.y -- the small view: in the canvas' middle
-    if wide then middleX, middleY = wide.x, wide.y end -- the full map: on the player
-    if not middleX then return false end
-    return math.abs(x - middleX) <= half and math.abs(y - middleY) <= half
-end

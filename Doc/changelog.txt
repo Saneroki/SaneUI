@@ -24,8 +24,8 @@ The bigger changes of each version, newest first.
   right. Plates of players you do not know are hidden, and plates are
   smaller the farther away they are.
 - Navigation: a click on the map pings the place to your party or
-  raid, as a click on the game's minimap does, and their pings show
-  on the map where they are; a double click puts the map pin there.
+  raid, as a click on the game's minimap does; a double click puts
+  the map pin there.
   A click on a quest in the quest log moves the map to it. The box
   Follow me on the full map's bar keeps you in the map's middle.
 - Data you can trust: what Sane UI's data has not had confirmed by

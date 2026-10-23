@@ -311,7 +311,6 @@ local function Draw()
     ns.Safe("route", ns.Route.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
-    ns.Safe("marks", ns.Marks.Pings, view, GetTime())
 end
 
 -- The player's place in the holder's units while it is on the view's plane (map, u, v from Live.Player), else nil.
@@ -450,10 +449,7 @@ local function Track()
     ns.Hybrid.Follow(holder, Here(map, u, v))
     -- Our arrow in both views, over the game's minimap (the game's own arrow on it shows only at times).
     ns.Marks.Player(view, map, u, v, facing)
-    if not lost then
-        ns.Marks.Group(view, now) -- in an instance the game's minimap shows the party and the pings itself
-        ns.Marks.Pings(view, now)
-    end
+    if not lost then ns.Marks.Group(view, now) end -- in an instance the game's minimap shows the party itself
     ns.Route.Track(map, u, v, now)
     if laid and not lost then ns.Indoors.Track(view, now) end
 end
@@ -760,9 +756,7 @@ function Canvas.Build(parent)
     frame:SetScript("OnSizeChanged", ns.Guard(function() if laid and not held then Canvas.Layout() end end))
     ns.Listen("LIVE", function(what)
         local drawn = Canvas.Laid() -- laid out, and not standing aside for the game's minimap (an instance)
-        if what == "ping" then
-            if drawn then ns.Safe("marks", ns.Marks.Pings, view, GetTime()) end
-        elseif what == "waypoint" then
+        if what == "waypoint" then
             if drawn then ns.Marks.Pin(view) end
             -- The game's arrow may lead to another quest now: its pins (the game's alone) and area.
             ns.Pins.Changed("waypoint")

@@ -308,8 +308,8 @@ Clicks, pings and following (2026-10-23; the plan, *Follow me on the full map*, 
 double click for the map pin*): every click on the map and on a pin goes through `Canvas.lua`'s `Clicked` (a pin's
 own first, `PinView.Act`; a double click within `Canvas.DOUBLE`, the map pin; else the map under it opens, else
 `Ping.Send` at once, in the click: the game blocks a ping from a timer). `Ping.lua` (no frames) sends a place by its yards from the player through `Hybrid.PingAt`
-(`Minimap:PingLocation`, a wider step for the moment where needed) and keeps `MINIMAP_PING`'s places, which
-`Marks.Pings` draws. The quest log's click moves the map (`Canvas.LookAt`), its `OnDoubleClick` pins. *Follow me*
+(`Minimap:PingLocation`, a wider step for the moment where needed); the group's pings are not heard (the game
+blocks an addon's callback for `MINIMAP_PING`), only the game's minimap draws them. The quest log's click moves the map (`Canvas.LookAt`), its `OnDoubleClick` pins. *Follow me*
 (`followMap`): the box on the bar, `Canvas.Following`, `Canvas.Center`, the tracker's `Again`.
 
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
