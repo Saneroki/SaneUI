@@ -171,6 +171,9 @@ the player's own without an icon): simple, bold and readable at the sidebar's si
 the game's textures by `dev/tools/category-art` (`SaneUI_Inventory/Art/Categories/`). A group's members' names as
 dark as the categories' heads (`Canvas.MEMBER_COLOR`).
 
+**Built (2026-10-23), Saneroki asked:** the drawings made large (256 x 256, for every size the game shows them
+at; each mipmap's lines thickened for its size) and in each category's empty slot, faded to a subtle grey.
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.

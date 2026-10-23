@@ -200,9 +200,12 @@ function Sheet:Label(place)
     label:Show()
 end
 
--- A block's empty slot, drawn as any empty slot (no sign in it, Saneroki, 2026-10-23): an item brought to it (picked up and clicked here, or dragged here) goes into
--- its category (Pinned's: pinned; Junk's: marked as junk); clicked with nothing, the next item clicked does
--- (Select.lua).
+-- A block's empty slot, drawn as any empty slot (no sign in it, Saneroki, 2026-10-23), its category's drawing (a
+-- group's) in its middle, faded to a subtle grey on the paper (Saneroki, 2026-10-23): an item brought to it (picked
+-- up and clicked here, or dragged here) goes into its category (Pinned's: pinned; Junk's: marked as junk); clicked
+-- with nothing, the next item clicked does (Select.lua).
+Canvas.SLOT_ICON = 0.6    -- the drawing against the slot's side
+Canvas.SLOT_FADE = 0.18   -- and how much of it shows
 local function PlusClick(plus)
     if GetCursorInfo() == "item" then return Menus.Drop(plus.key, plus.canvas.owner.stow) end
     ns.Select.Start("put", plus.key)
@@ -231,6 +234,9 @@ local function MakePlus(canvas)
     plus.lit:SetAllPoints()
     plus.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     plus.lit:Hide()
+    plus.icon = plus:CreateTexture(nil, "ARTWORK")
+    plus.icon:SetPoint("CENTER")
+    plus.icon:SetAlpha(Canvas.SLOT_FADE)
     plus:SetScript("OnClick", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnEnter", function(self) ns.Safe("bags", PlusEnter, self) end)
@@ -245,6 +251,15 @@ function Sheet:Plus(place)
     plus:SetSize(place.size, place.size)
     plus:SetFrameLevel(self.child:GetFrameLevel() + 3)
     plus.key = place.block.drop or place.block.key
+    -- ours whole and in graphite; one of the game's icons a player chose for a category of their own grey, cut a
+    -- little round its edge
+    local group = plus.key:match("^group:(.+)$")
+    local file = group and Categories.GroupIcon(group) or Categories.Icon(plus.key)
+    local zoom = Categories.Drawn(file) and 0 or Cells.ZOOM
+    plus.icon:SetTexture(file)
+    plus.icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
+    plus.icon:SetDesaturated(zoom > 0)
+    plus.icon:SetSize(place.size * Canvas.SLOT_ICON, place.size * Canvas.SLOT_ICON)
     plus.lit:Hide()
     plus:Show()
 end

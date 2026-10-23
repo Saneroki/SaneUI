@@ -9,8 +9,10 @@ The bigger changes of each version, newest first.
 - Inventory: every row of the bags' sidebar has a small pencil drawing
   of its own instead of the game's tiny icons: a backpack for All
   Items, a helmet for Head, a flask for Potions, a campfire for Camp
-  Items. A group's categories (The Armory, Adventure Prep) are written
-  darker, so they are easier to read.
+  Items. The same drawing, faded to a light grey, marks each
+  category's empty slot in your bags. A group's categories (The
+  Armory, Adventure Prep) are written darker, so they are easier to
+  read.
 - Combat text of Sane UI's own: damage, critical hits and heals rise
   over the nameplate of the creature or player that took them, and
   over your own character, in Sane UI's handwriting. A miss, dodge,

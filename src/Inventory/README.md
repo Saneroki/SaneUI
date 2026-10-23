@@ -77,7 +77,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **The sidebar** at the left (its arrow at the top folds it to a narrow edge and the strip of your bags with
     it; the arrow or the bags' button unfolds it, kept; every row with a small pencil drawing of its own: a
     backpack for All Items, a helmet for Head, a flask for Potions ...): *All Items* (every item by category, the categories side by side, as many to a
-    line as fit; every category that takes items shown with its items and an empty slot after them, also while
+    line as fit; every category that takes items shown with its items and an empty slot after them, its drawing
+    faded in it, also while
     it holds nothing; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
     *Pinned Items* and *Recent Items*, then every category switched on, by name, with how many items it holds
@@ -506,7 +507,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **The empty slots** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Canvas.lua`'s `Sheet:Plus`):
     after Pinned (shown when empty too) and every category that takes items (`Categories.Takes`; not Recent, the
     reagent bag's, the special bags' or a group, which take none), in the grid and the compact display; an item
-    on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
+    on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`. In its middle its category's drawing
+    (a group's, `Categories.GroupIcon`; a game icon a player chose grey, cut round its edge), `Canvas.SLOT_ICON`
+    (0.6) of the slot's side at `Canvas.SLOT_FADE` (0.18): a subtle grey on the paper.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
     journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
     narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Core's journal piece `arrow`, a pencil chevron

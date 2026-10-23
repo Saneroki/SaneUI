@@ -186,6 +186,8 @@ colour.
 - **Icons on the paper** (Saneroki, 2026-10-23): our own pencil drawings, never the game's tiny painted icons (a
   row of the bags' sidebar, the fold arrow): one simple object in a few bold graphite outlines, very little
   shading, centred in a square with a little room round it, thickened a little so it reads at 16 to 18 units.
+  Made large enough for its largest use (256 x 256), its smaller mipmaps thickened for their size, so one texture
+  serves a row and a slot. In an empty slot, a category's drawing is faded to a subtle grey (0.18).
 - **The podium** (the guild's race): steps drawn as an artist's pencil sketch of real blocks in perspective (each
   with its front, its top face and its side), in clean pencil lines only: firm outer edges, lighter inner edges,
   strokes running a little past their corners, a light second pass and a faint construction line. Nothing is

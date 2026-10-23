@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the category drawings large, and faded in each category's empty slot (Saneroki, 2026-10-23)
+- `dev/tools/category-art`: 256 x 256 (was 64), from a 1024 square; every mipmap made from the whole drawing by
+  itself, its lines thickened by a square `THICK` (30) wide for 64 and smaller, half as much for each doubling above
+  (the 64 level as before, so the sidebar's rows look the same); the thickening by running maxima (0.7 s an icon).
+  37 icons, 3.2 MB.
+- `Bags/Canvas.lua`: an empty slot (`Sheet:Plus`) draws its category's drawing in its middle (`plus.icon`;
+  `Categories.GroupIcon` for a group's one slot, `Categories.Icon` else), `Canvas.SLOT_ICON` (0.6) of its side at
+  `Canvas.SLOT_FADE` (0.18); a game icon a player chose for a category of their own grey and cut by `Cells.ZOOM`.
+- Tests: `dev/tests/bags.lua` 319 checks (a category's and Pinned's slot drawing, whole and faded; a group's; the
+  player's own icon grey).
+
 ### Inventory: pencil drawings of our own for the sidebars' rows; a group's members darker (Saneroki, 2026-10-23)
 - **The drawings:** `dev/imagegen/sets/bags/categories.txt` (Qwen turbo, one prompt a row, four seeds; a pilot of
   six settled the words: a few thick confident outlines, a simple silhouette, little shading), one chosen a row and

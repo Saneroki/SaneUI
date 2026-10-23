@@ -51,6 +51,7 @@ function methods:IsProtected() return self._protected or false end
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
 function methods:SetRotation(radians) self._rotation = radians end
 function methods:SetTexCoord(...) self._coords = { ... } end
+function methods:SetDesaturated(on) self._grey = on end
 function methods:GetStringWidth() return #(self._text or "") * 6 end
 function methods:GetTextWidth() return #(self._text or "") * 6 end
 function methods:SetVerticalScroll(value) self._scrolled = value end
@@ -892,6 +893,10 @@ local function PlusOf(key)
 end
 local plus = PlusOf("trade")
 check(plus and PlusOf("pinned") and not PlusOf("reagent"), "a + after Pinned and Trade Goods, none after the reagent bag's")
+check(plus.icon._texture == Categories.ART .. "trade" and plus.icon:GetAlpha() == ns.Canvas.SLOT_FADE
+    and plus.icon._coords[1] == 0 and plus.icon:GetWidth() == plus:GetWidth() * ns.Canvas.SLOT_ICON
+    and PlusOf("pinned").icon._texture == Categories.ART .. "pinned",
+    "an empty slot shows its category's drawing in its middle, whole and faded to a subtle grey")
 holding = 118
 plus:GetScript("OnClick")(plus)
 check(kept.assigned[118] == "trade" and holding == nil, "an item brought to a +: into that category")
@@ -948,6 +953,7 @@ end
 -- there, else into the group's first member.
 do
     local groupPlus = PlusOf("group:armory")
+    check(groupPlus.icon._texture == Categories.ART .. "armory", "a group's one empty slot: the group's drawing")
     check(groupPlus and not PlusOf("finger"), "a group's one + (none on its members)")
     holding, cursor = 4001, true
     groupPlus:GetScript("OnReceiveDrag")(groupPlus)
@@ -1031,6 +1037,8 @@ third.fn(third.data)
 check(kept.own[1].icon == Categories.ICONS[3], "its icon chosen")
 check(RowNamed("Flasks").icon._texture == Categories.ICONS[3] and RowNamed("Flasks").icon._coords[1] > 0,
     "the player's own category with the game's icon it chose: that icon, cut a little round its edge")
+check(PlusOf("own1") and PlusOf("own1").icon._texture == Categories.ICONS[3] and PlusOf("own1").icon._grey
+    and not PlusOf("trade").icon._grey, "in its empty slot that icon grey; Sane UI's drawings are graphite already")
 menu = RowMenu("Flasks")
 Choose(Line(menu, "Create Group With").sub, "Trade Goods")
 check(RowNamed("Trade Goods & Flasks") and Categories.GroupOf("own1"), "grouped with another from the menu")

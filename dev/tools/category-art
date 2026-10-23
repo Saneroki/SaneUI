@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Makes the bags' category icons (Inventory: the rows of the bags' and the alts' sidebars) from the chosen pencil
-drawings.
+"""Makes the bags' category icons (Inventory: the rows of the bags' and the alts' sidebars, a category's empty slot)
+from the chosen pencil drawings.
 
 The drawings are made with an image model (dev/imagegen/sets/bags/categories.txt, its chosen seeds noted there);
 the chosen one of each row is kept as assets/interface/categories/<key>.png, by its key: a view's (all, one, each),
 a built-in category's or group's (src/Inventory/Bags/Categories.lua), "add" (Add Category) and "own" (a category
 of the player's own without an icon of its own). Each becomes a pencil drawing on the page in the game: its lines
-and their grain in the journal's graphite (the darker a pixel, the more graphite), a little thicker so they hold at
-the sidebar's size, centred in a square with a little room round it; a BLP2 of SIDE x SIDE (dev/tools/art's
-writer) in assets/optimized/Inventory/Art/Categories/<key>.blp, which dev/build puts into SaneUI_Inventory/Art/.
+and their grain in the journal's graphite (the darker a pixel, the more graphite), centred in a square with a
+little room round it; a BLP2 of SIDE x SIDE (dev/tools/art's writer) in
+assets/optimized/Inventory/Art/Categories/<key>.blp, which dev/build puts into SaneUI_Inventory/Art/.
+
+SIDE is large enough for the drawing in an empty slot at 4K; the game draws it smaller from its mipmaps. Each
+mipmap is made from the whole drawing by itself, its lines thickened the more the smaller it is (THICK in the WORK
+square at 64 pixels, as much again for each halving above it less), so the large ones keep the pencil's own line
+and the small ones (a sidebar's row) still read.
 
 Usage:  dev/tools/category-art [key ...]     (no key: every chosen drawing)
 """
@@ -18,15 +23,15 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "assets/interface/categories"
 OUT = ROOT / "assets/optimized/Inventory/Art/Categories"
-SIDE = 64            # the texture's side
-WORK = 512           # the square the drawing is laid into first
+SIDE = 256           # the texture's side
+WORK = 1024          # the square the drawing is laid into first
 ROOM = 0.06          # the room round the drawing, of the square's side
-THICK = 15           # its lines made thicker by a max filter this wide, in the WORK square
+THICK = 30           # the lines thickened by a square this wide (WORK pixels) for the mipmap of 64 and smaller
 INK = (30, 23, 17)   # Core.Journal.INK
 
 _loader = importlib.machinery.SourceFileLoader("art", str(ROOT / "dev/tools/art"))
@@ -47,28 +52,46 @@ def drawing(path):
     picture = picture.resize((max(1, round(picture.width * k)), max(1, round(picture.height * k))), Image.LANCZOS)
     square = Image.new("L", (WORK, WORK))
     square.paste(picture, ((WORK - picture.width) // 2, (WORK - picture.height) // 2))
-    return np.asarray(square.filter(ImageFilter.MaxFilter(THICK)), dtype=np.float64) / 255
+    return np.asarray(square, dtype=np.float64) / 255
 
 
-def texture(key, alpha):
-    """The BLP2 of the drawing (graphite, premultiplied while it is made smaller), with its mipmaps."""
+def thicker(alpha, width):
+    """Each pixel the darkest within a square width wide round it (the lines grow by width - 1)."""
+    if width <= 1:
+        return alpha
+    half, n = width // 2, alpha.shape[0]
+    rows = np.pad(alpha, ((half, half), (0, 0)))
+    out = rows[:n].copy()
+    for s in range(1, width):
+        np.maximum(out, rows[s:s + n], out=out)
+    cols = np.pad(out, ((0, 0), (half, half)))
+    out = cols[:, :n].copy()
+    for s in range(1, width):
+        np.maximum(out, cols[:, s:s + n], out=out)
+    return out
+
+
+def level(alpha, size):
+    """One mipmap: the drawing, its lines thickened for its size, made size x size (premultiplied graphite)."""
+    width = min(THICK, round(THICK * 64 / size)) | 1
+    alpha = thicker(alpha, width)
     canvas = np.zeros(alpha.shape + (4,))
     canvas[..., :3] = np.array(INK) / 255 * alpha[..., None]
     canvas[..., 3] = alpha
-    canvas = art.resize(canvas, SIDE, SIDE)
-    levels, first, k = [], None, 0
-    while True:
-        size = max(1, SIDE >> k)
-        image = art.straight(canvas if k == 0 else art.resize(canvas, size, size))
+    return art.straight(art.resize(canvas, size, size))
+
+
+def texture(key, alpha):
+    levels, first, size = [], None, SIDE
+    while size >= 1:
+        image = level(alpha, size)
         first = first or image
         levels.append(art.dxt5(image))
-        if size == 1:
-            break
-        k += 1
+        size //= 2
     target = OUT / f"{key}.blp"
     target.write_bytes(art.blp(levels, SIDE, SIDE))
     psnr, _ = art.check(target, first)
-    print(f"{key}: {SIDE} x {SIDE} (read back {psnr:.1f} dB)")
+    print(f"{key}: {SIDE} x {SIDE}, {len(levels)} levels (read back {psnr:.1f} dB)")
 
 
 def main(keys):
