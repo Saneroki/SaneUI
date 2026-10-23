@@ -1219,7 +1219,8 @@ def tiles(args):
         guide_of(walk).save(work / f"{name}-water.png")
         facts = guides.facts(continent, i, j, square)
         keys = [str(z["uimap"]) for z in facts["zones"] if str(z["uimap"]) in briefs]
-        brief = dict(briefs[keys[0]]) if keys else dict(briefs["sea"], biome="the open sea", colours="deep dark blue")
+        brief = dict(briefs[keys[0]]) if keys else dict(briefs["sea"], biome="the open sea", colours="deep dark blue",
+                                                        atmosphere="Clear, even daylight over the open water")
         prompt = tile_words(words, brief)
         refs = [work / f"{name}-{part}.png" for part in ("colours", "coarse", "height", "water")]
         best = None
@@ -1248,13 +1249,15 @@ def status(args):
     out = Path(args.out)
     state = load_state(out)
     wanted = made = 0
-    for subject in state["subjects"]:
+    subjects = [s for s in state["subjects"] if not args.kind or s["kind"] == args.kind]
+    for subject in subjects:
         frames = subject.get("floors") or [{"name": subject["name"]}]
-        paths = [out / subject["name"] / "close.png", out / subject["name"] / "far.png"]
-        paths += [out / f["name"] / "middle.png" for f in frames]
+        paths = {"close": [out / subject["name"] / "close.png"], "far": [out / subject["name"] / "far.png"],
+                 "middle": [out / f["name"] / "middle.png" for f in frames]}
+        paths = [p for level in args.levels for p in paths[level]]   # only the levels asked: a job's own share
         wanted += len(paths)
         made += sum(1 for p in paths if p.is_file())
-    print(f"{made} of {wanted or 1} paintings made ({len(state['subjects'])} subjects)")
+    print(f"{made} of {wanted or 1} paintings made ({len(subjects)} subjects)")
 
 
 def main():

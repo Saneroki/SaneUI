@@ -55,4 +55,5 @@ done = '^(\d+) of \1 squares painted'
 name = "instancemaps"
 priority = 2
 command = ["dev/tools/map-layers", "paint", "--levels", "far", "--kind", "instance"]
-status = ["dev/tools/map-layers", "status"]
+status = ["dev/tools/map-layers", "status", "--levels", "far", "--kind", "instance"]
+done = '^(\d+) of \1 paintings made'

@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: the GPU runner's map jobs finish again (2026-10-23)
+- `dev/tools/map-layers tiles`: a square over the open sea took the sea's words, which have no light, and every
+  run stopped there; the sea's own light is now in its words.
+- `dev/tools/map-layers status` counts only the `--levels` and `--kind` asked, and the job `instancemaps` asks
+  for its own share (the instances' far renders) with a `done` pattern: before, the runner could never see it
+  finished and dropped it after three tries.
+
 ### Core: the journal's window no longer freezes the game (2026-10-23)
 - Opening the inventory froze the game until the client stopped the script ("script ran too long" in
   `Journal.lua`): the edges' and the bottom's tiles were laid by stepping a remainder, which in floating point can
