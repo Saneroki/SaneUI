@@ -870,12 +870,15 @@ end
 -- The section Expand window: a module's own settings ------------------------------------------------
 local described = { { key = "first", default = true, text = "First" }, { key = "last", default = true, text = "Last" } }
 Edge.Options(described, 2, "Appearance")
-check(#described == 8 and described[1].key == "first" and described[2].key == "expand" and described[2].header == "Expand window"
+check(#described == 9 and described[1].key == "first" and described[2].key == "expand" and described[2].header == "Expand window"
+    and described[3].key == "expandClick" and described[3].parent == "expand" and described[3].default == false
+    and described[3].text == "Hotcorner requires leftclick"
+    and table.remove(described, 3)
     and described[3].key == "motion" and described[4].key == "expandOpacity" and described[5].key == "expandTexture"
     and described[6].key == "corners" and described[7].key == "squareEdges" and described[8].key == "last"
     and described[7].tab == "Appearance" and described[3].parent == "expand" and described[7].parent == nil
     and described[6].header == "Window corners",
-    "a module puts the section Expand window where it wants it: whether it fills the screen, how it moves, its background; then its corners, a section of their own")
+    "a module puts the section Expand window where it wants it: whether it fills the screen, whether its edge wants a click, how it moves, its background; then its corners, a section of their own")
 check(described[6].min == 0 and described[6].max == 100 and described[6].unit == "%" and described[6].default == 10
     and described[6].text == "Corner radius" and described[7].default == true and described[7].text == "Don't round corners on screen edges",
     "the corner radius is a share, a tenth at first; the corners on the screen's edges are square at first")
@@ -888,8 +891,8 @@ do -- A module's section, followed by itself
     Edge.Options(list, 2, nil, { motion = "animations" })
     local heard = {}
     Core.Options("EdgeTest", list, function(key) heard[#heard + 1] = key end)
-    check(list[3].key == "motion" and list[3].parent[1] == "expand" and list[3].parent[2] == "animations" and list[2].parent == nil
-        and list[4].parent == "expand", "a module can put some of the section under switches of its own too")
+    check(list[4].key == "motion" and list[4].parent[1] == "expand" and list[4].parent[2] == "animations" and list[2].parent == nil
+        and list[3].parent == "expand" and list[5].parent == "expand", "a module can put some of the section under switches of its own too")
     W.Fire("ADDON_LOADED", "SaneUI_EdgeTest")
     local own = CreateFrame("Frame", nil, UIParent)
     local ownWindow = Window.New(own, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
@@ -907,15 +910,16 @@ end
 do -- Hotcorner requires leftclick: the edge fills the screen by a left click only
     local click = CreateFrame("Frame", nil, UIParent)
     local clickWindow = Window.New(click, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
-        dock = true, edge = { expand = true, motion = "off", expandOpacity = 50, expandTexture = "solid" },
+        dock = true, edge = { expand = true, expandClick = false, motion = "off", expandOpacity = 50, expandTexture = "solid" },
         first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
     local clickEdge = clickWindow.edge
     clickWindow:Place()
     W.Wait(1)
     at(click, 860, 0)
     local bottom = clickEdge.strips.bottom
-    Core.Set(Core.name, "edgeClick", true)
-    check(bottom._mouse == true, "with Hotcorner requires leftclick the strip takes clicks")
+    clickEdge.settings.expandClick = true
+    clickEdge:Update()
+    check(bottom._mouse == true, "with the window's Hotcorner requires leftclick its strip takes clicks")
     bottom:GetScript("OnEnter")(bottom)
     check(not clickEdge.full, "the mouse reaching the edge does nothing then")
     bottom:GetScript("OnMouseDown")(bottom, "RightButton")
@@ -924,7 +928,8 @@ do -- Hotcorner requires leftclick: the edge fills the screen by a left click on
     check(clickEdge.full, "a left click there fills the screen")
     bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
     check(not clickEdge.full, "and another brings it back")
-    Core.Set(Core.name, "edgeClick", false)
+    clickEdge.settings.expandClick = false
+    clickEdge:Update()
     check(not bottom._mouse, "switched off, clicks go through the strip again")
     bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
     check(not clickEdge.full, "and a click there does nothing")

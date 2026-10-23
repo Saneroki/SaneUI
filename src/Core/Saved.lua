@@ -263,8 +263,6 @@ Core.Options(Core.name, {
       headerTip = "Where Sane UI's windows stand.",
       tip = "Puts every window of Sane UI back at its first place and size. Whether a window was left in full screen, or the game's own window chosen instead, stays as it is. Also /sane window reset all.",
       button = function() if Core.Window and Core.Window.ResetAll then Core.Window.ResetAll() end end },
-    { key = "edgeClick", default = false, text = "Hotcorner requires leftclick",
-      tip = "A window docked to a screen edge or corner fills the screen only when you left-click at that edge or corner, not when the mouse merely reaches it. Click there again and it goes back." },
     { key = "animations", default = true, text = "Animations", page = "Appearance",
       header = "Windows", headerTip = "How Sane UI's windows move.",
       tip = "Sane UI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },

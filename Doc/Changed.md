@@ -6,6 +6,11 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: Hotcorner requires leftclick per window (Saneroki, 2026-10-23)
+- The switch moved from General into each module's section *Expand window* (`expandClick`, off, under *Can expand
+  to fullscreen*; `Edge.DEFAULTS`, `Edge.KEYS`): the bags may want a click while the map does not. The general
+  switch `edgeClick` is gone; a change is taken in by `edge:Update()` like the section's other switches.
+
 ### Core: Hotcorner requires leftclick (Saneroki, 2026-10-23)
 - New general switch *Hotcorner requires leftclick* (`edgeClick`, off; page General, under Windows): ticked, the
   mouse at a docked window's screen edge or corner does nothing; a left click in that edge's strip or the corner's
