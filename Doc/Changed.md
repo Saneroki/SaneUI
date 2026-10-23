@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the cast bar in the game's art, inside one outline with the bar (Saneroki, 2026-10-23)
+- **Art** (`Cast.lua`): the fill in the game's own cast bar atlases (`Cast.ART`: golden standard, channel,
+  uninterruptible, interrupted), given through `SetStatusBarTexture` as the game's cast bar does; the flat colours gone.
+- **One outline** (`Bar.lua`, `Bar.Outline`): the border, the rank's line and the glow reach down to the cast bar's
+  bottom while it shows (run from its `OnShow` and `OnHide`), their caps sized for both; around the bar alone
+  otherwise. The cast bar has no border of its own any more: a pixel of the outline between it and the bar.
+- Tests: 214 checks.
+
 ### Inventory: an item let go over the bags' window no longer tries a quiver (Saneroki, 2026-10-23)
 - An item from elsewhere (worn, the bank) let go over the window went into the first free slot of the carried bags,
   a quiver's or another bag of one family's too, and the game answered that only arrows fit there. Now

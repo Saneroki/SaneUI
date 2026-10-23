@@ -2,14 +2,16 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Cast
---  A unit's cast, under its plate's bar, without a gap: a bar as wide as the
---  plate's and as high as it, round at its ends like it, with a square icon
---  of the spell at its left end and the seconds left written inside the
---  icon; right of the icon, one line: the spell's name, then the name of its
+--  A unit's cast, under its plate's bar, inside the plate's one outline (the
+--  border, the rank's line and the glow go around both while it shows,
+--  Bar.Outline): a bar as wide as the plate's and as high as it, with a
+--  square icon of the spell at its left end and the seconds left written
+--  inside the icon; right of the icon, one line: the spell's name, then the name of its
 --  target, cut short where the bar ends (its start always shows). Filling as
 --  a cast goes on, emptying as a channel does. Its colour says whether it can
---  be interrupted: Cast.CAST (a channel Cast.CHANNEL), Cast.LOCKED where it
---  cannot. Interrupted, the bar is full in Cast.BROKEN and says so, and by
+--  be interrupted, in the game's own cast bar art (Cast.ART): its golden fill
+--  for a cast, its channel's for a channel, its grey where it cannot be
+--  interrupted. Interrupted, the bar is full in its red and says so, and by
 --  whom where the game names them; done or interrupted, it stays Cast.HOLD
 --  seconds before it goes.
 --
@@ -31,10 +33,10 @@ local Plain = Core.Plain
 local Cast = {}
 ns.Cast = Cast
 
-Cast.CAST = { 1, 0.72, 0.18 }    -- a cast's fill: it can be interrupted
-Cast.CHANNEL = { 0.35, 0.75, 1 } -- a channel's
-Cast.LOCKED = { 0.6, 0.6, 0.6 }  -- one that cannot be interrupted
-Cast.BROKEN = { 1, 0.15, 0.1 }   -- an interrupted one
+-- The game's own cast bar art (its atlases): a cast that can be interrupted, a channel, one that cannot be, one that
+-- was.
+Cast.ART = { cast = "ui-castingbar-filling-standard", channel = "ui-castingbar-filling-channel",
+             locked = "ui-castingbar-uninterruptable", broken = "ui-castingbar-interrupted" }
 Cast.HOLD = 0.5                  -- seconds a cast stays after it was done or interrupted
 Cast.WAIT = 1                    -- seconds past a reckoned end before a cast counts as done without the game's word
 Cast.INTERRUPTED = rawget(_G, "INTERRUPTED") or "Interrupted" -- the game's word
@@ -47,27 +49,52 @@ local listened = {}
 for _, event in ipairs(Cast.EVENTS) do listened[event] = true end
 Cast.Heard = listened
 
--- The fill's colours for the cast on a bar: a cast fills in its colour; a channel empties (its colour behind, the
--- dark filling from its end). A cast that cannot be interrupted is grey: the grey bar over the fill seen by the
--- game's answer, hidden or not.
+-- A status bar's fill in a piece of the game's cast bar art (given to the bar, which crops it as it fills, as the
+-- game's own cast bar does), or in plain dark.
+local function Fills(bar, atlas)
+    if atlas then
+        bar:SetStatusBarTexture(atlas)
+        bar:SetStatusBarColor(1, 1, 1)
+    else
+        local dark = ns.Bar.BACKGROUND
+        bar:SetStatusBarTexture(ns.Bar.WHITE)
+        bar:SetStatusBarColor(dark[1], dark[2], dark[3])
+    end
+end
+
+-- A texture behind a fill in a piece of the game's cast bar art, or in plain dark.
+local function Art(texture, atlas)
+    if atlas then
+        texture:SetAtlas(atlas)
+        texture:SetVertexColor(1, 1, 1, 1)
+    else
+        local dark = ns.Bar.BACKGROUND
+        texture:SetTexture(ns.Bar.WHITE)
+        texture:SetVertexColor(dark[1], dark[2], dark[3], dark[4])
+    end
+end
+
+-- The bar's art for the cast on it: a cast fills in the game's golden art; a channel empties (the channel's art
+-- behind, the dark filling from its end). A cast that cannot be interrupted is grey: a bar in the game's grey art
+-- over the fill, seen by the game's answer, hidden or not.
 local function Paint(bar)
     local cast = bar.cast
-    local colour = cast.channel and Cast.CHANNEL or Cast.CAST
-    local dark = ns.Bar.BACKGROUND
     for _, layer in ipairs({ bar.fill, bar.lock }) do
         layer:SetReverseFill(cast.channel)
         layer:SetMinMaxValues(cast.starts, cast.ends)
     end
+    local ART = Cast.ART
     if cast.channel then
-        bar.fill:SetStatusBarColor(dark[1], dark[2], dark[3])
-        bar.background:SetVertexColor(colour[1], colour[2], colour[3], 1)
-        bar.lock:SetStatusBarColor(dark[1], dark[2], dark[3])
-        bar.lockBack:SetVertexColor(Cast.LOCKED[1], Cast.LOCKED[2], Cast.LOCKED[3], 1)
+        Fills(bar.fill, nil)
+        Art(bar.background, ART.channel)
+        Fills(bar.lock, nil)
+        Art(bar.lockBack, ART.locked)
+        bar.lockBack:Show()
     else
-        bar.fill:SetStatusBarColor(colour[1], colour[2], colour[3])
-        bar.background:SetVertexColor(dark[1], dark[2], dark[3], dark[4])
-        bar.lock:SetStatusBarColor(Cast.LOCKED[1], Cast.LOCKED[2], Cast.LOCKED[3])
-        bar.lockBack:SetVertexColor(0, 0, 0, 0)
+        Fills(bar.fill, ART.cast)
+        Art(bar.background, nil)
+        Fills(bar.lock, ART.locked)
+        bar.lockBack:Hide()
     end
     local locked = cast.locked
     if Core.Secret(locked) then
@@ -115,6 +142,7 @@ local function Tick(bar)
     end
     bar.timer:SetFormattedText(left < 10 and "%.1f" or "%.0f", left)
 end
+local Outline = ns.Guard(function(bar) ns.Bar.Outline(bar.dress) end)
 local OnUpdate = ns.Guard(function(bar) Tick(bar) end)
 
 -- The cast bar under a plate's bar (made with the plate's dress, kept with it).
@@ -123,10 +151,6 @@ function Cast.Make(dress)
     bar:SetPoint("TOPLEFT", dress, "BOTTOMLEFT", 0, 0)
     bar:SetPoint("TOPRIGHT", dress, "BOTTOMRIGHT", 0, 0)
     bar:SetFrameLevel((Plain(dress:GetFrameLevel()) or 1) + 2)
-    local border = bar:CreateTexture(nil, "BACKGROUND", nil, -3)
-    border:SetTexture(ns.Bar.WHITE)
-    border:SetVertexColor(ns.Bar.BORDER[1], ns.Bar.BORDER[2], ns.Bar.BORDER[3], ns.Bar.BORDER[4])
-    border:SetAllPoints(bar)
     local fill = CreateFrame("StatusBar", nil, bar)
     fill:SetStatusBarTexture(ns.Bar.FILL)
     fill:SetMinMaxValues(0, 1)
@@ -146,8 +170,7 @@ function Cast.Make(dress)
     local lockBack = lock:CreateTexture(nil, "BACKGROUND")
     lockBack:SetTexture(ns.Bar.WHITE)
     lockBack:SetAllPoints(lock)
-    bar.border, bar.fill, bar.background, bar.lock, bar.lockBack = border, fill, background, lock, lockBack
-    bar.outer = ns.Bar.Caps(bar, bar, border)
+    bar.fill, bar.background, bar.lock, bar.lockBack = fill, background, lock, lockBack
     bar.caps = ns.Bar.Caps(fill, fill, fill:GetStatusBarTexture(), background, lock:GetStatusBarTexture(), lockBack)
     -- The icon at the left end, inside the border, square; the seconds left inside it.
     local top = CreateFrame("Frame", nil, bar)
@@ -170,27 +193,31 @@ function Cast.Make(dress)
     end
     bar.icon, bar.timer, bar.text = icon, timer, text
     bar:SetScript("OnUpdate", OnUpdate)
+    -- The plate's one outline around it too while it shows (Bar.Outline).
+    bar:SetScript("OnShow", Outline)
+    bar:SetScript("OnHide", Outline)
+    bar.dress = dress
     bar:Hide()
     dress.cast = bar
     Cast.Fit(dress)
 end
 
--- Laid out for the dress's size (Plate's Fit): as high as its bar, the icon square at its left end, a pixel inside the
--- border, the caps a quarter of each height.
+-- Laid out for the dress's size (Plate's Fit): as high as its bar, inside the plate's one outline (Bar.Outline: a
+-- pixel of it under the bar, between the two, and along the cast bar's ends and bottom), the icon square at its left
+-- end, the caps a quarter of each height.
 function Cast.Fit(dress)
     local bar = dress.cast
     if not bar then return end
     local height = Plain(dress:GetHeight()) or 0
     local edge = Core.Pixels(dress, 1)
     bar:SetHeight(height)
-    local inner = math.max(height - 2 * edge, 1)
+    local inner = math.max(height - edge, 1)
     bar.icon:ClearAllPoints()
-    bar.icon:SetPoint("TOPLEFT", bar, "TOPLEFT", edge, -edge)
+    bar.icon:SetPoint("TOPLEFT", bar, "TOPLEFT", edge, 0)
     bar.icon:SetSize(inner, inner)
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint("TOPLEFT", bar.icon, "TOPRIGHT", 0, 0)
     bar.fill:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -edge, edge)
-    ns.Bar.SizeCaps(bar.outer, height)
     ns.Bar.SizeCaps(bar.caps, inner)
 end
 
@@ -257,7 +284,8 @@ function Cast.Update(dress, unit, event, _, _, interruptedBy)
         -- A moment in red, then gone.
         bar.cast.held = GetTime() + Cast.HOLD
         bar.fill:SetReverseFill(false)
-        bar.fill:SetStatusBarColor(Cast.BROKEN[1], Cast.BROKEN[2], Cast.BROKEN[3])
+        Fills(bar.fill, Cast.ART.broken)
+        Art(bar.background, nil)
         bar.fill:SetMinMaxValues(0, 1)
         bar.fill:SetValue(1)
         bar.lock:SetAlpha(0)

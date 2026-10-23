@@ -940,9 +940,12 @@ check(castBar._height == dress._height and castBar.icon._width == castBar.icon._
     "as high as the bar, its icon square inside its border")
 check(castBar.icon._texture == 135812 and castBar.text._text == "Fireball  Bran Stoneheart" and (castBar.text._width or 0) == 0
     and castBar.text._points[2][3] == "RIGHT", "the spell's icon; its name, then its target's, cut where the bar ends")
-check(castBar.fill._barColor[1] == Cast.CAST[1] and castBar.fill._min == casts.nameplate1.starts and castBar.fill._max == casts.nameplate1.ends
+local function Atlas(bar) return bar._barTexture end
+check(Atlas(castBar.fill) == Cast.ART.cast and castBar.fill._min == casts.nameplate1.starts and castBar.fill._max == casts.nameplate1.ends
     and Near(Share(castBar.fill), 1 / 3) and castBar.timer._text == "2.0" and castBar.lock._alpha == 0,
-    "from its start to its end, a third done, two seconds left in the icon, in the cast's colour")
+    "from its start to its end, a third done, two seconds left in the icon, in the game's golden cast art")
+check(dress.border._points[2][2] == castBar and dress.halo[1]._points[2][2] == castBar and dress.rankLine._points[2][2] == castBar
+    and Near(dress.border.caps[1]._width, 2 * dress._height * Bar.CAP), "one outline, glow and rank line around the bar and the cast bar")
 check(castBar.timer._points[1][2] == castBar.icon, "the seconds inside the icon")
 check(gameCast._alpha == 0, "the game's own cast bar out of sight under ours")
 W.clock = W.clock + 1
@@ -956,8 +959,8 @@ castBar:GetScript("OnUpdate")(castBar, Cast.HOLD)
 check(not castBar:IsShown(), "half a second later: gone")
 casts.nameplate1 = { name = "Drain Life", channel = true, locked = true, starts = W.clock * 1000, ends = (W.clock + 4) * 1000 }
 W.Fire("UNIT_SPELLCAST_CHANNEL_START", "nameplate1")
-check(castBar:IsShown() and castBar.fill._reverse and castBar.background._vertex[1] == Cast.CHANNEL[1] and castBar.lock._alpha == 1
-    and castBar.lockBack._vertex[1] == Cast.LOCKED[1] and Share(castBar.fill) == 0 and castBar.text._text == "Drain Life",
+check(castBar:IsShown() and castBar.fill._reverse and castBar.background._atlas == Cast.ART.channel and castBar.lock._alpha == 1
+    and castBar.lockBack._atlas == Cast.ART.locked and Share(castBar.fill) == 0 and castBar.text._text == "Drain Life",
     "a channel that cannot be interrupted: grey over it, emptying from its end; no target")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "nameplate1")
@@ -968,20 +971,22 @@ check(not castBar:IsShown(), "then gone")
 -- Interrupted: full and red, saying so and by whom, for half a second.
 casts.nameplate1 = { name = "Fireball", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
-check(castBar.fill._barColor[1] == Cast.CAST[1] and not castBar.fill._reverse, "an interruptible cast: its colour")
+check(Atlas(castBar.fill) == Cast.ART.cast and not castBar.fill._reverse and castBar.lock._alpha == 0, "an interruptible cast: golden")
 UnitTokenFromGUID = function(guid) return guid == "Player-party1" and "party1" or nil end
 local unitName = UnitName
 UnitName = function(unit) if unit == "party1" then return "Bran" end return unitName(unit) end
 W.Fire("UNIT_SPELLCAST_INTERRUPTED", "nameplate1", "cast", 133, "Player-party1")
-check(castBar.fill._barColor[1] == Cast.BROKEN[1] and Share(castBar.fill) == 1 and castBar.text._text == Cast.INTERRUPTED .. ": Bran",
+check(Atlas(castBar.fill) == Cast.ART.broken and Share(castBar.fill) == 1 and castBar.text._text == Cast.INTERRUPTED .. ": Bran",
     "interrupted: full and red, saying so, and by whom")
 UnitName = unitName
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
-check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.BROKEN[1], "its stop after: still red")
+check(castBar:IsShown() and Atlas(castBar.fill) == Cast.ART.broken, "its stop after: still red")
 W.clock = W.clock + Cast.HOLD + 0.01
 castBar:GetScript("OnUpdate")(castBar, 1)
 check(not castBar:IsShown(), "gone after half a second")
+check(dress.border._points[2][2] == dress and Near(dress.border.caps[1]._width, dress._height * Bar.CAP),
+    "no cast: the outline around the bar alone again")
 -- Stopped early by the game (cast done): stays half a second; failed: at once.
 casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")

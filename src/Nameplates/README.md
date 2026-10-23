@@ -58,10 +58,12 @@ fails, every plate is the game's own again.
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
   picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
-- **Cast bar:** under the bar, without a gap, as wide and as high as it: the spell's icon at its left end with the
+- **Cast bar:** under the bar, inside the plate's one outline (the border, the rank's line and the glow go around the
+  bar and the cast bar together while a cast shows, around the bar alone otherwise), as wide and as high as the bar,
+  in the game's own cast bar art: the spell's icon at its left end with the
   seconds left inside it, then the spell's name and its target's on one line, cut where the bar ends (the start
-  always shows); filling as a cast goes on, emptying as a channel does. Its colour says whether it can be interrupted:
-  gold (a channel blue), grey where it cannot. Interrupted, it is full and red and says *Interrupted*, with who did it
+  always shows); filling as a cast goes on, emptying as a channel does. Its art says whether it can be interrupted:
+  the game's golden fill (a channel its channel fill), its grey where it cannot. Interrupted, it is full and red and says *Interrupted*, with who did it
   where the game names them. Done or interrupted, it stays half a second; failed, it goes at once. It shows every
   cast, also those the game hides from addons in a fight: the game then draws its progress, and the seconds come from
   the spell's cast time (none for a channel). Setting *Cast bar* (off: the game's own).
@@ -206,7 +208,10 @@ fails, every plate is the game's own again.
   `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
   the distance found, and each of your attacks with its reach and the game's answer.
 - **Cast** (`Cast.lua`): a frame of ours under the dress (`TOPLEFT` on its `BOTTOMLEFT`, as high as it, `Cast.Fit`),
-  a pixel's border and a `StatusBar` cut round by `Bar.Caps`, the icon square at its left end inside the border, a
+  inside the dress's outline (`Bar.Outline`, run as it shows or hides: the border, the rank's line and the glow
+  anchored down to its bottom, their caps for both heights), a `StatusBar` cut round by `Bar.Caps` filled in the
+  game's cast bar atlases (`Cast.ART`, through `SetStatusBarTexture` as the game's own: `ui-castingbar-filling-standard`,
+  `-filling-channel`, `ui-castingbar-uninterruptable`, `ui-castingbar-interrupted`), the icon square at its left end inside the border, a
   font string of the seconds on the icon, one of the spell's and its target's names from the icon to the bar's end
   (`SetWordWrap(false)`: cut short). `Cast.Update` reads the cast at each of the unit's `Cast.EVENTS`
   (`UNIT_SPELLCAST_*`, registered with Plate.EVENTS) and when a plate is filled: `UnitCastingInfo`, else
@@ -374,3 +379,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the power line a third of the bar's height (Saneroki), the combo points as high on it.
 - **2026-10-23:** the cast bar also for casts whose times the game hides from addons (Saneroki): the game draws its
   progress, the seconds are reckoned; the game's own cast bar no longer stands in.
+- **2026-10-23:** the cast bar in the game's own cast bar art, inside the plate's one outline (Saneroki): the border,
+  rank line and glow go around the bar and the cast bar together while a cast shows.

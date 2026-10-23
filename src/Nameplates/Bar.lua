@@ -118,10 +118,12 @@ local function Plate(host, sublevel)
 end
 
 -- A plate reaching that far beyond the dress on every side, its caps sized for it.
-local function Around(texture, dress, reach, height)
+-- A plate reaching that far beyond the dress on every side, down to the bottom of below (the dress, or its cast bar
+-- under it while a cast shows), its caps sized for it.
+local function Around(texture, dress, reach, height, below)
     texture:ClearAllPoints()
     texture:SetPoint("TOPLEFT", dress, "TOPLEFT", -reach, reach)
-    texture:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", reach, -reach)
+    texture:SetPoint("BOTTOMRIGHT", below or dress, "BOTTOMRIGHT", reach, -reach)
     Bar.SizeCaps(texture.caps, height + 2 * reach)
 end
 
@@ -186,14 +188,25 @@ function Bar.Fit(dress)
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", dress, "TOPLEFT", edge, -edge)
     health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -edge, edge)
-    Around(dress.border, dress, 0, height)
-    local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
-    Around(dress.rankLine, dress, pixel * reach, height)
-    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), height) end
+    Bar.Outline(dress)
     local inner = height - 2 * edge
     Bar.SizeCaps(dress.caps, inner)
     dress.line = math.max(inner * Bar.LINE, pixel * 2)
     dress.power:SetHeight(dress.line)
+end
+
+-- The outline (the border, the rank's line, the glow) around the bar, and around its cast bar too while a cast
+-- shows (Cast.lua calls it as one shows or goes): one frame for both.
+function Bar.Outline(dress)
+    local height = Plain(dress:GetHeight()) or 0
+    local pixel = Core.Pixels(dress, 1)
+    local below = dress.cast and dress.cast:IsShown() and dress.cast or dress
+    local tall = height + (below ~= dress and (Plain(below:GetHeight()) or 0) or 0)
+    Around(dress.border, dress, 0, tall, below)
+    local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
+    Around(dress.rankLine, dress, pixel * reach, tall, below)
+    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below) end
+    dress.outlined = below
 end
 
 -- A unit's rank as its border shows it ("boss", "elite", "rare"), or nil.
