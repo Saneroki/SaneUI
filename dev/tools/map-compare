@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""The finished maps compared (Saneroki, 2026-10-23): every zone and instance of dev/tools/map-layers that has a
+painted level, its levels and the game's own pictures of it in one web page, laid by their boxes in the world over
+each other: a slider each, or two of them side by side under a divider that is dragged across.
+
+Layers, per subject, from the bottom (each only where its picture is made):
+  Game terrain                   ground.png: the terrain plan, the whole subject
+  Game map[, floor N]            art.png of each floor (a zone: its own), on that floor's box
+  Our close level                close.png: the joined close squares, on the squares' own box
+  Our middle level[, floor N]    middle.png of each floor
+  Our far level                  far.png, the whole subject
+
+Usage:
+  dev/tools/map-compare build [--out DIR]
+  dev/tools/map-compare serve [--port 8771] [--out DIR]
+
+  build   the pictures as JPEGs (made again only when their source is newer), maps.js listing them, the page
+          (dev/tools/map-compare-page/) copied in
+  serve   builds, then the page on this computer, 127.0.0.1 port 8771 (saneui showmaps; a preview server's PORT)
+
+Writes (default assets/generated/map-layers/compare, never committed): index.html, maps.js, <subject>/<layer>.jpg.
+"""
+import argparse
+import functools
+import http.server
+import importlib.machinery
+import importlib.util
+import json
+import os
+import re
+import shutil
+from pathlib import Path
+
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def module(name, path):
+    loader = importlib.machinery.SourceFileLoader(name, str(path))
+    found = importlib.util.module_from_spec(importlib.util.spec_from_loader(name, loader))
+    loader.exec_module(found)
+    return found
+
+
+ml = module("map_layers", ROOT / "dev" / "tools" / "map-layers")   # the subjects, their frames and the close grid
+at = ml.at
+OUT = ml.OUT / "compare"
+PAGE = ROOT / "dev" / "tools" / "map-compare-page"
+PORT = 8771
+WIDEST = 3072                   # a picture at most so many pixels across (the close level is some 12800)
+QUALITY = 86
+Image.MAX_IMAGE_PIXELS = None   # the joined close level is larger than Pillow's guard
+
+
+def newer(target, source):
+    return not target.is_file() or target.stat().st_mtime < source.stat().st_mtime
+
+
+def close_box(folder):
+    """The joined close level's box: from its first square's corner to its last one's far edge (squares STEP apart,
+    SQ across), as join_close lays them; None without squares."""
+    found = [tuple(int(n) for n in p.stem.split("-")) for p in (folder / "close").glob("*.png")
+             if re.fullmatch(r"\d+-\d+", p.stem)]
+    if not found:
+        return None
+    k = ml.PER_YARD
+    i0, i1 = min(i for i, _ in found), max(i for i, _ in found)
+    j0, j1 = min(j for _, j in found), max(j for _, j in found)
+    return [ml.CENTRE - j0 * at.STEP / k, ml.CENTRE - (j1 * at.STEP + at.SQ) / k,
+            ml.CENTRE - i0 * at.STEP / k, ml.CENTRE - (i1 * at.STEP + at.SQ) / k]
+
+
+def layers_of(subject):
+    folder = ml.OUT / subject["name"]
+    floors = subject.get("floors") or [{"name": subject["name"], "box": subject["box"], "style_only": False}]
+    floor = (lambda f, words: f"{words}, floor {f['floor']}") if subject.get("floors") else (lambda f, words: words)
+    found = [("terrain", "Game terrain", folder / "ground.png", subject["box"], "game")]
+    found += [(f"game-{f['name']}", floor(f, "Game map"), ml.OUT / f["name"] / "art.png", f["box"], "game")
+              for f in floors if not f.get("style_only")]
+    found.append(("close", "Our close level", folder / "close.png", close_box(folder), "ours"))
+    found += [(f"middle-{f['name']}", floor(f, "Our middle level"), ml.OUT / f["name"] / "middle.png", f["box"], "ours")
+              for f in floors]
+    found.append(("far", "Our far level", folder / "far.png", subject["box"], "ours"))
+    return [(key, name, path, box, side) for key, name, path, box, side in found if box and path.is_file()]
+
+
+def build(args):
+    out = Path(args.out)
+    state = ml.load_state(ml.OUT)
+    maps = []
+    for subject in state["subjects"]:
+        layers = layers_of(subject)
+        levels = sorted({key.split("-")[0] for key, *_, side in layers if side == "ours"},
+                        key=("close", "middle", "far").index)
+        if not levels:
+            continue
+        entry = {"name": subject["name"], "title": subject["title"], "kind": subject["kind"],
+                 "box": subject["box"], "levels": levels, "layers": []}
+        for key, name, path, box, side in layers:
+            target = out / subject["name"] / f"{key}.jpg"
+            if newer(target, path):
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with Image.open(path) as picture:
+                    picture = picture.convert("RGB")
+                    picture.thumbnail((WIDEST, WIDEST), Image.Resampling.LANCZOS)
+                    picture.save(target, quality=QUALITY)
+                print(f"{subject['name']}: {target.name}", flush=True)
+            entry["layers"].append({"key": key, "name": name, "file": f"{subject['name']}/{target.name}",
+                                    "box": list(box), "side": side})
+        maps.append(entry)
+    maps.sort(key=lambda m: (m["kind"] != "zone", m["title"]))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "maps.js").write_text("window.MAPS = " + json.dumps(maps, indent=1) + ";\n")
+    for page in PAGE.iterdir():
+        shutil.copy(page, out / page.name)
+    print(f"{out}: {len(maps)} maps ({sum(m['kind'] == 'zone' for m in maps)} zones)")
+
+
+def serve(args):
+    build(args)
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(args.out))
+    print(f"The finished maps on 127.0.0.1 port {args.port}, in a browser (Ctrl+C stops it)")
+    http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler).serve_forever()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="The finished maps compared, level by level.")
+    parser.add_argument("command", choices=("build", "serve"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", PORT)))   # a preview server's PORT
+    parser.add_argument("--out", default=str(OUT))
+    args = parser.parse_args()
+    {"build": build, "serve": serve}[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

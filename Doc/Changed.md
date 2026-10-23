@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: the finished maps compared (2026-10-23)
+- `dev/tools/map-compare` (`saneui showmaps`, 127.0.0.1 port 8771): every zone and instance with a painted level
+  in one page, its levels (close, middle per floor, far) and the game's terrain and maps laid by their boxes over
+  each other: a slider each, or two side by side under a divider. A list of the maps with their finished levels,
+  a filter, the arrow keys. The pictures as JPEGs in `assets/generated/map-layers/compare`, made again when their
+  source is newer; it takes over the hand-made page of four maps that was there.
+
 ### dev: the GPU runner's map jobs finish again (2026-10-23)
 - `dev/tools/map-layers tiles`: a square over the open sea took the sea's words, which have no light, and every
   run stopped there; the sea's own light is now in its words.
