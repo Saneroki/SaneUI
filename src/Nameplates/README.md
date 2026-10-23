@@ -42,8 +42,8 @@ fails, every plate is the game's own again.
   not rounded), and "| 100%" how much is left. In a fight the game hides some of these from addons: the health
   is then shortened by the game in the same steps, the threat in grey. The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
-- **The border:** one thin outline: black, white on your target, orange on your focus (the game's colours for
-  them); red on any foe none of your attacks reach, as the game checks your own spells from your character (a
+- **The border:** one thin outline: black, a quiet 50% grey on your target, orange on your focus (the game's
+  colour for it); red on any foe none of your attacks reach, as the game checks your own spells from your character (a
   warrior's strikes, Charge, and Shoot only with a bow; a mage's bolts). Behind it, from the same edge but reaching
   farther, a line for the unit's rank: gold and thick on a boss, gold and thin on an elite (the game's gold
   dragon), silver and thin on a rare (its silver dragon, also a rare elite); and behind that, the red glow.
@@ -123,8 +123,8 @@ fails, every plate is the game's own again.
   that together they are solid at the bar's edge and fade to nothing outwards (`Bar.Fade`: one minus the band's
   share, squared); the rank's line (`dress.rankLine`, `Bar.RANKS` by `UnitIsBossMob` and `UnitClassification`: from
   the dress's edge, boss 4 pixels in the game's `NORMAL_FONT_COLOR`, elite 2 in it, rare and rare elite 2 silver;
-  none for `Bar.PLAIN`); the border, one pixel (the dress's size), `Bar.BORDER` black, on target and focus the
-  game's `NamePlateConstants.TARGET_BORDER_COLOR` and `FOCUS_TARGET_BORDER_COLOR` (`Bar.Border`); then inside the border a
+  none for `Bar.PLAIN`); the border, one pixel (the dress's size), `Bar.BORDER` black,
+  `Bar.TARGET` (a quiet 50% grey) on your target, the game's `NamePlateConstants.FOCUS_TARGET_BORDER_COLOR` on your focus (`Bar.Border`); then inside the border a
   `StatusBar` with the game's raid frames' fill (`Interface\RaidFrame\Raid-Bar-Hp-Fill`) and a dark background.
   Round by Core's caps (`Core.Shape.CAP_LEFT`, `CAP_RIGHT`, `assets/optimized/Core/Art/cap-*.blp`, made by
   `dev/tools/shape-art`): two mask textures per rectangle, at its ends, `Bar.CAP` (a quarter) of its height wide,
@@ -390,3 +390,4 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   round at the bottom left, the cast fill at the bottom right. The seam is gone.
 - **2026-10-23:** the bar's dark solid (Saneroki): a white or red outline no longer shows through the bar's soft edges,
   so it is as thin as the black.
+- **2026-10-23:** your target's outline a quiet 50% grey (Saneroki), a hint rather than white.

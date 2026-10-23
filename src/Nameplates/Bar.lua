@@ -26,8 +26,8 @@ local _, ns = ...
 --    the power    the unit's mana, rage or energy, a thin line along the bar's
 --                 bottom, in the game's colour for that power; no background:
 --                 spent power shows nothing
---    the border   one pixel: black; white on your target, orange on your
---                 focus (the game's colours for them); red on a foe out of
+--    the border   one pixel: black; grey on your target (a hint), orange on
+--                 your focus (the game's colour for it); red on a foe out of
 --                 reach of all your attacks (Range.lua)
 --  and behind the border, from the same inner edge but reaching farther:
 --    the rank     a line in the rank's colour: gold and thick on a boss, gold
@@ -76,7 +76,7 @@ local function GameColour(colour, r, g, b)
 end
 local constants = rawget(_G, "NamePlateConstants")
 constants = type(constants) == "table" and constants or {}
-Bar.TARGET = GameColour(constants.TARGET_BORDER_COLOR, 1, 1, 1)
+Bar.TARGET = { 0.5, 0.5, 0.5, 1 } -- your target's: a quiet grey, a hint of which one it is, not a shout
 Bar.FOCUS = GameColour(constants.FOCUS_TARGET_BORDER_COLOR, 1, 0.49, 0.04)
 local GOLD = GameColour(rawget(_G, "NORMAL_FONT_COLOR"), 1, 0.82, 0)
 local SILVER = { 0.8, 0.82, 0.88, 1 }

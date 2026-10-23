@@ -277,7 +277,7 @@ W.Fire("PLAYER_LOGIN")
 local Core = SaneUI.Core
 local Bar, Auras, Resource, Text, Scale = ns.Bar, ns.Auras, ns.Resource, ns.Text, ns.Scale
 
-check(Bar.FOCUS[2] == 0.49 and Bar.TARGET[1] == 1, "the border's colours for your target and focus are the game's")
+check(Bar.FOCUS[2] == 0.49 and Bar.TARGET[1] == 0.5, "your focus's border the game's colour, your target's a quiet grey")
 check(Core.Shape.CAP_LEFT:match("SaneUI\\Art\\cap%-left$") and Core.Shape.CAP_RIGHT:match("cap%-right$"), "Core names the caps' files")
 
 -------------------------------------------------------------------------------
@@ -579,7 +579,7 @@ check(friend:IsShown(), "the setting off: every player's plate")
 Core.Set(ns.name, "players", true)
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
-check(friend:IsShown() and friend.border[1]._vertex[1] == 1 and friend.border[1]._vertex[4] == 1 and dress.border[1]._vertex[1] == 0,
+check(friend:IsShown() and friend.border[1]._vertex[1] == 0.5 and friend.border[1]._vertex[4] == 1 and dress.border[1]._vertex[1] == 0,
     "your target: shown, its border white, the others' black")
 units.focus, plates.focus = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_FOCUS_CHANGED")
@@ -741,7 +741,7 @@ Settle()
 check(Near(dress._scale * 1.3, full) and Near(plates.nameplate1.UnitFrame._scale * 1.3, 1), "a scale the game still gives a plate: undone")
 plates.nameplate1:SetScale(1)
 Settle()
-check(dress.border[1]._vertex[1] == 1 and dress.border[1]._vertex[2] == 1, "the shot reaches it: your target's border white")
+check(dress.border[1]._vertex[1] == 0.5 and dress.border[1]._vertex[2] == 0.5, "the shot reaches it: your target's border grey")
 yards.nameplate1 = 38
 Settle()
 check(dress.out == true and dress.border[1]._vertex[2] == Bar.FAR[2] and Near(dress._scale, full),
