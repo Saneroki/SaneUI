@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 136 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Inventory: the doll's model between the lines, every race at one scale (Saneroki, 2026-10-23)
+- Saneroki's two lines on the doll: a full-grown character fills its place from under the level line
+  (`Doll.MODEL_TOP`, 84) down to the ground (`Doll.GROUND`, 681, was the strap at 713); a smaller race stands on
+  the same ground at the same scale, not filling the height.
+- **One size** (`Sheet/Model.lua`): the scene `Model.SIZE` (272 x 872 doll pixels, the shape it had) in place of
+  `Model.LARGER` times its place: the night elf in the game was 664 pixels tall at 1.5625, now about 589.
+- **One scale for every race:** after `SetUpCharacterSheetScene` every actor of the scene gets requested scale 1,
+  no scaling toward a man's size (`SetNormalizedScaleAggressiveness(0)`) and the floor (`SetPosition(0, 0, 0)`):
+  scene 595 gives each race its own size, scaling and lift.
+- **Feet measured:** the scene says where it draws the bottom of the model (its bounding box, once loaded; the
+  floor before) under the camera's target (`Transform3DPointTo2D`; the units from the target, drawn in the middle:
+  points or pixels, or shares of its size). The actors' `SetOnModelLoadedCallback` stands it anew once loaded. When
+  the answer cannot be read: the rule (field of view across the diagonal) and `Model.LOWER` (0.064 of the
+  scene's height) lower, as the game drew it (the feet were 63 doll pixels under the rule's 713). `Model.FEET` gone.
+- Tests: `dev/tests/inventory.lua` 136 checks (the one size, the actors evened, the feet before and after loading,
+  in pixels and in shares, the rule when the answer cannot be read).
 
 ### Inventory: the sidebar's group rows with the pencil arrow, turned, and a pencil box (Saneroki, 2026-10-23)
 - `Bags/Sidebar.lua`: the head's arrow made by one helper (`Arrow`: Kalam Bold's "<" in graphite at

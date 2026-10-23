@@ -149,6 +149,10 @@ slot): an item let go there opens the game's own question to destroy it.
 quarter larger again (1.5625 times its place), turned by the left button's drag and zoomed by the wheel (the game's
 scene that takes the mouse, over the hero's place only); left alone for ten seconds it glides back to how it stood.
 
+**Built (2026-10-23), Saneroki asked:** the model between his two lines: a full-grown character from under the
+level line down to the ground (681), a smaller race on the same ground at the same scale (the scene's own sizes per
+race taken out); the feet placed where the scene says it draws them.
+
 **Built (2026-10-23), Saneroki asked:** a group's fold arrow in the sidebar is the sidebar's own pencil arrow (the
 "<" that folds the sidebar), turned down or up; its box a square drawn in pencil with a light tick drawn by hand.
 

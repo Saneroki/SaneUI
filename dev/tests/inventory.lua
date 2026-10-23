@@ -122,8 +122,26 @@ C_Timer.NewTimer = function(delay, fn)
     return timer
 end
 -- The game's model scene that takes the mouse: its orbit camera (scene 595's: looking level at 1.02 from 3.9), turned
--- by the left button's drag and zoomed by the wheel; its field of view across the scene's diagonal.
-local FOV = 0.9
+-- by the left button's drag and zoomed by the wheel; its field of view; its projection (the test's own focal length,
+-- FOCAL points at a distance of one, drawn in pixels from its bottom left at PIXELS a point, or as shares of its size,
+-- or, untrusted, from the screen's corner); its actors as the scene for the character sheet makes them, one of them
+-- given the character's model.
+local FOV, FOCAL, PIXELS = 0.9, 760, 1.5
+local projection = "pixels"
+local actors = {}
+local function Actor()
+    local actor = { requested = 2, aggressiveness = 4.8, position = { 0, 0, 0.04 }, scale = 1, loaded = false, bottom = 0 }
+    function actor:SetRequestedScale(scale) self.requested = scale end
+    function actor:SetNormalizedScaleAggressiveness(share) self.aggressiveness = share end
+    function actor:SetPosition(x, y, z) self.position = { x, y, z } end
+    function actor:SetOnModelLoadedCallback(fn) self.onLoaded = fn end
+    function actor:IsLoaded() return self.loaded end
+    function actor:GetScale() return self.scale end
+    function actor:GetActiveBoundingBox() return -0.5, -0.5, self.bottom, 0.5, 0.5, 2 end
+    actors[actor] = true
+    return actor
+end
+local empty, player = Actor(), Actor()
 W.templates.ModelSceneMixinTemplate = function(widget)
     local camera = { target = 1.02, downs = 0, ups = 0, wheels = 0 }
     function camera:GetYaw() return self.yaw end
@@ -131,8 +149,17 @@ W.templates.ModelSceneMixinTemplate = function(widget)
     function camera:GetZoomDistance() return self.zoom end
     function camera:SetZoomDistance(zoom) self.zoom = zoom end
     function camera:GetTarget() return 0, 0, self.target end
-    function widget:GetActiveCamera() return camera end
+    widget._camera = camera
+    function widget:GetActiveCamera() return camera.zoom and camera end -- none before the scene is set up
     function widget:GetCameraFieldOfView() return FOV end
+    function widget:EnumerateActiveActors() return pairs(actors) end
+    function widget:Transform3DPointTo2D(_, _, z)
+        local width, height = self:GetSize()
+        local x, y = width / 2, height / 2 + (z - camera.target) * FOCAL / camera.zoom
+        if projection == "shares" then return x / width, y / height, camera.zoom end
+        if projection == "screen" then return 600 + x * PIXELS, 300 + y * PIXELS, camera.zoom end
+        return x * PIXELS, y * PIXELS, camera.zoom
+    end
     widget:SetScript("OnMouseDown", function() camera.downs = camera.downs + 1 end)
     widget:SetScript("OnMouseUp", function() camera.ups = camera.ups + 1 end)
     widget:SetScript("OnMouseWheel", function(_, delta) camera.wheels = camera.wheels + 1 camera.zoom = camera.zoom - delta * 0.19 end)
@@ -140,8 +167,9 @@ end
 local scenes = 0
 ModelSceneUtil = { SetUpCharacterSheetScene = function(scene)
     scenes = scenes + 1
-    local camera = scene:GetActiveCamera()
+    local camera = scene._camera
     camera.yaw, camera.zoom = 1.8325957, 3.9
+    for actor in pairs(actors) do actor.requested, actor.aggressiveness, actor.position = 2, 4.8, { 0, 0, 0.04 } end
 end }
 
 -- The game's side tabs (LargeSideTabButtonTemplate): an icon, checked or not, a handler for the left button let go.
@@ -324,23 +352,40 @@ for _, widget in ipairs(W.frames) do
 end
 check(scene, "the character's model scene stands in the left pane")
 local place = scene:GetParent()
-check(scene._template == "ModelSceneMixinTemplate" and math.abs(scene:GetHeight() - place:GetHeight() * 1.5625) < 0.01
-    and scene:IsMouseEnabled() and scene:IsMouseWheelEnabled(),
-    "the model turned by a drag and zoomed by the wheel (the game's scene that takes the mouse), a quarter larger twice")
 do
-    local Doll, PX = ns.Doll, SaneUI.Core.Journal.PX
+    local Doll, PX, Model = ns.Doll, SaneUI.Core.Journal.PX, ns.Model
+    check(scene._template == "ModelSceneMixinTemplate" and near(scene:GetWidth(), Model.SIZE[1] * PX)
+        and near(scene:GetHeight(), Model.SIZE[2] * PX) and scene:IsMouseEnabled() and scene:IsMouseWheelEnabled(),
+        "the model turned by a drag and zoomed by the wheel (the game's scene that takes the mouse), at its one size")
     local point = place._points[1]
     check(point[1] == "TOPLEFT" and near(point[5], -Doll.MODEL_TOP * PX)
         and near(place:GetHeight(), (Doll.GROUND - Doll.MODEL_TOP) * PX),
-        "the model's place: from under the level line down to the strap drawn under the hero's column")
+        "the model's place: from under the level line down to the ground")
+    local even = true
+    for actor in pairs(actors) do
+        even = even and actor.requested == 1 and actor.aggressiveness == 0 and actor.position[3] == 0 and actor.onLoaded ~= nil
+    end
+    check(even, "every race at one scale on the floor: the scene's own sizes, scaling and lifts per race taken out")
     local width, height = scene:GetSize()
-    local below = 1.02 / 3.9 * math.sqrt(width * width + height * height) / (2 * math.tan(FOV / 2))
-    local feet = scene._points[1]
-    check(feet[1] == "BOTTOM" and feet[2] == place and feet[3] == "BOTTOM" and feet[4] == 0
-        and near(feet[5], -(height / 2 - below)), "its feet (the scene's floor, by its camera) on the place's foot, the strap")
+    local function Feet(below)
+        local at = scene._points[1]
+        return at[1] == "BOTTOM" and at[2] == place and at[3] == "BOTTOM" and at[4] == 0 and near(at[5], -(height / 2 - below))
+    end
+    check(Feet(1.02 * FOCAL / 3.9), "before its model is loaded: the floor where the scene draws it (measured in pixels)")
+    player.loaded, player.bottom = true, -0.05
+    player.onLoaded(player)
+    check(Feet(1.07 * FOCAL / 3.9), "its model loaded: the bottom of the model on the place's foot")
     local hit = scene._hit
-    check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - below)
+    check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - 1.07 * FOCAL / 3.9)
         and near(height - hit[3] - hit[4], place:GetHeight()), "it takes the mouse only over its place, though drawn larger")
+    projection = "shares"
+    player.onLoaded(player)
+    check(Feet(1.07 * FOCAL / 3.9), "measured the same when the scene answers in shares of its size")
+    projection = "screen"
+    player.onLoaded(player)
+    local ruled = 1.07 / 3.9 * math.sqrt(width * width + height * height) / (2 * math.tan(FOV / 2)) + height * Model.LOWER
+    check(Feet(ruled), "an answer it cannot read: by the rule, its field of view across its diagonal, a little lower")
+    projection = "pixels"
 end
 -- Turned or zoomed, the model goes back to how it stood once left alone for Model.REST seconds; never while dragged.
 do

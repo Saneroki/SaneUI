@@ -6,8 +6,9 @@ local _, ns = ...
 --  game's sheet shows it (Camelot's CharacterModelScene): Blizzard's model
 --  scene for the character sheet (ModelSceneUtil.SetUpCharacterSheetScene: its
 --  camera, the player's actor, a shapeshift form's look) on the doll's paper,
---  no backdrop, Model.LARGER times its place, its feet on the strap drawn
---  under the hero's column (the place's foot, Doll.GROUND). The game's scene
+--  no backdrop, every race at one scale (Model.SIZE: a full-grown character
+--  fills its place, from under the level line down to Doll.GROUND; a gnome
+--  stands as small as it is), its feet on the place's foot. The game's scene
 --  that takes the mouse (ModelSceneMixinTemplate, its orbit camera): dragged
 --  with the left button it turns, the wheel zooms; left alone for Model.REST
 --  seconds, it glides back to how it first stood. An item let go over it is
@@ -17,9 +18,13 @@ local Core = SaneUI.Core
 local Model = {}
 ns.Model = Model
 
-Model.LARGER = 1.5625 -- the scene against its place: a quarter larger, and a quarter again (Saneroki, 2026-10-23)
-Model.REST = 10       -- seconds without a drag or a turn of the wheel before the model goes back to how it stood
-Model.FEET = 0.08     -- where the feet stand in the scene, from its foot, when its camera cannot tell (of its height)
+-- The scene's size in the doll's pixels (1080p): a full-grown character (a night elf) fills its place, head to foot
+-- (Saneroki, 2026-10-23). Its shape kept: the camera's scale goes with it.
+Model.SIZE = { 272, 872 }
+Model.REST = 10      -- seconds without a drag or a turn of the wheel before the model goes back to how it stood
+-- When the scene cannot measure where it draws a point: its field of view across its diagonal, and the floor this
+-- share of its height lower than that rule says (seen in the game, 2026-10-23).
+Model.LOWER = 0.064
 
 local TURN = 2 * math.pi
 local scene, place
@@ -52,23 +57,54 @@ local function Rest()
     resting = C_Timer.NewTimer(Model.REST, function() ns.Safe("character", Home) end)
 end
 
--- How far under the scene's middle its floor is drawn (height 0, where the scene's actors stand), in its units: the
--- game's camera looks level at its target from its distance, its field of view across the scene's diagonal.
-local function FloorBelow()
+-- How far under the scene's middle it draws the point at that height under the camera's target, in its units: asked
+-- of the scene (its projection, Transform3DPointTo2D). Its answer's units come from the target, drawn in its middle:
+-- points or pixels (the same both ways), or shares of its width and height; anything else is not trusted.
+local function Measured(height)
     local camera = Camera()
-    if not (camera and camera.GetTarget and scene.GetCameraFieldOfView) then return nil end
-    local _, _, height = camera:GetTarget()
-    local distance, fov = camera:GetZoomDistance(), scene:GetCameraFieldOfView()
-    if not (height and distance and fov and distance > 0 and fov > 0) then return nil end
+    if not (camera and camera.GetTarget and scene.Transform3DPointTo2D) then return nil end
+    local x, y, z = camera:GetTarget()
+    local midX, midY = scene:Transform3DPointTo2D(x, y, z)
+    local _, at = scene:Transform3DPointTo2D(x, y, height)
     local width, tall = scene:GetSize()
-    return height / distance * math.sqrt(width * width + tall * tall) / (2 * math.tan(fov / 2))
+    if not (midX and midY and at and midX > 0 and midY > 0 and width > 0 and tall > 0) then return nil end
+    local unitX, unitY = midX * 2 / width, midY * 2 / tall
+    local shares = math.abs(midX - 0.5) < 0.01 and math.abs(midY - 0.5) < 0.01
+    if not shares and math.abs(unitX - unitY) > 0.05 * unitY then return nil end
+    return math.abs(at - midY) / unitY
 end
 
--- The scene with its feet on its place's foot, centred across it; it takes the mouse only over its place.
-local function Stand()
-    local tall = scene:GetHeight()
-    local below = FloorBelow()
-    local up = below and below < tall / 2 and tall / 2 - below or tall * Model.FEET
+-- The same by the rule (Model.LOWER): the camera looks level at its target from its distance.
+local function Ruled(height)
+    local camera = Camera()
+    if not (camera and camera.GetTarget and scene.GetCameraFieldOfView) then return nil end
+    local _, _, z = camera:GetTarget()
+    local distance, fov = camera:GetZoomDistance(), scene:GetCameraFieldOfView()
+    if not (z and distance and fov and distance > 0 and fov > 0) then return nil end
+    local width, tall = scene:GetSize()
+    return (z - height) / distance * math.sqrt(width * width + tall * tall) / (2 * math.tan(fov / 2)) + tall * Model.LOWER
+end
+
+-- Every race at one scale on the scene's floor: the scene's own sizes and lifts per race taken out (its actors' sizes,
+-- their scaling toward a man's, their heights). The one that gets the character's model stands it anew once loaded.
+local Loaded
+local function Even(actor)
+    actor:SetRequestedScale(1)
+    actor:SetNormalizedScaleAggressiveness(0)
+    actor:SetPosition(0, 0, 0)
+    actor:SetOnModelLoadedCallback(Loaded)
+end
+
+-- The scene with the character's feet on its place's foot (the bottom of its model, once loaded; else the floor),
+-- centred across it; it takes the mouse only over its place.
+local function Stand(actor)
+    local tall, floor = scene:GetHeight(), 0
+    if actor and actor:IsLoaded() then
+        local _, _, bottom = actor:GetActiveBoundingBox()
+        floor = (bottom or 0) * (actor:GetScale() or 1)
+    end
+    local below = Measured(floor) or Ruled(floor)
+    local up = below and below < tall / 2 and tall / 2 - below or 0
     scene:ClearAllPoints()
     scene:SetPoint("BOTTOM", place, "BOTTOM", 0, -up)
     local side = (scene:GetWidth() - place:GetWidth()) / 2
@@ -96,14 +132,15 @@ local function Released(_, button)
     Dropped()
 end
 
--- The scene over its place (the hero's place on the doll, from under the level line down to the strap): Model.LARGER
--- times its size. The game's scripts turn and zoom it; ours are hooked on after them.
+Loaded = function(actor) ns.Safe("character", Stand, actor) end
+
+-- The scene over its place (the hero's place on the doll, from under the level line down to the ground), Model.SIZE.
+-- The game's scripts turn and zoom it; ours are hooked on after them.
 function Model.Build(over)
     local made, frame = pcall(CreateFrame, "ModelScene", nil, over, "ModelSceneMixinTemplate")
     if not made then return ns.Report("character", "this client has no model scene for the character: " .. tostring(frame)) end
     scene, place = frame, over
-    local width, height = place:GetSize()
-    scene:SetSize(width * Model.LARGER, height * Model.LARGER)
+    scene:SetSize(Model.SIZE[1] * Core.Journal.PX, Model.SIZE[2] * Core.Journal.PX)
     scene:EnableMouse(true)
     scene:EnableMouseWheel(true)
     Stand()
@@ -113,13 +150,21 @@ function Model.Build(over)
     scene:SetScript("OnReceiveDrag", function() ns.Safe("character", Dropped) end)
 end
 
--- The character as it looks now (shown, and when its model changed): the game's scene for the character sheet, its
--- camera as it first stands.
+-- The character as it looks now (shown, and when its model changed): the game's scene for the character sheet, every
+-- race at one scale, its camera as it first stands.
 function Model.Refresh()
     if not scene then return end
     local util = rawget(_G, "ModelSceneUtil")
     if util and util.SetUpCharacterSheetScene then util.SetUpCharacterSheetScene(scene) end
     local camera = Camera()
     home = camera and camera.GetYaw and { yaw = camera:GetYaw(), zoom = camera:GetZoomDistance() } or nil
-    Stand()
+    local loaded
+    local each, actors, first = scene:EnumerateActiveActors()
+    if each then
+        for actor in each, actors, first do
+            Even(actor)
+            if actor:IsLoaded() then loaded = actor end
+        end
+    end
+    Stand(loaded)
 end

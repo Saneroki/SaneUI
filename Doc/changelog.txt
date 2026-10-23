@@ -51,10 +51,10 @@ The bigger changes of each version, newest first.
 - Inventory: The Armory sorts your gear by its slot, Adventure Prep
   into Potions, Buffs, Camp Items and Consumables, each shown as its
   own part with one empty slot to drop into; rounder icons. The
-  character's model stands larger on plain paper, on the strap drawn
-  under it: drag it to turn it, the wheel zooms, and after ten seconds
-  it turns back. The top slots match the others and the strips show
-  each item's stats.
+  character's model fills the page from your level down to the
+  ground, smaller races just as small as they are: drag it to turn it,
+  the wheel zooms, and after ten seconds it turns back. The top slots
+  match the others and the strips show each item's stats.
 - Inventory: the items and empty slots in your bags are half again as
   large, the bags in the strip too; a waste bin as Junk's first slot:
   drop an item on it and the game asks to destroy it. A pinned item
