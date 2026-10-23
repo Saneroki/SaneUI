@@ -1,6 +1,6 @@
 # Sane UI: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power and your combo points along its bottom, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power and your combo points along its bottom, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away; combat numbers rising over them) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
@@ -66,8 +66,15 @@ fails, every plate is the game's own again.
   shrinks and grows evenly, in a straight line, about as fast as a running unit changes its distance, never past its
   size; selected or let go it moves quickly; it grows in from nothing when it appears. No transparency of ours. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
+- **Combat numbers:** what a creature or player with a plate takes rises over its bar and fades: damage in white
+  (a spell's in the colour of its school), a critical hit larger with a short swell, a glancing blow smaller, misses,
+  dodges, parries, blocks and the like in words, heals in green with a "+". Hits at once stand side by side. The game
+  says what a unit took, not from whom, so in a group it is everybody's damage on it. While ours show, the game's own
+  damage and healing numbers over units are off (*Instead of the game's numbers*). The game's XP numbers over a kill
+  are its own and stay.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points in your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*. The plates' size, style and
+  *Combo points in your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*; the section *Combat numbers* (*Numbers over nameplates*, *Heals*, *Instead of
+  the game's numbers*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
 ## Technical details
@@ -210,6 +217,19 @@ fails, every plate is the game's own again.
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
   seen, the unit frame at 1, the CVars at their defaults (`C_CVar.GetCVarInfo`). CVars through `C_CVar.SetCVar`, only
   those this client has, never in a fight (then at `PLAYER_REGEN_ENABLED`).
+- **Combat numbers** (`Numbers.lua`): each dress hears its unit's `UNIT_COMBAT` (in `Plate.EVENTS`; kind, flags,
+  amount, school) and hands it to `Numbers.Hit` (the combat log is closed to addons in this client). A number is a
+  pooled frame on the dress with one font string in the game's `CombatTextFont` face, outlined, `Numbers.HEIGHT`
+  high (times `Numbers.CRIT` 1.5 for a critical hit or heal, `Numbers.SMALL` 0.75 for a glancing blow or a word, as
+  the game's combat feedback); one animation group rises `Numbers.RISE` in `Numbers.TIME` and fades over its last
+  `Numbers.FADE`, a critical one swells to `Numbers.SWELL` and back; `OnFinished` (guarded) returns it to the pool,
+  as does the dress taken off (`Numbers.Clear`). Lanes `Numbers.LANES` in turn, at most `Numbers.MOST` a plate (the
+  oldest goes). Colours: physical white, a school the game's combat log colour (`Numbers.SCHOOLS`, the first bit
+  set), heals the game's combat text green; words from `CombatFeedbackText`. Amounts in the game's abbreviation
+  (`AbbreviateNumbers` with `Text.STEPS`). A hidden kind or amount (secret values) is written as it is, white,
+  nothing compared. The game's CVars `floatingCombatTextCombatDamage_v2` and `...CombatHealing_v2` at 0 while
+  *Numbers over nameplates* and *Instead of the game's numbers* are on, else (and standing down) at their defaults;
+  never in a fight (then at `PLAYER_REGEN_ENABLED`).
 - **Standing down** (`ns.GiveBack`): the game's scaling back, the game's unit frames at alpha 1 and their parts
   too on every unit frame ours ever lay over (the game hands them out again from its pool), then every dress off,
   each by itself; a dress taken off gives the game's parts back first, its bar as made and its texts empty, and
@@ -230,6 +250,7 @@ fails, every plate is the game's own again.
 | `Resource.lua` | Your combo points on the power line of your target's bar |
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
+| `Numbers.lua` | What the unit takes (damage, heals, misses) rising over its bar, in place of the game's numbers in the world |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
 
 ## Not there yet

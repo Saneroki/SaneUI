@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 136 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: combat numbers over the plates (Saneroki, 2026-10-23)
+- New `Numbers.lua` (in the TOC): what a plate's unit takes rises over its bar and fades: damage (physical white, a
+  spell in the game's colour for its school), critical hits and heals half again as large with a short swell,
+  glancing blows and words (miss, dodge, parry, block, ...) smaller, heals green with a "+". From each dress's own
+  `UNIT_COMBAT` (added to `Plate.EVENTS`; the combat log is closed to addons in this client), so in a group it is
+  everybody's damage on the unit. Pooled frames on the dress, one animation group each (rise, fade, swell; no
+  `OnUpdate`), lanes side by side, at most `Numbers.MOST` a plate; let go with the plate (`Plate.lua`, `Off`).
+  Hidden kinds and amounts (secret values) are written as they are, white, nothing compared.
+- The game's own numbers over units (`floatingCombatTextCombatDamage_v2`, `...CombatHealing_v2`) off while ours show,
+  at their defaults otherwise and when standing down; never set in a fight.
+- Settings, section *Combat numbers*: *Numbers over nameplates*, *Heals*, *Instead of the game's numbers*.
+- The purple XP over a kill is drawn by the game itself, with no CVar of its own in this build: it stays.
+- Tests: `dev/tests/nameplates.lua` 159 checks (a critical hit, a miss, a heal, a hidden hit, the pool, the most a
+  plate holds, the switches, the CVars off and back).
+
 ### Navigation: no blocked action at login; Follow me follows as soon as you walk (Saneroki, 2026-10-23)
 - `Hybrid.lua`: the game's minimap over our map takes no clicks (`SetMouseClickEnabled(false)`, given back as it
   was) in place of `SetPassThroughButtons`, which the game now blocks for addons (a blocked action at every login

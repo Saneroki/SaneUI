@@ -50,6 +50,24 @@ function methods:SetFont(file, height, flags) self._font = { file, height, flags
 -- The game's font for its plates' names: its face, height and outline.
 SystemFont_NamePlate_Outlined = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 14, "OUTLINE" end }
 function methods:GetStringHeight() return 10 end
+-- The game's animations, as far as the numbers use them: a group that plays until the test finishes it.
+local Animation = {}
+Animation.__index = Animation
+for _, name in ipairs({ "SetDuration", "SetSmoothing", "SetFromAlpha", "SetToAlpha", "SetStartDelay", "SetOrigin" }) do
+    Animation[name] = function() end
+end
+function Animation:SetOffset(x, y) self._offset = { x, y } end
+function Animation:SetScale(x, y) self._scale = { x, y } end
+local Group = {}
+Group.__index = Group
+function Group:CreateAnimation(kind) return setmetatable({ _kind = kind }, Animation) end
+function Group:SetScript(name, fn) self["_" .. name] = fn end
+function Group:GetParent() return self._parent end
+function Group:Restart() self._playing = true end
+function Group:Stop() self._playing = false end
+function Group:Finish() self._playing = false; self._OnFinished(self) end
+function methods:CreateAnimationGroup() return setmetatable({ _parent = self }, Group) end
+CombatFeedbackText = { MISS = "Miss", DODGE = "Dodge", BLOCK = "Block" }
 
 -- A hidden value of the game's: a table here, never compared.
 issecretvalue = function(value) return type(value) == "table" and value.secret == true end
@@ -227,7 +245,8 @@ end
 
 for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", nameplateMaxScaleDistance = "10",
                              nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000",
-                             nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6" }) do
+                             nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6",
+                             floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1" }) do
     W.cvarInfo[name] = { default = default }
 end
 W.LoadCore(root)
@@ -738,6 +757,48 @@ Core.Set(ns.name, "distance", true)
 check(CVar("nameplateSelectedScale") == "1", "on again")
 
 -------------------------------------------------------------------------------
+--  Combat numbers over a plate
+-------------------------------------------------------------------------------
+;(function()
+    local Numbers = ns.Numbers
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "0",
+        "the game's own numbers over units off while ours show")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "CRITICAL", 1234, 4)
+    local hit = dress.numbers and dress.numbers[1]
+    check(hit and hit._parent == dress and hit.text._text[1].abbreviated == 1234 and hit.text._font[2] == Numbers.HEIGHT * Numbers.CRIT,
+        "a critical hit rises over the plate, larger, in the game's abbreviation")
+    check(hit.text._color[1] == 1 and hit.text._color[2] == 0.5 and hit.motion._playing and hit.swell._scale[1] == Numbers.SWELL,
+        "fire's colour, and it swells once")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 0, 1)
+    local miss = dress.numbers[2]
+    check(miss.text._text == "Miss" and miss.text._font[2] == Numbers.HEIGHT * Numbers.SMALL and miss.text._color[2] == 1,
+        "a hit of nothing: the game's word, smaller, white")
+    check(miss._points[1][4] ~= hit._points[1][4], "two at once stand side by side")
+    W.Fire("UNIT_COMBAT", "nameplate1", "HEAL", "", 80, 2)
+    check(dress.numbers[3].text._text.form == "+%s" and dress.numbers[3].text._color[2] == 1 and dress.numbers[3].text._color[1] < 0.5,
+        "a heal: green, with a plus")
+    W.Fire("UNIT_COMBAT", "nameplate1", Secret(), Secret(), Secret(), Secret())
+    check(#dress.numbers == 4 and dress.numbers[4].text._color[3] == 1, "a hidden hit: written as it is, white, nothing compared")
+    W.Fire("UNIT_COMBAT", "nameplate1", "ENERGIZE", "", 10, 0)
+    check(#dress.numbers == 4, "power gained: nothing")
+    hit.motion:Finish()
+    check(#dress.numbers == 3 and not hit:IsShown(), "a number done goes back to the pool")
+    for _ = 1, Numbers.MOST + 2 do W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 5, 1) end
+    check(#dress.numbers == Numbers.MOST and dress.numbers[1].text._text[1].abbreviated == 5, "no more than Numbers.MOST on a plate: the oldest go")
+    ns.options.numbersHeal = false
+    local last = dress.numbers[#dress.numbers]
+    W.Fire("UNIT_COMBAT", "nameplate1", "HEAL", "", 80, 2)
+    check(dress.numbers[#dress.numbers] == last, "heals switched off: none")
+    ns.options.numbersHeal = true
+    Core.Set("Nameplates", "numbersGame", false)
+    check(CVar("floatingCombatTextCombatDamage_v2") == "1", "Instead of the game's numbers off: the game's back")
+    Core.Set("Nameplates", "numbersGame", true)
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0", "on again: off")
+    Numbers.Clear(dress)
+    check(#dress.numbers == 0, "the plate going takes its numbers")
+end)()
+
+-------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
 -------------------------------------------------------------------------------
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
@@ -764,6 +825,7 @@ check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.n
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
 check(C_CVar.GetCVar("nameplateSelectedScale") == "1.2" and plates.nameplate1.UnitFrame._scale == 1,
     "the game's scaling by distance its own again, its unit frames at their own scale")
+check(C_CVar.GetCVar("floatingCombatTextCombatDamage_v2") == "1", "the game's numbers over units back")
 bar:Hide()
 bar:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")

@@ -27,6 +27,8 @@ local ADDON, ns = ...
 --    Range.lua     how far each plate's unit is from your character, whether
 --                  your attacks reach it (its border red when not)
 --    Scale.lua     every plate's size by that distance alone, moving evenly
+--    Numbers.lua   what the unit takes (damage, heals, misses) rising over its
+--                  bar, in place of the game's own numbers in the world
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
@@ -58,6 +60,13 @@ ns.TEXT = {
     distanceTip = "Nameplates by their distance from your character alone: full size within 10 yards, half at 40, a quarter at 60; they grow in when they appear. Off: the game's own scaling and fading.",
     size = "Nameplate size",
     sizeTip = "How large nameplates are within 10 yards.",
+    numbersHeader = "Combat numbers",
+    numbers = "Numbers over nameplates",
+    numbersTip = "What a creature or player takes rises over its nameplate and fades: damage (white, or the colour of its school), critical hits larger, misses, dodges, parries and blocks in words. The game says what a unit took, not from whom: in a group it is everybody's damage.",
+    numbersHeal = "Heals",
+    numbersHealTip = "Heals on a unit with a nameplate, in green.",
+    numbersGame = "Instead of the game's numbers",
+    numbersGameTip = "The game's own damage and healing numbers over units are switched off while ours show. Off: both show.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -75,6 +84,9 @@ local OPTIONS = {
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
     { key = "plateSize", default = 125, min = 50, max = 300, step = 5, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
+    { key = "numbers", default = true, text = ns.TEXT.numbers, tip = ns.TEXT.numbersTip, header = ns.TEXT.numbersHeader },
+    { key = "numbersHeal", default = true, text = ns.TEXT.numbersHeal, tip = ns.TEXT.numbersHealTip, parent = "numbers" },
+    { key = "numbersGame", default = true, text = ns.TEXT.numbersGame, tip = ns.TEXT.numbersGameTip, parent = "numbers" },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "resource" then
@@ -83,6 +95,10 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
         ns.Guarded(ns.Range.Look)
     elseif key == "distance" or key == "plateSize" then
         ns.Guarded(ns.Scale.Update)
+    elseif key == "numbers" or key == "numbersGame" then
+        ns.Guarded(ns.Numbers.Update)
+    elseif key == "numbersHeal" then
+        return
     else
         ns.Guarded(ns.Plate.Refresh)
     end
@@ -91,6 +107,7 @@ end })
 -- Standing down: every plate the game's own again, ours out of sight, the game's scaling by distance.
 function ns.GiveBack()
     ns.Safe("give back", ns.Scale.GiveBack)
+    ns.Safe("give back", ns.Numbers.GiveBack)
     ns.Plate.GiveBack()
 end
 
@@ -103,4 +120,5 @@ function ns.OnLogin()
     ns.Resource.Start()
     ns.Range.Start()
     ns.Scale.Start()
+    ns.Numbers.Start()
 end

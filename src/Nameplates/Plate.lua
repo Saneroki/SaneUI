@@ -45,7 +45,7 @@ Plate.WIDEST, Plate.PLAIN = 1000, 120
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
-                 "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER" }
+                 "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER", "UNIT_COMBAT" }
 
 local dresses = {} -- [the game's plate] = our dress on it
 local shown = {}   -- [unit token] = the dress on that unit's plate, while the game shows it
@@ -118,10 +118,12 @@ local function Wear(dress)
     dress:SetShown(on)
 end
 
-local function Heard(dress, event)
+local function Heard(dress, event, _, ...)
     local unit = dress.unit
     if not unit or ns.off then return end
-    if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+    if event == "UNIT_COMBAT" then -- what it took: kind, flags, amount, school
+        ns.Numbers.Hit(dress, ...)
+    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.Bar.Health(dress, unit)
         ns.Text.Health(dress, unit)
     elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
@@ -225,6 +227,7 @@ local function Off(dress)
     ns.Text.Set(dress, nil)
     ns.Safe("auras", ns.Auras.Set, dress, nil)
     ns.Safe("combo points", ns.Resource.Leave, dress)
+    ns.Safe("numbers", ns.Numbers.Clear, dress)
 end
 
 local function Added(unit)

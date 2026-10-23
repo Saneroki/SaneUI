@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Nameplates: combat numbers. Damage, critical hits, heals, misses,
+  dodges and blocks rise over the nameplate of the creature or player
+  that took them, in place of the game's own numbers.
 - Nameplates: everything on one line inside the bar, each part only
   when there is something to show, and the bar just as wide as the
   line: your quest objective on the creature (a sword or a sack and
