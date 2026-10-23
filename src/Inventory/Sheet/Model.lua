@@ -8,8 +8,9 @@ local _, ns = ...
 --  camera, the player's actor, a shapeshift form's look) on the doll's paper,
 --  no backdrop, every race at one scale (Model.SIZE: a full-grown character
 --  fills its place, from under the level line down to Doll.GROUND; a gnome
---  stands as small as it is), its feet on the place's foot, cut off at the
---  foot of the hero's column (Doll.FOOT). The game's scene that takes the
+--  stands as small as it is), its feet on the place's foot, hidden below the
+--  foot of the hero's column (Doll.FOOT: the doll's picture drawn again over
+--  it there, Sheet.lua; no clipping frame). The game's scene that takes the
 --  mouse (ModelSceneMixinTemplate, its orbit camera): dragged with the left
 --  button it turns, the wheel moves the camera into its head; left alone
 --  for Model.REST seconds, it glides back to how it first stood. An item let
@@ -29,7 +30,7 @@ Model.REST = 10      -- seconds without a drag or a turn of the wheel before the
 Model.LOWER = 0.064
 
 local TURN = 2 * math.pi
-local scene, place, view
+local scene, place
 local home    -- how the camera first stood: { yaw, zoom }
 local held    -- the left button down on the model: a drag, never rested from
 local resting -- the timer that brings the model back
@@ -155,20 +156,13 @@ end
 
 Loaded = function(actor) ns.Safe("character", Stand, actor) end
 
--- The scene over its place (the hero's place on the doll, from under the level line down to the ground), Model.SIZE,
--- in a frame that cuts it off at the foot of the hero's column: zoomed in, its legs never cover the weapons' slots.
+-- The scene over its place (the hero's place on the doll, from under the level line down to the ground), Model.SIZE.
 -- The game's scripts turn and zoom it; ours are hooked on after them.
 function Model.Build(over)
-    view = CreateFrame("Frame", nil, over)
-    view:SetClipsChildren(true)
-    local made, frame = pcall(CreateFrame, "ModelScene", nil, view, "ModelSceneMixinTemplate")
+    local made, frame = pcall(CreateFrame, "ModelScene", nil, over, "ModelSceneMixinTemplate")
     if not made then return ns.Report("character", "this client has no model scene for the character: " .. tostring(frame)) end
     scene, place = frame, over
-    local PX = Core.Journal.PX
-    scene:SetSize(Model.SIZE[1] * PX, Model.SIZE[2] * PX)
-    view:SetPoint("TOP", scene, "TOP")
-    view:SetPoint("BOTTOM", place, "BOTTOM", 0, -(ns.Doll.FOOT - ns.Doll.GROUND) * PX)
-    view:SetWidth(scene:GetWidth())
+    scene:SetSize(Model.SIZE[1] * Core.Journal.PX, Model.SIZE[2] * Core.Journal.PX)
     scene:EnableMouse(true)
     scene:EnableMouseWheel(true)
     Stand()

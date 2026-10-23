@@ -56,13 +56,25 @@ Doll.AMMO = { 550, 770, 594, 812 }
 Doll.HERO = { 238, 30, 434, 708 }       -- the hero's place: his name and level at its top, the model under them
 Doll.NAME_Y, Doll.LEVEL_Y, Doll.MODEL_TOP = 40, 64, 84
 Doll.GROUND = 681                       -- where the model's feet stand (Saneroki, 2026-10-23)
-Doll.FOOT = 703                         -- the foot of the hero's column (its paper's edge): the model is cut off there
+Doll.FOOT = 703                         -- the foot of the hero's column (its paper's edge): the model is hidden below it
 Doll.CLOSE = { 485, 30 }                -- the X's middle, on the right strap
 Doll.HEAD = 30                          -- the top a window is dragged by
 -- An item's icon in its slot: so much inside the slot's painted box, each side.
 Doll.INSET = { top = 7, side = 7, weapon = 14, ammo = 5 }
 
 local PICTURE = J.PIECES.doll
+
+-- The picture again from left to right (1080p pixels) and from top down to its foot, in parent (as large as the doll):
+-- drawn over what stands on the picture there, it hides it (the model's legs below the hero's column).
+function Doll.Cover(parent, left, right, top)
+    local art = parent:CreateTexture(nil, "ARTWORK")
+    art:SetTexture(J.ART .. "doll")
+    local w, h = PICTURE[1] / PICTURE[3], PICTURE[2] / PICTURE[4]
+    art:SetTexCoord(left / Doll.PIXELS[1] * w, right / Doll.PIXELS[1] * w, top / Doll.PIXELS[2] * h, h)
+    art:SetPoint("TOPLEFT", parent, "TOPLEFT", left * PX, -top * PX)
+    art:SetPoint("BOTTOMRIGHT", parent, "TOPLEFT", right * PX, -Doll.HEIGHT)
+    return art
+end
 
 -- A rect of the doll's (1080p pixels) in units: left, top, width, height.
 function Doll.Rect(r)

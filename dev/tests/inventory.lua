@@ -27,6 +27,7 @@ function methods:GetTop() return self._bottom and self._bottom + self._height en
 function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:GetFrameStrata() return self._strata or "MEDIUM" end
 function methods:SetFrameLevel(level) self._level = level end
+function methods:SetTexCoord(...) self._coords = { ... } end
 function methods:GetFrameLevel() return self._level or 1 end
 function methods:Raise() self._level = 500 end
 function methods:SetClampedToScreen(on) self._clamped = on end
@@ -360,8 +361,7 @@ for _, widget in ipairs(W.frames) do
     if widget._kind == "ModelScene" then scene = widget end
 end
 check(scene, "the character's model scene stands in the left pane")
-local view = scene:GetParent()
-local place = view:GetParent()
+local place = scene:GetParent()
 do
     local Doll, PX, Model = ns.Doll, SaneUI.Core.Journal.PX, ns.Model
     check(scene._template == "ModelSceneMixinTemplate" and near(scene:GetWidth(), Model.SIZE[1] * PX)
@@ -392,11 +392,16 @@ do
     local target, below = 1.02 + spline.points[2][3], 1.07 * FOCAL / 3.9
     check(near((2 - target) * FOCAL / 2, place:GetHeight() - below),
         "zoomed all the way in, the camera has moved into the head: the model's top at the top of its place")
-    local clipped = {}
-    for _, point in ipairs(view._points) do clipped[point[1]] = point end
-    check(view._clips and clipped.TOP and clipped.TOP[2] == scene and clipped.BOTTOM and clipped.BOTTOM[2] == place
-        and near(clipped.BOTTOM[5], -(Doll.FOOT - Doll.GROUND) * PX) and near(view:GetWidth(), width),
-        "the scene cut off at the foot of the hero's column: zoomed in, its legs never cover the weapons' slots")
+    local cover
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Texture" and widget._texture and widget._texture:match("doll$") and widget._coords
+            and widget._coords[3] > 0 then cover = widget end
+    end
+    local h = SaneUI.Core.Journal.PIECES.doll[2] / SaneUI.Core.Journal.PIECES.doll[4]
+    check(not place._clips and not scene._clips and cover and near(cover._coords[3], Doll.FOOT / Doll.PIXELS[2] * h)
+        and near(cover._coords[4], h) and near(cover._points[1][5], -Doll.FOOT * PX)
+        and cover:GetParent():GetFrameLevel() > scene:GetFrameLevel(),
+        "no clipping frame: the doll's picture again below the hero's column, over the model, hides its legs there")
     local hit = scene._hit
     check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - 1.07 * FOCAL / 3.9)
         and near(height - hit[3] - hit[4], place:GetHeight()), "it takes the mouse only over its place, though drawn larger")

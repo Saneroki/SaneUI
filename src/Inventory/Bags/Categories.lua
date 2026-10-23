@@ -27,8 +27,11 @@ local _, ns = ...
 --      Reagent Bag          whatever is in the reagent bag
 --      Miscellaneous        what no other category takes
 --      Quest Items          off at first (they are in Miscellaneous then)
---      Special Bags         what is in a bag for one kind of item (a quiver,
---                           a soul or herb bag: the game's bag family)
+--      Containers           bags, quivers and other containers (the game's
+--                           classes Container and Quiver), and what is in a
+--                           bag for one kind of item (a quiver, a soul or herb
+--                           bag: the game's bag family) (Saneroki, 2026-10-23;
+--                           its key stays "special")
 --      Junk                 the last: grey items not filed elsewhere, and
 --                           what the player marked as junk; only while the
 --                           junk marker is on (Categories.Marker)
@@ -173,8 +176,8 @@ Categories.LIST = {
     { key = "misc", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous"),
       catchAll = true },
     { key = "quest", word = Core.Word("AUCTION_CATEGORY_QUEST_ITEMS", "Quest Items"), take = "quest" },
-    { key = "special", word = ns.TEXT.bagsSpecial, alone = true,
-      take = "special", unassignable = true, late = true },
+    { key = "special", word = Core.Word("AUCTION_CATEGORY_CONTAINERS", "Containers"), alone = true,
+      classes = Set(CLASS.Container or 1, CLASS.Quiver or 11), take = "special", late = true },
     { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk"), alone = true,
       last = true },
 }
@@ -506,7 +509,7 @@ end
 -------------------------------------------------------------------------------
 --  The player's choices for items
 -------------------------------------------------------------------------------
--- Whether an item may be put into a category (not Pinned, Recent, the reagent bag's, the special bags').
+-- Whether an item may be put into a category (not Pinned, Recent, the reagent bag's).
 function Categories.Takes(key)
     if not rank[key] then return false end
     local def = Categories.DEF[key]

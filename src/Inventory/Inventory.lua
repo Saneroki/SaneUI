@@ -52,7 +52,6 @@ ns.TEXT = {
     bagsBuffs = "Buffs",
     bagsCamp = "Camp Items",
     bagsReagentBag = "Reagent Bag",
-    bagsSpecial = "Special Bags",
     bagsArmory = "The Armory",
     bagsPrep = "Adventure Prep",
     bagsCategories = "Categories",

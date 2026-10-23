@@ -89,7 +89,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (elixirs, flasks, scrolls, gems and enchantments, and other consumables whose effect lasts 15 minutes or
     more), *Camp Items* and *Consumables* (the rest: food and drink, bandages) the group *Adventure Prep*; then
     *Trade Goods*, *Professions*, *Reagent Bag*, *Miscellaneous*, *Quest Items* (off at first: those items are in
-    Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag) and *Junk* last. A group shows
+    Miscellaneous then), *Containers* (bags, quivers and other containers, and what is in a quiver, a soul or
+    herb bag) and *Junk* last. A group shows
     in All Items as its name over the whole width, its members that hold something side by side under it, then
     one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
     the group's first member). In the sidebar its members are set in under it; the pencil arrow on its row (the sidebar's
@@ -227,8 +228,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `ModelSceneMixinTemplate` (its orbit camera: the
     left button's drag turns it, the wheel zooms; once the model has loaded, a target spline moves the camera into
-    its head: all the way in, the top of the model at the top of its place; in a frame that clips it at the foot of
-    the hero's column, `Doll.FOOT`) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
+    its head: all the way in, the top of the model at the top of its place; below the foot of the hero's column,
+    `Doll.FOOT`, the doll's picture is drawn again over it, `Doll.Cover` on a frame above the model and under the
+    items, so its legs go behind the weapons' row; no clipping frame, which hid the whole model) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
     at `UNIT_MODEL_CHANGED`, `Model.SIZE` (272 x 872 doll pixels: a full-grown character fills its place, from
     under the level line to `Doll.GROUND`). Every race at one scale: each of the scene's actors gets requested scale
     1, no scaling toward a man's size and the floor (scene 595 sizes and lifts each race). Its feet on the place's
@@ -506,7 +508,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `PLAYER_REGEN_DISABLED` ends it. The game's item buttons never see those clicks.
   - **The empty slots** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Canvas.lua`'s `Sheet:Plus`):
     after Pinned (shown when empty too) and every category that takes items (`Categories.Takes`; not Recent, the
-    reagent bag's, the special bags' or a group, which take none), in the grid and the compact display; an item
+    reagent bag's or a group, which take none), in the grid and the compact display; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`. In its middle its category's drawing
     (a group's, `Categories.GroupIcon`; a game icon a player chose grey, cut round its edge), `Canvas.SLOT_ICON`
     (0.75) of the slot's side at `Canvas.SLOT_FADE` (0.3): a grey on the paper.

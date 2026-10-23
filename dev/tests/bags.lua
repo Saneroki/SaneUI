@@ -356,6 +356,8 @@ end
 check(Kind(0, 1) == "potions" and Kind(0, 2) == "enhance" and Kind(0, 3) == "enhance" and Kind(0, 4) == "enhance"
     and Kind(3, 0) == "enhance" and Kind(0, 5) == "consumables" and Kind(0, 7) == "consumables",
     "consumables by kind: potions; elixirs, flasks, scrolls and gems are buffs; food and bandages the rest")
+check(Kind(1, 0) == "special" and Kind(11, 2) == "special" and Categories.Word("special") == "Containers"
+    and Categories.Takes("special"), "bags, quivers and other containers in Containers, which takes what is put into it")
 check(Kind(4, 1, "INVTYPE_HEAD") == "head" and Kind(2, 7, "INVTYPE_SHIELD") == "offhand" and Kind(2, 2, "INVTYPE_RANGEDRIGHT") == "ranged"
     and Kind(4, 0, "INVTYPE_BODY") == "armor" and Kind(4, 1, "INVTYPE_ROBE") == "chest",
     "gear by its slot; a shirt with the other gear")
@@ -554,7 +556,7 @@ local function Words(blocks)
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
 check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,?=0,Adventure Prep=0,Consumables=1,?=0,Trade Goods=1,"
-    .. "Professions=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
+    .. "Professions=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Containers=2,Junk=1",
     "All Items: Pinned (with its +, empty too), a block per category, a group's title over its members that hold "
     .. "something, the empty categories shown too (a slot to drop into): " .. Words(blocks))
 check(blocks[1].plus and blocks[9].plus and blocks[9].key == "trade" and not blocks[11].plus and blocks[2].title
@@ -643,7 +645,7 @@ blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
 for index = 1, count do kinds[places[index].kind] = (kinds[places[index].kind] or 0) + 1 end
-check(kinds.head == 13 and kinds.cell == 9 and kinds.plus == 8 and not kinds.pad,
+check(kinds.head == 13 and kinds.cell == 9 and kinds.plus == 9 and not kinds.pad,
     "grid: a head per block and group title, its cells, one empty slot after them where it takes items, nothing more")
 local quest
 for index = 1, count do

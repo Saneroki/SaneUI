@@ -166,6 +166,13 @@ function Sheet.Build(made)
     place:SetPoint("TOPLEFT", holder, "TOPLEFT", left, modelTop)
     place:SetSize(right - left, modelTop - bottom)
     ns.Model.Build(place)
+    -- the doll's picture again below the hero's column, over the model and under the items: zoomed in, its legs go
+    -- behind the weapons' row instead of over it
+    local cover = CreateFrame("Frame", nil, holder)
+    cover:SetAllPoints()
+    cover:SetFrameLevel(holder:GetFrameLevel() + 6)
+    local middle, half = (hero[1] + hero[3]) / 2, ns.Model.SIZE[1] / 2
+    Doll.Cover(cover, middle - half, middle + half, Doll.FOOT)
     -- the name and the level over the model, which is drawn larger than its place
     local words = CreateFrame("Frame", nil, holder)
     words:SetAllPoints()

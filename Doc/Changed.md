@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the doll's model back; Special Bags become Containers (Saneroki, 2026-10-23)
+- **The model was gone:** 25bd74d put the model scene into a frame that clipped its children, anchored to the scene
+  inside it; the game then drew no model at all. The scene stands on its place again (`Model.Build`, no `view`), and
+  the legs below the hero's column are hidden by the doll's own picture drawn again over the model: `Doll.Cover`
+  (the picture from `Doll.FOOT` down, as wide as `Model.SIZE`, its texture coordinates the doll's) on a frame of
+  `Sheet.Build` at the holder's level + 6, above the model and under the items (+10).
+- **Containers:** the category `special` (key kept) is named by the game's `AUCTION_CATEGORY_CONTAINERS` and takes
+  the classes Container and Quiver besides what lies in a special bag; no longer `unassignable`, so an item can be
+  put into it and it has its empty slot. `ns.TEXT.bagsSpecial` gone.
+- Tests: `dev/tests/inventory.lua` (no clipping frame; the cover's coordinates, place and level), `dev/tests/bags.lua`
+  321 checks (bags and quivers in Containers, its name, it takes items; nine empty slots in the grid).
+
 ### Nameplates: smaller drawings, your combat text at your feet, the "i" in Kalam (Saneroki, 2026-10-23)
 - `CombatText.lua`: the drawings 30 units (`CombatText.PICTURE`, was 48); your own combat text rises from about your
   character's feet, 130 under the screen's middle (`CombatText.SELF`, was 60 over it).

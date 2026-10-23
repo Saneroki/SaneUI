@@ -104,7 +104,7 @@ game's, else item by item), a grey item unmarked and kept. Kept for the account 
 what the character cannot use); a bar with the slots taken, the bags in a
 strip, the clean-up and the dropdown *View*; a sidebar with *All Items*, *One Bag*, *Each Bag*, Pinned, Recent and
 every category with its count; new categories (Weapons / Trinkets, Armor, Item Set Gear, Consumables, Gear
-Enhancements, Camp Items, Trade Goods, Professions, Reagent Bag, Miscellaneous, Quest Items, Special Bags, Junk) in
+Enhancements, Camp Items, Trade Goods, Professions, Reagent Bag, Miscellaneous, Quest Items, Containers, Junk) in
 two groups at first (The Armory, Adventure Prep); the player's own categories with an icon, groups of categories,
 renamed, moved, hidden from All Items or switched off; pins by a middle click, a second look in Pinned and Recent
 (what came in lately); stacks of one item merged; three displays (grid, list, compact); a foot with the currencies
@@ -177,6 +177,10 @@ at; each mipmap's lines thickened for its size) and in each category's empty slo
 **Built (2026-10-23), Saneroki asked:** the drawings in the empty slots bigger and darker (three quarters of the
 slot, 0.3); every word of the bags', the bank's and the alts' windows 1.2 times larger (`Paper.WORDS`), the heads,
 list lines and the sidebar (180 wide, rows of 28) grown with them.
+
+**Built (2026-10-23), Saneroki asked:** the doll's model shows again (the clipping frame round it hid it whole; the
+doll's picture is drawn over its legs below the hero's column instead); *Special Bags* is *Containers*: bags, quivers
+and other containers (the game's classes) besides what is in a special bag, and it takes what is put into it.
 
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
