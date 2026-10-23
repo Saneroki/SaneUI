@@ -1,0 +1,11 @@
+# Combat text, round 3: the miss alone (Saneroki, 2026-10-23: a target circle with an arrow going past next to it,
+# missing it), from words, in round 1's way (prompts alone), which gave the drawings picked for the others.
+#   dev/tools/imagegen dev/imagegen/sets/combat-text/miss.txt
+# chosen:
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=0.6
+count: 4
+out: assets/generated/combat-text/miss
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. A bold icon drawn in graphite pencil as in an adventurer's journal: a few thick, confident, dark pencil lines, clean and crisp, like a quick sketch by a skilled illustrator, a clear simple silhouette, no shading, no hatching, no colour, no paper texture, no background, straight on, centred and filling most of the picture, readable at a tiny size, no text, no letters:
+miss: a round archery target seen straight from the front, its rings drawn as circles, and one arrow flying past beside the target, close to its edge but not touching it, a short motion line behind the arrow; nothing stuck in the target.
+miss-side: a round archery target seen straight from the front on the left, one arrow flying past to its right, close beside its edge, clearly missing it, pointing upward, two short motion lines behind the arrow.

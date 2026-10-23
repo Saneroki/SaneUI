@@ -69,8 +69,9 @@ fails, every plate is the game's own again.
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
   (Kalam Bold, outlined): auto attacks and physical damage in white, spell damage in red, a critical hit larger with a short
   swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a
-  pencil drawing instead of a word, in white (an arrow flying over a target, a figure bending far back under an
-  arrow, crossed swords, a shield, a figure leaning hard to its side, the arrow at its face flying past where the head was) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
+  pencil drawing instead of a word, in white (an arrow flying over a target; a fighter bending far back
+  under an arrow; crossed swords with sparks; a shield with an arrow breaking on it; a fighter in a wide stance, his
+  head swung aside from an arrow flying up past it) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
 - **Over your character:** the same for what you take, rising from about your character's feet, below the middle of
   the screen, where your character stands (your character has no plate in this client): damage with a "-". While ours shows, the
@@ -263,7 +264,7 @@ fails, every plate is the game's own again.
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character; drawings for what did no harm |
-| `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
+| `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by an image model and picked by Saneroki (`assets/interface/combat-text/`, the miss still drawn in code), traced by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
 
 ## Not there yet

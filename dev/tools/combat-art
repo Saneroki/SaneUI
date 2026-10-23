@@ -12,10 +12,11 @@ letters do:
     block    a shield, an arrow's strike glancing off its edge
     evade    a figure leaning hard to its side, the arrow at its face flying past where the head was
     immune   a bubble with its shine, an "i" in its middle
+(the drawings in code; picked ones take their place, below)
 A drawing picked from the image model's (dev/imagegen/sets/combat-text/) is kept as assets/interface/combat-text/<name>.png
 and traced in place of the one in code: its dark lines, thickened, in white with the dark edge. The immunity's "i" is
 Kalam Bold, written in by code over either.
-dev/tools/art makes the game's textures of them (assets/optimized/Nameplates/Art/<name>.blp, drawn 48 x 48). A
+dev/tools/art makes the game's textures of them (assets/optimized/Nameplates/Art/<name>.blp, drawn 30 x 30, made for 48). A
 drawing by hand can take a picture's place in assets/CombatText/ under the same name.
 
 Needs Python with Pillow and NumPy.
@@ -38,8 +39,10 @@ OUT = ROOT / "assets" / "CombatText"
 # in place of the drawing in code below.
 PICKED = ROOT / "assets" / "interface" / "combat-text"
 KALAM = ROOT / "assets" / "optimized" / "Core" / "Fonts" / "Kalam-Bold.ttf"
-THICK = 17           # a traced drawing's lines made thicker by a max filter this wide (in N), so they hold at 48 units
+THICK = 17           # a traced drawing's lines made thicker by a max filter this wide (in N), so they hold at their size
+THICKS = {"parry": 9, "block": 9, "immune": 27}  # Saneroki, 2026-10-23: parry and block thinner, the bubble thicker
 LETTER = 0.50        # the immunity's "i": its height, a share of the picture
+LETTER_TRACED = 0.66 # the same in a traced bubble (Saneroki, 2026-10-23: a bigger "i")
 N = 1024
 WIDTH = 0.058        # a stroke's width, a share of the picture
 SECOND = 0.5         # the second pass: its strength and its width, shares of the first
@@ -202,15 +205,15 @@ def immune(s):
     s.stroke(arc(0.50, 0.52, 0.28, 195, 255, 24), 0.6)
 
 
-def letter(s, text="i", centre=(0.50, 0.52)):
+def letter(s, text="i", centre=(0.50, 0.52), size=LETTER):
     """A letter in Kalam Bold into the lines, centred: the immunity's "i" (Saneroki, 2026-10-23: our own font)."""
-    font = ImageFont.truetype(str(KALAM), int(N * LETTER))
+    font = ImageFont.truetype(str(KALAM), int(N * size))
     layer = Image.new("L", (N, N), 0)
     ImageDraw.Draw(layer).text((centre[0] * N, centre[1] * N), text, fill=255, font=font, anchor="mm")
     s.lines = ImageChops.lighter(s.lines, layer)
 
 
-def trace(path):
+def trace(path, thick=THICK):
     """A picked drawing's lines (dark and solid: the pencil), cropped into a square with a little room, at N, made a
     little thicker."""
     im = Image.open(path).convert("RGBA")
@@ -223,7 +226,7 @@ def trace(path):
     side = int(max(w, h) * 1.12)
     square = Image.new("L", (side, side), 0)
     square.paste(ink, ((side - w) // 2, (side - h) // 2))
-    return square.resize((N, N), Image.LANCZOS).filter(ImageFilter.MaxFilter(THICK))
+    return square.resize((N, N), Image.LANCZOS).filter(ImageFilter.MaxFilter(thick))
 
 
 def figure(s, head, neck, hips, hands, feet, width=1.0):
@@ -300,12 +303,13 @@ def main(names):
             continue
         sheet = Sheet(index + 1)
         picked = PICKED / f"{name}.png"
-        if drawings is DRAWINGS and picked.exists():
-            sheet.lines = trace(picked)
+        traced = drawings is DRAWINGS and picked.exists()
+        if traced:
+            sheet.lines = trace(picked, THICKS.get(name, THICK))
         else:
             drawings[name](sheet)
         if name == "immune":
-            letter(sheet)
+            letter(sheet, centre=(0.50, 0.50) if traced else (0.50, 0.52), size=LETTER_TRACED if traced else LETTER)
         path = out / f"{name}.png"
         sheet.picture().save(path)
         print(f"{name}: {path.relative_to(ROOT)}")

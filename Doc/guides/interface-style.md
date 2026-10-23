@@ -213,10 +213,15 @@ What a unit takes, rising over its nameplate and over your character (Saneroki, 
 - **What did no harm is a drawing, not a word:** a miss, dodge, parry, block, evade or immunity is a pencil line
   drawing, large, with thick lines, white in the game (an immunity, a bubble with an "i", bright red: tinted by
   code), on transparency with a dark edge round its lines so it reads over any ground, as the outlined numbers do.
-  Drawn by code for now (`dev/tools/combat-art`, in the pencil pieces' manner: strokes running past their ends, a
-  lighter second pass).
-- **A dodge** is a figure bending far back under an arrow; **an evade** a figure facing you, leaning hard to
-  its side, the arrow that flew at its face flying on through where the head was (Saneroki, 2026-10-23).
+- **The drawings** are an image model's pencil sketches (`dev/imagegen/sets/combat-text/`), picked by Saneroki
+  (2026-10-23), kept in `assets/interface/combat-text/` and traced by `dev/tools/combat-art` into white lines with
+  the dark edge, thickened for their size (parry and block thinner, the bubble thicker):
+  - **dodge:** a fighter bending far back at the waist, an arrow flying over (from left to right);
+  - **evade:** a fighter in a wide stance, the head swung aside, an arrow flying up past it (from bottom to top);
+  - **parry:** two swords crossed, short sparks where the blades meet;
+  - **block:** a heater shield with a double rim, an arrow breaking on its face, impact lines round the hit;
+  - **immune:** a round bubble with a shine at its upper left, a big "i" in Kalam Bold set in by code, bright red;
+  - **miss:** a target with an arrow flying past beside it, not touching it (to pick).
 
 ### Chat bubbles
 

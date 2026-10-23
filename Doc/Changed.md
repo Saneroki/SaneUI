@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the combat text's drawings from the image model (Saneroki, 2026-10-23)
+- Saneroki's picks, kept in `assets/interface/combat-text/` (new) and traced by `dev/tools/combat-art`: dodge (round
+  2's `house/dodge-2`, its arrow turned to fly left to right), evade (round 2's `picks/evade-2`, its arrow turned to
+  fly up past the head, as Saneroki's sketch), parry (round 1's `parry-1`), block (round 1's `block-4`), immune
+  (round 2's `house/immune-2`). The arrows were turned in the pictures themselves (a crop flipped or rotated).
+- `dev/tools/combat-art`: lines thickened per drawing (`THICKS`: parry and block 9, thinner; the bubble 27, thicker);
+  the traced bubble's "i" larger (`LETTER_TRACED`).
+- Render list `dev/imagegen/sets/combat-text/miss.txt` (round 3: a target with an arrow flying past beside it); the
+  miss stays the drawing in code until one is picked.
+
 ### Nameplates: the combat text in three colours (Saneroki, 2026-10-23)
 - `CombatText.lua`: physical damage (auto attacks, physical abilities; school mask 1 or none told) white, damage of
   any spell school red (`CombatText.SPELL`, the game's combat text red), heals green; over your character the same,
