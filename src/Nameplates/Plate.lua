@@ -46,6 +46,7 @@ Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACT
 
 local dresses = {} -- [the game's plate] = our dress on it
 local shown = {}   -- [unit token] = the dress on that unit's plate, while the game shows it
+Plate.shown = shown -- read by Scale.lua (never written there)
 local owners = setmetatable({}, { __mode = "k" }) -- [the game's unit frame] = the dress over it now
 local bars = setmetatable({}, { __mode = "k" })   -- [the game's health bar] = its unit frame, once followed
 
@@ -182,6 +183,7 @@ end
 local function Off(dress)
     if dress.unit and shown[dress.unit] == dress then shown[dress.unit] = nil end
     dress:UnregisterAllEvents()
+    ns.Safe("scale", ns.Scale.Leave, dress) -- the game's unit frame at its own scale, before it is let go
     local frame = dress.frame
     dress.unit, dress.frame = nil, nil
     dress:Hide()
@@ -217,6 +219,7 @@ local function Added(unit)
     Fill(dress)
     Wear(dress)
     ns.Resource.Again()
+    ns.Scale.Again()
 end
 
 local function Removed(unit)
@@ -224,6 +227,7 @@ local function Removed(unit)
     if not dress then return end
     Off(dress)
     ns.Resource.Again()
+    ns.Scale.Again()
 end
 
 -- Target or focus changed: every ring as it is now, and every plate shown or not (your target always is).
@@ -273,11 +277,13 @@ function Plate.Refresh()
     end
 end
 
--- The game's plates as they were: the parts of every unit frame ours ever lay over in sight again (the game hands
--- them out again from its pool, and sets their alpha nowhere), then every dress off, each by itself.
+-- The game's plates as they were: every unit frame ours ever lay over at its scale and its parts in sight again (the
+-- game hands them out again from its pool, and sets their alpha and scale nowhere), then every dress off, each by
+-- itself.
 function Plate.GiveBack()
     for _, frame in pairs(bars) do
         ns.Safe("give back", frame.SetAlpha, frame, 1)
+        ns.Safe("give back", frame.SetScale, frame, 1)
         ns.Safe("give back", Parts, frame, 1)
     end
     for _, dress in pairs(dresses) do

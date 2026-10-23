@@ -48,8 +48,9 @@ fails, every plate is the game's own again.
   picks buffs for its own plates. Right of the bar (after the raid marker) up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
 - **Raid marker:** right of the bar (none on a player you could fight, as on the game's plates).
-- **Smaller far away:** twice their size within ten yards, down to a little over half the size at the plates'
-  farthest reach, by the game's own scaling (its CVars for it).
+- **Smaller far away:** twice their size at your feet, slowly down to their own size at 40 yards, then faster to
+  half their size at 60, the farthest the game shows plates of units you have not targeted (its limit, however
+  far its setting says). Your target's plate, which the game shows farther, stays at half beyond that.
 - **Settings:** *Sane UI > Nameplates*: *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Only players you know*, *Smaller far away*. The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
@@ -132,10 +133,17 @@ fails, every plate is the game's own again.
   *i* from *i* - 1 to *i*, each given `GetComboPoints("player", "target")` as the game gives it (secret or not):
   the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
   The bar's inner caps mask every segment (they reach the first and the last).
-- **Scale** (`Scale.lua`): the game's CVars `nameplateMaxScale`, `nameplateMinScale`, `nameplateMaxScaleDistance`
-  and `nameplateMinScaleDistance` set to `Scale.CVARS` (2 close by, 0.55 far away) while *Smaller far away* is on, to their defaults
-  (`C_CVar.GetCVarInfo`) when it is off or the module stands down; through `C_CVar.SetCVar`, only those this
-  client has, never in a fight (then at `PLAYER_REGEN_ENABLED`).
+- **Scale** (`Scale.lua`): the game scales plates by distance in a straight line only, so our curve of two steps
+  (`Scale.CURVE`: 2 at 0 yards, 1 at 40, 0.5 at 60, straight between) is laid over it. While *Smaller far away* is
+  on, the game's CVars (`Scale.CVARS`) make its line run from 1 at no distance (`nameplateMaxScale`,
+  `nameplateMaxScaleDistance` 0) to `Scale.LINE` (0.25) at the farthest reach (`nameplateMinScale`,
+  `nameplateMinScaleDistance` 0), with nothing else in it (`nameplateSelectedScale`, `nameplateLargerScale` 1).
+  Every `Scale.EVERY` (0.05) seconds while plates show (a frame's `OnUpdate`, hidden otherwise), each plate's
+  scale as the game set it (`GetScale` of the plate) is read back to its distance (`Scale.Distance`, over
+  `nameplateMaxDistance` held to `Scale.FAR`, 60: the game's limit), and the dress and the game's unit frame on
+  the plate are scaled by our size over the game's (`SetScale`; a change under `Scale.STEP` left alone). Off, a
+  plate taken back, or standing down: both at scale 1 again, the CVars at their defaults (`C_CVar.GetCVarInfo`).
+  CVars through `C_CVar.SetCVar`, only those this client has, never in a fight (then at `PLAYER_REGEN_ENABLED`).
 - **Standing down** (`ns.GiveBack`): the game's scaling back, the game's unit frames at alpha 1 and their parts
   too on every unit frame ours ever lay over (the game hands them out again from its pool), then every dress off,
   each by itself; a dress taken off gives the game's parts back first, its bar as made and its texts empty, and
@@ -154,7 +162,7 @@ fails, every plate is the game's own again.
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
 | `Marks.lua` | The raid marker, right of the bar |
 | `Resource.lua` | Your combo points on the power line of your target's bar |
-| `Scale.lua` | Plates smaller far away (the game's CVars for it) |
+| `Scale.lua` | Plates smaller far away, on a curve of two steps over the game's own scaling |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
 
 ## Not there yet
@@ -175,3 +183,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   longer compares the game's hidden answer about aggro (the module stood down in a fight).
 - **2026-10-23:** plates up to twice their size close by; the power line and the combo points without a
   background, the points as segments of their own; the red glow thin and fading out, not an outline (Saneroki).
+- **2026-10-23:** the size by distance on a curve of two steps (Saneroki): twice at your feet, its own size at 40
+  yards, half at 60, read from the game's own scaling and laid over it.

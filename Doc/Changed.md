@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the size by distance on a curve of two steps (Saneroki, 2026-10-23)
+- **The curve** (`Scale.lua`, `Scale.CURVE`): twice the size at your feet, slowly down to its own size at 40 yards,
+  then faster to half at 60, the game's limit for plates of units not targeted (its `nameplateMaxDistance` reads
+  more but is held to 60); the target's plate, shown farther, stays at half.
+- **How:** the game scales only in a straight line, so its CVars now make that line run from 1 at no distance to
+  `Scale.LINE` (0.25) at the farthest, with the larger target and larger elites off (`nameplateSelectedScale`,
+  `nameplateLargerScale` 1). A driver frame's guarded `OnUpdate` (every 0.05 s, only while plates show) reads each
+  plate's scale back to its distance and scales our dress and the game's unit frame on it by our size over the
+  game's; scale 1 again when the plate goes, the setting is off or the module stands down (`Scale.Leave`,
+  `Plate.GiveBack`). `Plate.shown` is read by it.
+- Tests: 103 checks in `dev/tests/nameplates.lua` (the curve, the distance read back, a plate scaled, off in a fight).
+
 ### Nameplates: up to twice the size close by; resource lines without a background; a soft glow (Saneroki, 2026-10-23)
 - **Twice the size** (`Scale.lua`): `nameplateMaxScale` 2 (was 1), so a plate within ten yards is twice its size;
   far away still 0.55.
