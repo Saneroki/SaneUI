@@ -53,20 +53,37 @@ local hovered             -- the pin's button the mouse is on (Tip), for the rar
 local stage               -- the rare's model frame, once made; false where the client has none
 local Model               -- below
 
--- A pin's tooltip: its name (an NPC's role: Pins.lua), its lines; a quest's objectives as the game tells them.
+-- A pin's tooltip: its name (an NPC's role: Pins.lua), its lines; a quest's objectives as the game tells them. Words
+-- the tooltip says already are not said again (two trainers of a kind gathered: Priest Trainer once).
+local said = {} -- the words in the tooltip so far, for one tooltip
+local function Say(words, r, g, b, wrap)
+    if said[words] then return end
+    said[words] = true
+    GameTooltip:AddLine(words, r, g, b, wrap)
+end
+
 local function Tip(button)
     local pin = button.pin
     if not pin then return end
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    wipe(said)
     if pin.gathered then
-        GameTooltip:SetText(Pins.TEXT.gathered:format(#pin.gathered), 1, 1, 1)
+        -- What is there, one name under the other: the first as the heading
         for index, each in ipairs(pin.gathered) do
             if index > 12 then break end
-            GameTooltip:AddLine(each.role or each.name or "?", 1, 0.82, 0)
+            local words = each.role or each.name or "?"
+            if index == 1 then
+                said[words] = true
+                GameTooltip:SetText(words, 1, 1, 1)
+            else
+                Say(words, 1, 0.82, 0)
+            end
         end
         return GameTooltip:Show()
     end
-    GameTooltip:SetText(pin.role or pin.name or "?", 1, 1, 1)
+    local heading = pin.role or pin.name or "?"
+    said[heading] = true
+    GameTooltip:SetText(heading, 1, 1, 1)
     if pin.kind == "log" and pin.quest then
         if pin.complete then GameTooltip:AddLine(Pins.TEXT.turnIn, 0.2, 1, 0.2) end
         local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, pin.quest)
@@ -78,11 +95,11 @@ local function Tip(button)
         end
         GameTooltip:AddLine(Pins.TEXT.open, 0.5, 0.5, 0.5)
     else
-        if pin.offer then GameTooltip:AddLine(Pins.TEXT.offered, 1, 0.82, 0) end
+        if pin.offer then Say(Pins.TEXT.offered, 1, 0.82, 0) end
         for _, line in ipairs(pin.lines or {}) do
             -- A line in its own colour: { words, r, g, b }.
-            if type(line) == "table" then GameTooltip:AddLine(line[1], line[2], line[3], line[4], true)
-            else GameTooltip:AddLine(line, 1, 1, 1, true) end
+            if type(line) == "table" then Say(line[1], line[2], line[3], line[4], true)
+            else Say(line, 1, 1, 1, true) end
         end
         if pin.unverified then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
     end

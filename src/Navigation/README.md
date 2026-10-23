@@ -54,7 +54,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
   *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
   yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
-  show as one, in the first one's icon, its tooltip what is there. **A click on any pin**, on the small map and the
+  show as one, in the first one's icon, its tooltip what is there, each name once (two Priest Trainers: one line);
+  no tooltip says a word twice. **A click on any pin**, on the small map and the
   full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so); a
   gathered one zooms in too; on
   the full map a quest in your log also leads the game's arrow to it, and a quest giver's quests show in the quest
@@ -617,6 +618,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-23, no word twice:** a gathered marker's tooltip names what is there, without the sentence about a
+  click, and a pin's tooltip says no words twice (Saneroki).
 - **2026-10-23, tooltips by role; bosses as creatures:** as Saneroki asked, an NPC's pin is named by what it is
   (*Bowyer*, *Warrior Trainer*, *Quest giver*), not by its name; *! Unconfirmed Data !* in place of the old sentence,
   a divider in Sane UI's tooltips; a boss's tooltip is a creature's (its model, the boss's dragon, *??*), its abilities

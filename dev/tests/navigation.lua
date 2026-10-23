@@ -1476,9 +1476,12 @@ check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of 
         local first = widget._kind == "Button" and widget._shown and widget.pin and widget.pin.gathered and widget.pin.gathered[1]
         if first and first.thing == "object:1617" then marker = widget end
     end
+    GameTooltip._lines = nil
     if marker then marker._scripts.OnEnter(marker) end
-    check(#now == 2 and riders == 1 and marker and #marker.pin.gathered == 2 and GameTooltip._text == Pins.TEXT.gathered:format(2),
-        "herbs of a kind in one cell of the gather's grid: one goes on, the other rides with it; one marker of both")
+    check(#now == 2 and riders == 1 and marker and #marker.pin.gathered == 2 and GameTooltip._text == marker.pin.gathered[1].name
+        and GameTooltip._lines == nil,
+        "herbs of a kind in one cell of the gather's grid: one goes on, the other rides with it; one marker of both, its "
+        .. "tooltip naming what is there once, no sentence about the click")
     reader.On = read
     Pins.DataChanged()
     Canvas.Layout()

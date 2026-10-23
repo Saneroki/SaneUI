@@ -100,7 +100,6 @@ Pins.TEXT = {
     undiscovered = "Not discovered yet",
     open = "Click on the full map: the quest in the quest log",
     openMap = "Shift-click: open its map",
-    gathered = "%d here: a click zooms in",
     unverified = Core.UNCONFIRMED, -- (Core.Unconfirmed)
     questGiver = "Quest giver",
     level = "Level %d to %d",
