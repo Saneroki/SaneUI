@@ -105,10 +105,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
-  over the map, and beside it its floors. Where the data knows them, each boss in the game's boss mark where it
-  stands, and its own 3D model standing on the mark (the game's model of the boss's look). Its tooltip: its name,
-  its abilities and what it drops, each with its icon and name as the game has them (an item in its quality's
-  colour; at most ten of each, then how many more), not yet confirmed by the game. Where the data knows them, the
+  over the map, and beside it its floors. Where the data knows them, each boss as its own 3D model where it stands
+  (the game's model of the boss's look; the game's boss mark only where it has no look, or its model would reach
+  past the view's edge). Its tooltip: its name, its abilities and what it drops, each with its icon and name as the
+  game has them (an item in its quality's colour; at most ten of each, then how many more), not yet confirmed by the
+  game; hold Alt for each ability's description and each item's stats under its name. Where the data knows them, the
   enemies stand there too, each a small red dot under the bosses, its name in its tooltip (six dungeons so far). The wheel zooms it, a drag moves it, a right
   click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
@@ -316,11 +317,15 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   a boss with a look (the set's `display`) gets a `PlayerModel` of it standing on its mark (`SetDisplayInfo`, as the
   game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
-  edge (models are not cut there), let go (`ClearModel`) when the view closes. A boss's tooltip (`BossTip`) lists the
+  edge (models are not cut there), let go (`ClearModel`) when the view closes; the mark's icon and mouse only while
+  no model stands on it. A boss's tooltip (`BossTip`) lists the
   set *Bosses*' `abilities` and `loot` (`Listed`, at most `Dungeons.LINES` each; a set of their own, apart from the
   game's *Encounters*, so they stay unverified until the game confirms them): a spell by `C_Spell.GetSpellInfo`,
   an item by `C_Item.GetItemInfo` (asked for with `RequestLoadItemDataByID` while not loaded; drawn again once on
-  `ITEM_DATA_LOAD_RESULT`), each with its icon (`Dungeons.ICON`).
+  `ITEM_DATA_LOAD_RESULT`), each with its icon (`Dungeons.ICON`). With Alt held (`IsAltKeyDown`; drawn again on
+  `MODIFIER_STATE_CHANGED`) each line gets its details under it: a spell's `C_Spell.GetSpellDescription` (asked for
+  with `RequestLoadSpellData`, drawn again on `SPELL_DATA_LOAD_RESULT`), an item's own tooltip lines but its name,
+  in their colours, read from a hidden tooltip (`SaneUINavigationReader`, `SetItemByID`).
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the

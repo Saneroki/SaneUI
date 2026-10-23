@@ -260,6 +260,7 @@ UnitRace = function() return "Human", "Human", 1 end
 UnitClass = function(unit) return "Warrior", "WARRIOR", 1 end
 IsInGroup = function() return false end
 IsShiftKeyDown = function() return false end
+IsAltKeyDown = function() return false end
 RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 -- The game's scrolling list, as far as the quest log uses it: what it was given to show, drawn on demand.
 W.templates.WowScrollBoxList = function(box)
@@ -4211,6 +4212,24 @@ end)()
     Frames(1)
     lines = GameTooltip._lines or {}
     check(lines[5] and lines[5]:find("Item 902", 1, true), "the item come: the tooltip drawn again with it")
+    -- Alt held: each ability's description under its name, each item's own tooltip read for its lines.
+    local describe, read = C_Spell.GetSpellDescription, {}
+    C_Spell.GetSpellDescription = function(id) return id == 801 and "Hits the target and those beside it." or "" end
+    W.methods.SetItemByID = function(_, id) read[#read + 1] = id end
+    IsAltKeyDown = function() return true end
+    GameTooltip._lines = nil
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
+    Frames(1)
+    lines = GameTooltip._lines or {}
+    check(lines[2] and lines[2]:find("Cleave", 1, true) and lines[3] == "Hits the target and those beside it."
+        and lines[4] == Dungeons.TEXT.loot and read[1] == 901 and read[2] == 902,
+        "Alt held: the tooltip drawn again, an ability's description under it, the items' own tooltips read")
+    IsAltKeyDown = function() return false end
+    GameTooltip._lines = nil
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+    Frames(1)
+    check((GameTooltip._lines or {})[3] == Dungeons.TEXT.loot, "Alt let go: the names only again")
+    C_Spell.GetSpellDescription, W.methods.SetItemByID = describe, nil
     marks[1]._mouseOver = false
     C_Spell.GetSpellInfo, C_Item.GetItemInfo, C_Item.GetItemIconByID, C_Item.RequestLoadItemDataByID =
         spellInfo, itemInfo, itemIcon, request
@@ -4230,7 +4249,8 @@ end)()
     local model = marks[1].model
     check(model and model._kind == "PlayerModel" and model._display == 4203 and model._shown
         and model._points[1][1] == "BOTTOM" and near(model._points[1][4], marks[1]._points[1][4])
-        and model._level > marks[1]._level, "its own model in its look, standing on its mark, over it")
+        and model._level > marks[1]._level and not marks[1].icon._shown,
+        "its own model in its look, standing on its mark, over it; the mark's icon gone under it")
     local bar
     for _, widget in ipairs(W.frames) do
         if widget._kind == "Button" and widget._text == ns.TopBar.TEXT.questLog and not bar then bar = widget._parent end
@@ -4249,7 +4269,7 @@ end)()
     cursorX = wasX - 560
     view._scripts.OnUpdate(view, 0.01)
     view._scripts.OnMouseUp(view, "LeftButton")
-    check(not model._shown and marks[1]._shown and stepping and not view._scripts.OnUpdate,
+    check(not model._shown and marks[1]._shown and marks[1].icon._shown and stepping and not view._scripts.OnUpdate,
         "a model that would reach past the view's edge: hidden, its mark stays; the drag's step only while it drags")
     view._scripts.OnMouseDown(view, "LeftButton")
     check(view._scripts.OnUpdate == stepping, "the drag's step: one guarded function, made once")

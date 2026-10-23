@@ -15,6 +15,9 @@ The bigger changes of each version, newest first.
   the count, the junk marker, the bags, the clean-up and View on the
   window's title line, the three buttons round; the categories' column
   folds away, the bags' slots with it; empty bag slots stay empty.
+- Navigation: on a dungeon's map each boss stands as its 3D model
+  alone; hold Alt over it to read its abilities' descriptions and its
+  items' stats in the tooltip.
 - Navigation: routes no longer ride a lift up and straight back down
   (in the Undercity, by Gnomeregan), a route's walk to a lift leads to
   the lift's own floor, and of the ways a route has worked out the

@@ -21,7 +21,9 @@ local _, ns = ...
 --                   cut it there), its mark stays. The tooltip: its name, its abilities and what it drops
 --                   (the set Bosses: the game's spell and item IDs, kept apart from the game's own encounters
 --                   until the game confirms them), each with its icon and name as the game has them, an item
---                   in its quality's colour; and that it is not yet confirmed by the game
+--                   in its quality's colour; and that it is not yet confirmed by the game. With Alt held,
+--                   each ability's description and each item's own tooltip lines (its stats) under its name.
+--                   The mark shows only where no model stands (no look, or at the view's edge)
 --      enemies      where the set has them, each enemy as a small red dot where it stands (under the bosses),
 --                   its name in the tooltip
 --      the mouse    the wheel zooms around the mouse (from the whole map up to Dungeons.NEAR times
@@ -335,6 +337,44 @@ local function Iconed(icon, words)
     return ("|T%s:%d:%d:0:0:64:64:5:59:5:59|t %s"):format(tostring(icon), Dungeons.ICON, Dungeons.ICON, words)
 end
 
+-- A tooltip nobody sees, that the game fills with an item's own lines (its stats, as on the item's tooltip), to be
+-- read into the boss's; named, as the game's tooltip template names its lines by the frame's name.
+local reader
+local function Read(id)
+    reader = reader or CreateFrame("GameTooltip", "SaneUINavigationReader", nil, "GameTooltipTemplate")
+    reader:SetOwner(UIParent, "ANCHOR_NONE")
+    reader:ClearLines()
+    if not pcall(reader.SetItemByID, reader, id) then return 0 end
+    return reader:NumLines() or 0
+end
+
+-- With Alt held, an item's lines under its name: all of its own tooltip's but the name, in its colours.
+local function ItemDetails(id)
+    for index = 2, Read(id) do
+        local left, right = _G["SaneUINavigationReaderTextLeft" .. index], _G["SaneUINavigationReaderTextRight" .. index]
+        local words, other = left and left:GetText(), right and right:IsShown() and right:GetText()
+        if words and words ~= "" then
+            local r, g, b = left:GetTextColor()
+            if other and other ~= "" then
+                local r2, g2, b2 = right:GetTextColor()
+                GameTooltip:AddDoubleLine("    " .. words, other, r, g, b, r2, g2, b2)
+            else
+                GameTooltip:AddLine("    " .. words, r, g, b, true)
+            end
+        end
+    end
+end
+
+-- With Alt held, a spell's description under its name; asked of the game while it has not loaded it.
+local function SpellDetails(id)
+    local words = Core.Ask(C_Spell.GetSpellDescription, id)
+    if type(words) ~= "string" or words == "" then
+        Core.Ask(C_Spell.RequestLoadSpellData, id)
+        return
+    end
+    GameTooltip:AddLine(words, 1, 0.82, 0, true)
+end
+
 -- A spell's line: its icon and name as the game has them; nil where the game does not know it.
 local function SpellLine(id)
     local info = Core.Ask(C_Spell.GetSpellInfo, id)
@@ -356,8 +396,9 @@ local function ItemLine(id)
     return Iconed(Core.Ask(C_Item.GetItemIconByID, id), name), r, g, b
 end
 
--- Up to Dungeons.LINES lines of a list under its title, and how many more there are.
-local function Listed(title, ids, line)
+-- Up to Dungeons.LINES lines of a list under its title, and how many more there are; with Alt held, each one's
+-- details under it (details: nil for none).
+local function Listed(title, ids, line, details)
     local shown, more = 0, 0
     for _, id in ipairs(ids or {}) do
         if shown >= Dungeons.LINES then
@@ -368,6 +409,7 @@ local function Listed(title, ids, line)
                 if shown == 0 then GameTooltip:AddLine(title, 1, 0.82, 0) end
                 shown = shown + 1
                 GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
+                if details then details(id) end
             end
         end
     end
@@ -381,8 +423,9 @@ local function BossTip(part)
     GameTooltip:SetText(mark.name or "?", 1, 1, 1)
     local encounter = mark.encounter
     if encounter then
-        Listed(Dungeons.TEXT.abilities, BOSSES:Get(encounter, "abilities"), SpellLine)
-        Listed(Dungeons.TEXT.loot, BOSSES:Get(encounter, "loot"), ItemLine)
+        local alt = IsAltKeyDown()
+        Listed(Dungeons.TEXT.abilities, BOSSES:Get(encounter, "abilities"), SpellLine, alt and SpellDetails)
+        Listed(Dungeons.TEXT.loot, BOSSES:Get(encounter, "loot"), ItemLine, alt and ItemDetails)
     end
     GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
     GameTooltip:Show()
@@ -393,13 +436,16 @@ local function TipGone()
     GameTooltip_Hide()
 end
 
--- An item the tooltip asked for has come from the game: the tooltip drawn again, once on the next frame.
+-- An item or spell the tooltip asked for has come from the game, or Alt was pressed or let go: the tooltip drawn
+-- again, once on the next frame.
 local Again = Core.Later(function()
     if tipped and tipped:IsMouseOver() and GameTooltip:GetOwner() == tipped then BossTip(tipped) end
 end)
-ns.On("ITEM_DATA_LOAD_RESULT", function()
-    if tipped then Again() end
-end)
+for _, event in ipairs({ "ITEM_DATA_LOAD_RESULT", "SPELL_DATA_LOAD_RESULT", "MODIFIER_STATE_CHANGED" }) do
+    ns.On(event, function()
+        if tipped then Again() end
+    end)
+end
 
 -- A boss's mark, and the frame for its model above it (made when a boss with a look first needs it).
 local function Mark()
@@ -426,12 +472,12 @@ local function Model(mark)
 end
 
 -- A boss's model shown in its look (the game's creature display), standing on its mark; out of sight without a
--- look, or where it would reach past the view's edge.
+-- look, or where it would reach past the view's edge. True while it shows.
 local function Stand(mark, display, x, y)
     local model = mark.model
     if not display then
         if model then model:Hide() end
-        return
+        return false
     end
     model = model or Model(mark)
     if model.display ~= display then
@@ -447,6 +493,7 @@ local function Stand(mark, display, x, y)
     model:ClearAllPoints()
     model:SetPoint("BOTTOM", frame, "CENTER", x, y)
     model:SetShown(inside)
+    return inside
 end
 
 -- The bosses of the floor shown, as the set has them: { name, x, y } (0 to 1 on the floor's map), in their order.
@@ -524,7 +571,10 @@ function Dungeons.PlaceBosses(art, scale)
         mark:SetPoint("CENTER", frame, "CENTER", x, y)
         mark:SetFrameLevel(base + 1)
         mark:Show()
-        Stand(mark, boss.display, x, y)
+        -- The model is the boss; its mark only where no model stands (no look, or at the view's edge).
+        local standing = Stand(mark, boss.display, x, y)
+        mark.icon:SetShown(not standing)
+        mark:EnableMouse(not standing)
         -- In front by how far down it stands (the top of the art behind), over the marks; a few levels only, so
         -- none comes over the bar above the map (and takes its clicks).
         if mark.model then mark.model:SetFrameLevel(base + 2 + math.floor(boss.y * Dungeons.SPREAD)) end
