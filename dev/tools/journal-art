@@ -248,11 +248,15 @@ def icon_mask():
 
 def trash():
     """The bags' waste bin as pencil on the page: its strokes and shading in the journal's graphite, its white
-    fill clear (the darker a pixel, the more graphite), so the paper shows through as through any pencil line."""
+    fill clear (the darker a pixel, the more graphite), so the paper shows through as through any pencil line.
+    Drawn hard (Saneroki, 2026-10-23: strong and dark, plain to see): the drawing's darkest lines full graphite,
+    the lighter ones lifted, and every line a little thicker, so they hold when the game draws it slot-sized."""
     picture = Image.open(TRASH).convert("RGBA")
     rgba = np.asarray(picture, dtype=np.float32)
     lum = rgba[..., :3].mean(axis=-1)
-    ink = np.clip((235 - lum) / 150, 0, 1) * (rgba[..., 3] / 255)
+    ink = np.clip((235 - lum) / 85, 0, 1) ** 0.6 * (rgba[..., 3] / 255)
+    thick = Image.fromarray((ink * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(5))
+    ink = np.asarray(thick, dtype=np.float32) / 255
     out = np.zeros_like(rgba)
     out[..., :3] = (30, 23, 17)                 # Core.Journal.INK
     out[..., 3] = ink * 255

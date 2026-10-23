@@ -256,14 +256,15 @@ function Sheet:Plus(place)
     plus:Show()
 end
 
--- Junk's first slot, the waste bin: the bin's drawing alone, as large as a slot, no pencil slot around it; an item
--- let go there (or clicked onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
+-- Junk's first slot, the waste bin: the bin's drawing alone, no pencil slot around it, at full strength and a little
+-- larger than the slot (into the gaps round it; the slot is what takes the clicks); an item let go there (or clicked
+-- onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
+Canvas.BIN = 1.2       -- the drawing against the slot's size (Saneroki, 2026-10-23: bigger, plain to see)
 local function BinDrop()
     Menus.Destroy()
 end
 
 local function BinEnter(bin)
-    bin.picture:SetAlpha(1)
     bin.lit:SetShown(GetCursorInfo() == "item")
     GameTooltip:SetOwner(bin, "ANCHOR_TOP")
     GameTooltip:SetText(ns.TEXT.bagsTrash, 1, 1, 1)
@@ -272,7 +273,6 @@ local function BinEnter(bin)
 end
 
 local function BinLeave(bin)
-    bin.picture:SetAlpha(0.7)
     bin.lit:Hide()
     GameTooltip:Hide()
 end
@@ -285,8 +285,7 @@ local function MakeBin(canvas)
     bin.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     bin.lit:Hide()
     bin.picture = Core.Journal.Texture(bin, "trash", "ARTWORK")
-    bin.picture:SetAllPoints()
-    bin.picture:SetAlpha(0.7)
+    bin.picture:SetPoint("CENTER")
     bin:SetScript("OnClick", ns.Guard(BinDrop))
     bin:SetScript("OnReceiveDrag", ns.Guard(BinDrop))
     bin:SetScript("OnEnter", ns.Guard(BinEnter))
@@ -300,6 +299,7 @@ function Sheet:Bin(place)
     bin:SetPoint("TOPLEFT", self.child, "TOPLEFT", place.x + Canvas.INSET, -place.y)
     bin:SetSize(place.size, place.size)
     bin:SetFrameLevel(self.child:GetFrameLevel() + 3)
+    bin.picture:SetSize(place.size * Canvas.BIN, place.size * Canvas.BIN)
     bin.lit:Hide()
     bin:Show()
 end
