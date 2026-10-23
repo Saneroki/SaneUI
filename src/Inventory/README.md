@@ -95,7 +95,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     one part with all its items and one empty slot. An item let go anywhere over the window where nothing else
     takes it (the paper, the title line, the foot) goes into your bags, into the category the rules give it
     (what you put it into taken off). The items scroll with the mouse wheel; no scroll bar. Items and empty slots
-    are twice the game's size, the bags in the strip too, in the same look. At the sidebar's foot a waste bin
+    are half again the game's size, the bags in the strip too, in the same look. At the sidebar's foot a waste bin
     (a pencil drawing): an item let go there is offered to be destroyed in the game's own dialog, as when you
     drop it into the world (a rare item or better is typed out). *Pinned Items* and *Recent Items* (what
     came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
@@ -423,7 +423,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     many cells each category and group shows (Pinned and Recent too, stacks merged as they are shown), for the sidebar.
   - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (the blocks side by side in bands,
     `BAND_GAP` apart, as many as fit across, the next on a new band; each under its head (no rule under it): its
-    cells `Layout.SIZE` 68 (twice the game's) and `GAP` 6 apart, then where it takes items (`block.plus`) one empty slot; a block
+    cells `Layout.SIZE` 51 (half again the game's) and `GAP` 5 apart, then where it takes items (`block.plus`) one empty slot; a block
     takes the room of its cells or of its head's words (the canvas measures them), whichever is wider, at most the
     room, more cells in more lines; a block with nothing to show left out. A group's title (and a part's head)
     over the whole width with a pencil rule, its members' blocks side by side under it, a line of their own. An

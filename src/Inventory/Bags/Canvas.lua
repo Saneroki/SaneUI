@@ -41,7 +41,7 @@ local function Fonts()
         part = Paper.Font("SaneUIBagsPart", 19, true),
         row = Paper.Font("SaneUIBagsRow", 14),
         rowColored = Paper.Outlined("SaneUIBagsRowColored", 14),
-        plus = Paper.Font("SaneUIBagsPlus", 34, true),
+        plus = Paper.Font("SaneUIBagsPlus", 27, true),
     }
     return fonts
 end
