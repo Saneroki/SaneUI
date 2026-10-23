@@ -706,6 +706,8 @@ check(even and Near(dress._scale, full * Scale.Size(20)) and #steps > 10 and Nea
 yards.nameplate1 = 27
 Settle()
 check(Near(dress._scale, full * Scale.Size(25)), "27 yards: past the 25 yard rung, so at 25 for sure")
+check(Near(dress.edge, Core.Pixels(dress, 1)) and dress.fitted == dress.now,
+    "settled at its size: laid out anew, the border one screen pixel at it")
 -- Your target: always full, whatever its distance, reached quickly.
 units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")

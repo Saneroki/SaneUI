@@ -175,6 +175,8 @@ local function Fit(dress)
     if dress.unit then ns.Auras.Set(dress, dress.unit) end
 end
 local OnSizeChanged = ns.Guard(Fit)
+-- Laid out anew at the scale it shows at now (Scale.lua, as a plate grows or shrinks): its border one screen pixel.
+Plate.Refit = Fit
 
 local function Make(plate)
     local dress = CreateFrame("Frame", nil, plate)

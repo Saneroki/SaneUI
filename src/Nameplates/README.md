@@ -320,3 +320,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   beyond your farthest attack though your spells cannot say.
 - **2026-10-23:** no endless bars after a `/reload`: widths the game cannot give yet are guessed, and every plate is
   measured anew once the world shows.
+- **2026-10-23:** the outline one screen pixel at every size (Saneroki): a plate is laid out anew when its size
+  settles or has moved on by a tenth (`Plate.Refit`), not only at its first size.

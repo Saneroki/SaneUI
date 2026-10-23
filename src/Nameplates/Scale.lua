@@ -115,6 +115,13 @@ function Scale.Step(dress, elapsed)
         dress:SetAlpha(dress.showing)
         if dress.showing >= 1 then dress.showing = nil end
     end
+    -- Laid out anew when its size settled or moved on by a tenth since: the border one screen pixel at this size.
+    if not dress.fitted then dress.fitted = now end
+    local fitted = dress.fitted
+    if (now == aim and fitted ~= now) or math.abs(now - fitted) > 0.1 * math.max(now, 0.05) then
+        dress.fitted = now
+        ns.Plate.Refit(dress)
+    end
     return now ~= aim or dress.showing ~= nil
 end
 
@@ -157,7 +164,7 @@ end
 -- A plate that has just appeared: it grows in from nothing, to the size of its distance once that is known.
 function Scale.Born(dress)
     if not active or ns.off then return end
-    dress.now, dress.aim, dress.moving, dress.growing = 0, Scale.Size(dress.yards or 0), true, true
+    dress.now, dress.aim, dress.moving, dress.growing, dress.fitted = 0, Scale.Size(dress.yards or 0), true, true, 0
     dress.showing = 0
     dress:SetAlpha(0)
     Show(dress, 0)
@@ -171,7 +178,7 @@ function Scale.Leave(dress)
     dress:SetScale(Scale.Full())
     dress:SetAlpha(1)
     dress.now, dress.aim, dress.moving, dress.growing, dress.showing, dress.yards = nil, nil, nil, nil, nil, nil
-    dress.quick, dress.target = nil, nil
+    dress.quick, dress.target, dress.fitted = nil, nil, nil
 end
 
 local function Fought()
