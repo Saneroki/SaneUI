@@ -970,7 +970,8 @@ check(minimap._shown and minimap._width == 200 and minimap._zoom == 2, "the game
 local shown = Shown()
 local arrow
 for _, widget in ipairs(W.frames) do if widget._atlas == "UI-WorldMapArrow" and not arrow then arrow = widget end end -- the marks', not a dungeon's
-check(arrow and not arrow._shown, "our arrow is out of sight while the game's minimap shows its own")
+check(arrow and arrow._shown and arrow._points[1][1] == "CENTER" and near(arrow._points[1][4], 0) and near(arrow._points[1][5], 0),
+    "our arrow on the player in the middle, over the game's minimap too")
 check(minimap._level == frame:GetFrameLevel() + Hybrid.LEVEL and minimap._strata == frame:GetFrameStrata()
     and arrow._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.marks and Hybrid.LEVEL < Canvas.LEVELS.marks
     and Hybrid.LEVEL > Canvas.LEVELS.art,
@@ -1074,7 +1075,7 @@ W.Wait(0)
 check(small.native == nil and near(small.k, 100 / 240 / Camera.STEP) and not minimap._shown,
     "out past it: our map alone, a notch farther, the game's minimap out of sight")
 tracker._scripts.OnUpdate(tracker, 0.016)
-check(arrow._shown and arrow._rotation == 1.5, "our arrow shows instead, turned as the player faces")
+check(arrow._shown and arrow._rotation == 1.5, "our arrow shows, turned as the player faces")
 frame._scripts.OnMouseWheel(frame, 1)
 W.Wait(0)
 check(small.native == 0 and minimap._shown, "in again: the game's widest step, its minimap back")
@@ -1356,7 +1357,7 @@ do
         "full: the game's minimap around the player at the map's zoom, at the widest step that fits, on the player")
     check(arrow._shown and arrow._points[1][2] == holder and near(arrow._points[1][4], (u - Canvas.view.u) * full.k)
         and near(arrow._points[1][5], (v - Canvas.view.v) * full.k),
-        "full: our arrow on the player all the same, over the game's minimap there (its square only lends its dots)")
+        "full: our arrow on the player, over the game's minimap there too")
     local chosen = Core.Copy(ns.options.pins)
     chosen.minimap = nil
     Core.Set(ns.name, "pins", chosen)

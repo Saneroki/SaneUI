@@ -4,9 +4,9 @@ local _, ns = ...
 --  Sane UI - Navigation - Marks
 --  What stands over the map at a fixed size on the screen, whatever the zoom:
 --
---      the player's arrow   Blizzard's world map arrow (UI-WorldMapArrow), turned to the facing;
---                           on the small map out of sight while the game's minimap shows its own
---                           there (Hybrid.lua); on the full map always, over the game's minimap
+--      the player's arrow   Blizzard's world map arrow (UI-WorldMapArrow), turned to the facing; on
+--                           the small map and the full one alike, over the game's minimap where it
+--                           lies over ours (its own arrow, where it draws one, under it; Hybrid.lua)
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's);
 --                           a click leads the game's arrow to it or not, Ctrl-click takes it away
 --      the party, the raid  the game's party blip in each member's class colour, a few times a
@@ -117,10 +117,10 @@ local function Put(mark, x, y, half)
     mark:SetShown(ns.Canvas.Inside(x, y, half))
 end
 
--- The player's arrow: where the player is (map, u, v, facing from Live.Player), hidden when hidden is true.
-function Marks.Player(view, map, u, v, facing, hidden)
+-- The player's arrow: where the player is (map, u, v, facing from Live.Player); none where the game tells no place.
+function Marks.Player(view, map, u, v, facing)
     local x, y
-    if not hidden and u then x, y = Spot(view, map, u, v) end
+    if u then x, y = Spot(view, map, u, v) end
     if x and facing then arrow:SetRotation(facing) end
     Put(arrow, x, y, Marks.ARROW / 2)
 end

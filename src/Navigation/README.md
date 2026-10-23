@@ -590,8 +590,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   around the player at the map's own zoom (`Hybrid.Follow`, each step of the canvas' tracker): square, at its
   widest step whose square takes at most `Hybrid.ROOM` (half) of the canvas' shorter side (none at a zoom too
   close for its narrowest), shown while wholly inside the canvas (`Hybrid.Keep`); a click there pings as anywhere
-  on the map (`Ping.lua`), and our player's arrow stays over it (only the small view leaves the arrow to the game's
-  minimap, where it is the minimap). Only
+  on the map (`Ping.lua`). Our player's arrow stands over it in both views (`Marks.Player`; the game's own arrow on
+  its minimap, where it draws one, lies under ours): the arrow shows wherever the game tells your place. Only
   while the pin filter's *Minimap dots* is on, in both views. In an instance, where the game tells no place of
   yours, the small view's game minimap is the map alone: in its middle at the view's step (the game's own while
   the view has none), its ground on (`C_Minimap.SetDrawGroundTextures`), whatever the pin filter says; off again

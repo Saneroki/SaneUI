@@ -343,8 +343,7 @@ function Hybrid.Hide()
     if taken then Parts():Hide() end
 end
 
--- Whether it shows now: on the small map the canvas hides the player's arrow then, the game's own is there (on the
--- full map ours stays, Canvas.lua).
+-- Whether it shows now (our player's arrow stays over it all the same, Marks.lua).
 function Hybrid.Shown()
     return taken and Parts():IsShown() or false
 end
