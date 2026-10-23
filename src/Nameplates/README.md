@@ -242,7 +242,9 @@ fails, every plate is the game's own again.
   game's CVars (`CombatText.CVARS`): `floatingCombatTextCombatDamage_v2` and `...CombatHealing_v2` at 0 while *Over
   nameplates* and *Instead of the game's* are on, `enableFloatingCombatText` at 0 while *Over your character* and
   *Instead of the game's* are on; else (and standing down) at their defaults; never in a fight (then at
-  `PLAYER_REGEN_ENABLED`).
+  `PLAYER_REGEN_ENABLED`). Set again `CombatText.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD` and
+  `VARIABLES_LOADED` (the game's stored settings and Sync's profile come after the login and turned the heal numbers
+  back on), and after a `CVAR_UPDATE` of one of them; through `Core.Sync.SetCVar` where Sync is there.
 - **Standing down** (`ns.GiveBack`): the game's scaling back, the game's unit frames at alpha 1 and their parts
   too on every unit frame ours ever lay over (the game hands them out again from its pool), then every dress off,
   each by itself; a dress taken off gives the game's parts back first, its bar as made and its texts empty, and

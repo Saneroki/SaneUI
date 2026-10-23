@@ -852,6 +852,16 @@ check(CVar("nameplateSelectedScale") == "1", "on again")
     W.Fire("PLAYER_REGEN_ENABLED")
     check(CVar("enableFloatingCombatText") == "1", "the fight over: set")
     Core.Set(ns.name, "combatGame", true)
+    -- Something else turns the game's heal numbers back on (a profile's settings, the game's stored ones): ours again.
+    C_CVar.SetCVar("floatingCombatTextCombatHealing_v2", "1")
+    W.Fire("CVAR_UPDATE", "floatingCombatTextCombatHealing_v2", "1")
+    check(CVar("floatingCombatTextCombatHealing_v2") == "1", "not at once")
+    W.Wait(CombatText.AGAIN + 0.1)
+    check(CVar("floatingCombatTextCombatHealing_v2") == "0", "a little later the game's heal numbers are off again")
+    C_CVar.SetCVar("floatingCombatTextCombatDamage_v2", "1")
+    W.Fire("PLAYER_ENTERING_WORLD")
+    W.Wait(CombatText.AGAIN + 0.1)
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0", "after entering the world, set once more")
 end)()
 
 -------------------------------------------------------------------------------

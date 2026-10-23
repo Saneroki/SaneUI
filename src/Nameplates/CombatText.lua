@@ -42,6 +42,10 @@ local _, ns = ...
 --  ours are over the plates, its scrolling text about you while ours is over
 --  your character. They get their defaults back when ours is switched off or
 --  the module stands down. None is set in a fight: that waits for its end.
+--  They are set again a little after the game has its stored settings and
+--  Core's Sync has written a profile's (both come after the login, and would
+--  turn the game's numbers back on), and whenever one of them changes while
+--  ours shows (CVAR_UPDATE).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -287,12 +291,16 @@ function CombatText.Clear(host)
     for index = #list, 1, -1 do Release(list[index]) end
 end
 
--- The game's CVars off (0) or at their defaults; where this client has them, never in a fight.
+-- The game's CVars off (0) or at their defaults; where this client has them, never in a fight. Through Core's
+-- Sync where it is there (it leaves one the game locked alone, and notes one the game does not take).
 local function Set(names, hide)
+    local sync = Core.Sync
     for _, name in ipairs(names) do
         local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
         local wanted = hide and "0" or default
-        if now ~= nil and wanted ~= nil and tostring(now) ~= wanted then Core.Ask(C_CVar.SetCVar, name, wanted) end
+        if now ~= nil and wanted ~= nil and tostring(now) ~= wanted then
+            if sync and sync.SetCVar then sync.SetCVar(name, wanted) else Core.Ask(C_CVar.SetCVar, name, wanted) end
+        end
     end
 end
 
@@ -329,9 +337,25 @@ function CombatText.GiveBack()
     Apply()
 end
 
+-- Once more a little later: after the game's stored settings and Sync's (Sync waits 2 seconds), or after
+-- something else set one of ours.
+CombatText.AGAIN = 3
+local again = Core.Later(Apply, CombatText.AGAIN)
+local watched = {} -- [lower-case CVar name] = true
+for _, names in pairs(CombatText.CVARS) do
+    for _, name in ipairs(names) do watched[name:lower()] = true end
+end
+
+local function Changed(name)
+    if type(name) == "string" and watched[name:lower()] then again() end
+end
+
 function CombatText.Start()
     ns.On("PLAYER_REGEN_ENABLED", function()
         if waiting then Apply() end
     end)
+    ns.On("PLAYER_ENTERING_WORLD", again)
+    ns.On("VARIABLES_LOADED", again)
+    ns.On("CVAR_UPDATE", Changed)
     Apply()
 end
