@@ -61,7 +61,7 @@ Everything the game's (Camelot) character window has, in our panel:
   tooltips, each stat filled by the game's own function for it, laid out our own way (*The stats' page*).
 - **The stats' page (Saneroki, 2026-10-23):** not a long narrow list but a page that fits its window: each of the
   game's categories a section (its head written and ruled in pencil, a line a stat: name left, value right), the
-  sections in as many columns as the window's width holds (each 200 to 300 units at the words' first size, as even
+  sections in as many columns as the window's width holds (each 170 to 320 units at the words' first size, compact: little room round and between them, as even
   in height as the game's order lets them be, together in the page's middle), one list in a narrow window. The
   primary attributes stand over the columns as five pencil boxes with their value written large where they fit
   side by side; a pet's stats follow the player's. Built the same day. **Only the stats (Saneroki, 2026-10-23):**

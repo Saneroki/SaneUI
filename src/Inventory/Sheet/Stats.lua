@@ -38,15 +38,15 @@ local Stats = {}
 ns.Stats = Stats
 
 local Fit = Paper.Fit
-Stats.PAD = Fit(12)        -- the page's margin round the sections
-Stats.COLUMN = Fit(200)    -- the least width of a column; a window this wide (and its margins) is one list
-Stats.COLUMN_MOST = Fit(300) -- the most: on a wider page the columns stand together in its middle
-Stats.GAP = Fit(26)        -- between two columns
-Stats.SPACE = Fit(14)      -- between two sections in a column
-Stats.HEAD = Fit(26)       -- a section's head with its rule
-Stats.ROW = Fit(20)        -- a stat's line
-Stats.TILE = { Fit(78), Fit(60) } -- a primary attribute's box: its least width, its height
-Stats.TILE_GAP = Fit(10)
+Stats.PAD = Fit(5)         -- the page's margin round the sections
+Stats.COLUMN = Fit(170)    -- the least width of a column; a window this wide (and its margins) is one list
+Stats.COLUMN_MOST = Fit(320) -- the most: on a wider page the columns stand together in its middle
+Stats.GAP = Fit(12)        -- between two columns
+Stats.SPACE = Fit(6)       -- between two sections in a column
+Stats.HEAD = Fit(21)       -- a section's head with its rule
+Stats.ROW = Fit(18)        -- a stat's line
+Stats.TILE = { Fit(70), Fit(48) } -- a primary attribute's box: its least width, its height
+Stats.TILE_GAP = Fit(6)
 Stats.STEP = Fit(40)       -- the wheel scrolls this far
 Stats.LEAST = 300          -- how low the window may be made
 
@@ -175,12 +175,12 @@ local function AsTile(row)
     row.Label:SetFontObject(Fonts.tileLabel)
     row.Label:SetTextColor(Paper.SOFT[1], Paper.SOFT[2], Paper.SOFT[3], 1)
     row.Label:ClearAllPoints()
-    row.Label:SetPoint("TOPLEFT", Fit(4), -Fit(7))
-    row.Label:SetPoint("TOPRIGHT", -Fit(4), -Fit(7))
+    row.Label:SetPoint("TOPLEFT", Fit(4), -Fit(5))
+    row.Label:SetPoint("TOPRIGHT", -Fit(4), -Fit(5))
     row.Label:SetJustifyH("CENTER")
     row.Value:SetFontObject(Fonts.tileValue)
     row.Value:ClearAllPoints()
-    row.Value:SetPoint("BOTTOM", 0, Fit(6))
+    row.Value:SetPoint("BOTTOM", 0, Fit(4))
     row.Value:SetJustifyH("CENTER")
     row.zebra:Hide()
     for index, part in ipairs(row.box.parts) do part:SetShown(index ~= 5) end
@@ -249,8 +249,8 @@ local function Head(view, index)
         head:SetHeight(Stats.HEAD)
         head.text = head:CreateFontString(nil, "ARTWORK")
         head.text:SetFontObject(Fonts.head)
-        head.text:SetPoint("BOTTOMLEFT", Fit(3), Fit(5))
-        head.text:SetPoint("BOTTOMRIGHT", -Fit(3), Fit(5))
+        head.text:SetPoint("BOTTOMLEFT", Fit(3), Fit(3))
+        head.text:SetPoint("BOTTOMRIGHT", -Fit(3), Fit(3))
         head.text:SetJustifyH("LEFT")
         head.text:SetWordWrap(false)
         Paper.Rule(head, "BOTTOM")
