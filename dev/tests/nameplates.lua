@@ -439,7 +439,19 @@ check(dress.threat._color[2] == Text.THREAT[3][2] and dress.glow._alpha == 1, "a
 local untouched = true
 for _, layer in ipairs(dress.halo) do untouched = untouched and layer[1]._alpha == 1 and layer[2]._alpha == 1 end
 check(untouched, "switched by its frame's alpha: the layers' own strengths never overwritten")
+-- The game's colour from a hidden answer: it alone may look at the answer (here the test's secret says it).
+CreateColor = function(r, g, b, a) return { r = r, g = g, b = b, a = a, GetRGB = function(self) return self.r, self.g, self.b end } end
+C_CurveUtil = { EvaluateColorFromBoolean = function(value, yes, no) if value.truth then return yes end return no end }
 local hidden = Secret()
+hidden.truth = true
+units.nameplate1.threat = { hidden, Secret(), Secret() }
+W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
+check(dress.threat._color[1] == Text.THREAT[Text.AGGRO][1] and dress.threat._color[2] == Text.THREAT[Text.AGGRO][2],
+    "its kind hidden, the game says you have aggro: red")
+local calm = Secret()
+units.nameplate1.threat = { calm, Secret(), Secret() }
+W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
+check(dress.threat._color[1] == Text.THREAT[0][1], "its kind hidden, no aggro: grey")
 units.nameplate1.threat = { hidden, Secret(), Secret() }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(type(dress.glow._alpha) == "table" and dress.glow._alpha.from == hidden and dress.glow._alpha.yes == nil,

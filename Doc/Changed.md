@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the threat red in a fight while you have aggro (Saneroki, 2026-10-23)
+- **Text.Aggro** (`Text.lua`): in a fight the game hides your threat's status from addons, and the number stayed grey
+  while the bar glowed. Now the hidden `isTanking` is turned into a colour by the game (`C_CurveUtil.
+  EvaluateColorFromBoolean`, red or grey) and the text takes it as it is; orange (about to take aggro) only where the
+  status may be read.
+- Tests: 222 checks.
+
 ### Nameplates: your target's outline a quiet grey (Saneroki, 2026-10-23)
 - `Bar.TARGET` 50% grey (was the game's white): a hint of which plate is your target, not a shout.
 

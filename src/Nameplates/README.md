@@ -40,7 +40,8 @@ fails, every plate is the game's own again.
   - *health*,
   short (under a thousand as it is, then thousands to one place, "1.2k", then millions to two, "1.32m"; cut,
   not rounded), and "| 100%" how much is left. In a fight the game hides some of these from addons: the health
-  is then shortened by the game in the same steps, the threat in grey. The health takes the room of the most it
+  is then shortened by the game in the same steps, the threat red while you have aggro and grey otherwise (orange
+  cannot be told then). The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
 - **The border:** one thin outline: black, a quiet 50% grey on your target, orange on your focus (the game's
   colour for it); red on any foe none of your attacks reach, as the game checks your own spells from your character (a
@@ -167,7 +168,8 @@ fails, every plate is the game's own again.
     paces the questions) and at a fight's end; an answer (`Core.Inspect.Watch`) fills that player's plate.
   - *threat*: `UnitDetailedThreatSituation("player", unit)`: nothing without a status; the scaled percentage as
     `%d%%` (`SetFormattedText`, hidden or not) in the room of "100%"; its colour by the status (`Text.THREAT`: 0
-    grey, 1 orange, 2 and 3 red), grey where the status is hidden; aggro from `Text.AGGRO` (2) up, or the hidden
+    grey, 1 orange, 2 and 3 red); where the status is hidden (a fight), red or grey by the hidden `isTanking`
+    (`Text.Aggro`: the game's `C_CurveUtil.EvaluateColorFromBoolean` turns it into a colour the text takes as it is); aggro from `Text.AGGRO` (2) up, or the hidden
     `isTanking` as it is.
   - *name*: `Core.FullName` for players, else `UnitName` as it is; its room the plain name's (at most `Text.MOST`),
     a hidden one the last plain one's (`Text.NAME` before any).
@@ -391,3 +393,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the bar's dark solid (Saneroki): a white or red outline no longer shows through the bar's soft edges,
   so it is as thin as the black.
 - **2026-10-23:** your target's outline a quiet 50% grey (Saneroki), a hint rather than white.
+- **2026-10-23:** the threat red in a fight while you have aggro (Saneroki): the game's hidden answer turned into its
+  colour; orange only where the game shows how high your threat is.

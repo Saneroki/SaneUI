@@ -14,7 +14,8 @@ local _, ns = ...
 --    gear     a player's item level ("i32"), once inspected (Core.Inspect)
 --    threat   your threat on it while you are on its threat list: grey while
 --             low, orange when you are about to take its aggro, red while you
---             have it (and then the bar glows)
+--             have it (and then the bar glows); in a fight, where the game
+--             hides how high it is, red while you have its aggro, else grey
 --    name     its name: a player's first name and surname
 --    health   short ("850", "1.2k", "1.32m") and how much is left ("| 100%")
 --  The bar is as wide as the line and its insets (Text.Layout, Plate.Place).
@@ -296,10 +297,33 @@ function Text.Threat(dress, unit)
     Room(dress, "threat", Text.Width("100%"))
     if not pcall(text.SetFormattedText, text, "%d%%", share) then text:SetText("") end
     local plain = Plain(kind)
-    local colour = Text.THREAT[plain] or Text.THREAT[0]
-    text:SetTextColor(colour[1], colour[2], colour[3])
-    if plain then return ns.Bar.Glow(dress, plain >= Text.AGGRO) end
-    ns.Bar.Glow(dress, tanking) -- hidden: the glow takes the game's answer as it is
+    if plain then
+        local colour = Text.THREAT[plain] or Text.THREAT[0]
+        text:SetTextColor(colour[1], colour[2], colour[3])
+        return ns.Bar.Glow(dress, plain >= Text.AGGRO)
+    end
+    -- Its kind hidden (a fight): red while you have its aggro, grey otherwise, by the game's hidden answer whether you
+    -- do (the game turns it into a colour, the text takes that as it is); about to take it cannot be told then.
+    Text.Aggro(text, tanking)
+    ns.Bar.Glow(dress, tanking) -- the glow takes the game's answer as it is
+end
+
+-- The threat's text red while you have the unit's aggro, grey while not: by an answer of the game's, hidden or not.
+local colours -- the game's colour objects of the two, made once
+function Text.Aggro(text, tanking)
+    local red, grey = Text.THREAT[Text.AGGRO], Text.THREAT[0]
+    if not Core.Secret(tanking) then
+        local colour = tanking and red or grey
+        return text:SetTextColor(colour[1], colour[2], colour[3])
+    end
+    local curves, create = rawget(_G, "C_CurveUtil"), rawget(_G, "CreateColor")
+    local pick = curves and curves.EvaluateColorFromBoolean
+    if not (pick and create) then return text:SetTextColor(grey[1], grey[2], grey[3]) end
+    colours = colours or { create(red[1], red[2], red[3], 1), create(grey[1], grey[2], grey[3], 1) }
+    local ok, colour = pcall(pick, tanking, colours[1], colours[2])
+    if not ok or type(colour) ~= "table" or not pcall(text.SetTextColor, text, colour:GetRGB()) then
+        text:SetTextColor(grey[1], grey[2], grey[3])
+    end
 end
 
 -- A number cut (not rounded) to that many places, without the zeros at its end: 1.25 to one place is "1.2", 2.0 "2".
