@@ -542,30 +542,16 @@ W.Wait(0)
 -------------------------------------------------------------------------------
 check(W.cvars.nameplateMinScale == "0.25" and C_CVar.GetCVar("nameplateMaxScale") == "1" and W.cvars.nameplateMinScaleDistance == "0"
     and W.cvars.nameplateMaxScaleDistance == "0" and W.cvars.nameplateSelectedScale == "1",
-    "the game's scaling a straight line from full size at your feet to a quarter at the farthest, nothing else in it")
-local function Near(a, b) return math.abs(a - b) < 1e-6 end
-check(Near(Scale.Size(0), 2) and Near(Scale.Size(20), 1.5) and Near(Scale.Size(40), 1) and Near(Scale.Size(50), 0.75)
-    and Near(Scale.Size(60), 0.5) and Near(Scale.Size(500), 0.5), "our curve: twice, its own size at 40 yards, half at 60")
-check(Near(Scale.Distance(1, 60), 0) and Near(Scale.Distance(0.625, 60), 30) and Near(Scale.Distance(0.25, 60), 60)
-    and Near(Scale.Distance(0.1, 60), 60), "the distance read back from the game's scale")
--- The game puts the wolf 30 yards away (its scale 0.625): the plate at 1.25 of its size, so scaled by 2.
-plates.nameplate1:SetScale(0.625)
-Scale.driver:GetScript("OnUpdate")(Scale.driver, 1)
-check(Scale.driver:IsShown() and Near(dress._scale, 1.25 / 0.625) and Near(plates.nameplate1.UnitFrame._scale, 2),
-    "a plate scaled from the game's size to ours: our dress and the game's unit frame alike")
-plates.nameplate1:SetScale(0.25) -- at the farthest reach (the CVar's 1000 is held to the game's 60)
-Scale.driver:GetScript("OnUpdate")(Scale.driver, 1)
-check(Near(dress._scale, 2), "at 60 yards: half its size")
+    "the game's scaling a straight line from full size at your feet to a quarter at the farthest (half at 40 yards), nothing else in it")
 W.combat = true
 Core.Set(ns.name, "distance", false)
-check(W.cvars.nameplateMinScale == "0.25" and dress._scale == 1 and plates.nameplate1.UnitFrame._scale == 1 and not Scale.driver:IsShown(),
-    "off in a fight: the plates at the game's scale at once, the CVars wait")
+check(W.cvars.nameplateMinScale == "0.25", "off in a fight: the CVars wait")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == "10" and W.cvars.nameplateSelectedScale == "1.2",
     "after it: the game's defaults")
 Core.Set(ns.name, "distance", true)
-check(W.cvars.nameplateMinScale == "0.25" and Scale.driver:IsShown(), "on again")
+check(W.cvars.nameplateMinScale == "0.25", "on again")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
@@ -592,8 +578,7 @@ ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
     and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
-check(W.cvars.nameplateMinScale == "1" and plates.nameplate1.UnitFrame._scale == 1 and dress._scale == 1,
-    "the game's scaling by distance its own again, every plate at the game's scale")
+check(W.cvars.nameplateMinScale == "1", "the game's scaling by distance its own again")
 bar:Hide()
 bar:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")

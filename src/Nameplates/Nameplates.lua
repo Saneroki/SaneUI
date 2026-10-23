@@ -24,7 +24,7 @@ local ADDON, ns = ...
 --                  left of it, crowd control right of it, in the game's own aura
 --                  containers (hidden values and all)
 --    Marks.lua     the raid marker, in the line
---    Scale.lua     plates smaller far away, on a curve of two steps
+--    Scale.lua     plates smaller far away (the game's CVars for it)
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ ns.TEXT = {
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
     distance = "Smaller far away",
-    distanceTip = "Nameplates are twice their size close by, their own size at 40 yards and half of it at 60, the farthest the game shows them.",
+    distanceTip = "Nameplates are their own size at your feet, half at 40 yards and a quarter at 60, the farthest the game shows them.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
