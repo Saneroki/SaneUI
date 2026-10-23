@@ -39,8 +39,11 @@ OUT = ROOT / "assets" / "CombatText"
 # in place of the drawing in code below.
 PICKED = ROOT / "assets" / "interface" / "combat-text"
 KALAM = ROOT / "assets" / "optimized" / "Core" / "Fonts" / "Kalam-Bold.ttf"
-THICK = 17           # a traced drawing's lines made thicker by a max filter this wide (in N), so they hold at their size
-THICKS = {"parry": 9, "block": 9, "immune": 27}  # Saneroki, 2026-10-23: parry and block thinner, the bubble thicker
+THICK = 7            # a traced drawing's lines made thicker by a max filter this wide (in N): sharp pencil lines
+                     # that still hold at their size (Saneroki, 2026-10-23: sharp, not thick and sloppy)
+THICKS = {"parry": 1, "block": 1, "immune": 27}  # the bubble as it was (Saneroki: final as it is)
+SHRINK = {"parry": 5, "block": 5}  # their lines first made thinner by a min filter this wide: drawn heavier than the
+                                   # others, they match them so (Saneroki: their lines much stronger than the others)
 LETTER = 0.50        # the immunity's "i": its height, a share of the picture
 LETTER_TRACED = 0.66 # the same in a traced bubble (Saneroki, 2026-10-23: a bigger "i")
 N = 1024
@@ -48,7 +51,11 @@ WIDTH = 0.058        # a stroke's width, a share of the picture
 SECOND = 0.5         # the second pass: its strength and its width, shares of the first
 WOBBLE = 0.004       # how far a hand's line strays, a share of the picture
 PAST = 0.035         # how far a straight stroke runs past its ends, a share of its length
-EDGE = 0.022         # the dark edge round the lines, a share of the picture
+EDGE = 0.013         # the dark edge round the lines, a share of the picture
+EDGES = {"immune": 0.022}  # the bubble's, as it was
+# A drawing in code with sharp lines of its own (the miss, Saneroki's pick): a stroke's width, its wobble and the
+# second pass's strength, in place of WIDTH, WOBBLE and SECOND.
+SHARP = {"miss": (0.026, 0.0015, 0.0)}
 EDGE_ALPHA = 0.75    # its strength
 FAINT = 0.45         # a see-through stroke's strength (a figure that is not there)
 FAINT_EDGE = 0.45    # the dark edge round it, a share of the lines' edge
@@ -84,7 +91,9 @@ def past(points, share=PAST):
 
 
 class Sheet:
-    def __init__(self, seed):
+    def __init__(self, seed, edge=EDGE, sharp=None):
+        self.edge = edge
+        self.width, self.wobble, self.second = sharp or (WIDTH, WOBBLE, SECOND)
         self.lines = Image.new("L", (N, N), 0)
         self.faint = Image.new("L", (N, N), 0)  # see-through strokes: white at FAINT, no dark edge, under the rest
         self.rand = random.Random(seed)
@@ -93,10 +102,11 @@ class Sheet:
         """One stroke of the pencil through points (shares of the picture): tapered at its ends, its line a little
         unsteady; a lighter, thinner second pass beside it."""
         pts = bend(points) if curve else points
-        for alpha, wide, shift in ((1.0, width, 0.0), (SECOND, width * SECOND, 1.0)):
+        passes = ((1.0, width, 0.0), (self.second, width * self.second, 1.0)) if self.second else ((1.0, width, 0.0),)
+        for alpha, wide, shift in passes:
             layer = Image.new("L", (N, N), 0)
             draw = ImageDraw.Draw(layer)
-            dx, dy = (self.rand.uniform(-1, 1) * WOBBLE * 1.5 * shift for _ in range(2))
+            dx, dy = (self.rand.uniform(-1, 1) * self.wobble * 1.5 * shift for _ in range(2))
             dense = []
             for a, b in zip(pts, pts[1:]):
                 n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) * N / 2))
@@ -106,8 +116,8 @@ class Sheet:
             for i, (x, y) in enumerate(dense):
                 t = i / max(1, len(dense) - 1)
                 taper = 0.6 + 0.4 * math.sin(math.pi * t)
-                r = WIDTH * N * wide * taper / 2
-                wob = WOBBLE * N * math.sin(t * 9 + phase)
+                r = self.width * N * wide * taper / 2
+                wob = self.wobble * N * math.sin(t * 9 + phase)
                 cx, cy = (x + dx) * N + wob * 0.6, (y + dy) * N + wob
                 level = int(255 * alpha)
                 draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=level)
@@ -122,7 +132,7 @@ class Sheet:
         grain = np.asarray(Image.effect_noise((N, N), 40).filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32) / 255
         line = np.clip(np.asarray(self.lines, dtype=np.float32) / 255 * (0.82 + 0.3 * grain), 0, 1)
         shape = np.asarray(self.faint, dtype=np.float32) / 255
-        k = int(EDGE * N) | 1
+        k = int(self.edge * N) | 1
 
         def around(layer):
             spread = layer.filter(ImageFilter.MaxFilter(k)).filter(ImageFilter.GaussianBlur(k / 4))
@@ -213,7 +223,7 @@ def letter(s, text="i", centre=(0.50, 0.52), size=LETTER):
     s.lines = ImageChops.lighter(s.lines, layer)
 
 
-def trace(path, thick=THICK):
+def trace(path, thick=THICK, shrink=0):
     """A picked drawing's lines (dark and solid: the pencil), cropped into a square with a little room, at N, made a
     little thicker."""
     im = Image.open(path).convert("RGBA")
@@ -226,7 +236,10 @@ def trace(path, thick=THICK):
     side = int(max(w, h) * 1.12)
     square = Image.new("L", (side, side), 0)
     square.paste(ink, ((side - w) // 2, (side - h) // 2))
-    return square.resize((N, N), Image.LANCZOS).filter(ImageFilter.MaxFilter(thick))
+    square = square.resize((N, N), Image.LANCZOS)
+    if shrink:
+        square = square.filter(ImageFilter.MinFilter(shrink))
+    return square.filter(ImageFilter.MaxFilter(thick)) if thick > 1 else square
 
 
 def figure(s, head, neck, hips, hands, feet, width=1.0):
@@ -301,11 +314,11 @@ def main(names):
     for index, name in enumerate(drawings):
         if names and name not in names:
             continue
-        sheet = Sheet(index + 1)
+        sheet = Sheet(index + 1, EDGES.get(name, EDGE), SHARP.get(name))
         picked = PICKED / f"{name}.png"
         traced = drawings is DRAWINGS and picked.exists()
         if traced:
-            sheet.lines = trace(picked, THICKS.get(name, THICK))
+            sheet.lines = trace(picked, THICKS.get(name, THICK), SHRINK.get(name, 0))
         else:
             drawings[name](sheet)
         if name == "immune":

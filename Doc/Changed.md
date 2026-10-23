@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the combat text's drawings in sharp lines (Saneroki, 2026-10-23)
+- `dev/tools/combat-art`: sharp pencil lines in place of thick ones: a traced drawing's lines thickened by 7 (was 17),
+  the dark edge 0.013 (was 0.022); parry's and block's heavier lines first made thinner (`SHRINK`, 5) and not
+  thickened, so they match the others; the immunity's bubble as it was (`THICKS`, `EDGES`). The miss stays the
+  drawing in code (Saneroki's pick), in thin, even strokes without a second pass (`SHARP`); `Sheet` takes its edge
+  and its strokes per drawing.
+
 ### Inventory: Containers a category of its own; Special Bags as before (Saneroki, 2026-10-23)
 - 6fa115e had made Special Bags into Containers (bags and quivers besides what lies in a worn special bag). Saneroki
   explained the game: a bag or quiver lying in the bags is an item like any other and always empty

@@ -264,7 +264,7 @@ fails, every plate is the game's own again.
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character; drawings for what did no harm |
-| `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by an image model and picked by Saneroki (`assets/interface/combat-text/`, the miss still drawn in code), traced by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
+| `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by an image model and picked by Saneroki (`assets/interface/combat-text/`; the miss drawn by code), traced by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
 
 ## Not there yet

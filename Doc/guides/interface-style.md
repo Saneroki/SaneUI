@@ -215,13 +215,15 @@ What a unit takes, rising over its nameplate and over your character (Saneroki, 
   code), on transparency with a dark edge round its lines so it reads over any ground, as the outlined numbers do.
 - **The drawings** are an image model's pencil sketches (`dev/imagegen/sets/combat-text/`), picked by Saneroki
   (2026-10-23), kept in `assets/interface/combat-text/` and traced by `dev/tools/combat-art` into white lines with
-  the dark edge, thickened for their size (parry and block thinner, the bubble thicker):
+  the dark edge: sharp pencil lines, not thick ones (Saneroki, 2026-10-23), all of one weight (parry's and block's
+  heavier lines made thinner to match), the bubble alone kept thick:
   - **dodge:** a fighter bending far back at the waist, an arrow flying over (from left to right);
   - **evade:** a fighter in a wide stance, the head swung aside, an arrow flying up past it (from bottom to top);
   - **parry:** two swords crossed, short sparks where the blades meet;
   - **block:** a heater shield with a double rim, an arrow breaking on its face, impact lines round the hit;
   - **immune:** a round bubble with a shine at its upper left, a big "i" in Kalam Bold set in by code, bright red;
-  - **miss:** a target with an arrow flying past beside it, not touching it (to pick).
+  - **miss:** an arrow flying high over a target and past it, drawn by code in thin, even strokes (Saneroki's pick of
+    the first drawings).
 
 ### Chat bubbles
 
