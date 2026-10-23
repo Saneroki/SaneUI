@@ -553,7 +553,8 @@ function Bags.Build(made)
     child:SetSize(1, 1)
     scroll:SetScrollChild(child)
     Cells.Build(child)
-    Bags.canvas = ns.Canvas.New(child, { store = kept, redraw = function() Bags.Redraw() end, cells = Cells.bags })
+    Bags.canvas = ns.Canvas.New(child, { store = kept, redraw = function() Bags.Redraw() end, cells = Cells.bags,
+        stow = true })
     Bags.rowOf = Bags.canvas.rowOf
     Bags.scroll = scroll
     Select.Build(scroll, { bar, strip, side, Foot.frame })

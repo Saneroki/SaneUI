@@ -572,7 +572,7 @@ function Bag.Build(body, top, bottom, bags)
     rail = Sidebar.New(body, top, bottom, {
         word = ns.TEXT.bagsCategories,
         choose = function(view) ns.Bags.Choose(view) end,
-        drop = function(row) ns.Menus.Drop(row.key) end,
+        drop = function(row) ns.Menus.Drop(row.key, true) end,
         menu = function(row) if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end end,
         add = function(row) ns.Menus.Add(row) end,
         aim = Bag.Aim,

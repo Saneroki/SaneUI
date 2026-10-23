@@ -78,14 +78,14 @@ local function HeadUp(head, mouse)
     if mouse == "RightButton" then
         Menus.Row(head, head.key, head.group)
     elseif mouse == "LeftButton" and GetCursorInfo() then
-        Menus.Drop(head.key)
+        Menus.Drop(head.key, head.canvas.owner.stow)
     elseif mouse == "LeftButton" and head.fold then
         Folded(head)
     end
 end
 
 local function HeadDrop(head)
-    Menus.Drop(head.key)
+    Menus.Drop(head.key, head.canvas.owner.stow)
 end
 
 local function HeadEnter(head)
@@ -199,7 +199,7 @@ end
 -- A block's "+": an item brought to it (picked up and clicked here, or dragged here) goes into its category
 -- (Pinned's: pinned); clicked with nothing, the next item clicked does (Select.lua).
 local function PlusClick(plus)
-    if GetCursorInfo() == "item" then return Menus.Drop(plus.key) end
+    if GetCursorInfo() == "item" then return Menus.Drop(plus.key, plus.canvas.owner.stow) end
     ns.Select.Start("put", plus.key)
 end
 
@@ -218,6 +218,7 @@ end
 
 local function MakePlus(canvas)
     local plus = CreateFrame("Button", nil, canvas.child)
+    plus.canvas = canvas
     Core.Journal.Slot(plus, 1, "BACKGROUND")
     plus.sign = plus:CreateFontString(nil, "ARTWORK")
     plus.sign:SetFontObject(Fonts().plus)
@@ -338,7 +339,7 @@ function Sheet:Draw(blocks, room, how)
         elseif place.kind == "label" then
             self:Label(place)
         elseif place.kind == "pad" then
-            cells:Pad(place.x + x, place.y, place.size)
+            cells:Pad(place.x + x, place.y, place.size, place.block, self.owner.stow)
         elseif place.kind == "plus" then
             self:Plus(place)
         else

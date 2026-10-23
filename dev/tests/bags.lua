@@ -529,9 +529,9 @@ local function Words(blocks)
     return table.concat(list, ",")
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
-check(Words(blocks) == "Pinned Items=0,The Armory=2,Adventure Prep=1,Trade Goods=1,Reagent Bag=1,Miscellaneous=1,Special Bags=2,Junk=1",
-    "All Items: Pinned (with its +, empty too), a block per category, a group's members as one, the empty ones left out: " .. Words(blocks))
-check(blocks[1].plus and blocks[4].plus and blocks[4].key == "trade" and not blocks[5].plus and not blocks[2].plus,
+check(Words(blocks) == "Pinned Items=0,The Armory=2,Adventure Prep=1,Trade Goods=1,Professions=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
+    "All Items: Pinned (with its +, empty too), a block per category, a group's members as one, the empty ones shown too (slots to drop into): " .. Words(blocks))
+check(blocks[1].plus and blocks[4].plus and blocks[4].key == "trade" and not blocks[6].plus and not blocks[2].plus,
     "a + after Pinned and after a category that takes items; not after the reagent bag's, not after a group")
 local function Named(list, word)
     for index = 1, list.count do
@@ -602,8 +602,14 @@ blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
 for index = 1, count do kinds[places[index].kind] = (kinds[places[index].kind] or 0) + 1 end
-check(kinds.head == 8 and kinds.cell == 9 and kinds.plus == 4 and kinds.pad == 8 * 10 - 9 - 4,
-    "grid: a head per block, its cells, its +, every last line made whole with pads")
+check(kinds.head == 10 and kinds.cell == 9 and kinds.plus == 6 and kinds.pad == 10 * 10 - 9 - 6,
+    "grid: a head per block, its cells, its +, every last line made whole with pads (an empty block a line of them)")
+local padOf
+for index = 1, count do
+    local place = places[index]
+    if place.kind == "pad" and place.block and place.block.word == "Quest Items" then padOf = place end
+end
+check(padOf and padOf.block.key, "an empty category's pads know their block, to take an item let go on them")
 check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0 and places[3].kind == "pad",
     "Pinned empty: its + first, then pads")
 local armory
@@ -812,6 +818,39 @@ check(ns.Select.Mode() == "put", "a + clicked with nothing: choosing an item by 
 ns.Select.Click(Cells.Button(0, 3))
 check(kept.pinned[118] and ns.Select.Mode() == nil, "the next item clicked is pinned; the choosing ends")
 Categories.Pin(118, false)
+Bags.Refresh()
+-- An empty slot of a category (a pad): an item let go there goes into that category; Junk marks it, another
+-- category takes the mark off; an item from outside the bags goes into a free slot of them.
+local function PadOf(key)
+    for _, widget in ipairs(W.frames) do
+        if widget.lit and widget.border and widget.back and widget.key == key and widget:IsShown() then return widget end
+    end
+end
+local junkPad, tradePad = PadOf("junk"), PadOf("trade")
+check(junkPad and tradePad and junkPad._mouse ~= false, "a category's empty slots take what is let go on them")
+holding = 118
+junkPad:GetScript("OnEnter")(junkPad)
+check(junkPad.lit:IsShown(), "an item brought over an empty slot: lit")
+junkPad:GetScript("OnLeave")(junkPad)
+junkPad:GetScript("OnReceiveDrag")(junkPad)
+check(kept.assigned[118] == "junk" and Categories.Junk(118, 1) and holding == nil, "let go on Junk's empty slot: marked as junk")
+Bags.Refresh()
+tradePad = PadOf("trade")
+holding = 118
+tradePad:GetScript("OnMouseUp")(tradePad, "LeftButton")
+check(kept.assigned[118] == "trade" and not Categories.Junk(118, 1) and holding == nil,
+    "clicked onto another category's empty slot: into it, the junk mark off")
+do
+    local pickup, placed = C_Container.PickupContainerItem, nil
+    C_Container.PickupContainerItem = function(bag, slot) placed, holding, cursor = bag .. ":" .. slot, nil, false end
+    holding, cursor = 6001, true
+    Bags.Refresh()
+    PadOf("trade"):GetScript("OnReceiveDrag")(PadOf("trade"))
+    check(kept.assigned[6001] == "trade" and placed and holding == nil, "an item from outside the bags: into a free slot of them")
+    C_Container.PickupContainerItem, cursor = pickup, false
+end
+Categories.Assign(118, nil)
+Categories.Assign(6001, nil)
 Bags.Refresh()
 -- The junk marker.
 local coinButton = Bags.bar.coin

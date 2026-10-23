@@ -69,7 +69,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     first, the empty slots last; the reagent bag, the keyring and bags for one kind of item stay as they are. The
     button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
     the other views it is the game's *Clean Up Bags*.
-  - **The sidebar** at the left: *All Items* (every item by category; the free slots are not shown), *One Bag*
+  - **The sidebar** at the left: *All Items* (every item by category, every category shown with at least one line
+    of empty slots, also while it holds nothing; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
     *Pinned Items* and *Recent Items*, then every category switched on, by name, with how many items it holds
     (empty ones too). A click shows it.
@@ -84,7 +85,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **Your own way:** a middle click on an item pins it (or unpins it; an item you put into a category is taken
     out of it again). Alt and a right click opens its menu: *Pinned Items*, *Junk*, *Put Into* another category
     or a new one, *Take Out of* the one you put it into. An item picked up (or dragged) and let go over a
-    category's head or its row in the sidebar goes into that category (over Pinned: pinned). A right click on a
+    category's head, its row in the sidebar or one of its empty slots (or clicked onto that slot) goes into that
+    category (over Pinned: pinned; over Junk: marked as junk; over any other: the junk mark taken off). An item from
+    your bags stays in its slot; one from elsewhere (the bank, what you wear) goes into a free slot of your bags. A right click on a
     category (its row or its head): *Rename*, *Move Up*, *Move Down*, *Create Group With* another, *Add to Group*,
     *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
     *Hide in All Items*, *Disband Group*; on one of your own also *Icon* and *Delete*. *Add Category* at the
@@ -381,16 +384,17 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     goes to the front of `Recent.list` (at most `Recent.MOST`, until a `/reload`). Not counted while the bank is
     open; `Recent.SETTLE` seconds after it closes, counted anew without anything new.
   - **The views** (`Bags/Views.lua`, no frames: `Views.Build`): the sidebar's choice as blocks: *all* (Pinned,
-    Recent, then a block per category in order, a group's members as one, hidden and empty ones left out but the
-    player's own), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
+    Recent, then a block per category in order, a group's members as one, hidden ones left out, empty ones shown
+    but not while searching nor in the bank), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
     reagent bag), *each* (every bag), `cat:<key>`, `group:<group>` (its members each a block). Stacks of an item
     that is no gear merge into one entry with their counts added (`Views.Merging`: not while talking to a vendor,
     a banker of any kind the client has, the mailbox, a trade partner, nor while the auction house is open); a split item stays apart while the window is open
     (`Views.split`). What the search does not find is left out, or faded in *one* and *each*. `Views.Counts`: how
     many cells each category and group shows (Pinned and Recent too, stacks merged as they are shown), for the sidebar.
   - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (a head per block, its cells
-    `Layout.SIZE` 34 and `GAP` 4 apart, the "+", the last line filled with pads; the player's own empty category a
-    line of pads to drop items on), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
+    `Layout.SIZE` 34 and `GAP` 4 apart, the "+", the last line filled with pads; an empty block a line of pads; a
+    pad knows its block, and in the bags' window one of a category that takes items takes an item let go or
+    clicked on it, `Cells.Pad`, `Menus.Drop` with `stow`), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
     takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
     least three wide; on a tie the fuller band first). The display and the window's Sort By are kept (`store.bags`:

@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Inventory: every category in your bags stays visible with a row of
+  empty slots. Drag an item onto a category's empty slot to put it in
+  your bags under that category; onto Junk to mark it as junk, onto
+  any other category to take the junk mark off.
 - Navigation: routes no longer ride a lift up and straight back down
   (in the Undercity, by Gnomeregan), a route's walk to a lift leads to
   the lift's own floor, and of the ways a route has worked out the

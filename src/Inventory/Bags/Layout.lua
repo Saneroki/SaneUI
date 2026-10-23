@@ -7,8 +7,9 @@ local _, ns = ...
 --  lines where these say.
 --      grid     each block under its head (its name, how many), its cells in
 --               lines as wide as the room, then its "+" (to put an item in),
---               the last line made whole with pads (dark squares that take no
---               mouse); an empty block of the player's own a line of pads
+--               the last line made whole with pads (empty slots: an item let
+--               go on one goes into the block's category); an empty block a
+--               line of pads
 --      list     each block under its head, a line per cell: the item at the
 --               left, its words in columns
 --      compact  the blocks side by side in bands, its name over each: which
@@ -97,7 +98,7 @@ local function Cells(block, x, columns, pads)
         while column < columns do
             local place = Place("pad")
             place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
-            place.size = Layout.SIZE
+            place.size, place.block = Layout.SIZE, block
             column = column + 1
         end
     end
@@ -116,7 +117,7 @@ local function Grid(blocks, width)
         local block = blocks[index]
         Head(block, width)
         if block.level ~= 1 then
-            local lines = Cells(block, 0, columns, #block.entries > 0 or block.own or block.plus)
+            local lines = Cells(block, 0, columns, true)
             y = y + lines * step - (lines > 0 and Layout.GAP or 0) + Layout.APART
         end
     end

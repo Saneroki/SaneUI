@@ -8,8 +8,9 @@ local _, ns = ...
 --                 items are in their own category too), then a block per
 --                 category in the categories' order, a group's members
 --                 together as one block under the group's name; a category
---                 hidden from All Items left out, an empty one too unless it
---                 is the player's own; the free slots are not shown
+--                 hidden from All Items left out; an empty one shown too (a
+--                 line of empty slots to drop an item into), but not while
+--                 searching nor in the bank; the free slots are not shown
 --      one        One Bag: Pinned, then every slot of the ordinary bags in
 --                 their order, the empty ones too, then each bag for one kind
 --                 of item and the reagent bag by itself
@@ -199,14 +200,14 @@ local function ByCategories(section, query, order, merge)
                     end
                     Contents.Sort(block.entries, order)
                     block.number = #block.entries
-                    if #block.entries == 0 then used = used - 1 end
+                    if #block.entries == 0 and (query or not firstSection) then used = used - 1 end
                 end
             elseif not Categories.Hidden(key) or query then
                 local block = Fill(Block(Categories.Word(key)), lists[key] or {}, query, order, merge)
                 block.key = key
                 block.own = Categories.Own(key)
                 block.plus = plus and firstSection and Categories.Takes(key)
-                if #block.entries == 0 and not (block.own and not query and firstSection) then used = used - 1 end
+                if #block.entries == 0 and (query or not firstSection) then used = used - 1 end
             end
         end
     end

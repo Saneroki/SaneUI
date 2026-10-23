@@ -13,6 +13,21 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   for its own share (the instances' far renders) with a `done` pattern: before, the runner could never see it
   finished and dropped it after three tries.
 
+### Inventory: every category shown, its empty slots take items (Saneroki, 2026-10-23)
+- Saneroki asked that every category's line of slots stays visible when it is empty, and that the empty slots work
+  like real ones: an item let go there goes into the bags and into that category; on Junk it is marked as junk,
+  on any other category the junk mark comes off.
+- `Views.lua`: All Items keeps an empty category or group (not while searching, not in the bank). `Layout.lua`: in
+  the grid every block gets its line of pads, and a pad knows its block. `Cells.lua` (`Pool:Pad`): a pad of a
+  category that takes items takes an item let go or clicked on it (`Menus.Drop`), lit while one is brought over it,
+  the category's tooltip; drawn stronger than the inert pads.
+- `Menus.Drop(key, stow)`: in the bags' window (its heads, "+", pads and sidebar rows) the item is stowed: one taken
+  out of a bag (its slot locked) goes back to its slot, one from elsewhere (the bank, what is worn) into the first
+  free slot of the ordinary bags (`C_Container.PickupContainerItem`), with none free back where it came from. The
+  bank's window keeps the item where it was. Assigning to another category takes a junk mark off (as before).
+- `dev/tests/bags.lua`: the empty categories in All Items, the grid's pads, drops on Junk's and Trade Goods' empty
+  slots, an item from outside the bags stowed (278 checks).
+
 ### Core: the journal's window no longer freezes the game (2026-10-23)
 - Opening the inventory froze the game until the client stopped the script ("script ran too long" in
   `Journal.lua`): the edges' and the bottom's tiles were laid by stepping a remainder, which in floating point can

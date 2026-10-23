@@ -277,8 +277,32 @@ function Menus.Takes(key)
     return key == Categories.PINNED or key ~= nil and Categories.Takes(key)
 end
 
--- The item on the cursor let go over a category: put into it (Pinned: pinned), back to its slot.
-function Menus.Drop(key)
+-- The item on the cursor put into the bags: one taken out of a bag (its slot locked while it is held) back to its
+-- slot; one from elsewhere (the bank, what is worn) into the first free slot of the ordinary bags that takes it;
+-- with none free, back where it came from.
+local function Stow(id)
+    local container = rawget(_G, "C_Container") or {}
+    local carried = ns.Bags.Carried()
+    for _, record in ipairs(carried.slots) do
+        if record.item == id and record.locked then return ClearCursor() end
+    end
+    local pickup = container.PickupContainerItem or rawget(_G, "PickupContainerItem")
+    local holding = rawget(_G, "CursorHasItem")
+    if pickup and holding then
+        for _, record in ipairs(carried.slots) do
+            if not record.item and record.bag ~= ns.Contents.KEYRING and not ns.Contents.Reagent(record.bag) then
+                Core.Ask(pickup, record.bag, record.slot)
+                if not Core.Ask(holding) then return end
+            end
+        end
+    end
+    ClearCursor()
+end
+
+-- The item on the cursor let go over a category: put into it (Pinned: pinned; Junk: marked as junk; any other:
+-- assigned to it, which takes a junk mark off), then back to its slot; stow: in the bags' window, an item from
+-- elsewhere goes into the bags (Stow).
+function Menus.Drop(key, stow)
     if not Menus.Takes(key) then return false end
     local kind, id = Core.Ask(rawget(_G, "GetCursorInfo"))
     id = Core.Plain(id)
@@ -290,7 +314,7 @@ function Menus.Drop(key)
     else
         Categories.Assign(id, key)
     end
-    ClearCursor()
+    if stow then Stow(id) else ClearCursor() end
     Changed()
     return true
 end
