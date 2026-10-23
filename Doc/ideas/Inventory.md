@@ -142,8 +142,8 @@ for the title line's pencil lines, *View* and *Sell All Junk Items* pencil boxes
 
 **Built (2026-10-23), Saneroki asked:** items and empty slots twice the game's size (68), the bags' strip the same
 size and look; a waste bin, a pencil drawing (`assets/interface/bags-trash.png`, made with
-`dev/imagegen/sets/bags/trash.txt`, bucket-1), at the sidebar's foot: an item let go there opens the game's own
-question to destroy it.
+`dev/imagegen/sets/bags/trash.txt`, bucket-1), Junk's first slot (Saneroki asked: the bin, the junk, the empty
+slot): an item let go there opens the game's own question to destroy it.
 
 **Built (2026-10-23), Saneroki asked:** the doll's model down onto the strap drawn under the hero's column, a
 quarter larger again (1.5625 times its place), turned by the left button's drag and zoomed by the wheel (the game's

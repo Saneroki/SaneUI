@@ -176,7 +176,7 @@ end
 --  A sidebar's rows, anew
 -------------------------------------------------------------------------------
 function Rail:Width()
-    return self.folded and (self.narrow or Sidebar.FOLDED) or Sidebar.WIDTH
+    return self.folded and Sidebar.FOLDED or Sidebar.WIDTH
 end
 
 -- Folded to its narrow edge (the arrow alone) or unfolded; the window is told (its fold).
@@ -478,12 +478,10 @@ end
 
 -- A sidebar in body, under top and above bottom. options: { word (its head's), choose(view), drop(row), menu(row),
 -- add(row), tip(row) (a row's own tooltip: true when it showed one), aim(held, over, part) and place(held, over,
--- where) for rows dragged, fold(on) (the arrow's click: the window folds it, Rail:Fold), narrow (its width
--- folded: Sidebar.FOLDED, or more for what stands at its foot) }.
+-- where) for rows dragged, fold(on) (the arrow's click: the window folds it, Rail:Fold) }.
 function Sidebar.New(body, top, bottom, options)
     local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add,
-                                tip = options.tip, aim = options.aim, place = options.place,
-                                narrow = options.narrow }, Rail)
+                                tip = options.tip, aim = options.aim, place = options.place }, Rail)
     local frame = CreateFrame("Frame", nil, body)
     frame:SetWidth(Sidebar.WIDTH)
     frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
@@ -629,11 +627,6 @@ function Bag.DivideGroup(row)
     if ns.Bank then ns.Bank.Refresh() end
 end
 
--- Room kept free at the sidebar's foot (the bags' waste bin stands there), its rows scrolling above it.
-function Bag.Room(bottom)
-    if rail then rail.scroll:SetPoint("BOTTOMRIGHT", 0, bottom) end
-end
-
 -- Folded or unfolded (Bags.Fold keeps it).
 function Bag.Fold(on)
     if rail then rail:Fold(on) end
@@ -719,7 +712,6 @@ function Bag.Build(body, top, bottom, bags)
         aim = Bag.Aim,
         place = Bag.Place,
         fold = function(on) ns.Bags.Fold(on) end,
-        narrow = ns.Bags.TRASH_FOLDED,
     })
     Bag.frame = rail.frame
     return rail.frame

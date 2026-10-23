@@ -21,9 +21,7 @@ local _, ns = ...
 --                   does), the dropdown View: the display (Layout.LOOKS),
 --                   what sorts the items (Contents.ORDERS), what is shown
 --      the sidebar  at the left: the views and the categories (Sidebar.lua); folded by its
---                   arrow to a narrow edge, the strip of the bags hidden with it (kept); at its foot
---                   the waste bin, a pencil drawing: an item let go there is offered to be
---                   destroyed in the game's own dialog, as when it is dropped into the world
+--                   arrow to a narrow edge, the strip of the bags hidden with it (kept)
 --      the body     a scroll area (no scroll bar: the wheel scrolls it) with the view chosen as its blocks laid out
 --                   (Views.lua, Layout.lua) and drawn (Canvas.lua), each item
 --                   the game's own item button (Cells.lua); the bank has a
@@ -54,8 +52,6 @@ Bags.INSET = 8       -- from the scroll area's left to the items
 Bags.SCROLL = 20     -- room at the right for the game's scroll bar (the bank's)
 Bags.RIGHT = 6       -- room at the right of the bags' items (no scroll bar there)
 Bags.STEP = 56       -- the wheel's step: a line of items
-Bags.TRASH = 84      -- the waste bin's room at the sidebar's foot
-Bags.TRASH_FOLDED = 52 -- the sidebar folded: just wide enough for the bin, which always shows
 Bags.BAR = 18        -- the bar on the title line, inside the label's pencil lines
 Bags.PAGE_BAR = 35   -- a bar on the page (the bank's)
 Bags.BAR_BUTTON = 24 -- a button on a bar of the page (the bank's, the alts')
@@ -468,7 +464,6 @@ end
 function Bags.Fold(on)
     kept.side = not on
     Sidebar.Fold(on)
-    Bags.Bin()
     Strip()
     Bags.Size()
 end
@@ -592,67 +587,6 @@ local function Back()
     end
 end
 
--------------------------------------------------------------------------------
---  The waste bin
--------------------------------------------------------------------------------
--- The item on the cursor offered to be destroyed, in the game's own dialog as when it is dropped into the world
--- (the game's DELETE_ITEM_CONFIRM: a rare or better item but an heirloom is typed out, a quest item says so); its
--- Yes is the game's DeleteCursorItem. Nothing on the cursor: nothing.
-local function Trash()
-    local kind, id, link = Core.Ask(rawget(_G, "GetCursorInfo"))
-    id = Core.Plain(id)
-    if kind ~= "item" or type(id) ~= "number" then return end
-    local show = rawget(_G, "StaticPopup_Show")
-    if not show then return end
-    local name, _, quality, _, _, _, _, _, _, _, _, class = Core.Ask(rawget(_G, "GetItemInfo"), link or id)
-    local qualities = Enum and Enum.ItemQuality or {}
-    local good = type(quality) == "number" and quality >= (qualities.Rare or 3) and quality ~= (qualities.Heirloom or 7)
-    local quest = class == (Enum and Enum.ItemClass and Enum.ItemClass.Questitem or 12)
-    local which = good and (quest and "DELETE_GOOD_QUEST_ITEM" or "DELETE_GOOD_ITEM")
-        or (quest and "DELETE_QUEST_ITEM" or "DELETE_ITEM")
-    show(which, Core.Plain(name) or (type(link) == "string" and link:match("%[(.-)%]")) or tostring(id))
-end
-
-local function TrashEnter(bin)
-    bin.picture:SetAlpha(GetCursorInfo() == "item" and 1 or 0.75)
-    GameTooltip:SetOwner(bin, "ANCHOR_RIGHT")
-    GameTooltip:SetText(ns.TEXT.bagsTrash, 1, 1, 1)
-    GameTooltip:AddLine(ns.TEXT.bagsTrashTip, 1, 0.82, 0, true)
-    GameTooltip:Show()
-end
-
-local function TrashLeave(bin)
-    bin.picture:SetAlpha(0.55)
-    GameTooltip:Hide()
-end
-
--- The bin's drawing as large as its room lets it be (the sidebar folded: small).
-function Bags.Bin()
-    local bin = Bags.trash
-    if not bin then return end
-    local size = math.min(Bags.TRASH - 12, Sidebar.Width() - 8)
-    bin.picture:SetSize(size, size)
-end
-
--- The bin at the sidebar's foot, its rows above it.
-local function MakeTrash()
-    local bin = CreateFrame("Button", nil, side)
-    bin:SetPoint("BOTTOMLEFT")
-    bin:SetPoint("BOTTOMRIGHT")
-    bin:SetHeight(Bags.TRASH)
-    bin:SetFrameLevel(side:GetFrameLevel() + 5)
-    bin.picture = Core.Journal.Texture(bin, "trash", "ARTWORK")
-    bin.picture:SetPoint("CENTER")
-    bin.picture:SetAlpha(0.55)
-    bin:SetScript("OnReceiveDrag", ns.Guard(Trash))
-    bin:SetScript("OnClick", ns.Guard(Trash))
-    bin:SetScript("OnEnter", ns.Guard(TrashEnter))
-    bin:SetScript("OnLeave", ns.Guard(TrashLeave))
-    Bags.trash = bin
-    Sidebar.Room(Bags.TRASH)
-    Bags.Bin()
-end
-
 -- The wheel over the items: a line of them up or down, never past the ends.
 local function Wheel(delta)
     local most = scroll.GetVerticalScrollRange and scroll:GetVerticalScrollRange()
@@ -669,7 +603,6 @@ function Bags.Build(made)
     Foot.Build(body, coin, strip)
     side = Sidebar.Build(body, strip, Foot.frame, kept)
     Sidebar.Fold(kept.side == false)
-    MakeTrash()
     columns = Columns.Build(body, function() Bags.Redraw() end)
     scroll = CreateFrame("ScrollFrame", nil, body)
     scroll:EnableMouseWheel(true)

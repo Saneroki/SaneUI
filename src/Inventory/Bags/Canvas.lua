@@ -256,6 +256,59 @@ function Sheet:Plus(place)
     plus:Show()
 end
 
+-- Junk's first slot, the waste bin: a pencil slot with the bin's drawing in it; an item let go there (or clicked
+-- onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
+Canvas.BIN = 0.12      -- the drawing so far inside the slot, each side (of its size)
+local function BinDrop()
+    Menus.Destroy()
+end
+
+local function BinEnter(bin)
+    bin.picture:SetAlpha(1)
+    bin.lit:SetShown(GetCursorInfo() == "item")
+    GameTooltip:SetOwner(bin, "ANCHOR_TOP")
+    GameTooltip:SetText(ns.TEXT.bagsTrash, 1, 1, 1)
+    GameTooltip:AddLine(ns.TEXT.bagsTrashTip, 1, 0.82, 0, true)
+    GameTooltip:Show()
+end
+
+local function BinLeave(bin)
+    bin.picture:SetAlpha(0.7)
+    bin.lit:Hide()
+    GameTooltip:Hide()
+end
+
+local function MakeBin(canvas)
+    local bin = CreateFrame("Button", nil, canvas.child)
+    Core.Journal.Slot(bin, 1, "BACKGROUND")
+    local shade = ns.Paper.SHADE
+    bin.lit = bin:CreateTexture(nil, "BORDER")
+    bin.lit:SetAllPoints()
+    bin.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
+    bin.lit:Hide()
+    bin.picture = Core.Journal.Texture(bin, "trash", "ARTWORK")
+    bin.picture:SetAlpha(0.7)
+    bin:SetScript("OnClick", ns.Guard(BinDrop))
+    bin:SetScript("OnReceiveDrag", ns.Guard(BinDrop))
+    bin:SetScript("OnEnter", ns.Guard(BinEnter))
+    bin:SetScript("OnLeave", ns.Guard(BinLeave))
+    return bin
+end
+
+function Sheet:Bin(place)
+    local bin = self.bins:Take()
+    bin:ClearAllPoints()
+    bin:SetPoint("TOPLEFT", self.child, "TOPLEFT", place.x + Canvas.INSET, -place.y)
+    bin:SetSize(place.size, place.size)
+    bin:SetFrameLevel(self.child:GetFrameLevel() + 3)
+    local inset = place.size * Canvas.BIN
+    bin.picture:ClearAllPoints()
+    bin.picture:SetPoint("TOPLEFT", inset, -inset)
+    bin.picture:SetPoint("BOTTOMRIGHT", -inset, inset)
+    bin.lit:Hide()
+    bin:Show()
+end
+
 -------------------------------------------------------------------------------
 --  The list's lines
 -------------------------------------------------------------------------------
@@ -358,6 +411,7 @@ function Sheet:Draw(blocks, room, how)
     self.rows:Begin()
     self.labels:Begin()
     self.pluses:Begin()
+    self.bins:Begin()
     cells:Begin()
     for button in pairs(self.rowOf) do self.rowOf[button] = nil end
     local x = Canvas.INSET
@@ -369,6 +423,8 @@ function Sheet:Draw(blocks, room, how)
             self:Label(place)
         elseif place.kind == "plus" then
             self:Plus(place)
+        elseif place.kind == "bin" then
+            self:Bin(place)
         else
             local entry = place.entry
             local button = cells:Take()
@@ -395,6 +451,7 @@ function Sheet:Draw(blocks, room, how)
     self.rows:Done()
     self.labels:Done()
     self.pluses:Done()
+    self.bins:Done()
     return height + Canvas.INSET
 end
 
@@ -407,6 +464,7 @@ function Canvas.New(child, owner)
     canvas.rows = Core.Pool(function() return MakeRow(canvas) end)
     canvas.labels = Core.Pool(function() return MakeLabel(canvas) end)
     canvas.pluses = Core.Pool(function() return MakePlus(canvas) end)
+    canvas.bins = Core.Pool(function() return MakeBin(canvas) end)
     canvas.measurer = function(block) return Measure(canvas, block) end
     return canvas
 end

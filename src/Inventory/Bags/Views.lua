@@ -42,7 +42,8 @@ local _, ns = ...
 --          empty slot goes: "group:<group>"; else its key), own (the
 --          player's own: shown when empty), slots (the bags as they are:
 --          empty slots are cells too), plus (a "+" after its cells, to put
---          an item in: Pinned, a category that takes items) }
+--          an item in: Pinned, a category that takes items), bin (Junk's:
+--          the waste bin before its cells) }
 --  Pinned is shown with its "+" when it is empty too (not while searching).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -75,7 +76,7 @@ local function Block(word, level)
     for index = #block.entries, 1, -1 do block.entries[index] = nil end
     block.word, block.level, block.number = word, level or 2, nil
     block.key, block.group, block.own, block.slots, block.section, block.spare = nil, nil, false, false, nil, false
-    block.plus, block.title, block.bare, block.drop = false, false, false, nil
+    block.plus, block.title, block.bare, block.drop, block.bin = false, false, false, nil, false
     return block
 end
 
@@ -234,6 +235,7 @@ local function ByCategories(section, query, order, merge)
                 block.key = key
                 block.own = Categories.Own(key)
                 block.plus = plus and firstSection and Categories.Takes(key)
+                block.bin = block.plus and key == Categories.JUNK
                 if #block.entries == 0 and (query or not firstSection) then used = used - 1 end
             end
         end
@@ -327,6 +329,7 @@ function Views.Build(view, sections, query, order, options, store)
                 block.key = single
                 block.own = Categories.Own(single)
                 block.plus = plus and bags and Categories.Takes(single)
+                block.bin = block.plus and single == Categories.JUNK
             end
         elseif group then
             local lists = ByCategory(section)

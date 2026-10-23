@@ -1407,10 +1407,15 @@ toggle:GetScript("OnClick")(toggle)
 check(not Bags.strip:IsShown() and kept.strip == false, "its button hides the strip, kept")
 toggle:GetScript("OnClick")(toggle)
 check(Bags.strip:IsShown() and kept.strip, "and shows it again")
--- The waste bin at the sidebar's foot: an item let go there is offered to be destroyed in the game's own dialog.
+-- Junk's first slot is the waste bin: an item let go there is offered to be destroyed in the game's own dialog.
 do
-    local bin = Bags.trash
-    check(bin and bin:IsShown() and bin.picture._texture:find("trash"), "the waste bin, a pencil drawing, at the sidebar's foot")
+    local bin
+    for _, widget in ipairs(W.frames) do
+        if widget.picture and widget.lit and widget:IsShown() and (widget.picture._texture or ""):find("trash") then bin = widget end
+    end
+    local junkPlus = PlusOf("junk")
+    check(bin and junkPlus and -bin._points[1][5] == -junkPlus._points[1][5] and bin._points[1][4] < junkPlus._points[1][4],
+        "Junk: the waste bin first, on its line, before its items and its empty slot")
     local popups = #W.popups
     bin:GetScript("OnReceiveDrag")(bin)
     check(#W.popups == popups, "nothing on the cursor: nothing asked")
@@ -1422,8 +1427,7 @@ do
 end
 local sideFrame = ns.BagSidebar.frame
 ns.Bags.Fold(true)
-check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Bags.TRASH_FOLDED
-    and Bags.trash:IsShown() and Bags.trash.picture:GetWidth() == ns.Bags.TRASH_FOLDED - 8,
+check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.FOLDED,
     "the sidebar folded to its edge: the strip of the bags hidden with it, kept")
 toggle:GetScript("OnClick")(toggle)
 check(kept.side and Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.WIDTH,

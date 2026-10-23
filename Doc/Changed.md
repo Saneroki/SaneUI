@@ -308,6 +308,12 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: the waste bin is Junk's first slot (2026-10-23)
+- The bin leaves the sidebar (`MakeTrash`, `Bags.Bin`, `Bags.TRASH`, `TRASH_FOLDED`, the rail's `narrow`,
+  `BagSidebar.Room` gone): Junk's block has `block.bin` (`Views`), the layout a `bin` place before its cells
+  (`Layout`), the canvas a pencil slot with the drawing (`Sheet:Bin`, `Canvas.BIN`); its drop and click
+  `Menus.Destroy` (moved from `Bags.lua`), the game's own question to destroy the item.
+
 ### Inventory: the waste bin shows with the sidebar folded (2026-10-23)
 - Folded, the bags' sidebar is `Bags.TRASH_FOLDED` (52) wide (the rail's `narrow`), the bin's drawing 44 in it.
 

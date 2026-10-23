@@ -341,6 +341,25 @@ function Menus.Home(stow)
     return true
 end
 
+-- The item on the cursor offered to be destroyed (the waste bin, Junk's first slot), in the game's own dialog as
+-- when it is dropped into the world (the game's DELETE_ITEM_CONFIRM: a rare or better item but an heirloom is typed
+-- out, a quest item says so); its Yes is the game's DeleteCursorItem. Nothing on the cursor: nothing.
+function Menus.Destroy()
+    local kind, id, link = Core.Ask(rawget(_G, "GetCursorInfo"))
+    id = Core.Plain(id)
+    if kind ~= "item" or type(id) ~= "number" then return false end
+    local show = rawget(_G, "StaticPopup_Show")
+    if not show then return false end
+    local name, _, quality, _, _, _, _, _, _, _, _, class = Core.Ask(rawget(_G, "GetItemInfo"), link or id)
+    local qualities = Enum and Enum.ItemQuality or {}
+    local good = type(quality) == "number" and quality >= (qualities.Rare or 3) and quality ~= (qualities.Heirloom or 7)
+    local quest = class == (Enum and Enum.ItemClass and Enum.ItemClass.Questitem or 12)
+    local which = good and (quest and "DELETE_GOOD_QUEST_ITEM" or "DELETE_GOOD_ITEM")
+        or (quest and "DELETE_QUEST_ITEM" or "DELETE_ITEM")
+    show(which, Core.Plain(name) or (type(link) == "string" and link:match("%[(.-)%]")) or tostring(id))
+    return true
+end
+
 -- A category head's tooltip: what can be done there.
 function Menus.Tip(owner, key, group)
     local tip = GameTooltip

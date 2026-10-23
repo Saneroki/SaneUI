@@ -26,7 +26,7 @@ local _, ns = ...
 --
 --      local count, height = Layout.Lay(look, blocks, width, out, measure)
 --      measure(block): how wide its head's words are (the grid; nil: as wide as its cells)
---      out: the places, used again: out[i] = { kind = "head" | "cell" | "plus" | "row" | "label", x, y,
+--      out: the places, used again: out[i] = { kind = "head" | "cell" | "bin" | "plus" | "row" | "label", x, y,
 --           width, height, size (a cell's, a row's item), entry (a cell's or row's), block (a head's,
 --           a label's, a cell's), level (a head's: 1 a part, 2 a block, 3 a group's member) }
 -------------------------------------------------------------------------------
@@ -77,14 +77,20 @@ end
 
 -- How many cells a block shows: its items, and its first empty slot (block.plus).
 local function Slots(block)
-    return #block.entries + (block.plus and 1 or 0)
+    return #block.entries + (block.plus and 1 or 0) + (block.bin and 1 or 0)
 end
 
--- A block's cells in lines from x and top, columns to a line, then its empty slot (block.plus); returns the lines
--- taken.
+-- A block's cells in lines from x and top, columns to a line (Junk's waste bin before them, block.bin), then its
+-- empty slot (block.plus); returns the lines taken.
 local function Cells(block, x, top, columns)
     local step = Layout.SIZE + Layout.GAP
     local column, line = 0, 0
+    if block.bin then -- Junk's waste bin, first
+        local place = Place("bin")
+        place.x, place.y, place.width, place.height = x, top, Layout.SIZE, Layout.SIZE
+        place.size, place.block = Layout.SIZE, block
+        column = 1
+    end
     for _, entry in ipairs(block.entries) do
         if column >= columns then
             column = 0

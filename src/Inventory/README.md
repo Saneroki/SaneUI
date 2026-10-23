@@ -95,9 +95,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     one part with all its items and one empty slot. An item let go anywhere over the window where nothing else
     takes it (the paper, the title line, the foot) goes into your bags, into the category the rules give it
     (what you put it into taken off). The items scroll with the mouse wheel; no scroll bar. Items and empty slots
-    are half again the game's size, the bags in the strip too, in the same look. At the sidebar's foot a waste bin
-    (a pencil drawing, there too while the sidebar is folded, which stays just wide enough for it,
-    `Bags.TRASH_FOLDED`): an item let go there is offered to be destroyed in the game's own dialog, as when you
+    are half again the game's size, the bags in the strip too, in the same look. Junk's first slot is a waste bin
+    (a pencil drawing in a pencil slot; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
+    `Menus.Destroy`): an item let go there or clicked onto it is offered to be destroyed in the game's own dialog, as when you
     drop it into the world (a rare item or better is typed out). *Pinned Items* and *Recent Items* (what
     came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
     item show as one with their count added up (gear never; not at a vendor, the bank, the mail, a trade or the
