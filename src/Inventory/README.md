@@ -482,7 +482,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     highlight and the press share the game's mask of an item button's icon with rounded corners (`Cells.ROUNDED`,
     `Cells.Mask`; a circle, `Cells.CIRCLE`, for the list's round icons, `Cells.Round`); ours beside them in a table
     of our own: above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
-    that starts a quest, the junk coin; an empty slot the pencil slot alone.
+    that starts a quest, the junk coin; an empty slot the pencil slot alone, at half strength (`Cells.EMPTY_SLOT`; so too the end of a block's "+" slot and an empty bag slot in the strip).
     Drawn by the template's own functions (`SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`,
     `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
     `OnClick` and `OnMouseUp` light a list's line, open the item's menu (Alt and the right button, which the

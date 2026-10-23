@@ -227,7 +227,7 @@ end
 local function MakePlus(canvas)
     local plus = CreateFrame("Button", nil, canvas.child)
     plus.canvas = canvas
-    Core.Journal.Slot(plus, 1, "BACKGROUND")
+    Core.Journal.Slot(plus, 1, "BACKGROUND"):SetAlpha(Cells.EMPTY_SLOT)
     local shade = ns.Paper.SHADE
     plus.lit = plus:CreateTexture(nil, "BORDER")
     plus.lit:SetAllPoints()

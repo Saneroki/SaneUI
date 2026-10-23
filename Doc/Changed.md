@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: empty slots at half strength (Saneroki, 2026-10-23)
+- An empty slot's pencil lines are drawn at `Cells.EMPTY_SLOT` 0.5, less distracting: empty cells (back to full
+  when an item comes), a block's "+" slot (`Canvas`) and an empty bag slot in the strip (`Foot`).
+
 ### Inventory: the waste bin strong and dark (Saneroki, 2026-10-23)
 - The bin's drawing was faint on the paper (its darkest lines some 40 % graphite). `dev/tools/journal-art` now makes
   its darkest lines full graphite, lifts the lighter ones and thickens every line a little (`trash.blp` rebuilt,

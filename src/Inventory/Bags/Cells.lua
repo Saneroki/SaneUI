@@ -42,6 +42,7 @@ Cells.CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
 Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its pencil slot, a breath of graphite
 Cells.EMPTY_ALPHA = 0.04
+Cells.EMPTY_SLOT = 0.5                  -- an empty slot's pencil lines (Saneroki, 2026-10-23: less distracting)
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
@@ -285,6 +286,7 @@ local function Empty(button, mine)
     if icon then icon:Hide() end
     mine.empty:Show()
     mine.empty:SetAlpha(Cells.EMPTY_ALPHA)
+    mine.slot:SetAlpha(Cells.EMPTY_SLOT)
     Plain(mine)
     local cooldown = Part(button, "Cooldown")
     if cooldown and cooldown.Clear then cooldown:Clear() end
@@ -306,6 +308,7 @@ function Pool:Draw(button, record, how)
     Game("ClearItemButtonOverlay", button)
     if not record.item then return Empty(button, mine) end
     mine.empty:Hide()
+    mine.slot:SetAlpha(1)
     local icon = Part(button, "icon")
     if icon then icon:Show() end
     Call(button, "SetHasItem", record.icon)

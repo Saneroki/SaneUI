@@ -122,6 +122,7 @@ local function BagClick(button)
 end
 
 local frees = {}  -- [button] = how many of its slots are free, on it
+local slotOf = {} -- [button] = its pencil slot, half drawn while no bag is in it (ns.Cells.EMPTY_SLOT)
 
 local function MakeBag(index)
     local made, button = pcall(CreateFrame, "ItemButton", nil, strip)
@@ -129,7 +130,7 @@ local function MakeBag(index)
     button:SetSize(Foot.BAG, Foot.BAG)
     -- a pencil slot on the paper, the bag's icon in it (Core.Journal)
     local inset = Foot.BAG * Core.Journal.SLOT_ICON
-    Core.Journal.Slot(button, 1, "BACKGROUND")
+    slotOf[button] = Core.Journal.Slot(button, 1, "BACKGROUND")
     local face = CreateFrame("Frame", nil, button)
     face:SetPoint("TOPLEFT", inset, -inset)
     face:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -202,6 +203,7 @@ function Foot.Bags()
         Game("SetItemButtonTexture", button, picture)
         local icon = ns.Cells.Part(button, "icon")
         if icon then icon:SetShown(picture ~= nil) end
+        slotOf[button]:SetAlpha(picture and 1 or ns.Cells.EMPTY_SLOT)
         local size = Contents.Size(bag)
         local left = size > 0 and Core.Plain(Core.Ask(api.GetContainerNumFreeSlots, bag)) or nil
         frees[button]:SetText(left and tostring(left) or "")
