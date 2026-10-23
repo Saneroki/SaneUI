@@ -7,9 +7,13 @@ local _, ns = ...
 --  of the spell at its left end and the seconds left written inside the
 --  icon; right of the icon, one line: the spell's name, then the name of its
 --  target, cut short where the bar ends (its start always shows). Filling as
---  a cast goes on, emptying as a channel does; the fill in Cast.CAST,
---  Cast.CHANNEL, or Cast.LOCKED where it cannot be interrupted; Cast.BROKEN
---  for a moment when it was interrupted.
+--  a cast goes on, emptying as a channel does. Its colour says whether it can
+--  be interrupted, and whether by you now: Cast.READY while one of your
+--  interrupts (Cast.KICKS) is ready and reaches the unit, else Cast.CAST (a
+--  channel Cast.CHANNEL), Cast.LOCKED where it cannot be interrupted; looked
+--  at again every Cast.LOOK seconds while it shows. Interrupted, the bar is
+--  full in Cast.BROKEN for Cast.HOLD seconds and says so, and by whom where the
+--  game names them.
 --
 --  What the game says of the cast (UnitCastingInfo, UnitChannelInfo: name,
 --  icon, start and end, whether it can be interrupted; UnitSpellTargetName)
@@ -25,11 +29,18 @@ local Plain = Core.Plain
 local Cast = {}
 ns.Cast = Cast
 
-Cast.CAST = { 1, 0.72, 0.18 }    -- a cast's fill
+Cast.CAST = { 1, 0.72, 0.18 }    -- a cast's fill: it can be interrupted, not by you now
 Cast.CHANNEL = { 0.35, 0.75, 1 } -- a channel's
+Cast.READY = { 0.3, 0.9, 0.35 }  -- one you can interrupt now: an interrupt of yours ready, the unit in its reach
 Cast.LOCKED = { 0.6, 0.6, 0.6 }  -- one that cannot be interrupted
 Cast.BROKEN = { 1, 0.15, 0.1 }   -- an interrupted one, for a moment
-Cast.HOLD = 0.4                  -- seconds an interrupted cast stays, in Cast.BROKEN
+Cast.HOLD = 1                    -- seconds an interrupted cast stays, in Cast.BROKEN
+Cast.LOOK = 0.1                  -- seconds between looks at your interrupts while a cast shows
+Cast.GLOBAL = 1.5                -- a cooldown no longer than this is the global one: the interrupt counts as ready
+-- The classes' interrupts (every rank), from the game's tables: the spells classes learn that interrupt a cast.
+Cast.KICKS = { 1766, 1767, 1768, 1769, 6552, 6554, 72, 1671, 1672, 2139, 8042, 8044, 8045, 8046, 10412, 10413, 10414,
+               425609 }
+Cast.INTERRUPTED = rawget(_G, "INTERRUPTED") or "Interrupted" -- the game's word
 Cast.GAP = 3                     -- between the icon and the text
 -- The events of a unit's casts; each reads the cast anew (Plate.lua registers them on each plate).
 Cast.EVENTS = { "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_INTERRUPTED",
@@ -38,6 +49,47 @@ Cast.EVENTS = { "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_F
 local listened = {}
 for _, event in ipairs(Cast.EVENTS) do listened[event] = true end
 Cast.Heard = listened
+
+local kicks = {} -- your interrupts: those of Cast.KICKS you know
+
+-- Your interrupts made anew (your spells changed: Cast.Start listens).
+function Cast.Learn()
+    kicks = {}
+    local known = rawget(_G, "IsPlayerSpell")
+    for _, id in ipairs(Cast.KICKS) do
+        if Core.Ask(known, id) then kicks[#kicks + 1] = id end
+    end
+end
+
+-- Whether one of your interrupts is ready and reaches the unit: true, false, or nil where the game will not say (its
+-- cooldowns hidden in a fight, say).
+function Cast.Ready(unit)
+    if #kicks == 0 then return false end
+    local told = false
+    for _, id in ipairs(kicks) do
+        local cooldown = Core.Ask(C_Spell.GetSpellCooldown, id)
+        local start = type(cooldown) == "table" and Plain(cooldown.startTime)
+        local length = type(cooldown) == "table" and Plain(cooldown.duration)
+        if type(start) == "number" and type(length) == "number" then
+            told = true
+            local ready = length <= Cast.GLOBAL or start + length <= GetTime()
+            if ready and Core.Ask(C_Spell.IsSpellInRange, id, unit) ~= false then return true end
+        end
+    end
+    if told then return false end
+    return nil
+end
+
+-- The fill's colour for the cast on a bar: locked grey, else green while you can interrupt it now.
+local function Paint(bar)
+    local cast = bar.cast
+    local colour = cast.locked and Cast.LOCKED or (bar.unit and Cast.Ready(bar.unit) and Cast.READY)
+        or cast.channel and Cast.CHANNEL or Cast.CAST
+    if colour ~= bar.colour then
+        bar.colour = colour
+        bar.fill:SetStatusBarColor(colour[1], colour[2], colour[3])
+    end
+end
 
 -- The seconds left of the cast on a bar, its fill, its timer; hidden when it is over.
 local function Tick(bar)
@@ -50,6 +102,10 @@ local function Tick(bar)
             return bar:Hide()
         end
         return
+    end
+    if not cast.looked or now - cast.looked >= Cast.LOOK then
+        cast.looked = now
+        Paint(bar)
     end
     local left = cast.ends - now
     if left <= 0 then
@@ -155,8 +211,19 @@ local function Read(unit)
         name, icon, target
 end
 
--- A unit's cast on its plate, as the game says it now (an event of its casts, a plate filled anew).
-function Cast.Update(dress, unit, event)
+-- Who interrupted a cast, by the GUID the game gives: a name, or nil.
+local function Interrupter(guid)
+    if type(guid) ~= "string" or guid == "" then return nil end
+    local token = Core.Ask(rawget(_G, "UnitTokenFromGUID"), guid)
+    local name = token and ns.Bar.Raw(UnitName, token)
+    if type(name) ~= "nil" then return name end
+    local _, _, _, _, _, player = Core.Ask(rawget(_G, "GetPlayerInfoByGUID"), guid)
+    return player
+end
+
+-- A unit's cast on its plate, as the game says it now (an event of its casts with its cast, spell and who
+-- interrupted it; a plate filled anew).
+function Cast.Update(dress, unit, event, _, _, interruptedBy)
     local bar = dress.cast
     if not bar then return end
     if (ns.options or {}).castBar == false or not unit then
@@ -167,9 +234,14 @@ function Cast.Update(dress, unit, event)
     if event == "UNIT_SPELLCAST_INTERRUPTED" and bar.cast then
         -- A moment in red, then gone.
         bar.cast.broken = GetTime() + Cast.HOLD
+        bar.colour = Cast.BROKEN
         bar.fill:SetStatusBarColor(Cast.BROKEN[1], Cast.BROKEN[2], Cast.BROKEN[3])
         bar.fill:SetValue(1)
         bar.timer:SetText("")
+        local who = Interrupter(Plain(interruptedBy))
+        if type(who) == "nil" or not pcall(bar.text.SetFormattedText, bar.text, "%s: %s", Cast.INTERRUPTED, who) then
+            bar.text:SetText(Cast.INTERRUPTED)
+        end
         return
     end
     local cast, name, icon, target = Read(unit)
@@ -186,9 +258,8 @@ function Cast.Update(dress, unit, event)
         end
         return
     end
-    bar.cast = cast
-    local colour = cast.locked and Cast.LOCKED or cast.channel and Cast.CHANNEL or Cast.CAST
-    bar.fill:SetStatusBarColor(colour[1], colour[2], colour[3])
+    bar.cast, bar.unit, bar.colour = cast, unit, nil
+    Paint(bar)
     bar.icon:SetTexture(icon)
     if type(target) ~= "nil" then
         if not pcall(bar.text.SetFormattedText, bar.text, "%s  %s", name, target) then bar.text:SetText(name) end
@@ -197,4 +268,9 @@ function Cast.Update(dress, unit, event)
     end
     Tick(bar)
     bar:Show()
+end
+
+function Cast.Start()
+    ns.On("SPELLS_CHANGED", Core.Later(Cast.Learn))
+    Cast.Learn()
 end

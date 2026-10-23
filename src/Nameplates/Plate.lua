@@ -125,7 +125,7 @@ local function Heard(dress, event, _, ...)
     if event == "UNIT_COMBAT" then -- what it took: kind, flags, amount, school
         ns.CombatText.Hit(dress, ...)
     elseif ns.Cast.Heard[event] then
-        ns.Cast.Update(dress, unit, event)
+        ns.Cast.Update(dress, unit, event, ...) -- with the event's cast, spell and who interrupted it
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.Bar.Health(dress, unit)
         ns.Text.Health(dress, unit)

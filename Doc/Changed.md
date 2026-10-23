@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the cast bar shows when you can interrupt it, and who interrupted it (Saneroki, 2026-10-23)
+- **Colour** (`Cast.lua`): green (`Cast.READY`) while one of your interrupts is ready and reaches the unit, gold or
+  blue while it can be interrupted but not by you now, grey where it cannot; looked at every 0.1 s while the bar shows.
+  Your interrupts: `Cast.KICKS` (Kick, Pummel, Shield Bash, Counterspell, Earth Shock, Rebuke, every rank, from the
+  game's tables) you know (`IsPlayerSpell`, `Cast.Learn` at `SPELLS_CHANGED`); ready by `C_Spell.GetSpellCooldown`
+  (the global cooldown counts as ready), in reach by `C_Spell.IsSpellInRange`.
+- **Interrupted:** full and red for a second (`Cast.HOLD` 1, was 0.4), the text the game's *Interrupted* and who did it
+  (the event's `interruptedBy`, Plate.lua now hands the event's payload on).
+- Tests: 207 checks.
+
 ### Inventory: the stats window shows its stats; only the stats (Saneroki, 2026-10-23)
 - **Fixed:** the page stayed empty in the game: a stat's line had no font until the layout, but the game's function
   writes into it first, and the game refuses words without a font ("Font not set"). `Row` gives `Label` and `Value`

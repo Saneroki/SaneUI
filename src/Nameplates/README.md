@@ -60,8 +60,11 @@ fails, every plate is the game's own again.
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
 - **Cast bar:** under the bar, without a gap, as wide and as high as it: the spell's icon at its left end with the
   seconds left inside it, then the spell's name and its target's on one line, cut where the bar ends (the start
-  always shows); filling as a cast goes on, emptying as a channel does, grey where it cannot be interrupted, a moment
-  red when interrupted. Where the game hides a cast's times from addons, its own cast bar shows that one. Setting
+  always shows); filling as a cast goes on, emptying as a channel does. Its colour says whether it can be interrupted
+  and whether by you now: green while one of your interrupts (Kick, Pummel, Shield Bash, Counterspell, Earth Shock,
+  Rebuke) is ready and reaches the unit, gold (a channel blue) while it can be interrupted but not by you now, grey
+  where it cannot be interrupted. Interrupted, it is full and red for a second and says *Interrupted*, with who did
+  it where the game names them. Where the game hides a cast's times from addons, its own cast bar shows that one. Setting
   *Cast bar*.
 - **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
   foe's buffs stand left of the icons there.
@@ -210,8 +213,14 @@ fails, every plate is the game's own again.
   (`UNIT_SPELLCAST_*`, registered with Plate.EVENTS) and when a plate is filled: `UnitCastingInfo`, else
   `UnitChannelInfo` (name, icon, start, end, not interruptible), `UnitShouldDisplaySpellTargetName` and
   `UnitSpellTargetName`; the bar's guarded `OnUpdate`, only while it shows, sets the fill from start, end and
-  `GetTime` and the seconds (`%.1f` under ten). Colours `Cast.CAST`, `Cast.CHANNEL`, `Cast.LOCKED`; interrupted,
-  `Cast.BROKEN` for `Cast.HOLD` (0.4) seconds. Where the start or end is hidden (a secret value), or the setting is
+  `GetTime` and the seconds (`%.1f` under ten), and every `Cast.LOOK` (0.1) seconds the colour (`Paint`):
+  `Cast.LOCKED` where not interruptible, `Cast.READY` while `Cast.Ready` (one of your interrupts, `Cast.KICKS` known
+  by `IsPlayerSpell`, made anew at `SPELLS_CHANGED`: its `C_Spell.GetSpellCooldown` over or no longer than the global
+  one, `Cast.GLOBAL`, and `C_Spell.IsSpellInRange` not false; hidden cooldowns say nothing), else `Cast.CHANNEL` or
+  `Cast.CAST`. Interrupted (`UNIT_SPELLCAST_INTERRUPTED`): full in `Cast.BROKEN` for `Cast.HOLD` (1) second, the
+  text the game's `INTERRUPTED` and the interrupter's name (its `interruptedBy` GUID: `UnitTokenFromGUID` and
+  `UnitName`, else `GetPlayerInfoByGUID`). `Cast.KICKS`: the classes' interrupts of every rank, from the game's tables
+  (spells with the game's interrupt effect that a class skill line teaches). Where the start or end is hidden (a secret value), or the setting is
   off, ours hides and the game's `CastBarsContainer` (in `Plate.HIDDEN` otherwise) is at alpha 1 again.
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
@@ -357,3 +366,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   before goes back when it is switched off and at every logout.
 - **2026-10-23:** our own cast bar (Saneroki): under the bar, as high as it, the seconds in the spell's icon, the
   spell and its target cut to fit; the game's out of sight while ours shows.
+- **2026-10-23:** the cast bar says whether you can interrupt it now (green: your interrupt ready and in reach), and
+  an interrupted cast is red and says so, and by whom (Saneroki).
