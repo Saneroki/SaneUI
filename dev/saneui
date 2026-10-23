@@ -50,6 +50,8 @@ GROUPS = {
     "Art": {
         "atlas": (["dev/tools/atlas"], "the Atlas' painting: paint status join pack", 'paint · status · join · pack'),
         "makeimages": (["dev/tools/imagegen"], "a list of prompts through ComfyUI", 'prompts through ComfyUI'),
+        "linkprivate": (["dev/tools/private-folder", "link"], "the common folder assets/generated into the private folder (where, check)",
+                        None),
         "makecomfyapps": (["dev/tools/comfy-library"], "Sane UI's workflows and recipes as ComfyUI templates and apps",
                           None),
         "makeart": (["dev/tools/art"], "the game's textures from the drawings", None),

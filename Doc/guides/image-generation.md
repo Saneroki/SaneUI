@@ -114,8 +114,13 @@ template or an app, so Saneroki can follow the work and go on with it there hims
 ## Where pictures go (a hard rule, Saneroki, 2026-10-23)
 
 - **Test and concept pictures** (every candidate, try, contact sheet, render run, unpicked alternative) are
-  written under `assets/generated/`, which is the private work folder's (a link to it on this computer): never
-  committed here.
+  written under `assets/generated/`, never committed here.
+- **The common folder:** `assets/generated/` is a link into the private work folder (its `generated/`), so every
+  tool, list and web page keeps one path for those pictures and reaches them there; none names the private
+  folder. Its place is set in `~/.config/saneui/private.json` (`{"folder": "<path>"}`); `dev/tools/private-folder`
+  (`saneui linkprivate`; `where`, `check`) makes the link, and `dev/build` makes it by itself where it is missing,
+  moving what a real folder there held into the private one (nothing overwritten). Without the private folder (a
+  cloud session) the tools write a plain folder there, still ignored by git.
 - **`assets/` holds only** what the addon uses (the sources and the game textures made from them), the pictures
   ComfyUI and the tools read as input (the anchor, the decided picks in `assets/Concept art/UI style/`), the
   data and the fonts. A pick that nothing reads any more moves to `assets/generated/picks/`, the example set's

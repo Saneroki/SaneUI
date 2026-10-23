@@ -57,6 +57,9 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# The common folder into the private work folder (assets/generated), made where it is missing.
+"$here/dev/tools/private-folder" link --quiet || true
+
 # root: the tree the build is made from. The dev build: this folder. A release: git's copy of its tag.
 if [ -n "$release" ]; then
     commit="$(git -C "$here" rev-parse --verify --quiet "refs/tags/$release^{commit}" || true)"

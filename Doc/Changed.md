@@ -20,6 +20,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   eight unpicked alternatives of the UI style (four edges, band, buckle, chat bubble, class fan) moved to
   `assets/generated/picks/`, out of the repository. Guide: `Doc/guides/image-generation.md`, *In ComfyUI's window*,
   *Where pictures go*.
+- **The common folder:** `dev/tools/private-folder` (`saneui linkprivate`, new) makes `assets/generated` the link into
+  the private folder named in `~/.config/saneui/private.json`, moving a real folder's contents there first; `dev/build`
+  runs it. Every tool, list and web page keeps the one path.
 - Tests: `dev/tests/imagegen.py` 142 checks.
 
 ### Nameplates: combo points on the plate that holds them, none while empty (Saneroki, 2026-10-23)

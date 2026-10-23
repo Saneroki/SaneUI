@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""The private work folder's place, and the common folder every tool and web page uses to reach what is kept
+there: Sane UI's test and concept pictures and render runs (CLAUDE.md, *Where pictures go*).
+
+  assets/generated/   a link to the private folder's generated/: every candidate, try, contact sheet and render
+                      run, the picks nothing reads any more (picks/), the web pages' pictures. Tools and pages
+                      name only this path, never the private folder; the link is not committed (.gitignore).
+
+The private folder is named in ~/.config/saneui/private.json ({"folder": "<path>"}), like the newest export in
+blizzard.json. dev/build makes the link when it is missing (a new clone, another computer); a real folder
+there, left from before, has its contents moved into the private folder first, nothing overwritten.
+
+Usage:  dev/tools/private-folder [where|link|check]
+  where   print the private folder (and exit 1 when none is set)
+  link    make assets/generated the link (the default)
+  check   say whether the link is right; exit 1 when it is not
+"""
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "saneui" / "private.json"
+LINKS = {ROOT / "assets" / "generated": "generated"}   # the common folders: in the project -> in the private folder
+
+
+def folder():
+    """The private folder from this computer's settings, or None."""
+    if not CONFIG.is_file():
+        return None
+    path = Path(json.loads(CONFIG.read_text())["folder"]).expanduser()
+    return path if path.is_dir() else None
+
+
+def merge(source, target):
+    """Moves what a real folder holds into the private one, keeping what is there already."""
+    for item in source.iterdir():
+        dest = target / item.name
+        if not dest.exists():
+            shutil.move(str(item), str(dest))
+        elif item.is_dir() and dest.is_dir():
+            merge(item, dest)
+        else:
+            print(f"Left in place, the private folder has its own: {item}", file=sys.stderr)
+    if not any(source.iterdir()):
+        source.rmdir()
+
+
+def link(private, quiet=False):
+    for here, there in LINKS.items():
+        target = private / there
+        target.mkdir(parents=True, exist_ok=True)
+        if here.is_symlink():
+            if here.resolve() == target.resolve():
+                continue
+            here.unlink()
+        elif here.is_dir():
+            merge(here, target)
+            if here.exists():
+                sys.exit(f"{here.relative_to(ROOT)} still holds files: move them, then run this again")
+        here.symlink_to(os.path.relpath(target, here.parent))
+        if not quiet:
+            print(f"{here.relative_to(ROOT)} -> {target}")
+
+
+def main():
+    action = sys.argv[1] if len(sys.argv) > 1 else "link"
+    private = folder()
+    if private is None:
+        if action == "link" and "--quiet" in sys.argv:
+            return  # a computer without the private folder (a cloud session): the tools write a folder of their own
+        sys.exit(f"No private folder set: write {{\"folder\": \"<path>\"}} into {CONFIG}")
+    if action == "where":
+        print(private)
+    elif action == "link":
+        link(private, "--quiet" in sys.argv)
+    elif action == "check":
+        wrong = [h for h, t in LINKS.items() if not h.is_symlink() or h.resolve() != (private / t).resolve()]
+        for here in wrong:
+            print(f"{here.relative_to(ROOT)} is not the link into the private folder: dev/tools/private-folder link")
+        sys.exit(1 if wrong else 0)
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()
