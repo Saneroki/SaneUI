@@ -39,10 +39,10 @@ ns.Sidebars = Sidebar
 local Bag = {}
 ns.BagSidebar = Bag
 
-Sidebar.WIDTH = 160
+Sidebar.WIDTH = 180        -- room for the names at their size (ns.Paper.WORDS)
 Sidebar.FOLDED = 24        -- a folded sidebar: the arrow alone
 Sidebar.HEAD = 24
-Sidebar.ROW, Sidebar.ROW_GAP = 26, 2
+Sidebar.ROW, Sidebar.ROW_GAP = 28, 2
 Sidebar.ICON, Sidebar.ICON_SMALL = 18, 16
 Sidebar.INDENT = 16
 Sidebar.STEP = 28          -- the wheel's step
@@ -311,7 +311,7 @@ function Rail:Toggles(row, folded, ticked, fold, tick)
         square:SetAllPoints()
         square:SetAlpha(Sidebar.BOX)
         row.box.check = row.box:CreateFontString(nil, "OVERLAY")
-        row.box.check:SetFontObject(ns.Paper.Font("SaneUIBagsSideTick", Sidebar.TICK))
+        row.box.check:SetFontObject(Core.Journal.FontObject("SaneUIBagsSideTick", Sidebar.TICK)) -- as large as its box
         row.box.check:SetTextColor(ink[1], ink[2], ink[3])
         row.box.check:SetAlpha(Sidebar.MARK)
         row.box.check:SetPoint("CENTER", 1, 1)

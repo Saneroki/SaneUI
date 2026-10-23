@@ -52,6 +52,7 @@ function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, 
 function methods:SetRotation(radians) self._rotation = radians end
 function methods:SetTexCoord(...) self._coords = { ... } end
 function methods:SetDesaturated(on) self._grey = on end
+function methods:SetFont(file, size, flags) self._font = { file, size, flags } end
 function methods:GetStringWidth() return #(self._text or "") * 6 end
 function methods:GetTextWidth() return #(self._text or "") * 6 end
 function methods:SetVerticalScroll(value) self._scrolled = value end
@@ -897,6 +898,15 @@ check(plus.icon._texture == Categories.ART .. "trade" and plus.icon:GetAlpha() =
     and plus.icon._coords[1] == 0 and plus.icon:GetWidth() == plus:GetWidth() * ns.Canvas.SLOT_ICON
     and PlusOf("pinned").icon._texture == Categories.ART .. "pinned",
     "an empty slot shows its category's drawing in its middle, whole and faded to a subtle grey")
+do
+    local PX, words = SaneUI.Core.Journal.PX, ns.Paper.WORDS
+    check(words > 1 and math.abs(SaneUIBagsSideLabel._font[2] - 15 * words * PX) < 1e-9
+        and math.abs(SaneUIBagsHead._font[2] - 16 * words * PX) < 1e-9
+        and math.abs(SaneUIBagsMember._font[2] - 13 * words * PX) < 1e-9
+        and math.abs(SaneUIBagsSideTick._font[2] - ns.Sidebars.TICK * PX) < 1e-9
+        and Layout.HEAD == ns.Paper.Fit(20) and Layout.HEAD > 20,
+        "every word of the bags' view larger by Paper.WORDS, its heads' lines with it; a box's tick as large as its box")
+end
 holding = 118
 plus:GetScript("OnClick")(plus)
 check(kept.assigned[118] == "trade" and holding == nil, "an item brought to a +: into that category")

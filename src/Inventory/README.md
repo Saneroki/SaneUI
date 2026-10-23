@@ -509,7 +509,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     reagent bag's, the special bags' or a group, which take none), in the grid and the compact display; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`. In its middle its category's drawing
     (a group's, `Categories.GroupIcon`; a game icon a player chose grey, cut round its edge), `Canvas.SLOT_ICON`
-    (0.6) of the slot's side at `Canvas.SLOT_FADE` (0.18): a subtle grey on the paper.
+    (0.75) of the slot's side at `Canvas.SLOT_FADE` (0.3): a grey on the paper.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
     journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
     narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Core's journal piece `arrow`, a pencil chevron
@@ -609,7 +609,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Bindings.xml` | Inventory's key in the game's key bindings |
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which wear the journal (`Board.DRESS`), their bodies' sizes |
-| `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule, the dropdown in a pencil box |
+| `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam (every word `Paper.WORDS` times its first size, the heights laid out for words grown by `Paper.Fit`), a rule, the dropdown in a pencil box |
 | `Sheet/Doll.lua` | The character's doll: its picture, its slots and strips, a strip's words |
 | `Sheet/Slots.lua` | The character sheet's equipment slots, in the doll's slots, and their strips |
 | `Sheet/Model.lua` | The character sheet's model, still, in the doll's hero's place |

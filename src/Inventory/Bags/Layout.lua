@@ -35,14 +35,14 @@ ns.Layout = Layout
 
 Layout.SIZE = 51         -- an item button, an empty slot (Saneroki, 2026-10-23: half again the game's 34)
 Layout.GAP = 5           -- between two
-Layout.ROW = 24          -- a list's line
+Layout.ROW = ns.Paper.Fit(24)     -- a list's line (its words' size: ns.Paper.WORDS)
 Layout.ICON = 20         -- its item button
-Layout.HEAD = 20         -- a head line
+Layout.HEAD = ns.Paper.Fit(20)    -- a head line
 Layout.HEAD_GAP = 2      -- under it
 Layout.APART = 6         -- room after a block
-Layout.MEMBER = 16       -- a group's member's head
+Layout.MEMBER = ns.Paper.Fit(16)  -- a group's member's head
 Layout.BAND_GAP = 14     -- between two blocks side by side
-Layout.LABEL = 15        -- a block's name over it (compact)
+Layout.LABEL = ns.Paper.Fit(15)   -- a block's name over it (compact)
 Layout.LABEL_GAP = 3
 
 Layout.LOOKS = {

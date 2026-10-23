@@ -20,16 +20,22 @@ Paper.SHADE = J.SHADE                              -- the mouse on a row, a head
 Paper.CHOSEN = J.CHOSEN                            -- a chosen row
 Paper.ZEBRA = { J.INK[1], J.INK[2], J.INK[3], 0.035 } -- every other line of a list
 Paper.RULE_ALPHA = 0.8
+Paper.WORDS = 1.2   -- every word of these windows this much larger than first drawn (Saneroki, 2026-10-23: to be read)
+
+-- A height or width laid out for words at their first size, grown with them.
+function Paper.Fit(n)
+    return math.floor(n * Paper.WORDS + 0.5)
+end
 
 -- A font object of Kalam in graphite (size in 1080p pixels), made once by its name.
 function Paper.Font(name, size, bold, flags)
-    return J.FontObject(name, size, bold, flags)
+    return J.FontObject(name, size * Paper.WORDS, bold, flags)
 end
 
 -- An outlined Kalam for words in a game colour (a quality's, a class's): the colour unchanged, a thin dark line
 -- round the letters, so a light one reads on the paper.
 function Paper.Outlined(name, size, bold)
-    return J.FontObject(name, size, bold, "OUTLINE", { 1, 1, 1, 1 })
+    return J.FontObject(name, size * Paper.WORDS, bold, "OUTLINE", { 1, 1, 1, 1 })
 end
 
 -- A pencil line along a frame's edge ("TOP" or "BOTTOM"), as wide as the frame.
@@ -62,13 +68,13 @@ function Paper.Dropdown(parent, width, height)
     menu:SetSize(width, height)
     local box = J.Box(menu, 0.5)
     local label = menu:CreateFontString(nil, "OVERLAY")
-    J.Font(label, 14)
+    J.Font(label, 14 * Paper.WORDS)
     label:SetPoint("LEFT", 7, 0)
     label:SetPoint("RIGHT", -14, 0)
     label:SetJustifyH("LEFT")
     label:SetWordWrap(false)
     local arrow = menu:CreateFontString(nil, "OVERLAY")
-    J.Font(arrow, 12, true)
+    J.Font(arrow, 12 * Paper.WORDS, true)
     arrow:SetPoint("RIGHT", -6, 0)
     arrow:SetText("v")
     menu.label, menu.box = label, box

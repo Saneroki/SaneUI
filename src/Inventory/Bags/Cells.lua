@@ -73,11 +73,12 @@ end
 
 local function Fonts()
     if fonts then return fonts end
+    local w = ns.Paper.WORDS
     fonts = {
-        count = Core.Font("SaneUIBagsCount", "NumberFontNormal", 13, "OUTLINE"),
-        level = Core.Font("SaneUIBagsLevel", "NumberFontNormal", 13, "OUTLINE"),
-        bind = Core.Font("SaneUIBagsBind", "NumberFontNormal", 12, "OUTLINE"),
-        set = Core.Font("SaneUIBagsSet", "NumberFontNormal", 10, "OUTLINE"),
+        count = Core.Font("SaneUIBagsCount", "NumberFontNormal", 13 * w, "OUTLINE"),
+        level = Core.Font("SaneUIBagsLevel", "NumberFontNormal", 13 * w, "OUTLINE"),
+        bind = Core.Font("SaneUIBagsBind", "NumberFontNormal", 12 * w, "OUTLINE"),
+        set = Core.Font("SaneUIBagsSet", "NumberFontNormal", 10 * w, "OUTLINE"),
     }
     return fonts
 end

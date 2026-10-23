@@ -31,7 +31,7 @@ local Core = SaneUI.Core
 local Columns = {}
 ns.Columns = Columns
 
-Columns.HEAD = 20          -- the head's height
+Columns.HEAD = ns.Paper.Fit(20) -- the head's height (its words' size: ns.Paper.WORDS)
 Columns.GAP = 6            -- between two columns
 Columns.LEAST = 20         -- the least a column is made
 Columns.NAME_LEAST = 60    -- the least the name keeps

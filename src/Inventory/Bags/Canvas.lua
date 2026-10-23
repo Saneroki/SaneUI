@@ -204,8 +204,8 @@ end
 -- group's) in its middle, faded to a subtle grey on the paper (Saneroki, 2026-10-23): an item brought to it (picked
 -- up and clicked here, or dragged here) goes into its category (Pinned's: pinned; Junk's: marked as junk); clicked
 -- with nothing, the next item clicked does (Select.lua).
-Canvas.SLOT_ICON = 0.6    -- the drawing against the slot's side
-Canvas.SLOT_FADE = 0.18   -- and how much of it shows
+Canvas.SLOT_ICON = 0.75   -- the drawing against the slot's side (Saneroki, 2026-10-23: bigger)
+Canvas.SLOT_FADE = 0.3    -- and how much of it shows (darker)
 local function PlusClick(plus)
     if GetCursorInfo() == "item" then return Menus.Drop(plus.key, plus.canvas.owner.stow) end
     ns.Select.Start("put", plus.key)

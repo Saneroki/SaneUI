@@ -174,6 +174,10 @@ dark as the categories' heads (`Canvas.MEMBER_COLOR`).
 **Built (2026-10-23), Saneroki asked:** the drawings made large (256 x 256, for every size the game shows them
 at; each mipmap's lines thickened for its size) and in each category's empty slot, faded to a subtle grey.
 
+**Built (2026-10-23), Saneroki asked:** the drawings in the empty slots bigger and darker (three quarters of the
+slot, 0.3); every word of the bags', the bank's and the alts' windows 1.2 times larger (`Paper.WORDS`), the heads,
+list lines and the sidebar (180 wide, rows of 28) grown with them.
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.
