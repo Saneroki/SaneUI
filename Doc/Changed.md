@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: words in place of the drawings; the combat text's CVars back when off and at logout (Saneroki, 2026-10-23)
+- New setting *Drawings for what did no harm* (`combatPictures`, on): off, a miss, dodge, parry, block, evade or
+  immunity is the game's word, as a resist is.
+- `CombatText.lua`: the game's combat text CVars are ours only while ours shows: what they had before is kept in the
+  setting `combatFoundCVars` and goes back once (`Restore`, per group) when ours is switched off, the module stands
+  down, or at `PLAYER_LOGOUT` (`CombatText.Logout`, from `ns.OnLogout`, before Core's profiles take the game's
+  settings); a module off or not loaded leaves the game's and the profiles' values alone (was: the game's defaults
+  set when off). The setting and the logout's call in `Nameplates.lua` came in with 81133cb.
+- Tests: `dev/tests/nameplates.lua` 186 checks (the word with the drawings off; the values found go back at the
+  logout and are left alone after).
+
 ### Nameplates: the game's nameplate CVars ours only while on; theirs back at a logout (Saneroki, 2026-10-23)
 - **Off leaves them alone** (`Scale.lua`): switched off, the CVars had the game's defaults written, and with the guard
   of the last change again at every change, over the player's own and a profile's values. Now what each had before

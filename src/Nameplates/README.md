@@ -71,7 +71,7 @@ fails, every plate is the game's own again.
   swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a
   pencil drawing instead of a word, in white (an arrow flying over a target; a fighter bending far back
   under an arrow; crossed swords with sparks; a shield with an arrow breaking on it; a fighter in a wide stance, his
-  head swung aside from an arrow flying up past it) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
+  head swung aside from an arrow flying up past it) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word, and every one of them with *Drawings for what did no harm* off. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
 - **Over your character:** the same for what you take, rising from about your character's feet, below the middle of
   the screen, where your character stands (your character has no plate in this client): damage with a "-". While ours shows, the
@@ -80,7 +80,7 @@ fails, every plate is the game's own again.
   its own and stay.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
-  *Instead of the game's*). The plates' size, style and
+  *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
 ## Technical details
@@ -249,7 +249,11 @@ fails, every plate is the game's own again.
   game's CVars (`CombatText.CVARS`): `floatingCombatTextCombatDamage_v2` and `...CombatHealing_v2` at 0 while *Over
   nameplates* and *Instead of the game's* are on, `enableFloatingCombatText` at 0 while *Over your character* and
   *Instead of the game's* are on; else (and standing down) at their defaults; never in a fight (then at
-  `PLAYER_REGEN_ENABLED`). Set again `CombatText.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD` and
+  `PLAYER_REGEN_ENABLED`). What they had before ours is kept in
+  the setting `combatFoundCVars` and goes back (`Restore`, once per group: plates, self) when ours is switched off,
+  the module stands down, or at `PLAYER_LOGOUT` (`CombatText.Logout`, from `ns.OnLogout`, before Core's profiles
+  take the game's settings), so a module off or not loaded leaves the game's and the profiles' values alone. Set
+  again `CombatText.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD` and
   `VARIABLES_LOADED` (the game's stored settings and Sync's profile come after the login and turned the heal numbers
   back on), and after a `CVAR_UPDATE` of one of them; through `Core.Sync.SetCVar` where Sync is there.
 - **Standing down** (`ns.GiveBack`): the game's scaling back, the game's unit frames at alpha 1 and their parts

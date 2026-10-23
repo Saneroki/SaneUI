@@ -40,8 +40,11 @@ local _, ns = ...
 --  The game's own combat text is switched off by its CVars while ours shows
 --  (CombatText.CVARS, *Instead of the game's*): its numbers over units while
 --  ours are over the plates, its scrolling text about you while ours is over
---  your character. They get their defaults back when ours is switched off or
---  the module stands down. None is set in a fight: that waits for its end.
+--  your character. What they had before ours is kept with the module's
+--  settings and goes back when ours is switched off, the module stands down,
+--  or the game is about to write its settings (a logout, a /reload): so a
+--  module switched off or not loaded leaves the game's and the profiles'
+--  values alone. None is set in a fight: that waits for its end.
 --  They are set again a little after the game has its stored settings and
 --  Core's Sync has written a profile's (both come after the login, and would
 --  turn the game's numbers back on), and whenever one of them changes while
@@ -223,9 +226,10 @@ function CombatText.Show(host, form, value, color, size, critical)
     Play(number, critical)
 end
 
--- What did no harm, over a host: its drawing, or the game's word where there is none (or its file is missing).
+-- What did no harm, over a host: its drawing, or the game's word where there is none, its file is missing or the
+-- drawings are switched off (*Drawings for what did no harm*).
 function CombatText.Nothing(host, kind)
-    local name = CombatText.PICTURES[kind]
+    local name = (ns.options or {}).combatPictures ~= false and CombatText.PICTURES[kind] or nil
     if not name then
         CombatText.Show(host, "%s", Word(kind), CombatText.WHITE, CombatText.SMALL)
         return
@@ -291,16 +295,49 @@ function CombatText.Clear(host)
     for index = #list, 1, -1 do Release(list[index]) end
 end
 
--- The game's CVars off (0) or at their defaults; where this client has them, never in a fight. Through Core's
--- Sync where it is there (it leaves one the game locked alone, and notes one the game does not take).
-local function Set(names, hide)
+-- One CVar set: through Core's Sync where it is there (it leaves one the game locked alone, and notes one the game
+-- does not take), else the game's own.
+local function Put(name, value)
     local sync = Core.Sync
-    for _, name in ipairs(names) do
-        local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
-        local wanted = hide and "0" or default
-        if now ~= nil and wanted ~= nil and tostring(now) ~= wanted then
-            if sync and sync.SetCVar then sync.SetCVar(name, wanted) else Core.Ask(C_CVar.SetCVar, name, wanted) end
+    if sync and sync.SetCVar then sync.SetCVar(name, value) else Core.Ask(C_CVar.SetCVar, name, value) end
+end
+
+-- The values the CVars had before ours (the game's, a profile's, the player's), kept with the module's settings so a
+-- logout can put them back: [name] = value.
+local function Found()
+    local options = ns.options or {}
+    if type(options.combatFoundCVars) ~= "table" then options.combatFoundCVars = {} end
+    return options.combatFoundCVars
+end
+
+local applied = {} -- [group of CombatText.CVARS] = true: ours were set this session
+
+-- A group's CVars ours (0), where this client has them; what each had before kept first (once: not a value of ours).
+local function Ours(group)
+    local found = Found()
+    applied[group] = true
+    for _, name in ipairs(CombatText.CVARS[group]) do
+        local now = Core.Ask(C_CVar.GetCVarInfo, name)
+        if now ~= nil and tostring(now) ~= "0" then
+            if found[name] == nil then found[name] = tostring(now) end
+            Put(name, "0")
         end
+    end
+end
+
+-- A group's CVars back to what they had before ours (the game's default for one of ours whose earlier value is not
+-- known), once, and nothing kept any more: from now on they are the game's and the profiles' alone.
+local function Restore(group)
+    if not applied[group] then return end
+    applied[group] = nil
+    local found = Found()
+    for _, name in ipairs(CombatText.CVARS[group]) do
+        local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
+        if now ~= nil then
+            local back = found[name] or (tostring(now) == "0" and default) or nil
+            if back ~= nil and tostring(now) ~= tostring(back) then Put(name, tostring(back)) end
+        end
+        found[name] = nil
     end
 end
 
@@ -327,10 +364,17 @@ local function Apply()
     end
     waiting = false
     local game = options.combatGame ~= false
-    Set(CombatText.CVARS.plates, plates and game)
-    Set(CombatText.CVARS.self, yours and game)
+    if plates and game then Ours("plates") else Restore("plates") end
+    if yours and game then Ours("self") else Restore("self") end
 end
 CombatText.Update = Apply
+
+-- The game about to write its settings (a logout, a /reload): what was there before ours goes back, so with the
+-- module gone the game and the profiles have their own; loaded again, it sets ours again at the login.
+function CombatText.Logout()
+    Restore("plates")
+    Restore("self")
+end
 
 -- Standing down: the game's combat text back, yours no longer heard.
 function CombatText.GiveBack()

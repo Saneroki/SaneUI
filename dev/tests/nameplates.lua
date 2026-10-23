@@ -794,6 +794,7 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
 -------------------------------------------------------------------------------
 ;(function()
     local CombatText = ns.CombatText
+    CombatText.Update() -- as at a login: ours set (a logout above, if any, put the game's back)
     check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "0"
         and CVar("enableFloatingCombatText") == "0", "the game's own combat text off while ours shows")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "CRITICAL", 1234, 4)
@@ -818,6 +819,11 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
         and dress.numbers[5].picture._vertex[2] < 0.5, "an immunity: the bubble, bright red")
     W.Fire("UNIT_COMBAT", "nameplate1", "RESIST", "", 0, 1)
     check(dress.numbers[6].text:IsShown() and dress.numbers[6].text._text == "resist", "no drawing for a resist: the game's word")
+    Core.Set(ns.name, "combatPictures", false)
+    W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
+    local word = dress.numbers[#dress.numbers]
+    check(word.text:IsShown() and not word.picture:IsShown() and word.text._text == "parry", "drawings off: the game's word")
+    Core.Set(ns.name, "combatPictures", true)
     W.gone = { [CombatText.ART .. "evade"] = true }
     W.Fire("UNIT_COMBAT", "nameplate1", "EVADE", "", 0, 1)
     check(dress.numbers[#dress.numbers].text:IsShown() and dress.numbers[#dress.numbers].text._text == "evade"
@@ -888,6 +894,19 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
     W.Fire("PLAYER_ENTERING_WORLD")
     W.Wait(CombatText.AGAIN + 0.1)
     check(CVar("floatingCombatTextCombatDamage_v2") == "0", "after entering the world, set once more")
+    -- The game about to write its settings: what was there before ours goes back, so the profiles keep their own.
+    C_CVar.SetCVar("floatingCombatTextCombatHealing_v2", "1")
+    C_CVar.SetCVar("enableFloatingCombatText", "1")
+    Core.Set(ns.name, "combatText", false)
+    Core.Set(ns.name, "combatText", true) -- found anew: the healing CVar at 1
+    C_CVar.SetCVar("floatingCombatTextCombatHealing_v2", "0")
+    ns.OnLogout()
+    check(CVar("floatingCombatTextCombatHealing_v2") == "1" and CVar("floatingCombatTextCombatDamage_v2") == "1"
+        and next(ns.options.combatFoundCVars) == nil, "at the logout the values found before ours go back, nothing kept")
+    C_CVar.SetCVar("floatingCombatTextCombatDamage_v2", "0") -- the player's own choice, after it
+    Core.Set(ns.name, "combatGame", false)
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0", "after that, switched off: left alone")
+    Core.Set(ns.name, "combatGame", true)
 end)()
 
 -------------------------------------------------------------------------------
