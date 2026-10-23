@@ -125,13 +125,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   city in a mountain, a building's storeys), and by the flights your character has found where that is quicker:
   only those, as the game tells them at a flight master (it tells them once you have opened one, each session;
   until your first, the ones found before; a flight over many flight points is one, taking off once; with the Legacy
-  perk *Frequent Flier* the flights count 20 % faster). The
+  perk *Frequent Flier* the flights count 20 % faster; the line white along them). The
   line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
   leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
   over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
-  quickest), your side's or both sides' (not the other side's harbours and zeppelin towers), the line red from pier
-  to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
-  quicker, the line red from one city's entrance to it to the other's; and the hearthstone is taken where it is
+  quickest), your side's or both sides' (not the other side's harbours and zeppelin towers), the line light blue
+  from pier to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
+  quicker, the line light blue from one city's entrance to it to the other's; and the hearthstone is taken where it is
   quickest (the map learns its place where you bind it, or the first time you use it; a shaman's Astral Recall
   brings you there too). So are the teleports your character has, the line pale blue to where each brings you, then
   on foot: a mage's to the capitals and Dalaran (with a Rune of Teleportation in the bags), a druid's to Moonglade, an
@@ -325,8 +325,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
   legs after the next fainter. A dark edge, the game's dependency bar art tinted gold, its glint moved along by a
-  `TextureCoordTranslation` animation (no code of ours each frame); walks and lifts gold, flights pale, ships and the
-  tram red, portals violet, the hearthstone and the teleports pale blue. The animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
+  `TextureCoordTranslation` animation (no code of ours each frame); walks and lifts gold, flights white, ships and the
+  tram light blue, portals violet, the hearthstone and the teleports pale blue (the art is grey, so each shows its colour as it is). The animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
   `SetOffset`); where the game has not read the file yet, the glint stands still. A corner that turns more than
   `Route.BEND` degrees is drawn as a curve, from a point before it to one after it with the corner its middle point
   (a curve of three points of the way, so short parts one after the other make one smooth line), in pieces turning
@@ -575,7 +575,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
-| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights pale, ships and the tram red, portals violet, the hearthstone and the teleports pale blue |
+| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's 3D model beside its tooltip with Alt |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |

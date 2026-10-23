@@ -407,6 +407,8 @@ the game's own art and the game's own API.
   speeds on land and in water, not as the shortest way.
 - **Look:** instead of a dotted line, a **thin golden line pulsing towards the pin**, its corners **curved**
   (Saneroki, 2026-10-22: a curve of each corner and its two neighbours, not short straight lines).
+- **Its colours (Saneroki, 2026-10-23):** the walks golden, the flights between flight masters **white**, the ships,
+  zeppelins and the tram **light blue** (red before), the portals violet, the hearthstone and the teleports pale blue.
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 

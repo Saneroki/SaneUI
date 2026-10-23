@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the route's ships light blue, its flights white (Saneroki, 2026-10-23)
+- `Route.lua`: `Route.COLOURS`: a boat's, a zeppelin's and the tram's way light blue (0.4, 0.75, 1; red before), a
+  flight's white (pale gold before), as Saneroki asked. The line's art (the game's dependency bar: its edge, fill and
+  glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
+- README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
+
 ### Inventory: the bags' bar on the title line; borderless rounded icons; the sidebar folds (2026-10-23)
 - Items (`Bags/Cells.lua`, `Alts/Items.lua`): no border any more (`Cells.QUEST`, `NEUTRAL`, `EMPTY_EDGE` and the
   setting `borders`, *Quality Borders*, gone); the icon, the empty slot's graphite, the highlight and the press share

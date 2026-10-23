@@ -22,9 +22,9 @@ local _, ns = ...
 --  tinted gold, and over that its glint, moved along the line by the engine (a
 --  TextureCoordTranslation animation from Route.xml, as the game's talent lines
 --  move theirs), so nothing of ours runs every frame for the pulse. A walk and a
---  lift are golden; a flight pale gold; a boat's, a zeppelin's and the tram's way
---  red, as the plan has the ships' routes; a portal's violet; the hearthstone's and
---  the teleports' pale blue, straight to where they bring one.
+--  lift are golden; a flight white; a boat's, a zeppelin's and the tram's way light
+--  blue; a portal's violet; the hearthstone's and the teleports' pale blue,
+--  straight to where they bring one (the art is grey: each shows its colour as it is).
 --
 --  A corner of a leg that turns more than Route.BEND degrees is drawn as a curve:
 --  from a point before it to one after it, the corner its middle point (a curve of
@@ -51,8 +51,8 @@ Route.PIECE = 2     -- units a curve's pieces are long, at least
 Route.GLINT_PULSE = "SaneUINavigationGlintTemplate"
 Route.PULSE = 1.2
 Route.COLOURS = {
-    walk = { 1, 0.78, 0.25 }, flight = { 1, 0.92, 0.6 },
-    boat = { 0.95, 0.3, 0.2 }, zeppelin = { 0.95, 0.3, 0.2 }, tram = { 0.95, 0.3, 0.2 },
+    walk = { 1, 0.78, 0.25 }, flight = { 1, 1, 1 },
+    boat = { 0.4, 0.75, 1 }, zeppelin = { 0.4, 0.75, 1 }, tram = { 0.4, 0.75, 1 },
     lift = { 1, 0.78, 0.25 }, portal = { 0.7, 0.5, 1 }, hearth = { 0.6, 0.8, 1 }, teleport = { 0.6, 0.8, 1 },
 }
 
