@@ -40,6 +40,8 @@ ns.Plate = Plate
 Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
                  "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
                  "aggroHighlightAdditive" }
+-- A bar wider than this is a measurement gone wrong; it gets Plate.PLAIN until it is measured again.
+Plate.WIDEST, Plate.PLAIN = 1000, 120
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
@@ -149,8 +151,10 @@ function Plate.Place(dress)
     if type(row) ~= "table" then return end
     local width = Plain(row:GetWidth()) or 0
     local ours, theirs = Plain(dress:GetEffectiveScale()), Plain(row:GetEffectiveScale())
-    if ours and theirs and ours > 0 then width = width * theirs / ours end
+    if ours and theirs and ours > 0.01 and theirs > 0 then width = width * theirs / ours end
     width = dress.want or width
+    -- None, endless or absurd (the game not set up yet, just after a /reload): a plain width until it is.
+    if width ~= width or width <= 0 or width > Plate.WIDEST then width = Plate.PLAIN end
     local height = ns.Text.Height(dress)
     if dress.row == row and dress.wide and math.abs(dress.wide - width) < 0.01 and math.abs(dress.high - height) < 0.01 then
         return
@@ -368,6 +372,8 @@ function Plate.Start()
     ns.On("QUEST_LOG_UPDATE", quests)
     ns.On("UNIT_QUEST_LOG_CHANGED", quests)
     Core.Inspect.Watch(ns.Guard(Arrived))
+    -- Once the world shows (the game's fonts and scales set up, also after a /reload), every plate measured anew.
+    ns.On("PLAYER_ENTERING_WORLD", Core.Later(Plate.Refresh, 0.5))
     -- The plates the game shows already (after a /reload they are there before us).
     local plates = Core.Ask(C_NamePlate.GetNamePlates)
     for _, plate in ipairs(type(plates) == "table" and plates or {}) do

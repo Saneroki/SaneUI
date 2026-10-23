@@ -128,7 +128,10 @@ fails, every plate is the game's own again.
   by the width it was given), rounded up, and `Text.SLACK` (1) more; a text that answers hidden (a font string once
   given a hidden value may ever after), the health's most and the threat's "100%" are measured on a ruler of ours
   (`Text.Width`: a font string at alpha 0, never given a hidden value, on a frame of its own on `UIParent`, always
-  shown, since a hidden one may not measure what it is given). A plate is shown before it is filled, so its own
+  shown, since a hidden one may not measure what it is given). A width the game gives as none, endless or beyond
+  `Text.WIDEST` (just after a `/reload`, its fonts and scales not set up yet) counts as none: the ruler's guess is then
+  `Text.GUESS` of the font's height a letter; `Plate.Place` gives a bar wider than `Plate.WIDEST` `Plate.PLAIN`; and
+  half a second after `PLAYER_ENTERING_WORLD` every plate is filled and measured anew (`Plate.Refresh`). A plate is shown before it is filled, so its own
   texts are measured while they show. Icons are `Text.ICON` (1.2) times the font's
   height (`Text.size`). Several pieces set at once lay out once (`dress.holding`). The pieces:
   - *quest*: `Core.UnitQuest(unit)` (`src/Core/Objectives.lua`), not for players: the icon `Text.QUEST` (the game's
@@ -280,3 +283,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** your target always full size (Saneroki); plates glide evenly from rung to rung of the range ladder
   (the distance at the rung a unit just passed), slowly, as its unit moves; far foes red when the ladder puts them
   beyond your farthest attack though your spells cannot say.
+- **2026-10-23:** no endless bars after a `/reload`: widths the game cannot give yet are guessed, and every plate is
+  measured anew once the world shows.

@@ -46,6 +46,8 @@ Text.OUTSIDE = 4 -- from the bar's left end to the icons outside it (past a boss
 Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
 Text.ICON = 1.2  -- an icon's size, times the font's height
 Text.SLACK = 1   -- room given to a text beyond its measured width, so it is never cut short by rounding
+Text.WIDEST = 1000 -- a text measured wider than this was not measured (the game not ready yet)
+Text.GUESS = 0.6   -- a letter's width, a share of the font's height, while the game cannot measure
 Text.NAME = 80   -- the room of a name the game hides, before a plain one was seen
 Text.MOST = 400  -- the most room a name takes (cut short beyond it): long names make the bar longer
 Text.GEAR = { 0.75, 0.75, 0.75 } -- the item level's colour
@@ -102,10 +104,13 @@ local function Line(host, justify)
 end
 
 -- A text's whole width as drawn (not cut by a width it was given); nil where the text answers it hidden.
+-- A width the game gives before its fonts and scales are set up (just after a /reload) may be none, endless or
+-- absurd: none then.
 local function Drawn(text)
     local measure = text.GetUnboundedStringWidth or text.GetStringWidth
     local width = Plain(measure(text))
-    return type(width) == "number" and width or nil
+    if type(width) ~= "number" or width ~= width or width < 0 or width > Text.WIDEST then return nil end
+    return width
 end
 
 -- A font string of ours that only measures: never seen (alpha 0), never given a hidden value, on a frame of its own
@@ -115,7 +120,9 @@ local ruler
 -- How wide a plain text is in the line's font, with its slack.
 function Text.Width(text)
     ruler:SetText(text)
-    return math.ceil(Drawn(ruler) or 0) + Text.SLACK
+    local width = Drawn(ruler)
+    if not width then width = #text * Font().height * Text.GUESS end -- the game cannot say yet: about so wide
+    return math.ceil(width) + Text.SLACK
 end
 
 -- How high the bar is: the line's font and its padding over and under it, inside a border of a pixel.

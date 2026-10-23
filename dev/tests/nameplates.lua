@@ -431,6 +431,17 @@ check(not dress.power:IsShown(), "no power: no line")
 units.nameplate1.powerMost = 100
 W.Fire("UNIT_MAXPOWER", "nameplate1")
 
+-- Just after a /reload the game may measure texts endless: the bar gets a guess, never endless, and is measured
+-- anew once the world shows.
+local measure = methods.GetUnboundedStringWidth
+methods.GetUnboundedStringWidth, methods.GetStringWidth = function() return math.huge end, function() return math.huge end
+ns.Plate.Refresh()
+check(dress._width > 0 and dress._width <= ns.Plate.WIDEST, "widths measured endless: the bar a sensible width all the same")
+methods.GetUnboundedStringWidth, methods.GetStringWidth = measure, measure
+W.Fire("PLAYER_ENTERING_WORLD")
+W.Wait(1)
+check(dress._width == dress.want and dress.room.name == L(10), "the world shown: every plate measured anew, right")
+
 -------------------------------------------------------------------------------
 --  The auras: the game's containers, set up once
 -------------------------------------------------------------------------------

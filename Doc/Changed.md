@@ -30,6 +30,14 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
   (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
 
+### Nameplates: no endless bars after a /reload (Saneroki, 2026-10-23)
+- **Fixed** (`Text.lua`, `Plate.lua`): plates on the screen at a `/reload` are dressed at the login, before the game's
+  fonts and scales are set up, and its widths then (none, endless, absurd) made the bars endlessly wide. Such a width
+  now counts as none (`Text.WIDEST`); the ruler then guesses (`Text.GUESS` of the font's height a letter);
+  `Plate.Place` keeps a bar to `Plate.PLAIN` where its width is beyond `Plate.WIDEST`; and half a second after
+  `PLAYER_ENTERING_WORLD` every plate is filled and measured anew.
+- Tests: 144 checks.
+
 ### Nameplates: your target full size; smooth glides between range rungs; far foes red (Saneroki, 2026-10-23)
 - **Target** (`Scale.lua`): your target's plate always at the full size, whatever its distance; selected or let go a
   plate moves at `Scale.QUICK` (2 a second).
