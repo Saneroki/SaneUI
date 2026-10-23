@@ -137,7 +137,6 @@ function ns.OnLogin()
     ns.Plate.Start()
     ns.Resource.Start()
     ns.Range.Start()
-    ns.Cast.Start()
     ns.Scale.Start()
     ns.CombatText.Start()
 end

@@ -944,41 +944,26 @@ check(gameCast._alpha == 0, "the game's own cast bar out of sight under ours")
 W.clock = W.clock + 1
 castBar:GetScript("OnUpdate")(castBar, 1)
 check(Near(castBar.fill._value, 2 / 3) and castBar.timer._text == "1.0", "on its way: two thirds, a second left")
-W.clock = W.clock + 1.5
-castBar:GetScript("OnUpdate")(castBar, 1.5)
-check(not castBar:IsShown(), "over: gone")
+W.clock = W.clock + 1.1
+castBar:GetScript("OnUpdate")(castBar, 1.1)
+check(castBar:IsShown() and castBar.fill._value == 1 and castBar.timer._text == "", "done: full, no seconds, still there")
+W.clock = W.clock + Cast.HOLD
+castBar:GetScript("OnUpdate")(castBar, Cast.HOLD)
+check(not castBar:IsShown(), "half a second later: gone")
 casts.nameplate1 = { name = "Drain Life", channel = true, locked = true, starts = W.clock * 1000, ends = (W.clock + 4) * 1000 }
 W.Fire("UNIT_SPELLCAST_CHANNEL_START", "nameplate1")
 check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.LOCKED[1] and Near(castBar.fill._value, 1) and castBar.text._text == "Drain Life",
     "a channel that cannot be interrupted: grey, full, emptying; no target")
-W.Fire("UNIT_SPELLCAST_INTERRUPTED", "nameplate1")
-check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.BROKEN[1], "interrupted: a moment in red")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "nameplate1")
-check(castBar:IsShown(), "still red for that moment")
+check(castBar:IsShown() and castBar.fill._value == 0, "the channel ended: empty, staying")
 W.clock = W.clock + Cast.HOLD + 0.1
 castBar:GetScript("OnUpdate")(castBar, 0.5)
 check(not castBar:IsShown(), "then gone")
--- Your interrupt: green while it is ready and reaches the unit; gold while on its cooldown or out of reach.
-local cooling = { startTime = 0, duration = 0 }
-IsPlayerSpell = function(id) return id == 1766 end
-C_Spell.GetSpellCooldown = function() return cooling end
-ranges[1766] = { 0, 5 }
-Cast.Learn()
-yards.nameplate1 = 3
+-- Interrupted: full and red, saying so and by whom, for half a second.
 casts.nameplate1 = { name = "Fireball", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
-check(castBar.fill._barColor[1] == Cast.READY[1] and castBar.fill._barColor[2] == Cast.READY[2], "your Kick ready, in reach: green")
-cooling.startTime, cooling.duration = W.clock, 10
-W.clock = W.clock + 0.2
-castBar:GetScript("OnUpdate")(castBar, 0.2)
-check(castBar.fill._barColor[1] == Cast.CAST[1], "on its cooldown: gold, within a moment")
-cooling.startTime, cooling.duration = 0, 0
-yards.nameplate1 = 20
-W.clock = W.clock + 0.2
-castBar:GetScript("OnUpdate")(castBar, 0.2)
-check(castBar.fill._barColor[1] == Cast.CAST[1], "ready, but out of its reach: gold")
-yards.nameplate1 = 3
+check(castBar.fill._barColor[1] == Cast.CAST[1], "an interruptible cast: its colour, whatever your own interrupts")
 UnitTokenFromGUID = function(guid) return guid == "Player-party1" and "party1" or nil end
 local unitName = UnitName
 UnitName = function(unit) if unit == "party1" then return "Bran" end return unitName(unit) end
@@ -987,11 +972,23 @@ check(castBar.fill._barColor[1] == Cast.BROKEN[1] and castBar.fill._value == 1 a
     "interrupted: full and red, saying so, and by whom")
 UnitName = unitName
 casts.nameplate1 = nil
-W.clock = W.clock + Cast.HOLD + 0.1
+W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
+check(castBar:IsShown() and castBar.fill._barColor[1] == Cast.BROKEN[1], "its stop after: still red")
+W.clock = W.clock + Cast.HOLD + 0.01
 castBar:GetScript("OnUpdate")(castBar, 1)
-check(not castBar:IsShown(), "gone after its moment")
-IsPlayerSpell = nil
-Cast.Learn()
+check(not castBar:IsShown(), "gone after half a second")
+-- Stopped early by the game (cast done): stays half a second; failed: at once.
+casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
+check(castBar:IsShown() and castBar.fill._value == 1, "stopped: done, full, staying")
+casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(castBar:IsShown() and castBar.fill._value < 1, "a new cast at once: shown from its start")
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
+check(not castBar:IsShown(), "failed: gone at once")
 casts.nameplate1 = { name = "Fireball", starts = Secret(), ends = Secret() }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
 check(not castBar:IsShown() and gameCast._alpha == 1, "its times hidden from addons: the game's own cast bar shows it")
@@ -1003,8 +1000,8 @@ Core.Set(ns.name, "castBar", true)
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
 check(castBar:IsShown() and gameCast._alpha == 0, "on again: ours")
 casts.nameplate1 = nil
-W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
-check(not castBar:IsShown(), "stopped: gone")
+W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
+check(not castBar:IsShown(), "failed: gone")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
