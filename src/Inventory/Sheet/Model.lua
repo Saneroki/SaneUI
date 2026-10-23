@@ -8,9 +8,10 @@ local _, ns = ...
 --  camera, the player's actor, a shapeshift form's look) on the doll's paper,
 --  no backdrop, every race at one scale (Model.SIZE: a full-grown character
 --  fills its place, from under the level line down to Doll.GROUND; a gnome
---  stands as small as it is), its feet on the place's foot. The game's scene
---  that takes the mouse (ModelSceneMixinTemplate, its orbit camera): dragged
---  with the left button it turns, the wheel zooms toward its head; left alone
+--  stands as small as it is), its feet on the place's foot, cut off at the
+--  foot of the hero's column (Doll.FOOT). The game's scene that takes the
+--  mouse (ModelSceneMixinTemplate, its orbit camera): dragged with the left
+--  button it turns, the wheel moves the camera into its head; left alone
 --  for Model.REST seconds, it glides back to how it first stood. An item let
 --  go over it is put on (the game's AutoEquipCursorItem), as on the game's
 --  sheet.
@@ -26,10 +27,9 @@ Model.REST = 10      -- seconds without a drag or a turn of the wheel before the
 -- When the scene cannot measure where it draws a point: its field of view across its diagonal, and the floor this
 -- share of its height lower than that rule says (seen in the game, 2026-10-23).
 Model.LOWER = 0.064
-Model.HEAD = 0.85 -- the head the zoom aims at, up from the model's feet: this share of its height
 
 local TURN = 2 * math.pi
-local scene, place
+local scene, place, view
 local home    -- how the camera first stood: { yaw, zoom }
 local held    -- the left button down on the model: a drag, never rested from
 local resting -- the timer that brings the model back
@@ -97,31 +97,34 @@ local function Even(actor)
     actor:SetOnModelLoadedCallback(Loaded)
 end
 
--- The zoom toward the head: the camera's target rises as it zooms in, from where the scene looks (zoomed out) to the
--- model's head (all the way in); the game's camera follows its target spline.
-local function Aim(bottom, top)
+-- The zoom moves the camera into the head: its target goes with its distance (a target spline, which the game's
+-- camera follows) so that, all the way in, the top of the model stands at the top of its place, under the level line.
+-- A tall one's head stays about where it is and grows; a small one's comes up to it. At rest the scene draws the
+-- height from the floor up to its target as `below` of its units; nearer, larger by as much as the distance shrinks.
+local function Aim(floor, top, below)
     local camera, Spline = Camera(), rawget(_G, "CreateCatmullRomSpline")
-    if not (camera and camera.SetTargetSpline and Spline) then return end
+    if not (camera and camera.SetTargetSpline and camera.GetMinZoomDistance and Spline and home and below) then return end
     local _, _, z = camera:GetTarget()
+    local nearest = camera:GetMinZoomDistance()
+    if not (z and nearest and z > floor and below > 0) then return end
+    local target = top + (z - floor) * (1 - place:GetHeight() / below) * nearest / home.zoom
     local spline = Spline(3)
     spline:AddPoint(0, 0, 0)
-    spline:AddPoint(0, 0, bottom + (top - bottom) * Model.HEAD - z)
+    spline:AddPoint(0, 0, target - z)
     camera:SetTargetSpline(spline)
 end
 
 -- The scene with the character's feet on its place's foot (the bottom of its model, once loaded; else the floor),
--- centred across it; it takes the mouse only over its place. The model loaded, its zoom aims at its head.
+-- centred across it; it takes the mouse only over its place. The model loaded, its zoom goes into its head.
 local function Stand(actor)
-    local tall, floor = scene:GetHeight(), 0
+    local tall, floor, top = scene:GetHeight(), 0, nil
     if actor and actor:IsLoaded() then
-        local _, _, bottom, _, _, top = actor:GetActiveBoundingBox()
+        local _, _, bottom, _, _, high = actor:GetActiveBoundingBox()
         local scale = actor:GetScale() or 1
-        if bottom and top then
-            floor = bottom * scale
-            Aim(floor, top * scale)
-        end
+        if bottom and high then floor, top = bottom * scale, high * scale end
     end
     local below = Measured(floor) or Ruled(floor)
+    if top then Aim(floor, top, below) end
     local up = below and below < tall / 2 and tall / 2 - below or 0
     scene:ClearAllPoints()
     scene:SetPoint("BOTTOM", place, "BOTTOM", 0, -up)
@@ -152,13 +155,20 @@ end
 
 Loaded = function(actor) ns.Safe("character", Stand, actor) end
 
--- The scene over its place (the hero's place on the doll, from under the level line down to the ground), Model.SIZE.
+-- The scene over its place (the hero's place on the doll, from under the level line down to the ground), Model.SIZE,
+-- in a frame that cuts it off at the foot of the hero's column: zoomed in, its legs never cover the weapons' slots.
 -- The game's scripts turn and zoom it; ours are hooked on after them.
 function Model.Build(over)
-    local made, frame = pcall(CreateFrame, "ModelScene", nil, over, "ModelSceneMixinTemplate")
+    view = CreateFrame("Frame", nil, over)
+    view:SetClipsChildren(true)
+    local made, frame = pcall(CreateFrame, "ModelScene", nil, view, "ModelSceneMixinTemplate")
     if not made then return ns.Report("character", "this client has no model scene for the character: " .. tostring(frame)) end
     scene, place = frame, over
-    scene:SetSize(Model.SIZE[1] * Core.Journal.PX, Model.SIZE[2] * Core.Journal.PX)
+    local PX = Core.Journal.PX
+    scene:SetSize(Model.SIZE[1] * PX, Model.SIZE[2] * PX)
+    view:SetPoint("TOP", scene, "TOP")
+    view:SetPoint("BOTTOM", place, "BOTTOM", 0, -(ns.Doll.FOOT - ns.Doll.GROUND) * PX)
+    view:SetWidth(scene:GetWidth())
     scene:EnableMouse(true)
     scene:EnableMouseWheel(true)
     Stand()

@@ -115,6 +115,7 @@ RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92, colorStr = "ff3fc7e
 PLAYER_LEVEL_NO_SPEC = "Level %s |c%s%s|r"
 DressUpTexturePath = function(race) return "bg-" .. race end
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
+function methods:SetClipsChildren(on) self._clips = on end
 C_Timer.NewTimer = function(delay, fn)
     local timer = {}
     function timer:Cancel() self.cancelled = true end
@@ -150,6 +151,7 @@ W.templates.ModelSceneMixinTemplate = function(widget)
     function camera:SetZoomDistance(zoom) self.zoom = zoom end
     function camera:GetTarget() return 0, 0, self.target end
     function camera:SetTargetSpline(spline) self.spline = spline end
+    function camera:GetMinZoomDistance() return 2 end
     widget._camera = camera
     function widget:GetActiveCamera() return camera.zoom and camera end -- none before the scene is set up
     function widget:GetCameraFieldOfView() return FOV end
@@ -358,7 +360,8 @@ for _, widget in ipairs(W.frames) do
     if widget._kind == "ModelScene" then scene = widget end
 end
 check(scene, "the character's model scene stands in the left pane")
-local place = scene:GetParent()
+local view = scene:GetParent()
+local place = view:GetParent()
 do
     local Doll, PX, Model = ns.Doll, SaneUI.Core.Journal.PX, ns.Model
     check(scene._template == "ModelSceneMixinTemplate" and near(scene:GetWidth(), Model.SIZE[1] * PX)
@@ -383,10 +386,17 @@ do
     player.onLoaded(player)
     check(Feet(1.07 * FOCAL / 3.9), "its model loaded: the bottom of the model on the place's foot")
     local spline = scene._camera.spline
-    local head = -0.05 + (2 + 0.05) * Model.HEAD
     check(spline and spline.dimensions == 3 and #spline.points == 2 and spline.points[1][3] == 0
-        and near(spline.points[2][3], head - 1.02) and spline.points[2][1] == 0 and spline.points[2][2] == 0,
-        "zoomed in, the camera looks at the model's head: its target rises with the zoom, not at the hips")
+        and spline.points[2][1] == 0 and spline.points[2][2] == 0, "the zoom moves the camera's target (a spline)")
+    -- all the way in (2 from 3.9): the model's top (2 high) drawn at the top of its place, under the level line
+    local target, below = 1.02 + spline.points[2][3], 1.07 * FOCAL / 3.9
+    check(near((2 - target) * FOCAL / 2, place:GetHeight() - below),
+        "zoomed all the way in, the camera has moved into the head: the model's top at the top of its place")
+    local clipped = {}
+    for _, point in ipairs(view._points) do clipped[point[1]] = point end
+    check(view._clips and clipped.TOP and clipped.TOP[2] == scene and clipped.BOTTOM and clipped.BOTTOM[2] == place
+        and near(clipped.BOTTOM[5], -(Doll.FOOT - Doll.GROUND) * PX) and near(view:GetWidth(), width),
+        "the scene cut off at the foot of the hero's column: zoomed in, its legs never cover the weapons' slots")
     local hit = scene._hit
     check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - 1.07 * FOCAL / 3.9)
         and near(height - hit[3] - hit[4], place:GetHeight()), "it takes the mouse only over its place, though drawn larger")

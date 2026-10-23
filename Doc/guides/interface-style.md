@@ -233,8 +233,8 @@ Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bu
   - its shaped leather frame;
   - the hero in the middle: the game's live 3D model in the game; full-grown, he fills his place from under the
     level line down to the ground, every race at the same scale, so a gnome stands as small as it is; turned by a
-    drag and zoomed by the wheel toward his head, back to how he stood after ten seconds left alone (Saneroki,
-    2026-10-23).
+    drag; the wheel moves the camera into his head, his legs cut off at the foot of his column; back to how he
+    stood after ten seconds left alone (Saneroki, 2026-10-23).
     Nothing behind him but the page's own paper: no rectangle, no frame, no stony ground (Saneroki, 2026-10-23;
     `dev/tools/journal-art` covers the column with the page's paper);
   - the two top slots (head, hands) as large as the others (Saneroki, 2026-10-23);

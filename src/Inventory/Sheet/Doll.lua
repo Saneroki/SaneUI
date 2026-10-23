@@ -56,6 +56,7 @@ Doll.AMMO = { 550, 770, 594, 812 }
 Doll.HERO = { 238, 30, 434, 708 }       -- the hero's place: his name and level at its top, the model under them
 Doll.NAME_Y, Doll.LEVEL_Y, Doll.MODEL_TOP = 40, 64, 84
 Doll.GROUND = 681                       -- where the model's feet stand (Saneroki, 2026-10-23)
+Doll.FOOT = 703                         -- the foot of the hero's column (its paper's edge): the model is cut off there
 Doll.CLOSE = { 485, 30 }                -- the X's middle, on the right strap
 Doll.HEAD = 30                          -- the top a window is dragged by
 -- An item's icon in its slot: so much inside the slot's painted box, each side.

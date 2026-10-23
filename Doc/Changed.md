@@ -3,8 +3,19 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 137 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Inventory: the doll's zoom moves the camera into the head; the model cut off at the column's foot (Saneroki, 2026-10-23)
+- `Sheet/Model.lua`: zoomed in, the head went to the scene's middle and the legs, drawn larger, covered the weapons'
+  slots. Now the camera's target spline (`Aim`) puts the top of the model (its bounding box) at the top of its place
+  at the nearest distance (`GetMinZoomDistance`): the target there is the top plus (target - floor) x (1 - place's
+  height / `below`) x nearest / at rest, from the scene's own measure at rest. A tall character's head stays about
+  where it is and grows, a small one's comes up; `Model.HEAD` gone.
+- The scene sits in a frame that clips its children (`SetClipsChildren`, as the game's shop holds its scene), as wide
+  as the scene, from its top down to the foot of the hero's column (`Doll.FOOT`, 703, its paper's edge): below it
+  the model is cut off.
+- Tests: `dev/tests/inventory.lua` 139 checks (the model's top at the place's top all the way in, the clipping frame).
 
 ### Nameplates: the combat text in Kalam, drawings for what did no harm, over your character (Saneroki, 2026-10-23)
 - `Numbers.lua` is `CombatText.lua` (`ns.CombatText`); the settings' section *Combat text*: *Over nameplates*

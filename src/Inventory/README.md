@@ -224,8 +224,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `ModelSceneMixinTemplate` (its orbit camera: the
-    left button's drag turns it, the wheel zooms; once the model has loaded, a target spline aims the zoom at its
-    head, `Model.HEAD` of its height up from its feet) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
+    left button's drag turns it, the wheel zooms; once the model has loaded, a target spline moves the camera into
+    its head: all the way in, the top of the model at the top of its place; in a frame that clips it at the foot of
+    the hero's column, `Doll.FOOT`) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
     at `UNIT_MODEL_CHANGED`, `Model.SIZE` (272 x 872 doll pixels: a full-grown character fills its place, from
     under the level line to `Doll.GROUND`). Every race at one scale: each of the scene's actors gets requested scale
     1, no scaling toward a man's size and the floor (scene 595 sizes and lifts each race). Its feet on the place's
