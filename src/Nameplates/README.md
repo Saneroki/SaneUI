@@ -60,10 +60,11 @@ fails, every plate is the game's own again.
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
 - **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
   foe's buffs stand left of the icons there.
-- **Size by distance:** a plate's size depends on how far its unit is from your character and on nothing else
-  (selected or not, rank, the camera): *Nameplate size* (125% at first) within 10 yards, gradually down to half of it
-  at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. A plate
-  grows in from nothing when it appears, and moves to a new size evenly, in a straight line. No transparency of ours. The game's
+- **Size by distance:** your target's plate is always *Nameplate size* (125% at first). Any other's depends on how
+  far its unit is from your character and on nothing else (rank, the camera): full within 10 yards, gradually down to
+  half at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. It
+  shrinks and grows evenly, in a straight line, about as fast as a running unit changes its distance, never past its
+  size; selected or let go it moves quickly; it grows in from nothing when it appears. No transparency of ours. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*. The plates' size, style and
@@ -173,10 +174,11 @@ fails, every plate is the game's own again.
   and targets; loaded with `C_Item.RequestLoadItemDataByID`), and your spells with a range (`C_SpellBook`, not
   passive, not off-spec; `C_Spell.SpellHasRange`, `GetSpellInfo`'s `maxRange`; harmful ones for foes, helpful for
   friends; none with a least range), made anew at `SPELLS_CHANGED`. The first rung that reaches the unit bounds the
-  distance from above, the last that did not from below, and the unit stands between (`Range.Check`); none reaches:
-  between the last and `Range.FAR` (60). Where nothing answers (an item the game will not check, on a foe in a
-  fight perhaps), the last distance stays. Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
-  and none yes (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
+  distance from above, the last that did not from below (`Range.Check`; none reaches: up to `Range.FAR`, 60). The
+  distance kept (`Range.Settle`) is in the middle the first time, stays where it was while within those, and is at
+  the rung the unit just passed (the one distance the ladder knows for sure), so a plate glides from rung to rung.
+  Where nothing answers (an item the game will not check, on a foe in a fight perhaps), the last distance stays. Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
+  and none yes, or none can say and the ladder puts it beyond the farthest of them (`Range.longest`) (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
   for nothing); cleared when the plate goes; its border red (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
   `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
   the distance found, and each of your attacks with its reach and the game's answer.
@@ -190,14 +192,16 @@ fails, every plate is the game's own again.
   *i* from *i* - 1 to *i*, each given `GetComboPoints("player", "target")` as the game gives it (secret or not):
   the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
   The bar's inner caps mask every segment (they reach the first and the last).
-- **Scale** (`Scale.lua`): a plate's size from its distance alone (`Range.lua`): `Scale.Full()` (the setting
+- **Scale** (`Scale.lua`): your target's plate at `Scale.Full()`; any other's from its distance alone (`Range.lua`):
+  `Scale.Full()` (the setting
   *Nameplate size*, key `plateSize`, `Scale.SIZE` 125% at first) times its share on `Scale.CURVE` (1 to 10 yards, 0.5 at 40, 0.25 at
   60). The game's scaling and fading are off by its CVars (`Scale.CVARS`: `nameplateMaxScale`, `MinScale`,
   `SelectedScale`, `LargerScale`, `MinAlpha`, `MaxAlpha`, `SelectedAlpha`, `NotSelectedAlpha` 1), and whatever scale
   the game still gives a plate (`GetScale`) is undone: our dress at our size over it, the game's unit frame (its
   cast bar) at the share alone over it. A driver frame's guarded `OnUpdate` (hidden while no plate shows) runs
   `Range.Look` every `Range.EVERY` seconds, aims each plate at its share (anew too when the game's scale for it
-  changed) and moves it every frame at an even pace (`Scale.Step`: `Scale.SPEED` 1.5 shares a second, never past it).
+  changed) and moves it every frame at an even pace, never past it (`Scale.Step`: `Scale.SPEED` 0.2 shares a second with its
+  distance, `Scale.QUICK` 2 when selected or let go).
   `Scale.Born`: a plate appearing grows from nothing within `Scale.GROW` (0.2 s), its alpha up within `Scale.SHOW`
   (0.12 s).
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
@@ -273,3 +277,6 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   a red border on any foe out of reach of your attacks. The game's scaling had measured from the camera.
 - **2026-10-23:** the glow under the outline, always (Saneroki); sizes change evenly, no spring; nameplates half
   the size (*Nameplate size* 125%); a spell with a least range no longer turns a close foe red; `/sane range`.
+- **2026-10-23:** your target always full size (Saneroki); plates glide evenly from rung to rung of the range ladder
+  (the distance at the rung a unit just passed), slowly, as its unit moves; far foes red when the ladder puts them
+  beyond your farthest attack though your spells cannot say.

@@ -30,6 +30,17 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
   (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
 
+### Nameplates: your target full size; smooth glides between range rungs; far foes red (Saneroki, 2026-10-23)
+- **Target** (`Scale.lua`): your target's plate always at the full size, whatever its distance; selected or let go a
+  plate moves at `Scale.QUICK` (2 a second).
+- **Smooth:** the distance was the middle of the two rungs around a unit, flipping as it crossed one, and plates
+  jumped to it quickly. Now `Range.Settle` keeps it where it was while within the rungs and puts it at the rung the
+  unit just passed (the one distance known for sure); plates follow at `Scale.SPEED` 0.2 a second, about as fast as a
+  running unit changes its size, evenly, never past it.
+- **Far foes red** (`Range.lua`): where none of your spells can say, a foe the ladder puts beyond the farthest of your
+  attacks (`Range.longest`) is out of reach too. `Range.Check` gives the two rungs; `/sane range` prints them.
+- Tests: 142 checks.
+
 ### Nameplates: the glow under the outline; even size changes; half the size; close foes not red (Saneroki, 2026-10-23)
 - **Layers** (`Bar.lua`): the glow, the outline (rank line and border) and the bar each on a frame of its own one level
   above the last; the glow's frame had been asked one level under the dress, which can come out above the outline.

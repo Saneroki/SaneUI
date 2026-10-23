@@ -11,12 +11,15 @@ local _, ns = ...
 --  Range.FRIEND for friends: game facts, picked from its own item and spell
 --  tables), and your own spells with a range (harmful ones for foes, helpful
 --  ones for friends). The first that reaches it bounds the distance from
---  above, the last that did not from below; the unit is taken to stand
---  between (Range.Check). Nothing reaches it: beyond the last that did not,
---  up to the farthest the game shows plates (Range.FAR).
+--  above, the last that did not from below (Range.Check; nothing reaches it:
+--  up to the farthest the game shows plates, Range.FAR). The distance kept
+--  (Range.Settle) stays where it was while it is within those, and is at the
+--  rung a unit just moved past: the one distance known for sure, so a plate
+--  glides from rung to rung as its unit moves (Scale.lua).
 --
 --  Out of reach: a foe none of your harmful spells reaches now (one says no,
---  none yes). A spell that reaches only from afar (a least range: Charge,
+--  none yes; or none can say and the ladder puts it beyond the farthest of
+--  them). A spell that reaches only from afar (a least range: Charge,
 --  Auto Shot) says no to a foe too close as well, so its no counts for
 --  nothing. Its border is red then (Bar.Border), your target's and every
 --  other foe's alike (the setting Out of reach: red border).
@@ -34,6 +37,7 @@ ns.Range = Range
 
 Range.FAR = 60     -- the farthest the game shows plates of units not targeted, in yards
 Range.EVERY = 0.2  -- seconds between looks
+Range.longest = 0
 -- Items whose use reaches a foe that far: { yards, item }, from the game's tables (its item effects, their spells'
 -- ranges and targets).
 Range.ENEMY = { { 5, 3912 }, { 8, 238736 }, { 10, 9606 }, { 15, 275347 }, { 20, 10645 }, { 25, 274414 },
@@ -91,6 +95,8 @@ end
 function Range.Rebuild()
     local harmful, helpful = Spells()
     attacks = harmful
+    Range.longest = 0 -- the farthest any of your attacks reaches
+    for _, entry in ipairs(harmful) do Range.longest = math.max(Range.longest, entry[1]) end
     ladders.foe = Ladder(Range.ENEMY, harmful)
     ladders.friend = Ladder(Range.FRIEND, helpful)
     local items = rawget(_G, "C_Item")
@@ -110,44 +116,52 @@ local function Reaches(rung, unit)
     return Core.Ask(ask, rung.item, unit)
 end
 
--- How far a unit is (yards, or nil where nothing could tell), and for a foe whether your attacks reach it (true,
--- false, or nil where none of your spells could tell).
+-- Between which distances a unit stands (the farthest rung that did not reach it, the nearest that did; nil, nil
+-- where no rung could tell), and for a foe whether your attacks reach it (true, false, or nil where none of your
+-- spells could tell).
 function Range.Check(unit)
     local foe = Core.Ask(UnitCanAttack, "player", unit) == true
-    local below, above = nil, nil
+    local below, above, told = nil, nil, false
     for _, rung in ipairs(foe and ladders.foe or ladders.friend) do
         local reach = Reaches(rung, unit)
         if reach == true then
             above = rung[1]
             break
         elseif reach == false then
-            below = rung[1]
+            below, told = rung[1], true
         end
     end
-    local yards
-    if above then
-        yards = ((below or 0) + above) / 2
-    elseif below then
-        yards = (below + Range.FAR) / 2
-    end
-    if not foe then return yards, nil end
-    local told = false
+    local least, most = nil, nil
+    if told or above then least, most = below or 0, above or Range.FAR end
+    if not foe then return least, most, nil end
+    local no = false
     for _, entry in ipairs(attacks) do
         local reach = Core.Ask(C_Spell.IsSpellInRange, entry.spell, unit)
-        if reach == true then return yards, true end
-        if reach == false and (entry.least or 0) == 0 then told = true end
+        if reach == true then return least, most, true end
+        if reach == false and (entry.least or 0) == 0 then no = true end
     end
-    if told then return yards, false end
-    return yards, nil
+    -- Beyond the farthest of your attacks by the ladder, though they could not say: out of reach too.
+    if no or (least and Range.longest > 0 and least >= Range.longest) then return least, most, false end
+    return least, most, nil
 end
 
--- Every plate looked at: its distance (kept where it could not be told) and whether it is out of your reach; the
--- borders lit anew where that changed.
+-- A unit's distance kept from look to look: where the ladder puts it between two rungs, it stays where it was if it
+-- was there; where it moved past a rung, it is at that rung now (the one distance the ladder knows for sure); the
+-- first time, in the middle.
+function Range.Settle(yards, least, most)
+    if not least then return yards end
+    if not yards then return (least + most) / 2 end
+    if yards < least then return least end
+    if yards > most then return most end
+    return yards
+end
+
+-- Every plate looked at: its distance and whether it is out of your reach; the borders lit anew where that changed.
 function Range.Look()
     local on = (ns.options or {}).range ~= false
     for unit, dress in pairs(ns.Plate.shown) do
-        local yards, reach = Range.Check(unit)
-        if yards then dress.yards = yards end
+        local least, most, reach = Range.Check(unit)
+        dress.yards = Range.Settle(dress.yards, least, most)
         local out = on and reach == false
         if out ~= (dress.out == true) then
             dress.out = out
@@ -161,8 +175,8 @@ local rebuild = Core.Later(Range.Rebuild)
 -- /sane range: what the game answers for your target, each of your attacks with its reach, and the distance found.
 local function Tell()
     if Plain(UnitExists("target")) ~= true then return ns.Print("Range: no target.") end
-    local yards, reach = Range.Check("target")
-    ns.Print(("Range: about %s yards; your attacks %s."):format(yards and ("%.1f"):format(yards) or "?",
+    local least, most, reach = Range.Check("target")
+    ns.Print(("Range: between %s and %s yards; your attacks %s."):format(least or "?", most or "?",
         reach == true and "reach it" or reach == false and "do not reach it" or "cannot tell"))
     for _, entry in ipairs(attacks) do
         local data = Core.Ask(C_Spell.GetSpellInfo, entry.spell)

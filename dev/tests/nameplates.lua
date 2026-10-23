@@ -615,21 +615,41 @@ check(Near(Scale.Size(0), 1) and Near(Scale.Size(10), 1) and Near(Scale.Size(25)
 Range.Rebuild()
 units.nameplate1.friend, units.target, plates.target, units.focus, plates.focus = nil, nil, nil, nil, nil
 reach[100], reach[101] = nil, nil
+local function Between(unit) local least, most, reach = Range.Check(unit) return least, most, reach end
 yards.nameplate1 = 22
-check(select(1, Range.Check("nameplate1")) == 22.5 and select(2, Range.Check("nameplate1")) == true,
-    "22 yards: between the 20 and 25 yard items; the shot (8 to 30) reaches it")
+local least, most, inReach = Between("nameplate1")
+check(least == 20 and most == 25 and inReach == true, "22 yards: between the 20 and 25 yard items; the shot (8 to 30) reaches it")
 yards.nameplate1 = 3
-check(select(1, Range.Check("nameplate1")) == 2.5, "3 yards: within the 5 yard rung")
+least, most = Between("nameplate1")
+check(least == 0 and most == 5, "3 yards: within the 5 yard rung")
 yards.nameplate1 = 45
-check(select(1, Range.Check("nameplate1")) == 50 and select(2, Range.Check("nameplate1")) == false,
-    "45 yards: past the last rung (40), up to 60; none of your attacks reaches it")
+least, most, inReach = Between("nameplate1")
+check(least == 40 and most == 60 and inReach == false, "45 yards: past the last rung (40), up to 60; none of your attacks reaches it")
 units.nameplate2.friend = true
 yards.nameplate2 = 47
-check(select(1, Range.Check("nameplate2")) == 47.5 and select(2, Range.Check("nameplate2")) == nil,
-    "a friend: on the friends' ladder (45, 50), no reach of attacks")
+least, most, inReach = Between("nameplate2")
+check(least == 45 and most == 50 and inReach == nil, "a friend: on the friends' ladder (45, 50), no reach of attacks")
+-- The distance kept: in the middle at first, where it was while within the rungs, at the rung just passed.
+check(Range.Settle(nil, 20, 25) == 22.5 and Range.Settle(22.5, 20, 25) == 22.5 and Range.Settle(22.5, 25, 30) == 25
+    and Range.Settle(25, 20, 25) == 25 and Range.Settle(25, 15, 20) == 20 and Range.Settle(30, nil, nil) == 30,
+    "a distance known for sure only where its unit passed a rung")
+-- No spell can say, the ladder puts it beyond your farthest attack: out of reach too.
+reach[100], reach[101] = nil, nil
+local shot = ranges[101]
+local strike = ranges[100]
+ranges[101], ranges[100] = { 8, 30 }, { 0, 5 }
+local said = C_Spell.IsSpellInRange
+C_Spell.IsSpellInRange = function() return nil end
+yards.nameplate1 = 38
+least, most, inReach = Between("nameplate1")
+check(least == 35 and inReach == false, "38 yards, none of your spells can say: beyond the farthest (30), out of reach")
+yards.nameplate1 = 22
+least, most, inReach = Between("nameplate1")
+check(inReach == nil, "22 yards, none can say: not out of reach")
+C_Spell.IsSpellInRange, ranges[101], ranges[100] = said, shot, strike
 -- The driver: distances looked at, each plate moving evenly to its size, ours alone deciding.
 local tick = Scale.driver:GetScript("OnUpdate")
-local function Settle() for _ = 1, 200 do tick(Scale.driver, 0.02) end end
+local function Settle() for _ = 1, 500 do tick(Scale.driver, 0.02) end end
 yards.nameplate1 = 3
 plates.nameplate1:SetScale(1)
 Settle()
@@ -637,29 +657,35 @@ local full = Scale.Full()
 check(Near(dress._scale, full) and Near(plates.nameplate1.UnitFrame._scale, 1) and dress._alpha == 1 and dress.showing == nil,
     "3 yards: full size, seen, settled")
 check(full == 1.25, "full: the setting Nameplate size, 125% at first")
+-- Walking away: the plate follows evenly, never past its size, the same pace all the way.
+yards.nameplate1 = 22
+local even, last, steps = true, dress._scale, {}
+for _ = 1, 500 do
+    tick(Scale.driver, 0.02)
+    if dress._scale > last + 1e-9 then even = false end
+    if dress._scale ~= last then steps[#steps + 1] = last - dress._scale end
+    last = dress._scale
+end
+check(even and Near(dress._scale, full * Scale.Size(20)) and #steps > 10 and Near(steps[2], steps[5])
+    and Near(steps[2], full * Scale.SPEED * 0.02), "22 yards (past the 20 yard rung): smaller evenly, at its pace, never past its size")
+yards.nameplate1 = 27
+Settle()
+check(Near(dress._scale, full * Scale.Size(25)), "27 yards: past the 25 yard rung, so at 25 for sure")
+-- Your target: always full, whatever its distance, reached quickly.
 units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")
-Settle()
-check(Near(dress._scale, full), "your target: the same size at the same distance")
+for _ = 1, 40 do tick(Scale.driver, 0.02) end
+check(Near(dress._scale, full), "your target at 27 yards: full size, within a moment")
 plates.nameplate1:SetScale(1.3) -- whatever the game still does to a selected plate
 Settle()
 check(Near(dress._scale * 1.3, full) and Near(plates.nameplate1.UnitFrame._scale * 1.3, 1), "a scale the game still gives a plate: undone")
 plates.nameplate1:SetScale(1)
 Settle()
-yards.nameplate1 = 28
-local even, last, steps = true, dress._scale, {}
-for _ = 1, 200 do
-    tick(Scale.driver, 0.02)
-    if dress._scale > last + 1e-9 or dress._scale < full * Scale.Size(27.5) - 1e-9 then even = false end
-    if dress._scale ~= last then steps[#steps + 1] = last - dress._scale end
-    last = dress._scale
-end
-check(even and Near(dress._scale, full * Scale.Size(27.5)) and #steps > 3 and Near(steps[2], steps[3]),
-    "28 yards (between 25 and 30): smaller in even steps, never past its size")
 check(dress.border._vertex[1] == 1 and dress.border._vertex[2] == 1, "the shot reaches it: your target's border white")
 yards.nameplate1 = 38
 Settle()
-check(dress.out == true and dress.border._vertex[2] == Bar.FAR[2], "out of reach of all your attacks: red")
+check(dress.out == true and dress.border._vertex[2] == Bar.FAR[2] and Near(dress._scale, full),
+    "38 yards: out of reach of all your attacks, red; your target still full size")
 units.target, plates.target = nil, nil
 W.Fire("PLAYER_TARGET_CHANGED")
 check(dress.border._vertex[2] == Bar.FAR[2], "not your target, still out of reach: red over the black")
@@ -673,7 +699,6 @@ Core.Set(ns.name, "plateSize", 125)
 yards.nameplate1 = 6
 Settle()
 check(dress.out == true, "6 yards: out of the strike's reach, inside the shot's least: red")
-reach[100] = nil
 harmful[100] = nil -- a character with only a shot (least 8): its no at 6 yards says nothing
 Range.Rebuild()
 Settle()

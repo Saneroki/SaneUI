@@ -2,11 +2,10 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Scale
---  Every plate's size, by how far its unit is from your character and by
---  nothing else: Scale.Full() (the setting Nameplate size) within ten yards,
---  then down to half of it at forty yards and a quarter at sixty
---  (Scale.CURVE, straight between). Selected or not, rank, anything else:
---  the same size at the same distance. No transparency of ours, but a plate
+--  Every plate's size: your target's always Scale.Full() (the setting
+--  Nameplate size); any other's by how far its unit is from your character
+--  and nothing else: full within ten yards, then down to half at forty yards
+--  and a quarter at sixty (Scale.CURVE, straight between). No transparency of ours, but a plate
 --  appearing grows in from nothing.
 --
 --  The distance is Range.lua's (from your character, never the camera). The
@@ -15,9 +14,11 @@ local _, ns = ...
 --  and whatever scale the game still gives a plate is undone (our size over
 --  the plate's own scale), so ours is the only one.
 --
---  Each plate moves to its size at an even pace, in a straight line
---  (Scale.SPEED), from its last size when its distance changes, from nothing
---  when it appears (within Scale.GROW). A driver frame looks at the distances
+--  Each plate moves to its size at an even pace, in a straight line, never
+--  past it: with its unit's distance about as fast as a running unit changes
+--  it (Scale.SPEED), so it shrinks and grows smoothly from rung to rung of
+--  Range.lua's ladder; quickly when selected or let go (Scale.QUICK); from
+--  nothing when it appears (within Scale.GROW). A driver frame looks at the distances
 --  every Range.EVERY seconds and moves the plates every frame while one moves;
 --  hidden while no plate shows. The game's unit frame on a plate (its cast
 --  bar) is scaled along, without our size setting.
@@ -35,7 +36,9 @@ ns.Scale = Scale
 
 Scale.SIZE = 125 -- the setting Nameplate size at first: our bar's size within ten yards, in percent
 Scale.CURVE = { { 10, 1 }, { 40, 0.5 }, { 60, 0.25 } } -- { yards, share of the full size }, straight between
-Scale.SPEED = 1.5  -- how fast a plate moves to a new size: shares of the full size a second, in a straight line
+Scale.SPEED = 0.2  -- how fast a plate follows its unit's distance: shares of the full size a second, in a straight
+                   -- line (about as fast as a running unit changes it)
+Scale.QUICK = 2    -- how fast it moves to a size for any other reason (selected, the setting)
 Scale.GROW = 0.2   -- seconds a plate takes to grow from nothing as it appears
 Scale.SHOW = 0.12  -- seconds a plate takes from unseen to seen as it appears
 -- The game's CVars and ours for them: none of its scaling, none of its fading (but behind walls, which stays its own).
@@ -98,10 +101,10 @@ end
 function Scale.Step(dress, elapsed)
     local aim = dress.aim or 1
     local now = dress.now or aim
-    local pace = dress.growing and aim / Scale.GROW or Scale.SPEED
+    local pace = dress.growing and aim / Scale.GROW or dress.quick and Scale.QUICK or Scale.SPEED
     local step = pace * math.min(elapsed, 0.1)
     if math.abs(aim - now) <= step then
-        now, dress.growing = aim, nil
+        now, dress.growing, dress.quick = aim, nil, nil
     else
         now = now + (aim > now and step or -step)
     end
@@ -115,12 +118,15 @@ function Scale.Step(dress, elapsed)
     return now ~= aim or dress.showing ~= nil
 end
 
--- Every plate's size aimed at its distance's (Range.lua's; kept where it could not be told), and shown anew where
--- the game changed the scale it gives the plate.
+-- Every plate's size aimed: your target's full, any other's that of its distance (Range.lua's; kept where it could
+-- not be told); shown anew where the game changed the scale it gives the plate. Selected or let go, a plate moves
+-- quickly; by distance, evenly with its unit.
 local function Aim()
-    for _, dress in pairs(ns.Plate.shown) do
-        local aim = Scale.Size(dress.yards or 0)
+    for unit, dress in pairs(ns.Plate.shown) do
+        local target = Plain(UnitIsUnit(unit, "target")) == true
+        local aim = target and 1 or Scale.Size(dress.yards or 0)
         local own = Plain(dress.plate:GetScale())
+        if target ~= (dress.target == true) then dress.target, dress.quick = target, true end
         if aim ~= dress.aim or own ~= dress.given then
             dress.aim, dress.given = aim, own
             dress.moving = true
@@ -165,6 +171,7 @@ function Scale.Leave(dress)
     dress:SetScale(Scale.Full())
     dress:SetAlpha(1)
     dress.now, dress.aim, dress.moving, dress.growing, dress.showing, dress.yards = nil, nil, nil, nil, nil, nil
+    dress.quick, dress.target = nil, nil
 end
 
 local function Fought()
