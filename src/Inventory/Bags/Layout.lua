@@ -33,8 +33,8 @@ local _, ns = ...
 local Layout = {}
 ns.Layout = Layout
 
-Layout.SIZE = 34         -- an item button
-Layout.GAP = 4           -- between two
+Layout.SIZE = 68         -- an item button, an empty slot (Saneroki, 2026-10-23: twice the game's 34)
+Layout.GAP = 6           -- between two
 Layout.ROW = 24          -- a list's line
 Layout.ICON = 20         -- its item button
 Layout.HEAD = 20         -- a head line

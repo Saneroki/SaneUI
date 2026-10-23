@@ -140,6 +140,11 @@ rules give it; a group has one empty slot for the whole group; its sidebar row f
 and ticks whether All Items divides it into its members or shows it whole (a box); the bar's buttons small enough
 for the title line's pencil lines, *View* and *Sell All Junk Items* pencil boxes on the paper.
 
+**Built (2026-10-23), Saneroki asked:** items and empty slots twice the game's size (68), the bags' strip the same
+size and look; a waste bin, a pencil drawing (`assets/interface/bags-trash.png`, made with
+`dev/imagegen/sets/bags/trash.txt`, bucket-1), at the sidebar's foot: an item let go there opens the game's own
+question to destroy it.
+
 **Built (2026-10-23), Saneroki asked:** the doll's model down onto the strap drawn under the hero's column, a
 quarter larger again (1.5625 times its place), turned by the left button's drag and zoomed by the wheel (the game's
 scene that takes the mouse, over the hero's place only); left alone for ten seconds it glides back to how it stood.

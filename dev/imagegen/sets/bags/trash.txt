@@ -1,0 +1,10 @@
+# Bags: the waste bin at the bags window's bottom left (an item let go there is offered to be destroyed, as when
+# dropped into the world). A pencil drawing on the paper, alone; code lays it on the page and lights it.
+#   dev/tools/imagegen dev/imagegen/sets/bags/trash.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=0.6
+count: 4
+out: assets/generated/bags/trash
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. A loose, clean graphite pencil drawing as in an adventurer's journal, grey pencil lines and soft pencil shading only, no colour, no paper texture, alone, straight on, centred and filling most of the picture, chunky and readable when small, no text, no letters:
+bucket: a small wooden waste bucket with iron bands and a few crumpled scraps of paper sticking out of its top.
+barrel: a small round waste barrel of staves and two iron hoops, a broken arrow and a crumpled rag sticking out of it.

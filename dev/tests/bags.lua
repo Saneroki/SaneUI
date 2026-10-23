@@ -1407,6 +1407,19 @@ toggle:GetScript("OnClick")(toggle)
 check(not Bags.strip:IsShown() and kept.strip == false, "its button hides the strip, kept")
 toggle:GetScript("OnClick")(toggle)
 check(Bags.strip:IsShown() and kept.strip, "and shows it again")
+-- The waste bin at the sidebar's foot: an item let go there is offered to be destroyed in the game's own dialog.
+do
+    local bin = Bags.trash
+    check(bin and bin:IsShown() and bin.picture._texture:find("trash"), "the waste bin, a pencil drawing, at the sidebar's foot")
+    local popups = #W.popups
+    bin:GetScript("OnReceiveDrag")(bin)
+    check(#W.popups == popups, "nothing on the cursor: nothing asked")
+    holding, cursor = 118, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    check(#W.popups == popups + 1 and W.popups[#W.popups].which == "DELETE_ITEM",
+        "an item let go there: the game's own question to destroy it, as when dropped into the world")
+    holding, cursor = nil, false
+end
 local sideFrame = ns.BagSidebar.frame
 ns.Bags.Fold(true)
 check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.FOLDED,

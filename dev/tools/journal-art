@@ -91,7 +91,9 @@ LIST = {
     "sketch-tree-1": (0.5, "whole"),
     "doll": (1, "whole"),
     "icon-mask": (1, "mask"),
+    "trash": (0.31, "whole"),
 }
+TRASH = ROOT / "assets/interface/bags-trash.png"   # the bags' waste bin, chosen (dev/imagegen/sets/bags/trash.txt)
 ROUND = 0.2                  # the icon mask's corners: their radius against its side (Saneroki, 2026-10-23: rounder)
 
 
@@ -244,6 +246,20 @@ def icon_mask():
     return out
 
 
+def trash():
+    """The bags' waste bin as pencil on the page: its strokes and shading in the journal's graphite, its white
+    fill clear (the darker a pixel, the more graphite), so the paper shows through as through any pencil line."""
+    picture = Image.open(TRASH).convert("RGBA")
+    rgba = np.asarray(picture, dtype=np.float32)
+    lum = rgba[..., :3].mean(axis=-1)
+    ink = np.clip((235 - lum) / 150, 0, 1) * (rgba[..., 3] / 255)
+    out = np.zeros_like(rgba)
+    out[..., :3] = (30, 23, 17)                 # Core.Journal.INK
+    out[..., 3] = ink * 255
+    box = Image.fromarray(out.astype(np.uint8)).getbbox()
+    return Image.fromarray(out.astype(np.uint8)).crop(box)
+
+
 def slot():
     """A square pencil box for an item's slot (116 x 116, the box's height): the box's four corners kept whole
     (30 % of its height), its sides stretched between them."""
@@ -330,6 +346,8 @@ def main(names):
             picture = slot()
         elif name == "icon-mask":
             picture = icon_mask()
+        elif name == "trash":
+            picture = trash()
         else:
             picture = Image.open(PIECES / f"{name}.png").convert("RGBA")
         sizes[name] = texture(name, picture, scale, how)

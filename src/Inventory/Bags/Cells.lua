@@ -44,7 +44,7 @@ Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its penci
 Cells.EMPTY_ALPHA = 0.04
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
-Cells.MARK, Cells.COIN = 16, 12         -- the quest mark, the junk coin
+Cells.MARK, Cells.COIN = 28, 20         -- the quest mark, the junk coin
 
 local look = {}     -- [button] = what is ours on it (kept apart from the game's button)
 local recordOf = {} -- [button] = the record it draws now
@@ -73,10 +73,10 @@ end
 local function Fonts()
     if fonts then return fonts end
     fonts = {
-        count = Core.Font("SaneUIBagsCount", "NumberFontNormal", 11, "OUTLINE"),
-        level = Core.Font("SaneUIBagsLevel", "NumberFontNormal", 12, "OUTLINE"),
-        bind = Core.Font("SaneUIBagsBind", "NumberFontNormal", 11, "OUTLINE"),
-        set = Core.Font("SaneUIBagsSet", "NumberFontNormal", 9, "OUTLINE"),
+        count = Core.Font("SaneUIBagsCount", "NumberFontNormal", 16, "OUTLINE"),
+        level = Core.Font("SaneUIBagsLevel", "NumberFontNormal", 16, "OUTLINE"),
+        bind = Core.Font("SaneUIBagsBind", "NumberFontNormal", 14, "OUTLINE"),
+        set = Core.Font("SaneUIBagsSet", "NumberFontNormal", 12, "OUTLINE"),
     }
     return fonts
 end

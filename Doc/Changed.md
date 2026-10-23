@@ -240,6 +240,19 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   glint) is grey, so each kind shows its colour as it is. The hearthstone's and the teleports' stay pale blue.
 - README.md (*Routes*, *Route*, the files), `Doc/ideas/Navigation.md` (the line's colours).
 
+### Inventory: the bags' cells twice as large; the bag strip like them; a waste bin (2026-10-23)
+- `Layout.SIZE` 68 (was 34), `GAP` 6; the cells' words (`Cells.Fonts`: count and item level 16, BoE 14, the set 12),
+  the quest mark 28 and the coin 20, the "+" 34; `Bags.STEP` 74. The bags' strip takes the same size and gap
+  (`Foot.BAG`, `Foot.BAG_GAP` from `Layout`), already in the cells' look (pencil slot, rounded icon, no border).
+- The waste bin (`Bags.lua`: `MakeTrash`, `Trash`, `Bags.Bin`; `Bags.TRASH` its room, `BagSidebar.Room` keeps it
+  free under the rows): an item let go there or clicked onto it opens the game's own dialog as the game's
+  `DELETE_ITEM_CONFIRM` would (`DELETE_GOOD_ITEM` for rare and better but heirlooms, the quest variants for quest
+  items), whose Yes is the game's `DeleteCursorItem`.
+- Its picture: Core's `Art/Journal/trash` (`dev/tools/journal-art`: `trash()`, the chosen drawing
+  `assets/interface/bags-trash.png` turned into graphite on clear, its white fill gone; `Journal.PIECES`), made by
+  `dev/imagegen/sets/bags/trash.txt` (a quick try of eight; bucket-1 taken).
+- `dev/tests/bags.lua`: the bin, nothing asked without an item, the game's question with one.
+
 ### Inventory: the bags' strip of bag slots twice as large (2026-10-23)
 - `Foot.BAG` 68 (was 34), the strip's height with it (`Foot.STRIP`).
 

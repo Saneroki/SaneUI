@@ -627,6 +627,11 @@ function Bag.DivideGroup(row)
     if ns.Bank then ns.Bank.Refresh() end
 end
 
+-- Room kept free at the sidebar's foot (the bags' waste bin stands there), its rows scrolling above it.
+function Bag.Room(bottom)
+    if rail then rail.scroll:SetPoint("BOTTOMRIGHT", 0, bottom) end
+end
+
 -- Folded or unfolded (Bags.Fold keeps it).
 function Bag.Fold(on)
     if rail then rail:Fold(on) end
