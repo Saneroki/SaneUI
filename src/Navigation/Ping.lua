@@ -16,7 +16,9 @@ local _, ns = ...
 --                  double click puts the game's map pin there instead, and takes the ping back (Cancel)
 --      received    each ping a mark on our map at its place for Ping.TIME seconds (Marks.lua): its yards from
 --                  the player at the game's minimap's zoom then, put on our plane; the game's minimap draws its
---                  own where it shows (Hybrid.Covers), the sound is the game's
+--                  own where it shows (Hybrid.Covers), the sound is the game's. MINIMAP_PING is one of the
+--                  game's callback events: no frame can register it (RegisterEvent refuses it), only the
+--                  game's RegisterEventCallback takes it, as Blizzard's minimap does (Listen)
 --
 --  The game's minimap turns with the player where the game's setting says so and it is the game's own (ours
 --  holds it north up, Hybrid.lua); a ping's place is turned with it, both ways.
@@ -83,7 +85,17 @@ local function Pinged(unit, x, y)
     pings[#pings + 1] = { map = map, u = pu + east, v = pv + north, unit = Core.Plain(unit), ends = GetTime() + Ping.TIME }
     ns.Fire("LIVE", "ping")
 end
-ns.On("MINIMAP_PING", Pinged)
+-- The game's callback for MINIMAP_PING, guarded (its first value is the callback's owner: none); a client without
+-- callback events would tell it as a frame's event.
+local function Listen()
+    local register = rawget(_G, "RegisterEventCallback")
+    if not register then return ns.On("MINIMAP_PING", Pinged) end
+    local heard = ns.Guard(function(_, unit, x, y) Pinged(unit, x, y) end)
+    if not pcall(register, "MINIMAP_PING", heard) then
+        Core.NoteError("event MINIMAP_PING", "the game took no callback for it; the group's pings are off")
+    end
+end
+Listen()
 
 -- The pings still shown at now (GetTime), oldest first; those gone are let go.
 function Ping.List(now)

@@ -57,6 +57,13 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Tests: the inventory test's stand-in scene has the game's camera and scripts; 132 checks (the size, the place,
   the feet, the mouse's area, the game's scripts kept, the wait, its new start by the wheel, the way back).
 
+### Navigation: the group's pings heard (Saneroki, 2026-10-23)
+- `Ping.lua`: `MINIMAP_PING` is one of the game's callback events, which no frame can register (Forever's client
+  refused it: "this client has no such event"); it is now taken through the game's `RegisterEventCallback`, as
+  Blizzard's minimap takes it, guarded (`Listen`; its first value the callback's owner, none), a frame's event only on
+  a client without callback events.
+- Tests: `dev/tests/navigation.lua` (586 checks: the ping heard as a callback event, by no frame).
+
 ### Navigation: the player's arrow always shown, on the small map and the full one (Saneroki, 2026-10-23)
 - `Canvas.lua`, `Marks.lua`: our arrow (`Marks.Player`, Blizzard's world map arrow) is no longer left to the game's
   minimap where that lies over our map: on the full map, where the game's minimap stands only as a square around the

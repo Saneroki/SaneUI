@@ -403,7 +403,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   ping: `Ping.Send` takes the place's yards from the player and `Hybrid.PingAt` turns them into the minimap's units
   (its width over twice its view's radius, `C_Minimap.GetViewRadius`) and calls `Minimap:PingLocation`; where the
   view it has does not reach so far, at the nearest step measured that does, for the moment (its zoom set back at
-  once; what the game says of it meanwhile is ours), and none past its widest. `MINIMAP_PING` (unit, x, y: shares of
+  once; what the game says of it meanwhile is ours), and none past its widest. `MINIMAP_PING`, one of the game's
+  callback events (no frame's `RegisterEvent` takes it: it comes through the game's `RegisterEventCallback`, as to
+  Blizzard's own minimap, its first value the callback's owner, none; unit, x, y: shares of
   the minimap's width and height from its middle, the receiver's own player) comes back as yards (twice the radius
   times each share) on the player's plane, kept `Ping.TIME` seconds (`Ping.List`) and drawn by `Marks.Pings` at each
   look of the tracker: the game's minimap ping art (`UI-Minimap-Ping-Center`, `-Rotate` turning, `-Expand` growing),

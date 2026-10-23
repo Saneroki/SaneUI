@@ -669,6 +669,9 @@ C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressStri
                    end }
 W.AddSets(spawnsPath)
 
+-- The game's callback events (MINIMAP_PING among them): only RegisterEventCallback takes them, no frame's RegisterEvent.
+W.callbacks = {}
+RegisterEventCallback = function(event, fn) W.callbacks[event] = fn return true end
 W.LoadCore(root)
 local Core = SaneUI.Core
 -- Saved by an earlier version (the first shape of the settings): the view Overlay, which is gone.
@@ -1384,8 +1387,11 @@ end
         end
         return list
     end
-    W.Fire("MINIMAP_PING", "party1", 0.7, -0.2) -- past the game's minimap's square (its half: 0.5)
-    W.Fire("MINIMAP_PING", "player", 0.05, 0)
+    local listened = false
+    for _, widget in ipairs(W.frames) do listened = listened or widget._events.MINIMAP_PING ~= nil end
+    check(W.callbacks.MINIMAP_PING and not listened, "MINIMAP_PING heard as the game's callback event, by no frame")
+    W.callbacks.MINIMAP_PING(nil, "party1", 0.7, -0.2) -- past the game's minimap's square (its half: 0.5)
+    W.callbacks.MINIMAP_PING(nil, "player", 0.05, 0)
     local marks = Pinged()
     local mark = marks[1]
     local x, y = (u + 1.4 * radius - Canvas.view.u) * full.k, (v - 0.4 * radius - Canvas.view.v) * full.k
