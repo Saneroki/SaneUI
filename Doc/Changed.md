@@ -86,6 +86,14 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Tests: the inventory test's stand-in scene has the game's camera and scripts; 132 checks (the size, the place,
   the feet, the mouse's area, the game's scripts kept, the wait, its new start by the wheel, the way back).
 
+### Navigation: a ping sent in the click itself (Saneroki, 2026-10-23)
+- The game blocked our pings ("the game blocked UNKNOWN()", three times): `Minimap:PingLocation` is taken only in the
+  click's own handler, and the ping was sent from a timer (`Ping.Soon`, held back a double click's time). Now sent at
+  once, in the click (`Canvas.lua`'s `Clicked`, `Found.lua`'s picture), so a double click pings with its first click
+  and puts the map pin with its second; `Ping.Soon`, `Ping.Cancel` and `Ping.DOUBLE` are gone (`Canvas.DOUBLE`, 0.3).
+- Tests: `dev/tests/navigation.lua` (586 checks: the ping in the click, one ping in a double click; the test clock
+  kept as before).
+
 ### Navigation: the group's pings heard (Saneroki, 2026-10-23)
 - `Ping.lua`: `MINIMAP_PING` is one of the game's callback events, which no frame can register (Forever's client
   refused it: "this client has no such event"); it is now taken through the game's `RegisterEventCallback`, as

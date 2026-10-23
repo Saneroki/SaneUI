@@ -325,7 +325,7 @@ function minimap:SetZoom(step) self._zoom = step end
 function minimap:GetZoomLevels() return 6 end
 function minimap:SetMaskTexture(mask) self._mask = mask end
 function minimap:SetPassThroughButtons(...) self._through = { ... } end
-function minimap:PingLocation(x, y) self._ping = { x, y } end
+function minimap:PingLocation(x, y) self._ping, self._pings = { x, y }, (self._pings or 0) + 1 end
 minimap.ZoomIn = W.NewWidget("Button", nil, minimap)
 minimap.ZoomIn._mouse = true
 local backdrop = W.NewWidget("Frame", "MinimapBackdrop", minimap)
@@ -1221,18 +1221,16 @@ check(small.follow and near(small.u, 500) and minimap._shown, "then it follows a
     check(zoned and placed == 1, "a zone entered: the pins placed anew, not the whole map; what is explored lays it out")
 end)()
 
--- A plain click in a zone pings there, once the time of a double click has passed; a double click puts the map pin
--- there instead; Ctrl and a click puts it there too.
+-- A plain click in a zone pings there, in the click itself (the game blocks a ping from a timer); a double click puts
+-- the map pin there too (its first click pinged); Ctrl and a click puts it there.
 ;(function()
     cursorX, cursorY = 120, 110
     minimap._ping = nil
     local step = minimap._zoom
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
-    local owed = minimap._ping == nil
-    W.Wait(ns.Ping.DOUBLE)
-    check(owed and minimap._ping and near(minimap._ping[1], 20) and near(minimap._ping[2], 10) and minimap._zoom == step,
-        "a click: the game's ping where it was clicked (its yards from the player, in its minimap's units), once no second came")
+    check(minimap._ping and near(minimap._ping[1], 20) and near(minimap._ping[2], 10) and minimap._zoom == step,
+        "a click: the game's ping where it was clicked (its yards from the player, in its minimap's units), in the click")
     do
         -- Past the view the game's minimap has (step 2: 160 yards): at the nearest step that reaches it for the moment
         -- (step 0: 240 yards), then back at its own.
@@ -1248,16 +1246,16 @@ end)()
         minimap.SetZoom = zoom
         minimap._zoom = step
     end
-    waypoint, minimap._ping = nil, nil
+    waypoint, minimap._pings = nil, 0
     W.Wait(1) -- the first click long past: the next is no second of it
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
     W.Wait(0.1)
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
-    W.Wait(ns.Ping.DOUBLE)
-    check(waypoint and waypoint.uiMapID == 1429 and not minimap._ping and not tracked,
-        "a double click: the game's map pin there, not yet followed, and no ping")
+    W.Wait(0.6) -- 1.7 seconds in all: the clock as the tests below were written for
+    check(waypoint and waypoint.uiMapID == 1429 and minimap._pings == 1 and not tracked,
+        "a double click: the game's map pin there, not yet followed; one ping, its first click's")
     waypoint = nil
 end)()
 ctrl = true
@@ -2031,21 +2029,20 @@ do
         Click(button)
     end
     local mailbox = Drawn()["place:2"]
-    local sent
+    local sent, pings = nil, 0
     local send = ns.Ping.Send
-    ns.Ping.Send = function(map, u, v) sent = { map, u, v } return true end
+    ns.Ping.Send = function(map, u, v) sent, pings = { map, u, v }, pings + 1 return true end
     waypoint = nil
     W.Wait(1)
     Click(mailbox)
-    W.Wait(ns.Ping.DOUBLE)
     check(not waypoint and sent and sent[1] == full.map, "a click on a pin with nothing of its own: the map's, a ping there")
     W.Wait(1)
-    sent = nil
+    pings = 0
     Double(mailbox)
-    W.Wait(ns.Ping.DOUBLE)
+    W.Wait(0.6) -- the clock as the tests below were written for
     check(waypoint and waypoint.uiMapID == mailbox.pin.map and near(waypoint.position.x, mailbox.pin.x)
-        and near(waypoint.position.y, mailbox.pin.y) and not sent,
-        "a double click on a pin: the game's map pin where it stands, no ping")
+        and near(waypoint.position.y, mailbox.pin.y) and pings == 1,
+        "a double click on a pin: the game's map pin where it stands; one ping, its first click's")
     ns.Ping.Send = send
     local opened
     local show = ns.Canvas.Show
@@ -4300,19 +4297,16 @@ do
     local send = ns.Ping.Send
     ns.Ping.Send = function(map, u, v) sent = { map, u, v } return true end
     waypoint = nil
-    W.Wait(1)
+    W.Wait(1.6) -- the clock as the tests below were written for
     spot._scripts.OnClick(spot)
-    W.Wait(ns.Ping.DOUBLE)
     local entry = spot.entry
     check(not waypoint and sent and sent[1] == entry.plane and sent[2] == entry.u and sent[3] == entry.v,
-        "a click: a ping where it is, once no second click came")
+        "a click: a ping where it is, in the click")
     sent = nil
-    spot._scripts.OnClick(spot)
     spot._scripts.OnDoubleClick(spot)
-    W.Wait(ns.Ping.DOUBLE)
     check(waypoint and waypoint.uiMapID == 1429 and waypoint.position.x > 0 and waypoint.position.x < 1
         and waypoint.position.y > 0 and waypoint.position.y < 1 and not sent,
-        "a double click: the game's map pin where it is, on its zone's map; no ping")
+        "a double click: the game's map pin where it is, on its zone's map; no second ping")
     ns.Ping.Send = send
     waypoint = saved
 end

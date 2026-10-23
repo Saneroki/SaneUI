@@ -31,9 +31,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map;
   - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
-    as a click on the game's minimap does, and on this map too (below). It goes out once the time of a double
-    click has passed without a second, so a double click sends none. The game pings only as far as its minimap's
-    widest view reaches around you, so a place farther off is not pinged;
+    as a click on the game's minimap does, and on this map too (below). It goes out at once, in the click (the
+    game takes a ping only from the click itself), so a double click pings too, with its first click. The game
+    pings only as far as its minimap's widest view reaches around you, so a place farther off is not pinged;
   - **a double click:** the game's map pin there (on a pin: where the pin stands); **Ctrl and a click** puts it
     there too, as on the game's map. The pin has two states, as the game's own: *tracked* (gold, the game's
     arrow on the screen leads to it with its distance) and *untracked* (only on the map). A click on the pin
@@ -396,12 +396,14 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   pin filter `TopBar.PINS_WIDTH`, so the whole bar fits a screen 1366 units wide (1080p at the game's scale).
 - **Clicks and pings** (`Canvas.lua`, `Ping.lua`, no frames of its own): every click on the map and on a pin comes to
   `Canvas` (a pin's press and release are the map's, `Canvas.Release(button, pin)`): Ctrl puts the map pin at once;
-  two plain left clicks on the same (a pin, or the map) within `Ping.DOUBLE` seconds and `Canvas.NEAR` units are a
+  two plain left clicks on the same (a pin, or the map) within `Canvas.DOUBLE` seconds and `Canvas.NEAR` units are a
   double click, the map pin where the first was (the pin, or the map's place as it was: a first click may have
-  opened a zone); one is the pin's own (`PinView.Act`), else opens the map under it (`Into`), else owes a ping
-  (`Ping.Soon`), sent once no second click came. The game's one way to show a place to the group is its minimap's
-  ping: `Ping.Send` takes the place's yards from the player and `Hybrid.PingAt` turns them into the minimap's units
-  (its width over twice its view's radius, `C_Minimap.GetViewRadius`) and calls `Minimap:PingLocation`; where the
+  opened a zone); one is the pin's own (`PinView.Act`), else opens the map under it (`Into`), else pings there at
+  once (`Ping.Send`): the game takes `Minimap:PingLocation` only in the click's own handler, a ping from a timer it
+  blocks as an action of its own (seen 2026-10-23, `UNKNOWN()`), so a double click's first click pings too. The
+  game's one way to show a place to the group is its minimap's ping: `Ping.Send` takes the place's yards from the
+  player and `Hybrid.PingAt` turns them into the minimap's units (its width over twice its view's radius,
+  `C_Minimap.GetViewRadius`) and calls `Minimap:PingLocation`; where the
   view it has does not reach so far, at the nearest step measured that does, for the moment (its zoom set back at
   once; what the game says of it meanwhile is ours), and none past its widest. `MINIMAP_PING`, one of the game's
   callback events (no frame's `RegisterEvent` takes it: it comes through the game's `RegisterEventCallback`, as to

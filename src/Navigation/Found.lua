@@ -35,7 +35,7 @@ local _, ns = ...
 --  Each picture takes the mouse, as the pins do: its tooltip names the herb or
 --  ore, a click pings it to the group as a click on the game's minimap there
 --  would (Ping.lua), and a double click puts the game's map pin where it is (its
---  zone's map) instead, so the game's arrow leads there.
+--  zone's map) too, so the game's arrow leads there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Nodes = ns.Coords, ns.Nodes
@@ -301,18 +301,17 @@ local function OnMap(entry)
     return zone, x, y
 end
 
--- A click on a picture: a ping there, once no second click came. A double click: the game's map pin where it is
--- instead (PinView.Drop says so where the game takes none); the game's button tells the second click as one of its
--- own, after the first's OnClick.
+-- A click on a picture: a ping there, at once (the game takes one only in the click). A double click: the game's map
+-- pin where it is too (PinView.Drop says so where the game takes none); the game's button tells the second click as
+-- one of its own, after the first's OnClick.
 local function Clicked(button)
     local entry = button.entry
-    if entry then ns.Ping.Soon({ map = entry.plane, u = entry.u, v = entry.v }) end
+    if entry then ns.Ping.Send(entry.plane, entry.u, entry.v) end
 end
 
 local function DoubleClicked(button)
     local entry = button.entry
     if not entry then return end
-    ns.Ping.Cancel()
     local map, x, y = OnMap(entry)
     ns.PinView.Drop({ map = map, x = x, y = y })
 end

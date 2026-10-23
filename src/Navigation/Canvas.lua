@@ -42,8 +42,8 @@ local _, ns = ...
 --  Over a continent shown whole the zone under the mouse lights up, over the world
 --  the continent (Art.Light), and a plain click opens it, as on the game's map;
 --  where a click opens nothing, it pings there to the group as a click on the
---  game's minimap does (Ping.lua), once the time of a double click has passed
---  without a second (Ping.Soon). A click on a pin is the pin's first, where
+--  game's minimap does (Ping.lua), at once (the game takes a ping only in the
+--  click itself). A click on a pin is the pin's first, where
 --  it has one of its own (PinView.Act). A plane of its own (Zephras Isle) is drawn
 --  as a continent is, as a zone (Camera.lua).
 --
@@ -78,7 +78,7 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
-Canvas.DOUBLE = ns.Ping.DOUBLE -- a second click so many seconds after the first, near where it was, is a double click
+Canvas.DOUBLE = 0.3  -- a second click so many seconds after the first, near where it was, is a double click
 Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a double click
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
 Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, indoors = 5, light = 6, areas = 7, route = 8, pins = 12,
@@ -557,8 +557,8 @@ local last
 -- A click on the map, or on a pin (pin: its record, PinView.lua). The right button steps one map out; Ctrl and the
 -- left puts the game's map pin there. Two plain left clicks on the same (a pin, or the map) within Canvas.DOUBLE,
 -- near each other: the map pin where the first was (the view may have changed in between). One: the pin's own
--- (PinView.Act), else the map under the mouse opens, else a ping there, owed until no second click came (Ping.Soon).
--- In an instance our map is not drawn: no place to pin, the game's minimap pings itself.
+-- (PinView.Act), else the map under the mouse opens, else a ping there, at once (Ping.Send: so the first click of a
+-- double click pings too). In an instance our map is not drawn: no place to pin, the game's minimap pings itself.
 local function Clicked(button, pin)
     local x, y = FromMiddle()
     if not x then return end
@@ -578,16 +578,15 @@ local function Clicked(button, pin)
         and math.abs(x - last.x) + math.abs(y - last.y) <= Canvas.NEAR then
         local first = last
         last = nil
-        ns.Ping.Cancel() -- the first click's ping is not sent
         if not lost then ns.PinView.Drop(first.pin or first.spot) end
         return
     end
     -- Shift and a click is a pin's own (a map opened), never half of a double click.
     last = not IsShiftKeyDown() and { at = now, x = x, y = y, pin = pin, spot = not lost and Where(x, y) } or nil
     if pin and ns.PinView.Act(pin) then return end
-    if lost then return ns.Ping.Soon({ x = x, y = y }) end
+    if lost then return ns.Hybrid.Ping(x, y) end
     if Into(x, y) then return end
-    ns.Ping.Soon({ map = camera.map, u = camera.u + x / camera.k, v = camera.v + y / camera.k })
+    ns.Ping.Send(camera.map, camera.u + x / camera.k, camera.v + y / camera.k)
 end
 
 local function Up(_, button)

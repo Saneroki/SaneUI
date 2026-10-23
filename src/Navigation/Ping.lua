@@ -12,8 +12,9 @@ local _, ns = ...
 --                  (Found.lua): the place's yards from the player, in the game's minimap's units, as a click on
 --                  the game's minimap there would ping; where its view does not reach so far, at a wider step
 --                  of its own for the moment (Hybrid.PingAt). The game pings only inside its view: past its
---                  widest, none. Sent once the time of a double click has passed without a second (Soon): a
---                  double click puts the game's map pin there instead, and takes the ping back (Cancel)
+--                  widest, none. Sent at once, in the click itself: the game takes a ping only from the click
+--                  that asks for it (from a timer it blocks it as an action of its own), so the first click of a
+--                  double click (the map pin, Canvas.lua) pings too
 --      received    each ping a mark on our map at its place for Ping.TIME seconds (Marks.lua): its yards from
 --                  the player at the game's minimap's zoom then, put on our plane; the game's minimap draws its
 --                  own where it shows (Hybrid.Covers), the sound is the game's. MINIMAP_PING is one of the
@@ -27,8 +28,7 @@ local Core = SaneUI.Core
 local Ping = {}
 ns.Ping = Ping
 
-Ping.TIME = 5     -- seconds a ping stands on the map
-Ping.DOUBLE = 0.3 -- a second click so many seconds after the first is a double click (Canvas.lua's too)
+Ping.TIME = 5 -- seconds a ping stands on the map
 
 local pings = {} -- the pings shown: { map, u, v (its place on a plane), unit (who pinged), ends (when it goes) }
 
@@ -40,8 +40,8 @@ local function Turned()
 end
 
 -- Pings a place of a plane (map: the plane; u, v: its yards east and north) to the group, as a click on the game's
--- minimap there does. False where the game cannot: the player's place not known on that plane, the place past the
--- game's minimap's widest view.
+-- minimap there does; only in a click's own handler (above). False where the game cannot: the player's place not
+-- known on that plane, the place past the game's minimap's widest view.
 function Ping.Send(map, u, v)
     local here, pu, pv = ns.Live.Player()
     if not pu or here ~= map then return false end
@@ -49,24 +49,6 @@ function Ping.Send(map, u, v)
     local turn = Turned()
     local cos, sin = math.cos(turn), math.sin(turn)
     return ns.Hybrid.PingAt(east * cos + north * sin, north * cos - east * sin)
-end
-
--- The ping a click owes, sent once Ping.DOUBLE has passed and no double click took it back: { map, u, v } a place of
--- a plane (Send), { x, y } a point of the game's minimap from its middle where it is the map alone (an instance:
--- Hybrid.Ping). A newer click's ping takes its place.
-local owed
-function Ping.Soon(ping)
-    owed = ping
-    C_Timer.After(Ping.DOUBLE, ns.Guard(function()
-        if owed ~= ping then return end
-        owed = nil
-        if ping.map then Ping.Send(ping.map, ping.u, ping.v) else ns.Hybrid.Ping(ping.x, ping.y) end
-    end))
-end
-
--- The ping owed is not sent: the click was the first of a double click.
-function Ping.Cancel()
-    owed = nil
 end
 
 -- A ping from the group (or one's own): its place on the player's plane, kept for Ping.TIME seconds. Its place may be

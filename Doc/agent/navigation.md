@@ -306,8 +306,8 @@ with the routes harness outside the project (as 2026-10-21, above).
 
 Clicks, pings and following (2026-10-23; the plan, *Follow me on the full map*, *Pings as on the game's minimap*, *A
 double click for the map pin*): every click on the map and on a pin goes through `Canvas.lua`'s `Clicked` (a pin's
-own first, `PinView.Act`; a double click within `Ping.DOUBLE`, the map pin; else the map under it opens, else
-`Ping.Soon`). `Ping.lua` (no frames) sends a place by its yards from the player through `Hybrid.PingAt`
+own first, `PinView.Act`; a double click within `Canvas.DOUBLE`, the map pin; else the map under it opens, else
+`Ping.Send` at once, in the click: the game blocks a ping from a timer). `Ping.lua` (no frames) sends a place by its yards from the player through `Hybrid.PingAt`
 (`Minimap:PingLocation`, a wider step for the moment where needed) and keeps `MINIMAP_PING`'s places, which
 `Marks.Pings` draws. The quest log's click moves the map (`Canvas.LookAt`), its `OnDoubleClick` pins. *Follow me*
 (`followMap`): the box on the bar, `Canvas.Following`, `Canvas.Center`, the tracker's `Again`.
