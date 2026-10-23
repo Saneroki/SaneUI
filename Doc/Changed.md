@@ -10,6 +10,13 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
   (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
 
+### Nameplates: the quest's icon and the raid marker outside the bar; long names longer bars (Saneroki, 2026-10-23)
+- **Outside** (`Text.lua`, `Marks.lua`): the quest's sword or sack and the raid marker stand left of the bar, outside
+  it (`Text.OUTSIDE` 4 from it and each other, the marker outermost); the quest's count stays first in the line. A
+  foe's buffs stand left of them (`dress.outside`, `Auras.Place`).
+- **Long names** (`Text.MOST` 400, was 180): the bar grows for them instead of cutting them short.
+- Tests: 127 checks (the icons' places, the buffs past them, a long name).
+
 ### Nameplates: one control over size and transparency; plates spring in (Saneroki, 2026-10-23)
 - **One hand** (`Scale.lua`): the game's scaling, its larger target and elites and its fading pulled at the plates'
   size apart from ours. Now the game's scaling is only a gauge: its CVars make it one straight line from 1 at your

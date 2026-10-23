@@ -30,13 +30,13 @@ fails, every plate is the game's own again.
 - **Inside the bar:** one line, left to right, each piece taking room only while it shows, and the bar as wide
   as the line and a little inset, no wider:
   - *quest:* while the unit belongs to a quest in your log with an objective still open, the game's sword (to
-    kill it) or sack (to loot it) and the count ("0/7");
-  - *raid marker*;
+    kill it) or sack (to loot it) outside the bar, left of it, and the count ("0/7") first in the line;
+  - *raid marker*, outside the bar too, left of the quest's icon;
   - *level* in the game's colour for how hard it is to you (a skull where it is too high to tell);
   - *item level* of a player ("i32"), once the game let Sane UI inspect them (out of a fight, near enough);
   - *threat* while you are on its threat list: grey while low, orange when you are about to take its aggro, red
     while you have it, and then the whole bar glows red;
-  - *name* (a player's first name and surname), cut short past 180;
+  - *name* (a player's first name and surname): a long name makes the bar longer (cut short only past 400);
   - *health*,
   short (under a thousand as it is, then thousands to one place, "1.2k", then millions to two, "1.32m"; cut,
   not rounded), and "| 100%" how much is left. In a fight the game hides some of these from addons: the health
@@ -57,7 +57,8 @@ fails, every plate is the game's own again.
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
   picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
-- **Raid marker:** in the line (none on a player you could fight, as on the game's plates).
+- **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
+  foe's buffs stand left of the icons there.
 - **Size by distance:** one control over every plate's size and transparency, so nothing else pulls at them:
   full size within 10 yards, gradually down to half at 40 yards, then to a quarter at 60, the farthest the game
   shows plates of units you have not targeted. Your target's plate, which the game shows farther, stays at that
@@ -118,8 +119,9 @@ fails, every plate is the game's own again.
 - **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), in the game's nameplate
   font's face and outline (`SystemFont_NamePlate_Outlined`'s `GetFont`), `Text.SMALLER` (0.72) of its height, set on
   every text of ours once (`SetFont`), so later changes of the game's font object change none. Each piece has its room (`dress.room[piece]`, none while it does not
-  show); `Text.Layout` places the pieces from `Text.INSET` (3) in, `Text.GAP` apart (`Text.NEAR` between the quest's
-  icon and count), each at `LEFT` of the frame at its x, and wants the bar as wide as the line and its insets
+  show); `Text.Layout` places the pieces from `Text.INSET` (3) in, `Text.GAP` apart, each at `LEFT` of the frame at its
+  x; the icons (the quest's, then the raid marker: `OUTSIDE`) right of the frame's left, `Text.OUTSIDE` (4) apart from
+  it and each other, their width kept as `dress.outside` for the foe's buffs (`Auras.Place`), and wants the bar as wide as the line and its insets
   (`dress.want`, `Plate.Place`). A plain text's room is its own whole width (`GetUnboundedStringWidth`: not as cut
   by the width it was given), rounded up, and `Text.SLACK` (1) more; a text that answers hidden (a font string once
   given a hidden value may ever after), the health's most and the threat's "100%" are measured on a ruler of ours
@@ -128,9 +130,9 @@ fails, every plate is the game's own again.
   texts are measured while they show. Icons are `Text.ICON` (1.2) times the font's
   height (`Text.size`). Several pieces set at once lay out once (`dress.holding`). The pieces:
   - *quest*: `Core.UnitQuest(unit)` (`src/Core/Objectives.lua`), not for players: the icon `Text.QUEST` (the game's
-    cursors `Attack` and `LootAll`) and the count; kept as it was while the game hides it; again on
+    cursors `Attack` and `LootAll`) outside, the count inside; kept as it was while the game hides it; again on
     `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame.
-  - *raid marker* (`Marks.lua`).
+  - *raid marker* (`Marks.lua`), outside.
   - *level*: `UnitLevel`, coloured by the game's `GetRelativeDifficultyColor` against yours on a unit you can
     attack, `UNIT_LEVEL_NON_ATTACKABLE` otherwise, the game's skull (`Text.SKULL`) for a level below 1.
   - *gear*: `Core.Inspect.Level(unit, UnitGUID(unit))` for players, "i" and the level in `Text.GEAR`. Asked for when
@@ -153,15 +155,15 @@ fails, every plate is the game's own again.
   "CustomAuraContainerTemplate")`, `Blizzard_AuraContainer`): `own`, `Auras.OWN` (`HARMFUL|PLAYER|!CROWD_CONTROL`),
   its `BOTTOMLEFT` on the dress's `TOPLEFT`, growing right, as many as `Auras.Slots` of the dress's width; `foes`,
   `HELPFUL|INCLUDE_NAME_PLATE_ONLY` (the filter of the game's own plates), at most `Auras.BUFFS`, its
-  `BOTTOMRIGHT` left of the dress's `BOTTOMLEFT`, growing left; `control`, `Auras.CC` (`HARMFUL|CROWD_CONTROL`), at
+  `BOTTOMRIGHT` left of the dress's `BOTTOMLEFT` past the icons outside it (`dress.outside`), growing left; `control`, `Auras.CC` (`HARMFUL|CROWD_CONTROL`), at
   most `Auras.CONTROL`, its `BOTTOMLEFT` right of the dress (`Auras.Place`), growing right; up a row each. The game assigns the auras, icons, times and stacks (hidden values
   and all); our code runs only when a container makes a frame (`Dress`, its `initializeFrame`, guarded): a
   `Auras.SIZE` square icon cut by the game's nameplate aura mask (`UI-HUD-CoolDownManager-Mask`), its border
   (`UI-HUD-CoolDownManager-IconOverlay`), a `CooldownFrameTemplate` with the game's swipe, the count in a frame
   above it, handed to the frame with `SetIcon`, `SetDurationCooldown`, `SetApplicationCount`. A plate taken back
   sets its containers to `"none"`, disabled. Without the template the plates show no auras (noted once).
-- **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, a piece of the line
-  (`Text.size` square), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
+- **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, outside the bar left of the
+  quest's icon (`Text.size` square, placed by `Text.Layout`), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
   secret: only its type is looked at).
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
@@ -250,3 +252,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** one control over size and transparency (Saneroki): full within 10 yards, half at 40, a quarter at
   60, read from the game's scaling and set by us alone; plates spring in and fade out at the edge; the game's larger
   target and its fading off.
+- **2026-10-23:** the quest's icon and the raid marker outside the bar, left of it, the count inside; long names
+  make the bar longer (Saneroki).

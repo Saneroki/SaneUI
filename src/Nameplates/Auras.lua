@@ -6,7 +6,8 @@ local _, ns = ...
 --    above   the debuffs and damage over time you put on the unit, from the
 --            bar's left, as many as fit over its width
 --    left    up to three of its buffs, on a unit you can attack, as the game
---            picks buffs for its own plates, growing away from the bar
+--            picks buffs for its own plates, past the quest's icon and the
+--            raid marker, growing away from the bar
 --    right   the crowd control on it (stuns, fears, roots, by anyone),
 --            growing away from the bar
 --  Your crowd control shows on the right only, not twice.
@@ -98,13 +99,16 @@ function Auras.Make(dress)
     dress.foes = Container(dress, "BOTTOMRIGHT", "Left", "foes", Auras.FOES, Auras.BUFFS)
     dress.control = Container(dress, "BOTTOMLEFT", "Right", "control", Auras.CC, Auras.CONTROL)
     if dress.own then dress.own:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", 0, 0) end
-    if dress.foes then dress.foes:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -Auras.GAP, 0) end
     Auras.Place(dress)
 end
 
--- The crowd control right of the bar.
+-- A foe's buffs left of the bar, past the icons outside it (Text.Layout); the crowd control right of the bar.
 function Auras.Place(dress)
-    local control = dress.control
+    local foes, control = dress.foes, dress.control
+    if foes then
+        foes:ClearAllPoints()
+        foes:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -(Auras.GAP + (dress.outside or 0)), 0)
+    end
     if not control then return end
     control:ClearAllPoints()
     control:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", Auras.GAP, 0)

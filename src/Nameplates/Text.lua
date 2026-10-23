@@ -3,11 +3,12 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Text
 --  The line inside a plate's bar, left to right, each piece taking room only
---  while it shows:
---    quest    the game's sword (to kill) or sack (to loot) and the count
---             ("0/7") while the unit belongs to a quest in your log with an
---             objective still open (Core.UnitQuest)
---    marker   the raid marker (Marks.lua)
+--  while it shows; the icons stand outside the bar, at its left end (the raid
+--  marker outermost, the quest's icon next to the bar: Text.OUTSIDE):
+--    quest    the game's sword (to kill) or sack (to loot), outside, and the
+--             count ("0/7") inside, while the unit belongs to a quest in your
+--             log with an objective still open (Core.UnitQuest)
+--    marker   the raid marker (Marks.lua), outside
 --    level    the unit's level in the game's colour for how hard it is to you
 --             (a skull where it is too high to tell)
 --    gear     a player's item level ("i32"), once inspected (Core.Inspect)
@@ -41,12 +42,12 @@ Text.FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFon
 Text.INSET = 3   -- from the bar's ends to the line
 Text.PAD = 2     -- over and under the line, inside the bar
 Text.GAP = 4     -- between two pieces of the line
-Text.NEAR = 1    -- between the quest's icon and its count
+Text.OUTSIDE = 4 -- from the bar's left end to the icons outside it (past a boss's rank line), and between two of them
 Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
 Text.ICON = 1.2  -- an icon's size, times the font's height
 Text.SLACK = 1   -- room given to a text beyond its measured width, so it is never cut short by rounding
 Text.NAME = 80   -- the room of a name the game hides, before a plain one was seen
-Text.MOST = 180  -- the most room a name takes (cut short beyond it)
+Text.MOST = 400  -- the most room a name takes (cut short beyond it): long names make the bar longer
 Text.GEAR = { 0.75, 0.75, 0.75 } -- the item level's colour
 Text.SKULL = "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:0|t" -- the game's mark for a level too high to tell
 -- The game's mouse cursors for a creature to fight and one to loot, as Sane UI shows objectives elsewhere.
@@ -166,14 +167,30 @@ Text.Room = Room
 local ORDER = { { "quest", "quest" }, { "count", "count" }, { "raid", "raid" }, { "level", "level" }, { "gear", "gear" },
                 { "threat", "threat" }, { "name", "name" }, { "value", "value" } }
 
--- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place).
+-- The pieces that stand outside the bar, at its left end, from the bar outward.
+local OUTSIDE = { "quest", "raid" }
+local outside = { quest = true, raid = true }
+
+-- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place);
+-- the icons outside, left of the bar, from it outward.
 function Text.Layout(dress)
     local top, room = dress.top, dress.room
+    local edge = 0
+    for _, key in ipairs(OUTSIDE) do
+        local region = dress[key]
+        if region and room[key] then
+            region:ClearAllPoints()
+            region:SetPoint("RIGHT", top, "LEFT", -(edge + Text.OUTSIDE), 0)
+            edge = edge + Text.OUTSIDE + room[key]
+        end
+    end
+    dress.outside = edge -- the foe's buffs stand left of the icons (Auras.Place)
+    ns.Auras.Place(dress)
     local x, last = Text.INSET, nil
     for _, entry in ipairs(ORDER) do
         local region, width = dress[entry[1]], room[entry[2]]
-        if region and width then
-            if last then x = x + (last == "quest" and Text.NEAR or Text.GAP) end
+        if region and width and not outside[entry[2]] then
+            if last then x = x + Text.GAP end
             region:ClearAllPoints()
             region:SetPoint("LEFT", top, "LEFT", x, 0)
             -- A text as wide as its room (cut short past it), but the health: as wide as it is (its room is a guess

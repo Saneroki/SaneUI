@@ -323,6 +323,10 @@ check(Text.Percent(1, 1000) == 1 and Text.Percent(999, 1000) == 99 and Text.Perc
 units.nameplate1.name = Secret()
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
 check(dress.name._text == units.nameplate1.name and dress.room.name == L(10), "a hidden name goes to the text as it is, in the room of the last")
+units.nameplate1.name = "Archmage Ataeric the Unforgiving of the Blue Dragonflight"
+W.Fire("UNIT_NAME_UPDATE", "nameplate1")
+check(dress.room.name == L(#units.nameplate1.name) and dress.name._width == dress.room.name and dress._width == dress.want,
+    "a long name: all of its room, the bar longer for it")
 units.nameplate1.name = "Young Wolf"
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
 units.nameplate1.tapped = true
@@ -359,13 +363,15 @@ W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + L(2) + G,
     "off its list: none, and no room for it")
 
--- A quest: the sword and the count first in the line; done, gone.
+-- A quest: the sword outside the bar, left of it, the count first in the line; done, gone.
 units.nameplate1.quest = { { type = 17, leftText = "Wolves Across the Border" }, { type = 8, leftText = "Young Wolf slain: 3/8" } }
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(0)
 check(dress.quest:IsShown() and dress.quest._texture == Text.QUEST.kill and dress.count._text == "3/8"
-    and X(dress.quest) == I and X(dress.count) == I + Text.size + Text.NEAR and X(dress.level) == I + Text.size + Text.NEAR + L(3) + G,
-    "an objective to kill it: the sword and 3/8 before the level")
+    and dress.quest._points[1][1] == "RIGHT" and dress.quest._points[1][3] == "LEFT" and X(dress.quest) == -Text.OUTSIDE
+    and X(dress.count) == I and X(dress.level) == I + L(3) + G
+    and dress.foes._points[1][4] == -(Auras.GAP + Text.OUTSIDE + Text.size),
+    "an objective to kill it: the sword left of the bar, 3/8 first inside it, the buffs past the sword")
 units.nameplate1.quest[2] = { type = 8, leftText = "Wolf Pelt: 0/7" }
 W.Fire("UNIT_QUEST_LOG_CHANGED", "player")
 W.Wait(0)
@@ -373,7 +379,8 @@ check(dress.quest._texture == Text.QUEST.loot and dress.count._text == "0/7", "s
 units.nameplate1.quest = nil
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(0)
-check(not dress.quest:IsShown() and dress.room.quest == nil and dress.room.count == nil and X(dress.level) == I, "done: gone, no room")
+check(not dress.quest:IsShown() and dress.room.quest == nil and dress.room.count == nil and X(dress.level) == I
+    and dress.foes._points[1][4] == -Auras.GAP, "done: gone, no room, the buffs by the bar again")
 
 -- Power that changes, and a unit without any.
 units.nameplate1.powerNow = 70
@@ -443,14 +450,14 @@ check(friend.level._color[1] == 0.3, "the level of someone you cannot attack in 
 check(not friend.foes:IsShown() and friend.own:IsShown(), "no buffs on someone you cannot attack")
 check(friend.raid:IsShown() and friend.raid._cell[1] == 8 and friend.raid._cell[2] == 4 and friend.raid._cell[3] == 4,
     "a raid marker: the game's icon at its index")
-check(X(friend.raid) == I and X(friend.level) == I + Text.size + G and friend.control._points[1][2] == friend,
-    "in the line before the level; the crowd control right of the bar")
+check(friend.raid._points[1][1] == "RIGHT" and X(friend.raid) == -Text.OUTSIDE and X(friend.level) == I
+    and friend.control._points[1][2] == friend, "left of the bar, outside it; the line inside unmoved; the crowd control right")
 units.nameplate2.raid = Secret()
 W.Fire("RAID_TARGET_UPDATE")
 check(friend.raid:IsShown() and friend.raid._cell[1] == units.nameplate2.raid, "an index hidden from addons goes to the icon as it is")
 units.nameplate2.raid = nil
 W.Fire("RAID_TARGET_UPDATE")
-check(not friend.raid:IsShown() and friend.room.raid == nil and X(friend.level) == I, "no marker: none, no room")
+check(not friend.raid:IsShown() and friend.room.raid == nil and X(friend.level) == I, "no marker: none")
 
 -- A stranger: out of sight, unless a friend, guild member or your target; a player you can fight: shown, glowing.
 units.nameplate2.party = false
