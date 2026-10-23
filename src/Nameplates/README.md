@@ -70,7 +70,8 @@ fails, every plate is the game's own again.
   at `NAME_PLATE_UNIT_ADDED`; none for a forbidden plate or your own), a child of the plate (its place, scale and
   fading are ours too), centred on the plate's `UnitFrame.HealthBarsContainer`, made once and kept: the game hands
   plates out again and takes its unit frames from a pool, so each add looks at the plate's unit frame anew (read
-  with `rawget`, never written); as high as its line needs (`Text.Height`: the font's height, `Text.PAD` over and
+  with `rawget`, never written); `Plate.SIZE` (2) times the size the plate's scale gives it (`SetScale`); as high as
+  its line needs (`Text.Height`: the font's height, `Text.PAD` over and
   under, a pixel of border each) and as wide as the line wants (`Plate.Place`, at every fit and line change; the
   row's width, read in the dress's units, until the line is laid out). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
   `name`, `AurasFrame`, `RaidTargetFrame`, `ClassificationFrame`, `LevelFrame`, `PlayerLevelDiffFrame`,
@@ -120,7 +121,9 @@ fails, every plate is the game's own again.
   (`dress.want`, `Plate.Place`). A plain text's room is its own whole width (`GetUnboundedStringWidth`: not as cut
   by the width it was given), rounded up, and `Text.SLACK` (1) more; a text that answers hidden (a font string once
   given a hidden value may ever after), the health's most and the threat's "100%" are measured on a ruler of ours
-  (`Text.Width`: a font string at alpha 0, never given a hidden value). Icons are `Text.ICON` (1.2) times the font's
+  (`Text.Width`: a font string at alpha 0, never given a hidden value, on a frame of its own on `UIParent`, always
+  shown, since a hidden one may not measure what it is given). A plate is shown before it is filled, so its own
+  texts are measured while they show. Icons are `Text.ICON` (1.2) times the font's
   height (`Text.size`). Several pieces set at once lay out once (`dress.holding`). The pieces:
   - *quest*: `Core.UnitQuest(unit)` (`src/Core/Objectives.lua`), not for players: the icon `Text.QUEST` (the game's
     cursors `Attack` and `LootAll`) and the count; kept as it was while the game hides it; again on
@@ -137,10 +140,13 @@ fails, every plate is the game's own again.
     `isTanking` as it is.
   - *name*: `Core.FullName` for players, else `UnitName` as it is; its room the plain name's (at most `Text.MOST`),
     a hidden one the last plain one's (`Text.NAME` before any).
-  - *health*: plain, `Text.Short` and `Text.Percent` ("1.32m | 100%"); hidden, `AbbreviateNumbers` with
+  - *health*: the game hides a plate's unit's health from addons always (its most often): plain, `Text.Short` and
+    `Text.Percent` ("1.32m | 100%"); hidden, `AbbreviateNumbers` with
     `Text.STEPS` as its breakpoints (the game's own form where it takes none) and `UnitHealthPercent(unit, true,
-    CurveConstants.ScaleTo100)`, both into `SetFormattedText`. Its room that of the most health in that form,
-    measured on the text itself (kept while the most is hidden; "888.8k | 100%" on the ruler before any).
+    CurveConstants.ScaleTo100)`, both into `SetFormattedText`. Its room that of the most health in that form
+    on the ruler (kept while the most is hidden), else of `Text.Guess`: about `Text.PER_LEVEL` (60) a level, a
+    player's `Text.PLAYER` (100), three times for an elite or rare, a boss's in millions, every digit an 8 and the
+    places a real one may have ("8.8k", "8.88m"). The health text is as wide as it is (`SetWidth(0)`), never cut short.
 - **Auras** (`Auras.lua`): three of the game's aura containers per dress (`CreateFrame("AuraContainer", ...,
   "CustomAuraContainerTemplate")`, `Blizzard_AuraContainer`): `own`, `Auras.OWN` (`HARMFUL|PLAYER|!CROWD_CONTROL`),
   its `BOTTOMLEFT` on the dress's `TOPLEFT`, growing right, as many as `Auras.Slots` of the dress's width; `foes`,
@@ -227,3 +233,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   one straight line, so the game's own scaling does it all and nothing of ours rescales plates any more.
 - **2026-10-23:** a compact bar, as high as its line (Saneroki), less room at its ends; plates one and a half times
   larger at your feet, the same straight line down to a quarter of that at 60 yards.
+- **2026-10-23:** our bar twice the size (Saneroki); the health's room from its most or a guess by level and rank,
+  no more room for "888.8k"; the ruler on a frame always shown.

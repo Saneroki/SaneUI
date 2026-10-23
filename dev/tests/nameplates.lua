@@ -234,8 +234,17 @@ local I, G = Text.INSET, Text.GAP
 local function L(letters) return letters * 6 + Text.SLACK end -- a text's room: six a letter, and the slack
 check(X(dress.level) == I and X(dress.name) == I + L(2) + G and X(dress.value) == I + L(2) + G + L(10) + G,
     "the level first, then the name, then the health")
-check(dress.room.value == L(13), "hidden health keeps the room of the widest it can show")
-check(dress.want == I + L(2) + G + L(10) + G + L(13) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
+check(Text.Guess("nameplate1") == "8.8k" and dress.room.value == L(11),
+    "the most hidden: room for a guess from its level and rank (22, a rare: about 4k)")
+check(dress.want == I + L(2) + G + L(10) + G + L(11) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
+check(dress.value._width == 0 and dress.name._width == L(10), "the health as wide as it is (never cut short), the others their room")
+check(dress._scale == ns.Plate.SIZE, "our bar twice the size the plate's scale gives it")
+units.guess = { level = -1 }
+check(Text.Guess("guess") == "8.88m", "a boss's in millions")
+units.guess = { level = 30, player = true }
+check(Text.Guess("guess") == "8.8k", "a player's about a hundred a level")
+units.guess = { level = 8 }
+check(Text.Guess("guess") == "888", "a low creature's under a thousand")
 check(dress.rankLine:IsShown() and dress.rankLine._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare and dress.border._vertex[1] == 0,
     "a rare: a thin silver line behind the black border")
 check(not dress.raid:IsShown(), "no raid marker")

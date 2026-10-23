@@ -107,7 +107,9 @@ local function Drawn(text)
     return type(width) == "number" and width or nil
 end
 
-local ruler -- a font string of ours that only measures: never seen (alpha 0), never given a hidden value
+-- A font string of ours that only measures: never seen (alpha 0), never given a hidden value, on a frame of its own
+-- that is always shown (a hidden one may not measure what it was given).
+local ruler
 
 -- How wide a plain text is in the line's font, with its slack.
 function Text.Width(text)
@@ -134,9 +136,12 @@ function Text.Make(dress)
     top:SetAllPoints(dress)
     top:SetFrameLevel(dress.health:GetFrameLevel() + 3)
     if not ruler then
-        ruler = Line(top, "LEFT")
-        ruler:SetPoint("LEFT", top, "LEFT")
-        ruler:SetAlpha(0)
+        local holder = CreateFrame("Frame", nil, UIParent)
+        holder:SetSize(1, 1)
+        holder:SetPoint("TOPLEFT", UIParent, "TOPLEFT")
+        holder:SetAlpha(0)
+        ruler = Line(holder, "LEFT")
+        ruler:SetPoint("LEFT", holder, "LEFT")
         Text.size = math.floor(Font().height * Text.ICON + 0.5)
     end
     local quest = top:CreateTexture(nil, "OVERLAY")
@@ -171,7 +176,9 @@ function Text.Layout(dress)
             if last then x = x + (last == "quest" and Text.NEAR or Text.GAP) end
             region:ClearAllPoints()
             region:SetPoint("LEFT", top, "LEFT", x, 0)
-            if region.SetWordWrap then region:SetWidth(width) end
+            -- A text as wide as its room (cut short past it), but the health: as wide as it is (its room is a guess
+            -- while the game hides the most health).
+            if region.SetWordWrap then region:SetWidth(entry[2] == "value" and 0 or width) end
             x, last = x + width, entry[2]
         end
     end
@@ -284,6 +291,25 @@ function Text.Short(health)
     return Cut(health / 1000000, 2) .. "m"
 end
 
+-- A guess at how the most health of a unit looks short, for its room while the game hides it: about Text.PER_LEVEL a
+-- level (a player Text.PLAYER), three times that for an elite, a boss's in millions, each digit an 8 (the widest).
+Text.PER_LEVEL, Text.PLAYER = 60, 100
+function Text.Guess(unit)
+    local level = Core.Ask(UnitLevel, unit)
+    local rank = ns.Bar.Rank(unit)
+    local most
+    if rank == "boss" or (type(level) == "number" and level <= 0) then
+        most = 1000000
+    else
+        level = type(level) == "number" and level or 60
+        most = level * (Plain(UnitIsPlayer(unit)) and Text.PLAYER or Text.PER_LEVEL) * (rank and 3 or 1)
+    end
+    local short = Text.Short(most)
+    -- With the places a real one may have ("1.2k", "1.23m"), though the guess is round.
+    if not short:find(".", 1, true) then short = short:gsub("k$", ".8k"):gsub("m$", ".88m") end
+    return (short:gsub("%d", "8"))
+end
+
 -- How much is left, in whole percent: 100 only when full, 1 at least while any is left.
 function Text.Percent(now, most)
     if most <= 0 or now >= most then return now > 0 and 100 or 0 end
@@ -314,15 +340,11 @@ function Text.Health(dress, unit)
         return Room(dress, "value", nil)
     end
     local plainNow, plainMost = Plain(now), Plain(most)
-    -- Its room: as wide as the most it can show (so the bar does not change width as health goes), kept while the
-    -- most is hidden.
-    -- Measured on the text itself in that form (on the ruler where it answers hidden), then given what it shows.
-    if type(plainMost) == "number" then
-        local widest = Text.Short(plainMost) .. " | 100%"
-        text:SetText(widest)
-        dress.valueRoom = Measure(text, widest)
-    end
-    Room(dress, "value", dress.valueRoom or Text.Width("888.8k | 100%"))
+    -- Its room: as wide as the most it can show, so the bar does not change width as health goes. The game hides the
+    -- health of a plate's unit from addons always, and its most often: the most's width when it says it (kept),
+    -- else a guess from the unit's level and rank (Text.Guess).
+    if type(plainMost) == "number" then dress.valueRoom = Text.Width(Text.Short(plainMost) .. " | 100%") end
+    Room(dress, "value", dress.valueRoom or Text.Width(Text.Guess(unit) .. " | 100%"))
     if type(plainNow) == "number" and type(plainMost) == "number" then
         return text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
     end

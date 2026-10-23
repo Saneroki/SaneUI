@@ -40,6 +40,8 @@ ns.Plate = Plate
 Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
                  "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
                  "aggroHighlightAdditive" }
+-- Our bar, its line and auras this many times the size the plate's scale gives them.
+Plate.SIZE = 2
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
@@ -171,6 +173,7 @@ local OnSizeChanged = ns.Guard(Fit)
 local function Make(plate)
     local dress = CreateFrame("Frame", nil, plate)
     dress.plate, dress.edge = plate, 0
+    dress:SetScale(Plate.SIZE)
     ns.Bar.Make(dress)
     ns.Text.Make(dress)
     ns.Marks.Make(dress)
@@ -235,6 +238,7 @@ local function Added(unit)
     dress.row, dress.want = nil, nil -- placed anew over this row, as wide as its line once laid out
     for _, event in ipairs(Plate.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
     Fit(dress)
+    Wear(dress) -- shown before it is filled: its texts measured while they show
     Fill(dress)
     Wear(dress)
     ns.Resource.Again()
