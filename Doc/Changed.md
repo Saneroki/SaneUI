@@ -3,8 +3,16 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 136 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 137 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Inventory: the doll's zoom toward the head (Saneroki, 2026-10-23)
+- `Sheet/Model.lua`: the scene's camera looked at the hips (its target 1.02 high) at every zoom. Once the model
+  has loaded, the camera gets a target spline (`SetTargetSpline`, the game's `CreateCatmullRomSpline`): no shift
+  zoomed out, the model's head zoomed all the way in (`Model.HEAD`, 0.85 of its bounding box's height up from its
+  feet), so the wheel zooms in on the face. Set anew with each setup of the scene (which clears it); the way back
+  after ten seconds zooms out, so the target comes down with it.
+- Tests: `dev/tests/inventory.lua` 137 checks (the spline's points).
 
 ### Nameplates: combat numbers over the plates (Saneroki, 2026-10-23)
 - New `Numbers.lua` (in the TOC): what a plate's unit takes rises over its bar and fades: damage (physical white, a

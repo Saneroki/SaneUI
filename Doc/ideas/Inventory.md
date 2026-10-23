@@ -153,6 +153,8 @@ scene that takes the mouse, over the hero's place only); left alone for ten seco
 level line down to the ground (681), a smaller race on the same ground at the same scale (the scene's own sizes per
 race taken out); the feet placed where the scene says it draws them.
 
+**Built (2026-10-23), Saneroki asked:** the wheel zooms in on the model's head, not its hips.
+
 **Built (2026-10-23), Saneroki asked:** a group's fold arrow in the sidebar is the sidebar's own pencil arrow (the
 "<" that folds the sidebar), turned down or up; its box a square drawn in pencil with a light tick drawn by hand.
 

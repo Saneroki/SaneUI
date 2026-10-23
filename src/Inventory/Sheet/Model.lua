@@ -10,9 +10,10 @@ local _, ns = ...
 --  fills its place, from under the level line down to Doll.GROUND; a gnome
 --  stands as small as it is), its feet on the place's foot. The game's scene
 --  that takes the mouse (ModelSceneMixinTemplate, its orbit camera): dragged
---  with the left button it turns, the wheel zooms; left alone for Model.REST
---  seconds, it glides back to how it first stood. An item let go over it is
---  put on (the game's AutoEquipCursorItem), as on the game's sheet.
+--  with the left button it turns, the wheel zooms toward its head; left alone
+--  for Model.REST seconds, it glides back to how it first stood. An item let
+--  go over it is put on (the game's AutoEquipCursorItem), as on the game's
+--  sheet.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Model = {}
@@ -25,6 +26,7 @@ Model.REST = 10      -- seconds without a drag or a turn of the wheel before the
 -- When the scene cannot measure where it draws a point: its field of view across its diagonal, and the floor this
 -- share of its height lower than that rule says (seen in the game, 2026-10-23).
 Model.LOWER = 0.064
+Model.HEAD = 0.85 -- the head the zoom aims at, up from the model's feet: this share of its height
 
 local TURN = 2 * math.pi
 local scene, place
@@ -95,13 +97,29 @@ local function Even(actor)
     actor:SetOnModelLoadedCallback(Loaded)
 end
 
+-- The zoom toward the head: the camera's target rises as it zooms in, from where the scene looks (zoomed out) to the
+-- model's head (all the way in); the game's camera follows its target spline.
+local function Aim(bottom, top)
+    local camera, Spline = Camera(), rawget(_G, "CreateCatmullRomSpline")
+    if not (camera and camera.SetTargetSpline and Spline) then return end
+    local _, _, z = camera:GetTarget()
+    local spline = Spline(3)
+    spline:AddPoint(0, 0, 0)
+    spline:AddPoint(0, 0, bottom + (top - bottom) * Model.HEAD - z)
+    camera:SetTargetSpline(spline)
+end
+
 -- The scene with the character's feet on its place's foot (the bottom of its model, once loaded; else the floor),
--- centred across it; it takes the mouse only over its place.
+-- centred across it; it takes the mouse only over its place. The model loaded, its zoom aims at its head.
 local function Stand(actor)
     local tall, floor = scene:GetHeight(), 0
     if actor and actor:IsLoaded() then
-        local _, _, bottom = actor:GetActiveBoundingBox()
-        floor = (bottom or 0) * (actor:GetScale() or 1)
+        local _, _, bottom, _, _, top = actor:GetActiveBoundingBox()
+        local scale = actor:GetScale() or 1
+        if bottom and top then
+            floor = bottom * scale
+            Aim(floor, top * scale)
+        end
     end
     local below = Measured(floor) or Ruled(floor)
     local up = below and below < tall / 2 and tall / 2 - below or 0

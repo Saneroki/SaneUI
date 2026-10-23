@@ -149,6 +149,7 @@ W.templates.ModelSceneMixinTemplate = function(widget)
     function camera:GetZoomDistance() return self.zoom end
     function camera:SetZoomDistance(zoom) self.zoom = zoom end
     function camera:GetTarget() return 0, 0, self.target end
+    function camera:SetTargetSpline(spline) self.spline = spline end
     widget._camera = camera
     function widget:GetActiveCamera() return camera.zoom and camera end -- none before the scene is set up
     function widget:GetCameraFieldOfView() return FOV end
@@ -163,6 +164,12 @@ W.templates.ModelSceneMixinTemplate = function(widget)
     widget:SetScript("OnMouseDown", function() camera.downs = camera.downs + 1 end)
     widget:SetScript("OnMouseUp", function() camera.ups = camera.ups + 1 end)
     widget:SetScript("OnMouseWheel", function(_, delta) camera.wheels = camera.wheels + 1 camera.zoom = camera.zoom - delta * 0.19 end)
+end
+-- The game's spline: its points kept.
+CreateCatmullRomSpline = function(dimensions)
+    local spline = { dimensions = dimensions, points = {} }
+    function spline:AddPoint(...) self.points[#self.points + 1] = { ... } end
+    return spline
 end
 local scenes = 0
 ModelSceneUtil = { SetUpCharacterSheetScene = function(scene)
@@ -375,6 +382,11 @@ do
     player.loaded, player.bottom = true, -0.05
     player.onLoaded(player)
     check(Feet(1.07 * FOCAL / 3.9), "its model loaded: the bottom of the model on the place's foot")
+    local spline = scene._camera.spline
+    local head = -0.05 + (2 + 0.05) * Model.HEAD
+    check(spline and spline.dimensions == 3 and #spline.points == 2 and spline.points[1][3] == 0
+        and near(spline.points[2][3], head - 1.02) and spline.points[2][1] == 0 and spline.points[2][2] == 0,
+        "zoomed in, the camera looks at the model's head: its target rises with the zoom, not at the hips")
     local hit = scene._hit
     check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - 1.07 * FOCAL / 3.9)
         and near(height - hit[3] - hit[4], place:GetHeight()), "it takes the mouse only over its place, though drawn larger")

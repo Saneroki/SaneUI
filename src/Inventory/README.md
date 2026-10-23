@@ -35,7 +35,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - *Character*: Sane UI's own doll, a page of paper in a shaped leather frame (`Doc/guides/interface-style.md`):
     your model in the middle on the page's plain paper, from under your level down to the ground if you are
     full-grown, every race at the same scale (a gnome stands as small as it is; drag it with the left button to
-    turn it, the wheel zooms; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in two arcs of pencil slots round it (the head
+    turn it, the wheel zooms in on its head; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in two arcs of pencil slots round it (the head
     and the hands at the top as large as the others; the icons without a border, their corners rounded) with a
     paper strip beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
     Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
@@ -224,7 +224,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `ModelSceneMixinTemplate` (its orbit camera: the
-    left button's drag turns it, the wheel zooms) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
+    left button's drag turns it, the wheel zooms; once the model has loaded, a target spline aims the zoom at its
+    head, `Model.HEAD` of its height up from its feet) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
     at `UNIT_MODEL_CHANGED`, `Model.SIZE` (272 x 872 doll pixels: a full-grown character fills its place, from
     under the level line to `Doll.GROUND`). Every race at one scale: each of the scene's actors gets requested scale
     1, no scaling toward a man's size and the floor (scene 595 sizes and lifts each race). Its feet on the place's
