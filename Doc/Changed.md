@@ -48,6 +48,12 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Tests: the inventory test's stand-in scene has the game's camera and scripts; 132 checks (the size, the place,
   the feet, the mouse's area, the game's scripts kept, the wait, its new start by the wheel, the way back).
 
+### Navigation: the player's arrow on the full map again (Saneroki, 2026-10-23)
+- `Canvas.lua`: our arrow (`Marks.Player`) is left to the game's minimap only in the small view, where that minimap
+  is the map; on the full map, where the game's minimap stands only as a square around the player for its dots and
+  showed no arrow in play, ours is always drawn, over it, as the game's world map draws it.
+- Tests: `dev/tests/navigation.lua` (585 checks: our arrow on the player over the full map's game minimap).
+
 ### Navigation: pings as on the game's minimap, a double click for the map pin, the quest log moves the map, Follow me (Saneroki, 2026-10-23)
 - **Pings** (`Ping.lua`, new in the TOC, no frames): a plain click on the map where it opens nothing pings there to the
   party and raid through the game's own ping (`Minimap:PingLocation`; Forever's client loads no ping wheel): the

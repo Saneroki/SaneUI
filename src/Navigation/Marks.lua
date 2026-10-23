@@ -5,7 +5,8 @@ local _, ns = ...
 --  What stands over the map at a fixed size on the screen, whatever the zoom:
 --
 --      the player's arrow   Blizzard's world map arrow (UI-WorldMapArrow), turned to the facing;
---                           out of sight while the game's minimap shows its own (Hybrid.lua)
+--                           on the small map out of sight while the game's minimap shows its own
+--                           there (Hybrid.lua); on the full map always, over the game's minimap
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's);
 --                           a click leads the game's arrow to it or not, Ctrl-click takes it away
 --      the party, the raid  the game's party blip in each member's class colour, a few times a

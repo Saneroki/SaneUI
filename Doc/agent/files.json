@@ -17,13 +17,13 @@
     },
     {
       "path": "Doc/Changed.md",
-      "bytes": 599632,
-      "sha256": "b14ed5640a3675596e9e3fa54ede4733722bd3f8a9fd88519b44b5dfa68d5d46",
-      "lines": 6561,
+      "bytes": 604437,
+      "sha256": "4749877cfa64ba050431e6d464ab28eabb3f651a87248b8be5ac4493f411afcc",
+      "lines": 6609,
       "declarations": [
         {
           "name": "fields",
-          "line": 1428
+          "line": 1476
         }
       ],
       "headings": [
@@ -36,1408 +36,1420 @@
           "line": 5
         },
         {
-          "title": "Navigation: pings as on the game's minimap, a double click for the map pin, the quest log moves the map, Follow me (Saneroki, 2026-10-23)",
+          "title": "Nameplates: everything inside the bar, the power line, borders by rank, a glow on aggro, auras around the bar, strangers hidden, smaller far away (Saneroki, 2026-10-23)",
           "line": 9
         },
         {
+          "title": "Inventory: the doll's model on the strap, a quarter larger again, turned and zoomed, back after ten seconds (Saneroki, 2026-10-23)",
+          "line": 35
+        },
+        {
+          "title": "Navigation: the player's arrow on the full map again (Saneroki, 2026-10-23)",
+          "line": 51
+        },
+        {
+          "title": "Navigation: pings as on the game's minimap, a double click for the map pin, the quest log moves the map, Follow me (Saneroki, 2026-10-23)",
+          "line": 57
+        },
+        {
           "title": "Core: what the game confirms in play, kept, shared and harvested; items' stats learned (Saneroki, 2026-10-23)",
-          "line": 42
-        },
-        {
-          "title": "Navigation: a plus for pins of different icons gathered; their icons in its tooltip (Saneroki, 2026-10-23)",
-          "line": 69
-        },
-        {
-          "title": "Navigation: a pin's tooltip says nothing twice, a gathered one no sentence about the click (Saneroki, 2026-10-23)",
-          "line": 76
-        },
-        {
-          "title": "Tooltips: section names grey; Unconfirmed Data and Hold ALT for more as quiet notes (Saneroki, 2026-10-23)",
-          "line": 82
-        },
-        {
-          "title": "Tooltips and Navigation: columns, Unconfirmed Data, pins by role, bosses as creatures (Saneroki, 2026-10-23)",
           "line": 90
         },
         {
+          "title": "Navigation: a plus for pins of different icons gathered; their icons in its tooltip (Saneroki, 2026-10-23)",
+          "line": 117
+        },
+        {
+          "title": "Navigation: a pin's tooltip says nothing twice, a gathered one no sentence about the click (Saneroki, 2026-10-23)",
+          "line": 124
+        },
+        {
+          "title": "Tooltips: section names grey; Unconfirmed Data and Hold ALT for more as quiet notes (Saneroki, 2026-10-23)",
+          "line": 130
+        },
+        {
+          "title": "Tooltips and Navigation: columns, Unconfirmed Data, pins by role, bosses as creatures (Saneroki, 2026-10-23)",
+          "line": 138
+        },
+        {
           "title": "Navigation: a boss's items with Alt show their stats and effects only (Saneroki, 2026-10-23)",
-          "line": 111
+          "line": 159
         },
         {
           "title": "Navigation: the bosses as their models alone; Alt for their abilities' and items' details (Saneroki, 2026-10-23)",
-          "line": 118
+          "line": 166
         },
         {
           "title": "Navigation: the route's ships light blue, its flights white (Saneroki, 2026-10-23)",
-          "line": 125
+          "line": 173
         },
         {
           "title": "Inventory: the bags' items take the mouse again; drops anywhere on the window; no scroll bar (2026-10-23)",
-          "line": 131
+          "line": 179
         },
         {
           "title": "Inventory: drops on the paper; one slot a group; groups fold and divide; a small title line (2026-10-23)",
-          "line": 139
+          "line": 187
         },
         {
           "title": "Inventory: the Armory by slot, Adventure Prep by kind; one empty slot; the doll still, on plain paper (2026-10-23)",
-          "line": 155
+          "line": 203
         },
         {
           "title": "Inventory: the bags' bar on the title line; borderless rounded icons; the sidebar folds (2026-10-23)",
-          "line": 181
-        },
-        {
-          "title": "Inventory: the bags' categories share lines; one kind of empty slot (2026-10-23)",
-          "line": 196
-        },
-        {
-          "title": "dev: the tools' web pages, each on its own port (2026-10-23)",
-          "line": 207
-        },
-        {
-          "title": "dev: the finished maps compared (2026-10-23)",
-          "line": 215
-        },
-        {
-          "title": "dev: the GPU runner's map jobs finish again (2026-10-23)",
-          "line": 222
-        },
-        {
-          "title": "Inventory: every category shown, its empty slots take items (Saneroki, 2026-10-23)",
           "line": 229
         },
         {
-          "title": "Core: the journal's window no longer freezes the game (2026-10-23)",
+          "title": "Inventory: the bags' categories share lines; one kind of empty slot (2026-10-23)",
           "line": 244
         },
         {
+          "title": "dev: the tools' web pages, each on its own port (2026-10-23)",
+          "line": 255
+        },
+        {
+          "title": "dev: the finished maps compared (2026-10-23)",
+          "line": 263
+        },
+        {
+          "title": "dev: the GPU runner's map jobs finish again (2026-10-23)",
+          "line": 270
+        },
+        {
+          "title": "Inventory: every category shown, its empty slots take items (Saneroki, 2026-10-23)",
+          "line": 277
+        },
+        {
+          "title": "Core: the journal's window no longer freezes the game (2026-10-23)",
+          "line": 292
+        },
+        {
           "title": "Navigation: no ride straight back (2026-10-22)",
-          "line": 252
+          "line": 300
         },
         {
           "title": "Inventory, Core: the character, the bags and the alts in Sane UI's own look (Saneroki, 2026-10-22)",
-          "line": 275
+          "line": 323
         },
         {
           "title": "dev: Blizzard's code and art from the newest export, never references/ (Saneroki, 2026-10-22)",
-          "line": 313
+          "line": 361
         },
         {
           "title": "Navigation: long walks found fast and priced near-exactly, by a coarse layer over the walking data (Saneroki, 2026-10-22)",
-          "line": 335
+          "line": 383
         },
         {
           "title": "Navigation: walks timed at the character's own speeds, water priced by them (Saneroki, 2026-10-22)",
-          "line": 377
+          "line": 425
         },
         {
           "title": "Navigation: the golden line's corners curved (Saneroki, 2026-10-22)",
-          "line": 401
+          "line": 449
         },
         {
           "title": "Core, dev: the beta's copy of Sane UI with its own data sets (2026-10-22)",
-          "line": 419
+          "line": 467
         },
         {
           "title": "dev: the interface lab reads frame XML and loads Core from its TOC (2026-10-22)",
-          "line": 436
+          "line": 484
         },
         {
           "title": "Navigation: the routing finalized (2026-10-22)",
-          "line": 462
+          "line": 510
         },
         {
           "title": "Navigation: a world tile's words its zone's kind, colours and light only (2026-10-22)",
-          "line": 496
+          "line": 544
         },
         {
           "title": "Navigation: the world map of high resolution tiles; the world map offline; the instance maps (Saneroki, 2026-10-22)",
-          "line": 502
+          "line": 550
         },
         {
           "title": "Core, Navigation: the map window stands at login again; the tools in Forever's own game folder (2026-10-22)",
-          "line": 524
+          "line": 572
         },
         {
           "title": "Navigation: no walk after a walk at a flight point (2026-10-22)",
-          "line": 540
+          "line": 588
         },
         {
           "title": "Navigation: the maps' middle tries keep their zone's colours; the stitched middle level over a sea of its own (2026-10-22)",
-          "line": 557
+          "line": 605
         },
         {
           "title": "Navigation: the Atlas' middle and far levels of every zone queued (Saneroki, 2026-10-22)",
-          "line": 564
+          "line": 612
         },
         {
           "title": "Navigation: the walking data's openings both ways, on both rectangles; the portals' rooms (Saneroki, 2026-10-22)",
-          "line": 576
+          "line": 624
         },
         {
           "title": "Atlas, Navigation: the close squares joined in two bands, no harsh line between them (Saneroki, 2026-10-22)",
-          "line": 598
+          "line": 646
         },
         {
           "title": "Navigation: the maps' three levels all from straight above, each zone on its own, joined (Saneroki, 2026-10-22)",
-          "line": 606
+          "line": 654
         },
         {
           "title": "Navigation: the whole Undercity below its lifts' upper level (Saneroki, 2026-10-22)",
-          "line": 629
+          "line": 677
         },
         {
           "title": "Navigation: the maps' far level tuned, a copy never kept (Saneroki, 2026-10-22)",
-          "line": 647
+          "line": 695
         },
         {
           "title": "Navigation: the maps' far level a view of the terrain standing up, its layout held by controls (Saneroki, 2026-10-22)",
-          "line": 658
+          "line": 706
         },
         {
           "title": "Navigation, Core: the teleports a character has in the routes; what Core learns in play; Frequent Flier (Saneroki, 2026-10-21)",
-          "line": 678
+          "line": 726
         },
         {
           "title": "Navigation: the maps' far level a view from a plane, the close squares joined along seams (Saneroki, 2026-10-21)",
-          "line": 714
+          "line": 762
         },
         {
           "title": "Navigation: the maps' three levels strict, one pipeline for zones and instances (Saneroki, 2026-10-21)",
-          "line": 728
+          "line": 776
         },
         {
           "title": "Navigation, data: Forever's own ways of travel; Dalaran's airship the Alliance's (Saneroki, 2026-10-21)",
-          "line": 749
+          "line": 797
         },
         {
           "title": "Navigation: the dungeons' paintings researched and held to their words and pictures (Saneroki, 2026-10-21)",
-          "line": 769
+          "line": 817
         },
         {
           "title": "Navigation: boats, zeppelins and the tram of one side only for that side (Saneroki, 2026-10-21)",
-          "line": 793
+          "line": 841
         },
         {
           "title": "Navigation: Teldrassil's portal in the routes; a walk not found is none, the journey chosen again (Saneroki, 2026-10-21)",
-          "line": 805
+          "line": 853
         },
         {
           "title": "Navigation: the world's middle level at an angle, the instances' from above (Saneroki, 2026-10-21)",
-          "line": 838
-        },
-        {
-          "title": "Navigation: the maps' three looks, the instance maps made as the world's (Saneroki, 2026-10-21)",
-          "line": 847
-        },
-        {
-          "title": "Navigation: routes from the floor the player is on, not aboard in a dock town (Saneroki, 2026-10-21)",
-          "line": 863
-        },
-        {
-          "title": "Navigation: the dungeons' and raids' paintings planned and queued (Saneroki, 2026-10-21)",
           "line": 886
         },
         {
+          "title": "Navigation: the maps' three looks, the instance maps made as the world's (Saneroki, 2026-10-21)",
+          "line": 895
+        },
+        {
+          "title": "Navigation: routes from the floor the player is on, not aboard in a dock town (Saneroki, 2026-10-21)",
+          "line": 911
+        },
+        {
+          "title": "Navigation: the dungeons' and raids' paintings planned and queued (Saneroki, 2026-10-21)",
+          "line": 934
+        },
+        {
           "title": "Doc: a travel pin's ways on the map, to come (Saneroki, 2026-10-21)",
-          "line": 901
+          "line": 949
         },
         {
           "title": "Doc: what gets redesigned in our own style (Saneroki, 2026-10-21)",
-          "line": 906
+          "line": 954
         },
         {
           "title": "Navigation: the ground as the game draws it; water in buildings; indoors on a building's floor (Saneroki, 2026-10-21)",
-          "line": 912
+          "line": 960
         },
         {
           "title": "Navigation: the doodads in the walking data's tool (Saneroki, 2026-10-21)",
-          "line": 953
+          "line": 1001
         },
         {
           "title": "Navigation: only the flight points the character has found (Saneroki, 2026-10-21)",
-          "line": 976
+          "line": 1024
         },
         {
           "title": "Data: bosses' abilities and loot in a set of their own, unconfirmed until the game says so (Saneroki, 2026-10-21)",
-          "line": 993
+          "line": 1041
         },
         {
           "title": "Navigation: the walking data joins what players walk between (Saneroki, 2026-10-21)",
-          "line": 1005
+          "line": 1053
         },
         {
           "title": "Navigation, data: bosses' abilities and loot in their tooltips, more bosses, enemies (Saneroki, 2026-10-21)",
-          "line": 1044
+          "line": 1092
         },
         {
           "title": "Core: every data set part of Core, the data packs gone (Saneroki, 2026-10-21)",
-          "line": 1061
+          "line": 1109
         },
         {
           "title": "Navigation, Tooltips: indoor maps off the streets, instance maps without players, a rare's model, 3D portraits (Saneroki, 2026-10-21)",
-          "line": 1088
+          "line": 1136
         },
         {
           "title": "Navigation: lifts in the routes (Saneroki, 2026-10-21)",
-          "line": 1110
+          "line": 1158
         },
         {
           "title": "GPU runner: the queue started, listed and switched (Saneroki, 2026-10-21)",
-          "line": 1147
+          "line": 1195
         },
         {
           "title": "Docs: this session's asks in the plans and handoffs (Saneroki, 2026-10-21)",
-          "line": 1165
+          "line": 1213
         },
         {
           "title": "GPU runner and Atlas: rebuild, holds, a run's own plan (Saneroki, 2026-10-21)",
-          "line": 1178
+          "line": 1226
         },
         {
           "title": "Releases: saneui snapshot; every script in saneui (Saneroki, 2026-10-21)",
-          "line": 1194
+          "line": 1242
         },
         {
           "title": "Scripts: one command, saneui; dev and release builds (Saneroki, 2026-10-21)",
-          "line": 1205
+          "line": 1253
         },
         {
           "title": "Image generation: the GPU runner (Saneroki, 2026-10-21)",
-          "line": 1221
+          "line": 1269
         },
         {
           "title": "Navigation: zones and continents reimagined in the painted view (Saneroki, 2026-10-21)",
-          "line": 1241
+          "line": 1289
         },
         {
           "title": "Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)",
-          "line": 1261
+          "line": 1309
         },
         {
           "title": "A review of the whole addon: bugs, hardening, speed (Saneroki, 2026-10-21)",
-          "line": 1308
+          "line": 1356
         },
         {
           "title": "Art: every picture in assets, none in src (Saneroki, 2026-10-21)",
-          "line": 1437
+          "line": 1485
         },
         {
           "title": "Navigation: the planner keeps what it found while the pin stays (Saneroki, 2026-10-21)",
-          "line": 1448
+          "line": 1496
         },
         {
           "title": "Tests: a part the image lists include is checked in them (Saneroki, 2026-10-21)",
-          "line": 1456
+          "line": 1504
         },
         {
           "title": "Navigation: the quest log without a scroll bar, a click pins the objective; found herbs clicked (Saneroki, 2026-10-21)",
-          "line": 1461
+          "line": 1509
         },
         {
           "title": "Core: Sane UI's options on every full screen (Saneroki, 2026-10-21)",
-          "line": 1479
+          "line": 1527
         },
         {
           "title": "Navigation: the bosses' 3D models on the dungeon maps (Saneroki, 2026-10-21)",
-          "line": 1498
+          "line": 1546
         },
         {
           "title": "Navigation: the travel overlay lower and golden, smooth, and while waiting at a dock (Saneroki, 2026-10-21)",
-          "line": 1512
+          "line": 1560
         },
         {
           "title": "Navigation: dungeon maps of Core's data, with their bosses (Saneroki, 2026-10-21)",
-          "line": 1531
+          "line": 1579
         },
         {
           "title": "Inventory: the bank as a list, a tab's settings, buying a tab (Saneroki, 2026-10-21)",
-          "line": 1551
+          "line": 1599
         },
         {
           "title": "Inventory: categories dragged in the bags' sidebar (Saneroki, 2026-10-21)",
-          "line": 1568
+          "line": 1616
         },
         {
           "title": "Inventory: our own sort of the bags in One Bag (Saneroki, 2026-10-21)",
-          "line": 1589
+          "line": 1637
         },
         {
           "title": "Navigation: a map pin the game refuses no longer stops the map (Saneroki, 2026-10-20)",
-          "line": 1607
+          "line": 1655
         },
         {
           "title": "Navigation: quest marks as the game's, the pin filter in sections (Saneroki, 2026-10-20)",
-          "line": 1613
+          "line": 1661
         },
         {
           "title": "Navigation: the tram in the routes (Saneroki, 2026-10-20)",
-          "line": 1628
+          "line": 1676
         },
         {
           "title": "Navigation: quest areas in place, nearer zoom, dungeon maps, the quest log a window that pins (Saneroki, 2026-10-20)",
-          "line": 1645
+          "line": 1693
         },
         {
           "title": "Guild: the guild window, the wire and the guild's records (Saneroki, 2026-10-20)",
-          "line": 1670
+          "line": 1718
         },
         {
           "title": "Navigation: your trip on screen, the flight's way on the map, the tram (Saneroki, 2026-10-20)",
-          "line": 1694
+          "line": 1742
         },
         {
           "title": "Navigation: the coast keeps its docks; the view Blended (Saneroki, 2026-10-20)",
-          "line": 1722
+          "line": 1770
         },
         {
           "title": "Combat: our own talents (Saneroki, 2026-10-20)",
-          "line": 1737
+          "line": 1785
         },
         {
           "title": "Navigation: indoor maps of our own, without the black (Saneroki, 2026-10-20)",
-          "line": 1753
+          "line": 1801
         },
         {
           "title": "Data: quest areas, trainers, paths, and achievements, mounts, factions and more (Saneroki, 2026-10-20)",
-          "line": 1773
+          "line": 1821
         },
         {
           "title": "Navigation: herbs and ore found, sparkles, the finders in turn (Saneroki, 2026-10-20)",
-          "line": 1794
+          "line": 1842
         },
         {
           "title": "Inventory: the bag keys open our bags, the game's stay closed (Saneroki, 2026-10-20)",
-          "line": 1820
+          "line": 1868
         },
         {
           "title": "Inventory: every category and its name always in the sidebar, the bags' strip at first (Saneroki, 2026-10-20)",
-          "line": 1834
+          "line": 1882
         },
         {
           "title": "Inventory: the alts in the bags' look, Storage, displays and categories (Saneroki, 2026-10-20)",
-          "line": 1845
+          "line": 1893
         },
         {
           "title": "Inventory: the bank, a window of its own (Saneroki, 2026-10-20)",
-          "line": 1859
+          "line": 1907
         },
         {
           "title": "Inventory: the stack splitter, the bags' settings (Saneroki, 2026-10-20)",
-          "line": 1873
+          "line": 1921
         },
         {
           "title": "Inventory: the list's columns, the compact display planned (Saneroki, 2026-10-20)",
-          "line": 1885
+          "line": 1933
         },
         {
           "title": "Inventory: a \"+\" to put items in, the junk marker, junk sold one by one (Saneroki, 2026-10-20)",
-          "line": 1894
+          "line": 1942
         },
         {
           "title": "Inventory: the bags made over (Saneroki, 2026-10-20)",
-          "line": 1908
+          "line": 1956
         },
         {
           "title": "Art: concept art for a quiet grey look (Saneroki, 2026-10-20)",
-          "line": 1946
+          "line": 1994
         },
         {
           "title": "Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)",
-          "line": 2122
+          "line": 2170
         },
         {
           "title": "Navigation: ship times, learnt on a ride, and the dock watch (Saneroki, 2026-10-20)",
-          "line": 2142
+          "line": 2190
         },
         {
           "title": "Combat: our own spellbook, your keys opening it, the planner a window of its own (Saneroki, 2026-10-20)",
-          "line": 2171
+          "line": 2219
         },
         {
           "title": "Windows: layouts deleted, Classic windows across modules and back (Saneroki, 2026-10-20)",
-          "line": 2202
+          "line": 2250
         },
         {
           "title": "Inventory: a tab for each window, the alts' window named Alts (Saneroki, 2026-10-20)",
-          "line": 2222
+          "line": 2270
         },
         {
           "title": "Navigation: indoors without black (Saneroki, 2026-10-20)",
-          "line": 2236
+          "line": 2284
         },
         {
           "title": "Navigation: spirit healers in the game's spirit icon (Saneroki, 2026-10-20)",
-          "line": 2243
+          "line": 2291
         },
         {
           "title": "Windows: one full screen at a time (Saneroki, 2026-10-20)",
-          "line": 2247
+          "line": 2295
         },
         {
           "title": "Inventory: pinned items, the player's own groups, junk marks in the bags (Saneroki, 2026-10-20)",
-          "line": 2252
+          "line": 2300
         },
         {
           "title": "Navigation: merchants in the game's anvil (Saneroki, 2026-10-20)",
-          "line": 2283
+          "line": 2331
         },
         {
           "title": "Navigation: a click on a pin puts the map pin there (Saneroki, 2026-10-20)",
-          "line": 2288
+          "line": 2336
         },
         {
           "title": "Inventory: the character sheet's parts windows of their own, the sidebar (Saneroki, 2026-10-20)",
-          "line": 2299
+          "line": 2347
         },
         {
           "title": "Data: batch 5, more quests, NPCs and places, unverified (Saneroki, 2026-10-20)",
-          "line": 2323
+          "line": 2371
         },
         {
           "title": "Combat: its full screen on Core's board (Saneroki, 2026-10-20)",
-          "line": 2339
+          "line": 2387
         },
         {
           "title": "Nameplates: a module of its own (Saneroki, 2026-10-20)",
-          "line": 2355
+          "line": 2403
         },
         {
           "title": "Inventory: an alt's gear on a paper doll (Saneroki, 2026-10-20)",
-          "line": 2382
+          "line": 2430
         },
         {
           "title": "Inventory: the bags (Saneroki, 2026-10-20)",
-          "line": 2401
+          "line": 2449
         },
         {
           "title": "Inventory: the character sheet's PvP, currency and statistics tabs (Saneroki, 2026-10-20)",
-          "line": 2427
+          "line": 2475
         },
         {
           "title": "Inventory: the character sheet's skills tab (Saneroki, 2026-10-20)",
-          "line": 2442
+          "line": 2490
         },
         {
           "title": "Inventory: the other characters' window (Saneroki, 2026-10-20)",
-          "line": 2454
-        },
-        {
-          "title": "Inventory: the character sheet's side tabs and reputation (Saneroki, 2026-10-20)",
-          "line": 2472
-        },
-        {
-          "title": "Inventory: the character sheet's stats (Saneroki, 2026-10-20)",
-          "line": 2489
-        },
-        {
-          "title": "Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)",
           "line": 2502
         },
         {
-          "title": "Inventory: its own window and full screen in the corner (Saneroki, 2026-10-20)",
+          "title": "Inventory: the character sheet's side tabs and reputation (Saneroki, 2026-10-20)",
           "line": 2520
         },
         {
+          "title": "Inventory: the character sheet's stats (Saneroki, 2026-10-20)",
+          "line": 2537
+        },
+        {
+          "title": "Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)",
+          "line": 2550
+        },
+        {
+          "title": "Inventory: its own window and full screen in the corner (Saneroki, 2026-10-20)",
+          "line": 2568
+        },
+        {
           "title": "Navigation: the game's minimap square again, the player's arrow and dots back (Saneroki, 2026-10-20)",
-          "line": 2534
+          "line": 2582
         },
         {
           "title": "Navigation: every pin its own icon, the quests split, previews in the quest log (Saneroki, 2026-10-20)",
-          "line": 2543
+          "line": 2591
         },
         {
           "title": "Combat: quest marks beside nameplates (Saneroki, 2026-10-20)",
-          "line": 2574
+          "line": 2622
         },
         {
           "title": "Navigation: a size per kind of pin, quests to take see-through, done quests on demand (Saneroki, 2026-10-20)",
-          "line": 2586
+          "line": 2634
         },
         {
           "title": "Navigation: the route and the minimap's dots in the pin filter, the dots on the full map too (Saneroki, 2026-10-20)",
-          "line": 2602
+          "line": 2650
         },
         {
           "title": "Navigation: what stands on the map keeps inside the window; the small window sized by its corner (Saneroki, 2026-10-20)",
-          "line": 2617
+          "line": 2665
         },
         {
           "title": "Navigation: the golden line drawn again (Saneroki, 2026-10-20)",
-          "line": 2642
+          "line": 2690
         },
         {
           "title": "Social: Recent Allies no longer asks the game for them (Saneroki, 2026-10-20)",
-          "line": 2656
+          "line": 2704
         },
         {
           "title": "Social: every group you join a conversation of its own (Saneroki, 2026-10-20)",
-          "line": 2664
+          "line": 2712
         },
         {
           "title": "Social: chat views, the chat's own window, rows lit for messages not seen (Saneroki, 2026-10-20)",
-          "line": 2675
+          "line": 2723
         },
         {
           "title": "Core and Social: the full screen's windows on Core's board, layouts behind tabs (Saneroki, 2026-10-20)",
-          "line": 2698
+          "line": 2746
         },
         {
           "title": "Social: words picked out of the messages on the full screen, copied with Ctrl+C (Saneroki, 2026-10-20)",
-          "line": 2730
+          "line": 2778
         },
         {
           "title": "Social: the conversations' list dragged to its width, no fading on the full screen (Saneroki, 2026-10-20)",
-          "line": 2754
+          "line": 2802
         },
         {
           "title": "Navigation: Zephras Isle's terrain and walking data (Saneroki, 2026-10-20)",
-          "line": 2771
-        },
-        {
-          "title": "Social: the guild window held by Core's seat (Saneroki, 2026-10-20)",
-          "line": 2798
-        },
-        {
-          "title": "Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)",
           "line": 2819
         },
         {
-          "title": "Social: the guild window on the full screen, the chats among the conversations (Saneroki, 2026-10-20)",
+          "title": "Social: the guild window held by Core's seat (Saneroki, 2026-10-20)",
+          "line": 2846
+        },
+        {
+          "title": "Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)",
           "line": 2867
         },
         {
+          "title": "Social: the guild window on the full screen, the chats among the conversations (Saneroki, 2026-10-20)",
+          "line": 2915
+        },
+        {
           "title": "Inventory: a new module, the bags from the corner (Saneroki, 2026-10-20)",
-          "line": 2908
+          "line": 2956
         },
         {
           "title": "Navigation: the map on Zephras Isle (Saneroki, 2026-10-20)",
-          "line": 2929
+          "line": 2977
         },
         {
           "title": "Navigation: the docks of the boats and zeppelins on the map (Saneroki, 2026-10-20)",
-          "line": 2953
+          "line": 3001
         },
         {
           "title": "Navigation: routes to Zephras Isle (Saneroki, 2026-10-20)",
-          "line": 2974
+          "line": 3022
         },
         {
           "title": "Map data: what Navigation's map shows, from the game and two picked batches (Saneroki, 2026-10-20)",
-          "line": 2988
+          "line": 3036
         },
         {
           "title": "Navigation: routes across the sea, by boat and zeppelin, and by the hearthstone (Saneroki, 2026-10-20)",
-          "line": 3023
+          "line": 3071
         },
         {
           "title": "Navigation: routes to the map pin, on foot and by flight (Saneroki, 2026-10-20)",
-          "line": 3042
+          "line": 3090
         },
         {
           "title": "Navigation: pins, the quest log, the bar; classic windows kept (Saneroki, 2026-10-20)",
-          "line": 3068
+          "line": 3116
         },
         {
           "title": "The Atlas' colour pass and packing (Saneroki, 2026-10-20)",
-          "line": 3107
+          "line": 3155
         },
         {
           "title": "The Atlas faithful: words of an edit, what stands in water kept (Saneroki, 2026-10-19)",
-          "line": 3123
+          "line": 3171
         },
         {
           "title": "The Atlas' painting run: dev/tools/atlas (Saneroki, 2026-10-19)",
-          "line": 3146
+          "line": 3194
         },
         {
           "title": "Navigation: the Atlas a module of its own, the view Overlay gone (Saneroki, 2026-10-19)",
-          "line": 3164
+          "line": 3212
         },
         {
           "title": "Art and animation in Git LFS (Saneroki, 2026-10-19)",
-          "line": 3188
+          "line": 3236
         },
         {
           "title": "Navigation: the Atlas' look, each zone's atmosphere, painted only what the game has (Saneroki, 2026-10-19)",
-          "line": 3196
+          "line": 3244
         },
         {
           "title": "Navigation: the views Parchment and Scrying; the painted view's guides, briefs and pilots (Saneroki, 2026-10-19)",
-          "line": 3216
+          "line": 3264
         },
         {
           "title": "Tooltips: grooves easier to read (Saneroki, 2026-10-20)",
-          "line": 3251
+          "line": 3299
         },
         {
           "title": "Tooltips: grooves, a spell's table and its requirements (Saneroki, 2026-10-19)",
-          "line": 3260
+          "line": 3308
         },
         {
           "title": "Tooltips: Info, Alt for more, disenchanting and the price to post; careful gathering data (Saneroki, 2026-10-19)",
-          "line": 3279
+          "line": 3327
         },
         {
           "title": "Navigation: Sketches, one stitched map of both continents, every zone's map in full (Saneroki, 2026-10-19)",
-          "line": 3313
+          "line": 3361
         },
         {
           "title": "Navigation: the water cut away, zone-shaped maps, undiscovered parts dark (Saneroki, 2026-10-19)",
-          "line": 3334
+          "line": 3382
         },
         {
           "title": "Navigation: zones open by a click, the map goes with its window; Core: one push a visit (Saneroki, 2026-10-19)",
-          "line": 3352
+          "line": 3400
         },
         {
           "title": "Navigation: the whole module but the map's data (Saneroki, 2026-10-19)",
-          "line": 3376
+          "line": 3424
         },
         {
           "title": "Navigation: the first proof, the full screen map (Saneroki, 2026-10-18)",
-          "line": 3415
+          "line": 3463
         },
         {
           "title": "Core's own doors guarded too; the lint covers all of src (Saneroki, 2026-10-18)",
-          "line": 3436
+          "line": 3484
         },
         {
           "title": "Social: conversations on the full screen (Saneroki, 2026-10-18)",
-          "line": 3451
+          "line": 3499
         },
         {
           "title": "Errors handled gracefully, a hard rule (Saneroki, 2026-10-18)",
-          "line": 3472
+          "line": 3520
         },
         {
           "title": "Sync and the CVar list made again from Blizzard's options code (Saneroki, 2026-10-18)",
-          "line": 3516
+          "line": 3564
         },
         {
           "title": "Development: Blizzard updates, the todo list of a new build (Saneroki, 2026-10-18)",
-          "line": 3542
+          "line": 3590
         },
         {
           "title": "Aliases and notes of players (Saneroki, 2026-10-18)",
-          "line": 3558
+          "line": 3606
         },
         {
           "title": "Ideas: a verified fact keeps its day and times (Saneroki, 2026-10-18)",
-          "line": 3578
+          "line": 3626
         },
         {
           "title": "Ideas: when in doubt, left out (Saneroki, 2026-10-18)",
-          "line": 3586
+          "line": 3634
         },
         {
           "title": "Ideas: verified and unverified facts, gathering nodes (Saneroki, 2026-10-18)",
-          "line": 3596
+          "line": 3644
         },
         {
           "title": "Ideas: an auction house per game version, Forever's per ruleset (Saneroki, 2026-10-18)",
-          "line": 3607
+          "line": 3655
         },
         {
           "title": "Data: game facts apart from personal data (Saneroki, 2026-10-18)",
-          "line": 3612
+          "line": 3660
         },
         {
           "title": "Leveling: the plan for our own routes (Saneroki, 2026-10-18)",
-          "line": 3618
+          "line": 3666
         },
         {
           "title": "Tooltips: your character beside gear, Gathering, binding in Gold, Addons with Alt (Saneroki, 2026-10-18)",
-          "line": 3622
+          "line": 3670
         },
         {
           "title": "Social: panels on the full screen (Saneroki, 2026-10-17)",
-          "line": 3648
+          "line": 3696
         },
         {
           "title": "Profiles anew: Accountwide settings (Saneroki, 2026-10-17)",
-          "line": 3681
-        },
-        {
-          "title": "Core's shared tools",
-          "line": 3719
-        },
-        {
-          "title": "Windows (Core) and Social",
           "line": 3729
         },
         {
+          "title": "Core's shared tools",
+          "line": 3767
+        },
+        {
+          "title": "Windows (Core) and Social",
+          "line": 3777
+        },
+        {
           "title": "Settings: every kind of switch, a search on pages in tabs, pages built when first shown",
-          "line": 3749
+          "line": 3797
         },
         {
           "title": "Core's data framework: listeners after the job, jobs with handles",
-          "line": 3759
+          "line": 3807
         },
         {
           "title": "Sync: guarded CVar writes, found in steps",
-          "line": 3763
+          "line": 3811
         },
         {
           "title": "Abilities and Tooltips on Core's shared tools",
-          "line": 3766
+          "line": 3814
         },
         {
           "title": "Tooltips: every section named, one section Addons, 3D models (Saneroki, 2026-10-17)",
-          "line": 3781
+          "line": 3829
         },
         {
           "title": "Tooltips on Core's data: quests, your characters' things, other addons' lines apart (Saneroki, 2026-10-17)",
-          "line": 3815
+          "line": 3863
         },
         {
           "title": "Scripts/update: GitHub's newest into the game in one go",
-          "line": 3842
+          "line": 3890
         },
         {
           "title": "Navigation",
-          "line": 3853
+          "line": 3901
         },
         {
           "title": "Core's data framework",
-          "line": 3858
+          "line": 3906
         },
         {
           "title": "New designs across the modules (Saneroki, 2026-10-17)",
-          "line": 3985
+          "line": 4033
         },
         {
           "title": "Images: one pipeline for concept art, interface parts and animations",
-          "line": 4084
+          "line": 4132
         },
         {
           "title": "Voices: the voice tool, and short sounds",
-          "line": 4111
+          "line": 4159
         },
         {
           "title": "Ideas: prices per auction house, the game's facts for every realm",
-          "line": 4137
-        },
-        {
-          "title": "Ideas: data of game versions kept apart",
-          "line": 4152
-        },
-        {
-          "title": "Ideas: Sane Sync: finding the game, several game versions",
-          "line": 4171
-        },
-        {
-          "title": "Voices: how lore names are said",
           "line": 4185
         },
         {
-          "title": "Ideas: Sane Sync: the computer set up, measured, two processes",
-          "line": 4191
+          "title": "Ideas: data of game versions kept apart",
+          "line": 4200
         },
         {
-          "title": "Voices: the voice database, the cast, the directions",
-          "line": 4204
+          "title": "Ideas: Sane Sync: finding the game, several game versions",
+          "line": 4219
         },
         {
-          "title": "Ideas: Sane Sync: built with Rust and Tauri 2",
-          "line": 4224
-        },
-        {
-          "title": "Ideas: Sane Sync: hear a sample of the voices",
+          "title": "Voices: how lore names are said",
           "line": 4233
         },
         {
-          "title": "Ideas: Lore: the voices are downloads of their own",
-          "line": 4240
+          "title": "Ideas: Sane Sync: the computer set up, measured, two processes",
+          "line": 4239
         },
         {
-          "title": "Ideas: Lore: what the voices cost and weigh",
+          "title": "Voices: the voice database, the cast, the directions",
           "line": 4252
         },
         {
+          "title": "Ideas: Sane Sync: built with Rust and Tauri 2",
+          "line": 4272
+        },
+        {
+          "title": "Ideas: Sane Sync: hear a sample of the voices",
+          "line": 4281
+        },
+        {
+          "title": "Ideas: Lore: the voices are downloads of their own",
+          "line": 4288
+        },
+        {
+          "title": "Ideas: Lore: what the voices cost and weigh",
+          "line": 4300
+        },
+        {
           "title": "Ideas: Lore: where the texts come from, the voice service",
-          "line": 4258
+          "line": 4306
         },
         {
           "title": "Ideas: Lore",
-          "line": 4271
+          "line": 4319
         },
         {
           "title": "The page Sane UI: links and feedback",
-          "line": 4282
+          "line": 4330
         },
         {
           "title": "Social: the button Sane UI on the game's chat; no title on the small window",
-          "line": 4299
+          "line": 4347
         },
         {
           "title": "The name Sane Sync in the licence; licensing left to Saneroki",
-          "line": 4313
+          "line": 4361
         },
         {
           "title": "Ideas: the app is Sane Sync; Sane UI is open source",
-          "line": 4320
+          "line": 4368
         },
         {
           "title": "Ideas: Onboarding: the switch and the ?",
-          "line": 4328
+          "line": 4376
         },
         {
           "title": "Ideas: the Sane UI app",
-          "line": 4336
+          "line": 4384
         },
         {
           "title": "Windows: Saneroki's answers to the review",
-          "line": 4348
+          "line": 4396
         },
         {
           "title": "Windows reviewed: the guide, and what the review fixed",
-          "line": 4364
+          "line": 4412
         },
         {
           "title": "Ideas: Onboarding",
-          "line": 4386
+          "line": 4434
         },
         {
           "title": "The Navigation plan reviewed, and how it is built",
-          "line": 4394
+          "line": 4442
         },
         {
           "title": "Ideas: the Tooltips redesign reviewed, and how it is built",
-          "line": 4411
+          "line": 4459
         },
         {
           "title": "Ideas: Economy reviewed: checked against the code, a plan for building it",
-          "line": 4428
+          "line": 4476
         },
         {
           "title": "The data plan: second pass, contracts and the build in commits",
-          "line": 4450
+          "line": 4498
         },
         {
           "title": "Ideas: Navigation: leveling guide",
-          "line": 4474
+          "line": 4522
         },
         {
           "title": "Dialogue planned",
-          "line": 4480
+          "line": 4528
         },
         {
           "title": "The data plan reviewed",
-          "line": 4499
+          "line": 4547
         },
         {
           "title": "Nine dock zones",
-          "line": 4515
+          "line": 4563
         },
         {
           "title": "No banners for Abilities and Social",
-          "line": 4521
+          "line": 4569
         },
         {
           "title": "Ideas: Economy: Hide Blizzard's window per window, Esc closes, mailbox, guild bank and bags",
-          "line": 4527
+          "line": 4575
         },
         {
           "title": "Ideas: quests, creatures and the map in the data plan",
-          "line": 4534
+          "line": 4582
         },
         {
           "title": "Ideas: Combat's first decisions",
-          "line": 4541
+          "line": 4589
         },
         {
           "title": "Windows: title bars with a fuzzy search; what a window was left as",
-          "line": 4549
+          "line": 4597
         },
         {
           "title": "Art: making pictures with image models",
-          "line": 4580
+          "line": 4628
         },
         {
           "title": "Combat: a new module, set up",
-          "line": 4593
+          "line": 4641
         },
         {
           "title": "Ideas: every look of a tooltip, from layers",
-          "line": 4608
+          "line": 4656
         },
         {
           "title": "Ideas: Economy's windows, Classic remembered, the history in Core's database",
-          "line": 4619
+          "line": 4667
         },
         {
           "title": "Tooltips: live 3D portraits",
-          "line": 4629
+          "line": 4677
         },
         {
           "title": "Ideas: every tooltip type and portrait type, for the redesign",
-          "line": 4646
+          "line": 4694
         },
         {
           "title": "Spellbook is Abilities",
-          "line": 4654
+          "line": 4702
         },
         {
           "title": "Windows: a dock place in the middle; buttons on free and centred windows",
-          "line": 4670
+          "line": 4718
         },
         {
           "title": "Windows: moved and sized only in Blizzard's Edit Mode",
-          "line": 4696
-        },
-        {
-          "title": "Ideas: the Economy module",
-          "line": 4720
-        },
-        {
-          "title": "Social: open points written down",
-          "line": 4730
-        },
-        {
-          "title": "Social: the messages stay in sight while the window fills the screen",
-          "line": 4736
-        },
-        {
-          "title": "Social: a smiley with icons and emotes",
           "line": 4744
         },
         {
+          "title": "Ideas: the Economy module",
+          "line": 4768
+        },
+        {
+          "title": "Social: open points written down",
+          "line": 4778
+        },
+        {
+          "title": "Social: the messages stay in sight while the window fills the screen",
+          "line": 4784
+        },
+        {
+          "title": "Social: a smiley with icons and emotes",
+          "line": 4792
+        },
+        {
           "title": "Full screen: the dropdown Classic windows; a full screen is square",
-          "line": 4765
-        },
-        {
-          "title": "One licence; data in Core; Actionbar Organizer gone",
-          "line": 4785
-        },
-        {
-          "title": "Tooltips: a lighter Gold section",
-          "line": 4800
-        },
-        {
-          "title": "Windows: round corners and a trim, opened by a click, a progress bar",
           "line": 4813
         },
         {
+          "title": "One licence; data in Core; Actionbar Organizer gone",
+          "line": 4833
+        },
+        {
+          "title": "Tooltips: a lighter Gold section",
+          "line": 4848
+        },
+        {
+          "title": "Windows: round corners and a trim, opened by a click, a progress bar",
+          "line": 4861
+        },
+        {
           "title": "Chat is Social",
-          "line": 4857
+          "line": 4905
         },
         {
           "title": "Navigation: our own data",
-          "line": 4871
+          "line": 4919
         },
         {
           "title": "Navigation: one pin per thing",
-          "line": 4875
+          "line": 4923
         },
         {
           "title": "Navigation: every kind of pin",
-          "line": 4881
+          "line": 4929
         },
         {
           "title": "Ideas: one toggle, Click required to expand window",
-          "line": 4885
+          "line": 4933
         },
         {
           "title": "Ideas: Expand on hover in Core's Hotcorners and in each module",
-          "line": 4891
+          "line": 4939
         },
         {
           "title": "Ideas: windows in Edit Mode's layouts; chat views as windows and tabs",
-          "line": 4898
+          "line": 4946
         },
         {
           "title": "Ideas: expand by a left click; Expand on hover",
-          "line": 4909
+          "line": 4957
         },
         {
           "title": "Ideas: the screen layout of docked windows; Chat becomes Social",
-          "line": 4916
+          "line": 4964
         },
         {
           "title": "Navigation: feasibility, full screen, pins and routes",
-          "line": 4926
+          "line": 4974
         },
         {
           "title": "Navigation: planning notes",
-          "line": 4934
+          "line": 4982
         },
         {
           "title": "Tooltips: comparisons at absolute places; Press ALT for +N more",
-          "line": 4940
+          "line": 4988
         },
         {
           "title": "Tooltips: comparisons in one place, a gap apart; Questlog over the quests' standing",
-          "line": 4955
+          "line": 5003
         },
         {
           "title": "Tooltips: a Quest section with where you stand with each quest; the chart's words readable",
-          "line": 4968
+          "line": 5016
         },
         {
           "title": "Tooltips: gold for one item, the vendor price everywhere, captions Loot and Inventory",
-          "line": 4981
+          "line": 5029
         },
         {
           "title": "Tooltips: gold advice; item quests",
-          "line": 4992
+          "line": 5040
         },
         {
           "title": "Tooltips: drop chances on a creature's loot objectives",
-          "line": 5012
+          "line": 5060
         },
         {
           "title": "Spellbook: a reservation dragged off the bars is removed",
-          "line": 5020
-        },
-        {
-          "title": "Spellbook: a carried spell finds every action button",
-          "line": 5025
-        },
-        {
-          "title": "Spellbook: moving a reservation from button to button",
-          "line": 5037
-        },
-        {
-          "title": "Spellbook: hidden empty buttons, and the order in a tab",
-          "line": 5046
-        },
-        {
-          "title": "Spellbook: reserving on a bar addon's bars",
-          "line": 5059
-        },
-        {
-          "title": "Review: settings texts, bugs, performance and documentation across every module",
           "line": 5068
         },
         {
+          "title": "Spellbook: a carried spell finds every action button",
+          "line": 5073
+        },
+        {
+          "title": "Spellbook: moving a reservation from button to button",
+          "line": 5085
+        },
+        {
+          "title": "Spellbook: hidden empty buttons, and the order in a tab",
+          "line": 5094
+        },
+        {
+          "title": "Spellbook: reserving on a bar addon's bars",
+          "line": 5107
+        },
+        {
+          "title": "Review: settings texts, bugs, performance and documentation across every module",
+          "line": 5116
+        },
+        {
           "title": "Review: Spellbook, Tooltips and Chat bugs, hardening, performance",
-          "line": 5140
+          "line": 5188
         },
         {
           "title": "Review: Core and Sync bugs, hardening, performance",
-          "line": 5186
+          "line": 5234
         },
         {
           "title": "Windows: Expand window; the full window takes the mouse; a corner's square",
-          "line": 5220
+          "line": 5268
         },
         {
           "title": "Profiles: Empty; SaneUI Defaults only Sane UI's own settings",
-          "line": 5237
+          "line": 5285
         },
         {
           "title": "Sync: the Edit Mode layout is kept again",
-          "line": 5250
-        },
-        {
-          "title": "Chat: no white ghost of a message in the window's corner",
-          "line": 5264
-        },
-        {
-          "title": "Chat: an older history sorted anew, so the ticks hide it too",
-          "line": 5271
-        },
-        {
-          "title": "Chat: loot, skill ups and channel joins in their own groups in every client",
-          "line": 5279
-        },
-        {
-          "title": "Chat: a channel's tick hides all its messages",
-          "line": 5291
-        },
-        {
-          "title": "Chat: chat history; switches for system, creature, addon messages and channel joins; closer bubbles",
           "line": 5298
         },
         {
-          "title": "Chat: all bubbles alike, on a color or a game texture; Settings: a color swatch",
-          "line": 5311
+          "title": "Chat: no white ghost of a message in the window's corner",
+          "line": 5312
         },
         {
-          "title": "Chat: every line the game's chat shows; the line to write in is grey",
-          "line": 5325
+          "title": "Chat: an older history sorted anew, so the ticks hide it too",
+          "line": 5319
         },
         {
-          "title": "Settings and Sync are part of Core",
+          "title": "Chat: loot, skill ups and channel joins in their own groups in every client",
+          "line": 5327
+        },
+        {
+          "title": "Chat: a channel's tick hides all its messages",
           "line": 5339
         },
         {
+          "title": "Chat: chat history; switches for system, creature, addon messages and channel joins; closer bubbles",
+          "line": 5346
+        },
+        {
+          "title": "Chat: all bubbles alike, on a color or a game texture; Settings: a color swatch",
+          "line": 5359
+        },
+        {
+          "title": "Chat: every line the game's chat shows; the line to write in is grey",
+          "line": 5373
+        },
+        {
+          "title": "Settings and Sync are part of Core",
+          "line": 5387
+        },
+        {
           "title": "Profiles: New Characters",
-          "line": 5362
+          "line": 5410
         },
         {
           "title": "Profiles: SaneUI Defaults, always there and never changed",
-          "line": 5372
+          "line": 5420
         },
         {
           "title": "Core: a docked window fills the screen from its screen edge; the kinds of motion; Chat: full screen",
-          "line": 5390
+          "line": 5438
         },
         {
           "title": "Chat: the animation lines renamed; Settings: room between a checkbox and its words",
-          "line": 5415
+          "line": 5463
         },
         {
           "title": "Chat: its page in tabs, General and Appearance; Settings: a module's page in tabs",
-          "line": 5422
+          "line": 5470
         },
         {
           "title": "Chat: a page Appearance with the animations; Core: switches on a page under a module's, under another switch",
-          "line": 5436
-        },
-        {
-          "title": "Chat: gone messages stay gone when a new one comes; the fade-in shows",
-          "line": 5447
-        },
-        {
-          "title": "Chat: every message fades by itself, apart from the slide",
-          "line": 5455
-        },
-        {
-          "title": "Chat: faded messages stay faded under the mouse; fade in, slide up, smooth scrolling",
-          "line": 5466
-        },
-        {
-          "title": "Chat: notes in bubbles, achievements and the guild's message of the day",
-          "line": 5475
-        },
-        {
-          "title": "Chat: clicks go through, the scroll bar only scrolled up, a click on a name whispers",
           "line": 5484
         },
         {
+          "title": "Chat: gone messages stay gone when a new one comes; the fade-in shows",
+          "line": 5495
+        },
+        {
+          "title": "Chat: every message fades by itself, apart from the slide",
+          "line": 5503
+        },
+        {
+          "title": "Chat: faded messages stay faded under the mouse; fade in, slide up, smooth scrolling",
+          "line": 5514
+        },
+        {
+          "title": "Chat: notes in bubbles, achievements and the guild's message of the day",
+          "line": 5523
+        },
+        {
+          "title": "Chat: clicks go through, the scroll bar only scrolled up, a click on a name whispers",
+          "line": 5532
+        },
+        {
           "title": "Player names: first name and surname",
-          "line": 5494
+          "line": 5542
         },
         {
           "title": "Game chat channels on the page Chat; Sync parts ticked in older saved settings",
-          "line": 5504
+          "line": 5552
         },
         {
           "title": "Profiles: All settings accountwide, modules account wide or not, a profile per character",
-          "line": 5516
+          "line": 5564
         },
         {
           "title": "Profiles: a page with tabs and boxes; Sync in fine-grained parts",
-          "line": 5537
+          "line": 5585
         },
         {
           "title": "Options: Sane UI with only its logo, then Profiles, General, Appearance, the modules",
-          "line": 5555
+          "line": 5603
         },
         {
           "title": "Sync, the game's CVars, and profiles loaded and saved by themselves",
-          "line": 5569
+          "line": 5617
         },
         {
           "title": "Profiles: the account's settings or a character's own, and named copies of them",
-          "line": 5608
+          "line": 5656
         },
         {
           "title": "Images: a guide, and the textures sized for 4K",
-          "line": 5635
+          "line": 5683
         },
         {
           "title": "Art and banners in the options",
-          "line": 5650
+          "line": 5698
         },
         {
           "title": "Project: context for future coding chats",
-          "line": 5669
+          "line": 5717
         },
         {
           "title": "Tooltips: review fixes",
-          "line": 5677
+          "line": 5725
         },
         {
           "title": "Chat: review fixes",
-          "line": 5706
+          "line": 5754
         },
         {
           "title": "Spellbook: review fixes, lighter at login",
-          "line": 5735
+          "line": 5783
         },
         {
           "title": "Core: the options' AddOns tab, shared tools, hardening",
-          "line": 5768
+          "line": 5816
         },
         {
           "title": "Core: windows",
-          "line": 5790
+          "line": 5838
         },
         {
           "title": "Spellbook, evening",
-          "line": 5812
-        },
-        {
-          "title": "Tooltips: a chat link's tooltip in the middle of the screen, closed by a click, no X",
-          "line": 5829
-        },
-        {
-          "title": "Tooltips: gone at once when the mouse leaves",
-          "line": 5842
-        },
-        {
-          "title": "Tooltips: fixed: the comparison of what you wear jumped between two places again",
-          "line": 5850
-        },
-        {
-          "title": "Tooltips: descriptions in the middle; done objectives left out",
           "line": 5860
         },
         {
+          "title": "Tooltips: a chat link's tooltip in the middle of the screen, closed by a click, no X",
+          "line": 5877
+        },
+        {
+          "title": "Tooltips: gone at once when the mouse leaves",
+          "line": 5890
+        },
+        {
+          "title": "Tooltips: fixed: the comparison of what you wear jumped between two places again",
+          "line": 5898
+        },
+        {
+          "title": "Tooltips: descriptions in the middle; done objectives left out",
+          "line": 5908
+        },
+        {
           "title": "Tooltips: the mouse option a dropdown; Always and Default at first",
-          "line": 5869
-        },
-        {
-          "title": "Tooltips: seen only while a key is held; Settings: dropdowns",
-          "line": 5881
-        },
-        {
-          "title": "Tooltips: quest data by side; grey default panels; more tooltips hooked",
-          "line": 5893
-        },
-        {
-          "title": "Tooltips: a dead creature keeps its portrait and dragon",
-          "line": 5904
-        },
-        {
-          "title": "Tooltips: room under the name; no class for friendly NPCs",
-          "line": 5911
-        },
-        {
-          "title": "Tooltips: a larger quest database; grey panel for dead and offline units",
           "line": 5917
         },
         {
+          "title": "Tooltips: seen only while a key is held; Settings: dropdowns",
+          "line": 5929
+        },
+        {
+          "title": "Tooltips: quest data by side; grey default panels; more tooltips hooked",
+          "line": 5941
+        },
+        {
+          "title": "Tooltips: a dead creature keeps its portrait and dragon",
+          "line": 5952
+        },
+        {
+          "title": "Tooltips: room under the name; no class for friendly NPCs",
+          "line": 5959
+        },
+        {
+          "title": "Tooltips: a larger quest database; grey panel for dead and offline units",
+          "line": 5965
+        },
+        {
           "title": "Tooltips: auction prices of our own",
-          "line": 5924
+          "line": 5972
         },
         {
           "title": "Tooltips: our own quest database",
-          "line": 5931
+          "line": 5979
         },
         {
           "title": "Tooltips: NPC title and faction in the header; a section for experience and quests",
-          "line": 5948
+          "line": 5996
         },
         {
           "title": "Tooltips: spec, titles, tapped; spell columns, Healing/CC/Utility; health numbers centred",
-          "line": 5962
+          "line": 6010
         },
         {
           "title": "Tooltips: unit header in four lines, a weapon's numbers in one, a small plaque",
-          "line": 5982
-        },
-        {
-          "title": "Tooltips: items short and clear, prices, spell numbers, experience, a plainer plaque",
-          "line": 5997
-        },
-        {
-          "title": "Tooltips: a unit's target above its health",
-          "line": 6026
-        },
-        {
-          "title": "Tooltips: dragons closer, none for creatures without a rank",
           "line": 6030
         },
         {
+          "title": "Tooltips: items short and clear, prices, spell numbers, experience, a plainer plaque",
+          "line": 6045
+        },
+        {
+          "title": "Tooltips: a unit's target above its health",
+          "line": 6074
+        },
+        {
+          "title": "Tooltips: dragons closer, none for creatures without a rank",
+          "line": 6078
+        },
+        {
           "title": "Tooltips: the side's emblem in the top left corner",
-          "line": 6036
+          "line": 6084
         },
         {
           "title": "Tooltips: narrower soft edge, also on bars and buff icons",
-          "line": 6043
+          "line": 6091
         },
         {
           "title": "Tooltips: soft icons, silver dragon for every other creature",
-          "line": 6050
+          "line": 6098
         },
         {
           "title": "Tooltips: the target frame's dragons",
-          "line": 6059
+          "line": 6107
         },
         {
           "title": "Tooltips: the game's gold plaque, item level on it, power over health",
-          "line": 6069
+          "line": 6117
         },
         {
           "title": "Tooltips: fixes after a look at a buff",
-          "line": 6083
+          "line": 6131
         },
         {
           "title": "Tooltips: a player's item level",
-          "line": 6096
+          "line": 6144
         },
         {
           "title": "Tooltips: round icons, gold plaque",
-          "line": 6111
+          "line": 6159
         },
         {
           "title": "Tooltips, a third look",
-          "line": 6123
-        },
-        {
-          "title": "Core: the error log",
           "line": 6171
         },
         {
+          "title": "Core: the error log",
+          "line": 6219
+        },
+        {
           "title": "Tooltips, later the same day",
-          "line": 6183
+          "line": 6231
         },
         {
           "title": "Spellbook, later the same day",
-          "line": 6267
+          "line": 6315
         },
         {
           "title": "Removed",
-          "line": 6287
+          "line": 6335
         },
         {
           "title": "Changed",
-          "line": 6294
+          "line": 6342
         },
         {
           "title": "Added",
-          "line": 6321
+          "line": 6369
         },
         {
           "title": "0.2.0 (2026-10-14)",
-          "line": 6431
-        },
-        {
-          "title": "Changed",
-          "line": 6435
-        },
-        {
-          "title": "Added",
           "line": 6479
         },
         {
-          "title": "Project",
-          "line": 6484
-        },
-        {
-          "title": "0.1.0 (2026-10-14)",
-          "line": 6491
+          "title": "Changed",
+          "line": 6483
         },
         {
           "title": "Added",
-          "line": 6494
-        },
-        {
-          "title": "Changed (against Actionbar Organizer 0.3.0)",
-          "line": 6520
-        },
-        {
-          "title": "Removed",
-          "line": 6537
+          "line": 6527
         },
         {
           "title": "Project",
+          "line": 6532
+        },
+        {
+          "title": "0.1.0 (2026-10-14)",
+          "line": 6539
+        },
+        {
+          "title": "Added",
           "line": 6542
+        },
+        {
+          "title": "Changed (against Actionbar Organizer 0.3.0)",
+          "line": 6568
+        },
+        {
+          "title": "Removed",
+          "line": 6585
+        },
+        {
+          "title": "Project",
+          "line": 6590
         }
       ]
     },
@@ -1479,9 +1491,9 @@
     },
     {
       "path": "Doc/agent/README.md",
-      "bytes": 8043,
-      "sha256": "b071bad7ed26dcf2285826b5b4db86c4c245f83ac69341f70abab11494dbdd89",
-      "lines": 87,
+      "bytes": 8348,
+      "sha256": "e39e82bedce4c78ad89355afd531e4de3ca33d7a0a4dd6bab45c868f5f675c6e",
+      "lines": 89,
       "headings": [
         {
           "title": "Sane UI: quick context for a new chat",
@@ -1497,11 +1509,11 @@
         },
         {
           "title": "Validation and scope of this review",
-          "line": 62
+          "line": 64
         },
         {
           "title": "Keeping the memory useful",
-          "line": 78
+          "line": 80
         }
       ]
     },
@@ -1699,9 +1711,9 @@
     },
     {
       "path": "Doc/changelog.txt",
-      "bytes": 43105,
-      "sha256": "7bf5ac5c06bc885f80c0abe8dac3e4cd92cebb6fb1f741926b410111238ef7eb",
-      "lines": 744
+      "bytes": 43789,
+      "sha256": "e4088e8f66f5ccf797db6d98832e2fbe05c2dd752217e2e5460c963a2e4c15e1",
+      "lines": 755
     },
     {
       "path": "Doc/guides/addon-standards.md",
@@ -2255,9 +2267,9 @@
     },
     {
       "path": "Doc/guides/interface-style.md",
-      "bytes": 29507,
-      "sha256": "364faf0415506570d114a0ede51ef075b58d3512167422bd58f920c828af4524",
-      "lines": 431,
+      "bytes": 29681,
+      "sha256": "4047be4d7d8c0a4d332fb6358fd880eef83aa250b5a112ee2e5d0207c58c4ccf",
+      "lines": 433,
       "headings": [
         {
           "title": "Interface style",
@@ -2333,31 +2345,31 @@
         },
         {
           "title": "To redesign",
-          "line": 238
+          "line": 240
         },
         {
           "title": "Animation",
-          "line": 250
+          "line": 252
         },
         {
           "title": "Out",
-          "line": 257
+          "line": 259
         },
         {
           "title": "High resolution",
-          "line": 264
+          "line": 266
         },
         {
           "title": "In the game",
-          "line": 330
+          "line": 332
         },
         {
           "title": "The harness",
-          "line": 353
+          "line": 355
         },
         {
           "title": "Running it",
-          "line": 409
+          "line": 411
         }
       ]
     },
@@ -3327,9 +3339,9 @@
     },
     {
       "path": "Doc/ideas/Inventory.md",
-      "bytes": 13894,
-      "sha256": "2215b615447be9e2bf5181c914c8ce93a365e0b6e3c0355fb32efba6eff910c3",
-      "lines": 183,
+      "bytes": 14237,
+      "sha256": "95d5ef229e919d073d61a7c48b49a2bb245653a79a7813ec9a3bdcf9284887e1",
+      "lines": 187,
       "headings": [
         {
           "title": "Inventory",
@@ -3353,15 +3365,15 @@
         },
         {
           "title": "The other characters",
-          "line": 149
+          "line": 153
         },
         {
           "title": "Order",
-          "line": 164
+          "line": 168
         },
         {
           "title": "Open questions",
-          "line": 179
+          "line": 183
         }
       ]
     },
@@ -7186,9 +7198,9 @@
     },
     {
       "path": "dev/tests/inventory.lua",
-      "bytes": 49767,
-      "sha256": "3424d991f26342da4e56dee228f7f9326cca1ce8bce2d6838b101f9e02405211",
-      "lines": 840,
+      "bytes": 53543,
+      "sha256": "4c03b573794ef57e834c55568fbf58222a4934279e80ceb7f507921fce48aeed",
+      "lines": 903,
       "declarations": [
         {
           "name": "check",
@@ -7351,112 +7363,148 @@
           "line": 110
         },
         {
-          "name": "widget:SetCustomOnMouseUpHandler",
-          "line": 123
+          "name": "methods:SetHitRectInsets",
+          "line": 117
         },
         {
-          "name": "widget.ScrollBox:SetDataProvider",
+          "name": "timer:Cancel",
+          "line": 120
+        },
+        {
+          "name": "camera:GetYaw",
           "line": 129
         },
         {
+          "name": "camera:SetYaw",
+          "line": 130
+        },
+        {
+          "name": "camera:GetZoomDistance",
+          "line": 131
+        },
+        {
+          "name": "camera:SetZoomDistance",
+          "line": 132
+        },
+        {
+          "name": "camera:GetTarget",
+          "line": 133
+        },
+        {
+          "name": "widget:GetActiveCamera",
+          "line": 134
+        },
+        {
+          "name": "widget:GetCameraFieldOfView",
+          "line": 135
+        },
+        {
+          "name": "widget:SetCustomOnMouseUpHandler",
+          "line": 150
+        },
+        {
+          "name": "widget.ScrollBox:SetDataProvider",
+          "line": 156
+        },
+        {
           "name": "view:SetElementFactory",
-          "line": 137
+          "line": 164
         },
         {
           "name": "view:SetElementExtentCalculator",
-          "line": 138
+          "line": 165
         },
         {
           "name": "Fill",
-          "line": 145
+          "line": 172
         },
         {
           "name": "GameTooltip:SetItemByID",
-          "line": 178
+          "line": 205
         },
         {
           "name": "box:SetDataProvider",
-          "line": 195
+          "line": 222
         },
         {
           "name": "Push",
-          "line": 252
+          "line": 279
         },
         {
           "name": "Stand",
-          "line": 259
+          "line": 286
         },
         {
           "name": "Names",
-          "line": 386
+          "line": 449
         },
         {
           "name": "Factory",
-          "line": 400
+          "line": 463
         },
         {
           "name": "row:Init",
-          "line": 402
+          "line": 465
         },
         {
           "name": "Steps",
-          "line": 442
+          "line": 505
         },
         {
           "name": "Names",
-          "line": 453
+          "line": 516
         },
         {
           "name": "Elements",
-          "line": 464
+          "line": 527
         },
         {
           "name": "StorageRow",
-          "line": 543
+          "line": 606
         },
         {
           "name": "AltsPick",
-          "line": 563
+          "line": 626
         },
         {
           "name": "methods:SetMatchesSearch",
-          "line": 615
+          "line": 678
         },
         {
           "name": "Worn",
-          "line": 621
+          "line": 684
         },
         {
           "name": "Redraw",
-          "line": 653
+          "line": 716
         },
         {
           "name": "Equipped",
-          "line": 670
+          "line": 733
         },
         {
           "name": "Part",
-          "line": 691
+          "line": 754
         },
         {
           "name": "part.Build",
-          "line": 693
+          "line": 756
         },
         {
           "name": "part.Show",
-          "line": 694
+          "line": 757
         },
         {
           "name": "part.Size",
-          "line": 695
+          "line": 758
         },
         {
           "name": "part.Search",
-          "line": 696
+          "line": 759
         },
         {
           "name": "Overrides",
-          "line": 746
+          "line": 809
         }
       ]
     },
@@ -7570,113 +7618,125 @@
     },
     {
       "path": "dev/tests/nameplates.lua",
-      "bytes": 17890,
-      "sha256": "890d419bae5fae05901c566c7081f27b1ce00a62cbec7ac54ee3a77be3fc69f7",
-      "lines": 304,
+      "bytes": 27769,
+      "sha256": "413dac1501d140460739d700d12e93cfda963bc1b5fe431ff0c038d61969095a",
+      "lines": 472,
       "declarations": [
         {
           "name": "check",
-          "line": 14
+          "line": 15
         },
         {
           "name": "methods:SetMinMaxValues",
-          "line": 23
-        },
-        {
-          "name": "methods:SetValue",
           "line": 24
         },
         {
-          "name": "methods:SetStatusBarColor",
+          "name": "methods:SetValue",
           "line": 25
         },
         {
-          "name": "methods:SetStatusBarTexture",
+          "name": "methods:SetStatusBarColor",
           "line": 26
         },
         {
-          "name": "methods:GetStatusBarTexture",
+          "name": "methods:SetStatusBarTexture",
           "line": 27
         },
         {
-          "name": "methods:AddMaskTexture",
-          "line": 31
+          "name": "methods:GetStatusBarTexture",
+          "line": 28
         },
         {
-          "name": "methods:SetVertexColor",
+          "name": "methods:AddMaskTexture",
           "line": 32
         },
         {
-          "name": "methods:SetSpriteSheetCell",
+          "name": "methods:SetVertexColor",
           "line": 33
         },
         {
-          "name": "methods:SetTexture",
+          "name": "methods:SetSpriteSheetCell",
           "line": 34
         },
         {
-          "name": "methods:UnregisterAllEvents",
+          "name": "methods:SetTexture",
           "line": 35
         },
         {
+          "name": "methods:UnregisterAllEvents",
+          "line": 36
+        },
+        {
+          "name": "methods:SetFormattedText",
+          "line": 37
+        },
+        {
+          "name": "methods:SetAlphaFromBoolean",
+          "line": 43
+        },
+        {
+          "name": "methods:SetFrameLevel",
+          "line": 44
+        },
+        {
           "name": "Secret",
-          "line": 39
+          "line": 48
         },
         {
           "name": "Unit",
-          "line": 51
+          "line": 68
         },
         {
           "name": "widget:AddAuraGroup",
-          "line": 78
+          "line": 121
         },
         {
           "name": "frame:SetIcon",
-          "line": 83
+          "line": 126
         },
         {
           "name": "frame:SetDurationCooldown",
-          "line": 84
+          "line": 127
         },
         {
           "name": "frame:SetApplicationCount",
-          "line": 85
+          "line": 128
         },
         {
           "name": "widget:SetAuraGroupMaxFrameCount",
-          "line": 90
+          "line": 133
         },
         {
           "name": "widget:SetUnit",
-          "line": 91
+          "line": 134
         },
         {
           "name": "widget:SetFlowLayoutAnchorPoint",
-          "line": 92
+          "line": 135
         },
         {
           "name": "widget:SetFlowLayoutGrowthDirection",
-          "line": 93
+          "line": 136
         },
         {
           "name": "GamePlate",
-          "line": 97
+          "line": 140
         },
         {
           "name": "DressOf",
-          "line": 111
+          "line": 153
         },
         {
           "name": "Faded",
-          "line": 119
+          "line": 161
         }
       ]
     },
     {
       "path": "dev/tests/navigation.lua",
-      "bytes": 274724,
-      "sha256": "c9b87da5e19c0ebd0ced46615e4bea0d398a80224139dde0c20fe2e9de8bfc6e",
-      "lines": 4571,
+      "bytes": 275028,
+      "sha256": "ba076cb7e1b7a36ea58753a62e44ebc794e242f0c2415a8a35a923c972e6f18f",
+      "lines": 4574,
       "declarations": [
         {
           "name": "check",
@@ -7968,259 +8028,259 @@
         },
         {
           "name": "Pinged",
-          "line": 1374
+          "line": 1377
         },
         {
           "name": "Button",
-          "line": 1402
+          "line": 1405
         },
         {
           "name": "Drawn",
-          "line": 1473
+          "line": 1476
         },
         {
           "name": "Pin",
-          "line": 1511
+          "line": 1514
         },
         {
           "name": "slider:SetWidth",
-          "line": 1744
-        },
-        {
-          "name": "slider:ClearAllPoints",
-          "line": 1745
-        },
-        {
-          "name": "slider:SetPoint",
-          "line": 1746
-        },
-        {
-          "name": "slider:Init",
           "line": 1747
         },
         {
-          "name": "slider:RegisterCallback",
+          "name": "slider:ClearAllPoints",
           "line": 1748
         },
         {
-          "name": "slider:UnregisterCallback",
+          "name": "slider:SetPoint",
           "line": 1749
         },
         {
-          "name": "row:AttachTemplate",
+          "name": "slider:Init",
+          "line": 1750
+        },
+        {
+          "name": "slider:RegisterCallback",
           "line": 1751
         },
         {
+          "name": "slider:UnregisterCallback",
+          "line": 1752
+        },
+        {
+          "name": "row:AttachTemplate",
+          "line": 1754
+        },
+        {
           "name": "areaRow:AttachTemplate",
-          "line": 1767
+          "line": 1770
         },
         {
           "name": "slider:Init",
-          "line": 1783
+          "line": 1786
         },
         {
           "name": "Story",
-          "line": 1868
+          "line": 1871
         },
         {
           "name": "Click",
-          "line": 2014
+          "line": 2017
         },
         {
           "name": "Double",
-          "line": 2018
+          "line": 2021
         },
         {
           "name": "W.SmallAndBack",
-          "line": 2077
+          "line": 2080
         },
         {
           "name": "Forget",
-          "line": 2170
+          "line": 2173
         },
         {
           "name": "At",
-          "line": 2316
+          "line": 2319
         },
         {
           "name": "Glints",
-          "line": 2317
+          "line": 2320
         },
         {
           "name": "Gap",
-          "line": 2327
+          "line": 2330
         },
         {
           "name": "Off",
-          "line": 2329
+          "line": 2332
         },
         {
           "name": "Has",
-          "line": 2541
+          "line": 2544
         },
         {
           "name": "Blocks",
-          "line": 2569
+          "line": 2572
         },
         {
           "name": "Size",
-          "line": 2577
+          "line": 2580
         },
         {
           "name": "Openings",
-          "line": 2742
+          "line": 2745
         },
         {
           "name": "Swims",
-          "line": 2927
+          "line": 2930
         },
         {
           "name": "Rows",
-          "line": 2931
+          "line": 2934
         },
         {
           "name": "Drawn",
-          "line": 2936
+          "line": 2939
         },
         {
           "name": "Rides",
-          "line": 3076
+          "line": 3079
         },
         {
           "name": "At",
-          "line": 3083
+          "line": 3086
         },
         {
           "name": "Ride",
-          "line": 3092
+          "line": 3095
         },
         {
           "name": "Clock",
-          "line": 3141
+          "line": 3144
         },
         {
           "name": "Flights",
-          "line": 3188
+          "line": 3191
         },
         {
           "name": "Fly",
-          "line": 3200
+          "line": 3203
         },
         {
           "name": "Route",
-          "line": 3349
+          "line": 3352
         },
         {
           "name": "At",
-          "line": 3446
+          "line": 3449
         },
         {
           "name": "At",
-          "line": 3556
+          "line": 3559
         },
         {
           "name": "Over",
-          "line": 3557
+          "line": 3560
         },
         {
           "name": "Pin",
-          "line": 3571
+          "line": 3574
         },
         {
           "name": "Stand",
-          "line": 3578
+          "line": 3581
         },
         {
           "name": "At",
-          "line": 3611
+          "line": 3614
         },
         {
           "name": "At",
-          "line": 3664
+          "line": 3667
         },
         {
           "name": "At",
-          "line": 3693
+          "line": 3696
         },
         {
           "name": "Pin",
-          "line": 3733
+          "line": 3736
         },
         {
           "name": "Kinds",
-          "line": 3740
+          "line": 3743
         },
         {
           "name": "Perk",
-          "line": 3796
+          "line": 3799
         },
         {
           "name": "At",
-          "line": 3851
+          "line": 3854
         },
         {
           "name": "Pin",
-          "line": 3852
+          "line": 3855
         },
         {
           "name": "Kinds",
-          "line": 3861
+          "line": 3864
         },
         {
           "name": "Stand",
-          "line": 3866
-        },
-        {
-          "name": "Close",
           "line": 3869
         },
         {
+          "name": "Close",
+          "line": 3872
+        },
+        {
           "name": "In6178",
-          "line": 3928
+          "line": 3931
         },
         {
           "name": "Go",
-          "line": 3956
+          "line": 3959
         },
         {
           "name": "Wait",
-          "line": 3966
+          "line": 3969
         },
         {
           "name": "At",
-          "line": 4015
+          "line": 4018
         },
         {
           "name": "Spot",
-          "line": 4016
+          "line": 4019
         },
         {
           "name": "Route",
-          "line": 4020
+          "line": 4023
         },
         {
           "name": "Spot",
-          "line": 4069
+          "line": 4072
         },
         {
           "name": "Spot",
-          "line": 4098
+          "line": 4101
         },
         {
           "name": "Sweeps",
-          "line": 4260
+          "line": 4263
         },
         {
           "name": "Pictures",
-          "line": 4266
+          "line": 4269
         },
         {
           "name": "Shown",
-          "line": 4365
+          "line": 4368
         },
         {
           "name": "Marks",
-          "line": 4373
+          "line": 4376
         }
       ]
     },
@@ -27962,9 +28022,9 @@
     },
     {
       "path": "src/Inventory/README.md",
-      "bytes": 66783,
-      "sha256": "b1eacbc4d98941fea397ef33e8a10d824666f9297054c0cd1467dcffa633c351",
-      "lines": 637,
+      "bytes": 67527,
+      "sha256": "cd717d3d3b0b2c602718e1d9e62d92effa2f2838cc9fbb211729240f520a24a6",
+      "lines": 643,
       "headings": [
         {
           "title": "Sane UI: Inventory",
@@ -27980,15 +28040,15 @@
         },
         {
           "title": "Technical details",
-          "line": 169
+          "line": 170
         },
         {
           "title": "Files",
-          "line": 574
+          "line": 580
         },
         {
           "title": "History",
-          "line": 623
+          "line": 629
         }
       ]
     },
@@ -28116,37 +28176,37 @@
     },
     {
       "path": "src/Inventory/Sheet/Doll.lua",
-      "bytes": 6156,
-      "sha256": "cb5dd229e783e3b1c13b6361fffd84e40d38fc395cad6e3077abfc43b01a56ce",
-      "lines": 138,
+      "bytes": 6274,
+      "sha256": "1d1da8da42857777b294cb800e06dfa94b3da1367993460eafc60d5d354fdffc",
+      "lines": 139,
       "declarations": [
         {
           "name": "Doll.Rect",
-          "line": 66
+          "line": 67
         },
         {
           "name": "Doll.Build",
-          "line": 71
+          "line": 72
         },
         {
           "name": "Fit",
-          "line": 80
+          "line": 81
         },
         {
           "name": "Line",
-          "line": 93
+          "line": 94
         },
         {
           "name": "FillStrip",
-          "line": 103
+          "line": 104
         },
         {
           "name": "EmptyStrip",
-          "line": 123
+          "line": 124
         },
         {
           "name": "Doll.Strip",
-          "line": 128
+          "line": 129
         }
       ]
     },
@@ -28280,29 +28340,53 @@
     },
     {
       "path": "src/Inventory/Sheet/Model.lua",
-      "bytes": 2813,
-      "sha256": "42baffea2011528ba9050df1fd83bbbe420a7db8e8cb37b4e995dbce7c134b84",
-      "lines": 59,
+      "bytes": 5937,
+      "sha256": "55fe3812728dcd94a726bac2834e325a04c7db85bded97ed6357b0c8541f271e",
+      "lines": 125,
       "declarations": [
         {
           "name": "Game",
-          "line": 23
-        },
-        {
-          "name": "Dropped",
           "line": 30
         },
         {
+          "name": "Camera",
+          "line": 35
+        },
+        {
+          "name": "Home",
+          "line": 41
+        },
+        {
+          "name": "Rest",
+          "line": 50
+        },
+        {
+          "name": "FloorBelow",
+          "line": 57
+        },
+        {
+          "name": "Stand",
+          "line": 68
+        },
+        {
+          "name": "Dropped",
+          "line": 80
+        },
+        {
+          "name": "Pressed",
+          "line": 86
+        },
+        {
           "name": "Released",
-          "line": 36
+          "line": 92
         },
         {
           "name": "Model.Build",
-          "line": 42
+          "line": 101
         },
         {
           "name": "Model.Refresh",
-          "line": 55
+          "line": 118
         }
       ]
     },
@@ -28552,8 +28636,8 @@
     },
     {
       "path": "src/Inventory/Sheet/Sheet.lua",
-      "bytes": 8562,
-      "sha256": "1b0468e3114c7930f75790cf84a98630666810e6de8c7b740420a875849b4bbc",
+      "bytes": 8566,
+      "sha256": "1b04f55be5086a6d8b96dc2727b609bc061ebbad643f9005fb3dfbe23c90ca61",
       "lines": 200,
       "declarations": [
         {
@@ -29144,245 +29228,261 @@
     },
     {
       "path": "src/Nameplates/Auras.lua",
-      "bytes": 6093,
-      "sha256": "0fb4677487b783ee8e43ab2dd61cc90d77e9aa6f7c0e01e6504caab98bd6ba04",
-      "lines": 128,
+      "bytes": 6888,
+      "sha256": "82e5381fd4103dfc9cfcd5239d7150c7fc0bb74d378e4ecf013e1754ca00c408",
+      "lines": 145,
       "declarations": [
         {
           "name": "Dress",
-          "line": 40
+          "line": 45
         },
         {
           "name": "Container",
-          "line": 74
+          "line": 79
         },
         {
           "name": "Auras.Make",
-          "line": 92
+          "line": 96
+        },
+        {
+          "name": "Auras.Place",
+          "line": 106
         },
         {
           "name": "Auras.Slots",
-          "line": 98
-        },
-        {
-          "name": "Auras.Room",
-          "line": 104
+          "line": 119
         },
         {
           "name": "Most",
-          "line": 108
+          "line": 124
         },
         {
           "name": "Shown",
-          "line": 114
+          "line": 130
         },
         {
           "name": "Auras.Set",
-          "line": 122
+          "line": 138
         }
       ]
     },
     {
       "path": "src/Nameplates/Bar.lua",
-      "bytes": 6778,
-      "sha256": "c23b71d5fe05664aabea746fe8c1086e1b78496d0bb3c31de85df401ed9d860c",
-      "lines": 152,
+      "bytes": 13081,
+      "sha256": "31660fe58a4b31dafb4c82d06fb500f6a61ac0aaeb81fc7bdbef52af94bc2b88",
+      "lines": 296,
       "declarations": [
         {
           "name": "GameColour",
-          "line": 35
+          "line": 51
         },
         {
           "name": "Caps",
-          "line": 45
+          "line": 72
         },
         {
           "name": "Bar.SizeCaps",
-          "line": 61
+          "line": 88
+        },
+        {
+          "name": "Plate",
+          "line": 94
+        },
+        {
+          "name": "Around",
+          "line": 102
         },
         {
           "name": "Bar.Make",
-          "line": 67
+          "line": 111
         },
         {
           "name": "Bar.Fit",
-          "line": 86
+          "line": 155
         },
         {
-          "name": "ByClass",
-          "line": 99
+          "name": "Bar.Rank",
+          "line": 174
         },
         {
           "name": "Bar.Colour",
-          "line": 105
+          "line": 181
+        },
+        {
+          "name": "Bar.Danger",
+          "line": 201
         },
         {
           "name": "Bar.Paint",
-          "line": 119
+          "line": 206
+        },
+        {
+          "name": "Bar.Glow",
+          "line": 221
         },
         {
           "name": "Raw",
-          "line": 125
+          "line": 236
         },
         {
           "name": "Bar.Health",
-          "line": 133
+          "line": 244
+        },
+        {
+          "name": "PowerColour",
+          "line": 253
+        },
+        {
+          "name": "Bar.Power",
+          "line": 263
         },
         {
           "name": "Bar.Clear",
-          "line": 143
+          "line": 283
         },
         {
           "name": "Bar.Border",
-          "line": 149
+          "line": 292
         }
       ]
     },
     {
       "path": "src/Nameplates/Marks.lua",
-      "bytes": 3305,
-      "sha256": "0375afbe25ff218d318d8c54fec4c5f294870ccbbaaad83b5ada4f02f6298036",
-      "lines": 79,
+      "bytes": 1849,
+      "sha256": "70314f00dce9fd5a960e77d7ab42f4728f67b31b402b9a67e1c528c28eae9643",
+      "lines": 46,
       "declarations": [
         {
           "name": "Marks.Make",
-          "line": 29
-        },
-        {
-          "name": "Marks.Atlas",
-          "line": 43
-        },
-        {
-          "name": "Beside",
-          "line": 50
-        },
-        {
-          "name": "Marks.Rare",
-          "line": 56
+          "line": 26
         },
         {
           "name": "Marks.Raid",
-          "line": 72
+          "line": 35
         }
       ]
     },
     {
       "path": "src/Nameplates/Nameplates.lua",
-      "bytes": 3029,
-      "sha256": "4bc345fd8621b8c31fea3b753a6673a3b3e06526573d031fdb62616602827ed7",
-      "lines": 63,
+      "bytes": 4480,
+      "sha256": "57ffbfa78c54e672d5ffbc9afeda334c899fe254194df02800a6df90b92bf2c4",
+      "lines": 88,
       "declarations": [
         {
           "name": "ns.GiveBack",
-          "line": 52
+          "line": 75
         },
         {
           "name": "ns.OnLoad",
-          "line": 56
+          "line": 80
         },
         {
           "name": "ns.OnLogin",
-          "line": 60
+          "line": 84
         }
       ]
     },
     {
       "path": "src/Nameplates/Plate.lua",
-      "bytes": 10524,
-      "sha256": "ef283c4ab5419edae705223136659eacf3e67e72a7eff9e4869a1c35554128a5",
-      "lines": 257,
+      "bytes": 12848,
+      "sha256": "c51813d4c773f5ec5f297586781d42b7423fc9bd928f5aa221e9b7386e4ef6e0",
+      "lines": 307,
       "declarations": [
         {
-          "name": "Font",
-          "line": 46
-        },
-        {
           "name": "PlateOf",
-          "line": 54
+          "line": 53
         },
         {
           "name": "Lit",
-          "line": 60
-        },
-        {
-          "name": "Name",
-          "line": 66
+          "line": 59
         },
         {
           "name": "Fill",
-          "line": 74
+          "line": 66
+        },
+        {
+          "name": "Plate.Wanted",
+          "line": 79
         },
         {
           "name": "Parts",
-          "line": 86
+          "line": 93
         },
         {
           "name": "Wear",
-          "line": 95
+          "line": 102
         },
         {
           "name": "Heard",
-          "line": 104
+          "line": 115
         },
         {
           "name": "Fit",
-          "line": 121
+          "line": 141
         },
         {
           "name": "Make",
-          "line": 128
-        },
-        {
-          "name": "Turned",
           "line": 149
         },
         {
+          "name": "Turned",
+          "line": 164
+        },
+        {
           "name": "Follow",
-          "line": 157
+          "line": 172
         },
         {
           "name": "Off",
-          "line": 167
-        },
-        {
-          "name": "Added",
           "line": 182
         },
         {
+          "name": "Added",
+          "line": 199
+        },
+        {
           "name": "Removed",
-          "line": 205
+          "line": 222
         },
         {
           "name": "Borders",
-          "line": 213
+          "line": 230
+        },
+        {
+          "name": "People",
+          "line": 240
+        },
+        {
+          "name": "Threats",
+          "line": 247
         },
         {
           "name": "Raids",
-          "line": 219
+          "line": 256
         },
         {
           "name": "Plate.Of",
-          "line": 225
+          "line": 262
         },
         {
           "name": "Plate.Refresh",
-          "line": 232
+          "line": 269
         },
         {
           "name": "Plate.GiveBack",
-          "line": 238
+          "line": 278
         },
         {
           "name": "Plate.Start",
-          "line": 245
+          "line": 288
         }
       ]
     },
     {
       "path": "src/Nameplates/README.md",
-      "bytes": 9799,
-      "sha256": "dfeed98b50f89e205dd36757c97a3fa6a6d8667030fa4795d1ed4b2afa165e60",
-      "lines": 113,
+      "bytes": 16137,
+      "sha256": "55936dd15876cb63f2a3f991ea76cd46a981b5fb48cb75edf7b8031234405f46",
+      "lines": 170,
       "headings": [
         {
           "title": "Sane UI: Nameplates",
@@ -29394,31 +29494,31 @@
         },
         {
           "title": "How to use",
-          "line": 14
+          "line": 17
         },
         {
           "title": "Technical details",
-          "line": 37
+          "line": 56
         },
         {
           "title": "Files",
-          "line": 94
+          "line": 143
         },
         {
           "title": "Not there yet",
-          "line": 106
+          "line": 157
         },
         {
           "title": "History",
-          "line": 110
+          "line": 161
         }
       ]
     },
     {
       "path": "src/Nameplates/Resource.lua",
-      "bytes": 7110,
-      "sha256": "6e175c8fba9e5e675514f50517209ce67dd95598972b83d0edd68b572adc6898",
-      "lines": 165,
+      "bytes": 7287,
+      "sha256": "3a616e30fd5f55fb0e2a214bdd8990d3ec4b12c71952c3d1c905c1ead27ef725",
+      "lines": 167,
       "declarations": [
         {
           "name": "Colour",
@@ -29438,42 +29538,132 @@
         },
         {
           "name": "Resource.Fit",
-          "line": 108
+          "line": 107
         },
         {
           "name": "Resource.Update",
-          "line": 116
+          "line": 120
         },
         {
           "name": "Resource.Leave",
-          "line": 141
+          "line": 143
         },
         {
           "name": "Resource.Again",
-          "line": 148
+          "line": 150
         },
         {
           "name": "Power",
-          "line": 152
+          "line": 154
         },
         {
           "name": "Resource.Start",
-          "line": 157
+          "line": 159
         }
       ]
     },
     {
       "path": "src/Nameplates/SaneUI_Nameplates.toc",
-      "bytes": 1096,
-      "sha256": "8231b20de4261141e5eaf9cb7e539d1623d026813ad3248ce439aee4618a225a",
-      "lines": 23,
+      "bytes": 1305,
+      "sha256": "a28c059586efc86aa6027956a4f1e57204adcccf58f487689d0059bf92bbbe94",
+      "lines": 27,
       "load_order": [
         "Nameplates.lua",
         "Bar.lua",
+        "Text.lua",
         "Auras.lua",
         "Marks.lua",
         "Resource.lua",
+        "Scale.lua",
         "Plate.lua"
+      ]
+    },
+    {
+      "path": "src/Nameplates/Scale.lua",
+      "bytes": 2093,
+      "sha256": "c0beebdea358dddd92f7df78b6a542e7f5d586b8b272e00b8be0d7f5d0cf0ce5",
+      "lines": 62,
+      "declarations": [
+        {
+          "name": "Apply",
+          "line": 29
+        },
+        {
+          "name": "Fought",
+          "line": 39
+        },
+        {
+          "name": "Scale.Update",
+          "line": 46
+        },
+        {
+          "name": "Scale.GiveBack",
+          "line": 55
+        },
+        {
+          "name": "Scale.Start",
+          "line": 59
+        }
+      ]
+    },
+    {
+      "path": "src/Nameplates/Text.lua",
+      "bytes": 8085,
+      "sha256": "a0bb8cf7efd0863f188a9e2c882d8da95b4c698c06c9fb290bfa4880392763b0",
+      "lines": 185,
+      "declarations": [
+        {
+          "name": "Font",
+          "line": 45
+        },
+        {
+          "name": "Line",
+          "line": 52
+        },
+        {
+          "name": "Text.Make",
+          "line": 61
+        },
+        {
+          "name": "Text.Fit",
+          "line": 77
+        },
+        {
+          "name": "Text.Name",
+          "line": 82
+        },
+        {
+          "name": "LevelColour",
+          "line": 91
+        },
+        {
+          "name": "Text.Level",
+          "line": 102
+        },
+        {
+          "name": "Text.Threat",
+          "line": 117
+        },
+        {
+          "name": "Text.Short",
+          "line": 133
+        },
+        {
+          "name": "Text.Percent",
+          "line": 143
+        },
+        {
+          "name": "Hidden",
+          "line": 152
+        },
+        {
+          "name": "Text.Health",
+          "line": 164
+        },
+        {
+          "name": "Text.Set",
+          "line": 176
+        }
       ]
     },
     {
@@ -29654,9 +29844,9 @@
     },
     {
       "path": "src/Navigation/Canvas.lua",
-      "bytes": 41948,
-      "sha256": "56a3e48c64b33d6558d81cd7c1b4f6d3ff563461cf5bfe2360c16146a019b785",
-      "lines": 916,
+      "bytes": 42205,
+      "sha256": "7455e0ebe3fe61410cccf2b18d65960ce901aa84381cde9ccf7dfe1911579f92",
+      "lines": 918,
       "declarations": [
         {
           "name": "Mask",
@@ -29768,135 +29958,135 @@
         },
         {
           "name": "Cursor",
-          "line": 470
+          "line": 472
         },
         {
           "name": "FromMiddle",
-          "line": 477
+          "line": 479
         },
         {
           "name": "Drag",
-          "line": 484
+          "line": 486
         },
         {
           "name": "Down",
-          "line": 500
+          "line": 502
         },
         {
           "name": "Where",
-          "line": 511
+          "line": 513
         },
         {
           "name": "Into",
-          "line": 528
+          "line": 530
         },
         {
           "name": "Finish",
-          "line": 540
+          "line": 542
         },
         {
           "name": "Clicked",
-          "line": 561
+          "line": 563
         },
         {
           "name": "Up",
-          "line": 592
+          "line": 594
         },
         {
           "name": "Canvas.Press",
-          "line": 598
+          "line": 600
         },
         {
           "name": "Canvas.Release",
-          "line": 602
+          "line": 604
         },
         {
           "name": "Canvas.ZoomTo",
-          "line": 607
+          "line": 609
         },
         {
           "name": "Canvas.LookAt",
-          "line": 618
+          "line": 620
         },
         {
           "name": "Canvas.Center",
-          "line": 634
+          "line": 636
         },
         {
           "name": "Canvas.Following",
-          "line": 643
+          "line": 645
         },
         {
           "name": "Canvas.Show",
-          "line": 654
+          "line": 656
         },
         {
           "name": "Zoomed",
-          "line": 674
+          "line": 676
         },
         {
           "name": "Wheel",
-          "line": 684
+          "line": 686
         },
         {
           "name": "Over",
-          "line": 701
+          "line": 703
         },
         {
           "name": "Entered",
-          "line": 720
+          "line": 722
         },
         {
           "name": "Gone",
-          "line": 726
+          "line": 728
         },
         {
           "name": "Canvas.Build",
-          "line": 735
+          "line": 737
         },
         {
           "name": "Canvas.Mouse",
-          "line": 788
+          "line": 790
         },
         {
           "name": "Canvas.Use",
-          "line": 795
+          "line": 797
         },
         {
           "name": "Aim",
-          "line": 801
+          "line": 803
         },
         {
           "name": "Canvas.Open",
-          "line": 811
+          "line": 813
         },
         {
           "name": "Canvas.Fit",
-          "line": 823
+          "line": 825
         },
         {
           "name": "Canvas.Hold",
-          "line": 833
+          "line": 835
         },
         {
           "name": "Spot",
-          "line": 843
+          "line": 845
         },
         {
           "name": "Reach",
-          "line": 849
+          "line": 851
         },
         {
           "name": "Canvas.Morph",
-          "line": 858
+          "line": 860
         },
         {
           "name": "Canvas.Step",
-          "line": 894
+          "line": 896
         },
         {
           "name": "Canvas.Close",
-          "line": 911
+          "line": 913
         }
       ]
     },
@@ -30448,9 +30638,9 @@
     },
     {
       "path": "src/Navigation/Hybrid.lua",
-      "bytes": 20753,
-      "sha256": "47dc10756a61bd337abf456a313269fce8623eba76ddf031e1f3df2201a265d2",
-      "lines": 437,
+      "bytes": 20814,
+      "sha256": "c654f98528c0adea1e7e8259ad7d96d8a88a9baaccc64fdb0f7a0f06061935c9",
+      "lines": 438,
       "declarations": [
         {
           "name": "Parts",
@@ -30546,23 +30736,23 @@
         },
         {
           "name": "Hybrid.Shown",
-          "line": 347
+          "line": 348
         },
         {
           "name": "Hybrid.Wheel",
-          "line": 353
+          "line": 354
         },
         {
           "name": "Hybrid.Ping",
-          "line": 392
+          "line": 393
         },
         {
           "name": "Hybrid.PingAt",
-          "line": 405
+          "line": 406
         },
         {
           "name": "Hybrid.Covers",
-          "line": 429
+          "line": 430
         }
       ]
     },
@@ -30772,73 +30962,73 @@
     },
     {
       "path": "src/Navigation/Marks.lua",
-      "bytes": 11373,
-      "sha256": "75c73111b45c65a2696470d026df3c21ec22079d4d4774f0ae6b9785eb7ce8d7",
-      "lines": 259,
+      "bytes": 11474,
+      "sha256": "073b601f9d5817a55c18417425e078d79aaba046f53f2153986d894cdb01d4c7",
+      "lines": 260,
       "declarations": [
         {
           "name": "Tip",
-          "line": 44
+          "line": 45
         },
         {
           "name": "Sound",
-          "line": 52
+          "line": 53
         },
         {
           "name": "Clicked",
-          "line": 59
+          "line": 60
         },
         {
           "name": "Marks.Build",
-          "line": 76
+          "line": 77
         },
         {
           "name": "Marks.Stack",
-          "line": 97
+          "line": 98
         },
         {
           "name": "Spot",
-          "line": 103
+          "line": 104
         },
         {
           "name": "Put",
-          "line": 111
+          "line": 112
         },
         {
           "name": "Marks.Player",
-          "line": 120
+          "line": 121
         },
         {
           "name": "Marks.Pin",
-          "line": 128
+          "line": 129
         },
         {
           "name": "Marks.Group",
-          "line": 139
+          "line": 140
         },
         {
           "name": "PingMark",
-          "line": 168
+          "line": 169
         },
         {
           "name": "Art",
-          "line": 171
+          "line": 172
         },
         {
           "name": "Let",
-          "line": 201
+          "line": 202
         },
         {
           "name": "Marks.Pings",
-          "line": 210
+          "line": 211
         },
         {
           "name": "Marks.Fit",
-          "line": 237
+          "line": 238
         },
         {
           "name": "Marks.Clear",
-          "line": 252
+          "line": 253
         }
       ]
     },
@@ -31790,9 +31980,9 @@
     },
     {
       "path": "src/Navigation/README.md",
-      "bytes": 96071,
-      "sha256": "811850ce7a33f8ddd2b3eb0bf555821025ec08a67430b7fdcfa725b6ed0e4439",
-      "lines": 902,
+      "bytes": 96197,
+      "sha256": "ea941a61021ecf38aa956e161479a65574d980ae19fbc1e61e273bb88532723d",
+      "lines": 903,
       "headings": [
         {
           "title": "Sane UI: Navigation",
@@ -31812,11 +32002,11 @@
         },
         {
           "title": "Files",
-          "line": 621
+          "line": 622
         },
         {
           "title": "History",
-          "line": 668
+          "line": 669
         }
       ]
     },

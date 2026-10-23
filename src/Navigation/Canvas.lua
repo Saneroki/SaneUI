@@ -451,7 +451,9 @@ local function Track()
     end
     if was ~= known or followed ~= camera.follow then Native() end
     ns.Hybrid.Follow(holder, Here(map, u, v))
-    ns.Marks.Player(view, map, u, v, facing, ns.Hybrid.Shown())
+    -- Our arrow but where the small view is the game's minimap, which draws its own; on the full map always, over
+    -- the game's minimap around the player (its square there only lends its dots), as the game's map draws it.
+    ns.Marks.Player(view, map, u, v, facing, camera == ns.Window.small and ns.Hybrid.Shown())
     if not lost then
         ns.Marks.Group(view, now) -- in an instance the game's minimap shows the party and the pings itself
         ns.Marks.Pings(view, now)

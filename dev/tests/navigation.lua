@@ -1354,6 +1354,9 @@ do
         and minimap._points[1][2] == holder and near(minimap._points[1][4], (u - Canvas.view.u) * full.k)
         and near(minimap._points[1][5], (v - Canvas.view.v) * full.k) and minimap._mask == Hybrid.MASK,
         "full: the game's minimap around the player at the map's zoom, at the widest step that fits, on the player")
+    check(arrow._shown and arrow._points[1][2] == holder and near(arrow._points[1][4], (u - Canvas.view.u) * full.k)
+        and near(arrow._points[1][5], (v - Canvas.view.v) * full.k),
+        "full: our arrow on the player all the same, over the game's minimap there (its square only lends its dots)")
     local chosen = Core.Copy(ns.options.pins)
     chosen.minimap = nil
     Core.Set(ns.name, "pins", chosen)
