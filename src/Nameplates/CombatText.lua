@@ -14,8 +14,8 @@ local _, ns = ...
 --
 --  Your own character has no plate in this client (the game's resource
 --  display is a panel of Edit Mode, not over the character), so yours rise
---  from a point of ours over the screen's middle, where the camera keeps your
---  character, as the game's own combat text about you does (CombatText.SELF).
+--  from a point of ours under the screen's middle, about at your character's
+--  feet, where the camera keeps it (CombatText.SELF; Saneroki, 2026-10-23).
 --  Your damage taken is red with a minus.
 --
 --  Numbers in Sane UI's own font, Kalam Bold, outlined. What did no harm is a
@@ -51,7 +51,7 @@ ns.CombatText = CombatText
 CombatText.HEIGHT = 15     -- a number's font height, before the plate's size
 CombatText.CRIT = 1.5      -- a critical hit or heal, times that (the game's combat feedback)
 CombatText.SMALL = 0.75    -- a glancing blow or a word, times that (the same)
-CombatText.PICTURE = 48    -- a drawing's side (the size dev/tools/art made it for)
+CombatText.PICTURE = 30    -- a drawing's side (Saneroki, 2026-10-23: smaller; its texture is made for 48)
 CombatText.ABOVE = 2       -- from the top of the bar to where a number starts
 CombatText.RISE = 34       -- how far it rises
 CombatText.TIME = 1.1      -- seconds it shows
@@ -60,7 +60,7 @@ CombatText.POP = 0.08      -- seconds a critical one swells, and again to shrink
 CombatText.SWELL = 1.35    -- how large it swells
 CombatText.LANES = { 0, -22, 22, -11, 11 } -- where numbers at once stand, from the middle
 CombatText.MOST = 6        -- numbers on one host at once
-CombatText.SELF = 60       -- your character's point: this far over the screen's middle
+CombatText.SELF = -130     -- your character's point: this far from the screen's middle (down: about at its feet)
 CombatText.FONT = Core.Journal.FONT_BOLD
 CombatText.FLAGS = "OUTLINE"
 -- The game's fonts, where Kalam cannot be set (its file missing).
@@ -96,7 +96,7 @@ CombatText.NOTHING = { ABSORB = true, BLOCK = true, RESIST = true }
 
 local free = {}       -- numbers back in the pool
 local waiting = false -- the CVars wait for the fight's end
-local you             -- the point over the screen's middle your own combat text rises from
+local you             -- the point about at your character's feet its own combat text rises from
 local listening = false
 
 -- The font: Kalam Bold, outlined; the game's combat text font where Kalam cannot be set.

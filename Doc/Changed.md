@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: smaller drawings, your combat text at your feet, the "i" in Kalam (Saneroki, 2026-10-23)
+- `CombatText.lua`: the drawings 30 units (`CombatText.PICTURE`, was 48); your own combat text rises from about your
+  character's feet, 130 under the screen's middle (`CombatText.SELF`, was 60 over it).
+- `dev/tools/combat-art`: the immunity's "i" is Kalam Bold, written in by code (`letter`); a drawing picked from the
+  image model's, kept as `assets/interface/combat-text/<name>.png`, is traced in place of the one in code (`trace`:
+  its dark lines thickened, white with the dark edge).
+- Render lists `dev/imagegen/sets/combat-text/`: `drawings.txt` (round 1, prompts alone), `house.txt` (round 2, from
+  words with the bags' decided pencil icons as the style), `picks.txt` (round 2, Saneroki's picks of round 1 redrawn in
+  that style).
+
 ### Inventory: larger words in the bags' view; the slots' drawings bigger and darker (Saneroki, 2026-10-23)
 - `Paper.WORDS` (1.2): `Paper.Font` and `Paper.Outlined` make every font object that much larger than the size
   given, the dropdown's word and arrow too; the cells' numbers (`Cells.Fonts`: count, item level, bind, set) and

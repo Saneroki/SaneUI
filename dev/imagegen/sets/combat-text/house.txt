@@ -1,0 +1,17 @@
+# Combat text, round 2: each drawing from words, in the pencil-icon style of Sane UI's journal, image 1 the decided
+# pencil icons of the bags' sidebar (assets/interface/categories/, laid out as a sheet by the session: refs/house-icons.png)
+# as the style alone. The immunity is the bubble alone: code writes the "i" into it in Kalam Bold.
+#   dev/tools/imagegen dev/imagegen/sets/combat-text/house.txt
+# chosen:
+workflow: qwen21-edit-1ref
+set: width=1024, height=1024
+count: 3
+out: assets/generated/combat-text/house
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. Use image 1 only as a reference for the drawing style: clean, even, bold graphite pencil outlines, simple shapes, no shading, no hatching, no fill, white inside the shapes. Do not show anything from image 1. Draw one single new icon in exactly that style, alone, centred and filling most of the picture, readable at a tiny size, no text, no letters:
+ref: assets/generated/combat-text/refs/house-icons.png
+miss: an arrow flying high over a round archery target and past it, missing it completely, two short motion lines behind the arrow.
+dodge: a fighter bending far backwards at the waist, arms flung out for balance, while an arrow flies straight over the fighter's face, just above it.
+parry: two swords crossed blade against blade, a few short spark lines bursting from the point where the blades meet.
+block: a heater shield seen from the front, an arrow breaking against its face, a few short impact lines round the hit.
+evade: a fighter seen from the front, leaning the whole body sharply to one side so the head swings away, an arrow flying past right next to the head, through the empty space where the head was a moment before.
+immune: a round protective bubble, an empty sphere outline with one curved shine line at its upper left, nothing inside it.

@@ -1,0 +1,18 @@
+# Combat text, round 2: Saneroki's picks of round 1 (drawings.txt: evade-2, block-4, parry-1, dodge-1), each image 1
+# for its subject and layout, redrawn in the pencil-icon style of Sane UI's journal, image 2 the decided pencil icons
+# of the bags' sidebar as the style alone.
+#   dev/tools/imagegen dev/imagegen/sets/combat-text/picks.txt
+# chosen:
+workflow: qwen21-edit-2ref
+set: width=1024, height=1024
+count: 3
+out: assets/generated/combat-text/picks
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. Redraw image 1 as a clean icon: keep its subject, its pose and its layout, but draw it in the style of image 2: clean, even, bold graphite pencil outlines, simple shapes, no shading, no hatching, no fill, white inside the shapes. Do not show anything else from image 2. One single icon alone, centred and filling most of the picture, readable at a tiny size, no text, no letters:
+ref: assets/generated/combat-text/refs/pick-evade-2.png, assets/generated/combat-text/refs/house-icons.png
+evade: a fighter leaning to one side, the head swung away from an arrow that flies past it.
+ref: assets/generated/combat-text/refs/pick-block-4.png, assets/generated/combat-text/refs/house-icons.png
+block: a heater shield, an arrow breaking against its face, short impact lines round the hit.
+ref: assets/generated/combat-text/refs/pick-parry-1.png, assets/generated/combat-text/refs/house-icons.png
+parry: two swords crossed blade against blade, short spark lines where the blades meet.
+ref: assets/generated/combat-text/refs/pick-dodge-1.png, assets/generated/combat-text/refs/house-icons.png
+dodge: a fighter bending far backwards, an arrow flying straight over the fighter's face.

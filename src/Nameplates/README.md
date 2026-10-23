@@ -72,8 +72,8 @@ fails, every plate is the game's own again.
   pencil drawing instead of a word, in white (an arrow flying over a target, a figure bending far back under an
   arrow, crossed swords, a shield, a figure leaning hard to its side, the arrow at its face flying past where the head was) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
-- **Over your character:** the same for what you take, rising from just over the middle of the screen, where your
-  character stands (your character has no plate in this client): damage in red with a "-". While ours shows, the
+- **Over your character:** the same for what you take, rising from about your character's feet, below the middle of
+  the screen, where your character stands (your character has no plate in this client): damage in red with a "-". While ours shows, the
   game's own combat text is off (*Instead of the game's*): its numbers over units and its scrolling text about you,
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay.
@@ -225,7 +225,7 @@ fails, every plate is the game's own again.
 - **Combat text** (`CombatText.lua`): each dress hears its unit's `UNIT_COMBAT` (in `Plate.EVENTS`; kind, flags,
   amount, school) and hands it to `CombatText.Hit` (the combat log is closed to addons in this client); your own
   through `Core.OnUnit("UNIT_COMBAT", "player")` while *Over your character* is on, onto a point of ours on `UIParent`
-  `CombatText.SELF` (60) over its middle, at `Scale.Full()`. A number is a pooled frame on its host with one font
+  `CombatText.SELF` (-130: under its middle, about at your character's feet), at `Scale.Full()`. A number is a pooled frame on its host with one font
   string (`Core.Journal.FONT_BOLD`, `OUTLINE`; the game's `CombatTextFont` face where that cannot be set) and one
   texture, `CombatText.HEIGHT` high (times `CombatText.CRIT` 1.5 for a critical hit or heal, `CombatText.SMALL` 0.75
   for a glancing blow or a word, as the game's combat feedback); one animation group rises `CombatText.RISE` in
@@ -233,7 +233,7 @@ fails, every plate is the game's own again.
   `OnFinished` (guarded) returns it to the pool, as does the dress taken off (`CombatText.Clear`). Lanes
   `CombatText.LANES` in turn, at most `CombatText.MOST` a host (the oldest goes). What did no harm
   (`CombatText.PICTURES`: MISS, DODGE, PARRY and DEFLECT, BLOCK, EVADE, IMMUNE; a WOUND of 0 is a miss, or a block
-  by its flags) is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (48) square, white or tinted by `CombatText.TINTS`
+  by its flags) is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (30) square, white or tinted by `CombatText.TINTS`
   (`SetVertexColor`: the immunity bright red); the word from
   `CombatFeedbackText` where it has none or `SetTexture` finds no file. Colours: physical white (red over you, with a
   "-"), a school the game's combat log colour (`CombatText.SCHOOLS`, the first bit set), heals the game's combat

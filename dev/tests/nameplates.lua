@@ -821,7 +821,7 @@ check(CVar("nameplateSelectedScale") == "1", "on again")
     CombatText.Clear(dress)
     check(#dress.numbers == 0, "the plate going takes its numbers")
 
-    -- Your own character: no plate, a point over the screen's middle.
+    -- Your own character: no plate, a point under the screen's middle, about at its feet.
     W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 1)
     local you = W.frames[#W.frames]
     for _, frame in ipairs(W.frames) do
@@ -829,7 +829,7 @@ check(CVar("nameplateSelectedScale") == "1", "on again")
     end
     local mine = you.numbers and you.numbers[1]
     check(mine and you._points[1][1] == "CENTER" and you._points[1][5] == CombatText.SELF and mine.text._text.form == "-%s"
-        and mine.text._color[1] == 1 and mine.text._color[2] < 0.5, "a hit on you: red with a minus, over the screen's middle")
+        and mine.text._color[1] == 1 and mine.text._color[2] < 0.5, "a hit on you: red with a minus, about at your feet")
     W.Fire("UNIT_COMBAT", "player", "DODGE", "", 0, 1)
     check(you.numbers[2].picture._texture == CombatText.ART .. "dodge", "your dodge: its drawing")
     Core.Set(ns.name, "combatSelf", false)

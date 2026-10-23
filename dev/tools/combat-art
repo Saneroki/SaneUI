@@ -12,6 +12,9 @@ letters do:
     block    a shield, an arrow's strike glancing off its edge
     evade    a figure leaning hard to its side, the arrow at its face flying past where the head was
     immune   a bubble with its shine, an "i" in its middle
+A drawing picked from the image model's (dev/imagegen/sets/combat-text/) is kept as assets/interface/combat-text/<name>.png
+and traced in place of the one in code: its dark lines, thickened, in white with the dark edge. The immunity's "i" is
+Kalam Bold, written in by code over either.
 dev/tools/art makes the game's textures of them (assets/optimized/Nameplates/Art/<name>.blp, drawn 48 x 48). A
 drawing by hand can take a picture's place in assets/CombatText/ under the same name.
 
@@ -27,10 +30,16 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "assets" / "CombatText"
+# Drawings picked from the image model's (dev/imagegen/sets/combat-text/), one a name: where there is one, it is traced
+# in place of the drawing in code below.
+PICKED = ROOT / "assets" / "interface" / "combat-text"
+KALAM = ROOT / "assets" / "optimized" / "Core" / "Fonts" / "Kalam-Bold.ttf"
+THICK = 17           # a traced drawing's lines made thicker by a max filter this wide (in N), so they hold at 48 units
+LETTER = 0.50        # the immunity's "i": its height, a share of the picture
 N = 1024
 WIDTH = 0.058        # a stroke's width, a share of the picture
 SECOND = 0.5         # the second pass: its strength and its width, shares of the first
@@ -188,11 +197,33 @@ def block(s):
 
 
 def immune(s):
-    # A bubble with its shine on the upper left, an "i" in its middle.
+    # A bubble with its shine on the upper left; the "i" in it is Kalam's (letter()).
     s.stroke(arc(0.50, 0.52, 0.38, 0, 362, 96), 1.0)
     s.stroke(arc(0.50, 0.52, 0.28, 195, 255, 24), 0.6)
-    s.stroke(arc(0.50, 0.33, 0.012, 0, 360, 12), 1.3)  # the dot
-    s.stroke([(0.50, 0.44), (0.50, 0.70)], 1.15)
+
+
+def letter(s, text="i", centre=(0.50, 0.52)):
+    """A letter in Kalam Bold into the lines, centred: the immunity's "i" (Saneroki, 2026-10-23: our own font)."""
+    font = ImageFont.truetype(str(KALAM), int(N * LETTER))
+    layer = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(layer).text((centre[0] * N, centre[1] * N), text, fill=255, font=font, anchor="mm")
+    s.lines = ImageChops.lighter(s.lines, layer)
+
+
+def trace(path):
+    """A picked drawing's lines (dark and solid: the pencil), cropped into a square with a little room, at N, made a
+    little thicker."""
+    im = Image.open(path).convert("RGBA")
+    shape = np.asarray(im.getchannel("A"), dtype=np.float32) / 255
+    lum = np.asarray(im.convert("L"), dtype=np.float32) / 255
+    ink = Image.fromarray((np.clip(shape * (1 - lum) * 2.2, 0, 1) * 255).astype(np.uint8))
+    box = ink.point(lambda v: 255 if v > 40 else 0).getbbox()
+    ink = ink.crop(box)
+    w, h = ink.size
+    side = int(max(w, h) * 1.12)
+    square = Image.new("L", (side, side), 0)
+    square.paste(ink, ((side - w) // 2, (side - h) // 2))
+    return square.resize((N, N), Image.LANCZOS).filter(ImageFilter.MaxFilter(THICK))
 
 
 def figure(s, head, neck, hips, hands, feet, width=1.0):
@@ -268,7 +299,13 @@ def main(names):
         if names and name not in names:
             continue
         sheet = Sheet(index + 1)
-        drawings[name](sheet)
+        picked = PICKED / f"{name}.png"
+        if drawings is DRAWINGS and picked.exists():
+            sheet.lines = trace(picked)
+        else:
+            drawings[name](sheet)
+        if name == "immune":
+            letter(sheet)
         path = out / f"{name}.png"
         sheet.picture().save(path)
         print(f"{name}: {path.relative_to(ROOT)}")

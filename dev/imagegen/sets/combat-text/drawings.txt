@@ -1,0 +1,18 @@
+# Combat text (Nameplates, CombatText.lua): a drawing in place of a word for what did no harm: a miss, a dodge, a
+# parry, a block, an evade, an immunity. Pencil line drawings in the journal's manner, bold enough to read at a
+# glance over a fight (48 units); code makes them white with a dark edge round the lines (dev/tools/combat-art).
+# The prompts lead; the first drawings (dev/tools/combat-art) and Saneroki's evade sketch are loose ideas only.
+#   dev/tools/imagegen dev/imagegen/sets/combat-text/drawings.txt
+# Round 1 (prompts alone, qwen21-turbo-t2i). Saneroki: evade-2, block-4, parry-1 very good and close; dodge-1 not
+# bad. Next: house.txt and picks.txt, in the house's pencil-icon style.
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=0.6
+count: 4
+out: assets/generated/combat-text/drawings
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. A bold icon drawn in graphite pencil as in an adventurer's journal: a few thick, confident, dark pencil lines, clean and crisp, like a quick sketch by a skilled illustrator, a clear simple silhouette, no shading, no hatching, no colour, no paper texture, no background, straight on, centred and filling most of the picture, readable at a tiny size, no text, no letters:
+miss: an arrow flying high over a round archery target and past it, missing it completely, two short motion lines behind the arrow.
+dodge: a simple figure of a fighter bending far backwards at the waist, arms flung out for balance, while an arrow flies straight over the fighter's face, just above it.
+parry: two swords crossed blade against blade, a few short spark lines bursting from the point where the blades meet.
+block: a heater shield seen from the front, an arrow breaking against its face, a few short impact lines round the hit.
+evade: a simple figure of a fighter seen from the front, leaning the whole body sharply to one side so the head swings away, an arrow flying past right next to the head, through the empty space where the head was a moment before, a curved motion line for the head's swing.
+immune: a round protective bubble, a sphere outline with a curved shine at its upper left, a large bold lowercase letter i standing in its centre.
