@@ -5,17 +5,20 @@ local _, ns = ...
 --  Your combo points inside your target's health bar, along its bottom: a
 --  thin line, as high as the power line (Bar.lua) and right on top of it
 --  where the unit has power, one segment per point, lit in the game's colour
---  for combo points as you build them. In this client combo
+--  for combo points as you build them; a point not built shows nothing, the
+--  bar is seen through it. In this client combo
 --  points are the one class resource, kept on your target (GetComboPoints of
 --  "player" on "target", as the game's own combo frame reads them; at most
 --  five). So the strip is on your target's plate only, while you build them
 --  (a rogue; a druid while energy is the power shown, in cat form) and the
 --  target is one you can attack.
 --
---  The count may be hidden from addons in a fight (a secret value): the strip
---  is one status bar from none to the most points, and takes it as it is; the
---  lines between the segments are drawn over it, at their places, from the
---  most (plain). Its bottom corners are the bar's own: the bar's caps mask it.
+--  The count may be hidden from addons in a fight (a secret value): each
+--  segment is a status bar of its own, from its point less one to its point,
+--  and takes the count as it is: the bar clamps it, so a segment is full from
+--  its point on and empty below it, and nothing is computed with the count.
+--  The segments stand a pixel apart, as many as the most points (plain); the
+--  first's and the last's outer corners are the bar's own (its caps mask them).
 --  Only rogues and druids listen to anything here.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -24,7 +27,6 @@ local Resource = {}
 ns.Resource = Resource
 
 Resource.MOST = 5      -- the most points, as the game's own combo frame counts them
-Resource.EMPTY = { 0, 0, 0, 0.55 } -- a point not built: the bar under it darkened
 Resource.CLASSES = { ROGUE = true, DRUID = true }
 
 local holder -- the dress the strip shows on now (your target's)
@@ -50,60 +52,45 @@ local function Building()
 end
 Resource.Building = Building
 
--- The lines between the segments and along the strip's top, as many and where they should be.
-local function Lines(dress)
+-- The segments, as many as the most points and where they should be: side by side over the strip's width, a
+-- pixel apart.
+local function Segments(dress)
     local strip = dress.strip
     local width = (Plain(dress:GetWidth()) or 0) - 2 * dress.edge
-    local line = Core.Pixels(dress, 1)
-    local lines = strip.lines
-    for index = 1, math.max(most - 1, #lines) do
-        local texture = lines[index]
-        if not texture and index < most then
-            texture = strip:CreateTexture(nil, "OVERLAY")
-            texture:SetTexture(ns.Bar.WHITE)
-            texture:SetVertexColor(ns.Bar.BORDER[1], ns.Bar.BORDER[2], ns.Bar.BORDER[3], ns.Bar.BORDER[4])
-            lines[index] = texture
+    local gap = Core.Pixels(dress, 1)
+    local segments = strip.segments
+    for index = 1, math.max(most, #segments) do
+        local segment = segments[index]
+        if not segment and index <= most then
+            segment = CreateFrame("StatusBar", nil, strip)
+            segment:SetStatusBarTexture(ns.Bar.FILL)
+            segment:SetStatusBarColor(Colour())
+            -- The bar's own caps round the first and the last (masks of another frame, as the game's bars use them).
+            for _, mask in ipairs(dress.caps) do segment:GetStatusBarTexture():AddMaskTexture(mask) end
+            segments[index] = segment
         end
-        if texture then
-            texture:ClearAllPoints()
-            texture:SetPoint("TOP", strip, "TOPLEFT", width * index / most, 0)
-            texture:SetPoint("BOTTOM", strip, "BOTTOMLEFT", width * index / most, 0)
-            texture:SetWidth(line)
-            texture:SetShown(index < most)
+        if segment then
+            local left = width * (index - 1) / most + (index > 1 and gap / 2 or 0)
+            local right = width * index / most - (index < most and gap / 2 or 0)
+            segment:ClearAllPoints()
+            segment:SetPoint("TOPLEFT", strip, "TOPLEFT", left, 0)
+            segment:SetPoint("BOTTOMRIGHT", strip, "BOTTOMLEFT", right, 0)
+            segment:SetMinMaxValues(index - 1, index) -- full from this point on, empty below it
+            segment:SetShown(index <= most)
         end
     end
-    strip.top:SetHeight(line)
     strip.most = most
 end
 
 local function Make(dress)
-    local health = dress.health
-    local strip = CreateFrame("StatusBar", nil, health)
-    strip:SetStatusBarTexture(ns.Bar.FILL)
-    strip:SetStatusBarColor(Colour())
-    strip:SetMinMaxValues(0, most)
-    strip:SetValue(0)
-    local empty = strip:CreateTexture(nil, "BACKGROUND")
-    empty:SetTexture(ns.Bar.WHITE)
-    empty:SetVertexColor(Resource.EMPTY[1], Resource.EMPTY[2], Resource.EMPTY[3], Resource.EMPTY[4])
-    empty:SetAllPoints(strip)
-    -- The bar's own caps round the strip's bottom corners (masks of another frame, as the game's bars use them).
-    for _, mask in ipairs(dress.caps) do
-        strip:GetStatusBarTexture():AddMaskTexture(mask)
-        empty:AddMaskTexture(mask)
-    end
-    local top = strip:CreateTexture(nil, "OVERLAY")
-    top:SetTexture(ns.Bar.WHITE)
-    top:SetVertexColor(ns.Bar.BORDER[1], ns.Bar.BORDER[2], ns.Bar.BORDER[3], ns.Bar.BORDER[4])
-    top:SetPoint("TOPLEFT", strip, "TOPLEFT")
-    top:SetPoint("TOPRIGHT", strip, "TOPRIGHT")
-    strip.top, strip.lines = top, {}
+    local strip = CreateFrame("Frame", nil, dress.health)
+    strip.segments = {}
     strip:Hide()
     dress.strip = strip
 end
 
 -- Laid out for the dress's size (Plate's Fit): as high as the power line, on top of it while it shows, else
--- along the bar's bottom; the lines at their places.
+-- along the bar's bottom; the segments at their places.
 function Resource.Fit(dress)
     local strip = dress.strip
     if not strip then return end
@@ -113,7 +100,7 @@ function Resource.Fit(dress)
     strip:SetPoint("BOTTOMLEFT", below, edge .. "LEFT")
     strip:SetPoint("BOTTOMRIGHT", below, edge .. "RIGHT")
     strip:SetHeight(dress.line or 1)
-    Lines(dress)
+    Segments(dress)
 end
 
 -- The strip on your target's plate, its points as the game gives them; off everywhere else.
@@ -133,9 +120,8 @@ function Resource.Update()
     if Plain(UnitCanAttack("player", "target")) == false then return strip:Hide() end
     local ok, points = pcall(GetComboPoints, "player", "target")
     if not ok or type(points) == "nil" then return strip:Hide() end
-    if strip.most ~= most then Lines(dress) end
-    strip:SetMinMaxValues(0, most)
-    strip:SetValue(points)
+    if strip.most ~= most then Segments(dress) end
+    for index = 1, most do strip.segments[index]:SetValue(points) end -- each clamps it to its own point
     strip:Show()
 end
 

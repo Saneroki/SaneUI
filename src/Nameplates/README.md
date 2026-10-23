@@ -37,18 +37,19 @@ fails, every plate is the game's own again.
   and thin on a rare (its silver dragon, also a rare elite). A white ring a pixel outside it on your target, an
   orange one on your focus (the game's colours for them).
 - **The power line:** along the bottom of the bar, inside it, a fifth of its height: the unit's mana, rage or
-  energy in the game's colours. None on a unit without power.
+  energy in the game's colours, without a background: spent power shows nothing, the bar is seen through it.
+  None on a unit without power.
 - **Combo points:** as a rogue, or a druid in cat form, your combo points on your target show right on top of
-  its power line (along the bar's bottom where it has none), as high as the line, one segment each (five), lit
-  as you build them. Only on a target you can attack.
+  its power line (along the bar's bottom where it has none), as high as the line, one segment each (five), a
+  pixel apart, lit as you build them; a point not built shows nothing. Only on a target you can attack.
 - **Auras:** right above the bar, without a gap, from its left the debuffs and damage over time you put on the
   unit, with the time each has left and its stacks, as many as fit over the bar (eight on the game's medium
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
   picks buffs for its own plates. Right of the bar (after the raid marker) up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
 - **Raid marker:** right of the bar (none on a player you could fight, as on the game's plates).
-- **Smaller far away:** full size within ten yards, down to a little over half the size at the plates' farthest
-  reach, by the game's own scaling (its CVars for it).
+- **Smaller far away:** twice their size within ten yards, down to a little over half the size at the plates'
+  farthest reach, by the game's own scaling (its CVars for it).
 - **Settings:** *Sane UI > Nameplates*: *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Only players you know*, *Smaller far away*. The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
@@ -75,8 +76,8 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
-- **The bar** (`Bar.lua`): from the back, three glow plates (`Bar.HALO`: 2, 4 and 7 screen pixels beyond the
-  ring, `Bar.GLOW` at falling strengths), the ring (a pixel outside the border, shown on target and focus in the
+- **The bar** (`Bar.lua`): from the back, seven glow plates (`Bar.HALO`: 1 to 7 screen pixels beyond the
+  ring, `Bar.GLOW` at falling strengths, blend mode `ADD`: together a thin glow fading out), the ring (a pixel outside the border, shown on target and focus in the
   game's `NamePlateConstants.TARGET_BORDER_COLOR` and `FOCUS_TARGET_BORDER_COLOR`), the border (the dress's
   size, `Bar.RANKS` by `UnitIsBossMob` and `UnitClassification`: boss 3 pixels in the game's `NORMAL_FONT_COLOR`,
   elite 1 pixel in it, rare and rare elite 1 pixel silver; `Bar.PLAIN` black, 1), then inside the border a
@@ -94,7 +95,7 @@ fails, every plate is the game's own again.
 - **The power line** (`Bar.Power`): a `StatusBar` inside the bar along its bottom, `Bar.LINE` (a fifth) of the
   bar's height (two pixels at least), from 0 to `UnitPowerMax`, at `UnitPower` (both as the game gives them), in
   the game's `PowerBarColor` for `UnitPowerType`'s token; hidden where the most is a plain 0 or the setting is
-  off. Its coming or going moves the combo points (`Resource.Again`).
+  off; no background. Its coming or going moves the combo points (`Resource.Again`).
 - **The texts** (`Text.lua`): on a frame above the bar's (its level three above the bar's), the game's nameplate
   font (`SystemFont_NamePlate_Outlined`), one line each: the level at `LEFT` (`Text.INSET` in), the threat right of
   it (`Text.GAP`), the name at `CENTER` (white, `Text.NAME` of the bar's width, cut short beyond it), the health
@@ -125,12 +126,14 @@ fails, every plate is the game's own again.
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going, a power line coming or going), once a frame (`Core.Later`). Shown while the game gives combo
   points (`UnitPowerMax("player", Enum.PowerType.ComboPoints)`, at most `Resource.MOST`) and energy is the power
-  shown, on the dress of `C_NamePlate.GetNamePlateForUnit("target")` while `UnitCanAttack` allows. One `StatusBar`
-  from 0 to the most, its value `GetComboPoints("player", "target")` as the game gives it (secret or not), in the
-  game's `PowerBarColor.COMBO_POINTS`, as high as the power line and on its top (`Resource.Fit`, at every update),
-  else along the bar's bottom; lines between the segments and along its top in the border's dark.
+  shown, on the dress of `C_NamePlate.GetNamePlateForUnit("target")` while `UnitCanAttack` allows. A strip as high
+  as the power line and on its top (`Resource.Fit`, at every update), else along the bar's bottom, holding one
+  `StatusBar` per point, a pixel apart, without a background, in the game's `PowerBarColor.COMBO_POINTS`: segment
+  *i* from *i* - 1 to *i*, each given `GetComboPoints("player", "target")` as the game gives it (secret or not):
+  the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
+  The bar's inner caps mask every segment (they reach the first and the last).
 - **Scale** (`Scale.lua`): the game's CVars `nameplateMaxScale`, `nameplateMinScale`, `nameplateMaxScaleDistance`
-  and `nameplateMinScaleDistance` set to `Scale.CVARS` while *Smaller far away* is on, to their defaults
+  and `nameplateMinScaleDistance` set to `Scale.CVARS` (2 close by, 0.55 far away) while *Smaller far away* is on, to their defaults
   (`C_CVar.GetCVarInfo`) when it is off or the module stands down; through `C_CVar.SetCVar`, only those this
   client has, never in a fight (then at `PLAYER_REGEN_ENABLED`).
 - **Standing down** (`ns.GiveBack`): the game's scaling back, the game's unit frames at alpha 1 and their parts
@@ -170,3 +173,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   far away.
 - **2026-10-23:** health in thousands to one place and millions to two ("1.2k", "1.32m", Saneroki); the glow no
   longer compares the game's hidden answer about aggro (the module stood down in a fight).
+- **2026-10-23:** plates up to twice their size close by; the power line and the combo points without a
+  background, the points as segments of their own; the red glow thin and fading out, not an outline (Saneroki).

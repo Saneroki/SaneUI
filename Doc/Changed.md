@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: up to twice the size close by; resource lines without a background; a soft glow (Saneroki, 2026-10-23)
+- **Twice the size** (`Scale.lua`): `nameplateMaxScale` 2 (was 1), so a plate within ten yards is twice its size;
+  far away still 0.55.
+- **No background** (`Bar.lua`, `Resource.lua`): the power line's dark background is gone, so spent power shows
+  nothing; the combo points are one `StatusBar` per point (segment *i* from *i* - 1 to *i*, each given the count
+  as the game gives it: the bar clamps it, so hidden counts still work), a pixel apart, without the darkened
+  background and the dark lines between and over them: points not built show nothing.
+- **A glow, not an outline** (`Bar.HALO`): seven round layers a pixel apart, each fainter outwards (0.22 to
+  0.025), in blend mode `ADD`: thin and fading out, where the three solid layers looked like an outline.
+- Tests: 99 checks in `dev/tests/nameplates.lua` (the segments, no backgrounds, the glow's layers).
+
 ### Nameplates: health as "1.2k" and "1.32m"; the glow no longer stops the module in a fight (Saneroki, 2026-10-23)
 - **Health short** (`Text.Short`): under a thousand as it is, thousands to one place ("1.2k"), millions to two
   ("1.32m"), cut, not rounded, without zeros at the end ("1k", "1.3m"); the game's abbreviation of hidden health

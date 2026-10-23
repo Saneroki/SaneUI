@@ -42,6 +42,7 @@ function methods:SetFormattedText(form, ...)
 end
 function methods:SetAlphaFromBoolean(value, yes, no) self._alpha = { from = value, yes = yes, no = no } end
 function methods:SetFrameLevel(level) self._level = level end
+function methods:SetBlendMode(mode) self._blend = mode end
 
 -- A hidden value of the game's: a table here, never compared.
 issecretvalue = function(value) return type(value) == "table" and value.secret == true end
@@ -209,6 +210,11 @@ check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
     "its mana along the bar's bottom, in the game's colour")
 check(dress.halo[1]._alpha == 0, "no glow")
+local fading = #dress.halo == #Bar.HALO and #dress.halo >= 5
+for index, glow in ipairs(dress.halo) do
+    fading = fading and glow._blend == "ADD" and (index == 1 or glow._vertex[4] < dress.halo[index - 1]._vertex[4])
+end
+check(fading, "the glow: thin layers, each fainter outwards, added light")
 check(not dress.ring:IsShown(), "no ring: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
     and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
@@ -389,13 +395,30 @@ units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")
 W.Wait(0)
 local strip = dress.strip
-check(strip and strip:IsShown() and strip._value == 2 and strip._min == 0 and strip._max == 5, "on your target's bar: two of five")
+local function Lit()
+    local lit = 0
+    for index, segment in ipairs(strip.segments) do
+        if segment:IsShown() and segment._value >= index then lit = lit + 1 end
+    end
+    return lit
+end
+check(strip and strip:IsShown() and #strip.segments == 5 and Lit() == 2, "on your target's bar: two of five")
+check(strip.segments[3]._min == 2 and strip.segments[3]._max == 3, "each segment a status bar of its own point")
 check(strip._points[1][2] == dress.power and strip._points[1][3] == "TOPLEFT" and strip._height == dress.line,
     "right on top of the power line, as high as it")
-check(#strip:GetStatusBarTexture()._masks == 2 and strip:GetStatusBarTexture()._masks[1] == dress.caps[1], "its corners the bar's own")
-local lines = 0
-for _, line in ipairs(strip.lines) do if line:IsShown() then lines = lines + 1 end end
-check(lines == 4, "a line between each two of the five")
+check(#strip.segments[1]:GetStatusBarTexture()._masks == 2 and strip.segments[5]:GetStatusBarTexture()._masks[2] == dress.caps[2],
+    "the outer corners the bar's own")
+check(strip.segments[1]._points[2][4] < strip.segments[2]._points[1][4] and strip.segments[1]._points[1][4] == 0,
+    "a pixel apart, the first from the strip's left")
+local function Backgrounds(frame)
+    local count = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == frame and widget ~= frame._fill and widget:GetObjectType() == "Texture" then count = count + 1 end
+    end
+    return count
+end
+check(Backgrounds(dress.health) == 1 and Backgrounds(dress.power) == 0 and Backgrounds(strip) == 0 and Backgrounds(strip.segments[1]) == 0,
+    "no background behind the power line or the points: empty shows nothing")
 units.nameplate1.powerMost = 0
 W.Fire("UNIT_MAXPOWER", "nameplate1")
 W.Wait(0)
@@ -406,7 +429,7 @@ W.Wait(0)
 combo = Secret()
 W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
 W.Wait(0)
-check(strip._value == combo, "a hidden count goes to the strip as it is")
+check(strip.segments[1]._value == combo and strip.segments[5]._value == combo, "a hidden count goes to every segment as it is")
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
 W.Wait(0)

@@ -21,13 +21,15 @@ local _, ns = ...
 --                 yellow for a creature that does not attack on sight, red
 --                 for one that does, the game's colour for friends
 --    the power    the unit's mana, rage or energy, a thin line along the bar's
---                 bottom, in the game's colour for that power
+--                 bottom, in the game's colour for that power; no background:
+--                 spent power shows nothing
 --    the border   black; gold and thick on a boss, gold and thin on an elite,
 --                 silver and thin on a rare
 --    the ring     a pixel outside the border, on your target and your focus,
 --                 in the game's colours for them
---    the glow     red, around it all: you have the unit's aggro (Text.lua
---                 says), or it is a player who may attack you
+--    the glow     red, thin and fading out, around it all: you have the
+--                 unit's aggro (Text.lua says), or it is a player who may
+--                 attack you
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -44,8 +46,10 @@ Bar.TAPPED = { 0.5, 0.5, 0.5 }      -- tapped by others
 Bar.CALM = { 1, 0.93, 0.55 }        -- a creature that does not attack on sight (neutral to you)
 Bar.HOSTILE = { 1, 0, 0 }           -- one that does
 Bar.GLOW = { 1, 0.08, 0.05 }
--- The glow's layers: how far each reaches beyond the ring, in screen pixels, and how strong it is.
-Bar.HALO = { { 2, 0.5 }, { 4, 0.28 }, { 7, 0.12 } }
+-- The glow's layers: how far each reaches beyond the ring, in screen pixels, and how strong it is. A pixel apart
+-- and each fainter than the one inside it: laid over each other they fade out softly, strongest at the border and
+-- nearly nothing seven pixels out, a glow rather than an outline.
+Bar.HALO = { { 1, 0.22 }, { 2, 0.18 }, { 3, 0.14 }, { 4, 0.1 }, { 5, 0.07 }, { 6, 0.045 }, { 7, 0.025 } }
 
 -- A colour of the game's as { r, g, b, 1 }; ours where it has none.
 local function GameColour(colour, r, g, b)
@@ -111,7 +115,8 @@ end
 function Bar.Make(dress)
     dress.halo = {}
     for index, layer in ipairs(Bar.HALO) do
-        local glow = Plate(dress, -9 + index)
+        local glow = Plate(dress, math.min(-9 + index, -5))
+        glow:SetBlendMode("ADD") -- light added to what is behind: it glows
         glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], layer[2])
         glow:SetAlpha(0)
         dress.halo[index] = glow
@@ -136,14 +141,8 @@ function Bar.Make(dress)
     power:SetStatusBarTexture(Bar.FILL)
     power:SetMinMaxValues(0, 1)
     power:SetValue(0)
-    local empty = power:CreateTexture(nil, "BACKGROUND")
-    empty:SetTexture(Bar.WHITE)
-    empty:SetVertexColor(0, 0, 0, 0.6)
-    empty:SetAllPoints(power)
-    for _, mask in ipairs(dress.caps) do
-        power:GetStatusBarTexture():AddMaskTexture(mask)
-        empty:AddMaskTexture(mask)
-    end
+    -- No background: where the unit's power is spent, the bar is seen through the line.
+    for _, mask in ipairs(dress.caps) do power:GetStatusBarTexture():AddMaskTexture(mask) end
     power:Hide()
     dress.power = power
     dress.rank = Bar.PLAIN
