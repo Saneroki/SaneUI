@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 137 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: a pencil arrow of its own for the sidebars, centred and as large as a box (Saneroki, 2026-10-23)
+- **The picture:** `dev/imagegen/sets/bags/arrow.txt` (Qwen turbo, three prompts by four seeds), stroke-3 chosen
+  (`assets/interface/bags-arrow.png`): one thick pencil stroke bent into a chevron pointing down, heaviest at the
+  point. `dev/tools/journal-art arrow` makes Core's `Art/Journal/arrow.blp` from it (`arrow()`: graphite with its
+  grain, the left half mirrored onto the right, thickened by a 13 px max filter at 512, centred in a square with
+  `ARROW_ROOM` round it; 64 x 64), listed in `Journal.PIECES`.
+- `Bags/Sidebar.lua`: `Arrow` is that texture, `Sidebar.TOGGLE` (14) square in its button's middle, at
+  `Sidebar.MARK`, turned by `SetRotation` (down as drawn, up, left, right) in place of Kalam's "<": the head's
+  points left to fold and right to unfold; a group's row's arrow button is as large as its box (both
+  `Sidebar.TOGGLE`).
+- Tests: `dev/tests/bags.lua` 312 checks (the piece, its size and place, its turns in a group's row and the head).
+
 ### Inventory: the doll's zoom toward the head (Saneroki, 2026-10-23)
 - `Sheet/Model.lua`: the scene's camera looked at the hips (its target 1.02 high) at every zoom. Once the model
   has loaded, the camera gets a target spline (`SetTargetSpline`, the game's `CreateCatmullRomSpline`): no shift

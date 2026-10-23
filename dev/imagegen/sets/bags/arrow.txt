@@ -1,0 +1,11 @@
+# Bags: the fold arrow of the sidebars (the sidebar's head folds the sidebar, a group's row its members), as large
+# as a box beside it. Drawn pointing down; code turns it where it must point and lays it on the page in graphite.
+#   dev/tools/imagegen dev/imagegen/sets/bags/arrow.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=0.6
+count: 4
+out: assets/generated/bags/arrow
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. A loose, clean graphite pencil drawing as in an adventurer's journal, dark grey pencil only, no colour, no paper texture, alone, flat and straight on, centred and filling most of the picture, perfectly symmetric left and right, chunky and readable when very small, no text, no letters:
+stroke: one single thick pencil stroke bent into a chevron pointing straight down, like a wide letter V, the stroke tapered at both ends and heaviest at the rounded point.
+head: one small solid arrowhead pointing straight down, a wide rounded triangle outlined in firm pencil and filled with dense pencil shading.
+double: one chevron pointing straight down drawn with two or three quick overlapping pencil lines, as a hand sketches a fold mark, a rounded point.

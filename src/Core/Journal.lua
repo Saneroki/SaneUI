@@ -74,6 +74,7 @@ Journal.PIECES = {
     ["sketch-tree-1"] = { 378, 448, 512, 512 },
     ["doll"] = { 1360, 1804, 2048, 2048 },
     ["trash"] = { 248, 248, 256, 256 },      -- the bags' waste bin, a pencil drawing
+    ["arrow"] = { 64, 64, 64, 64 },          -- the sidebars' fold arrow, pencil, pointing down (code turns it)
 }
 local PIECES = Journal.PIECES
 

@@ -92,8 +92,12 @@ LIST = {
     "doll": (1, "whole"),
     "icon-mask": (1, "mask"),
     "trash": (0.31, "whole"),
+    "arrow": (0.125, "whole"),
 }
 TRASH = ROOT / "assets/interface/bags-trash.png"   # the bags' waste bin, chosen (dev/imagegen/sets/bags/trash.txt)
+ARROW = ROOT / "assets/interface/bags-arrow.png"   # the sidebars' fold arrow, chosen (dev/imagegen/sets/bags/arrow.txt)
+ARROW_SIDE = 512             # its square, before it is made the game's size (LIST: 64)
+ARROW_ROOM = 0.06            # the room round the drawing in its square, of the square's side
 ROUND = 0.2                  # the icon mask's corners: their radius against its side (Saneroki, 2026-10-23: rounder)
 
 
@@ -264,6 +268,30 @@ def trash():
     return Image.fromarray(out.astype(np.uint8)).crop(box)
 
 
+def arrow():
+    """The sidebars' fold arrow as pencil on the page, pointing down (code turns it): the drawing in the journal's
+    graphite, its grain kept (the darker a pixel, the more graphite), its left half mirrored onto its right so it is
+    exactly symmetric, a little thicker so it holds when drawn as small as a box, centred both ways in a square."""
+    picture = Image.open(ARROW).convert("RGBA")
+    rgba = np.asarray(picture, dtype=np.float32)
+    lum = rgba[..., :3].mean(axis=-1)
+    ink = np.clip((235 - lum) / 110, 0, 1) ** 0.5 * (rgba[..., 3] / 255)
+    l, t, r, b = Image.fromarray((ink * 255).astype(np.uint8)).getbbox()
+    ink = ink[t:b, l:r]
+    half = ink.shape[1] // 2
+    ink[:, ink.shape[1] - half:] = ink[:, :half][:, ::-1]
+    thick = Image.fromarray((ink * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(13))
+    inner = round(ARROW_SIDE * (1 - 2 * ARROW_ROOM))
+    w, h = thick.size
+    k = inner / max(w, h)
+    thick = thick.resize((round(w * k), round(h * k)), Image.LANCZOS)
+    alpha = Image.new("L", (ARROW_SIDE, ARROW_SIDE))
+    alpha.paste(thick, ((ARROW_SIDE - thick.width) // 2, (ARROW_SIDE - thick.height) // 2))
+    out = Image.new("RGBA", alpha.size, (30, 23, 17, 0))  # Core.Journal.INK
+    out.putalpha(alpha)
+    return out
+
+
 def slot():
     """A square pencil box for an item's slot (116 x 116, the box's height): the box's four corners kept whole
     (30 % of its height), its sides stretched between them."""
@@ -352,6 +380,8 @@ def main(names):
             picture = icon_mask()
         elif name == "trash":
             picture = trash()
+        elif name == "arrow":
+            picture = arrow()
         else:
             picture = Image.open(PIECES / f"{name}.png").convert("RGBA")
         sizes[name] = texture(name, picture, scale, how)

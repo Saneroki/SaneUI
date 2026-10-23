@@ -59,6 +59,7 @@ Sidebar.INTO = 0.2         -- the row it would go into, shaded
 Sidebar.MARK = 0.6         -- the pencil marks (the arrows, a box's tick) drawn lightly; under the mouse whole
 Sidebar.TICK = 25          -- a box's tick, in 1080p pixels: Kalam's root sign, a tick drawn by hand
 Sidebar.BOX = 0.8          -- a box's pencil square
+Sidebar.TOGGLE = 14        -- a box's side, and the arrow's beside it and in the head
 
 local Categories = ns.Categories
 local Rail = {}            -- a sidebar's functions
@@ -71,14 +72,14 @@ local function Fonts()
     }
 end
 
--- The sidebar's pencil arrow: Kalam's "<" in graphite, drawn lightly; turned where it points another way.
+-- The sidebars' pencil arrow (Core's journal piece "arrow", drawn pointing down) as large as a box, in its
+-- button's middle, drawn lightly; turned to point where it must.
+local DOWN, UP, LEFT, RIGHT = 0, math.pi, -math.pi / 2, math.pi / 2
 local function Arrow(parent)
-    local mark = parent:CreateFontString(nil, "ARTWORK")
-    mark:SetFontObject(ns.Paper.Font("SaneUIBagsSideArrow", 16, true))
-    mark:SetTextColor(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3])
-    mark:SetAlpha(Sidebar.MARK)
+    local mark = Core.Journal.Texture(parent, "arrow", "ARTWORK")
+    mark:SetSize(Sidebar.TOGGLE, Sidebar.TOGGLE)
     mark:SetPoint("CENTER")
-    mark:SetText("<")
+    mark:SetAlpha(Sidebar.MARK)
     return mark
 end
 
@@ -200,7 +201,7 @@ function Rail:Fold(on)
     self.scroll:SetShown(not on)
     self.label:SetShown(not on)
     if self.arrow then
-        self.arrow.text:SetText(on and ">" or "<")
+        self.arrow.mark:SetRotation(on and RIGHT or LEFT)
         self.arrow:ClearAllPoints()
         if on then
             self.arrow:SetPoint("TOP", self.frame, "TOP", 0, -2)
@@ -211,7 +212,7 @@ function Rail:Fold(on)
 end
 
 local function ArrowEnter(arrow)
-    arrow.text:SetAlpha(1)
+    arrow.mark:SetAlpha(1)
     GameTooltip:SetOwner(arrow, "ANCHOR_RIGHT")
     GameTooltip:SetText(arrow.rail.folded and ns.TEXT.sideUnfold or ns.TEXT.sideFold, 1, 1, 1)
     GameTooltip:Show()
@@ -225,7 +226,7 @@ local function ArrowClick(arrow)
 end
 
 local function ArrowLeave(arrow)
-    arrow.text:SetAlpha(Sidebar.MARK)
+    arrow.mark:SetAlpha(Sidebar.MARK)
     GameTooltip:Hide()
 end
 
@@ -296,17 +297,14 @@ local function Toggle(row, click, size)
     return button
 end
 
--- The head's arrow turned: down while the group's members are folded into it, up while they are listed.
-local DOWN, UP = math.pi / 2, -math.pi / 2
-
 function Rail:Toggles(row, folded, ticked, fold, tick)
     self.folder, self.ticker = fold, tick
     if not row.arrow then
         local ink = ns.Paper.INK
-        row.arrow = Toggle(row, ArrowOf, 13)
+        row.arrow = Toggle(row, ArrowOf, Sidebar.TOGGLE)
         row.arrow.mark = Arrow(row.arrow)
         -- a square drawn in pencil, a tick in it drawn by hand (Kalam's root sign), both light
-        row.box = Toggle(row, BoxOf, 14)
+        row.box = Toggle(row, BoxOf, Sidebar.TOGGLE)
         local square = Core.Journal.Texture(row.box, "pencil-slot", "BORDER")
         square:SetAllPoints()
         square:SetAlpha(Sidebar.BOX)
@@ -320,6 +318,7 @@ function Rail:Toggles(row, folded, ticked, fold, tick)
         row.box:SetPoint("RIGHT", row.count, "LEFT", -6, 0)
         row.arrow:SetPoint("RIGHT", row.box, "LEFT", -3, 0)
     end
+    -- down while the group's members are folded into it, up while they are listed
     row.arrow.mark:SetRotation(folded and DOWN or UP)
     row.arrow.tip = folded and ns.TEXT.bagsGroupUnfold or ns.TEXT.bagsGroupFold
     row.box.check:SetShown(ticked)
@@ -531,7 +530,7 @@ function Sidebar.New(body, top, bottom, options)
         arrow:SetSize(Sidebar.FOLDED - 4, Sidebar.HEAD - 4)
         arrow:SetFrameLevel(head:GetFrameLevel() + 2)
         arrow.rail = rail
-        arrow.text = Arrow(arrow)
+        arrow.mark = Arrow(arrow)
         arrow:SetScript("OnClick", function(self) ns.Safe("bags", ArrowClick, self) end)
         arrow:SetScript("OnEnter", function(self) ns.Safe("bags", ArrowEnter, self) end)
         arrow:SetScript("OnLeave", function(self) ns.Safe("bags", ArrowLeave, self) end)

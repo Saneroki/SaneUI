@@ -157,6 +157,10 @@ race taken out); the feet placed where the scene says it draws them.
 
 **Built (2026-10-23), Saneroki asked:** a group's fold arrow in the sidebar is the sidebar's own pencil arrow (the
 "<" that folds the sidebar), turned down or up; its box a square drawn in pencil with a light tick drawn by hand.
+Then an arrow of its own (Saneroki asked: centred and as large as the box): a pencil chevron made with an image
+model (`dev/imagegen/sets/bags/arrow.txt`, stroke-3; `assets/interface/bags-arrow.png`), made exactly symmetric,
+centred and a little thicker by `dev/tools/journal-art` (Core's piece `arrow`), the sidebar's head and the groups'
+rows alike.
 
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the

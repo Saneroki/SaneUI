@@ -503,9 +503,11 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
     journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
-    narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Kalam's "<" in graphite at `Sidebars.MARK`, whole
-    under the mouse; a group's row has the same arrow turned down while folded, up while listed, and a square
-    drawn in pencil, `pencil-slot`, with Kalam's root sign as a tick drawn by hand, as light), the names in Kalam always shown (one cut short whole in its tooltip), the
+    narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Core's journal piece `arrow`, a pencil chevron
+    drawn pointing down, `Sidebars.TOGGLE` square in its button's middle at `Sidebars.MARK`, whole under the
+    mouse, turned left (folds) or right (unfolds); a group's row has the same arrow turned down while folded, up
+    while listed, and beside it a box as large, a square drawn in pencil, `pencil-slot`, with Kalam's root sign as
+    a tick drawn by hand, as light), the names in Kalam always shown (one cut short whole in its tooltip), the
     view shown shaded in pencil with a graphite bar at its left; scrolled by the wheel; `Begin`, `Row`,
     `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
     category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a

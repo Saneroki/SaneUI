@@ -945,9 +945,11 @@ do
         "a group's row: its arrow and its box (ticked: divided)")
     local Side = ns.Sidebars
     local function near(a, b) return a and math.abs(a - b) < 1e-6 end
-    check(armoryRow.arrow.mark:GetText() == "<" and near(armoryRow.arrow.mark._rotation, -math.pi / 2)
-        and armoryRow.arrow.mark:GetAlpha() == Side.MARK,
-        "its arrow the sidebar's pencil arrow, turned up while its members are listed, drawn lightly")
+    local mark = armoryRow.arrow.mark
+    check(mark:GetTexture():match("Journal\\arrow$") and near(mark._rotation, math.pi) and mark:GetAlpha() == Side.MARK
+        and mark:GetWidth() == Side.TOGGLE and mark:GetHeight() == Side.TOGGLE and mark._points[1][1] == "CENTER"
+        and armoryRow.arrow:GetWidth() == armoryRow.box:GetWidth() and armoryRow.box:GetWidth() == Side.TOGGLE,
+        "its arrow the sidebars' pencil arrow, as large as its box and in its middle, turned up while listed, light")
     check(armoryRow.box.check:GetText() == "\226\136\154" and armoryRow.box.check:GetAlpha() == Side.MARK,
         "its tick drawn by hand in pencil, lightly")
     armoryRow.box:GetScript("OnEnter")(armoryRow.box)
@@ -956,7 +958,7 @@ do
     check(armoryRow.box.check:GetAlpha() == Side.MARK, "and lightly again when it leaves")
     armoryRow.arrow:GetScript("OnClick")(armoryRow.arrow)
     check(Categories.Folded("armory") and not RowNamed("Head") and RowNamed("The Armory"), "folded: its members not listed")
-    check(near(RowNamed("The Armory").arrow.mark._rotation, math.pi / 2), "folded: the arrow turned down")
+    check(near(RowNamed("The Armory").arrow.mark._rotation, 0), "folded: the arrow turned down (as drawn)")
     RowNamed("The Armory").arrow:GetScript("OnClick")(RowNamed("The Armory").arrow)
     check(RowNamed("Head"), "unfolded again")
     RowNamed("The Armory").box:GetScript("OnClick")(RowNamed("The Armory").box)
@@ -1447,9 +1449,16 @@ local sideFrame = ns.BagSidebar.frame
 ns.Bags.Fold(true)
 check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.FOLDED,
     "the sidebar folded to its edge: the strip of the bags hidden with it, kept")
+local headArrow
+for _, widget in ipairs(W.frames) do
+    if widget._parent == sideFrame and widget.rail and widget.mark then headArrow = widget.mark end
+end
+check(headArrow:GetTexture():match("Journal\\arrow$") and math.abs(headArrow._rotation - math.pi / 2) < 1e-6
+    and headArrow:GetWidth() == ns.Sidebars.TOGGLE, "folded: the head's pencil arrow, as large as a box, points right")
 toggle:GetScript("OnClick")(toggle)
 check(kept.side and Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.WIDTH,
     "the bags' button while folded: the sidebar unfolded, the strip shown")
+check(math.abs(headArrow._rotation + math.pi / 2) < 1e-6, "unfolded: it points left, the way it folds")
 local bagButtons = {}
 for _, widget in ipairs(W.frames) do
     if widget._parent == Bags.strip and widget._kind == "ItemButton" and widget:IsShown() then bagButtons[#bagButtons + 1] = widget end
