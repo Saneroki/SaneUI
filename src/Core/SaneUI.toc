@@ -75,6 +75,10 @@ Data\Characters.lua
 Data\Wire.lua
 # The guild's records: the roster and its history, every member's records, shared with the guild (Data.Guild)
 Data\Guild.lua
+# What the game confirmed in play of the data not yet verified, kept and shared with the guild and the group (Data.Confirm)
+Data\Confirm.lua
+# Core's watchers: creatures, things, mailboxes, crossings, a boss's loot and casts, the items' stats (Data.Watchers)
+Data\Watchers.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)
 People.lua
 # Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game

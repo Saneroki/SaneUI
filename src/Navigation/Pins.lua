@@ -255,6 +255,9 @@ local function Me()
 end
 
 local QUESTS = Core.Data.Set("Quests")
+-- The sets a place of Core's data comes from, for whether the game has confirmed it (Unverified).
+local SPAWNS, NPC_FACTS, OBJECT_FACTS = Core.Data.Set("Spawns"), Core.Data.Set("NPCs"), Core.Data.Set("Objects")
+local PLACE_FACTS, WAYS_SET = Core.Data.Set("Places"), Core.Data.Set("Travel")
 local function QuestName(id)
     return QUESTS:Get(id, "name") or ("#" .. tostring(id))
 end
@@ -348,10 +351,22 @@ local function QuestLines(lines, id, reason, grey)
     if reason then lines[#lines + 1] = { "  " .. reason, 0.6, 0.6, 0.6 } end
 end
 
+-- Whether the game has not confirmed a place of Core's data yet: its spawn or what it is (Core's marks, and what was
+-- confirmed in play since, here or by the guild or the group: Data.Confirm).
+local function Unverified(place)
+    local kind = place.kind
+    if kind == "npc" then return SPAWNS:Unverified(place.key) or NPC_FACTS:Unverified(place.id) end
+    if kind == "object" then return SPAWNS:Unverified(place.key) or OBJECT_FACTS:Unverified(place.id) end
+    if kind == "place" then return PLACE_FACTS:Unverified(place.id) end
+    if kind == "travel" then return WAYS_SET:Unverified(place.id) end
+    return false
+end
+Pins.Unverified = Unverified
+
 -- A place of Core's data as a pin: what it is says its kind and its look; nil for what the map does not show.
 local function FromData(place)
     local what, kind = place.what, place.kind
-    local pin = { key = place.key, name = place.name, unverified = true }
+    local pin = { key = place.key, name = place.name, unverified = Unverified(place) or nil }
     if kind == "npc" then
         -- Its quests by where they stand for this character: offered, too low or for later (its pin red while one
         -- is for later), done.
@@ -708,3 +723,10 @@ Map:OnChange(function()
     Pins.DataChanged()
     if ns.Canvas and ns.Canvas.Refresh then ns.Guarded(ns.Canvas.Refresh) end
 end)
+-- Something of Core's data confirmed in play: the pins say so no more.
+if Core.Data.OnConfirm then
+    Core.Data.OnConfirm(function()
+        Pins.DataChanged()
+        if ns.Canvas and ns.Canvas.Refresh then ns.Guarded(ns.Canvas.Refresh) end
+    end)
+end

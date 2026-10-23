@@ -455,7 +455,8 @@ Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "ra
     .. 'R[72] = "70245\t\tA Quest Giver\t\tnormal\t\t"\n'
     .. 'R[73] = "70245\t\tAn Old Friend\t\tnormal\t\t"\n'
     .. 'R[74] = "70245\t\tA Waiting Giver\t\tnormal\t\t"\n'
-    .. 'R[75] = "70245\t\tA Teacher\ttrainer\tnormal\t\tWarrior Trainer"\n')
+    .. 'R[75] = "70245\t\tA Teacher\ttrainer\tnormal\t\tWarrior Trainer"\n'
+    .. 'S.unverified = "69\\03070\\03071\\03072\\03073\\03074\\03075"\n')
 Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind", "skill", "skillLevel"', '"text", "text", "int", "int"',
     'R[1617] = "70245\t\tSilverleaf\therb\t182\t1"\nR[1731] = "70245\t\tCopper Vein\tore\t186\t1"\n'
     .. 'I.byName = {}\nI.byName.Silverleaf = "1617"\nI.byName["Copper Vein"] = "1731"\n')
@@ -465,7 +466,8 @@ Set(packPath .. "/Drops.lua", "Drops", "0000000a", "text", '"items"', '"list tup
 Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "point", "to", "levelMin", "levelMax"',
     '"text", "text", "point", "int", "int", "int"',
     'R[1] = "70245\t\tdungeon\tThe Mines\t1429\03130\03130\t500\t18\t23"\n'
-    .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
+    .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n'
+    .. 'S.unverified = "1\\0302"\n')
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait", "side", '
@@ -523,7 +525,8 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
     .. 'I.byKind.lift = "8\0309\03010\03011\03013"\nI.byKind.portal = "12\03014"\n'
-    .. 'I.byKind.teleport = "3003561\0303003567\0303018960\0303023442\0304297659"\n')
+    .. 'I.byKind.teleport = "3003561\0303003567\0303018960\0303023442\0304297659"\n'
+    .. 'S.unverified = "8\\0309\\03010\\03011\\03013\\03012\\03014"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
 os.execute(("mkdir -p '%s'"):format(spawnsPath))
@@ -583,7 +586,11 @@ Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name",
     'R[700] = "70245\t\tThe First Boss\t90\t0"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
 -- What the first boss casts and drops (the set Bosses, apart from the game's encounters: not yet confirmed).
 Set(dungeonsPath .. "/Bosses.lua", "Bosses", "0000000d", "int", '"abilities", "loot"', '"list int", "list int"',
-    'R[700] = "70245\t\t801\030802\t901\030902"\n')
+    'R[700] = "70245\t\t801\030802\t901\030902"\nS.unverified = "700"\n')
+-- An item the game keeps hidden (903), as Core's data has it: its stats learned in play.
+Set(dungeonsPath .. "/Items.lua", "Items", "0000000e", "int", '"name", "quality", "icon", "armor", "stats"',
+    '"text", "int", "int", "int", "map text int"',
+    'R[903] = "70245\t\tHidden Blade\t3\t1903\t50\tITEM_MOD_STAMINA_SHORT\0317"\n')
 W.AddSets(dungeonsPath)
 end
 -- The walking data (the set Walking): two tiles round the player, their blocks as the game unpacks them (the
@@ -1729,7 +1736,17 @@ check(GameTooltip._lines and GameTooltip._lines[1] == "- Wolf meat: 3/8" and Gam
 GameTooltip._lines = nil
 pins["place:1"]._scripts.OnEnter(pins["place:1"])
 check(GameTooltip._lines and GameTooltip._lines[1] == "Level 18 to 23" and GameTooltip._lines[2] == Pins.TEXT.unverified,
-    "a place of Core's data: its facts, marked as not yet confirmed by the game")
+    "a place of Core's data: its facts, marked as not yet confirmed by the game (its set's file lists it unverified)")
+;(function()
+    -- Confirmed in play (Data.Confirm: a watcher, or a guild or group member's message): the note goes.
+    check(Core.Data.Confirm("Places", 1) and not Core.Data.Set("Places"):Unverified(1), "the entrance confirmed in play")
+    W.Wait(0)
+    pins = Drawn()
+    GameTooltip._lines = nil
+    pins["place:1"]._scripts.OnEnter(pins["place:1"])
+    check(GameTooltip._lines and GameTooltip._lines[1] == "Level 18 to 23" and not GameTooltip._lines[2],
+        "confirmed, its pin's tooltip no longer says Unconfirmed Data")
+end)()
 -- Further out than a zone: only travel and places.
 full:Show(1415, 0, -9250, 0.05)
 Canvas.Layout()
@@ -4269,6 +4286,43 @@ end)()
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
     Frames(1)
     check((GameTooltip._lines or {})[5] == Dungeons.TEXT.loot, "Alt let go: the names only again")
+    -- Confirmed in play (Core's watchers, or a guild or group member's message): what the tooltip shows of the boss is
+    -- no longer unconfirmed; an item looted from the boss that the set does not name joins its loot.
+    local Data = Core.Data
+    check(Data.Confirm("Bosses", 700, "a801") and Data.Confirm("Bosses", 700, "l901") and Data.Confirm("Bosses", 700, "l902")
+        and not Data.Confirm("Bosses", 700, "l901") and not Data.Confirm("Bosses", 9999, "l1"),
+        "each ability and item confirmed once; a boss the set does not have, never")
+    GameTooltip._lines = nil
+    Frames(1)
+    lines = GameTooltip._lines or {}
+    check(lines[#lines] ~= Dungeons.TEXT.unverified and lines[7] and lines[7]:find("Item 902", 1, true),
+        "everything it shows confirmed: no Unconfirmed Data")
+    check(Data.Confirm("Bosses", 700, "l903"), "an item looted from the boss that the set does not name: confirmed too")
+    GameTooltip._lines = nil
+    Frames(1)
+    lines = GameTooltip._lines or {}
+    check(lines[8] and lines[8]:find("Hidden Blade", 1, true) and lines[8]:find("1903", 1, true)
+        and lines[#lines] ~= Dungeons.TEXT.unverified,
+        "it joins the loot, named as Core's data has it while the game keeps it hidden")
+    -- With Alt: the game's tooltip of it shows nothing, so its stats as Core's data has them (learned in play).
+    W.methods.SetItemByID = function(self, id)
+        local left = W.NewWidget("FontString")
+        left:SetText(id == 903 and "Hidden Blade" or "Item")
+        _G.SaneUINavigationReaderTextLeft1, _G.SaneUINavigationReaderTextRight1 = left, W.NewWidget("FontString")
+        self.NumLines = function() return 1 end
+    end
+    IsAltKeyDown = function() return true end
+    GameTooltip._lines = nil
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
+    Frames(1)
+    lines = GameTooltip._lines or {}
+    local blade
+    for index, line in ipairs(lines) do if line:find("Hidden Blade", 1, true) then blade = index end end
+    check(blade and lines[blade + 1] == "    50 Armor" and lines[blade + 2] == "    +7 ITEM_MOD_STAMINA_SHORT",
+        "Alt over an item the game keeps hidden: its armour and stats as Core's data has them")
+    IsAltKeyDown = function() return false end
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+    Frames(1)
     C_Spell.GetSpellDescription, W.methods.SetItemByID, W.methods.AddDoubleLine = describe, nil, nil
     ITEM_SPELL_TRIGGER_ONEQUIP, TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN = nil, nil
     marks[1]._mouseOver = false

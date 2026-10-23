@@ -228,7 +228,7 @@ part of Core.
 {"key":19999,"since":65100,"src":["game"],"gone":true}
 ```
 
-- **Keys in this order:** `key`, `since`, `day`, `src`, `gone`, `replaces`, then the fields in schema order.
+- **Keys in this order:** `key`, `since`, `day`, `src`, `verified`, `gone`, `replaces`, then the fields in schema order.
   The tools write every line so, with `,` and `:` and no spaces, map keys sorted, and the lines sorted by
   key (numbers by value, texts by their characters), then `since`, then `day`. The check refuses another
   order in a file the tools write; a fixes file only has to parse and fit.
@@ -240,6 +240,9 @@ part of Core.
   `game` is the file's game version.
 - **The first version holds every fact known;** each later one holds only the fields that changed, each in
   full. `null` clears a field (never in a first version).
+- **`verified`:** `{"day":"2026-11-07","times":3}`: the game confirmed this version in play (*Verified*): the day of
+  the import that took the newest confirmation in and how many imports confirmed it; nothing more. Only the import
+  writes it.
 - **`gone`:** `true` alone: the game removed the entry from that build on. A gone line holds no fields. A
   version after a gone one is a first version again (the entry came back).
 - **`replaces`:** in an entry's first line only: the key of the entry of the same set the game swapped for
@@ -274,7 +277,8 @@ A tool that reads a source writes staging, never the master: one JSON object per
 ```
 
 - `set`, `key`, `game` and `src` (one source's name) are needed; a line without its game version is
-  refused. `build` (0 when not known) and `day` are optional; `fields` holds what the source says, `null`
+  refused. **`confirmed`** (a day, `YYYY-MM-DD`, from the game alone and with nothing else to say): the game confirmed
+  the entry in play that day (the harvest). `build` (0 when not known) and `day` are optional; `fields` holds what the source says, `null`
   for a field it says is empty; `gone` and `replaces` as in the master.
 - Staging files go into `dev/data/staging/` (not committed).
 
@@ -291,6 +295,7 @@ that game version's files.
 | **Older:** the staged build is older than the entry's first version, and a field differs | A new first version in front: the old first version's facts with the staged ones put in; the old first version keeps only what differs from it. |
 | **Gone:** the game (or a person) says the entry is gone | A gone version. From a batch: refused (missing from a source is no proof). |
 | **Replaces:** a new entry names the one it replaces | Written into its first line; a different `replaces` for a known entry is a conflict. |
+| **Verified:** a confirmation (`confirmed`) of the version current at its build (the newest, at a build the master does not know) | Its `verified` mark written (`times` 1, the import's day), or one more time and the import's day for a confirmation seen after the mark's day; at most once an import per version. Another game version's confirmation of an entry it has no line of is live's (the version it stands on). |
 | **Refused:** an unknown set, game version, source or field; a value that does not fit; a build not in `builds.toml`; a batch of another game version | Listed with the reason. |
 
 - Fields a source does not have are left alone: sources are partial.
@@ -336,6 +341,10 @@ clock, entries sorted by key.
   changes).
 - **`build`** of a set is the newest build its own game version's lines know: their `since`, and the
   `build` of their batches.
+- **`S.unverified`** (after the rows, only where there are any): the keys, joined by character 30, of the entries
+  whose newest version the game has not confirmed: none of its sources is of the kind `game` or `hand`, and it has no
+  `verified` mark (another game version's entry standing on live's: live's newest line decides). `Handle:Unverified`
+  reads it (*Verified*).
 - **`hash`** of a set is the first 8 hex digits of the SHA-256 of its file, written with the hash as
   `00000000`. A module that keeps something worked out from a set knows by the hash when it is stale.
 
@@ -441,6 +450,7 @@ local Items = Data.Set("Items")     -- a handle: cheap, never nil; one per name
 | `Data.WhenReady(Items, fn)` | `fn(handle)` once the set (its handle or its name) is ready: at once if it is, in the caller's own call; else on the frame after it arrived, once. As a rule a set is there before any module asks. |
 | `Items:State()` | `"ready"`; `"refused"` (another format or game version, or the client's cannot be told) or `"missing"` (Core holds no such set), and a few words why; `"loading"` only while Core's own files are still being read. |
 | `Items:Ready()` | `State() == "ready"`. |
+| `Bosses:Unverified(key, part)` | Whether the entry (or a part of it: a boss's item `"l17076"`, an ability `"a8269"`) is not yet confirmed by the game: listed in its set's file (`S.unverified`) and not confirmed in play since (*Verified*). False for an entry learned in play, one the set lacks, a set not ready. |
 | `Items.hash`, `Items.build` | Where the data came from: its hash, the newest build it knows (nil while the set is not there). |
 
 - **What this client has reached:** a set made for a later patch than the client's build answers with the
@@ -575,15 +585,51 @@ Data.Learn("Travel", 4297659, record)   -- Core's watchers only: record, the set
 - **Dropped once the set is as new:** at the login a learned row is dropped when the set has a version of that entry
   at its build and day or later, whether it agrees or not (the release has seen that build and decided), and so is
   one that is no row. So a wrong learned fact cannot stand over the sets for ever.
-- **Not yet** (1c.1, 1c.3, 1f): confirmations (a cast that agrees teaches nothing new and is not kept), the harvest
-  into the master and sharing with the guild. An entry learnt that the set does not have is read by `Get`, but no
-  index lists it.
+- **Shared** (the sets of `Confirm.SHARED`: Items) with the guild and the group (*Verified*, *Sharing*), and taken
+  into the master by the harvest. An entry learnt that the set does not have is read by `Get`, but no index lists it.
+- **The builds:** each learning or confirmation notes the client's build with its patch (`builds[build] = "1.60.1"`,
+  `Data.NoteBuild`), so the harvest can add a build `builds.toml` lacks.
 - **The teleports' watcher** (`Data/Teleports.lua`): after the player cast the spell of a teleport of *Travel*
   (`UNIT_SPELLCAST_SUCCEEDED`; an item's, the spell it casts), the player's place in the world is looked at every
   `Teleports.LOOK` seconds and after a loading screen, for `Teleports.WAIT` seconds; a leap of `Teleports.LEAP`
   yards between two looks, or onto another map, is the teleport (no step, charge or blink goes so far so fast), and
   where it ends, to a hundredth of a yard with its map (no height), the way's path, learnt; within `Teleports.SAME`
   yards of the set's place, nothing (its numbers: `Data.Teleports`).
+
+### Verified (`Data.Confirm`) *(Saneroki, 2026-10-23)*
+
+What a batch alone says (not the game's tables, our crawls or a person) is unverified, and a view says so
+(*! Unconfirmed Data !*, Core's `Core.Unconfirmed`). The game confirms it in play: then it is kept, shared and
+harvested, and the next release ships the entry verified.
+
+```lua
+Data.Confirm("Places", 412)              -- Core's watchers: the game agrees with the entry
+Data.Confirm("Bosses", 1144, "l17076")   -- ... with a part: a boss's item ("l" and its ID) or ability ("a" and the spell's)
+Data.Confirmed("Bosses", 1144, "l17076") -- the whole entry, or that part, confirmed
+Data.ConfirmedParts("Bosses", 1144)      -- { "a8269", "l17076" }: a view adds those the entry lacks
+Data.OnConfirm(fn)                       -- fn() on the frame after something was confirmed, here or by others
+Data.Share("Items", 16801)               -- a row learned here (Data.Learn) shared with the guild and the group
+```
+
+- **Kept** in `SaneUIData_Learned[game].confirmed[set][key] = "day\031build\031parts"` (the parts cut by \030, `*` the
+  whole entry), until the harvest takes them in. Only an entry the set has and still has unverified (a part the entry
+  lacks counts: a fact of its own).
+- **The watchers** (`Data/Watchers.lua`), never in a fight or while the game restricts addons, a hidden value passed
+  over: a creature seen (the mouse, the target, a nameplate) confirms its spawn (*Spawns*) when it stands within
+  `Watchers.NEAR` yards of one of its points (`C_Map.GetPlayerMapPosition`, `GetMapWorldSize`), and itself (*NPCs*)
+  when it offers nothing to talk to; talked to or used (the game's unit `npc`: a vendor, a trainer, a flight master, a
+  quest giver, a mailbox) the creature or object and its spawn; a mailbox opened the set *Places*' mailbox within
+  `Watchers.MAILBOX` yards; a zone left the crossing within `Watchers.CROSSING` yards. **A boss's loot:** within
+  `Watchers.LOOT` seconds after the game said it was killed (`ENCOUNTER_END`) and in its instance, an item the set
+  *Bosses* names for it; any item of a corpse of the boss's name (the target, dead): the game tells no place inside an
+  instance, nor whose corpse a loot is (no `GetLootSourceInfo`), so the time, the instance and the corpse's name hold
+  the items to the boss (Saneroki, 2026-10-23). **Its abilities:** a spell its unit casts (the boss frames' units in
+  its fight, else a creature of its name; one the set does not name too), a buff it carries of those the set names,
+  wherever the game lets them be read. **Items:** every item the character has (bags, worn, bank) compared with
+  *Items*: its stats (`GetItemStats`, the game's names), armour, damage and speed (its tooltip's lines,
+  `C_TooltipInfo.GetItemByID`) learned where they differ or the set lacks them (many items' are hidden from the
+  game's tables), and shared; an item the set lacks only on an English client (the set's names are English).
+- **Sharing:** see *Messages* (kinds `V` and `L`).
 
 ### Loading
 
@@ -670,7 +716,9 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
   `crawl` (`[kind] = place`).
 - **A saved variable of the data** (`SaneUIData_<Name>[game]`): `format` (1); `broken` (parts of a wrong
   shape, kept for the harvest); and what it holds: the characters, the guilds' records, `learned`
-  (`SaneUIData_Learned`: `[set][key] = row`, a whole row in the set's format, *Learned*); *(1c)* the series (the
+  (`SaneUIData_Learned`: `[set][key] = row`, a whole row in the set's format, *Learned*), with `confirmed`
+  (`[set][key] = "day\031build\031parts"`, *Verified*), `outbox` (what waits to be shared: `"V\031set\031key\031part"`,
+  `"L\031set\031key"`, at most `Confirm.OUTBOX`) and `builds` (`[build] = patch`); *(1c)* the series (the
   prices per auction house, `houses["eu/1234/horde"]`), the drop counts.
 - **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and
   at most 100,000 values **for Core's saved file as a whole:** Lua 5.1 stops at 262,143 constants in one
@@ -751,6 +799,15 @@ lockdown, at most 300 waiting (urgent for 10 minutes, bulk for an hour). Taken i
 sender, more and it is not heard for ten minutes; at most 1,000 waiting in the inbox.*
 
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
+- **What was confirmed and learned** *(Saneroki, 2026-10-23)*: kind `V` (set, key, the parts cut by commas, `*` the
+  whole entry), one message per entry; learned rows as a block of kind `L` (`set\028key\028row`, the rows cut by
+  \029, at most `Confirm.ROWS`). Sent to the guild and the raid or else the party, `Confirm.GAP` seconds apart, never
+  in a fight, while the game restricts addons, or inside an instance: they wait in the outbox (kept in the saved
+  file) until the player is out and has somebody to tell. Taken from the guild, party, raid and instance channels
+  only (never a whisper): a confirmation of an entry or part this client has unverified (a part naming an item or a
+  spell the game does not know is dropped); a row only where it changes nothing but what play teaches
+  (`Confirm.SHARED`: an item's stats, armour, damage and speed; a new item where it names one). What was taken from
+  others is not passed on again.
 - **The sender** is the one the server names (`CHAT_MSG_ADDON`'s sender), by its key (*Players*); a message
   never names its own sender.
 - **A message:** its kind (a letter), the protocol number, its game version's short sign, then its fields,
@@ -860,7 +917,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the set files carry it. |
 | `dev/tools/data diff <set> [--patch 1.60.2] [--game <game version>]` | What a patch changed (the game version's newest when none is named): every entry new, changed (field from → to), gone or back at one of its builds. |
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
-| `dev/tools/data harvest` *(1c)* | Core's saved files into staging, accepted data only. |
+| `dev/tools/data harvest [--wow <folder>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`) read as data (a small reader of the Lua the game writes, never run), its own game version's part only (`.flavor.info`): learned rows as the game's facts at their build and day, whole confirmations as `confirmed` (a boss counts as whole once every item and ability the set names is confirmed; other parts stay in the game, counted), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
 | `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions and Encounters; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 

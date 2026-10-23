@@ -6,6 +6,33 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: what the game confirms in play, kept, shared and harvested; items' stats learned (Saneroki, 2026-10-23)
+- The master: a version's `verified` mark (`{"day","times"}`, after `src`; `master.py`, `schema.py`), `Master.confirmed`
+  (a source of the kind game or hand, or the mark). The compiler lists each set's entries not yet verified in its file
+  (`S.unverified`, `compile.py`).
+- `Data.lua`: `Handle:Unverified(key, part)`; `Data.LearnRow` (a row from somebody else's Sane UI, taken where
+  `accept` says so), `Data.Learned`, `Data.NoteBuild` (`builds[build] = patch` in the learned part).
+- `Data/Confirm.lua` (new, in Core's TOC): `Data.Confirm`, `Confirmed`, `ConfirmedParts`, `OnConfirm`, `Share`; kept in
+  `SaneUIData_Learned[game].confirmed`; shared with the guild and the raid or party (the wire's kinds V and L) from an
+  outbox kept in the saved file, `Confirm.GAP` seconds apart, never in a fight, under a restriction or in an instance,
+  as Saneroki asked; taken from the guild, party and raid only: a confirmation of what this client has unverified, a
+  learned row where it changes nothing but an item's stats, armour, damage and speed (`Confirm.SHARED`).
+- `Data/Watchers.lua` (new, in Core's TOC): creatures seen near their spawn or talked to, things used, mailboxes
+  opened, crossings, a boss's loot (within `Watchers.LOOT` seconds of its kill, in its instance: an item the set
+  names, or any of the boss's own corpse, as Saneroki allowed: no place is told inside an instance), its casts and
+  buffs; every item the character has compared with *Items* (`GetItemStats`, its tooltip's damage and speed),
+  learned and shared where it differs (the master has no item's stats yet).
+- Views: the map's pins (`Pins.Unverified`) and a boss's tooltip (per item and ability; items and abilities confirmed
+  that the set lacks join it; an item the game keeps hidden as Core's data has it, its stats with Alt: `Recorded`)
+  say *Unconfirmed Data* only while it holds; redrawn on `Data.OnConfirm`.
+- The harvest (`dev/data/harvest.py`, `dev/tools/data harvest`; `saneui data harvest`): the game folders' saved files
+  read as data, learned rows and whole confirmations staged, new builds into `builds.toml`; the import's case
+  *verified* (`confirmed`: the mark, once an import, beta's of live's on live's line).
+- `Doc/guides/data.md` (*Verified*, the line, staging, the set file, saved variables, messages, tools),
+  `Doc/ideas/Data.md`, `Data-build.md` (1c.3 ticked), READMEs (Core, Navigation); tests: `data.lua` 231 (marks,
+  watchers, sharing, taking, items), `navigation.lua` 568, `data/tools.py` 215 (the mark, the list, the import, the
+  harvest, every row read back).
+
 ### Navigation: a plus for pins of different icons gathered; their icons in its tooltip (Saneroki, 2026-10-23)
 - `PinView.lua`: a gathered marker shows its pins' icon where all have the same one (`Alike`: atlas, tint, grey),
   else the game's round plus (`PinView.PLUS`), as Saneroki asked; its tooltip puts each pin's own icon before its

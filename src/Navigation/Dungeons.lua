@@ -94,6 +94,7 @@ local SET = Core.Data.Set("Dungeons")
 local ENCOUNTERS = Core.Data.Set("Encounters")
 local NPCS = Core.Data.Set("NPCs")
 local BOSSES = Core.Data.Set("Bosses")
+local ITEMS = Core.Data.Set("Items")
 
 local frame, content, over, canvas
 local tiles = {}  -- the art's textures, made as many as needed
@@ -410,6 +411,33 @@ local function Shown(list)
         end
     end
 end
+-- An item's stats as Core's data has them, where the game's tooltip shows none (an item the game keeps hidden: its
+-- stats learned in play, here or by the guild or the group): its damage and speed, armour, and each stat.
+local STAT_WHITE = { 1, 1, 1 }
+local function Recorded(id)
+    local known = ITEMS:Ready() and ITEMS:Get(id)
+    if not known then return end
+    local white = STAT_WHITE
+    if known.damageMin and known.damageMax then
+        local words = (rawget(_G, "DAMAGE_TEMPLATE") or "%s - %s Damage"):format(known.damageMin, known.damageMax)
+        local speed = known.speed and ("%s %.2f"):format(rawget(_G, "SPEED") or "Speed", known.speed) or nil
+        stats[#stats + 1] = { words, white[1], white[2], white[3], speed, white[1], white[2], white[3] }
+    end
+    if known.armor then
+        stats[#stats + 1] = { (rawget(_G, "ARMOR_TEMPLATE") or "%s Armor"):format(known.armor), white[1], white[2], white[3] }
+    end
+    if type(known.stats) == "table" then
+        local keys = {}
+        for key in pairs(known.stats) do keys[#keys + 1] = key end
+        table.sort(keys)
+        for _, key in ipairs(keys) do
+            local value, word = known.stats[key], rawget(_G, key)
+            word = type(word) == "string" and word or key
+            stats[#stats + 1] = { ("%s%d %s"):format(value >= 0 and "+" or "", value, word), white[1], white[2], white[3] }
+        end
+    end
+end
+
 local function ItemDetails(id)
     local missing = Uncollected(id)
     local unknown = rawget(_G, "TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN")
@@ -434,6 +462,7 @@ local function ItemDetails(id)
         if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
         GameTooltip:AddLine("    " .. Dungeons.TEXT.uncollected, r, g, b)
     end
+    if #stats == 0 then Recorded(id) end
     Shown(effects)
     Shown(stats)
 end
@@ -461,7 +490,14 @@ local function ItemLine(id)
     local name, _, quality = Core.Ask(C_Item.GetItemInfo, id)
     if not name then
         Core.Ask(C_Item.RequestLoadItemDataByID, id)
-        return nil
+        -- Meanwhile, and for an item the game keeps hidden, as Core's data has it (learned in play, shared)
+        local known = ITEMS:Ready() and ITEMS:Get(id)
+        if not (known and known.name) then return nil end
+        name, quality = known.name, known.quality
+        local r, g, b = 1, 1, 1
+        local colour = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
+        if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
+        return Iconed(known.icon, name), r, g, b
     end
     local r, g, b = 1, 1, 1
     local colour = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
@@ -469,10 +505,32 @@ local function ItemLine(id)
     return Iconed(Core.Ask(C_Item.GetItemIconByID, id), name), r, g, b
 end
 
+-- A boss's abilities or items (kind "a" or "l"): the set's, then those confirmed in play that it does not name (Core's
+-- Data.ConfirmedParts: seen cast, looted from the boss).
+local function Parts(encounter, field, kind)
+    local list, seen = {}, {}
+    for _, id in ipairs(BOSSES:Get(encounter, field) or {}) do
+        if not seen[id] then
+            seen[id] = true
+            list[#list + 1] = id
+        end
+    end
+    local confirmed = Core.Data.ConfirmedParts and Core.Data.ConfirmedParts("Bosses", encounter) or {}
+    for _, part in ipairs(confirmed) do
+        local id = part:sub(1, 1) == kind and tonumber(part:sub(2))
+        if id and not seen[id] then
+            seen[id] = true
+            list[#list + 1] = id
+        end
+    end
+    return list
+end
+
 -- Up to Dungeons.LINES lines of a list under its title, and how many more there are; with Alt held, each one's
--- details under it (details: nil for none).
-local function Listed(title, ids, line, details)
-    local shown, more = 0, 0
+-- details under it (details: nil for none). True when a line shown is not yet confirmed by the game (kind: the
+-- part's letter, Bosses:Unverified).
+local function Listed(title, ids, line, details, encounter, kind)
+    local shown, more, unconfirmed = 0, 0, false
     for _, id in ipairs(ids or {}) do
         if shown >= Dungeons.LINES then
             more = more + 1
@@ -483,10 +541,12 @@ local function Listed(title, ids, line, details)
                 shown = shown + 1
                 GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
                 if details then details(id) end
+                if BOSSES:Unverified(encounter, kind .. id) then unconfirmed = true end
             end
         end
     end
     if more > 0 and shown > 0 then GameTooltip:AddLine(Dungeons.TEXT.more:format(more), 0.6, 0.6, 0.6) end
+    return unconfirmed
 end
 
 -- A boss's tooltip, as a creature's (Core.TipLook): its name in the game's red of a foe, under it the dungeon and
@@ -504,12 +564,15 @@ local function BossTip(part)
     local place = encounter and SET:Get(ENCOUNTERS:Get(encounter, "instance") or 0, "name")
     if place then GameTooltip:AddLine(place, 1, 1, 1) end
     GameTooltip:AddLine(Dungeons.TEXT.boss, 1, 0.82, 0)
+    local unconfirmed = false
     if encounter then
         local alt = IsAltKeyDown()
-        Listed(Dungeons.TEXT.abilities, BOSSES:Get(encounter, "abilities"), SpellLine, alt and SpellDetails)
-        Listed(Dungeons.TEXT.loot, BOSSES:Get(encounter, "loot"), ItemLine, alt and ItemDetails)
+        unconfirmed = Listed(Dungeons.TEXT.abilities, Parts(encounter, "abilities", "a"), SpellLine, alt and SpellDetails,
+            encounter, "a")
+        unconfirmed = Listed(Dungeons.TEXT.loot, Parts(encounter, "loot", "l"), ItemLine, alt and ItemDetails, encounter, "l")
+            or unconfirmed
     end
-    Core.Unconfirmed(GameTooltip)
+    if unconfirmed then Core.Unconfirmed(GameTooltip) end
     GameTooltip:Show()
 end
 
@@ -528,6 +591,12 @@ for _, event in ipairs({ "ITEM_DATA_LOAD_RESULT", "SPELL_DATA_LOAD_RESULT", "MOD
         if tipped then Again() end
     end)
 end
+-- Something confirmed in play, or an item's stats learned (here or shared): drawn again with it.
+local function Changed()
+    if tipped then Again() end
+end
+if Core.Data.OnConfirm then Core.Data.OnConfirm(Changed) end
+ITEMS:OnStamp(Changed)
 
 -- A boss's mark, and the frame for its model above it (made when a boss with a look first needs it).
 local function Mark()

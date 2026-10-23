@@ -4,14 +4,15 @@ Every staged line is compared with its own game version's view and written only 
 files. Live's lines are taken in first, so another game version stands on what the import made of live.
 The report comes first; the master changes only when the caller writes it (`apply`).
 """
+import datetime
 import itertools
 import json
 
 import master as masters
 import schema as schemas
 
-STAGING_WORDS = ("set", "key", "game", "build", "day", "src", "fields", "gone", "replaces")
-CASES = ("new", "agreeing", "changed", "older", "gone", "conflict", "taken", "refused")
+STAGING_WORDS = ("set", "key", "game", "build", "day", "src", "fields", "gone", "replaces", "confirmed")
+CASES = ("new", "agreeing", "changed", "older", "gone", "verified", "conflict", "taken", "refused")
 LISTED = ("conflict", "taken", "refused")
 UNTAKEN = " (--take does not mend this: mend it by hand)"
 
@@ -23,6 +24,9 @@ class Report:
         self.counts = {}   # (set, game) -> {"new": n, "agreeing": n, ...}
         self.listed = []   # (case, where, set, game, text)
         self.changed = set()  # (set, game) whose lines changed
+        self.counted = set()  # the lines a confirmation counted in this import: at most one each (*Verified*)
+        self.today = datetime.date.today().isoformat()  # the import's day: a verified mark's
+        self.builds = {}  # the master's builds per game version (run sets them)
 
     def count(self, set_name, game, case):
         counts = self.counts.setdefault((set_name, game), {})
@@ -82,7 +86,7 @@ def _refusal(master, data):
     build = data.get("build", 0)
     if not schemas._whole(build) or build < 0:
         return "build is a build number (0: not known)"
-    if build and build not in master.builds[game]:
+    if build and build not in master.builds[game] and "confirmed" not in data:
         return f"build {build} is not in builds.toml for {game}"
     if "day" in data and not masters.is_day(data["day"]):
         return f"day {data['day']!r} is no date (YYYY-MM-DD)"
@@ -104,6 +108,12 @@ def _refusal(master, data):
         return f"replaces is a key of {schema.set}"
     if replaces is not None and replaces == key:
         return "an entry cannot replace itself"
+    if "confirmed" in data:
+        if not masters.is_day(data["confirmed"]) or fields or data.get("gone") or replaces is not None:
+            return "confirmed is the day the game confirmed the entry in play (YYYY-MM-DD), with nothing else to say"
+        if info["kind"] != "game":
+            return "only the game confirms an entry"
+        return None
     if not fields and not data.get("gone"):
         return "says nothing (no fields)"
     refs = set()
@@ -213,8 +223,35 @@ def _whole(entry, versions, index):
     return versions[index - 1].gone
 
 
+def _confirm(report, entry, where, data):
+    """A confirmation from play (the harvest): the version current at its build gets its verified mark, or one more
+    time and the import's day, at most once an import and only for a confirmation seen after its mark's day."""
+    set_name, game = data["set"], data["game"]
+    versions = entry.versions()
+    build = data.get("build", 0)
+    known = build in report.builds.get(game, {})
+    # At a build the master knows: the version current then; else (or none named) the newest
+    version = (masters.current(versions, build) if known else versions[-1]) if versions else None
+    if version is None and versions:
+        version = versions[0]
+    if version is None or version.gone or version.line is None:
+        report.list("refused", where, set_name, game, "confirms no version the master has")
+        return False
+    line, seen = version.line, data["confirmed"]
+    if id(line) in report.counted or (line.verified and seen <= line.verified["day"]):
+        report.count(set_name, game, "agreeing")
+        return False
+    report.counted.add(id(line))
+    times = line.verified["times"] + 1 if line.verified else 1
+    line.verified = {"day": report.today, "times": times}
+    report.count(set_name, game, "verified")
+    return True
+
+
 def _take(master, report, entry, known, where, data, take):
     """Takes one staged line into its entry; True when a line of the master changed."""
+    if "confirmed" in data:
+        return _confirm(report, entry, where, data)
     set_name, game, key = data["set"], data["game"], data["key"]
     build, day, src = data.get("build", 0), data.get("day"), data["src"]
     clock = (build, day or "")
@@ -328,6 +365,7 @@ def run(master, staged, take=False):
     """Takes staged lines [(where, data)] into the loaded master's lines (not written yet). Returns a Report.
     take: a conflict is written into its version as a correction."""
     report = Report()
+    report.builds = master.builds
     work = []
     for where, data in staged:
         problem = _refusal(master, data)
@@ -338,6 +376,11 @@ def run(master, staged, take=False):
             continue
         if isinstance(data["src"], str) and data["src"].isdigit():
             data = {**data, "src": int(data["src"])}  # a batch's number, as the master writes it
+        game = data["game"]
+        if "confirmed" in data and masters.base_of(game) != game and not any(
+                line.key == data["key"] for line in master.lines.get((data["set"], game), [])):
+            # Another game version that stands on live's version of the entry: the confirmation is of live's line
+            data = {**data, "game": masters.base_of(game), "build": 0}
         work.append((where, data))
     # Live first, then the game versions that stand on it; one entry's lines in order of build and day, each
     # against what the ones before made.

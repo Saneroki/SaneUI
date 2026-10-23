@@ -407,7 +407,7 @@ check("diff: within the beta", views.diff(sample, "Gear", "forever-beta"), ["Gea
 check("diff: a patch not known", views.diff(sample, "Gear", patch="9.9.9"), ["No build of forever is 9.9.9 in builds.toml."])
 numbers = views.stats(sample)
 check("stats: per game version and set, then all", (numbers[0], numbers[2].split(), numbers[5]),
-      ("forever:", ["Folk", "3", "4", "1", "1", "4", "607", "B"], "  all: 3 sets, 10 entries, 2.7 KB"))
+      ("forever:", ["Folk", "3", "4", "1", "1", "4", "631", "B"], "  all: 3 sets, 10 entries, 2.7 KB"))
 check("stats: the beta", [line.split()[:6] for line in numbers if line.startswith("  Gear ")][2], ["Gear", "4", "5", "1", "0", "2"])
 
 # Compiling ----------------------------------------------------------------------------------------------
@@ -524,6 +524,113 @@ with tempfile.TemporaryDirectory(prefix="saneui-sets-") as folder:
         (place / ".flavor.info").write_text(f"Product Flavor!STRING:0\n{product}\n")
         check(f"compile: the game version of a {product} folder", compiler.product_game(place), want)
     check("compile: a folder without .flavor.info", compiler.product_game(out), None)
+
+# Verified: the mark of a version the game confirmed in play, the set files' list of what is not, the harvest -----
+import compile as compiler_v  # noqa: E402
+import harvest as harvests  # noqa: E402
+
+caught("verified of the wrong shape",
+       lambda c: c.replace("Folk/Folk.jsonl", '{"key":2,"since":0,"src":[1],', '{"key":2,"since":0,"src":[1],"verified":{"day":"soon","times":0},'),
+       "verified is")
+with Copy() as copy:
+    copy.replace("Folk/Folk.jsonl", '{"key":2,"since":0,"src":[1],', '{"key":2,"since":0,"src":[1],"verified":{"day":"2026-10-20","times":2},')
+    master = loaded(copy.root)
+    check("verified: read, the master fits", (master.errors, master.lines[("Folk", "forever")][1].verified),
+          ([], {"day": "2026-10-20", "times": 2}))
+    check("verified: written after src", masters.line_text(master.schemas["Folk"], master.lines[("Folk", "forever")][1]),
+          '{"key":2,"since":0,"src":[1],"verified":{"day":"2026-10-20","times":2},"name":"Tobin Reed"}')
+    text, _ = compiler_v.set_file(master, master.schemas["Folk"], "forever")
+    marks = [line for line in text.splitlines() if line.startswith("S.unverified")]
+    check("compile: the set file lists the entries a batch alone says (not one confirmed in play, nor the game's)",
+          marks, ['S.unverified = "1"'])
+    # Every row the compiler writes reads back the same (the harvest's reader, the game's codec turned round)
+    same = True
+    for set_name, schema in master.schemas.items():
+        for game in ("forever", "forever-beta"):
+            for key, versions in master.view(set_name, game).items():
+                for version in versions:
+                    if version.gone:
+                        continue
+                    _, _, fields = harvests.decode(master, schema, compiler_v.row(schema, version))
+                    want = {name: value for name, value in version.fields.items() if value not in (None, [], {})}
+                    if fields != want:
+                        same = False
+                        print("   differs:", set_name, key, fields, want)
+    check("harvest: every row read back as the compiler wrote it", same, True)
+
+# The import of a confirmation: the version's mark, one more time on a later day, once an import; the beta's of live's
+CONFIRM = {"set": "Folk", "game": "forever", "src": "game", "build": 0}
+with Copy() as copy:
+    master = loaded(copy.root)
+    report = importer.run(master, stage(copy, {**CONFIRM, "key": 1, "confirmed": "2026-10-20"},
+                                        {**CONFIRM, "key": 1, "confirmed": "2026-10-21"},
+                                        {**CONFIRM, "key": 2, "game": "forever-beta", "build": 66123, "confirmed": "2026-10-20"},
+                                        {**CONFIRM, "key": 2, "src": 1, "confirmed": "2026-10-20"},
+                                        {**CONFIRM, "key": 2, "confirmed": "2026-10-20", "fields": {"name": "X"}}))
+    check("import confirmed: counted once an import", counts(report, "Folk", "forever"), {"verified": 2, "agreeing": 1, "refused": 2})
+    check("import confirmed: refused from a batch, or with facts", sorted(listed(report, "refused")),
+          sorted(["only the game confirms an entry",
+                  "confirmed is the day the game confirmed the entry in play (YYYY-MM-DD), with nothing else to say"]))
+    importer.apply(master, report)
+    after = loaded(copy.root)
+    today = report.today
+    check("import confirmed: the marks written, the beta's confirmation of live's version on live's line",
+          [line.verified for line in after.lines[("Folk", "forever")][:2]], [{"day": today, "times": 1}] * 2)
+    again = importer.run(after, stage(copy, {**CONFIRM, "key": 1, "confirmed": "2999-01-01"},
+                                       {**CONFIRM, "key": 2, "confirmed": "2000-01-01"}))
+    check("import confirmed again: a later confirmation counts once more, an older one not",
+          ([line.verified["times"] for line in after.lines[("Folk", "forever")][:2]], counts(again, "Folk", "forever")),
+          ([2, 1], {"verified": 1, "agreeing": 1}))
+    text, _ = compiler_v.set_file(after, after.schemas["Folk"], "forever")
+    check("compile: a version confirmed in play is no longer listed", "S.unverified" in text, False)
+
+# The harvest: a saved file the game wrote, read as data; learned rows and whole confirmations staged; new builds
+with Copy() as copy:
+    master = loaded(copy.root)
+    wow = Path(copy.folder) / "wow"
+    beta = wow / "_classic_beta_"
+    saved = beta / "WTF" / "Account" / "A1" / "SavedVariables"
+    saved.mkdir(parents=True)
+    (beta / ".flavor.info").write_text("Product Flavor!STRING:0\nwow_classic_beta\n")
+    gloves = compiler_v.row(master.schemas["Gear"], master.view("Gear", "forever-beta")[100][-1]).split("\t", 2)[2]
+    (saved / "SaneUI.lua").write_text("\n".join([
+        "-- a comment the game does not write",
+        "SaneUIDB = {",
+        '["log"] = { "nothing of it is read" },',
+        "}",
+        "SaneUIData_Learned = {",
+        '["forever-beta"] = {',
+        '["format"] = 1,',
+        '["builds"] = { [66500] = "1.61.1", },',
+        '["learned"] = { ["Gear"] = { [100] = "66500\\t20750\\t' + gloves.replace("\x1e", "\\030").replace("\x1f", "\\031").replace("\t", "\\t") + '", }, },',
+        '["confirmed"] = { ["Folk"] = { [1] = "20750\\03166500\\031*", [2] = "20750\\03166500\\031l5", }, ["Nobody"] = {}, },',
+        '["outbox"] = {},',
+        "},",
+        '["forever"] = { ["learned"] = { ["Gear"] = { [100] = "65100\\t\\tLive\'s, of another folder" } } },',
+        "}",
+        ""]), encoding="utf-8")
+    files = harvests.saved_files(wow)
+    lines, report = harvests.harvest(master, files)
+    check("harvest: the folder's own game version only", [game for game, _ in files], ["forever-beta"])
+    learned = [line for line in lines if line["set"] == "Gear"]
+    check("harvest: a learned row as staging of the game's",
+          (learned[0]["key"], learned[0]["game"], learned[0]["build"], learned[0]["day"], learned[0]["src"],
+           learned[0]["fields"]["name"]) if learned else None,
+          (100, "forever-beta", 66500, "2026-10-24", "game", master.view("Gear", "forever-beta")[100][-1].fields["name"]))
+    check("harvest: a whole confirmation staged, one in parts only counted",
+          ([line for line in lines if line.get("confirmed")], report["parts"], report["skipped"]),
+          ([{"set": "Folk", "key": 1, "game": "forever-beta", "build": 66500, "src": "game", "confirmed": "2026-10-24"}], 1, 1))
+    check("harvest: a build the master does not know, with its patch and first day",
+          report["builds"], {"forever-beta": {66500: ("1.61.1", "2026-10-24")}})
+    check("harvest: added to builds.toml", harvests.add_builds(master, report["builds"]), 1)
+    after = loaded(copy.root)
+    check("harvest: builds.toml fits, the build known", (after.errors, 66500 in after.builds["forever-beta"]), ([], True))
+    staging = Path(copy.folder) / "harvest.jsonl"
+    harvests.write(lines, staging)
+    report = importer.run(after, importer.read_staging(staging))
+    check("harvest: taken in (the beta's confirmation of live's version, on live's line)",
+          (counts(report, "Folk", "forever").get("verified"), sorted(counts(report, "Gear", "forever-beta"))),
+          (1, ["agreeing"]))
 
 # The real master is as the game's code says (the CVar labels) -------------------------------------------
 with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:

@@ -18,7 +18,7 @@ INDEXABLE = ("int", "text", "enum", "ref", "flags", "money")
 RESERVED_INDEXES = ("replaces", "replacedBy")
 NAME = re.compile(r"^[A-Za-z][A-Za-z0-9]*$")
 FIELD_NAME = re.compile(r"^[a-z][A-Za-z0-9]*$")
-LINE_WORDS = ("key", "since", "day", "src", "gone", "replaces")
+LINE_WORDS = ("key", "since", "day", "src", "verified", "gone", "replaces")
 
 
 class Field:

@@ -1035,15 +1035,20 @@ do
     -- Two of the sets a map reads arrive together
     W.AddSets(MakeSets("Spots", {
         ["Places.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Places", { game = "forever", hash = "0000000c", build = 65000, key = "int", fields = { "kind", "name", "point" }, types = { "text", "text", "point" }, patches = {} })\n'
-            .. 'if not S then return end\nS.rows[1] = "65000\\t\\tcave\\tThe Hole\\t1429\\03150\\03150"\n',
+            .. 'if not S then return end\nS.rows[1] = "65000\\t\\tcave\\tThe Hole\\t1429\\03150\\03150"\n'
+            -- (for the watchers, below: a mailbox and a crossing on another map, all three not yet confirmed)
+            .. 'S.rows[2] = "65000\\t\\tmailbox\\t\\t1430\\03130\\03130"\nS.rows[3] = "65000\\t\\tcrossing\\t\\t1430\\03190\\03190"\n'
+            .. 'S.unverified = "1\\0302\\0303"\nS.index.byKind = { cave = "1", mailbox = "2", crossing = "3" }\n',
         ["Spawns.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Spawns", { game = "forever", hash = "0000000d", build = 65000, key = "text", fields = { "points" }, types = { "list point" }, patches = {} })\n'
-            .. 'if not S then return end\nS.rows["object:1617"] = "65000\\t\\t1429\\03110\\03120"\n' }))
+            .. 'if not S then return end\nS.rows["object:1617"] = "65000\\t\\t1429\\03110\\03120"\n'
+            .. 'S.rows["npc:69"] = "65000\\t\\t1430\\03160\\03160"\nS.rows["npc:70"] = "65000\\t\\t1430\\03120\\03120"\n'
+            .. 'S.unverified = "object:1617\\030npc:69\\030npc:70"\n' }))
     for _ = 1, 6 do Frame() end
     local spot = Map:Spawns("object:1617")
     check(walks == 1 and #Map:On(1429) == 2 and spot and spot[1429][1][1] == 0.1, "two sets arriving together: read once")
     -- The objects' facts arrive: the map is read anew, and until that read is done the last one's points stay
     W.AddSets(MakeSets("Things", { ["Objects.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Objects", { game = "forever", hash = "0000000e", build = 65000, key = "int", fields = { "name", "kind" }, types = { "text", "text" }, patches = {} })\n'
-        .. 'if not S then return end\nS.rows[1617] = "65000\\t\\tPeacebloom\\therb"\n' }))
+        .. 'if not S then return end\nS.rows[1617] = "65000\\t\\tPeacebloom\\therb"\nS.unverified = "1617"\n' }))
     Frame()
     W.Wait(0) -- told: read anew, its walks still to come
     check(walks == 2 and Map:Spawns("object:1617") == spot, "while the map is read anew, the last read's points stay")
@@ -1053,6 +1058,205 @@ do
     check(herb and herb.name == "Peacebloom" and Map:Spawns("object:1617") ~= spot and Map:Spawns("object:1617")[1429][1][2] == 0.2,
         "then the new read's: the object named, a herb")
     Spawns.Each = nil
+end
+
+-------------------------------------------------------------------------------
+--  Verified (Confirm.lua, Watchers.lua): what the game confirms in play of the facts not yet verified, kept, shared
+--  with the guild and the group (not in a fight or an instance), taken from them; the watchers; items' stats learned
+-------------------------------------------------------------------------------
+do
+    local Watchers = Data.Watchers
+    W.AddSets(MakeSets("Verify", {
+        ["NPCs.lua"] = 'local S = SaneUI.Core.Data.Add(1, "NPCs", { game = "forever", hash = "00000020", build = 65000, key = "int", fields = { "name", "services" }, types = { "text", "list text" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows[69] = "65000\\t\\tA Vendor\\tvendor"\nS.rows[70] = "65000\\t\\tA Wolf"\nS.unverified = "69\\03070"\n',
+        ["Encounters.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Encounters", { game = "forever", hash = "00000021", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows[700] = "65000\\t\\tThe First Boss"\n',
+        ["Bosses.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Bosses", { game = "forever", hash = "00000022", build = 65000, key = "int", fields = { "abilities", "loot" }, types = { "list int", "list int" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows[700] = "65000\\t\\t801\\030802\\t901\\030902"\nS.unverified = "700"\n',
+        ["Items.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Items", { game = "forever", hash = "00000023", build = 65000, key = "int", fields = { "name", "quality", "armor", "damageMin", "damageMax", "speed", "stats" }, types = { "text", "int", "int", "int", "int", "number", "map text int" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows[4500] = "65000\\t\\tLinen Shirt\\t1\\t\\t\\t\\t\\tITEM_MOD_STAMINA_SHORT\\0313"\nS.rows[4501] = "65000\\t\\tOld Blade\\t2"\n' }))
+    for _ = 1, 3 do Frame() end
+    local Places, Spawns, NPCs, Objects, Bosses = Data.Set("Places"), Data.Set("Spawns"), Data.Set("NPCs"), Data.Set("Objects"), Data.Set("Bosses")
+    check(Places:Unverified(2) and Places:Unverified(1) and not Places:Unverified(99) and Bosses:Unverified(700, "l901")
+        and not Data.Set("Encounters"):Unverified(700),
+        "the set files list the entries not yet verified (a batch's alone); an entry of the game's, or none, is not")
+
+    -- The stand-in's world: where the player stands on a map (1000 yards square), what a unit is, the instance
+    local guids, names, dead, inside, instance = { player = "Player-70-0000ABCD" }, {}, {}, false, 90
+    W.mapPos = nil
+    C_Map = { GetPlayerMapPosition = function(map)
+                  local at = W.mapPos
+                  if at and at.map == map then return { GetXY = function() return at.x, at.y end } end
+              end,
+              GetMapWorldSize = function() return 1000, 1000 end }
+    UnitGUID = function(unit) return guids[unit] end
+    UnitName = function(unit) if unit == "player" then return "Tester", "Stub" end return names[unit] end
+    UnitIsPlayer = function(unit) return unit == "player" end
+    UnitIsDead = function(unit) return dead[unit] or false end
+    IsInInstance = function() return inside end
+    GetInstanceInfo = function() return "A Dungeon", "party", 1, "Normal", 5, 0, false, instance end
+    local loot = {}
+    GetNumLootItems = function() return #loot end
+    GetLootSlotLink = function(slot) return loot[slot] and ("|cff0070dd|Hitem:%d::::|h[x]|h|r"):format(loot[slot]) end
+    -- The wire: what goes, as the guild's test sees it; packing a stand-in easy to read back
+    local sent = {}
+    local function Hex(text) return (text:gsub(".", function(c) return ("%02x"):format(c:byte()) end)) end
+    C_EncodingUtil = { CompressString = function(text) return "Z" .. text end,
+        DecompressString = function(text) if text:sub(1, 1) == "Z" then return text:sub(2) end end,
+        EncodeBase64 = Hex, DecodeBase64 = function(text) return (text:gsub("%x%x", function(h) return string.char(tonumber(h, 16)) end)) end }
+    C_ChatInfo = rawget(_G, "C_ChatInfo") or {}
+    C_ChatInfo.RegisterAddonMessagePrefix = function() return true end
+    C_ChatInfo.SendAddonMessage = function(prefix, text, channel) sent[#sent + 1] = { text = text, channel = channel } return 0 end
+    C_ChatInfo.InChatMessagingLockdown = function() return false end
+    local guild, group = false, false
+    -- The wire's queue goes on its frame's OnUpdate, one look a second here
+    local function Pass(seconds)
+        for _ = 1, seconds do
+            W.Wait(1)
+            local wireFrame = Core.Wire.frame
+            if wireFrame and wireFrame:IsShown() then wireFrame._scripts.OnUpdate(wireFrame, 1) end
+        end
+    end
+    IsInGuild = function() return guild end
+    IsInGroup = function() return group end
+    IsInRaid = function() return false end
+
+    -- A mailbox opened: the set's mailbox within reach confirmed, the crossing far off not
+    W.mapPos = { map = 1430, x = 0.305, y = 0.30 }
+    W.Fire("MAIL_SHOW")
+    local kept = SaneUIData_Learned.forever.confirmed
+    check(not Places:Unverified(2) and Places:Unverified(3) and kept.Places and type(kept.Places[2]) == "string"
+        and kept.Places[2]:find("^%d+\031%d+\031%*$"),
+        "a mailbox opened: the set's within Watchers.MAILBOX yards confirmed, kept as its day, build and parts (the whole)")
+    -- A zone left at the set's crossing
+    W.mapPos = { map = 1430, x = 0.91, y = 0.90 }
+    W.Fire("ZONE_CHANGED_NEW_AREA")
+    check(not Places:Unverified(3), "a zone left near the set's crossing: confirmed")
+    -- A creature seen near its spawn: its spawn, and the creature where it offers nothing to talk to
+    W.mapPos = { map = 1430, x = 0.21, y = 0.20 }
+    guids.target = "Creature-0-1-2-3-70-0000AAAA"
+    W.combat = true
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(Spawns:Unverified("npc:70") and NPCs:Unverified(70), "in a fight: nothing looked at")
+    W.combat = false
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(not Spawns:Unverified("npc:70") and not NPCs:Unverified(70), "out of it: the wolf seen at its spawn, both confirmed")
+    W.mapPos = { map = 1430, x = 0.61, y = 0.60 }
+    guids.mouseover = "Creature-0-1-2-3-69-0000BBBB"
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    check(not Spawns:Unverified("npc:69") and NPCs:Unverified(69),
+        "a vendor seen at its spawn: its spawn confirmed, the vendor itself only by talking to it")
+    guids.npc = "Creature-0-1-2-3-69-0000BBBB"
+    W.Fire("MERCHANT_SHOW")
+    check(not NPCs:Unverified(69), "talked to: the vendor confirmed")
+    -- A thing used (the game's unit "npc" is an object): its spawn near, and the thing
+    W.mapPos = { map = 1429, x = 0.10, y = 0.21 }
+    guids.npc = "GameObject-0-1-2-3-1617-0000CCCC"
+    W.Fire("GOSSIP_SHOW")
+    check(not Spawns:Unverified("object:1617") and not Objects:Unverified(1617), "a thing used at its spawn: both confirmed")
+
+    -- A boss killed, then its loot: an item the set names confirmed; one it does not only from a corpse of its name
+    W.Fire("ENCOUNTER_START", 700, "The First Boss", 1, 5)
+    W.Fire("UNIT_SPELLCAST_START", "boss1", "Cast-1", 801)
+    W.Fire("UNIT_SPELLCAST_START", "party1", "Cast-2", 802)
+    check(not Bosses:Unverified(700, "a801") and Bosses:Unverified(700, "a802"),
+        "in its fight, a spell the boss's unit cast: its ability confirmed; nobody else's casts count")
+    W.Fire("ENCOUNTER_END", 700, "The First Boss", 1, 5, 1)
+    loot = { 901, 905 }
+    W.Fire("LOOT_OPENED")
+    check(not Bosses:Unverified(700, "l901") and Bosses:Unverified(700, "l905") and Bosses:Unverified(700, "l902"),
+        "after the kill, in its instance: an item the set names for it confirmed; another not from just any corpse")
+    names.target, dead.target = "The First Boss", true
+    W.Fire("LOOT_OPENED")
+    check(not Bosses:Unverified(700, "l905") and Data.Confirmed("Bosses", 700, "l905")
+        and Data.ConfirmedParts("Bosses", 700)[1] == "a801",
+        "from the boss's own corpse (the target of its name, dead): an item the set does not name confirmed too, a fact of its own")
+    instance = 91
+    loot = { 902 }
+    W.Fire("LOOT_OPENED")
+    check(Bosses:Unverified(700, "l902"), "in another instance: nothing of the boss's")
+    instance = 90
+    W.Wait(Watchers.LOOT + 1)
+    W.Fire("LOOT_OPENED")
+    check(Bosses:Unverified(700, "l902"), "too long after the kill: nothing of the boss's")
+    names.target, dead.target = nil, nil
+
+    -- Sharing: nobody to tell yet; in a guild but inside an instance: it waits; out of it, slowly, to the guild
+    local outbox = SaneUIData_Learned.forever.outbox
+    check(#sent == 0 and #outbox >= 8, "nobody to tell (no guild, no group): what was confirmed waits in the outbox")
+    guild, inside = true, true
+    W.Fire("PLAYER_GUILD_UPDATE")
+    Pass(15)
+    check(#sent == 0, "inside an instance: still waiting")
+    inside = false
+    W.Fire("PLAYER_ENTERING_WORLD")
+    Pass(3)
+    check(#sent >= 1 and sent[1].channel == "GUILD" and sent[1].text == "V1\tf\tPlaces\t2\t*",
+        "out of it: to the guild, one confirmation a message (set, key, parts)")
+    Pass(40)
+    local bossLine
+    for _, message in ipairs(sent) do
+        if message.text:find("^V1\tf\tBosses\t700\t") then bossLine = message.text end
+    end
+    check(#outbox == 0 and bossLine and bossLine:find("a801", 1, true) and bossLine:find("l901", 1, true)
+        and bossLine:find("l905", 1, true), "everything sent in time, a boss's parts together in one message")
+
+    -- Taken from others: a confirmation from the guild of an entry this client has unverified; never by a whisper,
+    -- nor an item the game does not know
+    local wire = Core.Wire
+    wire.Take("V1\tf\tPlaces\t1\t*", "WHISPER", "Droopy Fairwind")
+    check(Places:Unverified(1), "a confirmation whispered: not taken")
+    wire.Take("V1\tf\tPlaces\t1\t*", "GUILD", "Droopy Fairwind")
+    local spells = rawget(_G, "C_Spell") or {}
+    C_Spell = spells
+    local spellName = spells.GetSpellName
+    spells.GetSpellName = function(id) return id == 802 and "Cleave" or nil end
+    wire.Take("V1\tf\tBosses\t700\ta802,l99999,a803", "GUILD", "Droopy Fairwind")
+    check(not Places:Unverified(1) and not Bosses:Unverified(700, "a802") and Bosses:Unverified(700, "l99999")
+        and Bosses:Unverified(700, "a803"),
+        "from a guild member: taken; a part naming an item or a spell the game does not know: not")
+    spells.GetSpellName = spellName
+
+    -- Items: the stats the game gives of what the character has, compared with the set's; learned where they differ
+    C_Item.GetItemInfo = function(id)
+        if id == 4500 then return "Linen Shirt", "|Hitem:4500|h", 1, 5, 1, "Armor", "Cloth", 1, "INVTYPE_BODY", 135, 1, 4, 1, 0 end
+        if id == 4501 then return "Old Blade", "|Hitem:4501|h", 2, 10, 5, "Weapon", "Sword", 1, "INVTYPE_WEAPON", 136, 25, 2, 7, 2 end
+        if id == 4502 then return "New Thing", "|Hitem:4502|h", 2, 10, 5, "Armor", "Mail", 1, "INVTYPE_CHEST", 137, 50, 4, 3, 2 end
+    end
+    GetItemStats = function(link)
+        if link:find("4500") then return { ITEM_MOD_STAMINA_SHORT = 3 } end
+        if link:find("4501") then return { ITEM_MOD_AGILITY_SHORT = 5, ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 1.9 } end
+        return { RESISTANCE0_NAME = 120 }
+    end
+    C_TooltipInfo = { GetItemByID = function(id)
+        if id == 4501 then return { lines = { { leftText = "Old Blade" }, { leftText = "3 - 7 Damage", rightText = "Speed 2.60" } } } end
+        return { lines = { { leftText = "x" } } }
+    end }
+    sent = {}
+    Watchers.Item(4500)
+    Watchers.Item(4501)
+    Watchers.Item(4502)
+    local Items = Data.Set("Items")
+    local blade, shirt, chest = Items:Get(4501), Items:Get(4500), Items:Get(4502)
+    check(not Data.Learned("Items", 4500) and blade.stats.ITEM_MOD_AGILITY_SHORT == 5 and blade.damageMin == 3
+        and blade.damageMax == 7 and blade.speed == 2.6 and blade.name == "Old Blade" and not blade.stats.ITEM_MOD_DAMAGE_PER_SECOND_SHORT
+        and shirt.stats.ITEM_MOD_STAMINA_SHORT == 3 and chest and chest.armor == 120 and chest.name == "New Thing",
+        "an item as the set has it: nothing learned; one without its stats, and one the set lacks: learned as the game gives them")
+    Pass(20)
+    local block
+    for _, message in ipairs(sent) do if message.text:find("^P1\tf\tL\t") then block = message end end
+    check(block and block.channel == "GUILD", "what was learned shared with the guild as a block")
+
+    -- A row learned by another: taken only where it changes nothing but what play teaches of the item
+    local function Send(text)
+        local packed = Hex("Z" .. text)
+        wire.Take(("P1\tf\tL\t%d\t1\t1\t%d\t%s"):format(math.random(9999), #text, packed), "PARTY", "Ann Brook")
+    end
+    Send("Items\0284500\02870245\t20000\tLinen Shirt\t1\t\t\t\t\tITEM_MOD_STAMINA_SHORT\0314\030ITEM_MOD_SPIRIT_SHORT\0312")
+    Send("Items\0284501\02870245\t20000\tShiny Blade\t2\t\t3\t7\t2.6\tITEM_MOD_AGILITY_SHORT\0315")
+    for _ = 1, 3 do Frame() end
+    check(Items:Get(4500).stats.ITEM_MOD_SPIRIT_SHORT == 2 and Items:Get(4501).name == "Old Blade",
+        "from a group member: new stats taken; a row that renames the item: not")
 end
 
 -------------------------------------------------------------------------------

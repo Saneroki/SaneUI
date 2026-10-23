@@ -6,6 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Data you can trust: what Sane UI's data has not had confirmed by
+  the game says "Unconfirmed Data" until you or somebody of your
+  guild or group sees it in play: an NPC at its place, a mailbox
+  opened, a boss's loot looted after the kill, its abilities cast.
+  What one player confirms is shared with the others who have Sane
+  UI, slowly and never in a fight or a dungeon. The stats of the items
+  you carry are learned and shared too, also of items the game keeps
+  hidden.
 - Tooltips: a tooltip too tall for the screen goes on in a second
   column beside the first, so all of it can be read.
 - Navigation: map pins name an NPC by what it is (Bowyer, Warrior

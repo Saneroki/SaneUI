@@ -175,13 +175,21 @@ def set_file(master, schema, game):
     """(text, entries) of a set's Lua file for a game version."""
     view = master.view(schema.set, game)
     keys = sorted(view)
+    base_view = master.view(schema.set, masters.base_of(game)) if masters.base_of(game) != game else {}
     rows, history, patches = [], [], {}
+    unverified = []  # the entries whose newest version the game has not confirmed (*Verified*)
     for key in keys:
         versions = view[key]
         for version in versions:
             if version.since:
                 patches[version.since] = master.builds[game][version.since]["patch"]
         rows.append(f"R{lua_key(key)} = {lua_string(row(schema, versions[-1]))}")
+        newest = versions[-1]
+        line = newest.line
+        if line is None and base_view.get(key):  # live's newest, which another game version stands on
+            line = base_view[key][-1].line
+        if not newest.gone and not master.confirmed(line):
+            unverified.append(key)
         if len(versions) > 1:
             history.append(f"H{lua_key(key)} = {lua_string(VERSION.join(row(schema, v) for v in versions[:-1]))}")
     indexes = {}
@@ -227,6 +235,8 @@ def set_file(master, schema, game):
         "local function Fill(f) f() end",
     ]
     lines += chunks(rows) + chunks(history)
+    if unverified:
+        lines.append(f"S.unverified = {lua_string(LIST.join(str(key) for key in unverified))}")
     for name in sorted(indexes):
         table = indexes[name]
         if not table:

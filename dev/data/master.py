@@ -52,11 +52,15 @@ def source_name(src):
 class Line:
     """One line of the master: one version of an entry as written (the first one whole, later ones only what
     changed). fields maps a field's name to its value, None for a field the version clears."""
-    __slots__ = ("key", "since", "day", "src", "gone", "replaces", "fields", "where")
+    __slots__ = ("key", "since", "day", "src", "gone", "replaces", "fields", "where", "verified")
 
-    def __init__(self, key, since=0, day=None, src=None, gone=False, replaces=None, fields=None, where=""):
+    def __init__(self, key, since=0, day=None, src=None, gone=False, replaces=None, fields=None, where="",
+                 verified=None):
         self.key, self.since, self.day = key, since, day
         self.src = list(src or [])
+        # The game confirmed this version in play (Doc/guides/data.md, *Verified*): {"day": the import's day that
+        # took the newest confirmation in, "times": how many imports confirmed it}; None: not confirmed in play.
+        self.verified = dict(verified) if verified else None
         self.gone, self.replaces = gone, replaces
         self.fields = dict(fields or {})
         self.where = where
@@ -359,6 +363,12 @@ class Master:
                 self.error(f"{where}: source {each} is {info.get('game')}'s batch: the line is in the wrong file")
         if len(set(map(source_name, src))) != len(src):
             self.error(f"{where}: src names a source twice")
+        verified = data.get("verified")
+        if "verified" in data:
+            if not (isinstance(verified, dict) and set(verified) == {"day", "times"} and is_day(verified.get("day"))
+                    and schemas._whole(verified.get("times")) and verified["times"] >= 1):
+                self.error(f"{where}: verified is {{\"day\": YYYY-MM-DD, \"times\": a whole number from 1}}")
+                verified = None
         if "gone" in data and data["gone"] is not True:
             self.error(f"{where}: gone is true or left out")
         gone = data.get("gone") is True
@@ -379,7 +389,16 @@ class Master:
             self.refs.append((where, game, target_set, target_key))
         if replaces is not None:
             self.refs.append((where, game, schema.set, replaces))
-        return Line(key, since, day, src, gone, replaces, fields, where)
+        return Line(key, since, day, src, gone, replaces, fields, where, verified)
+
+    def confirmed(self, line):
+        """Whether a version's line counts as the game's (Doc/guides/data.md, *Verified*): a source of the kind game
+        or hand, or a verified mark from play. Everything else (a batch alone) is unverified."""
+        if line is None:
+            return False
+        if line.verified:
+            return True
+        return any(self.sources.get(source_name(src), {}).get("kind") in ("game", "hand") for src in line.src)
 
     # Versions -----------------------------------------------------------------------------------------
 
@@ -391,7 +410,7 @@ class Master:
             fix = fixes.get(line.order())
             if fix:
                 line = Line(line.key, line.since, line.day, line.src + [s for s in fix.src if s not in line.src],
-                            line.gone, line.replaces, {**line.fields, **fix.fields}, line.where)
+                            line.gone, line.replaces, {**line.fields, **fix.fields}, line.where, line.verified)
             out.append(line)
         return out
 
@@ -445,6 +464,8 @@ def line_text(schema, line):
     if line.day:
         data["day"] = line.day
     data["src"] = line.src
+    if line.verified:
+        data["verified"] = {"day": line.verified["day"], "times": line.verified["times"]}
     if line.gone:
         data["gone"] = True
     if line.replaces is not None:

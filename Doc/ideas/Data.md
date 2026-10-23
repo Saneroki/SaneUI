@@ -444,6 +444,15 @@ marked, so an older game's fact is never taken for one of Forever's.
   a wrong fact costs the player (a route through nodes that are not there).
 - **Found again by source:** `dev/tools/data` lists the unverified versions per set and source, so a batch
   that turns out wrong or old can be dropped or replaced whole.
+- **Built (Saneroki, 2026-10-23)** as the guide's *Verified* says: the set files list what is unverified, Core's
+  watchers confirm it (creatures seen or talked to near their spawn, mailboxes, crossings, a boss's loot and casts),
+  what one player confirms is shared with the guild and the group (queued outside fights and instances), and the
+  harvest takes it into the master. Decisions: **a boss's loot** is its own when looted within minutes of its kill
+  in its instance, an item the set names, or any item of the boss's own corpse (the target of its name, dead): the
+  game tells no place inside an instance nor whose corpse a loot is; **items' stats** (hidden from the game's tables
+  for many items) are learned from what the character has, compared with the set, and shared, a shared row taken
+  only where it changes nothing but the stats; **a boss's ability** is confirmed where the game lets its cast or buff
+  be read (a cast it hides in the fight is passed over).
 - **Counts:** a chance or yield taken in from the baseline (exact, agreed: *When in doubt*) stays unverified
   until this game version's own counts have enough loots or gathers (*proposal* 50); then the own counts
   replace it.

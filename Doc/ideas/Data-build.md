@@ -145,6 +145,10 @@ holds the budget of values for all of them.
     `Codec.Encoder`, learned rows laid over a set's own at the login and dropped once the set is as new, `Stamp`
     moving, and the first watcher (`Data/Teleports.lua`: where a teleport brought the player). Still open: the
     inbox (no set waits to load any more: every set comes with Core), confirmations, the budget of values.*
+  - *Confirmations built (Saneroki, 2026-10-23): `Data/Confirm.lua` (`Data.Confirm`, `Confirmed`, `ConfirmedParts`,
+    `OnConfirm`; `confirmed[set][key]`, parts for a boss's items and abilities), the set files' `S.unverified` and
+    `Handle:Unverified`, shared with the guild and the group (step 1f's kinds V and L, ahead), the outbox held in
+    fights and instances. Still open: the budget of values.*
 - [ ] **1c.2 Series.**
   - The series *Prices*: today's points, the months at logout, the archive handshake (`archivedTo`), and
     the roll-up.
@@ -152,7 +156,9 @@ holds the budget of values for all of them.
     and side; a series file per house in the master; the shipped archive run only for the player's houses.
   - `Data.Series`.
   - Tests, among them: one item with two prices on two houses, and none of another house's prices shown.
-- [ ] **1c.3 Harvest.**
+- [x] **1c.3 Harvest.** *Built (Saneroki, 2026-10-23): `dev/data/harvest.py`, `dev/tools/data harvest` (every game
+  folder, its own game version's part; learned rows and whole confirmations; new builds into `builds.toml`); the
+  import's case *verified* (`confirmed`, the `verified` mark); `dev/tests/data/tools.py`.*
   - `dev/data/harvest.py` reads saved files as data: a small reader of their Lua, never run. It writes
     staging of accepted data only, and reads the `.bak` file when a saved file is missing.
   - Per game folder: it takes only the part keyed by that folder's own game version (its product in
@@ -188,7 +194,10 @@ holds the budget of values for all of them.
 
 ## 1d Watchers and what they find
 
-- [ ] **1d.1 Watchers, discoveries, chat messages.**
+- [ ] **1d.1 Watchers, discoveries, chat messages.** *Begun (Saneroki, 2026-10-23): `Data/Watchers.lua` confirms
+  creatures seen or talked to, things used, mailboxes and crossings, a boss's loot and casts, and learns the stats of
+  the items the character has. Still open: `Found.lua`, vendors' goods and trainers' lists, the switch and chat
+  message.*
   - `Watch.lua` (marks only) and `Found.lua`.
   - The watchers for vendors, trainers, flight masters and services.
   - The switch *Chat message for new data changes*.

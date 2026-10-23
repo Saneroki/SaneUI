@@ -77,7 +77,7 @@ GROUPS = {
         "checkuilab": (["dev/tools/ui-lab", "check"], "a scene of the interface lab run without the page, its log", None),
     },
     "Data": {
-        "data": (["dev/tools/data"], "Core's data framework: check, compile, import", 'check · compile · import'),
+        "data": (["dev/tools/data"], "Core's data framework: check, compile, import, harvest", 'check · import · harvest'),
         "readgamedata": (["dev/tools/game-data"], "the game's facts from its client tables", None),
         "readmapdata": (["dev/tools/map-data"], "the facts of Navigation's map", None),
         "readtraveldata": (["dev/tools/travel-data"], "flights, boats, zeppelins, the tram and lifts", None),

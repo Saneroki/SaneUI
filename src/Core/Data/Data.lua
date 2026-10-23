@@ -14,6 +14,7 @@ local Core = SaneUI.Core
 --      Items:OnStamp(Redraw)                         -- told when the set changes (later: learned data)
 --      SaneUI.Core.Data.WhenReady(Items, Draw)       -- once it is there: at once, as a rule
 --      Items:Changes(16801)                          -- its history: also History, At, Versions; Keys, Each
+--      Bosses:Unverified(1144, "l17076")             -- not yet confirmed by the game (the entry, or a part of it)
 --
 --  A set is ready once its file handed it over (Data.Add), which is before any module loads; Prepare and
 --  WhenReady stay for the readers that ask before that, and for sets that come late (the tests). A set's
@@ -252,6 +253,16 @@ end
 -- and decided, whether it agrees or not), so a wrong fact cannot stand over the sets for ever. Only Core learns
 -- (Data.Learn, its watchers); the modules read the sets as ever.
 local learned -- this client's learned rows ({ [set name] = { [key] = row } }), once Core's saved variables are read
+local learnedPart -- its saved part: also builds[build] = the patch, for the harvest (dev/tools/data harvest)
+
+-- Notes the client's build with its patch (GetBuildInfo), so the harvest can name the build of what was kept.
+function Data.NoteBuild()
+    if not learnedPart then return end
+    if type(learnedPart.builds) ~= "table" then learnedPart.builds = {} end
+    local patch, number = Core.Ask(rawget(_G, "GetBuildInfo"))
+    number = tonumber(number)
+    if number and type(patch) == "string" then learnedPart.builds[number] = patch end
+end
 
 -- A row's build and day (0 where it has none); nil for what is no row.
 local function Stamped(row)
@@ -317,6 +328,7 @@ function Data.Learn(name, key, record)
     local ok, body = pcall(set.encode, record)
     if not ok or body == "" then return false end
     local row = ClientBuild() .. "\t" .. Today() .. body
+    Data.NoteBuild()
     if type(learned[name]) ~= "table" then learned[name] = {} end
     learned[name][key] = row
     Lay(set, key, row)
@@ -325,11 +337,35 @@ function Data.Learn(name, key, record)
     return true
 end
 
+-- A row learned by somebody else's Sane UI (Confirm.lua, a guild or group member's): kept and read over the set's as one
+-- learned here, when it can be read and accept(record, current) says so (current: the entry as this client has it, or
+-- nil). False when it is not taken.
+function Data.LearnRow(name, key, row, accept)
+    local set = sets[name]
+    if not (learned and set and set.ready and set.decode) or key == nil or not Stamped(row) then return false end
+    local ok, record = pcall(set.decode, row)
+    if not ok or type(record) ~= "table" or record.gone then return false end
+    if set.rows[key] and AsNew(set.rows[key], row) then return false end
+    if type(accept) ~= "function" or not accept(record, Data.Set(name):Get(key)) then return false end
+    if type(learned[name]) ~= "table" then learned[name] = {} end
+    learned[name][key] = row
+    Lay(set, key, row)
+    Forget(set)
+    Moved(set)
+    return true
+end
+
+-- The row Core learned of an entry here, or nil (Confirm.lua shares it).
+function Data.Learned(name, key)
+    local rows = learned and learned[name]
+    return type(rows) == "table" and rows[key] or nil
+end
+
 -- Core's saved variables read: what was learned before laid over the sets there (as a rule all of them: their files
 -- run with Core's).
 Data.Saved("Learned", function(part)
     if type(part.learned) ~= "table" then part.learned = {} end
-    learned = part.learned
+    learned, learnedPart = part.learned, part
     for _, set in pairs(sets) do
         if set.ready then Overlay(set) end
     end
@@ -603,6 +639,28 @@ function Handle:Each(fn, done)
             Steps.Check()
         end
     end)
+end
+
+-- Whether an entry (or a part of it: a boss's item "l17076", an ability "a8269") is not yet confirmed by the game:
+-- its newest version came from a batch alone (the set's file lists those, S.unverified; Doc/guides/data.md,
+-- *Verified*), and nothing confirmed it since in play, here or by a guild or group member (Data.Confirmed,
+-- Confirm.lua). An entry learned in play is the game's. False for a set that is not ready, or an entry it lacks.
+function Handle:Unverified(key, part)
+    local set = sets[self.name]
+    if not (set and set.ready) or key == nil or set.laid[key] then return false end
+    local marks = set.marks
+    if not marks then
+        marks = {}
+        if type(set.unverified) == "string" then
+            for _, each in ipairs(Codec.Cut(set.unverified, LIST)) do
+                marks[set.key == "int" and tonumber(each) or each] = true
+            end
+        end
+        set.marks = marks
+    end
+    if not marks[key] then return false end
+    local confirmed = Data.Confirmed
+    return not (confirmed and confirmed(self.name, key, part))
 end
 
 -- A number that moves when the set arrives (and later when learned or accepted data changes it).
