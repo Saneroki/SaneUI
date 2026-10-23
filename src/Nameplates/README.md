@@ -58,9 +58,9 @@ fails, every plate is the game's own again.
   picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
 - **Raid marker:** in the line (none on a player you could fight, as on the game's plates).
-- **Smaller far away:** their own size at your feet, half at 40 yards, a quarter at 60, the farthest the game
+- **Smaller far away:** one and a half times their size at your feet, half that at 40 yards, a quarter of it at 60, the farthest the game
   shows plates of units you have not targeted (its limit, however far its setting says), in one straight line, by
-  the game's own scaling. Your target's plate, which the game shows farther, stays at a quarter beyond that.
+  the game's own scaling. Your target's plate, which the game shows farther, stays at that quarter beyond.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Only players you know*, *Smaller far away*. The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
@@ -70,8 +70,9 @@ fails, every plate is the game's own again.
   at `NAME_PLATE_UNIT_ADDED`; none for a forbidden plate or your own), a child of the plate (its place, scale and
   fading are ours too), centred on the plate's `UnitFrame.HealthBarsContainer`, made once and kept: the game hands
   plates out again and takes its unit frames from a pool, so each add looks at the plate's unit frame anew (read
-  with `rawget`, never written); as high as that row and as wide as its line wants (`Plate.Place`, at every fit
-  and line change, the row's size read in the dress's units; the row's width until the line is laid out). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
+  with `rawget`, never written); as high as its line needs (`Text.Height`: the font's height, `Text.PAD` over and
+  under, a pixel of border each) and as wide as the line wants (`Plate.Place`, at every fit and line change; the
+  row's width, read in the dress's units, until the line is laid out). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
   `name`, `AurasFrame`, `RaidTargetFrame`, `ClassificationFrame`, `LevelFrame`, `PlayerLevelDiffFrame`,
   `selectionHighlight`, `aggroHighlight*`) are at alpha 0, and 1 again when the plate goes
   (`NAME_PLATE_UNIT_REMOVED`), when the game hides its health bar (hooks after its `OnShow` and `OnHide`, once per
@@ -114,7 +115,7 @@ fails, every plate is the game's own again.
 - **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), in the game's nameplate
   font's face and outline (`SystemFont_NamePlate_Outlined`'s `GetFont`), `Text.SMALLER` (0.72) of its height, set on
   every text of ours once (`SetFont`), so later changes of the game's font object change none. Each piece has its room (`dress.room[piece]`, none while it does not
-  show); `Text.Layout` places the pieces from `Text.INSET` in, `Text.GAP` apart (`Text.NEAR` between the quest's
+  show); `Text.Layout` places the pieces from `Text.INSET` (3) in, `Text.GAP` apart (`Text.NEAR` between the quest's
   icon and count), each at `LEFT` of the frame at its x, and wants the bar as wide as the line and its insets
   (`dress.want`, `Plate.Place`). A plain text's room is its own whole width (`GetUnboundedStringWidth`: not as cut
   by the width it was given), rounded up, and `Text.SLACK` (1) more; a text that answers hidden (a font string once
@@ -138,8 +139,8 @@ fails, every plate is the game's own again.
     a hidden one the last plain one's (`Text.NAME` before any).
   - *health*: plain, `Text.Short` and `Text.Percent` ("1.32m | 100%"); hidden, `AbbreviateNumbers` with
     `Text.STEPS` as its breakpoints (the game's own form where it takes none) and `UnitHealthPercent(unit, true,
-    CurveConstants.ScaleTo100)`, both into `SetFormattedText`. Its room that of the most health in that form
-    (kept while the most is hidden; "888.8k | 100%" before any).
+    CurveConstants.ScaleTo100)`, both into `SetFormattedText`. Its room that of the most health in that form,
+    measured on the text itself (kept while the most is hidden; "888.8k | 100%" on the ruler before any).
 - **Auras** (`Auras.lua`): three of the game's aura containers per dress (`CreateFrame("AuraContainer", ...,
   "CustomAuraContainerTemplate")`, `Blizzard_AuraContainer`): `own`, `Auras.OWN` (`HARMFUL|PLAYER|!CROWD_CONTROL`),
   its `BOTTOMLEFT` on the dress's `TOPLEFT`, growing right, as many as `Auras.Slots` of the dress's width; `foes`,
@@ -165,7 +166,8 @@ fails, every plate is the game's own again.
   the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
   The bar's inner caps mask every segment (they reach the first and the last).
 - **Scale** (`Scale.lua`): the game's CVars (`Scale.CVARS`) make its own scaling by distance one straight line from
-  1 at no distance (`nameplateMaxScale`, `nameplateMaxScaleDistance` 0) to `Scale.FAR` (0.25) at the farthest reach
+  `Scale.NEAR` (1.5) at no distance (`nameplateMaxScale`, `nameplateMaxScaleDistance` 0) to `Scale.FAR` (a quarter of
+  it) at the farthest reach
   (`nameplateMinScale`, `nameplateMinScaleDistance` 0), with nothing else in it (`nameplateSelectedScale`,
   `nameplateLargerScale` 1), while *Smaller far away* is on; their defaults (`C_CVar.GetCVarInfo`) when it is off or
   the module stands down. Through `C_CVar.SetCVar`, only those this client has, never in a fight (then at
@@ -223,3 +225,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   edge (Saneroki); the ring is gone.
 - **2026-10-23:** plates half the size (Saneroki): their own size at your feet, half at 40 yards, a quarter at 60;
   one straight line, so the game's own scaling does it all and nothing of ours rescales plates any more.
+- **2026-10-23:** a compact bar, as high as its line (Saneroki), less room at its ends; plates one and a half times
+  larger at your feet, the same straight line down to a quarter of that at 60 yards.

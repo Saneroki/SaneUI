@@ -51,7 +51,7 @@ ns.TEXT = {
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
     distance = "Smaller far away",
-    distanceTip = "Nameplates are their own size at your feet, half at 40 yards and a quarter at 60, the farthest the game shows them.",
+    distanceTip = "Nameplates are largest at your feet, half that at 40 yards and a quarter at 60, the farthest the game shows them.",
 }
 
 -- What is told when the module stands down (Core's StandDown).

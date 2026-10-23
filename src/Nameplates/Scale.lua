@@ -2,14 +2,15 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Scale
---  Plates smaller the farther their unit is from you: their own size at your
---  feet, half at forty yards, a quarter at sixty, the farthest the game shows
---  plates of units you have not targeted, in one straight line. Your target's
---  plate, which the game shows farther, stays at a quarter beyond that.
+--  Plates smaller the farther their unit is from you: Scale.NEAR (one and a
+--  half times their size) at your feet, half that at forty yards, a quarter
+--  of it at sixty, the farthest the game shows plates of units you have not
+--  targeted, in one straight line. Your target's plate, which the game shows
+--  farther, stays at that quarter beyond.
 --
 --  The game scales its plates by distance itself, in a straight line, by its
---  CVars for it: this file sets that line (Scale.CVARS: full size at no
---  distance, Scale.FAR at the farthest reach) with nothing else in it (no
+--  CVars for it: this file sets that line (Scale.CVARS: Scale.NEAR at no
+--  distance, a quarter of it at the farthest reach) with nothing else in it (no
 --  larger target, no larger elites), while the setting is on, and puts the
 --  game's defaults back when it is switched off or the module stands down.
 --  CVars this client does not have are left alone, and none is set in a fight
@@ -20,9 +21,10 @@ local Core = SaneUI.Core
 local Scale = {}
 ns.Scale = Scale
 
-Scale.FAR = 0.25 -- the size at the plates' farthest reach (sixty yards: the game's limit)
+Scale.NEAR = 1.5            -- the size at your feet
+Scale.FAR = Scale.NEAR / 4  -- at the plates' farthest reach (sixty yards: the game's limit)
 Scale.CVARS = {
-    nameplateMaxScale = "1",
+    nameplateMaxScale = tostring(Scale.NEAR),
     nameplateMinScale = tostring(Scale.FAR),
     nameplateMaxScaleDistance = "0", -- smaller from your feet on
     nameplateMinScaleDistance = "0", -- smallest at the farthest reach

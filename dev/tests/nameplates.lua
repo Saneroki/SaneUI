@@ -214,7 +214,10 @@ local dress = DressOf(plates.nameplate1)
 check(dress and dress:IsShown() and dress.unit == "nameplate1", "the plate the game shows gets our dress")
 check(Faded(plates.nameplate1, 0), "the game's bar row, name, auras, marks and level boxes go out of sight under it")
 local row = plates.nameplate1.UnitFrame.HealthBarsContainer
-check(dress._points[1][1] == "CENTER" and dress._points[1][2] == row and dress._height == 20, "centred on the game's health bar row, as high")
+local high = Text.Height(dress)
+check(dress._points[1][1] == "CENTER" and dress._points[1][2] == row and dress._height == high
+    and high == math.ceil(14 * Text.SMALLER) + 2 * Text.PAD + 2 * Core.Pixels(dress, 1),
+    "centred on the game's health bar row, as high as its line: the font, a little over and under, the border")
 check(dress.health._value == wolf and dress.health._max == units.nameplate1.most, "hidden health goes to the bar as the game gives it")
 check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
 check(dress.name._text == "Young Wolf", "its name inside the bar")
@@ -262,13 +265,13 @@ check(dress.caps[1]._texture == Core.Shape.CAP_LEFT and dress.caps[1]._wrap[1] =
 -- Its size: the caps a quarter of each height, the bar a pixel inside its border.
 dress:GetScript("OnSizeChanged")(dress)
 local edge = Core.Pixels(dress, 1)
-check(dress.border.caps[1]._width == 20 * Bar.CAP and dress.caps[2]._width == (20 - 2 * edge) * Bar.CAP,
+check(dress.border.caps[1]._width == high * Bar.CAP and dress.caps[2]._width == (high - 2 * edge) * Bar.CAP,
     "each cap as wide as a quarter of what it rounds")
 check(dress.health._points[1][4] == edge and dress.health._points[2][4] == -edge, "the bar a pixel inside its border")
-check(dress.power._height == (20 - 2 * edge) * Bar.LINE, "the power line a fifth of the bar's height")
+check(dress.power._height == (high - 2 * edge) * Bar.LINE, "the power line a fifth of the bar's height")
 row:SetSize(120, 26)
 dress:GetScript("OnSizeChanged")(dress)
-check(dress._height == 26 and dress._width == dress.want, "the game's row higher (its style): as high, as wide as the line")
+check(dress._height == high and dress._width == dress.want, "the game's row higher (its style): ours as high as its line still")
 row:SetSize(120, 20)
 dress:GetScript("OnSizeChanged")(dress)
 
@@ -540,18 +543,18 @@ W.Wait(0)
 -------------------------------------------------------------------------------
 --  Smaller far away: the game's CVars, its defaults back when off
 -------------------------------------------------------------------------------
-check(W.cvars.nameplateMinScale == "0.25" and C_CVar.GetCVar("nameplateMaxScale") == "1" and W.cvars.nameplateMinScaleDistance == "0"
+check(W.cvars.nameplateMinScale == "0.375" and W.cvars.nameplateMaxScale == "1.5" and W.cvars.nameplateMinScaleDistance == "0"
     and W.cvars.nameplateMaxScaleDistance == "0" and W.cvars.nameplateSelectedScale == "1",
-    "the game's scaling a straight line from full size at your feet to a quarter at the farthest (half at 40 yards), nothing else in it")
+    "the game's scaling a straight line from one and a half at your feet to a quarter of that at the farthest, nothing else in it")
 W.combat = true
 Core.Set(ns.name, "distance", false)
-check(W.cvars.nameplateMinScale == "0.25", "off in a fight: the CVars wait")
+check(W.cvars.nameplateMinScale == "0.375", "off in a fight: the CVars wait")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == "10" and W.cvars.nameplateSelectedScale == "1.2",
     "after it: the game's defaults")
 Core.Set(ns.name, "distance", true)
-check(W.cvars.nameplateMinScale == "0.25", "on again")
+check(W.cvars.nameplateMinScale == "0.375", "on again")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down

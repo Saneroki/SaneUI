@@ -4,8 +4,8 @@ local _, ns = ...
 --  Sane UI - Nameplates - Plate
 --  Our dress on each plate the game shows: a frame of ours on the game's plate
 --  (so it follows the plate's place, scale and fading), centred on the game's
---  health bar row (HealthBarsContainer: its height is the game's nameplate
---  size and style) and as wide as the line inside it wants (Plate.Place),
+--  health bar row (HealthBarsContainer), as high as the line inside it needs
+--  and as wide as that line wants (Plate.Place),
 --  holding our bar (Bar.lua), the line inside it (Text.lua, the raid marker
 --  in it from Marks.lua), the auras around it (Auras.lua) and, on your
 --  target, the combo points (Resource.lua).
@@ -139,16 +139,17 @@ local function Heard(dress, event)
 end
 local OnEvent = ns.Guard(Heard)
 
--- The dress over the game's health bar row: as high, centred on it, as wide as its line wants (Text.Layout); as the
--- row before the line is laid out. The row's size read in the dress's own units (the two may be scaled apart for a
--- moment). Placed anew only when that changed.
+-- The dress centred on the game's health bar row, as high as its line needs (Text.Height) and as wide as it wants
+-- (Text.Layout; the row's width, read in the dress's own units, before the line is laid out). Placed anew only when
+-- that changed.
 function Plate.Place(dress)
     local row = dress.frame and rawget(dress.frame, "HealthBarsContainer")
     if type(row) ~= "table" then return end
-    local width, height = Plain(row:GetWidth()) or 0, Plain(row:GetHeight()) or 0
+    local width = Plain(row:GetWidth()) or 0
     local ours, theirs = Plain(dress:GetEffectiveScale()), Plain(row:GetEffectiveScale())
-    if ours and theirs and ours > 0 then width, height = width * theirs / ours, height * theirs / ours end
+    if ours and theirs and ours > 0 then width = width * theirs / ours end
     width = dress.want or width
+    local height = ns.Text.Height(dress)
     if dress.row == row and dress.wide and math.abs(dress.wide - width) < 0.01 and math.abs(dress.high - height) < 0.01 then
         return
     end

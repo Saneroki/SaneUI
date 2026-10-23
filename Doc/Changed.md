@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: a compact bar; larger plates (Saneroki, 2026-10-23)
+- **Compact** (`Text.lua`, `Plate.lua`): the bar as high as its line (`Text.Height`: the font's height, `Text.PAD` 2
+  over and under, a pixel of border each), no longer the game's row's height; `Text.INSET` 3 (was 5); the health's
+  room measured on its own text in its widest form (the ruler only where it answers hidden).
+- **Larger** (`Scale.lua`): `Scale.NEAR` 1.5 at your feet, the same straight line down to a quarter of it at 60
+  yards (`nameplateMaxScale` 1.5, `nameplateMinScale` 0.375).
+- Tests: 113 checks.
+
 ### Nameplates: half the size; the game's own scaling only (Saneroki, 2026-10-23)
 - **Half the size** (`Scale.lua`): their own size at your feet, half at 40 yards, a quarter at 60. That is one
   straight line, so the game's CVars do it all (`nameplateMinScale` 0.25 at the farthest, both scale distances 0,

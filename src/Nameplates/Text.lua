@@ -38,7 +38,8 @@ ns.Text = Text
 
 -- The game's own font for its plates' names.
 Text.FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFontHighlightSmall" }
-Text.INSET = 5   -- from the bar's ends to the line
+Text.INSET = 3   -- from the bar's ends to the line
+Text.PAD = 2     -- over and under the line, inside the bar
 Text.GAP = 4     -- between two pieces of the line
 Text.NEAR = 1    -- between the quest's icon and its count
 Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
@@ -112,6 +113,11 @@ local ruler -- a font string of ours that only measures: never seen (alpha 0), n
 function Text.Width(text)
     ruler:SetText(text)
     return math.ceil(Drawn(ruler) or 0) + Text.SLACK
+end
+
+-- How high the bar is: the line's font and its padding over and under it, inside a border of a pixel.
+function Text.Height(dress)
+    return math.ceil(Font().height) + 2 * Text.PAD + 2 * Core.Pixels(dress, 1)
 end
 
 -- How wide a text of the line is as it shows now (plain): measured on itself; on the ruler where it answers hidden
@@ -310,7 +316,12 @@ function Text.Health(dress, unit)
     local plainNow, plainMost = Plain(now), Plain(most)
     -- Its room: as wide as the most it can show (so the bar does not change width as health goes), kept while the
     -- most is hidden.
-    if type(plainMost) == "number" then dress.valueRoom = Text.Width(Text.Short(plainMost) .. " | 100%") end
+    -- Measured on the text itself in that form (on the ruler where it answers hidden), then given what it shows.
+    if type(plainMost) == "number" then
+        local widest = Text.Short(plainMost) .. " | 100%"
+        text:SetText(widest)
+        dress.valueRoom = Measure(text, widest)
+    end
     Room(dress, "value", dress.valueRoom or Text.Width("888.8k | 100%"))
     if type(plainNow) == "number" and type(plainMost) == "number" then
         return text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
