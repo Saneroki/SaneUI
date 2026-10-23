@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the white and red outline as thin as the black (Saneroki, 2026-10-23)
+- **Bar.BACKGROUND** solid (alpha 1, was 0.85): the outline plate lies behind the whole bar, and a white or red one
+  showed through the bar's dark and through the fill's soft top and bottom rows, so it looked two or three pixels
+  thick where the black looked one. The cast bar's dark too.
+- Tests: 220 checks.
+
 ### Inventory: the group Adventure Prep now Consumables, the category Consumables now Food (Saneroki, 2026-10-23)
 - **Names only** (`Inventory.lua`: `bagsPrep` the game's `AUCTION_CATEGORY_CONSUMABLES`, `bagsFood` new): the keys
   (`prep`, `consumables`) stay, so what the player chose is kept; a name the player gave stays theirs.

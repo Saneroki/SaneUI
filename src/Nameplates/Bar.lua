@@ -45,7 +45,8 @@ Bar.FILL = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" -- the game's raid frames' h
 Bar.WHITE = "Interface\\Buttons\\WHITE8X8"
 Bar.CAP = 1 / 4 -- a cap's width, as a share of the height of what it rounds
 Bar.LINE = 1 / 3 -- the power line's height (and the combo points'), a share of the bar's
-Bar.BACKGROUND = { 0.07, 0.07, 0.09, 0.85 } -- where health is missing
+Bar.BACKGROUND = { 0.07, 0.07, 0.09, 1 } -- where health is missing: solid, so the outline behind the bar never shows
+                                             -- through it (nor through the fill's soft top and bottom rows)
 Bar.BORDER = { 0, 0, 0, 0.9 }
 Bar.TAPPED = { 0.5, 0.5, 0.5 }      -- tapped by others
 Bar.CALM = { 1, 0.93, 0.55 }        -- a creature that does not attack on sight (neutral to you)

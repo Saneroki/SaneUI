@@ -388,3 +388,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   cast bar (two halves, Core's corner masks), the glow and the rank's line that much rounder by their reach, the bar
   and the cast bar a pixel less; the bar square at its bottom and the cast bar at its top where they meet, the icon
   round at the bottom left, the cast fill at the bottom right. The seam is gone.
+- **2026-10-23:** the bar's dark solid (Saneroki): a white or red outline no longer shows through the bar's soft edges,
+  so it is as thin as the black.

@@ -344,6 +344,7 @@ check(dress.halo[1][1]._parent == dress.glow and dress.border[1]._parent == dres
     and dress.glow._level < dress.border[1]._parent._level and dress.border[1]._parent._level < dress.health._level,
     "each layer on a frame of its own: the glow under the outline, the outline under the bar")
 check(dress.border[1]._vertex[1] == Bar.BORDER[1] and dress.border[1]._vertex[4] == Bar.BORDER[4], "the border black: not your target")
+check(dress.background._vertex[4] == 1, "the bar's dark solid: the outline behind it never shows through, whatever its colour")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
     and #dress.background._masks == 2 and #dress.border[1]._masks == 2 and #dress.border[2]._masks == 2
     and #dress.power:GetStatusBarTexture()._masks == 2,
