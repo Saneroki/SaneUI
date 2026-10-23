@@ -1692,5 +1692,29 @@ W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Droopy" })
 check(#lines == 0, "a name without its surname gets no lines: no player is guessed")
 People.Set("Droopy Fairwind", "alias", nil)
 
+-------------------------------------------------------------------------------
+--  The journal's window: laid out at any size, the edges' tiles counted whole
+-------------------------------------------------------------------------------
+do
+    local J = Core.Journal
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local look = J.Dress(frame, "Bags")
+    check(look.content and look.close and look.head and look.title._text == "Bags", "a dressed frame: its page, its X, its head, its title")
+    local tile = 600 * J.UNIT * J.SCALE
+    -- sizes where a tile's remainder in floating point comes out a hair under a whole tile, and plain ones
+    local sizes = { { 400, 300 }, { 1200.37, 777.7 }, { tile * 3 + 1e-12, tile * 7 - 1e-13 }, { 2731.1, 1529.9 } }
+    for k = 1, 200 do sizes[#sizes + 1] = { 300 + k * 13.37 + k * 1e-9, 200 + k * 7.77 } end
+    for _, size in ipairs(sizes) do
+        frame:SetSize(size[1], size[2])
+        look.Layout()
+    end
+    local most = 0
+    for _, pool in pairs(look.strips) do most = math.max(most, #pool) end
+    check(most > 0 and most <= J.MOST_TILES, "every size laid out, each edge in a few whole tiles")
+    frame:SetSize(1e9, 1e9)
+    look.Layout()
+    check(true, "a size beyond reason lays out without running on")
+end
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Core: all %d checks passed.\n"):format(passed))

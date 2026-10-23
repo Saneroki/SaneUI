@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: the journal's window no longer freezes the game (2026-10-23)
+- Opening the inventory froze the game until the client stopped the script ("script ran too long" in
+  `Journal.lua`): the edges' and the bottom's tiles were laid by stepping a remainder, which in floating point can
+  come out a hair under a whole tile, so the step stopped moving the position and the loop never ended (each round
+  making another texture). `Strip` now counts whole tiles from the first to the last, at most `Journal.MOST_TILES`.
+- `dev/tests/core.lua`: a dressed frame laid out at some 200 sizes, those at the floating-point edge among them, and
+  at one beyond reason (388 checks; the old loop does not finish them).
+
 ### Navigation: no ride straight back (2026-10-22)
 - `Planner.lua` (`Journey`): no ride brings one back to where the rides since the last walk began (`boarded`: for a
   node reached by a ride, that place; `origin` while a node is looked at; neither a ride nor a landing reaches it). A

@@ -120,38 +120,47 @@ end
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
--- A strip of a repeated piece from a to b (units from the frame's top left) along one side, the tile's phase
--- counted from origin, its textures kept in the look's pool under key. Masks go on every texture of the strip.
+-- A strip of a repeated piece from a to b (units from the frame's top left) along one side, the tiles counted from
+-- origin, its textures kept in the look's pool under key. Masks go on every texture of the strip. The tiles are
+-- counted whole (never stepped by a remainder, which in floating point can come out a hair under a tile and stop
+-- the strip from moving on), and no strip has more than Journal.MOST_TILES of them.
+Journal.MOST_TILES = 64
 local function Strip(look, key, piece, layer, across, width, a, b, vertical, origin, masks)
     local frame = look.frame
     local pool = look.strips[key] or {}
     look.strips[key] = pool
     local tile = u(TILE)
-    local n, pos = 0, a
-    while pos < b - 0.01 do
-        local phase = (pos - origin) % tile
-        local len = math.min(tile - phase, b - pos)
-        n = n + 1
-        local t = pool[n]
-        if not t then
-            t = frame:CreateTexture(nil, layer, nil, 0)
-            t:SetTexture(ART .. piece)
-            for _, m in ipairs(masks or {}) do t:AddMaskTexture(m) end
-            pool[n] = t
+    local n = 0
+    if b - a > 0.01 and b - a < tile * Journal.MOST_TILES then
+        local first = math.floor((a - origin) / tile)
+        local last = math.ceil((b - origin) / tile) - 1
+        for i = first, last do
+            local start = origin + i * tile
+            local from, to = math.max(a, start), math.min(b, start + tile)
+            if to - from > 0.01 then
+                n = n + 1
+                local t = pool[n]
+                if not t then
+                    t = frame:CreateTexture(nil, layer, nil, 0)
+                    t:SetTexture(ART .. piece)
+                    for _, m in ipairs(masks or {}) do t:AddMaskTexture(m) end
+                    pool[n] = t
+                end
+                t:ClearAllPoints()
+                local px = U * Journal.SCALE
+                local c0, c1 = (from - start) / px, (to - start) / px
+                if vertical then
+                    t:SetPoint("TOPLEFT", frame, "TOPLEFT", across, -from)
+                    t:SetSize(width, to - from)
+                    Coords(t, piece, 0, EDGE, c0, c1)
+                else
+                    t:SetPoint("TOPLEFT", frame, "TOPLEFT", from, -across)
+                    t:SetSize(to - from, width)
+                    Coords(t, piece, c0, c1, 0, EDGE)
+                end
+                t:Show()
+            end
         end
-        t:ClearAllPoints()
-        local from, to = phase / (U * Journal.SCALE), (phase + len) / (U * Journal.SCALE)
-        if vertical then
-            t:SetPoint("TOPLEFT", frame, "TOPLEFT", across, -pos)
-            t:SetSize(width, len)
-            Coords(t, piece, 0, EDGE, from, to)
-        else
-            t:SetPoint("TOPLEFT", frame, "TOPLEFT", pos, -across)
-            t:SetSize(len, width)
-            Coords(t, piece, from, to, 0, EDGE)
-        end
-        t:Show()
-        pos = pos + len
     end
     for i = n + 1, #pool do pool[i]:Hide() end
 end
