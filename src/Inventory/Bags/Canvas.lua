@@ -142,8 +142,9 @@ function Sheet:Head(place)
     if place.level == 1 then head.word:SetTextColor(ink[1], ink[2], ink[3]) else head.word:SetTextColor(color[1], color[2], color[3], color[4]) end
     head.number:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
     head.number:SetText(block.number and "(" .. tostring(block.number) .. ")" or "")
-    -- the pencil rule only under a part's head and a group's title; a category's name stands right over its cells
-    head.line:SetShown(place.level == 1 or block.title == true)
+    -- the pencil rule only under a part's head; a group's title (Saneroki, 2026-10-23) and a category's name stand
+    -- right over what they hold
+    head.line:SetShown(place.level == 1)
     head.line:SetAlpha(ns.Paper.RULE_ALPHA)
     head.key, head.group = block.key, block.group
     local list = self.owner.store.look == "list" and place.level ~= 1

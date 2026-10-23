@@ -733,8 +733,8 @@ check(swordButton and swordButton:IsShown() and swordButton:GetParent():GetID() 
     "the game's item button, its holder carrying the bag, the button the slot")
 check(drawn[swordButton].texture == "icon2001" and HeadNamed("The Armory") and HeadNamed("Item Set Gear")
     and Y(swordButton) == -HeadNamed("Item Set Gear")._points[1][5] + Layout.MEMBER + Layout.HEAD_GAP
-    and not HeadNamed("Item Set Gear").line:IsShown() and HeadNamed("The Armory").line:IsShown(),
-    "All Items at first: the sword under its category's head (no rule under it), under its group's title (ruled)")
+    and not HeadNamed("Item Set Gear").line:IsShown() and not HeadNamed("The Armory").line:IsShown(),
+    "All Items at first: the sword under its category's head, under its group's title (no rule under either)")
 local levelText
 for _, widget in ipairs(W.frames) do
     if widget._kind == "FontString" and widget._text == 20 or widget._text == "20" then levelText = widget end

@@ -86,6 +86,10 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   square fills the screen, another there brings the window back (`Edge:Clicked`). The strips take left clicks only
   while it is on (`SetMouseClickEnabled`); Edge follows Core's own `changed` for it.
 
+### Inventory: no rule under a group's title (Saneroki, 2026-10-23)
+- A group's title (The Armory, Adventure Prep) has no pencil rule (the double line) under it any more; it stands
+  right over its members' heads, as a category's name does. Only a part's head keeps its rule (`Sheet:Head`).
+
 ### Inventory: no "+" in the empty slots (Saneroki, 2026-10-23)
 - A block's empty slot after its items (Pinned's, a category's) shows no "+" any more, like the empty slots of the
   other views: `plus.sign` and the font `SaneUIBagsPlus` are gone; the slot still takes an item into its category.

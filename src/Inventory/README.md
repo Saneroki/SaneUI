@@ -431,8 +431,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `BAND_GAP` apart, as many as fit across, the next on a new band; each under its head (no rule under it): its
     cells `Layout.SIZE` 51 (half again the game's) and `GAP` 5 apart, then where it takes items (`block.plus`) one empty slot; a block
     takes the room of its cells or of its head's words (the canvas measures them), whichever is wider, at most the
-    room, more cells in more lines; a block with nothing to show left out. A group's title (and a part's head)
-    over the whole width with a pencil rule, its members' blocks side by side under it, a line of their own. An
+    room, more cells in more lines; a block with nothing to show left out. A group's title over the whole width (no rule
+    under it; a part's head with a pencil rule), its members' blocks side by side under it, a line of their own. An
     empty slot: an item let go or clicked on it goes into the block's category, `Menus.Drop` with `stow`), *list*
     (a line `Layout.ROW` high per cell, a folded block its head only, a folded group's title its members too),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
