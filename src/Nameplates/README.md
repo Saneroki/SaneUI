@@ -1,6 +1,6 @@
 # Sane UI: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under your target's, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
@@ -9,7 +9,7 @@ health bar it lays its own: a rectangle with round corners, everything on one li
 while it shows: your quest objective on the unit (a sword or a sack, "0/7"), its raid marker, its level, a
 player's item level ("i32"), your threat on it, its name, its health and how much is left ("1.32m | 100%"). The
 bar is as wide as that line, no wider. Along its bottom a thin line of the unit's mana, rage or energy,
-and on your target your combo points in a row of their own under it, inside the same outline. Its one border is lit on your target and focus, a line
+and your combo points in a row of their own under the bar of the unit you have them on, inside the same outline. Its one border is lit on your target and focus, a line
 behind it tells the unit's rank, a red glow behind that your aggro or a player who may attack you. Right above the bar your own debuffs,
 left of it up to three of a foe's buffs, right of it the crowd control on the unit. Plates
 of players you cannot attack and do not know are hidden; every plate is smaller the farther away it is. When it
@@ -51,10 +51,10 @@ fails, every plate is the game's own again.
 - **The power line:** along the bottom of the bar, inside it, a third of its height: the unit's mana, rage or
   energy in the game's colours, without a background: spent power shows nothing, the bar is seen through it.
   None on a unit without power.
-- **Combo points:** as a rogue, or a druid in cat form, your combo points on your target show in a row of their
-  own right under its bar, a third as high, inside the same outline (a cast's bar comes under them), one segment
-  each (five), a pixel apart, lit as you build them; a point not built shows the bar's dark. Only on a target
-  you can attack.
+- **Combo points:** as a rogue, or a druid in cat form, your combo points show in a row of their own right under
+  the bar of the unit you have them on (your target or not), a third as high, inside the same outline (a cast's bar comes under them), one segment
+  each (five), a pixel apart, lit as you build them; a point not built shows the bar's dark. No row while you
+  have none. Where the game hides the count, on your target's plate only.
 - **Auras:** right above the bar, without a gap, from its left the debuffs and damage over time you put on the
   unit, with the time each has left and its stacks, as many as fit over the bar (eight on the game's medium
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
@@ -90,7 +90,7 @@ fails, every plate is the game's own again.
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points under your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
+  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
@@ -237,13 +237,15 @@ fails, every plate is the game's own again.
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going), once a frame (`Core.Later`). Shown while the game gives combo
   points (`UnitPowerMax("player", Enum.PowerType.ComboPoints)`, at most `Resource.MOST`) and energy is the power
-  shown, on the dress of `C_NamePlate.GetNamePlateForUnit("target")` while `UnitCanAttack` allows. A row of its own
+  shown: every plate's unit that `UnitCanAttack` allows is asked `GetComboPoints("player", unit)`, and its row shows
+  while that is a plain number above 0; a hidden count shows on your target's plate only (`UnitIsUnit`), as it is,
+  since more than none cannot be told. A row of its own
   under the dress (`TOPLEFT` on its `BOTTOMLEFT`, `Resource.SHARE` (a third) of its height, `Resource.Fit`), inside
   its outline: `Bar.Outline` (run as the row or the cast shows or hides) puts the cast under it and anchors the
   border, the rank's line and the glow down to the lowest row; the health bar square at its bottom then, the
   row round at its bottom corners only while it is the lowest (`Resource.Shape`, Core's corner masks), square
   above a cast. Inside it one `StatusBar` per point, a pixel apart, over the bar's dark, in the game's `PowerBarColor.COMBO_POINTS`: segment
-  *i* from *i* - 1 to *i*, each given `GetComboPoints("player", "target")` as the game gives it (secret or not):
+  *i* from *i* - 1 to *i*, each given that count as the game gives it (secret or not):
   the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
   The row's own pair of masks shapes every segment (they reach the first and the last).
 - **Scale** (`Scale.lua`): your target's plate at `Scale.Full()`; any other's from its distance alone (`Range.lua`):
@@ -311,7 +313,7 @@ fails, every plate is the game's own again.
 | `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
 | `Marks.lua` | The raid marker, in the line |
-| `Resource.lua` | Your combo points in a row under your target's bar |
+| `Resource.lua` | Your combo points in a row under the bar of the unit holding them |
 | `Cast.lua` | A unit's cast under its plate's bar: the icon with the seconds left, the spell and its target, cut to fit |
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
@@ -403,3 +405,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the combo points in a row of their own under your target's bar (Saneroki), half its height,
   inside the same outline; a cast's bar under them.
 - **2026-10-23:** the combo points' row thinner (Saneroki): a third of the bar's height, as the power line.
+- **2026-10-23:** the combo points' row on whichever plate holds at least one point, your target's or not, and on
+  none while you have none (Saneroki).

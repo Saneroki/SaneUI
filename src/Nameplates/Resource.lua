@@ -2,20 +2,24 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Resource
---  Your combo points in a row of their own under your target's health bar,
+--  Your combo points in a row of their own under the health bar of the unit
+--  you have them on,
 --  inside the plate's one outline (Bar.Outline: the bar, this row, the cast
 --  bar under it while a cast shows; nothing between them): Resource.SHARE of
 --  the bar's height, one segment per point a pixel apart, lit in the game's
 --  colour for combo points as you build them, the bar's dark where a point is
 --  not built; round at its bottom corners only while nothing is under it
 --  (Resource.Shape). In this client combo
---  points are the one class resource, kept on your target (GetComboPoints of
---  "player" on "target", as the game's own combo frame reads them; at most
---  five). So the strip is on your target's plate only, while you build them
---  (a rogue; a druid while energy is the power shown, in cat form) and the
---  target is one you can attack.
+--  points are the one class resource, kept on one unit (the game's own combo
+--  frame reads them as GetComboPoints of "player" on "target"; at most five).
+--  Every plate of a unit you can attack is asked the same of its own unit, so
+--  the row shows on whichever plate holds at least one point, your target's
+--  or not, and on none while you have none; only while you build them (a
+--  rogue; a druid while energy is the power shown, in cat form).
 --
---  The count may be hidden from addons in a fight (a secret value): each
+--  The count may be hidden from addons (a secret value, where the game
+--  restricts units' power): whether it is more than none cannot be told then,
+--  so a hidden count shows on your target's plate alone, as it is. Each
 --  segment is a status bar of its own, from its point less one to its point,
 --  and takes the count as it is: the bar clamps it, so a segment is full from
 --  its point on and empty below it, and nothing is computed with the count.
@@ -32,7 +36,6 @@ Resource.MOST = 5      -- the most points, as the game's own combo frame counts 
 Resource.SHARE = 1 / 3 -- the row's height, a share of the bar's (Saneroki, 2026-10-23: as thin as the power line)
 Resource.CLASSES = { ROGUE = true, DRUID = true }
 
-local holder -- the dress the strip shows on now (your target's)
 local most = Resource.MOST
 
 -- The game's colour for combo points; ours where it has none.
@@ -133,38 +136,51 @@ function Resource.Shape(dress, lowest)
     ns.Bar.Ends(strip.caps, inner, mode, mode, math.max(ns.Bar.Radius(dress) - edge, 0.01), height)
 end
 
--- The strip on your target's plate, its points as the game gives them; off everywhere else.
-function Resource.Update()
-    local options = ns.options or {}
-    local on = not ns.off and options.resource ~= false and Resource.CLASSES[Core.class] and Building()
-    local plate = on and Core.Ask(C_NamePlate.GetNamePlateForUnit, "target")
-    local dress = plate and ns.Plate.Of(plate)
-    if dress ~= holder then
-        if holder and holder.strip then holder.strip:Hide() end
-        holder = dress
+-- One plate's row: shown with its unit's points while you have at least one on it (a hidden count: on your target's
+-- plate only), hidden otherwise.
+local function One(unit, dress, on)
+    local points
+    if on and Plain(UnitCanAttack("player", unit)) ~= false then
+        local ok, count = pcall(GetComboPoints, "player", unit)
+        if ok then points = count end
     end
-    if not dress then return end
+    local plain = Plain(points)
+    local show
+    if type(points) == "nil" then
+        show = false
+    elseif plain == nil then
+        show = Plain(UnitIsUnit(unit, "target")) == true
+    else
+        show = type(plain) == "number" and plain > 0
+    end
+    if not show then
+        if dress.strip then dress.strip:Hide() end
+        return
+    end
     if not dress.strip then
         Make(dress)
         Resource.Fit(dress)
     end
     local strip = dress.strip
-    if Plain(UnitCanAttack("player", "target")) == false then return strip:Hide() end
-    local ok, points = pcall(GetComboPoints, "player", "target")
-    if not ok or type(points) == "nil" then return strip:Hide() end
     if strip.most ~= most then Segments(dress) end
     for index = 1, most do strip.segments[index]:SetValue(points) end -- each clamps it to its own point
     strip:Show()
 end
 
--- Whether the strip is on that dress now (a plate the game takes back loses it).
+-- Every plate's row, its unit's points as the game gives them.
+function Resource.Update()
+    local options = ns.options or {}
+    local on = not ns.off and options.resource ~= false and Resource.CLASSES[Core.class] and Building()
+    for unit, dress in pairs(ns.Plate.shown) do One(unit, dress, on) end
+end
+
+-- A plate the game takes back loses its row.
 function Resource.Leave(dress)
-    if holder == dress then holder = nil end
     if dress.strip then dress.strip:Hide() end
 end
 
 local again = Core.Later(Resource.Update) -- once a frame, however many of these come together
--- A plate came or went (Plate.lua): your target's may be among them.
+-- A plate came or went (Plate.lua): its unit may hold points.
 function Resource.Again()
     if Resource.CLASSES[Core.class] then again() end
 end

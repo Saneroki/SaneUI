@@ -197,7 +197,7 @@ end
 UnitHealth = function(unit) return Unit(unit).health end
 UnitHealthMax = function(unit) return Unit(unit).most end
 GetRaidTargetIndex = function(unit) return Unit(unit).raid end
-local power, combo = 3, 2
+local power, combo, comboOn = 3, 2, nil -- comboOn: the unit your points are on
 UnitPowerType = function(unit)
     if unit == "player" then return power end
     return 0, Unit(unit).powerToken
@@ -207,7 +207,7 @@ UnitPowerMax = function(unit, kind)
     return Unit(unit).powerMost or 0
 end
 UnitPower = function(unit) return Unit(unit).powerNow end
-GetComboPoints = function() return combo end
+GetComboPoints = function(_, unit) return comboOn ~= nil and Unit(unit) == comboOn and combo or 0 end
 
 -- The game's container of auras for addons: it calls back for each frame it makes, records what it is told.
 W.templates.CustomAuraContainerTemplate = function(widget)
@@ -606,8 +606,10 @@ W.Fire("UNIT_FACTION", "nameplate2")
 check(friend.glow._alpha == 0, "a friend again: no glow")
 
 -------------------------------------------------------------------------------
---  Combo points under your target's bar
+--  Combo points under the bar of the unit you have them on
 -------------------------------------------------------------------------------
+check(not (dress.strip and dress.strip:IsShown()), "no points anywhere: no row")
+comboOn = units.nameplate1
 units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")
 W.Wait(0)
@@ -652,11 +654,25 @@ casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
 check(not dress.cast:IsShown() and dress.border[2]._points[1][2] == strip and strip.caps[1]._texture == Core.Shape.CORNER.BOTTOMLEFT,
     "the cast gone: the points the lowest again")
+combo = 3
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
 W.Wait(0)
-check(not strip:IsShown() and not (friend.strip and friend.strip:IsShown()), "a target you cannot attack: none anywhere")
+check(strip:IsShown() and strip.segments[3]._value == 3 and not (friend.strip and friend.strip:IsShown()),
+    "your points on a foe you no longer target: still on its plate; none on a friend's")
+combo = Secret()
+W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
+W.Wait(0)
+check(not strip:IsShown(), "a hidden count: on your target's plate only")
+combo = 0
 units.target, plates.target = units.nameplate1, plates.nameplate1
+W.Fire("PLAYER_TARGET_CHANGED")
+W.Wait(0)
+check(not strip:IsShown(), "no points: no row, on your target's plate too")
+combo = 2
+W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
+W.Wait(0)
+check(strip:IsShown() and Lit() == 2, "the first point: the row")
 power = Enum.PowerType.Mana
 W.Fire("UNIT_DISPLAYPOWER", "player")
 W.Wait(0)
@@ -669,6 +685,9 @@ Core.Set(ns.name, "resource", false)
 W.Wait(0)
 check(not strip:IsShown(), "the setting off: none")
 Core.Set(ns.name, "resource", true)
+W.Wait(0)
+comboOn = nil
+W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
 W.Wait(0)
 
 -------------------------------------------------------------------------------
