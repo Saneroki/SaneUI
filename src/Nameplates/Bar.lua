@@ -272,22 +272,36 @@ end
 function Bar.Outline(dress)
     local height = Plain(dress:GetHeight()) or 0
     local pixel = Core.Pixels(dress, 1)
-    local below = dress.cast and dress.cast:IsShown() and dress.cast or dress
-    local tall = height + (below ~= dress and (Plain(below:GetHeight()) or 0) or 0)
+    -- The rows under the bar, top to bottom: your combo points (Resource.lua), the cast bar (Cast.lua); each
+    -- right under the one above it.
+    local strip = dress.strip and dress.strip:IsShown() and dress.strip or nil
+    local cast = dress.cast and dress.cast:IsShown() and dress.cast or nil
+    if dress.cast then
+        local above = strip or dress
+        dress.cast:ClearAllPoints()
+        dress.cast:SetPoint("TOPLEFT", above, "BOTTOMLEFT", 0, 0)
+        dress.cast:SetPoint("TOPRIGHT", above, "BOTTOMRIGHT", 0, 0)
+    end
+    local below = cast or strip or dress
+    local tall = height
+    for _, row in ipairs({ strip or false, cast or false }) do
+        if row then tall = tall + (Plain(row:GetHeight()) or 0) end
+    end
     local radius = Bar.Radius(dress)
     Around(dress.border, dress, 0, tall, below, radius)
     local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
     Around(dress.rankLine, dress, pixel * reach, tall, below, radius)
     for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below, radius) end
-    -- The bar a pixel inside the outline; down to the cast bar while one shows, square there, so nothing of the
-    -- outline shows between them.
-    local casting = below ~= dress
+    -- The bar a pixel inside the outline; down to the row under it while one shows, square there, so nothing of the
+    -- outline shows between them. The combo points' row round at its bottom only while the cast bar is not under it.
+    local under = below ~= dress
     local health = dress.health
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", dress, "TOPLEFT", pixel, -pixel)
-    health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, casting and 0 or pixel)
-    local mode = casting and "top" or "both"
-    Bar.Ends(dress.caps, health, mode, mode, math.max(radius - pixel, 0.01), height - (casting and 1 or 2) * pixel)
+    health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, under and 0 or pixel)
+    local mode = under and "top" or "both"
+    Bar.Ends(dress.caps, health, mode, mode, math.max(radius - pixel, 0.01), height - (under and 1 or 2) * pixel)
+    if strip then ns.Resource.Shape(dress, cast == nil) end
     dress.outlined = below
 end
 

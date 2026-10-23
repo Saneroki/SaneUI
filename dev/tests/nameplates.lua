@@ -606,7 +606,7 @@ W.Fire("UNIT_FACTION", "nameplate2")
 check(friend.glow._alpha == 0, "a friend again: no glow")
 
 -------------------------------------------------------------------------------
---  Combo points in your target's bar
+--  Combo points under your target's bar
 -------------------------------------------------------------------------------
 units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")
@@ -621,10 +621,13 @@ local function Lit()
 end
 check(strip and strip:IsShown() and #strip.segments == 5 and Lit() == 2, "on your target's bar: two of five")
 check(strip.segments[3]._min == 2 and strip.segments[3]._max == 3, "each segment a status bar of its own point")
-check(strip._points[1][2] == dress.power and strip._points[1][3] == "TOPLEFT" and strip._height == dress.line,
-    "right on top of the power line, as high as it")
-check(#strip.segments[1]:GetStatusBarTexture()._masks == 2 and strip.segments[5]:GetStatusBarTexture()._masks[2] == dress.caps[2],
-    "the outer corners the bar's own")
+check(strip._points[1][2] == dress and strip._points[1][3] == "BOTTOMLEFT" and strip._height == dress._height * Resource.SHARE,
+    "a row of its own under the bar, half as high")
+check(#strip.segments[1]:GetStatusBarTexture()._masks == 2 and strip.segments[5]:GetStatusBarTexture()._masks[2] == strip.caps[2]
+    and strip.caps[1]._texture == Core.Shape.CORNER.BOTTOMLEFT and strip.caps[2]._texture == Core.Shape.CORNER.BOTTOMRIGHT,
+    "the lowest row: round at its bottom corners alone")
+check(dress.border[2]._points[1][2] == strip and dress.health._points[2][5] == 0 and dress.caps[1]._texture == Core.Shape.CORNER.TOPLEFT,
+    "inside the one outline, the bar square where the row meets it")
 check(strip.segments[1]._points[2][4] < strip.segments[2]._points[1][4] and strip.segments[1]._points[1][4] == 0,
     "a pixel apart, the first from the strip's left")
 local function Backgrounds(frame)
@@ -634,19 +637,21 @@ local function Backgrounds(frame)
     end
     return count
 end
-check(Backgrounds(dress.health) == 1 and Backgrounds(dress.power) == 0 and Backgrounds(strip) == 0 and Backgrounds(strip.segments[1]) == 0,
-    "no background behind the power line or the points: empty shows nothing")
-units.nameplate1.powerMost = 0
-W.Fire("UNIT_MAXPOWER", "nameplate1")
-W.Wait(0)
-check(strip._points[1][2] == dress.health and strip._points[1][3] == "BOTTOMLEFT", "no power line: along the bar's bottom")
-units.nameplate1.powerMost = 100
-W.Fire("UNIT_MAXPOWER", "nameplate1")
-W.Wait(0)
+check(Backgrounds(dress.health) == 1 and Backgrounds(dress.power) == 0 and Backgrounds(strip.inner) == 1 and Backgrounds(strip.segments[1]) == 0,
+    "no background behind the power line; the points' row the bar's dark where a point is not built")
 combo = Secret()
 W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
 W.Wait(0)
 check(strip.segments[1]._value == combo and strip.segments[5]._value == combo, "a hidden count goes to every segment as it is")
+casts.nameplate1 = { name = "Fireball", icon = 135812, starts = (W.clock - 1) * 1000, ends = (W.clock + 2) * 1000 }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(dress.cast:IsShown() and dress.cast._points[1][2] == strip and dress.cast._points[1][3] == "BOTTOMLEFT"
+    and dress.border[2]._points[1][2] == dress.cast, "a cast too: under the points, inside the outline")
+check(strip.caps[1]._texture ~= Core.Shape.CORNER.BOTTOMLEFT and strip.inner._points[2][5] == 0, "the points square then, the cast the lowest")
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
+check(not dress.cast:IsShown() and dress.border[2]._points[1][2] == strip and strip.caps[1]._texture == Core.Shape.CORNER.BOTTOMLEFT,
+    "the cast gone: the points the lowest again")
 units.target, plates.target = units.nameplate2, plates.nameplate2
 W.Fire("PLAYER_TARGET_CHANGED")
 W.Wait(0)
