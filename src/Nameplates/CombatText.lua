@@ -19,8 +19,8 @@ local _, ns = ...
 --  Your damage taken is red with a minus.
 --
 --  Numbers in Sane UI's own font, Kalam Bold, outlined. What did no harm is a
---  pencil drawing in white (dev/tools/combat-art: miss, dodge, parry, block,
---  evade, immune; Art/combat-<name>.blp), larger than the numbers so it reads at a glance;
+--  pencil drawing in white, an immunity's in bright red (dev/tools/combat-art:
+--  miss, dodge, parry, block, evade, immune; Art/combat-<name>.blp), larger than the numbers so it reads at a glance;
 --  what has none (resist, absorb, reflect, interrupt) is the game's word.
 --
 --  A number is a small frame of ours with one text and one picture, from a
@@ -69,6 +69,8 @@ CombatText.FALLBACK = { "CombatTextFont", "SystemFont_NamePlate_Outlined", "Game
 CombatText.ART = "Interface\\AddOns\\SaneUI_Nameplates\\Art\\combat-"
 CombatText.PICTURES = { MISS = "miss", DODGE = "dodge", PARRY = "parry", DEFLECT = "parry", BLOCK = "block",
                         EVADE = "evade", IMMUNE = "immune" }
+-- A drawing's colour where it is not white (Saneroki, 2026-10-23: an immunity bright red).
+CombatText.TINTS = { immune = { 1, 0.15, 0.1 } }
 -- The game's CVars for its own combat text: over units (off while ours is over the plates) and about you (off while
 -- ours is over your character).
 CombatText.CVARS = {
@@ -241,6 +243,8 @@ function CombatText.Nothing(host, kind)
         return
     end
     number.text:Hide()
+    local tint = CombatText.TINTS[name] or CombatText.WHITE
+    number.picture:SetVertexColor(tint[1], tint[2], tint[3])
     number.picture:SetSize(CombatText.PICTURE, CombatText.PICTURE)
     number.picture:Show()
     Play(number, false)

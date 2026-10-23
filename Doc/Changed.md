@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the immunity a red bubble with an "i"; other ideas for dodge and evade (Saneroki, 2026-10-23)
+- `dev/tools/combat-art`: the immunity's bubble larger, an "i" in its middle, no sparkle; `CombatText.TINTS` draws it
+  bright red (`SetVertexColor`, the texture stays white). `--try` draws other ideas into `assets/generated/CombatText/`
+  (not shipped): dodge leaning back under an arrow or stepping aside from it, evade back to a flag, back home, or
+  running to a flag.
+- Tests: `dev/tests/nameplates.lua` 170 checks (the immunity red, the block white).
+
 ### Inventory: the doll's zoom moves the camera into the head; the model cut off at the column's foot (Saneroki, 2026-10-23)
 - `Sheet/Model.lua`: zoomed in, the head went to the scene's middle and the legs, drawn larger, covered the weapons'
   slots. Now the camera's target spline (`Aim`) puts the top of the model (its bounding box) at the top of its place

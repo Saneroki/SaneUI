@@ -783,9 +783,13 @@ check(CVar("nameplateSelectedScale") == "1", "on again")
     W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
     check(dress.numbers[3].picture._texture == CombatText.ART .. "parry", "a parry: its drawing")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "BLOCK", 0, 1)
-    check(dress.numbers[4].picture._texture == CombatText.ART .. "block", "a blow blocked whole: the shield")
+    check(dress.numbers[4].picture._texture == CombatText.ART .. "block" and dress.numbers[4].picture._vertex[2] == 1,
+        "a blow blocked whole: the shield, white")
+    W.Fire("UNIT_COMBAT", "nameplate1", "IMMUNE", "", 0, 1)
+    check(dress.numbers[5].picture._texture == CombatText.ART .. "immune" and dress.numbers[5].picture._vertex[1] == 1
+        and dress.numbers[5].picture._vertex[2] < 0.5, "an immunity: the bubble, bright red")
     W.Fire("UNIT_COMBAT", "nameplate1", "RESIST", "", 0, 1)
-    check(dress.numbers[5].text:IsShown() and dress.numbers[5].text._text == "resist", "no drawing for a resist: the game's word")
+    check(dress.numbers[6].text:IsShown() and dress.numbers[6].text._text == "resist", "no drawing for a resist: the game's word")
     W.gone = { [CombatText.ART .. "evade"] = true }
     W.Fire("UNIT_COMBAT", "nameplate1", "EVADE", "", 0, 1)
     check(dress.numbers[#dress.numbers].text:IsShown() and dress.numbers[#dress.numbers].text._text == "evade"

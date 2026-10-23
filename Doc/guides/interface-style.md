@@ -203,7 +203,8 @@ What a unit takes, rising over its nameplate and over your character (Saneroki, 
 - **Numbers in Kalam Bold**, outlined, in the game's colours (white, a school's colour, green heals, red damage on
   you).
 - **What did no harm is a drawing, not a word:** a miss, dodge, parry, block, evade or immunity is a pencil line
-  drawing, large, with thick lines, white in the game (tinted by code where it needs a colour), on transparency
+  drawing, large, with thick lines, white in the game (an immunity, a bubble with an "i", bright red: tinted by
+  code), on transparency
   with a dark edge round its lines so it reads over any ground, as the outlined numbers do. Drawn by code for now
   (`dev/tools/combat-art`, in the pencil pieces' manner: strokes running past their ends, a lighter second pass).
 

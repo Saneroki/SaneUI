@@ -68,9 +68,9 @@ fails, every plate is the game's own again.
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
   (Kalam Bold, outlined): damage in white (a spell's in the colour of its school), a critical hit larger with a short
-  swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a white
-  pencil drawing instead of a word (an arrow flying over a target, an arrow swerving aside, crossed swords, a shield,
-  a round arrow turning back, a bubble); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
+  swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a
+  pencil drawing instead of a word, in white (an arrow flying over a target, an arrow swerving aside, crossed swords,
+  a shield, a round arrow turning back) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
 - **Over your character:** the same for what you take, rising from just over the middle of the screen, where your
   character stands (your character has no plate in this client): damage in red with a "-". While ours shows, the
@@ -233,7 +233,8 @@ fails, every plate is the game's own again.
   `OnFinished` (guarded) returns it to the pool, as does the dress taken off (`CombatText.Clear`). Lanes
   `CombatText.LANES` in turn, at most `CombatText.MOST` a host (the oldest goes). What did no harm
   (`CombatText.PICTURES`: MISS, DODGE, PARRY and DEFLECT, BLOCK, EVADE, IMMUNE; a WOUND of 0 is a miss, or a block
-  by its flags) is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (48) square; the word from
+  by its flags) is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (48) square, white or tinted by `CombatText.TINTS`
+  (`SetVertexColor`: the immunity bright red); the word from
   `CombatFeedbackText` where it has none or `SetTexture` finds no file. Colours: physical white (red over you, with a
   "-"), a school the game's combat log colour (`CombatText.SCHOOLS`, the first bit set), heals the game's combat
   text green. Amounts in the game's abbreviation (`AbbreviateNumbers` with `Text.STEPS`), written with
