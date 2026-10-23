@@ -47,7 +47,7 @@ fails, every plate is the game's own again.
   warrior's strikes, Charge, and Shoot only with a bow; a mage's bolts). Behind it, from the same edge but reaching
   farther, a line for the unit's rank: gold and thick on a boss, gold and thin on an elite (the game's gold
   dragon), silver and thin on a rare (its silver dragon, also a rare elite); and behind that, the red glow.
-- **The power line:** along the bottom of the bar, inside it, a fifth of its height: the unit's mana, rage or
+- **The power line:** along the bottom of the bar, inside it, a third of its height: the unit's mana, rage or
   energy in the game's colours, without a background: spent power shows nothing, the bar is seen through it.
   None on a unit without power.
 - **Combo points:** as a rogue, or a druid in cat form, your combo points on your target show right on top of
@@ -133,7 +133,7 @@ fails, every plate is the game's own again.
   `Bar.CALM` for `UnitReaction` 4, `Bar.HOSTILE` below it, else `UnitSelectionColor(unit, true)`. The glow is on
   while `Bar.Danger` (a player who `UnitCanAttack` you) or while you have the unit's aggro (`Bar.Glow`, from
   `Text.Threat`): a plain answer by `SetAlpha`, a hidden one by `SetAlphaFromBoolean`.
-- **The power line** (`Bar.Power`): a `StatusBar` inside the bar along its bottom, `Bar.LINE` (a fifth) of the
+- **The power line** (`Bar.Power`): a `StatusBar` inside the bar along its bottom, `Bar.LINE` (a third) of the
   bar's height (two pixels at least), from 0 to `UnitPowerMax`, at `UnitPower` (both as the game gives them), in
   the game's `PowerBarColor` for `UnitPowerType`'s token; hidden where the most is a plain 0 or the setting is
   off; no background. Its coming or going moves the combo points (`Resource.Again`).
@@ -365,3 +365,4 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   an interrupted cast is red and says so, and by whom (Saneroki).
 - **2026-10-23:** the cast bar's colour from the cast alone (Saneroki): interruptible or not, red when interrupted; it
   stays half a second after it was done or interrupted.
+- **2026-10-23:** the power line a third of the bar's height (Saneroki), the combo points as high on it.

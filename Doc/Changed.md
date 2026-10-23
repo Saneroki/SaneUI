@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the power line a third of the bar (Saneroki, 2026-10-23)
+- `Bar.LINE` 1/3 (was 1/5): the unit's mana, rage or energy a third of the bar's height; your combo points as high,
+  on top of it.
+
 ### Inventory: the stats' page more compact (Saneroki, 2026-10-23)
 - Less room round and between the sections (`Sheet/Stats.lua`, at the words' first size): the page's margin 5 (was
   12), between columns 12 (26), between sections 6 (14), a head 21 (26), a line 18 (20); the attributes' boxes 70 by

@@ -41,7 +41,7 @@ ns.Bar = Bar
 Bar.FILL = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" -- the game's raid frames' health fill
 Bar.WHITE = "Interface\\Buttons\\WHITE8X8"
 Bar.CAP = 1 / 4 -- a cap's width, as a share of the height of what it rounds
-Bar.LINE = 1 / 5 -- the power line's height (and the combo points'), a share of the bar's
+Bar.LINE = 1 / 3 -- the power line's height (and the combo points'), a share of the bar's
 Bar.BACKGROUND = { 0.07, 0.07, 0.09, 0.85 } -- where health is missing
 Bar.BORDER = { 0, 0, 0, 0.9 }
 Bar.TAPPED = { 0.5, 0.5, 0.5 }      -- tapped by others
@@ -175,7 +175,7 @@ function Bar.Make(dress)
 end
 
 -- Laid out for the dress's size and the unit's rank: the bar a pixel inside its border, the rank's line reaching
--- out from the same edge, the glow beyond it, the power line a fifth of the bar's height, every cap a quarter of what
+-- out from the same edge, the glow beyond it, the power line a third of the bar's height, every cap a quarter of what
 -- it rounds.
 function Bar.Fit(dress)
     local height = Plain(dress:GetHeight()) or 0

@@ -355,7 +355,7 @@ local edge = Core.Pixels(dress, 1)
 check(dress.border.caps[1]._width == high * Bar.CAP and dress.caps[2]._width == (high - 2 * edge) * Bar.CAP,
     "each cap as wide as a quarter of what it rounds")
 check(dress.health._points[1][4] == edge and dress.health._points[2][4] == -edge, "the bar a pixel inside its border")
-check(dress.power._height == (high - 2 * edge) * Bar.LINE, "the power line a fifth of the bar's height")
+check(dress.power._height == (high - 2 * edge) * Bar.LINE, "the power line a third of the bar's height")
 row:SetSize(120, 26)
 dress:GetScript("OnSizeChanged")(dress)
 check(dress._height == high and dress._width == dress.want, "the game's row higher (its style): ours as high as its line still")
