@@ -1042,7 +1042,9 @@ do
         ["Spawns.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Spawns", { game = "forever", hash = "0000000d", build = 65000, key = "text", fields = { "points" }, types = { "list point" }, patches = {} })\n'
             .. 'if not S then return end\nS.rows["object:1617"] = "65000\\t\\t1429\\03110\\03120"\n'
             .. 'S.rows["npc:69"] = "65000\\t\\t1430\\03160\\03160"\nS.rows["npc:70"] = "65000\\t\\t1430\\03120\\03120"\n'
-            .. 'S.unverified = "object:1617\\030npc:69\\030npc:70"\n' }))
+            -- (for the watchers: a creature of two spawn points, far apart)
+            .. 'S.rows["npc:71"] = "65000\\t\\t1431\\03110\\03110\\0301431\\03180\\03180"\n'
+            .. 'S.unverified = "object:1617\\030npc:69\\030npc:70\\030npc:71"\n' }))
     for _ = 1, 6 do Frame() end
     local spot = Map:Spawns("object:1617")
     check(walks == 1 and #Map:On(1429) == 2 and spot and spot[1429][1][1] == 0.1, "two sets arriving together: read once")
@@ -1067,7 +1069,8 @@ end
 do
     local Watchers = Data.Watchers
     W.AddSets(MakeSets("Verify", {
-        ["NPCs.lua"] = 'local S = SaneUI.Core.Data.Add(1, "NPCs", { game = "forever", hash = "00000020", build = 65000, key = "int", fields = { "name", "services" }, types = { "text", "list text" }, patches = {} })\n'
+        ["NPCs.lua"] = 'local S = SaneUI.Core.Data.Add(1, "NPCs", { game = "forever", hash = "00000020", build = 65000, key = "int", fields = { "name", "services", "levelMin", "levelMax", "rank", "kind", "health" }, '
+            .. 'types = { "text", "list text", "int", "int", "text", "text", "map int int" }, play = { "name", "levelMin", "levelMax", "rank", "kind", "health{}?", "services[]" }, patches = {} })\n'
             .. 'if not S then return end\nS.rows[69] = "65000\\t\\tA Vendor\\tvendor"\nS.rows[70] = "65000\\t\\tA Wolf"\nS.unverified = "69\\03070"\n',
         ["Encounters.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Encounters", { game = "forever", hash = "00000021", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
             .. 'if not S then return end\nS.rows[700] = "65000\\t\\tThe First Boss"\n',
@@ -1093,6 +1096,7 @@ do
     UnitName = function(unit) if unit == "player" then return "Tester", "Stub" end return names[unit] end
     UnitIsPlayer = function(unit) return unit == "player" end
     UnitIsDead = function(unit) return dead[unit] or false end
+    UnitLevel = function(unit) if unit == "player" then return W.level end end -- the creatures' facts: in the next part
     IsInInstance = function() return inside end
     GetInstanceInfo = function() return "A Dungeon", "party", 1, "Normal", 5, 0, false, instance end
     local loot = {}
@@ -1154,15 +1158,6 @@ do
     guids.npc = "GameObject-0-1-2-3-1617-0000CCCC"
     W.Fire("GOSSIP_SHOW")
     check(not Spawns:Unverified("object:1617") and not Objects:Unverified(1617), "a thing used at its spawn: both confirmed")
-
-    -- A quest taken: the set's quest confirmed (the game's ID, the last number of its event)
-    W.AddSets(MakeSets("VerifyQuests", { ["Quests.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Quests", { game = "forever", hash = "00000024", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
-        .. 'if not S then return end\nS.rows[77] = "65000\\t\\tWolves"\nS.rows[78] = "65000\\t\\tBears"\nS.unverified = "77\\03078"\n' }))
-    Frame()
-    local Quests = Data.Set("Quests")
-    W.Fire("QUEST_ACCEPTED", 3, 77)
-    W.Fire("QUEST_TURNED_IN", 78, 450, 0)
-    check(not Quests:Unverified(77) and not Quests:Unverified(78), "a quest taken, and one handed in: confirmed")
 
     -- A boss killed, then its loot: an item the set names confirmed; one it does not only from a corpse of its name
     W.Fire("ENCOUNTER_START", 700, "The First Boss", 1, 5)
@@ -1266,6 +1261,327 @@ do
     for _ = 1, 3 do Frame() end
     check(Items:Get(4500).stats.ITEM_MOD_SPIRIT_SHORT == 2 and Items:Get(4501).name == "Old Blade",
         "from a group member: new stats taken; a row that renames the item: not")
+end
+
+-------------------------------------------------------------------------------
+--  Checked and counted in play (Check.lua, Tally.lua, Quests.lua, Loot.lua, Facts.lua): what the game tells compared
+--  field by field, confirmed or learned; quests offered, taken, worked on, handed in; every loot window counted; places
+--  seen merged by yards; creatures, vendors and spells
+-------------------------------------------------------------------------------
+do
+    local Watchers, Tally, Loot, Checks = Data.Watchers, Data.Tally, Data.Loot, Data.Checks
+    -- A set's file as dev/tools/data writes it: its rows (fields cut by tabs, as in the master's order)
+    local function SetText(name, hash, fields, types, play, rows, unverified)
+        local function Quoted(list)
+            local out = {}
+            for index, each in ipairs(list or {}) do out[index] = ("%q"):format(each) end
+            return table.concat(out, ", ")
+        end
+        local text = ('local S = SaneUI.Core.Data.Add(1, %q, { game = "forever", hash = %q, build = 65000, key = "int", fields = { %s }, types = { %s }, %spatches = {} })\nif not S then return end\n')
+            :format(name, hash, Quoted(fields), Quoted(types), play and ("play = { " .. Quoted(play) .. " }, ") or "")
+        for key, row in pairs(rows) do text = text .. ("S.rows[%d] = %q\n"):format(key, "65000\t\t" .. row) end
+        if unverified then text = text .. ("S.unverified = %q\n"):format(unverified) end
+        return text
+    end
+    local QUEST_FIELDS = { "name", "level", "minLevel", "side", "races", "classes", "requires", "startNPCs", "startObjects",
+        "startItems", "finishNPCs", "finishObjects", "objectives", "next", "rewardMoney", "rewardXP", "rewardItems",
+        "rewardChoices", "rewardSpell", "tags", "groupSize" }
+    local SIDED = "list tuple(npc:int,side:text)"
+    local QUEST_TYPES = { "text", "int", "int", "text", "list int", "list int", "list tuple(kind:text,quest:int,side:text)",
+        SIDED, "list tuple(object:int,side:text)", "list int", SIDED, "list tuple(object:int,side:text)",
+        "list tuple(index:int,kind:text,what:int,count:int,text:text,stage:int)", "int", "int", "int",
+        "list tuple(item:int,count:int)", "list tuple(item:int,count:int)", "int", "list text", "int" }
+    local QUEST_PLAY = { "name", "level", "minLevel?", "side?", "races?", "classes?", "requires?", "startNPCs.npc",
+        "startObjects.object", "startItems[]", "finishNPCs.npc", "finishObjects.object", "objectives", "next?",
+        "rewardMoney", "rewardXP", "rewardItems", "rewardChoices", "rewardSpell", "tags[]?", "groupSize?" }
+    -- A quest's row: its fields by name, in the set's order (\030 between a list's elements, \031 between parts)
+    local function Row(values)
+        local out = {}
+        for index, field in ipairs(QUEST_FIELDS) do out[index] = values[field] or "" end
+        return table.concat(out, "\t")
+    end
+    W.AddSets(MakeSets("Play", {
+        ["Quests.lua"] = SetText("Quests", "00000030", QUEST_FIELDS, QUEST_TYPES, QUEST_PLAY, {
+            [77] = Row({ name = "Wolves", level = "5", minLevel = "3", side = "alliance", requires = "done\03176", startNPCs = "69",
+                         finishNPCs = "69", objectives = "1\031kill\03170\0318\031Wolf slain", rewardXP = "450" }),
+            [79] = Row({ name = "Boars", level = "10", minLevel = "8", side = "horde", races = "2",
+                         requires = "done\03150\030closed\03151" }),
+            [80] = Row({ name = "Hides", level = "7", startNPCs = "69", finishNPCs = "69", rewardXP = "200",
+                         objectives = "1\031loot\0312001\0314\031Wolf Hide" }),
+        }, "77\03079\03080"),
+        ["Vendors.lua"] = SetText("Vendors", "00000031", { "goods" }, { "list tuple(item:int,price:int)" }, { "goods.item" },
+            { [69] = "2010\03150" }, "69"),
+        ["Spells.lua"] = SetText("Spells", "00000032", { "name", "rank", "icon" }, { "text", "text", "int" }, { "name", "rank", "icon" },
+            { [8613] = "Skinning", [133] = "Fireball\tRank 1\t135812" }, "133"),
+    }))
+    for _ = 1, 3 do Frame() end
+    local Quests, Vendors, Spells, NPCs, Spawns = Data.Set("Quests"), Data.Set("Vendors"), Data.Set("Spells"), Data.Set("NPCs"), Data.Set("Spawns")
+    check(Quests:Ready() and Quests:PlayFields()[1] == "name" and Quests:HasField("rewardXP") and not Quests:HasField("nothing"),
+        "a set's play list comes with its file: how play tells each field")
+
+    -- The stand-in's world: the map (1000 yards square), the units, the quest window and log
+    local guids, names, levels, dead, players = { player = "Player-70-0000ABCD" }, {}, {}, {}, {}
+    local here = { map = 1430, x = 0.25, y = 0.40 }
+    C_Map = { GetBestMapForUnit = function() return here and here.map end,
+        GetPlayerMapPosition = function(map) if here and here.map == map then return { GetXY = function() return here.x, here.y end } end end,
+        GetMapWorldSize = function() return 1000, 1000 end }
+    UnitGUID = function(unit) return guids[unit] end
+    UnitName = function(unit) if unit == "player" then return "Tester", "Stub" end return names[unit] end
+    UnitIsPlayer = function(unit) return unit == "player" or players[unit] == true end
+    UnitIsDead = function(unit) return dead[unit] or false end
+    UnitLevel = function(unit) if unit == "player" then return W.level end return levels[unit] end
+    UnitRace = function() return "Human", "Human", 1 end
+    UnitClass = function() return "Mage", "MAGE", 8 end
+    UnitFactionGroup = function() return "Alliance" end
+    GetMaxPlayerLevel = function() return 60 end
+    IsInInstance = function() return false end
+    W.level = 4
+    local function Npc(id) return ("Creature-0-1-2-3-%d-0000%04X"):format(id, id) end
+    local window = {}       -- the quest window: { quest, title, rewards = { {item, count} }, choices, xp, money }
+    local completed = {}    -- [quest] = true: done once
+    local log = {}          -- the quest log: { { info = {...}, objectives = {...} } }
+    GetQuestID = function() return window.quest end
+    GetTitleText = function() return window.title end
+    GetNumQuestRewards = function() return #(window.rewards or {}) end
+    GetNumQuestChoices = function() return #(window.choices or {}) end
+    GetQuestItemInfo = function(kind, index)
+        local item = (kind == "reward" and window.rewards or window.choices)[index]
+        return "An Item", 134000, item.count, 2, true, item.item
+    end
+    GetRewardXP = function() return window.xp or 0 end
+    GetRewardMoney = function() return window.money or 0 end
+    C_QuestInfoSystem = { GetQuestRewardSpells = function() return {} end }
+    C_QuestLog = {
+        GetLogIndexForQuestID = function(quest) for index, entry in ipairs(log) do if entry.info.questID == quest then return index end end end,
+        GetInfo = function(index) return log[index] and log[index].info end,
+        GetQuestObjectives = function(quest) for _, entry in ipairs(log) do if entry.info.questID == quest then return entry.objectives end end end,
+        GetNumQuestLogEntries = function() return #log end,
+        IsQuestFlaggedCompleted = function(quest) return completed[quest] == true end,
+    }
+    local function Offer(quest, title, giver, extra)
+        window = extra or {}
+        window.quest, window.title = quest, title
+        guids.npc = giver
+        W.Fire("QUEST_DETAIL")
+    end
+    local function Take(quest, title, level, objectives)
+        log[#log + 1] = { info = { questID = quest, title = title, level = level, suggestedGroup = 0, isHeader = false },
+            objectives = objectives }
+        W.Fire("QUEST_ACCEPTED", quest)
+        W.Wait(0)
+    end
+    local function Told(name, key)
+        local told = {}
+        for _, part in ipairs(Data.ConfirmedParts(name, key)) do told[part] = true end
+        return told
+    end
+
+    -- A quest our data has, offered by its giver: what agrees confirmed, the rewards it lacks learned
+    completed[76] = true
+    Offer(77, "Wolves", Npc(69), { rewards = { { item = 2000, count = 1 } }, xp = 450 })
+    local wolves, told = Quests:Get(77), Told("Quests", 77)
+    check(wolves and wolves.rewardItems and wolves.rewardItems[1].item == 2000 and Data.Learned("Quests", 77)
+        and wolves.objectives[1].what == 70 and wolves.requires[1].quest == 76,
+        "a quest offered with rewards the set lacks: learned, the set's other facts carried along")
+    check(told.name and told["startNPCs=69"] and told.rewardItems and told.rewardXP and told.rewardMoney and not told.objectives
+        and not told.requires, "and what the game told kept with it, so the harvest takes only that")
+    -- Taken: the log's level and objectives
+    Take(77, "Wolves", 5, { { text = "Wolf slain: 0/8", type = "monster", numRequired = 8, numFulfilled = 0, finished = false } })
+    told = Told("Quests", 77)
+    check(told.level and told.objectives and Quests:Get(77).objectives[1].text == "Wolf slain",
+        "taken: its level and objectives as the log lists them (the count's numbers left out)")
+
+    -- A quest whose every fact the game confirms while it is done: confirmed field by field, then whole
+    Offer(80, "Hides", Npc(69), { xp = 200 })
+    check(Quests:Unverified(80) and not Quests:Unverified(80, "name") and not Quests:Unverified(80, "startNPCs=69")
+        and not Data.Learned("Quests", 80), "offered as our data has it: its fields confirmed, the entry not yet whole")
+    Take(80, "Hides", 7, { { text = "Wolf Hide: 0/4", type = "item", numRequired = 4, numFulfilled = 0, finished = false } })
+    check(Quests:Unverified(80), "taken: still its taker to see")
+    window = { quest = 80 }
+    guids.npc = Npc(69)
+    W.Fire("QUEST_COMPLETE")
+    check(not Quests:Unverified(80), "handed in to its taker: every field the game can tell told, the whole quest confirmed")
+
+    -- An offer proves requirements wrong: a lower level, another race and side, a quest not done first
+    completed[51] = false
+    Offer(79, "Boars", Npc(69))
+    local boars = Quests:Get(79)
+    check(boars.minLevel == 4 and boars.side == nil and boars.races[2] == 1 and #boars.requires == 1
+        and boars.requires[1].kind == "closed", "offered at level 4, to a human of the Alliance, without quest 50 done: narrowed")
+    -- A quest another player shares says nothing of who gives it or what it needs
+    players.npc = true
+    Offer(78, "Shared", "Player-70-00001234")
+    players.npc = nil
+    check(Quests:Get(78) and not Quests:Get(78).startNPCs and not Quests:Get(78).minLevel,
+        "a quest shared by a player: learned by its title, no giver, nothing narrowed")
+
+    -- A quest only Forever has: learned whole as it is done
+    Offer(90, "Rats", Npc(71), { rewards = {}, xp = 300, money = 120 })
+    Take(90, "Rats", 6, { { text = "Sewer Rat slain: 0/5", type = "monster", numRequired = 5, numFulfilled = 0, finished = false } })
+    -- a rat killed: the count goes up with the dead rat targeted
+    guids.target, names.target, dead.target = Npc(72), "Sewer Rat", true
+    log[#log].objectives[1].numFulfilled = 1
+    W.Fire("QUEST_WATCH_UPDATE", 90)
+    W.Wait(1)
+    local rats = Quests:Get(90)
+    check(rats and rats.name == "Rats" and rats.startNPCs[1].npc == 71 and rats.level == 6 and rats.rewardXP == 300
+        and rats.rewardMoney == 120 and rats.objectives[1].kind == "kill" and rats.objectives[1].what == 72
+        and rats.objectives[1].count == 5, "a quest the set lacks: its giver, level, rewards and objectives, the creature it asks for")
+    local cell = Tally.Of("cells", "quest:90/1")
+    check(cell and cell[1][1] == 1430 and cell[1][2] == 4025 and cell[1][3] == 1, "where its count went up: a cell of the map")
+    guids.target, names.target, dead.target = nil, nil, nil
+    -- handed in, then the next of its chain offered by the same NPC at once
+    window = { quest = 90 }
+    guids.npc = Npc(71)
+    W.Fire("QUEST_COMPLETE")
+    W.Fire("QUEST_TURNED_IN", 90, 300, 120)
+    Offer(91, "More Rats", Npc(71))
+    check(Quests:Get(90).finishNPCs[1].npc == 71 and Quests:Get(90).next == 91, "handed in to its taker; the quest it led to is its next")
+    W.Wait(1)
+    W.Fire("QUEST_TURNED_IN", 91, 0, 0)
+    W.Wait(1)
+    W.Fire("GOSSIP_SHOW")
+    Offer(92, "Other", Npc(71))
+    check(Quests:Get(91).next == nil, "a quest offered after the NPC's list: no chain")
+
+    -- Loot: each corpse once, from the game's source per slot; a quest's item counted for those on it
+    local slots, fishing = {}, false -- { item, name, count, sources = { guid, count, ... } }
+    GetNumLootItems = function() return #slots end
+    GetLootSlotLink = function(slot) return slots[slot].item and ("|Hitem:%d::|h[x]|h"):format(slots[slot].item) end
+    GetLootSlotInfo = function(slot) return 134000, slots[slot].name, slots[slot].count or 1 end
+    GetLootSourceInfo = function(slot) return unpack(slots[slot].sources) end
+    IsFishingLoot = function() return fishing end
+    local function Of(key)
+        local out = {}
+        for _, record in ipairs(Tally.Of("drops", key) or {}) do out[table.concat(record, ",", 1, record[1] == "c" and 3 or 4)] = record[record[1] == "c" and 4 or 5] end
+        return out
+    end
+    local A, B, C, D = Npc(70):gsub("0046$", "000A"), Npc(70):gsub("0046$", "000B"), Npc(70):gsub("0046$", "000C"), Npc(70):gsub("0046$", "000D")
+    slots = { { item = 2001, name = "Wolf Hide", sources = { A, 1 } }, { sources = { A, 0 } } }
+    W.Fire("LOOT_OPENED", false, false)
+    local wolf = Of("npc:70")
+    check(wolf["c,loot,0"] == 1 and wolf["c,loot,80"] == 1 and wolf["d,loot,2001,80"] == 1,
+        "a corpse looted: one loot, one for quest 80 too (its item not yet all gathered), the hide counted for those on it")
+    W.Fire("LOOT_OPENED", false, false)
+    check(Of("npc:70")["c,loot,0"] == 1, "the same window opened again: nothing counted twice")
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-1", 8613)
+    slots = { { item = 2002, name = "Light Leather", sources = { A, 1 } } }
+    W.Fire("LOOT_OPENED", false, false)
+    check(Of("npc:70")["c,skin,0"] == 1 and Of("npc:70")["d,skin,2002,0"] == 1, "skinned after the cast: a loot of its own way")
+    W.Wait(5)
+    slots = { { item = 2003, name = "Wolf Fang", count = 3, sources = { B, 1, C, 2 } } }
+    W.Fire("LOOT_OPENED", false, false)
+    wolf = Of("npc:70")
+    check(wolf["c,loot,0"] == 3 and wolf["d,loot,2003,0"] == 2, "two corpses looted together: two loots, the fang from each")
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-2", 921)
+    slots = { { item = 2004, name = "Coin", sources = { D, 1 } } }
+    W.Fire("LOOT_OPENED", false, false)
+    W.Wait(5)
+    slots = { { item = 2003, name = "Wolf Fang", sources = { D, 1 } } }
+    W.Fire("LOOT_OPENED", false, false)
+    wolf = Of("npc:70")
+    check(wolf["c,pickpocket,0"] == 1 and wolf["d,pickpocket,2004,0"] == 1 and wolf["c,loot,0"] == 4,
+        "a pocket picked, then its corpse looted: one of each")
+    local cells = Tally.Of("cells", "npc:70")
+    check(cells and cells[1][2] == 4025 and cells[1][3] == 4, "where each corpse was looted: its cell")
+    -- a herb gathered (the set Objects calls it one): a gather, and where it stands
+    local node = "GameObject-0-1-2-3-1617-00000001"
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-3", 2366)
+    slots = { { item = 765, name = "Silverleaf", count = 2, sources = { node, 2 } } }
+    W.Fire("LOOT_OPENED", false, false)
+    W.Fire("LOOT_OPENED", false, false)
+    local point = Tally.Of("points", "object:1617")
+    check(Of("object:1617")["c,gather,0"] == 1 and Of("object:1617")["d,gather,765,0"] == 1 and point and point[1][1] == 1430
+        and point[1][2] == 25 and point[1][3] == 40 and point[1][4] == 1, "a node gathered: once, its place seen")
+    -- fishing: for the zone; a container from the bags: nothing; a client without sources: nothing
+    fishing = true
+    slots = { { item = 6303, name = "Raw Trout", sources = {} } }
+    W.Fire("LOOT_OPENED", false, false)
+    fishing = false
+    check(Of("zone:1430")["c,fish,0"] == 1 and Of("zone:1430")["d,fish,6303,0"] == 1, "fished: for the zone")
+    slots = { { item = 2005, sources = { Npc(73), 1 } } }
+    W.Fire("LOOT_OPENED", false, true)
+    local source = GetLootSourceInfo
+    GetLootSourceInfo = nil
+    W.Fire("LOOT_OPENED", false, false)
+    GetLootSourceInfo = source
+    check(not Tally.Of("drops", "npc:73") and Loot.blind, "from the bags, or with no source per slot: nothing counted")
+
+    -- Places seen: merged by yards, one visit at a time
+    check(Tally.Point("npc:500", 1430, 50, 50) and not Tally.Point("npc:500", 1430, 50.2, 50), "seen twice at once: one visit")
+    W.Wait(Tally.VISIT + 1)
+    Tally.Point("npc:500", 1430, 50.3, 50)
+    Tally.Point("npc:500", 1430, 60, 60)
+    Tally.Point("npc:500", 1431, 50, 50)
+    local seen = Tally.Of("points", "npc:500")
+    check(#seen == 3 and seen[1][4] == 2 and seen[1][2] == 50.15 and seen[2][4] == 1 and seen[3][1] == 1431,
+        "again later, 3 yards off: the same place, its point the mean; farther, or on another map: places of their own")
+    check(not Tally.Cell("npc:500", 1430, 100, 5) and not Tally.Point("npc:5\0310", 1430, 1, 1), "off the map, or a key that breaks a row: refused")
+    local part = SaneUIData_Learned.forever
+    local _, block = next(part.tally)
+    check(type(block.id) == "string" and #block.id == 16 and part.maps[1430] == "1000\0311000"
+        and type(block.drops["npc:70"]) == "string", "kept packed per build, with a random id and the maps' sizes")
+
+    -- Spawns: the point stood at confirmed, the whole once every point is
+    here = { map = 1431, x = 0.105, y = 0.10 }
+    guids.mouseover = Npc(71)
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    local first, second = Watchers.Code({ map = 1431, x = 10, y = 10 }), Watchers.Code({ map = 1431, x = 80, y = 80 })
+    check(first == "p1433963631", "a spawn point's part: its map and place to a tenth (the harvest makes the same)")
+    check(not Spawns:Unverified("npc:71", first) and Spawns:Unverified("npc:71", second) and Spawns:Unverified("npc:71"),
+        "a creature of two spawn points seen at one: that point confirmed, not the other, nor the whole")
+    here = { map = 1431, x = 0.80, y = 0.805 }
+    W.Wait(Watchers.AGAIN + 1)
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    check(not Spawns:Unverified("npc:71"), "seen at the other too: the whole spawn confirmed")
+    here = { map = 1430, x = 0.25, y = 0.40 }
+
+    -- Creatures: what the game shows learned or confirmed; a level outside the set's widens it
+    guids.mouseover, names.mouseover, levels.mouseover = Npc(300), "Ogre Mauler", 12
+    UnitClassification = function() return "elite" end
+    UnitCreatureType = function() return "Giant" end
+    UnitHealthMax = function() return 1500 end
+    UnitPlayerControlled = function() return false end
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    local ogre = NPCs:Get(300)
+    check(ogre and ogre.name == "Ogre Mauler" and ogre.levelMin == 12 and ogre.levelMax == 12 and ogre.rank == "elite"
+        and ogre.kind == "giant" and ogre.health[12] == 1500, "a creature the set lacks, seen: learned as the game shows it")
+    levels.mouseover = 13
+    UnitHealthMax = function() return 1600 end
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    ogre = NPCs:Get(300)
+    check(ogre.levelMin == 12 and ogre.levelMax == 13 and ogre.health[12] == 1500 and ogre.health[13] == 1600,
+        "seen at another level: the highest widened, its health at that level added")
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    UnitPlayerControlled = function() return true end
+    guids.mouseover, levels.mouseover = Npc(301), 20
+    W.Fire("UPDATE_MOUSEOVER_UNIT")
+    UnitPlayerControlled = function() return false end
+    check(not NPCs:Get(301), "a creature a player controls (a pet, a totem): not looked at")
+    -- A vendor's goods: an item the set lacks added, none taken away
+    local goods = { 2010, 2011 }
+    GetMerchantNumItems = function() return #goods end
+    GetMerchantItemID = function(index) return goods[index] end
+    CanMerchantRepair = function() return true end
+    guids.npc = Npc(69)
+    W.Fire("MERCHANT_SHOW")
+    W.Wait(1)
+    local wares = Vendors:Get(69)
+    check(wares and #wares.goods == 2 and wares.goods[1].price == 50 and wares.goods[2].item == 2011 and Told("Vendors", 69)["goods=2010"],
+        "a vendor's window: the good the set lacks added, the price the set has kept")
+    -- Spells: name, rank, icon; all three as the set has them confirm the spell
+    C_Spell = { GetSpellName = function(id) return ({ [133] = "Fireball", [134] = "Frost Nova" })[id] end,
+        GetSpellSubtext = function(id) return id == 133 and "Rank 1" or "" end,
+        GetSpellTexture = function(id) return id == 133 and 135812 or 135848 end }
+    Data.Facts.Spell(133)
+    Data.Facts.Spell(134)
+    check(not Spells:Unverified(133) and Spells:Get(134) and Spells:Get(134).name == "Frost Nova" and Spells:Get(134).icon == 135848,
+        "a spell as the set has it: confirmed whole; one it lacks: learned")
+
+    -- Check alone: a field the game shows empty, a field the set has not
+    check(Data.Check("Quests", 79, { groupSize = Checks.NONE, nothing = 1 }) and Told("Quests", 79).groupSize,
+        "the game shows a field empty and the set has none: told, agreeing; a field the set has not: passed over")
+    check(not Data.Check("Nowhere", 1, { name = "x" }), "a set that is not there: nothing")
 end
 
 -------------------------------------------------------------------------------

@@ -632,6 +632,158 @@ with Copy() as copy:
           (counts(report, "Folk", "forever").get("verified"), sorted(counts(report, "Gear", "forever-beta"))),
           (1, ["agreeing"]))
 
+# Checked and counted in play: the schema's play list, a field the game changed alone, the ledger and what it stages -
+import play as plays  # noqa: E402
+import schema as schemas_p  # noqa: E402
+
+caught("a play list naming no field", lambda c: c.replace("Folk/schema.toml", "\n[fields]", '\nplay = ["name", "nope"]\n\n[fields]'),
+       "play 'nope' names no field")
+caught("a play list's member of what is no list", lambda c: c.replace("Folk/schema.toml", "\n[fields]", '\nplay = ["name.first"]\n\n[fields]'),
+       "is no part of a list of tuples")
+with Copy() as copy:
+    copy.replace("Folk/schema.toml", "\n[fields]", '\nplay = ["name", "title?", "home"]\n\n[fields]')
+    # Ama's title as the game said it, the rest of her the batch's
+    copy.append("Folk/Folk.jsonl", '{"key":1,"since":65100,"src":["game"],"title":"Master Smith"}\n')
+    master = loaded(copy.root)
+    schema = master.schemas["Folk"]
+    check("play: read, how each field is told", [(t.field.name, t.how, t.optional) for t in schema.play],
+          [("name", "whole", False), ("title", "whole", True), ("home", "whole", False)])
+    text, _ = compiler_v.set_file(master, schema, "forever")
+    check("compile: the play list in the set file's header", 'play = { "name", "title?", "home" },' in text, True)
+    check("compile: a field the game changed alone makes the batch's other fields no fact of the game's",
+          [line for line in text.splitlines() if line.startswith("S.unverified")], ['S.unverified = "1\\0302"'])
+    check("covered: every field of the play list told (the optional ones aside)",
+          (plays.covered(schema, {"name": "A", "title": "B", "home": [1, 2, 3]}, {"name", "home"}),
+           plays.covered(schema, {"name": "A", "home": [1, 2, 3]}, {"name"}), plays.covered(schema, {}, {"name"})),
+          (True, False, False))
+
+    # The harvest of what the game told: a learned row staged with only the fields it told; an entry the game told
+    # field by field, over two saved files, confirmed whole once every field was
+    wow = Path(copy.folder) / "wow"
+    live = wow / "_forever_"
+    saved = live / "WTF" / "Account" / "A1" / "SavedVariables"
+    saved.mkdir(parents=True)
+    (live / ".flavor.info").write_text("Product Flavor!STRING:0\nwowf\n")
+    (saved / "SaneUI.lua").write_text("\n".join([
+        "SaneUIData_Learned = {",
+        '["forever"] = {',
+        '["builds"] = { [65100] = "1.60.1", },',
+        '["learned"] = { ["Folk"] = { [1] = "65100\\t20750\\tAma Brightwater\\tGuildmaster\\t1429\\03142.5\\03163.1", }, },',
+        '["confirmed"] = { ["Folk"] = { [1] = "20750\\03165100\\031title", [2] = "20750\\03165100\\031name", }, },',
+        '["maps"] = { [1430] = "1000\\0311000", },',
+        '["tally"] = { [65100] = { ["id"] = "00aa00bb00cc00dd", ["drops"] = { ["npc:70"] = "c\\031loot\\0310\\0314\\030d\\031loot\\0312001\\0310\\0313\\0313", },',
+        '  ["points"] = { ["npc:69"] = "1430\\03160.5\\03160.2\\0313", }, ["cells"] = { ["npc:70"] = "1430\\0314025\\0312", }, }, },',
+        "},",
+        "}",
+        ""]), encoding="utf-8")
+    ledger_file = Path(copy.folder) / "ledger.json"
+    ledger = plays.Ledger(ledger_file)
+    lines, report = harvests.harvest(master, harvests.saved_files(wow), ledger)
+    ledger.save()
+    learned = [line for line in lines if line.get("fields")]
+    check("harvest: a learned row with what the game told of it only",
+          [(line["key"], line["fields"]) for line in learned], [(1, {"title": "Guildmaster"})])
+    check("harvest: an entry whose every field of the play list the game told: confirmed whole",
+          [(line["key"], line["confirmed"]) for line in lines if line.get("confirmed")], [(2, "2026-10-24")])
+    again = plays.Ledger(ledger_file)
+    check("ledger: the counts, places and cells added up, the block remembered",
+          (again.drops["forever"]["npc:70"]["65100"], again.points["forever"]["npc:69"], again.cells["forever"]["npc:70"],
+           list(again.taken["forever"]), again.maps["forever"]),
+          ({"c": {"loot|0": 4}, "d": {"loot|2001|0": [3, 3]}}, [[1430, 60.5, 60.2, 3]], {"1430|4025": 2},
+           ["00aa00bb00cc00dd"], {"1430": [1000, 1000]}))
+    harvests.harvest(master, harvests.saved_files(wow), again)
+    check("ledger: the same saved file again: nothing counted twice",
+          (again.drops["forever"]["npc:70"]["65100"]["c"], again.points["forever"]["npc:69"][0][3]), ({"loot|0": 4}, 3))
+    grown = (saved / "SaneUI.lua").read_text().replace("\\0314\\030d", "\\0319\\030d").replace("\\0313\\0313", "\\0315\\0316")
+    (saved / "SaneUI.lua").write_text(grown)
+    harvests.harvest(master, harvests.saved_files(wow), again)
+    check("ledger: the block grown since: only what it grew by added",
+          again.drops["forever"]["npc:70"]["65100"], {"c": {"loot|0": 9}, "d": {"loot|2001|0": [5, 6]}})
+    check("harvest: files a player sent, every game version they hold",
+          [game for game, _ in harvests.sent_files(wow)], [None])
+
+
+class Stub:
+    """A master of a few sets for what the counts stage: {set: {key: [fields of each version]}}."""
+
+    def __init__(self, sets):
+        self.schemas = {name: None for name in sets}
+        self.sets = sets
+
+    def view(self, name, game):
+        return {key: [masters.Version(0, None, False, fields, None) for fields in versions]
+                for key, versions in self.sets.get(name, {}).items()}
+
+
+def counted(game="forever", **kinds):
+    ledger = plays.Ledger(None)
+    ledger.maps = {game: {"1430": [1000, 1000]}}
+    for kind, value in kinds.items():
+        getattr(ledger, kind)[game] = value
+    return ledger
+
+
+def tally_report():
+    return {"staged": collections.Counter(), "waiting": collections.Counter(), "changes": [], "dropped": 0}
+
+
+import collections  # noqa: E402
+
+# Drops: chances from enough loots; our data's items play never saw kept where they are rare; staged again on growth
+stub = Stub({"Drops": {"npc:70": [{"items": [{"item": 2001, "chance": 50}, {"item": 9999, "chance": 0.5},
+                                              {"item": 8888, "chance": 30}]}]}})
+ledger = counted(drops={"npc:70": {"65100": {"c": {"loot|0": 60}, "d": {"loot|2001|0": [30, 33], "loot|2002|0": [2, 2]}}}})
+report = tally_report()
+lines = plays.drops(stub, ledger, "forever", 65100, "2026-10-24", report)
+check("drops: the chances from 60 loots; one seen twice, no chance yet; our data's rare one kept, a common one gone",
+      (lines[0]["fields"] if lines else None, report["dropped"]),
+      ({"loots": 60, "items": [{"item": 2001, "how": "loot", "drops": 30, "chance": 50.0},
+                               {"item": 2002, "how": "loot", "drops": 2}, {"item": 9999, "chance": 0.5}]}, 1))
+ledger.drops["forever"]["npc:70"]["65100"]["c"]["loot|0"] = 80
+check("drops: staged again only once the loots grew by half", plays.drops(stub, ledger, "forever", 65100, "2026-10-24", tally_report()), [])
+few = counted(drops={"npc:71": {"65100": {"c": {"loot|0": 49, "skin|0": 60}, "d": {"skin|2002|0": [30, 30]}}}})
+report = tally_report()
+check("drops: a way short of the loots it needs: waiting", (plays.drops(stub, few, "forever", 65100, "d", report), report["waiting"]["Drops"]),
+      ([], 1))
+moved = counted(drops={"npc:72": {"65100": {"c": {"loot|0": 200}, "d": {"loot|2001|0": [100, 100]}},
+                                  "65200": {"c": {"loot|0": 200}, "d": {"loot|2001|0": [40, 40]}}}})
+report = tally_report()
+lines = plays.drops(stub, moved, "forever", 65200, "d", report)
+check("drops: a chance a build changed counts from that build on, and is said",
+      (lines[0]["fields"]["items"][0]["chance"], lines[0]["build"], report["changes"]), (20.0, 65200, [("npc:72", 65200, 2001, 50.0, 20.0)]))
+
+# Spawns: our data's point narrowed to where play saw it on more than one visit; a new one; one point unseen: waiting
+stub = Stub({"Spawns": {"npc:69": [{"points": [[1430, 60, 60]]}], "npc:80": [{"points": [[1430, 10, 10], [1430, 90, 90]]}],
+                        "npc:81": [{"points": [[1430, 30, 30]]}]}})
+ledger = counted(points={"npc:69": [[1430, 60.5, 60.2, 3], [1430, 61.4, 60.4, 1]], "npc:80": [[1430, 10.1, 10, 4]],
+                         "npc:81": [[1430, 30.05, 30, 2]], "npc:500": [[1430, 40, 40, 2], [1430, 41, 40, 2]]})
+report = tally_report()
+lines = {line["key"]: line for line in plays.spawns(stub, ledger, "forever", 65100, "2026-10-24", report)}
+check("spawns: narrowed; unchanged within a yard: confirmed; a new thing's places (the second within reach of the first: one)",
+      (lines["npc:69"]["fields"], lines["npc:81"].get("confirmed"), lines["npc:500"]["fields"], "npc:80" in lines,
+       report["waiting"]["Spawns"]),
+      ({"points": [[1430, 60.5, 60.2]]}, "2026-10-24", {"points": [[1430, 40, 40]]}, False, 1))
+check("spawns: a point's part as the game names it (Watchers.lua's Code)", harvests.code([1431, 10, 10.04]), "p1433963631")
+merge = counted()
+merge.add_place("forever", "npc:9", 1430, 50, 50, 1)
+merge.add_place("forever", "npc:9", 1430, 50.5, 50, 1)
+merge.add_place("forever", "npc:9", 1430, 52, 50, 1)
+check("ledger: places from many players merged by yards (5 yards: one, 20 yards: another)",
+      merge.points["forever"]["npc:9"], [[1430, 50.25, 50, 2], [1430, 52, 50, 1]])
+
+# Areas: cells looted twice or more, for a creature that has none, and a quest's objective
+stub = Stub({"Spawns": {"npc:69": [{"points": [[1430, 60, 60]], "areas": [{"map": 1430, "row": 1, "first": 1, "last": 1}]}]},
+             "CreatureSpawns": {}, "QuestAreas": {"90/2/1/1430": [{}]}, "Quests": {}})
+ledger = counted(cells={"npc:70": {"1430|4025": 2, "1430|4026": 3, "1430|5000": 1}, "npc:69": {"1430|1": 5},
+                        "quest:90/1": {"1430|4025": 2}, "quest:90/2": {"1430|4025": 2}})
+report = tally_report()
+lines = plays.areas(stub, ledger, "forever", 65100, "d", report)
+check("areas: a creature's from its cells (one looted once left out), a quest objective's where our data has none",
+      [(line["set"], line["key"], line["fields"].get("areas") or line["fields"].get("runs")) for line in lines],
+      [("CreatureSpawns", 70, [{"map": 1430, "row": 40, "first": 25, "last": 26}]),
+       ("QuestAreas", "90/1/1/1430", [{"row": 40, "first": 25, "last": 25}])])
+
+
 # The real master is as the game's code says (the CVar labels) -------------------------------------------
 with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     staging = Path(folder) / "cvar-labels.jsonl"

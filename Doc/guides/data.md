@@ -158,6 +158,13 @@ bySlot = "slot"
   is added at the end, and never moved or removed once the set is shipped (a field no longer wanted
   stays, unused). Old lines simply lack a new field.
 - `about` says in one sentence what the set holds.
+- **`play`** (optional): how play tells each field, for Core's checks in play (*Checked in play*): `"name"` a field
+  the game shows whole; `"startNPCs.npc"` a list of tuples the game shows one member of at a time (the giver talked
+  to), known by that part; `"services[]"` a list of plain values shown one at a time; `"health{}"` a map shown one
+  key at a time (the health at the level seen); a trailing `?` a field the game shows only where our data is wrong
+  (a requirement an offer proves wrong): play can correct it, never confirm it, so it does not hold back a whole
+  confirmation. An entry is confirmed whole once the game told every field of the list (but the `?` ones) that it
+  holds; without a list, every field counts. `Quests`: `play = ["name", "level", "minLevel?", ..., "startNPCs.npc"]`.
 
 **Types:**
 
@@ -408,6 +415,10 @@ end)
   int-keyed set), `number`, `text` (also `enum` and a `ref` to a text-keyed set), `bool`, `point`,
   `tuple(name:type,...)`, `list <element>`, `map <int|text> <element>`.
 - **`patches`** names the patch of every build the set's versions start at (from `builds.toml`).
+- **`play`**, where the schema has one: its list as written (*schema.toml*), for `Data.Check`.
+- **`S.unverified`**: the entries whose newest version the game has not said whole: an entry is verified only when
+  each field it holds was last written by a line of the game's (or a person's), or a confirmation from play (a
+  `verified` mark) came after it. A field the game changed alone leaves the batch's other fields unverified.
 - The compiler's own indexes: `replaces` (new key → the old one) and `replacedBy` (old key → the new one).
 
 ### A row
@@ -614,14 +625,19 @@ Data.Share("Items", 16801)               -- a row learned here (Data.Learn) shar
 
 - **Kept** in `SaneUIData_Learned[game].confirmed[set][key] = "day\031build\031parts"` (the parts cut by \030, `*` the
   whole entry), until the harvest takes them in. Only an entry the set has and still has unverified (a part the entry
-  lacks counts: a fact of its own).
+  lacks counts: a fact of its own). **Parts:** a boss's item `l…` or ability `a…`; a spawn point `p…` (its map and
+  place to a tenth of a percent: `Watchers.Code`); a field the game told, `name`, or a member of one,
+  `startNPCs=69`, `health=12` (*Checked in play*). Of an entry Core learned, the parts the game told are kept too
+  (`Confirmations.Told`), so the harvest stages only those. At the login, the confirmations of an entry the set no
+  longer lists unverified (a release took it in) and that Core did not learn are dropped.
 - **The watchers** (`Data/Watchers.lua`), never in a fight or while the game restricts addons, a hidden value passed
-  over: a creature seen (the mouse, the target, a nameplate) confirms its spawn (*Spawns*) when it stands within
-  `Watchers.NEAR` yards of one of its points (`C_Map.GetPlayerMapPosition`, `GetMapWorldSize`), and itself (*NPCs*)
-  when it offers nothing to talk to; talked to or used (the game's unit `npc`: a vendor, a trainer, a flight master, a
-  quest giver, a mailbox) the creature or object and its spawn; a mailbox opened the set *Places*' mailbox within
-  `Watchers.MAILBOX` yards; a zone left the crossing within `Watchers.CROSSING` yards; a quest taken or handed in
-  (`QUEST_ACCEPTED`, `QUEST_TURNED_IN`) the set *Quests*' quest. **A boss's loot:** within
+  over: a creature seen (the mouse, the target, a nameplate) confirms the spawn point (*Spawns*) it stands within
+  `Watchers.NEAR` yards of (`C_Map.GetPlayerMapPosition`, `GetMapWorldSize`), the whole spawn once every point of it
+  was, and itself (*NPCs*) when it offers nothing to talk to; talked to or used (the game's unit `npc`: a vendor, a
+  trainer, a flight master, a quest giver, a mailbox) the creature or object and its spawn, and where the player
+  stands is a sighting of its place (`Tally.Point`); a mailbox opened the set *Places*' mailbox within
+  `Watchers.MAILBOX` yards; a zone left the crossing within `Watchers.CROSSING` yards. Quests: *Checked in play*.
+  **A boss's loot:** within
   `Watchers.LOOT` seconds after the game said it was killed (`ENCOUNTER_END`) and in its instance, an item the set
   *Bosses* names for it; any item of a corpse of the boss's name (the target, dead): the game tells no place inside an
   instance, nor whose corpse a loot is (no `GetLootSourceInfo`), so the time, the instance and the corpse's name hold
@@ -632,6 +648,88 @@ Data.Share("Items", 16801)               -- a row learned here (Data.Learn) shar
   `C_TooltipInfo.GetItemByID`) learned where they differ or the set lacks them (many items' are hidden from the
   game's tables), and shared; an item the set lacks only on an English client (the set's names are English).
 - **Sharing:** see *Messages* (kinds `V` and `L`).
+
+### Checked in play (`Data.Check`) *(Saneroki, 2026-10-24)*
+
+Every data point starts as what we could gather and guess, and play makes it right: whatever the game shows of an
+entry is compared with the set, field by field, by Core's watchers alone.
+
+```lua
+Data.Check("Quests", 77, { name = "Wolves", rewardXP = 450, startNPCs = { npc = 69 } })
+```
+
+- **How each field is told** is the schema's `play` list (*schema.toml*): whole, one member of a list, one key of a map,
+  or `?` (shown only where our data is wrong). `Checks.NONE` says the game shows the field empty.
+- **Agrees:** the field confirmed (`name`; a member `startNPCs=69`; a key `health=12`) and shared like any
+  confirmation; once every field of the play list the entry holds was told (a list's every member, a map's every
+  key), the whole entry.
+- **Differs, or the set lacks the entry** (a quest, a creature only Forever has): learned (`Data.Learn`), the set's
+  record with what the game told put in: a member added to its list, never one taken away (a giver of the other
+  side, a good sold out). Every part told is kept with it, so the harvest stages only what the game said; the set's
+  other facts ride along unverified.
+- **Texts only on an English client** (names, titles, objectives, ranks, kinds): the sets' are English. A new entry
+  on another client is learned without them.
+
+The watchers that check:
+
+| Watcher | What it tells |
+| --- | --- |
+| **Quests** (`Data/Quests.lua`) | *Offered* (`QUEST_DETAIL`): title, the NPC, thing or item that offers it, rewards (items and choices as the window lists them, money, experience, a spell). *Taken* (`QUEST_ACCEPTED`): level, group size, daily, the objectives as the log lists them (kind, count, text without its numbers). *Worked on* (`QUEST_WATCH_UPDATE`): the creature it asks for (the dead target its text names), the item (looted, its name in the text), where the count went up (`Tally.Cell`, key `quest:<quest>/<objective>`). *Handed in* (`QUEST_COMPLETE`, `QUEST_TURNED_IN`): who takes it, experience and money; the quest the same NPC offers at once after, with no list in between, its `next`. |
+| **Requirements** (with an offer) | Offered by an NPC, a thing or an item (never shared by a player): a lower level narrows `minLevel`; a race, class or side our data leaves out is added; a quest our data says must be done first and is not (or one that closes it and is done) is removed. Only the player's own character, only the conclusion. |
+| **Rewards** | Experience only below the highest level and at most `QuestWatch.XP` levels over the quest's (it is cut beyond), money only below the highest level, a quest that scales neither. |
+| **Creatures** (`Data/Facts.lua`) | Seen out of a fight (never one a player controls): name, level (the set's lowest and highest widened by one seen outside them), rank, kind, health at the level seen (not where the game gives a share of 100). Talked to: its services (vendor and repair, trainer, flight master, banker, auctioneer, stable master, quest giver). |
+| **Vendors** | Their goods as the window lists them: an item the set lacks added. Not prices: they are the player's, after the discount their standing earns. |
+| **Spells** | Of the spellbook, and every spell a tooltip shows: name, rank, icon. Not cost, cast time, range: talents and gear change them. |
+| **Items** | Those the character has, and every item a tooltip shows (`TooltipDataProcessor`): as *Verified* says. |
+
+### Counted in play (`Data.Tally`) *(Saneroki, 2026-10-24)*
+
+What one loot or one sighting cannot settle is counted, and only the sum of many players' counts goes into the
+master (*The harvest*).
+
+```lua
+Tally.Loot("npc:69", "loot", 0)        -- one loot: how (loot, skin, pickpocket, gather, fish); quest 0 for everybody
+Tally.Drop("npc:69", "loot", 769, 0, 2) -- an item it gave, and how many
+Tally.Point("npc:69", map, x, y)       -- seen from up close: merged into a place within Tally.MERGE yards, one visit
+Tally.Cell("npc:69", map, x, y)        -- looted here: a cell of the map
+```
+
+- **Kept** in `SaneUIData_Learned[game].tally[build] = { id, drops, points, cells }`: one block per build (the build
+  period), each with a random id, a packed row per key; at most `Tally.BUILDS` blocks, the maps' sizes in yards beside
+  them (`maps`). No time finer than the build, no name, no trail.
+- **The loot watcher** (`Data/Loot.lua`): every loot window, by the game's own source of each slot
+  (`GetLootSourceInfo`: the corpses or things it came from, several at once). Without it nothing is counted (a creature
+  is never guessed from the target; `Loot.blind`). Each source once a way: a corpse opened again without a cast is the
+  same window; right after a cast that gathers (Skinning, Herb Gathering, Mining, by their names in *Spells*) it is
+  `skin`; after Pick Pocket `pickpocket`; a node or chest each time a cast opens it (`gather` for the herbs and ore of
+  *Objects*). Fishing counts for the zone (`zone:<map>`); a container in the bags not at all.
+- **Quest items:** an item an objective of a quest in the log asks for (not done yet, its text naming the item)
+  counts for those on that quest, and so does one more loot for each such quest: the chance while on it.
+- **Where:** a creature looted, its cell; a node or chest, its point; a creature or thing talked to, its point.
+
+### The harvest
+
+`dev/tools/data harvest` (`saneui data harvest`) reads the saved files: the game folders' own (`--wow`), or WTF
+folders and `SaneUI.lua` files players sent (`--from`, each game version they hold). Read as data, never run; only
+`SaneUIData_Learned`.
+
+- **Learned rows** become the game's facts at their build and day, with only the fields the game told (a list only
+  once every member was told, over all files).
+- **Confirmations:** `*`, a boss's every item and ability, a spawn's every point, or every field of the play list the
+  entry holds, over all files: staged as `confirmed`.
+- **The ledger** (`play.py`; kept outside the project where `~/.config/saneui/private.json` points, else in
+  `dev/data/staging/`) takes of each tally block only what grew since it last read it (by the block's id: a file read
+  twice counts once), adds it up, and stages:
+  - **Drops:** a key's chances, once every way it is looted that matters (our data's and play's) has `Play.LOOTS`
+    loots; per item how often it came, its chance from `Play.SURE` drops on. An item our data lists that play never
+    saw stays where it is rare enough not to have shown, else it goes. A chance a build changed (both sides
+    `Play.CHANGE` loots, two-proportion z over `Play.Z`, a fifth up or down) counts from that build on, and is said.
+    Staged again once the loots grew by half.
+  - **Spawns:** places seen on `Play.VISITS` visits or more; each of our points narrowed to where play saw it (within
+    `Play.NEAR` yards), new ones added; only once every point of ours was seen. Unchanged within a yard: confirmed.
+  - **Areas:** cells counted `Play.CELLS` times or more, where our data has no area: a creature's (*Spawns*, else
+    *CreatureSpawns*), a quest objective's (*QuestAreas*, `from = "play"`).
+- Then `dev/tools/data import <staging> --apply`, and a release ships it.
 
 ### Loading
 
@@ -919,7 +1017,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the set files carry it. |
 | `dev/tools/data diff <set> [--patch 1.60.2] [--game <game version>]` | What a patch changed (the game version's newest when none is named): every entry new, changed (field from → to), gone or back at one of its builds. |
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
-| `dev/tools/data harvest [--wow <folder>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`) read as data (a small reader of the Lua the game writes, never run), its own game version's part only (`.flavor.info`): learned rows as the game's facts at their build and day, whole confirmations as `confirmed` (a boss counts as whole once every item and ability the set names is confirmed; other parts stay in the game, counted), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
+| `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
 | `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions and Encounters; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 

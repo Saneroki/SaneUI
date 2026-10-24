@@ -65,6 +65,7 @@ class Schema:
         self.fields = []
         self.byname = {}
         self.index = {}
+        self.play = None  # how play tells each field ([Told], Doc/guides/data.md, *Checked in play*), or None
 
     @property
     def names(self):
@@ -144,7 +145,7 @@ def load(path, where=None):
         return None, [f"{where}: does not parse: {error}"]
     problems, schema = [], Schema()
     for word in data:
-        if word not in ("set", "key", "learn", "about", "fields", "index"):
+        if word not in ("set", "key", "learn", "about", "fields", "index", "play"):
             problems.append(f"{where}: '{word}' is not part of a schema")
     schema.set, schema.key = data.get("set"), data.get("key")
     schema.learn, schema.about = data.get("learn", False), data.get("about")
@@ -191,7 +192,64 @@ def load(path, where=None):
             problems.append(f"{where}: index '{name}': a field of type {field.type} cannot be indexed")
         else:
             schema.index[name] = Index(field, part)
+    if "play" in data:
+        schema.play, found = _play(schema, data["play"], where)
+        problems += found
     return schema, problems
+
+
+class Told:
+    """How play tells a field (a schema's play list): "name" whole, "startNPCs.npc" one member of a list of tuples at a
+    time, known by that part, "services[]" one value of a list at a time, "health{}" one key of a map at a time; a
+    trailing "?" for a field the game shows only where the data is wrong (a requirement an offer proves wrong): it does
+    not hold back a whole confirmation."""
+
+    def __init__(self, text, field, how, by=None, optional=False):
+        self.text, self.field, self.how, self.by, self.optional = text, field, how, by, optional
+
+    def part(self, value):
+        """The confirmation's part for a member, a map's key, or the whole field."""
+        if self.how == "whole":
+            return self.field.name
+        if self.how == "map":
+            return f"{self.field.name}={value}"
+        return f"{self.field.name}={value.get(self.by) if self.by else value}"
+
+
+PLAY = re.compile(r"^([a-z][A-Za-z0-9]*)(?:\.([a-z][A-Za-z0-9]*)|(\[\])|(\{\}))?(\?)?$")
+
+
+def _play(schema, value, where):
+    """([Told], problems) of a schema's play list."""
+    if not isinstance(value, list) or not all(isinstance(each, str) for each in value):
+        return None, [f"{where}: 'play' is a list of field names"]
+    out, problems = [], []
+    for text in value:
+        match = PLAY.match(text)
+        field = schema.byname.get(match.group(1)) if match else None
+        if field is None:
+            problems.append(f"{where}: play '{text}' names no field")
+            continue
+        by, members, keyed, optional = match.group(2), match.group(3), match.group(4), bool(match.group(5))
+        if by:
+            part = next((p for p in (field.parts or []) if p.name == by), None)
+            if field.type != "list" or field.element != "tuple" or part is None:
+                problems.append(f"{where}: play '{text}': '{by}' is no part of a list of tuples")
+                continue
+            out.append(Told(text, field, "member", by, optional))
+        elif members:
+            if field.type != "list" or field.element == "tuple":
+                problems.append(f"{where}: play '{text}': '[]' is for a list of plain values")
+                continue
+            out.append(Told(text, field, "member", None, optional))
+        elif keyed:
+            if field.type != "map":
+                problems.append(f"{where}: play '{text}': '{{}}' is for a map")
+                continue
+            out.append(Told(text, field, "map", None, optional))
+        else:
+            out.append(Told(text, field, "whole", None, optional))
+    return out, problems
 
 
 def _text_problem(value):

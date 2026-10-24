@@ -3,6 +3,8 @@ key = "int"              # the vendor's creature ID
 learn = true             # at every vendor (MERCHANT_SHOW); the same on every realm
 about = "What each vendor sells, for how much, how many, and in which other currency."
 
+# How play tells each field (Doc/guides/data.md, *Checked in play*): the goods one by one; prices are the player's.
+play = ["goods.item"]
 [fields]
 goods = { type = "list", of = "tuple", parts = [
     { name = "item", type = "int" },

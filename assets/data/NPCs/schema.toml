@@ -3,6 +3,8 @@ key = "int"              # the game's creature ID
 learn = true             # seen out of combat, with no restriction active (Doc/ideas/Data.md, *Creatures*)
 about = "Every creature: its name, levels, rank, kind, reaction, stats, spells, buffs at rest and services."
 
+# How play tells each field (Doc/guides/data.md, *Checked in play*): the levels each a bound seen, the health at a level.
+play = ["name", "levelMin", "levelMax", "boss?", "rank", "kind", "health{}?", "services[]"]
 [fields]
 name         = { type = "text" }
 title        = { type = "text" }           # the line under its name: Repair Merchant

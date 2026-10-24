@@ -3,6 +3,8 @@ key = "int"              # the game's spell ID: one per rank
 learn = true             # the game knows every spell by its ID: tooltips, the spellbook, the crawl
 about = "The players' spells and abilities, every rank: what the game says of each, with its history."
 
+# How play tells each field (Doc/guides/data.md, *Checked in play*): cost, cast time and range are the player's.
+play = ["name", "rank", "icon"]
 [fields]
 name        = { type = "text" }            # in English (decisions 7 and 22)
 rank        = { type = "text" }            # the game's rank line: Rank 3

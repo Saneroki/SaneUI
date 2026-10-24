@@ -7,6 +7,11 @@ about = "Every quest: who it is offered to and what it needs first, who gives an
 # takers: where they stand is theirs (Spawns). An NPC giver or taker is the game's creature ID, not a ref: a
 # quest may name a creature the set NPCs does not hold (yet). A side on a giver, taker or requirement: it
 # holds for that side only.
+
+# How play tells each field (Doc/guides/data.md, *Checked in play*): a "?" one an offer shows only where it is wrong.
+play = ["name", "level", "minLevel?", "side?", "races?", "classes?", "requires?", "startNPCs.npc", "startObjects.object",
+        "startItems[]", "finishNPCs.npc", "finishObjects.object", "objectives", "next?", "rewardMoney", "rewardXP",
+        "rewardItems", "rewardChoices", "rewardSpell", "tags[]?", "groupSize?"]
 [fields]
 name           = { type = "text" }
 level          = { type = "int", min = 0 }

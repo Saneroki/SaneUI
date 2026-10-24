@@ -12,12 +12,17 @@ local Core = SaneUI.Core
 --      Data.Confirmed("Bosses", 1144, "l17076") whether it is confirmed: the whole entry, or that part
 --      Data.ConfirmedParts("Bosses", 1144)      { "l17076", "a8269", ... }: the parts confirmed (a view adds those the
 --                                               entry lacks)
+--      Data.Confirm("Quests", 77, "name")       ... a field the game told and the entry agrees with; a member of a
+--                                               list ("startNPCs=1234"); a spawn point ("p" and its code): Check.lua
+--                                               and Watchers.lua
 --      Data.OnConfirm(fn)                       fn() on the frame after something was confirmed, here or by others
 --      Data.Share("Items", 16801)               a row learned here (Data.Learn) shared with the guild and the group
 --
 --  Kept in SaneUIData_Learned[game].confirmed[set][key] = "day\031build\031parts", the parts cut by \030 ("*": the
 --  whole entry), until the harvest takes them into the master (dev/tools/data harvest) and a release ships the entry
---  verified. Handle:Unverified (Data.lua) asks Data.Confirmed.
+--  verified; at the login those of an entry the set no longer lists unverified (and Core did not learn) are dropped.
+--  Handle:Unverified (Data.lua) asks Data.Confirmed. Of an entry Core learned, the parts the game told are kept too
+--  (Confirm.Told), so the harvest takes only those of the row.
 --
 --  Shared (the wire's kind V: set, key, parts; learned rows as a block of kind L) with the guild and with the party or
 --  raid, whoever there has Sane UI: what one player confirms, the others take (an entry or a part they have unverified;
@@ -226,9 +231,12 @@ local function Key(name, text)
     return text
 end
 
--- A part of somebody else's: whole, or one of a known kind whose item or spell the game knows.
-local function Known(part)
+-- A part of somebody else's: whole, a field the game told (or a member of one: "startNPCs=1234", Check.lua), or
+-- one of a known kind whose item or spell the game knows.
+local function Known(name, part)
     if part == WHOLE then return true end
+    local field = part:match("^(%a[%w]*)=") or part
+    if Data.Set(name):HasField(field) then return true end
     local kind, id = part:match("^(%a)(%d+)$")
     local check = kind and Confirm.KINDS[kind]
     return check ~= nil and check(tonumber(id)) == true
@@ -243,7 +251,7 @@ Wire.Listen("V", function(_, fields, channel)
     if not Data.Set(name):Get(key) then return end
     for part in (fields[3] or ""):gmatch("[^,]+") do
         local asked = part ~= WHOLE and part or nil
-        if Known(part) and Data.Set(name):Unverified(key, asked) then Store(name, key, part) end
+        if Known(name, part) and Data.Set(name):Unverified(key, asked) then Store(name, key, part) end
     end
 end)
 
@@ -288,6 +296,16 @@ function Data.Confirm(name, key, part)
     return true
 end
 
+-- What the game told of an entry Core learned (Check.lua): its parts kept as told, so the harvest stages only what the
+-- game said of the row and not the set's facts it carries along. Not shared: a learned row goes as a whole.
+function Confirm.Told(name, key, part)
+    if not confirmed or key == nil or type(part) ~= "string" then return false end
+    local entry = Parsed(name, key)
+    if entry and entry.parts[part] then return true end
+    Store(name, key, part)
+    return true
+end
+
 -- A row learned here shared with the guild and the group (only the sets others take, Confirm.SHARED).
 function Data.Share(name, key)
     if not (Confirm.SHARED[name] and Data.Learned(name, key)) then return false end
@@ -295,9 +313,29 @@ function Data.Share(name, key)
     return true
 end
 
+-- What a release took in since: the confirmations of an entry the set no longer lists unverified, and that Core did
+-- not learn, are dropped (the master has them); asked before this client's confirmations count, so only the set's
+-- own marks answer.
+local function Drop(list)
+    for name, entries in pairs(list) do
+        local handle = Data.Set(name)
+        if type(entries) ~= "table" then
+            list[name] = nil
+        elseif handle:Ready() then
+            for key in pairs(entries) do
+                -- gone from the set too (nor learned): nothing left to confirm
+                local learnt = Data.Learned(name, key) ~= nil
+                if not handle:Get(key) or (not learnt and not handle:Unverified(key)) then entries[key] = nil end
+            end
+            if next(entries) == nil then list[name] = nil end
+        end
+    end
+end
+
 Data.Saved("Learned", function(part)
     if type(part.confirmed) ~= "table" then part.confirmed = {} end
     if type(part.outbox) ~= "table" then part.outbox = {} end
+    Drop(part.confirmed)
     confirmed, outbox, parsed = part.confirmed, part.outbox, {}
     for index = #outbox, 1, -1 do
         if type(outbox[index]) ~= "string" then table.remove(outbox, index) end

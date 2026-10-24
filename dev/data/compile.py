@@ -171,6 +171,29 @@ def index_values(index, value):
     return [each for each in values if each is not None]
 
 
+def trusted(master, versions, base=None):
+    """Whether the game said every field an entry's newest version holds (Doc/guides/data.md, *Verified*): each was
+    last written by a line of the game's (or a person's), or a confirmation from play (a verified mark) came after it.
+    So a field the game changed does not make the batch's other fields the game's. Another game version's entry
+    stands on live's newest version (base): its fields are trusted as live's are."""
+    said = {}
+    for version in versions:
+        line = version.line
+        if line is None:  # live's newest, which another game version stands on
+            ok = bool(base) and trusted(master, base)
+            said = {name: ok for name in version.fields}
+            continue
+        if line.gone:
+            said = {}
+            continue
+        game = master.confirmed(line)
+        if line.verified:
+            said = {name: True for name in version.fields}
+        for name in line.fields:
+            said[name] = game or bool(line.verified)
+    return all(said.get(name, False) for name in versions[-1].fields)
+
+
 def set_file(master, schema, game):
     """(text, entries) of a set's Lua file for a game version."""
     view = master.view(schema.set, game)
@@ -185,10 +208,7 @@ def set_file(master, schema, game):
                 patches[version.since] = master.builds[game][version.since]["patch"]
         rows.append(f"R{lua_key(key)} = {lua_string(row(schema, versions[-1]))}")
         newest = versions[-1]
-        line = newest.line
-        if line is None and base_view.get(key):  # live's newest, which another game version stands on
-            line = base_view[key][-1].line
-        if not newest.gone and not master.confirmed(line):
+        if not newest.gone and not trusted(master, versions, base_view.get(key)):
             unverified.append(key)
         if len(versions) > 1:
             history.append(f"H{lua_key(key)} = {lua_string(VERSION.join(row(schema, v) for v in versions[:-1]))}")
@@ -228,6 +248,7 @@ def set_file(master, schema, game):
         f"    game = {lua_string(game)}, hash = {lua_string(PLACEHOLDER)}, build = {build}, key = {lua_string(schema.key)},",
         f"    fields = {{ {fields} }},",
         f"    types = {{ {types} }},",
+        *([f"    play = {{ {', '.join(lua_string(told.text) for told in schema.play)} }},"] if schema.play else []),
         f"    patches = {{ {patch_text} }},",
         "})",
         "if not S then return end",

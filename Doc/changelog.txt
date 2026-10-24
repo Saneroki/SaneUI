@@ -6,6 +6,15 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Data: Sane UI's database gets better as you play. Every quest you
+  are offered, take, do and hand in is checked against it: its
+  giver, objectives, rewards and who takes it back are confirmed, and
+  a quest Sane UI did not know yet is learned as you do it. Loot is
+  counted, so the chances of drops become real numbers over time;
+  the places of quest givers, vendors, herbs and ore are narrowed to
+  where you stood; creatures, vendors' goods and spells are checked
+  too. What your play teaches is kept in your saved files, for the
+  next versions of Sane UI to take in.
 - Inventory: the Character Stats window is redrawn on the journal's
   page. Your stats are no longer one long narrow list: each category
   is a section written in pencil, and the sections stand side by side

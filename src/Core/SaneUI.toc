@@ -77,8 +77,18 @@ Data\Wire.lua
 Data\Guild.lua
 # What the game confirmed in play of the data not yet verified, kept and shared with the guild and the group (Data.Confirm)
 Data\Confirm.lua
+# What the game told in play, compared with the sets field by field: confirmed where it agrees, learned where not (Data.Check)
+Data\Check.lua
+# What play counts: loots and what they gave, places seen, per build period, for the harvest (Data.Tally)
+Data\Tally.lua
 # Core's watchers: creatures, things, mailboxes, crossings, a boss's loot and casts, the items' stats (Data.Watchers)
 Data\Watchers.lua
+# The quest watchers: offered, taken, worked on, handed in, compared with the set Quests (Data.QuestWatch)
+Data\Quests.lua
+# Every loot window counted: corpses, skinning, pockets, nodes, fishing, quest items, where (Data.Loot)
+Data\Loot.lua
+# Creatures, their services, vendors' goods, spells and the tooltips' items, compared with the sets (Data.Facts)
+Data\Facts.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)
 People.lua
 # What the game says about a unit for every view: its quest objective, a player's item level and talents (paced inspections)

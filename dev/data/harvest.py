@@ -5,19 +5,25 @@ Core keeps in SaneUIData_Learned[game] (in WTF/Account/<account>/SavedVariables/
   learned[set][key]    a whole row of the set, as the game showed it (Data.Learn, or taken from a guild or group
                        member's Sane UI): staged as the game's facts at the row's build and day
   confirmed[set][key]  "day\\031build\\031parts": the game agreed with the entry ("*" the whole entry) or with parts of
-                       it (a boss's item "l17076", its ability "a8269"): the whole entry staged as confirmed (the
-                       import writes its verified mark); a boss whose every item and ability the set names was
-                       confirmed counts as whole; other parts stay in the game, counted in the report
+                       it (a boss's item "l17076", its ability "a8269", a spawn point "p..."; a field the game told,
+                       "name", or a member of one, "startNPCs=69": Check.lua): the whole entry staged as confirmed
+                       (the import writes its verified mark); a boss whose every item and ability, a spawn whose
+                       every point, an entry whose every field of the play list (the schema's) was confirmed counts
+                       as whole, the fields over all saved files taken (the ledger); other parts are counted
+  tally[build]         what play counted (Tally.lua): added up in the ledger (play.py), staged once enough agree
 
 The file is read as data, never run: a small reader of the Lua the game writes. Only the part of the folder's own game
 version is taken (its product in .flavor.info), and only game facts: nothing else of the saved file is looked at.
 """
+import collections
 import datetime
 import json
+import math
 import re
 
 import compile as compiler
 import master as masters
+import play as plays
 
 LIST, PART = "\x1e", "\x1f"
 STAGING = masters.MASTER.parent.parent / "dev" / "data" / "staging"
@@ -215,19 +221,37 @@ def saved_files(wow):
     return out
 
 
+def sent_files(path):
+    """[(None, path)] of the saved files of Sane UI in a WTF folder, a game folder or one file a player sent: each
+    game version the file holds is taken (a file sent has no game folder to tell it)."""
+    if path.is_file():
+        return [(None, path)]
+    return [(None, found) for found in sorted(path.glob("**/SavedVariables/SaneUI.lua"))]
+
+
 def _key(schema, key):
     if schema.key == "int":
         return int(key)
     return str(key)
 
 
+def code(point):
+    """A spawn point as the game names it among an entry's parts (Watchers.lua's Code): "p" and its map and place."""
+    map_id, x, y = point[0], point[1], point[2]
+    return f"p{(map_id * 1001 + math.floor(x * 10 + 0.5)) * 1001 + math.floor(y * 10 + 0.5)}"
+
+
 def _whole_by_parts(master, schema, game, key, parts):
-    """Whether a set confirmed in parts (PARTS) had every part of its entry's newest version confirmed."""
-    names = PARTS.get(schema.set)
-    if not names:
-        return False
+    """Whether a set confirmed in parts (PARTS, a spawn's points) had every part of its entry's newest version
+    confirmed."""
     versions = master.view(schema.set, game).get(key)
     if not versions or versions[-1].gone:
+        return False
+    if schema.set == "Spawns":
+        points = versions[-1].fields.get("points") or []
+        return bool(points) and all(code(point) in parts for point in points)
+    names = PARTS.get(schema.set)
+    if not names:
         return False
     for letter, field in names.items():
         for value in versions[-1].fields.get(field, []) or []:
@@ -236,72 +260,161 @@ def _whole_by_parts(master, schema, game, key, parts):
     return True
 
 
-def harvest(master, files):
-    """(staging lines, report) of saved files [(game version, path)]: learned rows and whole confirmations."""
-    lines, report = [], {"learned": 0, "confirmed": 0, "parts": 0, "skipped": 0, "broken": 0, "builds": {}}
-    for game, path in files:
+FIELD_PART = re.compile(r"^([a-z][A-Za-z0-9]*)(=.*)?$")
+
+
+def _fields_told(parts):
+    """The fields a confirmation's parts name (Check.lua's: "name", "startNPCs=69"), not a boss's or a spawn's."""
+    out = set()
+    for part in parts:
+        match = FIELD_PART.match(part)
+        if match and not re.match(r"^[a-z]\d+$", part):
+            out.add(match.group(1))
+    return out
+
+
+def _told_fields(schema, fields, parts):
+    """Of a learned row's fields, those the game told (a list's every member, a map's every key): the rest is the
+    set's own carried along, unverified, and not staged. A field told empty is staged empty (null)."""
+    how = {told.field.name: told for told in (schema.play or [])}
+    named = _fields_told(parts)
+    out = {}
+    for name in named:
+        told = how.get(name)
+        value = fields.get(name)
+        if value is None:
+            if name in parts:
+                out[name] = None
+        elif told is None or told.how == "whole":
+            if name in parts:
+                out[name] = value
+        elif told.how == "member":
+            if all(told.part(element) in parts for element in value):
+                out[name] = value
+        elif all(told.part(inner) in parts for inner in value):
+            out[name] = value
+    return out
+
+
+def _parts(packed):
+    """(day, build, parts) of a confirmation as the game packs it; None when it cannot be read."""
+    if not isinstance(packed, str):
+        return None
+    pieces = packed.split(PART)
+    try:
+        day = (EPOCH + datetime.timedelta(days=int(pieces[0]))).isoformat()
+        build = int(pieces[1])
+    except (ValueError, IndexError):
+        return None
+    return day, build, set(pieces[2].split(LIST)) if len(pieces) > 2 else set()
+
+
+def harvest(master, files, ledger=None):
+    """(staging lines, report) of saved files [(game version or None for each it holds, path)]: learned rows,
+    confirmations, and what play counted (the ledger, play.py; a ledger without a file when none is given)."""
+    ledger = ledger or plays.Ledger(None)
+    lines = []
+    report = {"learned": 0, "confirmed": 0, "parts": 0, "skipped": 0, "broken": 0, "builds": {}, "counted": 0,
+              "staged": collections.Counter(), "waiting": collections.Counter(), "changes": [], "dropped": 0}
+    newest = {}  # game -> the newest build its saved files were of
+    for wanted, path in files:
         try:
             saved = read_saved(path.read_text(encoding="utf-8", errors="replace"))
         except (ValueError, IndexError) as problem:
             report["broken"] += 1
             print(f"{path}: cannot be read ({problem})")
             continue
-        part = (saved.get("SaneUIData_Learned") or {}).get(game)
-        if not isinstance(part, dict):
-            continue
-        patches = part.get("builds") if isinstance(part.get("builds"), dict) else {}
-
-        def seen(build, day):
-            """Notes a build of this game version, its patch (as the game said it) and the first day it was seen."""
-            if build in master.builds.get(game, {}) or not isinstance(patches.get(build), str):
-                return
-            known = report["builds"].setdefault(game, {})
-            patch, first = known.get(build, (patches[build], day))
-            known[build] = (patch, min(first, day) if first and day else first or day)
-        for set_name, rows in (part.get("learned") or {}).items():
-            schema = master.schemas.get(set_name)
-            if schema is None or not isinstance(rows, dict):
-                report["skipped"] += 1
-                continue
-            for key, row in rows.items():
-                try:
-                    build, day, fields = decode(master, schema, row)
-                except (ValueError, IndexError, TypeError):
-                    report["broken"] += 1
-                    continue
-                line = {"set": set_name, "key": _key(schema, key), "game": game, "build": build, "src": "game",
-                        "fields": fields}
-                if day:
-                    line["day"] = day
-                seen(build, day)
-                lines.append(line)
-                report["learned"] += 1
-        for set_name, entries in (part.get("confirmed") or {}).items():
-            schema = master.schemas.get(set_name)
-            if schema is None or not isinstance(entries, dict):
-                report["skipped"] += 1
-                continue
-            for key, packed in entries.items():
-                if not isinstance(packed, str):
-                    report["broken"] += 1
-                    continue
-                pieces = packed.split(PART)
-                try:
-                    day = (EPOCH + datetime.timedelta(days=int(pieces[0]))).isoformat()
-                    build = int(pieces[1])
-                except (ValueError, IndexError):
-                    report["broken"] += 1
-                    continue
-                parts = set(pieces[2].split(LIST)) if len(pieces) > 2 else set()
-                seen(build, day)
-                key = _key(schema, key)
-                if "*" in parts or _whole_by_parts(master, schema, game, key, parts):
-                    lines.append({"set": set_name, "key": key, "game": game, "build": build, "src": "game",
-                                  "confirmed": day})
-                    report["confirmed"] += 1
-                else:
-                    report["parts"] += 1
+        learned_all = saved.get("SaneUIData_Learned") or {}
+        games = [wanted] if wanted else [game for game in learned_all if game in master.games]
+        for game in games:
+            part = learned_all.get(game)
+            if isinstance(part, dict):
+                lines += _harvest_part(master, game, part, ledger, report, newest)
+    day = plays.today()
+    for game, build in sorted(newest.items()):
+        for stage in (plays.drops, plays.spawns, plays.areas):
+            lines += stage(master, ledger, game, build, day, report)
     return lines, report
+
+
+def _harvest_part(master, game, part, ledger, report, newest):
+    lines = []
+    patches = part.get("builds") if isinstance(part.get("builds"), dict) else {}
+
+    def seen(build, day):
+        """Notes a build of this game version, its patch (as the game said it) and the first day it was seen."""
+        newest[game] = max(newest.get(game, 0), build or 0)
+        if build in master.builds.get(game, {}) or not isinstance(patches.get(build), str):
+            return
+        known = report["builds"].setdefault(game, {})
+        patch, first = known.get(build, (patches[build], day))
+        known[build] = (patch, min(first, day) if first and day else first or day)
+
+    told = {}  # (set, key) -> the parts the game told of it in this file
+    for set_name, entries in (part.get("confirmed") or {}).items():
+        schema = master.schemas.get(set_name)
+        if schema is None or not isinstance(entries, dict):
+            continue
+        for key, packed in entries.items():
+            found = _parts(packed)
+            if found:
+                told[(set_name, _key(schema, key))] = found
+    for set_name, rows in (part.get("learned") or {}).items():
+        schema = master.schemas.get(set_name)
+        if schema is None or not isinstance(rows, dict):
+            report["skipped"] += 1
+            continue
+        for key, row in rows.items():
+            try:
+                build, day, fields = decode(master, schema, row)
+            except (ValueError, IndexError, TypeError):
+                report["broken"] += 1
+                continue
+            key = _key(schema, key)
+            parts = (told.get((set_name, key)) or (None, None, set()))[2]
+            if _fields_told(parts):
+                union = ledger.take_told(game, set_name, key, parts, day, build)
+                fields = _told_fields(schema, fields, union)
+                if not fields:
+                    report["parts"] += 1
+                    continue
+            line = {"set": set_name, "key": key, "game": game, "build": build, "src": "game", "fields": fields}
+            if day:
+                line["day"] = day
+            seen(build, day)
+            lines.append(line)
+            report["learned"] += 1
+    for set_name, entries in (part.get("confirmed") or {}).items():
+        schema = master.schemas.get(set_name)
+        if schema is None or not isinstance(entries, dict):
+            report["skipped"] += 1
+            continue
+        for key in entries:
+            key = _key(schema, key)
+            found = told.get((set_name, key))
+            if not found:
+                report["broken"] += 1
+                continue
+            day, build, parts = found
+            seen(build, day)
+            if (set_name in (part.get("learned") or {}) and key in {_key(schema, k) for k in part["learned"][set_name]}):
+                continue  # its row staged above, with what the game told of it
+            whole = "*" in parts or _whole_by_parts(master, schema, game, key, parts)
+            if not whole and _fields_told(parts):
+                union = ledger.take_told(game, set_name, key, parts, day, build)
+                versions = master.view(set_name, game).get(key)
+                whole = bool(versions) and not versions[-1].gone and plays.covered(schema, versions[-1].fields, union)
+            if whole:
+                lines.append({"set": set_name, "key": key, "game": game, "build": build, "src": "game", "confirmed": day})
+                report["confirmed"] += 1
+            else:
+                report["parts"] += 1
+    ledger.take_maps(game, part.get("maps"))
+    for build, block in (part.get("tally") or {}).items():
+        if isinstance(block, dict) and isinstance(build, int):
+            seen(build, None)
+            ledger.take_block(game, build, block, report)
+    return lines
 
 
 def add_builds(master, builds):

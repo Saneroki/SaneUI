@@ -33,6 +33,7 @@ local Data = Core.Data -- made by Codec.lua
 local Codec, Steps = Data.Codec, Core.Steps
 
 Data.FORMAT = 1
+Data.reports = {} -- what else /sane data prints: fn() each, after the sets (Tally.lua: what play counted)
 Data.frozen = false -- the tests' switch: records handed out read-only, changes found by Data.Tampered()
 -- The saved variables of Core's data, SaneUIData_<name>, as Core's TOC declares them.
 Data.SAVED = { Characters = true, Guild = true, Learned = true }
@@ -405,6 +406,10 @@ function Data.Add(format, name, header)
         return nil
     end
     set.decode, set.fields, set.key = decode, header.fields, header.key
+    set.named = {}
+    for index, field in ipairs(header.fields) do set.named[field] = index end
+    -- The fields play can tell (the schema's play): an entry is confirmed whole once the game told each it holds.
+    set.play = type(header.play) == "table" and header.play or nil
     local writes, encode = pcall(Codec.Encoder, header.fields, header.types)
     set.encode = writes and encode or nil -- without, nothing of it is learned; it is read all the same
     set.patches = type(header.patches) == "table" and header.patches or {}
@@ -663,6 +668,26 @@ function Handle:Unverified(key, part)
     return not (confirmed and confirmed(self.name, key, part))
 end
 
+-- Whether the set has a field of that name; false while it is not ready.
+function Handle:HasField(field)
+    local set = sets[self.name]
+    return set ~= nil and set.ready == true and set.named[field] ~= nil
+end
+
+-- The fields play can tell of the set's entries (the schema's play), or every field where it names none; an empty
+-- array while the set is not ready.
+function Handle:PlayFields()
+    local set = sets[self.name]
+    if not (set and set.ready) then return NONE end
+    return set.play or set.fields
+end
+
+-- Whether an entry is one Core learned in play (its row the game's, laid over the set's).
+function Handle:Learned(key)
+    local set = sets[self.name]
+    return set ~= nil and set.ready == true and set.laid[key] == true
+end
+
 -- A number that moves when the set arrives (and later when learned or accepted data changes it).
 function Handle:Stamp()
     local set = sets[self.name]
@@ -837,4 +862,5 @@ Core.Command("data", TEXT.about, function(rest)
     end
     local line = #jobs > 0 and Steps.Paused() and TEXT.jobsPaused or TEXT.jobs
     Core.Print(line:format(#jobs > 0 and table.concat(jobs, ", ") or TEXT.noJobs))
+    for _, fn in ipairs(Data.reports) do Core.Safe("data: /sane data", fn) end
 end)

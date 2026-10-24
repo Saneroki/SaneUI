@@ -6,6 +6,46 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Data: the database made better by play: checked field by field, counted, harvested (Saneroki, 2026-10-24)
+- **Checked in play** (`Data/Check.lua`, `Data.Check(set, key, told)`): what the game shows of an entry compared with
+  the set field by field. What agrees is confirmed as a part (a field `name`, a member `startNPCs=69`, a map's key
+  `health=12`) and shared like any confirmation; the whole entry once every field of its schema's new `play` list was
+  told. What differs, or an entry the set lacks (a quest or creature only Forever has), is learned with the parts the
+  game told (`Confirmations.Told`), never taking a member away. Texts only on an English client.
+- **The quest watchers** (`Data/Quests.lua`): offered (title, giver, thing or starting item, rewards: items, choices,
+  money, experience, a spell), taken (level, group, daily, the log's objectives), worked on (the creature an
+  objective asks for from the dead target its text names, the item from the loot, where the count went up),
+  handed in (the taker, experience and money; the quest offered at once after it by the same NPC its `next`).
+  Requirements narrowed by an offer to the player's own character (a lower level, a race, class or side, a quest not
+  done first), never by a quest a player shared. Experience and money only where they are whole. The old whole-quest
+  confirmation at `QUEST_ACCEPTED` is gone (it marked givers, rewards and requirements verified unseen).
+- **Counted in play** (`Data/Tally.lua`, `Data.Tally`): per build a block with a random id in `SaneUIData_Learned`
+  (`tally`, and `maps` with their sizes in yards): loots and what they gave, places seen from up close merged by
+  `Tally.MERGE` yards (one visit per `Tally.VISIT`), cells of the map. Bounded (`Tally.BUILDS`, `KEYS`, `RECORDS`).
+- **Every loot window** (`Data/Loot.lua`) by the game's own source of each slot (`GetLootSourceInfo`; without it
+  nothing, `Loot.blind`, said by `/sane data`): each corpse once, skinning and gathering from a corpse after its cast,
+  Pick Pocket, nodes and chests for each cast, fishing for the zone, a quest's item for those on the quest; the
+  corpse's cell, the node's point.
+- **Creatures, services, vendors, spells, tooltips** (`Data/Facts.lua`): creatures out of a fight (name, levels
+  widened, rank, kind, health at a level; never a pet or totem), the services of the NPC talked to, vendors' goods
+  (not prices), the spellbook's and tooltips' spells (name, rank, icon), the tooltips' items.
+- **Spawns point by point** (`Watchers.lua`): the point stood near confirmed (`p` and `Watchers.Code`), the whole
+  once all were; a creature or thing talked to is a sighting of its place.
+- **The master:** `play` lists for Quests, NPCs, Spells and Vendors (`dev/data/schema.py`: whole, `x.part`, `x[]`,
+  `x{}`, `?`), written into the set files' headers; **an entry is verified only when each of its fields was last
+  written or confirmed by the game** (`compile.trusted`; no entry's mark changed today).
+- **The harvest** (`dev/data/harvest.py`, `dev/data/play.py`): learned rows staged with only what the game told;
+  confirmations whole over all saved files; `--from` for WTF folders and saved files players send; the ledger
+  (outside the project where `~/.config/saneui/private.json` points) adds every block up once and stages Drops
+  (every way looted 50 times, chances from 3 drops, the change between builds, our rare items kept, common ones
+  gone, again once the loots grew by half), Spawns (points narrowed, new ones, once every point of ours was seen) and
+  areas (Spawns, CreatureSpawns, QuestAreas, where our data has none).
+- Confirmations of an entry a release verified are dropped at the login. `/sane data` says what play counted.
+- Tests: `dev/tests/data.lua` 267 checks (quests offered, taken, worked on, handed in, narrowed, shared; a quest only
+  Forever has; loot of every way; places merged; spawns point by point; creatures, vendors, spells),
+  `dev/tests/data/tools.py` 235 (the play list, the per-field mark, the harvest's told fields, the ledger taking a
+  block once and its growth, Drops, Spawns, areas).
+
 ### dev: one menu on every tool page; the pages dark (Saneroki, 2026-10-24)
 - **The menu:** a ☰ button on every tool page (interface pieces, concept history, maps compared, instance maps, world
   map, interface lab, task board) opens the list of them all, each with its port and a dot for whether it is up,

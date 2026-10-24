@@ -456,6 +456,25 @@ marked, so an older game's fact is never taken for one of Forever's.
 - **Counts:** a chance or yield taken in from the baseline (exact, agreed: *When in doubt*) stays unverified
   until this game version's own counts have enough loots or gathers (*proposal* 50); then the own counts
   replace it.
+- **Field by field, and counted (Saneroki, 2026-10-24):** every data point starts as what we could gather and guess,
+  and play makes it right (the guide's *Checked in play*, *Counted in play*, *The harvest*). Decisions:
+  - **What the game shows is compared field by field** (`Data.Check`): what agrees is confirmed as a part (a field,
+    a member of a list), what differs or is missing is learned with the parts the game told, and the harvest stages
+    only those. An entry is verified whole once the game told every field its schema's `play` list names (a field
+    the game shows only where our data is wrong, such as a requirement, is marked `?`: it rides along with the
+    whole). **The set files mark an entry verified only when each of its fields was last written or confirmed by the
+    game**, so a field the game changed alone no longer makes a batch's other fields the game's.
+  - **A spawn is confirmed point by point** (`p` and the point's code), whole once every point was seen.
+  - **Counts in blocks per build with a random id**, added up by the harvest in a ledger kept outside the project
+    (only what grew since a block was last read: a file read twice counts once); 50 loots of every way a key is
+    looted before its chances go in, a chance from 3 drops on, an item our data lists that play never saw kept only
+    where it is too rare to have shown; places from two visits; cells from two loots; areas only where our data has
+    none.
+  - **Not counted or compared:** prices at vendors and trainers (the player's discount), spells' costs, cast times
+    and ranges (talents, gear), experience and money where they are cut or grow (the highest level, far over the
+    quest's), anything without the game's own source (a loot's corpse: `GetLootSourceInfo`).
+  - Sharing the counts with the guild waits for the trust of step 1f (three senders); confirmations are shared as
+    before.
 
 ### Harvest
 

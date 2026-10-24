@@ -6,15 +6,15 @@ local Core = SaneUI.Core
 --  play shows that the data lacks (Data.Learn): Doc/guides/data.md, *Verified*. Each only looks and compares; nothing
 --  is asked of the game in a fight or while it restricts addons, and a value it hides is passed over.
 --
---      seen         a creature under the mouse, the target or a nameplate: its spawn (the set Spawns) when it stands
---                   within Watchers.NEAR yards of one of its points; the creature itself (NPCs) when it offers
---                   nothing to talk to (a vendor, a trainer is only confirmed by talking to it)
+--      seen         a creature under the mouse, the target or a nameplate: the spawn point (the set Spawns) it stands
+--                   within Watchers.NEAR yards of, the whole spawn once each of its points was; the creature itself
+--                   (NPCs) when it offers nothing to talk to (a vendor, a trainer is only confirmed by talking to it)
 --      talked to    an NPC or a thing one talks to or uses (a vendor, a trainer, a flight master, a quest giver, a
 --                   banker, a mailbox: the game's unit "npc"): the creature or object and its spawn, near one of its
---                   points
+--                   points; and where the player stands, a sighting of its place (Tally.Point, for the harvest)
 --      a mailbox    opened: the set Places' mailbox within Watchers.MAILBOX yards
 --      a crossing   a zone left near the set Places' crossing (within Watchers.CROSSING yards)
---      a quest      taken or handed in: the set Quests' quest (the game names it by its ID)
+--      a quest      offered, taken, worked on, handed in: field by field, in Quests.lua
 --      a boss       its loot: within Watchers.LOOT seconds after the game said the boss was killed (ENCOUNTER_END)
 --                   and in its instance, an item the set Bosses names for it; any item of a corpse of the boss's
 --                   name (the target, dead): the game tells no place inside an instance, nor whose corpse a loot is,
@@ -39,7 +39,6 @@ Watchers.AURAS = 40      -- a boss's buffs looked at, at most
 
 local Spawns, NPCs, Objects, Places = Data.Set("Spawns"), Data.Set("NPCs"), Data.Set("Objects"), Data.Set("Places")
 local Bosses, Encounters, Items = Data.Set("Bosses"), Data.Set("Encounters"), Data.Set("Items")
-local Quests = Data.Set("Quests")
 
 local sqrt, floor = math.sqrt, math.floor
 
@@ -80,9 +79,30 @@ local function Near(points, yards)
     return false
 end
 
--- A thing of the data with spawn points (Spawns: "npc:69", "object:1617"): confirmed where the player stands near one.
+-- A spawn point as a part of its entry: "p" and a number made of its map and place to a tenth of a percent (the
+-- harvest makes the same: dev/data/harvest.py).
+local function Code(point)
+    return ("p%d"):format((point.map * 1001 + floor(point.x * 10 + 0.5)) * 1001 + floor(point.y * 10 + 0.5))
+end
+Watchers.Code = Code
+
+-- A thing of the data with spawn points (Spawns: "npc:69", "object:1617"): the point the player stands near confirmed,
+-- and the whole entry once every point of it is.
 local function Spawn(key)
-    if Spawns:Unverified(key) and Near(Spawns:Get(key, "points"), Watchers.NEAR) then Data.Confirm("Spawns", key) end
+    if not Spawns:Unverified(key) then return end
+    local points = Spawns:Get(key, "points")
+    if type(points) ~= "table" or #points == 0 then return end
+    local all = true
+    for _, point in ipairs(points) do
+        if type(point) == "table" and type(point.map) == "number" then
+            local code = Code(point)
+            if Spawns:Unverified(key, code) then
+                local far = Yards(point)
+                if far and far <= Watchers.NEAR then Data.Confirm("Spawns", key, code) else all = false end
+            end
+        end
+    end
+    if all then Data.Confirm("Spawns", key) end
 end
 
 -------------------------------------------------------------------------------
@@ -218,7 +238,8 @@ Core.On("UPDATE_MOUSEOVER_UNIT", function() Seen("mouseover") end)
 Core.On("PLAYER_TARGET_CHANGED", function() Seen("target") end)
 Core.On("NAME_PLATE_UNIT_ADDED", Seen)
 
--- An NPC or a thing talked to or used (the game's unit "npc"): the creature or the object, and its spawn.
+-- An NPC or a thing talked to or used (the game's unit "npc"): the creature or the object, and its spawn; where the
+-- player stands, within reach of it, a sighting of its place (Tally.Point).
 local function Spoke()
     local kind, id = Thing("npc")
     if kind == "npc" then
@@ -226,6 +247,10 @@ local function Spoke()
     elseif kind == "object" then
         Spawn("object:" .. id)
         if Objects:Unverified(id) then Data.Confirm("Objects", id) end
+    end
+    if kind and not Core.Ask(rawget(_G, "IsInInstance")) then
+        local map, x, y = Data.Tally.Here()
+        if map then Data.Tally.Point(kind .. ":" .. id, map, x, y) end
     end
 end
 Watchers.Spoke = Spoke
@@ -254,19 +279,6 @@ end)
 Core.On("ZONE_CHANGED_NEW_AREA", function()
     if not Core.Restricted() then PlacesNear("crossing", Watchers.CROSSING) end
 end)
-
--- A quest taken or handed in: the game names it by its ID (the last number its event gives: some clients give the
--- quest log's line first).
-local function Quest(...)
-    local id
-    for index = 1, select("#", ...) do
-        local value = Core.Plain((select(index, ...)))
-        if type(value) == "number" then id = value end
-    end
-    if id and Quests:Unverified(id) then Data.Confirm("Quests", id) end
-end
-Core.On("QUEST_ACCEPTED", Quest)
-Core.On("QUEST_TURNED_IN", function(id) Quest(id) end)
 
 -------------------------------------------------------------------------------
 --  Items: their stats as the game gives them

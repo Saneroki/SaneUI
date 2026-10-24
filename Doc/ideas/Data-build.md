@@ -196,24 +196,34 @@ holds the budget of values for all of them.
 
 - [ ] **1d.1 Watchers, discoveries, chat messages.** *Begun (Saneroki, 2026-10-23): `Data/Watchers.lua` confirms
   creatures seen or talked to, things used, mailboxes and crossings, a boss's loot and casts, and learns the stats of
-  the items the character has. Still open: `Found.lua`, vendors' goods and trainers' lists, the switch and chat
+  the items the character has. Since 2026-10-24 (`Data/Check.lua`, `Data/Facts.lua`): NPCs' services and vendors'
+  goods compared field by field (`Data.Check`). Still open: `Found.lua`, trainers' lists, the switch and chat
   message.*
   - `Watch.lua` (marks only) and `Found.lua`.
   - The watchers for vendors, trainers, flight masters and services.
   - The switch *Chat message for new data changes*.
   - Tests.
-- [ ] **1d.2 Tooltips and creatures.**
+- [ ] **1d.2 Tooltips and creatures.** *Built (Saneroki, 2026-10-24, `Data/Facts.lua`): the items and spells of the
+  tooltips and the spellbook, creatures out of a fight (name, levels widened, rank, kind, health at a level), compared
+  by `Data.Check`, with tests. Still open: `Data.Spell`.*
   - Items and spells seen in tooltips (decision 23).
   - Creatures, only out of combat and with no restriction active (`Core.Plain`).
   - `Data.Spell`.
   - Tests.
-- [ ] **1d.3 Drops,** with the World pack (decision 24).
+- [ ] **1d.3 Drops,** with the World pack (decision 24). *Built (Saneroki, 2026-10-24): every loot window counted per
+  build period (`Data/Loot.lua`, `Data/Tally.lua`: corpses, skinning, pockets, nodes, fishing, quest items, cells and
+  points), added up over every player's saved file by the harvest's ledger (`dev/data/play.py`), which stages chances
+  from enough loots, the test for a changed chance, narrowed points and areas; with tests. Still open: the spawn mix
+  of a place of several node types, yields per visit, and `Drops:Chance` for the views.*
   - Loot counted, but only if `GetLootSourceInfo` is there.
   - Build periods, chances, the test for a changed chance, cells.
   - Gathering nodes (the plan, *Gathering nodes*): gathers and yields per node type and visit, places merged
     by yards with candidates and the spawn mix; verified and unverified marks (*Verified and unverified*).
   - Tests.
-- [ ] **1d.4 Quests,** with the Quests pack.
+- [ ] **1d.4 Quests,** with the Quests pack. *Built (Saneroki, 2026-10-24, `Data/Quests.lua`): the quest watchers
+  (offered, taken, worked on, handed in, compared field by field; a quest only Forever has learned whole), `next`
+  from a follow-up offered at once, requirements narrowed by the offer, objectives' creatures and items and where
+  counts go up; with tests. Still open: breadcrumbs, `Missing`, the game's quest lines.*
   - The quest watchers.
   - Chains, breadcrumbs and `Missing`.
   - Requirements narrowed by what the game offers.
