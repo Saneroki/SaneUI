@@ -513,6 +513,8 @@ class Handler(BaseHTTPRequestHandler):
         q = urllib.parse.parse_qs(url.query)
         if url.path in ("/", "/index.html"):
             return self.reply((WEB / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if url.path == "/web-nav.js":
+            return self.reply(web_nav(), "text/javascript; charset=utf-8")
         if url.path in ("/lab.js", "/lab.css"):
             kind = "text/javascript" if url.path.endswith(".js") else "text/css"
             return self.reply((WEB / url.path[1:]).read_bytes(), kind + "; charset=utf-8")
@@ -574,6 +576,11 @@ class Handler(BaseHTTPRequestHandler):
                 r = HOST.start()
             return self.reply(r)
         return self.reply({"error": "unknown"}, code=404)
+
+
+def web_nav():
+    """The pages' menu with every tool page in it (dev/tools/web-pages nav), sent as /web-nav.js."""
+    return subprocess.run([str(ROOT / "dev" / "tools" / "web-pages"), "nav"], capture_output=True).stdout
 
 
 def serve(port):

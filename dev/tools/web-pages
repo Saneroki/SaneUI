@@ -8,17 +8,25 @@ of its own, so they can all be open at once.
   127.0.0.1 port 8773   world map          dev/tools/world-map serve (saneui showworldmap)
   127.0.0.1 port 8774   interface lab      dev/tools/ui-lab serve (saneui showuilab)
   127.0.0.1 port 8775   task board         dev/tools/board serve (saneui showboard)
-  and the pages of ~/.config/saneui/pages.json: {"pages": [{"name": ..., "port": ..., "folder": ...}]}, folders
-  served as they are (pages kept outside the project)
+  and the pages of ~/.config/saneui/pages.json: {"pages": [{"name": ..., "port": ..., "folder": ..., "path": ...}]},
+  folders served as they are (pages kept outside the project; "path" the page in the folder, "/" if left out)
+
+Every page has the same menu of them all (the ☰ button, Alt+M): dev/tools/web-nav.js, which each tool's server
+sends as /web-nav.js with the list below filled in (`web-pages nav` prints it); a folder's pages get it put in by
+`web-pages folder`, the server this tool runs for folders.
 
 Usage:
   dev/tools/web-pages [list]   the pages, their ports and which are up (saneui webpages, saneui status webpages)
   dev/tools/web-pages run      every page that is down, here; Ctrl+C stops them
   dev/tools/web-pages start    run in the background (saneui start webpages), as a passing user unit
   dev/tools/web-pages stop     the background run stopped (saneui stop webpages); pages started elsewhere stay
+  dev/tools/web-pages nav      the pages' menu script, the list filled in (what the servers send as /web-nav.js)
+  dev/tools/web-pages folder PORT DIR   a folder served as it is, its HTML pages with the menu put in
 
 A page whose port is taken already (its tool started by hand, or by a session) is left to that server.
 """
+import functools
+import http.server
 import json
 import os
 import signal
@@ -31,6 +39,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "saneui" / "pages.json"
 UNIT = "saneui-web-pages"
+NAV = ROOT / "dev" / "tools" / "web-nav.js"
 PAGES = [   # name, port, what serves it: a tool's command, or a folder served as it is
     ("interface pieces", 8768, ROOT / "assets" / "generated" / "interface"),
     ("maps compared", 8771, ["dev/tools/map-compare", "serve"]),
@@ -48,6 +57,53 @@ def pages():
     return sorted(found, key=lambda p: p[1])
 
 
+def paths():
+    """The page each port opens on, where it is not the folder's root (from pages.json)."""
+    if not CONFIG.is_file():
+        return {}
+    return {int(p["port"]): p["path"] for p in json.loads(CONFIG.read_text())["pages"] if p.get("path")}
+
+
+def nav_script():
+    """dev/tools/web-nav.js with every page in its list."""
+    where = paths()
+    listed = [{"name": name, "port": port, "path": where.get(port, "/")} for name, port, _ in pages()]
+    return NAV.read_text().replace("/*PAGES*/[]", json.dumps(listed), 1)
+
+
+def serve_folder(port, folder):
+    """A folder as it is, with /web-nav.js, and the menu put into each HTML page it sends."""
+    tag = b'<script src="/web-nav.js" defer></script>'
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def send(self, body, kind):
+            self.send_response(200)
+            self.send_header("Content-Type", kind)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            if self.path.split("?")[0] == "/web-nav.js":
+                return self.send(nav_script().encode(), "text/javascript; charset=utf-8")
+            file = Path(self.translate_path(self.path))
+            if file.is_dir() and self.path.split("?")[0].endswith("/"):
+                file = file / "index.html"
+            if file.suffix == ".html" and file.is_file():
+                page = file.read_bytes()
+                at = page.lower().rfind(b"</body>")
+                return self.send(page[:at] + tag + page[at:] if at >= 0 else page + tag, "text/html; charset=utf-8")
+            super().do_GET()
+
+    handler = functools.partial(Handler, directory=str(folder))
+    print(f"{folder} on 127.0.0.1 port {port}", flush=True)
+    http.server.ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
+
+
 def up(port):
     with socket.socket() as s:
         s.settimeout(0.3)
@@ -59,7 +115,7 @@ def command(port, serves):
     if isinstance(serves, Path):
         if not serves.is_dir():
             return None, f"{serves} is not there"
-        return [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(serves)], None
+        return [sys.executable, str(Path(__file__).resolve()), "folder", str(port), str(serves)], None
     if not (ROOT / serves[0]).is_file():
         return None, f"{serves[0]} is not there"
     return [str(ROOT / serves[0]), *serves[1:], "--port", str(port)], None
@@ -113,6 +169,13 @@ def main():
             print(f"The background run ({UNIT}): {'running' if active else 'not running'}")
     elif verb == "run":
         run()
+    elif verb == "nav":
+        sys.stdout.write(nav_script())
+    elif verb == "folder" and len(sys.argv) == 4:
+        try:
+            serve_folder(int(sys.argv[2]), Path(sys.argv[3]).expanduser().resolve())
+        except KeyboardInterrupt:
+            pass
     elif verb == "start":
         subprocess.run(["systemctl", "--user", "reset-failed", UNIT], capture_output=True)
         env = [f"--setenv={k}={os.environ[k]}" for k in ("PATH", "HOME") if k in os.environ]

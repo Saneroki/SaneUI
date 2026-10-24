@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: one menu on every tool page; the pages dark (Saneroki, 2026-10-24)
+- **The menu:** a ☰ button on every tool page (interface pieces, concept history, maps compared, instance maps, world
+  map, interface lab, task board) opens the list of them all, each with its port and a dot for whether it is up,
+  the page you are on marked; Alt+M opens and closes it, Esc closes it. One script, `dev/tools/web-nav.js` (in a
+  shadow root, so no page's styles reach it), stands before the page's title in its header bar, or in the top left
+  corner where a page has none. Every tool's server sends it as `/web-nav.js` with the list filled in from
+  `dev/tools/web-pages` (`web-pages nav`; `pages.json` gets an optional `path`, the concept history's
+  `/concept-history/`).
+- **Folders:** `web-pages folder PORT DIR` serves a folder as it is and puts the menu into each HTML page it sends,
+  so the interface pieces and the concept history get it without their generators changing; `web-pages run` and
+  `.claude/launch.json` use it in place of `python -m http.server`.
+- **Dark:** the menu sets the browser's dark controls and scrollbars on every page; the task board opens dark (its
+  ◐ button still switches to light, kept per browser).
+
 ### dev: the task board, every todo a card from Backlog to Finalized (Saneroki, 2026-10-23)
 - **`dev/tools/board`** (`saneui board`, `saneui showboard`): one board in the private folder (`board.json`, set by
   `~/.config/saneui/private.json`), columns Backlog, Next up, In progress, Review (built, to try in the game) and

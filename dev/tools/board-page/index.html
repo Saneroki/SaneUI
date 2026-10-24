@@ -448,11 +448,10 @@ $("f-delete").onclick = async () => {
 $("new").onclick = () => open(null);
 $("search").oninput = (ev) => { filter.text = ev.target.value.trim(); render(); };
 $("area").onchange = (ev) => { filter.area = ev.target.value; store.set("area", filter.area); render(); };
-const theme = store.get("theme", null);
-if (theme) document.documentElement.dataset.theme = theme;
+document.documentElement.dataset.theme = store.get("look", "dark");   // dark unless light was chosen
 $("theme").onclick = () => {
   const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#1b1a18";
-  document.documentElement.dataset.theme = dark ? "light" : "dark"; store.set("theme", dark ? "light" : "dark");
+  document.documentElement.dataset.theme = dark ? "light" : "dark"; store.set("look", dark ? "light" : "dark");
 };
 document.addEventListener("keydown", (ev) => {
   if ($("edit").open || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
@@ -461,5 +460,6 @@ document.addEventListener("keydown", (ev) => {
 });
 poll();
 </script>
+<script src="/web-nav.js" defer></script>
 </body>
 </html>
