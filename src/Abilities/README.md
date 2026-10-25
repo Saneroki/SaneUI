@@ -1,6 +1,6 @@
 # Sane UI: Abilities
 
-**Status:** working · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** working · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever and Retail (interface 16001, 120105; in Retail the reservations and layouts, see *In Retail*)
 
 ## TL;DR
 The module for your spells and abilities (it was called *Spellbook*; it will do more than the spellbook).
@@ -8,6 +8,8 @@ Your normal spellbook (P) also lists the spells you have **not learned yet**, in
 they will end up. Drag a grey spell onto an action bar button: the button is *reserved* and becomes the
 real spell the moment you learn it. A **Home** page, the first tab of the spellbook, says what your
 trainer can teach you right now and which spells you get from quests.
+In Retail the game's spellbook lists the spells still to come itself and stays the game's own; there the
+module keeps reserved buttons and saved bar layouts.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Abilities* under *Sane UI* in the game's addon list.
@@ -72,6 +74,13 @@ trainer can teach you right now and which spells you get from quests.
   reservations, `/sane ab debug` what the lists were built from.
 - **If the spellbook ever looks wrong:** `/sane ab pages off`, then `/reload`. The game then draws its pages
   itself again (no grey entries); everything else keeps working. `/sane errors` shows what went wrong.
+- **In Retail:** the game's own spellbook already shows the spells you learn at later levels, in grey, so the
+  spellbook, its options menu and the trainers stay the game's: no grey entries of ours, no Home page, no
+  compact pages, no moving or resizing, and the spellbook's switches are not on the options page. What is
+  there: reserved buttons with their grey icon and clock on the bars (moved as above), saved bar layouts
+  (*Action bar layouts* in the spellbook's menu, or `/sane ab save`, `load`: what you do not have yet is
+  reserved), `/sane ab item`, `list`, `clear`, `debug`, and the two switches *Show reservations on the action
+  bars* and *Say in chat when a reserved button is filled*.
 
 ## Technical details
 - **Part of Sane UI, and an addon of its own** (`SaneUI_Abilities.toc`: `## Dependencies: SaneUI`,
@@ -243,8 +252,26 @@ trainer can teach you right now and which spells you get from quests.
   `Data/Classes/`, whose files are only checked for their format.
   The page rule in `Book/Layout.lua` was also run against Blizzard's own paging code: same result in
   42,000 generated cases.
-- **References:** `references/` is Blizzard's interface source and art for this build
-  (`Blizzard_PlayerSpells`, `Blizzard_PagedContent`, `Blizzard_Menu`).
+- **Forever and Retail** (`Doc/guides/addon-standards.md`, *Forever and Retail*). One code for both; what
+  differs is told apart by `Core.FOREVER`. The spells still to come are Forever's: its class trainers teach
+  them rank by rank, and its spellbook does not list them. Retail's spellbook lists them itself (its
+  *future spells*), Retail has no class trainers and no ranks, and its spellbook is of another measure
+  (pages 680 x 650 from 65 down, headings 51 high, text tabs, no `UpdateSize` on the window). So in Retail:
+  - Forever's trainer data is not read: the class files, `Data/QuestSpells.lua`, `Data/WeaponSkills.lua` and
+    `Data/SkillLines.lua` end in `[ExcludeLoadGameType standard]` in the TOC. `Data/Trainer.lua` is read in
+    both: its functions (`D.Learned`, `D.FamilyName`, `D.Info`) serve the reservations too. Without
+    `SkillLines.lua` a spell finds no built-in tab, and no error (`Sources.lua`, `FindTab`).
+  - The spellbook's pages are not taken (`Book.TryArm`), so Home and the window, which follow them, stay away;
+    the trainer's window is not listened to (`Abilities.lua`, `OnLogin`); the five spellbook switches are kept
+    without words, so they have no control (`OPTIONS`); the spellbook's menu gets only the bars' lines
+    (`Menu.lua`); `/sane ab add`, `pages` and `window` are not there and the help leaves them out
+    (`TEXT.helpRetail`); `/sane ab debug` tells the reservations only.
+  - What you have is read as in Forever, without the question about low ranks
+    (`C_SpellBook.IsSpellBookItemLowRank`, Forever's only). The reservations, the bars' ghosts, moving a
+    reservation, the saved layouts and the spell the game puts on a button by itself work the same: the bars,
+    their slots, the events and the functions they use are the same in both games.
+- **References:** Blizzard's interface source and art of the newest export (`dev/tools/blizzard where`):
+  `Blizzard_PlayerSpells`, `Blizzard_PagedContent`, `Blizzard_Menu`.
 
 ## Files
 | File | What it is |
@@ -270,6 +297,11 @@ trainer can teach you right now and which spells you get from quests.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-10-25 — Retail: the module runs there with the reservations, their ghosts on the bars and the saved
+  layouts. The spellbook stays the game's own (it lists the spells still to come itself): no grey entries,
+  Home, compact pages or window of ours, no spellbook switches in the options or the spellbook's menu, no
+  trainer reading, and Forever's trainer data is not read. Reading your spellbook no longer asks Retail
+  about low ranks, which it does not know (the error at login).
 - 2026-10-17 — On Core's shared tools. Saving, loading and deleting a layout ask in the game's own
   dialogs (loading asks *Yes* or *No*). A switch flipped in the spellbook's menu, by the checkbox next to
   the page buttons or by `/sane ab pages` shows on an open options page at once. The checkbox sounds as

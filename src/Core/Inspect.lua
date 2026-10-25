@@ -4,9 +4,11 @@
 --  (a tooltip, a nameplate): Core.Inspect.Level(unit, guid), .Talents(unit,
 --  guid), and Core.Inspect.Watch(fn): fn(guid) when a player's answer came.
 --
---  Talents: on this client a class's talents are one tree in three groups
+--  Talents: on Forever a class's talents are one tree in three groups
 --  ("Balance", "Feral Combat", "Restoration"), each with the points spent in it
---  (C_Traits); the group with the most is the player's spec.
+--  (C_Traits); the group with the most is the player's spec. Retail has no such
+--  groups: there the spec is the specialization chosen ("Guardian"), without
+--  points (C_SpecializationInfo).
 --
 --  Yours are the game's at once (GetAverageItemLevel, your active talents).
 --  Another player's can only be had by inspecting them: the game asks the server (NotifyInspect)
@@ -93,6 +95,28 @@ local function Talents(config)
     return best, table.concat(points, "/")
 end
 
+-- Whether talents come in groups with points (Forever's), or the spec is the specialization (Retail's).
+local function Grouped()
+    local traits = rawget(_G, "C_Traits")
+    return traits ~= nil and traits.GetGroupDisplayInfoByTreeID ~= nil
+end
+
+-- The name of a specialization: yours (no unit), or the inspected player's. Nil when the client cannot say.
+local function Specialization(unit)
+    local specs = rawget(_G, "C_SpecializationInfo")
+    if not specs then return nil end
+    if not unit then
+        local index = Ask(specs.GetSpecialization)
+        if not index then return nil end
+        local _, name = Ask(specs.GetSpecializationInfo, index)
+        return name
+    end
+    local id = Ask(specs.GetInspectSpecialization, unit)
+    if not id or id == 0 then return nil end
+    local _, name = Ask(rawget(_G, "GetSpecializationInfoByID"), id)
+    return name
+end
+
 local function Keep(guid, level, spec, points)
     if count >= LOTS then
         local now = GetTime()
@@ -124,14 +148,18 @@ function Inspect.Level(unit, guid)
     return nil, Question(unit, guid, now)
 end
 
--- A player's spec and its points ("Feral Combat", "0/31/20"), or nil: yours at once, another's
--- once inspected (Level asks).
+-- A player's spec and its points ("Feral Combat", "0/31/20"; Retail's specialization has none), or nil:
+-- yours at once, another's once inspected (Level asks).
 function Inspect.Talents(unit, guid)
     if Plain(UnitIsUnit(unit, "player")) then
         local now = GetTime()
         if not mine.at or now - mine.at >= MINE then
             local classTalents = rawget(_G, "C_ClassTalents")
-            mine.spec, mine.points = Talents(classTalents and Ask(classTalents.GetActiveConfigID))
+            if Grouped() then
+                mine.spec, mine.points = Talents(classTalents and Ask(classTalents.GetActiveConfigID))
+            else
+                mine.spec, mine.points = Specialization(), nil
+            end
             mine.at = now
         end
         return mine.spec, mine.points
@@ -156,8 +184,12 @@ local function Start()
         pending = nil
         if Plain(UnitGUID(unit)) ~= guid then unit = UnitTokenFromGUID and Plain(UnitTokenFromGUID(guid)) end
         local level = unit and Plain(C_PaperDollInfo.GetInspectItemLevel(unit))
-        local consts = rawget(_G, "Constants")
-        local spec, points = Talents(consts and consts.TraitConsts and consts.TraitConsts.INSPECT_TRAIT_CONFIG_ID)
+        local consts, spec, points = rawget(_G, "Constants"), nil, nil
+        if Grouped() then
+            spec, points = Talents(consts and consts.TraitConsts and consts.TraitConsts.INSPECT_TRAIT_CONFIG_ID)
+        elseif unit then
+            spec = Specialization(unit)
+        end
         -- The answer is read: what was inspected is let go, unless the game's inspect window shows it
         -- or somebody else (another addon) has asked for an inspection since ours.
         if not InspectWindowOpen() and ClearInspectPlayer and lastAsked <= at then ClearInspectPlayer() end

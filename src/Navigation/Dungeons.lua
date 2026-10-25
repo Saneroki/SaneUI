@@ -163,7 +163,7 @@ function Dungeons.List()
     Walk()
     if list and (told or fromData) then return list end
     list = {}
-    local root = ns.Coords.WorldMap()
+    local root = ns.Coords.Top() -- (Retail's: also Outland's, Draenor's and the Shadowlands')
     local children = root and Core.Ask(C_Map.GetMapChildrenInfo, root, DUNGEON, true)
     local seen = {}
     for _, info in ipairs(type(children) == "table" and children or {}) do

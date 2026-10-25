@@ -15,6 +15,9 @@ local _, ns = ...
 --  your key bindings change (UPDATE_BINDINGS, only when the keys of those
 --  actions did), and taken away when the switch is off or the module stands
 --  down; in a fight, once it is over. Our keys themselves work in a fight too.
+--  Only the keys of a window of ours this game has (Board.Present): in Retail,
+--  where our spellbook and talents are not (Combat.lua, ns.Serves), the game's
+--  keys stay the game's.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Keys = {}
@@ -23,8 +26,9 @@ ns.Keys = Keys
 -- The game's actions whose keys open ours, and what each opens.
 Keys.ACTIONS = { TOGGLESPELLBOOK = "spellbook", TOGGLEPETBOOK = "pet", TOGGLETALENTS = "talents" }
 Keys.ORDER = { "TOGGLESPELLBOOK", "TOGGLEPETBOOK", "TOGGLETALENTS" }
--- Our own keys (Bindings.xml).
+-- Our own keys (Bindings.xml), and the window of ours each opens.
 Keys.COMMANDS = { spellbook = "SANEUI_COMBAT_SPELLBOOK", pet = "SANEUI_COMBAT_PETBOOK", talents = "SANEUI_COMBAT_TALENTS" }
+Keys.WINDOWS = { spellbook = "spellbook", pet = "spellbook", talents = "talents" }
 
 -- Their words in the game's key bindings.
 BINDING_NAME_SANEUI_COMBAT_SPELLBOOK = "Open the spellbook on Combat's full screen"
@@ -44,6 +48,12 @@ local function Signature()
     return table.concat(parts, "|")
 end
 
+-- Whether the window of ours that one of the game's actions would open is there in this game.
+local function Ours(action)
+    local what = Keys.ACTIONS[action]
+    return what ~= nil and ns.Board.Present(Keys.WINDOWS[what])
+end
+
 -- Our keys on the game's: out of a fight, or once it is over.
 function Keys.Bind()
     if not owner then return end
@@ -53,19 +63,26 @@ function Keys.Bind()
     local options = ns.options or {}
     if ns.off or options.keys == false then return end
     for _, action in ipairs(Keys.ORDER) do
-        for _, key in ipairs({ GetBindingKey(action) }) do
-            if type(key) == "string" and key ~= "" then
-                SetOverrideBinding(owner, false, key, Keys.COMMANDS[Keys.ACTIONS[action]])
+        if Ours(action) then
+            for _, key in ipairs({ GetBindingKey(action) }) do
+                if type(key) == "string" and key ~= "" then
+                    SetOverrideBinding(owner, false, key, Keys.COMMANDS[Keys.ACTIONS[action]])
+                end
             end
         end
     end
 end
 
--- Whether our keys are on the game's now: the game's own spellbook and talents then open from its micro menu
--- buttons only (Core's Classic windows say so).
-function Keys.Taken()
+-- Whether our keys are on the game's now (that action's, TOGGLETALENTS; without one, any of them): the game's own
+-- spellbook and talents then open from its micro menu buttons only (Core's Classic windows say so).
+function Keys.Taken(action)
     local options = ns.options or {}
-    return owner ~= nil and not ns.off and options.keys ~= false
+    if owner == nil or ns.off or options.keys == false then return false end
+    if action then return Ours(action) end
+    for _, each in ipairs(Keys.ORDER) do
+        if Ours(each) then return true end
+    end
+    return false
 end
 
 local function Changed()
@@ -74,9 +91,10 @@ local function Changed()
 end
 
 -- One of our keys was pressed (Bindings.xml): the full screen with that window, or back from it. The pet book's
--- does nothing while your pet has no spellbook, as the game's key (it opens its book only at the pet's tab).
+-- does nothing while your pet has no spellbook, as the game's key (it opens its book only at the pet's tab); one
+-- whose window this game has not (Retail) does nothing either.
 function Keys.Press(what)
-    if ns.off then return end
+    if ns.off or not ns.Board.Present(Keys.WINDOWS[what]) then return end
     if what == "pet" then
         if not ns.BookData.HasPet() then return end
         return ns.Window.Toggle("spellbook", "pet")

@@ -247,6 +247,10 @@ local function Show(on)
     end
 end
 
--- A window of its own on the board: the rank at the left, the season's details at the right.
-ns.Page.Part("pvp", Core.Word("PVP", "PvP"), ns.Page.Least(PvP.LEAST[1] + ns.Page.SIDE, PvP.LEAST[2]),
-    { side = true, Build = Build, Show = Show })
+-- A window of its own on the board: the rank at the left, the season's details at the right. Only where the game
+-- keeps the season's rank (WoW: Forever's progression of its rank faction): a game without it (Retail, whose PvP is
+-- its honor levels and seasons) has no PvP window.
+if Majors().GetMajorFactionProgressionInfo then
+    ns.Page.Part("pvp", Core.Word("PVP", "PvP"), ns.Page.Least(PvP.LEAST[1] + ns.Page.SIDE, PvP.LEAST[2]),
+        { side = true, Build = Build, Show = Show })
+end

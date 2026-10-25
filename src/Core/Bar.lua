@@ -43,6 +43,7 @@ Bar.ART = {
     divider = "ui-hud-experiencebar-divider",
     flare = "UI-HUD-ExperienceBar-Flare-XP-2x-Flipbook",
 }
+Bar.LINE = { 0, 0, 0, 0.6 } -- a divider where the client lacks the divider's art (Retail)
 -- The flare is a flipbook, laid out as the game's status bar plays it (GradualAnimatedStatusBar.xml):
 -- its rows, columns and pictures, and its width for each unit of the bar's height (32.5 on 10).
 local FLIPBOOK = { rows = 7, columns = 4, frames = 28, wide = 3.25 }
@@ -212,9 +213,12 @@ function Bar.New(parent, options)
     over:SetAllPoints()
     over:SetFrameLevel(frame:GetFrameLevel() + 3)
     local segments = math.floor(tonumber(options.segments) or tonumber(rawget(_G, "STATUS_BAR_NUM_SEGMENTS")) or 1)
+    -- Retail's bars have no dividers, nor their art: there a thin dark line of ours stands for one.
+    local textures = rawget(_G, "C_Texture")
+    local art = not (textures and textures.GetAtlasInfo) or Core.Ask(textures.GetAtlasInfo, Bar.ART.divider) ~= nil
     for index = 1, segments - 1 do
         local divider = over:CreateTexture(nil, "ARTWORK")
-        divider:SetAtlas(Bar.ART.divider)
+        if art then divider:SetAtlas(Bar.ART.divider) else divider:SetColorTexture(unpack(Bar.LINE)) end
         bar.dividers[index] = divider
     end
     bar.pip = over:CreateTexture(nil, "OVERLAY")

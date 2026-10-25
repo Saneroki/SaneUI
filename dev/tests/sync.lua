@@ -398,6 +398,22 @@ W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(W.cvars.cameraSavedDistance == "30", "it follows when the fight is over")
 
+-- Another game's: each game has settings of its own, so what one kept is never written into the other ---
+check(Sync.options.from == "forever", "what is kept was read in Forever")
+W.cvars.cameraSavedDistance = "7"
+W.Play("retail")
+Sync.Give()
+check(W.cvars.cameraSavedDistance == "7" and Sync.Taken("perCharacter") == nil,
+    "in Retail Forever's are neither written nor handed out (a game folder's saved settings copied into the other's)")
+Sync.Capture()
+check(Sync.options.from == "retail" and Sync.Taken("perCharacter") ~= nil, "Retail's own take their place")
+W.Play("forever")
+W.cvars.cameraSavedDistance = "30"
+Sync.Give()
+check(W.cvars.cameraSavedDistance == "30", "and are not written into Forever either")
+Sync.Capture()
+check(Sync.options.from == "forever", "Forever's own again")
+
 -- A part that is not kept is neither read nor written -------------------------------------------
 Tick(Control("Other per-character settings"), false)
 check(options.off.perCharacter == true and not Sync.PartKept("perCharacter"), "unticked, the part is left to the game")

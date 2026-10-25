@@ -1675,6 +1675,13 @@ bar:SetValue(200, 1000)
 check(not rise.playing and bar.filled._value == 0.2, "with the motion Instant a gain is there at once too")
 Core.general.motion = "glide"
 check(#Bar.New(UIParent, { segments = 1 }).dividers == 0, "one piece: no dividers")
+do -- a client without the dividers' art (Retail): a thin dark line of ours for each
+    local texture = rawget(_G, "C_Texture")
+    C_Texture = { GetAtlasInfo = function(name) if name ~= Bar.ART.divider then return {} end end }
+    local plain = Bar.New(UIParent, { segments = 4 }).dividers
+    check(#plain == 3 and plain[1]._atlas == nil, "without the dividers' art, each divider is a line of ours")
+    C_Texture = texture
+end
 do
 local told = Bar.New(UIParent, { moved = function() error("the module's own") end })
 told:SetValue(5, 10)

@@ -74,12 +74,8 @@ local function Layouts(root)
     end
 end
 
--- First the book, then the bars, as on the options page.
-local function Extend(_, root)
-    if not ns.char then return end
-    root:CreateDivider()
-    root:CreateTitle(Core.TITLE)
-
+-- The book's own lines, and the divider under them.
+local function BookLines(root)
     Checkbox(root, "showHidden", PagesOurs)
 
     -- The game offers this line itself, except to warriors and rogues: their ranks replace
@@ -95,8 +91,17 @@ local function Extend(_, root)
     Checkbox(root, "home", PagesOurs)
     Checkbox(root, "compact", PagesOurs)
     Checkbox(root, "window", PagesOurs)
-
     root:CreateDivider()
+end
+
+-- First the book, then the bars, as on the options page. The book's lines are Forever's: in Retail
+-- the spellbook's pages are the game's own (Abilities.lua, at the top), and the bars' lines follow the title.
+local function Extend(_, root)
+    if not ns.char then return end
+    root:CreateDivider()
+    root:CreateTitle(Core.TITLE)
+    if Core.FOREVER then BookLines(root) end
+
     Checkbox(root, "ghosts")
     Checkbox(root, "announce")
 

@@ -231,9 +231,13 @@ local function Locks()
     return locks
 end
 
+-- Whether this client can extend a raid lock: WoW: Forever says so (C_RaidLocks); Retail has no such question, and
+-- its raid info always can (SetSavedInstanceExtend).
 local function Extendable()
     local locks = rawget(_G, "C_RaidLocks")
-    return locks and Core.Ask(locks.IsRaidLockExtendFeatureSupported)
+    local supported = locks and locks.IsRaidLockExtendFeatureSupported
+    if supported then return Core.Ask(supported) end
+    return rawget(_G, "SetSavedInstanceExtend") ~= nil
 end
 
 -- The button to extend the lock chosen, with the game's words for what it would do.

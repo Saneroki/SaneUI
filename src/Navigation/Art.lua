@@ -205,20 +205,29 @@ local function Linked(box, link)
              height = link.sv * box.height }
 end
 
+-- One plane's map, linked into the view's plane, if it meets the view: its paper frame faded off.
+local function Plane(plane, view)
+    local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
+    box = box and link and Linked(box, link)
+    if box and Meets(box, view) then
+        Draw(plane, box, 1, view, outlines:Get(-plane, Art.EDGE, box.u, box.v, box.width, box.height), true)
+    end
+end
+
 -- Under the stitched map: the world map, and every plane's map that meets the view (a continent's, the isle's
--- own), their paper frames faded off; the sea between the zones and around them.
+-- own), their paper frames faded off; the sea between the zones and around them. A view's plane not on the world
+-- map (Retail's Outland, Coords.Elsewhere) has its own map alone.
 local function Under(view)
     local world = Coords.WorldBox(view.map)
     if world and Meets(world, view) then
         Draw(Coords.WorldMap(), world, 0, view, outlines:Get("world", Art.EDGE, world.u, world.v, world.width, world.height), true)
     end
+    local own = false
     for _, plane in ipairs(Coords.Planes()) do
-        local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
-        box = box and link and Linked(box, link)
-        if box and Meets(box, view) then
-            Draw(plane, box, 1, view, outlines:Get(-plane, Art.EDGE, box.u, box.v, box.width, box.height), true)
-        end
+        own = own or plane == view.map
+        Plane(plane, view)
     end
+    if not own then Plane(view.map, view) end
 end
 
 -- The art in view (view: Canvas.view), if shown (the view Parchment): the world's and the continents' maps,

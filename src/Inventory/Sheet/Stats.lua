@@ -5,9 +5,10 @@ local _, ns = ...
 --  The stats' window (the key "stats" on the module's board, Board.lua): the
 --  player's stats, and the pet's under them while there is a pet, on the
 --  journal's page in Sane UI's own look (Doc/guides/interface-style.md): each
---  of the game's categories (PAPERDOLL_STATCATEGORIES: general, attributes,
---  weapons, modifiers, defense; then the resistances; a pet's named with its
---  name) a section
+--  of the game's categories (PAPERDOLL_STATCATEGORIES: WoW: Forever's general,
+--  attributes, weapons, modifiers, defense, then the resistances, a pet's
+--  named with its name; Retail's attributes and enhancements, no resistances
+--  and no pet's, as its sheet has them) a section
 --  with its head written in pencil and ruled, its stats in lines under it
 --  (the name at the left, the value at the right). The sections stand in as
 --  many columns as the window's width holds, in the game's order down each
@@ -203,10 +204,13 @@ local function Give(view, row)
     view.spare[#view.spare + 1] = row
 end
 
--- Filled by the game's function for its stat: shown unless the game hides it or it is at the value it hides at.
+-- Filled by the game's function for its stat: shown unless the game hides it or it is at the value it hides at, as
+-- each game's sheet compares it: WoW: Forever the function's answer, Retail the number it left on the line
+-- (numericValue: its functions answer nothing).
 local function Fill(view, unit, stat, info)
     local row = Take(view)
     local value = Core.Plain(info.updateFunc(row, unit, stat.id))
+    if Core.RETAIL then value = Core.Plain(row.numericValue) end
     if not row:IsShown() or (stat.hideAt ~= nil and value == stat.hideAt) then
         Give(view, row)
         return nil
@@ -260,9 +264,33 @@ local function Head(view, index)
     return head
 end
 
--- Whether the player has a pet the game shows stats for.
+-- Whether the game shows a pet's stats at all: its list has a pet's categories (WoW: Forever's; Retail's has none,
+-- nor their event); and whether the player has a pet it shows them for.
+local function PetStats()
+    local categories = rawget(_G, "PAPERDOLL_STATCATEGORIES")
+    for _, category in ipairs(type(categories) == "table" and categories or {}) do
+        if type(category) == "table" and category.unit == "pet" then return true end
+    end
+    return false
+end
+
 local function Pet()
     return Game("HasPetUI") and UnitExists("pet") and true or false
+end
+
+-- Whether the game has resistances (WoW: Forever's; Retail has none).
+local function Resists()
+    return (rawget(_G, "PaperDollFrame_SetResistance") or rawget(_G, "UnitResistance")) ~= nil
+end
+
+-- A category's name: its own (WoW: Forever's categoryName), else the title of the game's frame it stands in on the
+-- game's sheet (Retail's categoryFrame, the frame's titleText).
+local function CategoryName(category)
+    if category.categoryName then return category.categoryName end
+    local pane = rawget(_G, "CharacterStatsPane")
+    local frame = type(pane) == "table" and category.categoryFrame and pane[category.categoryFrame]
+    local title = type(frame) == "table" and frame.titleText
+    return type(title) == "string" and title or nil
 end
 
 -- Each category of a unit's (the player's, or the pet's) with the stats that show, added to sections; a pet's
@@ -274,7 +302,7 @@ local function Categories(view, sections, unit)
     local owner = unit == "pet" and (UnitName("pet") or Core.Word("PET", "Pet")) or nil
     for _, category in ipairs(categories) do
         if (category.unit or "player") == unit then
-            local name = owner and (owner .. ": " .. tostring(category.categoryName or "")) or category.categoryName
+            local name = owner and (owner .. ": " .. tostring(CategoryName(category) or "")) or CategoryName(category)
             local section = { name = name, rows = {}, primary = unit == "player" }
             for _, stat in ipairs(category.stats or {}) do
                 if info[stat.stat] and Shown(stat, spec, role, unit) then
@@ -290,8 +318,8 @@ local function Categories(view, sections, unit)
     end
 end
 
--- Every line given back, then the sections anew: the player's categories, the resistances, and the pet's
--- categories while there is a pet.
+-- Every line given back, then the sections anew: the player's categories, the resistances (where the game has
+-- them), and the pet's categories while there is a pet.
 local function Sections(view)
     for _, section in ipairs(view.sections) do
         for _, row in ipairs(section.rows) do Give(view, row) end
@@ -299,7 +327,7 @@ local function Sections(view)
     local sections = {}
     Categories(view, sections, "player")
     local resist = { name = Core.Word("STAT_CATEGORY_RESISTANCE", "Resistances"), rows = {} }
-    for _, name in ipairs(Stats.RESISTANCES) do
+    for _, name in ipairs(Resists() and Stats.RESISTANCES or {}) do
         resist.rows[#resist.rows + 1] = Resistance(view, "player", name)
     end
     if #resist.rows > 0 then sections[#sections + 1] = resist end
@@ -469,7 +497,7 @@ local EVENTS = { "COMBAT_RATING_UPDATE", "SPEED_UPDATE", "SKILL_LINES_CHANGED", 
 local UNIT_EVENTS = { "UNIT_STATS", "UNIT_RANGEDDAMAGE", "UNIT_RANGED_ATTACK_POWER", "UNIT_ATTACK", "UNIT_SPELL_HASTE",
                       "UNIT_RESISTANCES", "UNIT_ATTACK_POWER", "UNIT_ATTACK_SPEED", "UNIT_DAMAGE", "UNIT_MAXHEALTH",
                       "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER", "UNIT_LEVEL" }
-local PET_EVENTS = { "PET_STATS_UPDATE" }
+local PET_EVENTS = { "PET_STATS_UPDATE" } -- only where the game shows a pet's stats (PetStats): Retail lacks the event
 
 -- The stats' window is shown (on) or hidden: the game listened to only while it is shown, the pet's too (UNIT_PET
 -- names the pet's owner: the player's only).
@@ -477,7 +505,7 @@ function Stats.Show(on)
     for _, event in ipairs(EVENTS) do
         if on then Core.On(event, later) else Core.Off(event, later) end
     end
-    for _, event in ipairs(PET_EVENTS) do
+    for _, event in ipairs(PetStats() and PET_EVENTS or {}) do
         if on then Core.On(event, later) else Core.Off(event, later) end
     end
     if on then Core.OnUnit("UNIT_PET", "player", later) else Core.OffUnit("UNIT_PET", "player", later) end

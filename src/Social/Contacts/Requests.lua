@@ -108,7 +108,7 @@ local function Accept(request) BNAcceptFriendInvite(request.id) end
 -- comes over Battle.net, not from a character only (Title).
 local function Blockable(request)
     local levels = Enum and Enum.BattleNetFriendLevel
-    return C_BattleNet.SetBlocked ~= nil and request.level ~= nil and request.level ~= (levels and levels.Title)
+    return Contacts.Blocker() ~= nil and request.level ~= nil and request.level ~= (levels and levels.Title)
 end
 
 local function Decline(request, owner)
@@ -117,7 +117,7 @@ local function Decline(request, owner)
         if Blockable(request) then
             root:CreateButton(Core.Word("BLOCK_INVITES", "Block Invites"), ns.Guard(function()
                 Core.Confirm(Core.Word("BLOCK_INVITES_CONFIRMATION", "Are you sure you want to block all invites from %s?"), request.name, function()
-                    C_BattleNet.SetBlocked(request.id, true)
+                    Contacts.Blocker()(request.id, true)
                     BNDeclineFriendInvite(request.id)
                 end)
             end))

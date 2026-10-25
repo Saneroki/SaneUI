@@ -2170,6 +2170,63 @@ do
     Core.described[ns.name].changed("boardFinder")
     W.Wait(0.1)
     check(finderTab:IsShown(), "on again, the tab is back")
+    ;(function() -- Retail: its own group finder, its own unblock, its raid locks always extendable
+    local Finder, switch = ns.Contacts.Finder, nil
+    for _, option in ipairs(Core.described[ns.name].list) do
+        if option.key == "boardFinder" then switch = option end
+    end
+    check(Finder.Usable() and not Core.Config.Hidden(ns.name, switch), "(Forever: the tab Group finder and its switch)")
+    -- Raid Info's Extend Raid Lock: Forever asks the game whether it can extend one; Retail has no such question.
+    local saved, locks = rawget(_G, "SetSavedInstanceExtend"), rawget(_G, "C_RaidLocks")
+    rawset(_G, "SetSavedInstanceExtend", function() end)
+    rawset(_G, "C_RaidLocks", { IsRaidLockExtendFeatureSupported = function() return false end })
+    local function Extend()
+        ns.Friends.Open("Raid")
+        local info = foot(panels.friends, "Raid Info")
+        info:GetScript("OnClick")(info, "LeftButton")
+        local extend = foot(panels.friends, "Extend Raid Lock")
+        local back = foot(panels.friends, "Back")
+        back:GetScript("OnClick")(back, "LeftButton")
+        return extend
+    end
+    check(Extend() == nil, "Forever: no Extend Raid Lock where the game says it cannot extend one")
+    W.Play("retail")
+    local finderFrame = W.NewWidget("Frame", "PVEFrame", UIParent)
+    finderFrame:Hide()
+    local opened = 0
+    rawset(_G, "PVEFrame", finderFrame)
+    rawset(_G, "PVEFrame_ToggleFrame", function() opened = opened + 1 end)
+    ns.Friends.Open("Finder")
+    ns.Friends.Relabel()
+    W.Wait(0.1)
+    check(not Finder.Usable() and not finderTab:IsShown() and list(panels.friends) == friends
+        and Core.Config.Hidden(ns.name, switch), "Retail: the tab Group finder and its switch stand down, Friends is shown")
+    ns.CLASSIC[3].show()
+    check(opened == 1, "Retail: Group finder in Classic windows opens the game's own finder, as its micro menu button does")
+    finderFrame:Show()
+    ns.CLASSIC[3].show()
+    check(opened == 1, "(not while it is open)")
+    local found = false
+    for _, name in ipairs(ns.CLASSIC[3].frame) do found = found or name == "PVEFrame" end
+    check(found, "Retail's finder gets the button Sane UI too")
+    local unblocked
+    rawset(_G, "BNSetBlocked", function(id, on) unblocked = id .. " " .. tostring(on) end)
+    ns.Contacts.Blocker()(7, false)
+    check(C_BattleNet.SetBlocked == nil and unblocked == "7 false", "Retail: invites are blocked and unblocked by its own function")
+    check(Extend() ~= nil, "Retail: Raid Info offers Extend Raid Lock, as the game's own always does")
+    rawset(_G, "BNSetBlocked", nil)
+    rawset(_G, "PVEFrame", nil)
+    rawset(_G, "PVEFrame_ToggleFrame", nil)
+    W.Play("forever")
+    rawset(_G, "SetSavedInstanceExtend", saved)
+    rawset(_G, "C_RaidLocks", locks)
+    ns.Friends.Relabel()
+    W.Wait(0.1)
+    check(C_BattleNet.SetBlocked ~= nil and finderTab:IsShown() and Finder.Usable()
+        and not Core.errors["Social: group finder"] and not Core.errors["Social: raid"],
+        "Forever again: the tab is back, nothing went wrong")
+    ns.Friends.Open("Friends")
+    end)()
     ;(function() -- the conversations' panel: the chat, the second chat, every whisper, the party's and the raid's chat
     local Talks, talks = ns.Talks, panels.talks
     local function click(widget, button) widget:GetScript("OnClick")(widget, button or "LeftButton") end

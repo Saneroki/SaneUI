@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; in Retail the quest marks only (our spellbook and talents are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -64,6 +64,10 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*, *Quest marks on nameplates*,
   the section *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and
   texture) and *Window corners*.
+- **In Retail:** our spellbook and talents are made after WoW: Forever's, which Retail has not, so neither is
+  there: the bottom edge fills no screen, your spellbook, pet book and talents keys open the game's own windows,
+  and the settings are *Quest marks on nameplates* only. The quest marks work as in Forever. Combat's own keys
+  still stand in the game's key bindings (the game reads `Bindings.xml` in both games) and do nothing there.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -165,11 +169,21 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   creature, else the sack (`Interface\CURSOR\LootAll`), the count left of it. None while the module Nameplates runs
   (`SaneUI.Nameplates`, not stood down): it shows the same inside its bar. A secret value (a fight) leaves the mark as it was.
   Looked at again on `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame (`Core.Later`).
+- **Forever and Retail** (`Combat.lua`, `ns.Serves(key)`): each of our windows is there only in a game that has
+  what it is made after, asked for itself: the spellbook where the game's book holds its flyouts' spells loose
+  (`C_SpellBook.IsSpellBookItemLooseFlyoutMember`; its art, `spellbook-*-C60`, is that game's too), the talents
+  where each specialization group has its own config (`C_SpecializationInfo.GetCombatConfigIDForSpecGroup`). Both
+  are Forever's only. A window that is not there is no part's `Present()` (`Talents.Present`, `Book.Part.Present`):
+  not in the dropdown *Windows*, not in the first layout (`Board.FIRST`, those present), not in *Classic windows*
+  (the entries' `window`), and its keys stay the game's (`Keys.Bind`, `Keys.Taken(action)`, `Keys.Press`). With
+  neither (`ns.Serves()`), no window is made (`Window.Build`), the switch *keys* and the sections *Expand window*
+  and *Window corners* are not described, and `GIVEN_BACK` says only the quest marks go.
 - **Standing down** (`ns.GiveBack`): the keys are the game's again first, then each part gives back what it lent
   (the planner) and hides what is protected (the book's secure buttons, now or after the fight), the window hides,
   the quest marks hide and no plate gets one after it; each step by itself, so one that fails keeps none of the
   others from giving back.
-- Tests: `dev/tests/combat.lua` (the window, the board, the keys, the planner, the quest marks),
+- Tests: `dev/tests/combat.lua` (the window, the board, the keys, the planner, the quest marks, a window of ours a
+  game lacks; at its end the file runs again as Retail loads the module, `combat.lua retail`),
   `dev/tests/book.lua` (the spellbook), `dev/tests/talents.lua` (the talents).
 
 ## Files
@@ -209,3 +223,5 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   the book casts out of a fight only); your spellbook and talents keys open ours; the talent planner a window
   of its own; the game's window no longer seated.
 - **2026-10-20:** our own talents (the game's shared talent frame with the Camelot class layer ported).
+- **2026-10-25:** Retail (Saneroki: one interface for both games): our spellbook and talents stand down there and
+  the game's own open with their keys; the quest marks run in both.

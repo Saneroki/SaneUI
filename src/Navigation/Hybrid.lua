@@ -30,6 +30,9 @@ local _, ns = ...
 --                   planes, so its minimap alone is the map there, with its own ground, at the view's
 --                   step (the game's own while the view has none), whatever the pin filter says; our
 --                   layers hold nothing meanwhile (Canvas.lua); its ground off again once a place is known
+--      no land      where Core's terrain is not there (Retail, until its data comes: Terrain.Possible) the
+--                   small view keeps the game's own ground at its steps, the land as it lies; our map
+--                   (Parchment) shows past them, and the full map has its dots only
 --
 --  The full map (Wide): around the player at the map's own scale, so its dots stand where they are
 --  on our map: square, at its widest step whose square takes at most Hybrid.ROOM of the canvas'
@@ -48,6 +51,7 @@ local Hybrid = {}
 ns.Hybrid = Hybrid
 
 Hybrid.MASK = "Interface\\Buttons\\WHITE8X8" -- square: the corners of our map are the minimap's too
+Hybrid.ROUND = "Textures\\MinimapMask" -- the engine's round mask, given back where the game's code sets none (Retail)
 Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks.lua)
 Hybrid.ROOM = 0.5 -- the full map: its square takes at most so much of the canvas' shorter side
 local WAIT = "navigation: minimap" -- what waits for the fight's end
@@ -176,8 +180,13 @@ local function Give()
     for frame in pairs(saved.mice) do frame:EnableMouse(true) end
     cluster:SetAlpha(saved.clusterAlpha)
     cluster:EnableMouse(saved.clusterMouse)
-    -- Its mask, frame art and sizes as the game sets them for the minimap's settings.
-    if cluster.UpdateMinimapConfig then Core.Ask(cluster.UpdateMinimapConfig, cluster) end
+    -- Its mask, frame art and sizes as the game sets them for the minimap's settings; where no code of the game sets
+    -- its mask (Retail: the engine's own), that round one.
+    if cluster.UpdateMinimapConfig then
+        Core.Ask(cluster.UpdateMinimapConfig, cluster)
+    else
+        minimap:SetMaskTexture(Hybrid.ROUND)
+    end
     -- Hidden first, so what follows its showing (Core's button Sane UI on it, Classic.lua) looks again.
     minimap:Hide()
     minimap:SetShown(saved.shown)
@@ -203,8 +212,8 @@ function Hybrid.GiveBack()
     Give()
 end
 
--- The game sets the minimap's mask again when its rotation is switched (MinimapCluster:UpdateMinimapConfig;
--- in this game a function of its own, on the setting rotateMinimap): ours again after it, and its border
+-- Forever's game sets the minimap's mask again when its rotation is switched (MinimapCluster:UpdateMinimapConfig,
+-- a function of its own, on the setting rotateMinimap; Retail's sets none): ours again after it, and its border
 -- kept out of sight.
 local function Reset()
     if not taken then return end
@@ -300,12 +309,13 @@ end
 -- sight otherwise. The camera's zoom is the step's. On the full map: Wide. lost: the small view follows the
 -- player where the game tells no place of the player (an instance, Canvas.lua): the game's minimap alone is
 -- the map, with its own ground, at the view's step (the game's own while the view has none), whatever the
--- pin filter says.
+-- pin filter says. Its own ground in the small view too where our map has no land to draw under its dots
+-- (Terrain.Possible: Retail, until its data comes): the land as it lies is the game's minimap's there.
 function Hybrid.Place(camera, width, height, known, lost)
     if not taken then return end
     local minimap = Parts()
     wide = nil
-    Ground(lost)
+    Ground(lost or (camera ~= ns.Window.full and not ns.Terrain.Possible()))
     if not lost and not ns.Pins.Shows("minimap") then return minimap:Hide() end
     if camera == ns.Window.full then return Wide(minimap, camera, width, height, known) end
     if lost and not camera.native then camera.native = minimap:GetZoom() end

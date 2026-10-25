@@ -25,6 +25,9 @@ local _, ns = ...
 --  its point on and empty below it, and nothing is computed with the count.
 --  The segments stand a pixel apart, as many as the most points (plain); the
 --  row's caps mask them all (the first's and the last's outer corners).
+--  Retail keeps the points on your character, whatever you target, and gives
+--  more of them with talents: there they show on your target's plate alone,
+--  as the game's own class bar does, up to Retail's most (Resource.MOST).
 --  Only rogues and druids listen to anything here.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -32,11 +35,15 @@ local Plain = Core.Plain
 local Resource = {}
 ns.Resource = Resource
 
-Resource.MOST = 5      -- the most points, as the game's own combo frame counts them
+-- The most points, as the game's own combo bar counts them: five in Forever, up to seven with Retail's talents.
+Resource.MOST = { forever = 5, retail = 7 }
 Resource.SHARE = 1 / 3 -- the row's height, a share of the bar's (Saneroki, 2026-10-23: as thin as the power line)
 Resource.CLASSES = { ROGUE = true, DRUID = true }
 
-local most = Resource.MOST
+local function Most()
+    return Core.ForGame(Resource.MOST) or Resource.MOST.forever
+end
+local most = Most()
 
 -- The game's colour for combo points; ours where it has none.
 local function Colour()
@@ -52,7 +59,7 @@ local function Building()
     local types = rawget(_G, "Enum") and Enum.PowerType
     if not types then return false end
     local top = Plain(UnitPowerMax("player", types.ComboPoints))
-    if type(top) == "number" and top > 0 then most = math.min(top, Resource.MOST) end
+    if type(top) == "number" and top > 0 then most = math.min(top, Most()) end
     local shown = Plain(UnitPowerType("player"))
     return type(top) ~= "number" or top > 0 and shown == types.Energy
 end
@@ -137,9 +144,10 @@ function Resource.Shape(dress, lowest)
 end
 
 -- One plate's row: shown with its unit's points while you have at least one on it (a hidden count: on your target's
--- plate only), hidden otherwise.
+-- plate only), hidden otherwise. In Retail the points are yours, asked of your target's unit alone.
 local function One(unit, dress, on)
     local points
+    if on and Core.RETAIL and Plain(UnitIsUnit(unit, "target")) ~= true then on = false end
     if on and Plain(UnitCanAttack("player", unit)) ~= false then
         local ok, count = pcall(GetComboPoints, "player", unit)
         if ok then points = count end

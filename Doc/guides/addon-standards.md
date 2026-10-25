@@ -322,6 +322,13 @@ frames built for them, and all of the data (maps, quests, NPCs, routes).
 - **Data per game:** game data never goes into a module's code: it is Core's data, kept per game version
   (Forever's sets are refused in Retail, which has none yet). It moves into a package per game, Data: Forever
   and Data: Retail.
+- **Tested in both:** a module's test runs it as Forever, and checks its Retail path too: `W.Play("retail")`
+  (`dev/tests/wowstub.lua`) makes the stand-in a Retail client, Core told, and takes away what Retail lacks of
+  Forever's (`dev/tests/games.lua`, made by `dev/tools/blizzard games`: globals, `C_X.Function`, `Enum` and
+  `Constants` entries, events), as the game does; `W.Play("forever")` gives it back.
+- **Kept settings of one game:** the game's own settings Sync keeps (CVars, layouts, chat windows) were read in
+  one game and are written only there (`Sync.options.from`); a game folder's saved settings copied into the
+  other's do not carry one game's options into the other.
 - **After a patch of either game:** `saneui readpatch`, then the session it prepares (`saneui fixpatch`;
   [blizzard-updates.md](blizzard-updates.md), *After a patch*).
 

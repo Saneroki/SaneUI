@@ -181,6 +181,13 @@ function Terrain.Place(view, shown)
     masks:End()
 end
 
+-- Whether the land can be drawn at all: Core's set Tiles is there, or still being read. Not in Retail until its data
+-- comes (and this module's overview is Forever's land): Scrying and Blended are not offered there (ns.Offered), and
+-- the game's minimap keeps its own ground in the small view (Hybrid.Place).
+function Terrain.Possible()
+    return ns.Has("Tiles")
+end
+
 -- Whether the blocks are known (the set Tiles is there); asked for if not.
 function Terrain.Ready()
     if Tiles:Ready() then return true end

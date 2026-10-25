@@ -20,7 +20,9 @@ local _, ns = ...
 --  names a herb or ore (Nodes.Find) is narrowed to its dot's middle: the way
 --  out to where the answer stops halved a few times, to the left and right,
 --  then down and up from between them. How far a dot answers is learnt from
---  those edges, and the sweep's step follows it.
+--  those edges, and the sweep's step follows it. A client whose minimap does not
+--  answer so (Retail) finds none (Found.Works): no pictures, and no far ones on
+--  the screen (Glints.lua); its finders still switch, the game's own dots show.
 --
 --  A sweep done, the dots of the kind whose finder is on are what the game
 --  shows now: one it covered and found no more is gone. Those it did not cover,
@@ -450,6 +452,11 @@ end
 -- The found ones, read only (each { u, v, plane, kind, node, picture, ... }): for the far sparkles (Glints.lua).
 function Found.Each()
     return found
+end
+
+-- Whether herbs and ore are found here: the game's minimap answers what its dots are (Start).
+function Found.Works()
+    return overlay ~= nil
 end
 
 -- Shown while the module is on and the filter shows either kind; it runs only while the game's minimap shows.

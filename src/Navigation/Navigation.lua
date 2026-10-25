@@ -89,30 +89,37 @@ ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are ba
 -- golden line (Planner.lua, Route.lua) and the game's minimap's dots (Hybrid.lua). The quests by where they stand
 -- for this character: in its log (the game's), offered to it now, offered but too low to give it experience,
 -- offered once it meets what they ask (its level, a quest first), done. Each kind in a section of the filter
--- (ns.PIN_SECTIONS); one without a known section in the last.
+-- (ns.PIN_SECTIONS); one without a known section in the last. A kind only Core's data has (data: its sets) is in
+-- the filter only while one of them is there (ns.KindOffered): not in Retail, until its data comes.
+local SPAWNS, SERVICES = { "Spawns" }, { "Spawns", "Places" }
 ns.KINDS = {
     { "route", ns.TEXT.route, section = "around", on = true, small = true, icon = "poi-traveldirections-arrow" },
     { "minimap", ns.TEXT.minimap, section = "around", on = true, small = true, icon = "monsterneutral" },
     { "log", ns.TEXT.log, section = "quests", on = true, small = true, icon = "questturnin" },
-    { "quest", ns.TEXT.offers, section = "quests", on = true, small = true, icon = "questnormal" },
-    { "low", ns.TEXT.low, section = "quests", on = true, small = true, icon = "trivialquests", grey = true },
-    { "later", ns.TEXT.later, section = "quests", on = true, small = true, icon = "questturnin", tint = { 255, 51, 38 } },
-    { "done", ns.TEXT.done, section = "quests", on = false, small = true, icon = "islands-questbangdisable", grey = true },
+    { "quest", ns.TEXT.offers, section = "quests", on = true, small = true, icon = "questnormal", data = SPAWNS },
+    { "low", ns.TEXT.low, section = "quests", on = true, small = true, icon = "trivialquests", grey = true,
+      data = SPAWNS },
+    { "later", ns.TEXT.later, section = "quests", on = true, small = true, icon = "questturnin", tint = { 255, 51, 38 },
+      data = SPAWNS },
+    { "done", ns.TEXT.done, section = "quests", on = false, small = true, icon = "islands-questbangdisable", grey = true,
+      data = SPAWNS },
     { "area", "Quest areas", section = "quests", on = true, small = true, icon = "questblob" },
     { "flight", "Flight points", section = "travel", on = true, small = true, icon = "flightmaster" },
     { "travel", "Boats, zeppelins and portals", section = "travel", on = true, small = true, icon = "flightmasterferry" },
     { "entrance", "Dungeons and raids", section = "travel", on = true, small = true, icon = "dungeon" },
     { "place", "Places", section = "towns", on = true, small = true, icon = "poi-town" },
-    { "service", "Services", section = "towns", on = true, small = true, icon = "innkeeper" },
+    { "service", "Services", section = "towns", on = true, small = true, icon = "innkeeper", data = SERVICES },
     { "rare", "Rares", section = "finds", on = true, small = true, icon = "dungeonskull" },
     { "treasure", "Treasures", section = "finds", on = true, icon = "vignetteloot" },
-    { "herb", "Possible herbs", section = "gathering", on = true, small = true, icon = "professions_tracking_herb" },
-    { "ore", "Possible ore", section = "gathering", on = true, small = true, icon = "professions_tracking_ore" },
+    { "herb", "Possible herbs", section = "gathering", on = true, small = true, icon = "professions_tracking_herb",
+      data = SPAWNS },
+    { "ore", "Possible ore", section = "gathering", on = true, small = true, icon = "professions_tracking_ore",
+      data = SPAWNS },
     -- What the game's minimap shows now (Found.lua); each switches its finder (Nodes.lua). Their icons: the
     -- finders' own, Find Herbs and Find Minerals.
     { "foundHerb", "Found herbs", section = "gathering", on = true, small = true, texture = 133939 },
     { "foundOre", "Found ore", section = "gathering", on = true, small = true, texture = 136025 },
-    { "book", "Books", section = "finds", on = false, icon = "lorewalking-map-icon" },
+    { "book", "Books", section = "finds", on = false, icon = "lorewalking-map-icon", data = SPAWNS },
     { "group", "Party and raid", section = "around", on = true, small = true, icon = "partymember" },
 }
 -- The pin filter's sections, in its order: their key (the kinds' section) and their title.
@@ -124,6 +131,23 @@ ns.PIN_SECTIONS = {
     { "finds", "Rares and treasures" },
     { "gathering", "Gathering" },
 }
+
+-- Whether one of Core's sets can be had: ready, or still being read with Core. Not where Core refuses it or holds
+-- none (Retail, until its data comes): what needs it stands down there, with no view, no switch and no word.
+function ns.Has(name)
+    local state = Core.Data.Set(name):State()
+    return state == "ready" or state == "loading"
+end
+
+-- Whether a kind of pin can show anything here: one only Core's data has while one of its sets is there.
+function ns.KindOffered(kind)
+    if not kind.data then return true end
+    for _, name in ipairs(kind.data) do
+        if ns.Has(name) then return true end
+    end
+    return false
+end
+
 -- A kind's words with its icon before them (size: the icon's, 16 at first), for the pin filter and the setting's list.
 function ns.KindLabel(kind, size)
     size = size or 16
@@ -161,11 +185,24 @@ for _, kind in ipairs(ns.KINDS) do
 end
 
 -- The ways to draw the map, in the order of their buttons (shown as Parchment, Blended, Scrying, Atlas). Atlas only
--- while the module Atlas is there (Painted.lua); a view not offered falls back to Scrying, the default.
+-- while the module Atlas is there (Painted.lua); Scrying and Blended only while Core's terrain is (Terrain.Possible:
+-- not in Retail, until its data comes). A view not offered falls back to Scrying, the default, and where that is not
+-- offered either to Parchment, the game's own map art (ns.Fallback).
 ns.VIEWS = { "sketches", "blend", "terrain", "atlas" }
 ns.FALLBACK = "terrain"
 local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "blend", ns.TEXT.views.blend },
                   { "terrain", ns.TEXT.views.terrain }, { "atlas", ns.TEXT.views.atlas } }
+
+-- The switches of what this game cannot have stand down (hidden): the trip and the docks need Core's set Travel; the
+-- sparkles Core's herbs and ore (Nodes.Known), the far ones also the game's minimap's answers (Found.Works), the turns
+-- a game whose finders take turns (Nodes.TOGETHER: Retail's tracking holds both at once).
+local function NoTravel() return not ns.Has("Travel") end
+local SPARKLES = { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSparkles, tip = ns.TEXT.nodeSparklesTip,
+                   header = ns.TEXT.nodes, hidden = function() return not ns.Nodes.Known() end }
+local GLINTS = { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, tip = ns.TEXT.nodeGlintsTip,
+                 hidden = function() return not (ns.Nodes.Known() and ns.Found.Works()) end }
+local TURNS = { key = "nodeTurns", default = 6, min = 0, max = 30, step = 1, unit = ns.TEXT.seconds,
+                text = ns.TEXT.nodeTurns, tip = ns.TEXT.nodeTurnsTip, hidden = function() return ns.Nodes.TOGETHER end }
 
 local OPTIONS = {
     -- Every view a choice while the settings are first read, so a saved Atlas is kept; at login only those
@@ -180,14 +217,11 @@ local OPTIONS = {
     { key = "followMap", default = false, text = ns.TEXT.followMap, tip = ns.TEXT.followMapTip },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
-    { key = "tripView", default = true, text = ns.TEXT.tripView, tip = ns.TEXT.tripViewTip },
-    { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip },
+    { key = "tripView", default = true, text = ns.TEXT.tripView, tip = ns.TEXT.tripViewTip, hidden = NoTravel },
+    { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip, hidden = NoTravel },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
-    { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSparkles, tip = ns.TEXT.nodeSparklesTip, header = ns.TEXT.nodes },
-    { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, tip = ns.TEXT.nodeGlintsTip },
-    { key = "nodeTurns", default = 6, min = 0, max = 30, step = 1, unit = ns.TEXT.seconds, text = ns.TEXT.nodeTurns,
-      tip = ns.TEXT.nodeTurnsTip },
+    SPARKLES, GLINTS, TURNS,
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, #OPTIONS + 1)
@@ -255,25 +289,44 @@ end })
 -- Whether a view can be drawn: Atlas only while its module is there and has not failed.
 function ns.Offered(key)
     if key == "atlas" then return ns.Painted.Offered() end
-    return key == "sketches" or key == "blend" or key == "terrain"
+    if key == "blend" or key == "terrain" then return ns.Terrain.Possible() end
+    return key == "sketches"
 end
 
--- The view the map is drawn in: the one chosen, if it is offered, else Scrying.
+-- The view a view not offered falls back to: Scrying, else Parchment.
+function ns.Fallback()
+    if ns.Offered(ns.FALLBACK) then return ns.FALLBACK end
+    return "sketches"
+end
+
+-- The view the map is drawn in: the one chosen, if it is offered, else the fallback.
 function ns.View()
     local chosen = ns.options.view
     if ns.Offered(chosen) then return chosen end
-    return ns.FALLBACK
+    return ns.Fallback()
+end
+
+-- Whether a switch is on the options page here (its hidden says not).
+local function Shows(option)
+    return not (option.hidden and option.hidden())
 end
 
 -- The views offered, in the settings' dropdown and on the full map's buttons; a saved view not offered (the
--- module Atlas switched off, or failed) becomes Scrying. At login, and when the Atlas failed.
+-- module Atlas switched off, or failed; Scrying without Core's terrain) becomes the fallback. The kinds of pin
+-- that can show anything here in the setting's list (TopBar's filter asks ns.KindOffered itself), and the section
+-- Herbs and ore only while one of its switches is there. At login, and when the Atlas failed.
 function ns.Offer()
     local choices = OPTIONS[1].choices
     wipe(choices)
     for _, choice in ipairs(CHOICES) do
         if ns.Offered(choice[1]) then choices[#choices + 1] = choice end
     end
-    if not ns.Offered(ns.options.view) then Core.Set(ns.name, "view", ns.FALLBACK) end
+    if not ns.Offered(ns.options.view) then Core.Set(ns.name, "view", ns.Fallback()) end
+    wipe(PIN_CHOICES)
+    for _, kind in ipairs(ns.KINDS) do
+        if ns.KindOffered(kind) then PIN_CHOICES[#PIN_CHOICES + 1] = { kind[1], ns.KindLabel(kind) } end
+    end
+    SPARKLES.header = (Shows(SPARKLES) or Shows(GLINTS) or Shows(TURNS)) and ns.TEXT.nodes or nil
     ns.Window.Arrange()
 end
 

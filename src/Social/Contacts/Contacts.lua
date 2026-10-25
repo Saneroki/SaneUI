@@ -107,6 +107,12 @@ function Contacts.Ago(stamp)
     return Core.Word("LASTONLINE_SECS", "< a minute")
 end
 
+-- The game's function that blocks or unblocks invites from a Battle.net account (id, on): C_BattleNet.SetBlocked
+-- in WoW: Forever, BNSetBlocked in Retail; nil where neither is there.
+function Contacts.Blocker()
+    return C_BattleNet.SetBlocked or rawget(_G, "BNSetBlocked")
+end
+
 -- A whisper to somebody, as the game's Send Message writes one: the line to write in opens with it.
 function Contacts.Tell(name, bnet)
     if not name or name == "" then return end

@@ -773,6 +773,9 @@ end
 -- An error while taking over: it is not tried again, and what it took of the game's goes back.
 function TryArm()
     if not (ns.DB and ns.char) then return end
+    -- Retail's spellbook lists the spells still to come itself, on pages of another measure: its pages
+    -- stay the game's there, and Home and the window, which follow them, too (Abilities.lua, at the top).
+    if not Core.FOREVER then return end
     local loaded = C_AddOns and C_AddOns.IsAddOnLoaded
     if not (loaded and loaded("Blizzard_PlayerSpells")) then return end
     local ok, problem = xpcall(Arm, Core.Trace)

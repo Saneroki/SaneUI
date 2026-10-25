@@ -740,6 +740,49 @@ Push()
 Stand()
 check(repPanel:IsShown() and statPanel:IsShown() and head:IsVisible() and repList.rows[2].name._text == "Stormwind Keep",
     "back: the windows of the layout as they were, drawn as the game has it now")
+
+-------------------------------------------------------------------------------
+--  Retail
+-------------------------------------------------------------------------------
+-- What WoW: Forever alone has stands down in Retail: the skills and PvP windows are never registered (no skill
+-- lines, no season's rank), the side tabs' icons are Retail's own, and the coloured bars of the reputation and the
+-- other lists are ours (the game has no ColoredProgressBarTemplate there). Each file read as the game reads it.
+do
+    local registered = {}
+    local function Note(key) registered[#registered + 1] = key end
+    local function Read(...)
+        registered = {}
+        local fake = setmetatable({}, { __index = ns })
+        fake.Page = setmetatable({ Part = Note }, { __index = ns.Page })
+        for _, file in ipairs({ ... }) do
+            assert(loadfile(root .. "/src/Inventory/" .. file .. ".lua"))("SaneUI_Inventory", fake)
+        end
+        return table.concat(registered, ","), fake
+    end
+    local sheetFiles = { "Sheet/Reputation", "Sheet/Skills", "Sheet/PvP", "Sheet/Currency", "Sheet/Statistics" }
+    check(Read(unpack(sheetFiles)) == "reputation,skills,pvp,currency,statistics", "WoW: Forever: every window of the game's tabs")
+    W.Play("retail")
+    check(Read(unpack(sheetFiles)) == "reputation,currency,statistics",
+        "Retail: no skills window and no PvP window; the reputation, currency and statistics windows as in WoW: Forever")
+    local _, fake = Read("Board")
+    local icons = fake.Board.ICONS
+    check(icons.reputation == "Interface/ICONS/Achievement_Reputation_01" and icons.currency == "Interface/ICONS/INV_Misc_Coin_02"
+        and icons.statistics == "Interface/ICONS/Achievement_General" and icons.bags == ns.Board.ICONS.bags,
+        "Retail: its own icons where WoW: Forever's side tabs are its own art; the others the same")
+    local row = W.NewWidget("Button", nil, UIParent)
+    ns.Rows.Draw(row, "entry", "Stormwind", false, {})
+    local bar = row.bar
+    check(bar._template == nil and bar.track and bar.Fill and bar.Text, "Retail: a row's bar is ours, with the game's bar's parts")
+    bar:SetFillPercent(0.5)
+    bar:SetText("Friendly")
+    check(near(bar.Fill._width, 0.5 * (ns.Rows.BAR - 2 * ns.Rows.TRACK_INSET)) and bar.Fill:IsShown() and bar.Text._text == "Friendly",
+        "Retail: our bar filled that share of its track, its words on it")
+    bar:SetFillPercent(0)
+    check(not bar.Fill:IsShown(), "Retail: none at all, no fill")
+    W.Play("forever")
+    local _, back = Read("Board")
+    check(back.Board.ICONS.reputation == "Interface/ICONS/INV_SideTab_Reputation2_c60", "back in WoW: Forever: its side tabs' icons")
+end
 for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end
 
 io.write(("Sheet: all %d checks passed.\n"):format(passed))

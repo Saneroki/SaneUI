@@ -15,10 +15,15 @@ local _, ns = ...
 --  The game picks such a thing and gives it a plate only with its interact key on
 --  (Options > Controls, softTargetInteract) and its plates for objects
 --  (SoftTargetIconGameObject); how far it looks and in which directions are its
---  settings too. While the sparkles are on those are set as the game's own
---  gamepad setup sets them (Blizzard_Gamepad/Core.lua), where they reach less,
+--  settings too. While the sparkles are on those are set as Forever's own
+--  gamepad setup sets them (its Blizzard_Gamepad/Core.lua), where they reach less,
 --  out of a fight; what each was is kept for the character, and put back when
---  the sparkles go off, unless it was changed since.
+--  the sparkles go off, unless it was changed since. A setting this client
+--  lacks is passed over.
+--
+--  Without Core's herbs and ore (Nodes.Known: Retail, until its data comes) no
+--  herb or ore can be told by its name: the sparkles stand down, the game's
+--  settings are left as they are and the switch is not on the options page.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Nodes = ns.Nodes
@@ -180,7 +185,11 @@ function Sparkles.Settings()
     if InCombatLockdown() then return Core.AfterCombat(WAIT, Sparkles.Settings) end
     local character = Core.Character(ns.name)
     if type(character.interact) ~= "table" then character.interact = {} end
-    if ns.options.nodeSparkles and not ns.off then Set(character.interact) else PutBack(character.interact) end
+    if ns.options.nodeSparkles and not ns.off and Nodes.Known() then
+        Set(character.interact)
+    else
+        PutBack(character.interact)
+    end
     updating()
 end
 

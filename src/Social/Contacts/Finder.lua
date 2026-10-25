@@ -27,6 +27,10 @@ local _, ns = ...
 --  from addons: the rows read last stay, its line says so, and they are read
 --  anew once it ends. Every part of a listing is read plain; one the game hides
 --  a needed part of is left out.
+--
+--  Only in WoW: Forever. Retail's finder is its own (PVEFrame, with its premade
+--  groups to sign up for, ns.RetailFinder): there the tab and its switch stand
+--  down, and Group finder in Classic windows opens the game's.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Board, Contacts, Layout = ns.Board, ns.Contacts, ns.Layout
@@ -234,10 +238,10 @@ local function Invite()
     if listing and listing.leader then C_PartyInfo.InviteUnit(listing.leader) end
 end
 
--- Its tab is offered while the switch Group finder is on; where the game's finder is closed to this
--- character, the list says so.
+-- Its tab is offered while the switch Group finder is on, and never where the game's finder is Retail's; where
+-- the game's finder is closed to this character, the list says so.
 function View.Usable()
-    return ns.options.boardFinder and true or false
+    return ns.options.boardFinder and not ns.RetailFinder() and true or false
 end
 
 function View.Build(page)

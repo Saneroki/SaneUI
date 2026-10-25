@@ -8,7 +8,8 @@ local _, ns = ...
 --                 (plus or minus) at its right; a click folds or unfolds it
 --      subheader  a header with a value of its own: its fold button at its left
 --                 (campaign_headericon), its name, its bar
---      entry      its name and the game's coloured bar (ColoredProgressBarTemplate)
+--      entry      its name and the game's coloured bar (ColoredProgressBarTemplate;
+--                 Forever's: where the game has none, Retail, ours, Rows.Bar)
 --  An entry or subheader is lit as the game lights them: a faint light that is
 --  brighter while it is chosen or under the mouse, in the colour its tab says.
 --
@@ -17,6 +18,7 @@ local _, ns = ...
 --          owner = { click = function(row) end, fold = function(row) end,
 --                    enter = function(row) end, leave = function(row) end }
 --      Rows.Light(row, alpha, color)
+--      Rows.Bar(parent)   -- a coloured bar: bar:SetFillPercent(share), bar:SetText(text), bar.Fill
 --  Every part of a row is made once (a row is drawn for another kind than it was
 --  last as the list scrolls); its scripts call its owner's functions, ns.Safe.
 -------------------------------------------------------------------------------
@@ -27,6 +29,45 @@ ns.Rows = Rows
 Rows.HEADER, Rows.SUBHEADER, Rows.ENTRY = 28, 22, 30
 Rows.BAR, Rows.BAR_HEIGHT, Rows.SIDE_BAR = 160, 29, 180
 Rows.NAME_LEFT, Rows.HEADER_LEFT = 15, 10
+-- Our bar where the game has no coloured bar: its track in from the bar's sides and as high as the game's fill,
+-- the game's plain status bar texture as its fill (both games have it), tinted by the tab.
+Rows.TRACK_INSET, Rows.TRACK = 6, 15
+Rows.FILL = "Interface\\TargetingFrame\\UI-StatusBar"
+
+-- Our bar's calls, as the game's bar answers them (ColoredProgressBarMixin): the fill that share of the track.
+local function OwnFill(bar, share)
+    share = math.min(1, math.max(0, tonumber(share) or 0))
+    local width = (bar:GetWidth() or 0) - 2 * Rows.TRACK_INSET
+    bar.Fill:SetWidth(math.max(1, share * width))
+    bar.Fill:SetTexCoord(0, share, 0, 1)
+    bar.Fill:SetShown(share > 0)
+end
+
+local function OwnText(bar, text)
+    bar.Text:SetText(text)
+end
+
+-- A coloured bar: the game's (ColoredProgressBarTemplate, Forever's), else ours with the same calls and parts.
+function Rows.Bar(parent)
+    if rawget(_G, "ColoredProgressBarMixin") then return CreateFrame("Frame", nil, parent, "ColoredProgressBarTemplate") end
+    local bar = CreateFrame("Frame", nil, parent)
+    bar:SetSize(Rows.BAR, Rows.BAR_HEIGHT)
+    bar.track = bar:CreateTexture(nil, "BACKGROUND")
+    bar.track:SetColorTexture(0, 0, 0, 0.5)
+    bar.track:SetPoint("LEFT", Rows.TRACK_INSET, 0)
+    bar.track:SetPoint("RIGHT", -Rows.TRACK_INSET, 0)
+    bar.track:SetHeight(Rows.TRACK)
+    bar.Fill = bar:CreateTexture(nil, "BORDER")
+    bar.Fill:SetTexture(Rows.FILL)
+    bar.Fill:SetPoint("TOPLEFT", bar.track, "TOPLEFT")
+    bar.Fill:SetPoint("BOTTOMLEFT", bar.track, "BOTTOMLEFT")
+    bar.Fill:Hide()
+    bar.Text = bar:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    bar.Text:SetPoint("LEFT")
+    bar.Text:SetPoint("RIGHT")
+    bar.SetFillPercent, bar.SetText = OwnFill, OwnText
+    return bar
+end
 
 local function Call(row, name)
     local owner = row.owner
@@ -83,7 +124,7 @@ local function Parts(row)
     row.toggle:SetSize(20, 20)
     row.toggle:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
     row.toggle:SetScript("OnClick", function() ns.Safe("character", Folded, row) end)
-    row.bar = CreateFrame("Frame", nil, row, "ColoredProgressBarTemplate")
+    row.bar = Rows.Bar(row)
     row.bar:SetSize(Rows.BAR, Rows.BAR_HEIGHT)
     row.bar:SetPoint("RIGHT", -3, 0)
     row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

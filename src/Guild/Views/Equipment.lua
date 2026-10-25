@@ -6,10 +6,11 @@ local _, ns = ...
 --  member, those who share their gear with their item level, sorted by it
 --  (a click on a column's head sorts by another), searched by name. At the
 --  right the one chosen as a paper doll: its name, level, class and rank, its
---  item level large, eight slots down each side and the three weapons under
---  them, around a figure (your own as it stands; another's gear dressed on
---  your own figure, as in the game's dressing room: this client cannot show
---  another's race), and when it was shared (not live, but your own).
+--  item level large, eight slots down each side and the weapons under them
+--  (the ranged slot only where the game has one), around a figure (your own
+--  as it stands; another's gear dressed on your own figure, as in the game's
+--  dressing room: this client cannot show another's race), and when it was
+--  shared (not live, but your own).
 --
 --  The gear is Core's (Core.Data.Guild): each member's card, which that member
 --  shares with the guild while its switch is on; your own is read live.
@@ -23,10 +24,11 @@ local view, list, doll
 local chosen
 local search, sortKey, descending = "", "itemLevel", true
 
--- The doll's slots: the left column, the right column, the weapons (the game's slot IDs).
+-- The doll's slots: the left column, the right column, the weapons (the game's slot IDs), the ranged one of them.
 Equipment.LEFT = { 1, 2, 3, 15, 5, 4, 19, 9 }
 Equipment.RIGHT = { 10, 6, 7, 8, 11, 12, 13, 14 }
 Equipment.WEAPONS = { 16, 17, 18 }
+Equipment.RANGED = 18
 -- The game's empty-slot pictures, by slot.
 local EMPTY = { [1] = "Head", [2] = "Neck", [3] = "Shoulder", [15] = "Chest", [5] = "Chest", [4] = "Shirt", [19] = "Tabard",
     [9] = "Wrists", [10] = "Hands", [6] = "Waist", [7] = "Legs", [8] = "Feet", [11] = "Finger", [12] = "Finger",
@@ -96,6 +98,18 @@ local function Init(row, element)
     if row.LockHighlight then
         if element.key == chosen then row:LockHighlight() else row:UnlockHighlight() end
     end
+end
+
+-- The weapon slots this client's doll has: the ranged one only where the game's own paper doll shows it
+-- (C_PaperDollInfo.IsRangedSlotShown: WoW: Forever, not Retail; a client that cannot say keeps it).
+function Equipment.Weapons()
+    local info = rawget(_G, "C_PaperDollInfo")
+    local ranged = not (info and info.IsRangedSlotShown) or Core.Ask(info.IsRangedSlotShown) ~= false
+    local slots = {}
+    for _, slot in ipairs(Equipment.WEAPONS) do
+        if ranged or slot ~= Equipment.RANGED then slots[#slots + 1] = slot end
+    end
+    return slots
 end
 
 -------------------------------------------------------------------------------
@@ -243,10 +257,10 @@ local function BuildDoll(parent)
         button:SetPoint("TOPRIGHT", -16, -(top + (index - 1) * (Layout.SLOT + Layout.SLOT_GAP)))
         b.slots[#b.slots + 1] = button
     end
-    local weapons = CreateFrame("Frame", nil, b)
-    weapons:SetSize(3 * Layout.SLOT + 2 * 40, Layout.SLOT)
+    local weapons, held = CreateFrame("Frame", nil, b), Equipment.Weapons()
+    weapons:SetSize(#held * Layout.SLOT + (#held - 1) * 40, Layout.SLOT)
     weapons:SetPoint("BOTTOM", 0, 16)
-    for index, slot in ipairs(Equipment.WEAPONS) do
+    for index, slot in ipairs(held) do
         local button = Slot(weapons, slot)
         button:SetPoint("LEFT", (index - 1) * (Layout.SLOT + 40), 0)
         b.slots[#b.slots + 1] = button

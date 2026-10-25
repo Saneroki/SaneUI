@@ -195,6 +195,8 @@ C_SpecializationInfo = {
     GetSpecializationInfo = function() return 1482 end,
 }
 GetNumSpecGroups = function() return groups2 end
+-- Forever's spellbook, which our own is made after (Combat.lua, ns.Serves): the first layout holds both.
+C_SpellBook.IsSpellBookItemLooseFlyoutMember = function() return false end
 
 -------------------------------------------------------------------------------
 --  The game's shared talent frame, as small as the window needs (Blizzard_SharedTalentUI's TalentFrameBaseMixin)
@@ -822,5 +824,13 @@ check(ns.off and bar.unit == nil and next(frame._events) == nil and frame:GetScr
 calls = {}
 buttons[2]:GetScript("OnClick")(buttons[2], "LeftButton")
 check(#calls == 0, "and its nodes do nothing")
+
+-- In Retail, whose talents are not those of two specializations ours are made after (Combat.lua, ns.Serves): ours
+-- are not there, the game's talents stay (nor is our spellbook: no first layout at all).
+W.Play("retail")
+check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default() == nil,
+    "in Retail our talents are not there: the game's stay")
+W.Play("forever")
+check(Talents.Present(), "in Forever they are")
 
 io.write(("Talents: all %d checks passed.\n"):format(passed))

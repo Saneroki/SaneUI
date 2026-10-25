@@ -8,8 +8,9 @@ local _, ns = ...
 --  (the head's square button), in place of the friends list; Back goes back.
 --
 --  A click chooses one; Remove takes them off the list (C_FriendList.DelIgnore-
---  ByIndex, or C_BattleNet.SetBlocked); Ignore Player adds the player you have
---  targeted, or asks for a name in the game's dialog (C_FriendList.AddIgnore).
+--  ByIndex, or the game's unblock, Contacts.Blocker); Ignore Player adds the
+--  player you have targeted, or asks for a name in the game's dialog
+--  (C_FriendList.AddIgnore).
 --  Read anew when the game tells of a change, only while it is shown; the
 --  search box finds them by name.
 -------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ end
 local function Remove()
     for _, entry in ipairs(listed) do
         if entry.key == chosen then
-            if entry.kind == "ignore" then C_FriendList.DelIgnoreByIndex(entry.index) else C_BattleNet.SetBlocked(entry.id, false) end
+            if entry.kind == "ignore" then C_FriendList.DelIgnoreByIndex(entry.index) else Contacts.Blocker()(entry.id, false) end
             chosen = nil
             return
         end

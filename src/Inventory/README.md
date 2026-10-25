@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105; in Retail the skills and PvP windows, resistances, pet stats, the ranged and ammo slots and the keyring stand down)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -43,7 +43,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Using an equipped item with a right click stays on the game's own sheet and the action bars.
   - *Character Stats*: your stats on the journal's page, with the game's values and tooltips (in a fight they show
     what they were before it, and are brought up to date when it is over). Each of the game's categories (General,
-    Primary Attributes, Weapons, Modifiers, Defense, Resistances) is a section with its name written and ruled in
+    Primary Attributes, Weapons, Modifiers, Defense, Resistances; in Retail its Attributes and Enhancements) is a section with its name written and ruled in
     pencil, a line for each stat, its name at the left and its value at the right (a bonus in green, a malus in red,
     darkened to read on the paper). The page follows the window: narrow, it is one list; wider, the sections stand
     in as many columns as fit, in the game's order, the columns about even in height and kept together in the
@@ -59,10 +59,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - *Reputation*: your factions as the game lists them: a click on a header folds or unfolds it, a click on a
     faction chooses it (its standing in numbers under the mouse); at the right the chosen faction, its standing,
     its description and the game's switches At War, Move to Inactive and Show as Experience Bar.
-  - *Skills*: your skill lines with their ranks (the bonus in green); choose one to see its description, and for a
-    weapon skill what it means against a foe of your level and against a raid boss.
-  - *PvP*: the season, your rank and the game's rank ring, your points, the time left of the season, and at the
-    right the season's progress and the next reward.
+  - *Skills* (WoW: Forever): your skill lines with their ranks (the bonus in green); choose one to see its
+    description, and for a weapon skill what it means against a foe of your level and against a raid boss.
+  - *PvP* (WoW: Forever): the season, your rank and the game's rank ring, your points, the time left of the season,
+    and at the right the season's progress and the next reward.
   - *Currency*: your currencies (choose one for its caps and description; Shift and a click links it, the game's
     watch key puts it on the backpack), with the game's switches Unused and Show on Backpack; the transfer between
     characters stays on the game's own sheet.
@@ -211,7 +211,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   the others go on. The first layout puts the parts of `Board.FIRST` (the character, the stats, the bags, the other
   characters) side by side, each as wide as its least width, the last taking the rest; the others come from the
   dropdown *Windows*; later the layout is the player's (kept in the module's store, `board`). Each window's icon
-  (`Board.ICONS`: a texture, or a function that draws it: the portrait, the PvP icon of your faction) gives it a
+  (`Board.ICONS`: a texture, or a function that draws it: the portrait, the PvP icon of your faction; the side tabs'
+  icons are WoW: Forever's own art, so Retail gets icons of its own of the same meaning, `Core.ForGame`) gives it a
   tab of its own in the title bar (Core's board, `spec.icon`).
 - **The character sheet** (`Sheet/`): the game's Camelot character window rebuilt from Blizzard's code
   (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`, `ReputationFrame`, `SkillsFrame`, `PVPRankFrame`,
@@ -222,12 +223,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     pixels of a 1080p layout, `Doll.TOP`, `LEFT`, `RIGHT`, `WEAPONS`, `AMMO`, `HERO`), at the window's top
     middle, scaled to fit and never larger than its picture is drawn for 4K (`Sheet.Size`), the board's least
     `Sheet.LEAST` of it. In the hero's place the panel's title (`UnitPVPName`, Kalam), the level line under it
-    (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one, the class as ink,
+    (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one (WoW: Forever: where
+    `IsSpecSelectionEnabled` says the class chooses one; Retail, which lacks that call: always), the class as ink,
     `Core.Journal.Ink`) and the model; the panel's head (to drag it) is the doll's top, its X on the right strap.
     `Sheet.LEFT` (the game's 398) is still what the other characters' paper doll reads.
   - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` without its frame, in the doll's painted slots
     (`Doll.INSET` from their sides), in the game's order; the ranged slot (and its strip) only where
-    `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo`. Drawn as
+    `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo` (Retail has neither slot: the game knows
+    no `RangedSlot` or `AmmoSlot`, so no button is made and the doll's painted slots stay empty). Drawn as
     `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while
     broken or unusable, grey while locked; empty: no picture, the doll's sketch shows). Its strip (`Doll.Strip`):
     the item's stats, centred both ways, one to a line while they fit (`Slots.Stats`: `GetItemStats` by the game's
@@ -257,10 +260,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `Value` with their fonts from the start, the tooltip's fields) filled by the game's own function for it
     (`PAPERDOLL_STATINFO[stat].updateFunc`), as the game fills its rows; which stats show as the game decides it
     (`PAPERDOLL_STATCATEGORIES`: `primary`, `roles`, `showFunc`, the unit's categories, a stat at its `hideAt` or one
-    the game hides left out); the label's colon taken off, the game's colour codes darkened (`Paper.InkHex`); the
+    the game hides left out: as each game's sheet compares it: WoW: Forever the value the stat's function answers,
+    Retail the `numericValue` it left on the line); a category named by its `categoryName` (WoW: Forever) or by the `titleText` of the frame
+    it stands in on the game's sheet (Retail's `categoryFrame` on `CharacterStatsPane`); the label's colon taken off, the game's colour codes darkened (`Paper.InkHex`); the
     tooltip the game's (`onEnterFunc`, else `PaperDollStatTooltip`). Then the resistances (`Stats.RESISTANCES`, the
-    game's `PaperDollFrame_SetResistance`), then the pet's categories while `HasPetUI` and the pet is there, named
-    "<pet>: <category>". The sections are laid out for the page's width (`Layout`): `Stats.COLUMN` to
+    game's `PaperDollFrame_SetResistance`; only where the game has resistances, none in Retail), then the pet's
+    categories while `HasPetUI` and the pet is there, named "<pet>: <category>" (`PET_STATS_UPDATE` listened to only
+    where the game's list has a pet's categories: Retail has neither them nor the event). The sections are laid out for the page's width (`Layout`): `Stats.COLUMN` to
     `Stats.COLUMN_MOST` wide columns, the block of them centred, cut in the game's order so the tallest column is as
     low as it can be (`Cuts`); the primary attributes as five pencil boxes over the block (`AsTile`) where they fit
     across it, else a section. A `ScrollFrame` and the wheel; laid out again on every size change. Under a
@@ -290,11 +296,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     The game's template itself registers into the game's sheet when made, so it is not used.
   - **Rows** (`Sheet/Rows.lua`): the reputation and skills rows in the game's three looks, the same in both (a header
     with `common-button-list-collapseExpand` and its fold sign; a sub-header with its `campaign_headericon` fold
-    button; an entry with the game's `ColoredProgressBarTemplate`), the game's heights (`Rows.HEADER`, `SUBHEADER`,
+    button; an entry with a coloured bar, `Rows.Bar`: the game's `ColoredProgressBarTemplate` where it has one, WoW:
+    Forever; in Retail, which has none, ours with the same calls, `SetFillPercent` and `SetText`, its `Fill` the
+    game's plain status bar texture on a dark track), the game's heights (`Rows.HEADER`, `SUBHEADER`,
     `ENTRY`), the game's light (`charactercreate-customize-dropdown-linemouseover-…`), an indent; every part made once,
     its scripts calling the tab's (`owner`), `ns.Safe`.
   - **Reputation** (`Sheet/Reputation.lua`): the factions of `C_Reputation` on those rows, its coloured bar
-    (`ColoredProgressBarTemplate`: the standing's word and colour, `FACTION_BAR_COLORS`, friendships green, renown
+    (`Rows.Bar`: the standing's word and colour, `FACTION_BAR_COLORS`, friendships green, renown
     blue; the progress under the mouse), its light (`Reputation.LIT`, `WAR`: brighter chosen or under the mouse,
     red at war). The choice is the game's (`C_Reputation.SetSelectedFaction`), the first faction chosen when none
     is. The side: name, standing, description, bar, the account-wide line, and the switches
@@ -310,7 +318,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     for a weapon skill (`Skills.WEAPONS`, the game's skill line IDs, ranged or not) the game's sums against a foe of
     your level and a raid boss (`Skills.BOSS_LEVEL`, `RANKS_PER_LEVEL`; glancing blows from the game's
     `GetGlancingBlowChance`, `GetGlancingBlowPenalty`) under the game's category bands (`Side.Category`). Drawn anew a
-    frame after `SKILL_LINES_CHANGED`, while shown.
+    frame after `SKILL_LINES_CHANGED`, while shown. WoW: Forever's: the part registers only where `C_SkillInfo` has
+    its skill lines (`GetSkillLineInfo`), so Retail has no skills window.
   - **PvP** (`Sheet/PvP.lua`): the season's rank as the game keeps it, the renown of its PvP rank faction
     (`C_MajorFactions`, `PvP.FACTION` 2800): the season (`GetCurrentArenaSeason`), the rank's number and title (the
     game's `PVP_RANK_<n>_<faction>` in the character's gender, `Enum.PvPRanks`), the game's ring (a paused
@@ -318,7 +327,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     rank's badge `UI-Character-Info-Honor-Icon-<n>`, the rank on a reward ring at its foot), the points, the time
     left of the season (`C_SeasonInfo`, the game's seconds formatter) counted down by a ticker that runs only while
     the tab shows. The side: title and number, the season's description, progress, this week's raised cap, the next
-    rank with a reward (`GetRenownRewardsForLevel`, icon rows `Side.Icon`) and the rewards' vendor.
+    rank with a reward (`GetRenownRewardsForLevel`, icon rows `Side.Icon`) and the rewards' vendor. WoW: Forever's:
+    the part registers only where the game keeps that rank (`C_MajorFactions.GetMajorFactionProgressionInfo`), so
+    Retail (its honor levels and seasons) has no PvP window.
   - **Currency** (`Sheet/Currency.lua`): `C_CurrencyInfo`'s list: headers (`ExpandCurrencyList`), sub-headers, and
     currencies as the game draws them (name, count, icon at the right, greyed at none, a tick while on the
     backpack), set in by depth; the choice is ours, kept by name as the game's sheet keeps it, forgotten when the tab
@@ -591,6 +602,15 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     closing, `EQUIPMENT_SETS_CHANGED`, `BANKFRAME_OPENED`/`CLOSED` and the bank's slot and tab events: everything
     read and drawn a frame later (`Core.Later`); `ITEM_LOCK_CHANGED` greys one slot; `PLAYER_LEVEL_UP` asks
     anew who can use what; `BAG_UPDATE_COOLDOWN`, `PLAYER_MONEY`, `CURRENCY_DISPLAY_UPDATE` their own part.
+- **WoW: Forever and Retail** (2026-10-25; `Doc/guides/addon-standards.md`, *Forever and Retail*): one code for both,
+  each part asking the game for what it needs. What only WoW: Forever has stands down in Retail without a word:
+  the skills and PvP windows (not registered: not in the dropdown *Windows* nor among the title bar's tabs), the
+  resistances and the pet's stats in the stats' window, the ranged and ammo slots on the doll, the keyring in the
+  bags (the game gives it no slots). The rest is the same in both: the doll, the stats (Retail's own categories,
+  attributes and enhancements), gear sets, titles, reputation (renown as the game's bar has it), currency,
+  statistics, the bags with the reagent bag, the bank with its tabs and the account's (Retail's warband bank), the
+  other characters. In Retail the coloured bars are `Rows.Bar`'s own and the side tabs' icons Retail's
+  (`Board.ICONS`).
 - **Never the game's panels** (2026-10-20, from the error log): our code neither opens nor closes the game's
   character sheet or any other panel of its window manager (`UIParentPanelManager.lua`). Opened by our code,
   the manager ran tainted and the sheet's `OnShow` failed on the player frame's secret health
@@ -600,7 +620,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **Standing down** (`ns.GiveBack`): the bag keys and the game's bag windows are the game's again first, then the
   board's windows go and the window with them, each step by itself (`ns.Safe`). A `/reload` starts the module afresh.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
-  and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags).
+  and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags); each also as Retail (`W.Play("retail")`: the level line, the stats, the windows that stand down, the icons, our bar, the bags without a keyring).
 
 ## Files
 
@@ -626,8 +646,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Sheet/Titles.lua` | The sidebar's titles |
 | `Sheet/Sidebar.lua` | The stats' window: the right pane, the game's sidebar tabs, their panes; registers the part `stats` |
 | `Sheet/Reputation.lua` | The reputation window |
-| `Sheet/Skills.lua` | The skills window |
-| `Sheet/PvP.lua` | The PvP window: the season's rank |
+| `Sheet/Skills.lua` | The skills window (WoW: Forever's skill lines; none in Retail) |
+| `Sheet/PvP.lua` | The PvP window: the season's rank (WoW: Forever's; none in Retail) |
 | `Sheet/Currency.lua` | The currency window |
 | `Sheet/Statistics.lua` | The statistics window |
 | `Bags/Contents.lua` | The bags, without frames: the containers, a record per slot (bind type, price, who can use it, the set it is in), free slots, orders, the search, the junk to sell |
@@ -666,3 +686,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   Our own bags: every slot and the bank while it is open, the game's item buttons, four views, the search, the
   game's clean-up, the bag bar, junk and reagents, currencies and gold. Then pinned items, the player's own groups
   (the game's renamed, moved, hidden or joined; items let go over a group's head) and items marked as junk.
+- **2026-10-25:** in Retail too (Saneroki: one interface for both games): the coloured bars our own where the game
+  has none (the reputation, currency and statistics windows had none of their rows), the stats by Retail's
+  categories without resistances (which stopped the whole page) or the pet's, the specialization on the level line,
+  Retail's own icons for the side tabs; the skills and PvP windows, the ranged and ammo slots and the keyring stand
+  down there.

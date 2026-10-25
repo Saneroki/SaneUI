@@ -941,6 +941,13 @@ tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
 check(row(panel, 4).left == "Fire Mage |cff" .. ASIDE_HEX .. "0/31/20|r  \194\183  |cff" .. TITLE_HEX .. "Sergeant|r  \194\183  |cff" .. RED_HEX .. "PvP|r",
     "a player's title (a PvP rank) on the class line")
 check(row(panel, 2).label == "Officer" and row(panel, 2).labelFont == "detail", "the player's rank in the guild, small, after the guild")
+-- Retail's spec comes without talent points (Core.Inspect gives none there)
+local talents = ns.Inspect.Talents
+ns.Inspect.Talents = function() return "Guardian", nil end
+tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
+check(row(panel, 4).left == "Guardian Mage  \194\183  |cff" .. TITLE_HEX .. "Sergeant|r  \194\183  |cff" .. RED_HEX .. "PvP|r",
+    "a spec without points (Retail's): the spec before the class, nothing after them")
+ns.Inspect.Talents = talents
 world.mouseover.title, world.mouseover.guildRank = nil, nil
 options.classColors = true
 
@@ -976,6 +983,16 @@ world.target.class = { "Mage", "MAGE" }
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
 check(row(panel, 6).left == "137 XP" and row(panel, 6).right == "Next level in 7" and row(panel, 6).font == "sub",
     "what killing it gives you (one level above you, elite: twice) and how many such kills to your next level")
+-- Retail gives experience by other rules (its creatures' levels follow yours): no row for it there
+W.Play("retail")
+tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
+local experience = false
+for index = 1, count(panel) do experience = experience or row(panel, index).left == "137 XP" end
+check(not experience and ns.Numbers.Experience("target") == nil and row(panel, 3).left == "Mage  \194\183  |cffffd100Elite|r",
+    "in Retail a creature's panel has no experience row; the rest as in Forever")
+W.Play("forever")
+tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
+check(row(panel, 6).left == "137 XP", "back in Forever: the row again")
 -- The rule's rows: at level 45 a creature fades to nothing 14 levels below you and is grey from 10 below
 world.player.level, world.target.level = 45, 36
 local gain, kills = ns.Numbers.Experience("target")
@@ -2177,6 +2194,25 @@ GameTooltip_SetDefaultAnchor(tip, UIParent)
 check(not ns.off and Core.errors["Tooltips: the mouse switch"] and #W.printed == 1, "an error in the switch for the mouse is noted and told; it stands nothing down")
 tip.IsForbidden = nil
 options.cursor = "default"
+
+-- Retail: what it lacks of Forever's hidden, every kind still drawn, nothing noted ---------------------
+do
+    W.Play("retail")
+    local before = 0
+    for _ in pairs(Core.errors) do before = before + 1 end
+    tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
+    check(panel:IsShown() and tip:GetAlpha() == 0 and row(panel, 1).left == "Thunderfury", "Retail: an item's panel")
+    spell()
+    check(panel:IsShown() and row(panel, 1).left == "Fireball", "Retail: a spell's panel")
+    tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
+    check(panel:IsShown() and head(panel).unit == "mouseover", "Retail: a player's panel")
+    tip:Fill({ type = TYPE.Object }, { { "Peacebloom" }, { "Herbalism", nil, { 1, 0.5, 0.25 } } })
+    check(panel:IsShown() and row(panel, 1).left == "Peacebloom", "Retail: a thing of the world's panel")
+    local after = 0
+    for _ in pairs(Core.errors) do after = after + 1 end
+    check(after == before and not ns.off, "Retail: no error noted, nothing stood down")
+    W.Play("forever")
+end
 
 -- A failure: the game's own tooltips are back ------------------------------------------------------
 spell()

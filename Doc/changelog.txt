@@ -6,10 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Retail: Sane UI loads in the main game too, beside WoW: Forever.
+- Retail: Sane UI works in the main game too, beside WoW: Forever.
   Everything that both games have works in both; what only Forever
-  has (its painted Atlas, its data of the world) stays in Forever
-  for now.
+  has (its painted Atlas, its data of the world, Combat's own
+  spellbook and talents, the trainers' spells in the spellbook)
+  stays in Forever for now, and the game's own takes its place.
+  The game's settings Sane UI keeps for you stay with the game
+  they were made in.
 - Speed Leveling: one key for questing. Give it a key (E, say)
   under Sane UI in the game's key bindings and press it again and
   again: it opens the loot of the corpse beside you, picks up the

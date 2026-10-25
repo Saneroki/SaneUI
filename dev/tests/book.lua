@@ -104,6 +104,7 @@ C_SpellBook = {
     PickupSpellBookItem = function(slot, bank) picked = { slot, bank } end,
     GetSpellBookItemCooldownDuration = function(slot) return slot == 5 and "nova's cooldown" or nil end,
     GetSpellBookItemCooldown = function() return nil end,
+    IsSpellBookItemLooseFlyoutMember = function() return false end, -- Forever's: the book our own is made after
 }
 PetHasSpellbook = function() return true end
 GetPetIcon = function() return 500 end
@@ -332,5 +333,12 @@ check(#Covers() == 0, "its panel hidden: the secure buttons go")
 W.Fire("SPELLS_CHANGED")
 W.Wait(0)
 check(true, "deaf while hidden")
+
+-- In Retail, whose book is not the one ours is made after (its art, no flyouts' spells loose in it: Combat.lua,
+-- ns.Serves): ours is not there, the game's spellbook stays.
+W.Play("retail")
+check(not Part.Present() and not ns.Board.Present("spellbook"), "in Retail our spellbook is not there: the game's stays")
+W.Play("forever")
+check(Part.Present(), "in Forever it is")
 
 io.write(("Book: all %d checks passed.\n"):format(passed))

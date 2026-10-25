@@ -221,6 +221,12 @@ function Talents.Search(text)
     if frame then ns.TalentsTree.Search(frame, search) end
 end
 
+-- Whether it is there: in the game whose talents it is made after (two specializations, each with its config:
+-- Combat.lua, ns.Serves); in Retail the game's own talents stay, and its talents key opens them.
+function Talents.Present()
+    return ns.Serves("talents")
+end
+
 -- The module stands down: the commit's bar stopped, the frame's events gone.
 function Talents.Leave()
     Talents.Show(false)

@@ -49,7 +49,9 @@ far as the game shows creatures by name):
 5. Creatures the game itself marks for a quest of yours on their nameplates (`Core.UnitQuest`): what Core's data
    does not know.
 
-Core's names are English: on a client in another language the key finds what 1, 3 and 5 name.
+Core's names are English: on a client in another language the key finds what 1, 3 and 5 name. Retail has none of
+Core's quest data yet: there too the key finds what 1, 3 and 5 name, and no thing of the world by its ID; looting,
+fighting, talking, the hearth and the game's own quest items work as in Forever.
 
 **The things of the world** go by the game's object ID, on any client: those of your quests' open objectives, those
 an item to loot comes from (*Drops*), and those a finished quest is handed in to, of your side. The game tells no

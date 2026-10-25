@@ -49,26 +49,35 @@ end
 -- dropdown Classic windows: the full screen goes back and what opens the game's is said (our code opens none of
 -- the game's panels: its OnShow sets the action bars' grids): its key, or, while our keys are on the game's
 -- (Keys.lua), its button in the micro menu. On it the button Sane UI: ours, filling the screen with our spellbook
--- or talents on it (Core's Classic.lua).
+-- or talents on it (Core's Classic.lua). Only those of ours this game has (Board.Present).
 local SPELLBOOK, TALENTS = Core.Word("SPELLBOOK", "Spellbook"), Core.Word("TALENTS", "Talents")
 local function Running() return not ns.off end
-local function Binding(name) return not ns.Keys.Taken() and name or nil end
+local function Binding(name) return not ns.Keys.Taken(name) and name or nil end
 local CLASSIC = {
-    { text = SPELLBOOK, show = function() Core.Classic.Press(SPELLBOOK, Binding("TOGGLESPELLBOOK")) end,
+    { window = "spellbook", text = SPELLBOOK, show = function() Core.Classic.Press(SPELLBOOK, Binding("TOGGLESPELLBOOK")) end,
       ours = function() ns.Safe("classic", Window.Open, "spellbook") end,
       frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", full = true, ready = Running },
-    { text = TALENTS, show = function() Core.Classic.Press(TALENTS, Binding("TOGGLETALENTS")) end,
+    { window = "talents", text = TALENTS, show = function() Core.Classic.Press(TALENTS, Binding("TOGGLETALENTS")) end,
       ours = function() ns.Safe("classic", Window.Open, "talents") end,
       frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", full = true, ready = Running },
 }
+local function Classic()
+    local list = {}
+    for _, entry in ipairs(CLASSIC) do
+        if ns.Board.Present(entry.window) then list[#list + 1] = entry end
+    end
+    return list
+end
 
+-- Made at the login, where this game has a window of ours for its full screen (Combat.lua, ns.Serves): in Retail,
+-- without our spellbook and talents, there is no window, and the bottom edge stays the game's.
 function Window.Build()
-    if frame then return end
+    if frame or not ns.Serves() then return end
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Window.WIDTH, Window.HEIGHT) -- not sizable: its size is ours, not kept
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
-        first = { dock = "BOTTOM" }, sizable = false, classic = CLASSIC,
+        first = { dock = "BOTTOM" }, sizable = false, classic = Classic,
         strip = Window.STRIP,
         filled = function(full) ns.Guarded(Filled, full) end,
         docked = function() ns.Guarded(Placed) end,

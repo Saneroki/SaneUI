@@ -102,6 +102,47 @@ function W.Allowed(conditions)
     return true
 end
 
+-- The game the test plays, Forever (at first) or Retail: its project (WOW_PROJECT_ID, W.project) and Core told
+-- (Core.TellGame). Playing Retail, what Retail lacks of Forever's interface (games.lua, made from the newest
+-- exports) is not there, as in the game: a global, a field of a table (C_SpellBook.IsSpellBookItemLowRank,
+-- Enum.TrainerType), whether the stand-in or the test made it; reading such a global gives nil, and an event
+-- Retail lacks cannot be registered. Back to Forever, all of it is there again. A test that wants one of them
+-- in Retail all the same sets it after W.Play.
+--     W.Play("retail")   ...   W.Play("forever")
+W.hidden = {}        -- [global name] = true: a global the game played lacks (the stand-in's index gives nil)
+W.hiddenEvents = {}  -- [event] = true: an event the game played lacks
+local stash = {}     -- { table, key, value } of each thing hidden, to be given back
+local lacks          -- [game] = the names it lacks (games.lua), read when first wanted
+function W.Play(game, env)
+    env = env or _G
+    for index = #stash, 1, -1 do rawset(stash[index][1], stash[index][2], stash[index][3]) end
+    stash, W.hidden, W.hiddenEvents = {}, {}, {}
+    W.project = game == "retail" and 1 or 18
+    rawset(env, "WOW_PROJECT_ID", W.project)
+    if game == "retail" then
+        lacks = lacks or require("games")
+        for name in lacks.retail:gmatch("[^\n]+") do
+            local event = name:match("^event:(.+)$")
+            if event then
+                W.hiddenEvents[event] = true
+            else
+                local holder, key = env, nil
+                for part in name:gmatch("[^.]+") do
+                    if key then holder = type(holder) == "table" and rawget(holder, key) or nil end
+                    key = part
+                end
+                if holder == env then W.hidden[key] = true end
+                if type(holder) == "table" and rawget(holder, key) ~= nil then
+                    stash[#stash + 1] = { holder, key, rawget(holder, key) }
+                    rawset(holder, key, nil)
+                end
+            end
+        end
+    end
+    local sane = rawget(env, "SaneUI")
+    if type(sane) == "table" and sane.Core and sane.Core.TellGame then sane.Core.TellGame() end
+end
+
 -- Runs every file an addon's TOC lists, in its order: each line that is not empty and not a comment
 -- (the ## directives are comments too) names one, but for the other game's (its conditions, W.Allowed).
 local function LoadToc(root, addon, folder, toc, private)
@@ -235,7 +276,7 @@ function methods:HookScript(name, fn)
     end
 end
 function methods:RegisterEvent(event)
-    if event == "NOT_A_REAL_EVENT" then error("unknown event") end
+    if event == "NOT_A_REAL_EVENT" or W.hiddenEvents[event] then error("unknown event") end
     self._events[event] = true
 end
 function methods:RegisterUnitEvent(event, ...)
@@ -954,7 +995,7 @@ function W.Install(env)
         ItemRefTooltip = true, ShoppingTooltip1 = true, ShoppingTooltip2 = true,
     }
     setmetatable(env, { __index = function(_, key)
-        if optional[key] or (type(key) == "string" and key:match("Button%d+$")) then return nil end
+        if optional[key] or W.hidden[key] or (type(key) == "string" and key:match("Button%d+$")) then return nil end
         error("the addon read an undefined global: " .. tostring(key), 2)
     end })
 end

@@ -22,6 +22,8 @@ local ADDON, ns = ...
 --  (QuestMarks.lua). The game's own frames stay as they are. Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
+--  Our spellbook and talents are made after WoW: Forever's, so in Retail
+--  neither is there (ns.Serves): no full screen there, the quest marks only.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Combat", ns)
@@ -40,15 +42,38 @@ ns.TEXT = {
     questMarksTip = "A creature that belongs to a quest in your log shows a small mark beside its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count still open. As the game says it in the creature's tooltip.",
 }
 
+-- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
+-- and Retail*): the book after its book, whose art is that game's and which holds the spells of its flyouts loose
+-- (C_SpellBook.IsSpellBookItemLooseFlyoutMember), the talents after its talents of two specializations, each with a
+-- config of its own (C_SpecializationInfo.GetCombatConfigIDForSpecGroup). In a game without that (Retail) ours is
+-- not there and the game's own stays: no window of it on the full screen, its key the game's (Board.Present); with
+-- neither, no full screen at all (Window.lua), nor its settings.
+local NEEDS = {
+    spellbook = { "C_SpellBook", "IsSpellBookItemLooseFlyoutMember" },
+    talents = { "C_SpecializationInfo", "GetCombatConfigIDForSpecGroup" },
+}
+
+-- Whether our window of that key ("spellbook", "talents") serves this game; without a key: either of them.
+function ns.Serves(key)
+    if key == nil then return ns.Serves("spellbook") or ns.Serves("talents") end
+    local need = NEEDS[key]
+    local api = need and rawget(_G, need[1])
+    return type(api) == "table" and type(api[need[2]]) == "function"
+end
+
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again"
+ns.GIVEN_BACK = ns.Serves()
+    and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again"
+    or "no quest marks beside nameplates"
 
 local OPTIONS = {
-    { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
 }
--- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
-Core.Edge.Options(OPTIONS, 1)
+if ns.Serves() then
+    table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
+    -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
+    Core.Edge.Options(OPTIONS, 1)
+end
 -- Core's window takes the section in by itself (Edge.lua); the keys bound anew, the quest marks looked at again.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "keys" then ns.Guarded(ns.Keys.Bind) end

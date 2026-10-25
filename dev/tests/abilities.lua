@@ -1534,6 +1534,80 @@ for _, class in ipairs({ "Druid", "Hunter", "Mage", "Paladin", "Priest", "Rogue"
         "the " .. class .. " file is in the trainer data's format" .. (problem and (": " .. problem) or ""))
 end
 
+-- Retail ------------------------------------------------------------------------------------------
+-- The same code there (Abilities.lua, at the top): what you have is read without Forever's ranks and the
+-- reservations work as in Forever; Forever's trainer data is not read, the spellbook's pages stay the
+-- game's, and its menu, the options and the commands keep only what serves the bars.
+W.Play("retail") -- and what Retail lacks of Forever's is not there (games.lua): IsSpellBookItemLowRank, for one
+do
+    local toc = {}
+    for text in io.lines(root .. "/src/Abilities/SaneUI_Abilities.toc") do
+        local file, conditions = text:match("^([%w\\]+%.lua)%s*(.*)$")
+        if file and W.Allowed(conditions) then toc[file] = true end
+    end
+    check(toc["Data\\Trainer.lua"] and toc["Sources.lua"] and toc["Book\\Drag.lua"] and toc["Book\\Menu.lua"]
+        and not (toc["Data\\Classes\\Mage.lua"] or toc["Data\\QuestSpells.lua"] or toc["Data\\WeaponSkills.lua"] or toc["Data\\SkillLines.lua"]),
+        "Retail reads none of Forever's trainer data, only Trainer.lua, whose functions every file uses")
+
+    local ICEBLOCK = 45438
+    W.spells[ICEBLOCK] = { name = "Ice Block" }
+    W.actions[1] = nil
+    ns.QueueUpdate(true, 0)
+    W.Wait(1)
+    check(S.known.Fireball and S.has.Fireball and next(Core.errors) == nil, "Retail: what you have is read without the question about low ranks")
+    check(E.Reserve(1, { kind = "spell", id = ICEBLOCK, name = "Ice Block" }), "Retail: a button is reserved")
+    W.Wait(1)
+    check(reserved(1) and not action(1) and barGhost:IsShown(), "it waits, with its grey icon on the bar")
+    W.Learn(ICEBLOCK, 4)
+    W.Wait(2)
+    check(action(1) and action(1).id == ICEBLOCK and not reserved(1) and not barGhost:IsShown(), "and becomes the real button once learned")
+    W.actions[1] = nil
+
+    -- Without the built-in lists of spellbook tabs (Data/SkillLines.lua) a spell still to come has no tab, and no error
+    local trees, names = ns.TreeLines, ns.SkillLineOfName
+    ns.TreeLines, ns.SkillLineOfName = nil, nil
+    S.AddExtra(LANCE)
+    check(#S.All() > 0 and not ns.off, "the list of spells to come needs none of Forever's lists to be built")
+    S.RemoveExtra({ id = LANCE })
+    ns.TreeLines, ns.SkillLineOfName = trees, names
+
+    -- A spellbook read in Retail never takes the pages over (a second one: the first left them to the game further up)
+    local copy = setmetatable({}, { __index = ns })
+    W.Load(root, "SaneUI_Abilities", "Abilities/Book/Book", copy)
+    W.Fire("ADDON_LOADED", "Blizzard_PlayerSpells")
+    check(not copy.Book.Armed() and view1:GetHeight() == 590 and stands(nativePager, paged, -75, 40),
+        "Retail: the spellbook's pages, its column and its page buttons stay the game's")
+
+    lines = {}
+    ns.class = "WARRIOR"
+    W.menuModifiers.MENU_SPELL_BOOK_SETTINGS(nil, W.Description(lines))
+    ns.class = "MAGE"
+    check(lines[1].title == "Sane UI" and line("Show reservations on the action bars") and line("Action bar layouts")
+        and not line("Show unlearned spells") and not line("Compact spellbook pages") and not line("Show all spell ranks"),
+        "Retail: the spellbook's menu has the bars' lines only, also for a warrior")
+
+    W.printed = {}
+    sane("")
+    check(printedMatch("/sane ab list") and printedMatch("saved layout") and not printedMatch("/sane ab add")
+        and not printedMatch("pages off") and not printedMatch("window reset") and not printedMatch("in grey"),
+        "Retail: /sane abilities explains what serves there")
+    W.printed = {}
+    local extras = #ns.DB.extras.MAGE
+    sane("pages off")
+    sane("window reset")
+    sane("add " .. LANCE)
+    check(ns.options.book == true and #ns.DB.extras.MAGE == extras and not printedMatch("after /reload")
+        and not printedMatch("own size again") and printedMatch("/sane ab list"),
+        "the commands for the spellbook's pages, its window and its grey spells are not there: the help instead")
+    W.printed = {}
+    sane("debug")
+    check(printedMatch("reservations: ") and not printedMatch("still to learn") and not printedMatch("spellbook:"),
+        "/sane ab debug tells the reservations only")
+end
+W.Play("forever")
+ns.QueueUpdate(true, 0)
+W.Wait(1)
+
 -- Errors are caught and kept (core.lua); none happened in everything above ----------------
 for label, problem in pairs(Core.errors) do io.stderr:write(label .. ": " .. problem.text .. "\n") end
 check(next(Core.errors) == nil, "no step of the module raised an error")

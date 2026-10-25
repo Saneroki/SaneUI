@@ -428,8 +428,12 @@ local function Unit(ctx)
             end
         end
     end
-    if classWord and spec then
+    -- The spec before the class, its talent points after it where the game counts them (Forever: 0/31/20; a
+    -- Retail spec has none: "Guardian Druid")
+    if classWord and spec and points then
         classWord = Read.Memo("spec", "%s %s |cff" .. POINTS_HEX .. "%s|r", spec, classWord, points)
+    elseif classWord and spec then
+        classWord = Read.Memo("spec", "%s %s", spec, classWord)
     end
     if not first then first, classWord = classWord, nil end
     if first then Read.Text("detail", first, DETAIL[1], DETAIL[2], DETAIL[3]) end

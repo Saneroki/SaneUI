@@ -87,7 +87,10 @@ the game's own chat channels on every character is the Social module's.)
   has its stored settings (`C_CVar.AreCVarsLoaded`, else 2 seconds after `VARIABLES_LOADED`), and when
   another profile came into use or *Accountwide settings* was switched on (Core's hook `moved`), once the
   first writing came due.
-  Never in a fight: then at `PLAYER_REGEN_ENABLED`. Your own channels are joined before the chat windows are
+  Never in a fight: then at `PLAYER_REGEN_ENABLED`. Only in the game they were read in (`from`: `forever` or
+  `retail`; those kept before Sane UI served two games are Forever's): each game has options, CVars, layouts and
+  chat windows of its own, so another game's (a game folder's saved settings copied into the other's) are neither
+  written nor handed out (`Sync.Taken`), and this game's take their place at the next reading. Your own channels are joined before the chat windows are
   written (a join puts a channel into the first window). One reload dialog per writing (`Sync.OfferReload`,
   through `Core.AskReload`) names what the game shows only after one.
 - **Through the game's stored settings, never its frames** (no taint):
@@ -144,6 +147,8 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-10-25 — Per game (Saneroki): what was read in one game is written only there (`from`), never Forever's
+  settings into Retail.
 - 2026-10-17 — In the profile in use only (Saneroki): with *Accountwide settings* off Sync keeps, reads and writes nothing. The tab is *Game settings*; each profile keeps its own ticks. Written again when another profile comes into use (`moved`).
 - 2026-10-17 — The CVars of Graphics, Audio and the other per-character settings are found in steps, a few
   milliseconds a frame (no stall when a character comes into the game). Only CVars the game lets addons set

@@ -14,7 +14,9 @@ local _, ns = ...
 --      titles      the titles (Sheet/Titles.lua)
 --      reputation, skills, pvp, currency, statistics
 --                  what the game's character sheet has behind its tabs, each a
---                  window of its own (Sheet/)
+--                  window of its own (Sheet/); skills and pvp only where the
+--                  game has WoW: Forever's skill lines and PvP rank (none in
+--                  Retail: those parts do not register)
 --      bags        the bags
 --      bank        the bank, while the character is at a banker
 --      alts        your alts: the other characters' snapshots
@@ -52,6 +54,11 @@ local function Honor(texture)
     texture:SetTexture(UnitFactionGroup("player") == "Horde" and "Interface/ICONS/INV_SideTab_Honor_Horde_c60"
         or "Interface/ICONS/INV_SideTab_Honor_Alliance_c60")
 end
+-- The side tabs' icons are WoW: Forever's own art; Retail has none of them, so there an icon of its own of the same
+-- meaning.
+local function SideTab(forever, retail)
+    return Core.ForGame({ retail = "Interface/ICONS/" .. retail }) or "Interface/ICONS/" .. forever
+end
 Board.ICONS = {
     character = Portrait,
     stats = "Interface/ICONS/Spell_Nature_Strength",
@@ -63,11 +70,11 @@ Board.ICONS = {
         texture:SetTexture("Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs")
         texture:SetTexCoord(0.015625, 0.53125, 0.32421875, 0.4609375)
     end,
-    reputation = "Interface/ICONS/INV_SideTab_Reputation2_c60",
+    reputation = SideTab("INV_SideTab_Reputation2_c60", "Achievement_Reputation_01"),
     skills = "Interface/ICONS/Ability_Racial_JackofAllTrades",
     pvp = Honor,
-    currency = "Interface/ICONS/INV_SideTab_Currency_c60",
-    statistics = "Interface/ICONS/INV_SideTab_Stats_c60",
+    currency = SideTab("INV_SideTab_Currency_c60", "INV_Misc_Coin_02"),
+    statistics = SideTab("INV_SideTab_Stats_c60", "Achievement_General"),
     bags = "Interface/ICONS/INV_Misc_Bag_08",
     bank = "Interface/ICONS/INV_Misc_Bag_09",
     alts = "Interface/ICONS/INV_Misc_GroupNeedMore",

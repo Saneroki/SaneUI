@@ -5,8 +5,9 @@ local _, ns = ...
 --  The bar over the full map's top edge, left to right:
 --
 --      Quest Log         the quest log's window over the map in or out (kept; QuestLog.lua)
---      the views         Parchment, Blended, Scrying and Atlas while its module is there: how the map is drawn
---                        (the setting Map view; Navigation.lua, Offer)
+--      the views         Parchment; Blended and Scrying while Core's terrain is there (not in Retail, until its
+--                        data comes); Atlas while its module is: how the map is drawn (the setting Map view;
+--                        Navigation.lua, Offer)
 --      the map selector  the world, a continent or a plane of its own (Zephras Isle), then a zone of it (A to
 --                        Z): the map shows it whole; each says what the map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
@@ -129,11 +130,13 @@ local function FloorList(_, root)
     end
 end
 
--- The world, then each continent and each plane of its own.
+-- The world, then each continent and each plane of its own; then the continents beside the world map (Retail's
+-- Outland, Draenor, the Shadowlands: Coords.Elsewhere).
 local function Continents(_, root)
     local world = Coords.WorldMap()
     if world then Radio(root, Name(world), world) end
     for _, plane in ipairs(Coords.Planes()) do Radio(root, Name(plane), plane) end
+    for _, plane in ipairs(Coords.Elsewhere()) do Radio(root, Name(plane), plane) end
 end
 
 -- The zones of the plane shown, A to Z (a plane of its own is its own zone).
@@ -194,7 +197,8 @@ end
 
 -- The pin filter: its sections, each under its title and a line between them; in each a checkbox per kind with its
 -- icon before its words, and the size slider of each kind that has a size (the pins, the party's marks, the route's
--- line); the quest areas' slider is their opacity. A kind of no known section comes last.
+-- line); the quest areas' slider is their opacity. A kind of no known section comes last; one that can show nothing
+-- here (only Core's data has it, and that is not there: ns.KindOffered) is left out, and a section left empty with it.
 local SIZED = { group = true, route = true, area = true }
 local function Filter(_, root)
     local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
@@ -209,7 +213,7 @@ local function Filter(_, root)
     local rest = {}
     for _, kind in ipairs(ns.KINDS) do
         local section = sections[known[kind.section]] or rest
-        section[#section + 1] = kind
+        if ns.KindOffered(kind) then section[#section + 1] = kind end
     end
     sections[#sections + 1] = rest
     local first = true

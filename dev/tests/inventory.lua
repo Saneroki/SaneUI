@@ -352,6 +352,25 @@ for _, widget in ipairs(W.frames) do
         and widget._text ~= "Level 1 |cff3fc7ebMage|r" then level = widget end
 end
 check(level, "the level line, the class in its colour as ink on the paper, as the game writes it")
+-- The specialization on it: in WoW: Forever only where the game says the class chooses one; in Retail, which has no
+-- such call, always (as each game's own sheet writes it).
+do
+    local specs = rawget(_G, "C_SpecializationInfo")
+    PLAYER_LEVEL = "Level %s |c%s%s %s|r"
+    C_SpecializationInfo = { GetSpecialization = function() return 1 end,
+                             GetSpecializationInfo = function() return 62, "Arcane" end,
+                             IsSpecSelectionEnabled = function() return false end }
+    W.Fire("PLAYER_LEVEL_UP")
+    check(level._text:match("^Level 1 |cff%x+Mage|r$"), "WoW: Forever, a class that chooses none: the class alone: " .. level._text)
+    W.Play("retail")
+    C_SpecializationInfo.IsSpecSelectionEnabled = nil
+    W.Fire("PLAYER_LEVEL_UP")
+    check(level._text:match("^Level 1 |cff%x+Arcane Mage|r$"), "Retail: the specialization before the class: " .. level._text)
+    W.Play("forever")
+    C_SpecializationInfo, PLAYER_LEVEL = specs, nil
+    W.Fire("PLAYER_LEVEL_UP")
+    check(level._text:match("^Level 1 |cff%x+Mage|r$"), "back in WoW: Forever, without a specialization: as it was")
+end
 check(scenes == 1, "the game's scene for the character sheet is set up when shown")
 local scene
 for _, widget in ipairs(W.frames) do
@@ -570,6 +589,33 @@ W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Wait(0)
 check(not ns.Stats.Owed() and not Names():find("CRITCHANCE"), "the fight over: drawn anew")
+-- Retail: its categories named by the frames they stand in on its sheet, a stat at the value it hides at known by the
+-- number its function leaves on the line (it answers nothing), no resistances and no pet's stats (it has neither,
+-- nor the pet's event: listening to it would fail).
+do
+    W.Play("retail")
+    local categories, info = PAPERDOLL_STATCATEGORIES, PAPERDOLL_STATINFO
+    local function Retail(name)
+        return { updateFunc = function(frame) frame.Value:SetText(tostring(statValues[name])) frame.numericValue = statValues[name] end }
+    end
+    PAPERDOLL_STATINFO = { HEALTH = Retail("HEALTH"), CRITCHANCE = Retail("CRITCHANCE"), HASTE = Retail("HASTE") }
+    PAPERDOLL_STATCATEGORIES = {
+        { categoryFrame = "AttributesCategory", stats = { { stat = "HEALTH" } } },
+        { categoryFrame = "EnhancementsCategory", stats = { { stat = "CRITCHANCE", hideAt = 0 }, { stat = "HASTE", hideAt = 0 } } },
+    }
+    CharacterStatsPane = { AttributesCategory = { titleText = "Attributes" }, EnhancementsCategory = { titleText = "Enhancements" } }
+    Stats.Show(false)
+    Stats.Show(true)
+    check(Names() == "[Attributes] HEALTH [Enhancements] HASTE",
+        "Retail: its categories by its frames' titles, a stat at its hide value left out, no resistances: " .. Names())
+    check(not Core.errors["event PET_STATS_UPDATE"], "Retail: the pet's stats' event not listened to")
+    W.Play("forever")
+    PAPERDOLL_STATCATEGORIES, PAPERDOLL_STATINFO, CharacterStatsPane = categories, info, nil
+    Stats.Show(false)
+    Stats.Show(true)
+    check(Names():find("[General] HEALTH", 1, true) and Names():find("[Resistance] Arcane", 1, true),
+        "back in WoW: Forever: its categories and the resistances again: " .. Names())
+end
 
 -------------------------------------------------------------------------------
 --  The other characters

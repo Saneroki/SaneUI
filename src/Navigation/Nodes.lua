@@ -14,8 +14,10 @@ local _, ns = ...
 --
 --  The finders follow the pin filter's kinds Found herbs and Found ore (Apply): the one switched on, the
 --  one switched off; with both on and both known they take turns while you move (the setting Find Herbs
---  and Find Minerals in turn: seconds of moving between two turns). A finder is a spell, and switching it
---  sounds as a cast: Sane UI's own switches are silent. The game's effect sounds are off from the switch
+--  and Find Minerals in turn: seconds of moving between two turns). Retail's tracking holds both at once
+--  (Nodes.TOGETHER): there each is simply on while its kind is, and no turns are taken. Without Core's herbs
+--  and ore (Nodes.Known: Retail, until its data comes) nothing is told by its name. A finder is a spell, and
+--  switching it sounds as a cast: Sane UI's own switches are silent. The game's effect sounds are off from the switch
 --  until the cast went through (a moment later; at most Nodes.QUIET seconds), then as they were; what they
 --  were is kept in the store meanwhile, so a /reload in between puts it back (Start).
 -------------------------------------------------------------------------------
@@ -29,6 +31,9 @@ Nodes.FOUND = { herb = "foundHerb", ore = "foundOre" } -- the pin filter's kind 
 Nodes.QUIET = 2      -- seconds the effect sounds stay off at most after a switch
 Nodes.AFTER = 0.25   -- and how long after the cast went through (its sound comes with it)
 Nodes.LOOK = 0.5     -- seconds between two looks whether a turn is due
+-- Whether the game's tracking holds both finders at once (Retail's ticks any number of them), so they take no
+-- turns; Forever's holds one at a time, as Classic did. Nothing of the game tells it: the game's rule.
+Nodes.TOGETHER = Core.RETAIL
 local SFX = "Sound_EnableSFX"
 local WAIT = "navigation: finders" -- what waits for the fight's end
 local HERB, METAL, GOODS = 9, 7, 7 -- the game's item class Trade Goods and its subclasses Herb, Metal & Stone
@@ -57,6 +62,12 @@ function Nodes.Find(name)
         named[name] = known
     end
     return known or nil
+end
+
+-- Whether herbs and ore can be told by their names here: Core's set Objects is there (not in Retail, until its data
+-- comes: the sparkles and the far ones stand down then).
+function Nodes.Known()
+    return ns.Has("Objects")
 end
 
 -- Whether a word stands in a name as a word of its own.
@@ -102,12 +113,13 @@ local skills = {} -- [skill line] = what you reach with its bonus, or false: not
 
 function Nodes.TooHard(node)
     local skill = node.skill
-    if not skill then return false end
+    local lines = rawget(_G, "C_SkillInfo")
+    -- A game that tells no skill line's rank (Retail): none greyed, rather than all.
+    if not skill or not (lines and lines.GetSkillLineInfoByID) then return false end
     local reach = skills[skill]
     if reach == nil then
         reach = false
-        local info = rawget(_G, "C_SkillInfo")
-        info = info and Core.Ask(info.GetSkillLineInfoByID, skill)
+        local info = Core.Ask(lines.GetSkillLineInfoByID, skill)
         local rank = type(info) == "table" and Core.Plain(info.rank)
         if type(rank) == "number" and rank > 0 then
             local bonus = Core.Plain(info.modifier)
@@ -121,10 +133,10 @@ end
 -------------------------------------------------------------------------------
 --  The finders
 -------------------------------------------------------------------------------
--- The finders the game lists for this character: [kind] = its place in the game's tracking list, and the kind
--- whose finder is on.
+-- The finders the game lists for this character: [kind] = its place in the game's tracking list, the kind
+-- whose finder is on, and [kind] = true for each that is on (both, where the game holds both: Nodes.TOGETHER).
 local function Finders()
-    local places, on = {}, nil
+    local places, on, lit = {}, nil, {}
     local count = Core.Plain(Core.Ask(C_Minimap.GetNumTrackingTypes)) or 0
     for index = 1, count do
         local info = Core.Ask(C_Minimap.GetTrackingInfo, index)
@@ -132,11 +144,11 @@ local function Finders()
         for kind, id in pairs(Nodes.FINDERS) do
             if spell == id then
                 places[kind] = index
-                if Core.Plain(info.active) then on = kind end
+                if Core.Plain(info.active) then on, lit[kind] = kind, true end
             end
         end
     end
-    return places, on
+    return places, on, lit
 end
 
 -- The kind whose finder is on, as the game told it last: asked once, then again only after the game says its
@@ -201,12 +213,23 @@ local function Wants(kind)
     return ns.Pins.Shows(Nodes.FOUND[kind])
 end
 
+-- Where the game holds both finders (Nodes.TOGETHER): each on while its kind is wanted, off while not; those to go
+-- off first, so the sounds stay off for the cast of the one that comes on.
+local function Together(places, lit)
+    for _, on in ipairs({ false, true }) do
+        for _, kind in ipairs({ "herb", "ore" }) do
+            if places[kind] and Wants(kind) == on and (lit[kind] or false) ~= on then Switch(places[kind], on) end
+        end
+    end
+end
+
 -- The pin filter's Found herbs and Found ore as the finders: the one on that is no longer wanted gives way to
 -- the other kind (if wanted and known) or goes off; none on, the wanted one comes on.
 function Nodes.Apply()
     if ns.off then return end
     if InCombatLockdown() then return Core.AfterCombat(WAIT, Nodes.Apply) end
-    local places, on = Finders()
+    local places, on, lit = Finders()
+    if Nodes.TOGETHER then return Together(places, lit) end
     if on and not Wants(on) then
         local other = on == "herb" and "ore" or "herb"
         if Wants(other) and places[other] then
@@ -233,11 +256,12 @@ local function Look()
     if other and places[other] then Switch(places[other], true) end
 end
 
--- The looks run while turns may come: the setting above 0, both kinds wanted, both finders known.
+-- The looks run while turns may come: the setting above 0, both kinds wanted, both finders known, and a game whose
+-- finders take turns.
 function Nodes.Update()
     local places = Finders()
-    local wanted = not ns.off and (ns.options.nodeTurns or 0) > 0 and Wants("herb") and Wants("ore")
-        and places.herb and places.ore
+    local wanted = not ns.off and not Nodes.TOGETHER and (ns.options.nodeTurns or 0) > 0 and Wants("herb")
+        and Wants("ore") and places.herb and places.ore
     if wanted and not ticker then
         moving = 0
         ticker = C_Timer.NewTicker(Nodes.LOOK, ns.Guard(Look))

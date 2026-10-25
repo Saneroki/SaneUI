@@ -231,7 +231,7 @@ end
 local function Build(left, right)
     list = ns.List.New(left, { extent = Extent, draw = Draw })
     side = ns.Side.New(right)
-    side.bar = CreateFrame("Frame", nil, side.content, "ColoredProgressBarTemplate")
+    side.bar = ns.Rows.Bar(side.content)
     side.bar:SetSize(ns.Rows.SIDE_BAR, ns.Rows.BAR_HEIGHT)
     side.bar:SetPoint("TOP", side.divider, "BOTTOM", 0, -6)
     side.description:ClearAllPoints()
@@ -247,6 +247,9 @@ local function Show(on)
     if on then Skills.Refresh() end
 end
 
--- A window of its own on the board: the skill lines at the left, the chosen one at the right.
-ns.Page.Part("skills", Core.Word("SKILLS", "Skills"), ns.Page.Least(ns.List.LEAST + ns.Page.SIDE, ns.List.LEAST_HEIGHT),
-    { side = true, Build = Build, Show = Show })
+-- A window of its own on the board: the skill lines at the left, the chosen one at the right. Only where the game
+-- keeps skill lines (WoW: Forever's C_SkillInfo): a game without them (Retail) has no skills window.
+if Info().GetSkillLineInfo then
+    ns.Page.Part("skills", Core.Word("SKILLS", "Skills"), ns.Page.Least(ns.List.LEAST + ns.Page.SIDE, ns.List.LEAST_HEIGHT),
+        { side = true, Build = Build, Show = Show })
+end

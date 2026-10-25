@@ -288,7 +288,7 @@ end
 -- The layers, as the view chosen draws them, at every zoom: Parchment (the art), Scrying (the land), Blended (the
 -- art over the land, faded out as the view comes close: Canvas.Blend), Atlas (the land, the painted map over it);
 -- the ground is the sea of the one or the other, or between them. Only a layer that shows is drawn. The Atlas'
--- module is loaded the first time its view is drawn; if it cannot be, Scrying (Painted.lua). In an instance
+-- module is loaded the first time its view is drawn; if it cannot be, the fallback (Painted.lua). In an instance
 -- (lost) none: the game's minimap is the map there.
 local function Draw()
     if lost then
@@ -297,7 +297,7 @@ local function Draw()
         return ns.Safe("marks", ns.Marks.Clear)
     end
     local chosen = ns.View()
-    if chosen == "atlas" and not ns.Painted.Ready() then chosen = ns.FALLBACK end
+    if chosen == "atlas" and not ns.Painted.Ready() then chosen = ns.Fallback() end
     local art = chosen == "sketches" and 1 or chosen == "blend" and Canvas.Blend(view.span) or 0
     local sea, paper = Canvas.GROUND, Canvas.PAPER
     ground:SetColorTexture(sea[1] + (paper[1] - sea[1]) * art, sea[2] + (paper[2] - sea[2]) * art,

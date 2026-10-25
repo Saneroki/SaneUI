@@ -90,7 +90,8 @@ local function Standing(data)
     return share, color, word, progress
 end
 
--- A bar of the game's (ColoredProgressBarTemplate) drawn for a faction; under the mouse it shows the numbers.
+-- A coloured bar (Rows.Bar: the game's, or ours where it has none) drawn for a faction; under the mouse it shows the
+-- numbers.
 local function Bar(bar, data)
     local share, color, word, progress = Standing(data)
     bar:SetFillPercent(math.max(0, math.min(1, share)))
@@ -271,7 +272,7 @@ end
 local function Build(left, right)
     list = ns.List.New(left, { extent = Extent, draw = Draw })
     side = ns.Side.New(right, ns.Side.Foot(3))
-    side.bar = CreateFrame("Frame", nil, side.content, "ColoredProgressBarTemplate")
+    side.bar = ns.Rows.Bar(side.content)
     side.bar:SetSize(ns.Rows.SIDE_BAR, ns.Rows.BAR_HEIGHT)
     side.bar:SetPoint("TOP", side.divider, "BOTTOM", 0, -6)
     side.description:ClearAllPoints()

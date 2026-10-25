@@ -17,6 +17,9 @@ local _, ns = ...
 --  out of a fight: the reservations need it. The list of what is still to come is
 --  the expensive part, so it is only built when something reads it (S.All: the
 --  spellbook's pages, Home, a command) and something changed since.
+--
+--  In Retail only the first part runs: nothing there reads the list of spells
+--  still to come, and the trainer's window is not read (Abilities.lua, at the top).
 -------------------------------------------------------------------------------
 local S = {}
 ns.Sources = S
@@ -225,6 +228,8 @@ function S.ScanBook()
     local known, has, knownTab, low = {}, {}, {}, {}
     local lines = {}
     local bank, types = Bank(), Enum.SpellBookItemType
+    -- Forever's spellbook marks the ranks below your highest one; Retail has no ranks and no such question.
+    local lowRank = C_SpellBook.IsSpellBookItemLowRank
     -- One spellbook item under one of its names. Keeps the rank you can cast: the highest one learned.
     local function Note(key, line, item, isLow)
         has[key] = true
@@ -245,7 +250,7 @@ function S.ScanBook()
                     -- "Instant Poison II" is "Instant Poison" in the trainer data (D.Info): known by both.
                     local sub = ns.Plain(item.subName)
                     local base = D.FamilyName(name, type(sub) == "string" and sub or nil)
-                    local isLow = not item.isPassive and C_SpellBook.IsSpellBookItemLowRank(index, bank) and true or false
+                    local isLow = not item.isPassive and lowRank ~= nil and lowRank(index, bank) and true or false
                     Note(name, line, item, isLow)
                     if base ~= name then Note(base, line, item, isLow) end
                 end
@@ -263,6 +268,11 @@ end
 -------------------------------------------------------------------------------
 --  The spellbook tab of a spell you do not have yet
 -------------------------------------------------------------------------------
+-- The built-in lists of Data/SkillLines.lua for your class: Forever's, not read in Retail (the TOC).
+local function TreeLines()
+    return ns.TreeLines and ns.TreeLines[ns.class]
+end
+
 local function LineIndex(skillLine)
     local index = Core.Ask(C_SpellBook.GetSkillLineIndexByID, skillLine)
     return type(index) == "number" and index or nil
@@ -274,7 +284,7 @@ local function ProbeTab(id)
     if probed[id] == nil then
         probed[id] = false
         local inLine = C_TradeSkillUI and C_TradeSkillUI.IsRecipeInSkillLine
-        for _, line in ipairs(inLine and ns.TreeLines[ns.class] or {}) do
+        for _, line in ipairs(inLine and TreeLines() or {}) do
             if Core.Ask(inLine, id, line) == true then
                 probed[id] = LineIndex(line) or false
                 break
@@ -295,11 +305,11 @@ local function FindTab(entry)
     local tab = entry.id and ProbeTab(entry.id)
     if tab then return tab, "tabProbe" end
 
-    local names = ns.SkillLineOfName[ns.class]
+    local names = ns.SkillLineOfName and ns.SkillLineOfName[ns.class]
     tab = names and names[name] and LineIndex(names[name])
     if tab then return tab, "tabStatic" end
 
-    local trees = ns.TreeLines[ns.class]
+    local trees = TreeLines()
     tab = entry.tree and trees and trees[entry.tree] and LineIndex(trees[entry.tree])
     if tab then return tab, "tabTalent" end
 

@@ -3,10 +3,12 @@
 -- spellbook side by side, each as wide as its share of the game's sizes), a planner Sane UI knows as a window of
 -- its own (listed only while it is there, seated in its panel, opened and closed with it), the quest marks beside
 -- nameplates, and giving everything back. Our spellbook itself is tried in dev/tests/book.lua, our talents in
--- dev/tests/talents.lua. The look can only be judged in the game.
+-- dev/tests/talents.lua. The look can only be judged in the game. At its end it runs again as Retail loads the module
+-- ("retail": W.Play), where neither our spellbook nor our talents are.
 -- Usage, from the project folder:  lua5.1 dev/tests/combat.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
+local RETAIL = arg[1] == "retail"
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
@@ -103,6 +105,11 @@ W.templates.PagingControlsHorizontalTemplate = function(controls)
     function controls:SetMaxPages(count) self.maxPages = math.max(count, 1) end
     function controls:UpdateControls() end
 end
+-- WoW: Forever's spellbook and talents, which ours are made after (Combat.lua, ns.Serves): the spells of its flyouts
+-- loose in its book, its two specializations each with a talent config of its own. Retail lacks both (W.Play).
+C_SpellBook.IsSpellBookItemLooseFlyoutMember = function() return false end
+C_SpecializationInfo = { GetCombatConfigIDForSpecGroup = function(group) return 100 + group end }
+if RETAIL then W.Play("retail") end
 
 W.LoadCore(root)
 local Core = SaneUI.Core
@@ -112,6 +119,40 @@ W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
 local Board, Edge = ns.Board, Core.Edge
+
+-------------------------------------------------------------------------------
+--  In Retail: neither our spellbook nor our talents, so no full screen and the game's keys its own; the quest marks
+-------------------------------------------------------------------------------
+if RETAIL then
+    check(Core.RETAIL and not ns.Serves() and not Board.Present("spellbook") and not Board.Present("talents"),
+        "Retail has not the spellbook and talents ours are made after: neither of ours is there")
+    check(ns.Window.handle == nil and not ns.Window.Full() and not ns.Window.Fill(),
+        "no window: the bottom edge fills no screen")
+    check(next(W.overrides) == nil and not ns.Keys.Taken() and not ns.Keys.Taken("TOGGLETALENTS"),
+        "no key of the game's runs ours: its spellbook and talents keys open its own windows")
+    ns.Keys.Press("spellbook")
+    ns.Keys.Press("talents")
+    check(not ns.off and not ns.Window.Full(), "our own keys (in the game's key bindings) do nothing, and nothing fails")
+    local listed = {}
+    for _, option in ipairs(Core.described[ns.name].list) do listed[option.key] = true end
+    check(listed.questMarks and not listed.keys and not listed.expand, "its settings: the quest marks only")
+    Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
+    local plate = W.NewWidget("Frame", nil, UIParent)
+    C_NamePlate = { GetNamePlateForUnit = function(unit) return unit == "nameplate1" and plate or nil end }
+    C_QuestLog = { UnitIsRelatedToActiveQuest = function() return true end }
+    C_TooltipInfo.GetUnit = function() return { lines = { { type = 8, leftText = "Young Wolf slain: 3/8" } } } end
+    UnitIsPlayer, UnitName = function() return false end, function() return "Young Wolf" end
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    local mark
+    for _, widget in ipairs(W.frames) do if widget._parent == plate and widget.icon then mark = widget end end
+    check(mark and mark._shown and mark.icon._texture == ns.QuestMarks.ICONS.kill and mark.count._text == "3/8",
+        "the quest marks beside nameplates, as in Forever")
+    ns.StandDown("a test")
+    check(ns.off and not mark._shown and ns.GIVEN_BACK == "no quest marks beside nameplates",
+        "standing down: the quest marks go, and what is told says so")
+    io.write(("Combat in Retail: all %d checks passed.\n"):format(passed))
+    return
+end
 
 -------------------------------------------------------------------------------
 --  The window, docked at the bottom middle
@@ -356,6 +397,35 @@ end
 
 
 -------------------------------------------------------------------------------
+--  A window of ours this game has not (Combat.lua, ns.Serves): it alone is not there
+-------------------------------------------------------------------------------
+do
+    local configs, keyOf = C_SpecializationInfo.GetCombatConfigIDForSpecGroup, GetBindingKey
+    C_SpecializationInfo.GetCombatConfigIDForSpecGroup = nil -- talents not of two specializations, as Retail's
+    GetBindingKey = function(action) return ({ TOGGLESPELLBOOK = "P", TOGGLETALENTS = "N" })[action] end
+    ns.Keys.Bind()
+    check(not Board.Present("talents") and Board.Present("spellbook") and ns.Serves(),
+        "without the talents ours are made after, our talents are not there; our spellbook is")
+    check(W.overrides[owner].P == ns.Keys.COMMANDS.spellbook and W.overrides[owner].N == nil
+        and ns.Keys.Taken("TOGGLESPELLBOOK") and not ns.Keys.Taken("TOGGLETALENTS"),
+        "the talents key opens the game's talents; the spellbook's key ours")
+    local entries = Core.Classic.List(handle)
+    check(#entries == 1 and entries[1].window == "spellbook", "Classic windows: the game's spellbook, not its talents")
+    local first, listed = layouts.options.default(), {}
+    for _, spec in ipairs(layouts.options.windows()) do listed[spec.key] = true end
+    check(first and first.key == "spellbook" and listed.spellbook and not listed.talents,
+        "the first layout is the spellbook alone, and the dropdown Windows has no talents")
+    W.Play("retail")
+    ns.Keys.Bind()
+    check(not ns.Serves() and W.overrides[owner] == nil and not ns.Keys.Taken() and Core.Classic.List(handle) == nil,
+        "with neither (Retail): no key of the game's runs ours, and no Classic windows of Combat's")
+    W.Play("forever")
+    C_SpecializationInfo.GetCombatConfigIDForSpecGroup, GetBindingKey = configs, keyOf
+    ns.Keys.Bind()
+    check(Board.Present("talents") and W.overrides[owner].P == ns.Keys.COMMANDS.spellbook, "back in Forever: both ours again")
+end
+
+-------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
 ns.Window.Reboard()
@@ -370,5 +440,8 @@ check(W.overrides[owner] == nil, "and the game's keys open the game's windows ag
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 check(not questMark._shown, "a plate the game shows after it gets no quest mark")
+
+-- As Retail loads the module: this file once more, in a client of its own.
+check(os.execute(("lua5.1 '%s/dev/tests/combat.lua' retail"):format(root)) == 0, "in Retail the module loads and runs as that game has it")
 
 io.write(("Combat: all %d checks passed.\n"):format(passed))

@@ -454,6 +454,12 @@ function Book_.Search(text)
     if holder and shown then Fill(false) end
 end
 
+-- Whether it is there: in the game whose book it is made after (its art, its flyouts' spells loose in it: Combat.lua,
+-- ns.Serves); in Retail the game's own spellbook stays, and its spellbook and pet book keys open it.
+function Book_.Present()
+    return ns.Serves("spellbook")
+end
+
 function Book_.Leave()
     Book_.Show(false)
     Core.AfterCombat("Combat: spellbook casts", Casts.Clear)

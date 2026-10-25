@@ -16,6 +16,15 @@ local ADDON, ns = ...
 --
 --  You make a reservation in the game's own spellbook: the spells you have not
 --  learned yet are listed there in grey (Book/), and you drag one onto a button.
+--
+--  WoW: Forever and Retail. The spells still to come are Forever's: its class
+--  trainers teach them, rank by rank (Data/, the trainer's window), and its
+--  spellbook does not list them, so the module puts them on its pages (Book/).
+--  Retail's spellbook lists the spells still to come by itself, Retail has no
+--  class trainers and no ranks, and its spellbook has pages of another measure:
+--  there the spellbook, its switches and the trainers stay the game's own
+--  (Core.FOREVER below), and Forever's trainer data is not even read (the TOC).
+--  The reservations, their grey icons on the bars and the saved layouts serve both.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -53,8 +62,9 @@ ns.TEXT = {
     pagesOn = "the spellbook shows your unlearned spells again after /reload.",
     pagesOff = "the spellbook's pages are left to the game after /reload.",
     pagesReload = "the spellbook's pages",
-    -- /sane abilities
+    -- /sane abilities; in Retail the lines about the spellbook's grey spells and pages are not there
     about = "unlearned spells in the spellbook, reserved buttons, saved bar layouts",
+    aboutRetail = "reserved buttons, saved bar layouts",
     help = {
         "the spells you have not learned yet are in your spellbook, in grey. Drag one onto an action bar button to reserve that button. (/sane ab is short for /sane abilities.)",
         "/sane ab list - your reservations     /sane ab clear - remove them all",
@@ -64,6 +74,13 @@ ns.TEXT = {
         "/sane ab pages off - leave the spellbook's pages to the game (and /sane ab pages on)",
         "/sane ab window reset - the spellbook's own size and place again",
         "/sane ab debug - what the lists were built from",
+    },
+    helpRetail = {
+        "a reserved action bar button waits for what you do not have yet, and becomes the real thing once you have it. Load a saved layout: what you do not have yet is reserved. (/sane ab is short for /sane abilities.)",
+        "/sane ab list - your reservations     /sane ab clear - remove them all",
+        "/sane ab save <name>, /sane ab load <name>, /sane ab delete <name>, /sane ab layouts - saved bar layouts",
+        "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
+        "/sane ab debug - your reservations and Bar 1's slots",
     },
     debugSpells = "spells: %d learned, %d still to learn (trainer list %d, weapon skills %d, talents %d, read at the trainer %d, added by hand %d).",
     debugTabs = "spellbook tab found for %d of them (%d by a rank you know, %d at the trainer, %d asked from the game, %d from the built-in list, %d by talent tree); %d without a tab.",
@@ -156,6 +173,16 @@ local OPTIONS = {
     { key = "announce", default = true, text = "Say in chat when a reserved button is filled",
       tip = "When you learn a spell or get an item a button was reserved for, one chat line names the button. Off: it lands quietly." },
 }
+
+-- The spellbook's switches (the first five) are Forever's: in Retail they are kept with the settings, without
+-- words, so neither the options page nor the spellbook's menu has them (an option without text has no control).
+if not Core.FOREVER then
+    for _, option in ipairs(OPTIONS) do
+        if option.key == "book" or option.parent == "book" then
+            option.text, option.tip, option.header, option.headerTip = nil, nil, nil, nil
+        end
+    end
+end
 
 -- The pages change hands at a /reload only: said in chat, and offered through Core's dialog where it has one.
 local function PagesChanged(on)
@@ -414,6 +441,8 @@ function ns.OnLogin()
     end)
     -- The class trainer's window says which spellbook tab each spell belongs to. Once the module
     -- stood down the window is the game's alone: its filter was put back then (ns.GiveBack).
+    -- Retail has no class trainers: its trainers' windows are the game's alone from the start.
+    if not Core.FOREVER then return end
     local function AtTrainer(step)
         return function()
             if not ns.off then ns.Safe("trainer", step) end
@@ -461,16 +490,19 @@ local function Reservations()
     return slots
 end
 
--- /sane ab debug: what the lists were built from. Also kept in the saved settings file.
+-- /sane ab debug: what the lists were built from. Also kept in the saved settings file. The spells
+-- still to come and the spellbook's pages are Forever's; in Retail only the reservations are told.
 local function Debug()
-    ns.Sources.All() -- built first, if something changed since
-    local stats = ns.Sources.stats
-    ns.Print(TEXT.debugSpells:format(
-        stats.known or 0, stats.unlearned or 0, stats.data or 0, stats.skill or 0, stats.talent or 0, stats.trainer or 0, stats.extra or 0))
-    ns.Print(TEXT.debugTabs:format(
-        (stats.unlearned or 0) - (stats.tabNone or 0), stats.tabKnown or 0, stats.tabTrainer or 0,
-        stats.tabProbe or 0, stats.tabStatic or 0, stats.tabTalent or 0, stats.tabNone or 0))
-    if ns.Book and ns.Book.Describe then ns.Print(ns.Book.Describe()) end
+    if Core.FOREVER then
+        ns.Sources.All() -- built first, if something changed since
+        local stats = ns.Sources.stats
+        ns.Print(TEXT.debugSpells:format(
+            stats.known or 0, stats.unlearned or 0, stats.data or 0, stats.skill or 0, stats.talent or 0, stats.trainer or 0, stats.extra or 0))
+        ns.Print(TEXT.debugTabs:format(
+            (stats.unlearned or 0) - (stats.tabNone or 0), stats.tabKnown or 0, stats.tabTrainer or 0,
+            stats.tabProbe or 0, stats.tabStatic or 0, stats.tabTalent or 0, stats.tabNone or 0))
+        if ns.Book and ns.Book.Describe then ns.Print(ns.Book.Describe()) end
+    end
     ns.Print(TEXT.debugSlots:format(#Reservations(), ns.Bar1Offset() + 1, ns.Bar1Offset() + ns.NUM_BUTTONS))
 end
 
@@ -556,13 +588,19 @@ local commands = {
     end,
 }
 
-Core.Command("abilities", TEXT.about, function(text)
+-- The commands about the spellbook's grey spells, its pages and its window: Forever's (at the top). In
+-- Retail they are not there, and the help leaves them out.
+local BOOK_COMMANDS = { add = true, pages = true, window = true }
+
+Core.Command("abilities", Core.FOREVER and TEXT.about or TEXT.aboutRetail, function(text)
     local word, rest = text:match("^(%S+)%s*(.-)$")
-    local command = word and commands[word:lower()]
+    word = word and word:lower()
+    local command = word and commands[word]
     if not ns.char then return end
+    if command and BOOK_COMMANDS[word] and not Core.FOREVER then command = nil end
     if command then
         command(rest)
     else
-        for _, line in ipairs(TEXT.help) do ns.Print(line) end
+        for _, line in ipairs(Core.FOREVER and TEXT.help or TEXT.helpRetail) do ns.Print(line) end
     end
 end, "ab", "spellbook", "sb") -- its old name, and the old short word, still work

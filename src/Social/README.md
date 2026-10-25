@@ -81,7 +81,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
     finder (its comment can only be typed there). Nothing is searched by itself: only a click of yours does.
     In a fight or a dungeon (chat lockdown) the game hides the listings from addons: the list stays as it was,
-    its line says so, and it is read anew once that ends.
+    its line says so, and it is read anew once that ends. WoW: Forever only: in Retail, whose group finder is its
+    own (the dungeon finder and premade groups), the tab and its switch are not there.
   - **Conversations** at the left, all the room the right leaves: first the **chat** itself (unless the layout
     has it as a window of its own), then your **chat views**, then every whisper, and the chat of each group
     you join, each a conversation of its own, the newest message first. Every party or raid you join (and
@@ -126,9 +127,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   back; its button *Sane UI* (the game's square button with circling arrows, just above its chat menu
   button, left of the game's chat), `/sane social` or the switch brings this one again. *Friends list*: the window goes back to its
   place and the game's friends list opens (in a fight the game refuses that to an addon: a line says to use the
-  game's own key). *Group finder*: the same for the game's group finder. The game's friends list and group
-  finder have the button *Sane UI* beside their close button: it closes the game's window and this one fills
-  the screen. The dropdown lists the other modules' game windows too, each under its module's name.
+  game's own key). *Group finder*: the same for the game's group finder (in Retail its own). The game's friends
+  list (or its newer social window, where the game has that on) and group finder have the button *Sane UI* beside
+  their close button: it closes the game's window and this one fills the screen. The dropdown lists the other modules' game windows too, each under its module's name.
 - **Scroll:** mouse wheel, or the bar at the right, which is only there while you are scrolled up from
   the newest message. At the newest message the window follows new ones; scrolled up to read, it stays
   where you are.
@@ -272,6 +273,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   The oldest go 25 at a time (`Log.PRUNE`, marked `gone`), so the window's list drops them in
   one update (`RemoveIndexRange`) instead of one per message. Which events are read, and on which side
   they land, is the table `Log.EVENTS`.
+- **Forever and Retail:** one code for both. What differs is asked for where it is used: the group finder
+  (`ns.RetailFinder`, Retail's `PVEFrame`: the tab *Group Finder* and its switch stand down there, the switch's
+  `hidden`), blocking invites (`Contacts.Blocker`: `C_BattleNet.SetBlocked` or Retail's `BNSetBlocked`), extending a
+  raid lock (Forever asks `C_RaidLocks`, Retail always can), the kinds of Recent Allies' filter (none where the game has
+  no `Enum.RecentAlliesInteractionCategoryFilter`), names (Forever's first name and surname, Retail's name and realm:
+  `Core.Surnames`). The chat, its edit boxes and events, Battle.net, the friends list's other tabs and the guild window
+  are the same in both.
 - **Yours or not** is decided by the sender's GUID, not the name (a Forever name is two words and the
   game hands out only the first). `..._INFORM` events are always yours.
 - **Layout** (`Layout.lua`) is every size, distance and own colour, and the arithmetic from the window's
@@ -306,7 +314,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   meanwhile, not at every key.
   The title bar holds Core's dropdown *Classic windows*, whose list is `ns.CLASSIC` (`Social.lua`): *Chat* (`Choose(false)`, a
   line in chat says how to bring the window back), *Friends list* (`ToggleFriendsFrame(FRIEND_TAB_FRIENDS)`,
-  as the game's key opens it, only if `FriendsFrame` is not shown; nothing if the game has no such function). The
+  as the game's key opens it, only if neither `FriendsFrame` nor `SocialUIFrame` is shown; nothing if the game has no
+  such function), *Group finder* (`ns.OpenFinder`: Forever's `ToggleGroupFinderFrame`, Retail's `PVEFrame_ToggleFrame`;
+  its button on `LFGParentFrame` or `PVEFrame`). The
   section *Expand window* is Core's (`Edge.Options`, with its corner switches, `Shape.Options`), put at the
   top of the tab, before the first switch of the tab *Appearance*, its *Animation type* also under *All
   animations and fades* (`Edge.Options`' `under`); the window reads it by `edge = ns.options`, and Core
@@ -699,7 +709,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   game's channels and their wishes (the list, once a zone, only where offered, not in lockdown, a profile's
   wishes, with the window closed), the switch *Chat window*, Core's window and the game's chat agreeing
   whichever way it changed, the key, the full screen's panels and the conversations' list dragged to its
-  width, and words picked to copy (lit while dragged, waiting for Ctrl+C, let go by the next press or key).
+  width, words picked to copy (lit while dragged, waiting for Ctrl+C, let go by the next press or key), and
+  Retail (`W.Play`: the group finder's tab and switch away, the game's own finder opened, its unblock, raid locks).
   They cannot judge the look.
 
 ## Files
@@ -733,7 +744,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Contacts/Allies.lua` | Recent allies (`C_RecentAllies`), once the game has read them |
 | `Contacts/Raid.lua` | The raid's groups, arranged by dragging, a menu of its own on a member; Raid Info |
 | `Contacts/Quick.lua` | Quick Join (`C_SocialQueue`): the groups of your friends and guild you may ask to join |
-| `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click, paused in chat lockdown |
+| `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click, paused in chat lockdown; WoW: Forever only |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
 | `Bindings.xml` | Its key in the game's key bindings (section *Sane UI*, Core's): the chat window shown or hidden |
 
@@ -743,6 +754,9 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-10-25 — Retail: the tab *Group Finder* and its switch stand down (Retail's finder is its own), *Group finder*
+  in *Classic windows* opens Retail's, invites are blocked by Retail's own function, *Extend Raid Lock* as Retail's
+  raid info offers it; the button *Sane UI* also on the game's newer social window.
 - 2026-10-20 — Recent Allies asks the game for them no more (an addon may not); it waits until the game has read them.
 - 2026-10-20 — Every group you join a conversation of its own, named by the others in it, ended when you leave
   (by the group's GUID; Saneroki).

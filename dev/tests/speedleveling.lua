@@ -230,6 +230,22 @@ names = Wanted.Names()
 check(names[#names] == "Stonetusk Boar", "a marked creature, last")
 check(not Joined(names):find("Paxton") and not Joined(names):find("Someone"), "nothing unmarked, no player")
 
+-- Retail, which has none of Core's quest data yet: the guide's names and the creatures the game marks, no quest's
+-- object; nothing fails.
+do
+    local quests = records.Quests
+    records.Quests = {}
+    W.Play("retail")
+    Wanted.Changed()
+    check(Joined(Wanted.Names()) == "Marshal McBride, Kobold Vermin, Defias Thug, Garrick Padfoot, Stonetusk Boar",
+        "Retail without quest data: the guide's names, then the creatures the game marks: " .. Joined(Wanted.Names()))
+    check(not Wanted.Object("GameObject-0-1-0-12-7001-0000ABCD"), "and no quest's object")
+    records.Quests = quests
+    W.Play("forever")
+    Wanted.Changed()
+    check(Joined(Wanted.Names()) == Joined(names), "Forever again: the quests' names as before")
+end
+
 -- The guide switched off: its names go.
 Core.Set(ns.name, "guide", false)
 check(Joined(Wanted.Names()) == "Deputy Willem, Kobold Vermin, Kobold Laborer, Kobold Worker, Kobold Geomancer, Stonetusk Boar",

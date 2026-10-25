@@ -689,6 +689,30 @@ W.Wait(0)
 comboOn = nil
 W.Fire("UNIT_POWER_UPDATE", "player", "COMBO_POINTS")
 W.Wait(0)
+-- Retail keeps the points on your character whatever you target, and gives up to seven: on your target's plate alone
+do
+    W.Play("retail")
+    local asked, most, targeted, targetPlate = GetComboPoints, UnitPowerMax, units.target, plates.target
+    GetComboPoints = function() return combo end -- the same for every unit: they are yours
+    UnitPowerMax = function(unit, kind)
+        if unit == "player" and kind == Enum.PowerType.ComboPoints then return 7 end
+        return most(unit, kind)
+    end
+    combo = 6
+    units.target, plates.target = units.nameplate1, plates.nameplate1
+    W.Fire("PLAYER_TARGET_CHANGED")
+    W.Wait(0)
+    check(strip:IsShown() and strip.most == 7 and Lit() == 6, "Retail: on your target's plate, six of seven")
+    units.target, plates.target = units.nameplate2, plates.nameplate2
+    W.Fire("PLAYER_TARGET_CHANGED")
+    W.Wait(0)
+    check(not strip:IsShown(), "Retail: a foe you no longer target shows none, though the game counts them for it too")
+    GetComboPoints, UnitPowerMax, combo = asked, most, 2
+    W.Play("forever")
+    units.target, plates.target = targeted, targetPlate
+    W.Fire("PLAYER_TARGET_CHANGED")
+    W.Wait(0)
+end
 
 -------------------------------------------------------------------------------
 --  Distance from your character: size by it alone, on a spring; out of reach: red
@@ -1077,6 +1101,32 @@ check(castBar:IsShown() and gameCast._alpha == 0, "on again: ours")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
 check(not castBar:IsShown(), "failed: gone")
+
+-------------------------------------------------------------------------------
+--  Retail: what it lacks of Forever's hidden, a plate dressed and filled as in Forever
+-------------------------------------------------------------------------------
+do
+    W.Play("retail")
+    local before = 0
+    for _ in pairs(Core.errors) do before = before + 1 end
+    units.nameplate5 = { name = "Kobold Miner", health = 30, most = 60, reaction = 2, level = 12 }
+    plates.nameplate5 = GamePlate()
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate5")
+    local miner = DressOf(plates.nameplate5)
+    check(miner and miner:IsShown() and Faded(plates.nameplate5, 0) and miner.name._text == "Kobold Miner"
+        and miner.level._text == "12" and miner.health._value == 30, "Retail: the plate dressed and filled")
+    units.nameplate5.health = 20
+    W.Fire("UNIT_HEALTH", "nameplate5")
+    W.Fire("UNIT_COMBAT", "nameplate5", "WOUND", "", 10, 1)
+    check(miner.health._value == 20 and #miner.numbers == 1, "Retail: its health followed, what it took rising over it")
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate5")
+    check(not miner:IsShown() and Faded(plates.nameplate5, 1), "Retail: taken back, the game's own again")
+    local after = 0
+    for _ in pairs(Core.errors) do after = after + 1 end
+    check(after == before and not ns.off, "Retail: no error noted, nothing stood down")
+    units.nameplate5, plates.nameplate5 = nil, nil
+    W.Play("forever")
+end
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down

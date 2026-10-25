@@ -22,7 +22,9 @@ local _, ns = ...
 --  A map straight on the world map that is no continent but has a box and a
 --  place there (Zephras Isle) is a plane of its own, linked alike (PlaneOf,
 --  Planes), and the map drawn there is a zone (Alone): it is its own zone, with
---  no continent's level between it and the world.
+--  no continent's level between it and the world. Where the world map has a map
+--  over it (Retail's Cosmic), the continents beside the world map there (Outland,
+--  Draenor, the Shadowlands) are planes too, linked to none (Top, Elsewhere).
 --
 --  The terrain's grid: every continent is 64 x 64 tiles of 1600/3 yards, its
 --  middle at the world's 0, 0; a tile's key in Core's set Tiles is
@@ -280,6 +282,34 @@ function Coords.Planes()
         if map and info.mapType ~= Coords.CONTINENT and Coords.PlaneOf(map) == map then list[#list + 1] = map end
     end
     if #continents > 0 then planes = list end
+    return list
+end
+
+-- The top of the game's map tree: the world map, or the map over it where there is one (Retail's Cosmic, over
+-- Azeroth, Outland, Draenor and the Shadowlands). Asked when a list is made (the dungeons, the map selector).
+function Coords.Top()
+    local map, seen = Coords.WorldMap(), 0
+    while map and seen < 5 do
+        local info = Core.Ask(C_Map.GetMapInfo, map)
+        local parent = type(info) == "table" and info.parentMapID
+        if type(parent) ~= "number" or parent <= 0 then break end
+        map, seen = parent, seen + 1
+    end
+    return map
+end
+
+-- The continents with a box under the top of the map tree but not on the world map (Retail's Outland, Draenor, the
+-- Shadowlands), as the game lists them: each a plane, linked to no other; none where the world map is the top
+-- (Forever). A new list each time (the map selector's, when it opens).
+function Coords.Elsewhere()
+    local list, root = {}, Coords.Top()
+    if not root or root == Coords.WorldMap() then return list end
+    local children = Core.Ask(C_Map.GetMapChildrenInfo, root, Coords.CONTINENT)
+    for _, info in ipairs(type(children) == "table" and children or {}) do
+        if info.mapID and Coords.PlaneOf(info.mapID) == info.mapID and Coords.Box(info.mapID) then
+            list[#list + 1] = info.mapID
+        end
+    end
     return list
 end
 

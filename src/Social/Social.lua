@@ -127,6 +127,13 @@ ns.GIVEN_BACK = "the chat window is closed"
 -- quiet ones its windows are filled with, repeated every size points (Core.Skin.TILES, as a full window's).
 local BACK_CHOICES = Core.Skin.Choices(ns.TEXT.solid)
 
+-- Retail's own group finder (PVEFrame: the dungeon finder and premade groups), where the game has it; nil in WoW:
+-- Forever, whose finder is the vanilla style one (LFGParentFrame) the tab Group finder is built after. Where
+-- Retail's is there, that tab and its switch stand down, and the game's own finder is the one opened.
+function ns.RetailFinder()
+    return rawget(_G, "PVEFrame")
+end
+
 -- The groups of messages (Log.GROUPS) that have a switch of their own: it says whether they are shown
 -- (Channels.Shown), in the settings and in the list of what to show alike.
 ns.SHOWS = { SYSTEM = "showSystem", MONSTER = "showCreatures", PRINT = "showAddons", CHANNEL_NOTICES = "showJoins" }
@@ -163,7 +170,7 @@ local OPTIONS = {
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
       headerTip = "What the full screen's windows hold. Which windows stand there, and where, you arrange on the full screen itself: drag a window's head to move it, the gap between two to share their room, add one from the dropdown Windows, take one off with its X; each layout behind a tab of its own.",
       tip = "How many of the last messages each conversation keeps, also for the next login (then 1,000 of all conversations together at most, the newest first)." },
-    { key = "boardFinder", default = true, text = "Group finder",
+    { key = "boardFinder", default = true, text = "Group finder", hidden = function() return ns.RetailFinder() ~= nil end,
       tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
 
     { key = "textSize", default = 14, min = 10, max = 24, step = 1, text = "Text size", tab = LOOK, header = "Messages",
@@ -375,9 +382,16 @@ end
 -- friends list, opened as its key opens it (ToggleFriendsFrame), only if it is not open already. The
 -- window goes back to its zone either way (Core's). In a fight the game refuses to open its panels from
 -- an addon's code ("Interface action failed"; UIParentPanelManager.lua): then it is only said.
+-- The game's friends list is FriendsFrame, or its newer social window (SocialUIFrame) where the game has that on
+-- in its place (SocialUIControl.IsEnabled, in both games).
+local FRIENDS = { "FriendsFrame", "SocialUIFrame" }
 local function Friends()
-    local friends, toggle = rawget(_G, "FriendsFrame"), rawget(_G, "ToggleFriendsFrame")
-    if not toggle or (friends and friends:IsShown()) then return end
+    local toggle = rawget(_G, "ToggleFriendsFrame")
+    if not toggle then return end
+    for _, name in ipairs(FRIENDS) do
+        local friends = rawget(_G, name)
+        if friends and friends:IsShown() then return end
+    end
     if InCombatLockdown() then return ns.Print(ns.TEXT.friendsInFight) end
     toggle(rawget(_G, "FRIEND_TAB_FRIENDS"))
 end
@@ -388,14 +402,16 @@ local function PutAway()
     ns.Print(ns.TEXT.nativeChat)
 end
 
--- The game's group finder, opened as its micro menu button opens it (ToggleGroupFinderFrame: the game's
--- vanilla style finder, LFGParentFrame, loaded by the game when it allows it), only if it is not open
--- already; as the friends list. tab: the finder's own (1 to list yourself, 2 to browse).
+-- The game's group finder, opened as its micro menu button opens it, only if it is not open already; as the
+-- friends list. In WoW: Forever ToggleGroupFinderFrame: the game's vanilla style finder, LFGParentFrame, loaded
+-- by the game when it allows it; tab: that finder's own (1 to list yourself, 2 to browse). In Retail its own
+-- finder (PVEFrame_ToggleFrame: PVEFrame, where it was last).
 function ns.OpenFinder(tab)
-    local finder = rawget(_G, "LFGParentFrame")
+    local finder = rawget(_G, "LFGParentFrame") or ns.RetailFinder()
     if finder and finder:IsShown() then return end
     if InCombatLockdown() then return ns.Print(ns.TEXT.finderInFight) end
-    local show, toggle = rawget(_G, "LFGVanilla_ShowFrame"), rawget(_G, "ToggleGroupFinderFrame")
+    local show = rawget(_G, "LFGVanilla_ShowFrame")
+    local toggle = rawget(_G, "ToggleGroupFinderFrame") or rawget(_G, "PVEFrame_ToggleFrame")
     if tab and show then show(tab) elseif toggle then toggle() end
 end
 
@@ -406,9 +422,11 @@ local function Running() return not ns.off end
 ns.CLASSIC = {
     { text = ns.TEXT.classicChat, show = PutAway },
     { text = ns.TEXT.classicFriends, show = function() ns.Safe("friends list", Friends) end,
-      frame = "FriendsFrame", full = true, ours = Ours, ready = Running },
+      frame = FRIENDS, full = true, ours = Ours, ready = Running },
+    -- The finder of either game: Forever's comes with its addon, loaded on demand; Retail's is there from the start.
     { text = ns.TEXT.classicFinder, show = function() ns.Safe("group finder", ns.OpenFinder) end,
-      frame = "LFGParentFrame", addon = "Blizzard_GroupFinder_VanillaStyle", full = true, ours = Ours, ready = Running },
+      frame = { "LFGParentFrame", "PVEFrame" }, addon = "Blizzard_GroupFinder_VanillaStyle", full = true, ours = Ours,
+      ready = Running },
 }
 -- Core's buttons while the window stands free or in the middle of the screen: the game's own window is
 -- its chat, and closing ours puts it away the same way. The button back to ours (Sane UI) goes onto the

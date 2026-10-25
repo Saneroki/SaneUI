@@ -90,6 +90,7 @@ local keepers = {}    -- [saved name] = { fn, ... }: handed its part once Core's
 local said = {}       -- [label] = true: a failure is said once
 local handed = {}     -- the records handed out while Data.frozen: { record, copy }
 local arrived = false -- Core's files have run, the sets with them, and its saved variables are read
+local holds = false   -- a set of this game version was taken: without any, its data is not made yet (Retail's)
 local game, told      -- the client's game version, once told
 local build           -- the client's build
 local stamps = 0
@@ -219,11 +220,16 @@ local function Fail(name, label, text, loud)
 end
 
 -- For a reader that asks before Core's files have all run: nothing to do then. Afterwards a set that is not
--- there is said once, quietly.
+-- there is said once, quietly; not at all where this game version has no data yet (no set of it was taken):
+-- the views that need it stand down without a word.
 function Data.Prepare(name)
     if not arrived then return end
     local set = sets[name]
     if set and (set.ready or set.refused or set.failed) then return end
+    if not holds then
+        if type(name) == "string" then Internal(name).failed = true end
+        return
+    end
     Fail(name, "data: " .. tostring(name), TEXT.missing:format(tostring(name)))
 end
 
@@ -417,6 +423,7 @@ function Data.Add(format, name, header)
     set.rows, set.history, set.index, set.laid = {}, {}, {}, {}
     Forget(set)
     set.added, set.ready, set.refused, set.failed, set.why = true, true, nil, nil, nil
+    holds = true
     local handle = Data.Set(name)
     handle.hash, handle.build = header.hash, header.build
     Moved(set)

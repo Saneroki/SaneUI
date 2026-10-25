@@ -3,8 +3,50 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 91 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 (Speed Leveling), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Sane UI works in Retail: every module gone through (Saneroki, 2026-10-25)
+Sane UI's first run in Retail failed in places, and stood down where it should not: Combat's own talents (Forever's
+two talent groups, `TabSystemButtonMixin:UpdateTabText`) took the whole module down, Abilities' scan asked for
+Forever's spell ranks, and Sync wrote the game settings kept in Forever into Retail. Every module was gone through
+against Retail's export (the Forever-Retail lookup, `uses.md`); what both games share works in both, what needs
+Forever's systems or data stands down in Retail without a word, and Forever is unchanged.
+- **Core:** Sync's kept game settings belong to the game they were read in (`Sync.options.from`, those kept before
+  Forever's): another game's are neither written nor handed out (`Sync.Taken`), and replaced at the next reading.
+  The data framework notes no missing set where the game version has no set at all (Retail, until Data: Retail).
+  `Core.Inspect.Talents` gives Retail's specialization without points. The bar's dividers: a thin line of ours where
+  the client lacks their atlas (Retail).
+- **Abilities:** the scan asks for low ranks only where the game has them; Forever's trainer data, weapon skills
+  and skill lines load in Forever only (`[ExcludeLoadGameType standard]`); in Retail the spellbook's pages, Home,
+  the window, the trainer's reading, their switches, menu lines and commands are not there; the reservations, their
+  icons and the saved layouts work in both.
+- **Combat:** its own spellbook and talents are Forever's (`ns.Serves`, by the functions they need): in Retail
+  neither is there, the game's keys and windows stay the game's, no full screen at the bottom edge, and the module
+  keeps the quest marks on nameplates (its one setting there).
+- **Inventory:** the rows' coloured bar is ours where the game has no `ColoredProgressBarTemplate` (`Rows.Bar`:
+  reputation, currency, statistics); the stats page takes Retail's categories and its hide values, without
+  resistances and the pet's stats; Skills and PvP register only where their systems are; Retail's icons for the
+  side tabs; the level line shows the specialization in Retail.
+- **Social and Guild:** the Group finder tab and its switch stand down where Retail's finder (`PVEFrame`) is, and
+  its entry in *Classic windows* opens Retail's; Battle.net blocking through `BNSetBlocked` in Retail; the friends
+  list also as the game's newer social window; *Extend Raid Lock* where the game has it; the guild's paper doll
+  without a ranged slot where the game shows none.
+- **Navigation:** Scrying and Blended only where Core's terrain is: in Retail the map is Parchment, the game's own
+  map art, and the small view keeps the game's minimap ground; pins, switches and views that need Core's data or
+  Forever's minimap answers stand down; the game's minimap gets its round mask back where no code of the game sets
+  one; Retail's tracking holds both finders at once; the continents beside Retail's world map are in the map
+  selector. Forever's outlines and coasts load in Forever only.
+- **Tooltips, Nameplates, Speed Leveling:** the class line shows Retail's specialization; no kill-experience row in
+  Retail (its rule is Forever's); combo points on the target's plate only in Retail (up to seven); Speed Leveling
+  finds without quest data what the game marks.
+- **Tests in Retail (#137):** `W.Play("retail")` makes the tests' stand-in a Retail client: Core told, and everything
+  Retail lacks of Forever's taken away (`dev/tests/games.lua`, made by `dev/tools/blizzard games` with the lookup:
+  globals, `C_X.Function`, `Enum` and `Constants` entries, events; a global Forever defines in Lua that Retail's code
+  calls is the client's own there); `W.Play("forever")` gives it back. Every module's test checks its Retail path.
+- **Docs:** `Doc/guides/addon-standards.md` (*Tested in both*, *Kept settings of one game*),
+  `Doc/guides/blizzard-updates.md` (the stand-in's list; a file for one game: `standard` only), the modules'
+  READMEs (*Forever and Retail*).
 
 ### Sane UI in Forever and Retail; our own patch notes after every patch (Saneroki, 2026-10-25)
 - **One code for both games** (Saneroki: development aimed at Forever, Retail compatible, its data later). Core knows

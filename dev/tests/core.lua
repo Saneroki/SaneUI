@@ -1665,6 +1665,20 @@ check(not W.Allowed(retailOnly) and W.Allowed(foreverOnly) and W.Allowed(nil), "
 W.project = 1
 check(W.Allowed(retailOnly) and not W.Allowed(foreverOnly), "Retail reads its own, not Forever's")
 W.project = 18
+-- The stand-in plays Retail: what Retail lacks of Forever's is not there, as in the game; back in Forever it is.
+local lowRank = C_SpellBook.IsSpellBookItemLowRank
+W.Play("retail")
+check(Core.RETAIL and WOW_PROJECT_ID == 1 and W.project == 1, "playing Retail: its project, and Core told")
+check(C_SpellBook.IsSpellBookItemLowRank == nil and Enum.TrainerType == nil and C_SpellBook.GetSpellBookItemInfo ~= nil,
+    "Retail lacks Forever's spell ranks and trainer types, not what both have")
+check(UnitDefenseSkill == nil and not pcall(CreateFrame("Frame").RegisterEvent, CreateFrame("Frame"), "PET_STATS_UPDATE"),
+    "a global Retail lacks reads nil, an event it lacks cannot be registered")
+W.Play("forever")
+check(Core.FOREVER and WOW_PROJECT_ID == 18 and C_SpellBook.IsSpellBookItemLowRank == lowRank and Enum.TrainerType ~= nil,
+    "back in Forever, all of it is there again")
+-- A game version without any data yet (Retail's): a view that asks for a set finds it missing, and nothing is noted.
+check(Core.Data.Set("Quests"):State() == "missing" and Core.Data.Set("Quests"):Get(1) == nil and Core.errors["data: Quests"] == nil,
+    "no set of this game version at all: a set asked for is missing without a word in the log")
 
 -- People: an alias and a note for a player, set from the game's menu of a player
 local People = Core.People

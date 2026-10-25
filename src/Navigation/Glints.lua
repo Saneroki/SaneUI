@@ -22,6 +22,9 @@ local _, ns = ...
 --  until the right button turns you with the camera, or you have moved on for a
 --  while (the camera swings in behind you as you go). Within reach of the
 --  interact key the close sparkles take over (Sparkles.lua).
+--
+--  Only where the minimap's herbs and ore are found (Found.Works, Nodes.Known):
+--  not in Retail, whose minimap tells no addon what its dots are; nothing runs there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Nodes, Found = ns.Coords, ns.Nodes, ns.Found
@@ -212,10 +215,10 @@ local function Update(_, elapsed)
     HideAll(shown + 1)
 end
 
--- Shown while the setting is on and the module is; nothing drawn and nothing asked otherwise.
+-- Shown while the setting is on, the module is and herbs and ore are found; nothing drawn and nothing asked otherwise.
 function Glints.Update()
     if not holder then return end
-    local on = ns.options.nodeGlints and not ns.off
+    local on = ns.options.nodeGlints and not ns.off and Found.Works() and Nodes.Known()
     if not on then HideAll() end
     holder:SetShown(on)
 end

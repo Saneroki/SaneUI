@@ -1811,6 +1811,26 @@ Push()
 Stand()
 check(Cells.Shown(0, 9) and HeadNamed("The Armory"), "shown again: drawn as they are now, in the view it opens with")
 
+-- Retail: no keyring (the game gives it no slots, and has no call that puts a key on it); the bags and their strip
+-- without it, the rest as in WoW: Forever.
+W.Play("retail")
+SIZES[-1] = 0
+W.Fire("BAG_CONTAINER_UPDATE")
+W.Fire("BAG_UPDATE_DELAYED")
+W.Wait(0)
+local retailStrip = {}
+for _, widget in ipairs(W.frames) do
+    if widget._parent == Bags.strip and widget._kind == "ItemButton" and widget:IsShown() then retailStrip[#retailStrip + 1] = widget end
+end
+check(table.concat(Contents.Carried({}), ",") == "0,1,2,3,5" and not Cells.Shown(-1, 1) and Cells.Shown(0, 9) and #retailStrip == 6,
+    "Retail: the bags without the keyring, in the window and its strip: " .. table.concat(Contents.Carried({}), ",") .. ", " .. #retailStrip)
+W.Play("forever")
+SIZES[-1] = 4
+W.Fire("BAG_CONTAINER_UPDATE")
+W.Fire("BAG_UPDATE_DELAYED")
+W.Wait(0)
+check(Cells.Shown(-1, 1), "back in WoW: Forever: the keyring again")
+
 for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end
 ns.StandDown("a test")
 check(ns.off and not panel:IsShown(), "standing down: the bags go with the window")

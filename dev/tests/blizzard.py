@@ -302,6 +302,22 @@ with tempfile.TemporaryDirectory() as out:
 
 scratch.cleanup()
 
+# -- What one game lacks of the other's, for the tests' stand-in (games.lacks, dev/tests/games.lua) ---------------
+
+import games  # noqa: E402
+rows = [("api:C_Test.Gone", "api", "forever-only", "", "", ""), ("api:C_Test.Retail", "api", "retail-only", "", "", ""),
+        ("lua:TestMixin", "lua", "forever-only", "", "", ""), ("lua:TestMixin:Method", "lua", "forever-only", "", "", ""),
+        ("event:TEST_EVENT", "event", "forever-only", "", "", ""), ("xml:TestTemplate", "xml", "forever-only", "", "", ""),
+        ("enum:Enum.Test.One", "enum", "forever-only", "", "", ""), ("api:C_Test.Both", "api", "calls-differ", "", "", "")]
+check("lacks: what Retail has not of Forever's, as a module reaches it",
+      games.lacks(rows, "retail"), ["C_Test.Gone", "Enum.Test.One", "TestMixin", "event:TEST_EVENT"])
+check("lacks: and Forever of Retail's", games.lacks(rows, "forever"), ["C_Test.Retail"])
+check("lacks: a global Forever defines in Lua that Retail's code calls is the client's own there",
+      games.lacks(rows, "retail", mentioned={"TestMixin", "C_Test"}), ["C_Test.Gone", "Enum.Test.One", "event:TEST_EVENT"])
+listed = (ROOT / "dev/tests/games.lua").read_text(encoding="utf-8")
+check("the stand-in's list: made, with what Retail lacks", "\nC_SpellBook.IsSpellBookItemLowRank\n" in listed
+      and listed.rstrip().endswith("}"), True)
+
 # -- Sane UI's own source reads without problems ------------------------------------------------------------
 
 real = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)

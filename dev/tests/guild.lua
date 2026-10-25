@@ -565,6 +565,24 @@ ns.Window.Toggle()
 Frames(2)
 check(escape:IsShown(), "opened again, Esc closes it again")
 check(not ns.off, "the module did not stand down")
+
+-- Retail: the same window and views; the doll has no ranged slot there, as the game's own paper doll.
+local Equipment, paperDoll = ns.Views.equipment, rawget(_G, "C_PaperDollInfo")
+local function Held() return table.concat(Equipment.Weapons(), ",") end
+C_PaperDollInfo = { IsRangedSlotShown = function() return not Core.RETAIL end }
+check(Held() == "16,17,18", "Forever: the doll's weapons, the ranged slot among them")
+W.Play("retail")
+check(Held() == "16,17", "Retail: no ranged slot, as the game's own paper doll")
+ns.Window.Toggle()
+ns.Window.Toggle()
+Frames(2)
+for index = 1, 8 do ns.Page.Choose(index, 1) end
+ns.Page.Choose(2, 2)
+Frames(2)
+check(escape:IsShown() and #caught == 0 and not ns.off, "Retail: the window and every tab shown without an error: " .. tostring(caught[1]))
+W.Play("forever")
+C_PaperDollInfo = paperDoll
+check(Held() == "16,17,18", "a client that cannot say keeps the ranged slot")
 W.caught = nil
 
 -- Standing down: the guild key is the game's again, the window offered no more, the roster no more asked for.

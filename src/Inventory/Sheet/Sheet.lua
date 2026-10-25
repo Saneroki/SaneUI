@@ -55,11 +55,13 @@ local function Level()
         local r, g, b = Core.Journal.Ink(color.r, color.g, color.b)
         colour = ("ff%02x%02x%02x"):format(math.floor(r * 255), math.floor(g * 255), math.floor(b * 255))
     end
+    -- the specialization, where the class can choose one (WoW: Forever asks IsSpecSelectionEnabled; Retail, which
+    -- lacks it, always shows the one there is)
     local spec
     local specs = rawget(_G, "C_SpecializationInfo")
-    if specs and specs.GetSpecialization and specs.IsSpecSelectionEnabled and specs.GetSpecializationInfo then
+    if specs and specs.GetSpecialization and specs.GetSpecializationInfo then
         local tree = Core.Ask(specs.GetSpecialization)
-        if tree and Core.Ask(specs.IsSpecSelectionEnabled, classID) then
+        if tree and (not specs.IsSpecSelectionEnabled or Core.Ask(specs.IsSpecSelectionEnabled, classID)) then
             spec = select(2, Core.Ask(specs.GetSpecializationInfo, tree, false, false, nil, UnitSex("player")))
         end
     end

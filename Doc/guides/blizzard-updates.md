@@ -43,12 +43,16 @@ quests, NPCs, routes).
   and writes lookup tables: `symbols.tsv` (every symbol that differs: forever-only, retail-only, calls-differ,
   code-differs), `files.tsv`, `addons.tsv` (whether each client loads an addon), `art.tsv` and `art-folders.tsv`
   (pictures by content key), a `README.md` of counts, and `uses.md`, the todo list of what of Sane UI's own uses
-  Retail lacks or calls differently. Without `--out` they go to `dev/blizzard/reports/` (not committed).
+  Retail lacks or calls differently. Without `--out` they go to `dev/blizzard/reports/` (not committed). It also
+  writes `dev/tests/games.lua`, what Retail lacks of Forever's as a module reaches it (globals, `C_X.Function`,
+  `Enum` and `Constants` entries, events), which the tests' stand-in takes away when it plays Retail
+  (`W.Play("retail")`): committed with Sane UI.
 - **One symbol in both games:** `dev/tools/blizzard show <name> --retail`; `check --retail` writes the todo list
   alone.
 - **One addon folder for both:** a TOC can name both Interface numbers (`## Interface: 16001, 120105`); a file
-  line can end in `[AllowLoadGameType camelot]` or `[AllowLoadGameType standard]`; `_Mainline` is the family of
-  both games.
+  line for one game ends in `[AllowLoadGameType standard]` (Retail's) or `[ExcludeLoadGameType standard]`
+  (Forever's), never `camelot`, which Retail's client may not know (`addon-standards.md`, *Forever and Retail*);
+  `_Mainline` is the family of both games.
 
 ## After a patch
 
@@ -64,7 +68,8 @@ and for that game:
    Blizzard's Lua, the code files per addon, the art per folder), the tables of every change (`symbols.tsv`,
    `files.tsv`, `addons.tsv`, `art.tsv`, `art-folders.tsv`, sides old and new), and `todo.md` and `todo.json`,
    what of it reaches Sane UI (the check's todo list below).
-3. **Makes the Forever-Retail lookup anew** for the two games' newest exports.
+3. **Makes the Forever-Retail lookup anew** for the two games' newest exports, and the tests' list of what Retail
+   lacks (`dev/tests/games.lua`: commit it with the fixes).
 4. **Prepares the session that fixes Sane UI:** `session.md`, its brief (the steps, the rules for both games,
    the todo list's head), and a card on the board for it (`--no-card` leaves it out).
 

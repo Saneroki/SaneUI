@@ -84,12 +84,13 @@ local function Least(spec)
     return least
 end
 
--- The first layout: the talents and the spellbook side by side, each as wide as its share of their own widths.
+-- The first layout: the talents and the spellbook side by side, each as wide as its share of their own widths (those
+-- of the two this game has: Combat.lua, ns.Serves).
 local function Default()
     local nodes, shares = {}, {}
     for _, key in ipairs(Board.FIRST) do
         local entry = parts[key]
-        if entry then
+        if entry and Board.Present(key) then
             nodes[#nodes + 1] = { key = key }
             shares[#shares + 1] = (entry.wants or Least(entry.spec))[1]
         end

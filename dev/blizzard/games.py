@@ -178,9 +178,48 @@ def tables(a, b, art_a, art_b, out, names=GAMES):
     return symbol_rows, file_rows, addon_rows, art_rows, folders
 
 
-def write(forever, retail, forever_art, retail_art, out):
-    """The lookup tables of Forever and Retail into the folder out; returns the README's lines."""
-    return readme(forever, retail, *tables(forever, retail, forever_art, retail_art, out))
+# What the tests' stand-in hides when it plays Retail (dev/tests/wowstub.lua, W.Play): the kinds a module reaches
+# by name. A mixin's methods (Mixin:Method) are left out: the stand-in has none of Blizzard's mixins.
+STUB_KINDS = ("api", "lua", "enum", "const", "frame", "event")
+
+
+def lacks(symbol_rows, game, names=GAMES, mentioned=frozenset()):
+    """What one game (a side's name) lacks of the other's, as a module reaches it: a global, Table.Field,
+    Enum.X.Y, Constants.X.Y; an event as event:NAME. mentioned: the names the lacking game's own code holds. A
+    global the other game defines in its Lua and this one's code calls all the same is the client's own there
+    (Forever's Lua BNSetBlocked, Retail's built-in one): not lacked."""
+    other = names[1] if game == names[0] else names[0]
+    found = []
+    for id_, kind, how, *_ in symbol_rows:
+        if how != f"{other}-only" or kind not in STUB_KINDS:
+            continue
+        name = id_.partition(":")[2]
+        if kind == "event":
+            found.append("event:" + name)
+        elif ":" not in name and not (kind == "lua" and "." not in name and name in mentioned):
+            found.append(name)
+    return sorted(set(found))
+
+
+def stub(symbol_rows, forever, retail, path):
+    """dev/tests/games.lua: what Retail lacks of Forever's, for the tests' stand-in."""
+    names = lacks(symbol_rows, "retail", mentioned=retail.names)
+    lines = ["-- What Retail lacks of Forever's interface, for the tests' stand-in (wowstub.lua, W.Play): globals,",
+             "-- Table.Field, Enum.X.Y, Constants.X.Y and events (event:NAME), from the newest exports of the two games",
+             f"-- (Forever {forever.build or forever.label}, Retail {retail.build or retail.label}). Made by "
+             "dev/tools/blizzard games; do not edit by hand.",
+             "return {", "    retail = [["] + names + ["]],", "}"]
+    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return len(names)
+
+
+def write(forever, retail, forever_art, retail_art, out, stub_path=None):
+    """The lookup tables of Forever and Retail into the folder out, and the stand-in's list into stub_path if
+    given; returns the README's lines."""
+    rows = tables(forever, retail, forever_art, retail_art, out)
+    if stub_path:
+        stub(rows[0], forever, retail, stub_path)
+    return readme(forever, retail, *rows)
 
 
 def table(head, rows):

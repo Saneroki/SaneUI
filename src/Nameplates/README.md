@@ -54,7 +54,8 @@ fails, every plate is the game's own again.
 - **Combo points:** as a rogue, or a druid in cat form, your combo points show in a row of their own right under
   the bar of the unit you have them on (your target or not), a third as high, inside the same outline (a cast's bar comes under them), one segment
   each (five), a pixel apart, lit as you build them; a point not built shows the bar's dark. No row while you
-  have none. Where the game hides the count, on your target's plate only.
+  have none. Where the game hides the count, on your target's plate only. In Retail the points are your
+  character's, whatever you target: they show on your target's plate alone, one segment each up to seven.
 - **Auras:** right above the bar, without a gap, from its left the debuffs and damage over time you put on the
   unit, with the time each has left and its stacks, as many as fit over the bar (eight on the game's medium
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
@@ -88,7 +89,8 @@ fails, every plate is the game's own again.
   the screen, where your character stands (your character has no plate in this client): damage with a "-". While ours shows, the
   game's own combat text is off (*Instead of the game's*): its numbers over units and its scrolling text about you,
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
-  its own and stay.
+  its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
+  client lacks those for its numbers over units, those numbers stay as the game has them.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
@@ -236,10 +238,11 @@ fails, every plate is the game's own again.
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going), once a frame (`Core.Later`). Shown while the game gives combo
-  points (`UnitPowerMax("player", Enum.PowerType.ComboPoints)`, at most `Resource.MOST`) and energy is the power
-  shown: every plate's unit that `UnitCanAttack` allows is asked `GetComboPoints("player", unit)`, and its row shows
-  while that is a plain number above 0; a hidden count shows on your target's plate only (`UnitIsUnit`), as it is,
-  since more than none cannot be told. A row of its own
+  points (`UnitPowerMax("player", Enum.PowerType.ComboPoints)`, at most `Resource.MOST` of the game: 5 in Forever, 7
+  in Retail) and energy is the power shown: every plate's unit that `UnitCanAttack` allows is asked
+  `GetComboPoints("player", unit)`, and its row shows while that is a plain number above 0; a hidden count shows on
+  your target's plate only (`UnitIsUnit`), as it is, since more than none cannot be told. Retail keeps the points on
+  your character, so the game counts them for every unit: there only your target's plate is asked. A row of its own
   under the dress (`TOPLEFT` on its `BOTTOMLEFT`, `Resource.SHARE` (a third) of its height, `Resource.Fit`), inside
   its outline: `Bar.Outline` (run as the row or the cast shows or hides) puts the cast under it and anchors the
   border, the rank's line and the glow down to the lowest row; the health bar square at its bottom then, the
@@ -407,3 +410,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** the combo points' row thinner (Saneroki): a third of the bar's height, as the power line.
 - **2026-10-23:** the combo points' row on whichever plate holds at least one point, your target's or not, and on
   none while you have none (Saneroki).
+- **2026-10-25:** Retail: the combo points on your target's plate alone (Retail keeps them on your character), up to
+  seven.

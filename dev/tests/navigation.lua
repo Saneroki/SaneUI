@@ -3,7 +3,8 @@
 -- views, the views offered with and without the module Atlas (its index read, the level a zoom draws, the
 -- block under a point, loaded when first drawn, the fall back when it fails), the mouse (drag, wheel, right
 -- click, Ctrl-click), the game's minimap taken over ours and given back, the game's map kept closed and its
--- keys. The look itself can only be judged in the game.
+-- keys; played as Retail (W.Play), without Forever's data, what stands down and what the game's own does instead.
+-- The look itself can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/navigation.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -4635,6 +4636,165 @@ end)()
     Dungeons.Close()
     check(#Marks() == 0 and not model._shown and model._cleared, "closed: no marks, the models let go")
     W.methods.SetDisplayInfo, W.methods.ClearModel = nil, nil
+end)()
+
+-------------------------------------------------------------------------------
+--  Retail: Core holds none of Forever's data there (its sets refused), and the game lacks Forever's own (W.Play)
+-------------------------------------------------------------------------------
+;(function()
+    -- Forever's art indexes are read in Forever only (their TOC lines).
+    local handle = assert(io.open(root .. "/src/Navigation/SaneUI_Navigation.toc"))
+    local toc = handle:read("*a")
+    handle:close()
+    local function Left()
+        local left = {}
+        for line in toc:gmatch("[^\n]+") do
+            local file, conditions = line:match("^([%w%.]+%.lua)%s*(.*)$")
+            if file and not W.Allowed(conditions) then left[#left + 1] = file end
+        end
+        table.sort(left)
+        return table.concat(left, " ")
+    end
+    check(Left() == "", "Forever reads every file of the module")
+    W.Play("retail")
+    check(Left() == "Coasts.lua Outlines.lua", "Retail leaves Forever's outlines and coasts out")
+
+    -- Its sets refused: the land, herbs and ore, the ways, the places.
+    local Nodes = ns.Nodes
+    local silverleaf = Nodes.Find("Silverleaf")
+    local SETS = { "Tiles", "Objects", "Travel", "Spawns", "Places" }
+    for _, name in ipairs(SETS) do Core.Data.Set(name).State = function() return "refused", "another game's" end end
+    local together, view, sounds = Nodes.TOGETHER, ns.options.view, C_CVar.GetCVar("softTargetInteract")
+    Nodes.TOGETHER = Core.RETAIL
+    check(Core.RETAIL and not ns.Offered("terrain") and not ns.Offered("blend") and ns.Offered("sketches")
+        and ns.Fallback() == "sketches",
+        "Retail without Core's terrain: Scrying and Blended not offered, Parchment the fallback")
+    Core.Set(ns.name, "view", "terrain")
+    check(ns.View() == "sketches", "a saved Scrying drawn as Parchment")
+    ns.Offer()
+    local listed = {}
+    for _, choice in ipairs(viewOption.choices) do listed[#listed + 1] = choice[1] end
+    listed = table.concat(listed, " ")
+    check(ns.options.view == "sketches" and listed:find("^sketches") and not listed:find("terrain") and not listed:find("blend"),
+        "and the setting falls back to it; the views offered: no Scrying, no Blended")
+    local pins = {}
+    for _, choice in ipairs(Core.Described(ns.name, "pins").choices) do pins[choice[1]] = true end
+    check(pins.log and pins.flight and pins.place and pins.rare and pins.foundHerb and pins.group and not pins.quest
+        and not pins.low and not pins.later and not pins.done and not pins.service and not pins.herb and not pins.ore
+        and not pins.book, "the pin kinds only Core's data has: not in the setting's list")
+    local filter
+    for _, widget in ipairs(W.frames) do
+        if widget._generator and widget._override == ns.TopBar.TEXT.pins then filter = widget end
+    end
+    filter:GenerateMenu()
+    local rows = {}
+    for _, item in ipairs(filter._items or {}) do if type(item.text) == "string" then rows[#rows + 1] = item.text end end
+    rows = table.concat(rows, "\n")
+    check(rows:find("Flight points", 1, true) and rows:find("Found herbs", 1, true) and not rows:find("Possible herbs", 1, true)
+        and not rows:find("Services", 1, true) and not rows:find(ns.TEXT.offers, 1, true), "nor in the pin filter")
+    local function Hidden(key)
+        local option = Core.Described(ns.name, key)
+        return option.hidden and option.hidden() and true or false
+    end
+    check(Hidden("tripView") and Hidden("dockTimes") and Hidden("nodeSparkles") and Hidden("nodeGlints") and Hidden("nodeTurns")
+        and not Hidden("nativeMinimap") and Core.Described(ns.name, "nodeSparkles").header == nil,
+        "the switches of what Retail cannot have are not on the options page, nor the section Herbs and ore")
+
+    -- The map: Parchment, the game's own art; the game's minimap its own ground in the small view, its dots only full.
+    Canvas.Refresh()
+    local shown = Shown()
+    check(Count(shown, 801, 804) == 0 and Overviews(shown, 0) == 0 and Overviews(shown, 0, "Sketches") == 0,
+        "no terrain, no overview, no stitched map")
+    small.follow, small.native = true, 2
+    Hybrid.Place(small, 200, 200, true, false)
+    check(Hybrid.Taken() and ground == true, "the small view: the game's minimap with its own ground, the land as it lies")
+    Hybrid.Place(full, 1600, 866, true, false)
+    check(ground == false, "the full map: its dots only")
+
+    -- Given back where the game's code sets no mask: the engine's round one.
+    local config = cluster.UpdateMinimapConfig
+    cluster.UpdateMinimapConfig = false -- (the stand-in's frames answer every other name with a function)
+    Core.Set(ns.name, "nativeMinimap", true)
+    check(not Hybrid.Taken() and minimap._mask == Hybrid.ROUND,
+        "the game's minimap given back round, where the game sets no mask")
+    cluster.UpdateMinimapConfig = config
+    Core.Set(ns.name, "nativeMinimap", false)
+    check(Hybrid.Taken() and minimap._mask == Hybrid.MASK, "taken again: square")
+
+    -- Herbs and ore: both finders at once, no turns; no sparkles, no far ones, the game's settings as they were.
+    local setTracking = C_Minimap.SetTracking
+    C_Minimap.SetTracking = function(index, on)
+        gather.tracking[index].active = on
+        gather.switches[#gather.switches + 1] = { index = index, on = on }
+    end
+    gather.tracking[1].active, gather.tracking[2].active = false, false
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    Nodes.Apply()
+    check(gather.tracking[1].active and gather.tracking[2].active,
+        "Retail's tracking holds both: Find Herbs and Find Minerals on")
+    local chosen = Core.Copy(ns.options.pins)
+    chosen.foundOre = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(gather.tracking[1].active and not gather.tracking[2].active, "Found ore off: Find Minerals off, Find Herbs stays")
+    chosen = Core.Copy(chosen)
+    chosen.foundOre = true
+    Core.Set(ns.name, "pins", chosen)
+    local count = #gather.switches
+    gather.speed = 7
+    W.Wait(ns.options.nodeTurns + 1)
+    gather.speed = 0
+    check(gather.tracking[1].active and gather.tracking[2].active and #gather.switches == count,
+        "both on again, and no turns while moving")
+    W.Wait(Nodes.QUIET + 0.01)
+    C_Minimap.SetTracking = setTracking
+    ns.Sparkles.Settings()
+    ns.Glints.Update()
+    check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("SoftTargetIconGameObject") == "0"
+        and not ns.Glints.frame._shown and not Nodes.Known(), "no sparkles (the game's settings as they were) and no far ones")
+    check(not Nodes.TooHard(silverleaf), "a game that tells no skill line's rank: no herb greyed")
+
+    -- The continents beside the world map (Outland), under the map over it: in the selector, drawn by their own map.
+    local children = C_Map.GetMapChildrenInfo
+    MAPS[946] = { kind = 0, parent = 0 }
+    MAPS[947].parent = 946
+    MAPS[101] = { kind = 2, parent = 946, continent = 530, top = 5000, bottom = -5000, left = 5000, right = -5000 }
+    C_Map.GetMapChildrenInfo = function(map, kind, all)
+        if map ~= 946 then return children(map, kind, all) end
+        local list = {}
+        for _, id in ipairs({ 947, 101 }) do
+            if not kind or MAPS[id].kind == kind then list[#list + 1] = { mapID = id, mapType = MAPS[id].kind } end
+        end
+        return list
+    end
+    local elsewhere = Coords.Elsewhere()
+    check(Coords.Top() == 946 and #elsewhere == 1 and elsewhere[1] == 101, "the map over the world map, and its other continent")
+    local selector
+    for _, widget in ipairs(W.frames) do
+        if widget._generator then
+            widget:GenerateMenu()
+            if widget._items[1] and widget._items[1].text == "#947" then selector = widget end
+        end
+    end
+    check(selector and selector._items[#selector._items].text == "#101", "the map selector lists it after the world's")
+    local camera = Canvas.camera
+    check(Canvas.Show(101) and camera.map == 101 and Count(Shown(), 10101, 10112) > 0,
+        "shown: its own map drawn, though the world map does not hold it")
+    MAPS[946], MAPS[101], MAPS[947].parent, C_Map.GetMapChildrenInfo = nil, nil, 0, children
+    check(Canvas.Show(1415) and camera.map == 1415 and Coords.Top() == 947 and #Coords.Elsewhere() == 0,
+        "and back: the world map the top again")
+
+    -- Back to Forever.
+    W.Play("forever")
+    for _, name in ipairs(SETS) do Core.Data.Set(name).State = nil end
+    Nodes.TOGETHER = together
+    ns.Offer()
+    Core.Set(ns.name, "view", view)
+    ns.Sparkles.Settings()
+    ns.Glints.Update()
+    check(ns.Offered("terrain") and ns.View() == view and Core.Described(ns.name, "nodeSparkles").header == ns.TEXT.nodes
+        and Core.Described(ns.name, "pins").choices[4][1] == "quest" and not Hidden("tripView") and not Hidden("nodeTurns")
+        and C_CVar.GetCVar("softTargetInteract") == sounds and not ns.off,
+        "Forever again: every view, kind and switch back, the sparkles' settings set, the module running")
 end)()
 
 -- A failure stands the module down: everything given back.

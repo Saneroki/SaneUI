@@ -12,22 +12,23 @@
 # The module's own table, its switches and its commands. First: every other file adds to that table.
 Abilities.lua
 
-# What the trainers teach: the file of your class fills the list, then the quest rewards are added
+# What the trainers teach: the file of your class fills the list, then the quest rewards are added.
+# WoW: Forever's data: Retail reads only Trainer.lua, whose functions the other files use too.
 Data\Trainer.lua
-Data\Classes\Druid.lua
-Data\Classes\Hunter.lua
-Data\Classes\Mage.lua
-Data\Classes\Paladin.lua
-Data\Classes\Priest.lua
-Data\Classes\Rogue.lua
-Data\Classes\Shaman.lua
-Data\Classes\Warlock.lua
-Data\Classes\Warrior.lua
-Data\QuestSpells.lua
-Data\WeaponSkills.lua
+Data\Classes\Druid.lua [ExcludeLoadGameType standard]
+Data\Classes\Hunter.lua [ExcludeLoadGameType standard]
+Data\Classes\Mage.lua [ExcludeLoadGameType standard]
+Data\Classes\Paladin.lua [ExcludeLoadGameType standard]
+Data\Classes\Priest.lua [ExcludeLoadGameType standard]
+Data\Classes\Rogue.lua [ExcludeLoadGameType standard]
+Data\Classes\Shaman.lua [ExcludeLoadGameType standard]
+Data\Classes\Warlock.lua [ExcludeLoadGameType standard]
+Data\Classes\Warrior.lua [ExcludeLoadGameType standard]
+Data\QuestSpells.lua [ExcludeLoadGameType standard]
+Data\WeaponSkills.lua [ExcludeLoadGameType standard]
 
-# Reservations
-Data\SkillLines.lua
+# Reservations; first the built-in spellbook tab of each spell name (Forever's data as well)
+Data\SkillLines.lua [ExcludeLoadGameType standard]
 Sources.lua
 Buttons.lua
 Engine.lua

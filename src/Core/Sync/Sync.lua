@@ -72,8 +72,16 @@ function Sync.Part(id, group, part)
     Sync.parts[#Sync.parts + 1] = part
 end
 
--- What a part took last (to keep when the game cannot say now).
+-- Whether the kept settings were read in this game. Each game has options, CVars, layouts and chat windows
+-- of its own: what one kept is never written into the other (a game folder's saved settings copied into the
+-- other's), and that game's own take its place at the next capture.
+local function Ours()
+    return Sync.options.from == Core.GAME
+end
+
+-- What a part took last (to keep when the game cannot say now); nothing of another game's.
 function Sync.Taken(id)
+    if not Ours() then return nil end
     return Sync.options.taken[id]
 end
 
@@ -145,7 +153,7 @@ function Sync.Capture()
             taken[part.id] = data
         end
     end
-    options.taken = taken
+    options.taken, options.from = taken, Core.GAME
     ReadNamed(options.named)
 end
 
@@ -157,9 +165,14 @@ function Sync.OfferReload(names)
     Core.AskReload(names)
 end
 
--- Writes the kept parts of the settings in use into the game; in a fight, once it is over.
+-- Writes the kept parts of the settings in use into the game; in a fight, once it is over. Another game's are
+-- not written: from now on this game's are read in their place.
 function Sync.Give()
     if not On() then return end
+    if not Ours() then
+        given = true
+        return
+    end
     if InCombatLockdown() then
         waiting = true
         return
@@ -191,10 +204,13 @@ end
 --      off     [part id] = true: left to the game, which keeps it per character
 --      taken   [part id] = what the part read last
 --      named   [CVar] = its value: single CVars kept by name
+--      from    the game taken and named were read in ("forever", "retail"; Ours): those kept before Sane UI
+--              served two games are Forever's
 Core.Options(Sync.name, {
     { key = "off", default = {} },
     { key = "taken", default = {} },
     { key = "named", default = {} },
+    { key = "from", default = "forever" },
 }, { capture = function() Sync.Capture() end, moved = function() Sync.Moved() end, game = true })
 
 -- Core's saved settings are there, and in use where they should come from (Saved.lua and

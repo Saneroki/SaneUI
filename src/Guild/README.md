@@ -44,7 +44,8 @@ is on. The other views say they come later.
 - **Equipment:** at the left every member, those who share their gear with their item level, highest first (click a
   column's head to sort by another), searched by name. At the right the one chosen: name, level, class, rank, when
   it was shared (*not live*) or *Your own, live*, its item level large, its slots (the game's empty-slot pictures, the
-  item's icon in its quality's colour, its item level; the item's tooltip under the mouse) around a figure: yours as
+  item's icon in its quality's colour, its item level; the item's tooltip under the mouse; the ranged slot only where
+  the game's own paper doll has one, not in Retail) around a figure: yours as
   you stand; another member's gear is dressed on your own figure, as in the game's dressing room (this client cannot
   show another's race). A member that shares nothing yet says so.
 - **Sharing** (options page *Guild*, section *Sharing with the Guild*): *Share My Gear and Professions* (on): your
@@ -86,6 +87,8 @@ is on. The other views say they come later.
   *Pictures*; quick sketches of the look: `dev/imagegen/sets/guild/`). Everything else is the game's: insets
   (`InsetFrameTemplate`), buttons (`UIPanelButtonTemplate`), search boxes (`SearchBoxTemplate`), lists
   (`WowScrollBoxList`, `MinimalScrollBar`), class circles, paper-doll slots, `DressUpModel`, the gear, status icons.
+- **Forever and Retail:** the same module in both; the one difference is the doll's ranged slot
+  (`Equipment.Weapons`, as the game's `C_PaperDollInfo.IsRangedSlotShown`).
 - **Words** are in `ns.TEXT` (`Guild.lua`), the game's own strings where it has one (`Core.Word`).
 - **Cost:** at rest only Core's reading of the roster after the game says it changed (by the scheduler: never in a
   fight or while the game restricts addons). The page and its views are made when first opened; a view redraws only
@@ -95,7 +98,7 @@ is on. The other views say they come later.
 - **Tests:** `lua5.1 dev/tests/guild.lua`: the wire (parts numbered wrongly, a block that does not fit), the guild's
   records (a roster that shrinks, a fight, asks and answers, a switch turned off, Sync), a window offered to a board,
   what the views show, the page with every tab, the guild key (in a guild and outside one), Esc on the window of its
-  own, standing down.
+  own, the window and its tabs in Retail (`W.Play`) with the doll's weapons there, standing down.
 
 ## Files
 | File | What |
@@ -118,5 +121,6 @@ Every view that says it comes later (Doc/ideas/Guild.md, *Build order*); the pic
 (*Player*); news cards; the notification strip at the minimap.
 
 ## History
+- 2026-10-25 — Retail: the doll without the ranged slot, as the game's own.
 - 2026-10-20 — The module (Saneroki): the window with all its tabs on Social's full screen or alone, the overview, the
   roster, everybody's gear; the guild key; sharing of the character card with the guild.

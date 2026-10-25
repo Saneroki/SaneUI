@@ -623,6 +623,30 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   minimap chosen the small window rests (alpha 0, the canvas takes no mouse and holds no texture) while the
   corner's push still fills the screen; Edit Mode shows it. The Classic windows are kept choices (Core's
   `checked`, `back`).
+- **Forever and Retail:** one code for both games. Retail has none of Core's data yet (Core refuses Forever's
+  sets there), so what needs it stands down without a word, and what needs a system only Forever has too; the
+  minimap and the map work from the game's own API (`ns.Has`: a set ready or still being read):
+  - the views: Scrying and Blended need Core's terrain (`Terrain.Possible`, the set *Tiles*): not offered, and
+    a view not offered falls back to Scrying or, without it, to Parchment (`ns.Fallback`), the game's own map
+    art (the world's, each continent's, the zone in the middle whole; no stitched map, no outlines: `Outlines.lua`
+    and `Coasts.lua` are Forever's world, left out of Retail by their TOC lines). In the small view at the game's
+    minimap's steps the game's minimap keeps its own ground there, the land as it lies (`Hybrid.Place`); past
+    them, and on the full map, Parchment with its dots;
+  - the game's minimap given back round where the game's code sets no mask (Retail: `Hybrid.ROUND`, the engine's
+    own; Forever's `UpdateMinimapConfig` sets it there);
+  - the continents beside the world map, under the map over it (Retail's Outland, Draenor, the Shadowlands:
+    `Coords.Top`, `Coords.Elsewhere`): in the map selector after the world's, each drawn by its own map
+    (`Art.lua`, `Under`); the dungeons listed from the top of the map tree;
+  - the pin kinds only Core's data has (offers, low, later, done, services, possible herbs and ore, books: their
+    `data` in `ns.KINDS`) are not in the pin filter nor the setting's list (`ns.KindOffered`); the game's own
+    (the log, flight points, places, rares, treasures, entrances, links, the group, quest areas) show;
+  - herbs and ore: Retail's tracking holds both finders at once (`Nodes.TOGETHER`): each on while its kind is,
+    no turns (the switch is not there); the found ones need the minimap's answers Retail does not give
+    (`Found.Works`), the sparkles Core's herbs and ore (`Nodes.Known`): neither runs, the far ones neither, the
+    game's interact settings are left as they are, and their switches (and the section's header) are not on the
+    options page; a game that tells no skill line's rank greys no herb (`Nodes.TooHard`);
+  - the trip on screen and the ship times need Core's set *Travel*: their switches are not there; the route to
+    the map pin is a straight line, as anywhere without walking data; the indoor map needs the set *Indoors*.
 - **When something fails:** the module stands down: the keys go back to the game, its minimap back where it
   was, our window goes (`ns.GiveBack`); what may not be done in a fight waits for its end.
 
@@ -632,14 +656,14 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 |---|---|
 | `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Navigation.lua` | The module's table (`ns`), its texts and settings, `/sane map`, `GiveBack` |
-| `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them; the terrain's grid; the player's place. No frames |
+| `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them, the top of the tree and the continents beside the world map (Retail's); the terrain's grid; the player's place. No frames |
 | `Camera.lua` | Where a view looks: middle, zoom, following, the level its zoom shows; drag, wheel, one map out. No frames |
 | `Live.lua` | What the game tells while playing, read when it changes. No frames |
 | `Ping.lua` | The game's minimap ping on our map: a click's ping sent by the place's yards from you (after a double click's time), the group's pings kept where they are. No frames |
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
-| `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand |
-| `Coasts.lua` | The tiles on a coast, which have a finer mask of their own, by their plane's instance: made by `dev/tools/terrain-art`, not by hand |
+| `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand; Forever's world, read in Forever only (its TOC line) |
+| `Coasts.lua` | The tiles on a coast, which have a finer mask of their own, by their plane's instance: made by `dev/tools/terrain-art`, not by hand; Forever's, read in Forever only |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
@@ -676,6 +700,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, in Retail:** the module runs in Retail too, where Core has no data yet: the map is drawn as
+  Parchment (Scrying and Blended stand down without Core's terrain), the small view at the game's minimap's steps
+  shows the game's own ground, the game's minimap is given back round, the continents beside the world map
+  (Outland, Draenor, the Shadowlands) are in the map selector and drawn, the dungeons of the whole map tree listed;
+  the pin kinds, switches and sparkles that need Core's data or Forever's minimap stand down; Retail's two finders
+  are on together. Forever's outlines and coasts are read in Forever only.
 - **2026-10-25, no square edges in the ring:** the item picture's straight edges showed inside the leather: it is now
   cut 12 % in at each side (past its own frame and the dark band inside it, `Found.TRIM`), cut round, and 16 % wider
   than the ring's hole (`Found.FILL`), its edge under the leather; on the screen and on the minimap alike, the rings

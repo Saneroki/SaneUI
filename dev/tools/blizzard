@@ -234,7 +234,8 @@ def games_lookup(out=None, forever=None, retail=None):
     forever = forever or exports.Export(exports.required("code"))
     retail = retail or exports.Export(exports.required("code", "retail"))
     out = Path(out) if out else reports_folder() / f"forever-{forever.build}-retail-{retail.build}"
-    lines = games.write(forever, retail, exports.required("art"), exports.required("art", "retail"), out)
+    lines = games.write(forever, retail, exports.required("art"), exports.required("art", "retail"), out,
+                        ROOT / "dev" / "tests" / "games.lua")
     found, tocs = sane_uses()
     result = compare.Analysis(forever, retail, found, tocs)
     report.markdown(result, out / "uses.md", ROOT, None)

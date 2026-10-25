@@ -185,7 +185,9 @@ end
 
 -- The game's rule for what a kill gives (as the original game has it), by your level: a row holds
 -- the highest level it is for, how many levels below yours a creature's gain fades to nothing,
--- and how many levels below yours a creature is grey and gives nothing at all.
+-- and how many levels below yours a creature is grey and gives nothing at all. Forever's: Retail
+-- gives otherwise (its creatures' levels follow yours), and tells no addon how much, so there a
+-- creature's panel has no experience row.
 local KILL_RULE = {
     { 7, 5, 5 }, { 9, 6, 5 }, { 11, 7, 6 }, { 15, 8, 6 }, { 19, 9, 6 }, { 29, 11, 7 }, { 39, 12, 8 },
     { 44, 13, 9 }, { 49, 14, 10 }, { 54, 15, 11 }, { 59, 16, 12 }, { math.huge, 17, 9 },
@@ -211,8 +213,9 @@ end
 
 -- What killing the unit gives you, and how many such kills your next level is away; nil for a
 -- unit that gives nothing (a player, a friend, one somebody else has tapped, a dead or a grey one,
--- or you are at the highest level).
+-- or you are at the highest level; and in a game that does not follow KILL_RULE).
 function Numbers.Experience(unit)
+    if not SaneUI.Core.FOREVER then return nil end
     local mine, theirs = Ask(UnitLevel, "player"), Ask(UnitLevel, unit)
     if not (mine and theirs and theirs > 0) then return nil end
     local top = Ask(rawget(_G, "GetMaxPlayerLevel")) or rawget(_G, "MAX_PLAYER_LEVEL")
