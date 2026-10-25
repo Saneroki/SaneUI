@@ -33,11 +33,13 @@ local Core = SaneUI.Core
 --  the words of its text format, for guides pasted as text (Saneroki,
 --  2026-10-25):
 --
---      local book = Core.Neighbours.Book("guide", 8) -- nil: not loaded, no guide in it, or its ways changed
+--      local book = Core.Neighbours.Book("guide", 8, shift) -- nil: not loaded, no guide in it, or its ways changed
 --      book.title, book.at, book.total  -- the guide's name, the step it is at, how many steps it has
 --      book.hand                        -- the steps at hand: { { number, lines = { { text, done, count } } } }
 --                                       -- (count: a line of something to do, ticked when done)
---      book.ahead                       -- up to that many steps after: { { number, text } }
+--      book.ahead                       -- up to that many steps from the one after those at hand (book.after),
+--                                       -- moved by shift (back for less than 0; book.first: where it began):
+--                                       -- { { number, text, done } } (done: before the step it is at)
 --      book.colours                     -- the colours its words give names, by our kinds: { friend = "ff00ff25" }
 --      book.shown                       -- whether its own window is shown
 --      book.place                       -- where its arrow points, while it points: { continent, x, y } (the
@@ -48,6 +50,8 @@ local Core = SaneUI.Core
 --      Core.Neighbours.Arrow("guide")             -- its arrow's frame, or nil
 --      Core.Neighbours.Boxes("guide")             -- its boxes of targets and items: a list of frames
 --      Core.Neighbours.GoTo("guide", 12)          -- its step 12, by its own function
+--      Core.Neighbours.Complete("guide", 12)      -- its step 12 ticked off, line by line by its own function (false:
+--                                                 -- it has none)
 --      Core.Neighbours.Frame("guide")             -- its window's frame, or nil
 --      local words = Core.Neighbours.Format("guide") -- its text format's words, by ours (copies):
 --      words.commands, words.marks      -- [its word] = ours; words.modes: [its mark] = true (a game mode not ours)
@@ -79,6 +83,9 @@ Neighbours.KNOWN = {
               -- world's yards wx, wy on the continent instance, or a map zone and x, y in hundredths); the function of
               -- its window that opens its menu (menu); its boxes of targets and items, global frames (boxes).
               arrow = "arrowFrame", menu = "DropDownMenu", boxes = { "RXPTargetFrame", "RXPItemFrame" },
+              -- Its function that ticks one line of a step off, as its window's box beside the line does (complete:
+              -- it takes a table holding the line as element).
+              complete = "SetElementComplete",
               -- Its text format: each command word and step mark by ours, the marks of game modes Sane UI's games do
               -- not play, and its colour words by our kinds.
               commands = { accept = "take", turnin = "handin", complete = "goal", collect = "carry", xp = "level",
@@ -268,7 +275,7 @@ local function ArrowPlace(object, known)
     return nil
 end
 
-function Neighbours.Book(key, ahead)
+function Neighbours.Book(key, ahead, shift)
     local known = Neighbours.KNOWN[key]
     local object, guide = LoadedGuide(known)
     if not object then return nil end
@@ -290,12 +297,14 @@ function Neighbours.Book(key, ahead)
     end
     table.sort(book.hand, function(a, b) return a.number < b.number end)
     local last = book.hand[#book.hand] and book.hand[#book.hand].number or at
-    local number = math.max(at, last) + 1
+    book.after = math.max(at, last) + 1
+    local number = math.max(1, book.after + (shift or 0))
+    book.first = number
     while #book.ahead < (ahead or 0) and steps[number] do
         local step = steps[number]
         if type(step) == "table" and not step.optional and not step.hidewindow and not step.tip then
             local text = FirstWords(step)
-            if text then book.ahead[#book.ahead + 1] = { number = number, text = text } end
+            if text then book.ahead[#book.ahead + 1] = { number = number, text = text, done = number < at } end
         end
         number = number + 1
     end
@@ -350,6 +359,20 @@ function Neighbours.Boxes(key)
         if type(frame) == "table" and type(frame.GetObjectType) == "function" then boxes[#boxes + 1] = frame end
     end
     return boxes
+end
+
+-- A step of a known guide's loaded guide ticked off, each of its lines by its own function (as the box beside a line
+-- in its window ticks it), so it goes on as it does then; false when it has no such function or no such step.
+function Neighbours.Complete(key, number)
+    local known = Neighbours.KNOWN[key]
+    local object, guide = LoadedGuide(known)
+    local complete = object and known.complete and rawget(object, known.complete)
+    local step = guide and type(number) == "number" and guide.steps[number]
+    if type(complete) ~= "function" or type(step) ~= "table" or type(step.elements) ~= "table" then return false end
+    for _, element in ipairs(step.elements) do
+        if type(element) == "table" then Core.Safe("neighbours: " .. key, complete, { element = element }) end
+    end
+    return true
 end
 
 -- A known addon's window, by its global name, while it is loaded.

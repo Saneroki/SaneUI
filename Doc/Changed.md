@@ -3,8 +3,28 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 139 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 148 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling's guide: any step at hand ticked off, the list through the whole guide, no blocked actions (Saneroki, 2026-10-25)
+Saneroki, in Retail: steps 2 and 14 of the Shadowglen guide could not be skipped; he wants to scroll through every
+step, done ones too, and go to one with a right click; and chat said the game blocked an action (the error log:
+"the game blocked UNKNOWN()", 2,680 times in three minutes, blamed on Sane UI).
+- **Skipping (`Guide.lua`, `src/Core/Neighbours.lua`):** the known guide keeps steps in view before its current step
+  (one with a line to tick by hand that goes along up to a named step; one that goes along with the step before it).
+  A click now ticks the step off whole, each line by the known guide's own function as the box beside a line does
+  (`Neighbours.Complete`, its `SetElementComplete`), whichever step at hand it is; going on past it from its step
+  only where it has no such function.
+- **The list (`Steps.lua`, `Guide.Picture(count, shift)`, `Neighbours.Book(key, ahead, shift)`):** the wheel scrolls
+  it through the whole guide, back to the first step and to the last; done steps (before the step it is at) with the
+  game's tick, the steps at hand lighter; it starts after the steps at hand again when the guide moves on. A right
+  click on a listed step opens its menu: *Go to step N*, then the known guide's own menu (else the guides kept).
+- **No more blocked actions (`Icons.lua`):** the known guide's boxes of targets and items were put into a hidden frame
+  of ours; they hold its secure buttons, and in a fight the game blocked their layout under a parent set by Sane UI's
+  code. They are left as they are now; Sane UI's own icons stand beside them (they can be switched off in the known
+  guide's own settings).
+- **Tests:** `dev/tests/speedguide.lua` 148 checks.
+- **Docs:** `src/SpeedLeveling/README.md`.
 
 ### Nameplates: critters without a plate or a name, a setting shows them (Saneroki, 2026-10-25)
 Saneroki asked for critters to have no name or nameplate by default, with a setting to show them.

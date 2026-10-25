@@ -16,10 +16,12 @@ local _, ns = ...
 --  each does and whether it is there is set out of a fight only; in one the
 --  row stays as it was and follows once it is over. It is placed by the screen
 --  where the guide's top is, not hung on the guide, whose height changes in a
---  fight. While it shows for the leveling guide Sane UI knows, that guide's own
---  boxes of targets and items are put away (Core.Lend), given back as they were.
+--  fight. The boxes of targets and items of the leveling guide Sane UI knows are
+--  left as they are, its to show or hide (its own settings): its secure buttons
+--  are not Sane UI's to move or hide, and the game blocks what that would make
+--  them do in a fight.
 --
---      Icons.Update(shown, known)   as the guide is now (shown; known: the known guide's)
+--      Icons.Update(shown)          as the guide is now (shown or not)
 --      Icons.GiveBack()
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -41,11 +43,10 @@ local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local CURSOR = { 16 / 512, 128 / 512, 16 / 256, 128 / 256 }
 local FRIEND, FOE = "Interface\\CURSOR\\UISpeakCursor2x", "Interface\\CURSOR\\UIAttackCursor2x"
 
-local row, away
+local row
 local buttons = {}
 local shownList = {}  -- what the buttons do now: { { item = ID } or { name, foe } }
 local placed          -- the row's place and what it holds, as last set: "left,top|..."
-local lent = {}       -- [frame] = the lend of a box of the known guide's
 
 local function Font(name, size)
     local font = CreateFont(name)
@@ -188,26 +189,6 @@ local function Signature(list, left, top)
     return table.concat(parts, "|")
 end
 
--- The known guide's boxes: put away while our row shows its guide.
-local function Boxes(on)
-    if on then
-        if not away then
-            away = CreateFrame("Frame")
-            away:Hide()
-        end
-        for _, box in ipairs(Core.Neighbours.Boxes("guide")) do
-            lent[box] = lent[box] or Core.Lend(box)
-            if not lent[box]:SetParent(away) then return false end
-        end
-    else
-        for box, lend in pairs(lent) do
-            lent[box] = nil
-            lend:Return()
-        end
-    end
-    return true
-end
-
 local function Later()
     Core.AfterCombat("speedleveling: icons", function() ns.Guarded(ns.Steps.Update) end)
 end
@@ -228,7 +209,7 @@ local function Build()
     ns.On("QUEST_LOG_UPDATE", again)
 end
 
-function Icons.Update(shown, known)
+function Icons.Update(shown)
     local on = shown and not ns.off and ns.options.icons
     local view = on and ns.Steps.Frame()
     local left, top = view and view:GetLeft(), view and view:GetTop()
@@ -238,7 +219,6 @@ function Icons.Update(shown, known)
             row:Hide()
             placed = nil
         end
-        if not InCombatLockdown() then Boxes(false) end
         return
     end
     if not row then Build() end
@@ -250,7 +230,6 @@ function Icons.Update(shown, known)
         if signature ~= placed then Later() end
         return
     end
-    if not Boxes(known) then return Later() end
     if signature ~= placed then
         placed = signature
         for index, entry in ipairs(list) do

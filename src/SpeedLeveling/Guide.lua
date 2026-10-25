@@ -9,8 +9,11 @@ local _, ns = ...
 --  view, the player's ways through it, and what its steps at hand want for the
 --  key (Wanted.lua, Key.lua).
 --
---      Guide.Picture()    nil (no guide), or { title, levels, at, total, known, hand = { step }, ahead = { line } }
---                         step = { number, lines = { { text, done, have, need, count } } }, line = { number, text }
+--      Guide.Picture(count, shift)  nil (no guide), or { title, levels, at, total, known, hand = { step },
+--                         ahead = { line }, shift }: count steps listed from the one after those at hand, moved by
+--                         shift (back for less than 0; picture.shift: as far as it went)
+--                         step = { number, lines = { { text, done, have, need, count } } },
+--                         line = { number, text, done } (done: before the step you are at)
 --                         (text in our colours; count: a thing to do, its have and need when it has a number)
 --      Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
@@ -104,9 +107,9 @@ end
 -------------------------------------------------------------------------------
 --  The two places a guide comes from
 -------------------------------------------------------------------------------
-local function Book()
+local function Book(count, shift)
     if not ns.options.knownGuide then return nil end
-    return Core.Neighbours.Book("guide", Guide.AHEAD)
+    return Core.Neighbours.Book("guide", count or Guide.AHEAD, shift)
 end
 
 -- The known guide's book, as our picture.
@@ -125,8 +128,10 @@ local function FromBook(book)
         picture.hand[#picture.hand + 1] = { number = step.number, lines = lines }
     end
     for _, line in ipairs(book.ahead) do
-        picture.ahead[#picture.ahead + 1] = { number = line.number, text = Paint(line.text, book.colours) }
+        picture.ahead[#picture.ahead + 1] = { number = line.number, text = Paint(line.text, book.colours),
+                                              done = line.done }
     end
+    picture.shift = (book.first or book.after or 0) - (book.after or 0)
     return picture
 end
 
@@ -145,7 +150,7 @@ local function OurLines(index)
     return lines
 end
 
-local function FromRun()
+local function FromRun(count, shift)
     local guide = ns.Run.Guide()
     if not guide then return nil end
     local title, levels = Split(Paint(guide.title or guide.name))
@@ -157,24 +162,28 @@ local function FromRun()
         picture.hand[#picture.hand + 1] = { number = index, lines = OurLines(index) }
         last = math.max(last, index)
     end
-    local index = last + 1
-    while #picture.ahead < Guide.AHEAD and guide.steps[index] do
+    local index = math.max(1, last + 1 + (shift or 0))
+    picture.shift = index - (last + 1)
+    while #picture.ahead < (count or Guide.AHEAD) and guide.steps[index] do
         if not guide.steps[index].aside then
             local lines = OurLines(index)
-            if lines[1] then picture.ahead[#picture.ahead + 1] = { number = index, text = lines[1].text } end
+            if lines[1] then
+                picture.ahead[#picture.ahead + 1] = { number = index, text = lines[1].text, done = index < at }
+            end
         end
         index = index + 1
     end
     return picture
 end
 
-function Guide.Picture()
-    local book = Book()
+-- The picture, with count steps listed from the one after those at hand, moved by shift (back for less than 0).
+function Guide.Picture(count, shift)
+    local book = Book(count, shift)
     if book then return FromBook(book) end
-    return FromRun()
+    return FromRun(count, shift)
 end
 
-function Guide.Known() return Book() ~= nil end
+function Guide.Known() return Book(0) ~= nil end
 
 -- What a step asks you to do, in our words for the arrow's picture: "take", "handin" (a quest), "talk", "buy",
 -- "train", "inn", "hearth", "fly", "kill", "loot", "use", or "go" (getting there is all). Its first thing to do not yet
@@ -213,7 +222,7 @@ end
 -- nowhere. The known guide's own arrow's place while its guide is shown, with the step it is at; else the guide run
 -- here's.
 function Guide.Target()
-    if Book() then
+    if Book(0) then
         local place = Core.Neighbours.Pointing("guide")
         if not place then return nil end
         local book = Core.Neighbours.Book("guide", 0)
@@ -230,7 +239,7 @@ end
 
 -- The known guide's own menu (its guides, its options) while its guide is shown; false while it is not.
 function Guide.Menu()
-    if not Book() then return false end
+    if not Book(0) then return false end
     Core.Neighbours.Menu("guide")
     return true
 end
@@ -239,7 +248,7 @@ end
 --  The player's ways through it
 -------------------------------------------------------------------------------
 function Guide.Go(number)
-    if Book() then
+    if Book(0) then
         Core.Neighbours.GoTo("guide", number)
     else
         ns.Run.Go(number)
@@ -248,7 +257,7 @@ function Guide.Go(number)
 end
 
 function Guide.Back()
-    local book = Book()
+    local book = Book(0)
     if book then
         if book.at > 1 then Core.Neighbours.GoTo("guide", book.at - 1) end
     else
@@ -258,12 +267,15 @@ function Guide.Back()
 end
 
 -- A step at hand skipped: the one it is at, past it; another (one that stays at hand), out of the way. The known
--- guide goes on past the step clicked, from the one it is at on: its step may be one that goes along with the next,
--- both shown, and a click on either goes past it (one before it, that stays with you, it keeps).
+-- guide's step is ticked off whole, as its own window does it, whichever of its steps at hand it is (one may go along
+-- with the next, both shown).
 function Guide.Skip(number)
-    local book = Book()
+    local book = Book(0)
     if book then
-        if number >= book.at then Core.Neighbours.GoTo("guide", number + 1) end
+        -- Ticked off line by line, as its own window's boxes do; without that, past it from the step it is at on.
+        if not Core.Neighbours.Complete("guide", number) and number >= book.at then
+            Core.Neighbours.GoTo("guide", number + 1)
+        end
     else
         ns.Run.Skip(number)
     end
@@ -405,7 +417,7 @@ Changed = Core.Later(Tell)
 
 -- The game changed: the guide run here moves on as far as done steps go.
 local function Check()
-    if Book() or not ns.Run.Guide() then return end
+    if Book(0) or not ns.Run.Guide() then return end
     if ns.Run.Check() then Onward() end
     ns.Run.Watch(Changed)
     Changed()
@@ -415,7 +427,7 @@ local checkSoon = Core.Later(Check, 0.2)
 -- Things the game tells only as they happen, for the guide run here.
 local function Saw(what)
     return function()
-        if Book() or not ns.Run.Guide() then return end
+        if Book(0) or not ns.Run.Guide() then return end
         ns.Run.Saw(what)
         checkSoon()
     end
@@ -449,7 +461,7 @@ function Guide.Start()
         if Core.Ask(rawget(_G, "UnitOnTaxi"), "player") then Saw("fly")() end
     end, 1))
     ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spell)
-        if unit ~= "player" or Book() or not ns.Run.Guide() then return end
+        if unit ~= "player" or Book(0) or not ns.Run.Guide() then return end
         spell = Plain(spell)
         if spell == ns.Run.HEARTH_SPELL or spell == ns.Run.RECALL then ns.Run.Saw("hearth") end
         if type(spell) == "number" then ns.Run.Saw("cast" .. spell) end

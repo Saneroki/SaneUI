@@ -46,8 +46,8 @@ else from a guide you pasted as text, which Sane UI runs itself. The key finds w
 | Your leveling guide's own guide | on | While the leveling guide Sane UI knows is loaded, its loaded guide is shown and followed; off: the guide you pasted |
 | Hide its own window | on | While its guide is shown here, that guide's own window is unseen (see-through and small); back as it was when this is off |
 | Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
-| Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*); the known guide's own boxes put away meanwhile |
-| Steps listed ahead | 5 | How many next steps stand under those at hand (0 to 12) |
+| Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*); the known guide's own boxes stay its own (switch them off in its settings) |
+| Steps listed ahead | 5 | How many steps the list under those at hand shows (0 to 12); the wheel scrolls it through the whole guide |
 | Guides | | Opens the window of the guides kept as text (also `/sane guides`) |
 
 ## What it looks for
@@ -88,16 +88,20 @@ player's click.
   - each step at hand on a faint dark shade: *Step 12* small, its first words large (what to do), its things to do
     (*Mottled Boar slain* with *2/4* at the right and a thin bar under it, a hand-drawn tick once done), its other
     words smaller, *!* before a warning, *i* before the rest; what is done is faint;
-  - the next steps, greyed out (no colours in them), a line each with its number, each a little fainter (all clear
-    while the mouse is on them).
+  - the list of steps, greyed out (no colours in them), a line each with its number, each a little fainter (all
+    clear while the mouse is on them): at first the next steps; the wheel scrolls it through the whole guide, the done
+    steps above (the game's tick before each), the steps at hand a little lighter. When the guide moves on, the list
+    starts after the steps at hand again.
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
-- **The mouse:** a click on a step at hand skips it (the guide goes on past it; for the known guide, past the step
-  clicked: its step at hand may be one that only goes along with the next, both shown), a right click goes back one
-  step;
-  the wheel over the next steps scrolls them, a double click goes to one; a right click on the zone or on the next
-  steps opens the known guide's own menu (its guides, its options) while its guide is shown, else a menu of the
-  guides kept (choose the one to follow) and *Paste a guide...*.
+- **The mouse:** a click on a step at hand skips it, a right click goes back one step. A pasted guide goes on past
+  it; the known guide's step is ticked off whole, each line by its own function as the boxes beside its lines do
+  (`Core.Neighbours.Complete`), whichever step at hand it is: one it keeps in view before its current step (one to
+  tick by hand, one that goes along with later ones) as well as the current one and one that goes along with it.
+  The wheel over the list scrolls it; a double click on a listed step goes to it; a right click on it opens its menu:
+  *Go to step 12*, and the known guide's own menu (else the guides kept). A right click on the zone opens the known
+  guide's own menu (its guides, its options) while its guide is shown, else a menu of the guides kept (choose the one
+  to follow) and *Paste a guide...*.
 
 ### The arrow
 A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide (at first over the middle of the screen),
@@ -125,8 +129,9 @@ target, eight at most. Each in Sane UI's round leather ring (`Art/mark-round`): 
 count; a target the game's speech bubble or sword, its portrait once you have seen it (its nameplate, your target). A
 click uses the item, or targets the name (with the skull while *Skull on what is found* is on); the mouse on one says
 what it is. They are Sane UI's own secure buttons: set out of a fight only (in one the row stays as it was and
-follows once it is over), placed by the screen where the guide's top is. While they show for the known guide, its own
-boxes of targets and items are put away.
+follows once it is over), placed by the screen where the guide's top is. The known guide's own boxes of targets and items
+stay its own, as they are: switch them off in its own settings. Its secure buttons are not Sane UI's to move or hide;
+the game blocks what moving them makes them do in a fight.
 - **The guides kept as text** (`/sane guides`, or the menu): at the left the guides kept, a click follows one (those
   for another side, race or class greyed), the cross beside one forgets it (asked first); at the right a box to
   paste a guide's text into, and *Read*, which keeps each guide of it (a file with several guides in long brackets
@@ -160,9 +165,9 @@ hand with their words, what is done, and its next steps; a count is read from a 
 its own function (`Core.Neighbours.GoTo`), a right click back. Its colours of names become ours. What the view stands
 in for is lent (`Core.Lend`) and given back as it was when its switch is off, when its window is closed, and when the
 module stands down: its window (see-through and small), its arrow (put into a hidden frame of ours while our arrow
-points to its place), and its boxes of targets and items (put away the same way while our icons show, out of a fight
-only: they hold the game's secure buttons). Its import strings are locked to the buyer's account: Sane UI never reads them; it shows
-only what that guide has loaded itself.
+points to its place), but not its boxes of targets and items: they hold the game's secure buttons, and the game
+blocks what moving them makes them do in a fight. Its import strings are locked to the buyer's account: Sane UI never
+reads them; it shows only what that guide has loaded itself.
 
 ## How it works
 An addon may target, mark, attack, interact and use items only by the game's secure ways and on a key press, so
@@ -199,7 +204,7 @@ every choice is made by those, in a fight too (`Key.lua`):
 | `Key.lua` | The key: the buttons Find and Fight, the header and its snippets, the state driver, Find's macro (`Key.Find()`), the game's settings for Loot first and Quest objects |
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu, the known guide's window lent |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words, the known guide's arrow put away |
-| `Icons.lua` | The icons over the guide: items to use and names to target, secure buttons; the known guide's boxes put away |
+| `Icons.lua` | The icons over the guide: items to use and names to target, Sane UI's own secure buttons |
 | `Guides.lua` | The window of the guides kept as text: the list, the box to paste into, *Read* |
 | `Bindings.xml` | The key in the game's key bindings: a click on Find |
 

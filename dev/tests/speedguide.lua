@@ -409,6 +409,25 @@ W.Wait(1)
 local shown = 0
 for _, row in ipairs(rows) do if row._shown then shown = shown + 1 end end
 check(shown == 2, "two next steps listed")
+-- The wheel: back to the step at hand and before, as far as the first step; down again.
+Guide.Go(3)
+W.Wait(1)
+rows[1]._scripts.OnMouseWheel(rows[1], 1)
+rows[1]._scripts.OnMouseWheel(rows[1], 1)
+check(rows[1].step == 2 and rows[1].tick._text == Steps.TICK and rows[2].step == 3 and rows[2].tick._text == "",
+    "scrolled up: a done step with its tick, then the one at hand: " .. tostring(rows[1].step))
+rows[1]._scripts.OnMouseWheel(rows[1], 5)
+check(rows[1].step == 1, "no further up than the first step")
+rows[1]._scripts.OnMouseWheel(rows[1], -1)
+check(rows[1].step == 2, "down again")
+-- A right click on a listed step: its menu, Go to step.
+local menus = #W.menus
+rows[1]._scripts.OnClick(rows[1], "RightButton")
+local menu = W.menus[#W.menus]
+check(#W.menus == menus + 1 and menu[2] and menu[2].text == ns.TEXT.goToStep:format(2), "its menu: Go to step 2")
+menu[2].fn()
+W.Wait(1)
+check(Run.At() == 2, "and it goes there")
 Core.Set(ns.name, "showGuide", false)
 check(not view:IsShown(), "Show the guide off: hidden")
 Core.Set(ns.name, "showGuide", true)
@@ -463,14 +482,29 @@ check(picture.hand[1].lines[3].have == 3 and picture.hand[1].lines[3].need == 10
 check(picture.ahead[1].number == 5 and picture.ahead[2].number == 7, "the next steps, the optional one left out")
 check(Guide.Targets()[1] == nil and select(2, Guide.Targets())[1] == "Gornek", "the key finds its NPC")
 check(Guide.Uses()[1] == 5000, "and its items")
+-- A click ticks a step at hand off whole, line by line by its own function, whichever step it is.
+local ticked = {}
+book[KNOWN.complete] = function(holder) ticked[#ticked + 1] = holder.element end
+steps[3].elements = { { text = "Kill boars along the way", textOnly = false }, { text = "+ by hand" } }
 Guide.Skip(4)
-check(went == 5, "a click: its own function goes on")
-went = nil
+check(#ticked == #elements and ticked[1] == elements[1] and went == nil, "a click: each line ticked off by its own function")
+ticked = {}
+Guide.Skip(3)
+check(#ticked == 2 and ticked[1] == steps[3].elements[1], "a step kept in view before the one it is at: ticked off too")
+-- Without such a function: past the step clicked, from the one it is at on.
+book[KNOWN.complete] = nil
 Guide.Skip(5)
-check(went == 6, "a click on the step after the one it is at (that one goes along with it): past it")
+check(went == 6, "no function to tick: past the step clicked")
 went = nil
 Guide.Skip(3)
-check(went == nil, "one before it: it keeps")
+check(went == nil, "before the one it is at: nothing")
+book[KNOWN.complete] = function(holder) ticked[#ticked + 1] = holder.element end
+-- The list from any step: back through the done ones, a tick before each.
+picture = Guide.Picture(3, -3)
+check(picture.shift == -3 and picture.ahead[1].number == 2 and picture.ahead[1].done and not picture.ahead[3].done,
+    "the list scrolled back: done steps, ticked")
+picture = Guide.Picture(3, -10)
+check(picture.shift == -4 and picture.ahead[1].number == 1, "no further back than the first step")
 Guide.Back()
 check(went == 3, "a right click: back one, by its own function")
 Steps.Update()
@@ -482,13 +516,13 @@ place, there = Guide.Target()
 check(place and place.continent == 1 and place.x == -600.5 and place.y == -4300.25 and Guide.Doing(there) == "take",
     "its arrow shown: ours points to its place, a quest to take there")
 check(ownArrow._parent ~= UIParent and not ownArrow:IsVisible(), "its own arrow put away")
-check(boxes[1]._parent ~= UIParent and boxes[2]._parent ~= UIParent, "its own boxes put away: our icons stand for them")
+check(boxes[1]._parent == UIParent and boxes[1]._points[1][1] == "CENTER", "its own boxes left as they are: its own")
 check(rawget(_G, "SaneUISpeedLevelingIcon1"):GetAttribute("item") == "item:5000"
     and rawget(_G, "SaneUISpeedLevelingIcon2"):GetAttribute("macrotext"):find("Gornek", 1, true), "its item and its NPC")
 Core.Set(ns.name, "icons", false)
-check(boxes[1]._parent == UIParent and not rawget(_G, "SaneUISpeedLevelingIcons")._shown, "icons off: its boxes back")
+check(not rawget(_G, "SaneUISpeedLevelingIcons")._shown, "icons off: the row hidden")
 Core.Set(ns.name, "icons", true)
-check(boxes[1]._parent ~= UIParent, "on: put away again")
+check(rawget(_G, "SaneUISpeedLevelingIcons")._shown, "on: shown again")
 Core.Set(ns.name, "knownWindow", false)
 check(own._alpha == 1 and own:GetScale() == 1, "Hide its own window off: given back as it was")
 Core.Set(ns.name, "knownWindow", true)
@@ -513,9 +547,12 @@ end
 header._scripts.OnClick(header)
 check(menuOpened == 1, "a right click on the zone: the known guide's own menu")
 rows[1]._scripts.OnClick(rows[1])
-check(menuOpened == 2, "and on the next steps")
+local rowMenu = W.menus[#W.menus]
+check(rowMenu[3] and rowMenu[3].text == ns.TEXT.guideMenu, "a listed step's menu: the known guide's own menu under Go to")
+rowMenu[3].fn()
+check(menuOpened == 2, "which opens it")
 Core.Set(ns.name, "knownGuide", false)
-local menus = #W.menus
+menus = #W.menus
 header._scripts.OnClick(header)
 check(#W.menus == menus + 1 and #W.menus[#W.menus] >= 3 and menuOpened == 2, "the pasted guide: our menu, the guides and paste")
 Core.Set(ns.name, "knownGuide", true)

@@ -12,15 +12,18 @@ local _, ns = ...
 --      those that have one; a tick on those done), its other words smaller, a
 --      "!" before a warning and an "i" before the rest;
 --    - the next steps greyed out, a line each with its number, fading as they
---      go down.
+--      go down; the wheel scrolls the list through every step of the guide,
+--      the done ones above (a tick before each), a right click on one offers
+--      to go to it.
 --  Over its top the row of icons to use and to target (Icons.lua); the arrow is
 --  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
 --  anew with it.
---  A click on a step at hand skips it, a right click goes back one; the wheel
---  over the next steps scrolls them, a double click goes to one; a right click
---  on the zone or on the next steps opens the known guide's own menu (its
---  guides, its options) while its guide is shown, else the menu of the guides
---  kept as text. It stands where Edit Mode puts it (Core.Window), at first at
+--  A click on a step at hand skips it (the known guide's ticked off whole, as
+--  its own window does), a right click goes back one; the wheel over the list
+--  scrolls it, a double click on a listed step goes to it, a right click on it
+--  opens its menu (Go to step, the guide's menu); a right click on the zone
+--  opens the known guide's own menu (its guides, its options) while its guide
+--  is shown, else the menu of the guides kept as text. It stands where Edit Mode puts it (Core.Window), at first at
 --  the screen's right, a little down; it grows downwards.
 --
 --  While the leveling guide Sane UI knows shows its own window, this shows its
@@ -59,7 +62,8 @@ local SOFT = { 0.8, 0.8, 0.8 }
 local frame, window, header, rule, ruleShadow, title, levels, progress
 local cards, rows = {}, {}
 local fonts = {}
-local offset = 0      -- the next steps scrolled past
+local offset = 0      -- the list scrolled from its start after the steps at hand (back for less than 0)
+local lastAt          -- the step the guide was at when last drawn: when it moves on, the list starts again
 local hovered = false
 local lent            -- the lend of the known guide's window
 
@@ -132,22 +136,32 @@ local function Hover(on)
     Steps.Update()
 end
 
+local RowMenu
+
+-- The list scrolled by the wheel: through every step of the guide, the done ones above too.
+local listEnds -- the list drawn last reached the guide's end: it scrolls no further down
+
+local function Wheel(_, delta)
+    if delta < 0 and listEnds then return end
+    offset = offset - delta
+    Steps.Update()
+end
+
 local function Row()
     local row = CreateFrame("Button", nil, frame)
     row:RegisterForClicks("RightButtonUp")
+    row.tick = row:CreateFontString(nil, "OVERLAY")
+    row.tick:SetFontObject(Font("number"))
     row.number = Text(row, "number")
     row.number:SetJustifyH("RIGHT")
     row.text = Text(row, "ahead")
     row.text:SetWordWrap(false)
-    row:SetScript("OnClick", ns.Guard(function(self) Menu(self) end))
+    row:SetScript("OnClick", ns.Guard(function(self) RowMenu(self) end))
     row:SetScript("OnDoubleClick", ns.Guard(function(self) ns.Guide.Go(self.step) end))
     row:SetScript("OnEnter", ns.Guard(function() Hover(true) end))
     row:SetScript("OnLeave", ns.Guard(function() Hover(false) end))
     row:EnableMouseWheel(true)
-    row:SetScript("OnMouseWheel", ns.Guard(function(_, delta)
-        offset = math.max(0, offset - delta)
-        Steps.Update()
-    end))
+    row:SetScript("OnMouseWheel", ns.Guard(Wheel))
     return row
 end
 
@@ -195,6 +209,18 @@ function Menu(owner)
         end
         root:CreateDivider()
         root:CreateButton(ns.TEXT.paste, ns.Guard(ns.Guides.Open))
+    end))
+end
+
+-- A listed step's menu: go to it; the known guide's own menu (or the guides kept) a line under it.
+function RowMenu(row)
+    local util = rawget(_G, "MenuUtil")
+    if not (util and util.CreateContextMenu) then return end
+    local step = row.step
+    util.CreateContextMenu(row, ns.Guard(function(_, root)
+        root:CreateTitle(ns.TEXT.step:format(step))
+        root:CreateButton(ns.TEXT.goToStep:format(step), ns.Guard(function() ns.Guide.Go(step) end))
+        root:CreateButton(ns.Guide.Known() and ns.TEXT.guideMenu or ns.TEXT.guides, ns.Guard(function() Menu(row) end))
     end))
 end
 
@@ -319,7 +345,14 @@ end
 
 function Steps.Update()
     if ns.off then return Hide() end
-    local picture = ns.options.showGuide and ns.Guide.Picture()
+    local count = ns.options.ahead or 0
+    local picture = ns.options.showGuide and ns.Guide.Picture(count, offset)
+    if picture and lastAt ~= picture.at then
+        -- The guide moved on: the list starts after the steps at hand again.
+        lastAt, offset = picture.at, 0
+        if picture.shift ~= 0 then picture = ns.Guide.Picture(count, 0) end
+    end
+    if picture then offset = picture.shift end
     local known = picture and picture.known
     -- The known guide's guide is shown only while its own window is there to be shown.
     local own = known and Core.Neighbours.Frame("guide")
@@ -365,11 +398,14 @@ function Steps.Update()
     end
     for index = #picture.hand + 1, #cards do cards[index]:Hide() end
 
-    -- The next steps, greyed out, fading as they go down.
-    local shown = math.min(ns.options.ahead or 0, #picture.ahead)
-    offset = math.max(0, math.min(offset, #picture.ahead - shown))
+    -- The listed steps, greyed out and fading as they go down: the next ones, or wherever the wheel took the list
+    -- (a tick before one done; one at hand a little lighter).
+    local here = {}
+    for _, step in ipairs(picture.hand) do here[step.number] = true end
+    local shown = math.min(count, #picture.ahead)
+    listEnds = #picture.ahead < count
     for index = 1, shown do
-        local line = picture.ahead[index + offset]
+        local line = picture.ahead[index]
         local row = rows[index] or Row()
         rows[index] = row
         row.step = line.number
@@ -380,11 +416,15 @@ function Steps.Update()
         row.number:SetPoint("TOPRIGHT", row, "TOPLEFT", Steps.NUMBERS - 6, -1)
         row.number:SetText(line.number)
         row.number:SetTextColor(Steps.GREY * 0.8, Steps.GREY * 0.8, Steps.GREY * 0.8)
+        row.tick:ClearAllPoints()
+        row.tick:SetPoint("TOPRIGHT", row.number, "TOPLEFT", -2, 1)
+        row.tick:SetText(line.done and Steps.TICK or "")
         row.text:ClearAllPoints()
         row.text:SetPoint("TOPLEFT", row, "TOPLEFT", Steps.NUMBERS, 0)
         row.text:SetWidth(Steps.WIDTH - Steps.NUMBERS)
         row.text:SetText(Greyed(line.text))
-        row.text:SetTextColor(Steps.GREY, Steps.GREY, Steps.GREY)
+        local grey = here[line.number] and SOFT[1] or Steps.GREY
+        row.text:SetTextColor(grey, grey, grey)
         local height = row.text:GetStringHeight() + 3
         row:SetHeight(height)
         row:SetAlpha(hovered and 1 or math.max(Steps.FAINTEST, 1 - Steps.FADE * index))
