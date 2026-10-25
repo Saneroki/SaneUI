@@ -12,19 +12,25 @@ Each press of the key does the first of these that is due (the order the game's 
 1. **Loot:** a corpse with loot beside you is opened, as a right click does. What is taken is up to the game's loot
    window (and later Sane UI's loot module).
 2. **Fight in a fight:** your target is a living foe and you are in a fight: it gets a skull and is attacked.
-3. **Talk:** a friendly NPC stands right in front of you (the one the game's interact key would pick): you talk to
+3. **Use the step's item on your target:** out of a fight, your target is the one a step's item is used on, as the
+   step's own words say — a corpse ("use the dust on their corpses"), or the creature or NPC they name ("use the cage
+   on a worg pup"): the item is used on it. A friendly NPC only once it is within the item's reach; never a creature
+   the words say to weaken first, and not again on a target the game refused the item on.
+4. **Talk:** a friendly NPC stands right in front of you (the one the game's interact key would pick): you talk to
    it, with one press. At a quest giver, your guide's quests are taken and handed in (below).
-4. **Pick up:** a thing of the world your quests or your guide want is in front of you (a quest's chest or plant, the
+5. **Pick up:** a thing of the world your quests or your guide want is in front of you (a quest's chest or plant, the
    crate an item to loot comes from, the board a quest is handed in to): it is picked up, opened or used.
-5. **Fight:** your target is a living foe that is wanted: it gets a skull and is attacked.
-6. **Talk to a wanted NPC:** your target is a quest NPC: you talk to it.
-7. **Hearth:** your guide's step says to hearth: your Hearthstone (a shaman's Astral Recall while the stone cools
+6. **Fight:** your target is a living foe that is wanted: it gets a skull and is attacked.
+7. **Talk to a wanted NPC:** your target is a quest NPC: you talk to it. Far away, the game's own Click-to-Move runs
+   you to it first (*Walk to the NPC found*).
+8. **Hearth:** your guide's step says to hearth: your Hearthstone (a shaman's Astral Recall while the stone cools
    down).
-8. **Find:** else the key looks around you for what is wanted, targets the first it finds, marks it with a skull, and
+9. **Find:** else the key looks around you for what is wanted, targets the first it finds, marks it with a skull, and
    starts the attack on a foe. When it finds nothing wanted, it uses one quest item instead.
 
-So: kill, press to loot, press to find the next one, press to attack; walk up to the NPC it found, press to talk and
-take its quests; walk over the quest's plant, press to pick it.
+So: kill, press to loot, press to find the next one, press to attack; press to find the NPC, press again to run to
+it and take its quests; walk over the quest's plant, press to pick it; press on the corpse to use the step's item.
+The game lets no addon walk you to a place on the map: only to a target, by its own Click-to-Move.
 
 **Independent (Saneroki, 2026-10-25).** The leveling guide Sane UI knows is needed for nothing: Sane UI reads only
 the words of its text format and the recipe its bought guides are locked by (`Core.Neighbours.Format`,
@@ -44,6 +50,8 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | --- | --- | --- |
 | Loot first | on | A corpse with loot beside you is opened before anything is looked for. The game's interact key (`softTargetInteract`) is switched on for it |
 | Talk to NPCs | on | A friendly NPC right in front of you is talked to at once (after a corpse to loot); a quest NPC the key found, at the next press. Off: the key looks on |
+| Walk to the NPC found | on | While a quest NPC the key found is your target, the game's Click-to-Move (`autointeract`) is lent, so the key runs you to it and talks; put back as it was when that NPC is no longer your target, and in a fight. While it is lent, a right click on the ground walks you there too |
+| Use items on what is found | on | Out of a fight, a step's item is used on your target when the step's words say it is for that one (a corpse, or the creature or NPC they name); before talking and fighting |
 | Quest objects | on | A thing of the world your quests or your guide want, in front of you, is picked up, opened or used. It needs the game's interact key too |
 | Skull on what is found | on | What the key finds or attacks gets a skull. In a group everybody sees it; in a raid only an assistant may mark |
 | Your guide's targets | on | What the steps at hand of your guide name to kill or talk to comes first |
@@ -179,8 +187,15 @@ choice is made by those, in a fight too (`Key.lua`):
   of these.
 - **The header** (`SaneUISpeedLevelingKey`, `SecureHandlerAttributeTemplate`) then puts that state's action on the
   key's keys as override bindings of its own: *Interact With Target* (`INTERACTTARGET`, the game's own) to loot, pick
-  up or talk, the button *Fight* (`/startattack`) or the button *Find*. A foe or friend counts only when the module
-  said it is wanted (out of a fight), a thing only when the interact key's thing is a wanted one.
+  up or talk, the button *Fight* (`/startattack`), the button *Use* (`/use item:<ID>` on your target) or the button
+  *Find*. A foe or friend counts only when the module said it is wanted (out of a fight), a thing only when the
+  interact key's thing is a wanted one, *Use* only while the module said your target is the one the step's item is
+  for (the attribute `use`, set out of a fight, a friendly target's reach looked at again three times a second while
+  it waits; cleared as a fight begins). A cast of the item the game refuses (`UNIT_SPELLCAST_FAILED`, not one too
+  far) keeps the item off that target.
+- **Walking:** while your target is a living friendly NPC the key wants, the game's Click-to-Move (`autointeract`)
+  is lent, so *Interact With Target* runs you there before it talks; given back when that is over, and as a fight
+  begins. The game offers no way for an addon to walk you to a place on the map.
 - **Find** (`SaneUISpeedLevelingFind`, the key's own binding in `Bindings.xml`) runs a macro: the hearth alone when it
   is due; else `/cleartarget`, then `/targetexact [noexists][dead] <name>` for each wanted name, the first first, a
   skull on the one found and the attack on a foe, with an item ready when none was found. The game runs only the first
@@ -202,8 +217,8 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Run.lua` | A guide run for the character: the steps at hand, what is done, skip, back, go, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed), what the steps want for the key |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
-| `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick`, each a macro line or nil |
-| `Key.lua` | The key: the buttons Find (and its chain) and Fight, the header and its snippets, the state driver, the game's settings |
+| `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
+| `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key, Click-to-Move) |
 | `Quests.lua` | What a quest giver does for your guide: takes and hands in its quests |
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |

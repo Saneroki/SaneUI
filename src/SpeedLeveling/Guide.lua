@@ -18,6 +18,7 @@ local _, ns = ...
 --      Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
 --      Guide.Things()     the things of the world the steps at hand name to pick up or use (names)
+--      Guide.UseOn()      the items the steps at hand name to use, with their lines' words: { { item, words } }
 --      Guide.Quests()     what the steps at hand take and hand in: { take = { [quest] = true }, handin = ...,
 --                         gossip = { option IDs }, choose = ... } (Run.Quests)
 --      Guide.Target()     where the arrow points: a place (Run.Way's), and the step there (the picture's)
@@ -94,6 +95,11 @@ local function Paint(text)
         text = text:gsub("|c" .. word:gsub("%p", "%%%0"), "|c" .. Hex(kind))
     end
     return (text:gsub("\\n", "\n"))
+end
+
+-- A guide's words as plain small letters, their colours and pictures gone: to find a name in them.
+function Guide.Bare(text)
+    return (Paint(text):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):lower())
 end
 
 -- The names the guide's words colour as things to pick up or use.
@@ -225,6 +231,12 @@ end
 function Guide.Uses()
     if not ns.Run.Guide() then return nil end
     return ns.Run.Uses()
+end
+
+-- The items the steps at hand name to use, with the words of their lines (what each is used on).
+function Guide.UseOn()
+    if not ns.options.guide or not ns.Run.Guide() then return nil end
+    return ns.Run.UseOn()
 end
 
 function Guide.Things()

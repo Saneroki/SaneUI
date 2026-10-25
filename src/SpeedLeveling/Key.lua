@@ -23,7 +23,16 @@ local _, ns = ...
 --            With Target, which picks it up, opens or uses it
 --    fight   your target a living foe: Fight
 --    talk    your target a living friendly NPC that is wanted (the switch Talk
---            to NPCs): Interact With Target
+--            to NPCs): Interact With Target. Far away, the game's own
+--            Click-to-Move runs you there first (the switch Walk to the NPC
+--            found: lent while such an NPC is your target, given back after)
+--    use     out of a fight, your target the one a step's item is used on, as
+--            the step's words say (a corpse, a creature or NPC they name;
+--            Items.OnTarget; the switch Use items on what is found): the
+--            button Use. This comes before talking and fighting; a friendly
+--            target only once it is within the item's reach (looked at three
+--            times a second while it is your target), and never again on a
+--            target the game refused the item on
 --    find    else: the button Find. Its macro is the hearth when your guide's
 --            step wants it (Items.lua); else it lets your target go, targets
 --            the first wanted name around you (Wanted.lua), marks it with a
@@ -52,7 +61,9 @@ ns.Key = Key
 
 Key.ROOM = 255  -- characters of a button's macro text the game runs
 Key.LINKS = 4   -- buttons in the chain after Find
+Key.AIM = 0.3   -- seconds between looks at a target's reach while a step's item waits to be used on it
 Key.HEADER, Key.FIND, Key.FIGHT = "SaneUISpeedLevelingKey", "SaneUISpeedLevelingFind", "SaneUISpeedLevelingFight"
+Key.USE = "SaneUISpeedLevelingUse"
 Key.LINK = "SaneUISLFind"  -- the chain's buttons: SaneUISLFind2, SaneUISLFind3, ...
 Key.COMMAND = "CLICK " .. Key.FIND .. ":LeftButton" -- the key's own binding (Bindings.xml)
 
@@ -63,22 +74,27 @@ _G["BINDING_NAME_" .. Key.COMMAND] = ns.TEXT.binding
 local LOOT = "[@softinteract,exists,dead] loot; "
 local FIGHT = "[@target,harm,nodead,combat] fight; "
 local NEAR = "[@softinteract,exists,help,nodead] near; "
-local REST = "[@target,harm,nodead] foe; [@target,help,nodead] friend; find"
+local REST = "[@target,harm,nodead] foe; [@target,help,nodead] friend; [@target,exists,dead] corpse; find"
 
 -- The header's snippets, which the game runs in its restricted environment, in a fight too. A change of the state
 -- or of what decides it: the action due on each of the key's keys.
 local ON_CHANGE = [[
-    if name == "state-mode" or name == "wanted" or name == "object" or name == "talk" or name == "keys" then
+    if name == "state-mode" or name == "wanted" or name == "object" or name == "talk" or name == "keys"
+        or name == "use" then
         self:RunAttribute("_bind")
     end
 ]]
 local BIND = [[
     local state = self:GetAttribute("state-mode")
     local action = "find"
-    if state == "loot" or state == "near" then
+    if state == "loot" then
         action = "interact"
     elseif state == "fight" then
         action = "fight"
+    elseif self:GetAttribute("use") then
+        action = "use"
+    elseif state == "near" then
+        action = "interact"
     elseif self:GetAttribute("object") then
         action = "interact"
     elseif state == "foe" then
@@ -93,6 +109,8 @@ local BIND = [[
             self:SetBinding(true, key, "INTERACTTARGET")
         elseif action == "fight" then
             self:SetBindingClick(true, key, "SaneUISpeedLevelingFight")
+        elseif action == "use" then
+            self:SetBindingClick(true, key, "SaneUISpeedLevelingUse")
         else
             self:SetBindingClick(true, key, "SaneUISpeedLevelingFind")
         end
@@ -103,37 +121,50 @@ local BIND = [[
 -- picks the corpse, the NPC or the thing in front of you).
 local ANY = Enum and Enum.SoftTargetEnableFlags and Enum.SoftTargetEnableFlags.Any or 3
 local SETTINGS = { softTargetInteract = tostring(ANY) }
+-- What Walk to the NPC found lends, only while such an NPC is your target: the game's Click-to-Move, with which its
+-- Interact With Target runs you to the target first.
+local WALK, WALKING = "autointeract", "1"
 
-local header, find, fight
+local header, find, fight, use
 local links = {}  -- the chain's buttons, in order
 local keys        -- the key's keys as the header has them; nil before the first reading
 local soft        -- the GUID of what the interact key would use now, as the game last said
+local using       -- the item the button Use uses on your target now, or nil
+local refused = { items = {} } -- the items the game refused on the target now (refused.guid: which target)
+local aiming      -- the ticker looking at a friendly target's reach, while a step's item waits for it
 
 local function Same(a, b)
     return tostring(a) == tostring(b)
 end
 
--- Each setting as needed; what it was is kept (the first time only) to be put back.
-local function Lend()
+-- A setting lent: what it was kept (the first time only) to be put back.
+local function Borrow(name, value)
     local kept = ns.options.foundCVars
-    for name, value in pairs(SETTINGS) do
-        local now = Core.Ask(C_CVar.GetCVar, name)
-        if now ~= nil and not Same(now, value) then
-            Core.Ask(C_CVar.SetCVar, name, value)
-            if not kept[name] and Same(Core.Ask(C_CVar.GetCVar, name), value) then kept[name] = { was = now, set = value } end
-        end
+    local now = Core.Ask(C_CVar.GetCVar, name)
+    if now ~= nil and not Same(now, value) then
+        Core.Ask(C_CVar.SetCVar, name, value)
+        if not kept[name] and Same(Core.Ask(C_CVar.GetCVar, name), value) then kept[name] = { was = now, set = value } end
     end
 end
 
--- Each kept setting back as it was, unless it was changed since.
-local function PutBack()
+-- A kept setting back as it was, unless it was changed since.
+local function Return(name)
     local kept = ns.options.foundCVars
-    for name, entry in pairs(kept) do
-        if type(entry) == "table" and Same(Core.Ask(C_CVar.GetCVar, name), entry.set) then
-            Core.Ask(C_CVar.SetCVar, name, entry.was)
-        end
-        kept[name] = nil
+    local entry = kept[name]
+    if type(entry) == "table" and Same(Core.Ask(C_CVar.GetCVar, name), entry.set) then
+        Core.Ask(C_CVar.SetCVar, name, entry.was)
     end
+    kept[name] = nil
+end
+
+-- Each setting the key needs, as needed.
+local function Lend()
+    for name, value in pairs(SETTINGS) do Borrow(name, value) end
+end
+
+-- Every kept setting back as it was.
+local function PutBack()
+    for name in pairs(ns.options.foundCVars) do Return(name) end
 end
 
 -- A name a macro line can carry: nothing that ends the line or the conditions.
@@ -224,9 +255,66 @@ local function Before()
     if not InCombatLockdown() then WriteFind(Key.Find()) end
 end
 
--- A fight begins (the moment before the lock): Find without the hearth and items, which a fight would only break.
+-- Whether your target is a living friendly NPC (one to talk to or walk to).
+local function Friendly()
+    return Core.Ask(UnitExists, "target") and not Core.Ask(UnitIsPlayer, "target") and not Core.Ask(UnitIsDead, "target")
+        and Core.Ask(UnitIsFriend, "player", "target") == true
+end
+
+local Aim
+
+-- While a step's item waits for a friendly target to come within reach, looked at again a few times a second.
+local function Watch(on)
+    if on and not aiming then
+        aiming = C_Timer.NewTicker(Key.AIM, Key.aimLater)
+    elseif not on and aiming then
+        aiming:Cancel()
+        aiming = nil
+    end
+end
+
+-- Out of a fight: the step's item for your target now (the button Use, the attribute use), and the game's
+-- Click-to-Move lent while a living friendly NPC the key wants is your target (the switch Walk to the NPC found).
+function Aim()
+    if not header or ns.off then return Watch(false) end
+    if InCombatLockdown() then return end
+    local guid = Core.Ask(UnitGUID, "target")
+    if guid ~= refused.guid then refused.guid, refused.items = guid, {} end
+    using = ns.options.useOn and ns.Items.OnTarget(refused.items) or nil
+    Write(use, using and ("/use item:" .. using) or "")
+    if (header:GetAttribute("use") and true or false) ~= (using ~= nil) then header:SetAttribute("use", using ~= nil) end
+    local friendly = Friendly()
+    if ns.options.walk and ns.options.talk and friendly and header:GetAttribute("wanted") and not using then
+        Borrow(WALK, WALKING)
+    else
+        Return(WALK)
+    end
+    local waits = ns.options.useOn and friendly and not using and ns.Guide.UseOn()
+    Watch(waits and waits[1] ~= nil or false)
+end
+Key.aimLater = ns.Guard(function() Aim() end)
+
+-- The game refused the item the button Use used on your target (a cast that failed, not one too far): not again on
+-- that target.
+local function Refused(unit, _, spell)
+    if unit ~= "player" or not using or InCombatLockdown() then return end
+    local items = rawget(_G, "C_Item")
+    local _, itemSpell = Core.Ask(items and items.GetItemSpell, using)
+    if Core.Plain(spell) ~= itemSpell then return end
+    if Core.Ask(items and items.IsItemInRange, using, "target") == false then return end
+    refused.items[using] = true
+    Aim()
+end
+
+-- A fight begins (the moment before the lock): Find without the hearth and items, which a fight would only break; no
+-- item used on the target and no Click-to-Move in the fight.
 local function Fighting()
-    if not InCombatLockdown() and header and not ns.off then WriteFind(Key.Find(true)) end
+    if InCombatLockdown() or not header or ns.off then return end
+    WriteFind(Key.Find(true))
+    if header:GetAttribute("use") then header:SetAttribute("use", false) end
+    using = nil
+    Return(WALK)
+    Watch(false)
 end
 
 local function Later(fn)
@@ -242,6 +330,7 @@ function Key.Refresh()
     local thing = soft or Core.Ask(UnitGUID, "softinteract")
     header:SetAttribute("object", ns.options.objects and ns.Wanted.Object(thing) or false)
     WriteFind(Key.Find())
+    Aim()
 end
 Key.refreshLater = Later(Key.Refresh)
 
@@ -286,7 +375,7 @@ end
 function Key.Start()
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: start", Key.startLater) end
     if header then return end
-    find, fight = Button(Key.FIND, ""), Button(Key.FIGHT, "")
+    find, fight, use = Button(Key.FIND, ""), Button(Key.FIGHT, ""), Button(Key.USE, "")
     find:SetScript("PreClick", ns.Guard(Before))
     -- The chain's buttons are clicked by Find's macro, a click without key down: they act on it.
     for at = 2, Key.LINKS + 1 do
@@ -302,6 +391,8 @@ function Key.Start()
     ns.On("PLAYER_TARGET_CHANGED", Key.Refresh)
     ns.On("UPDATE_BINDINGS", Key.Keys)
     ns.On("PLAYER_REGEN_DISABLED", Fighting)
+    ns.On("PLAYER_REGEN_ENABLED", Key.Refresh)
+    ns.On("UNIT_SPELLCAST_FAILED", Refused)
     ns.On("PLAYER_SOFT_INTERACT_CHANGED", function(_, now)
         soft = Core.Plain(now)
         Key.Refresh()
@@ -323,6 +414,8 @@ function Key.GiveBack()
     ClearOverrideBindings(header)
     Write(find, "")
     Write(fight, "")
+    Write(use, "")
     for _, link in ipairs(links) do Write(link, "") end
+    Watch(false)
     PutBack()
 end

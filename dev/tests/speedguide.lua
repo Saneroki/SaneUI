@@ -376,6 +376,8 @@ check(Guide.Chosen() == "Our Group\\6-10 Hills", "through the guide: on to the o
 -------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
+check(not ns.off and #Core.log == 0, "no error stood the module down along the way: "
+    .. tostring(Core.log[1] and Core.log[1].text))
 ns.off = true
 ns.GiveBack()
 check(not Steps.Frame(), "stood down: the guide is hidden")

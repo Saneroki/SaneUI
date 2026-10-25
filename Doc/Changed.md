@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 148 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: the key walks you to the NPC found and uses the step's item on your target (Saneroki, 2026-10-25)
+Saneroki asked for the follow-up (board #163): walk to the NPC the key found, and use a step's item on the creature
+found.
+- **Walking (`Key.lua`, the switch *Walk to the NPC found*, on):** the game's Click-to-Move (`autointeract`) is lent
+  only while your target is a living friendly NPC the key wants, so *Interact With Target* runs you to it before it
+  talks; it is given back as soon as that is over and as a fight begins, and left alone where the player has it on
+  already. The game gives addons no way to walk to a map place, only to a target.
+- **An item on the target (`Items.OnTarget`, `Key.lua`, the switch *Use items on what is found*, on):** the step's
+  `.use` lines now keep their words (`Format.lua`, `step.uses`; `Run.UseOn`, `Guide.UseOn`, `Guide.Bare`), which
+  say what each item is for: on a corpse ("on their corpses"; the corpse of a creature the steps want), or on the
+  creature or NPC they name. Out of a fight the key's new button *Use* (`/use item:<ID>`) comes before talking and
+  fighting while your target is that one; a friendly target only once it is within the item's reach (the game's
+  `IsItemInRange`, looked at three times a second while it waits; out of reach the key walks you there). Never on a
+  foe whose words say it must be weakened first, and a cast the game refuses (`UNIT_SPELLCAST_FAILED`, not one
+  merely too far) keeps the item off that target. A new driver state, a dead target (`corpse`), carries it.
+- **Checked on the real guides:** of 381 `.use` lines with words, 24 speak of corpses and 62 name their target; all
+  43 Horde guides ran through the key with targets of every kind, no error.
+- **Tests:** `dev/tests/speedleveling.lua` 79 checks (both tests now fail if the module stood down along the way).
+- **Docs:** `src/SpeedLeveling/README.md`.
+
 ### Speed Leveling: independent of any other addon; it imports the paid guides itself (Saneroki, 2026-10-25)
 Saneroki (with the guide authors' leave) asked for the whole function built into Speed Leveling so it needs no other
 addon: our own display and engine, able to import, open and run the paid guides, which are locked to the account. He

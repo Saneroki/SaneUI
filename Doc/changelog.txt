@@ -21,7 +21,9 @@ The bigger changes of each version, newest first.
 - Speed Leveling's key: one button loots the corpse by you, talks
   to the quest giver in front of you and takes its quests, picks
   up quest things, attacks your foe, or finds and marks the next
-  target - whatever makes sense where you stand.
+  target - whatever makes sense where you stand. It runs you to
+  the NPC it found, and uses your quest item on the corpse or the
+  creature your guide says it is for.
 - The minimap's satchel: one button on the minimap opens a page
   with the zone you are in, your time and the realm's, frame
   rate, latency, new mail, the game's calendar, clock (with its

@@ -51,8 +51,10 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   match the game's own interact button; quest givers take and hand in the guide's quests (`Quests.lua`); what is
   found ordered nearest first by the zone you are in (the set *Spawns*); a quest Core lacks found by the game's own
   objective words; Find's macro chained for the 255-character limit. Built.
-- **Not yet:** the routes and their planner (below), the guide's way on the map (board #158), walking to the NPC
-  found (the game's click to move), an item to use on the creature found (the player's click).
+- **Built (Saneroki, 2026-10-25, board #163):** the key walks you to the NPC found (the game's Click-to-Move, lent
+  only while such an NPC is your target) and uses a step's item on your target where the step's words say it is for
+  that one (a corpse, or the creature or NPC they name), out of a fight. The game lets no addon walk to a map place.
+- **Not yet:** the routes and their planner (below), the guide's way on the map (board #158).
 
 ## What has to exist first
 

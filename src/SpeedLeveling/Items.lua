@@ -18,6 +18,14 @@ local _, ns = ...
 --  Such an item is often for a place or a creature: away from it the game says
 --  so and nothing is used; one that wants a target puts the game's targeting
 --  hand on the cursor.
+--    on the target  (Saneroki, 2026-10-25: an item used on the creature found;
+--                the switch Use items on what is found) an item of the steps
+--                at hand whose words say what it is used on: a corpse ("on
+--                their corpses"), or the creature or NPC they name ("use the
+--                cage on a worg pup"). Key.lua puts it on the key while your
+--                target is that one, out of a fight. Never for a foe whose
+--                words say it must be weakened first, nor one the game
+--                refused on that target.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Items = {}
@@ -102,6 +110,43 @@ function Items.Pick(items)
     for _, list in ipairs({ items or EMPTY, Items.QuestItems(true) }) do
         for _, item in ipairs(list) do
             if item ~= Items.HEARTHSTONE and Ready(item) then return "/use item:" .. item end
+        end
+    end
+    return nil
+end
+
+-- Words that say a creature must be weakened first: such an item fails on it at full health.
+local WEAKEN = { "weak", "below", "health", "%" }
+
+-- The item of the steps at hand to use on your target now, by what their words say (above): one you carry, usable,
+-- ready, whose use reaches a unit (the game's ItemHasRange). For a friendly target only once it is in reach (the
+-- game's word; else the key walks you there); for a foe or a corpse the game says when it is too far. refused: the
+-- items the game refused on this target ([item] = true). The item's ID, or nil.
+function Items.OnTarget(refused)
+    local uses = ns.Guide.UseOn()
+    if not (uses and uses[1]) then return nil end
+    if not Core.Ask(UnitExists, "target") or Core.Ask(UnitIsPlayer, "target") then return nil end
+    local name = Core.Plain(Core.Ask(UnitName, "target"))
+    if type(name) ~= "string" or name == "" then return nil end
+    name = name:lower()
+    local dead = Core.Ask(UnitIsDead, "target") == true
+    local foe = Core.Ask(UnitCanAttack, "player", "target") == true
+    local items = rawget(_G, "C_Item")
+    for _, use in ipairs(uses) do
+        local words = ns.Guide.Bare(use.words)
+        local fits
+        if dead then
+            fits = words:find("corpse", 1, true) ~= nil and (words:find(name, 1, true) ~= nil or ns.Wanted.Unit("target"))
+        else
+            fits = words:find(name, 1, true) ~= nil
+            for _, hint in ipairs(foe and fits and WEAKEN or EMPTY) do
+                if words:find(hint, 1, true) then fits = false end
+            end
+        end
+        if fits and not (refused and refused[use.item]) and Ready(use.item)
+            and Core.Ask(items and items.ItemHasRange, use.item) == true then
+            if dead or foe then return use.item end
+            if Core.Ask(items and items.IsItemInRange, use.item, "target") ~= false then return use.item end
         end
     end
     return nil

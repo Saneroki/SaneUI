@@ -32,7 +32,7 @@ local _, ns = ...
 --      Run.Saw(what), Run.Watch(changed), Run.Stop()
 --      Run.Way(place)        how far from a place, in yards, and which way; Run.Distance
 --      Run.Target()          where the arrow points: the place line and its step
---      Run.ObjectiveKind(quest, goal), Run.Targets(), Run.Uses(), Run.Quests(), Run.Words(line)
+--      Run.ObjectiveKind(quest, goal), Run.Targets(), Run.Uses(), Run.UseOn(), Run.Quests(), Run.Words(line)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -554,6 +554,16 @@ function Run.Uses()
         end
     end
     return items, spells
+end
+
+-- The items the steps at hand name to use, each with its line's words (what it is used on): { { item, words } }.
+function Run.UseOn()
+    local uses = {}
+    if not guide then return uses end
+    for _, index in ipairs(Run.Hand()) do
+        for _, use in ipairs(guide.steps[index].uses or EMPTY) do uses[#uses + 1] = use end
+    end
+    return uses
 end
 
 -- What the steps at hand take and hand in, and the talk options they name, for the quest givers (Quests.lua).

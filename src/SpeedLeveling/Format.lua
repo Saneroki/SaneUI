@@ -31,7 +31,7 @@ local _, ns = ...
 --      guide   { name, title, group, subgroup, after = { { name, only } }, defaultFor, only, games = { game },
 --                mine, steps = { step }, labels = { [label] = index } }   -- mine: it is for this character
 --      step    { lines = { line }, label, together ("next" or a label), stays, needs (a label), aside, loop, hidden,
---                map, arrowText, unless = { test }, friends, foes, items, spells }
+--                map, arrowText, unless = { test }, friends, foes, items, spells, uses = { { item, words } } }
 --      line    { what = a word of Format.DOING or Format.WORDS, words, ... what the command gave }
 --      test    { what = a word of Format.TESTS, ... }: the step is passed by while it holds
 --  problems: "line N: ..." for each command line that could not be read; that line is left out.
@@ -238,7 +238,8 @@ local COMMANDS = {
     foe = function(v) return { foes = v } end,
     use = function(v)
         local item = tonumber((tostring(v[1] or ""):match("%d+")))
-        return item and { items = { item } } or nil
+        -- Kept with the line's words too: they say what the item is used on (a corpse, a creature by its name).
+        return item and { items = { item }, uses = { { item = item } } } or nil
     end,
     bankIn = function(v, said) return said and { what = "manual" } or nil end,
     bankOut = function(v, said) return said and { what = "manual" } or nil end,
@@ -357,6 +358,10 @@ local function Command(step, made, said, manualOnly)
     if made.friends then Append(step, "friends", made.friends) end
     if made.foes then Append(step, "foes", made.foes) end
     if made.items then Append(step, "items", made.items) end
+    if made.uses then
+        step.uses = step.uses or {}
+        for _, use in ipairs(made.uses) do step.uses[#step.uses + 1] = { item = use.item, words = said } end
+    end
     if said then step.lines[#step.lines + 1] = { what = "say", words = said } end
     return made.test ~= nil or made.friends ~= nil or made.foes ~= nil or made.items ~= nil or said ~= nil
 end

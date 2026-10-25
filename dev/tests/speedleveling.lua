@@ -24,6 +24,22 @@ end
 --  The secure parts, as the game runs them
 -------------------------------------------------------------------------------
 local methods = W.methods
+-- Enough of a font string and a frame for the guide's view to be drawn beside the key.
+function methods:GetStringHeight() return self._text and self._text ~= "" and 14 or 0 end
+function methods:GetStringWidth() return #(self._text or "") * 6 end
+function methods:SetAlpha(alpha) self._alpha = alpha end
+function methods:SetScale(scale) self._scale = scale end
+function methods:SetHeight(height) self._height = height end
+function methods:GetHeight() return self._height end
+function methods:SetWidth(width) self._width = width end
+function methods:GetWidth() return self._width end
+function methods:SetSize(width, height) self._width, self._height = width, height end
+function methods:SetRotation(angle) self._rotation = angle end
+function methods:SetTextColor(r, g, b) self._color = { r, g, b } end
+function methods:GetLeft() return 900 end
+function methods:GetTop() return 600 end
+function methods:GetBottom() return 300 end
+GetPlayerFacing = function() return 0 end
 function methods:SetAttribute(name, value)
     self._attributes = self._attributes or {}
     self._attributes[name] = value
@@ -59,6 +75,25 @@ function GetBindingKey(command) return unpack(bound[command] or {}) end
 local units = {}
 UnitExists = function(unit) return units[unit] ~= nil or unit == "player" end
 UnitIsPlayer = function(unit) return unit == "player" or (units[unit] and units[unit].player) or false end
+UnitIsDead = function(unit) return units[unit] and units[unit].dead or false end
+UnitCanAttack = function(_, unit) return units[unit] and units[unit].foe or false end
+UnitIsFriend = function(_, unit) return units[unit] ~= nil and not units[unit].foe end
+C_Timer.NewTicker = function(every, fn)
+    local ticker = { cancelled = false }
+    function ticker:Cancel() self.cancelled = true end
+    local function Tick()
+        if ticker.cancelled then return end
+        fn(ticker)
+        if not ticker.cancelled then C_Timer.After(every, Tick) end
+    end
+    C_Timer.After(every, Tick)
+    return ticker
+end
+-- Items: which reach a unit (a use with a range), whether the target is within it, the spell each casts.
+local reach = {} -- [item] = true (in reach), false (too far); nil: no range at all
+C_Item.ItemHasRange = function(id) return reach[id] ~= nil end
+C_Item.IsItemInRange = function(id) return reach[id] end
+C_Item.GetItemSpell = function(id) return "Use", 90000 + id end
 UnitName = function(unit) if units[unit] then return units[unit].name end return "Tester" end
 UnitGUID = function(unit) return units[unit] and units[unit].guid or nil end
 Enum.TooltipDataLineType = { QuestObjective = 8 }
@@ -115,8 +150,10 @@ local language = "enUS"
 GetLocale = function() return language end
 IsQuestLogSpecialItemInRange = function() return 1 end
 
--- The game's settings Loot first uses.
+-- The game's settings the key lends: its interact key, and Click-to-Move (off, as most players have it).
 W.cvarInfo.softTargetInteract = { default = "2" }
+W.cvarInfo.autointeract = { default = "0" }
+W.cvars.autointeract = "0"
 
 -------------------------------------------------------------------------------
 --  Core, its data, and the module
@@ -208,8 +245,8 @@ check(_G[Key.LINK .. 2] and _G[Key.LINK .. (Key.LINKS + 1)], "the chain's button
 local conditions = drivers[header].mode
 check(conditions:find("^%[@softinteract,exists,dead%] loot; "), "loot comes first while Loot first is on")
 check(conditions:find("%[@target,harm,nodead,combat%] fight; %[@softinteract,exists,help,nodead%] near; "
-    .. "%[@target,harm,nodead%] foe; %[@target,help,nodead%] friend; find$"),
-    "then a foe in a fight, an NPC in front of you, a foe, a friend, else find: " .. conditions)
+    .. "%[@target,harm,nodead%] foe; %[@target,help,nodead%] friend; %[@target,exists,dead%] corpse; find$"),
+    "then a foe in a fight, an NPC in front of you, a foe, a friend, a corpse, else find: " .. conditions)
 check(W.cvars.softTargetInteract == "3", "Loot first: the interact key on")
 check(ns.options.foundCVars.softTargetInteract.was == "2", "what the interact key was is kept")
 check(fight:GetAttribute("macrotext") == "/tm [harm,nodead] !8\n/startattack [harm,nodead]", "Fight marks and attacks")
@@ -342,6 +379,93 @@ W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(7001), Thing(9999))
 check(header:GetAttribute("object") == false and overrides.E == FIND, "a thing nobody wants: Find")
 
 -------------------------------------------------------------------------------
+--  A step's item used on the one found, and walking to the NPC found
+-------------------------------------------------------------------------------
+local USE = "CLICK " .. Key.USE .. ":LeftButton"
+local useButton = _G[Key.USE]
+local usingGuide = table.concat({ "#forever", "#name Use", "#group G", "step",
+    L("goal", "10,1"), -- an objective not yet done keeps the step at hand
+    L("friend", "Wounded Guard"), L("foe", "Kobold Vermin"),
+    L("use", "7001", "Use the Cage on a Worg Pup"),
+    L("use", "7002", "Use the Net on a weakened Raptor below 20% health"),
+    L("use", "7003", "Use the Salve on the Wounded Guard"),
+    L("use", "7004", "Use the Dust on their corpses"),
+    L("use", "7005", "Use the Horn to start the quest"),
+}, "\n")
+ns.Guide.AddAll(ns.Format.Parts(usingGuide), false)
+ns.Guide.Choose("G\\Use")
+for id = 7001, 7005 do W.items[id] = { name = "Item " .. id, count = 1 } end
+reach[7001], reach[7002], reach[7003], reach[7004] = true, true, false, true -- 7005 has no range: used on nothing
+
+-- A living foe the words name: the item, before fighting it.
+units.target = { name = "Worg Pup", foe = true, guid = "Creature-0-1-0-1-111-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "foe")
+check(header:GetAttribute("use") == true and overrides.E == USE, "a foe the step's words name: Use, before fighting")
+check(useButton:GetAttribute("macrotext") == "/use item:7001", "Use uses that step's item")
+-- The game refuses it (not too far): not again on that target, the key fights.
+W.Fire("UNIT_SPELLCAST_FAILED", "player", "cast", 97001)
+check(header:GetAttribute("use") == false, "the game refused the item: not again on this target")
+-- A foe whose words say it must be weakened first: never the item.
+units.target = { name = "Raptor", foe = true, guid = "Creature-0-1-0-1-222-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(header:GetAttribute("use") == false, "a foe to weaken first: the item is the player's click")
+-- A new target of the refused kind: tried anew.
+units.target = { name = "Worg Pup", foe = true, guid = "Creature-0-1-0-1-111-02" }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(header:GetAttribute("use") == true, "another of that kind: tried anew")
+
+-- A corpse the words speak of, of a creature the step wants: the item on it.
+units.target = { name = "Kobold Vermin", foe = true, dead = true, guid = "Creature-0-1-0-1-333-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "corpse")
+check(header:GetAttribute("use") == true and useButton:GetAttribute("macrotext") == "/use item:7004"
+    and overrides.E == USE, "a wanted corpse the words speak of: its item on it")
+units.target = { name = "Young Wolf", foe = true, dead = true, guid = "Creature-0-1-0-1-444-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(header:GetAttribute("use") == false and overrides.E == FIND, "a corpse nobody wants: Find")
+
+-- A friendly NPC the words name, too far for the item: the game's Click-to-Move lent, the key talks (walks there).
+units.target = { name = "Wounded Guard", guid = "Creature-0-1-0-1-555-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "friend")
+check(header:GetAttribute("use") == false and overrides.E == "INTERACTTARGET", "too far for the item: talk, which walks")
+check(W.cvars.autointeract == "1" and ns.options.foundCVars.autointeract.was == "0", "Click-to-Move lent, what it was kept")
+-- Within the item's reach now: looked at again a few times a second; the item, Click-to-Move given back.
+reach[7003] = true
+W.Wait(1)
+check(header:GetAttribute("use") == true and useButton:GetAttribute("macrotext") == "/use item:7003"
+    and overrides.E == USE, "within reach: the item on it")
+check(W.cvars.autointeract == "0" and ns.options.foundCVars.autointeract == nil, "Click-to-Move given back")
+-- An NPC nobody wants: neither.
+reach[7003] = false
+units.target = { name = "Brother Paxton", guid = "Creature-0-1-0-1-666-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(header:GetAttribute("use") == false and W.cvars.autointeract == "0", "an NPC nobody wants: no item, no walking")
+-- Walk to the NPC found off: the key talks, the game's setting left alone.
+Core.Set(ns.name, "walk", false)
+units.target = { name = "Wounded Guard", guid = "Creature-0-1-0-1-555-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(W.cvars.autointeract == "0", "Walk to the NPC found off: Click-to-Move left alone")
+Core.Set(ns.name, "walk", true)
+check(W.cvars.autointeract == "1", "on again: lent")
+-- A fight begins: no item on the target, Click-to-Move given back for the fight.
+W.Fire("PLAYER_REGEN_DISABLED")
+check(header:GetAttribute("use") == false and W.cvars.autointeract == "0", "a fight: no item, no Click-to-Move")
+W.Fire("PLAYER_REGEN_ENABLED")
+check(W.cvars.autointeract == "1", "after the fight: lent again while that NPC is your target")
+-- Use items on what is found off: never the item.
+units.target = { name = "Worg Pup", foe = true, guid = "Creature-0-1-0-1-111-03" }
+W.Fire("PLAYER_TARGET_CHANGED")
+Core.Set(ns.name, "useOn", false)
+check(header:GetAttribute("use") == false, "Use items on what is found off: never the item")
+Core.Set(ns.name, "useOn", true)
+units.target = nil
+W.Fire("PLAYER_TARGET_CHANGED")
+check(W.cvars.autointeract == "0", "no target: Click-to-Move given back")
+ns.Guide.Choose("G\\Test")
+
+-------------------------------------------------------------------------------
 --  The hearth and the quest items
 -------------------------------------------------------------------------------
 -- The guide's step wants the hearth: Find hearths, nothing else. (A guide line of ours, through Guide.Uses.)
@@ -407,6 +531,8 @@ check(W.cvars.softTargetInteract == "2" and next(ns.options.foundCVars) == nil, 
 Core.Set(ns.name, "loot", true)
 check(W.cvars.softTargetInteract == "3", "on again: the interact key on")
 
+check(not ns.off and #SaneUI.Core.log == 0, "no error stood the module down along the way: "
+    .. tostring(SaneUI.Core.log[1] and SaneUI.Core.log[1].text))
 ns.StandDown("a test")
 check(ns.off and drivers[header].mode == nil, "standing down: the driver stopped")
 check(next(overrides) == nil, "no override binding of ours")
