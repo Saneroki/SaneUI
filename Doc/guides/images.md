@@ -83,6 +83,7 @@ What Sane UI has now:
 | icon | up to 40 x 40 (not drawn yet) | 128 x 128 | all | 114 % | 22 KB |
 | button | 24 x 24 (the smiley in Social, drawn by `dev/tools/smiley-art`) | 64 x 64 | all | 95 % | 6 KB |
 | logo | up to 96 x 96 (not drawn yet) | 256 x 256 | all | 95 % | 86 KB |
+| mark | up to 70 x 70 (Navigation's leather rings, made by `dev/tools/mark-art`; kept whole, not cropped: code turns them about their middle) | 256 x 256 | all | 130 % | 86 KB |
 
 Something drawn larger than 428 units on a side does not fit 1024: draw it in pieces, or ask first.
 

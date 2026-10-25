@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""Makes the leather rings of Navigation's far herbs and ore (Glints.lua) from the render Saneroki picked
+(dev/imagegen/sets/far-marks/rings.txt, leather-1; Saneroki, 2026-10-25), kept as
+assets/interface/far-marks/leather-ring.png: a ring of stitched leather that runs out into a point at the top.
+
+  assets/FarMarks/ring-pointed.png   the picked ring as it is, moved so the middle of its hole is the picture's
+                                     middle (code turns it about that middle, so the point shows the way)
+  assets/FarMarks/ring-round.png     the same ring perfectly round, without the point: its band from the picked
+                                     ring's own leather, its edges on exact circles
+
+Both are CANVAS texels square, the hole's middle in the middle, at one scale, so code lays either the same way.
+dev/tools/art makes the game's textures of them (assets/optimized/Navigation/Art/mark-pointed.blp, mark-round.blp).
+
+The round one: the ring is unrolled round the hole's middle (a row per angle, from the hole's edge outwards). Where
+the point leaves the circle (within POINT degrees of the top) the rows are taken from the opposite side of the ring
+(the leather is evenly lit, so it fits), blended into their neighbours over BLEND degrees; then every row is
+stretched so its inner and outer edges lie on the two circles the bottom of the ring has, and rolled up again.
+
+Prints the hole's radius and the ring's, in the canvas' texels, for Glints.lua.
+
+Needs Python with Pillow and NumPy.
+
+Usage:  dev/tools/mark-art      then dev/tools/art
+"""
+import math
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+PICKED = ROOT / "assets" / "interface" / "far-marks" / "leather-ring.png"
+OUT = ROOT / "assets" / "FarMarks"
+CANVAS = 1040       # the pictures' side: room for the point's tip round the middle
+ANGLES = 4096       # rows of the unrolled ring
+POINT = 64          # degrees each side of the top where the point leaves the circle
+BLEND = 8           # degrees over which the borrowed rows fade into the ring's own
+EDGE = 0.5          # alpha that counts as the ring's edge
+
+
+def bilinear(image, x, y):
+    """The picture (H x W x 4, premultiplied) at the points x, y (arrays), clear outside it."""
+    h, w = image.shape[:2]
+    x0, y0 = np.floor(x).astype(int), np.floor(y).astype(int)
+    fx, fy = (x - x0)[..., None], (y - y0)[..., None]
+    out = np.zeros(x.shape + (4,))
+    for dy, wy in ((0, 1 - fy), (1, fy)):
+        for dx, wx in ((0, 1 - fx), (1, fx)):
+            xi, yi = x0 + dx, y0 + dy
+            inside = (xi >= 0) & (xi < w) & (yi >= 0) & (yi < h)
+            value = np.zeros(x.shape + (4,))
+            value[inside] = image[yi[inside], xi[inside]]
+            out += value * wx * wy
+    return out
+
+
+def edges(alpha_rows, radii):
+    """Each row's inner edge (first radius at EDGE going out) and outer edge (last), NaN where none."""
+    inner = np.full(alpha_rows.shape[0], np.nan)
+    outer = np.full(alpha_rows.shape[0], np.nan)
+    for i, row in enumerate(alpha_rows):
+        solid = np.nonzero(row >= EDGE)[0]
+        if len(solid):
+            inner[i], outer[i] = radii[solid[0]], radii[solid[-1]]
+    return inner, outer
+
+
+def fit_circle(xs, ys):
+    """The circle through points (least squares): its middle and radius."""
+    a = np.column_stack([xs, ys, np.ones_like(xs)])
+    b = xs ** 2 + ys ** 2
+    (c1, c2, c3), *_ = np.linalg.lstsq(a, b, rcond=None)
+    cx, cy = c1 / 2, c2 / 2
+    return cx, cy, math.sqrt(c3 + cx * cx + cy * cy)
+
+
+def unroll(image, cx, cy, radii):
+    """Rows per angle (0 up, turning to the right), columns per radius."""
+    theta = np.linspace(0, 2 * math.pi, ANGLES, endpoint=False)[:, None]
+    return bilinear(image, cx + np.sin(theta) * radii[None, :], cy - np.cos(theta) * radii[None, :])
+
+
+def roll(rows, radii):
+    """The rows (angle by radius, at those radii) rolled up again on the canvas, round its middle."""
+    m = CANVAS / 2
+    y, x = np.mgrid[0:CANVAS, 0:CANVAS] + 0.5
+    r = np.hypot(x - m, y - m)
+    row = (np.arctan2(x - m, -(y - m)) % (2 * math.pi)) / (2 * math.pi) * ANGLES
+    column = (r - radii[0]) / (radii[1] - radii[0])
+    padded = np.concatenate([rows, rows[:1]])  # (the angle wraps round)
+    return bilinear(padded, column, row)
+
+
+def save(rgba, path):
+    alpha = rgba[..., 3:4]
+    rgb = np.where(alpha > 1e-6, rgba[..., :3] / np.maximum(alpha, 1e-6), 0)
+    out = np.concatenate([rgb, alpha], axis=-1)
+    Image.fromarray(np.round(np.clip(out, 0, 1) * 255).astype(np.uint8), "RGBA").save(path)
+    print(f"Wrote {path.relative_to(ROOT)} ({CANVAS} x {CANVAS}).")
+
+
+def main():
+    source = np.asarray(Image.open(PICKED).convert("RGBA"), dtype=np.float64) / 255
+    source[..., :3] *= source[..., 3:4]
+    alpha = source[..., 3]
+    # A first middle: the bounding box's, the hole's middle a ring's half width up from its bottom.
+    ys, xs = np.nonzero(alpha >= EDGE)
+    gx, gy = (xs.min() + xs.max()) / 2, ys.max() - (xs.max() - xs.min()) / 2
+    radii = np.arange(1, CANVAS / 2, 0.5)
+    rows = unroll(source, gx, gy, radii)
+    inner, outer = edges(rows[..., 3], radii)
+    theta = np.linspace(0, 2 * math.pi, ANGLES, endpoint=False)
+    # The hole is round all the way: its middle from its edge. The ring's outside only where the point is not.
+    ok = ~np.isnan(inner)
+    cx, cy, hole = fit_circle(gx + np.sin(theta[ok]) * inner[ok], gy - np.cos(theta[ok]) * inner[ok])
+    rows = unroll(source, cx, cy, radii)
+    inner, outer = edges(rows[..., 3], radii)
+    degrees = np.degrees(theta)
+    away = np.minimum(degrees, 360 - degrees)  # degrees from the top
+    clean = away > POINT + BLEND
+    ring = float(np.nanmedian(outer[clean]))
+    hole = float(np.nanmedian(inner))
+    print(f"hole {hole:.1f} texels (round within {np.nanmax(np.abs(inner - hole)):.1f}), ring {ring:.1f} "
+          f"(within {np.nanmax(np.abs(outer[clean] - ring)):.1f}), middle at {cx:.1f}, {cy:.1f} of the picked render")
+
+    # The pointed ring: moved, the hole's middle in the canvas' middle.
+    m = CANVAS / 2
+    y, x = np.mgrid[0:CANVAS, 0:CANVAS] + 0.5
+    OUT.mkdir(parents=True, exist_ok=True)
+    save(bilinear(source, x - m + cx, y - m + cy), OUT / "ring-pointed.png")
+
+    # The round ring: the rows near the top from the opposite side, faded in; every row's edges onto the two circles.
+    band = np.arange(hole - 12, ring + 12, 0.5)  # the band with a little room for its soft edges
+    rows = unroll(source, cx, cy, band)
+    half = ANGLES // 2
+    opposite = np.roll(rows, half, axis=0)
+    weight = np.clip((POINT + BLEND - away) / BLEND, 0, 1)[:, None, None]  # 1 near the top, 0 away from it
+    rows = rows * (1 - weight) + opposite * weight
+    inner, outer = edges(rows[..., 3], band)
+    straight = np.empty_like(rows)
+    for i in range(ANGLES):
+        # band radius b on the circles -> radius in this row: inner edge to inner edge, outer to outer
+        lo, hi = inner[i], outer[i]
+        if np.isnan(lo):
+            straight[i] = rows[i]
+            continue
+        want = lo + (band - hole) * (hi - lo) / (ring - hole)
+        index = (want - band[0]) / (band[1] - band[0])
+        straight[i] = np.stack([np.interp(index, np.arange(len(band)), rows[i, :, c]) for c in range(4)], axis=-1)
+    save(roll(straight, band), OUT / "ring-round.png")
+    print(f"For Glints.lua: hole {hole / CANVAS:.4f} and ring {ring / CANVAS:.4f} of the canvas' side (radii).")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,7 @@
 # Far herbs and ore (Navigation, Glints.lua): the ring round a found node's picture, running out into a point at the
 # top that code turns toward the node (Saneroki, 2026-10-25: one cohesive piece, loosely like the first build).
+# Picked: leather-1 (Saneroki, 2026-10-25), kept as assets/interface/far-marks/leather-ring.png; dev/tools/mark-art
+# makes the pointed ring and a perfectly round one from it (Saneroki: the minimap's found ones wear the round one).
 # The first build (the game's minimap ring, two slices of it as the point) drawn large on grey is in
 # assets/generated/far-marks/reference.png.
 # With image 1 the edit model copied the first build's two bars over the ring (blurred, all five did): so from words

@@ -6,6 +6,27 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the found herbs and ore in a leather ring, pointed in the world and round on the minimap (Saneroki, 2026-10-25)
+- **The pick:** of eight rings rendered (`dev/imagegen/sets/far-marks/rings.txt`: five gold, leather, pencil, parchment;
+  Qwen 2.1 turbo from words, transparent) Saneroki took the leather one, kept as
+  `assets/interface/far-marks/leather-ring.png`, and asked for a perfectly round version too.
+- **`dev/tools/mark-art`** (new, `saneui makemarkart`): finds the middle of the ring's hole (a circle fitted to its
+  edge) and lays the picked ring round it on a canvas of 1040 (`assets/FarMarks/ring-pointed.png`); unrolls the ring
+  round that middle, takes the rows within `POINT` degrees of the top from the opposite side (blended over `BLEND`),
+  stretches every row so its edges lie on the two circles of the ring's bottom and rolls it up again
+  (`assets/FarMarks/ring-round.png`). Prints the hole's and the ring's radius for the code.
+- **`dev/tools/art`:** the kind `mark` (drawn 70 x 70, 256 x 256), kept whole instead of cropped (a kind's fourth
+  value), so the hole's middle stays the texture's; `assets/optimized/Navigation/Art/mark-pointed.blp`,
+  `mark-round.blp` (Git LFS, with their sources).
+- **The marks** (`Glints.lua`): the picture (`Glints.ICON`) in the pointed ring, the ring turned by `SetRotation(-way)`
+  about the hole's middle; the yards on the side away from the point. The two slices of the minimap's gold ring are
+  gone.
+- **The minimap's found ones** (`Found.lua`): the round leather ring in place of the game's tracking ring
+  (`Found.RING`, `Found.HOLE`, `Found.OUTER`; `Found.Ring` lays it so the hole holds the picture, its edge under the
+  leather); `Found.Round` takes off the item picture's own dark frame (`Found.TRIM`) and makes it round, for both.
+- The interface lab's scene `far-sparkles` has a minimap's stand-in with the three found ones on it.
+- Tests: `dev/tests/navigation.lua` 599 checks (the ring's turn ahead, ahead-right, behind-left).
+
 ### Navigation: far herbs and ore as their pictures, the ring running out into a point (Saneroki, 2026-10-25)
 - **The look** (`Glints.lua`): no column and no sparkles; each mark is the item's picture, round
   (`TempPortraitAlphaMask`), in the minimap pictures' gold ring (`Found.Ring`, new, shared with `Found.lua`'s

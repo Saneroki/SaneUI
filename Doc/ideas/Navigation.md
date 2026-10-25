@@ -2014,8 +2014,13 @@ battlemaster, spirit healer, meeting stone.
     slices of its own art as the point. The interface lab's scene `far-sparkles` shows it over the world.
   - **One cohesive ring (Saneroki, 2026-10-25):** a painted ring with its point at the top, transparent, code turning
     it: five in gold and one each in leather, pencil and parchment rendered (`dev/imagegen/sets/far-marks/rings.txt`,
-    Qwen 2.1 turbo from words: with the first build as image 1 the edit model copied its two bars). Saneroki's pick
-    goes through `dev/tools/art` into `Art/` and replaces the ring and its slices.
+    Qwen 2.1 turbo from words: with the first build as image 1 the edit model copied its two bars). **Picked: the
+    leather ring** (leather-1), with a perfectly round version of it (Saneroki): `dev/tools/mark-art` lays the picked
+    ring round the middle of its hole (`Art/mark-pointed.blp`, turned by `SetRotation` about it) and makes the round
+    one from its own leather, the arc under the point taken from the opposite side and the edges laid on exact circles
+    (`Art/mark-round.blp`). The edit model's round tries changed the leather.
+  - **The minimap's found ones wear the round ring (Saneroki, 2026-10-25),** so they match the marks in the world
+    (`Found.Ring`, `Found.RING`, `Found.Round` shared by `Found.lua` and `Glints.lua`).
   - **Rough, never the map pin (Saneroki, 2026-10-25):** *"It doesn't have to be super precise"*; the map pin and the
     game's navigation marker (`C_Navigation`, which needs the hidden setting `showInGameNavigation`) are not used.
     The game tells no addon where its camera looks, so Sane UI takes it as it usually is: behind the player at the

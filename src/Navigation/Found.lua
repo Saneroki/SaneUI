@@ -3,8 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Found
 --  The herbs and ore the game's minimap shows as dots, found and drawn over it
---  in their own pictures: what each gives (its herb, its ore) in the gold ring
---  of the game's minimap buttons, grey while your skill is too low for it. The
+--  in their own pictures: what each gives (its herb, its ore) in a round ring of
+--  stitched leather, the far sparkles' (Glints.lua) without their point, grey
+--  while your skill is too low for it. The
 --  pin filter's kinds Found herbs and Found ore, each its own size there; the
 --  same on our small map (Hybrid.lua lays the game's minimap over it) and on the
 --  game's own minimap (the switch Show the game's minimap).
@@ -48,10 +49,13 @@ Found.KEEP = 300    -- seconds one of the kind whose finder is off is kept
 Found.FAR = 2       -- and how far it may be: so many of the minimap's radii
 Found.LOOTED = 10   -- yards: a looted node takes the nearest found one this near with it
 Found.MOST = 60     -- pictures drawn at most
--- The gold ring of the game's minimap buttons, laid around an icon as the game lays it around a 24 wide one
--- (Blizzard_FrameXML/ItemDisplay.xml, SpecRing): its art at its own 64, its corner 19 left and 18 up of the
--- icon's middle; scaled with the icon.
-local RING, RING_SIDE, RING_X, RING_Y, RING_FOR = "Interface\\Minimap\\MiniMap-TrackingBorder", 64, -19, 18, 24
+-- The leather ring Saneroki picked for the found ones (dev/tools/mark-art), round here; the far sparkles have it with
+-- its point (Glints.lua). Its picture is drawn round the middle of its hole; in the picture's side, the hole's radius
+-- and the ring's outer one (the art tool keeps 2 of 256 texels clear round it).
+Found.RING = "Interface\\AddOns\\SaneUI_Navigation\\Art\\mark-round"
+Found.HOLE = 0.2293 * 252 / 256
+Found.OUTER = 0.2942 * 252 / 256
+Found.TRIM = 0.07   -- of an item's picture cut off at each side: its own dark frame
 local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local SHAPE = { "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE" }
 
@@ -326,25 +330,31 @@ local function Tip(button)
     GameTooltip:Show()
 end
 
--- The gold ring laid round an icon of that side (its texture Found.RING); the far sparkles lay theirs so too.
+-- The ring laid round an icon of that side, the icon's edge a little under the leather; the far sparkles lay theirs
+-- so too.
 function Found.Ring(ring, icon, side)
-    local share = side / RING_FOR
-    ring:SetSize(RING_SIDE * share, RING_SIDE * share)
+    local whole = side / (Found.HOLE * 2.04)
+    ring:SetSize(whole, whole)
     ring:ClearAllPoints()
-    ring:SetPoint("TOPLEFT", icon, "CENTER", RING_X * share, RING_Y * share)
+    ring:SetPoint("CENTER", icon, "CENTER")
 end
-Found.RING = RING
+
+-- An item's picture, round, without its own frame.
+function Found.Round(icon, mask)
+    icon:SetTexCoord(Found.TRIM, 1 - Found.TRIM, Found.TRIM, 1 - Found.TRIM)
+    mask:SetTexture(ROUND, SHAPE[1], SHAPE[2])
+    mask:SetAllPoints(icon)
+    icon:AddMaskTexture(mask)
+end
 
 local function Picture(index)
     local picture = pictures[index]
     if picture then return picture end
     local icon = overlay:CreateTexture(nil, "ARTWORK")
     local mask = overlay:CreateMaskTexture()
-    mask:SetTexture(ROUND, SHAPE[1], SHAPE[2])
-    mask:SetAllPoints(icon)
-    icon:AddMaskTexture(mask)
+    Found.Round(icon, mask)
     local ring = overlay:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(RING)
+    ring:SetTexture(Found.RING)
     local button = CreateFrame("Button", nil, overlay)
     button:SetAllPoints(icon)
     button:SetScript("OnClick", ns.Guard(Clicked))

@@ -241,8 +241,9 @@ Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon 
   pin on its zone's map (`OnMap`).
 - **Far sparkles** (2026-10-25, `Glints.lua`, setting `nodeGlints`): the found ones (`Found.Each`) beyond 18 yards
   marked on the screen through a camera taken to be behind the player (`Project`: `GetCameraZoom`, `GetPlayerFacing`,
-  `cameraFov`; no map pin, no `C_Navigation`, Saneroki), the item's picture in the minimap's gold ring (`Found.Ring`)
-  running out into a point of two slices of its art (`Point`, `Lay`), the yards; off the view at the screen's edge; waiting
+  `cameraFov`; no map pin, no `C_Navigation`, Saneroki), the item's picture (`Found.Round`) in the leather ring with
+  its point (`Art/mark-pointed.blp`, `dev/tools/mark-art`) turned the way (`SetRotation`), the yards opposite; the
+  minimap's found ones in the round leather ring (`Found.Ring`, `Art/mark-round.blp`); off the view at the screen's edge; waiting
   while the left button turns the camera (`Behind`). Lab scene `far-sparkles`.
 - **Indoor maps off the streets** (2026-10-21): Core's set *Indoors* marks a part `open` (the game's part flag
   `EXTERIOR_LIT` and its area outdoors in `WMOAreaTable`, read by `dev/tools/indoor-art`); `Indoors.lua` never draws

@@ -87,8 +87,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
 - **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): the herbs and ore the game's minimap
-  shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in the gold
-  ring of the game's minimap buttons, grey while your skill is too low for it; on our small map and on the game's
+  shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in a round
+  ring of stitched leather (the far herbs and ore below wear it with a point), grey while your skill is too low for it; on our small map and on the game's
   own minimap alike. Each switch is also its finder: *Found herbs* on puts Find Herbs on, off takes it off (or
   Find Minerals in its place, while *Found ore* is on), and so on, without a sound. With both on and both spells
   known they take turns while you move (the setting *Find Herbs and Find Minerals in turn*: every 6 seconds of
@@ -105,8 +105,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   around you up to 20 yards (as the game sets it for a gamepad); switched off, those settings are as they were.
 - **Far herbs and ore** (the setting *Far herbs and ore on the screen*, on at first): each herb and ore the minimap
   found farther away than the sparkles above reach shows on the screen in its direction: the picture of what it gives,
-  round in the gold ring of the minimap's pictures, the ring running out into a point the way to it (up: ahead,
-  right: to your right, down: behind you), and how many yards away it is under it; the nearest eight. One outside your view stands
+  round in a ring of stitched leather (the minimap's found ones wear it too, without the point) that runs out into a
+  point the way to it (up: ahead, right: to your right, down: behind you), and how many yards away it is on the other
+  side; the nearest eight. One outside your view stands
   at the screen's left or right edge, on the side you would turn to. They are placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, looking the way
   you face. While you turn the camera with the left mouse button they wait, until you ride on a moment or turn with
   the right button. They never touch the map pin.
@@ -659,7 +660,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
-| `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the gold ring, the ring running out into a point the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
+| `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
+| `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -674,6 +676,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, the leather ring:** as Saneroki chose (the ring \#6 of eight rendered: five gold, leather, pencil and
+  parchment), the found herbs and ore wear a ring of stitched leather: on the screen with its point, turned toward the
+  node about the middle of its hole (`Art/mark-pointed.blp`), on the minimap perfectly round (`Art/mark-round.blp`), so
+  both look alike; the item's own dark frame is trimmed off its picture (`Found.Round`). The yards stand on the side
+  away from the point. `dev/tools/mark-art` makes both rings from the picked render, the round one from its own
+  leather with its edges laid on exact circles.
 - **2026-10-25, far herbs and ore as pictures:** as Saneroki asked, no column: each found herb and ore far away is
   the picture of what it gives, round in the gold ring of the minimap's pictures (`Found.Ring`), the ring running out
   into a point the way to it from where you face (two slices of the ring's own art, from where they leave the ring to

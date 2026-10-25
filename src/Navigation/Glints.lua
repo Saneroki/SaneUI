@@ -3,10 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Glints
 --  The herbs and ore the minimap found (Found.lua) marked on the screen however
---  far they are: the picture of what each gives, round in the gold ring of the
---  minimap's pictures, the ring running out into a point the way to it (up:
---  ahead, right: to your right, down: behind you), and how many yards away it is
---  under it. One
+--  far they are: the picture of what each gives, round in a ring of stitched
+--  leather that runs out into a point the way to it (up: ahead, right: to your
+--  right, down: behind you), and how many yards away it is under it. One
 --  you can see stands where it is on the screen; one outside the view stands at
 --  the screen's left or right edge, on the side you would turn to. The setting
 --  Far herbs and ore on the screen.
@@ -39,22 +38,18 @@ Glints.ZOOM = 15           -- yards behind you, where the game tells no zoom
 Glints.FOV = 90            -- degrees, where the game has no setting cameraFov
 Glints.HOLD = 0.25         -- seconds the left button is down before it counts as turning the camera
 Glints.SETTLE = 1.5        -- seconds of moving after which the camera is behind you again
-Glints.ICON = 32           -- the picture's side at full size
-Glints.RIM = 0.7           -- the ring's gold outer edge from the picture's middle, in the picture's sides
-Glints.TIP = 0.98          -- the point's tip from the picture's middle, in the picture's sides
--- The ring's band in its art (64 texels laid round a picture 24 wide, Found.Ring): its middle 13.75 texels from the
--- picture's middle, 3.5 wide; and a slice across it at the ring's left, outer edge to inner, for the point's arms.
-Glints.BAND = { 13.75 / 24, 3.5 / 24 }
-local SLICE = { 4 / 64, 9 / 64, 16 / 64, 21 / 64 }
+Glints.ICON = 33           -- the picture's side at full size
+-- The ring: the leather one of the found ones on the minimap (Found.RING, Found.Ring), with its point at the top
+-- (dev/tools/mark-art), drawn round the middle of its hole, so it turns about the picture's middle.
+Glints.RING = "Interface\\AddOns\\SaneUI_Navigation\\Art\\mark-pointed"
 Glints.EDGE = 44           -- an edge mark's distance from the screen's edge
 Glints.STACK = 58          -- edge marks one under another, from the middle down
 
-local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local YARDS = Core.Word("IN_GAME_NAVIGATION_RANGE", "%d yd")
 local FONT = "SaneUINavigationGlints"
 
 local holder        -- our frame over the world, under every window; its OnUpdate runs while it shows
-local marks = {}    -- the marks made: { frame, icon, ring, arms = { left, right }, text }
+local marks = {}    -- the marks made: { frame, icon, ring, text }
 local list = {}     -- this frame's candidates: { entry, yards, way, x, y } or { entry, yards, way, side }
 local turning = 0   -- seconds the left button has turned the camera
 local stale = false -- the camera turned away from your facing, not yet behind you again
@@ -111,18 +106,6 @@ end
 -------------------------------------------------------------------------------
 --  The marks
 -------------------------------------------------------------------------------
--- An arm of the point: a slice of the ring's band, its outer edge to the left (or, mirrored, to the right).
-local function Arm(frame, mirrored)
-    local arm = frame:CreateTexture(nil, "OVERLAY")
-    arm:SetTexture(Found.RING)
-    if mirrored then
-        arm:SetTexCoord(SLICE[2], SLICE[1], SLICE[3], SLICE[4])
-    else
-        arm:SetTexCoord(SLICE[1], SLICE[2], SLICE[3], SLICE[4])
-    end
-    return arm
-end
-
 local function Mark(index)
     local mark = marks[index]
     if mark then return mark end
@@ -130,43 +113,18 @@ local function Mark(index)
     frame:SetSize(1, 1)
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetPoint("CENTER", frame, "CENTER")
-    local mask = frame:CreateMaskTexture()
-    mask:SetTexture(ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    mask:SetAllPoints(icon)
-    icon:AddMaskTexture(mask)
+    Found.Round(icon, frame:CreateMaskTexture())
     local ring = frame:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(Found.RING)
-    local arms = { left = Arm(frame), right = Arm(frame, true) }
+    ring:SetTexture(Glints.RING)
     local text = frame:CreateFontString(nil, "OVERLAY")
     text:SetFontObject(Core.Font(FONT, "GameFontHighlightSmall", 11, "OUTLINE") or "GameFontHighlightSmall")
-    mark = { frame = frame, icon = icon, ring = ring, arms = arms, text = text }
+    mark = { frame = frame, icon = icon, ring = ring, text = text }
     marks[index] = mark
     return mark
 end
 
--- An arm from where it leaves the ring (bx, by) to the tip (tx, ty): the slice stood along it, a band's width longer
--- (half into the ring, half past the tip, so the arms meet), turned from upright to its way.
-local function Lay(arm, frame, bx, by, tx, ty, width)
-    local dx, dy = tx - bx, ty - by
-    arm:SetSize(width, math.sqrt(dx * dx + dy * dy) + width)
-    arm:ClearAllPoints()
-    arm:SetPoint("CENTER", frame, "CENTER", (bx + tx) / 2, (by + ty) / 2)
-    arm:SetRotation(-math.atan2(dx, dy))
-end
-
--- The point, the way to the node (0 up, turning to the right, radians): the ring runs out along the two lines from
--- its tip that touch the band's middle, so the arms leave the ring where they would join it.
-local function Point(mark, way, side)
-    local band, tip = Glints.BAND[1] * side, Glints.TIP * side
-    local turn = math.acos(band / tip)
-    local tx, ty = math.sin(way) * tip, math.cos(way) * tip
-    local frame, width, arms = mark.frame, Glints.BAND[2] * side, mark.arms
-    Lay(arms.left, frame, math.sin(way - turn) * band, math.cos(way - turn) * band, tx, ty, width)
-    Lay(arms.right, frame, math.sin(way + turn) * band, math.cos(way + turn) * band, tx, ty, width)
-end
-
--- A mark: its picture (grey while your skill is too low for it) in the ring at x, y, the point the way, its yards
--- under it.
+-- A mark: its picture (grey while your skill is too low for it) in the ring at x, y, the ring turned so its point shows
+-- the way (0 up, turning to the right), its yards on the other side (under it, while the point is up).
 local function Draw(mark, candidate, x, y, size)
     local entry, side = candidate.entry, Glints.ICON * size
     local file = entry.picture or Nodes.Picture(entry.node)
@@ -177,9 +135,10 @@ local function Draw(mark, candidate, x, y, size)
     mark.icon:SetTexture(file or 134400) -- (the game's question mark, while the item is not known yet)
     mark.icon:SetDesaturated(Nodes.TooHard(entry.node))
     Found.Ring(mark.ring, mark.icon, side)
-    Point(mark, candidate.way, side)
+    mark.ring:SetRotation(-candidate.way)
+    local away = mark.ring:GetWidth() * Found.OUTER + 8
     mark.text:ClearAllPoints()
-    mark.text:SetPoint("TOP", mark.frame, "CENTER", 0, -side * Glints.RIM - 2)
+    mark.text:SetPoint("CENTER", mark.frame, "CENTER", -math.sin(candidate.way) * away, -math.cos(candidate.way) * away)
     mark.text:SetFormattedText(YARDS, math.floor(candidate.yards + 0.5))
     mark.frame:Show()
 end

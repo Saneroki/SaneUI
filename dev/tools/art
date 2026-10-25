@@ -21,6 +21,8 @@ prints the numbers).
   logo     drawn up to 96 x 96 (not drawn yet): 256 x 256.
   sheet    a flipbook made by dev/tools/flipbook: kept whole, its sides are powers of two already (its
            frame's side came from the drawn size there); TexCoords 0-1.
+  mark     drawn up to 70 x 70 (Navigation's far herbs and ore, Glints.lua): 256 x 256, the picture kept whole,
+           not cropped (its middle is the middle code turns it about; dev/tools/mark-art).
 
 They go into assets/optimized/, and a module's banner also into that module's art, as
 assets/optimized/<module>/Art/banner.blp (dev/build puts it into the addon's Art/): that copy is the one the game loads (the options page of the module shows it at the top). Another
@@ -54,12 +56,13 @@ MARGIN = 2           # clear texels around a picture, so the texture's border ne
 UNIT_PIXELS = 2160 / 768  # a UI unit on a 4K screen at UI scale 1 (Blizzard's PixelUtil: 768 / height)
 SLACK = 0.85         # a side may have this share of the texels 4K asks for before it doubles
 LARGEST = 1024       # no side larger
-KINDS = {            # kind: (drawn width, height in UI units; set at the left, else centred)
+KINDS = {            # kind: (drawn width, height in UI units; set at the left, else centred; kept whole, not cropped)
     "banner": (300, 100, True),
     "icon": (40, 40, False),
     "button": (24, 24, False),
     "logo": (96, 96, False),
     "combat": (48, 48, False),  # the combat text's pictures over a nameplate (Nameplates, CombatText.lua)
+    "mark": (70, 70, False, True),  # the far herbs' and ore's rings, turned about their middle (Navigation, Glints.lua)
 }
 # The pictures: (file in assets, a pattern; name in assets/optimized; kind; the module that ships it;
 # its file in that module's Art/, banner.blp if none is given).
@@ -77,6 +80,9 @@ PICTURES = [
 ] + [  # drawn by dev/tools/combat-art
     (f"CombatText/{name}.png", f"CombatText-{name}", "combat", "Nameplates", f"combat-{name}.blp")
     for name in ("miss", "dodge", "parry", "block", "evade", "immune")
+] + [  # made by dev/tools/mark-art from the leather ring Saneroki picked
+    (f"FarMarks/ring-{name}.png", f"FarMarks-{name}", "mark", "Navigation", f"mark-{name}.blp")
+    for name in ("pointed", "round")
 ]
 
 
@@ -192,11 +198,11 @@ def make(pattern, name, kind, module, shipped_as="banner.blp"):
             print(f"Skipped {name}: a sheet's sides must be powers of two, not {width} x {height} (dev/tools/flipbook).")
             return
     else:
-        drawn_w, drawn_h, left = KINDS[kind]
+        drawn_w, drawn_h, left, *whole = KINDS[kind]
         width, height = side(drawn_w), side(drawn_h)
         texels = min(width / drawn_w, height / drawn_h)  # per UI unit, the same both ways
         box_w, box_h = round(drawn_w * texels), round(drawn_h * texels)
-        box = place(load(found[0]), drawn_w / drawn_h, box_h, left)
+        box = place(load(found[0], crop=not (whole and whole[0])), drawn_w / drawn_h, box_h, left)
     levels, first, k = [], None, 0
     while True:
         # Every level made from the full picture (not from the level before), the box at the top left.

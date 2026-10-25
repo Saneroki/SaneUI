@@ -8,10 +8,11 @@ The bigger changes of each version, newest first.
 ------------------
 - Navigation: far herbs and ore. Every herb and ore your minimap
   finds now shows on the screen however far away it is: the picture
-  of what it gives in a gold ring that runs out into a point the way
+  of what it gives in a ring of stitched leather that points the way
   to it, and how many yards away it is. One behind you or outside
   your view waits at the edge of the screen, its point showing which
-  way to turn.
+  way to turn. On the minimap the found herbs and ore wear the same
+  leather ring, round.
 - Data: Sane UI's database gets better as you play. Every quest you
   are offered, take, do and hand in is checked against it: its
   giver, objectives, rewards and who takes it back are confirmed, and

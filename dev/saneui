@@ -62,6 +62,7 @@ GROUPS = {
         "makeshapes": (["dev/tools/shape-art"], "the masks of Core's round shapes", None),
         "makesmiley": (["dev/tools/smiley-art"], "Social's smiley", None),
         "makecombatart": (["dev/tools/combat-art"], "the combat text's pictures (miss, parry, block ...)", None),
+        "makemarkart": (["dev/tools/mark-art"], "Navigation's leather rings for the found herbs and ore", None),
         "maketooltipart": (["dev/tools/tooltip-art"], "the Tooltips module's pictures", None),
         "maketerrain": (["dev/tools/terrain-art"], "Navigation's terrain, outlines and stitched map", None),
         "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),
