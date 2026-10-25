@@ -57,6 +57,17 @@ One window on Core's window system, behaving like the Social module's chat windo
   quest log.
 - Its place, size and what it was left as are kept by Core.
 
+## Forever's own world, Retail's own maps (Saneroki, 2026-10-25)
+
+The map differs per game. **WoW: Forever** keeps the custom map of this plan: our own tiles, Scrying, the Atlas,
+one world to roam freely, without right clicks. **Retail** shows its maps as the game's own map does: its map tree,
+one map at a time (a zone, its continent, Azeroth, the Cosmic map of every world), each with its own art and its
+layers; a click goes into the map under the mouse, a right click up to the map over it, the wheel zooms within the
+map shown. Retail's world (some 2,000 maps, continents at different scales on Azeroth, worlds beside it, zones in
+several versions) is the game's to keep up with every patch; Sane UI makes no map data of its own for it. Saneroki
+chose our own window for it (option 1 of two): our window, pins and look, Retail's maps and layers as the game has
+them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Navigation/Camera.Retail.lua`).
+
 ## One map, two views
 
 Minimap, world map and quest log are one window, so there is **one map**. The small docked window (the

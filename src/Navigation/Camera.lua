@@ -35,6 +35,7 @@ Camera.ZONE = 9000   -- below so many yards in view's height the zone in the mid
 Camera.SLACK = 0.15  -- a level is left only so far past where it is entered
 
 local methods = {}
+Camera.methods = methods -- Retail's camera is made of them, with its own where the two differ (Camera.Retail.lua)
 
 -- The nearest zoom of its own in the view the map is drawn in (Navigation.lua, View).
 function Camera.Near()
@@ -69,11 +70,16 @@ local function Level(self)
     return "continent"
 end
 
+-- The nearest zoom of this camera's own (Hybrid.lua asks it at the game's minimap's last step).
+function methods:Nearest()
+    return Camera.Near()
+end
+
 -- The zoom within its bounds, the middle on the map shown (the plane's, or the world).
 local function Clamp(self)
     local box = self.level == "world" and self.world or self.box
     if not box then return end
-    local near = self.native and self.k or Camera.Near()
+    local near = self.native and self.k or self:Nearest()
     self.k = math.max(self.far, math.min(near, self.k))
     self.u = math.max(box.u, math.min(box.u + box.width, self.u))
     self.v = math.min(box.v, math.max(box.v - box.height, self.v))
@@ -176,7 +182,7 @@ function methods:ZoomAt(notches, dx, dy)
     self.native = nil
     if self.follow then dx, dy = 0, 0 end
     local u, v = self.u + dx / self.k, self.v + dy / self.k
-    local k = math.max(self.far, math.min(Camera.Near(), self.k * Camera.STEP ^ notches))
+    local k = math.max(self.far, math.min(self:Nearest(), self.k * Camera.STEP ^ notches))
     self.u, self.v, self.k = u - dx / k, v - dy / k, k
     self:Settle()
 end

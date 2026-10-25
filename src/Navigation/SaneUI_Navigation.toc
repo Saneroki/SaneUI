@@ -15,6 +15,8 @@ Navigation.lua
 Coords.lua
 # Where a view looks: its middle, its zoom, following the player, the map its zoom shows. Knows no frames
 Camera.lua
+# Retail's map: the game's own map tree, one map at a time (a Retail-only override of the camera and two answers of the map tree)
+Camera.Retail.lua
 # What the game tells while playing: the player, the map pin, group, quests, flights, rares, explored areas. Knows no frames
 Live.lua
 # The game's minimap ping on our map: a click pings a place to the group, their pings shown where they are. No frames

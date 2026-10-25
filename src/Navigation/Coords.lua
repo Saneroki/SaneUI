@@ -42,6 +42,7 @@ local floor = math.floor
 -- The game's numbers for kinds of map (Enum.UIMapType), should the table be missing.
 local KINDS = rawget(_G, "Enum") and Enum.UIMapType or {}
 Coords.CONTINENT, Coords.ZONE = KINDS.Continent or 2, KINDS.Zone or 3
+Coords.COSMIC, Coords.WORLD = KINDS.Cosmic or 0, KINDS.World or 1
 
 local boxes = {}      -- [uiMapID] = its box, or false: asked once a session
 local continentOf = {} -- [uiMapID] = the continent it lies on, or false

@@ -47,6 +47,12 @@ local _, ns = ...
 --  it has one of its own (PinView.Act). A plane of its own (Zephras Isle) is drawn
 --  as a continent is, as a zone (Camera.lua).
 --
+--  Retail shows one map at a time, as the game's own map does (Camera.Retail.lua:
+--  camera.shown): a click goes into the map the game says is under the mouse, at
+--  every level (a city in its zone too), and lights it up before; a right click
+--  goes up to the map over it; the wheel zooms within the map shown; following,
+--  the view shows the map the player is on (camera:Wants).
+--
 --  On the window's way to the full screen and back the map goes with it (Morph): laid
 --  out once, at the start, for the whole way, it is only scaled and moved on the
 --  steps, from where the view it leaves looks to where the view it comes to looks;
@@ -90,7 +96,8 @@ local held = false -- on the window's way, or hidden: its size changes lay nothi
 local morph       -- on the window's way: { a = where it comes from, b = where it goes, now = where it is }
 -- Where the layers were laid out: the origin (u, v), the zoom (k), the view in the plane with its margin
 -- (left, right, top, bottom), its height in yards (span); the plane's map (map: a continent's, or a plane of its
--- own), its instance (continent), the level and the zone shown. One table, filled anew at each layout.
+-- own), its instance (continent), the level and the zone shown; one map at a time (Retail): the map shown (shown),
+-- its box in the plane (box) and its art's layer (layer). One table, filled anew at each layout.
 local view = { u = 0, v = 0, k = 1, left = 0, right = 0, top = 0, bottom = 0, span = 0, level = "continent" }
 Canvas.view = view
 -- The canvas' own rectangle in the holder's units as the holder stands now (x, y: its offset from the canvas'
@@ -253,9 +260,10 @@ function Canvas.Inside(x, y, half)
     return x - half >= edge.left and x + half <= edge.right and y - half >= edge.bottom and y + half <= edge.top
 end
 
--- The zone in the middle of the view, at the zone's level.
+-- The zone in the middle of the view, at the zone's level; one map at a time, the map shown.
 local function Zone()
     if camera.level ~= "zone" then return nil end
+    if camera.shown then return camera.shown end
     return Coords.ZoneAt(camera.map, camera.u, camera.v)
 end
 
@@ -347,6 +355,7 @@ function Canvas.Layout()
     local box = Coords.Box(camera.map)
     view.u, view.v, view.k = camera.u, camera.v, camera.k
     view.map, view.continent, view.level = camera.map, box.continent, camera.level
+    view.shown, view.box, view.layer = camera.shown, camera.shown and camera.box or nil, camera.layer
     view.zone = Zone()
     view.span = height / camera.k
     view.left, view.right, view.top, view.bottom = camera:View(math.max(width, height) * Canvas.MARGIN)
@@ -367,7 +376,7 @@ end
 -- The camera moved without zooming: the holder follows; past the margin, or over another zone, a layout. The
 -- zone in the middle is asked of the game every Canvas.LOOK while the view moves, not at each of its steps.
 function Canvas.Moved()
-    if not laid or camera.k ~= view.k or camera.map ~= view.map or camera.level ~= view.level then
+    if not laid or camera.k ~= view.k or camera.map ~= view.map or camera.level ~= view.level or camera.shown ~= view.shown then
         return Canvas.Layout()
     end
     local x, y = (view.u - camera.u) * view.k, (view.v - camera.v) * view.k
@@ -433,7 +442,8 @@ local function Track()
     known = u ~= nil and map == camera.map
     if Lost(u) ~= lost then return Canvas.Layout() end -- into an instance or out of it: drawn anew (Draw, Hybrid)
     if camera.follow and u then
-        if map ~= camera.map then
+        -- Into the player's plane; one map at a time, also onto the map the player is on now (another zone).
+        if map ~= camera.map or camera.shown and camera:Wants() ~= camera.shown then
             camera:Show(map, u, v)
             return Canvas.Layout()
         elseif u ~= camera.u or v ~= camera.v then
@@ -517,13 +527,21 @@ local function Where(x, y)
 end
 
 -- A plain click on a map the view shows whole: the zone under the mouse at a continent, the continent (or the
--- plane of its own) at the world, fills the view, as a click on the game's map opens it. False where nothing is
--- opened.
+-- plane of its own) at the world, fills the view, as a click on the game's map opens it; one map at a time
+-- (Retail), the map the game says is under the mouse on the map shown, at every level (camera:Under). False where
+-- nothing is opened.
 local function Into(x, y)
-    if camera.level == "zone" then return false end
     local u, v = camera.u + x / camera.k, camera.v + y / camera.k
     local map
-    if camera.level == "world" then map = Coords.PlaneAt(camera.map, u, v) else map = Coords.ZoneAt(camera.map, u, v) end
+    if camera.shown then
+        map = camera:Under(u, v)
+    elseif camera.level == "zone" then
+        return false
+    elseif camera.level == "world" then
+        map = Coords.PlaneAt(camera.map, u, v)
+    else
+        map = Coords.ZoneAt(camera.map, u, v)
+    end
     if not map or not camera:Fit(map) then return false end
     ns.Art.Unlight()
     Canvas.Layout()
@@ -606,14 +624,15 @@ function Canvas.ZoomTo(u, v, notches)
 end
 
 -- Looks at a point of a map (x, y: 0 to 1 on it; a quest chosen in the quest log): there in the middle, at the zoom
--- the view has, in its plane; the view no longer follows, as after a drag. A dungeon's map over the full map goes.
--- False where the map has no place on our planes.
+-- the view has, in its plane; one map at a time, that map shown whole first. The view no longer follows, as after a
+-- drag. A dungeon's map over the full map goes. False where the map has no place on our planes.
 function Canvas.LookAt(map, x, y)
     if not laid or held or lost then return false end
     local plane = Coords.PlaneOf(map)
     local u, v
     if plane and x and y then u, v = Coords.MapToPlane(map, x, y, plane) end
     if not u then return false end
+    if camera.shown and not camera:Fit(map) then return false end
     ns.Dungeons.Close()
     camera.follow = false
     lastInput = GetTime()
@@ -705,7 +724,7 @@ local function Over()
     local x, y = FromMiddle()
     if not x or (x == overX and y == overY) then return end
     overX, overY = x, y
-    if view.level == "zone" then return ns.Art.Unlight() end
+    if view.level == "zone" and not view.shown then return ns.Art.Unlight() end
     ns.Art.Light(view, camera.u + x / camera.k, camera.v + y / camera.k)
 end
 local hovering = ns.Guard(Over) -- made once: the look while the mouse is over the canvas
@@ -830,10 +849,11 @@ function Canvas.Hold()
     ns.Marks.Clear()
 end
 
--- Where a view looks, as plain numbers: its plane, middle, zoom, size and level.
+-- Where a view looks, as plain numbers: its plane, middle, zoom, size and level; one map at a time, the map shown,
+-- its box and its art's layer.
 local function Spot(from)
     return { map = from.map, u = from.u, v = from.v, k = from.k, width = from.width, height = from.height,
-             level = from.level }
+             level = from.level, shown = from.shown, box = from.shown and from.box or nil, layer = from.layer }
 end
 
 -- What a spot shows, and margin units past it: left, right, top, bottom in its plane.
@@ -869,7 +889,8 @@ function Canvas.Morph(target, width, height)
     local l2, r2, t2, b2 = Reach(b, margin)
     view.u, view.v, view.k = wide.u, wide.v, wide.k
     view.map, view.continent, view.level = b.map, Coords.Box(b.map).continent, wide.level
-    view.zone = wide.level == "zone" and Coords.ZoneAt(b.map, wide.u, wide.v) or nil
+    view.shown, view.box, view.layer = b.shown, b.box, b.layer
+    view.zone = wide.level == "zone" and (b.shown or Coords.ZoneAt(b.map, wide.u, wide.v)) or nil
     view.span = wide.height / wide.k
     view.left, view.right = math.min(l1, l2), math.max(r1, r2)
     view.top, view.bottom = math.max(t1, t2), math.min(b1, b2)

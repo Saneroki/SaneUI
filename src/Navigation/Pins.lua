@@ -7,7 +7,8 @@ local _, ns = ...
 --  Knows no frames: PinView.lua draws what For gives.
 --
 --      Pins.For(view, small)   the pins in view: every zone the view shows at a zone's level, the
---                              continents' travel and places further out, none at the world
+--                              continents' travel and places further out, none at the world; one map at
+--                              a time (Retail), the map shown's
 --      Pins.Gather(list, k)    pins that would cover each other on the screen, gathered (Gather below)
 --      Pins.Standing(quest, id) where a quest of Core's data stands for this character, and why (offered, low,
 --                              later, log, done, never)
@@ -526,10 +527,14 @@ local NONE = {}
 
 -- The maps whose pins the view shows: each zone in view (and the zone in the middle, should it have none of
 -- its own), further out the continent itself too (its flight points, as the game's continent map has them);
--- at the world none.
+-- at the world none. One map at a time (Retail): the map shown, as the game's own map asks for its pins.
 local function Maps(view)
     local maps = {}
     if view.level == "world" then return maps end
+    if view.shown then
+        maps[1] = view.shown
+        return maps
+    end
     if view.level ~= "zone" then maps[1] = view.map end
     for _, zone in ipairs(Coords.Zones(view.map)) do
         local box = zone.box

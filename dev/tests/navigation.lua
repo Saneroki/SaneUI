@@ -4,13 +4,15 @@
 -- block under a point, loaded when first drawn, the fall back when it fails), the mouse (drag, wheel, right
 -- click, Ctrl-click), the game's minimap taken over ours and given back, the game's map kept closed and its
 -- keys; played as Retail (W.Play), without Forever's data, what stands down and what the game's own does instead.
--- The look itself can only be judged in the game.
+-- Then again as a Retail client from the start ("retail"): the game's own map tree, one map at a time
+-- (Camera.Retail.lua). The look itself can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/navigation.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
+W.retailRun = arg[1] == "retail" -- run again as a Retail client from the start (at the end; no local: the chunk has 200)
 
 local passed = 0
 local function check(condition, what)
@@ -120,6 +122,14 @@ local MAPS = {
     [1460] = { kind = 3, parent = 1415, continent = 0, top = -6400 / 3, bottom = -8000 / 3, left = -6400 / 3,
                right = -8000 / 3 },
 }
+if W.retailRun then
+    -- Retail's tree: the Cosmic map over Azeroth, Outland beside Azeroth under it (a world of its own, 10000 yards
+    -- square), and a battleground the tree hangs under Kalimdor in a world of its own (2000 yards square).
+    MAPS[946] = { kind = 0, parent = 0 }
+    MAPS[947].parent = 946
+    MAPS[101] = { kind = 2, parent = 946, continent = 530, top = 5000, bottom = -5000, left = 5000, right = -5000 }
+    MAPS[1459] = { kind = 3, parent = 1414, continent = 30, top = 1000, bottom = -1000, left = 1000, right = -1000 }
+end
 local player = { map = 1429, x = 0.75, y = 0.3 }
 local waypoint, tracked = nil, false
 C_Map = {
@@ -141,7 +151,7 @@ C_Map = {
     GetFallbackWorldMapID = function() return 947 end,
     GetMapChildrenInfo = function(map, kind)
         local list = {}
-        for _, id in ipairs({ 1415, 1414, 1429, 2521 }) do
+        for _, id in ipairs(W.retailRun and { 1415, 1414, 1429, 2521, 947, 101, 1459 } or { 1415, 1414, 1429, 2521 }) do
             if MAPS[id].parent == map and (not kind or MAPS[id].kind == kind) then list[#list + 1] = { mapID = id, mapType = MAPS[id].kind } end
         end
         return list
@@ -156,16 +166,25 @@ C_Map = {
         if unit ~= "player" or map ~= player.map or not MAPS[map].top then return nil end
         return CreateVector2D(player.x, player.y)
     end,
+    -- Retail: the Cosmic map has art; Elwynn two layers, the second twice as detailed from 1.5 times its size on.
     GetMapArtLayers = function(map)
+        local one = { layerWidth = 1002, layerHeight = 668, tileWidth = 256, tileHeight = 256 }
+        if W.retailRun and map == 946 then return { one } end
         if not MAPS[map] or (not MAPS[map].top and map ~= 947) then return {} end
-        return { { layerWidth = 1002, layerHeight = 668, tileWidth = 256, tileHeight = 256 } }
+        if W.retailRun and map == 1429 then
+            one.minScale, one.maxScale = 1, 1.5
+            return { one, { layerWidth = 2004, layerHeight = 1336, tileWidth = 256, tileHeight = 256, minScale = 1.5, maxScale = 3 } }
+        end
+        return { one }
     end,
-    GetMapArtLayerTextures = function(map)
+    GetMapArtLayerTextures = function(map, layer)
         local files = {}
-        for index = 1, 12 do files[index] = map * 100 + index end
+        for index = 1, (layer == 2 and 48 or 12) do files[index] = map * 100 + index + (layer == 2 and 50 or 0) end
         return files
     end,
     GetMapInfoAtPosition = function(map, x, y)
+        -- Retail's Cosmic map: Azeroth on its left half, Outland on its right
+        if map == 946 then return { mapID = x < 0.5 and 947 or 101, mapType = x < 0.5 and 1 or 2 } end
         -- Elwynn's box on the continent's map: x from 0.375 to 0.625, y from 0.625 to 0.7
         if map == 1415 and x >= 0.375 and x <= 0.625 and y >= 0.625 and y <= 0.7 then return { mapID = 1429, mapType = 3 } end
         if map == 947 then
@@ -676,6 +695,7 @@ W.AddSets(spawnsPath)
 -- The game's callback events (MINIMAP_PING among them): only RegisterEventCallback takes them, no frame's RegisterEvent.
 W.callbacks = {}
 RegisterEventCallback = function(event, fn) W.callbacks[event] = fn return true end
+if W.retailRun then W.Play("retail") end
 W.LoadCore(root)
 local Core = SaneUI.Core
 -- Saved by an earlier version (the first shape of the settings): the view Overlay, which is gone.
@@ -685,6 +705,129 @@ local ns = W.LoadAddon(root, "Navigation", "SaneUI_Navigation")
 W.Fire("ADDON_LOADED", "SaneUI_Navigation")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Navigation == ns and not ns.off, "the module is made and started")
+
+-------------------------------------------------------------------------------
+--  Retail from the start: the game's own map tree, one map at a time (Camera.Retail.lua)
+-------------------------------------------------------------------------------
+if W.retailRun then (function()
+    local Coords, Camera, Canvas, Window = ns.Coords, ns.Camera, ns.Canvas, ns.Window
+    check(Core.RETAIL and Camera.Wanted and Camera.DEEP, "Retail: the map's own camera, one map at a time")
+    check(Coords.PlaneOf(1429) == 1415 and Coords.PlaneOf(1459) == 1459 and Coords.Box(1459).continent == 30,
+        "a map whose box lies in another world than its continent's (a battleground) is a plane of its own")
+    local sheet = Coords.Box(946)
+    check(sheet and sheet.continent == -1 and sheet.width == Coords.SHEET and near(sheet.height, Coords.SHEET * 668 / 1002)
+        and Coords.PlaneOf(946) == 946 and Coords.Box(947) == false,
+        "the top of the tree, the Cosmic map, is a sheet of its own of its art's shape; Azeroth still has no box of its own")
+    check(Coords.Top() == 946 and #Coords.Elsewhere() == 1 and Coords.Elsewhere()[1] == 101, "Outland beside Azeroth")
+
+    local frame, small = Canvas.frame, Window.small
+    -- The textures shown whose files lie between low and high (the made-up art: a map's ID times 100 and the tile's
+    -- number; its second layer's 50 on).
+    local function Drawn(low, high)
+        local count = 0
+        for _, widget in ipairs(W.frames) do
+            local file = widget._kind == "Texture" and widget._shown and widget._texture
+            if type(file) == "number" and file >= low and file <= high then count = count + 1 end
+        end
+        return count
+    end
+    frame._width, frame._height = 200, 200
+    Canvas.Use(small)
+    Canvas.Open()
+    local tracker
+    for _, widget in ipairs(W.frames) do if widget._parent == frame and widget._scripts.OnUpdate then tracker = widget end end
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(small.shown == 1429 and small.map == 1415 and small.level == "zone" and Canvas.view.shown == 1429 and small.follow,
+        "the small view follows the player on the map the player is on, Elwynn, in its continent's plane")
+    check(Canvas.view.layer == 2 and Drawn(142951, 142998) > 0 and Drawn(142901, 142912) == 0 and Drawn(141501, 141512) == 0
+        and Drawn(94701, 94712) == 0, "close in: Elwynn's more detailed layer alone, nothing of its continent's or Azeroth's")
+
+    -- Right click: one map out, each whole, up to the top of the tree.
+    local function Right()
+        frame._scripts.OnMouseDown(frame, "RightButton")
+        frame._scripts.OnMouseUp(frame, "RightButton")
+    end
+    Right()
+    check(small.shown == 1415 and small.level == "continent" and near(small.k, small.fit) and not small.follow
+        and Drawn(141501, 141512) > 0 and Drawn(142901, 142998) == 0, "right click: the continent whole, its art alone")
+    Right()
+    check(small.shown == 947 and small.level == "world" and small.map == 1415 and Drawn(94701, 94712) > 0
+        and Drawn(141501, 141512) == 0, "again: Azeroth whole, in the continent's plane")
+    Right()
+    check(small.shown == 946 and small.map == 946 and small.level == "world" and Drawn(94601, 94612) > 0
+        and Drawn(94701, 94712) == 0, "again: the Cosmic map, on its sheet")
+    Right()
+    check(small.shown == 946, "at the top a right click does nothing more")
+
+    -- A click goes into the map the game says is under the mouse.
+    local function Click(u, v)
+        cursorX, cursorY = 100 + (u - small.u) * small.k, 100 + (v - small.v) * small.k
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+    end
+    Click(sheet.width * 0.75, -sheet.height / 2)
+    check(small.shown == 101 and small.map == 101 and small.level == "continent", "a click on the Cosmic map's right half: Outland")
+    Right()
+    Click(sheet.width * 0.25, -sheet.height / 2)
+    check(small.shown == 947 and small.level == "world", "on its left half: Azeroth")
+    local box = small.box
+    Click(box.u + 0.3 * box.width, box.v - 0.5 * box.height)
+    check(small.shown == 1414 and small.map == 1414 and small.level == "continent", "on Azeroth Kalimdor, in its own plane")
+    Right()
+    box = small.box
+    check(small.shown == 947 and small.map == 1414, "Azeroth again, now in Kalimdor's plane")
+    Click(box.u + 0.78 * box.width, box.v - 0.5 * box.height)
+    check(small.shown == 1415, "the Eastern Kingdoms")
+    box = small.box
+    Click(box.u + 0.5 * box.width, box.v - 0.66 * box.height)
+    check(small.shown == 1429 and small.level == "zone" and near(small.k, small.fit), "and Elwynn whole")
+    check(small:Fit(1459) and small.map == 1459 and small.shown == 1459, "a battleground: shown in its own plane")
+
+    -- The wheel within the map shown: out no farther than whole, in as near as Camera.DEEP units to a pixel of its art.
+    small:Fit(1429)
+    Canvas.Layout()
+    frame._scripts.OnMouseWheel(frame, -1)
+    W.Wait(0)
+    check(near(small.k, small.fit) and small.shown == 1429 and small.layer == 1, "out from whole: it stays whole, its first layer")
+    local found = false
+    for _, pin in ipairs(ns.Pins.For(Canvas.view, false)) do found = found or pin.key == "quest:7" end
+    check(found, "the pins of the map shown: Elwynn's quest")
+    for _ = 1, 40 do
+        frame._scripts.OnMouseWheel(frame, 1)
+        W.Wait(0)
+    end
+    check(near(small.near, Camera.DEEP * 1002 / 2000) and near(small.k, small.near) and small.layer == 2
+        and Drawn(142951, 142998) > 0, "in: as near as four units to a pixel of its art, in its more detailed layer")
+    small:Fit(1415)
+    Canvas.Layout()
+    found = false
+    for _, pin in ipairs(ns.Pins.For(Canvas.view, false)) do found = found or pin.key == "quest:7" end
+    check(not found, "on the continent, as the game's own continent map, no quest of the log")
+
+    -- Following again, into another zone: the view goes onto the map the player is on now.
+    player.map, player.x, player.y = 1460, 0.5, 0.5
+    small.follow = true
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(small.shown == 1460 and small.level == "zone" and small.map == 1415, "following, the view goes onto the map the player walked into")
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+
+    -- The full map, the first time: the map the player is on, whole, as the game's own map opens.
+    Window.Toggle()
+    frame._width, frame._height = 1600, 868
+    Window.frame._group:Run(1)
+    local full = Window.full
+    check(Canvas.camera == full and full.shown == 1429 and full.level == "zone" and near(full.k, full.fit),
+        "the full map opens on the map the player is on, whole")
+
+    local problems = {}
+    for label, problem in pairs(Core.errors) do
+        if label:find("Navigation", 1, true) then problems[#problems + 1] = label .. ": " .. tostring(problem.text) end
+    end
+    check(#problems == 0, "nothing of Navigation went wrong on the way: " .. table.concat(problems, "; "))
+    print = nil -- the stand-in's print; use the real one for the summary
+    io.write(("Navigation in Retail: all %d checks passed.\n"):format(passed))
+    os.exit(0)
+end)() end
 check(type(ns.OUTLINES) == "table", "the zones that have an outline are listed (Outlines.lua)")
 check(type(ns.COASTS) == "table", "the tiles on a coast are listed (Coasts.lua)")
 check(ns.options.view == "terrain" and ns.View() == "terrain", "a saved view that is gone (Overlay) falls back to Scrying")
@@ -4803,6 +4946,9 @@ check(ns.off and not Window.frame:IsShown() and not Hybrid.Taken() and next(over
     "standing down: the window goes, the game's minimap and keys are back")
 check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("Sound_EnableSFX") == "1" and not gather.overlay._shown,
     "and the interact key's settings as they were, no found herbs drawn")
+
+check(os.execute(("lua5.1 '%s/dev/tests/navigation.lua' retail"):format(root)) == 0,
+    "as a Retail client from the start the map is the game's own map tree, one map at a time")
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Navigation: all %d checks passed.\n"):format(passed))

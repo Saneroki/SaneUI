@@ -13,6 +13,11 @@ The bigger changes of each version, newest first.
   stays in Forever for now, and the game's own takes its place.
   The game's settings Sane UI keeps for you stay with the game
   they were made in.
+- Navigation in Retail: the map shows the game's own maps, one
+  at a time, as the game's map does: click a zone to go in,
+  right-click to go up to the continent, Azeroth and every
+  world, scroll to zoom. WoW: Forever keeps its own map of the
+  whole world.
 - Speed Leveling: one key for questing. Give it a key (E, say)
   under Sane UI in the game's key bindings and press it again and
   again: it opens the loot of the corpse beside you, picks up the

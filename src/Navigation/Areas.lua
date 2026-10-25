@@ -98,13 +98,15 @@ local function Quest()
     return index and index > 0 and quest or nil
 end
 
--- Drawn for the view as the canvas laid it out: over each zone in view, at a zone's level.
+-- Drawn for the view as the canvas laid it out: over each zone in view, at a zone's level; one map at a time
+-- (Retail), over the map shown.
 function Areas.Place(view)
     local quest = view.level == "zone" and ns.Pins.Shows("area") and Quest()
     if not quest then return HideAll() end
     layer:SetAlpha(ns.PinScale("area")) -- the pin filter's slider for the quest areas is their opacity
     local drawn = {}
-    for _, zone in ipairs(Coords.Zones(view.map)) do
+    local zones = view.shown and { { map = view.shown, box = view.box } } or Coords.Zones(view.map)
+    for _, zone in ipairs(zones) do
         local box = zone.box
         if box.u <= view.right and box.u + box.width >= view.left and box.v >= view.bottom and box.v - box.height <= view.top then
             local frame = Frame(zone.map)

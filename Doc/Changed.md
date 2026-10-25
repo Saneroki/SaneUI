@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 (Speed Leveling), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation in Retail: the game's own maps, one at a time (Saneroki, 2026-10-25)
+Saneroki: Forever keeps our own map (our tiles, Scrying, the Atlas, one world to roam); Retail's map shows the game's
+own map tree as its own map does, in our window with our pins (option 1 of two; `Doc/ideas/Navigation.md`, *Forever's
+own world, Retail's own maps*).
+- **`src/Navigation/Camera.Retail.lua`** (read in Retail alone): the camera shows one map (`camera.shown`), whole at
+  first; the wheel within it up to its art's largest scale (or `Camera.DEEP` units to a pixel of its art); a click
+  into the map the game says is under the mouse (`camera:Under`), a right click up to the map over it (zone,
+  continent, Azeroth, the Cosmic map); following, the map the player is on (`Camera.Wanted`); the art's layer by the
+  zoom (`camera.layer`). Retail's two answers of the map tree: a map in another world than its continent's is a plane
+  of its own (`Coords.PlaneOf`), the Cosmic map a sheet (`Coords.Box`, `Coords.SHEET`).
+- **Shared, the same in Forever:** cameras have their own nearest zoom (`camera:Nearest`, Hybrid asks it); `Art.Of`
+  takes a layer, `Art.Layers`; the canvas, the art, the pins, the quest areas and the map selector follow the map
+  shown where the camera has one (`view.shown`, `view.box`, `view.layer`); `Coords.COSMIC`, `Coords.WORLD`.
+- **Tests:** `dev/tests/navigation.lua` runs again as a Retail client from the start (`retail`, 25 checks: the tree's
+  answers, following, right clicks up to the Cosmic map, clicks back in, the zoom's limits and layers, the pins of
+  the map shown, the full map's first look).
+
 ### Sane UI works in Retail: every module gone through (Saneroki, 2026-10-25)
 Sane UI's first run in Retail failed in places, and stood down where it should not: Combat's own talents (Forever's
 two talent groups, `TabSystemButtonMixin:UpdateTabText`) took the whole module down, Abilities' scan asked for

@@ -32,6 +32,12 @@ local _, ns = ...
 --  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone,
 --  at the world the continent, in the game's own highlight art
 --  (C_Map.GetMapHighlightInfoAtPosition), added onto what is under it, in every view.
+--
+--  Retail shows one map at a time, as the game's own map does (Camera.Retail.lua,
+--  view.shown): that map's art alone, in the layer the zoom asks for (a map may
+--  have several, each more detailed: C_Map.GetMapArtLayers, as Blizzard's scroll
+--  controller picks them), with its explored parts; what a click opens lights up
+--  on it at every level.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Art = {}
@@ -42,7 +48,9 @@ Art.SKETCH = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Sketches\\%d-%d-%d"
 Art.EDGE = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Edge"
 
 local Coords = ns.Coords
-local arts = {} -- [uiMapID] = its art (tiles across and down, the layer's size and its tiles', the files), or false
+local arts = {} -- [uiMapID * 100 + layer] = that layer's art (tiles across and down, the layer's size and its tiles',
+                -- the files), or false
+local layered = {} -- [uiMapID] = its layers as the game lists them (sizes, scales), or false
 local layer, pool, parts, stitched, outlines, glow, light
 local Overlays = Core.Data.Set("Overlays")
 
@@ -69,30 +77,45 @@ function Art.Build(holder)
     return layer, glow
 end
 
--- A map's art: its first layer, asked of the game once a session; false when it has none. { across, down: its
--- tiles; width, height: the layer's pixels; tileWidth, tileHeight; files: the tiles' files, row by row }
-local function Of(map)
-    local art = arts[map]
+-- A map's art layers as the game lists them (each { layerWidth, layerHeight, tileWidth, tileHeight, minScale,
+-- maxScale }), asked once a session; false when it has none.
+function Art.Layers(map)
+    local list = layered[map]
+    if list ~= nil then return list end
+    list = map and Core.Ask(C_Map.GetMapArtLayers, map)
+    list = type(list) == "table" and #list > 0 and list or false
+    layered[map] = list
+    return list
+end
+
+-- A map's art: one layer of it (the first unless said), asked of the game once a session; false when it has none.
+-- { across, down: its tiles; width, height: the layer's pixels; tileWidth, tileHeight; files: the tiles' files,
+-- row by row }
+local function Of(map, layer)
+    layer = layer or 1
+    local key = map and map * 100 + layer
+    local art = key and arts[key]
     if art ~= nil then return art end
     art = false
-    local list = Core.Ask(C_Map.GetMapArtLayers, map)
-    local info = type(list) == "table" and list[1]
-    local files = info and Core.Ask(C_Map.GetMapArtLayerTextures, map, 1)
+    local list = key and Art.Layers(map)
+    local info = list and list[layer]
+    local files = info and Core.Ask(C_Map.GetMapArtLayerTextures, map, layer)
     if type(files) == "table" and (info.tileWidth or 0) > 0 and (info.tileHeight or 0) > 0
         and (info.layerWidth or 0) > 0 and (info.layerHeight or 0) > 0 then
         art = { across = math.ceil(info.layerWidth / info.tileWidth), down = math.ceil(info.layerHeight / info.tileHeight),
                 width = info.layerWidth, height = info.layerHeight, tileWidth = info.tileWidth,
                 tileHeight = info.tileHeight, files = files }
     end
-    arts[map] = art
+    if key then arts[key] = art end
     return art
 end
-Art.Of = Of -- the dungeons' maps too (Dungeons.lua)
+Art.Of = Of -- the dungeons' maps too (Dungeons.lua), and Retail's camera (its nearest zoom)
 
 -- One map's art over its box: the tiles that meet the view, at sublevel; cut by mask, if given. under: drawn under
 -- the stitched map (Under), in textures of its own, so the same map can be drawn over it too (the isle, a zone).
-local function Draw(map, box, sublevel, view, mask, under)
-    local art = Of(map)
+-- layer: which of its layers (the first unless said).
+local function Draw(map, box, sublevel, view, mask, under, layer)
+    local art = Of(map, layer)
     if not art or not box then return end
     local width, height = art.tileWidth / art.width * box.width, art.tileHeight / art.height * box.height
     local right, bottom = box.u + box.width, box.v - box.height
@@ -104,7 +127,7 @@ local function Draw(map, box, sublevel, view, mask, under)
                 local index = (row - 1) * art.across + column
                 local file = art.files[index]
                 if file and u < view.right and u + width > view.left then
-                    local key = map * 1000 + index
+                    local key = (map * 1000 + index) * 10 + (layer or 1) - 1
                     ns.Canvas.Put(pool:Get(under and -key or key, file, sublevel, mask), u, v, width, height,
                         math.min(1, (right - u) / width), math.min(1, (v - bottom) / height))
                 end
@@ -231,13 +254,17 @@ local function Under(view)
 end
 
 -- The art in view (view: Canvas.view), if shown (the view Parchment): the world's and the continents' maps,
--- the stitched map over them, up close every zone's own over that.
+-- the stitched map over them, up close every zone's own over that. One map at a time (Retail, view.shown): that
+-- map's art alone, in the layer the zoom asks for, with its explored parts.
 function Art.Place(view, shown)
     pool:Begin()
     parts:Begin()
     stitched:Begin()
     outlines:Begin()
-    if shown then
+    if shown and view.shown then
+        Draw(view.shown, view.box, 1, view, nil, nil, view.layer)
+        if (view.layer or 1) == 1 then Parts(view.shown, view.box, 2, view) end
+    elseif shown then
         Under(view)
         if ns.Terrain.Ready() then ns.Terrain.Overview(view, stitched, Art.SKETCH, 2) end
         if view.level == "zone" then Zones(view) end
@@ -257,7 +284,9 @@ end
 -- at a continent the zone there, at the world the continent; none at a zone, nor where the game has none.
 function Art.Light(view, u, v)
     local map, box
-    if view.level == "world" then
+    if view.shown then
+        map, box = view.shown, view.box -- one map at a time: on it, whatever its level (Retail)
+    elseif view.level == "world" then
         map, box = Coords.WorldMap(), Coords.WorldBox(view.map)
     elseif view.level == "continent" then
         map, box = view.map, Coords.Box(view.map)

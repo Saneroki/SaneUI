@@ -12,6 +12,8 @@ fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, 
 (the docks, piers and bridges standing on it kept); or *Blended*, the one far out fading into the other close in.
 With the module *Atlas* (`SaneUI_Atlas`, `src/Atlas/`) switched on there is a third, *Atlas*: the whole world
 painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
+That is WoW: Forever's map; in Retail the map is the game's own map tree, one map at a time, as the game's own map
+shows it: a click into a map, a right click out to the one over it, the wheel within it.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
 party), always over the map; the full map has the quest log as a window of its own over it, which its pin keeps
 on the screen while the map is small too, and the maps of the dungeons and raids. The plan is in
@@ -623,20 +625,35 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   minimap chosen the small window rests (alpha 0, the canvas takes no mouse and holds no texture) while the
   corner's push still fills the screen; Edit Mode shows it. The Classic windows are kept choices (Core's
   `checked`, `back`).
+- **Retail's map: the game's own map tree, one map at a time** (Saneroki, 2026-10-25; `Camera.Retail.lua`, read in
+  Retail alone): where WoW: Forever's map is one world to roam, Retail's is the game's own maps, as its own map shows
+  them. The map shown (`camera.shown`) fills the view whole at first; the wheel zooms in on it up to the largest
+  scale of its art (as near as the game's own map comes, or `Camera.DEEP` units to a pixel of its art) and out to it
+  whole; a click goes into the map the game says is under the mouse (`camera:Under`, as its `NavigateToCursor`), at
+  every level, lit up before (`Art.Light` on the map shown); a right click goes up to the map over it: a zone, its
+  continent, Azeroth, the Cosmic map of every world (`StepOut`). Following the player, it shows the map the player is
+  on (`Camera.Wanted`: the game's best map, or the first over it that can be shown). Only that map's art is drawn, in
+  the layer its zoom asks for (`camera.layer`, as Blizzard's scroll controller picks the layers), with its explored
+  parts; the pins and the quest areas are that map's (`Pins.For`, `Areas.Place`), at a continent only the continent's
+  kinds. The spaces stay Forever's (`Coords.lua`): the map shown lies in its plane, in yards, so the pins, the party,
+  the route and the game's minimap stand where they stand in both games; Azeroth is drawn in a continent's plane on
+  it (`Coords.WorldBox`). Two answers of the map tree differ in Retail: a map whose box lies in another world than
+  its continent's (a battleground, a dungeon's floor, an isle of its own) is a plane of its own, and the Cosmic map
+  is a sheet of its own (`Coords.SHEET` wide, its art's shape). The map selector has the Cosmic map first.
 - **Forever and Retail:** one code for both games. Retail has none of Core's data yet (Core refuses Forever's
   sets there), so what needs it stands down without a word, and what needs a system only Forever has too; the
   minimap and the map work from the game's own API (`ns.Has`: a set ready or still being read):
   - the views: Scrying and Blended need Core's terrain (`Terrain.Possible`, the set *Tiles*): not offered, and
     a view not offered falls back to Scrying or, without it, to Parchment (`ns.Fallback`), the game's own map
-    art (the world's, each continent's, the zone in the middle whole; no stitched map, no outlines: `Outlines.lua`
-    and `Coasts.lua` are Forever's world, left out of Retail by their TOC lines). In the small view at the game's
+    art (one map at a time, above; no stitched map, no outlines: `Outlines.lua` and `Coasts.lua` are Forever's
+    world, left out of Retail by their TOC lines). In the small view at the game's
     minimap's steps the game's minimap keeps its own ground there, the land as it lies (`Hybrid.Place`); past
     them, and on the full map, Parchment with its dots;
   - the game's minimap given back round where the game's code sets no mask (Retail: `Hybrid.ROUND`, the engine's
     own; Forever's `UpdateMinimapConfig` sets it there);
   - the continents beside the world map, under the map over it (Retail's Outland, Draenor, the Shadowlands:
-    `Coords.Top`, `Coords.Elsewhere`): in the map selector after the world's, each drawn by its own map
-    (`Art.lua`, `Under`); the dungeons listed from the top of the map tree;
+    `Coords.Top`, `Coords.Elsewhere`): in the map selector after the world's, each a map of the tree (above); the
+    dungeons listed from the top of the map tree;
   - the pin kinds only Core's data has (offers, low, later, done, services, possible herbs and ore, books: their
     `data` in `ns.KINDS`) are not in the pin filter nor the setting's list (`ns.KindOffered`); the game's own
     (the log, flight points, places, rares, treasures, entrances, links, the group, quest areas) show;
@@ -656,6 +673,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 |---|---|
 | `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Navigation.lua` | The module's table (`ns`), its texts and settings, `/sane map`, `GiveBack` |
+| `Camera.Retail.lua` | Retail's camera: one map at a time from the game's map tree (into a map, out to the one over it, the wheel within it, its art's layer), following onto the map the player is on; Retail's two answers of the map tree (`Coords.PlaneOf`, `Coords.Box`). Read in Retail alone |
 | `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them, the top of the tree and the continents beside the world map (Retail's); the terrain's grid; the player's place. No frames |
 | `Camera.lua` | Where a view looks: middle, zoom, following, the level its zoom shows; drag, wheel, one map out. No frames |
 | `Live.lua` | What the game tells while playing, read when it changes. No frames |
@@ -700,6 +718,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, Retail's own maps (Saneroki):** in Retail the map is the game's own map tree, one map at a time: a
+  click into the map under the mouse, a right click up to the map over it (zone, continent, Azeroth, the Cosmic
+  map), the wheel within the map shown, its art's layers by the zoom, its pins alone; following, the map the player
+  is on; the full map opens on it whole (`Camera.Retail.lua`). Forever's map is as it was.
 - **2026-10-25, in Retail:** the module runs in Retail too, where Core has no data yet: the map is drawn as
   Parchment (Scrying and Blended stand down without Core's terrain), the small view at the game's minimap's steps
   shows the game's own ground, the game's minimap is given back round, the continents beside the world map

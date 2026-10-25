@@ -377,9 +377,9 @@ function Hybrid.Wheel(camera, notches, size)
         end
         if step > last then
             -- In past the narrowest step: our map alone, a notch nearer, up to its own nearest zoom.
-            if not nearest or nearest >= ns.Camera.Near() then return true end
+            if not nearest or nearest >= camera:Nearest() then return true end
             camera.native = nil
-            camera.k = math.min(ns.Camera.Near(), nearest * ns.Camera.STEP)
+            camera.k = math.min(camera:Nearest(), nearest * ns.Camera.STEP)
             return true
         end
     elseif nearest and camera.k > nearest then
@@ -388,7 +388,7 @@ function Hybrid.Wheel(camera, notches, size)
         step = last
     elseif notches > 0 then
         local widest = Hybrid.Zoom(0, size)
-        if not widest or camera.k * ns.Camera.STEP ^ notches < widest and camera.k < ns.Camera.Near() then return false end
+        if not widest or camera.k * ns.Camera.STEP ^ notches < widest and camera.k < camera:Nearest() then return false end
         step = 0
     else
         return false

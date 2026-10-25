@@ -8,8 +8,9 @@ local _, ns = ...
 --      the views         Parchment; Blended and Scrying while Core's terrain is there (not in Retail, until its
 --                        data comes); Atlas while its module is: how the map is drawn (the setting Map view;
 --                        Navigation.lua, Offer)
---      the map selector  the world, a continent or a plane of its own (Zephras Isle), then a zone of it (A to
---                        Z): the map shows it whole; each says what the map shows now
+--      the map selector  the world (in Retail first the Cosmic map over it), a continent or a plane of its own
+--                        (Zephras Isle), then a zone of it (A to Z): the map shows it whole; each says what the
+--                        map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
 --      Follow me         a checkbox left of the pin filter: the full map keeps you in its middle as you move
@@ -130,10 +131,12 @@ local function FloorList(_, root)
     end
 end
 
--- The world, then each continent and each plane of its own; then the continents beside the world map (Retail's
--- Outland, Draenor, the Shadowlands: Coords.Elsewhere).
+-- The map of every world where the game has one over the world map and it can be shown (Retail's Cosmic map:
+-- Camera.Retail.lua), the world, then each continent and each plane of its own; then the continents beside the world
+-- map (Retail's Outland, Draenor, the Shadowlands: Coords.Elsewhere).
 local function Continents(_, root)
-    local world = Coords.WorldMap()
+    local world, top = Coords.WorldMap(), Coords.Top()
+    if top and top ~= world and Coords.Box(top) then Radio(root, Name(top), top) end
     if world then Radio(root, Name(world), world) end
     for _, plane in ipairs(Coords.Planes()) do Radio(root, Name(plane), plane) end
     for _, plane in ipairs(Coords.Elsewhere()) do Radio(root, Name(plane), plane) end
@@ -326,7 +329,8 @@ function TopBar.Update()
     if not bar or not bar:IsShown() then return end
     local camera = ns.Canvas.camera
     if not camera or not camera.map then return end
-    local map = camera.level == "world" and Coords.WorldMap() or camera.map
+    -- (one map at a time, Retail: the world level is the map shown, Azeroth or the Cosmic map)
+    local map = camera.level == "world" and (camera.shown or Coords.WorldMap()) or camera.map
     local zone = camera.level == "zone" and ns.Canvas.view.zone or nil
     logButton:SetButtonState(TopBar.LogShown() and "PUSHED" or "NORMAL", TopBar.LogShown())
     followBox:SetChecked(ns.options.followMap and true or false)
@@ -343,5 +347,5 @@ function TopBar.Update()
     shownMap, shownZone = map, zone
     continentMenu:OverrideText(Name(map))
     zoneMenu:OverrideText(zone and Name(zone) or TopBar.TEXT.zones)
-    zoneMenu:SetEnabled(map ~= Coords.WorldMap())
+    zoneMenu:SetEnabled(camera.level ~= "world")
 end
