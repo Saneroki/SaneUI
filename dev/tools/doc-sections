@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""A long document read by its sections, so a chat loads only what it needs.
+
+Usage: dev/tools/doc-sections FILE              its headings: lines, size in tokens (about), nesting
+       dev/tools/doc-sections FILE HEADING ...  the sections whose heading holds these words (any case)
+
+Works on Markdown headings (# to ######) outside code fences. A section runs to the next heading of the
+same or a higher level, so it holds its subsections.
+"""
+import re
+import sys
+from pathlib import Path
+
+HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+FENCE = re.compile(r"^\s*(```|~~~)")
+
+
+def sections(lines):
+    found, fenced = [], False
+    for number, line in enumerate(lines, 1):
+        if FENCE.match(line):
+            fenced = not fenced
+        elif not fenced and (match := HEADING.match(line)):
+            found.append([len(match[1]), match[2], number, len(lines)])
+    for at, section in enumerate(found):
+        for later in found[at + 1:]:
+            if later[0] <= section[0]:
+                section[3] = later[2] - 1
+                break
+    return found
+
+
+def tokens(lines):
+    count = sum(len(line) for line in lines) // 4
+    return f"{count / 1000:.1f}k" if count >= 1000 else str(count)
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        sys.exit(__doc__.strip())
+    path = Path(sys.argv[1])
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    found = sections(lines)
+    if len(sys.argv) == 2:
+        print(f"{path}: {len(lines)} lines, ~{tokens(lines)} tokens")
+        for level, title, first, last in found:
+            print(f"{first:>6}-{last:<6} ~{tokens(lines[first - 1:last]):>5}  {'  ' * (level - 1)}{title}")
+        return
+    words = [word.lower() for word in sys.argv[2:]]
+    picked = [section for section in found if all(word in section[1].lower() for word in words)]
+    if not picked:
+        sys.exit(f"doc-sections: no heading in {path} holds {' '.join(sys.argv[2:])!r}")
+    for level, title, first, last in picked:
+        print(f"== {path}:{first}-{last}")
+        sys.stdout.write("".join(lines[first - 1:last]))
+
+
+main()

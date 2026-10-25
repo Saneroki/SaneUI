@@ -94,6 +94,8 @@ GROUPS = {
         "makesyncpages": (["dev/tools/sync-pages"], "what each of the game's options pages sets", None),
         "compareblizzard": (["dev/tools/blizzard"], "a new game build's interface code against ours", None),
         "indexproject": (["dev/tools/project-index"], "the project map in Doc/agent", None),
+        "showsections": (["dev/tools/doc-sections"], "a long document's headings with their size, or the sections named",
+                         None),
     },
     "Voices": {
         "voicedb": (["dev/tools/voicedb"], "the texts of the game that get a voice", None),

@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 91 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: long documents read by their sections (Saneroki, 2026-10-25)
+- `dev/tools/doc-sections` (`saneui showsections FILE`): a Markdown file's headings with their lines and size in tokens
+  (about); `saneui showsections FILE words` prints the sections whose heading holds those words, with their
+  subsections. A chat reads a guide of 20k tokens by the part it needs.
+- `Doc/agent/README.md`, *Read as little as needed*, names it.
+
 ### Speed Leveling: NPCs found before creatures (Saneroki, 2026-10-25)
 - `Wanted.Names()`: the guide's NPCs and the NPCs your finished quests go to come before every creature (the guide's,
   the quests', those the game marks on nameplates), so Find targets a quest giver or taker around you first.

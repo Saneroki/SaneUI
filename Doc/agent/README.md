@@ -6,7 +6,7 @@ Use current source and the user's instructions when they differ from a note.
 ## Read as little as needed
 
 1. Read this page (and root `AGENTS.md` where there is one); check `git status --short` and `git log -5 --oneline`.
-2. Read the relevant note below and the matching development guide.
+2. Read the relevant note below and the matching development guide: long ones by section (`saneui showsections FILE` lists them).
 3. Read the current implementation and nearby tests for the requested behaviour.
 4. Look up only the needed Blizzard APIs/templates locally. Avoid generated copies in `BUILD/`.
 
