@@ -26,6 +26,16 @@ step, done ones too, and go to one with a right click; and chat said the game bl
 - **Tests:** `dev/tests/speedguide.lua` 148 checks.
 - **Docs:** `src/SpeedLeveling/README.md`.
 
+### Installs into Forever and Retail at once (Saneroki, 2026-10-25)
+Saneroki, a hard rule: `saneui installdev` and every session's build, commit and install put the build into both
+games at the same time.
+- **`dev/build`:** `--install` goes into Forever's game folder (`WOW_FOREVER`, default `_forever_`) and Retail's
+  (`WOW_RETAIL`, default `_retail_` beside it), both or neither: each must have its `Interface/AddOns` and a
+  `.flavor.info` of its own game, or nothing is copied into either and the build says which folder is missing (before,
+  whichever game folders were there, and `WOW_FOREVER` named one alone).
+- **`dev/saneui`:** `saneui installed` names the build in Forever's and Retail's game, and a game without Sane UI.
+- **Docs:** `dev/installdev`, `dev/installrelease`, `Scripts/update`, `README.md`, `Doc/agent/development.md`.
+
 ### Nameplates: critters without a plate or a name, a setting shows them (Saneroki, 2026-10-25)
 Saneroki asked for critters to have no name or nameplate by default, with a setting to show them.
 - **`src/Nameplates/Plate.lua`:** `Plate.Wanted(unit, dress)`: a unit that is no player whose creature type

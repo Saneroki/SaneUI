@@ -20,9 +20,10 @@
 #      takes its index from there too, and is built only once dev/tools/atlas has made it. Then Core's data
 #      sets (BUILD/SaneUI/Sets, listed at the end of its TOC), compiled from the master in assets/data by
 #      dev/tools/data: Forever live's (Doc/guides/data.md).
-#   3. With --install: copies them into the AddOns folder of each game folder whose product Sane UI knows
-#      (.flavor.info: WoW: Forever's _forever_ and Retail's _retail_, whichever are there; WOW_FOREVER names one
-#      alone), so the game has this build whichever of them it is started in, and removes a module's folder
+#   3. With --install: copies them into the AddOns folders of both games at once, WoW: Forever's _forever_ and
+#      Retail's _retail_ (Saneroki, 2026-10-25, a hard rule), so either game has this build whichever is started;
+#      if one of the two is not there (no AddOns folder, or .flavor.info names another product), nothing goes
+#      into either (WOW_FOREVER and WOW_RETAIL name the folders elsewhere). It removes a module's folder
 #      there under its old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities; the
 #      data packs SaneUI_Data_*, now part of Core). Core's sets go in as the game folder's product says:
 #      Forever live's into its folder; into another game version's folder (Retail's, a PTR's) that game
@@ -45,6 +46,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_forever_}"
 addons="$wow/Interface/AddOns"
+retail="${WOW_RETAIL:-$(dirname "$wow")/_retail_}"
 
 mode="" install="" release=""
 while [ $# -gt 0 ]; do
@@ -168,22 +170,21 @@ if [ -z "$install" ]; then
     exit 0
 fi
 
-# The game folders it goes into: WOW_FOREVER's alone; else each beside the default one whose product Sane UI
-# knows (Forever's _forever_, Retail's _retail_), so that none keeps an older build, nor a copy of another's with
-# sets its client refuses.
-folders=()
-if [ -n "${WOW_FOREVER:-}" ]; then
-    if [ -d "$addons" ]; then folders=("$wow"); fi
-else
-    for folder in "$(dirname "$wow")"/_*_; do
-        if [ -d "$folder/Interface/AddOns" ] && "$root/dev/tools/data" game "$folder" >/dev/null; then
-            folders+=("$folder")
-        fi
-    done
-fi
-if [ ${#folders[@]} -eq 0 ]; then
-    echo "AddOns folder not found: $addons" >&2
-    echo "Set WOW_FOREVER to the game's folder (_forever_; Retail's is _retail_). The build itself is done." >&2
+# The game folders it goes into: Forever's and Retail's, both at once (Saneroki, 2026-10-25, a hard rule), so that
+# neither keeps an older build. Each must be there and be its game's (.flavor.info), or nothing goes into either.
+folders=("$wow" "$retail")
+missing=""
+for folder in "${folders[@]}"; do
+    if [ "$folder" = "$wow" ]; then want=forever; else want=retail; fi
+    game="$("$root/dev/tools/data" game "$folder" 2>/dev/null || true)"
+    if [ ! -d "$folder/Interface/AddOns" ] || [ "${game%%-*}" != "$want" ]; then
+        echo "Not a game folder of ${want^}'s with an AddOns folder: $folder" >&2
+        missing=1
+    fi
+done
+if [ -n "$missing" ]; then
+    echo "Nothing installed: the build goes into Forever's and Retail's game folders at once, or into neither." >&2
+    echo "Start that game once (its AddOns folder appears), or set WOW_FOREVER and WOW_RETAIL to the folders. The build itself is done." >&2
     exit 1
 fi
 # Art in Git LFS that git never downloaded is a small text file pointing at it: never into the game.

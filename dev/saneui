@@ -123,6 +123,7 @@ BACKGROUND = {
 LINK = Path.home() / "bin" / "saneui"
 GAME = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"
                            "/Program Files (x86)/World of Warcraft/_forever_"))
+RETAIL = Path(os.environ.get("WOW_RETAIL", GAME.parent / "_retail_"))
 
 
 def run(argv):
@@ -135,12 +136,13 @@ def run(argv):
 
 
 def installed():
-    """The build in the game: Core's TOC in each game folder (WOW_FOREVER's alone, else live's and the beta's)."""
-    folders = [GAME] if os.environ.get("WOW_FOREVER") else sorted(GAME.parent.glob("_*_"))
-    found = False
-    for folder in folders:
+    """The build in the game: Core's TOC in Forever's and Retail's game folders (dev/build installs into both)."""
+    missing = False
+    for game, folder in (("Forever", GAME), ("Retail", RETAIL)):
         toc = folder / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
         if not toc.is_file():
+            print(f"No Sane UI in {game}'s game ({folder / 'Interface' / 'AddOns'}).")
+            missing = True
             continue
         fields = {}
         for line in toc.read_text(errors="replace").splitlines():
@@ -148,12 +150,8 @@ def installed():
                 key, value = line[3:].split(":", 1)
                 fields[key.strip()] = value.strip()
         build = fields.get("X-SaneUI-Build", "dev (built before builds were marked)")
-        print(f"In the game ({folder.name}): Sane UI {fields.get('Version', '?')}, {build}.")
-        found = True
-    if not found:
-        print(f"No Sane UI in the game ({GAME / 'Interface' / 'AddOns'}).")
-        return 1
-    return 0
+        print(f"In {game}'s game ({folder.name}): Sane UI {fields.get('Version', '?')}, {build}.")
+    return 1 if missing else 0
 
 
 def overview():

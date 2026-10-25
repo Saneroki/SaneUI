@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # A release into the game: the snapshot of the dev build git keeps under a version tag (default
-# current, the newest), tested, built into BUILD/release/<tag> and copied into WoW: Forever's AddOns
-# folder in place of the dev build (dev/build --release TAG --install). saneui installrelease runs it;
+# current, the newest), tested, built into BUILD/release/<tag> and copied into the AddOns folders of
+# WoW: Forever and Retail at once in place of the dev build (dev/build --release TAG --install). saneui installrelease runs it;
 # saneui installdev goes back to the dev build.
 #
 # Usage:  dev/installrelease [TAG]

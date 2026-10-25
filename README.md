@@ -41,9 +41,10 @@ saneui installrelease      # the release into the game: the tag current, or one 
 saneui build               # test and build into BUILD only (--release TAG: a release, into BUILD/release/TAG)
 saneui installed           # which build the game has
 ```
-Then `/reload` in the game (a new file or a first install needs a game restart). The installs go into each
-game folder of Forever there is, live's `_forever_` and the beta's `_classic_beta_`, each with the data sets of
-its own game version (a client does not use another's); `WOW_FOREVER` names one folder alone.
+Then `/reload` in the game (a new file or a first install needs a game restart). The installs go into both
+games at once, Forever's `_forever_` and Retail's `_retail_`, each with the data sets of its own game version (a
+client does not use another's); if either folder is missing, nothing is installed. `WOW_FOREVER` and `WOW_RETAIL`
+name the folders elsewhere.
 
 - **The dev build** is the default: the working tree as it is, with every change not yet committed. Its TOCs
   say `## X-SaneUI-Build: dev <commit>` (`+changes` when the tree differs from the commit).
