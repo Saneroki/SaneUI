@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Abilities
 ## Notes: Sane UI's spellbook. The spells you have not learned yet are in your spellbook, in grey, and a Home page says what you can learn now. Drag a grey spell onto an action bar button and the button is reserved until you learn the spell. Type /sane abilities.
 ## Author: Saneroki

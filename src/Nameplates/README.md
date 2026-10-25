@@ -1,6 +1,6 @@
 # Sane UI: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever (interface 16001)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's

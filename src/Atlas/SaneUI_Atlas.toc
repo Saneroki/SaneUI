@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Atlas
 ## Notes: The painted map for Navigation: the whole world painted as one map, from a single building up close out to both continents. Navigation shows it as its third map view, Atlas, while this is switched on. Loaded only when that view is first shown.
 ## Author: Saneroki
@@ -7,6 +7,7 @@
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## LoadOnDemand: 1
+## X-SaneUI-Games: forever
 ## IconTexture: Interface\Icons\INV_Misc_Map02
 ## X-License: MIT
 

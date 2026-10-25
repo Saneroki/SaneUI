@@ -7,8 +7,8 @@ local _, ns = ...
 --  src/Atlas/, its art of about 3 GB made into assets/optimized/Atlas/ and put in
 --  by dev/build), loaded on demand:
 --
---      found      at login, without loading it: it is in the addon list, switched on for this character
---                 and loadable (Find); only then the view is offered (its button, its choice)
+--      found      at login, without loading it: it is in the addon list, switched on for this character,
+--                 loadable and made for this game (Find); only then the view is offered (its button, its choice)
 --      loaded     the first time the view is drawn (Ready: C_AddOns.LoadAddOn, guarded); its index
 --                 read, it answers as SaneUI.Atlas (Core's modules). If it cannot be loaded, or stands
 --                 down later, the view is no longer offered: its button and choice go and the map shows
@@ -46,7 +46,8 @@ local offer = Core.Later(function() ns.Guarded(ns.Offer) end)
 function Painted.Find()
     state = false
     local api = rawget(_G, "C_AddOns")
-    if not api then return false end
+    -- The art is Forever's world (its TOC: X-SaneUI-Games): Retail's continents are another landscape.
+    if not api or not Core.ServesGame(Painted.ADDON) then return false end
     if Core.Ask(api.IsAddOnLoaded, Painted.ADDON) then
         state = "found"
         return true

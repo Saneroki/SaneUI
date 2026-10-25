@@ -93,6 +93,10 @@ GROUPS = {
         "makecvarlabels": (["dev/tools/cvar-labels"], "the names of the game's settings", None),
         "makesyncpages": (["dev/tools/sync-pages"], "what each of the game's options pages sets", None),
         "compareblizzard": (["dev/tools/blizzard"], "a new game build's interface code against ours", None),
+        "readpatch": (["dev/tools/blizzard", "patch"], "after a game patch: its interface exported, our patch notes, "
+                      "the todo list and the brief of the fixing session (forever, retail)", "after a patch: patch notes"),
+        "fixpatch": (["dev/tools/blizzard", "fix"], "the session that makes Sane UI comply with the newest patch "
+                     "(--print: the prompt only)", "the patch's fixing session"),
         "indexproject": (["dev/tools/project-index"], "the project map in Doc/agent", None),
         "showsections": (["dev/tools/doc-sections"], "a long document's headings with their size, or the sections named",
                          None),

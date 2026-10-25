@@ -132,7 +132,7 @@ local function PutUpPages()
     -- on the page Profiles.
     for _, name in ipairs(Core.optionOrder) do
         local module = SaneUI[name]
-        if module and name ~= Core.name then
+        if module and name ~= Core.name and not module.elsewhere then
             if Core.Tabbed(name) and canvas then
                 -- Switches in tabs: a page of our own, as Profiles is. The game's Defaults (All settings)
                 -- sets the switches of a page of our own through its OnDefault.

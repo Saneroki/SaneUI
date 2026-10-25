@@ -1,6 +1,6 @@
 # Sane UI: Abilities
 
-**Status:** working · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever (interface 16001)
+**Status:** working · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for your spells and abilities (it was called *Spellbook*; it will do more than the spellbook).

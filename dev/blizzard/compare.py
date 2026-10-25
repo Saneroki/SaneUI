@@ -433,9 +433,12 @@ class Analysis:
         if wanted:
             stale = []
             for toc in tocs:
-                found = re.search(r"^## Interface:\s*(\d+)", toc.read_text(encoding="utf-8"), re.M)
-                if found and int(found.group(1)) != wanted:
-                    stale.append((toc, found.group(1)))
+                # One number per game (16001, 120105): the one of this export's game (its major version) is checked.
+                found = re.search(r"^## Interface:\s*([\d,\s]+)$", toc.read_text(encoding="utf-8"), re.M)
+                numbers = [int(n) for n in re.findall(r"\d+", found.group(1))] if found else []
+                if found and wanted not in numbers:
+                    same = [str(n) for n in numbers if n // 10000 == wanted // 10000]
+                    stale.append((toc, ", ".join(same) or "none of this game's"))
             if stale:
                 self.add("housekeeping", "interface", [f"`## Interface: {wanted}` for build {self.new.build}"] +
                          [f"{self.uses.rel(toc)} has {number}" for toc, number in stale], label="TOC Interface number")

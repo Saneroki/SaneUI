@@ -17,18 +17,19 @@ from pathlib import Path
 
 import compare
 
-GAMES = ("forever", "retail")
+GAMES = ("forever", "retail")  # the names of the two sides: the games here, ("old", "new") for a patch (patch.py)
 OK = ("ok", "decrypted")  # the statuses of a file the export holds, in its files.tsv
 
 
-def status(a, b):
-    """How one symbol differs between Forever (a) and Retail (b), or None where it is the same."""
+def status(a, b, names=GAMES):
+    """How one symbol differs between the first side (a, Forever) and the second (b, Retail), or None where it is
+    the same."""
     if a is None:
-        return "retail-only"
+        return f"{names[1]}-only"
     if b is None:
-        return "forever-only"
+        return f"{names[0]}-only"
     if a["deprecated"] != b["deprecated"]:
-        return "deprecated-in-" + ("retail" if b["deprecated"] else "forever")
+        return "deprecated-in-" + (names[1] if b["deprecated"] else names[0])
     if a["sig"] != b["sig"]:
         return "calls-differ"
     if a["hash"] != b["hash"]:
@@ -58,31 +59,32 @@ def addon_of(file):
     return parts[1] if len(parts) > 2 and parts[0] == "AddOns" else ""
 
 
-def symbols(forever, retail):
+def symbols(forever, retail, names=GAMES):
     """[(id, kind, status, forever's place, retail's place, notes)] of every symbol that differs."""
     rows = []
     for id_ in sorted(forever.symbols.keys() | retail.symbols.keys()):
         a, b = forever.symbols.get(id_), retail.symbols.get(id_)
-        how = status(a, b)
+        how = status(a, b, names)
         if how:
             notes = compare.describe(a, b) if a and b else []
             rows.append((id_, (a or b)["kind"], how, where(a), where(b), "; ".join(notes)))
     return rows
 
 
-def files(forever, retail):
+def files(forever, retail, names=GAMES):
     """[(path, status, loaded by)] of every code file, matched without regard to capitals."""
-    exports = {"forever": forever, "retail": retail}
+    exports = dict(zip(names, (forever, retail)))
     by_name = {game: {path.lower(): path for path in export.files} for game, export in exports.items()}
     loaded = {game: {path.lower() for path in export.loaded} for game, export in exports.items()}
     rows = []
-    for low in sorted(by_name["forever"].keys() | by_name["retail"].keys()):
-        f, r = by_name["forever"].get(low), by_name["retail"].get(low)
+    first, second = by_name[names[0]], by_name[names[1]]
+    for low in sorted(first.keys() | second.keys()):
+        f, r = first.get(low), second.get(low)
         if f and r:
             how = "same" if forever.files[f] == retail.files[r] else "differs"
         else:
-            how = "forever-only" if f else "retail-only"
-        loads = [game for game in GAMES if low in loaded[game]]
+            how = f"{names[0]}-only" if f else f"{names[1]}-only"
+        loads = [game for game in names if low in loaded[game]]
         rows.append((f or r, how, "both" if len(loads) == 2 else loads[0] if loads else "neither"))
     return rows
 
@@ -129,7 +131,7 @@ def art_index(root):
     return index
 
 
-def art(forever_root, retail_root):
+def art(forever_root, retail_root, names=GAMES):
     """[(path, status, forever's bytes, retail's bytes)] of the pictures that differ, and the counts per folder."""
     f, r = art_index(forever_root), art_index(retail_root)
     rows, folders = [], defaultdict(Counter)
@@ -138,7 +140,7 @@ def art(forever_root, retail_root):
         if a and b:
             how = "same" if a[1] == b[1] else "differs"
         else:
-            how = "forever-only" if a else "retail-only"
+            how = f"{names[0]}-only" if a else f"{names[1]}-only"
         path = (a or b)[0]
         folders["/".join(path.split("/")[:3]) if path.count("/") > 2 else path.rsplit("/", 1)[0]][how] += 1
         if how != "same":
@@ -156,23 +158,29 @@ def namespace(id_):
     return kind
 
 
-def write(forever, retail, forever_art, retail_art, out):
-    """The lookup tables into the folder out; returns the README's lines."""
+def tables(a, b, art_a, art_b, out, names=GAMES):
+    """The tables of two exports side by side into the folder out: (symbol rows, file rows, addon rows, art rows,
+    art folders)."""
     out.mkdir(parents=True, exist_ok=True)
-    symbol_rows = symbols(forever, retail)
-    write_tsv(out / "symbols.tsv", ("id", "kind", "status", "forever", "retail", "notes"), symbol_rows)
-    file_rows = files(forever, retail)
+    symbol_rows = symbols(a, b, names)
+    write_tsv(out / "symbols.tsv", ("id", "kind", "status") + names + ("notes",), symbol_rows)
+    file_rows = files(a, b, names)
     write_tsv(out / "files.tsv", ("path", "status", "loads"), file_rows)
-    addon_rows = addons(forever, retail, symbol_rows, file_rows)
-    write_tsv(out / "addons.tsv", ("addon", "forever", "retail", "files-differ", "symbols-differ"), addon_rows)
+    addon_rows = addons(a, b, symbol_rows, file_rows)
+    write_tsv(out / "addons.tsv", ("addon",) + names + ("files-differ", "symbols-differ"), addon_rows)
     art_rows, folders = [], {}
-    if forever_art.is_dir() and retail_art.is_dir():
-        art_rows, folders = art(forever_art, retail_art)
-        write_tsv(out / "art.tsv", ("path", "status", "forever-bytes", "retail-bytes"), art_rows)
-        statuses = ("same", "differs", "forever-only", "retail-only")
+    if art_a and art_b and art_a.is_dir() and art_b.is_dir():
+        art_rows, folders = art(art_a, art_b, names)
+        write_tsv(out / "art.tsv", ("path", "status", f"{names[0]}-bytes", f"{names[1]}-bytes"), art_rows)
+        statuses = ("same", "differs", f"{names[0]}-only", f"{names[1]}-only")
         write_tsv(out / "art-folders.tsv", ("folder",) + statuses,
                   [(folder, *(folders[folder][s] for s in statuses)) for folder in sorted(folders)])
-    return readme(forever, retail, symbol_rows, file_rows, addon_rows, art_rows, folders)
+    return symbol_rows, file_rows, addon_rows, art_rows, folders
+
+
+def write(forever, retail, forever_art, retail_art, out):
+    """The lookup tables of Forever and Retail into the folder out; returns the README's lines."""
+    return readme(forever, retail, *tables(forever, retail, forever_art, retail_art, out))
 
 
 def table(head, rows):

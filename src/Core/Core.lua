@@ -39,6 +39,40 @@ function Core.Print(text)
     print(PREFIX .. text)
 end
 
+-- The game this client is: Sane UI is one code for WoW: Forever and Retail (Doc/guides/addon-standards.md,
+-- *Forever and Retail*). Core.GAME is "forever" or "retail", nil on any other client; Core.FOREVER and
+-- Core.RETAIL say the same for code that differs. Forever's client is Retail's with a layer of its own, so
+-- WOW_PROJECT_ID tells them apart (18 and 1, should the game's names for them be missing). Told as Core is
+-- read; again only by the tests.
+function Core.TellGame()
+    local project, game = rawget(_G, "WOW_PROJECT_ID"), nil
+    if project ~= nil and project == (rawget(_G, "WOW_PROJECT_CAMELOT") or 18) then
+        game = "forever"
+    elseif project ~= nil and project == (rawget(_G, "WOW_PROJECT_MAINLINE") or 1) then
+        game = "retail"
+    end
+    Core.GAME, Core.FOREVER, Core.RETAIL = game, game == "forever", game == "retail"
+    return game
+end
+Core.TellGame()
+
+-- This game's one of a choice made per game: Core.ForGame({ forever = 6, retail = 8 }) is 6 in Forever; nil
+-- where the game is not named (what that game lacks).
+function Core.ForGame(choices)
+    return choices[Core.GAME]
+end
+
+-- Whether an addon of Sane UI serves this game: "## X-SaneUI-Games: forever" in its TOC names the games it
+-- is made for (a module that needs the one game's art or systems); without it, both.
+function Core.ServesGame(addon)
+    local ok, games = pcall(C_AddOns.GetAddOnMetadata, addon, "X-SaneUI-Games")
+    if not ok or type(games) ~= "string" or games == "" then return true end
+    for game in games:lower():gmatch("[%a%-]+") do
+        if game == Core.GAME then return true end
+    end
+    return false
+end
+
 -- The 12.x client hides some values from addons during combat ("secret values").
 -- Using one in a comparison is an error, so everything read from the game goes through here.
 function Core.Secret(value)
@@ -69,7 +103,7 @@ end
 -- region (WoW: Forever, "Droopy Fairwind": two players can share the first name, or the surname), rather
 -- than by one name unique on its realm (Retail, "Thrall-Draenor").
 function Core.Surnames()
-    if rawget(_G, "WOW_PROJECT_ID") == (rawget(_G, "WOW_PROJECT_CAMELOT") or 18) then return true end
+    if Core.FOREVER then return true end
     return Core.Ask(rawget(_G, "RegionalUniqueNamesEnabled")) == true
 end
 
@@ -586,6 +620,9 @@ function Core.NewModule(addon, name, module)
     module.title = module.title or name
     module.Print, module.Plain, module.On = Core.Print, Core.Plain, Core.On
     byAddon[addon] = byAddon[addon] or module
+    -- A module made for the other game only (its TOC's X-SaneUI-Games) is off here from the start, without a
+    -- word: never started, its guards shut, no options page (module.elsewhere).
+    if not Core.ServesGame(addon) then module.off, module.elsewhere = true, true end
 
     -- As Core.Safe, the label under the module's name. The step runs first: the label's string is
     -- only made when it failed (Safe is used for what runs many times a second).

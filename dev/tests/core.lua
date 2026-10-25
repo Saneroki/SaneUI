@@ -1193,6 +1193,15 @@ check(demo.Guarded(function() given = 99 end) == nil and given == 1, "from then 
 demo.StandDown("again")
 check(given == 1, "and it stands down only once")
 W.printed = {}
+-- A module made for the other game only (its TOC's X-SaneUI-Games): off from the start, without a word.
+W.addons[#W.addons + 1] = { name = "SaneUI_Elsewhere", metadata = { ["X-SaneUI-Games"] = "Retail" } }
+local elsewhere = Core.NewModule("SaneUI_Elsewhere", "Elsewhere")
+check(elsewhere.off and elsewhere.elsewhere and not Core.errors["Elsewhere: it stopped"]
+    and not Core.ServesGame("SaneUI_Elsewhere") and Core.ServesGame("SaneUI_Demo"),
+    "a module made for Retail only is off in Forever, without a word; one without the line serves both games")
+W.addons[#W.addons].metadata["X-SaneUI-Games"] = "forever, retail"
+check(Core.ServesGame("SaneUI_Elsewhere"), "a module that names both games serves this one")
+table.remove(W.addons)
 local spare = Core.NewModule("SaneUI_Spare", "Spare")
 spare.GiveBack = function() error("cannot give it back") end
 spare.StandDown("a part is missing")
@@ -1638,6 +1647,8 @@ check(Core.PlayerKey("target") == nil and Core.FullName("target") == "Marshal Du
 UnitIsPlayer = unitIsPlayer
 -- Retail: UnitName's second answer is a realm, never shown as a surname
 WOW_PROJECT_ID, W.regionalNames = 1, false
+check(Core.TellGame() == "retail" and Core.RETAIL and not Core.FOREVER and Core.ForGame({ forever = 1, retail = 2 }) == 2,
+    "a Retail client: the game retail, its choice")
 UnitName = function(unit) if unit == "target" then return "Thrall", "Draenor" end return "Jaina", nil end
 check(not Core.Surnames() and Core.FullName("target") == "Thrall" and Core.FullName("player") == "Jaina",
     "Retail: the name alone is shown, not the realm as a surname")
@@ -1647,6 +1658,13 @@ check(Core.PlayerKeyOf("Thrall-Draenor") == "Thrall-Draenor" and Core.PlayerKeyO
 W.regionalNames = true
 check(Core.Surnames() and Core.PlayerKeyOf("Droopy Fairwind") == "Droopy Fairwind", "another client with regional names: first name and surname too")
 WOW_PROJECT_ID, UnitName = 18, unitName
+check(Core.TellGame() == "forever" and Core.FOREVER and Core.ForGame({ retail = 2 }) == nil, "back to Forever; a choice it lacks is nil")
+-- A TOC's file for one game (Doc/guides/addon-standards.md, *Forever and Retail*), as each client reads it.
+local retailOnly, foreverOnly = "[AllowLoadGameType standard]", "[ExcludeLoadGameType standard]"
+check(not W.Allowed(retailOnly) and W.Allowed(foreverOnly) and W.Allowed(nil), "Forever reads its own files and both games', not Retail's")
+W.project = 1
+check(W.Allowed(retailOnly) and not W.Allowed(foreverOnly), "Retail reads its own, not Forever's")
+W.project = 18
 
 -- People: an alias and a note for a player, set from the game's menu of a player
 local People = Core.People

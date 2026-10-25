@@ -1,6 +1,6 @@
 # Sane UI: Atlas
 
-**Status:** the code is there; the painted map is being made, and until it is, the module is not built · **Since:** 2026-10-19 · **Addon:** `SaneUI_Atlas` · **Game:** WoW: Forever (interface 16001)
+**Status:** the code is there; the painted map is being made, and until it is, the module is not built · **Since:** 2026-10-19 · **Addon:** `SaneUI_Atlas` · **Game:** WoW: Forever only (`X-SaneUI-Games: forever`: its painted world is Forever's; interface 16001, 120105)
 
 ## TL;DR
 The painted map of the whole world for Navigation: both continents painted as one map, every road, building and

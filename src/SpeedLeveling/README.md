@@ -1,6 +1,6 @@
 # Sane UI: Speed Leveling
 
-**Status:** built · **Since:** 2026-10-25 · **Addon:** `SaneUI_SpeedLeveling` · **Game:** WoW: Forever (interface 16001)
+**Status:** built · **Since:** 2026-10-25 · **Addon:** `SaneUI_SpeedLeveling` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 One key for questing, pressed again and again. Each press does the first of these that is due:

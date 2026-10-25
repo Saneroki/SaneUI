@@ -46,6 +46,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 SRC = Path(__file__).resolve().parents[2] / "src"
 sys.path.insert(0, str(SRC.parent / "dev" / "data"))
+GAME_CONDITIONS = ("[AllowLoadGameType standard]", "[ExcludeLoadGameType standard]")  # Retail's file, Forever's
 MAIN = "SaneUI"  # the addon every module depends on; a module's addon is SaneUI_<Module>
 # dev/build puts each module together from src/<folder> and assets/optimized/<folder> (its art, and the Atlas'
 # index a tool makes with it): a file its TOC lists may be in either. src itself holds no pictures or sounds.
@@ -70,7 +71,13 @@ def read_toc(toc):
             fields[field.group(1)] = field.group(2)
         if not line or line.startswith("#"):
             continue
-        path = toc.parent / line.replace("\\", "/")
+        # A file for one game only (Doc/guides/addon-standards.md, *Forever and Retail*): both clients know the
+        # game type standard; Retail's client may not know camelot, and a type it does not know allows the file.
+        line, _, conditions = line.partition(" [")
+        if conditions and "[" + conditions not in GAME_CONDITIONS:
+            problems.append(f"{toc.relative_to(SRC)}: {line} [{conditions}: a file for one game ends in "
+                            + " or ".join(GAME_CONDITIONS))
+        path = toc.parent / line.strip().replace("\\", "/")
         files.add(path)
         if path.suffix == ".xml" and path.exists():
             for included in re.findall(r'<(?:Script|Include)\s+file="([^"]+)"', path.read_text(encoding="utf-8")):

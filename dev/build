@@ -20,15 +20,16 @@
 #      takes its index from there too, and is built only once dev/tools/atlas has made it. Then Core's data
 #      sets (BUILD/SaneUI/Sets, listed at the end of its TOC), compiled from the master in assets/data by
 #      dev/tools/data: Forever live's (Doc/guides/data.md).
-#   3. With --install: copies them into the AddOns folder of each of WoW: Forever's game folders (live's
-#      _forever_ and the beta's _classic_beta_, whichever are there; WOW_FOREVER names one alone), so the
-#      game has this build whichever of them it is started in, and removes a module's folder there under its
-#      old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities; the data
-#      packs SaneUI_Data_*, now part of Core). Core's sets go in as the game folder's product says
-#      (.flavor.info): live's into live's folder; into a beta's or PTR's folder that game version's,
-#      compiled into the game's copy of Core (a client refuses another game version's sets). A module of
-#      ours that this build does not have (one the release predates) is taken out of the game, so a release
-#      never runs with newer modules.
+#   3. With --install: copies them into the AddOns folder of each game folder whose product Sane UI knows
+#      (.flavor.info: WoW: Forever's _forever_ and Retail's _retail_, whichever are there; WOW_FOREVER names one
+#      alone), so the game has this build whichever of them it is started in, and removes a module's folder
+#      there under its old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities; the
+#      data packs SaneUI_Data_*, now part of Core). Core's sets go in as the game folder's product says:
+#      Forever live's into its folder; into another game version's folder (Retail's, a PTR's) that game
+#      version's, compiled into the game's copy of Core (a client refuses another game version's sets; Retail
+#      has none yet). A module made for one game only (its TOC's X-SaneUI-Games) goes only into that game's
+#      folders and is taken out of the other's. A module of ours that this build does not have (one the
+#      release predates) is taken out of the game, so a release never runs with newer modules.
 #
 # Why a copy and not a symlink: the game runs inside Steam's container, which
 # cannot see /data. A link from the AddOns folder to this project would be dead there.
@@ -167,9 +168,9 @@ if [ -z "$install" ]; then
     exit 0
 fi
 
-# The game folders it goes into: WOW_FOREVER's alone; else each of Forever's beside the default one whose product
-# Sane UI knows (live's _forever_, the beta's _classic_beta_; not retail's), so that neither keeps an older build,
-# nor a copy of the other's with sets its client refuses.
+# The game folders it goes into: WOW_FOREVER's alone; else each beside the default one whose product Sane UI
+# knows (Forever's _forever_, Retail's _retail_), so that none keeps an older build, nor a copy of another's with
+# sets its client refuses.
 folders=()
 if [ -n "${WOW_FOREVER:-}" ]; then
     if [ -d "$addons" ]; then folders=("$wow"); fi
@@ -182,7 +183,7 @@ else
 fi
 if [ ${#folders[@]} -eq 0 ]; then
     echo "AddOns folder not found: $addons" >&2
-    echo "Set WOW_FOREVER to the game's folder (_forever_; the beta's is _classic_beta_). The build itself is done." >&2
+    echo "Set WOW_FOREVER to the game's folder (_forever_; Retail's is _retail_). The build itself is done." >&2
     exit 1
 fi
 # Art in Git LFS that git never downloaded is a small text file pointing at it: never into the game.
@@ -193,14 +194,29 @@ if [ -n "$pointers" ]; then
     exit 1
 fi
 
+# serves <addon> <game version>: whether the built addon is made for that game version's game: its TOC's
+# X-SaneUI-Games names the games (forever, retail); without that line, both.
+serves() {
+    local games
+    games="$(sed -n 's/^## X-SaneUI-Games:[[:space:]]*//p' "$build/$1/$1.toc" | tr -d '\r' | tr 'A-Z,' 'a-z ')"
+    [ -z "$games" ] || [[ " $games " == *" ${2%%-*} "* ]]
+}
+
 # into <game folder>: the build into its AddOns folder (wow and addons, which to_game and stale read).
 into() {
     local name toc old game
     wow="$1" addons="$1/Interface/AddOns"
     # Core's sets of the game folder's own game version (Doc/guides/data.md, *Game versions*): the build has
-    # live's; a beta's or PTR's game copy of Core keeps its own, made anew from the master after the copy.
+    # Forever live's; another game version's copy of Core keeps its own, made anew from the master after the copy.
     game="$("$root/dev/tools/data" game "$wow" || true)"
     for name in $names; do
+        if [ -n "$game" ] && ! serves "$name" "$game"; then
+            if [ -d "$addons/$name" ]; then
+                rm -rf "${addons:?}/$name"
+                echo "Removed from the game, made for another game: $addons/$name"
+            fi
+            continue
+        fi
         if [ "$name" = SaneUI ] && [ -n "$game" ] && [ "$game" != forever ]; then
             to_game "$name" --exclude=/Sets/
         else

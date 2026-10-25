@@ -202,7 +202,14 @@ local function loadTOC(path)
         line = line:gsub("\r$", "")
         local k, v = line:match("^##%s*([%w%-_]+)%s*:%s*(.-)%s*$")
         if k then fields[k] = v
-        elseif not line:match("^#") and line:match("%S") then files[#files + 1] = line:match("^%s*(.-)%s*$") end
+        elseif not line:match("^#") and line:match("%S") then
+            -- A file for one game only: the lab plays Forever, so Retail's ([AllowLoadGameType standard]) is left out.
+            local file = line:match("^%s*(.-)%s*$")
+            local plain, conditions = file:match("^(.-)%s*(%[.*%])$")
+            if not (conditions and (conditions:find("AllowLoadGameType%s+standard") or conditions:find("ExcludeLoadGameType%s+camelot"))) then
+                files[#files + 1] = plain or file
+            end
+        end
     end
     f:close()
     local a = newAddon(name, fields)

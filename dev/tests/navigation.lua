@@ -2489,8 +2489,11 @@ local atlasAddon = { name = "SaneUI_Atlas", title = "Atlas", metadata = { Title 
                      loadable = false, reason = "DEMAND_LOADED", enabled = 0 }
 W.addons[#W.addons + 1] = atlasAddon
 check(not Painted.Find() and not ns.Offered("atlas"), "the module Atlas switched off for this character: not offered")
+-- Switched on, but made for the other game only (its TOC's X-SaneUI-Games): not offered.
+atlasAddon.enabled, atlasAddon.metadata["X-SaneUI-Games"] = 2, "retail"
+check(not Painted.Find() and not ns.Offered("atlas"), "the module Atlas made for the other game: not offered")
+atlasAddon.metadata["X-SaneUI-Games"] = "forever"
 -- Switched on, but the game cannot load it: offered at first, then Scrying again once it was tried.
-atlasAddon.enabled = 2
 check(Painted.Find() and ns.Offered("atlas"), "the module Atlas in the addon list, switched on: found without loading it")
 ns.Offer()
 check(#viewOption.choices == 4 and viewOption.choices[4][1] == "atlas" and Button("atlas")._shown

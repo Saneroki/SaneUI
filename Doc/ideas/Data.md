@@ -37,7 +37,7 @@ framework gives that data one home in Core, so that:
 | **Entry** | One thing in a set: the item 16801. |
 | **Version** | An entry's facts from one game build on. An entry has one or more; the newest one the running client has reached is the *current* one. |
 | **Build** | The game's build number (`GetBuildInfo`): the clock versions are measured by. A small table names each build's patch (*1.60.2*) and date. |
-| **Game version** | One game as one kind of client plays it, in its own folder (Sane Sync's word): Forever live (`forever`), its PTR (`forever-ptr`), its beta (`forever-beta`), later retail's. Not to be mixed up with an entry's *Version*. Their data never meet (*Game versions kept apart*). |
+| **Game version** | One game as one kind of client plays it, in its own folder (Sane Sync's word): Forever live (`forever`), its PTR (`forever-ptr`), its beta (`forever-beta`), and Retail's (`retail`, `retail-ptr`, `retail-beta`; Saneroki, 2026-10-25: Sane UI runs in Retail, whose data comes later, into a package per game). Not to be mixed up with an entry's *Version*. Their data never meet (*Game versions kept apart*). |
 | **Source** | Where a fact came from: the game, a hand fix, or a numbered batch of staging from one of our tools. |
 | **Master** | The sets as kept in the repository: plain text, every version, every source. The truth. |
 | **Pack** | What the game loads: one or more sets compiled from the master into a small load-on-demand addon. |

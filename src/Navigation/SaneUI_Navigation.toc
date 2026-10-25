@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Navigation
 ## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, a click pings the place to your group, a double click puts the map pin there; draw it as Parchment (Blizzard's maps joined into one), as Scrying (the land as it lies) or, with the module Atlas, painted. Pins of your quests, flight points, rares, places and party; the maps of the dungeons and raids; the quest log over the full map, pinned to the screen if you like; a golden line to the map pin, on foot and by flight. The game's map keys open it. Settings: the page Navigation.
 ## Author: Saneroki

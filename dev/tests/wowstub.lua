@@ -86,12 +86,31 @@ local function LoadListed(root, addon, folder, path, private)
     end
 end
 
+-- The game types each client is in (W.project): Forever's camelot and mainline, Retail's standard and mainline.
+local GAME_TYPES = { [18] = { camelot = true, mainline = true }, [1] = { standard = true, mainline = true } }
+
+-- Whether a file line's conditions ("[AllowLoadGameType standard]", "[ExcludeLoadGameType standard]") let the
+-- client the test plays (W.project) read it, as the game decides it.
+function W.Allowed(conditions)
+    local types = GAME_TYPES[W.project] or {}
+    for key, list in (conditions or ""):gmatch("%[%s*(%a+)%s*:?%s*([^%]]*)%]") do
+        local named = false
+        for word in list:lower():gmatch("%a+") do named = named or types[word] or false end
+        if key == "AllowLoadGameType" and not named then return false end
+        if key == "ExcludeLoadGameType" and named then return false end
+    end
+    return true
+end
+
 -- Runs every file an addon's TOC lists, in its order: each line that is not empty and not a comment
--- (the ## directives are comments too) names one.
+-- (the ## directives are comments too) names one, but for the other game's (its conditions, W.Allowed).
 local function LoadToc(root, addon, folder, toc, private)
     for line in io.lines(root .. "/src/" .. folder .. "/" .. toc) do
         line = line:match("^%s*(.-)%s*$")
-        if line ~= "" and not line:match("^#") then LoadListed(root, addon, folder, line, private) end
+        if line ~= "" and not line:match("^#") then
+            local file, conditions = line:match("^(.-)%s*(%[.*%])$")
+            if W.Allowed(conditions) then LoadListed(root, addon, folder, file or line, private) end
+        end
     end
 end
 

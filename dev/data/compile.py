@@ -22,7 +22,8 @@ KEYWORDS = set("and break do else elseif end false for function if in local nil 
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # The products a game folder's .flavor.info names, and the game version each serves today. A beta or PTR
 # product serves whichever game is tested in it (Doc/ideas/SaneSync.md, *Finding the game*).
-PRODUCTS = {"wowf": "forever", "wow_classic_beta": "forever-beta"}
+PRODUCTS = {"wowf": "forever", "wow_classic_beta": "forever-beta", "wow": "retail", "wowt": "retail-ptr",
+            "wow_beta": "retail-beta"}
 
 
 def product_game(folder):

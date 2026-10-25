@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Nameplates
 ## Notes: The game's nameplates in Sane UI's dress: a round-cornered health bar with level, threat, name and health inside it, the unit's power and your combo points along its bottom, a border by rank, a red glow on aggro, your debuffs above it, a foe's buffs left and crowd control right of it. Plates of players you do not know are hidden; plates shrink far away.
 ## Author: Saneroki

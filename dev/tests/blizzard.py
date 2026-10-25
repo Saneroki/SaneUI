@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
 import compare  # noqa: E402
 import export as exports  # noqa: E402
 import lua  # noqa: E402
+import patch  # noqa: E402
 import report  # noqa: E402
 import uses as sane  # noqa: E402
 
@@ -276,6 +277,28 @@ with tempfile.TemporaryDirectory() as out:
     check("json: findings", len(data["findings"]), len(found))
     check("json: a finding", next(f for f in data["findings"] if f["id"] == "event:TEST_GONE")["uses"],
           ["src/Test/Test.lua:8 (frame:RegisterEvent #1)"])
+
+# -- a patch: the patch notes, every change, the todo list, the fixing session's brief ------------------------
+
+with tempfile.TemporaryDirectory() as out:
+    out = Path(out) / "forever-old-to-new"
+    result, card = patch.write("forever", old, new, None, None, module, [FIXTURE / "src/Test/SaneUI_Test.toc"], None,
+                               out, lambda _: "7", "the-lookup")
+    notes = (out / "notes.md").read_text()
+    brief = (out / "session.md").read_text()
+    check("patch: its files", sorted(p.name for p in out.iterdir()),
+          ["addons.tsv", "files.tsv", "notes.md", "session.md", "symbols.tsv", "todo.json", "todo.md"])
+    check("patch notes: the title", notes.splitlines()[0], "# Patch notes: Forever old → 1.60.2.70000")
+    check("patch notes: a function gone, by namespace", "### C_Test (" in notes and "**Gone** (1): `C_Test.Removed`" in notes, True)
+    check("patch notes: an event's payload", "`TEST_EVENT`: payload new: `guid` WOWGUID" in notes, True)
+    check("patch notes: what reaches Sane UI", "## What it means for Sane UI" in notes, True)
+    check("patch: the board's card", card, "7")
+    check("brief: the task, the card, the lookup", brief.startswith("# Make Sane UI comply with Forever 1.60.2.70000")
+          and "`saneui board start 7`" in brief and "`the-lookup`" in brief and "dev/tools/blizzard adopt" in brief, True)
+    check("brief: the todo list's head", "- broken: `C_Test.Removed` (API function): gone from the new export (src/Test/Test.lua:13)"
+          in brief, True)
+    check("patch tables: gone and new", any(row.startswith("api:C_Test.Removed\tapi\told-only")
+                                            for row in (out / "symbols.tsv").read_text().splitlines()), True)
 
 scratch.cleanup()
 

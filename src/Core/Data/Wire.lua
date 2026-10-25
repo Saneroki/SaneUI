@@ -57,7 +57,7 @@ Wire.MUTE = 600         -- seconds a sender of too many is not heard
 Wire.CHANNELS = { GUILD = true, OFFICER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
 
 local TAB, BLOCK_KIND = "\t", "P"
-local SIGNS = { forever = "f", ["forever-beta"] = "b", ["forever-ptr"] = "p" }
+local SIGNS = { forever = "f", ["forever-beta"] = "b", ["forever-ptr"] = "p", retail = "r", ["retail-beta"] = "q", ["retail-ptr"] = "t" }
 local JOB = "wire: inbox"
 -- The game's answers to a send (Enum.SendAddonMessageResult): what waits and goes again, what is dropped.
 local RESULT = Enum and Enum.SendAddonMessageResult or {}

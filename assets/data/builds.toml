@@ -7,6 +7,9 @@
 
 [forever-ptr]
 
+# Retail (Saneroki, 2026-10-25): Sane UI runs there too; its data comes later.
+[retail]
+
 [forever-beta]
 70425 = { patch = "1.60.1" }
 70450 = { patch = "1.60.1" }

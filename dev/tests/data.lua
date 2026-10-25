@@ -700,6 +700,13 @@ W.beta, W.test = false, true
 check(Told() == "forever-ptr" and Data.Add(1, "BetaLater", Header("forever-beta")) == nil and StateOf("BetaLater") == "refused",
     "a test client: forever-ptr")
 W.test = false
+WOW_PROJECT_ID = 1
+check(Told() == "retail" and Data.Add(1, "RetailWords", Header("retail")) and StateOf("RetailWords") == "ready"
+    and Data.Add(1, "LiveInRetail", Header("forever")) == nil and StateOf("LiveInRetail") == "refused",
+    "a Retail client: retail; Retail's set files taken, Forever's refused")
+W.beta = true
+check(Told() == "retail-beta", "a Retail beta client: retail-beta")
+W.beta = false
 WOW_PROJECT_ID = 2
 local client = Told()
 check(client == nil and Data.Add(1, "Unknown", Header("forever")) == nil and select(2, StateOf("Unknown")):find("cannot be told"),

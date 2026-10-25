@@ -37,7 +37,6 @@ Data.reports = {} -- what else /sane data prints: fn() each, after the sets (Tal
 Data.frozen = false -- the tests' switch: records handed out read-only, changes found by Data.Tampered()
 -- The saved variables of Core's data, SaneUIData_<name>, as Core's TOC declares them.
 Data.SAVED = { Characters = true, Guild = true, Learned = true }
-local CAMELOT = 18 -- WOW_PROJECT_CAMELOT, WoW: Forever's project number, should the global be missing
 local WEAK = { __mode = "v" }
 local LIST, VERSION = "\030", "\028"
 
@@ -130,13 +129,14 @@ local function Answer(name)
     return Core.Ask(rawget(_G, name)) and true or false
 end
 
--- The client's game version: forever, forever-ptr or forever-beta; nil when it cannot be told.
+-- The client's game version: its game (Core.GAME: forever or retail), -beta or -ptr on a test client; nil
+-- when it cannot be told.
 local function Tell()
-    local project = rawget(_G, "WOW_PROJECT_ID")
-    if project == nil or project ~= (rawget(_G, "WOW_PROJECT_CAMELOT") or CAMELOT) then return nil end
-    if Answer("IsBetaBuild") then return "forever-beta" end
-    if Answer("IsPublicTestClient") or Answer("IsTestBuild") then return "forever-ptr" end
-    return "forever"
+    local game = Core.GAME
+    if not game then return nil end
+    if Answer("IsBetaBuild") then return game .. "-beta" end
+    if Answer("IsPublicTestClient") or Answer("IsTestBuild") then return game .. "-ptr" end
+    return game
 end
 
 function Data.Game()
@@ -149,6 +149,7 @@ end
 function Data.Retell()
     local wasGame, wasBuild = game, build
     told, build = false, nil
+    Core.TellGame()
     if Data.Game() ~= wasGame or ClientBuild() ~= wasBuild then
         for _, set in pairs(sets) do Forget(set) end
     end

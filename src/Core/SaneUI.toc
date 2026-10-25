@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Sane UI
 ## Notes: A sane user interface, built in modules. This is the part every module needs, with Sane UI's options (Esc > Options > AddOns > Sane UI, or /sane options) and the game settings it keeps the same on all your characters. The modules are listed below it: switch each one on or off by itself. Type /sane.
 ## Author: Saneroki

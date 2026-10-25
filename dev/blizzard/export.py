@@ -71,11 +71,19 @@ CONFIG = Path.home() / ".config" / "saneui" / "blizzard.json"
 GAMES = {"forever": ("wowf", "wow_classic_beta"), "retail": ("wow", "wowt", "wow_beta")}
 
 
+def setting(key):
+    """One of this computer's settings for Blizzard's exports (CONFIG): exports (their folder), install (the game's
+    World of Warcraft folder), extract (the command that exports a product's build: `<command> <product>`),
+    reports (where a patch's notes and the Forever-Retail lookup go); None when not set."""
+    if CONFIG.is_file():
+        value = json.loads(CONFIG.read_text(encoding="utf-8")).get(key)
+        return str(Path(value).expanduser()) if value else None
+    return None
+
+
 def exports_folder():
     import os
-    folder = os.environ.get("BLIZZARD_EXPORTS")
-    if not folder and CONFIG.is_file():
-        folder = json.loads(CONFIG.read_text(encoding="utf-8")).get("exports")
+    folder = os.environ.get("BLIZZARD_EXPORTS") or setting("exports")
     return Path(folder).expanduser() if folder else None
 
 

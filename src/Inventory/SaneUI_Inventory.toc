@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Inventory
 ## Notes: What you carry and wear. Push the mouse into the screen's bottom right corner and the screen fills with your inventory's windows, arranged as you like; push it there again, or press Esc, and they go. Settings: the page Inventory.
 ## Author: Saneroki

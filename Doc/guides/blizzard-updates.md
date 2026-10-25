@@ -50,6 +50,33 @@ quests, NPCs, routes).
   line can end in `[AllowLoadGameType camelot]` or `[AllowLoadGameType standard]`; `_Mainline` is the family of
   both games.
 
+## After a patch
+
+Run `saneui readpatch` (`dev/tools/blizzard patch [forever|retail]`) every time a game was patched, once the
+launcher has updated it. It looks which game's installed build (`.build.info`) is newer than its newest export,
+and for that game:
+
+1. **Exports the new build** with this computer's command for it (the settings' `extract`, called with the
+   product), into the exports' folder.
+2. **Writes our own patch notes**, the new export against the one before it, into the reports' folder
+   (`patches/<game>-<old>-to-<new>/`): `notes.md` (what Blizzard changed in the interface, kind by kind, in
+   words: Blizzard's addons, the API by namespace, events, widgets, enums, structures, CVars, templates,
+   Blizzard's Lua, the code files per addon, the art per folder), the tables of every change (`symbols.tsv`,
+   `files.tsv`, `addons.tsv`, `art.tsv`, `art-folders.tsv`, sides old and new), and `todo.md` and `todo.json`,
+   what of it reaches Sane UI (the check's todo list below).
+3. **Makes the Forever-Retail lookup anew** for the two games' newest exports.
+4. **Prepares the session that fixes Sane UI:** `session.md`, its brief (the steps, the rules for both games,
+   the todo list's head), and a card on the board for it (`--no-card` leaves it out).
+
+Then `saneui fixpatch` starts Claude Code in the project on the newest brief (`--print` gives its prompt to
+paste into another session). `--again` writes a patch's folder anew from the newest two exports without
+exporting. A game's first export has nothing before it: its notes come with its next patch.
+
+The settings (`~/.config/saneui/blizzard.json`): `exports` (the exports' folder), `install` (the game's World
+of Warcraft folder; the same default as `dev/build`), `extract` (the command that exports a product's build
+there), `reports` (where the patches' folders and the lookup go; without it `dev/blizzard/reports/`, not
+committed).
+
 ## The pipeline
 
 1. **Extract the new build's interface** into the exports' folder, as above. It becomes the newest export at once.

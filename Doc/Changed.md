@@ -6,6 +6,33 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 91 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Sane UI in Forever and Retail; our own patch notes after every patch (Saneroki, 2026-10-25)
+- **One code for both games** (Saneroki: development aimed at Forever, Retail compatible, its data later). Core knows
+  the game: `Core.GAME` (`forever`, `retail`), `Core.FOREVER`, `Core.RETAIL`, `Core.ForGame({ forever = a, retail = b })`,
+  `Core.TellGame()` (told as Core is read; again by the tests). `Data.Game()` answers `retail`, `retail-beta` and
+  `retail-ptr` too; `assets/data/builds.toml` has `[retail]` (no data yet), so Core refuses Forever's sets in Retail
+  and a Retail copy of Core carries none. Wire signs for Retail's game versions.
+- **A module for one game:** `## X-SaneUI-Games: forever` in its TOC (`Core.ServesGame`): in the other game it is off
+  from the start (`module.elsewhere`), without a word and without an options page. The Atlas is Forever's
+  (its painted world); Navigation does not offer its view in Retail (`Painted.Find`).
+- **Every TOC:** `## Interface: 16001, 120105`. A file line for one game: `[AllowLoadGameType standard]` (Retail's)
+  or `[ExcludeLoadGameType standard]` (Forever's), the only two `dev/tests/lint` allows; the tests' stub
+  (`W.Allowed`) and the lab read them as the game does. `dev/tools/blizzard check` checks each game's number.
+- **`dev/build` installs into Retail's folder too** (product `wow` is the game version `retail` in
+  `dev/data/compile.py`): Core without sets there, a module of the other game left out and taken out. The beta's
+  `_classic_beta_` is gone from the words of `dev/build` and `dev/tools/errors`.
+- **After a patch:** `saneui readpatch` (`dev/tools/blizzard patch [forever|retail] [--again] [--no-card]`): a game
+  whose installed build is newer than its newest export is exported (the settings' `extract`), and its new export
+  against the one before written as our own patch notes (`notes.md`: Blizzard's addons, the API by namespace,
+  events, widgets, enums, structures, CVars, templates, Lua, code files and art), the tables of every change, Sane
+  UI's todo list (`todo.md`) and the brief of the session that fixes it (`session.md`), with a card on the board;
+  the Forever-Retail lookup made anew. `saneui fixpatch` starts Claude Code on the newest brief (`--print`: the
+  prompt). New `dev/blizzard/patch.py`; `games.py` names its two sides. Settings in `~/.config/saneui/blizzard.json`:
+  `install`, `extract`, `reports`. `Doc/guides/blizzard-updates.md`, *After a patch*.
+- **The rules:** `Doc/guides/addon-standards.md`, *13. Forever and Retail* (look a name up first, one way for both,
+  what one game lacks stands down, overrides, files and modules of one game, data per game), with a checklist line.
+- Tests: Core 394 checks, data in the game 269, Navigation 601, blizzard 91, saneui 257.
+
 ### dev: Blizzard's code of Forever and Retail side by side (Saneroki, 2026-10-25)
 - Sane UI is to work in Forever and Retail (Saneroki). `dev/blizzard/export.py` knows both games (`GAMES`, `CLIENTS`):
   `newest()` and `required()` are Forever's newest export unless asked for Retail's (`newest("code", "retail")`),

@@ -45,7 +45,8 @@ compute decisions from it ([principle 12](blizzard-design-principles.md)).
 - In Sane UI a module's `Title` is its plain name (*Abilities*, not *Sane UI Abilities*): it stands under
   *Sane UI* in the addon list already.
 - Several game versions: prefer a comma-separated `Interface` and per-line conditions
-  (`[AllowLoadGameType ...]`) over several TOC files.
+  (`[AllowLoadGameType ...]`) over several TOC files. Sane UI's TOCs name Forever's and Retail's numbers
+  (`## Interface: 16001, 120105`) and use per-line conditions only as section 13 says.
 - Media files are not listed. Only Lua and XML are.
 - In Sane UI every module is an addon of its own with its TOC in its folder (`src/Core/SaneUI.toc`,
   `src/Abilities/SaneUI_Abilities.toc`). A module's TOC says `## Dependencies: SaneUI` and
@@ -284,6 +285,46 @@ And so:
   are tried in the game and noted as tried or not tried.
 - Record every change in `Doc/Changed.md`.
 
+## 13. Forever and Retail
+
+Sane UI is one code for two games (Saneroki, 2026-10-25): WoW: Forever and Retail, English clients only.
+Development is aimed at Forever; Retail stays compatible, and its data comes later. Forever's client is
+Retail's (the family Mainline) with a layer of its own, so most of the API, the widgets, the frameworks
+(Settings, Menu, ScrollBox, Edit Mode) and the secret-value restrictions are the same in both. What differs:
+each game's own systems (Forever: Classic's mechanics such as spell ranks, trainers, ammo, resistances, the
+keyring, the swing timer, pet happiness; Retail: housing, delves, the dungeon journal, PvP), the Blizzard
+frames built for them, and all of the data (maps, quests, NPCs, routes).
+
+- **Look it up first:** before using a function, event, template or frame, look it up in the Forever-Retail
+  lookup (`dev/tools/blizzard games`; `symbols.tsv` there) or `dev/tools/blizzard show <name> --retail`. A
+  name not listed there is the same in both games.
+- **One way for both, where there is one:** use what both games have, and the way both understand. A feature
+  is not written twice when one way serves both games.
+- **What one game lacks stands down there:** a function only one game has is reached through
+  `Core.Ask(rawget(_G, "Name"), ...)` (nil when it is not there) or after a check that it is there. The
+  feature that needs it shows nothing in the other game: no view, no switch, no word in chat. A missing
+  feature is no error.
+- **Which game:** `Core.GAME` (`"forever"` or `"retail"`), `Core.FOREVER`, `Core.RETAIL`; a value that differs
+  per game: `Core.ForGame({ forever = a, retail = b })` (nil for a game not named). Asking for the thing itself
+  (is the function there, does the frame exist) beats asking for the game where it answers the same.
+- **Overrides where the games differ much:** a file of the module for one game (`Retail.lua`,
+  `<Part>.Retail.lua`), listed in the TOC after what it overrides, starting with
+  `if not SaneUI.Core.RETAIL then return end`, that replaces only the functions that game needs otherwise.
+  The shared file stays the one for both; the override holds only the difference.
+- **A file only one game can read** (an XML file inheriting a template only one game has): its TOC line ends
+  in `[AllowLoadGameType standard]` (Retail's) or `[ExcludeLoadGameType standard]` (Forever's), nothing else.
+  Both clients know the game type `standard`; Retail's client may not know Forever's `camelot`, and a game
+  type a client does not know lets the file load. `dev/tests/lint` allows only these two; the tests and the
+  lab read them as the game does (`W.Allowed`).
+- **A module for one game:** `## X-SaneUI-Games: forever` in its TOC (`Core.ServesGame`): in the other game
+  it is never started and has no options page, and `dev/build` does not install it there (the Atlas: its
+  painted pieces are Forever's world).
+- **Data per game:** game data never goes into a module's code: it is Core's data, kept per game version
+  (Forever's sets are refused in Retail, which has none yet). It moves into a package per game, Data: Forever
+  and Data: Retail.
+- **After a patch of either game:** `saneui readpatch`, then the session it prepares (`saneui fixpatch`;
+  [blizzard-updates.md](blizzard-updates.md), *After a patch*).
+
 ## Checklist before a commit
 
 - [ ] New files are in their module's TOC; `dev/build` passes.
@@ -294,6 +335,7 @@ And so:
 - [ ] Values read from the game are tested before they are compared or computed with.
 - [ ] No `OnUpdate`, timer or event that runs while the feature is hidden or idle.
 - [ ] A failure leaves the Blizzard default working.
+- [ ] Works in both games: looked up in the Forever-Retail lookup; what one game lacks stands down there.
 - [ ] No Blizzard art or sound copied into the addon.
 
 ## Sources

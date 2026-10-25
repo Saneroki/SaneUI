@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 16001, 120105
 ## Title: Speed Leveling
 ## Notes: One key for questing, pressed again and again: it opens the loot of the corpse beside you, picks up what your quests want beside you, finds what your quests and your leveling guide want around you, puts a skull on it, and attacks it or talks to it; it hearths when your guide says so, and uses a quest item when nothing is around. Give it a key in the game's key bindings, under Sane UI.
 ## Author: Saneroki

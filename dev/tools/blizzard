@@ -18,6 +18,15 @@ Usage:  dev/tools/blizzard where      the newest export's code and art folders, 
         dev/tools/blizzard games [--out <folder>]
                                    Forever's newest export against Retail's: the lookup tables of where the two
                                    games differ (symbols, files, addons, art) and what of Sane UI's uses differs
+        dev/tools/blizzard patch [forever|retail] [--again] [--no-card]
+                                   after a patch (saneui readpatch): a game whose installed build is newer than its
+                                   newest export is exported; its new export against the one before it written as
+                                   our own patch notes, the tables of every change, Sane UI's todo list and the
+                                   brief of the session that fixes it, with a card on the board; the Forever-Retail
+                                   lookup made anew. --again: the newest two exports once more, nothing exported
+        dev/tools/blizzard fix [forever|retail] [--print]
+                                   the session that makes Sane UI comply with the newest patch (saneui fixpatch):
+                                   Claude Code started on its brief; --print: only the brief's prompt, to paste
 
 check and show take --retail: Retail's newest export against Forever's, in place of <new> and --old.
 
@@ -31,6 +40,8 @@ import argparse
 import difflib
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -43,10 +54,13 @@ sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
 import compare  # noqa: E402
 import export as exports  # noqa: E402
 import games  # noqa: E402
+import patch  # noqa: E402
 import report  # noqa: E402
 import uses as sane  # noqa: E402
 
 REPORTS = ROOT / "dev" / "blizzard" / "reports"
+# The game's World of Warcraft folder unless the settings name another (as dev/build has it).
+INSTALL = Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft"
 # The files made from Blizzard's code, with the tool that makes each.
 GENERATED = (("dev/tools/cvar-labels", "src/Core/Settings/Data/CVarLabels.lua"),
              ("dev/tools/sync-pages", "src/Core/Sync/Data/Pages.lua"))
@@ -207,18 +221,121 @@ def run_where(args):
             print(f"  art:  {interface / 'BlizzardInterfaceArt'}")
 
 
-def run_games(args):
-    forever, retail = pair(argparse.Namespace(retail=True), None)
-    out = Path(args.out) if args.out else REPORTS / f"forever-{forever.build}-retail-{retail.build}"
+def reports_folder():
+    return Path(exports.setting("reports") or REPORTS)
+
+
+def sane_uses():
+    return sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT), sorted((ROOT / "src").glob("*/*.toc"))
+
+
+def games_lookup(out=None, forever=None, retail=None):
+    """The Forever-Retail lookup of the two games' newest exports into out (default: the reports' folder)."""
+    forever = forever or exports.Export(exports.required("code"))
+    retail = retail or exports.Export(exports.required("code", "retail"))
+    out = Path(out) if out else reports_folder() / f"forever-{forever.build}-retail-{retail.build}"
     lines = games.write(forever, retail, exports.required("art"), exports.required("art", "retail"), out)
-    found = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)
-    tocs = sorted((ROOT / "src").glob("*/*.toc"))
+    found, tocs = sane_uses()
     result = compare.Analysis(forever, retail, found, tocs)
     report.markdown(result, out / "uses.md", ROOT, None)
     report.as_json(result, out / "uses.json")
     (out / "README.md").write_text("\n".join(lines), encoding="utf-8")
+    return result, out
+
+
+def run_games(args):
+    result, out = games_lookup(args.out)
     print("\n".join(report.summary(result, out / "uses.md")))
     print(f"The lookup tables: {out}")
+
+
+def installed():
+    """{product: version} of the game's install (.build.info)."""
+    info = Path(exports.setting("install") or INSTALL) / ".build.info"
+    if not info.is_file():
+        fail(f"No game install at {info.parent}: name it in {exports.CONFIG} ({{\"install\": \"<folder>\"}}).")
+    rows = [line.split("|") for line in info.read_text(encoding="utf-8").splitlines()]
+    head = [field.split("!")[0] for field in rows[0]]
+    return {fields.get("Product"): fields.get("Version") for fields in (dict(zip(head, row)) for row in rows[1:])}
+
+
+def extract(product):
+    """Exports the installed build of a product with this computer's command for it (the settings' extract)."""
+    command = exports.setting("extract")
+    if not command:
+        fail(f"No command to export a build: name it in {exports.CONFIG} ({{\"extract\": \"<command>\"}}; it is "
+             "called with the product, wowf or wow, and writes into the exports' folder).")
+    print(f"Exporting {product}: {command} {product}")
+    subprocess.run([command, product], check=True)
+
+
+def board_card(game, old, new, out):
+    """A card on the board for the session that fixes Sane UI; its number, or None. Not twice for one patch."""
+    title = f"Patch: {patch.TITLE[game]} {old.build} → {new.build}: make Sane UI comply"
+    board = [str(ROOT / "dev" / "tools" / "board")]
+    listed = subprocess.run(board + ["list"], capture_output=True, text=True).stdout
+    for line in listed.splitlines():
+        if title in line:
+            return line.split()[0].lstrip("#")
+    made = subprocess.run(board + ["add", title, "--priority", "high", "--area", "Forever and Retail", "--notes",
+                                   f"The brief: {out / 'session.md'}; the patch notes: {out / 'notes.md'}. "
+                                   "Start it with saneui fixpatch."], capture_output=True, text=True)
+    found = re.search(r"#(\d+)", made.stdout)
+    return found.group(1) if found else None
+
+
+def run_patch(args):
+    asked = [args.game] if args.game else list(exports.GAMES)
+    versions = installed()
+    done = []
+    for game in asked:
+        title = patch.TITLE[game]
+        product = next((p for p in exports.GAMES[game] if versions.get(p)), None)
+        found = exports.all_exports(game)
+        newest = found[-1][0] if found else None
+        version = versions.get(product) if product else None
+        if version and (newest is None or exports.version_key(version) > exports.version_key(newest)):
+            if args.again:
+                print(f"{title}: build {version} is installed, the newest export is {newest}: run without --again.")
+                continue
+            extract(product)
+            found = exports.all_exports(game)
+        elif not args.again:
+            print(f"{title}: build {version or '(not installed)'} is exported already ({newest}): nothing new.")
+            continue
+        if len(found) < 2:
+            print(f"{title}: its first export ({found[-1][0] if found else 'none'}): nothing before it to compare with.")
+            continue
+        old = exports.Export(found[-2][2] / "BlizzardInterfaceCode")
+        new = exports.Export(found[-1][2] / "BlizzardInterfaceCode")
+        out = reports_folder() / "patches" / f"{game}-{old.build}-to-{new.build}"
+        lookup = ""
+        if exports.all_exports("forever") and exports.all_exports("retail"):
+            _, lookup = games_lookup()
+        found_uses, tocs = sane_uses()
+        made = generated(old.root, new.root) if game == "forever" else None
+        analysis, card = patch.write(game, old, new, found[-2][2] / "BlizzardInterfaceArt",
+                                     found[-1][2] / "BlizzardInterfaceArt", found_uses, tocs, made, out,
+                                     None if args.no_card else lambda _: board_card(game, old, new, out), lookup)
+        print("\n".join(report.summary(analysis, out / "todo.md")))
+        print(f"The patch notes: {out / 'notes.md'}" + (f"; the board's card #{card}" if card else ""))
+        done.append(game)
+    if done:
+        print("Start the session that makes Sane UI comply: saneui fixpatch" + (f" {done[0]}" if len(done) == 1 else ""))
+
+
+def run_fix(args):
+    """Claude Code started in the project on the newest patch's brief."""
+    briefs = sorted((reports_folder() / "patches").glob(f"{args.game or '*'}-*/session.md"),
+                    key=lambda path: path.stat().st_mtime)
+    if not briefs:
+        fail("No patch's brief yet: saneui readpatch writes one after a patch.")
+    prompt = f"Read {briefs[-1]} and do what it says."
+    if args.print or not shutil.which("claude"):
+        print(prompt)
+        return
+    os.chdir(ROOT)
+    os.execvp("claude", ["claude", prompt])
 
 
 def main():
@@ -237,12 +354,19 @@ def main():
     commands.add_parser("adopt")
     commands.add_parser("where")
     commands.add_parser("games").add_argument("--out")
+    command = commands.add_parser("patch")
+    command.add_argument("game", nargs="?", choices=list(exports.GAMES))
+    command.add_argument("--again", action="store_true")
+    command.add_argument("--no-card", action="store_true")
+    command = commands.add_parser("fix")
+    command.add_argument("game", nargs="?", choices=list(exports.GAMES))
+    command.add_argument("--print", action="store_true")
     command = commands.add_parser("uses")
     command.add_argument("--list", action="store_true")
     command.add_argument("--unknown", action="store_true")
     args = parser.parse_args()
     {"check": run_check, "show": run_show, "uses": run_uses, "adopt": run_adopt, "where": run_where,
-     "games": run_games}[args.command](args)
+     "games": run_games, "patch": run_patch, "fix": run_fix}[args.command](args)
 
 
 if __name__ == "__main__":
