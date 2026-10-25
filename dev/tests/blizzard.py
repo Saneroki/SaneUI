@@ -68,6 +68,9 @@ check("allowed: excluded", exports.allowed("[AllowLoadGameType mainline] [Exclud
 check("allowed: another game", exports.allowed("[AllowLoadGameType vanilla, tbc]"), False)
 check("allowed: the login screen", exports.allowed("[AllowLoad glue]"), False)
 check("allowed: another language", exports.allowed("[AllowLoadTextLocale: zhCN]"), False)
+check("allowed: Retail's game type, by Forever and Retail",
+      [exports.allowed("[AllowLoadGameType standard]", exports.CLIENTS[g]["types"]) for g in ("forever", "retail")],
+      [False, True])
 check("interface number", [exports.interface_of(v) for v in ("1.60.1.70450", "1.61.12.1", "x", None)],
       [16001, 16112, None, None])
 
@@ -83,11 +86,25 @@ with tempfile.TemporaryDirectory() as scratch:
     check("locate: nothing", exports.locate(scratch), None)
     check("build of a game folder's export", exports.build_of(game / "BlizzardInterfaceCode"), "1.60.1.70245")
 
+# Each game's TOC of an addon, its letters as they come (the export writes new names in small letters).
+with tempfile.TemporaryDirectory() as scratch:
+    folder = Path(scratch) / "Blizzard_X"
+    folder.mkdir()
+    for name in ("blizzard_x_classic.toc", "blizzard_x_mainline.toc", "Blizzard_X_Standard.toc"):
+        (folder / name).write_text("")
+    reader = object.__new__(exports.Export)
+    picked = []
+    for game in ("forever", "retail"):
+        reader.client = exports.CLIENTS[game]
+        picked.append(reader._toc(folder).name)
+    check("toc: each game's, without regard to capitals", picked, ["blizzard_x_mainline.toc", "Blizzard_X_Standard.toc"])
+
 # The exports' folder: the newest build's code and art, by version number, not by name.
 with tempfile.TemporaryDirectory() as scratch:
     before = os.environ.get("BLIZZARD_EXPORTS")
     os.environ["BLIZZARD_EXPORTS"] = scratch
-    for name in ("wowf-1.60.1.70532", "wow_classic_beta-1.60.1.70450", "wowf-1.60.10.1", "wowf-1.61.0.5"):
+    for name in ("wowf-1.60.1.70532", "wow_classic_beta-1.60.1.70450", "wowf-1.60.10.1", "wowf-1.61.0.5",
+                 "wow-12.1.5.70575"):
         shutil.copytree(FIXTURE / "old", Path(scratch) / name / "interface" / "BlizzardInterfaceCode")
     (Path(scratch) / "wowf-1.70.0.1" / "interface").mkdir(parents=True)  # no code: not an export
     check("exports: by version", [e[0] for e in exports.all_exports()],
@@ -95,6 +112,13 @@ with tempfile.TemporaryDirectory() as scratch:
     check("exports: the newest code", exports.newest("code"),
           Path(scratch) / "wowf-1.61.0.5" / "interface" / "BlizzardInterfaceCode")
     check("exports: the newest art", exports.newest("art").name, "BlizzardInterfaceArt")
+    check("exports: Retail's apart", exports.newest("code", "retail"),
+          Path(scratch) / "wow-12.1.5.70575" / "interface" / "BlizzardInterfaceCode")
+    note = Path(scratch) / "wow-12.1.5.70575" / "interface" / "BlizzardInterfaceCode" / ".build"
+    note.write_text('{"version": "12.1.5.70575", "product": "wow"}')
+    check("exports: the game of an export, by its product",
+          [exports.game_of(note.parent), exports.game_of(Path(scratch) / "wowf-1.61.0.5" / "interface")],
+          ["retail", "forever"])
     os.environ["BLIZZARD_EXPORTS"] = str(Path(scratch) / "none")
     check("exports: none", exports.newest("code"), None)
     if before is None:

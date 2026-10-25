@@ -4,7 +4,7 @@ Sane UI: a todo list of what broke, what is deprecated, what is called different
 housekeeping (Doc/guides/blizzard-updates.md). Sane UI is built on the newest export (the highest build in the
 exports' folder this computer's settings name: ~/.config/saneui/blizzard.json), never on references/.
 
-Usage:  dev/tools/blizzard where      the newest export's code and art folders, and its build
+Usage:  dev/tools/blizzard where      the newest export's code and art folders, and its build (Forever's and Retail's)
         dev/tools/blizzard check [<new>] [--old <export>|git:<revision>] [--build <version>] [--out <file.md>]
                                    the todo list, in dev/blizzard/reports/ (Markdown and JSON)
         dev/tools/blizzard show <name> [<new>] [--old ...]
@@ -15,6 +15,11 @@ Usage:  dev/tools/blizzard where      the newest export's code and art folders, 
                                    the globals it reads that the export does not define (the client's own)
         dev/tools/blizzard adopt   the files made from Blizzard's code made again from the newest export
                                    (CVarLabels.lua, Pages.lua); commit them after the build
+        dev/tools/blizzard games [--out <folder>]
+                                   Forever's newest export against Retail's: the lookup tables of where the two
+                                   games differ (symbols, files, addons, art) and what of Sane UI's uses differs
+
+check and show take --retail: Retail's newest export against Forever's, in place of <new> and --old.
 
 <new> is an export's code folder (BlizzardInterfaceCode, or the game folder the game exported into, or its
 Interface folder); without it, the newest export. --old is the export before the newest unless given: another
@@ -37,6 +42,7 @@ sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
 
 import compare  # noqa: E402
 import export as exports  # noqa: E402
+import games  # noqa: E402
 import report  # noqa: E402
 import uses as sane  # noqa: E402
 
@@ -90,9 +96,16 @@ def generated(old_root, new_root):
     return run
 
 
-def analysis(args, scratch):
+def pair(args, scratch):
+    """The two exports to compare: Forever's newest and Retail's (--retail), or the new one and the one before."""
+    if getattr(args, "retail", False):
+        return exports.Export(exports.required("code")), exports.Export(exports.required("code", "retail"))
     new = new_export(args.new, args.build)
-    old = old_export(args.old, scratch, new.root)
+    return old_export(args.old, scratch, new.root), new
+
+
+def analysis(args, scratch):
+    old, new = pair(args, scratch)
     found = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)
     tocs = sorted((ROOT / "src").glob("*/*.toc"))
     return compare.Analysis(old, new, found, tocs, generated(old.root, new.root))
@@ -123,8 +136,7 @@ def matches(name, *exports_):
 
 def run_show(args):
     with tempfile.TemporaryDirectory() as scratch:
-        new = new_export(args.new, args.build)
-        old = old_export(args.old, scratch, new.root)
+        old, new = pair(args, scratch)
         ids = matches(args.name, old, new)
         if not ids:
             fail(f"Neither export has {args.name!r}.")
@@ -184,13 +196,29 @@ def run_adopt(args):
 
 
 def run_where(args):
-    found = exports.all_exports()
-    if not found:
+    if not exports.all_exports():
         exports.required("code")
-    version, product, interface = found[-1]
-    print(f"{product} {version}")
-    print(f"code: {interface / 'BlizzardInterfaceCode'}")
-    print(f"art:  {interface / 'BlizzardInterfaceArt'}")
+    for game in exports.GAMES:
+        found = exports.all_exports(game)
+        if found:
+            version, product, interface = found[-1]
+            print(f"{game}: {product} {version}")
+            print(f"  code: {interface / 'BlizzardInterfaceCode'}")
+            print(f"  art:  {interface / 'BlizzardInterfaceArt'}")
+
+
+def run_games(args):
+    forever, retail = pair(argparse.Namespace(retail=True), None)
+    out = Path(args.out) if args.out else REPORTS / f"forever-{forever.build}-retail-{retail.build}"
+    lines = games.write(forever, retail, exports.required("art"), exports.required("art", "retail"), out)
+    found = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)
+    tocs = sorted((ROOT / "src").glob("*/*.toc"))
+    result = compare.Analysis(forever, retail, found, tocs)
+    report.markdown(result, out / "uses.md", ROOT, None)
+    report.as_json(result, out / "uses.json")
+    (out / "README.md").write_text("\n".join(lines), encoding="utf-8")
+    print("\n".join(report.summary(result, out / "uses.md")))
+    print(f"The lookup tables: {out}")
 
 
 def main():
@@ -203,15 +231,18 @@ def main():
         command.add_argument("new", nargs="?")
         command.add_argument("--build")
         command.add_argument("--old")
+        command.add_argument("--retail", action="store_true")
         if name == "check":
             command.add_argument("--out")
     commands.add_parser("adopt")
     commands.add_parser("where")
+    commands.add_parser("games").add_argument("--out")
     command = commands.add_parser("uses")
     command.add_argument("--list", action="store_true")
     command.add_argument("--unknown", action="store_true")
     args = parser.parse_args()
-    {"check": run_check, "show": run_show, "uses": run_uses, "adopt": run_adopt, "where": run_where}[args.command](args)
+    {"check": run_check, "show": run_show, "uses": run_uses, "adopt": run_adopt, "where": run_where,
+     "games": run_games}[args.command](args)
 
 
 if __name__ == "__main__":

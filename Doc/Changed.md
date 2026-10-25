@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 91 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: Blizzard's code of Forever and Retail side by side (Saneroki, 2026-10-25)
+- Sane UI is to work in Forever and Retail (Saneroki). `dev/blizzard/export.py` knows both games (`GAMES`, `CLIENTS`):
+  `newest()` and `required()` are Forever's newest export unless asked for Retail's (`newest("code", "retail")`),
+  so Retail's higher version numbers (12.x) never take Forever's place in the lab, `adopt` and the art tools. An
+  export is read as its own client loads it (Forever: `camelot` and `mainline`, `[Game]` Camelot; Retail: `standard`
+  and `mainline`, `[Game]` Standard); TOC names are matched without regard to capitals.
+- `dev/tools/blizzard games [--out FOLDER]` (new `dev/blizzard/games.py`): lookup tables of where the two games
+  differ: `symbols.tsv`, `files.tsv`, `addons.tsv`, `art.tsv`, `art-folders.tsv`, a `README.md` of counts, and
+  `uses.md`, what of Sane UI's own uses Retail lacks or calls differently. `check` and `show` take `--retail`
+  (`show C_ActionBar.FindSpellActionButtons --retail`); `where` names both games' newest exports.
+  `Doc/guides/blizzard-updates.md`, *Forever and Retail*. `dev/tests/blizzard.py`: 82 checks.
+
 ### dev: long documents read by their sections (Saneroki, 2026-10-25)
 - `dev/tools/doc-sections` (`saneui showsections FILE`): a Markdown file's headings with their lines and size in tokens
   (about); `saneui showsections FILE words` prints the sections whose heading holds those words, with their

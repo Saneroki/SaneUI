@@ -10,17 +10,45 @@ The tool is a development tool only: Python in `dev/blizzard/`, run by `dev/tool
 ## Sane UI's base: the newest export, a hard rule
 
 Blizzard's code and art that Sane UI is built on, and that its tools read (the lab, the made files, the art tools),
-are the **newest export**: of the exports this computer keeps, the one with the highest version number. Never
-`references/`: that is an old in-game export, kept only to compare with (`git:<revision>`).
+are the **newest export**: of Forever's exports this computer keeps, the one with the highest version number.
+Retail's exports stand beside them and are read only when asked for (*Forever and Retail*). Never `references/`:
+that is an old in-game export, kept only to compare with (`git:<revision>`).
 
 - Where they are kept: the folder `~/.config/saneui/blizzard.json` names (`{"exports": "<folder>"}`; or
   `$BLIZZARD_EXPORTS`). It holds one folder a build, `<product>-<version>/interface/`, with `BlizzardInterfaceCode/`
   and `BlizzardInterfaceArt/` in the layout of the game's own export (`Interface/AddOns/...`, `Interface/...`) and a
   note `.build` of the build.
-- `dev/tools/blizzard where` prints the newest export's code and art folders and its build; `dev/blizzard/export.py`
-  (`newest()`, `required()`) gives them to the tools. A tool that needs them and finds none says so and stops.
+- `dev/tools/blizzard where` prints the newest export's code and art folders and its build, Forever's and Retail's;
+  `dev/blizzard/export.py` (`newest()`, `required()`) gives them to the tools. A tool that needs them and finds none
+  says so and stops.
 - They are read straight from the game's install, without starting the game; the in-game console's `exportInterfaceFiles code` and `art` write the same layout into the game
   folder, and either can stand in that folder.
+
+## Forever and Retail
+
+Saneroki (2026-10-25): Sane UI is made for WoW: Forever and Retail, English clients only. Forever's client is
+Retail's (the family Mainline) with a layer of its own: the game type `camelot`, its `Camelot/` folders and
+`*Overrides.lua`; Retail's game type is `standard`. Both share most of Blizzard's code, the API and its
+restrictions; they differ in each game's own systems (Forever: Classic's mechanics such as spell ranks, ammo,
+resistances, the swing timer; Retail: housing, delves, the encounter journal) and entirely in their data (maps,
+quests, NPCs, routes).
+
+- **Which game an export is:** its product (`.build`, or the game folder's `.flavor.info`): `wowf` is Forever,
+  `wow` Retail (`GAMES` in `dev/blizzard/export.py`). Each is read as its own client loads it (`CLIENTS`): the load
+  groups it is in, what `[Family]` and `[Game]` stand for, and which of an addon's TOCs it takes first.
+- **Forever is the default:** `newest()`, `required()` and every tool that builds on Blizzard's code take Forever's
+  newest export; Retail's version numbers (12.x) are higher than Forever's and never count as Forever's newest.
+  `newest(kind, "retail")` gives Retail's.
+- **Where they differ:** `dev/tools/blizzard games [--out FOLDER]` compares Forever's newest export with Retail's
+  and writes lookup tables: `symbols.tsv` (every symbol that differs: forever-only, retail-only, calls-differ,
+  code-differs), `files.tsv`, `addons.tsv` (whether each client loads an addon), `art.tsv` and `art-folders.tsv`
+  (pictures by content key), a `README.md` of counts, and `uses.md`, the todo list of what of Sane UI's own uses
+  Retail lacks or calls differently. Without `--out` they go to `dev/blizzard/reports/` (not committed).
+- **One symbol in both games:** `dev/tools/blizzard show <name> --retail`; `check --retail` writes the todo list
+  alone.
+- **One addon folder for both:** a TOC can name both Interface numbers (`## Interface: 16001, 120105`); a file
+  line can end in `[AllowLoadGameType camelot]` or `[AllowLoadGameType standard]`; `_Mainline` is the family of
+  both games.
 
 ## The pipeline
 

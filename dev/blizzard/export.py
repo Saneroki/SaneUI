@@ -1,6 +1,6 @@
 """One export of Blizzard's interface code (as the game's exportInterfaceFiles code writes it), read as this client
 loads it: what it gives every addon, as symbols with an id, a signature and a hash. Sane UI is built on the newest
-export (newest(): the highest build of the exports' folder this computer's settings name), never on references/.
+export (newest(): Forever's highest build of the exports' folder this computer's settings name), never on references/.
 
   lua:<chain>        what the Lua files define at their top level: Name, A.B (functions, tables, values), A:B
   xml:<name>         named XML objects: templates (virtual), frames, fonts
@@ -15,8 +15,9 @@ export (newest(): the highest build of the exports' folder this computer's setti
 A signature (sig) is what a caller depends on (parameters, arguments and returns with the API's flags, a
 template's parents, mixins and keys, a payload, an enum's values); the hash covers the whole definition, so a
 symbol whose hash changed and whose signature did not is the same to call but works differently inside.
-Only the files this client loads count (the TOCs read for game type camelot, which also counts the group
-mainline; [Family] is Mainline, [Game] Camelot); the documentation counts whole.
+Only the files its client loads count (Forever's TOCs read for game type camelot, which also counts the group
+mainline, [Family] as Mainline and [Game] as Camelot; Retail's for standard and mainline, [Game] as Standard); the
+documentation counts whole.
 """
 import hashlib
 import json
@@ -29,11 +30,17 @@ from pathlib import Path
 
 import lua
 
-GAME_TYPES = {"camelot", "mainline"}  # the load groups this client is in ("standard" is the main game's)
-FAMILY, GAME = "Mainline", "Camelot"
+# How each game's client reads the TOCs: the load groups it is in, what [Family] and [Game] stand for, and the
+# suffixes of the TOC it takes first. Forever is Retail's code (the family Mainline) with a layer of its own.
+CLIENTS = {
+    "forever": {"types": {"camelot", "mainline"}, "family": "Mainline", "game": "Camelot",
+                "suffixes": ("_Camelot", "_Mainline", "")},
+    "retail": {"types": {"standard", "mainline"}, "family": "Mainline", "game": "Standard",
+               "suffixes": ("_Standard", "_Mainline", "")},
+}
+GAME_TYPES = CLIENTS["forever"]["types"]
 DOCS = "Blizzard_APIDocumentationGenerated"
 DEPRECATED = "Blizzard_Deprecated"  # addons whose names start so keep old names alive a while
-TOC_SUFFIXES = ("_Camelot", "_Mainline", "")
 CONDITION = re.compile(r"\[\s*([A-Za-z]+)\s*:?\s*([^\]]*)\]")
 DEPENDENCIES = ("Dependencies", "Dep", "RequiredDep", "RequiredDeps")
 PATH = re.compile(r"interface[\\/]", re.I)
@@ -59,6 +66,9 @@ def names_of(value):
 # The folder holds one <product>-<version> folder a build, with interface/BlizzardInterfaceCode and
 # interface/BlizzardInterfaceArt in it, the export of that build's code and art.
 CONFIG = Path.home() / ".config" / "saneui" / "blizzard.json"
+# The games, by their clients' products (.build.info): Forever is the one the tools build on unless told otherwise;
+# Retail's version numbers (12.x) are higher than Forever's and must never count as Forever's newest.
+GAMES = {"forever": ("wowf", "wow_classic_beta"), "retail": ("wow", "wowt", "wow_beta")}
 
 
 def exports_folder():
@@ -73,31 +83,33 @@ def version_key(version):
     return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
 
 
-def all_exports():
-    """Every export of the exports' folder that has its code, newest last: (version, product, interface folder)."""
+def all_exports(game="forever"):
+    """Every export of one game in the exports' folder that has its code, newest last: (version, product, interface
+    folder)."""
     folder = exports_folder()
     found = []
     if folder and folder.is_dir():
         for build in folder.iterdir():
             product, _, version = build.name.rpartition("-")
             interface = build / "interface"
-            if product and version and (interface / "BlizzardInterfaceCode" / "Interface" / "AddOns").is_dir():
+            if product in GAMES[game] and version and \
+                    (interface / "BlizzardInterfaceCode" / "Interface" / "AddOns").is_dir():
                 found.append((version, product, interface))
     return sorted(found, key=lambda e: version_key(e[0]))
 
 
-def newest(kind="code"):
-    """The newest export's code (BlizzardInterfaceCode) or art (BlizzardInterfaceArt) folder, the one with the highest
-    version number; None where this computer has none (its settings name no exports' folder, or it is empty)."""
-    found = all_exports()
+def newest(kind="code", game="forever"):
+    """The newest export's code (BlizzardInterfaceCode) or art (BlizzardInterfaceArt) folder, the game's one with the
+    highest version number; None where this computer has none (its settings name no exports' folder, or it is empty)."""
+    found = all_exports(game)
     if not found:
         return None
     return found[-1][2] / ("BlizzardInterfaceCode" if kind == "code" else "BlizzardInterfaceArt")
 
 
-def required(kind="code"):
-    """newest(kind), or the reason there is none, and an exit."""
-    folder = newest(kind)
+def required(kind="code", game="forever"):
+    """newest(kind, game), or the reason there is none, and an exit."""
+    folder = newest(kind, game)
     if folder is None or not folder.is_dir():
         raise SystemExit(f"No export of Blizzard's interface {kind}: name the exports' folder in {CONFIG} "
                          '({"exports": "<folder>"}) or $BLIZZARD_EXPORTS (Doc/guides/blizzard-updates.md).')
@@ -127,6 +139,20 @@ def from_git(revision, root, into):
     return Path(into) / "references" / "BlizzardInterfaceCode"
 
 
+def product_of(root):
+    """The product an export is of (wowf, wow): its note (.build), or the game folder's .flavor.info."""
+    note = root / ".build"
+    if note.is_file():
+        return json.loads(note.read_text(encoding="utf-8")).get("product")
+    flavor = root.parent / ".flavor.info"
+    return flavor.read_text(encoding="utf-8").split()[-1] if flavor.is_file() else None
+
+
+def game_of(root):
+    """The game an export is of: Retail by its product, else Forever."""
+    return "retail" if product_of(root) in GAMES["retail"] else "forever"
+
+
 def build_of(root):
     """The game's build an export is of, where it can be known: its note (.build), or the game
     folder it was exported into (.flavor.info names the product, .build.info one folder up its version)."""
@@ -138,7 +164,7 @@ def build_of(root):
     info = game.parent / ".build.info"
     if not (flavor.is_file() and info.is_file()):
         return None
-    product = flavor.read_text(encoding="utf-8").split()[-1]
+    product = product_of(root)
     rows = [line.split("|") for line in info.read_text(encoding="utf-8").splitlines()]
     head = [field.split("!")[0] for field in rows[0]] if rows else []
     for row in rows[1:]:
@@ -156,14 +182,14 @@ def interface_of(version):
     return int(parts[0]) * 10000 + int(parts[1]) * 100 + int(parts[2])
 
 
-def allowed(conditions):
-    """Whether a TOC line or field with these [conditions] counts for this client, in the game (not the login
-    screen) and in English."""
+def allowed(conditions, types=GAME_TYPES):
+    """Whether a TOC line or field with these [conditions] counts for the client of these load groups, in the game
+    (not the login screen) and in English."""
     for key, argument in CONDITION.findall(conditions):
         words = {word for word in re.split(r"[\s,]+", argument.strip().lower()) if word}
-        if key == "AllowLoadGameType" and not words & GAME_TYPES:
+        if key == "AllowLoadGameType" and not words & types:
             return False
-        if key == "ExcludeLoadGameType" and words & GAME_TYPES:
+        if key == "ExcludeLoadGameType" and words & types:
             return False
         if key == "AllowLoad" and words and not words & {"game", "both"}:
             return False
@@ -238,10 +264,12 @@ def xml_signature(node):
 class Export:
     """An export read whole: its symbols, the names it mentions anywhere, its addons and files."""
 
-    def __init__(self, root, label=None, build=None):
+    def __init__(self, root, label=None, build=None, game=None):
         self.root = Path(root)
         self.interface = self.root / "Interface"
         self.build = build or build_of(self.root)
+        self.game = game or game_of(self.root)
+        self.client = CLIENTS[self.game]
         game = self.root.parent.name if self.root.name == "BlizzardInterfaceCode" else self.root.name
         self.label = label or self.build or game
         self.symbols = {}  # id -> record
@@ -280,10 +308,10 @@ class Export:
         del self._defs
 
     def _toc(self, folder):
-        tocs = {p.stem: p for p in folder.glob("*.toc")}
-        for suffix in TOC_SUFFIXES:
-            if folder.name + suffix in tocs:
-                return tocs[folder.name + suffix]
+        tocs = {p.stem.lower(): p for p in folder.glob("*.toc")}  # without regard to capitals, as the game
+        for suffix in self.client["suffixes"]:
+            if (folder.name + suffix).lower() in tocs:
+                return tocs[(folder.name + suffix).lower()]
         return next(iter(tocs.values())) if len(tocs) == 1 else None
 
     def _addon(self, folder):
@@ -298,21 +326,23 @@ class Export:
             field = re.match(r"##\s*([A-Za-z]+)\s*:\s*(.*)$", line)
             if field:
                 value, _, conditions = field.group(2).partition("[")
-                if allowed("[" + conditions if conditions else ""):
+                if allowed("[" + conditions if conditions else "", self.client["types"]):
                     fields.setdefault(field.group(1), []).append(value.strip())
                 continue
             if line and not line.startswith("#"):
                 path, *rest = line.split(None, 1)
-                if allowed(rest[0] if rest else ""):
-                    lines.append(path.replace("[Family]", FAMILY).replace("[Game]", GAME).replace("\\", "/"))
+                if allowed(rest[0] if rest else "", self.client["types"]):
+                    lines.append(path.replace("[Family]", self.client["family"]).replace("[Game]", self.client["game"])
+                                 .replace("\\", "/"))
 
         def words(name):
             return {w for value in fields.get(name, []) for w in re.split(r"[\s,]+", value.lower()) if w}
 
+        types = self.client["types"]
         loads = True
-        if "AllowLoadGameType" in fields and not words("AllowLoadGameType") & GAME_TYPES:
+        if "AllowLoadGameType" in fields and not words("AllowLoadGameType") & types:
             loads = False
-        if words("ExcludeLoadGameType") & GAME_TYPES:
+        if words("ExcludeLoadGameType") & types:
             loads = False
         if "AllowLoad" in fields and not words("AllowLoad") & {"game", "both"}:
             loads = False
