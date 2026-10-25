@@ -40,6 +40,13 @@ local Core = SaneUI.Core
 --      book.ahead                       -- up to that many steps after: { { number, text } }
 --      book.colours                     -- the colours its words give names, by our kinds: { friend = "ff00ff25" }
 --      book.shown                       -- whether its own window is shown
+--      book.place                       -- where its arrow points, while it points: { continent, x, y } (the
+--                                       -- world's yards, as its text format writes them) or { map, x, y } (a
+--                                       -- uiMapID, hundredths); a line's what: our word for its command
+--      Core.Neighbours.Pointing("guide")          -- book.place alone, for an arrow asked often
+--      Core.Neighbours.Menu("guide")              -- its own menu (its guides, its options), by its own function
+--      Core.Neighbours.Arrow("guide")             -- its arrow's frame, or nil
+--      Core.Neighbours.Boxes("guide")             -- its boxes of targets and items: a list of frames
 --      Core.Neighbours.GoTo("guide", 12)          -- its step 12, by its own function
 --      Core.Neighbours.Frame("guide")             -- its window's frame, or nil
 --      local words = Core.Neighbours.Format("guide") -- its text format's words, by ours (copies):
@@ -68,6 +75,10 @@ Neighbours.KNOWN = {
               lists = "GetCurrentTargets", items = "activeItems", spells = "activeSpells",
               current = "currentGuide", progress = "GetGuideProgress", go = "SetStep", window = "RXPFrame",
               hand = "activeSteps", colourTable = "guideTextColors",
+              -- Its arrow: a frame of the object's (arrow), shown while it points, its target element (element: the
+              -- world's yards wx, wy on the continent instance, or a map zone and x, y in hundredths); the function of
+              -- its window that opens its menu (menu); its boxes of targets and items, global frames (boxes).
+              arrow = "arrowFrame", menu = "DropDownMenu", boxes = { "RXPTargetFrame", "RXPItemFrame" },
               -- Its text format: each command word and step mark by ours, the marks of game modes Sane UI's games do
               -- not play, and its colour words by our kinds.
               commands = { accept = "take", turnin = "handin", complete = "goal", collect = "carry", xp = "level",
@@ -222,13 +233,15 @@ end
 
 -- A step's lines as plain copies: the words of each element that has any, whether it is done, whether it is a
 -- thing to do (count) or words only.
-local function Lines(step)
+local function Lines(step, commands)
     local lines = {}
     for _, element in ipairs(type(step.elements) == "table" and step.elements or {}) do
         local text = type(element) == "table" and Core.Plain(element.text)
         if type(text) == "string" and text:find("%S") then
+            local tag = Core.Plain(element.tag)
             lines[#lines + 1] = { text = text, done = (element.completed or element.skip) and true or false,
-                                  count = not element.textOnly }
+                                  count = not element.textOnly, what = type(tag) == "string" and commands
+                                  and commands[tag] or nil }
         end
     end
     return lines
@@ -238,6 +251,21 @@ end
 local function FirstWords(step)
     local lines = Lines(step)
     return lines[1] and lines[1].text or nil
+end
+
+-- Where a known guide's arrow points, while it is shown: a place of ours, plain numbers.
+local function ArrowPlace(object, known)
+    local arrow = rawget(object, known.arrow)
+    if type(arrow) ~= "table" or not (arrow.IsShown and arrow:IsShown()) or arrow.wrongContinent then return nil end
+    local element = rawget(arrow, "element")
+    if type(element) ~= "table" then return nil end
+    local wx, wy, continent = Core.Plain(element.wx), Core.Plain(element.wy), Core.Plain(element.instance)
+    if type(wx) == "number" and type(wy) == "number" and type(continent) == "number" then
+        return { continent = continent, x = wx, y = wy }
+    end
+    local map, x, y = Core.Plain(element.zone), Core.Plain(element.x), Core.Plain(element.y)
+    if type(map) == "number" and type(x) == "number" and type(y) == "number" then return { map = map, x = x, y = y } end
+    return nil
 end
 
 function Neighbours.Book(key, ahead)
@@ -257,7 +285,7 @@ function Neighbours.Book(key, ahead)
     for _, step in ipairs(type(hand) == "table" and hand or {}) do
         local number = type(step) == "table" and tonumber(Core.Plain(step.index))
         if number and not step.hidewindow and not step.tip then
-            book.hand[#book.hand + 1] = { number = number, lines = Lines(step) }
+            book.hand[#book.hand + 1] = { number = number, lines = Lines(step, known.commands) }
         end
     end
     table.sort(book.hand, function(a, b) return a.number < b.number end)
@@ -271,6 +299,7 @@ function Neighbours.Book(key, ahead)
         end
         number = number + 1
     end
+    book.place = ArrowPlace(object, known)
     local colours = rawget(object, known.colourTable)
     for ours, theirs in pairs(known.colours) do
         local colour = type(colours) == "table" and Core.Plain(colours[theirs])
@@ -285,6 +314,42 @@ function Neighbours.GoTo(key, number)
     local object = LoadedGuide(known)
     local go = object and rawget(object, known.go)
     if type(go) == "function" and type(number) == "number" then Core.Safe("neighbours: " .. key, go, number) end
+end
+
+-- Where a known guide's arrow points now (as book.place), without the rest of its book.
+function Neighbours.Pointing(key)
+    local known = Neighbours.KNOWN[key]
+    local object = known and known.arrow and LoadedGuide(known)
+    return object and ArrowPlace(object, known) or nil
+end
+
+-- A known guide's own menu, opened by its window's own function.
+function Neighbours.Menu(key)
+    local frame = Neighbours.Frame(key)
+    local known = Neighbours.KNOWN[key]
+    local open = frame and known.menu and rawget(frame, known.menu)
+    if type(open) == "function" then Core.Safe("neighbours: " .. key, open) end
+end
+
+-- A known guide's arrow frame, while it is loaded.
+function Neighbours.Arrow(key)
+    local known = Neighbours.KNOWN[key]
+    local object = known and known.arrow and Loaded(known.addon) and Object(known)
+    local arrow = object and rawget(object, known.arrow)
+    if type(arrow) == "table" and type(arrow.GetObjectType) == "function" then return arrow end
+    return nil
+end
+
+-- A known addon's boxes, by their global names, those made so far, while it is loaded.
+function Neighbours.Boxes(key)
+    local known = Neighbours.KNOWN[key]
+    local boxes = {}
+    if not known or not known.boxes or not Loaded(known.addon) then return boxes end
+    for _, name in ipairs(known.boxes) do
+        local frame = rawget(_G, name)
+        if type(frame) == "table" and type(frame.GetObjectType) == "function" then boxes[#boxes + 1] = frame end
+    end
+    return boxes
 end
 
 -- A known addon's window, by its global name, while it is loaded.

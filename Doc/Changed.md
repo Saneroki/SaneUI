@@ -3,8 +3,31 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 and 122 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling's guide: the leather arrow, Expressway, the guide's own menu and boxes (Saneroki, 2026-10-25)
+Saneroki asked for the arrow in Sane UI's leather ring with its point, the view's words in Expressway, the next steps
+greyed out, the known guide's own menu on a right click, and its boxes of targets and items gathered with the view so
+they need no placing.
+- **`src/SpeedLeveling/Steps.lua`:** the arrow at the view's top: the far herbs' pointed ring (`Art/mark-pointed`),
+  turned every 0.05 s the way to the place (`Run.Way` less the player's facing), its target asked every 0.5 s
+  (`Guide.Target`), what waits there in its hole (the game's quest signs, else a map), its yards under it, out of sight
+  within the place's reach. All words in Expressway (`Fonts/Expressway.ttf`), outlined, the game's font where it cannot
+  be set; ticks are the game's ready-check tick (the font has no root sign). The next steps grey, their colours taken
+  out. A right click on the zone or the next steps opens the known guide's own menu while its guide is shown. While
+  ours points to its place, the known guide's arrow is put into a hidden frame (`Core.Lend`); its boxes are placed in
+  a row under the view by the screen, out of a fight only (the switch *Gather its targets and items*). At first at the
+  screen's right, anchored by its top.
+- **`src/SpeedLeveling/Run.lua`:** `Run.Way` (yards and the bearing, for both kinds of place), `Run.Target` (the first
+  place of the steps at hand not yet passed; points on the way passed within their reach). **`Guide.lua`:**
+  `Guide.Target`, `Guide.Menu`; a line's command in our word in the picture.
+- **`src/Core/Neighbours.lua`:** `Neighbours.Pointing`, `Arrow`, `Boxes`, `Menu`; `book.place`; a line's `what`.
+- **Art and font:** `assets/optimized/SpeedLeveling/Art/mark-pointed.blp` (the pointed ring, `dev/tools/art` ships it
+  to Speed Leveling too), `assets/fonts/Expressway/` and `assets/optimized/SpeedLeveling/Fonts/Expressway.ttf`.
+- **Tests:** `dev/tests/speedguide.lua` 122 checks (18 new).
+- **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/guides/interface-style.md` (*The leveling
+  guide over the world*), `Doc/ideas/Leveling.md`, the public changelog.
 
 ### Speed Leveling: your leveling guide over the world (Saneroki, 2026-10-25)
 Saneroki asked for his leveling guide in Speed Leveling, over the world without a window, in Sane UI's own style:

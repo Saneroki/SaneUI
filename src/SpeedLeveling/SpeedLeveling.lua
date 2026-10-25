@@ -53,11 +53,13 @@ ns.TEXT = {
     guideHeader = "Guide",
     guideHeaderTip = "Your leveling guide over the world: the zone, the steps at hand and the next ones.",
     showGuide = "Show the guide",
-    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them. A click on a step at hand skips it, a right click goes back one; the wheel over the next steps scrolls them, a double click goes to one; a right click on the zone chooses a guide.",
+    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, with an arrow to the step's place. A click on a step at hand skips it, a right click goes back one; the wheel over the next steps scrolls them, a double click goes to one; a right click on the zone or the next steps opens your leveling guide's own menu (or chooses a pasted guide).",
     knownGuide = "Your leveling guide's own guide",
     knownGuideTip = "While the leveling guide Sane UI knows is loaded, its guide is shown and followed, the one it has loaded for you. Off: the guide you pasted.",
     knownWindow = "Hide its own window",
     knownWindowTip = "While its guide is shown here, that guide's own window is made unseen; it comes back as it was when this is off.",
+    knownBoxes = "Gather its targets and items",
+    knownBoxesTip = "While its guide is shown here, that guide's boxes of targets and items stand in a row under it, so they need no placing; they go back where they were when this is off. Placed out of a fight: the game holds them in one.",
     ahead = "Steps listed ahead",
     aheadTip = "How many of the next steps stand under those at hand.",
     guidesButton = "Guides",
@@ -117,6 +119,8 @@ local OPTIONS = {
     { key = "knownGuide", default = true, text = ns.TEXT.knownGuide, tip = ns.TEXT.knownGuideTip },
     { key = "knownWindow", default = true, text = ns.TEXT.knownWindow, tip = ns.TEXT.knownWindowTip,
       parent = "knownGuide" },
+    { key = "knownBoxes", default = true, text = ns.TEXT.knownBoxes, tip = ns.TEXT.knownBoxesTip,
+      parent = "knownGuide" },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
       button = function() ns.Guarded(ns.Guides.Open) end },
@@ -124,7 +128,7 @@ local OPTIONS = {
     { key = "told", default = false },    -- told once how to give the key a key (Key.lua)
 }
 -- The switches of the guide over the world: drawn anew; the known guide's switch also changes what the key wants.
-local VIEW = { showGuide = true, knownWindow = true, ahead = true }
+local VIEW = { showGuide = true, knownWindow = true, knownBoxes = true, ahead = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then
         ns.Guarded(ns.Steps.Update)

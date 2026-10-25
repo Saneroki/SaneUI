@@ -35,8 +35,10 @@ target, mark, attack and interact only by the game's secure ways, and looting a 
   read. Our own routes, once there, are a third place for its steps.
 - **Built: the guide over the world** (`src/SpeedLeveling/README.md`, *The guide over the world*): the view, the
   guides kept as text and their window, the engine that runs a pasted guide, the known guide's loaded guide read.
-- **Not yet:** the routes and their planner (below), the guide's way on the map and an arrow to its place (now: the
-  key and the known guide's own arrow), walking to the NPC found (the game's click to move), quest givers of quests
+- **Decision (Saneroki, 2026-10-25), the same day:** the arrow to the step's place in the far herbs' leather ring
+  with its point, at the view's top; the view's words in Expressway; the next steps greyed out; a right click opens
+  the known guide's own menu; its boxes of targets and items gathered under the view. Built.
+- **Not yet:** the routes and their planner (below), the guide's way on the map, walking to the NPC found (the game's click to move), quest givers of quests
   to take (only through the guide for now), an item to use on the creature found (the player's click).
 
 ## What has to exist first

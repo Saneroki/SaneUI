@@ -32,7 +32,8 @@ local _, ns = ...
 --      Run.Check()           the game changed: moved on as far as done steps go; true when anything moved
 --      Run.Saw(what)         a thing the game tells only as it happens, for the steps at hand
 --      Run.Watch(changed)    the place looked at while a step waits for one (changed() after a move); Run.Stop()
---      Run.Distance(place)   how far the character is from a place, in yards
+--      Run.Way(place)        how far the character is from a place, in yards, and which way it lies; Run.Distance
+--      Run.Target()          where the arrow points: the place line and its step
 --      Run.Targets()         the names the steps at hand want found: foes, friends
 --      Run.Uses()            the items and spells they want used
 --      Run.Words(line)       a line's words: the guide's own, or ours made from the game's names
@@ -208,29 +209,37 @@ local function Size(map)
     return size
 end
 
--- How far the character is from a place, in yards; nil where the game does not say (another continent, a dungeon).
-function Run.Distance(place)
+-- How far the character is from a place, in yards, and which way it lies (radians from the north, turning to the
+-- left as the game's facing does); nil where the game does not say (another continent, a dungeon).
+function Run.Way(place)
+    local north, west
     if place.continent then
         local position = rawget(_G, "UnitPosition")
         if not position then return nil end
-        local ok, north, west, _, world = pcall(position, "player")
-        if not ok then return nil end
-        north, west, world = Plain(north), Plain(west), Plain(world)
-        if type(north) ~= "number" or type(west) ~= "number" or world ~= place.continent then return nil end
-        -- The format writes a place in the world west first, then north.
-        return math.sqrt((west - place.x) ^ 2 + (north - place.y) ^ 2)
+        local ok, x, y, _, world = pcall(position, "player")
+        x, y, world = Plain(x), Plain(y), Plain(world)
+        if not ok or type(x) ~= "number" or type(y) ~= "number" or world ~= place.continent then return nil end
+        -- The format writes a place in the world west first, then north; the game's own two numbers go north first.
+        north, west = place.y - x, place.x - y
+    else
+        local map = MapId(place.map)
+        local maps = rawget(_G, "C_Map")
+        if not (map and maps) then return nil end
+        local point = Core.Ask(maps.GetPlayerMapPosition, map, "player")
+        local size = Size(map)
+        if type(point) ~= "table" or not size then return nil end
+        local x, y = point.x, point.y
+        if point.GetXY then x, y = point:GetXY() end
+        x, y = Plain(x), Plain(y)
+        if type(x) ~= "number" or type(y) ~= "number" then return nil end
+        -- A map's x grows to the east, its y to the south.
+        west, north = -(place.x / 100 - x) * size[1], -(place.y / 100 - y) * size[2]
     end
-    local map = MapId(place.map)
-    local maps = rawget(_G, "C_Map")
-    if not (map and maps) then return nil end
-    local point = Core.Ask(maps.GetPlayerMapPosition, map, "player")
-    local size = Size(map)
-    if type(point) ~= "table" or not size then return nil end
-    local x, y = point.x, point.y
-    if point.GetXY then x, y = point:GetXY() end
-    x, y = Plain(x), Plain(y)
-    if type(x) ~= "number" or type(y) ~= "number" then return nil end
-    return math.sqrt(((x - place.x / 100) * size[1]) ^ 2 + ((y - place.y / 100) * size[2]) ^ 2)
+    return math.sqrt(north ^ 2 + west ^ 2), math.atan2(west, north)
+end
+
+function Run.Distance(place)
+    return (Run.Way(place))
 end
 
 -------------------------------------------------------------------------------
@@ -450,6 +459,33 @@ function Run.Saw(what)
         seen[index] = seen[index] or {}
         seen[index][what] = true
     end
+end
+
+-- Where the arrow points: the first place not yet passed of the steps at hand, the step you are at first; a point on
+-- the way, or a place to get to, is passed once you were within its reach. The place line and its step; nil for none.
+function Run.Target()
+    if not guide then return nil end
+    local order = {}
+    if guide.steps[at] then order[1] = at end
+    for _, index in ipairs(Run.Hand()) do
+        if index ~= at then order[#order + 1] = index end
+    end
+    for _, index in ipairs(order) do
+        for number, line in ipairs(guide.steps[index].lines) do
+            local key = "place" .. number
+            if (line.what == "place" or line.what == "arrive") and not (seen[index] and seen[index][key]) then
+                local passable = line.way or line.what == "arrive"
+                local distance = passable and Run.Distance(line)
+                if distance and distance <= (line.near and line.near > 0 and line.near or ns.Format.FAR) then
+                    seen[index] = seen[index] or {}
+                    seen[index][key] = true
+                else
+                    return line, index
+                end
+            end
+        end
+    end
+    return nil
 end
 
 -- Whether a step at hand waits for a place.

@@ -33,6 +33,13 @@ function methods:GetHeight() return self._height end
 function methods:SetWidth(width) self._width = width end
 function methods:GetWidth() return self._width end
 function methods:SetSize(width, height) self._width, self._height = width, height end
+function methods:SetRotation(angle) self._rotation = angle end
+function methods:SetTextColor(r, g, b) self._color = { r, g, b } end
+function methods:SetFormattedText(format, ...) self._text = format:format(...) end
+function methods:GetLeft() return self._left or 900 end
+function methods:GetBottom() return self._bottom or 300 end
+local facing = 0
+GetPlayerFacing = function() return facing end
 
 -- The key's secure parts, enough for it to start beside the guide (dev/tests/speedleveling.lua tries them).
 function methods:SetAttribute(name, value)
@@ -264,12 +271,34 @@ check(Run.At() == 6, "not on its quest: the step passed by: " .. Run.At())
 W.place = { -4250, -600, 0, 1 } -- the game's two numbers of a place in the world, its height, the continent
 W.Wait(2)
 check(Run.At() == 6, "too far from the place")
+-- The arrow: to the place, the yards under it, turned as the player faces.
+local place, waits = Guide.Target()
+check(place and place.continent == 1 and place.near == 20 and waits == nil, "the arrow points to the step's place")
+local yards, way = Run.Way(place)
+check(math.abs(yards - 49.75) < 0.01 and math.abs(way - math.atan2(-0.5, 49.75)) < 1e-6, "how far and which way")
+Steps.Update()
+local ring, yardsText
+for _, widget in ipairs(W.frames) do
+    if widget._texture == Steps.RING then ring = widget end
+end
+for _, widget in ipairs(W.frames) do
+    if widget._kind == "FontString" and widget._parent == ring._parent and widget._text == "50" then yardsText = widget end
+end
+check(ring and ring._parent._shown and yardsText, "the leather ring shown, its yards under it")
+check(math.abs(ring._rotation - way) < 1e-6, "facing north: turned the way to the place")
+facing = math.pi / 2
+Steps.Update()
+check(math.abs(ring._rotation - (way - math.pi / 2)) < 1e-6, "facing west: turned with you")
+facing = 0
 W.place = { -4200, -605, 0, 2 }
 W.Wait(2)
 check(Run.At() == 6, "on another continent")
 W.place = { -4200, -605, 0, 1 }
 W.Wait(2)
 check(Run.At() == 7, "near enough: on")
+check(Guide.Target() == nil, "no place left: the arrow has nowhere to point")
+Steps.Update()
+check(not ring._parent._shown, "and is out of sight")
 
 -- The hearth: as it is cast.
 check(Run.Uses()[1] == Run.HEARTHSTONE, "the hearth: the key's Hearthstone")
@@ -321,6 +350,7 @@ end
 check(#cards == 1 and cards[1].number == 1 and cards[1].label._text == "Step 1", "a card for the step at hand")
 check(#rows == 5 and ns.options.ahead == 5, "the next steps, as many as the switch says: " .. #rows)
 check(rows[2]._alpha < rows[1]._alpha, "fading as they go down")
+check(rows[1].text._color[1] == Steps.GREY and not rows[1].text._text:find("|c", 1, true), "greyed out, no colours in them")
 local target = rows[1].step
 rows[1]._scripts.OnDoubleClick(rows[1])
 W.Wait(1)
@@ -346,8 +376,20 @@ check(view:IsShown(), "on: shown again")
 --  The known guide's loaded guide
 -------------------------------------------------------------------------------
 local own = CreateFrame("Frame", KNOWN.window, UIParent)
+local menuOpened = 0
+own[KNOWN.menu] = function() menuOpened = menuOpened + 1 end
+local ownArrow = CreateFrame("Frame", nil, UIParent)
+ownArrow.element = { wx = -600.5, wy = -4300.25, instance = 1 }
+ownArrow:Hide()
+local boxes = {}
+for index, name in ipairs(KNOWN.boxes) do
+    boxes[index] = CreateFrame("Frame", name, UIParent)
+    boxes[index]:SetPoint("CENTER", UIParent, "CENTER", 0, index * 50)
+    boxes[index]:SetWidth(100)
+end
 local elements = {
     { text = "Talk to |cff00ff25Gornek|r", textOnly = true },
+    { text = "Accept Cutting Teeth", tag = "accept" },
     { text = "Cutting Teeth: 3/10", completed = false },
     { text = "Accepted", completed = true },
 }
@@ -359,7 +401,7 @@ local book = { [KNOWN.current] = { name = "6-10 Durotar", steps = steps },
                [KNOWN.progress] = function() return 4 end,
                [KNOWN.colourTable] = { [COLOUR.friend] = "FF00FF25" },
                [KNOWN.part] = { [KNOWN.lists] = function() return { "Gornek" }, {}, {} end },
-               [KNOWN.items] = { [5000] = true }, [KNOWN.spells] = {} }
+               [KNOWN.items] = { [5000] = true }, [KNOWN.spells] = {}, [KNOWN.arrow] = ownArrow }
 local went
 book[KNOWN.go] = function(number) went = number end
 own[KNOWN.hand] = { steps[4] }
@@ -370,9 +412,10 @@ W.loaded[KNOWN.addon] = true
 picture = Guide.Picture()
 check(picture.known and picture.title == "Durotar" and picture.levels == "6-10" and picture.at == 4 and picture.total == 12,
     "the known guide's guide: its zone, levels, step")
-check(picture.hand[1].number == 4 and #picture.hand[1].lines == 3, "its step at hand with its lines")
+check(picture.hand[1].number == 4 and #picture.hand[1].lines == 4, "its step at hand with its lines")
 check(not picture.hand[1].lines[1].text:find("00ff25", 1, true), "its colour of NPCs made ours")
-check(picture.hand[1].lines[2].have == 3 and picture.hand[1].lines[2].need == 10 and picture.hand[1].lines[3].done,
+check(picture.hand[1].lines[2].what == "take", "a line's command in our word")
+check(picture.hand[1].lines[3].have == 3 and picture.hand[1].lines[3].need == 10 and picture.hand[1].lines[4].done,
     "a count read from its words; a line done")
 check(picture.ahead[1].number == 5 and picture.ahead[2].number == 7, "the next steps, the optional one left out")
 check(Guide.Targets()[1] == nil and select(2, Guide.Targets())[1] == "Gornek", "the key finds its NPC")
@@ -383,6 +426,19 @@ Guide.Back()
 check(went == 3, "a right click: back one, by its own function")
 Steps.Update()
 check(own._alpha == 0 and own._scale == Steps.UNSEEN, "its own window unseen while ours shows its guide")
+check(Guide.Target() == nil and ownArrow._parent == UIParent, "its arrow not shown: ours points nowhere, its own left")
+ownArrow:Show()
+Steps.Update()
+place, waits = Guide.Target()
+check(place and place.continent == 1 and place.x == -600.5 and place.y == -4300.25 and waits == "take",
+    "its arrow shown: ours points to its place, a quest to take there")
+check(ownArrow._parent ~= UIParent and not ownArrow:IsVisible(), "its own arrow put away")
+check(boxes[1]._points[1][2] == UIParent and boxes[1]._points[1][1] == "TOPLEFT"
+    and boxes[2]._points[1][4] > boxes[1]._points[1][4], "its boxes in a row under ours")
+Core.Set(ns.name, "knownBoxes", false)
+check(boxes[1]._points[1][1] == "CENTER" and boxes[2]._points[1][5] == 100, "Gather off: its boxes back where they were")
+Core.Set(ns.name, "knownBoxes", true)
+check(boxes[1]._points[1][1] == "TOPLEFT", "on: gathered again")
 Core.Set(ns.name, "knownWindow", false)
 check(own._alpha == 1 and own:GetScale() == 1, "Hide its own window off: given back as it was")
 Core.Set(ns.name, "knownWindow", true)
@@ -405,8 +461,14 @@ for _, widget in ipairs(W.frames) do
         and not widget._scripts.OnDoubleClick then header = widget end
 end
 header._scripts.OnClick(header)
-local menu = W.menus[#W.menus]
-check(menu and #menu >= 3, "the zone's menu: the guides, paste")
+check(menuOpened == 1, "a right click on the zone: the known guide's own menu")
+rows[1]._scripts.OnClick(rows[1])
+check(menuOpened == 2, "and on the next steps")
+Core.Set(ns.name, "knownGuide", false)
+local menus = #W.menus
+header._scripts.OnClick(header)
+check(#W.menus == menus + 1 and #W.menus[#W.menus] >= 3 and menuOpened == 2, "the pasted guide: our menu, the guides and paste")
+Core.Set(ns.name, "knownGuide", true)
 
 -------------------------------------------------------------------------------
 --  Standing down
@@ -415,6 +477,7 @@ Steps.Update()
 check(own._alpha == 0, "lent before standing down")
 ns.StandDown("a test")
 check(not view:IsShown() and own._alpha == 1 and own:GetScale() == 1, "standing down: hidden, its window given back")
+check(ownArrow._parent == UIParent and boxes[1]._points[1][1] == "CENTER", "and its arrow and boxes")
 Steps.Update()
 check(not view:IsShown(), "nothing more after standing down")
 
