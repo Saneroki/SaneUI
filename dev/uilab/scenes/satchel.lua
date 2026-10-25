@@ -94,6 +94,24 @@ AddonCompartmentFrame.registeredAddons = {
       func = function(_, input) print("Compartment Addon: " .. tostring(input.buttonName)) end },
 }
 
+-- What the lab does not tell of the game's minimap and clock: the realm's time, the latency, new mail, an invitation,
+-- the game's calendar button, its clock window and stopwatch (stand-ins: their windows are the lab's empty frames).
+GetGameTime = function() return 17, 5 end
+GetNetStats = function() return 0, 0, 35, 41 end
+HasNewMail = function() return true end
+GetLatestThreeSenders = function() return "Mirabel Ashgrove", "Tobin" end
+C_Calendar = C_Calendar or {}
+C_Calendar.GetNumPendingInvites = function() return 1 end
+CreateFrame("Button", "GameTimeFrame", UIParent):Hide()
+TimeManagerFrame = CreateFrame("Frame", "TimeManagerFrame", UIParent)
+TimeManagerFrame:Hide()
+StopwatchFrame = CreateFrame("Frame", "StopwatchFrame", UIParent)
+StopwatchFrame:Hide()
+TimeManager_Toggle = function() TimeManagerFrame:SetShown(not TimeManagerFrame:IsShown()) end
+Stopwatch_Toggle = function() StopwatchFrame:SetShown(not StopwatchFrame:IsShown()) end
+TimeManager_IsAlarmFiring = function() return false end
+TimeManager_TurnOffAlarm = function() end
+
 Lab.Addon("SaneUI_Navigation", "src/Navigation/Found.lua", "src/Navigation/Strays.lua", "src/Navigation/Satchel.lua")
 
 -- The small map's stand-in in the top right corner: a terrain picture, as large as the window.

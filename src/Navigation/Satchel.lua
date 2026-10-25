@@ -9,6 +9,16 @@ local _, ns = ...
 --  a page of the journal (Core.Journal) with, under their titles, large cells
 --  that are easy to hit:
 --
+--      the zone  its title the zone and subzone you are in, in the colour the game's minimap
+--                gives them (friendly, hostile, contested, a sanctuary); under it in two
+--                columns your local time and the realm's, the frame rate, the latency home and
+--                to the world, the time of day (Forever: C_DateAndTime.IsDayTime), new mail
+--                and from whom, the calendar's invitations; looked at again every second while
+--                the page is open. Then the game's Calendar (a secure button of ours over its
+--                cell clicks the game's own calendar button, so the game opens its panel as
+--                its own code: out of a fight only), Clock (the game's clock window: its alarm
+--                and settings; while the alarm sounds, a click stops it) and Stopwatch (the
+--                game's, on the screen), each ticked while open (Saneroki, 2026-10-25)
 --      AddOns    the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
 --                title, A to Z, twice as large as the rest: its picture round,
@@ -50,6 +60,15 @@ Satchel.SPELL = { 0.0625, 0.9 } -- a tracking spell's icon cut inside its frame,
 Satchel.TICK = "\226\136\154"   -- the pencil tick: Kalam's root sign
 Satchel.ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask" -- an addon's picture cut round by it
 Satchel.TRIM = 0.08        -- of an addon's picture cut off at each side: an icon's own frame
+Satchel.LINE = 16          -- a line under the zone's title
+Satchel.LABEL = 76         -- a line's words before its value
+Satchel.EVERY = 1          -- seconds between two looks at the lines while the page is open
+Satchel.CLOCK = 134376     -- the clock's picture (INV_Misc_PocketWatch_01) and the stopwatch's (Spell_Nature_TimeStop)
+Satchel.STOPWATCH = 136106
+Satchel.CALENDAR = "UI-HUD-Calendar-%d-Up" -- the game's calendar button's atlas for the day of the month
+-- The zone's colour as the game's minimap gives it (Blizzard_Minimap, Minimap_Update), by C_PvP.GetZonePVPInfo.
+Satchel.ZONE = { sanctuary = { 0.41, 0.8, 0.94 }, arena = { 1, 0.1, 0.1 }, friendly = { 0.1, 1, 0.1 },
+                 hostile = { 1, 0.1, 0.1 }, contested = { 1, 0.7, 0 } }
 -- The game's tracking entries its menu lists besides those of a spell (Blizzard_Minimap, OPTIONAL_FILTERS; Forever
 -- has them as MinimapConstants.OPTIONAL_FILTERS, Retail keeps them to itself): Enum.MinimapTrackingFilter's names.
 Satchel.OPTIONAL = { "Banker", "Auctioneer", "Barber", "TrainerProfession", "AccountCompletedQuests", "TrivialQuests",
@@ -61,17 +80,125 @@ Satchel.TEXT = {
     pins = "Pins",
     tracking = Core.Word("TRACKING", "Tracking"),
     none = "The buttons other addons put round the minimap gather here.",
+    localTime = "Local time",
+    realmTime = "Realm time",
+    framerate = "Frame rate",
+    fps = "%d fps",
+    home = "Latency, home",
+    world = "Latency, world",
+    ms = "%d ms",
+    dayTime = "Time of day",
+    day = "Day",
+    night = "Night",
+    mail = "New mail",
+    someone = "waiting",
+    invites = "Invitations",
+    calendar = "Calendar",
+    calendarTip = "The game's calendar",
+    clock = Core.Word("TIMEMANAGER_TITLE", "Clock"),
+    clockTip = "The game's clock: its alarm and settings",
+    alarm = "Alarm",
+    alarmTip = "A click stops it",
+    stopwatch = Core.Word("STOPWATCH_TITLE", "Stopwatch"),
+    stopwatchTip = "The game's stopwatch, on the screen",
+    fight = "After the fight: the game opens it only out of one",
 }
 
 local button          -- the button on the small map
 local panel, look, scroll, sheet
 local cells, heads = {}, {} -- the cells and the sections' titles made so far, used again at each fill
+local rows = {}       -- the lines under the zone's title: { label, value } font strings, used again
+local shown = { lines = 0 } -- what the page shows of what changes: its lines' count, whether the alarm sounds
+local calendar        -- the secure button over the Calendar's cell (Cover)
+local since = 0       -- seconds since the lines were last looked at
 local predicted = {}  -- [tracking index] = on: switched here, until the game's tracking says so too (a spell's cast)
 local small = false   -- the window stands small and is the minimap: the button shows
 
 -------------------------------------------------------------------------------
 --  What it holds
 -------------------------------------------------------------------------------
+-- A function of the game's, where this client has it.
+local function Game(name)
+    local fn = rawget(_G, name)
+    return type(fn) == "function" and fn or nil
+end
+
+-- The zone you are in, its subzone after it, and its colour on the paper.
+local function Zone()
+    local zone, sub = Core.Plain(Core.Ask(Game("GetZoneText"))) or "", Core.Plain(Core.Ask(Game("GetSubZoneText"))) or ""
+    local title = sub ~= "" and sub ~= zone and (zone ~= "" and zone .. ", " .. sub or sub) or zone
+    local pvp = rawget(_G, "C_PvP")
+    local kind = Core.Plain(Core.Ask(pvp and pvp.GetZonePVPInfo or Game("GetZonePVPInfo")))
+    local colour = Satchel.ZONE[kind]
+    if not colour then return title, nil end
+    local r, g, b = Journal.Ink(colour[1], colour[2], colour[3])
+    return title, { r, g, b }
+end
+
+-- The lines under the zone's title, as the game tells them now: { words, value }.
+local function Lines()
+    local list = {}
+    local function Add(label, value) if value then list[#list + 1] = { label, value } end end
+    local here, realm = Game("GameTime_GetLocalTime"), Game("GameTime_GetGameTime")
+    Add(Satchel.TEXT.localTime, here and here(true) or date("%H:%M"))
+    if realm then
+        Add(Satchel.TEXT.realmTime, realm(true))
+    elseif Game("GetGameTime") then
+        Add(Satchel.TEXT.realmTime, ("%02d:%02d"):format(GetGameTime()))
+    end
+    local rate = Core.Plain(Core.Ask(Game("GetFramerate")))
+    if type(rate) == "number" then Add(Satchel.TEXT.framerate, Satchel.TEXT.fps:format(math.floor(rate + 0.5))) end
+    local stats = Game("GetNetStats")
+    if stats then
+        local _, _, home, world = stats()
+        home, world = Core.Plain(home), Core.Plain(world)
+        if type(home) == "number" then Add(Satchel.TEXT.home, Satchel.TEXT.ms:format(home)) end
+        if type(world) == "number" then Add(Satchel.TEXT.world, Satchel.TEXT.ms:format(world)) end
+    end
+    local times = rawget(_G, "C_DateAndTime")
+    if times and times.IsDayTime then
+        Add(Satchel.TEXT.dayTime, Core.Ask(times.IsDayTime) and Satchel.TEXT.day or Satchel.TEXT.night)
+    end
+    if Core.Plain(Core.Ask(Game("HasNewMail"))) then
+        local senders = {}
+        for _, name in ipairs({ Core.Ask(Game("GetLatestThreeSenders")) }) do
+            name = Core.Plain(name)
+            if type(name) == "string" and name ~= "" then senders[#senders + 1] = name end
+        end
+        Add(Satchel.TEXT.mail, #senders > 0 and table.concat(senders, ", ") or Satchel.TEXT.someone)
+    end
+    local dates = rawget(_G, "C_Calendar")
+    local invites = Core.Plain(Core.Ask(dates and dates.GetNumPendingInvites))
+    if type(invites) == "number" and invites > 0 then Add(Satchel.TEXT.invites, tostring(invites)) end
+    return list
+end
+
+-- Whether the game's alarm sounds now (its clock window's, Blizzard_TimeManager).
+local function Alarm()
+    local firing = Game("TimeManager_IsAlarmFiring")
+    return firing and firing() and true or false
+end
+
+-- The game's calendar, clock and stopwatch, where this client has them (the clock's only once the game loaded it).
+local function Tools()
+    local list = {}
+    local function Open(name) local frame = rawget(_G, name) return frame ~= nil and frame:IsShown() end
+    if calendar then
+        list[#list + 1] = { time = "calendar", title = Satchel.TEXT.calendar, tip = Satchel.TEXT.calendarTip,
+                            art = Satchel.CALENDAR:format(tonumber(date("%d")) or 1), ticked = Open("CalendarFrame") }
+    end
+    if rawget(_G, "TimeManagerFrame") and Game("TimeManager_Toggle") then
+        local alarm = Alarm()
+        list[#list + 1] = { time = "clock", title = alarm and Satchel.TEXT.alarm or Satchel.TEXT.clock,
+                            tip = alarm and Satchel.TEXT.alarmTip or Satchel.TEXT.clockTip, art = Satchel.CLOCK,
+                            ticked = alarm or Open("TimeManagerFrame") }
+    end
+    if rawget(_G, "StopwatchFrame") and Game("Stopwatch_Toggle") then
+        list[#list + 1] = { time = "stopwatch", title = Satchel.TEXT.stopwatch, tip = Satchel.TEXT.stopwatchTip,
+                            art = Satchel.STOPWATCH, ticked = Open("StopwatchFrame") }
+    end
+    return list
+end
 -- The kinds of pin the map can show here, in the pin filter's order.
 local function Pins()
     local order, list = {}, {}
@@ -134,6 +261,12 @@ local function Entered(cell)
     cell.shade:Show()
     local item = cell.item
     if item and item.entry and not ns.Strays.Hover(item.entry, cell, true) then Tip(cell, item.title) end
+    if item and item.time then
+        Tip(cell, item.title)
+        local fight = item.time == "calendar" and InCombatLockdown()
+        GameTooltip:AddLine(fight and Satchel.TEXT.fight or item.tip, 1, 1, 1, true)
+        GameTooltip:Show()
+    end
 end
 
 local function Left(cell)
@@ -162,7 +295,20 @@ local function Clicked(cell, mouse)
     elseif item.track then
         Track(item.track, not item.on)
         Satchel.Fill()
+    elseif item.time == "clock" then
+        -- Its alarm stopped as the game's clock button stops it; else its window, out of the satchel's way.
+        if Alarm() then
+            TimeManager_TurnOffAlarm()
+            Satchel.Fill()
+        else
+            TimeManager_Toggle()
+            if TimeManagerFrame:IsShown() then Satchel.Close() else Satchel.Fill() end
+        end
+    elseif item.time == "stopwatch" then
+        Stopwatch_Toggle()
+        Satchel.Fill()
     end
+    -- The calendar's own click comes only in a fight (out of one the secure button over it takes it): nothing then.
 end
 
 local function Cell(index)
@@ -270,18 +416,21 @@ local function Dress(cell, item, size, height)
     elseif item.entry then
         Picture(icon, item.icon or 134400) -- a compartment's addon without a picture: the game's question mark
         icon:SetTexCoord(Satchel.TRIM, 1 - Satchel.TRIM, Satchel.TRIM, 1 - Satchel.TRIM)
+    elseif item.time then
+        Picture(icon, item.art)
     end
     local switch = item.on ~= nil -- a pin, a tracking entry: on or off
     local off = switch and not item.on
     if off then icon:SetDesaturated(true) end
     icon:SetAlpha(off and Satchel.FAINT or 1)
-    cell.tick:SetShown(switch and item.on or false)
+    cell.tick:SetShown(switch and item.on or item.ticked or false)
     cell.name:SetAlpha(off and Journal.FAINT[4] or 1)
     cell:Show()
 end
 
--- A section's title over its rule at y on the sheet; the line under it if it holds nothing.
-local function Head(index, title, y, note)
+-- A section's title over its rule at y on the sheet, in its colour (graphite unless given); the line under it if it
+-- holds nothing.
+local function Head(index, title, y, note, colour)
     local head = heads[index]
     if not head then
         head = { text = sheet:CreateFontString(nil, "OVERLAY"), rule = Journal.Rule(sheet),
@@ -291,6 +440,8 @@ local function Head(index, title, y, note)
         head.note:SetJustifyH("LEFT")
         heads[index] = head
     end
+    colour = colour or Journal.INK
+    head.text:SetTextColor(colour[1], colour[2], colour[3], 1)
     head.text:SetText(title)
     head.text:ClearAllPoints()
     head.text:SetPoint("TOPLEFT", sheet, "TOPLEFT", 2, -y)
@@ -306,6 +457,53 @@ local function Head(index, title, y, note)
         head.note:SetPoint("RIGHT", sheet, "RIGHT", 0, 0)
         head.note:SetText(note)
     end
+end
+
+-- The lines under the zone's title from y on, in two columns: each its words faint, its value in graphite. Returns
+-- where the sheet goes on.
+local function Rows(lines, y)
+    local column = Satchel.COLUMNS * Satchel.CELL[1] / 2
+    for index, line in ipairs(lines) do
+        local row = rows[index]
+        if not row then
+            row = { label = sheet:CreateFontString(nil, "OVERLAY"), value = sheet:CreateFontString(nil, "OVERLAY") }
+            Journal.Font(row.label, 12, false, Journal.FAINT)
+            Journal.Font(row.value, 12, false, Journal.INK)
+            row.value:SetWordWrap(false)
+            rows[index] = row
+        end
+        local x, top = ((index - 1) % 2) * column + 2, y + math.floor((index - 1) / 2) * Satchel.LINE
+        row.label:ClearAllPoints()
+        row.label:SetPoint("TOPLEFT", sheet, "TOPLEFT", x, -top)
+        row.value:ClearAllPoints()
+        row.value:SetPoint("TOPLEFT", sheet, "TOPLEFT", x + Satchel.LABEL, -top)
+        row.value:SetWidth(column - Satchel.LABEL - 6)
+        row.label:SetText(line[1])
+        row.value:SetText(line[2])
+        row.label:Show()
+        row.value:Show()
+    end
+    for index = #lines + 1, #rows do
+        rows[index].label:Hide()
+        rows[index].value:Hide()
+    end
+    shown.lines = #lines
+    return y + math.ceil(#lines / 2) * Satchel.LINE + 4
+end
+
+-- The secure button over the Calendar's cell (or none): placed and shown out of a fight only, and while the cell lies
+-- wholly in the page's view (the button stands on UIParent: the page's scroll cuts the cells, not it). At a fight's
+-- start it lets go of the cell (Satchel.Start): the page is then free to move, and the cell's own click does nothing.
+local function Cover(cell)
+    if not calendar or InCombatLockdown() then return end
+    local top, bottom = cell and cell:GetTop(), cell and cell:GetBottom()
+    local seen = top and bottom and top <= (scroll:GetTop() or 0) + 1 and bottom >= (scroll:GetBottom() or 0) - 1
+    calendar.cell = seen and cell or nil
+    calendar:ClearAllPoints()
+    if not seen then return calendar:Hide() end
+    calendar:SetAllPoints(cell)
+    calendar:SetFrameLevel(cell:GetFrameLevel() + 5)
+    calendar:Show()
 end
 
 -------------------------------------------------------------------------------
@@ -326,9 +524,30 @@ local function Anchor()
     end
 end
 
+-- The calendar's cell, while the page shows one.
+local function CalendarCell()
+    for _, cell in ipairs(cells) do
+        if cell.item and cell.item.time == "calendar" then return cell end
+    end
+    return nil
+end
+
 local function Wheel(_, delta)
     local most = scroll:GetVerticalScrollRange() or 0
     scroll:SetVerticalScroll(math.min(math.max(scroll:GetVerticalScroll() - delta * Satchel.CELL[2], 0), most))
+    Cover(CalendarCell())
+end
+
+-- Every Satchel.EVERY seconds while the page is open: its lines as the game tells them now; the page laid out anew
+-- where a line came or went, or the alarm began or stopped.
+local function Look(_, elapsed)
+    since = since + elapsed
+    if since < Satchel.EVERY then return end
+    since = 0
+    local lines = Lines()
+    if #lines ~= shown.lines or Alarm() ~= shown.alarm then return Satchel.Fill() end
+    for index, line in ipairs(lines) do rows[index].value:SetText(line[2]) end
+    if calendar and not calendar.cell then Cover(CalendarCell()) end -- its cell's place not known at the layout
 end
 
 local function Build()
@@ -348,14 +567,21 @@ local function Build()
     sheet = CreateFrame("Frame", nil, scroll)
     sheet:SetSize(Satchel.COLUMNS * Satchel.CELL[1], 1)
     scroll:SetScrollChild(sheet)
+    panel:SetScript("OnUpdate", ns.Guard(Look))
     ns.On("MINIMAP_UPDATE_TRACKING", function() Satchel.Fill() end)
+    for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
+        ns.On(event, function() Satchel.Fill() end)
+    end
 end
 
 -- What it holds, laid out anew (opened, a switch changed, a button given back); nothing while it is closed.
 function Satchel.Fill()
     if not panel or not panel:IsShown() then return end
-    -- Each: its title, what it holds, the line while it holds nothing, its pictures' size and its rows' height.
+    -- Each: its title, what it holds, the line while it holds nothing, its pictures' size and its rows' height; the
+    -- zone's its colour and its lines too.
+    local zone, colour = Zone()
     local sections = {
+        { zone, Tools(), nil, Satchel.ICON, Satchel.CELL[2], colour = colour, lines = Lines() },
         { Satchel.TEXT.addons, ns.Strays.List(), Satchel.TEXT.none, Satchel.ADDON[1], Satchel.ADDON[2] },
         { Satchel.TEXT.pins, Pins(), nil, Satchel.ICON, Satchel.CELL[2] },
         { Satchel.TEXT.tracking, Tracking(), nil, Satchel.ICON, Satchel.CELL[2] },
@@ -369,11 +595,12 @@ function Satchel.Fill()
     local y, used, titled = 0, 0, 0
     for _, section in ipairs(sections) do
         local items, size, height = section[2], section[4], section[5]
-        if #items > 0 or section[3] then
+        if #items > 0 or section[3] or section.lines then
             titled = titled + 1
-            Head(titled, section[1], y, #items == 0 and section[3] or nil)
+            Head(titled, section[1], y, #items == 0 and section[3] or nil, section.colour)
             y = y + Satchel.HEAD
-            if #items == 0 then y = y + Satchel.NOTE end
+            if section.lines then y = Rows(section.lines, y) end
+            if #items == 0 and section[3] then y = y + Satchel.NOTE end
             for index, item in ipairs(items) do
                 used = used + 1
                 local cell = Cell(used)
@@ -391,7 +618,9 @@ function Satchel.Fill()
     local _, chrome = Journal.Outer(width, 0)
     local room = (tonumber(UIParent:GetHeight()) or 768) * Satchel.ROOM - chrome
     panel:SetSize(Journal.Outer(width, math.max(math.min(y, room), 1)))
-    Wheel(nil, 0) -- the scroll within the new height
+    shown.alarm = Alarm()
+    since = 0
+    Wheel(nil, 0) -- the scroll within the new height; the calendar's secure button over its cell
 end
 
 function Satchel.Open()
@@ -407,6 +636,7 @@ end
 
 function Satchel.Close()
     if not panel or not panel:IsShown() then return end
+    Cover(nil)
     panel:Hide()
     Core.Escape(panel, nil)
     for _, cell in ipairs(cells) do Empty(cell) end -- the held buttons wait out of sight again
@@ -445,6 +675,29 @@ function Satchel.Build(canvas)
     button:SetScript("OnLeave", GameTooltip_Hide)
     button:Hide()
     Satchel.button = button
+    -- The Calendar's secure button (Cover): it clicks the game's own calendar button (out of sight with the
+    -- minimap's cluster, but there), so the game opens its calendar panel as its own code; ours may not.
+    local game = rawget(_G, "GameTimeFrame")
+    if game then
+        calendar = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
+        calendar:SetFrameStrata("DIALOG")
+        calendar:RegisterForClicks("LeftButtonUp")
+        calendar:SetAttribute("type", "click")
+        calendar:SetAttribute("clickbutton", game)
+        calendar:SetAttribute("useOnKeyDown", false) -- on the release, as it is registered
+        calendar:SetScript("OnEnter", ns.Guard(function() if calendar.cell then Entered(calendar.cell) end end))
+        calendar:SetScript("OnLeave", ns.Guard(function() if calendar.cell then Left(calendar.cell) end end))
+        calendar:HookScript("PostClick", ns.Guard(function() C_Timer.After(0.1, ns.Guard(Satchel.Fill)) end))
+        calendar:Hide()
+        Satchel.calendar = calendar
+        -- A fight: it lets go of the cell before the game locks it (the page moves freely meanwhile); after: back.
+        ns.On("PLAYER_REGEN_DISABLED", function()
+            calendar.cell = nil
+            calendar:Hide()
+            calendar:ClearAllPoints()
+        end)
+        ns.On("PLAYER_REGEN_ENABLED", function() if Satchel.Shown() then Satchel.Fill() end end)
+    end
 end
 
 -- Over what stands on the map (Canvas.lua lays the levels).

@@ -11,8 +11,8 @@ Deeprun Tram, by lift, through portals, by the hearthstone and by the teleports 
 classic dungeons' and raids' maps of
 Core's set *Dungeons* in the game's map art, with their floors, bosses and the bosses' 3D models
 (`src/Navigation/README.md`). Not yet: a travel pin's ways under the mouse (*Map pins*), the leveling guide, the
-dungeons' three zooms, search, the minimap's other small parts (zone text, clock, mail, difficulty, the calendar and
-the expansion summary); its addon buttons, tracking and pins are in the satchel (2026-10-25).
+dungeons' three zooms, search, the minimap's last small parts (the instance difficulty, Retail's expansion summary);
+its addon buttons, tracking, pins, zone, times, mail, calendar, clock and stopwatch are in the satchel (2026-10-25).
 
 How to read this page:
 
@@ -79,6 +79,9 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
   minimap, the tracking menu), in a big, easily selectable way. Built: the satchel (`src/Navigation/Satchel.lua`,
   `Strays.lua`): AddOns (other addons' buttons and the game's addon compartment), Pins (our kinds), Tracking (the
   game's tracking menu's entries).
+- **The minimap's other parts in the satchel too** (Saneroki, 2026-10-25): the calendar, the zone's name, the local
+  and the server's time, the frame rate, the local and world latency, the time of day, the game's clock with its
+  alarm and its stopwatch. Built: the satchel's first section (the zone, its lines, Calendar, Clock, Stopwatch).
 
 ## One map, two views
 
@@ -1035,7 +1038,9 @@ As Blizzard's hybrid minimap does (*verified*), with our canvas under the native
   new parent, so no taint). Which ones: *Open questions*. Built (2026-10-25): the tracking, in the satchel's
   section *Tracking* (the game's own entries, switched through its API); other addons' buttons are held in the
   satchel (their frames moved, never one of Blizzard's: the game's own are told apart by `issecurevariable`).
-  Still to come: zone text, clock, mail, difficulty, the calendar and the expansion summary (Retail).
+  Built too (2026-10-25): the zone's name, the times, the frame rate, the latency, mail, the calendar (a secure
+  button of ours clicks the game's own), the clock with its alarm and the stopwatch, in the satchel's first
+  section. Still to come: the instance difficulty and Retail's expansion summary.
 - **Watch for:** the game's skin of this client sets the minimap's mask again when `rotateMinimap`
   changes (`Blizzard_Minimap/Camelot/Skin.lua`): our mask is set again after (`CVAR_UPDATE`). The queue
   eye is anchored to `Minimap` in this client and moves with it: placed by us. The game's key *Toggle

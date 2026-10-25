@@ -93,6 +93,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
 - **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
   the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
+  - **the zone you are in** (its title, with the subzone, in the colour the game's minimap gives it: friendly,
+    hostile, contested, a sanctuary), under it your local time and the realm's, the frame rate, the latency home and
+    to the world, the time of day (in WoW: Forever), new mail and from whom, the calendar's invitations, looked at
+    again every second; then the game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
+    click stops it) and **Stopwatch** (on the screen), each ticked while open. The calendar opens out of a fight
+    only, as the game opens it only so for an addon;
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
     minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
     the golden ring round it, with its addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists
@@ -471,7 +477,21 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   finders `Nodes.FINDERS`). A tracking entry is switched as the game's menu switches it
   (`MinimapUtil.SetTrackingFilterByFilterIndex`, else `C_Minimap.SetTracking`) and shown so at once until the game
   agrees (a spell's takes its cast); `MINIMAP_UPDATE_TRACKING` and a change of the setting *Pins on the map* fill it
-  anew while it is open.
+  anew while it is open. Its first section, the zone's (`Zone`, `Lines`, `Tools`): its title the zone and subzone
+  (`GetZoneText`, `GetSubZoneText`) in the minimap's colour for `C_PvP.GetZonePVPInfo` (`Satchel.ZONE`, made
+  readable on the paper by `Journal.Ink`); its lines in two columns, each a label and a value, from
+  `GameTime_GetLocalTime` and `GameTime_GetGameTime` (the game's own time format), `GetFramerate`, `GetNetStats`,
+  `C_DateAndTime.IsDayTime` (Forever only), `HasNewMail` with `GetLatestThreeSenders`, and
+  `C_Calendar.GetNumPendingInvites`, each only where the client has it; looked at again every `Satchel.EVERY`
+  second while the page shows (its `OnUpdate`), the page laid out anew where a line comes or goes or the alarm
+  starts or stops, and at each zone change. Then its cells: *Calendar* (the game's day-of-month atlas), covered out
+  of a fight by a secure button of ours on `UIParent` (`SecureActionButtonTemplate`, `type` *click* on the game's
+  `GameTimeFrame`, out of sight with the cluster but there), so the game opens its calendar panel as its own code
+  (`Cover`: placed and shown only while its cell lies wholly in the page's view; at `PLAYER_REGEN_DISABLED` it lets
+  go, so the page moves freely in a fight, where the cell's own click does nothing); *Clock* (the game's
+  `TimeManager_Toggle`, a plain show, the satchel closing out of its way; while `TimeManager_IsAlarmFiring`,
+  `TimeManager_TurnOffAlarm`); *Stopwatch* (`Stopwatch_Toggle`). The clock's and the stopwatch's cells only once
+  the game has loaded its clock (never loaded by our code: that would taint it).
 - **Following on the full map:** the tracker follows again where `Again` says: the small view once the mouse has
   been off it for *Follow again after*; the full map only with *Follow me* ticked, as soon as the player moved since
   the last look and no button is held (a quest moved to counts as a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at
@@ -756,7 +776,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
-| `Satchel.lua` | The satchel: its button on the small map and its page of the addons' buttons, the pins and the game's tracking, in Core's journal |
+| `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; the addons' buttons, the pins and the game's tracking, in Core's journal |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -776,6 +796,9 @@ Tests: `dev/tests/navigation.lua`.
   map, the satchel, opens a page of the buttons other addons put round the minimap, gathered there
   (`Strays.lua`), with the addons of the game's addon compartment, the kinds of pin and what the game's minimap
   tracks, in large cells that switch at a click (`Satchel.lua`).
+- **2026-10-25, the satchel's zone and clock:** as Saneroki asked, the satchel opens on the zone you are in, with
+  your local and the realm's time, the frame rate, the latency home and to the world, the time of day, new mail and
+  the calendar's invitations, and the game's calendar, clock (alarm) and stopwatch.
 - **2026-10-25, the satchel's addons round:** as Saneroki asked, the addons' pictures round, without the golden
   ring round them: their buttons lie unseen over our round picture of them.
 - **2026-10-25, the satchel's addons larger:** as Saneroki asked, the addons' pictures twice the size of the

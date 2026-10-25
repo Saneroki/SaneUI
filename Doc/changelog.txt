@@ -16,9 +16,12 @@ The bigger changes of each version, newest first.
   (/sane guides), which Sane UI follows by itself as you quest.
   A leather arrow on top points the way, with the yards under it.
 - The minimap's satchel: one button on the minimap opens a page
-  with the buttons other addons put round the minimap (and the
-  game's addon menu), every kind of pin and what the game's
-  minimap tracks, in large cells you switch with a click.
+  with the zone you are in, your time and the realm's, frame
+  rate, latency, new mail, the game's calendar, clock (with its
+  alarm) and stopwatch; the buttons other addons put round the
+  minimap (and the game's addon menu), round; every kind of pin
+  and what the game's minimap tracks, in large cells you switch
+  with a click.
 - Navigation: a middle click on the map brings it back to you,
   following you again, near enough to see the minimap's icons.
 - Retail: Sane UI works in the main game too, beside WoW: Forever.

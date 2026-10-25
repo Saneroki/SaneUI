@@ -366,6 +366,10 @@ function issecurevariable(name) return W.insecure[name] == nil, W.insecure[name]
 function methods:GetName() return self._name end
 function methods:IsObjectType(kind) return self._kind == kind end
 function methods:GetDrawLayer() return self._layer end
+function methods:SetAttribute(name, value)
+    self._attributes = self._attributes or {}
+    self._attributes[name] = value
+end
 -- A texture's part of its file, as the game tells it: its corners, upper left, lower left, upper right, lower right.
 function methods:GetTexCoord()
     local c = self._coords or {}
@@ -1422,6 +1426,67 @@ end)()
     button._scripts.OnClick(button, "LeftButton")
     check(not Satchel.Shown() and W.stray:GetParent() ~= held.spot and not W.stray:GetParent()._shown,
         "the button again closes it: the addon's button waits out of sight again")
+end)()
+
+-- The satchel's first section: the zone you are in, under it your times, the frame rate, the latency, new mail; the
+-- game's calendar (a secure button of ours clicks the game's own), clock and stopwatch.
+;(function()
+    local Satchel = ns.Satchel
+    local firing = false
+    local game = {
+        GetZoneText = function() return "Elwynn Forest" end, GetSubZoneText = function() return "Goldshire" end,
+        C_PvP = { GetZonePVPInfo = function() return "friendly" end }, GetGameTime = function() return 17, 5 end,
+        GetNetStats = function() return 0, 0, 35, 41 end, HasNewMail = function() return true end,
+        GetLatestThreeSenders = function() return "Mirabel", "Tobin" end,
+        TimeManagerFrame = W.NewWidget("Frame", "TimeManagerFrame", UIParent),
+        StopwatchFrame = W.NewWidget("Frame", "StopwatchFrame", UIParent),
+        TimeManager_IsAlarmFiring = function() return firing end,
+        TimeManager_TurnOffAlarm = function() firing = false end,
+    }
+    game.TimeManager_Toggle = function() game.TimeManagerFrame:SetShown(not game.TimeManagerFrame:IsShown()) end
+    game.Stopwatch_Toggle = function() game.StopwatchFrame:SetShown(not game.StopwatchFrame:IsShown()) end
+    game.TimeManagerFrame:Hide()
+    game.StopwatchFrame:Hide()
+    for name, value in pairs(game) do rawset(_G, name, value) end
+    local function Shown()
+        local texts, cells = {}, {}
+        for _, widget in ipairs(W.frames) do
+            if widget._shown and widget._kind == "FontString" and widget._text then texts[widget._text] = widget end
+            if widget._shown and widget.item then cells[widget.item.title] = widget end
+        end
+        return texts, cells
+    end
+    Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
+    local texts, cells = Shown()
+    local title = texts["Elwynn Forest, Goldshire"]
+    local r, g = Core.Journal.Ink(0.1, 1, 0.1)
+    check(title and near(title._color[1], r) and near(title._color[2], g),
+        "the satchel's first section: the zone and subzone you are in, in the friendly colour on the paper")
+    check(texts[Satchel.TEXT.localTime] and texts["17:05"] and texts[Satchel.TEXT.framerate] and texts["60 fps"]
+        and texts["35 ms"] and texts["41 ms"] and texts["Mirabel, Tobin"],
+        "under it the local and the realm's time, the frame rate, the latency home and to the world, who sent new mail")
+    check(cells[Satchel.TEXT.calendar] and cells[Satchel.TEXT.clock] and cells[Satchel.TEXT.stopwatch]
+        and Satchel.calendar._attributes.type == "click" and Satchel.calendar._attributes.clickbutton == W.gameButton,
+        "the game's calendar, clock and stopwatch; the calendar's secure button clicks the game's own")
+    local watch = cells[Satchel.TEXT.stopwatch]
+    watch._scripts.OnClick(watch, "LeftButton")
+    check(game.StopwatchFrame._shown and Shown() and select(2, Shown())[Satchel.TEXT.stopwatch].tick._shown,
+        "a click shows the game's stopwatch, its cell ticked")
+    firing = true
+    rawset(_G, "HasNewMail", function() return false end)
+    Satchel.frame._scripts.OnUpdate(Satchel.frame, Satchel.EVERY)
+    texts, cells = Shown()
+    local alarm = cells[Satchel.TEXT.alarm]
+    check(alarm and alarm.tick._shown and not texts[Satchel.TEXT.mail],
+        "a second later: the alarm sounds, the clock's cell says so; the mail read, its line gone")
+    alarm._scripts.OnClick(alarm, "LeftButton")
+    check(not firing and select(2, Shown())[Satchel.TEXT.clock], "a click stops the alarm, as the game's clock does")
+    local clock = select(2, Shown())[Satchel.TEXT.clock]
+    clock._scripts.OnClick(clock, "LeftButton")
+    check(game.TimeManagerFrame._shown and not Satchel.Shown(), "a click opens the game's clock window, the satchel out of its way")
+    for name in pairs(game) do rawset(_G, name, nil) end
+    rawset(_G, "HasNewMail", nil)
+    game.StopwatchFrame:Hide()
 end)()
 
 -- A drag: no longer following, the game's minimap goes; it follows again after a while without the mouse.

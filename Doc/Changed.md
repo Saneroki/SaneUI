@@ -62,6 +62,19 @@ the guide the leveling guide Sane UI knows has loaded, while it is loaded, else 
 - **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`, `Doc/agent/README.md`, the
   public changelog.
 
+### Navigation: the satchel's zone and clock (Saneroki, 2026-10-25)
+Saneroki asked for the minimap's other parts in the satchel too: the calendar, the zone's name, the local and the
+server's time, the frame rate, the local and world latency, the time of day, and the game's timer, stopwatch and alarm.
+- **`src/Navigation/Satchel.lua`:** a first section: its title the zone and subzone in the game's minimap colours
+  (`Satchel.ZONE`), its lines (`Lines`: local and realm time, frame rate, latency home and world, the time of day in
+  Forever, new mail with its senders, the calendar's invitations), looked at every `Satchel.EVERY` second while open;
+  its cells (`Tools`): *Calendar* (a secure button of ours on `UIParent` clicks the game's `GameTimeFrame`, `Cover`,
+  out of a fight only), *Clock* (`TimeManager_Toggle`; while the alarm sounds, `TimeManager_TurnOffAlarm`),
+  *Stopwatch* (`Stopwatch_Toggle`), each ticked while open.
+- **Tests:** `dev/tests/navigation.lua` 654 checks (the zone and its colour, the lines, the three cells, the
+  calendar's secure button, the stopwatch, the alarm stopped, the clock's window); the lab's scene `satchel` with
+  stand-ins for the game's clock and calendar.
+
 ### Navigation: the satchel's addons round (Saneroki, 2026-10-25)
 Saneroki asked for the addons' pictures without the golden ring round them, always round.
 - **`src/Navigation/Strays.lua`:** a held button lies unseen (alpha 0, kept and given back; a hook after its

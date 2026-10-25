@@ -342,8 +342,11 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
 - **Tests:** `dev/tests/navigation.lua` 645 checks (20 new: the middle click in both views, an addon's button held
   and given back, a larger frame and the game's own left, the satchel's cells, a pin and a tracking entry switched,
   the compartment's click); the Retail run 26. The lab's scene `satchel` (`dev/uilab/scenes/satchel.lua`).
-- **Not yet:** the minimap's other parts (zone text, clock, mail, difficulty, the calendar, Retail's expansion
-  summary).
+- **The zone and the clock** (same day): the satchel's first section, the zone in its colour, the times, frame
+  rate, latency, time of day (Forever), mail, invitations (`Zone`, `Lines`, every `Satchel.EVERY` second), and the
+  game's Calendar (a secure button over its cell clicks `GameTimeFrame`, `Cover`, out of a fight only), Clock and
+  Stopwatch. Tests: 654 checks.
+- **Not yet:** the instance difficulty, Retail's expansion summary.
 
 ## What is not there yet
 
