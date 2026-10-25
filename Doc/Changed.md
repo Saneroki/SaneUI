@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 (Speed Leveling), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation in Retail: the Cosmic map's highlight (Saneroki, 2026-10-25)
+The world under the mouse on Retail's Cosmic map lit up as a corner of its picture, blown up. Its highlight is a
+piece of an atlas (`worldmap-highlight-cosmic-azeroth` and the other worlds; also Argus' three maps and the Broken
+Isles; Forever has none), and a `SetTexCoord` after `SetAtlas` cuts within the piece, not within the file: the
+piece's own coordinates set again took its top left part.
+- **`src/Navigation/Art.lua`** (`Art.Light`): the texture placed first, the atlas set last with its coordinates
+  reset (`SetAtlas(atlas, false, "TRILINEAR", true)`), as Blizzard's highlight pin sets it.
+- **Tests:** `dev/tests/navigation.lua` (Retail, 26 checks): the Cosmic map's highlight is its atlas piece whole, at
+  the atlas' size.
+
 ### Navigation in Retail: the game's own maps, one at a time (Saneroki, 2026-10-25)
 Saneroki: Forever keeps our own map (our tiles, Scrying, the Atlas, one world to roam); Retail's map shows the game's
 own map tree as its own map does, in our window with our pins (option 1 of two; `Doc/ideas/Navigation.md`, *Forever's

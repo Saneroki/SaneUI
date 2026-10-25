@@ -718,6 +718,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, the Cosmic map's highlight:** a world under the mouse on Retail's Cosmic map (and Argus' maps,
+  the Broken Isles on Azeroth) lights up in its whole piece of the game's atlas: the piece is set last, as the
+  game's own highlight does, since a texture's coordinates after its atlas cut within the piece.
 - **2026-10-25, Retail's own maps (Saneroki):** in Retail the map is the game's own map tree, one map at a time: a
   click into the map under the mouse, a right click up to the map over it (zone, continent, Azeroth, the Cosmic
   map), the wheel within the map shown, its art's layers by the zoom, its pins alone; following, the map the player

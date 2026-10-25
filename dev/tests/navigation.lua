@@ -201,6 +201,8 @@ C_Map = {
         if map == 1415 and x >= 0.375 and x <= 0.625 and y >= 0.625 and y <= 0.7 then
             return 4242, nil, 0.75, 0.5, 0.25, 0.075, 0.375, 0.625
         end
+        -- Retail's Cosmic map: Azeroth's globe in a piece of an atlas, about its link's box on the map
+        if map == 946 and x < 0.5 then return 0, "worldmap-highlight-cosmic-azeroth", 1, 1, 0.332, 0.495, 0.348, 0.25 end
     end,
     HasUserWaypoint = function() return waypoint ~= nil end,
     GetUserWaypoint = function() return waypoint end,
@@ -758,6 +760,28 @@ if W.retailRun then (function()
         and Drawn(94701, 94712) == 0, "again: the Cosmic map, on its sheet")
     Right()
     check(small.shown == 946, "at the top a right click does nothing more")
+
+    -- The mouse over Azeroth on it: the game's highlight, a piece of an atlas (448 by 423 of a 1024 file), whole.
+    local texture = rawget(_G, "C_Texture")
+    C_Texture = { GetAtlasInfo = function(atlas)
+        if atlas ~= "worldmap-highlight-cosmic-azeroth" then return nil end
+        return { width = 448, height = 423, leftTexCoord = 1 / 1024, rightTexCoord = 449 / 1024, topTexCoord = 1 / 1024,
+                 bottomTexCoord = 424 / 1024 }
+    end }
+    cursorX, cursorY = 100 + (sheet.width * 0.4 - small.u) * small.k, 100 + (-sheet.height / 2 - small.v) * small.k
+    frame._mouseOver = true
+    frame._scripts.OnEnter(frame)
+    local hover, light
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == frame and widget ~= tracker and widget._scripts.OnUpdate then hover = widget end
+    end
+    hover._scripts.OnUpdate(hover, 0.016)
+    for _, widget in ipairs(W.frames) do if widget._atlas == "worldmap-highlight-cosmic-azeroth" then light = widget end end
+    check(light and light._shown and light._coords[1] == 0 and light._coords[2] == 1 and light._coords[3] == 0
+        and light._coords[4] == 1 and near(light._width, 448 * sheet.width / 1002 * small.k + Canvas.OVERLAP, 0.01),
+        "Azeroth under the mouse on the Cosmic map: its piece of the atlas whole, as large as the game has it")
+    frame._mouseOver = false
+    C_Texture = texture
 
     -- A click goes into the map the game says is under the mouse.
     local function Click(u, v)

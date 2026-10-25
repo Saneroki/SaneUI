@@ -300,15 +300,16 @@ function Art.Light(view, u, v)
         return Art.Unlight()
     end
     if atlas then
-        -- An atlas at its own size, in the map art's pixels, centred where the game puts it.
+        -- An atlas at its own size, in the map art's pixels, centred where the game puts it (Retail's Cosmic map,
+        -- Argus, the Broken Isles). Its piece of the file set last, the game's coordinates reset: a SetTexCoord
+        -- after SetAtlas cuts within the piece, not the file.
         local info, art = C_Texture.GetAtlasInfo(atlas), Of(map)
         if not info or not art then return Art.Unlight() end
-        light:SetAtlas(atlas)
         local across, down = info.width * box.width / art.width, info.height * box.height / art.height
         local u0 = box.u + (left + wide / 2) * box.width - across / 2
         local v0 = box.v - (top + high / 2) * box.height + down / 2
         ns.Canvas.Put(light, u0, v0, across, down)
-        light:SetTexCoord(info.leftTexCoord, info.rightTexCoord, info.topTexCoord, info.bottomTexCoord)
+        light:SetAtlas(atlas, false, "TRILINEAR", true)
     elseif type(file) == "number" and file > 0 and wide > 0 and high > 0 and (partX or 0) > 0 and (partY or 0) > 0 then
         light:SetTexture(file, "CLAMP", "CLAMP", "TRILINEAR")
         ns.Canvas.Put(light, box.u + left * box.width, box.v - top * box.height, wide * box.width / partX,
