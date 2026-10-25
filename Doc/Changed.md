@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the far herbs' and ore's yards as a bare number under the ring (Saneroki, 2026-10-25)
+- `Glints.lua`: the distance is the number alone (`%d`, no longer the game's `IN_GAME_NAVIGATION_RANGE` with *yds*),
+  `GameFontHighlight` at `Glints.TEXT` with an outline, under the ring, and under its point while that points down
+  (`Glints.TIP`, the tip's distance from the middle in the picture's side). Centred in the ring over the picture came
+  first, the same day. The setting's tip said "a gold ring": a ring of stitched leather now.
+- Tests: `dev/tests/navigation.lua` 600 checks (the marks found by their numbers; the yards under a downward point).
+
 ### Navigation: the found herbs and ore in a leather ring, pointed in the world and round on the minimap (Saneroki, 2026-10-25)
 - **The pick:** of eight rings rendered (`dev/imagegen/sets/far-marks/rings.txt`: five gold, leather, pencil, parchment;
   Qwen 2.1 turbo from words, transparent) Saneroki took the leather one, kept as

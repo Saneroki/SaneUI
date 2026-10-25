@@ -106,8 +106,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Far herbs and ore** (the setting *Far herbs and ore on the screen*, on at first): each herb and ore the minimap
   found farther away than the sparkles above reach shows on the screen in its direction: the picture of what it gives,
   round in a ring of stitched leather (the minimap's found ones wear it too, without the point) that runs out into a
-  point the way to it (up: ahead, right: to your right, down: behind you), and how many yards away it is on the other
-  side; the nearest eight. One outside your view stands
+  point the way to it (up: ahead, right: to your right, down: behind you), and how many yards away it is under it, the
+  number alone; the nearest eight. One outside your view stands
   at the screen's left or right edge, on the side you would turn to. They are placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, looking the way
   you face. While you turn the camera with the left mouse button they wait, until you ride on a moment or turn with
   the right button. They never touch the map pin.
@@ -676,6 +676,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, the yards as a number:** as Saneroki asked, a far herb's or ore's distance is the number alone (no
+  *yds*), under the ring (`Glints.TEXT`), and under the point too while that points down (a node behind you); centred
+  in the ring over the picture was tried first.
 - **2026-10-25, the leather ring:** as Saneroki chose (the ring \#6 of eight rendered: five gold, leather, pencil and
   parchment), the found herbs and ore wear a ring of stitched leather: on the screen with its point, turned toward the
   node about the middle of its hole (`Art/mark-pointed.blp`), on the minimap perfectly round (`Art/mark-round.blp`), so

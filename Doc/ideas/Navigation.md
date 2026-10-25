@@ -2007,7 +2007,7 @@ battlemaster, spirit healer, meeting stone.
   beyond the close sparkles' reach marked on the screen however far it is.
   - **What it shows (Saneroki, 2026-10-25):** its direction and its distance, the nearest eight: the picture of what
     it gives, round, in a ring that runs out into a point the way to it from the player's facing (up: ahead, down:
-    behind), and its yards under it (the game's `IN_GAME_NAVIGATION_RANGE`). One the player can see stands where it is
+    behind), and its yards under it, the number alone (Saneroki: "79", no *yds*; centred in the ring first, then below). One the player can see stands where it is
     on the screen; one outside the view at the screen's left or right edge, on the side one would turn to. No column
     (a first build had one, Saneroki took it out the same day); no loose V (a flat yellow V beside the ring came next);
     the point part of the ring and shaded like it (Saneroki). Built for now: the minimap pictures' gold ring with two

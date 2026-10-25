@@ -259,7 +259,8 @@ Saneroki, 2026-10-25):
   player faces (up: ahead, down: behind), one cohesive piece; a flat yellow V beside the ring did not belong to it;
 - **the same ring on the minimap,** perfectly round, without the point (Saneroki), so the found ones look alike
   there and in the world;
-- its yards on the side away from the point, in small outlined letters;
+- **its yards under the ring,** the number alone ("79", no *yds*), in small outlined letters, under the point too
+  while that points down (Saneroki, 2026-10-25; centred in the ring over the picture was tried and moved below);
 - no column, no beam, no sparkles: a first build's column of gold sparkles was taken out.
 
 ## Views

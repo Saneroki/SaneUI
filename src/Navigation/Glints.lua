@@ -42,10 +42,11 @@ Glints.ICON = 33           -- the picture's side at full size
 -- The ring: the leather one of the found ones on the minimap (Found.RING, Found.Ring), with its point at the top
 -- (dev/tools/mark-art), drawn round the middle of its hole, so it turns about the picture's middle.
 Glints.RING = "Interface\\AddOns\\SaneUI_Navigation\\Art\\mark-pointed"
+Glints.TIP = 510 / 1040 * 252 / 256 -- its point's tip from the middle, in the picture's side (dev/tools/mark-art's canvas)
 Glints.EDGE = 44           -- an edge mark's distance from the screen's edge
 Glints.STACK = 58          -- edge marks one under another, from the middle down
+Glints.TEXT = 12           -- the yards' letters' size
 
-local YARDS = Core.Word("IN_GAME_NAVIGATION_RANGE", "%d yd")
 local FONT = "SaneUINavigationGlints"
 
 local holder        -- our frame over the world, under every window; its OnUpdate runs while it shows
@@ -116,15 +117,16 @@ local function Mark(index)
     Found.Round(icon, frame:CreateMaskTexture())
     local ring = frame:CreateTexture(nil, "OVERLAY")
     ring:SetTexture(Glints.RING)
+    -- The yards: the number alone, under the ring, outlined so it reads on any ground.
     local text = frame:CreateFontString(nil, "OVERLAY")
-    text:SetFontObject(Core.Font(FONT, "GameFontHighlightSmall", 11, "OUTLINE") or "GameFontHighlightSmall")
+    text:SetFontObject(Core.Font(FONT, "GameFontHighlight", Glints.TEXT, "OUTLINE") or "GameFontHighlight")
     mark = { frame = frame, icon = icon, ring = ring, text = text }
     marks[index] = mark
     return mark
 end
 
 -- A mark: its picture (grey while your skill is too low for it) in the ring at x, y, the ring turned so its point shows
--- the way (0 up, turning to the right), its yards on the other side (under it, while the point is up).
+-- the way (0 up, turning to the right), its yards under it (under the point too, while that points down).
 local function Draw(mark, candidate, x, y, size)
     local entry, side = candidate.entry, Glints.ICON * size
     local file = entry.picture or Nodes.Picture(entry.node)
@@ -136,10 +138,11 @@ local function Draw(mark, candidate, x, y, size)
     mark.icon:SetDesaturated(Nodes.TooHard(entry.node))
     Found.Ring(mark.ring, mark.icon, side)
     mark.ring:SetRotation(-candidate.way)
-    local away = mark.ring:GetWidth() * Found.OUTER + 8
+    local whole = mark.ring:GetWidth()
+    local low = math.max(Found.OUTER, -math.cos(candidate.way) * Glints.TIP) * whole
     mark.text:ClearAllPoints()
-    mark.text:SetPoint("CENTER", mark.frame, "CENTER", -math.sin(candidate.way) * away, -math.cos(candidate.way) * away)
-    mark.text:SetFormattedText(YARDS, math.floor(candidate.yards + 0.5))
+    mark.text:SetPoint("TOP", mark.frame, "CENTER", 0, -low - 1)
+    mark.text:SetFormattedText("%d", math.floor(candidate.yards + 0.5))
     mark.frame:Show()
 end
 

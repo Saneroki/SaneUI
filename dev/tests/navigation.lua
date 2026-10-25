@@ -4357,7 +4357,7 @@ end)()
         local parts = {}
         for _, widget in ipairs(W.frames) do
             if widget._parent == mark then
-                if widget._kind == "FontString" then parts.text = widget._text end
+                if widget._kind == "FontString" then parts.text, parts.under = widget._text, widget._points[1][5] end
                 if widget._texture == 3765 then parts.icon = widget end
                 -- The ring with its point, turned from pointing up (counterclockwise, as the game turns).
                 if widget._kind == "Texture" and widget._texture == Glints.RING then parts.turn = widget._rotation end
@@ -4374,7 +4374,7 @@ end)()
     check(#marks == 3, "the three beyond the close sparkles' reach marked, the near one left to them")
     local by = {}
     for _, mark in ipairs(marks) do by[Parts(mark).text] = mark end
-    local ahead, right, behind = by["60 yd"], by["89 yd"], by["51 yd"]
+    local ahead, right, behind = by["60"], by["89"], by["51"]
     check(ahead and right and behind and marks[1] == behind, "each with its yards, the nearest first")
     local at, turn = ahead._points[1], Parts(ahead).turn
     check(at[2] == holder and math.abs(at[4]) < 1e-6 and at[5] > 0 and at[5] < 450 and Parts(ahead).icon
@@ -4385,6 +4385,10 @@ end)()
     turn = Parts(behind).turn
     check(math.abs(behind._points[1][4] + (800 - Glints.EDGE)) < 1e-6 and turn > math.pi / 2,
         "one behind you to the left: at the left edge, its ring pointing down and to the left")
+    local ring
+    for _, widget in ipairs(W.frames) do if widget._parent == behind and widget._texture == Glints.RING then ring = widget end end
+    check(Parts(ahead).under < 0 and Parts(behind).under < -Found.OUTER * ring._width - 2,
+        "the yards under the ring, and under its point while that points down")
     W.foci = { WorldFrame }
     held.LeftButton = true
     check(#Marks(0.3) == 0, "the left mouse button turning the camera: none (your facing tells nothing then)")
