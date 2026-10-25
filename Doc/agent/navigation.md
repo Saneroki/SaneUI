@@ -239,6 +239,10 @@ Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon 
   no scroll bar but while the mouse is on a list longer than its room, at the docked side (`Scroller`, `Side`).
 - **Found herbs and ore clicked** (`Found.lua`): each picture a button, its tooltip the node's name, a click the map
   pin on its zone's map (`OnMap`).
+- **Far sparkles** (2026-10-25, `Glints.lua`, setting `nodeGlints`): the found ones (`Found.Each`) beyond 18 yards
+  marked on the screen through a camera taken to be behind the player (`Project`: `GetCameraZoom`, `GetPlayerFacing`,
+  `cameraFov`; no map pin, no `C_Navigation`, Saneroki), a gold column with sparkles, the picture and the yards; off
+  the view at the screen's edge with the game's arrow; waiting while the left button turns the camera (`Behind`).
 - **Indoor maps off the streets** (2026-10-21): Core's set *Indoors* marks a part `open` (the game's part flag
   `EXTERIOR_LIT` and its area outdoors in `WMOAreaTable`, read by `dev/tools/indoor-art`); `Indoors.lua` never draws
   one and passes over a building whose part you stand in (`Standing`) is open.
@@ -316,7 +320,7 @@ Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' t
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 524 with the 2026-10-21 changes; 527 with the whole city below; 528 with no walk after a walk at a flight
 point; 530 with the routing finalized; 551 with the coarse layer; 555 with no ride straight back; 584 with pings,
-double clicks and Follow me), `dev/tests/walk.py`
+double clicks and Follow me; 599 with far sparkles), `dev/tests/walk.py`
 (125; 130 with the
 teleports' tool; 147 with the walking data's openings; 159 with the coarse layer).
 

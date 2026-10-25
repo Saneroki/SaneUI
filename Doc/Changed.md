@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: far sparkles, the found herbs and ore marked on the screen however far (Saneroki, 2026-10-25)
+- **What** (`Glints.lua`, new; the setting *Sparkles on far herbs and ore*, `nodeGlints`, on at first): each herb and
+  ore the minimap found (`Found.Each`, new) beyond `Glints.NEAR` yards marked in its direction: a column of gold (two
+  gradients, added light) with `Glints.SPARKS` of the game's `star4` drifting up it, the item's picture (grey while
+  the skill is too low, `Nodes.TooHard`) and its yards (the game's `IN_GAME_NAVIGATION_RANGE`) under it; the nearest
+  `Glints.MOST`. One outside the view at the left or right edge, the side one would turn to, stacked from the middle
+  down, the game's `Navigation-Tracked-Arrow` turned to point out.
+- **Roughly placed, never the map pin** (Saneroki): a camera of our own (`Project`): behind the player at
+  `GetCameraZoom`, looking the way of `GetPlayerFacing`, `Glints.PITCH` down about `Glints.PIVOT` yards over the
+  feet, its height's angle from `cameraFov` taken across a 16:9 screen (`Scale`); a place at the player's height.
+  The marks wait (`Behind`) while the left button, held `Glints.HOLD` seconds with the mouse on the world, turns the
+  camera, until the right button is down or the player has moved `Glints.SETTLE` seconds.
+- A frame on `UIParent` at the `BACKGROUND` strata, its `OnUpdate` only while the setting is on; hidden when the
+  module stands down (`Glints.Hide`).
+- Tests: `dev/tests/navigation.lua` 599 checks (one ahead in the middle, one right of it, one behind at the left edge
+  with the arrow, a near one left to the close sparkles, the left button's turn ended by moving or by the right
+  button, a short click, the setting).
+
 ### Data: the database made better by play: checked field by field, counted, harvested (Saneroki, 2026-10-24)
 - **Checked in play** (`Data/Check.lua`, `Data.Check(set, key, told)`): what the game shows of an entry compared with
   the set field by field. What agrees is confirmed as a part (a field `name`, a member `startNPCs=69`, a map's key

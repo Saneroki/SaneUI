@@ -64,6 +64,8 @@ ns.TEXT = {
     nodes = "Herbs and ore",
     nodeSparkles = "Sparkles on herbs and ore",
     nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
+    nodeGlints = "Sparkles on far herbs and ore",
+    nodeGlintsTip = "A column of gold sparkles over each herb and ore the minimap found farther away, in its direction on the screen, with the picture of what it gives and how many yards away it is; one outside your view at the screen's edge, on the side you would turn to. Placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, and while you turn the camera with the left mouse button they wait until you ride on or turn with the right one.",
     nodeTurns = "Find Herbs and Find Minerals in turn",
     nodeTurnsTip = "With Found herbs and Found ore both on in the pin filter and both spells known: the other one every so many seconds while you move, without a sound, so the map finds both. 0: never.",
     followMap = "Follow me",
@@ -183,6 +185,7 @@ local OPTIONS = {
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
     { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSparkles, tip = ns.TEXT.nodeSparklesTip, header = ns.TEXT.nodes },
+    { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, tip = ns.TEXT.nodeGlintsTip },
     { key = "nodeTurns", default = 6, min = 0, max = 30, step = 1, unit = ns.TEXT.seconds, text = ns.TEXT.nodeTurns,
       tip = ns.TEXT.nodeTurnsTip },
 }
@@ -245,6 +248,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
     if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end
+    if key == "nodeGlints" then return ns.Guarded(ns.Glints.Update) end
     if key == "nodeTurns" then return ns.Guarded(ns.Nodes.Update) end
 end })
 
@@ -284,6 +288,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Found.Hide)
     ns.Safe("giving back", ns.Nodes.GiveBack)
     ns.Safe("giving back", ns.Sparkles.GiveBack)
+    ns.Safe("giving back", ns.Glints.Hide)
 end
 
 function ns.OnLoad()
@@ -304,6 +309,7 @@ function ns.OnLogin()
     ns.Nodes.Start()
     ns.Found.Start()
     ns.Sparkles.Start()
+    ns.Glints.Start()
 end
 
 Core.Command("map", ns.TEXT.about, function(rest)

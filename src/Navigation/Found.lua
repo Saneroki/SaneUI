@@ -430,6 +430,11 @@ local function Looted()
     if best then Remove(best) end
 end
 
+-- The found ones, read only (each { u, v, plane, kind, node, picture, ... }): for the far sparkles (Glints.lua).
+function Found.Each()
+    return found
+end
+
 -- Shown while the module is on and the filter shows either kind; it runs only while the game's minimap shows.
 function Found.Update()
     if not overlay then return end

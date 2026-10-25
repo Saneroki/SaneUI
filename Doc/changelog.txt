@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: far sparkles. Every herb and ore your minimap finds
+  now shows on the screen however far away it is: a column of gold
+  sparkles in its direction, with the picture of what it gives and
+  how many yards away it is. One behind you or outside your view
+  waits at the edge of the screen, an arrow pointing the way to turn.
 - Data: Sane UI's database gets better as you play. Every quest you
   are offered, take, do and hand in is checked against it: its
   giver, objectives, rewards and who takes it back are confirmed, and

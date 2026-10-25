@@ -103,6 +103,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   ore your interact key would gather now, hanging from the game's plate on it, so you see it among the grass and
   the rocks. They need the game's interact key: while they are on, *Enable Interact Key* is on and it looks all
   around you up to 20 yards (as the game sets it for a gamepad); switched off, those settings are as they were.
+- **Far sparkles** (the setting *Sparkles on far herbs and ore*, on at first): a column of gold sparkles over each
+  herb and ore the minimap found farther away than the sparkles above reach, in its direction on the screen, with
+  the picture of what it gives and how many yards away it is; the nearest eight. One outside your view stands at the
+  screen's left or right edge, on the side you would turn to, the game's navigation arrow pointing on. They are
+  placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, looking the way
+  you face. While you turn the camera with the left mouse button they wait, until you ride on a moment or turn with
+  the right button. They never touch the map pin.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
 - **The quest log**, a window over the full map (*Quest Log* on the bar puts it in or out; drag its title bar to
@@ -652,6 +659,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
+| `Glints.lua` | Far sparkles: the found herbs and ore beyond the sparkles' reach marked on the screen in their direction, with their yards, through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -666,6 +674,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, far sparkles:** as Saneroki asked, every herb and ore the minimap found shows on the screen however
+  far it is: a column of gold sparkles in its direction, the picture of what it gives and its yards under it, and one
+  outside the view at the screen's edge, the game's navigation arrow pointing on (`Glints.lua`, the setting *Sparkles
+  on far herbs and ore*). Roughly placed and without the map pin (Saneroki): the camera is taken to be behind you, at
+  the game's zoom and field of view, and the marks wait while the left mouse button turns it.
 - **2026-10-23, a red ! for each:** in a tooltip the red ! stands before the name of each thing not yet confirmed (a
   boss's ability or item, an enemy, a pin's thing, its quests), so *! Unconfirmed Data !* says which (Saneroki).
 - **2026-10-23, confirmed in play:** a pin's and a boss's *Unconfirmed Data* follow Core's marks and what the

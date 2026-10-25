@@ -64,6 +64,7 @@ Hybrid.lua
 Found.lua
 # Gold sparkles in the world on the herb or ore your interact key would gather
 Sparkles.lua
+Glints.lua
 # The game's map kept closed: its keys and every way to it open ours
 Native.lua
 # The quest log, a window of its own over the full map; pinned, on the screen while the map is small too

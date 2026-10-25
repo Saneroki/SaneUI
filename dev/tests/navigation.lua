@@ -4326,6 +4326,87 @@ check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("SoftTarget
 Core.Set(ns.name, "nodeSparkles", true)
 end)()
 
+-- Far sparkles (Glints.lua): each found herb marked on the screen in its direction however far, with its yards;
+-- one behind you at the edge you would turn to; none while the left mouse button turns the camera.
+;(function()
+    local Found, Glints, Nodes = ns.Found, ns.Glints, ns.Nodes
+    local held, facing, saved = {}, 0, GetPlayerFacing
+    IsMouseButtonDown = function(button) return held[button] or false end
+    GetPlayerFacing = function() return facing end
+    GetCameraZoom = function() return 10 end
+    CreateColor = function(r, g, b, a) return { r, g, b, a } end
+    WorldFrame = W.NewWidget("Frame", "WorldFrame", nil)
+    W.methods.SetFormattedText = function(self, format, ...) self._text = format:format(...) end
+    local holder = Glints.frame
+    holder._width, holder._height = 1600, 900
+    local plane, pu, pv = Coords.Player()
+    local herb = Nodes.Find("Silverleaf")
+    local list = Found.Each()
+    local function Add(du, dv)
+        list[#list + 1] = { u = pu + du, v = pv + dv, plane = plane, kind = "herb", node = herb, seen = 0, swept = 0 }
+    end
+    local function Marks(elapsed)
+        holder._scripts.OnUpdate(holder, elapsed or 0.016)
+        local shown = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == holder and widget._shown then shown[#shown + 1] = widget end
+        end
+        return shown
+    end
+    local function Parts(mark)
+        local parts = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == mark then
+                if widget._kind == "FontString" then parts.text = widget._text end
+                if widget._atlas then parts.arrow = widget end
+                if widget._texture == 3765 then parts.icon = widget end
+            end
+        end
+        return parts
+    end
+    check(holder and holder._shown and holder._strata == "BACKGROUND", "far sparkles: a frame of ours under every window")
+    Add(0, 60)     -- straight ahead
+    Add(40, 80)    -- ahead, to the right (east, facing north)
+    Add(-10, -50)  -- behind you, to the left
+    Add(5, 10)     -- within the close sparkles' reach
+    local marks = Marks()
+    check(#marks == 3, "the three beyond the close sparkles' reach marked, the near one left to them")
+    local by = {}
+    for _, mark in ipairs(marks) do by[Parts(mark).text] = mark end
+    local ahead, right, behind = by["60 yd"], by["89 yd"], by["51 yd"]
+    check(ahead and right and behind and marks[1] == behind, "each with its yards, the nearest first")
+    local at = ahead._points[1]
+    check(at[2] == holder and math.abs(at[4]) < 1e-6 and at[5] > 0 and at[5] < 450 and Parts(ahead).icon
+        and not Parts(ahead).arrow._shown, "one straight ahead: a column in the screen's middle, the picture of its herb under it")
+    check(right._points[1][4] > 0 and right._points[1][4] < 800 - Glints.EDGE, "one ahead to the right: right of the middle, on the screen")
+    check(math.abs(behind._points[1][4] + (800 - Glints.EDGE)) < 1e-6 and Parts(behind).arrow._shown
+        and math.abs(Parts(behind).arrow._rotation - math.pi / 2) < 1e-6,
+        "one behind you to the left: at the left edge, the arrow pointing left")
+    W.foci = { WorldFrame }
+    held.LeftButton = true
+    check(#Marks(0.3) == 0, "the left mouse button turning the camera: none (your facing tells nothing then)")
+    held.LeftButton = false
+    check(#Marks() == 0, "the button let go, standing: still none (the camera is not behind you yet)")
+    gather.speed = 7
+    check(#Marks(Glints.SETTLE + 0.1) == 3, "moved on a while: back (the camera has swung behind you)")
+    gather.speed = 0
+    held.LeftButton = true
+    Marks(0.3)
+    held.RightButton = true
+    check(#Marks() == 3, "the right button down too: back at once (it turns you with the camera)")
+    held.LeftButton, held.RightButton, W.foci = false, false, {}
+    held.LeftButton = true
+    check(#Marks(0.1) == 3, "a short click (a target, a herb): no camera turn")
+    held.LeftButton = false
+    Core.Set(ns.name, "nodeGlints", false)
+    check(not holder._shown, "the setting off: nothing drawn, nothing asked")
+    Core.Set(ns.name, "nodeGlints", true)
+    check(holder._shown and #Marks() == 3, "on again: marked again")
+    for index = #list, 1, -1 do if list[index].seen == 0 then table.remove(list, index) end end
+    check(#Marks() == 0, "none found: none marked")
+    GetPlayerFacing = saved
+end)()
+
 -- The dungeons of Core's set Dungeons, which the game has no map of (Forever's client has none): their floors, the
 -- game's tiles, the bosses' marks with their names (the set Encounters); no player inside (the game tells no place).
 ;(function()
