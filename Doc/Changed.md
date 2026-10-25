@@ -3,8 +3,20 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 and 137 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 96 and 139 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: one press talks to the NPC in front of you; a click skips any step at hand (Saneroki, 2026-10-25)
+Saneroki, in Retail: the key said "You can't do that" in front of a quest giver, and a click on a step did not skip it.
+- **`src/SpeedLeveling/Key.lua`:** a new state after a fight's: `[@softinteract,exists,help,nodead] near`, a living
+  friendly NPC the game's interact key would pick; with *Talk to NPCs* on, the key is Interact With Target at once
+  (before, an NPC no list named sent the press to Find, whose macro then tried a quest item).
+- **`src/SpeedLeveling/Items.lua`:** Find's quest item leaves out one the game says is out of range of what it is for
+  (`IsQuestLogSpecialItemInRange` 0); `Items.QuestItems(near)`.
+- **`src/SpeedLeveling/Guide.lua`:** the known guide's step at hand may be one that only goes along with the next, both
+  shown: a click on either goes past the step clicked (`GoTo(number + 1)`), before only on the step it was at.
+- **Tests:** `dev/tests/speedleveling.lua` 96 checks, `dev/tests/speedguide.lua` 139.
+- **Docs:** `src/SpeedLeveling/README.md`.
 
 ### Speed Leveling's guide: the arrow a part of its own, pictures and words; icons over the guide (Saneroki, 2026-10-25)
 Saneroki asked for the arrow and the guide placed apart in Edit Mode, a picture of what to do in the arrow (a speech

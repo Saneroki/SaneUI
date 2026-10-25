@@ -465,6 +465,12 @@ check(Guide.Targets()[1] == nil and select(2, Guide.Targets())[1] == "Gornek", "
 check(Guide.Uses()[1] == 5000, "and its items")
 Guide.Skip(4)
 check(went == 5, "a click: its own function goes on")
+went = nil
+Guide.Skip(5)
+check(went == 6, "a click on the step after the one it is at (that one goes along with it): past it")
+went = nil
+Guide.Skip(3)
+check(went == nil, "one before it: it keeps")
 Guide.Back()
 check(went == 3, "a right click: back one, by its own function")
 Steps.Update()

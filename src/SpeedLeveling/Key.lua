@@ -17,6 +17,10 @@ local _, ns = ...
 --    object  the thing of the world the interact key would use is one your
 --            quests want (Wanted.Object; the switch Quest objects): Interact
 --            With Target, which picks it up, opens or uses it
+--    talk    a living friendly NPC right in front of you, the one the game's
+--            interact key would talk to (its soft target; Saneroki, 2026-10-25:
+--            one press talks to the quest giver you stand at; the switch Talk to
+--            NPCs): Interact With Target
 --    fight   your target a living foe that is wanted: Fight
 --    talk    your target a living friendly NPC that is wanted (the switch Talk
 --            to NPCs): Interact With Target, which talks to it
@@ -26,10 +30,10 @@ local _, ns = ...
 --            skull and starts the attack on a foe, and when it found none,
 --            uses one quest item (Items.lua)
 --
---  A state driver of the game reads loot, a foe, a friend from the macro
---  conditions, five times a second; the header's snippet then puts that mode's
---  action on the key's keys as override bindings of its own (above other
---  overrides). Whether your target is wanted and whether the soft target is a
+--  A state driver of the game reads loot, a foe, an NPC in front of you, a
+--  friend from the macro conditions, five times a second; the header's
+--  snippet then puts that mode's action on the key's keys as override bindings
+--  of its own (above other overrides). Whether your target is wanted and whether the soft target is a
 --  wanted object the module says out of a fight (the attributes wanted and
 --  object, at every change of either and of the quests), and the macro of Find
 --  is written out of a fight only: anew the moment before each press
@@ -51,7 +55,8 @@ local HINT = "Speed Leveling: give it a key in Esc > Options > Keybindings, unde
 
 -- What the macro conditions tell the state driver: the first that holds.
 local LOOT = "[@softinteract,exists,dead] loot; "
-local REST = "[@target,harm,nodead,combat] fight; [@target,harm,nodead] foe; [@target,help,nodead] friend; find"
+local REST = "[@target,harm,nodead,combat] fight; [@softinteract,exists,help,nodead] near; [@target,harm,nodead] foe; "
+    .. "[@target,help,nodead] friend; find"
 
 -- The header's snippets, which the game runs in its restricted environment, in a fight too. A change of the state
 -- or of what decides it: the action of the mode on each of the key's keys.
@@ -68,6 +73,8 @@ local BIND = [[
         mode = self:GetAttribute("wanted") and "fight" or "find"
     elseif mode == "friend" then
         mode = self:GetAttribute("wanted") and self:GetAttribute("talk") and "talk" or "find"
+    elseif mode == "near" then
+        mode = self:GetAttribute("talk") and "talk" or "find"
     end
     self:ClearBindings()
     for index = 1, self:GetAttribute("keys") or 0 do

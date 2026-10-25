@@ -13,7 +13,8 @@ local _, ns = ...
 --                items): the first in your bags, usable and off its cooldown,
 --                of the guide's step's items and then of the game's own quest
 --                items (the item a quest in your log shows as a button), for
---                quests not yet done. One a press: two would be used at once.
+--                quests not yet done, but one the game says is out of range of
+--                what it is for. One a press: two would be used at once.
 --  Such an item is often for a place or a creature: away from it the game says
 --  so and nothing is used; one that wants a target puts the game's targeting
 --  hand on the cursor.
@@ -75,9 +76,11 @@ function Items.Hearth(items, spells)
     return recall and "/cast " .. recall or nil
 end
 
--- The game's quest items of the quests in your log not yet done, in the log's order (also Icons.lua's).
-function Items.QuestItems()
+-- The game's quest items of the quests in your log not yet done, in the log's order (also Icons.lua's); with near,
+-- only those the game does not call out of range of what they are for (its quest item's range: in range, or none).
+function Items.QuestItems(near)
     local found = {}
+    local range = rawget(_G, "IsQuestLogSpecialItemInRange")
     local log, special = rawget(_G, "C_QuestLog"), rawget(_G, "GetQuestLogSpecialItemInfo")
     local total = log and type(special) == "function" and Core.Ask(log.GetNumQuestLogEntries)
     if type(total) ~= "number" then return found end
@@ -87,7 +90,8 @@ function Items.QuestItems()
         if type(quest) == "number" and not Core.Ask(log.IsComplete, quest) then
             local link = Core.Ask(special, index)
             local item = type(link) == "string" and tonumber(link:match("item:(%d+)"))
-            if item then found[#found + 1] = item end
+            local away = near and range and Core.Ask(range, index) == 0
+            if item and not away then found[#found + 1] = item end
         end
     end
     return found
@@ -95,7 +99,7 @@ end
 
 -- The one item to use when nothing is found, as a macro line; nil when there is none ready.
 function Items.Pick(items)
-    for _, list in ipairs({ items or EMPTY, Items.QuestItems() }) do
+    for _, list in ipairs({ items or EMPTY, Items.QuestItems(true) }) do
         for _, item in ipairs(list) do
             if item ~= Items.HEARTHSTONE and Ready(item) then return "/use item:" .. item end
         end

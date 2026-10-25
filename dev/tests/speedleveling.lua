@@ -198,8 +198,9 @@ check(next(overrides) == nil, "no key: no override binding")
 
 local conditions = drivers[header] and drivers[header].mode
 check(conditions and conditions:find("^%[@softinteract,exists,dead%] loot; "), "loot comes first while Loot first is on")
-check(conditions:find("%[@target,harm,nodead,combat%] fight; %[@target,harm,nodead%] foe; %[@target,help,nodead%] friend; find$"),
-    "then a foe in a fight, a foe, a friend, else find")
+check(conditions:find("%[@target,harm,nodead,combat%] fight; %[@softinteract,exists,help,nodead%] near; "
+    .. "%[@target,harm,nodead%] foe; %[@target,help,nodead%] friend; find$"),
+    "then a foe in a fight, an NPC in front of you, a foe, a friend, else find")
 check(W.cvars.softTargetInteract == "3", "Loot first: the interact key on")
 check(W.cvars.autoLootDefault == "0" and ns.options.foundCVars.autoLootDefault == nil,
     "the game's auto loot left as it is: opening the loot is all the key does")
@@ -347,6 +348,13 @@ check(overrides.E == "INTERACTTARGET", "on again: talk")
 units.target = { name = "Brother Paxton" }
 W.Fire("PLAYER_TARGET_CHANGED")
 check(overrides.E == FIND, "an NPC nobody wants: Find")
+-- An NPC right in front of you (the game's interact key's own pick): one press talks to it, wanted or not.
+header:SetAttribute("state-mode", "near")
+check(overrides.E == "INTERACTTARGET", "an NPC in front of you: talk at once")
+Core.Set(ns.name, "talk", false)
+check(overrides.E == FIND, "Talk to NPCs off: Find")
+Core.Set(ns.name, "talk", true)
+header:SetAttribute("state-mode", "friend")
 units.target = { name = "Someone Else", player = true }
 W.Fire("PLAYER_TARGET_CHANGED")
 check(header:GetAttribute("wanted") == false, "a player is never wanted")
@@ -466,7 +474,7 @@ uses[5411] = nil
 --  Loot first off and on, standing down
 -------------------------------------------------------------------------------
 Core.Set(ns.name, "loot", false)
-check(not drivers[header].mode:find("softinteract", 1, true), "Loot first off: no loot state")
+check(not drivers[header].mode:find("softinteract,exists,dead", 1, true), "Loot first off: no loot state")
 check(W.cvars.softTargetInteract == "3", "Quest objects still wants the interact key")
 Core.Set(ns.name, "objects", false)
 check(W.cvars.softTargetInteract == "2" and W.cvars.autoLootDefault == "0", "both off: the game's settings back as they were")

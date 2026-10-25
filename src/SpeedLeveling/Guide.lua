@@ -258,11 +258,12 @@ function Guide.Back()
 end
 
 -- A step at hand skipped: the one it is at, past it; another (one that stays at hand), out of the way. The known
--- guide goes on only past the step it is at.
+-- guide goes on past the step clicked, from the one it is at on: its step may be one that goes along with the next,
+-- both shown, and a click on either goes past it (one before it, that stays with you, it keeps).
 function Guide.Skip(number)
     local book = Book()
     if book then
-        if number == book.at then Core.Neighbours.GoTo("guide", book.at + 1) end
+        if number >= book.at then Core.Neighbours.GoTo("guide", number + 1) end
     else
         ns.Run.Skip(number)
     end
