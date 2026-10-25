@@ -326,6 +326,15 @@ local function Tip(button)
     GameTooltip:Show()
 end
 
+-- The gold ring laid round an icon of that side (its texture Found.RING); the far sparkles lay theirs so too.
+function Found.Ring(ring, icon, side)
+    local share = side / RING_FOR
+    ring:SetSize(RING_SIDE * share, RING_SIDE * share)
+    ring:ClearAllPoints()
+    ring:SetPoint("TOPLEFT", icon, "CENTER", RING_X * share, RING_Y * share)
+end
+Found.RING = RING
+
 local function Picture(index)
     local picture = pictures[index]
     if picture then return picture end
@@ -374,10 +383,7 @@ local function Draw(plane, pu, pv, scale, facing)
                 icon:ClearAllPoints()
                 icon:SetPoint("CENTER", overlay, "CENTER", x, y)
                 icon:SetDesaturated(Nodes.TooHard(entry.node))
-                local share = side / RING_FOR
-                ring:SetSize(RING_SIDE * share, RING_SIDE * share)
-                ring:ClearAllPoints()
-                ring:SetPoint("TOPLEFT", icon, "CENTER", RING_X * share, RING_Y * share)
+                Found.Ring(ring, icon, side)
                 icon:Show()
                 ring:Show()
                 picture.button.entry = entry

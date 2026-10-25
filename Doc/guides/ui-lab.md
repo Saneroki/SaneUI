@@ -78,7 +78,9 @@ prints its log.
   Lab.Say("GUILD", "Mirabel Ashgrove", "Hello")   -- a chat line from the server now
   ```
 
-  The scenes: `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
+  The scenes: `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, with the rest of Navigation
+  standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
+  here one in `assets/generated/ui-lab/backdrops/`, local), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest

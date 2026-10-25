@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: far herbs and ore as their pictures, the ring running out into a point (Saneroki, 2026-10-25)
+- **The look** (`Glints.lua`): no column and no sparkles; each mark is the item's picture, round
+  (`TempPortraitAlphaMask`), in the minimap pictures' gold ring (`Found.Ring`, new, shared with `Found.lua`'s
+  pictures; `Found.RING`), `Glints.ICON` wide (down to `Glints.SMALL` far off), the ring running out into a point the
+  way to the node from the facing (`Point`; `way` = `atan2(across, ahead)`: up ahead, down behind): two slices across
+  the ring's band in its own art (`SLICE`, `Glints.BAND` measured from the art), each laid by `Lay` from where a line
+  from the tip (`Glints.TIP`) touches the band's middle to the tip, turned with `SetRotation`. The yards under the
+  ring. Edge marks the same, without the game's arrow. The setting is called *Far herbs and ore on the screen*
+  (`nodeGlints`). A flat V of gold lines came first, the same day.
+- **One cohesive ring, rendered:** `dev/imagegen/sets/far-marks/rings.txt` (Qwen 2.1 turbo from words; with the first
+  build as image 1 the edit model copied its two bars), five in gold, one each in leather, pencil and parchment, under
+  `assets/generated/far-marks/`; Saneroki's pick is to replace the ring and its slices.
+- **The interface lab:** the scene `far-sparkles` (`dev/uilab/scenes/far-sparkles.lua`): Core from its TOC, the rest of
+  Navigation standing in, `Found.lua` and `Glints.lua` as they are, a Peacebloom, an Earthroot and a Copper Vein
+  found, over a local screenshot of the world (`assets/generated/ui-lab/backdrops/`). The lab reads the game's plural
+  code `|4one:many` without its closing `;` too, as the game's `IN_GAME_NAVIGATION_RANGE` has it
+  (`dev/uilab/lab/text.lua`), and turns a region drawn with mirrored texture coordinates as the game does: the mirror
+  inside the turn (`dev/uilab/web/lab.js`).
+- Tests: `dev/tests/navigation.lua` 599 checks (the point ahead, ahead-right, behind-left).
+
 ### Navigation: far sparkles, the found herbs and ore marked on the screen however far (Saneroki, 2026-10-25)
 - **What** (`Glints.lua`, new; the setting *Sparkles on far herbs and ore*, `nodeGlints`, on at first): each herb and
   ore the minimap found (`Found.Each`, new) beyond `Glints.NEAR` yards marked in its direction: a column of gold (two

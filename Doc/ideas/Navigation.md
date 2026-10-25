@@ -2003,26 +2003,33 @@ battlemaster, spirit healer, meeting stone.
   `C_TooltipInfo.GetMinimapMouseover`) while a finder is on, a few points a frame, never in a fight; each drawn
   in the picture of what it gives, a click puts the map pin there (2026-10-21). Kept as discoveries of Core's:
   not yet.
-- **Far sparkles** (built 2026-10-25, `Glints.lua`, the setting *Sparkles on far herbs and ore*): every live node
+- **Far sparkles** (built 2026-10-25, `Glints.lua`, the setting *Far herbs and ore on the screen*): every live node
   beyond the close sparkles' reach marked on the screen however far it is.
-  - **What it shows (Saneroki, 2026-10-25):** its direction and its distance: a column of gold sparkles where it
-    stands, the picture of what it gives and its yards under it, the nearest eight; one outside the view at the
-    screen's left or right edge, on the side one would turn to, with the game's navigation arrow
-    (`Navigation-Tracked-Arrow`) pointing on.
+  - **What it shows (Saneroki, 2026-10-25):** its direction and its distance, the nearest eight: the picture of what
+    it gives, round, in a ring that runs out into a point the way to it from the player's facing (up: ahead, down:
+    behind), and its yards under it (the game's `IN_GAME_NAVIGATION_RANGE`). One the player can see stands where it is
+    on the screen; one outside the view at the screen's left or right edge, on the side one would turn to. No column
+    (a first build had one, Saneroki took it out the same day); no loose V (a flat yellow V beside the ring came next);
+    the point part of the ring and shaded like it (Saneroki). Built for now: the minimap pictures' gold ring with two
+    slices of its own art as the point. The interface lab's scene `far-sparkles` shows it over the world.
+  - **One cohesive ring (Saneroki, 2026-10-25):** a painted ring with its point at the top, transparent, code turning
+    it: five in gold and one each in leather, pencil and parchment rendered (`dev/imagegen/sets/far-marks/rings.txt`,
+    Qwen 2.1 turbo from words: with the first build as image 1 the edit model copied its two bars). Saneroki's pick
+    goes through `dev/tools/art` into `Art/` and replaces the ring and its slices.
   - **Rough, never the map pin (Saneroki, 2026-10-25):** *"It doesn't have to be super precise"*; the map pin and the
     game's navigation marker (`C_Navigation`, which needs the hidden setting `showInGameNavigation`) are not used.
     The game tells no addon where its camera looks, so Sane UI takes it as it usually is: behind the player at the
     zoom the game tells (`GetCameraZoom`), looking the way the player faces (`GetPlayerFacing`), tilted 12° down
     about a point 2 yards over the feet, through the angle of the setting `cameraFov` taken across a 16:9 screen (the
     height's angle kept on other screens). A place lies at the player's height (the game tells no height), and the
-    column stands up through it, so a hill or a hollow moves only its foot. Offline, nodes 40 to 200 yards away on a
+    picture stands at that height. Offline, nodes 40 to 200 yards away on a
     1920 by 1080 screen: 11 px off across on average with the camera behind, 86 px with it 5° off the facing; up to
-    170 px up or down, hence a column.
+    170 px up or down.
   - **When the facing tells nothing:** while the left mouse button turns the camera alone (held a quarter second
     with the mouse on the world), the marks wait, until the right button turns the player with the camera or the
     player has moved for 1.5 seconds (the camera swings in behind).
-  - **Later, if wanted:** a node's place snapped to Core's *Spawns* point of the same object nearby; the column's
-    foot told by the minimap's arrows for above and below; the look redesigned with the sparkle (card #43).
+  - **Later, if wanted:** a node's place snapped to Core's *Spawns* point of the same object nearby; its height
+    told by the minimap's arrows for above and below; the look redesigned with the map pins (card #43).
 
 ### Rares
 

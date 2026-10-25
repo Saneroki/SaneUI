@@ -103,11 +103,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   ore your interact key would gather now, hanging from the game's plate on it, so you see it among the grass and
   the rocks. They need the game's interact key: while they are on, *Enable Interact Key* is on and it looks all
   around you up to 20 yards (as the game sets it for a gamepad); switched off, those settings are as they were.
-- **Far sparkles** (the setting *Sparkles on far herbs and ore*, on at first): a column of gold sparkles over each
-  herb and ore the minimap found farther away than the sparkles above reach, in its direction on the screen, with
-  the picture of what it gives and how many yards away it is; the nearest eight. One outside your view stands at the
-  screen's left or right edge, on the side you would turn to, the game's navigation arrow pointing on. They are
-  placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, looking the way
+- **Far herbs and ore** (the setting *Far herbs and ore on the screen*, on at first): each herb and ore the minimap
+  found farther away than the sparkles above reach shows on the screen in its direction: the picture of what it gives,
+  round in the gold ring of the minimap's pictures, the ring running out into a point the way to it (up: ahead,
+  right: to your right, down: behind you), and how many yards away it is under it; the nearest eight. One outside your view stands
+  at the screen's left or right edge, on the side you would turn to. They are placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, looking the way
   you face. While you turn the camera with the left mouse button they wait, until you ride on a moment or turn with
   the right button. They never touch the map pin.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
@@ -659,7 +659,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
-| `Glints.lua` | Far sparkles: the found herbs and ore beyond the sparkles' reach marked on the screen in their direction, with their yards, through a camera taken to be behind you; those outside the view at the screen's edge |
+| `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the gold ring, the ring running out into a point the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -674,6 +674,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, far herbs and ore as pictures:** as Saneroki asked, no column: each found herb and ore far away is
+  the picture of what it gives, round in the gold ring of the minimap's pictures (`Found.Ring`), the ring running out
+  into a point the way to it from where you face (two slices of the ring's own art, from where they leave the ring to
+  the tip), and its yards under it; at the screen's edge the same. The setting is *Far herbs and ore on the screen*.
+  The interface lab shows it over the world (scene `far-sparkles`). One cohesive painted ring with its point is to
+  replace the slices: candidates in gold, leather, pencil and parchment from `dev/imagegen/sets/far-marks/`.
 - **2026-10-25, far sparkles:** as Saneroki asked, every herb and ore the minimap found shows on the screen however
   far it is: a column of gold sparkles in its direction, the picture of what it gives and its yards under it, and one
   outside the view at the screen's edge, the game's navigation arrow pointing on (`Glints.lua`, the setting *Sparkles

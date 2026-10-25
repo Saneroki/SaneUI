@@ -241,7 +241,8 @@ return function(Lab)
                     buf[#buf + 1] = "???"
                     i = stop and stop + 2 or n + 1
                 elseif e == "4" then
-                    local a, b2, stop = text:match("^4([^:]*):([^;]*);()", i + 1)
+                    -- (the plural runs to a ";" or to the text's end: the game's IN_GAME_NAVIGATION_RANGE has none)
+                    local a, b2, stop = text:match("^4([^:]*):([^;]*);?()", i + 1)
                     if a then
                         local before = table.concat(buf):match("(%d+)%s*$")
                         buf[#buf + 1] = (tonumber(before) == 1) and a or b2

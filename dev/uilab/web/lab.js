@@ -145,7 +145,9 @@ function blendAndTone(st, it) {
   if (it.bl === "ADD") st.mixBlendMode = "plus-lighter";
   else if (it.bl === "MOD") st.mixBlendMode = "multiply";
   if (it.ds) st.filter = `grayscale(${it.ds})`;
-  if (it.rot) st.transform = (st.transform || "") + ` rotate(${-it.rot}rad)`;
+  // The game turns the region as drawn, a mirror of its texture coordinates (scale) inside it: in CSS the rightmost
+  // function acts first, so the turn goes in front.
+  if (it.rot) st.transform = `rotate(${-it.rot}rad) ${st.transform || ""}`;
 }
 
 function drawColor(el, it) {

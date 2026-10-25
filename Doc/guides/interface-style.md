@@ -245,6 +245,21 @@ Built on `assets/generated/picks/UI style/chat-bubble.png` (paper #133's top bub
   - the second holds the message;
 - no leather and no ornament.
 
+### Far herbs and ore
+
+A herb or ore the minimap found, marked over the world in its direction however far it is (Navigation, `Glints.lua`;
+Saneroki, 2026-10-25):
+
+- **the picture of what it gives** (Peacebloom's flower, Copper Ore's ore), round, in the gold ring of the minimap's
+  pictures, as on the minimap;
+- **the arrow is part of the ring:** the ring runs out into a point the way to the node from where the player faces
+  (up: ahead, down: behind), one cohesive piece shaded like the ring; a flat yellow V beside the ring did not belong
+  to it;
+- its yards under it, in small outlined letters;
+- no column, no beam, no sparkles: a first build's column of gold sparkles was taken out;
+- the ring with its point to be one painted piece: candidates in gold, leather, pencil and parchment
+  (`dev/imagegen/sets/far-marks/`), Saneroki's pick to come.
+
 ## Views
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):

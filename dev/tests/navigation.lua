@@ -4358,8 +4358,13 @@ end)()
         for _, widget in ipairs(W.frames) do
             if widget._parent == mark then
                 if widget._kind == "FontString" then parts.text = widget._text end
-                if widget._atlas then parts.arrow = widget end
                 if widget._texture == 3765 then parts.icon = widget end
+                -- The point's arms (slices of the ring's art): their middles together lie the way it points.
+                if widget._kind == "Texture" and widget._texture == Found.RING and widget._rotation then
+                    local at = widget._points[1]
+                    parts.tip = parts.tip or { 0, 0 }
+                    parts.tip[1], parts.tip[2] = parts.tip[1] + at[4], parts.tip[2] + at[5]
+                end
             end
         end
         return parts
@@ -4375,13 +4380,16 @@ end)()
     for _, mark in ipairs(marks) do by[Parts(mark).text] = mark end
     local ahead, right, behind = by["60 yd"], by["89 yd"], by["51 yd"]
     check(ahead and right and behind and marks[1] == behind, "each with its yards, the nearest first")
-    local at = ahead._points[1]
+    local at, tip = ahead._points[1], Parts(ahead).tip
     check(at[2] == holder and math.abs(at[4]) < 1e-6 and at[5] > 0 and at[5] < 450 and Parts(ahead).icon
-        and not Parts(ahead).arrow._shown, "one straight ahead: a column in the screen's middle, the picture of its herb under it")
-    check(right._points[1][4] > 0 and right._points[1][4] < 800 - Glints.EDGE, "one ahead to the right: right of the middle, on the screen")
-    check(math.abs(behind._points[1][4] + (800 - Glints.EDGE)) < 1e-6 and Parts(behind).arrow._shown
-        and math.abs(Parts(behind).arrow._rotation - math.pi / 2) < 1e-6,
-        "one behind you to the left: at the left edge, the arrow pointing left")
+        and math.abs(tip[1]) < 1e-6 and tip[2] > 0,
+        "one straight ahead: its herb's picture in the screen's middle, its ring pointing up")
+    tip = Parts(right).tip
+    check(right._points[1][4] > 0 and right._points[1][4] < 800 - Glints.EDGE and tip[1] > 0 and tip[2] > 0,
+        "one ahead to the right: right of the middle, on the screen, its ring pointing up and to the right")
+    tip = Parts(behind).tip
+    check(math.abs(behind._points[1][4] + (800 - Glints.EDGE)) < 1e-6 and tip[1] < 0 and tip[2] < 0,
+        "one behind you to the left: at the left edge, its ring pointing down and to the left")
     W.foci = { WorldFrame }
     held.LeftButton = true
     check(#Marks(0.3) == 0, "the left mouse button turning the camera: none (your facing tells nothing then)")
