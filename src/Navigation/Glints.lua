@@ -38,7 +38,7 @@ Glints.ZOOM = 15           -- yards behind you, where the game tells no zoom
 Glints.FOV = 90            -- degrees, where the game has no setting cameraFov
 Glints.HOLD = 0.25         -- seconds the left button is down before it counts as turning the camera
 Glints.SETTLE = 1.5        -- seconds of moving after which the camera is behind you again
-Glints.ICON = 33           -- the picture's side at full size
+Glints.ICON = 32           -- the ring's hole's width at full size (the picture a little wider, under the leather)
 -- The ring: the leather one of the found ones on the minimap (Found.RING, Found.Ring), with its point at the top
 -- (dev/tools/mark-art), drawn round the middle of its hole, so it turns about the picture's middle.
 Glints.RING = "Interface\\AddOns\\SaneUI_Navigation\\Art\\mark-pointed"
@@ -133,7 +133,6 @@ local function Draw(mark, candidate, x, y, size)
     entry.picture = file
     mark.frame:ClearAllPoints()
     mark.frame:SetPoint("CENTER", holder, "CENTER", x, y)
-    mark.icon:SetSize(side, side)
     mark.icon:SetTexture(file or 134400) -- (the game's question mark, while the item is not known yet)
     mark.icon:SetDesaturated(Nodes.TooHard(entry.node))
     Found.Ring(mark.ring, mark.icon, side)

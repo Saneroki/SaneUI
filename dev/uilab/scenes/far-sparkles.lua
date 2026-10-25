@@ -53,7 +53,6 @@ local function Minimap()
     ground:AddMaskTexture(round)
     for _, found in ipairs({ { -40, 50, 133939 }, { 35, 70, 134187 }, { 55, -30, 134566 } }) do
         local icon = map:CreateTexture(nil, "ARTWORK")
-        icon:SetSize(14, 14)
         icon:SetPoint("CENTER", map, "CENTER", found[1], found[2])
         icon:SetTexture(found[3])
         ns.Found.Round(icon, map:CreateMaskTexture())

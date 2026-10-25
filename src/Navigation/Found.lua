@@ -55,7 +55,8 @@ Found.MOST = 60     -- pictures drawn at most
 Found.RING = "Interface\\AddOns\\SaneUI_Navigation\\Art\\mark-round"
 Found.HOLE = 0.2293 * 252 / 256
 Found.OUTER = 0.2942 * 252 / 256
-Found.TRIM = 0.07   -- of an item's picture cut off at each side: its own dark frame
+Found.TRIM = 0.12   -- of an item's picture cut off at each side: its own frame and the dark band inside it
+Found.FILL = 1.16   -- the round picture's width over the hole's: its edge under the leather, never in sight
 local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local SHAPE = { "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE" }
 
@@ -330,16 +331,17 @@ local function Tip(button)
     GameTooltip:Show()
 end
 
--- The ring laid round an icon of that side, the icon's edge a little under the leather; the far sparkles lay theirs
--- so too.
+-- The ring round a picture, its hole side wide: the picture Found.FILL times that, its edge under the leather; the far
+-- sparkles lay theirs so too.
 function Found.Ring(ring, icon, side)
-    local whole = side / (Found.HOLE * 2.04)
+    icon:SetSize(side * Found.FILL, side * Found.FILL)
+    local whole = side / (Found.HOLE * 2)
     ring:SetSize(whole, whole)
     ring:ClearAllPoints()
     ring:SetPoint("CENTER", icon, "CENTER")
 end
 
--- An item's picture, round, without its own frame.
+-- An item's picture, round, cut inside its own frame (Found.Ring makes it wider than the hole besides).
 function Found.Round(icon, mask)
     icon:SetTexCoord(Found.TRIM, 1 - Found.TRIM, Found.TRIM, 1 - Found.TRIM)
     mask:SetTexture(ROUND, SHAPE[1], SHAPE[2])
@@ -389,7 +391,6 @@ local function Draw(plane, pu, pv, scale, facing)
                 local picture = Picture(shown)
                 local icon, ring = picture.icon, picture.ring
                 icon:SetTexture(file)
-                icon:SetSize(side, side)
                 icon:ClearAllPoints()
                 icon:SetPoint("CENTER", overlay, "CENTER", x, y)
                 icon:SetDesaturated(Nodes.TooHard(entry.node))

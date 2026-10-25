@@ -250,8 +250,9 @@ Built on `assets/generated/picks/UI style/chat-bubble.png` (paper #133's top bub
 A herb or ore the minimap found, marked over the world in its direction however far it is (Navigation, `Glints.lua`;
 Saneroki, 2026-10-25):
 
-- **the picture of what it gives** (Peacebloom's flower, Copper Ore's ore), round, without the item picture's own dark
-  frame;
+- **the picture of what it gives** (Peacebloom's flower, Copper Ore's ore), cut round inside the item picture's own
+  frame and a little wider than the ring's hole, so no straight edge of it ever shows inside the leather (Saneroki,
+  2026-10-25);
 - **in a ring of stitched leather** (Saneroki's pick of eight renders, five gold, leather, pencil, parchment:
   `dev/imagegen/sets/far-marks/rings.txt`, leather-1): dark brown leather with a fine grain, a saddle stitch round
   its outer edge and another round the hole;

@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the found herbs' and ore's pictures without square edges in the ring (Saneroki, 2026-10-25)
+- `Found.lua`: an item's picture is cut 12 % in at each side (`Found.TRIM`, was 7 %: the icon's frame is 4 of 64
+  texels, a darker band follows), and `Found.Ring` makes it `Found.FILL` (1.16) times as wide as the ring's hole, so the
+  round mask's edge lies under the leather; the ring is sized from the hole (`side` is the hole's width now), as large
+  as before. `Glints.lua` (`Glints.ICON` 32, the hole's width) and the lab scene follow.
+
 ### Navigation: the far herbs' and ore's yards as a bare number under the ring (Saneroki, 2026-10-25)
 - `Glints.lua`: the distance is the number alone (`%d`, no longer the game's `IN_GAME_NAVIGATION_RANGE` with *yds*),
   `GameFontHighlight` at `Glints.TEXT` with an outline, under the ring, and under its point while that points down

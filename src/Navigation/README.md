@@ -676,6 +676,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, no square edges in the ring:** the item picture's straight edges showed inside the leather: it is now
+  cut 12 % in at each side (past its own frame and the dark band inside it, `Found.TRIM`), cut round, and 16 % wider
+  than the ring's hole (`Found.FILL`), its edge under the leather; on the screen and on the minimap alike, the rings
+  as large as before.
 - **2026-10-25, the yards as a number:** as Saneroki asked, a far herb's or ore's distance is the number alone (no
   *yds*), under the ring (`Glints.TEXT`), and under the point too while that points down (a node behind you); centred
   in the ring over the picture was tried first.
