@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Speed Leveling
-## Notes: One key for questing, pressed again and again: it loots the corpse beside you, finds what your quests and your leveling guide want around you, puts a skull on it, and attacks it or talks to it. Give it a key in the game's key bindings, under Sane UI.
+## Notes: One key for questing, pressed again and again: it opens the loot of the corpse beside you, picks up what your quests want beside you, finds what your quests and your leveling guide want around you, puts a skull on it, and attacks it or talks to it; it hearths when your guide says so, and uses a quest item when nothing is around. Give it a key in the game's key bindings, under Sane UI.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -11,7 +11,10 @@
 
 # The module's own table, its words and settings. First: the other files will add to that table.
 SpeedLeveling.lua
-# What the key looks for around you, by name: your guide's step, your quests' objectives, the NPCs to hand in to
+# What the key looks for around you, by name: your guide's step, your quests' objectives, the NPCs to hand in to;
+# the things of the world your quests want, by ID
 Wanted.lua
+# What the key uses: the hearth when your guide's step wants it, else one quest item when nothing is found
+Items.lua
 # The key: loot, fight, talk or find, chosen by the game's secure ways at each press
 Key.lua

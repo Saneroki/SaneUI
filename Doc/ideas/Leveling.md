@@ -19,12 +19,17 @@ target, mark, attack and interact only by the game's secure ways, and looting a 
 
 ## Where it stands (2026-10-25)
 
-- **Built: the questing key** (`src/SpeedLeveling/README.md`). A secure state driver picks loot, fight, talk or
-  find at each press; the macro of Find targets the first wanted name around you. Its lists: the guide's step,
-  the quests' open objectives (kill, then the likeliest droppers of an item to loot), creatures the game marks
-  for a quest, the NPCs to hand finished quests in to.
+- **Built: the questing key** (`src/SpeedLeveling/README.md`). A secure state driver picks loot, pick up, fight,
+  talk, hearth or find at each press; the macro of Find targets the first wanted name around you. Its lists: the
+  guide's step, the quests' open objectives (kill, then the likeliest droppers of an item to loot), creatures the
+  game marks for a quest, the NPCs to hand finished quests in to; the quest objects beside you by ID.
+- **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
+  looted is the loot module's (board card 34). Quest items, the hearth and things of the world that cannot be
+  targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the
+  hearth when the guide's step says so, and one quest item when nothing wanted is around.
 - **Not yet:** the routes and their planner (below), our own guide view (Navigation), walking to the NPC found
-  (the game's click to move), quest givers of quests to take (only through the guide for now).
+  (the game's click to move), quest givers of quests to take (only through the guide for now), an item to use on
+  the creature found (the player's click).
 
 ## What has to exist first
 

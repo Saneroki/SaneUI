@@ -2,7 +2,8 @@
 -- guide's step, the quests' objectives from Core's data, creatures the game marks on nameplates, the NPCs to hand in
 -- to), the language, the macro of Find and its room, whether the target is wanted, the header's snippets as the game
 -- runs them (which action each state puts on the key's keys), the keys from the game's key bindings, the hint, the
--- game's settings for Loot first kept and put back, the switches, a fight, and standing down.
+-- wanted objects and the interact key's thing, the hearth and the quest items, the game's settings for Loot first and
+-- Quest objects kept and put back, the switches, a fight, and standing down.
 -- Usage, from the project folder:  lua5.1 dev/tests/speedleveling.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -87,10 +88,22 @@ C_QuestLog.IsComplete = function(quest) return log.complete[quest] == true end
 C_QuestLog.GetQuestObjectives = function(quest) return log.objectives[quest] end
 C_QuestLog.UnitIsRelatedToActiveQuest = function(unit) return units[unit] ~= nil and units[unit].quest ~= nil end
 log.entries = { { isHeader = true, title = "Elwynn Forest" }, { questID = 10 }, { questID = 11 }, { questID = 12 } }
-log.objectives[10] = { { text = "Kobold Vermin slain: 2/10", finished = false }, { text = "Candle: 0/8", finished = false } }
+log.objectives[10] = { { text = "Kobold Vermin slain: 2/10", finished = false }, { text = "Candle: 0/8", finished = false },
+                       { text = "Lantern lit: 0/1", finished = false } }
 log.objectives[11] = {}
 log.objectives[12] = { { text = "Wolf slain: 8/8", finished = true } }
 log.complete[11] = true
+
+-- Items in your bags (W.items), usable unless named here, their cooldowns; spells you know; the quest items of the log.
+local unusable, cooling, learned = {}, {}, {}
+C_Item.IsUsableItem = function(id) return not unusable[id] end
+C_Container = { GetItemCooldown = function(id) return cooling[id] and 100 or 0, cooling[id] or 0, 1 end }
+IsPlayerSpell = function(id) return learned[id] == true end
+C_Spell.GetSpellCooldown = function() return { startTime = 0, duration = 0 } end
+local specials = {} -- [quest log index] = item ID
+GetQuestLogSpecialItemInfo = function(index)
+    return specials[index] and ("|Hitem:" .. specials[index] .. ":::|h[Item]|h") or nil, 134400, 1, false
+end
 
 local language = "enUS"
 GetLocale = function() return language end
@@ -98,6 +111,7 @@ GetLocale = function() return language end
 -- The game's settings Loot first uses.
 W.cvarInfo.softTargetInteract = { default = "2" }
 W.cvarInfo.autoLootDefault = { default = "0" }
+W.cvars.autoLootDefault = "0"
 
 -------------------------------------------------------------------------------
 --  Core, its data as the test gives it, and the module
@@ -110,7 +124,8 @@ local Core = SaneUI.Core
 -- its name through a library, the library from a global stub; its targeting part's lists of the step at hand.
 local known = Core.Neighbours.KNOWN.guide
 local guideLists = { { "Marshal McBride" }, { "Kobold Vermin", "Defias Thug" }, { "Garrick Padfoot" }, {} }
-local guide = { [known.part] = { [known.lists] = function() return unpack(guideLists) end } }
+local guide = { [known.part] = { [known.lists] = function() return unpack(guideLists) end }, [known.items] = {},
+                [known.spells] = {} }
 local library = { GetAddon = function(_, name) return name == known.addon and guide or nil end }
 _G[known.stub] = setmetatable({ GetLibrary = function(_, name) return name == known.library and library or nil end },
                               { __call = function(self, name) return self:GetLibrary(name) end })
@@ -118,9 +133,11 @@ W.loaded[known.addon] = true
 
 local records = {
     Quests = {
-        [10] = { objectives = { { index = 1, kind = "kill", what = 100 }, { index = 2, kind = "loot", what = 500 } },
-                 finishNPCs = { { npc = 300 } } },
-        [11] = { objectives = {}, finishNPCs = { { npc = 301, side = "horde" }, { npc = 302, side = "alliance" } } },
+        [10] = { objectives = { { index = 1, kind = "kill", what = 100 }, { index = 2, kind = "loot", what = 500 },
+                                { index = 3, kind = "object", what = 7001 } },
+                 finishNPCs = { { npc = 300 } }, finishObjects = { { object = 7002 } } },
+        [11] = { objectives = {}, finishNPCs = { { npc = 301, side = "horde" }, { npc = 302, side = "alliance" } },
+                 finishObjects = { { object = 8000, side = "alliance" }, { object = 8001, side = "horde" } } },
         [12] = { objectives = { { index = 1, kind = "kill", what = 105 } }, finishNPCs = { { npc = 303 } } },
     },
     NPCs = { [100] = { name = "Kobold Vermin" }, [105] = { name = "Prowler" }, [200] = { name = "Kobold Worker" },
@@ -183,9 +200,10 @@ local conditions = drivers[header] and drivers[header].mode
 check(conditions and conditions:find("^%[@softinteract,exists,dead%] loot; "), "loot comes first while Loot first is on")
 check(conditions:find("%[@target,harm,nodead,combat%] fight; %[@target,harm,nodead%] foe; %[@target,help,nodead%] friend; find$"),
     "then a foe in a fight, a foe, a friend, else find")
-check(W.cvars.softTargetInteract == "3" and W.cvars.autoLootDefault == "1", "Loot first: the interact key and auto loot on")
-check(ns.options.foundCVars.softTargetInteract.was == "2" and ns.options.foundCVars.autoLootDefault.was == "0",
-    "what they were is kept")
+check(W.cvars.softTargetInteract == "3", "Loot first: the interact key on")
+check(W.cvars.autoLootDefault == "0" and ns.options.foundCVars.autoLootDefault == nil,
+    "the game's auto loot left as it is: opening the loot is all the key does")
+check(ns.options.foundCVars.softTargetInteract.was == "2", "what the interact key was is kept")
 check(fight:GetAttribute("macrotext") == "/tm [harm,nodead] !8\n/startattack [harm,nodead]", "Fight marks and attacks")
 
 -------------------------------------------------------------------------------
@@ -336,19 +354,116 @@ header:SetAttribute("state-mode", "find")
 check(overrides.Q == FIND, "nothing of these: Find")
 
 -------------------------------------------------------------------------------
+--  The things of the world your quests want
+-------------------------------------------------------------------------------
+local function Thing(id) return "GameObject-0-1-0-12-" .. id .. "-0000ABCD" end
+check(Wanted.Object(Thing(7001)), "an open objective's object")
+check(Wanted.Object(Thing(7)), "a thing an item to loot comes from")
+check(Wanted.Object(Thing(8000)) and not Wanted.Object(Thing(8001)), "a finished quest's object to hand in to, of your side")
+check(not Wanted.Object(Thing(7002)), "not the object of a quest not yet finished")
+check(not Wanted.Object(Thing(9999)) and not Wanted.Object("Creature-0-1-0-12-7001-0000ABCD") and not Wanted.Object(nil),
+    "nothing else, no creature of that number")
+
+units.target = nil
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "find")
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "", Thing(7001))
+check(header:GetAttribute("object") == true and overrides.Q == "INTERACTTARGET", "a wanted thing beside you: Interact With Target")
+header:SetAttribute("state-mode", "foe")
+check(overrides.Q == "INTERACTTARGET", "before a foe out of a fight")
+header:SetAttribute("state-mode", "fight")
+check(overrides.Q == FIGHT, "in a fight the foe comes first")
+header:SetAttribute("state-mode", "loot")
+check(overrides.Q == "INTERACTTARGET", "a corpse first, the same action")
+header:SetAttribute("state-mode", "find")
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(7001), Thing(9999))
+check(header:GetAttribute("object") == false and overrides.Q == FIND, "a thing nobody wants: Find")
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(9999), Thing(7001))
+Core.Set(ns.name, "objects", false)
+check(header:GetAttribute("object") == false and overrides.Q == FIND, "Quest objects off: Find")
+Core.Set(ns.name, "objects", true)
+check(overrides.Q == "INTERACTTARGET", "on again: the thing")
+W.combat = true
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(7001), "")
+check(header:GetAttribute("object") == true, "in a fight it stays")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(header:GetAttribute("object") == false and overrides.Q == FIND, "after the fight: asked again")
+language = "deDE"
+W.Fire("QUEST_LOG_UPDATE")
+W.Wait(1)
+check(Wanted.Object(Thing(7001)), "on any client: objects go by their number")
+language = "enUS"
+W.Fire("QUEST_LOG_UPDATE")
+W.Wait(1)
+
+-------------------------------------------------------------------------------
+--  The hearth and the quest items
+-------------------------------------------------------------------------------
+local uses = guide[known.items]
+local recall = guide[known.spells]
+W.items[6948] = { name = "Hearthstone", count = 1 }
+uses[6948] = true
+check(Key.Find() == "/use item:6948", "the guide's step wants the hearth: the Hearthstone, nothing else")
+find._scripts.PreClick(find, "LeftButton", true)
+check(find:GetAttribute("macrotext") == "/use item:6948", "written the moment before the press")
+cooling[6948] = 3600
+check(Key.Find():find("^/cleartarget\n"), "the stone cooling down, no Astral Recall: Find as before")
+recall[556] = true
+learned[556] = true
+W.spells[556] = { name = "Astral Recall" }
+check(Key.Find() == "/cast Astral Recall", "a shaman's Astral Recall while the stone cools down")
+cooling[6948] = nil
+check(Key.Find() == "/use item:6948", "the stone first")
+W.Fire("PLAYER_REGEN_DISABLED")
+check(not find:GetAttribute("macrotext"):find("/use", 1, true), "as a fight begins: no hearth")
+Core.Set(ns.name, "hearth", false)
+check(not Key.Find():find("6948", 1, true), "Hearthstone off: never the stone")
+Core.Set(ns.name, "hearth", true)
+uses[6948], recall[556] = nil, nil
+
+-- Nothing found: one item, the guide's step's first, then the quest log's own; none of a quest done.
+uses[5411] = ""
+W.items[5411] = { name = "Cleansing Totem", count = 1 }
+local macro = Key.Find()
+check(macro:find("/startattack %[harm,nodead%]\n/stopmacro %[exists%]\n/use item:5411$"), "the guide's item, when none was found")
+W.items[5411].count = 0
+specials[2], specials[3] = 6000, 6001
+W.items[6000], W.items[6001] = { name = "Torch", count = 1 }, { name = "Done Thing", count = 1 }
+check(Key.Find():find("/use item:6000$"), "not in your bags: the quest log's item")
+unusable[6000] = true
+check(not Key.Find():find("/use", 1, true), "not usable now, and the other's quest is done: none")
+unusable[6000] = nil
+cooling[6000] = 30
+check(not Key.Find():find("/use", 1, true), "cooling down: none")
+cooling[6000] = nil
+W.Fire("PLAYER_REGEN_DISABLED")
+check(not find:GetAttribute("macrotext"):find("/use", 1, true), "as a fight begins: no item")
+Core.Set(ns.name, "items", false)
+check(not Key.Find():find("/use", 1, true), "Quest items off: none")
+Core.Set(ns.name, "items", true)
+check(Key.Macro({}, "/use item:6000") == "/use item:6000", "no names: the item alone")
+specials[2], specials[3] = nil, nil
+uses[5411] = nil
+
+-------------------------------------------------------------------------------
 --  Loot first off and on, standing down
 -------------------------------------------------------------------------------
 Core.Set(ns.name, "loot", false)
 check(not drivers[header].mode:find("softinteract", 1, true), "Loot first off: no loot state")
-check(W.cvars.softTargetInteract == "2" and W.cvars.autoLootDefault == "0", "the game's settings back as they were")
+check(W.cvars.softTargetInteract == "3", "Quest objects still wants the interact key")
+Core.Set(ns.name, "objects", false)
+check(W.cvars.softTargetInteract == "2" and W.cvars.autoLootDefault == "0", "both off: the game's settings back as they were")
 check(next(ns.options.foundCVars) == nil, "nothing kept any more")
 Core.Set(ns.name, "loot", true)
-check(drivers[header].mode:find("^%[@softinteract"), "on again: loot first")
+check(drivers[header].mode:find("^%[@softinteract") and W.cvars.softTargetInteract == "3", "on again: loot first")
 -- Changed by the player since: left as the player has it.
-W.cvars.autoLootDefault = "0"
+W.cvars.softTargetInteract = "1"
 Core.Set(ns.name, "loot", false)
-check(W.cvars.softTargetInteract == "2" and W.cvars.autoLootDefault == "0", "a setting changed since is left alone")
+check(W.cvars.softTargetInteract == "1", "a setting changed since is left alone")
+W.cvars.softTargetInteract = "2"
 Core.Set(ns.name, "loot", true)
+Core.Set(ns.name, "objects", true)
 
 ns.StandDown("a test")
 check(ns.off and drivers[header].mode == nil, "standing down: the driver stopped")

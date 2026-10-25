@@ -335,6 +335,7 @@ but for a window to try those with (`/sane window`).
   | `Core.Lend(frame)`, `Core.Lent(frame)` | A frame of the game's changed for a while and given back exactly (`lent:SetParent`, `SetPoints(fn)`, `SetLayer`, `SetAlpha`, `SetScale`, `SetMouse`, `SetShown`, `Lent()`, `Return()`); whether a frame is lent now, to any module (Abilities leaves the spellbook's place alone while Combat holds it) |
   | `Core.Neighbours.Window(key)` | The known addons (Saneroki, 2026-10-20), named in `Neighbours.lua` only: a handle on one while it is loaded (`"talents"`: a talent planner), nil otherwise: `handle.title`, `handle:Frame()`, `Shown()`, `Open()`, `Close()` (by its own functions), `Follow(fn)` (after each opening of it, a hook after its opening function, made once) |
   | `Core.Neighbours.Targets(key)` | What a known leveling guide's step at hand wants (`"guide"`, Saneroki, 2026-10-25): two lists of names, the creatures (to kill, then to look out for) and the NPCs, copies in its order; nil while it is not loaded or its ways changed. Read by Speed Leveling's key |
+  | `Core.Neighbours.Uses(key)` | What a known leveling guide's steps at hand want used (`"guide"`): two sorted lists of IDs, the items (its hearth step lists the Hearthstone) and the spells; nil while it is not loaded or its ways changed. Read by Speed Leveling's key |
 
   - **The title bar** (`Window.lua`, `Bar`, `Refresh`): with `titleBar` (a kind of window that has one; the
     small chat, unit frames have none), and on every window while it fills the screen. Across its top,

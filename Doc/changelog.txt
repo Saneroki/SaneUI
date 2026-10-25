@@ -8,9 +8,11 @@ The bigger changes of each version, newest first.
 ------------------
 - Speed Leveling: one key for questing. Give it a key (E, say)
   under Sane UI in the game's key bindings and press it again and
-  again: it loots the corpse beside you, finds what your quests and
+  again: it opens the loot of the corpse beside you, picks up the
+  quest's plant or chest you stand at, finds what your quests and
   your leveling guide want around you, puts a skull on it, and
-  attacks it or talks to it.
+  attacks it or talks to it. When your guide says to hearth, it
+  hearths; when nothing is around, it uses your quest item.
 - Navigation: far herbs and ore. Every herb and ore your minimap
   finds now shows on the screen however far away it is: the picture
   of what it gives in a ring of stitched leather that points the way

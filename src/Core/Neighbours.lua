@@ -27,6 +27,7 @@ local Core = SaneUI.Core
 --
 --      local foes, friends = Core.Neighbours.Targets("guide") -- nil: not installed, not loaded, or changed
 --      foes, friends                    -- the creatures, the NPCs: lists of names in the guide's order, copies
+--      local items, spells = Core.Neighbours.Uses("guide")    -- what the step wants used: item and spell IDs
 -------------------------------------------------------------------------------
 local Neighbours = {}
 Core.Neighbours = Neighbours
@@ -37,11 +38,13 @@ Neighbours.KNOWN = {
     -- first time it opens; its table's UI opens (Show) and closes (Hide) it.
     talents = { addon = "TalentsForeverBook", title = "Talents Forever", window = "TalentsForeverBookFrame",
                 api = "TalentsForeverBook", open = "Show", close = "Hide" },
-    -- A leveling guide: what its step at hand wants killed or talked to, for Speed Leveling's key. Its addon object is
-    -- found by its name through the library it was made with (library, from the global stub); its part targeting has a
-    -- function (lists) that answers three lists of names: the NPCs, the creatures to kill, the creatures to look out for.
+    -- A leveling guide: what its step at hand wants killed, talked to or used, for Speed Leveling's key. Its addon
+    -- object is found by its name through the library it was made with (library, from the global stub); its part
+    -- targeting has a function (lists) that answers three lists of names: the NPCs, the creatures to kill, the creatures
+    -- to look out for. The object's tables items and spells hold what its steps at hand want used, by ID (its hearth step
+    -- puts the Hearthstone there).
     guide = { addon = "RXPGuides", title = "RestedXP", stub = "LibStub", library = "AceAddon-3.0", part = "targeting",
-              lists = "GetCurrentTargets" },
+              lists = "GetCurrentTargets", items = "activeItems", spells = "activeSpells" },
 }
 
 local handles = {} -- [key] = the handle made for it
@@ -133,6 +136,29 @@ function Neighbours.Targets(key)
     Names(look, foes, seen)
     Names(friends, wanted, seen)
     return foes, wanted
+end
+
+-- The IDs of a table's keys that are whole numbers above 0, in order: nothing of theirs is kept.
+local function Ids(list)
+    local ids = {}
+    if type(list) ~= "table" then return ids end
+    for id, wanted in pairs(list) do
+        id = Core.Plain(id)
+        if type(id) == "number" and id > 0 and id == math.floor(id) and Core.Plain(wanted) then ids[#ids + 1] = id end
+    end
+    table.sort(ids)
+    return ids
+end
+
+-- What a known guide's steps at hand want used: two lists of IDs, the items and the spells; nil while it is not loaded
+-- or its ways changed.
+function Neighbours.Uses(key)
+    local known = Neighbours.KNOWN[key]
+    if not known or not known.items or not Loaded(known.addon) then return nil end
+    local object = Object(known)
+    local items = object and rawget(object, known.items)
+    if type(items) ~= "table" then return nil end
+    return Ids(items), Ids(rawget(object, known.spells))
 end
 
 -- The handle of a known addon by its key, while that addon is loaded and has what is used of it; nil otherwise.

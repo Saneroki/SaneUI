@@ -3,8 +3,27 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 60 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 91 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: loot only opened; quest objects, the hearth and quest items (Saneroki, 2026-10-25)
+- **Loot opened, not taken** (Saneroki asked): the key's loot step is the game's Interact With Target alone, as a right
+  click on the corpse; the game's auto loot (`autoLootDefault`) is no longer switched on. How and what is looted is
+  the loot module's to come.
+- **Quest objects** (new switch, on): `Wanted.Object(guid)`, the things of the world your quests want by object ID
+  (open objectives of kind `object`, the `object:` sources of an item to loot in *Drops*, the `finishObjects` of a
+  finished quest of your side), on any client. `Key.lua` keeps the interact key's thing from
+  `PLAYER_SOFT_INTERACT_CHANGED` and sets the header's attribute `object`; the snippet then puts `INTERACTTARGET` on
+  the keys, after loot and a fight's foe, before a wanted foe and an NPC. The interact key stays on while this or Loot
+  first is on.
+- **Hearth and items** (new `Items.lua`, switches *Hearthstone* and *Quest items*, on): Find's macro (`Key.Find`) is
+  `/use item:6948` alone when the guide's step lists the Hearthstone (a shaman's Astral Recall, 556, while it cools
+  down); else its targeting lines end with `/stopmacro [exists]` and `/use item:<ID>`, the first ready item (in your
+  bags, `C_Item.IsUsableItem`, off its `C_Container.GetItemCooldown`) of the guide's step's items and of the quest
+  log's own (`GetQuestLogSpecialItemInfo`, quests not yet done). As a fight begins (`PLAYER_REGEN_DISABLED`) the
+  macro is written without either.
+- Core: `Neighbours.Uses(key)`, a known guide's steps' items and spells to use, by ID (`KNOWN.guide.items`, `spells`).
+- Tests: `dev/tests/speedleveling.lua` 91 checks (objects and the soft target, the hearth, the items, the switches).
 
 ### Speed Leveling: one key for questing (Saneroki, 2026-10-25)
 - **New module** `SaneUI_SpeedLeveling` (Saneroki asked for it): one key (the game's key bindings, under Sane UI),

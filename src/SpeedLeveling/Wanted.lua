@@ -14,6 +14,13 @@ local _, ns = ...
 --       on a nameplate: what Core's data does not know
 --    4. the NPCs your finished quests are handed in to, of your side
 --  Core's names are English: on a client in another language only 1 and 3.
+--
+--  And the things of the world your quests want picked up or used (Object),
+--  by the game's object ID, in any language: those of open objectives, those
+--  an item to loot comes from (Drops), those a finished quest is handed in to.
+--  The game tells no addon where they are; the key finds the one its interact
+--  key would use (the soft target, Key.lua).
+--
 --  The quests' part is read anew after the quest log changed, the guide's at
 --  each question.
 -------------------------------------------------------------------------------
@@ -29,7 +36,7 @@ local QUESTS, NPCS, DROPS = Core.Data.Set("Quests"), Core.Data.Set("NPCs"), Core
 local ENGLISH = { enUS = true, enGB = true }
 local EMPTY = {}
 
-local quests       -- the names of 2 and 4, { foes, friends }; nil: to be read anew
+local quests       -- the names of 2 and 4, { foes, friends }, and the objects, { [ID] = true }; nil: to be read anew
 local marked = {}  -- the creatures of 3, in the order they were seen
 local markedSet = {}
 
@@ -49,15 +56,20 @@ local function Name(npc)
     return type(npc) == "number" and NPCS:Get(npc, "name") or nil
 end
 
--- The creatures that drop an item when looted, the likeliest first (one without a chance last), at most DROPPERS.
-local function Droppers(item)
+-- The creatures that drop an item when looted, the likeliest first (one without a chance last), at most DROPPERS;
+-- the objects it comes from go into objects.
+local function Droppers(item, objects)
     local found = {}
     for _, key in ipairs(DROPS:Keys("byItem", item)) do
-        local npc = tonumber(tostring(key):match("^npc:(%d+)$"))
-        local record = npc and DROPS:Get(key)
+        local kind, id = tostring(key):match("^(%a+):(%d+)$")
+        id = tonumber(id)
+        local record = id and (kind == "npc" or kind == "object") and DROPS:Get(key)
         for _, drop in ipairs(record and record.items or EMPTY) do
-            if drop.item == item and (drop.how == nil or drop.how == "loot") then
-                found[#found + 1] = { npc = npc, chance = drop.chance or 0 }
+            if drop.item == item and kind == "object" and drop.how ~= "fish" then
+                objects[id] = true
+                break
+            elseif drop.item == item and (drop.how == nil or drop.how == "loot") then
+                found[#found + 1] = { npc = id, chance = drop.chance or 0 }
                 break
             end
         end
@@ -72,13 +84,15 @@ local function Droppers(item)
 end
 
 -- The quests in the log: the creatures of their open objectives (to kill, then to loot from) and the NPCs to hand
--- the finished ones in to.
+-- the finished ones in to, by name (English only); the objects of their objectives, of the items to loot and to
+-- hand in to, by ID.
 local function Read()
-    local foes, friends, have = {}, {}, {}
-    quests = { foes = foes, friends = friends }
+    local foes, friends, have, objects = {}, {}, {}, {}
+    quests = { foes = foes, friends = friends, objects = objects }
     local log = rawget(_G, "C_QuestLog")
-    local total = log and English() and Core.Ask(log.GetNumQuestLogEntries)
+    local total = log and Core.Ask(log.GetNumQuestLogEntries)
     if type(total) ~= "number" then return end
+    local english = English()
     local side = Core.Ask(UnitFactionGroup, "player")
     side = type(side) == "string" and side:lower() or nil
     local items, due = {}, {}
@@ -90,6 +104,9 @@ local function Read()
             for _, finish in ipairs(record.finishNPCs or EMPTY) do
                 if not finish.side or finish.side == side then due[#due + 1] = finish.npc end
             end
+            for _, finish in ipairs(record.finishObjects or EMPTY) do
+                if not finish.side or finish.side == side then objects[finish.object] = true end
+            end
         elseif record then
             local open = Core.Ask(log.GetQuestObjectives, quest)
             for _, objective in ipairs(record.objectives or EMPTY) do
@@ -99,15 +116,21 @@ local function Read()
                         Add(foes, have, Name(objective.what))
                     elseif objective.kind == "loot" then
                         items[#items + 1] = objective.what
+                    elseif objective.kind == "object" and type(objective.what) == "number" then
+                        objects[objective.what] = true
                     end
                 end
             end
         end
     end
     for _, item in ipairs(items) do
-        for _, npc in ipairs(Droppers(item)) do Add(foes, have, Name(npc)) end
+        for _, npc in ipairs(Droppers(item, objects)) do Add(foes, have, Name(npc)) end
     end
     for _, npc in ipairs(due) do Add(friends, have, Name(npc)) end
+    if not english then
+        wipe(foes)
+        wipe(friends)
+    end
 end
 
 -- A creature on a nameplate that the game marks for a quest of yours (3).
@@ -137,6 +160,15 @@ function Wanted.Unit(unit)
     if type(name) == "string" and have[name] then return true end
     local doing = Core.UnitQuest(unit)
     return doing == "kill" or doing == "loot"
+end
+
+-- Whether a thing of the world is one your quests want, by its GUID ("GameObject-0-...-<ID>-<spawn>").
+function Wanted.Object(guid)
+    if type(guid) ~= "string" then return false end
+    local kind, id = guid:match("^(%a+)%-%d+%-%d+%-%d+%-%d+%-(%d+)%-")
+    if kind ~= "GameObject" then return false end
+    if not quests then Read() end
+    return quests.objects[tonumber(id)] == true
 end
 
 -- The quests or the switch changed: all read anew, the nameplates shown now looked at again, the key told.
