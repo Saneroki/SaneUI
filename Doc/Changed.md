@@ -62,6 +62,16 @@ the guide the leveling guide Sane UI knows has loaded, while it is loaded, else 
 - **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`, `Doc/agent/README.md`, the
   public changelog.
 
+### Navigation: the satchel's addons round (Saneroki, 2026-10-25)
+Saneroki asked for the addons' pictures without the golden ring round them, always round.
+- **`src/Navigation/Strays.lua`:** a held button lies unseen (alpha 0, kept and given back; a hook after its
+  `SetAlpha` keeps it so) over the picture the satchel draws of it; `Strays.Picture` finds that picture (its largest
+  `ARTWORK` texture, else its normal texture).
+- **`src/Navigation/Satchel.lua`:** an addon's picture cut round (`Satchel.ROUND`), cut inside its frame where it
+  shows its whole file (`Satchel.TRIM`); the compartment's addons too.
+- **Tests:** `dev/tests/navigation.lua` 647 checks (the round picture, the button unseen and seen again when given
+  back).
+
 ### Navigation: the satchel's addons twice as large (Saneroki, 2026-10-25)
 - **`src/Navigation/Satchel.lua`:** the section AddOns has pictures of 56 (twice the pins' and tracking's 28) in rows
   84 high (`Satchel.ADDON`); each section its own picture size and row height. Test updated.

@@ -11,8 +11,10 @@ local _, ns = ...
 --
 --      AddOns    the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
---                title, A to Z, twice as large as the rest; their clicks and
---                tooltips their own
+--                title, A to Z, twice as large as the rest: its picture round,
+--                cut inside its own frame, without the ring round it (Saneroki,
+--                2026-10-25); a held button lies unseen over it, its clicks and
+--                tooltip its own
 --      Pins      every kind of pin the map can show here, in the pin filter's
 --                order (ns.KINDS, ns.PIN_SECTIONS): a click switches it, as the
 --                pin filter on the full map's bar does (their sizes stay there)
@@ -46,6 +48,8 @@ Satchel.ROOM = 0.8         -- the page takes at most so much of the screen's hei
 Satchel.FAINT = 0.4        -- a cell switched off: its picture so faint
 Satchel.SPELL = { 0.0625, 0.9 } -- a tracking spell's icon cut inside its frame, as the game's menu cuts it
 Satchel.TICK = "\226\136\154"   -- the pencil tick: Kalam's root sign
+Satchel.ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask" -- an addon's picture cut round by it
+Satchel.TRIM = 0.08        -- of an addon's picture cut off at each side: an icon's own frame
 -- The game's tracking entries its menu lists besides those of a spell (Blizzard_Minimap, OPTIONAL_FILTERS; Forever
 -- has them as MinimapConstants.OPTIONAL_FILTERS, Retail keeps them to itself): Enum.MinimapTrackingFilter's names.
 Satchel.OPTIONAL = { "Banker", "Auctioneer", "Barber", "TrainerProfession", "AccountCompletedQuests", "TrivialQuests",
@@ -175,6 +179,9 @@ local function Cell(index)
     cell.spot:SetPoint("TOP", 0, -3)
     cell.picture = cell.spot:CreateTexture(nil, "ARTWORK")
     cell.picture:SetAllPoints()
+    cell.round = cell.spot:CreateMaskTexture() -- an addon's picture is cut round by it
+    cell.round:SetTexture(Satchel.ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    cell.round:SetAllPoints(cell.picture)
     cell.tick = cell:CreateFontString(nil, "OVERLAY")
     Journal.Font(cell.tick, 16, true, Journal.INK)
     cell.tick:SetPoint("BOTTOMLEFT", cell.spot, "TOPRIGHT", -3, -9)
@@ -202,6 +209,30 @@ local function Picture(texture, art)
     end
 end
 
+-- An addon's picture round (cut round, on), or square as it is (off).
+local function Round(cell, on)
+    if (cell.rounded or false) == on then return end
+    cell.rounded = on
+    if on then cell.picture:AddMaskTexture(cell.round) else cell.picture:RemoveMaskTexture(cell.round) end
+end
+
+-- The picture a held button shows (Strays.Picture), as it shows it: its file or atlas, its part, its colour. One cut
+-- to the whole of its file is cut inside its frame, as the rest of the satchel's addons (Satchel.TRIM).
+local function Copy(icon, art)
+    if not art then return Picture(icon, 134400) end
+    local atlas = art:GetAtlas()
+    if atlas then icon:SetAtlas(atlas) else icon:SetTexture(art:GetTexture()) end
+    local left, top, _, _, _, _, right, bottom = art:GetTexCoord()
+    if left == 0 and top == 0 and right == 1 and bottom == 1 then
+        icon:SetTexCoord(Satchel.TRIM, 1 - Satchel.TRIM, Satchel.TRIM, 1 - Satchel.TRIM)
+    elseif left then
+        icon:SetTexCoord(art:GetTexCoord())
+    end
+    local r, g, b = art:GetVertexColor()
+    if r then icon:SetVertexColor(r, g, b) end
+    icon:SetDesaturated(art:IsDesaturated() and true or false)
+end
+
 -- A cell let go: a held button on it back out of sight (Strays.Place), the cell hidden.
 local function Empty(cell)
     local item = cell.item
@@ -221,14 +252,13 @@ local function Dress(cell, item, size, height)
     icon:SetTexCoord(0, 1, 0, 1)
     icon:SetVertexColor(1, 1, 1, 1)
     icon:SetDesaturated(false)
-    if item.button then
-        -- Its own button in the picture's place, as its addon made it.
-        icon:Hide()
-        cell.tick:Hide()
-        ns.Strays.Place(item.button, cell.spot, size)
-        return cell:Show()
-    end
     icon:Show()
+    Round(cell, item.button ~= nil or item.entry ~= nil)
+    if item.button then
+        -- Its own button unseen over its picture, its clicks and tooltip its own.
+        Copy(icon, ns.Strays.Picture(item.button))
+        ns.Strays.Place(item.button, cell.spot, size)
+    end
     local pin = item.pin
     if pin then
         Picture(icon, pin.texture or pin.icon)
@@ -237,8 +267,9 @@ local function Dress(cell, item, size, height)
     elseif item.track then
         Picture(icon, item.texture)
         if item.spell then icon:SetTexCoord(Satchel.SPELL[1], Satchel.SPELL[2], Satchel.SPELL[1], Satchel.SPELL[2]) end
-    else
+    elseif item.entry then
         Picture(icon, item.icon or 134400) -- a compartment's addon without a picture: the game's question mark
+        icon:SetTexCoord(Satchel.TRIM, 1 - Satchel.TRIM, Satchel.TRIM, 1 - Satchel.TRIM)
     end
     local switch = item.on ~= nil -- a pin, a tracking entry: on or off
     local off = switch and not item.on

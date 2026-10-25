@@ -94,8 +94,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
   the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
-    minimap they would otherwise stand on our map only now and then, or nowhere), each its own button with its
-    addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists
+    minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
+    the golden ring round it, with its addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists
     (the game's own button for them is out of sight with its minimap's frame), a click on one as in the game's
     menu. An addon with both shows once. With the game's own minimap chosen they are back round it;
   - **Pins:** every kind of pin the map can show, a click shows it or not (as the pin filter; the sizes stay there);
@@ -448,8 +448,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   own are secure, Sane UI's left), no larger than `Strays.LARGEST` (64) each way, taking the mouse and not
   protected, is held: its parent, points, scale, strata and level kept, the clicks the cluster's hiding took from
   it given back (`Hybrid.Release`), then out of sight until the satchel lays it in a cell (`Strays.Place`, scaled to
-  the cell's picture). A hook after its `SetPoint` puts it back whenever its addon places it again (a drag, its own
-  update). Looked for at the login, 2 and 10 seconds after, a second after each addon that loads, and as the
+  the cell's picture), unseen there (alpha 0) over the round picture the satchel draws of it: its own largest
+  texture in the `ARTWORK` layer, else its normal texture (`Strays.Picture`), cut inside its frame where it shows its
+  whole file (`Satchel.TRIM`) and cut round (`Satchel.ROUND`); the ring and background the common buttons have lie in
+  other layers and stay out. Hooks after its `SetPoint` and `SetAlpha` put it back whenever its addon places it
+  again or shows it (a drag, its own update, a fade). Looked for at the login, 2 and 10 seconds after, a second after each addon that loads, and as the
   satchel opens. Given back exactly when the game's minimap is the game's again (`Hybrid.Update` tells it) or the
   module stands down. Its name in the satchel is its addon's title in the addon list (no colours). The game's addon
   compartment (`AddonCompartmentFrame.registeredAddons`, both games): each addon a cell of its own, its click
@@ -773,6 +776,8 @@ Tests: `dev/tests/navigation.lua`.
   map, the satchel, opens a page of the buttons other addons put round the minimap, gathered there
   (`Strays.lua`), with the addons of the game's addon compartment, the kinds of pin and what the game's minimap
   tracks, in large cells that switch at a click (`Satchel.lua`).
+- **2026-10-25, the satchel's addons round:** as Saneroki asked, the addons' pictures round, without the golden
+  ring round them: their buttons lie unseen over our round picture of them.
 - **2026-10-25, the satchel's addons larger:** as Saneroki asked, the addons' pictures twice the size of the
   pins' and tracking's.
 - **2026-10-25, the satchel compact:** as Saneroki asked, six smaller cells a row, the pictures without their pencil

@@ -17,9 +17,12 @@ local _, ns = ...
 --  Looked for at the login, Strays.AGAIN seconds after it, after each addon that
 --  loads, and as the satchel opens. Named by its addon's title in the addon list.
 --
---  Held: its parent, place, scale and level kept, then out of sight until the
---  satchel lays it in its cell (Strays.Place); where its addon places it again
---  (a drag, an update of its own) it goes back there (a hook after its SetPoint).
+--  Held: its parent, place, scale, alpha and level kept, then out of sight until
+--  the satchel lays it in its cell (Strays.Place), unseen there over the round
+--  picture the satchel draws of it (Strays.Picture: without the ring and the
+--  background round it), its clicks and tooltip its own; where its addon places it
+--  again or shows it (a drag, an update of its own, a fade) it goes back (hooks
+--  after its SetPoint and SetAlpha).
 --  The clicks the cluster's hiding took from it are its own again (Hybrid.Release).
 --  Given back exactly once the game's minimap is the game's again (the switch
 --  Show the game's minimap) or the module stands down (GiveBack). One its addon
@@ -40,7 +43,7 @@ Strays.AGAIN = { 2, 10 }  -- seconds after the login it looks again: addons that
 
 local held = {}       -- [button] = what it was: parent, points, scale, strata, level, mouse; and its addon, title
 local spots = {}      -- [button] = the frame it is laid on now (a cell), or the hidden home
-local hooked = {}     -- [button] = true: its SetPoint is hooked (a hook stays; it asks held)
+local hooked = {}     -- [button] = true: its SetPoint and SetAlpha are hooked (a hook stays; it asks held)
 local placing = false -- our own SetPoint on a held button: its hook leaves that be
 local home            -- out of sight: where a held button waits for its cell
 
@@ -93,6 +96,7 @@ local function Lay(button, size)
     button:SetScale(size and size / math.max(width or 1, height or 1, 1) or was.scale)
     button:SetFrameStrata(spot:GetFrameStrata())
     button:SetFrameLevel(spot:GetFrameLevel() + 2)
+    button:SetAlpha(0) -- the satchel draws its picture under it
     placing = false
 end
 
@@ -103,14 +107,24 @@ local function Placed(button)
 end
 local replaced = ns.Guard(Placed) -- made once: the hook after each held button's SetPoint
 
+-- Its addon showed it again (a fade on the mouse's coming): unseen again over its picture.
+local unseen = ns.Guard(function(button)
+    if placing or not held[button] then return end
+    placing = true
+    button:SetAlpha(0)
+    placing = false
+end)
+
 local function Take(button, addon)
     held[button] = {
         parent = button:GetParent(), points = Core.Points(button), scale = button:GetScale(),
-        strata = button:GetFrameStrata(), level = button:GetFrameLevel(), addon = addon, title = Title(addon),
+        strata = button:GetFrameStrata(), level = button:GetFrameLevel(), alpha = button:GetAlpha(), addon = addon,
+        title = Title(addon),
     }
     ns.Hybrid.Release(button)
     if not hooked[button] then
         hooksecurefunc(button, "SetPoint", replaced)
+        hooksecurefunc(button, "SetAlpha", unseen)
         hooked[button] = true
     end
     spots[button] = home
@@ -140,6 +154,24 @@ function Strays.Place(button, cell, size)
     spots[button] = cell or home
     if cell then cell.size = size end
     Lay(button, cell and size)
+end
+
+-- The picture an addon's button shows: the largest of its textures in the ARTWORK layer that shows something, else
+-- its normal texture (some draw their picture so); nil where it has none. The ring and the background the common
+-- minimap buttons lay round it are in other layers, and stay out of the satchel.
+function Strays.Picture(button)
+    local best, most
+    for _, region in ipairs({ button:GetRegions() }) do
+        if region:IsObjectType("Texture") and region:GetDrawLayer() == "ARTWORK" and (region:GetTexture() or region:GetAtlas()) then
+            local width, height = region:GetSize()
+            local area = (width or 0) * (height or 0)
+            if not best or area > most then best, most = region, area end
+        end
+    end
+    if best then return best end
+    local normal = button.GetNormalTexture and button:GetNormalTexture()
+    if normal and (normal:GetTexture() or normal:GetAtlas()) then return normal end
+    return nil
 end
 
 -- A title as one addon's two ways of writing it compare: its letters and digits alone, in small letters.
@@ -194,6 +226,7 @@ function Strays.GiveBack()
         Core.Repoint(button, was.points)
         button:SetFrameStrata(was.strata)
         button:SetFrameLevel(was.level)
+        button:SetAlpha(was.alpha)
         placing = false
     end
     wipe(held)

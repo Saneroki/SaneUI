@@ -365,6 +365,21 @@ W.insecure = { PretendAddonButton = "PretendAddon", PretendAddonOverlay = "Prete
 function issecurevariable(name) return W.insecure[name] == nil, W.insecure[name] end
 function methods:GetName() return self._name end
 function methods:IsObjectType(kind) return self._kind == kind end
+function methods:GetDrawLayer() return self._layer end
+-- A texture's part of its file, as the game tells it: its corners, upper left, lower left, upper right, lower right.
+function methods:GetTexCoord()
+    local c = self._coords or {}
+    if #c == 8 then return unpack(c) end
+    local l, r, t, b = c[1] or 0, c[2] or 1, c[3] or 0, c[4] or 1
+    return l, t, l, b, r, t, r, b
+end
+function methods:GetRegions()
+    local list = {}
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == self and (widget._kind == "Texture" or widget._kind == "FontString") then list[#list + 1] = widget end
+    end
+    return unpack(list)
+end
 -- A scroll frame's place (the satchel's page): none past its range.
 function methods:SetVerticalScroll(offset) self._scroll = offset end
 function methods:GetVerticalScroll() return self._scroll or 0 end
@@ -372,6 +387,13 @@ function methods:GetVerticalScrollRange() return 0 end
 W.stray = W.NewWidget("Button", "PretendAddonButton", minimap)
 W.stray:SetSize(31, 31)
 W.stray:SetPoint("TOPLEFT", minimap, "TOPLEFT", 4, -4)
+-- Its art as the common minimap buttons have it: a dark round background, its picture, the golden ring over it.
+for _, part in ipairs({ { "BACKGROUND", 136467, 20 }, { "ARTWORK", 133784, 17 }, { "OVERLAY", 136430, 53 } }) do
+    local texture = W.stray:CreateTexture()
+    texture:SetDrawLayer(part[1])
+    texture:SetTexture(part[2])
+    texture:SetSize(part[3], part[3])
+end
 W.overlay = W.NewWidget("Frame", "PretendAddonOverlay", minimap)
 W.overlay:SetSize(198, 198)
 W.gameButton = W.NewWidget("Button", "GameTimeFrame", cluster)
@@ -1361,6 +1383,11 @@ end)()
     check(held and held.item.button == W.stray and W.stray:GetParent() == held.spot and near(W.stray._scale, Satchel.ADDON[1] / 31) and near(held.spot._width, Satchel.ADDON[1])
         and count["Pretend Addon"] == 1,
         "the addon's own button in its cell, twice as large as a pin's picture, under its title without colours, once")
+    check(W.stray._alpha == 0 and held.picture._shown and held.picture._texture == 133784 and held.picture._mask == held.round
+        and near(held.picture._coords[1], Satchel.TRIM),
+        "its button unseen over its picture: the picture alone, round, cut inside its frame, without its ring")
+    W.stray:SetAlpha(1)
+    check(W.stray._alpha == 0, "its addon showing it again (a fade): unseen again")
     check(cells["Compartment Addon"] and cells["Compartment Addon"].item.entry and cells["Compartment Addon"].picture._shown,
         "the game's compartment's other addon in a cell of its own, its picture over its title")
     local entry = cells["Compartment Addon"]
@@ -2948,7 +2975,7 @@ Core.Set(ns.name, "nativeMinimap", true)
 check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and minimap:IsMouseClickEnabled()
     and ground == true and ignoreRotation == false and configs > 0, "Show the game's minimap: its place, wheel, clicks, ground, rotation and mask back")
 check(W.stray:GetParent() == minimap and W.stray._points[1][1] == "TOPLEFT" and W.stray._points[1][2] == minimap
-    and W.stray._scale == 1, "and the other addon's button back on it, where and as large as its addon had it")
+    and W.stray._scale == 1 and W.stray._alpha == 1, "and the other addon's button back on it, where, as large and as seen as its addon had it")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,
     "its cluster, border and buttons back")
 ;(function()
