@@ -6,6 +6,11 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 91 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: NPCs found before creatures (Saneroki, 2026-10-25)
+- `Wanted.Names()`: the guide's NPCs and the NPCs your finished quests go to come before every creature (the guide's,
+  the quests', those the game marks on nameplates), so Find targets a quest giver or taker around you first.
+  `dev/tests/speedleveling.lua` follows (91 checks).
+
 ### Speed Leveling: loot only opened; quest objects, the hearth and quest items (Saneroki, 2026-10-25)
 - **Loot opened, not taken** (Saneroki asked): the key's loot step is the game's Interact With Target alone, as a right
   click on the corpse; the game's auto loot (`autoLootDefault`) is no longer switched on. How and what is looted is

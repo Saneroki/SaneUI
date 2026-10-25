@@ -210,9 +210,9 @@ check(fight:GetAttribute("macrotext") == "/tm [harm,nodead] !8\n/startattack [ha
 --  What is wanted
 -------------------------------------------------------------------------------
 local names = Wanted.Names()
-check(Joined(names) == "Kobold Vermin, Defias Thug, Garrick Padfoot, Marshal McBride, Kobold Laborer, Kobold Worker, "
-    .. "Kobold Geomancer, Deputy Willem", "the guide's creatures and NPCs, the quests' creatures, then the NPCs to hand in to: "
-    .. Joined(names))
+check(Joined(names) == "Marshal McBride, Deputy Willem, Kobold Vermin, Defias Thug, Garrick Padfoot, Kobold Laborer, "
+    .. "Kobold Worker, Kobold Geomancer", "the NPCs first (the guide's, those to hand in to), then the guide's creatures and "
+    .. "the quests': " .. Joined(names))
 -- The likeliest three droppers of the item to loot; none that only gives it skinned, no object; not the kill done
 -- (quest 12), not the NPC of a quest not finished, not one of the other side.
 check(not Joined(names):find("Tunneler") and not Joined(names):find("Young Wolf"), "three droppers, looted only")
@@ -227,17 +227,17 @@ W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate3")
 names = Wanted.Names()
-check(names[#names - 1] == "Stonetusk Boar" and names[#names] == "Deputy Willem", "a marked creature, before the NPCs")
+check(names[#names] == "Stonetusk Boar", "a marked creature, last")
 check(not Joined(names):find("Paxton") and not Joined(names):find("Someone"), "nothing unmarked, no player")
 
 -- The guide switched off: its names go.
 Core.Set(ns.name, "guide", false)
-check(Joined(Wanted.Names()) == "Kobold Vermin, Kobold Laborer, Kobold Worker, Kobold Geomancer, Stonetusk Boar, Deputy Willem",
+check(Joined(Wanted.Names()) == "Deputy Willem, Kobold Vermin, Kobold Laborer, Kobold Worker, Kobold Geomancer, Stonetusk Boar",
     "without the guide: the quests' names only")
 Core.Set(ns.name, "guide", true)
 -- The guide gone (unloaded, or its ways changed): the quests still.
 W.loaded[known.addon] = nil
-check(Wanted.Names()[1] == "Kobold Vermin" and #Wanted.Names() == 6, "no guide: the quests' names")
+check(Wanted.Names()[1] == "Deputy Willem" and #Wanted.Names() == 6, "no guide: the quests' names")
 W.loaded[known.addon] = true
 guide[known.part][known.lists] = function() error("changed") end
 check(#Wanted.Names() == 6, "a guide whose function fails counts as not there")
@@ -248,8 +248,8 @@ log.complete[10] = true
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(1)
 names = Wanted.Names()
-check(Joined(names):find("Marshal Dughan, Deputy Willem$") and not Joined(names):find("Laborer"),
-    "a finished quest: its NPC, in the log's order, and no more creatures")
+check(Joined(names):find("^Marshal McBride, Marshal Dughan, Deputy Willem, ") and not Joined(names):find("Laborer"),
+    "a finished quest: its NPC after the guide's, in the log's order, and no more creatures")
 check(Joined(names):find("Stonetusk Boar", 1, true), "the plate still shown is looked at again")
 log.complete[10] = nil
 W.Fire("QUEST_LOG_UPDATE")
@@ -259,7 +259,7 @@ W.Wait(1)
 language = "deDE"
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(1)
-check(Joined(Wanted.Names()) == "Kobold Vermin, Defias Thug, Garrick Padfoot, Marshal McBride, Stonetusk Boar",
+check(Joined(Wanted.Names()) == "Marshal McBride, Kobold Vermin, Defias Thug, Garrick Padfoot, Stonetusk Boar",
     "on a German client: the guide's names and the marked creature")
 language = "enUS"
 W.Fire("QUEST_LOG_UPDATE")

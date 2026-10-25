@@ -3,17 +3,17 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Wanted
 --  What the key looks for around you, by name, in this order (the key takes
---  the first it finds):
---    1. what the step at hand of your leveling guide names (a guide Sane UI
---       knows, Core.Neighbours, while it is loaded and the switch is on): its
---       creatures, then its NPCs
---    2. the creatures of your quests' open objectives (Core's sets Quests and
+--  the first it finds), the NPCs before the creatures (Saneroki, 2026-10-25):
+--    1. the NPCs the step at hand of your leveling guide names (a guide Sane UI
+--       knows, Core.Neighbours, while it is loaded and the switch is on)
+--    2. the NPCs your finished quests are handed in to, of your side
+--    3. the creatures the guide's step names
+--    4. the creatures of your quests' open objectives (Core's sets Quests and
 --       NPCs): those to kill, then those that drop an item to loot (Drops),
 --       the likeliest first, at most DROPPERS an item
---    3. creatures the game itself marks for a quest of yours (Core.UnitQuest)
+--    5. creatures the game itself marks for a quest of yours (Core.UnitQuest)
 --       on a nameplate: what Core's data does not know
---    4. the NPCs your finished quests are handed in to, of your side
---  Core's names are English: on a client in another language only 1 and 3.
+--  Core's names are English: on a client in another language only 1, 3 and 5.
 --
 --  And the things of the world your quests want picked up or used (Object),
 --  by the game's object ID, in any language: those of open objectives, those
@@ -36,8 +36,8 @@ local QUESTS, NPCS, DROPS = Core.Data.Set("Quests"), Core.Data.Set("NPCs"), Core
 local ENGLISH = { enUS = true, enGB = true }
 local EMPTY = {}
 
-local quests       -- the names of 2 and 4, { foes, friends }, and the objects, { [ID] = true }; nil: to be read anew
-local marked = {}  -- the creatures of 3, in the order they were seen
+local quests       -- the names of 2 and 4, { friends, foes }, and the objects, { [ID] = true }; nil: to be read anew
+local marked = {}  -- the creatures of 5, in the order they were seen
 local markedSet = {}
 
 local function English()
@@ -133,7 +133,7 @@ local function Read()
     end
 end
 
--- A creature on a nameplate that the game marks for a quest of yours (3).
+-- A creature on a nameplate that the game marks for a quest of yours (5).
 local function Seen(unit)
     if Core.Ask(UnitIsPlayer, unit) then return end
     local doing = Core.UnitQuest(unit)
@@ -146,7 +146,7 @@ function Wanted.Names()
     local names, have = {}, {}
     local foes, friends
     if ns.options.guide then foes, friends = Core.Neighbours.Targets("guide") end
-    for _, list in ipairs({ foes or EMPTY, friends or EMPTY, quests.foes, marked, quests.friends }) do
+    for _, list in ipairs({ friends or EMPTY, quests.friends, foes or EMPTY, quests.foes, marked }) do
         for _, name in ipairs(list) do Add(names, have, name) end
     end
     return names, have

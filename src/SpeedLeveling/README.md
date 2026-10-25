@@ -37,17 +37,19 @@ walk over the quest's plant, press to pick it.
 | Quest items | on | When the key finds nothing wanted around you, it uses one item: the guide's step's first, then a quest item of your quest log; the first in your bags that is ready |
 
 ## What it looks for
-In this order; the key takes the first it finds around you (as far as the game shows creatures by name):
+In this order, the NPCs before the creatures (Saneroki, 2026-10-25); the key takes the first it finds around you (as
+far as the game shows creatures by name):
 
-1. What the step at hand of your leveling guide names: its creatures, then its NPCs (a guide Sane UI knows,
+1. The NPCs the step at hand of your leveling guide names: quest givers and takers (a guide Sane UI knows,
    `Core.Neighbours.Targets("guide")`, while it is loaded).
-2. The creatures of your quests' open objectives, from Core's data (the sets *Quests* and *NPCs*): those to kill,
+2. The NPCs your finished quests are handed in to, of your side.
+3. The creatures the guide's step names.
+4. The creatures of your quests' open objectives, from Core's data (the sets *Quests* and *NPCs*): those to kill,
    then those that drop an item to loot (*Drops*: the likeliest three an item).
-3. Creatures the game itself marks for a quest of yours on their nameplates (`Core.UnitQuest`): what Core's data
+5. Creatures the game itself marks for a quest of yours on their nameplates (`Core.UnitQuest`): what Core's data
    does not know.
-4. The NPCs your finished quests are handed in to, of your side.
 
-Core's names are English: on a client in another language the key finds what 1 and 3 name.
+Core's names are English: on a client in another language the key finds what 1, 3 and 5 name.
 
 **The things of the world** go by the game's object ID, on any client: those of your quests' open objectives, those
 an item to loot comes from (*Drops*), and those a finished quest is handed in to, of your side. The game tells no
