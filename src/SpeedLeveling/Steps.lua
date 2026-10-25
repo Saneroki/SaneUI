@@ -5,10 +5,6 @@ local _, ns = ...
 --  The guide over the world (Saneroki, 2026-10-25): no window, words in
 --  Expressway with a thin dark outline straight on the game (Saneroki's pick of
 --  font for it), from the top:
---    - the arrow: Sane UI's leather ring that runs out into a point, turned the
---      way to the step's place (up: ahead), a picture of what waits there in
---      its hole (a quest to take, one to hand in, else the map), its yards under
---      it; a row of its own while the guide has a place to go to;
 --    - the guide's zone, its levels after it, and at the right how far you are
 --      ("12/84 · 14%"), a thin rule under them;
 --    - each step at hand on a faint dark shade: "Step 12" small, its first
@@ -17,6 +13,9 @@ local _, ns = ...
 --      "!" before a warning and an "i" before the rest;
 --    - the next steps greyed out, a line each with its number, fading as they
 --      go down.
+--  Over its top the row of icons to use and to target (Icons.lua); the arrow is
+--  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
+--  anew with it.
 --  A click on a step at hand skips it, a right click goes back one; the wheel
 --  over the next steps scrolls them, a double click goes to one; a right click
 --  on the zone or on the next steps opens the known guide's own menu (its
@@ -25,17 +24,12 @@ local _, ns = ...
 --  the screen's right, a little down; it grows downwards.
 --
 --  While the leveling guide Sane UI knows shows its own window, this shows its
---  guide, lends what it stands in for (Core.Lend), and gives each back as it was
---  when this stops showing it:
---    - its window, unseen and small (the switch Hide its own window);
---    - its arrow, put away while ours points to its place;
---    - its boxes of targets and items, in a row under this (the switch Gather
---      its targets and items), placed out of a fight only: they hold the game's
---      secure buttons. They are placed by the screen, not hung on this view, so
---      nothing of a fight's changes here can move them.
+--  guide, and its window is made unseen and small (Core.Lend; the switch Hide
+--  its own window), given back as it was when this stops showing it.
 --
 --      Steps.Update()   shown or hidden and drawn anew, as the switches and the guide are now
---      Steps.GiveBack() hidden, the known guide's window, arrow and boxes given back
+--      Steps.Frame()    the view's frame while it is shown (the icons stand over its top)
+--      Steps.GiveBack() hidden, the known guide's window given back; the arrow and the icons too
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Steps = {}
@@ -52,41 +46,22 @@ Steps.GREY = 0.55     -- the next steps' words, greyed out; their numbers a litt
 Steps.DONE = 0.5      -- a thing done, so faint
 Steps.BAR = 2         -- a count's bar, high
 Steps.UNSEEN = 0.01   -- the known guide's own window, so small while this shows its guide
-Steps.HOLE = 26       -- the arrow's ring's hole, wide
-Steps.LOOK = 0.05     -- seconds between turns of the arrow
-Steps.ASK = 0.5       -- seconds between asks of where it points
-Steps.BOXES = 8       -- the known guide's boxes, so far under this
 Steps.FONT = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Fonts\\Expressway.ttf"
-Steps.RING = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Art\\mark-pointed"
 Steps.TICK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t" -- the game's ready check's tick
-
--- The ring's measures, as the art has them (dev/tools/mark-art, 1040 texels on 252 of 256): its hole's and its
--- leather's radius, and the point's tip from the middle, each a share of the picture's side.
-local HOLE, OUTER, TIP = 0.2293 * 252 / 256, 0.2942 * 252 / 256, 510 / 1040 * 252 / 256
--- What waits at the place, in the ring's hole: the game's own pictures.
-local WAITING = {
-    take = "Interface\\GossipFrame\\AvailableQuestIcon",
-    handin = "Interface\\GossipFrame\\ActiveQuestIcon",
-}
-local MAP = "Interface\\Icons\\INV_Misc_Map_01"
-local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 
 -- The fonts, by part: size in UI units.
 local FONTS = {
     title = 16, levels = 11, count = 11, label = 10, instruction = 13.5, line = 12, note = 11, mark = 11, ahead = 12,
-    number = 11, yards = 13,
+    number = 11,
 }
 local SOFT = { 0.8, 0.8, 0.8 }
 
 local frame, window, header, rule, ruleShadow, title, levels, progress
-local arrow           -- { frame, ring, picture, mask, backing, text }
 local cards, rows = {}, {}
 local fonts = {}
 local offset = 0      -- the next steps scrolled past
 local hovered = false
-local lent = {}       -- [what] = the lend of the known guide's frame: window, arrow, and each box
-local away            -- a hidden frame of ours, where the known guide's arrow is put away
-local target, waiting -- where the arrow points, what waits there
+local lent            -- the lend of the known guide's window
 
 local function Font(part)
     if fonts[part] then return fonts[part] end
@@ -111,161 +86,19 @@ local function Text(parent, part, layer)
 end
 
 -------------------------------------------------------------------------------
---  The known guide's frames, lent
+--  The known guide's window, lent: unseen and small
 -------------------------------------------------------------------------------
-local function Lend(what, frame)
-    if not lent[what] and frame then lent[what] = Core.Lend(frame) end
-    return lent[what]
-end
-
-local function GiveBack(what)
-    local lend = lent[what]
-    lent[what] = nil
-    if lend then lend:Return() end
-end
-
-local function GiveAllBack()
-    for what in pairs(lent) do GiveBack(what) end
-end
-
--- Its window: unseen and small.
 local function Window(on)
     local own = on and Core.Neighbours.Frame("guide")
-    if not own then return GiveBack("window") end
-    local lend = Lend("window", own)
-    lend:SetAlpha(0)
-    lend:SetScale(Steps.UNSEEN)
-end
-
--- Its arrow: put away into a hidden frame of ours while ours points to its place.
-local function Arrow(on)
-    local own = on and Core.Neighbours.Arrow("guide")
-    if not own then return GiveBack("arrow") end
-    if not away then
-        away = CreateFrame("Frame")
-        away:Hide()
+    if own then
+        lent = lent or Core.Lend(own)
+        lent:SetAlpha(0)
+        lent:SetScale(Steps.UNSEEN)
+    elseif lent then
+        local was = lent
+        lent = nil
+        was:Return()
     end
-    Lend("arrow", own):SetParent(away)
-end
-
--- Its boxes: in a row under this, each placed by the screen where this view's bottom is now; out of a fight only (the
--- lend refuses while the game holds them), done again once the fight is over.
-local function Boxes(on)
-    local boxes = on and Core.Neighbours.Boxes("guide") or {}
-    if #boxes == 0 then
-        for what in pairs(lent) do if what ~= "window" and what ~= "arrow" then GiveBack(what) end end
-        return
-    end
-    local left, bottom = frame:GetLeft(), frame:GetBottom()
-    if not (left and bottom) then return end
-    local scale = UIParent:GetEffectiveScale()
-    local x = 0
-    for _, box in ipairs(boxes) do
-        local lend = Lend(box, box)
-        if box:IsShown() then
-            local share = box:GetEffectiveScale() / scale
-            local placed = lend:SetPoints(function(f)
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", (left + x) / share, (bottom - Steps.BOXES) / share)
-            end)
-            if not placed then
-                Core.AfterCombat("speedleveling: boxes", function() ns.Guarded(Steps.Update) end)
-                return
-            end
-            x = x + (box:GetWidth() or 0) * share + Steps.GAP
-        end
-    end
-end
-
--------------------------------------------------------------------------------
---  The arrow
--------------------------------------------------------------------------------
--- The ring turned the way to the place, the yards under it; out of sight within the place's reach.
-local function Turn()
-    if not target then return end
-    local yards, way = ns.Run.Way(target)
-    local facing = Core.Plain(Core.Ask(rawget(_G, "GetPlayerFacing")))
-    local near = target.near and target.near > 0 and target.near or ns.Format.FAR
-    if not (yards and way and facing) or yards <= near then
-        arrow.ring:Hide()
-        arrow.picture:Hide()
-        arrow.backing:Hide()
-        arrow.text:SetText("")
-        return
-    end
-    local turn = way - facing
-    arrow.ring:SetRotation(turn)
-    arrow.ring:Show()
-    arrow.picture:Show()
-    arrow.backing:Show()
-    -- The yards under the ring, under its point while that points down.
-    local whole = arrow.ring:GetWidth()
-    local low = math.max(OUTER, -math.cos(turn) * TIP) * whole
-    arrow.text:ClearAllPoints()
-    arrow.text:SetPoint("TOP", arrow.frame, "CENTER", 0, -low - 1)
-    arrow.text:SetFormattedText("%d", math.floor(yards + 0.5))
-end
-
-local function MakeArrow()
-    local holder = CreateFrame("Frame", nil, frame)
-    local whole = Steps.HOLE / (HOLE * 2)
-    holder:SetSize(whole, whole)
-    local backing = holder:CreateTexture(nil, "BACKGROUND")
-    backing:SetColorTexture(0, 0, 0, 0.6)
-    backing:SetSize(Steps.HOLE * 1.1, Steps.HOLE * 1.1)
-    backing:SetPoint("CENTER")
-    local backMask = holder:CreateMaskTexture()
-    backMask:SetTexture(ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    backMask:SetAllPoints(backing)
-    backing:AddMaskTexture(backMask)
-    local picture = holder:CreateTexture(nil, "ARTWORK")
-    picture:SetPoint("CENTER")
-    local mask = holder:CreateMaskTexture()
-    mask:SetTexture(ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    mask:SetAllPoints(picture)
-    local ring = holder:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(Steps.RING)
-    ring:SetSize(whole, whole)
-    ring:SetPoint("CENTER")
-    local text = Text(holder, "yards")
-    text:SetJustifyH("CENTER")
-    arrow = { frame = holder, ring = ring, picture = picture, mask = mask, backing = backing, text = text }
-    -- Turned while shown, a step at a time; where it points asked less often.
-    local turned, asked = 0, 0
-    holder:SetScript("OnUpdate", ns.Guard(function(_, elapsed)
-        turned, asked = turned + elapsed, asked + elapsed
-        if asked >= Steps.ASK then
-            asked = 0
-            target, waiting = ns.Guide.Target()
-        end
-        if turned >= Steps.LOOK then
-            turned = 0
-            Turn()
-        end
-    end))
-end
-
--- What waits at the place, in the ring's hole: a quest's sign whole, the map round.
-local function Picture()
-    local file = WAITING[waiting]
-    local round = not file
-    if round ~= arrow.round then
-        -- The mask on the map's picture only, added and taken off once each.
-        if round then
-            arrow.picture:AddMaskTexture(arrow.mask)
-        elseif arrow.round then
-            arrow.picture:RemoveMaskTexture(arrow.mask)
-        end
-        arrow.round = round
-    end
-    if file then
-        arrow.picture:SetTexCoord(0, 1, 0, 1)
-        arrow.picture:SetSize(Steps.HOLE * 0.8, Steps.HOLE * 0.8)
-    else
-        arrow.picture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        arrow.picture:SetSize(Steps.HOLE * 1.1, Steps.HOLE * 1.1)
-    end
-    arrow.picture:SetTexture(file or MAP)
 end
 
 -------------------------------------------------------------------------------
@@ -336,10 +169,9 @@ local function Build()
     rule:SetColorTexture(1, 1, 1, 0.45)
     ruleShadow = frame:CreateTexture(nil, "ARTWORK")
     ruleShadow:SetColorTexture(0, 0, 0, 0.6)
-    MakeArrow()
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
                                       first = { point = "TOPRIGHT", x = -70, y = -200 },
-                                      -- moved in Edit Mode: the known guide's boxes follow
+                                      -- moved in Edit Mode: the icons over it follow
                                       docked = function() ns.Guarded(Steps.Update) end })
     window:Place()
 end
@@ -480,8 +312,9 @@ end
 
 local function Hide()
     if frame then frame:Hide() end
-    target, waiting = nil, nil
-    GiveAllBack()
+    Window(false)
+    ns.Arrow.Update(false)
+    ns.Icons.Update(false)
 end
 
 function Steps.Update()
@@ -495,22 +328,8 @@ function Steps.Update()
     frame:Show()
     Window(known and ns.options.knownWindow)
 
-    -- The arrow, while the guide has a place to go to.
-    local y = 0
-    target, waiting = ns.Guide.Target()
-    Arrow(known and target ~= nil)
-    if target then
-        Picture()
-        arrow.frame:ClearAllPoints()
-        arrow.frame:SetPoint("TOP", frame, "TOP", 0, 0)
-        arrow.frame:Show()
-        Turn()
-        y = y - arrow.frame:GetHeight() - FONTS.yards - 2
-    else
-        arrow.frame:Hide()
-    end
-
     -- The head: the zone, its levels, how far.
+    local y = 0
     header:ClearAllPoints()
     header:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
     header:SetWidth(Steps.WIDTH)
@@ -574,7 +393,12 @@ function Steps.Update()
     end
     for index = shown + 1, #rows do rows[index]:Hide() end
     frame:SetHeight(math.max(1, -y))
-    Boxes(known and ns.options.knownBoxes)
+    ns.Arrow.Update(true, known)
+    ns.Icons.Update(true, known)
+end
+
+function Steps.Frame()
+    return frame and frame:IsShown() and frame or nil
 end
 
 function Steps.GiveBack()

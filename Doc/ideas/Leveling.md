@@ -38,6 +38,10 @@ target, mark, attack and interact only by the game's secure ways, and looting a 
 - **Decision (Saneroki, 2026-10-25), the same day:** the arrow to the step's place in the far herbs' leather ring
   with its point, at the view's top; the view's words in Expressway; the next steps greyed out; a right click opens
   the known guide's own menu; its boxes of targets and items gathered under the view. Built.
+- **Decision (Saneroki, 2026-10-25), then:** the arrow a part of its own, placed in Edit Mode; in its hole a picture
+  of what to do there (talk, kill, loot, use, ...); under it what to do, the yards and the time to get there; the
+  targets and items as clean icons only over the guide's top, our own buttons in place of the known guide's boxes.
+  Built.
 - **Not yet:** the routes and their planner (below), the guide's way on the map, walking to the NPC found (the game's click to move), quest givers of quests
   to take (only through the guide for now), an item to use on the creature found (the player's click).
 

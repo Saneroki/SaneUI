@@ -14,7 +14,8 @@ local _, ns = ...
 --                         (text in our colours; count: a thing to do, its have and need when it has a number)
 --      Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
---      Guide.Target()     where the arrow points: a place (Run.Way's), and "take" or "handin" for what waits there
+--      Guide.Target()     where the arrow points: a place (Run.Way's), and the step there (the picture's)
+--      Guide.Doing(step)  what that step asks you to do: "talk", "kill", "loot", "use", ... (the arrow's picture)
 --      Guide.Menu()       the known guide's own menu while its guide is shown (true), else false
 --      Guide.Kept()       the guides kept as text: { { name, group, mine } }, by group and name
 --      Guide.Add(text)    the guides of a pasted text kept (one of the same name replaced): their names, problems
@@ -137,7 +138,8 @@ local function OurLines(index)
         local words = ns.Run.Words(line)
         if words and (line.what ~= "place" or line.words) then
             lines[#lines + 1] = { text = Paint(words), done = state.done, count = ns.Format.DOING[line.what] or false,
-                                  have = state.have, need = state.need, what = line.what }
+                                  have = state.have, need = state.need, what = line.what,
+                                  objective = line.what == "goal" and ns.Run.ObjectiveKind(line.quest, line.goal) or nil }
         end
     end
     return lines
@@ -174,33 +176,56 @@ end
 
 function Guide.Known() return Book() ~= nil end
 
--- What waits at a step: a quest to take or to hand in (its first such line), else nil.
-local function Waiting(lines)
-    for _, line in ipairs(lines or EMPTY) do
-        if (line.what == "take" or line.what == "handin") and not line.done then return line.what end
+-- What a step asks you to do, in our words for the arrow's picture: "take", "handin" (a quest), "talk", "buy",
+-- "train", "inn", "hearth", "fly", "kill", "loot", "use", or "go" (getting there is all). Its first thing to do not yet
+-- done decides by its command (a quest's objective by the game's kind of it); else the first name its words colour.
+local BY_WHAT = { take = "take", handin = "handin", shop = "buy", trainer = "train", learn = "train", bind = "inn",
+                  hearth = "hearth", flightpath = "fly", fly = "fly", cast = "use", carry = "loot" }
+local BY_OBJECTIVE = { monster = "kill", item = "loot", object = "use" }
+local BY_COLOUR = { foe = "kill", loot = "loot", pick = "use", friend = "talk", buy = "buy" }
+
+-- The thing to do the first name coloured in words names: the colour that comes first.
+local function ByColour(text)
+    local first, doing
+    text = text:lower()
+    for kind, word in pairs(BY_COLOUR) do
+        local at = text:find("|c" .. Hex(kind), 1, true)
+        if at and (not first or at < first) then first, doing = at, word end
     end
-    return nil
+    return doing
 end
 
--- Where the arrow points now: the place (Run.Way's kind), and what waits there; nil for nowhere. The known guide's
--- own arrow's place while its guide is shown, else the guide run here's.
+function Guide.Doing(step)
+    for _, line in ipairs(step and step.lines or EMPTY) do
+        if not line.done then
+            local doing = BY_WHAT[line.what] or (line.objective and BY_OBJECTIVE[line.objective])
+            if doing then return doing end
+        end
+    end
+    for _, line in ipairs(step and step.lines or EMPTY) do
+        local doing = not line.done and ByColour(line.text)
+        if doing then return doing end
+    end
+    return "go"
+end
+
+-- Where the arrow points now: the place (as Run.Way takes it) and the step there (as the picture has it); nil for
+-- nowhere. The known guide's own arrow's place while its guide is shown, with the step it is at; else the guide run
+-- here's.
 function Guide.Target()
     if Book() then
         local place = Core.Neighbours.Pointing("guide")
         if not place then return nil end
         local book = Core.Neighbours.Book("guide", 0)
-        for _, step in ipairs(book and book.hand or EMPTY) do
-            if step.number == book.at then return place, Waiting(step.lines) end
+        local picture = book and FromBook(book)
+        for _, step in ipairs(picture and picture.hand or EMPTY) do
+            if step.number == picture.at then return place, step end
         end
-        return place
+        return place, picture and picture.hand[1]
     end
     local line, index = ns.Run.Target()
     if not line then return nil end
-    local lines = {}
-    for _, state in ipairs(ns.Run.Lines(index)) do
-        lines[#lines + 1] = { what = state.line.what, done = state.done }
-    end
-    return line, Waiting(lines)
+    return line, { number = index, lines = OurLines(index) }
 end
 
 -- The known guide's own menu (its guides, its options) while its guide is shown; false while it is not.

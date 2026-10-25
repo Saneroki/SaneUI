@@ -21,7 +21,8 @@ So: kill, press to loot, press to find the next one, press to attack; walk up to
 walk over the quest's plant, press to pick it.
 
 **And your leveling guide over the world** (Saneroki, 2026-10-25): no window, outlined words straight on the game,
-an arrow to the step's place, the guide's zone and how far you are, the steps at hand, the next steps greyed out. Its steps come from the leveling
+the guide's zone and how far you are, the steps at hand, the next steps greyed out; over it the items to use and the
+names to target as icons; and an arrow of its own to the step's place, with a picture and words of what to do there. Its steps come from the leveling
 guide Sane UI knows while it is loaded (the guide it has loaded for you; its own window is made unseen meanwhile),
 else from a guide you pasted as text, which Sane UI runs itself. The key finds what the guide's steps at hand name.
 
@@ -43,7 +44,8 @@ else from a guide you pasted as text, which Sane UI runs itself. The key finds w
 | *Guide:* Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Your leveling guide's own guide | on | While the leveling guide Sane UI knows is loaded, its loaded guide is shown and followed; off: the guide you pasted |
 | Hide its own window | on | While its guide is shown here, that guide's own window is unseen (see-through and small); back as it was when this is off |
-| Gather its targets and items | on | While its guide is shown here, that guide's boxes of targets and items stand in a row under the view; back where they were when this is off |
+| Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
+| Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*); the known guide's own boxes put away meanwhile |
 | Steps listed ahead | 5 | How many next steps stand under those at hand (0 to 12) |
 | Guides | | Opens the window of the guides kept as text (also `/sane guides`) |
 
@@ -80,10 +82,6 @@ player's click.
 ## The guide over the world
 - **What it shows,** from the top, in Expressway with a thin dark outline (Saneroki's pick of font for it, shipped in
   the module's `Fonts/`), where Edit Mode puts it (at first at the screen's right, a little down; it grows down):
-  - **the arrow:** Sane UI's leather ring that runs out into a point (the far herbs' mark, `Art/mark-pointed`),
-    turned the way to the step's place (up: ahead), in its hole what waits there (the game's yellow *!* for a quest
-    to take, *?* for one to hand in, else a map), its yards under it, the number alone; out of sight within the
-    place's reach. A row of its own while the guide has a place to go to;
   - the guide's zone, its levels after it, and at the right how far you are (*12/84 · 14%*), a thin rule under;
   - each step at hand on a faint dark shade: *Step 12* small, its first words large (what to do), its things to do
     (*Mottled Boar slain* with *2/4* at the right and a thin bar under it, a hand-drawn tick once done), its other
@@ -96,9 +94,35 @@ player's click.
   the wheel over the next steps scrolls them, a double click goes to one; a right click on the zone or on the next
   steps opens the known guide's own menu (its guides, its options) while its guide is shown, else a menu of the
   guides kept (choose the one to follow) and *Paste a guide...*.
-- **Where the arrow points:** for a pasted guide, the first place of the steps at hand not yet passed, the step you
-  are at first (a point on the way, or a place to get to, is passed once you were within its reach; `Run.Target`);
-  for the known guide, where its own arrow points (`Core.Neighbours.Pointing`), its own arrow put away meanwhile.
+
+### The arrow
+A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide (at first over the middle of the screen),
+shown while the guide is and has a place to go to:
+
+- **Sane UI's leather ring that runs out into a point** (the far herbs' mark, `Art/mark-pointed`), turned the way to
+  the place (up: ahead), a step every 0.05 s.
+- **In its hole, what to do there** (`Guide.Doing`), the game's own cursor pictures: a speech bubble to talk, a sword
+  to kill, a bag to loot, an open hand to use or click something, the quest's yellow *!* to take one and *?* to hand
+  one in, a coin bag to buy, a book to train, the Hearthstone at an inn or to hearth, a winged boot to fly, a map when
+  getting there is all. The step's first thing not yet done decides by its command (an objective by the game's kind
+  of it: a creature, an item, a thing of the world), else the first name its words colour (a creature, a thing to
+  loot, to pick up, an NPC, a vendor).
+- **Under it, words at a glance:** what to do there (the step's first words, names in colour), then how far (*177 yd*)
+  and the time to get there at the pace you have been closing in (*177 yd · 0:25*; none while you stand or walk
+  away). Within the place's reach the ring and the yards go, the words stay.
+- **Where it points:** for a pasted guide, the first place of the steps at hand not yet passed, the step you are at
+  first (a point on the way, or a place to get to, is passed once you were within its reach; `Run.Target`); for the
+  known guide, where its own arrow points (`Core.Neighbours.Pointing`), its own arrow put away meanwhile.
+
+### The icons
+Over the guide's top, a row of icons only (`Icons.lua`): first the items the steps want used (the Hearthstone while
+a step hearths, the steps' items, the game's own quest items of your quests), then the NPCs and the creatures to
+target, eight at most. Each in Sane UI's round leather ring (`Art/mark-round`): an item its picture, cooldown and
+count; a target the game's speech bubble or sword, its portrait once you have seen it (its nameplate, your target). A
+click uses the item, or targets the name (with the skull while *Skull on what is found* is on); the mouse on one says
+what it is. They are Sane UI's own secure buttons: set out of a fight only (in one the row stays as it was and
+follows once it is over), placed by the screen where the guide's top is. While they show for the known guide, its own
+boxes of targets and items are put away.
 - **The guides kept as text** (`/sane guides`, or the menu): at the left the guides kept, a click follows one (those
   for another side, race or class greyed), the cross beside one forgets it (asked first); at the right a box to
   paste a guide's text into, and *Read*, which keeps each guide of it (a file with several guides in long brackets
@@ -132,9 +156,8 @@ hand with their words, what is done, and its next steps; a count is read from a 
 its own function (`Core.Neighbours.GoTo`), a right click back. Its colours of names become ours. What the view stands
 in for is lent (`Core.Lend`) and given back as it was when its switch is off, when its window is closed, and when the
 module stands down: its window (see-through and small), its arrow (put into a hidden frame of ours while our arrow
-points to its place), and its boxes of targets and items (in a row under the view, placed by the screen where the
-view's bottom is, out of a fight only: they hold the game's secure buttons, so nothing in a fight may move them, and
-they are not hung on the view, whose height changes in a fight). Its import strings are locked to the buyer's account: Sane UI never reads them; it shows
+points to its place), and its boxes of targets and items (put away the same way while our icons show, out of a fight
+only: they hold the game's secure buttons). Its import strings are locked to the buyer's account: Sane UI never reads them; it shows
 only what that guide has loaded itself.
 
 ## How it works
@@ -168,7 +191,9 @@ every choice is made by those, in a fight too (`Key.lua`):
 | `Wanted.lua` | What is wanted, by name and in order (`Wanted.Names()`, `Wanted.Unit(unit)`), and the things of the world by ID (`Wanted.Object(guid)`); read anew when the quest log changes |
 | `Items.lua` | What the key uses: `Items.Hearth(items, spells)`, `Items.Pick(items)`, each a macro line or nil |
 | `Key.lua` | The key: the buttons Find and Fight, the header and its snippets, the state driver, Find's macro (`Key.Find()`), the game's settings for Loot first and Quest objects |
-| `Steps.lua` | The guide over the world: the arrow, drawn from the picture, its clicks, its menu, the known guide's window, arrow and boxes lent |
+| `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu, the known guide's window lent |
+| `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words, the known guide's arrow put away |
+| `Icons.lua` | The icons over the guide: items to use and names to target, secure buttons; the known guide's boxes put away |
 | `Guides.lua` | The window of the guides kept as text: the list, the box to paste into, *Read* |
 | `Bindings.xml` | The key in the game's key bindings: a click on Find |
 

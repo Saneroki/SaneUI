@@ -3,7 +3,9 @@
 -- the guide run (moving on past done steps, the steps at hand, skipping, going back and being held there, what the
 -- game tells as it happens, places, tests that pass a step by, the next guide), the guides kept, the known guide's
 -- loaded guide as our picture (its colours, its steps, going to a step), the view over the world (drawn, clicked,
--- scrolled, its menu, hidden), the known guide's window lent and given back, and standing down.
+-- scrolled, its menu, hidden), the arrow (where it points, what to do there, turned, how far and how long), the icons
+-- to use and to target (secure, held in a fight), the known guide's window, arrow and boxes lent and given back, and
+-- standing down.
 -- The guide format's own words come from Core (Core.Neighbours.KNOWN.guide): the test names none of its own.
 -- Usage, from the project folder:  lua5.1 dev/tests/speedguide.lua
 
@@ -38,6 +40,7 @@ function methods:SetTextColor(r, g, b) self._color = { r, g, b } end
 function methods:SetFormattedText(format, ...) self._text = format:format(...) end
 function methods:GetLeft() return self._left or 900 end
 function methods:GetBottom() return self._bottom or 300 end
+function methods:GetTop() return self._top or 600 end
 local facing = 0
 GetPlayerFacing = function() return facing end
 
@@ -230,6 +233,13 @@ check(picture.hand[1].lines[1].text:find("|cff%x%x%x%x%x%xKaltunk|r"), "the NPC'
 check(not picture.hand[1].lines[1].text:find(COLOUR.friend, 1, true), "the format's colour word is gone")
 check(picture.hand[1].lines[2].count and not picture.hand[1].lines[2].done, "the quest to take: a thing to do")
 check(picture.ahead[1].number == 2 and picture.ahead[1].text:find("copper", 1, true), "the next steps listed")
+local iconRow = rawget(_G, "SaneUISpeedLevelingIcons")
+local icon1, icon2 = rawget(_G, "SaneUISpeedLevelingIcon1"), rawget(_G, "SaneUISpeedLevelingIcon2")
+check(iconRow and iconRow._shown and iconRow._points[1][2] == UIParent and iconRow._points[1][5] == 600 + ns.Icons.ABOVE,
+    "the icons over the guide's top, placed by the screen")
+check(icon1._template == "SecureActionButtonTemplate" and icon1:GetAttribute("type") == "macro"
+    and icon1:GetAttribute("macrotext") == "/cleartarget\n/targetexact Kaltunk\n/tm [exists] !8", "a click targets the NPC, marked")
+check(not (icon2 and icon2._shown), "one icon")
 
 -- The quest taken: on past the step; the boars go along with the next one.
 quests.on[10] = true
@@ -240,6 +250,18 @@ local hand = Run.Hand()
 check(#hand == 2 and hand[1] == 2 and hand[2] == 3, "the boars stay at hand with the next")
 local foes = Guide.Targets()
 check(foes[1] == "Mottled Boar", "the key finds the boars")
+W.items[6948] = { name = "Hearthstone", count = 1 }
+Steps.Update()
+icon1, icon2 = rawget(_G, "SaneUISpeedLevelingIcon1"), rawget(_G, "SaneUISpeedLevelingIcon2")
+check(icon1:GetAttribute("type") == "item" and icon1:GetAttribute("item") == "item:6948", "the step's item first: a click uses it")
+check(icon2._shown and icon2:GetAttribute("macrotext"):find("Mottled Boar", 1, true), "then the creature to fight")
+W.combat = true
+W.items[6948] = nil
+Steps.Update()
+check(icon1:GetAttribute("item") == "item:6948", "in a fight the game holds them: as they were")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(icon1:GetAttribute("macrotext"):find("Mottled Boar", 1, true) and not icon2._shown, "after it: what is wanted now")
 local items = Guide.Uses()
 check(items[1] == 6948, "and the step's item")
 
@@ -272,24 +294,44 @@ W.place = { -4250, -600, 0, 1 } -- the game's two numbers of a place in the worl
 W.Wait(2)
 check(Run.At() == 6, "too far from the place")
 -- The arrow: to the place, the yards under it, turned as the player faces.
-local place, waits = Guide.Target()
-check(place and place.continent == 1 and place.near == 20 and waits == nil, "the arrow points to the step's place")
+local place, there = Guide.Target()
+check(place and place.continent == 1 and place.near == 20 and there.number == 6, "the arrow points to the step's place")
+check(Guide.Doing(there) == "go", "getting there is all: the map's picture")
 local yards, way = Run.Way(place)
 check(math.abs(yards - 49.75) < 0.01 and math.abs(way - math.atan2(-0.5, 49.75)) < 1e-6, "how far and which way")
 Steps.Update()
-local ring, yardsText
+local arrowFrame = rawget(_G, "SaneUISpeedLevelingArrow")
+local ring, picture, words, far
 for _, widget in ipairs(W.frames) do
-    if widget._texture == Steps.RING then ring = widget end
+    if widget._texture == ns.Arrow.RING then ring = widget end
 end
 for _, widget in ipairs(W.frames) do
-    if widget._kind == "FontString" and widget._parent == ring._parent and widget._text == "50" then yardsText = widget end
+    if widget._parent == ring._parent and widget._kind == "Texture" and type(widget._texture) == "string"
+        and widget._texture:find("CURSOR", 1, true) then picture = widget end
+    if widget._parent == arrowFrame and widget._kind == "FontString" then
+        if widget._text == "Get there" then words = widget elseif widget._text == "50 yd" then far = widget end
+    end
 end
-check(ring and ring._parent._shown and yardsText, "the leather ring shown, its yards under it")
+check(arrowFrame and arrowFrame._shown and ring._shown, "the arrow: a part of its own, its leather ring shown")
+check(picture and picture._texture:find("Directions", 1, true), "in its hole: the picture of getting there")
+check(words and far, "under it what to do there, and how far")
 check(math.abs(ring._rotation - way) < 1e-6, "facing north: turned the way to the place")
 facing = math.pi / 2
 Steps.Update()
 check(math.abs(ring._rotation - (way - math.pi / 2)) < 1e-6, "facing west: turned with you")
 facing = 0
+W.clock = W.clock + 1
+W.place = { -4240, -600, 0, 1 }
+Steps.Update()
+check(far._text:find("40 yd", 1, true) and far._text:find("11 s", 1, true), "closing in: the time to get there: " .. far._text)
+W.place = { -4250, -600, 0, 1 }
+W.clock = W.clock + 1
+Steps.Update()
+check(not far._text:find(" s", 1, true), "walking away: no time")
+Core.Set(ns.name, "showArrow", false)
+check(not arrowFrame._shown, "Show the arrow off: hidden")
+Core.Set(ns.name, "showArrow", true)
+check(arrowFrame._shown, "on again")
 W.place = { -4200, -605, 0, 2 }
 W.Wait(2)
 check(Run.At() == 6, "on another continent")
@@ -298,7 +340,7 @@ W.Wait(2)
 check(Run.At() == 7, "near enough: on")
 check(Guide.Target() == nil, "no place left: the arrow has nowhere to point")
 Steps.Update()
-check(not ring._parent._shown, "and is out of sight")
+check(not arrowFrame._shown, "and is out of sight")
 
 -- The hearth: as it is cast.
 check(Run.Uses()[1] == Run.HEARTHSTONE, "the hearth: the key's Hearthstone")
@@ -402,6 +444,7 @@ local book = { [KNOWN.current] = { name = "6-10 Durotar", steps = steps },
                [KNOWN.colourTable] = { [COLOUR.friend] = "FF00FF25" },
                [KNOWN.part] = { [KNOWN.lists] = function() return { "Gornek" }, {}, {} end },
                [KNOWN.items] = { [5000] = true }, [KNOWN.spells] = {}, [KNOWN.arrow] = ownArrow }
+W.items[5000] = { name = "Cleansing Totem", count = 2 }
 local went
 book[KNOWN.go] = function(number) went = number end
 own[KNOWN.hand] = { steps[4] }
@@ -429,16 +472,17 @@ check(own._alpha == 0 and own._scale == Steps.UNSEEN, "its own window unseen whi
 check(Guide.Target() == nil and ownArrow._parent == UIParent, "its arrow not shown: ours points nowhere, its own left")
 ownArrow:Show()
 Steps.Update()
-place, waits = Guide.Target()
-check(place and place.continent == 1 and place.x == -600.5 and place.y == -4300.25 and waits == "take",
+place, there = Guide.Target()
+check(place and place.continent == 1 and place.x == -600.5 and place.y == -4300.25 and Guide.Doing(there) == "take",
     "its arrow shown: ours points to its place, a quest to take there")
 check(ownArrow._parent ~= UIParent and not ownArrow:IsVisible(), "its own arrow put away")
-check(boxes[1]._points[1][2] == UIParent and boxes[1]._points[1][1] == "TOPLEFT"
-    and boxes[2]._points[1][4] > boxes[1]._points[1][4], "its boxes in a row under ours")
-Core.Set(ns.name, "knownBoxes", false)
-check(boxes[1]._points[1][1] == "CENTER" and boxes[2]._points[1][5] == 100, "Gather off: its boxes back where they were")
-Core.Set(ns.name, "knownBoxes", true)
-check(boxes[1]._points[1][1] == "TOPLEFT", "on: gathered again")
+check(boxes[1]._parent ~= UIParent and boxes[2]._parent ~= UIParent, "its own boxes put away: our icons stand for them")
+check(rawget(_G, "SaneUISpeedLevelingIcon1"):GetAttribute("item") == "item:5000"
+    and rawget(_G, "SaneUISpeedLevelingIcon2"):GetAttribute("macrotext"):find("Gornek", 1, true), "its item and its NPC")
+Core.Set(ns.name, "icons", false)
+check(boxes[1]._parent == UIParent and not rawget(_G, "SaneUISpeedLevelingIcons")._shown, "icons off: its boxes back")
+Core.Set(ns.name, "icons", true)
+check(boxes[1]._parent ~= UIParent, "on: put away again")
 Core.Set(ns.name, "knownWindow", false)
 check(own._alpha == 1 and own:GetScale() == 1, "Hide its own window off: given back as it was")
 Core.Set(ns.name, "knownWindow", true)
@@ -477,7 +521,7 @@ Steps.Update()
 check(own._alpha == 0, "lent before standing down")
 ns.StandDown("a test")
 check(not view:IsShown() and own._alpha == 1 and own:GetScale() == 1, "standing down: hidden, its window given back")
-check(ownArrow._parent == UIParent and boxes[1]._points[1][1] == "CENTER", "and its arrow and boxes")
+check(ownArrow._parent == UIParent and boxes[1]._parent == UIParent, "and its arrow and boxes")
 Steps.Update()
 check(not view:IsShown(), "nothing more after standing down")
 

@@ -23,6 +23,8 @@ Wanted.lua
 Items.lua
 # The key: loot, fight, talk or find, chosen by the game's secure ways at each press
 Key.lua
-# The guide over the world, and the window of the guides kept as text
+# The guide over the world, its arrow, its icons to use and to target, and the window of the guides kept as text
 Steps.lua
+Arrow.lua
+Icons.lua
 Guides.lua

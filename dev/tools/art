@@ -21,9 +21,9 @@ prints the numbers).
   logo     drawn up to 96 x 96 (not drawn yet): 256 x 256.
   sheet    a flipbook made by dev/tools/flipbook: kept whole, its sides are powers of two already (its
            frame's side came from the drawn size there); TexCoords 0-1.
-  mark     drawn up to 70 x 70 (Navigation's far herbs and ore, Glints.lua; Speed Leveling's arrow, Steps.lua):
-           256 x 256, the picture kept whole, not cropped (its middle is the middle code turns it about;
-           dev/tools/mark-art).
+  mark     drawn up to 70 x 70 (Navigation's far herbs and ore, Glints.lua; Speed Leveling's arrow and icons,
+           Arrow.lua, Icons.lua): 256 x 256, the picture kept whole, not cropped (its middle is the middle code
+           turns it about; dev/tools/mark-art).
 
 They go into assets/optimized/, and a module's banner also into that module's art, as
 assets/optimized/<module>/Art/banner.blp (dev/build puts it into the addon's Art/): that copy is the one the game loads (the options page of the module shows it at the top). Another
@@ -84,8 +84,9 @@ PICTURES = [
 ] + [  # made by dev/tools/mark-art from the leather ring Saneroki picked
     (f"FarMarks/ring-{name}.png", f"FarMarks-{name}", "mark", "Navigation", f"mark-{name}.blp")
     for name in ("pointed", "round")
-] + [  # the same pointed ring as Speed Leveling's arrow to the guide's place (Steps.lua)
-    ("FarMarks/ring-pointed.png", "FarMarks-pointed", "mark", "SpeedLeveling", "mark-pointed.blp"),
+] + [  # the same rings as Speed Leveling's arrow to the guide's place (Arrow.lua) and its icons (Icons.lua)
+    (f"FarMarks/ring-{name}.png", f"FarMarks-{name}", "mark", "SpeedLeveling", f"mark-{name}.blp")
+    for name in ("pointed", "round")
 ]
 
 

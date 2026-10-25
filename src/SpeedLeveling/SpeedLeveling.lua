@@ -26,6 +26,8 @@ local ADDON, ns = ...
 --    Items.lua   what the key uses: the hearth, one quest item
 --    Key.lua     the key: what one press does now, by the game's secure ways
 --    Steps.lua   the guide over the world
+--    Arrow.lua   the way to the guide's place, a part of its own
+--    Icons.lua   the items to use and the names to target, over the guide
 --    Guides.lua  the window of the guides kept as text
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -58,8 +60,10 @@ ns.TEXT = {
     knownGuideTip = "While the leveling guide Sane UI knows is loaded, its guide is shown and followed, the one it has loaded for you. Off: the guide you pasted.",
     knownWindow = "Hide its own window",
     knownWindowTip = "While its guide is shown here, that guide's own window is made unseen; it comes back as it was when this is off.",
-    knownBoxes = "Gather its targets and items",
-    knownBoxesTip = "While its guide is shown here, that guide's boxes of targets and items stand in a row under it, so they need no placing; they go back where they were when this is off. Placed out of a fight: the game holds them in one.",
+    showArrow = "Show the arrow",
+    showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode: the leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
+    icons = "Targets and items over the guide",
+    iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row over the guide's top: a click uses the item or targets the name. Your leveling guide's own boxes for them are put away meanwhile. Changed out of a fight only: the game holds such buttons in one.",
     ahead = "Steps listed ahead",
     aheadTip = "How many of the next steps stand under those at hand.",
     guidesButton = "Guides",
@@ -101,6 +105,13 @@ ns.TEXT = {
     shop = "Visit the vendor",
     trainer = "Visit the trainer",
     arrive = "Get there",
+    -- The arrow and the icons (Arrow.lua, Icons.lua).
+    arrowView = "Guide's arrow",
+    yards = "%d yd",
+    seconds = "%d s",
+    minutes = "%d:%02d",
+    targetFriend = "Click: target it",
+    targetFoe = "Click: target it",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -119,8 +130,8 @@ local OPTIONS = {
     { key = "knownGuide", default = true, text = ns.TEXT.knownGuide, tip = ns.TEXT.knownGuideTip },
     { key = "knownWindow", default = true, text = ns.TEXT.knownWindow, tip = ns.TEXT.knownWindowTip,
       parent = "knownGuide" },
-    { key = "knownBoxes", default = true, text = ns.TEXT.knownBoxes, tip = ns.TEXT.knownBoxesTip,
-      parent = "knownGuide" },
+    { key = "showArrow", default = true, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
+    { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
       button = function() ns.Guarded(ns.Guides.Open) end },
@@ -128,7 +139,7 @@ local OPTIONS = {
     { key = "told", default = false },    -- told once how to give the key a key (Key.lua)
 }
 -- The switches of the guide over the world: drawn anew; the known guide's switch also changes what the key wants.
-local VIEW = { showGuide = true, knownWindow = true, knownBoxes = true, ahead = true }
+local VIEW = { showGuide = true, knownWindow = true, showArrow = true, icons = true, ahead = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then
         ns.Guarded(ns.Steps.Update)

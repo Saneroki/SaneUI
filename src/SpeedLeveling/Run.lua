@@ -34,6 +34,7 @@ local _, ns = ...
 --      Run.Watch(changed)    the place looked at while a step waits for one (changed() after a move); Run.Stop()
 --      Run.Way(place)        how far the character is from a place, in yards, and which way it lies; Run.Distance
 --      Run.Target()          where the arrow points: the place line and its step
+--      Run.ObjectiveKind(quest, goal)  the game's kind of a quest's objective ("monster", "item", "object")
 --      Run.Targets()         the names the steps at hand want found: foes, friends
 --      Run.Uses()            the items and spells they want used
 --      Run.Words(line)       a line's words: the guide's own, or ours made from the game's names
@@ -107,6 +108,14 @@ local function Objective(quest, goal)
     local objective = type(objectives) == "table" and objectives[goal]
     if type(objective) ~= "table" then return nil end
     return Plain(objective.finished) == true, Plain(objective.numFulfilled), Plain(objective.numRequired), Plain(objective.text)
+end
+
+-- The kind of a quest's objective, as the game names it ("monster", "item", "object", ...); nil where it says none.
+function Run.ObjectiveKind(quest, goal)
+    local objectives = Core.Ask(Log().GetQuestObjectives, quest)
+    local objective = type(objectives) == "table" and objectives[goal]
+    local kind = type(objective) == "table" and Plain(objective.type)
+    return type(kind) == "string" and kind or nil
 end
 
 local function Count(item)

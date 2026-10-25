@@ -271,13 +271,17 @@ Speed Leveling's guide, straight on the world without a window (`src/SpeedLeveli
 
 - **Its words in Expressway**, a clean sans with a thin dark outline, not Kalam: it stands over the game, not on paper
   (Saneroki's pick). Names in the game's own font colours, as the guide marks them.
-- **From the top:** the arrow, then the zone with its levels and how far (*12/84 · 14%*) over a thin rule, the steps
-  at hand on a faint dark shade, the next steps **greyed out** and fading as they go down (Saneroki: he likes them
-  greyed).
-- **The arrow is the far herbs' leather ring with its point** (*Far herbs and ore*), turned the way to the step's
-  place, a picture of what waits there in its hole (a quest to take, one to hand in, else the map), its yards under
-  it, the number alone.
-- **The guide's own boxes** of targets and items stand in a row under it, so nothing needs placing.
+- **From the top:** a row of icons (the items to use, the names to target), then the zone with its levels and how
+  far (*12/84 · 14%*) over a thin rule, the steps at hand on a faint dark shade, the next steps **greyed out** and
+  fading as they go down (Saneroki: he likes them greyed).
+- **The icons are icons only,** each in the far herbs' round leather ring (*Far herbs and ore*): an item's picture
+  with its cooldown and count, a target's portrait once seen, else the game's speech bubble or sword (Saneroki: clean,
+  just the icons, over the guide's top).
+- **The arrow is a part of its own,** placed apart in Edit Mode (Saneroki): the far herbs' leather ring with its
+  point, turned the way to the step's place; in its hole the game's own cursor picture of what to do there (a speech
+  bubble to talk, a sword to kill, a bag to loot, an open hand to use, the quest's *!* and *?*, a coin bag, a book, the
+  Hearthstone, a winged boot, a map); under it, words read at a glance: what to do there, then the yards and the time
+  to get there.
 
 ## Views
 

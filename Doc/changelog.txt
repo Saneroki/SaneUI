@@ -11,10 +11,13 @@ The bigger changes of each version, newest first.
   steps to do now with their counts, and the next steps fading
   out. Click a step to skip it, right-click to go back. It shows
   the guide your leveling guide addon has loaded (its own window
-  steps aside, its menu opens on a right click, its targets and
-  items line up underneath), or a guide you paste as text
-  (/sane guides), which Sane UI follows by itself as you quest.
-  A leather arrow on top points the way, with the yards under it.
+  steps aside, its menu opens on a right click), or a guide you
+  paste as text (/sane guides), which Sane UI follows by itself
+  as you quest. Over it, the items to use and the NPCs and
+  creatures to target, as icons you click. A leather arrow of its
+  own, placed in Edit Mode, points the way: in it a picture of
+  what to do there (talk, fight, loot, use), under it what to do,
+  how far and how long it takes.
 - The minimap's satchel: one button on the minimap opens a page
   with the zone you are in, your time and the realm's, frame
   rate, latency, new mail, the game's calendar, clock (with its

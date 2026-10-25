@@ -75,8 +75,8 @@ function Items.Hearth(items, spells)
     return recall and "/cast " .. recall or nil
 end
 
--- The game's quest items of the quests in your log not yet done, in the log's order.
-local function QuestItems()
+-- The game's quest items of the quests in your log not yet done, in the log's order (also Icons.lua's).
+function Items.QuestItems()
     local found = {}
     local log, special = rawget(_G, "C_QuestLog"), rawget(_G, "GetQuestLogSpecialItemInfo")
     local total = log and type(special) == "function" and Core.Ask(log.GetNumQuestLogEntries)
@@ -95,7 +95,7 @@ end
 
 -- The one item to use when nothing is found, as a macro line; nil when there is none ready.
 function Items.Pick(items)
-    for _, list in ipairs({ items or EMPTY, QuestItems() }) do
+    for _, list in ipairs({ items or EMPTY, Items.QuestItems() }) do
         for _, item in ipairs(list) do
             if item ~= Items.HEARTHSTONE and Ready(item) then return "/use item:" .. item end
         end

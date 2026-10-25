@@ -3,8 +3,30 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 and 122 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 and 137 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling's guide: the arrow a part of its own, pictures and words; icons over the guide (Saneroki, 2026-10-25)
+Saneroki asked for the arrow and the guide placed apart in Edit Mode, a picture of what to do in the arrow (a speech
+bubble to talk, a sword to kill, a bag to loot, a hand to use), words under it read at a glance, and the targets and
+items to use as clean icons only, above the guide's top.
+- **`src/SpeedLeveling/Arrow.lua`** (new): the arrow as its own part (`Core.Window`, key `arrowPlace`, at first over
+  the middle of the screen; the switch *Show the arrow*). In its hole the game's cursor pictures (the largest of each
+  sheet, cut past the corner its tip is drawn in): `Guide.Doing` picks talk, kill, loot, use, take, hand in, buy,
+  train, inn, hearth, fly or go. Under it the step's first words and *177 yd · 0:25*: the time from the pace you close
+  in (measured every 0.5 s, smoothed, none slower than 0.8 yd/s or past a leap of 50 yd/s). The known guide's arrow is
+  put away here now.
+- **`src/SpeedLeveling/Icons.lua`** (new): a row of Sane UI's own secure buttons over the guide's top, placed by the
+  screen: the steps' items in your bags and the game's quest items (type item), then the NPCs and creatures (a macro
+  that targets, with the skull); round leather rings (`Art/mark-round`), cooldowns, counts, portraits once seen,
+  tooltips; set out of a fight only. The known guide's boxes are put away (`Core.Lend`, a hidden parent) in place of
+  being gathered (the switch *Targets and items over the guide* replaces *Gather its targets and items*).
+- **`Steps.lua`:** the arrow and the boxes out; `Steps.Frame`. **`Guide.lua`:** `Guide.Doing`; `Guide.Target` gives the
+  step there. **`Run.lua`:** `Run.ObjectiveKind`. **`Items.lua`:** `Items.QuestItems` shared.
+- **Art:** `assets/optimized/SpeedLeveling/Art/mark-round.blp` (`dev/tools/art` ships both rings to Speed Leveling).
+- **Tests:** `dev/tests/speedguide.lua` 137 checks.
+- **Docs:** `src/SpeedLeveling/README.md` (*The arrow*, *The icons*), `Doc/guides/interface-style.md`,
+  `Doc/ideas/Leveling.md`, the public changelog.
 
 ### Speed Leveling's guide: the leather arrow, Expressway, the guide's own menu and boxes (Saneroki, 2026-10-25)
 Saneroki asked for the arrow in Sane UI's leather ring with its point, the view's words in Expressway, the next steps
