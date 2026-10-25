@@ -12,14 +12,15 @@ local _, ns = ...
 --  A click uses the item, or targets the name and puts the skull on it while
 --  Skull on what is found is on; the mouse on one says what it is.
 --
+--  Only what can be used is shown: an item in your bags that the steps name to
+--  use, or one with a use of its own (the game's quest items have one); never
+--  the gear or the loot a step only mentions.
+--
 --  Sane UI's own secure buttons (the game's SecureActionButtonTemplate): what
 --  each does and whether it is there is set out of a fight only; in one the
 --  row stays as it was and follows once it is over. It is placed by the screen
 --  where the guide's top is, not hung on the guide, whose height changes in a
---  fight. The boxes of targets and items of the leveling guide Sane UI knows are
---  left as they are, its to show or hide (its own settings): its secure buttons
---  are not Sane UI's to move or hide, and the game blocks what that would make
---  them do in a fight.
+--  fight.
 --
 --      Icons.Update(shown)          as the guide is now (shown or not)
 --      Icons.GiveBack()
@@ -157,13 +158,15 @@ local function Plain(name)
     return type(name) == "string" and name ~= "" and not name:find("[;%[%]\n]")
 end
 
--- What the row holds now: the items in your bags first, then the NPCs, then the creatures.
+-- What the row holds now: the items in your bags first, then the NPCs, then the creatures. An item the steps name
+-- (named) is shown when you carry it; another only when it has a use of its own.
 local function Wanted()
     local list, have = {}, {}
     local items = rawget(_G, "C_Item")
-    local function Item(item)
+    local function Item(item, named)
         if #list < Icons.MOST and not have["i" .. item]
-            and (Core.Ask(items and items.GetItemCount or rawget(_G, "GetItemCount"), item) or 0) > 0 then
+            and (Core.Ask(items and items.GetItemCount or rawget(_G, "GetItemCount"), item) or 0) > 0
+            and (named or Core.Ask(items and items.GetItemSpell or rawget(_G, "GetItemSpell"), item) ~= nil) then
             have["i" .. item] = true
             list[#list + 1] = { item = item }
         end
@@ -175,8 +178,8 @@ local function Wanted()
         end
     end
     local uses = ns.Guide.Uses()
-    for _, item in ipairs(uses or {}) do Item(item) end
-    for _, item in ipairs(ns.Items.QuestItems()) do Item(item) end
+    for _, item in ipairs(uses or {}) do Item(item, true) end
+    for _, item in ipairs(ns.Items.QuestItems()) do Item(item, false) end
     local foes, friends = ns.Guide.Targets()
     for _, name in ipairs(friends or {}) do Name(name, false) end
     for _, name in ipairs(foes or {}) do Name(name, true) end
@@ -204,7 +207,7 @@ local function Build()
     end
     ns.On("BAG_UPDATE_COOLDOWN", Redraw)
     -- Items come and go in the bags, quest items with quests: the row anew, as the guide is shown now.
-    local again = Core.Later(function() Icons.Update(ns.Steps.Frame() ~= nil, ns.Guide.Known()) end, 0.3)
+    local again = Core.Later(function() Icons.Update(ns.Steps.Frame() ~= nil) end, 0.3)
     ns.On("BAG_UPDATE_DELAYED", again)
     ns.On("QUEST_LOG_UPDATE", again)
 end

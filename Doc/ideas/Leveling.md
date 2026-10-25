@@ -13,9 +13,16 @@ not copied from any guide.
 **Decision (Saneroki, 2026-10-25):** a module of its own, *Speed Leveling* (`SaneUI_SpeedLeveling`), with one key
 for questing, pressed again and again: it loots the corpse beside you, finds what your quests and your leveling
 guide want around you, marks it with a skull, and attacks it or talks to it. Its targets come from the quest log
-(Core's data) and from the step at hand of a leveling guide Sane UI knows (a known addon, `Core.Neighbours`);
-our own routes take that guide's place once they are there. Nothing happens without a key press: an addon may
-target, mark, attack and interact only by the game's secure ways, and looting a corpse needs the player's press.
+(Core's data) and from the step at hand of the guide being followed; our own routes are a further source once they
+are there. Nothing happens without a key press: an addon may target, mark, attack and interact only by the game's
+secure ways, and looting a corpse needs the player's press.
+
+**Decision (Saneroki, 2026-10-25), superseding the known-addon dependency:** Speed Leveling is independent of any
+other addon at runtime. It runs leveling guides itself: the guides you paste as text, and the guides you bought,
+opened for your own account from their import string (`Unlock.lua`; the string is locked to the buyer's account and
+Sane UI opens it only for the account played). Of the leveling guide Sane UI knows it reads only the words of its
+text format and the recipe its bought guides are locked by (`Core.Neighbours.Format`, `Core.Neighbours.Lock`,
+copies), and nothing of the addon is called at runtime. The intended setup has no other leveling addon installed.
 
 ## Where it stands (2026-10-25)
 
@@ -28,22 +35,24 @@ target, mark, attack and interact only by the game's secure ways, and looting a 
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the
   hearth when the guide's step says so, and one quest item when nothing wanted is around.
 - **Decision (Saneroki, 2026-10-25): the guide over the world, in Speed Leveling.** Its steps over the world, no
-  window: the zone, how far, the steps at hand, the next steps fading; a click skips, a right click goes back.
-  Where its steps come from, both: the guide the leveling guide Sane UI knows has loaded, while it is loaded (its own
-  window made unseen meanwhile; `Core.Neighbours.Book`), else guides pasted as text in that guide's format, read and
-  run by our own code (`Format.lua`, `Run.lua`). Its import strings are locked to the buyer's account and are never
-  read. Our own routes, once there, are a third place for its steps.
-- **Built: the guide over the world** (`src/SpeedLeveling/README.md`, *The guide over the world*): the view, the
-  guides kept as text and their window, the engine that runs a pasted guide, the known guide's loaded guide read.
+  window: the zone, how far, the steps at hand, the next steps fading; a click skips, a right click goes back. Its
+  steps come from a guide run by our own engine (`Format.lua`, `Lines.lua`, `Run.lua`): guides you paste as text, and
+  the guides you bought, opened for your own account (`Unlock.lua`). Our own routes, once there, are a further source.
+- **Built: the guide over the world** (`src/SpeedLeveling/README.md`): the view, the guides kept and their window,
+  the engine that runs a guide, the import string of bought guides opened for the account (checked offline against
+  the real paid guide: 191 guides, 15,129 steps for a Horde character, all read and run with no error).
 - **Decision (Saneroki, 2026-10-25), the same day:** the arrow to the step's place in the far herbs' leather ring
-  with its point, at the view's top; the view's words in Expressway; the next steps greyed out; a right click opens
-  the known guide's own menu; its boxes of targets and items gathered under the view. Built.
+  with its point; the view's words in Expressway; the next steps greyed out. Built.
 - **Decision (Saneroki, 2026-10-25), then:** the arrow a part of its own, placed in Edit Mode; in its hole a picture
   of what to do there (talk, kill, loot, use, ...); under it what to do, the yards and the time to get there; the
-  targets and items as clean icons only over the guide's top, our own buttons in place of the known guide's boxes.
-  Built.
-- **Not yet:** the routes and their planner (below), the guide's way on the map, walking to the NPC found (the game's click to move), quest givers of quests
-  to take (only through the guide for now), an item to use on the creature found (the player's click).
+  targets and items as clean icons only over the guide's top, our own secure buttons. Built.
+- **Decision (Saneroki, 2026-10-25), the rebuild:** Speed Leveling made independent of any other addon and able to
+  import and open the paid guides itself (`Unlock.lua`); the key's order loot → talk → pick up → fight → find to
+  match the game's own interact button; quest givers take and hand in the guide's quests (`Quests.lua`); what is
+  found ordered nearest first by the zone you are in (the set *Spawns*); a quest Core lacks found by the game's own
+  objective words; Find's macro chained for the 255-character limit. Built.
+- **Not yet:** the routes and their planner (below), the guide's way on the map (board #158), walking to the NPC
+  found (the game's click to move), an item to use on the creature found (the player's click).
 
 ## What has to exist first
 

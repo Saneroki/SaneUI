@@ -14,11 +14,9 @@ local _, ns = ...
 --
 --  A part of its own, placed in Edit Mode apart from the guide (Core.Window), at
 --  first over the middle of the screen; shown while the guide is and it has a
---  place to go to (the switch Show the arrow). While it points to the place of
---  the leveling guide Sane UI knows, that guide's own arrow is put away
---  (Core.Lend) and given back as it was.
+--  place to go to (the switch Show the arrow).
 --
---      Arrow.Update(shown, known)   shown or not with the guide (known: the known guide's), drawn anew
+--      Arrow.Update(shown)   shown or not with the guide, drawn anew
 --      Arrow.GiveBack()
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -60,8 +58,6 @@ local SOFT = { 0.8, 0.8, 0.8 }
 
 local frame, window, holder, ring, picture, backing, words, far
 local target, step  -- where it points, the step there
-local away          -- a hidden frame of ours, where the known guide's arrow is put away
-local lent          -- the lend of that arrow
 local pace          -- { yards, at, speed }: how fast you have been closing in
 
 local function Font(name, size)
@@ -74,7 +70,7 @@ local function Font(name, size)
     return font
 end
 
--- Whether two places are the same place (the known guide's is a new table at each ask).
+-- Whether two places are the same place.
 local function Same(a, b)
     return a ~= nil and b ~= nil and a.x == b.x and a.y == b.y and a.map == b.map and a.continent == b.continent
 end
@@ -194,7 +190,7 @@ local function Build()
             local place, at = ns.Guide.Target()
             if not Same(place, target) then pace = nil end
             target, step = place, at
-            if not target then return Arrow.Update(true, ns.Guide.Known()) end
+            if not target then return Arrow.Update(true) end
             Picture()
             words:SetText(Words(step))
         end
@@ -208,27 +204,9 @@ local function Build()
     window:Place()
 end
 
--- The known guide's own arrow: put away while ours points to its place.
-local function Lend(on)
-    local own = on and Core.Neighbours.Arrow("guide")
-    if own then
-        if not away then
-            away = CreateFrame("Frame")
-            away:Hide()
-        end
-        lent = lent or Core.Lend(own)
-        lent:SetParent(away)
-    elseif lent then
-        local was = lent
-        lent = nil
-        was:Return()
-    end
-end
-
-function Arrow.Update(shown, known)
+function Arrow.Update(shown)
     target, step = nil, nil
     if shown and not ns.off and ns.options.showArrow then target, step = ns.Guide.Target() end
-    Lend(known and target ~= nil)
     if not target then
         if frame then frame:Hide() end
         pace = nil

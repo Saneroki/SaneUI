@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Speed Leveling
-## Notes: One key for questing, pressed again and again: it opens the loot of the corpse beside you, picks up what your quests want beside you, finds what your quests and your leveling guide want around you, puts a skull on it, and attacks it or talks to it; it hearths when your guide says so, and uses a quest item when nothing is around. Shows your leveling guide's steps over the world. Give it a key in the game's key bindings, under Sane UI.
+## Notes: One key for questing, pressed again and again: it loots the corpse beside you, talks to the quest giver in front of you, picks up what your quests want, attacks your foe, or finds and marks what your quests and your guide want around you; it hearths when your guide says so, and uses a quest item when nothing is around. At a quest giver it takes and hands in your guide's quests. Shows your leveling guide's steps over the world, run by Sane UI itself. Give it a key in the game's key bindings, under Sane UI.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -11,19 +11,24 @@
 
 # The module's own table, its words and settings. First: the other files will add to that table.
 SpeedLeveling.lua
-# A leveling guide written as text, read into our own shape; run for the character: where you are, what is done
+# The import string of the guides you bought, opened for the account you play
+Unlock.lua
+# A leveling guide written as text, read into our own shape; what the game says about each line; run for the character
 Format.lua
+Lines.lua
 Run.lua
-# The guide shown: the known guide's while it is loaded, else one pasted as text; what its steps at hand want
+# The guide shown and followed; what its steps at hand want for the key and the quest givers
 Guide.lua
-# What the key looks for around you, by name: your guide's step, your quests' objectives, the NPCs to hand in to;
-# the things of the world your quests want, by ID
+# What the key looks for around you, by name: your guide's steps, your quests' objectives, the NPCs to hand in to;
+# the thing of the world in front of you
 Wanted.lua
 # What the key uses: the hearth when your guide's step wants it, else one quest item when nothing is found
 Items.lua
-# The key: loot, fight, talk or find, chosen by the game's secure ways at each press
+# The key: loot, talk, pick up, fight or find, chosen by the game's secure ways at each press
 Key.lua
-# The guide over the world, its arrow, its icons to use and to target, and the window of the guides kept as text
+# What a quest giver does for your guide: takes and hands in its quests
+Quests.lua
+# The guide over the world, its arrow, its icons to use and to target, and the window of the guides kept
 Steps.lua
 Arrow.lua
 Icons.lua

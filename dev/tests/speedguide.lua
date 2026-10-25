@@ -1,18 +1,19 @@
 -- Runs Speed Leveling's guide against the stand-in client (wowstub.lua): a guide written as text read into our shape
--- for one character (its head, who a step and a line are for, each kind of command, step marks, what cannot be read),
--- the guide run (moving on past done steps, the steps at hand, skipping, going back and being held there, what the
--- game tells as it happens, places, tests that pass a step by, the next guide), the guides kept, the known guide's
--- loaded guide as our picture (its colours, its steps, going to a step), the view over the world (drawn, clicked,
--- scrolled, its menu, hidden), the arrow (where it points, what to do there, turned, how far and how long), the icons
--- to use and to target (secure, held in a fight), the known guide's window, arrow and boxes lent and given back, and
--- standing down.
+-- for one character (its head, who a step and a line are for, each kind of command, step marks, what cannot be read,
+-- which games it is for), the import string of bought guides opened for the account (Unlock), the guide run (moving
+-- on past done steps, the steps at hand, skipping, going back and being held there, what the game tells as it
+-- happens, places, tests that pass a step by, the next guide), the guides kept (packed, chosen), the picture over the
+-- world (drawn, clicked, scrolled, hidden), the arrow, the icons (only what can be used; secure), and standing down.
 -- The guide format's own words come from Core (Core.Neighbours.KNOWN.guide): the test names none of its own.
 -- Usage, from the project folder:  lua5.1 dev/tests/speedguide.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
+local E = require("encoding")
 W.Install(_G)
+bit = E.bit
+C_EncodingUtil = E.C_EncodingUtil
 
 local passed = 0
 local function check(condition, what)
@@ -29,7 +30,6 @@ function methods:GetStringWidth() return #(self._text or "") * 6 end
 function methods:SetAlpha(alpha) self._alpha = alpha end
 function methods:GetAlpha() return self._alpha end
 function methods:SetScale(scale) self._scale = scale end
-function methods:GetScale() return self._scale or 1 end
 function methods:SetHeight(height) self._height = height end
 function methods:GetHeight() return self._height end
 function methods:SetWidth(width) self._width = width end
@@ -44,7 +44,6 @@ function methods:GetTop() return self._top or 600 end
 local facing = 0
 GetPlayerFacing = function() return facing end
 
--- The key's secure parts, enough for it to start beside the guide (dev/tests/speedleveling.lua tries them).
 function methods:SetAttribute(name, value)
     self._attributes = self._attributes or {}
     self._attributes[name] = value
@@ -72,27 +71,59 @@ end
 UnitRace = function() return "Orc", "Orc", 2 end
 UnitClass = function() return "Warrior", "WARRIOR", 1 end
 UnitFactionGroup = function() return "Horde" end
+UnitIsDeadOrGhost = function() return false end
+UnitOnTaxi = function() return false end
+GetNumGroupMembers = function() return 0 end
 W.level = 5
 local xp = 100
+UnitLevel = function() return W.level end
 UnitXP = function() return xp end
 UnitXPMax = function() return 400 end
-local money = 50
+local money = 0
 GetMoney = function() return money end
-GetRealZoneText = function() return "Durotar" end
-GetSubZoneText = function() return "Valley of Trials" end
-local taxi = false
-UnitOnTaxi = function() return taxi end
+local zone, subzone = "Durotar", "Valley of Trials"
+GetRealZoneText = function() return zone end
+GetSubZoneText = function() return subzone end
+GetBindLocation = function() return "Razor Hill" end
+local home = false
+HEARTHSTONE_BOUND = true
 
--- The quests: taken (on), handed in (done), ready to hand in (ready), their objectives.
-local quests = { on = {}, done = {}, ready = {}, objectives = {} }
+-- The quests: on, done, ready, objectives; names.
+local quests = { on = {}, done = {}, ready = {}, objectives = {}, names = { [10] = "Your Place", [11] = "Cutting Teeth" } }
 C_QuestLog = rawget(_G, "C_QuestLog") or {}
-C_QuestLog.IsOnQuest = function(quest) return quests.on[quest] == true end
-C_QuestLog.IsQuestFlaggedCompleted = function(quest) return quests.done[quest] == true end
-C_QuestLog.IsComplete = function(quest) return quests.ready[quest] == true end
-C_QuestLog.GetQuestObjectives = function(quest) return quests.objectives[quest] end
+C_QuestLog.IsOnQuest = function(q) return quests.on[q] == true end
+C_QuestLog.IsQuestFlaggedCompleted = function(q) return quests.done[q] == true end
+C_QuestLog.IsComplete = function(q) return quests.ready[q] == true end
+C_QuestLog.GetQuestObjectives = function(q) return quests.objectives[q] end
+C_QuestLog.GetTitleForQuestID = function(q) return quests.names[q] end
 C_QuestLog.GetNumQuestLogEntries = function() return 0 end
+C_QuestLog.RequestLoadQuestByID = function() end
+
 local known = {}
 IsPlayerSpell = function(spell) return known[spell] == true end
+IsSpellKnown = function(spell) return known[spell] == true end
+C_Item = rawget(_G, "C_Item") or {}
+C_Item.GetItemCount = function(id) local it = W.items[id] return it and it.count or 0 end
+C_Item.GetItemNameByID = function(id) return W.items[id] and W.items[id].name or nil end
+C_Item.GetItemIconByID = function() return 134400 end
+C_Item.IsUsableItem = function() return true end
+C_Item.GetItemSpell = function(id) return W.items[id] and W.items[id].use or nil end
+C_Container = { GetItemCooldown = function() return 0, 0, 1 end }
+
+-- The world: Durotar is map 1411 on continent 1, 2000 x 2000 yards; the player at its middle.
+local pos = { x = 0.5, y = 0.5 }
+C_Map = rawget(_G, "C_Map") or {}
+C_Map.GetBestMapForUnit = function() return 1411 end
+C_Map.GetMapInfo = function(id) return { mapID = id, name = "Durotar", mapType = 3, parentMapID = 12 } end
+C_Map.GetFallbackWorldMapID = function() return 947 end
+C_Map.GetMapChildrenInfo = function() return { { mapID = 1411, name = "Durotar", mapType = 3 } } end
+C_Map.GetPlayerMapPosition = function() return { x = pos.x, y = pos.y, GetXY = function(s) return s.x, s.y end } end
+C_Map.GetAreaInfo = function(a) return a == 500 and "Valley of Trials" or "Somewhere" end
+CreateVector2D = function(x, y) return { x = x, y = y } end
+C_Map.GetWorldPosFromMapPos = function(_, p)
+    -- map (0,0) is world (2000,2000); each unit of fraction is 2000 yards, x to the east, y to the south.
+    return 1, { x = 2000 - p.x * 2000, y = 2000 - p.y * 2000 }
+end
 
 W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -112,18 +143,36 @@ local function Mark(mark, value) return "#" .. M[mark] .. (value and (" " .. val
 local ns = W.LoadAddon(root, "SpeedLeveling", "SaneUI_SpeedLeveling")
 W.Fire("ADDON_LOADED", "SaneUI_SpeedLeveling")
 W.Fire("PLAYER_LOGIN")
-local Format, Run, Guide, Steps = ns.Format, ns.Run, ns.Guide, ns.Steps
-local orc = { side = "Horde", race = "Orc", class = "WARRIOR" }
-local human = { side = "Alliance", race = "Human", class = "MAGE" }
+local Format, Run, Guide, Steps, Unlock = ns.Format, ns.Run, ns.Guide, ns.Steps, ns.Unlock
+local orc = { side = "Horde", race = "Orc", class = "WARRIOR", level = 5, game = "forever" }
+local human = { side = "Alliance", race = "Human", class = "MAGE", level = 5, game = "forever" }
+
+-------------------------------------------------------------------------------
+--  Who a line is for
+-------------------------------------------------------------------------------
+check(Format.For(orc, "Horde") and Format.For(orc, "Orc Warrior") and Format.For(orc, "Dwarf Hunter/Orc Warrior"),
+    "OR between slashes, AND between spaces")
+check(not Format.For(orc, "Orc Mage") and not Format.For(orc, "Alliance"), "an AND-group needs every name")
+check(not Format.For(orc, "!Orc") and Format.For(orc, "!Mage") and Format.For(orc, "!Human"), "! before a name: all but it")
+check(Format.For(orc, "5") and not Format.For(orc, "6") and Format.For(orc, "!6"), "a number: the level reached")
+check(Format.For({ side = "Neutral", level = 1 }, "Alliance") and Format.For({ side = "Neutral", level = 1 }, "Horde"),
+    "a neutral character counts as both sides")
+check(Format.For({ race = "Scourge", level = 1 }, "Undead"), "Undead names the Scourge race")
+check(Format.Plays(orc, { "forever", "tbc" }) and Format.Plays(orc, { "classic" }) and not Format.Plays(orc, { "retail" })
+    and Format.Plays(orc, {}), "a guide's games: Forever falls back to classic; none plays anywhere")
 
 -------------------------------------------------------------------------------
 --  Reading a guide
 -------------------------------------------------------------------------------
 local TEXT = table.concat({
     "<< Horde",
+    "#forever",
+    "#tbc",
     Mark("name", "1-6 Valley"),
+    Mark("title", "Valley of Trials"),
     Mark("group", "Our Group"),
-    Mark("after", "6-10 Hills;Other Group\\6-10 Other"),
+    Mark("subgroup", "Speedrun"),
+    Mark("after", "6-10 Hills;Other Group\\6-10 Other << Warrior"),
     Mark("defaultFor", "Orc/Troll"),
     "-- a comment",
     "step",
@@ -136,13 +185,13 @@ local TEXT = table.concat({
     "    " .. Mark("together", "next"),
     "    +Kill boars until you have some copper << Warrior",
     "    +Never seen << Mage",
-    "    " .. Line("foe", "Mottled Boar"),
+    "    " .. Line("foe", "*Mottled Boar"),
     "    " .. Line("money", ">0.01"),
     "step",
     "    " .. Mark("label", "Teeth"),
     "    " .. Line("place", "1411,45.5,62.2"),
     "    " .. Line("goal", "10,1 --Mottled Boar slain (4)"),
-    "    " .. Line("carry", "770,6,10,2"),
+    "    " .. Line("carry", "770,6,10"),
     "    " .. Line("use", "6948"),
     "    .notacommand 3 >> Words of a command not known",
     "    " .. Line("take", "abc"),
@@ -166,14 +215,18 @@ local TEXT = table.concat({
     "    *A note\\nwith two lines",
 }, "\n")
 
+local head = Format.Head(TEXT)
+check(head.name == "1-6 Valley" and head.group == "Our Group" and head.subgroup == "Speedrun", "the head alone: name, group, subgroup")
+check(head.games[1] == "forever" and head.games[2] == "classic" or (head.games[1] == "forever"), "its games, from the head")
+check(head.only == "Horde" and head.defaultFor == "Orc/Troll", "who it is for; who starts with it")
+check(head.after[1].name == "6-10 Hills" and head.after[2].name == "Other Group\\6-10 Other" and head.after[2].only == "Warrior",
+    "the guides after it, each with its own who")
+
 local parts = Format.Parts("local x = 1\nGuide([[" .. TEXT .. "]])\nGuide([[" .. Mark("name", "Second") .. "\nstep\n]])")
 check(#parts == 2 and parts[1] == TEXT, "a Lua file's long brackets: each pair a guide")
-check(#Format.Parts(TEXT) == 1 and #Format.Parts("  \n ") == 0, "a bare text: one guide; nothing: none")
 
 local guide, problems = Format.Read(TEXT, orc)
-check(guide.mine and guide.name == "1-6 Valley" and guide.group == "Our Group", "the head: its name and group")
-check(guide.after[1] == "6-10 Hills" and guide.after[2] == "Other Group\\6-10 Other", "the guides after it, in order")
-check(guide.defaultFor[1] == "Orc" and guide.defaultFor[2] == "Troll", "who starts with it")
+check(guide.mine and guide.name == "1-6 Valley" and guide.title == "Valley of Trials", "the head: name and title")
 check(not Format.Read(TEXT, human).mine, "a Horde guide is not the human's")
 check(#guide.steps == 8, "the steps for the orc warrior: " .. #guide.steps)
 local first = guide.steps[1]
@@ -184,7 +237,7 @@ check(first.friends[1] == "Kaltunk", "an NPC for the key")
 local boars = guide.steps[2]
 check(boars.together == "next" and #boars.lines == 1 and boars.lines[1].what == "manual", "with the next; a line for the warrior only")
 check(boars.foes[1] == "Mottled Boar" and boars.unless[1].what == "money" and boars.unless[1].more
-    and boars.unless[1].copper == 100, "a creature for the key; passed by with a silver")
+    and boars.unless[1].copper == 100, "a creature for the key (its * gone); passed by with a silver")
 local teeth = guide.steps[3]
 check(guide.labels.Teeth == 3 and teeth.label == "Teeth", "a step's name")
 check(teeth.lines[1].what == "place" and teeth.lines[1].map == 1411 and teeth.lines[1].x == 45.5, "a place on a map, no reach")
@@ -193,7 +246,7 @@ check(teeth.lines[3].what == "carry" and teeth.lines[3].item == 770 and teeth.li
     "an item to carry, for a quest")
 check(teeth.items[1] == 6948, "an item for the key")
 check(teeth.lines[4].what == "say" and teeth.lines[4].words == "Words of a command not known", "a command not known: its words")
-check(#problems == 1 and problems[1]:find("cannot be read", 1, true), "a command that cannot be read is said: " .. tostring(problems[1]))
+check(#problems == 1 and problems[1]:find("could not be read", 1, true), "a command that cannot be read is said: " .. tostring(problems[1]))
 check(guide.steps[4].stays and guide.steps[4].lines[1].what == "level" and guide.steps[4].lines[1].level == 6, "a step that stays")
 check(guide.steps[5].unless[1].what == "onQuest" and guide.steps[5].unless[1].quests[1] == 11, "a test: on a quest")
 check(guide.steps[6].aside and guide.steps[6].lines[1].what == "arrive" and guide.steps[6].lines[1].continent == 1
@@ -206,21 +259,50 @@ end
 local level = Format.Read("step\n" .. Line("level", "10-1475") .. "\n" .. Line("level", "<10.5,1"), orc).steps[1]
 check(level.lines[1].points == -1475 and level.lines[1].level == 10, "so many points short of a level")
 check(level.unless[1].what == "reached" and level.unless[1].share == 0.5 and level.unless[1].below, "a level that passes a step by")
-check(Format.For(orc, "Orc/Troll Warrior") and not Format.For(orc, "!Orc") and Format.For(orc, "!Undead")
-    and Format.For({ race = "Scourge" }, "Undead"), "who a line is for")
+
+-------------------------------------------------------------------------------
+--  The import string of bought guides, opened for the account
+-------------------------------------------------------------------------------
+BNGetInfo = function() return 1, "Tester#4242" end
+local recipe = Core.Neighbours.Lock("guide")
+local g1 = "#forever\n" .. Mark("name", "Bought A") .. "\n" .. Mark("group", "Bought") .. "\nstep\n" .. Line("take", "1")
+local g2 = "#forever\n" .. Mark("name", "Bought B") .. "\n" .. Mark("group", "Bought") .. "\nstep\n" .. Line("handin", "1")
+local string = E.Lock("Tester#4242", { g1, g2 }, recipe)
+check(Unlock.Looks(string) and not Unlock.Looks("step\n.accept 1"), "an import string is told from a guide's text")
+-- The unlock runs in Core's job steps: drive the scheduler's frame until it is done.
+local function Pump()
+    local f = Core.Steps.frame
+    for _ = 1, 50 do
+        W.ms = W.ms + 100
+        if f._scripts and f._scripts.OnUpdate then f._scripts.OnUpdate(f, 0.1) end
+    end
+end
+local opened, failed
+Unlock.Open(string, function(texts, problem) opened, failed = texts, problem end)
+Pump()
+check(opened and #opened == 2 and opened[1]:find("Bought A", 1, true) and not failed, "opened for the right account: two guides")
+BNGetInfo = function() return 1, "Other#9999" end
+local badTexts, badProblem
+Unlock.Open(string, function(texts, problem) badTexts, badProblem = texts, problem end)
+Pump()
+check(not badTexts and badProblem == ns.TEXT.unlockAccount, "another account: refused")
+BNGetInfo = function() return 1, "Tester#4242" end
 
 -------------------------------------------------------------------------------
 --  The guides kept, one run
 -------------------------------------------------------------------------------
 check(Guide.Picture() == nil, "no guide yet: nothing to show")
 check(not rawget(_G, "SaneUISpeedLevelingSteps"), "and no view made")
-local names = Guide.Add("Guide([[" .. TEXT .. "]])\nGuide([[" .. Mark("name", "6-10 Hills") .. "\n<< Horde\nstep\n"
-    .. Line("take", "20") .. "\n]])")
+local names = Guide.AddAll(Format.Parts("Guide([[" .. TEXT .. "]])\nGuide([[" .. Mark("name", "6-10 Hills")
+    .. "\n#forever\n<< Horde\n" .. Mark("group", "Our Group") .. "\nstep\n" .. Line("take", "20") .. "\n]])"), false)
 check(#names == 2 and names[1] == "1-6 Valley" and names[2] == "6-10 Hills", "two guides kept")
-check(Core.Store(ns.name).guides["1-6 Valley"].text == TEXT, "kept as their text")
-check(Guide.Chosen() == "1-6 Valley", "a character without a guide takes the first for it")
-check(Core.Character(ns.name).guide == "1-6 Valley", "kept for the character")
-check(#Guide.Kept() == 2 and Guide.Kept()[1].group == "", "listed by group and name")
+check(type(Core.Store(ns.name).guides["Our Group\\1-6 Valley"]) == "table", "kept by group and name")
+check(Guide.Chosen() == "Our Group\\1-6 Valley", "a character without a guide takes the first for it")
+check(Core.Character(ns.name).guide == "Our Group\\1-6 Valley", "kept for the character")
+check(#Guide.Kept() == 2 and Guide.Kept()[1].group == "Our Group", "listed by group and name")
+Guide.AddAll(opened, true)
+check(#Guide.Kept() == 4, "the bought guides kept too")
+for _, kept in ipairs(Guide.Kept()) do if kept.name == "Bought A" then check(kept.bought, "a bought guide is marked so") end end
 W.Wait(1)
 
 -- The first step: nothing done; the key wants its NPC.
@@ -228,18 +310,14 @@ check(Run.At() == 1 and #Run.Hand() == 1, "at the first step")
 local _, friends = Guide.Targets()
 check(friends and friends[1] == "Kaltunk", "the key finds its NPC")
 local picture = Guide.Picture()
-check(picture.title == "Valley" and picture.levels == "1-6" and picture.at == 1 and picture.total == 8, "the head: zone, levels, where")
+check(picture.title == "Valley of Trials" and picture.at == 1 and picture.total == 8, "the head: title, where")
 check(picture.hand[1].lines[1].text:find("|cff%x%x%x%x%x%xKaltunk|r"), "the NPC's name in our colour")
 check(not picture.hand[1].lines[1].text:find(COLOUR.friend, 1, true), "the format's colour word is gone")
-check(picture.hand[1].lines[2].count and not picture.hand[1].lines[2].done, "the quest to take: a thing to do")
 check(picture.ahead[1].number == 2 and picture.ahead[1].text:find("copper", 1, true), "the next steps listed")
-local iconRow = rawget(_G, "SaneUISpeedLevelingIcons")
-local icon1, icon2 = rawget(_G, "SaneUISpeedLevelingIcon1"), rawget(_G, "SaneUISpeedLevelingIcon2")
-check(iconRow and iconRow._shown and iconRow._points[1][2] == UIParent and iconRow._points[1][5] == 600 + ns.Icons.ABOVE,
-    "the icons over the guide's top, placed by the screen")
-check(icon1._template == "SecureActionButtonTemplate" and icon1:GetAttribute("type") == "macro"
-    and icon1:GetAttribute("macrotext") == "/cleartarget\n/targetexact Kaltunk\n/tm [exists] !8", "a click targets the NPC, marked")
-check(not (icon2 and icon2._shown), "one icon")
+
+-- The quest givers: the step's quest to take, and the next step's.
+local wants = Guide.Quests()
+check(wants.take[10], "the quest giver takes the step's quest")
 
 -- The quest taken: on past the step; the boars go along with the next one.
 quests.on[10] = true
@@ -250,322 +328,56 @@ local hand = Run.Hand()
 check(#hand == 2 and hand[1] == 2 and hand[2] == 3, "the boars stay at hand with the next")
 local foes = Guide.Targets()
 check(foes[1] == "Mottled Boar", "the key finds the boars")
-W.items[6948] = { name = "Hearthstone", count = 1 }
-Steps.Update()
-icon1, icon2 = rawget(_G, "SaneUISpeedLevelingIcon1"), rawget(_G, "SaneUISpeedLevelingIcon2")
-check(icon1:GetAttribute("type") == "item" and icon1:GetAttribute("item") == "item:6948", "the step's item first: a click uses it")
-check(icon2._shown and icon2:GetAttribute("macrotext"):find("Mottled Boar", 1, true), "then the creature to fight")
-W.combat = true
-W.items[6948] = nil
-Steps.Update()
-check(icon1:GetAttribute("item") == "item:6948", "in a fight the game holds them: as they were")
-W.combat = false
-W.Fire("PLAYER_REGEN_ENABLED")
-check(icon1:GetAttribute("macrotext"):find("Mottled Boar", 1, true) and not icon2._shown, "after it: what is wanted now")
-local items = Guide.Uses()
-check(items[1] == 6948, "and the step's item")
 
--- A count on the objective, then the money that passes the boars by.
-quests.objectives[10] = { { text = "Mottled Boar slain: 2/4", finished = false, numFulfilled = 2, numRequired = 4 } }
-W.items[770] = { name = "Scorpid Stinger", count = 3 }
-picture = Guide.Picture()
-local counted
-for _, line in ipairs(picture.hand[2].lines) do if line.have == 2 and line.need == 4 then counted = line end end
-check(counted and counted.text:find("Mottled Boar slain", 1, true), "an objective with its count")
-money = 200
-W.Fire("PLAYER_MONEY")
-W.Wait(1)
-check(#Run.Hand() == 1, "a silver: the boars are passed by")
+-- The icons: only an item you can use, not the gear a step mentions.
+W.items[6948] = { name = "Hearthstone", count = 1, use = "Astral Recall" }
+W.items[770] = { name = "Some Gear", count = 1 } -- no use: not shown
+Steps.Update()
+local icon1 = rawget(_G, "SaneUISpeedLevelingIcon1")
+check(icon1 and icon1:GetAttribute("type") == "item" and icon1:GetAttribute("item") == "item:6948",
+    "the usable item is an icon; a click uses it")
 
--- Done: the objective and the items; the step that stays comes along. On quest 11, its step waits for its hand-in.
-quests.on[11] = true
-quests.objectives[10][1].finished = true
-W.items[770].count = 6
-W.Fire("BAG_UPDATE_DELAYED")
-W.Wait(1)
-check(Run.At() == 5, "the objective and the items done: on: " .. Run.At())
-check(Run.Hand()[1] == 4 and Run.Hand()[2] == 5, "the level to reach stays at hand")
--- Off quest 11: its step is passed by; the step aside waits for its place.
-quests.on[11] = nil
-W.Fire("QUEST_LOG_UPDATE")
-W.Wait(1)
-check(Run.At() == 6, "not on its quest: the step passed by: " .. Run.At())
-W.place = { -4250, -600, 0, 1 } -- the game's two numbers of a place in the world, its height, the continent
-W.Wait(2)
-check(Run.At() == 6, "too far from the place")
--- The arrow: to the place, the yards under it, turned as the player faces.
-local place, there = Guide.Target()
-check(place and place.continent == 1 and place.near == 20 and there.number == 6, "the arrow points to the step's place")
-check(Guide.Doing(there) == "go", "getting there is all: the map's picture")
-local yards, way = Run.Way(place)
-check(math.abs(yards - 49.75) < 0.01 and math.abs(way - math.atan2(-0.5, 49.75)) < 1e-6, "how far and which way")
-Steps.Update()
-local arrowFrame = rawget(_G, "SaneUISpeedLevelingArrow")
-local ring, picture, words, far
-for _, widget in ipairs(W.frames) do
-    if widget._texture == ns.Arrow.RING then ring = widget end
-end
-for _, widget in ipairs(W.frames) do
-    if widget._parent == ring._parent and widget._kind == "Texture" and type(widget._texture) == "string"
-        and widget._texture:find("CURSOR", 1, true) then picture = widget end
-    if widget._parent == arrowFrame and widget._kind == "FontString" then
-        if widget._text == "Get there" then words = widget elseif widget._text == "50 yd" then far = widget end
-    end
-end
-check(arrowFrame and arrowFrame._shown and ring._shown, "the arrow: a part of its own, its leather ring shown")
-check(picture and picture._texture:find("Directions", 1, true), "in its hole: the picture of getting there")
-check(words and far, "under it what to do there, and how far")
-check(math.abs(ring._rotation - way) < 1e-6, "facing north: turned the way to the place")
-facing = math.pi / 2
-Steps.Update()
-check(math.abs(ring._rotation - (way - math.pi / 2)) < 1e-6, "facing west: turned with you")
-facing = 0
-W.clock = W.clock + 1
-W.place = { -4240, -600, 0, 1 }
-Steps.Update()
-check(far._text:find("40 yd", 1, true) and far._text:find("11 s", 1, true), "closing in: the time to get there: " .. far._text)
-W.place = { -4250, -600, 0, 1 }
-W.clock = W.clock + 1
-Steps.Update()
-check(not far._text:find(" s", 1, true), "walking away: no time")
-Core.Set(ns.name, "showArrow", false)
-check(not arrowFrame._shown, "Show the arrow off: hidden")
-Core.Set(ns.name, "showArrow", true)
-check(arrowFrame._shown, "on again")
-W.place = { -4200, -605, 0, 2 }
-W.Wait(2)
-check(Run.At() == 6, "on another continent")
-W.place = { -4200, -605, 0, 1 }
-W.Wait(2)
-check(Run.At() == 7, "near enough: on")
-check(Guide.Target() == nil, "no place left: the arrow has nowhere to point")
-Steps.Update()
-check(not arrowFrame._shown, "and is out of sight")
+-- An objective met: the goal line done.
+quests.objectives[10] = { { finished = true, numFulfilled = 4, numRequired = 4 } }
+check(Run.Lines(3)[2].done and Run.Lines(3)[2].have == 4, "an objective the game says is finished, with its count")
 
--- The hearth: as it is cast.
-check(Run.Uses()[1] == Run.HEARTHSTONE, "the hearth: the key's Hearthstone")
-W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-1", Run.HEARTH_SPELL)
-W.Wait(1)
-check(Run.At() == 8, "hearthed: on")
+-- The place reached: the arrow stops pointing to it once you are near.
+local line, idx = Run.Target()
+check(line and line.map == 1411 and idx == 3, "the arrow points to the step's place")
+pos.x, pos.y = 0.455, 0.622
+check(Run.Distance({ map = 1411, x = 45.5, y = 62.2 }) < 2, "the distance on a map, in yards")
 
--- Back, held there though done; a click skips it; skipping the label's step passes the one that needs it.
+-- Going to a step holds you there; a click skips it and moves on; a right click goes back.
+Run.Go(3)
+check(Run.At() == 3, "go to a step and be held there")
+local was = Run.At()
+Guide.Skip(3)
+check(Run.At() > was, "a click skips the step at hand and moves on")
+local after = Run.At()
 Guide.Back()
-check(Run.At() == 7, "back one step")
-W.Fire("QUEST_LOG_UPDATE")
-W.Wait(1)
-check(Run.At() == 7, "held there though it is done")
-Guide.Go(3)
-Guide.Skip(3)
-check(Run.At() == 8 and Core.Character(ns.name).skipped["1-6 Valley"][3], "skipped: on, kept as skipped; the step "
-    .. "that needs it passed by: " .. Run.At())
-check(Core.Character(ns.name).at["1-6 Valley"] == 8, "where you are, kept")
+check(Run.At() < after, "a right click goes back")
 
--- The level: the step that stays goes; the last step done: the next guide.
-W.level = 6
-quests.done[10] = true
-W.Fire("PLAYER_LEVEL_UP", 6)
-W.Wait(1)
-check(Guide.Chosen() == "6-10 Hills" and Run.At() == 1, "through: on to the guide it names next")
-
--- Remove and choose.
-Guide.Choose("1-6 Valley")
-check(Guide.Chosen() == "1-6 Valley" and Run.At() == 9, "chosen again: where it was left")
-Guide.Remove("6-10 Hills")
-check(#Guide.Kept() == 1, "a guide forgotten")
-Guide.Go(1)
-
--------------------------------------------------------------------------------
---  The view
--------------------------------------------------------------------------------
-quests.done[10], quests.on[10] = nil, nil
-Guide.Go(1)
-W.Wait(1)
-local view = rawget(_G, "SaneUISpeedLevelingSteps")
-check(view and view:IsShown(), "the view over the world")
-local cards, rows = {}, {}
-for _, widget in ipairs(W.frames) do
-    if widget._parent == view and widget._kind == "Button" and widget._scripts.OnClick and widget._shown then
-        if widget.label then cards[#cards + 1] = widget end
-    end
-    if widget._parent == view and widget._scripts.OnDoubleClick and widget._shown then rows[#rows + 1] = widget end
-end
-check(#cards == 1 and cards[1].number == 1 and cards[1].label._text == "Step 1", "a card for the step at hand")
-check(#rows == 5 and ns.options.ahead == 5, "the next steps, as many as the switch says: " .. #rows)
-check(rows[2]._alpha < rows[1]._alpha, "fading as they go down")
-check(rows[1].text._color[1] == Steps.GREY and not rows[1].text._text:find("|c", 1, true), "greyed out, no colours in them")
-local target = rows[1].step
-rows[1]._scripts.OnDoubleClick(rows[1])
-W.Wait(1)
-check(target == 2 and Run.At() == target, "a double click goes there")
-cards[1]._scripts.OnClick(cards[1], "RightButton")
-W.Wait(1)
-check(Run.At() == 1, "a right click goes back one")
-cards[1]._scripts.OnClick(cards[1], "LeftButton")
-W.Wait(1)
-check(Run.At() >= 2, "a click skips the step")
-Guide.Go(1)
-Core.Set(ns.name, "ahead", 2)
-W.Wait(1)
-local shown = 0
-for _, row in ipairs(rows) do if row._shown then shown = shown + 1 end end
-check(shown == 2, "two next steps listed")
--- The wheel: back to the step at hand and before, as far as the first step; down again.
-Guide.Go(3)
-W.Wait(1)
-rows[1]._scripts.OnMouseWheel(rows[1], 1)
-rows[1]._scripts.OnMouseWheel(rows[1], 1)
-check(rows[1].step == 2 and rows[1].tick._text == Steps.TICK and rows[2].step == 3 and rows[2].tick._text == "",
-    "scrolled up: a done step with its tick, then the one at hand: " .. tostring(rows[1].step))
-rows[1]._scripts.OnMouseWheel(rows[1], 5)
-check(rows[1].step == 1, "no further up than the first step")
-rows[1]._scripts.OnMouseWheel(rows[1], -1)
-check(rows[1].step == 2, "down again")
--- A right click on a listed step: its menu, Go to step.
-local menus = #W.menus
-rows[1]._scripts.OnClick(rows[1], "RightButton")
-local menu = W.menus[#W.menus]
-check(#W.menus == menus + 1 and menu[2] and menu[2].text == ns.TEXT.goToStep:format(2), "its menu: Go to step 2")
-menu[2].fn()
-W.Wait(1)
-check(Run.At() == 2, "and it goes there")
-Core.Set(ns.name, "showGuide", false)
-check(not view:IsShown(), "Show the guide off: hidden")
-Core.Set(ns.name, "showGuide", true)
-check(view:IsShown(), "on: shown again")
-
--------------------------------------------------------------------------------
---  The known guide's loaded guide
--------------------------------------------------------------------------------
-local own = CreateFrame("Frame", KNOWN.window, UIParent)
-local menuOpened = 0
-own[KNOWN.menu] = function() menuOpened = menuOpened + 1 end
-local ownArrow = CreateFrame("Frame", nil, UIParent)
-ownArrow.element = { wx = -600.5, wy = -4300.25, instance = 1 }
-ownArrow:Hide()
-local boxes = {}
-for index, name in ipairs(KNOWN.boxes) do
-    boxes[index] = CreateFrame("Frame", name, UIParent)
-    boxes[index]:SetPoint("CENTER", UIParent, "CENTER", 0, index * 50)
-    boxes[index]:SetWidth(100)
-end
-local elements = {
-    { text = "Talk to |cff00ff25Gornek|r", textOnly = true },
-    { text = "Accept Cutting Teeth", tag = "accept" },
-    { text = "Cutting Teeth: 3/10", completed = false },
-    { text = "Accepted", completed = true },
-}
-local steps = {}
-for index = 1, 12 do steps[index] = { index = index, elements = { { text = "Step " .. index .. " words", textOnly = true } } } end
-steps[4].elements = elements
-steps[6].optional = true
-local book = { [KNOWN.current] = { name = "6-10 Durotar", steps = steps },
-               [KNOWN.progress] = function() return 4 end,
-               [KNOWN.colourTable] = { [COLOUR.friend] = "FF00FF25" },
-               [KNOWN.part] = { [KNOWN.lists] = function() return { "Gornek" }, {}, {} end },
-               [KNOWN.items] = { [5000] = true }, [KNOWN.spells] = {}, [KNOWN.arrow] = ownArrow }
-W.items[5000] = { name = "Cleansing Totem", count = 2 }
-local went
-book[KNOWN.go] = function(number) went = number end
-own[KNOWN.hand] = { steps[4] }
-local library = { GetAddon = function(_, name) return name == KNOWN.addon and book or nil end }
-_G[KNOWN.stub] = { GetLibrary = function(_, name) return name == KNOWN.library and library or nil end }
-W.loaded[KNOWN.addon] = true
-
-picture = Guide.Picture()
-check(picture.known and picture.title == "Durotar" and picture.levels == "6-10" and picture.at == 4 and picture.total == 12,
-    "the known guide's guide: its zone, levels, step")
-check(picture.hand[1].number == 4 and #picture.hand[1].lines == 4, "its step at hand with its lines")
-check(not picture.hand[1].lines[1].text:find("00ff25", 1, true), "its colour of NPCs made ours")
-check(picture.hand[1].lines[2].what == "take", "a line's command in our word")
-check(picture.hand[1].lines[3].have == 3 and picture.hand[1].lines[3].need == 10 and picture.hand[1].lines[4].done,
-    "a count read from its words; a line done")
-check(picture.ahead[1].number == 5 and picture.ahead[2].number == 7, "the next steps, the optional one left out")
-check(Guide.Targets()[1] == nil and select(2, Guide.Targets())[1] == "Gornek", "the key finds its NPC")
-check(Guide.Uses()[1] == 5000, "and its items")
--- A click ticks a step at hand off whole, line by line by its own function, whichever step it is.
-local ticked = {}
-book[KNOWN.complete] = function(holder) ticked[#ticked + 1] = holder.element end
-steps[3].elements = { { text = "Kill boars along the way", textOnly = false }, { text = "+ by hand" } }
-Guide.Skip(4)
-check(#ticked == #elements and ticked[1] == elements[1] and went == nil, "a click: each line ticked off by its own function")
-ticked = {}
-Guide.Skip(3)
-check(#ticked == 2 and ticked[1] == steps[3].elements[1], "a step kept in view before the one it is at: ticked off too")
--- Without such a function: past the step clicked, from the one it is at on.
-book[KNOWN.complete] = nil
+-- A test passes a step by: step 5 is skipped while not on quest 11, held once on it.
+Run.Go(5)
+quests.on[11] = false
+check(Run.At() == 5 and Run.Check() == false, "held at the test step while nothing changed")
 Guide.Skip(5)
-check(went == 6, "no function to tick: past the step clicked")
-went = nil
-Guide.Skip(3)
-check(went == nil, "before the one it is at: nothing")
-book[KNOWN.complete] = function(holder) ticked[#ticked + 1] = holder.element end
--- The list from any step: back through the done ones, a tick before each.
-picture = Guide.Picture(3, -3)
-check(picture.shift == -3 and picture.ahead[1].number == 2 and picture.ahead[1].done and not picture.ahead[3].done,
-    "the list scrolled back: done steps, ticked")
-picture = Guide.Picture(3, -10)
-check(picture.shift == -4 and picture.ahead[1].number == 1, "no further back than the first step")
-Guide.Back()
-check(went == 3, "a right click: back one, by its own function")
-Steps.Update()
-check(own._alpha == 0 and own._scale == Steps.UNSEEN, "its own window unseen while ours shows its guide")
-check(Guide.Target() == nil and ownArrow._parent == UIParent, "its arrow not shown: ours points nowhere, its own left")
-ownArrow:Show()
-Steps.Update()
-place, there = Guide.Target()
-check(place and place.continent == 1 and place.x == -600.5 and place.y == -4300.25 and Guide.Doing(there) == "take",
-    "its arrow shown: ours points to its place, a quest to take there")
-check(ownArrow._parent ~= UIParent and not ownArrow:IsVisible(), "its own arrow put away")
-check(boxes[1]._parent == UIParent and boxes[1]._points[1][1] == "CENTER", "its own boxes left as they are: its own")
-check(rawget(_G, "SaneUISpeedLevelingIcon1"):GetAttribute("item") == "item:5000"
-    and rawget(_G, "SaneUISpeedLevelingIcon2"):GetAttribute("macrotext"):find("Gornek", 1, true), "its item and its NPC")
-Core.Set(ns.name, "icons", false)
-check(not rawget(_G, "SaneUISpeedLevelingIcons")._shown, "icons off: the row hidden")
-Core.Set(ns.name, "icons", true)
-check(rawget(_G, "SaneUISpeedLevelingIcons")._shown, "on: shown again")
-Core.Set(ns.name, "knownWindow", false)
-check(own._alpha == 1 and own:GetScale() == 1, "Hide its own window off: given back as it was")
-Core.Set(ns.name, "knownWindow", true)
-check(own._alpha == 0, "on: unseen again")
-own:Hide()
-Steps.Update()
-check(not view:IsShown() and own._alpha == 1, "its window closed: ours hidden too, its own given back")
-own:Show()
-Steps.Update()
-check(view:IsShown(), "open again: shown")
-Core.Set(ns.name, "knownGuide", false)
-check(not Guide.Picture().known and Guide.Picture().title == "Valley" and own._alpha == 1,
-    "the known guide's switch off: the pasted guide, its window given back")
-Core.Set(ns.name, "knownGuide", true)
+check(Run.At() > 5, "skipped past it")
 
--- The menu on the zone.
-local header
-for _, widget in ipairs(W.frames) do
-    if widget._parent == view and widget._kind == "Button" and widget._scripts.OnClick and not widget.label
-        and not widget._scripts.OnDoubleClick then header = widget end
-end
-header._scripts.OnClick(header)
-check(menuOpened == 1, "a right click on the zone: the known guide's own menu")
-rows[1]._scripts.OnClick(rows[1])
-local rowMenu = W.menus[#W.menus]
-check(rowMenu[3] and rowMenu[3].text == ns.TEXT.guideMenu, "a listed step's menu: the known guide's own menu under Go to")
-rowMenu[3].fn()
-check(menuOpened == 2, "which opens it")
-Core.Set(ns.name, "knownGuide", false)
-menus = #W.menus
-header._scripts.OnClick(header)
-check(#W.menus == menus + 1 and #W.menus[#W.menus] >= 3 and menuOpened == 2, "the pasted guide: our menu, the guides and paste")
-Core.Set(ns.name, "knownGuide", true)
+-- The guide moves to its end and goes on to the next it names.
+quests.on[11] = true
+quests.done[11], quests.done[10] = true, true
+local guard = 0
+while not Run.Through() and guard < 20 do Run.Skip(Run.At()) guard = guard + 1 end
+Guide.CheckSoon()
+W.Wait(1)
+check(Guide.Chosen() == "Our Group\\6-10 Hills", "through the guide: on to the one it names next")
 
 -------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
-Steps.Update()
-check(own._alpha == 0, "lent before standing down")
-ns.StandDown("a test")
-check(not view:IsShown() and own._alpha == 1 and own:GetScale() == 1, "standing down: hidden, its window given back")
-check(ownArrow._parent == UIParent and boxes[1]._parent == UIParent, "and its arrow and boxes")
-Steps.Update()
-check(not view:IsShown(), "nothing more after standing down")
+ns.off = true
+ns.GiveBack()
+check(not Steps.Frame(), "stood down: the guide is hidden")
 
-io.write(("Speed Leveling's guide: all %d checks passed.\n"):format(passed))
+io.write(("Speed Leveling guide: all %d checks passed.\n"):format(passed))

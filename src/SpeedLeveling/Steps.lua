@@ -18,21 +18,16 @@ local _, ns = ...
 --  Over its top the row of icons to use and to target (Icons.lua); the arrow is
 --  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
 --  anew with it.
---  A click on a step at hand skips it (the known guide's ticked off whole, as
---  its own window does), a right click goes back one; the wheel over the list
---  scrolls it, a double click on a listed step goes to it, a right click on it
---  opens its menu (Go to step, the guide's menu); a right click on the zone
---  opens the known guide's own menu (its guides, its options) while its guide
---  is shown, else the menu of the guides kept as text. It stands where Edit Mode puts it (Core.Window), at first at
---  the screen's right, a little down; it grows downwards.
---
---  While the leveling guide Sane UI knows shows its own window, this shows its
---  guide, and its window is made unseen and small (Core.Lend; the switch Hide
---  its own window), given back as it was when this stops showing it.
+--  A click on a step at hand skips it, a right click goes back one; the wheel
+--  over the list scrolls it, a double click on a listed step goes to it, a
+--  right click on it opens its menu (Go to step, the guides); a right click on
+--  the zone opens the menu of the guides kept (choose the one to follow, Paste
+--  a guide). It stands where Edit Mode puts it (Core.Window), at first at the
+--  screen's right, a little down; it grows downwards.
 --
 --      Steps.Update()   shown or hidden and drawn anew, as the switches and the guide are now
 --      Steps.Frame()    the view's frame while it is shown (the icons stand over its top)
---      Steps.GiveBack() hidden, the known guide's window given back; the arrow and the icons too
+--      Steps.GiveBack() hidden; the arrow and the icons too
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Steps = {}
@@ -48,7 +43,6 @@ Steps.FAINTEST = 0.3
 Steps.GREY = 0.55     -- the next steps' words, greyed out; their numbers a little darker
 Steps.DONE = 0.5      -- a thing done, so faint
 Steps.BAR = 2         -- a count's bar, high
-Steps.UNSEEN = 0.01   -- the known guide's own window, so small while this shows its guide
 Steps.FONT = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Fonts\\Expressway.ttf"
 Steps.TICK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t" -- the game's ready check's tick
 
@@ -65,7 +59,6 @@ local fonts = {}
 local offset = 0      -- the list scrolled from its start after the steps at hand (back for less than 0)
 local lastAt          -- the step the guide was at when last drawn: when it moves on, the list starts again
 local hovered = false
-local lent            -- the lend of the known guide's window
 
 local function Font(part)
     if fonts[part] then return fonts[part] end
@@ -87,22 +80,6 @@ local function Text(parent, part, layer)
     text:SetJustifyH("LEFT")
     text:SetJustifyV("TOP")
     return text
-end
-
--------------------------------------------------------------------------------
---  The known guide's window, lent: unseen and small
--------------------------------------------------------------------------------
-local function Window(on)
-    local own = on and Core.Neighbours.Frame("guide")
-    if own then
-        lent = lent or Core.Lend(own)
-        lent:SetAlpha(0)
-        lent:SetScale(Steps.UNSEEN)
-    elseif lent then
-        local was = lent
-        lent = nil
-        was:Return()
-    end
 end
 
 -------------------------------------------------------------------------------
@@ -193,9 +170,8 @@ end
 -------------------------------------------------------------------------------
 --  The menu
 -------------------------------------------------------------------------------
--- The known guide's own menu while its guide is shown, else ours: the guides kept as text, Paste a guide.
+-- The guides kept: the one to follow, Paste a guide.
 function Menu(owner)
-    if ns.Guide.Menu() then return end
     local util = rawget(_G, "MenuUtil")
     if not (util and util.CreateContextMenu) then return end
     util.CreateContextMenu(owner, ns.Guard(function(_, root)
@@ -212,7 +188,7 @@ function Menu(owner)
     end))
 end
 
--- A listed step's menu: go to it; the known guide's own menu (or the guides kept) a line under it.
+-- A listed step's menu: go to it; the guides kept a line under it.
 function RowMenu(row)
     local util = rawget(_G, "MenuUtil")
     if not (util and util.CreateContextMenu) then return end
@@ -220,7 +196,7 @@ function RowMenu(row)
     util.CreateContextMenu(row, ns.Guard(function(_, root)
         root:CreateTitle(ns.TEXT.step:format(step))
         root:CreateButton(ns.TEXT.goToStep:format(step), ns.Guard(function() ns.Guide.Go(step) end))
-        root:CreateButton(ns.Guide.Known() and ns.TEXT.guideMenu or ns.TEXT.guides, ns.Guard(function() Menu(row) end))
+        root:CreateButton(ns.TEXT.guides, ns.Guard(function() Menu(row) end))
     end))
 end
 
@@ -338,7 +314,6 @@ end
 
 local function Hide()
     if frame then frame:Hide() end
-    Window(false)
     ns.Arrow.Update(false)
     ns.Icons.Update(false)
 end
@@ -353,13 +328,9 @@ function Steps.Update()
         if picture.shift ~= 0 then picture = ns.Guide.Picture(count, 0) end
     end
     if picture then offset = picture.shift end
-    local known = picture and picture.known
-    -- The known guide's guide is shown only while its own window is there to be shown.
-    local own = known and Core.Neighbours.Frame("guide")
-    if not picture or (known and own and not own:IsShown()) then return Hide() end
+    if not picture then return Hide() end
     if not frame then Build() end
     frame:Show()
-    Window(known and ns.options.knownWindow)
 
     -- The head: the zone, its levels, how far.
     local y = 0
@@ -433,8 +404,8 @@ function Steps.Update()
     end
     for index = shown + 1, #rows do rows[index]:Hide() end
     frame:SetHeight(math.max(1, -y))
-    ns.Arrow.Update(true, known)
-    ns.Icons.Update(true, known)
+    ns.Arrow.Update(true)
+    ns.Icons.Update(true)
 end
 
 function Steps.Frame()

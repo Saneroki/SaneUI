@@ -9,88 +9,117 @@ local ADDON, ns = ...
 --  and is switched on and off in the game's addon list.
 --
 --  One key for questing (Esc > Options > Keybindings, under Sane UI), pressed
---  again and again: it opens the loot of the corpse beside you, picks up what
---  your quests want beside you, finds what your quests and your leveling guide
---  want around you, puts a skull on it, and attacks it or talks to it; it
---  hearths when your guide says so, and uses a quest item when nothing wanted
---  is around. And your leveling guide over the world, its steps at hand and
---  the next ones (Saneroki, 2026-10-25): the guide Sane UI knows while it is
---  loaded, else a guide pasted as text.
+--  again and again: it opens the loot of the corpse beside you, talks to the
+--  quest giver in front of you, picks up what your quests want in front of
+--  you, attacks your foe, else finds what your quests and your guide want
+--  around you, puts a skull on it and attacks it; it hearths when your guide
+--  says so, and uses a quest item when nothing wanted is around. At a quest
+--  giver the guide's quests are taken and handed in. And your leveling guide
+--  over the world, its steps at hand and the next ones (Saneroki, 2026-10-25),
+--  run by Sane UI itself: guides pasted as text, and the guides you bought,
+--  opened for your account. Nothing of another addon is needed.
+--    Unlock.lua  the import string of bought guides, opened for your account
 --    Format.lua  a guide written as text, read into our own shape
---    Run.lua     a guide read from text, run: where you are, what is done
---    Guide.lua   the guide shown: the known guide's, else ours; its picture
---    Wanted.lua  what is wanted around you, by name: your guide's step, your
---                quests' open objectives (Core's data), the creatures the game
---                marks for your quests, the NPCs your finished quests go to;
---                the things of the world your quests want, by ID
+--    Lines.lua   what each line of a guide asks, and whether it is done
+--    Run.lua     a guide run for the character: where you are, what is at hand
+--    Guide.lua   the guide shown, its picture, the guides kept
+--    Wanted.lua  what is wanted around you, by name: your guide's steps, your
+--                quests' open objectives (Core's data, else the game's words),
+--                the creatures the game marks for your quests, the NPCs your
+--                finished quests go to; the thing in front of you
 --    Items.lua   what the key uses: the hearth, one quest item
 --    Key.lua     the key: what one press does now, by the game's secure ways
+--    Quests.lua  what a quest giver does for your guide
 --    Steps.lua   the guide over the world
 --    Arrow.lua   the way to the guide's place, a part of its own
 --    Icons.lua   the items to use and the names to target, over the guide
---    Guides.lua  the window of the guides kept as text
+--    Guides.lua  the window of the guides kept
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 ns.title = "Speed Leveling"
 Core.NewModule(ADDON, "SpeedLeveling", ns)
 
 ns.TEXT = {
-    binding = "Loot, pick up, find and mark, attack or talk, use",
+    binding = "Loot, talk, pick up, attack, find and mark, use",
+    hint = "Speed Leveling: give it a key in Esc > Options > Keybindings, under Sane UI.",
     objects = "Quest objects",
-    objectsTip = "A thing of the world your quests want, beside you, is picked up, opened or used, as a right click on it does: a quest's chest or plant, what an item to loot comes from, the board a quest is handed in to. The game's interact key finds it and is switched on for it.",
+    objectsTip = "A thing of the world your quests or your guide want, in front of you, is picked up, opened or used, as a right click on it does: a quest's chest or plant, what an item to loot comes from, the board a quest is handed in to. The game's interact key finds it and is switched on for it.",
     loot = "Loot first",
-    lootTip = "A corpse with loot beside you is opened before anything is looked for, as a right click on it does; what is taken is up to the loot window. The game's interact key is switched on for it, and put back as it was when this is off.",
+    lootTip = "A corpse with loot beside you is opened before anything else, as a right click on it does; what is taken is up to the loot window. The game's interact key is switched on for it, and put back as it was when this, Talk to NPCs and Quest objects are off.",
     skull = "Skull on what is found",
-    skullTip = "What the key finds gets a skull over its head. In a group it shows for everybody; in a raid only an assistant may mark.",
+    skullTip = "What the key finds or attacks gets a skull over its head. In a group it shows for everybody; in a raid only an assistant may mark.",
     talk = "Talk to NPCs",
-    talkTip = "A quest NPC the key found is talked to at the next press, as the game's Interact With Target does. Off: the key looks on for the next thing.",
-    guide = "Your leveling guide's targets",
-    guideTip = "What the steps at hand of your guide want killed, talked to or used come first: the leveling guide Sane UI knows while it is loaded, else the guide you pasted.",
+    talkTip = "A friendly NPC in front of you is talked to at once (after a corpse to loot); a quest NPC the key found, at the next press. Off: the key goes on to what is next.",
+    guide = "Your guide's targets",
+    guideTip = "What the steps at hand of your guide want talked to or killed come first.",
     hearth = "Hearthstone",
-    hearthTip = "When your leveling guide's step says to hearth, the key uses your Hearthstone (a shaman's Astral Recall while the stone cools down), once nothing is to be looted, picked up, fought or talked to.",
+    hearthTip = "When your guide's step says to hearth, the key uses your Hearthstone (a shaman's Astral Recall while the stone cools down), once nothing is to be looted, talked to, picked up or fought.",
     items = "Quest items",
     itemsTip = "When the key finds nothing wanted around you, it uses one item: of your guide's step first, then a quest item of your quest log, the first in your bags that is ready. Away from its place the game says so and nothing is used; one for a creature or a spot puts the game's targeting hand on the cursor.",
+
+    -- The quest givers (Quests.lua).
+    questsHeader = "Quest givers",
+    questsHeaderTip = "What talking to a quest giver does for your guide. Hold Shift while you talk to do it yourself.",
+    take = "Take the guide's quests",
+    takeTip = "The quests the steps at hand of your guide take (and those of the step after them) are accepted as the quest giver offers them.",
+    handin = "Hand in the guide's quests",
+    handinTip = "The quests the steps at hand hand in are handed in: the reward the guide names, else the only one. With several rewards to choose from and none named, the choice is yours.",
+    gossip = "Choose the guide's talk",
+    gossipTip = "Where a step names what to say to an NPC (a gossip option), it is chosen.",
 
     -- The guide over the world (Guide.lua, Steps.lua, Guides.lua).
     guideHeader = "Guide",
     guideHeaderTip = "Your leveling guide over the world: the zone, the steps at hand and the next ones.",
     showGuide = "Show the guide",
-    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone opens your leveling guide's own menu (or chooses a pasted guide).",
-    knownGuide = "Your leveling guide's own guide",
-    knownGuideTip = "While the leveling guide Sane UI knows is loaded, its guide is shown and followed, the one it has loaded for you. Off: the guide you pasted.",
-    knownWindow = "Hide its own window",
-    knownWindowTip = "While its guide is shown here, that guide's own window is made unseen; it comes back as it was when this is off.",
+    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
     showArrow = "Show the arrow",
     showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode: the leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
     icons = "Targets and items over the guide",
-    iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row over the guide's top: a click uses the item or targets the name. Your leveling guide's own boxes for them stay its own: switch them off in its settings. Changed out of a fight only: the game holds such buttons in one.",
+    iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row over the guide's top: a click uses the item or targets the name. Changed out of a fight only: the game holds such buttons in one.",
     ahead = "Steps listed ahead",
     aheadTip = "How many steps the list under those at hand shows; the wheel scrolls it through the whole guide.",
     guidesButton = "Guides",
-    guidesButtonTip = "The guides kept as text: paste a guide's text to keep it, choose the one to follow.",
+    guidesButtonTip = "The guides kept: paste the import string of the guides you bought, or a guide's text, and choose the one to follow.",
     guideView = "Guide",
     guides = "Guides",
     step = "Step %d",
     progress = "%d/%d \194\183 %d%%",
-    knownShown = "Your leveling guide's own guide is shown",
     paste = "Paste a guide...",
-    pasteHint = "Paste a guide's text here (Ctrl+V), then Read.",
+    pasteHint = "Or paste a guide's text here (Ctrl+V), then Read.",
     readButton = "Read",
     read = "Kept %d: %s.",
     unread = "%d lines could not be read and are left out:",
     noneRead = "No guide was found in that text.",
-    noneKept = "No guide is kept yet: paste a guide's text at the right, then Read.",
+    noneKept = "No guide is kept yet: paste the import string of your bought guides at the right, or a guide's text, then Read.",
     forget = "Forget the guide %s?",
-    command = "the guides kept as text: paste one, choose the one to follow",
+    command = "the guides kept: paste the import string of your bought guides or a guide's text, choose the one to follow",
     unnamed = "Guide",
-    -- Our words for a line a guide gives none (Run.lua).
+    -- The import string of bought guides (Unlock.lua, Guides.lua).
+    stringTitle = "The guides you bought: their import string",
+    stringHint = "Click here and paste it (Ctrl+V): it is opened for the account you play.",
+    pastedString = "%d characters pasted.",
+    notString = "That is no import string: paste a guide's text into the box below instead.",
+    opening = "Opening your guides... %d%%",
+    openingAlready = "Your guides are being opened already.",
+    unlockBroken = "The import string is incomplete or broken: copy it again, whole.",
+    unlockAccount = "That import string is for another account: it opens only with the BattleTag the guides were bought with.",
+    unlockOffline = "Battle.net is not connected, so your BattleTag is not known yet: try again in a moment.",
+    unlockOld = "That import string is of an older kind that can no longer be read: get it anew.",
+    unlockGame = "This game cannot open import strings.",
+    unlockEmpty = "That import string holds no guide.",
+    -- Our words for a line a guide gives none (Lines.lua).
     quest = "Quest %d",
     item = "Item %d",
     spell = "Spell %d",
-    take = "Accept %s",
-    handin = "Hand in %s",
+    acceptQuest = "Accept %s",
+    handinQuest = "Hand in %s",
+    abandon = "Abandon %s",
     level = "Reach level %d",
+    levelShort = "Grind until you are %d experience away from level %d",
+    levelInto = "Grind until you are %d experience into level %d",
+    levelShare = "Grind until you are %d%% into level %d",
     learn = "Learn %s",
+    skill = "Reach %d in %s",
     hearthTo = "Hearth to %s",
     hearthNow = "Hearth",
     bindTo = "Make %s your home",
@@ -102,16 +131,20 @@ ns.TEXT = {
     goTo = "Go to %s",
     revive = "Die, and come back at the spirit healer",
     cast = "Cast %s",
-    shop = "Visit the vendor",
-    trainer = "Visit the trainer",
+    shop = "Sell junk and buy what you need",
+    trainer = "Train your skills",
+    stable = "Stable your pet",
     arrive = "Get there",
+    destroy = "Throw away %s",
+    bankIn = "Put %s into the bank",
+    bankOut = "Take %s out of the bank",
+    tame = "Tame the beast",
     -- The arrow and the icons (Arrow.lua, Icons.lua).
     arrowView = "Guide's arrow",
     yards = "%d yd",
     seconds = "%d s",
     minutes = "%d:%02d",
     goToStep = "Go to step %d",
-    guideMenu = "Your leveling guide's menu",
     targetFriend = "Click: target it",
     targetFoe = "Click: target it",
 }
@@ -121,40 +154,42 @@ ns.GIVEN_BACK = "the key is the game's own again, the guide hidden"
 
 local OPTIONS = {
     { key = "loot", default = true, text = ns.TEXT.loot, tip = ns.TEXT.lootTip },
+    { key = "talk", default = true, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
     { key = "objects", default = true, text = ns.TEXT.objects, tip = ns.TEXT.objectsTip },
     { key = "skull", default = true, text = ns.TEXT.skull, tip = ns.TEXT.skullTip },
-    { key = "talk", default = true, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
     { key = "guide", default = true, text = ns.TEXT.guide, tip = ns.TEXT.guideTip },
     { key = "hearth", default = true, text = ns.TEXT.hearth, tip = ns.TEXT.hearthTip },
     { key = "items", default = true, text = ns.TEXT.items, tip = ns.TEXT.itemsTip },
+    { key = "take", default = true, text = ns.TEXT.take, tip = ns.TEXT.takeTip,
+      header = ns.TEXT.questsHeader, headerTip = ns.TEXT.questsHeaderTip },
+    { key = "handin", default = true, text = ns.TEXT.handin, tip = ns.TEXT.handinTip },
+    { key = "gossip", default = true, text = ns.TEXT.gossip, tip = ns.TEXT.gossipTip },
     { key = "showGuide", default = true, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip,
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
-    { key = "knownGuide", default = true, text = ns.TEXT.knownGuide, tip = ns.TEXT.knownGuideTip },
-    { key = "knownWindow", default = true, text = ns.TEXT.knownWindow, tip = ns.TEXT.knownWindowTip,
-      parent = "knownGuide" },
     { key = "showArrow", default = true, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
     { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
       button = function() ns.Guarded(ns.Guides.Open) end },
-    { key = "foundCVars", default = {} }, -- the game's settings as they were before Loot first, Quest objects (Key.lua)
+    { key = "foundCVars", default = {} }, -- the game's settings as they were before the key lent them (Key.lua)
     { key = "told", default = false },    -- told once how to give the key a key (Key.lua)
 }
--- The switches of the guide over the world: drawn anew; the known guide's switch also changes what the key wants.
-local VIEW = { showGuide = true, knownWindow = true, showArrow = true, icons = true, ahead = true }
+-- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
+-- givers' switches are read as a quest giver talks.
+local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true }
+local QUESTS = { take = true, handin = true, gossip = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then
         ns.Guarded(ns.Steps.Update)
-    elseif key == "guide" or key == "knownGuide" then
+    elseif key == "guide" then
         ns.Guarded(ns.Wanted.Changed)
         ns.Guarded(ns.Steps.Update)
-    else
+    elseif not QUESTS[key] then
         ns.Guarded(ns.Key.Update)
     end
 end })
 
--- Standing down: no override binding of ours on your keys, the game's settings as they were, the guide hidden and
--- the known guide's own window as it was.
+-- Standing down: no override binding of ours on your keys, the game's settings as they were, the guide hidden.
 function ns.GiveBack()
     ns.Guide.Stop()
     ns.Steps.GiveBack()
@@ -167,9 +202,11 @@ function ns.OnLoad()
 end
 
 function ns.OnLogin()
+    ns.Lines.Start()
     ns.Guide.Start()
     ns.Wanted.Start()
     ns.Key.Start()
+    ns.Quests.Start()
     -- A change of the guide: drawn anew; what the key wants follows.
     ns.Guide.Watch(ns.Steps.Update)
     ns.Guide.Watch(ns.Key.Refresh)

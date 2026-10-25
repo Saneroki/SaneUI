@@ -6,18 +6,22 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Speed Leveling: your leveling guide over the world. No window,
-  just clear words on the game: the zone, how far you are, the
-  steps to do now with their counts, and the next steps fading
-  out. Click a step to skip it, right-click to go back. It shows
-  the guide your leveling guide addon has loaded (its own window
-  steps aside, its menu opens on a right click), or a guide you
-  paste as text (/sane guides), which Sane UI follows by itself
-  as you quest. Over it, the items to use and the NPCs and
-  creatures to target, as icons you click. A leather arrow of its
-  own, placed in Edit Mode, points the way: in it a picture of
-  what to do there (talk, fight, loot, use), under it what to do,
-  how far and how long it takes.
+- Speed Leveling: your leveling guide over the world, and one key
+  for questing - on its own, with no other addon needed. No
+  window, just clear words on the game: the zone, how far you
+  are, the steps to do now with their counts, and the next steps
+  fading out. Click a step to skip it, right-click to go back.
+  Open the Guides window (/sane guides) and paste a guide you
+  bought - it opens for your own account - or any guide's text;
+  Sane UI runs it by itself as you quest. Over it, the items to
+  use and the NPCs and creatures to target, as icons you click. A
+  leather arrow of its own, placed in Edit Mode, points the way:
+  in it a picture of what to do there (talk, fight, loot, use),
+  under it what to do, how far and how long it takes.
+- Speed Leveling's key: one button loots the corpse by you, talks
+  to the quest giver in front of you and takes its quests, picks
+  up quest things, attacks your foe, or finds and marks the next
+  target - whatever makes sense where you stand.
 - The minimap's satchel: one button on the minimap opens a page
   with the zone you are in, your time and the realm's, frame
   rate, latency, new mail, the game's calendar, clock (with its

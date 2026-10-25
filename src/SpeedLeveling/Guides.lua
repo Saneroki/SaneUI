@@ -2,11 +2,16 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Guides
---  The window of the guides kept as text (/sane guides, or Paste a guide in
---  the guide's menu): at the left the guides kept, a click runs one (those not
---  for this character greyed), the cross beside one forgets it (asked first);
---  at the right a box to paste a guide's text into, and Read, which keeps each
---  guide of it and says how many and which lines could not be read.
+--  The window of the guides kept (/sane guides, or Paste a guide in the
+--  guide's menu): at the left the guides kept, a click follows one (those not
+--  for this character or this game greyed), the cross beside one forgets it
+--  (asked first). At the right, at the top, a line for the import string of
+--  the guides you bought: what is pasted there is gathered as it comes (the
+--  line itself holds a character only, so a string of megabytes does not hold
+--  the game up) and opened for your account once the paste is over
+--  (Unlock.lua); under it a box to paste a guide's text into, and Read, which
+--  keeps each guide of it (an import string pasted there is opened too). It
+--  says how many were kept and which lines could not be read.
 --  A panel of Sane UI's (Core.Window), made when first opened.
 --
 --      Guides.Open()     shown, or hidden again
@@ -15,12 +20,16 @@ local Core = SaneUI.Core
 local Guides = {}
 ns.Guides = Guides
 
-Guides.LIST = 210   -- the list's width
+Guides.LIST = 230   -- the list's width
 Guides.ROW = 20     -- a row of the list, high
 Guides.INSET = 12
+Guides.QUIET = 0.25 -- seconds without a character before a paste counts as over
 
-local frame, window, list, child, box, status
+local frame, window, list, child, box, status, line, lineHint
 local rows = {}
+local pasted, waited = {}, 0 -- the characters of the import line's paste so far; the time since the last
+local listening = false      -- the line waits for its paste to be over
+local Pasted, Opening        -- the line's and the window's OnUpdate while they wait, guarded once (below)
 
 local function Fill()
     local kept = ns.Guide.Kept()
@@ -40,57 +49,113 @@ local function Fill()
             row.forget:SetSize(20, 20)
             row.forget:SetPoint("RIGHT", 0, 0)
             row.forget:SetScript("OnClick", ns.Guard(function(button)
-                local name = button:GetParent().name
-                Core.Confirm(ns.TEXT.forget, name, function() ns.Guide.Remove(name) Fill() end)
+                local key, name = button:GetParent().key, button:GetParent().name
+                Core.Confirm(ns.TEXT.forget, name, function() ns.Guide.Remove(key) Fill() end)
             end))
             row:SetScript("OnClick", ns.Guard(function(self)
                 if self.mine then
-                    ns.Guide.Choose(self.name)
+                    ns.Guide.Choose(self.key)
                     Fill()
                 end
             end))
             rows[index] = row
         end
-        row.name, row.mine = guide.name, guide.mine
+        row.key, row.name, row.mine = guide.key, guide.name, guide.mine
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -(index - 1) * Guides.ROW)
         row:SetPoint("RIGHT", child, "RIGHT")
         local words = guide.group ~= "" and (guide.name .. "  |cff999999" .. guide.group .. "|r") or guide.name
-        row.text:SetText((guide.name == chosen and "> " or "") .. words)
+        row.text:SetText((guide.key == chosen and "> " or "") .. words)
         row.text:SetFontObject(guide.mine and "GameFontHighlightSmall" or "GameFontDisableSmall")
         row:Show()
     end
     for index = #kept + 1, #rows do rows[index]:Hide() end
     child:SetHeight(math.max(1, #kept * Guides.ROW))
-    if #kept == 0 then status:SetText(ns.TEXT.noneKept) end
+    if #kept == 0 and status:GetText() == "" then status:SetText(ns.TEXT.noneKept) end
+end
+
+-- What a read kept, in words: how many, their names, the lines that could not be read (the first four).
+local function Said(names, problems)
+    if #names == 0 then return ns.TEXT.noneRead end
+    local said = ns.TEXT.read:format(#names, table.concat(names, ", "))
+    if #problems > 0 then
+        said = said .. "\n" .. ns.TEXT.unread:format(#problems) .. "\n"
+            .. table.concat(problems, "\n", 1, math.min(#problems, 4))
+    end
+    return said
+end
+
+-- The guides of a text kept; an import string opened first, how far it is shown meanwhile. done() once it is over.
+local function Take(text, done)
+    if ns.Unlock.Looks(text) then
+        status:SetText(ns.TEXT.opening:format(0))
+        frame:SetScript("OnUpdate", Opening)
+        local started = ns.Unlock.Open(text, function(texts, problem)
+            frame:SetScript("OnUpdate", nil)
+            if not texts then
+                status:SetText(problem)
+            else
+                local names, problems = ns.Guide.AddAll(texts, true)
+                status:SetText(Said(names, problems))
+            end
+            Fill()
+            if done then done() end
+        end)
+        if not started then
+            frame:SetScript("OnUpdate", nil)
+            status:SetText(ns.TEXT.openingAlready)
+        end
+        return
+    end
+    local names, problems = ns.Guide.AddAll(ns.Format.Parts(text), false)
+    status:SetText(Said(names, problems))
+    Fill()
+    if done then done() end
 end
 
 local function Read()
     local text = box:GetText()
     if not text:find("%S") then return end
-    local names, problems = ns.Guide.Add(text)
-    if #names == 0 then
-        status:SetText(ns.TEXT.noneRead)
-    else
-        local said = ns.TEXT.read:format(#names, table.concat(names, ", "))
-        if #problems > 0 then
-            said = said .. "\n" .. ns.TEXT.unread:format(#problems) .. "\n" .. table.concat(problems, "\n", 1,
-                                                                                         math.min(#problems, 4))
-        end
-        status:SetText(said)
-        box:SetText("")
-    end
-    Fill()
+    Take(text, function() box:SetText("") end)
 end
+
+-------------------------------------------------------------------------------
+--  The import line: a paste gathered as it comes
+-------------------------------------------------------------------------------
+local function LineReset()
+    wipe(pasted)
+    waited, listening = 0, false
+    line:SetScript("OnUpdate", nil)
+end
+
+Pasted = ns.Guard(function(_, elapsed)
+    waited = waited + elapsed
+    if waited < Guides.QUIET then return end
+    local text = table.concat(pasted)
+    LineReset()
+    line:SetText("")
+    line:ClearFocus()
+    if not ns.Unlock.Looks(text) then
+        status:SetText(text:find("%S") and ns.TEXT.notString or "")
+        return
+    end
+    lineHint:SetText(ns.TEXT.pastedString:format(#text))
+    Take(text, function() lineHint:SetText(ns.TEXT.stringHint) end)
+end)
+
+Opening = ns.Guard(function()
+    local share = ns.Unlock.Shown()
+    if share then status:SetText(ns.TEXT.opening:format(math.floor(share * 100))) end
+end)
 
 local function Build()
     frame = CreateFrame("Frame", nil, UIParent)
-    frame:SetSize(620, 440)
+    frame:SetSize(660, 460)
     frame:Hide()
     window = Core.Window.New(frame, {
         kind = "panel", store = Core.Store(ns.name), key = "guidesPlace", title = ns.TEXT.guides, edge = false,
-        dock = false, sizable = true, minWidth = 480, minHeight = 300,
-        first = { point = "CENTER", x = 0, y = 40, width = 620, height = 440 },
+        dock = false, sizable = true, minWidth = 520, minHeight = 320,
+        first = { point = "CENTER", x = 0, y = 40, width = 660, height = 460 },
         close = function() frame:Hide() end,
     })
     local inside, I = window.inside, Guides.INSET
@@ -103,8 +168,42 @@ local function Build()
     child:SetSize(Guides.LIST, 1)
     list:SetScrollChild(child)
 
+    -- The import line, its words over it.
+    local lineTitle = inside:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    lineTitle:SetPoint("TOPLEFT", list, "TOPRIGHT", I + 24, 0)
+    lineTitle:SetText(ns.TEXT.stringTitle)
+    line = CreateFrame("EditBox", nil, inside, "InputBoxTemplate")
+    line:SetHeight(22)
+    line:SetPoint("TOPLEFT", lineTitle, "BOTTOMLEFT", 6, -4)
+    line:SetPoint("RIGHT", inside, "RIGHT", -(I + 6), 0)
+    line:SetAutoFocus(false)
+    line:SetScript("OnEditFocusGained", ns.Guard(function(self)
+        LineReset()
+        self:SetText("")
+        self:SetMaxBytes(1)
+    end))
+    line:SetScript("OnEditFocusLost", ns.Guard(function(self) self:SetMaxBytes(0) end))
+    line:SetScript("OnChar", ns.Guard(function(self, char)
+        pasted[#pasted + 1] = char
+        waited = 0
+        if not listening then
+            listening = true
+            self:SetScript("OnUpdate", Pasted)
+        end
+    end))
+    line:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
+    lineHint = inside:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    lineHint:SetPoint("TOPLEFT", line, "BOTTOMLEFT", -6, -4)
+    lineHint:SetPoint("RIGHT", inside, "RIGHT", -I, 0)
+    lineHint:SetJustifyH("LEFT")
+    lineHint:SetText(ns.TEXT.stringHint)
+
+    local hint = inside:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    hint:SetPoint("TOPLEFT", lineHint, "BOTTOMLEFT", 0, -14)
+    hint:SetText(ns.TEXT.pasteHint)
+
     local scroll = CreateFrame("ScrollFrame", nil, inside, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", list, "TOPRIGHT", I + 24, 0)
+    scroll:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -6)
     scroll:SetPoint("BOTTOMRIGHT", -(I + 24), I + 74)
     box = CreateFrame("EditBox", nil, scroll)
     box:SetMultiLine(true)
@@ -122,10 +221,6 @@ local function Build()
     -- A click anywhere on the box's ground puts the cursor in it.
     scroll:SetScript("OnMouseDown", ns.Guard(function() box:SetFocus() end))
 
-    local hint = inside:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    hint:SetPoint("BOTTOMLEFT", scroll, "TOPLEFT", 0, 4)
-    hint:SetText(ns.TEXT.pasteHint)
-
     local read = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
     read:SetSize(100, 22)
     read:SetPoint("TOPRIGHT", scroll, "BOTTOMRIGHT", 24, -8)
@@ -137,6 +232,7 @@ local function Build()
     status:SetPoint("RIGHT", read, "LEFT", -10, 0)
     status:SetJustifyH("LEFT")
     status:SetJustifyV("TOP")
+    status:SetText("")
 
     frame:HookScript("OnShow", ns.Guard(Fill))
     window:Place()

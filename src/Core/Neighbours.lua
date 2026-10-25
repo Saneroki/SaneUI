@@ -22,40 +22,20 @@ local Core = SaneUI.Core
 --      planner:Open(), planner:Close()  -- by its own functions
 --      planner:Follow(fn)               -- fn() after each opening of it, whatever opened it
 --
---  A leveling guide is asked what its step at hand wants, by name (Saneroki,
---  2026-10-25: Speed Leveling's key finds it around you):
+--  A leveling guide is not adapted to at runtime: Sane UI only reads the words
+--  of its text format, so Speed Leveling can run guides written in it with an
+--  engine of its own (Saneroki, 2026-10-25). The words are given as copies, so
+--  nothing of the addon is kept or called:
 --
---      local foes, friends = Core.Neighbours.Targets("guide") -- nil: not installed, not loaded, or changed
---      foes, friends                    -- the creatures, the NPCs: lists of names in the guide's order, copies
---      local items, spells = Core.Neighbours.Uses("guide")    -- what the step wants used: item and spell IDs
---
---  And its loaded guide, as it stands, for Speed Leveling's own view of it; and
---  the words of its text format, for guides pasted as text (Saneroki,
---  2026-10-25):
---
---      local book = Core.Neighbours.Book("guide", 8, shift) -- nil: not loaded, no guide in it, or its ways changed
---      book.title, book.at, book.total  -- the guide's name, the step it is at, how many steps it has
---      book.hand                        -- the steps at hand: { { number, lines = { { text, done, count } } } }
---                                       -- (count: a line of something to do, ticked when done)
---      book.ahead                       -- up to that many steps from the one after those at hand (book.after),
---                                       -- moved by shift (back for less than 0; book.first: where it began):
---                                       -- { { number, text, done } } (done: before the step it is at)
---      book.colours                     -- the colours its words give names, by our kinds: { friend = "ff00ff25" }
---      book.shown                       -- whether its own window is shown
---      book.place                       -- where its arrow points, while it points: { continent, x, y } (the
---                                       -- world's yards, as its text format writes them) or { map, x, y } (a
---                                       -- uiMapID, hundredths); a line's what: our word for its command
---      Core.Neighbours.Pointing("guide")          -- book.place alone, for an arrow asked often
---      Core.Neighbours.Menu("guide")              -- its own menu (its guides, its options), by its own function
---      Core.Neighbours.Arrow("guide")             -- its arrow's frame, or nil
---      Core.Neighbours.Boxes("guide")             -- its boxes of targets and items: a list of frames
---      Core.Neighbours.GoTo("guide", 12)          -- its step 12, by its own function
---      Core.Neighbours.Complete("guide", 12)      -- its step 12 ticked off, line by line by its own function (false:
---                                                 -- it has none)
---      Core.Neighbours.Frame("guide")             -- its window's frame, or nil
---      local words = Core.Neighbours.Format("guide") -- its text format's words, by ours (copies):
+--      local words = Core.Neighbours.Format("guide")  -- nil for a guide with no format
 --      words.commands, words.marks      -- [its word] = ours; words.modes: [its mark] = true (a game mode not ours)
 --      words.colours                    -- [our kind] = its colour word in a guide's text
+--      words.gameTags                   -- [its game tag] = our word for the game (which games a guide is for)
+--
+--  And the recipe its bought guides are locked by, so Speed Leveling can open
+--  the ones bought for the player's own account (Unlock.lua):
+--
+--      local lock = Core.Neighbours.Lock("guide")     -- a copy: { account, tag, width, taps, mark, close, version }
 -------------------------------------------------------------------------------
 local Neighbours = {}
 Core.Neighbours = Neighbours
@@ -66,41 +46,53 @@ Neighbours.KNOWN = {
     -- first time it opens; its table's UI opens (Show) and closes (Hide) it.
     talents = { addon = "TalentsForeverBook", title = "Talents Forever", window = "TalentsForeverBookFrame",
                 api = "TalentsForeverBook", open = "Show", close = "Hide" },
-    -- A leveling guide: what its step at hand wants killed, talked to or used, for Speed Leveling's key. Its addon
-    -- object is found by its name through the library it was made with (library, from the global stub); its part
-    -- targeting has a function (lists) that answers three lists of names: the NPCs, the creatures to kill, the creatures
-    -- to look out for. The object's tables items and spells hold what its steps at hand want used, by ID (its hearth step
-    -- puts the Hearthstone there).
-    -- Its loaded guide: the object's guide table (current: its name or display name, its steps, each with its
-    -- lines, elements: each with text and whether completed or skipped, textOnly for words only), the step it is at
-    -- (progress, a function), its function that goes to a step (go), its window (window, a global frame) with the
-    -- steps at hand on it (hand), and the colours it gives the colour words of its texts (colourTable).
-    guide = { addon = "RXPGuides", title = "RestedXP", stub = "LibStub", library = "AceAddon-3.0", part = "targeting",
-              lists = "GetCurrentTargets", items = "activeItems", spells = "activeSpells",
-              current = "currentGuide", progress = "GetGuideProgress", go = "SetStep", window = "RXPFrame",
-              hand = "activeSteps", colourTable = "guideTextColors",
-              -- Its arrow: a frame of the object's (arrow), shown while it points, its target element (element: the
-              -- world's yards wx, wy on the continent instance, or a map zone and x, y in hundredths); the function of
-              -- its window that opens its menu (menu); its boxes of targets and items, global frames (boxes).
-              arrow = "arrowFrame", menu = "DropDownMenu", boxes = { "RXPTargetFrame", "RXPItemFrame" },
-              -- Its function that ticks one line of a step off, as its window's box beside the line does (complete:
-              -- it takes a table holding the line as element).
-              complete = "SetElementComplete",
+    -- A leveling guide whose text format Sane UI reads (Saneroki, 2026-10-25): Speed Leveling runs guides written
+    -- in it (the guides you bought, opened for your own account, and guides pasted as text) with an engine of its
+    -- own, needing nothing of the addon at runtime. Named here only to read its format: each command word and step
+    -- mark by a word of ours, the marks of game modes Sane UI's games do not play, the game tags that say which games
+    -- a guide is for, the colour words its texts give names, and the recipe its bought guides are locked by (lock).
+    guide = {
               -- Its text format: each command word and step mark by ours, the marks of game modes Sane UI's games do
               -- not play, and its colour words by our kinds.
-              commands = { accept = "take", turnin = "handin", complete = "goal", collect = "carry", xp = "level",
-                           train = "learn", hs = "hearth", home = "bind", fp = "flightpath", fly = "fly", zone = "zone",
-                           subzone = "area", deathskip = "revive", cast = "cast", usespell = "cast", vendor = "shop",
-                           trainer = "trainer", target = "friend", mob = "foe", unitscan = "foe", use = "use",
-                           isOnQuest = "onQuest", isQuestComplete = "questReady", isQuestTurnedIn = "handedIn",
-                           isQuestAvailable = "open", money = "money", itemcount = "count", zoneskip = "inZone",
-                           subzoneskip = "inArea", ["goto"] = "place", waypoint = "waypoint" },
-              marks = { name = "name", displayname = "title", next = "after", group = "group", version = "version",
-                        defaultfor = "defaultFor", completewith = "together", label = "label", sticky = "stays",
-                        requires = "needs", optional = "aside" },
-              modes = { "hardcore", "som", "season", "ssf" },
+              commands = { accept = "take", daily = "take", acceptmultiple = "take", turnin = "handin",
+                           dailyturnin = "handin", turninmultiple = "handin", complete = "goal", collect = "carry",
+                           collectmultiple = "carry", questitemcount = "carry", destroy = "destroy", xp = "level",
+                           xpto = "level", train = "learn", hastyhearth = "learn", istrained = "learn", skill = "skill",
+                           hs = "hearth", hsbatching = "hearth", home = "bind", bindlocation = "atHome", fp = "flightpath",
+                           fly = "fly", zone = "zone", subzone = "area", explore = "area", deathskip = "revive",
+                           cast = "cast", usespell = "cast", vendor = "shop", trainer = "trainer", stable = "stable",
+                           tame = "tame", equip = "equip", reputation = "note", target = "friend", mob = "foe",
+                           unitscan = "foe", rare = "foe", use = "use", openitem = "use", macro = "note",
+                           bankdeposit = "bankIn", bankwithdraw = "bankOut", retrieveitem = "bankOut",
+                           isOnQuest = "onQuest", isNotOnQuest = "notOnQuest", isQuestComplete = "questReady",
+                           isQuestNotComplete = "questOpen", isQuestTurnedIn = "handedIn", isQuestAvailable = "open",
+                           skipOnQuest = "skipOnQuest", money = "money", itemcount = "count",
+                           aura = "aura", itemStat = "stat", bronzetube = "note", zoneskip = "inZone", subzoneskip = "inArea",
+                           group = "grouped", solo = "solo", dungeon = "dungeon", enabledungeon = "dungeon",
+                           maxlevel = "maxLevel", disablecheckbox = "manualOnly", ["goto"] = "place",
+                           groundgoto = "place", flygoto = "place", questgoto = "place", waypoint = "waypoint",
+                           questwaypoint = "waypoint", line = "line", pin = "pin", link = "link", timer = "timer",
+                           countdown = "timer", cooldown = "ready", blastedLands = "note" },
+              marks = { name = "name", displayname = "title", next = "after", group = "group", subgroup = "subgroup",
+                        version = "version", defaultfor = "defaultFor", completewith = "together", label = "label",
+                        sticky = "stays", requires = "needs", optional = "aside", loop = "loop", hidewindow = "hidden",
+                        map = "map", arrowtext = "arrowText", xprate = "xprate", phase = "phase" },
+              modes = { "hardcore", "hardcoreserver", "som", "season", "ssf", "questguide", "speedrunguide", "beta",
+                        "fresh", "aldor", "scryer" },
+              -- Which games a guide's head marks it for (its first step onwards is read only for a game it names):
+              -- our word for each, "classic" the older one Forever falls back to.
+              gameTags = { forever = "forever", retail = "retail", df = "retail", classic = "classic" },
               colours = { friend = "RXP_FRIENDLY_", foe = "RXP_ENEMY_", loot = "RXP_LOOT_", warn = "RXP_WARN_",
-                          pick = "RXP_PICK_", buy = "RXP_BUY_" } },
+                          pick = "RXP_PICK_", buy = "RXP_BUY_" },
+              -- How its import strings of bought guides are locked to the buyer's account (Saneroki, 2026-10-25:
+              -- Speed Leveling opens them for the account played): the account's name is the given answer of the
+              -- game's function (account, tag: the BattleTag), its last width bytes in small letters set to the
+              -- right of width bytes (zeros before), each then stirred from the bytes taps behind it; that key
+              -- locks each piece (the stream cipher RC4) of zlib-packed text. A piece is its Adler-32 sum, the
+              -- mark, the base64 text and the close; the string ends in "|" and its format's version, at least
+              -- version.
+              lock = { account = "BNGetInfo", tag = 2, width = 16, taps = { 15, 13, 12, 10 }, mark = ":",
+                       close = "%", version = 40000 } },
 }
 
 local handles = {} -- [key] = the handle made for it
@@ -154,69 +146,6 @@ function methods:Follow(fn)
     end))
 end
 
--- The addon object of a known addon made with a library that finds addons by their name (known.library, from the
--- global known.stub).
-local function Object(known)
-    local stub = rawget(_G, known.stub)
-    local get = type(stub) == "table" and rawget(stub, "GetLibrary")
-    local library = Core.Ask(get, stub, known.library, true)
-    local object = type(library) == "table" and Core.Ask(library.GetAddon, library, known.addon, true)
-    return type(object) == "table" and object or nil
-end
-
--- Each name of a list, plain and once (seen), into a list of ours: nothing of theirs is kept.
-local function Names(list, into, seen)
-    if type(list) ~= "table" then return end
-    for _, name in ipairs(list) do
-        name = Core.Plain(name)
-        if type(name) == "string" and name ~= "" and not seen[name] then
-            seen[name] = true
-            into[#into + 1] = name
-        end
-    end
-end
-
--- What a known guide's step at hand wants: the creatures (those to kill, then those to look out for) and the NPCs,
--- each a list of names; nil while it is not loaded or its ways changed.
-function Neighbours.Targets(key)
-    local known = Neighbours.KNOWN[key]
-    if not known or not known.lists or not Loaded(known.addon) then return nil end
-    local object = Object(known)
-    local part = object and rawget(object, known.part)
-    local lists = type(part) == "table" and rawget(part, known.lists)
-    if type(lists) ~= "function" then return nil end
-    local ok, friends, kill, look = pcall(lists)
-    if not ok then return nil end
-    local foes, wanted, seen = {}, {}, {}
-    Names(kill, foes, seen)
-    Names(look, foes, seen)
-    Names(friends, wanted, seen)
-    return foes, wanted
-end
-
--- The IDs of a table's keys that are whole numbers above 0, in order: nothing of theirs is kept.
-local function Ids(list)
-    local ids = {}
-    if type(list) ~= "table" then return ids end
-    for id, wanted in pairs(list) do
-        id = Core.Plain(id)
-        if type(id) == "number" and id > 0 and id == math.floor(id) and Core.Plain(wanted) then ids[#ids + 1] = id end
-    end
-    table.sort(ids)
-    return ids
-end
-
--- What a known guide's steps at hand want used: two lists of IDs, the items and the spells; nil while it is not loaded
--- or its ways changed.
-function Neighbours.Uses(key)
-    local known = Neighbours.KNOWN[key]
-    if not known or not known.items or not Loaded(known.addon) then return nil end
-    local object = Object(known)
-    local items = object and rawget(object, known.items)
-    if type(items) ~= "table" then return nil end
-    return Ids(items), Ids(rawget(object, known.spells))
-end
-
 -- A known guide's text format: its words by ours, copies (nothing of theirs is kept); nil for one with none.
 function Neighbours.Format(key)
     local known = Neighbours.KNOWN[key]
@@ -226,162 +155,19 @@ function Neighbours.Format(key)
     for theirs, ours in pairs(known.marks) do words.marks[theirs] = ours end
     for _, mark in ipairs(known.modes) do words.modes[mark] = true end
     for ours, theirs in pairs(known.colours) do words.colours[ours] = theirs end
+    words.gameTags = {}
+    for tag, game in pairs(known.gameTags or {}) do words.gameTags[tag] = game end
     return words
 end
 
--- A known guide's addon object and its loaded guide table, while it is loaded and has one.
-local function LoadedGuide(known)
-    if not known or not known.current or not Loaded(known.addon) then return nil end
-    local object = Object(known)
-    local guide = object and rawget(object, known.current)
-    if type(guide) ~= "table" or type(rawget(guide, "steps")) ~= "table" then return nil end
-    return object, guide
-end
-
--- A step's lines as plain copies: the words of each element that has any, whether it is done, whether it is a
--- thing to do (count) or words only.
-local function Lines(step, commands)
-    local lines = {}
-    for _, element in ipairs(type(step.elements) == "table" and step.elements or {}) do
-        local text = type(element) == "table" and Core.Plain(element.text)
-        if type(text) == "string" and text:find("%S") then
-            local tag = Core.Plain(element.tag)
-            lines[#lines + 1] = { text = text, done = (element.completed or element.skip) and true or false,
-                                  count = not element.textOnly, what = type(tag) == "string" and commands
-                                  and commands[tag] or nil }
-        end
-    end
-    return lines
-end
-
--- A step's first words: what the window lists for a step ahead.
-local function FirstWords(step)
-    local lines = Lines(step)
-    return lines[1] and lines[1].text or nil
-end
-
--- Where a known guide's arrow points, while it is shown: a place of ours, plain numbers.
-local function ArrowPlace(object, known)
-    local arrow = rawget(object, known.arrow)
-    if type(arrow) ~= "table" or not (arrow.IsShown and arrow:IsShown()) or arrow.wrongContinent then return nil end
-    local element = rawget(arrow, "element")
-    if type(element) ~= "table" then return nil end
-    local wx, wy, continent = Core.Plain(element.wx), Core.Plain(element.wy), Core.Plain(element.instance)
-    if type(wx) == "number" and type(wy) == "number" and type(continent) == "number" then
-        return { continent = continent, x = wx, y = wy }
-    end
-    local map, x, y = Core.Plain(element.zone), Core.Plain(element.x), Core.Plain(element.y)
-    if type(map) == "number" and type(x) == "number" and type(y) == "number" then return { map = map, x = x, y = y } end
-    return nil
-end
-
-function Neighbours.Book(key, ahead, shift)
+-- How a known guide's import strings are locked to the buyer's account: a copy of its recipe; nil for one with none.
+function Neighbours.Lock(key)
     local known = Neighbours.KNOWN[key]
-    local object, guide = LoadedGuide(known)
-    if not object then return nil end
-    local steps = guide.steps
-    local ok, at = pcall(rawget(object, known.progress) or error, guide)
-    at = ok and tonumber(Core.Plain(at)) or nil
-    if not at then return nil end
-    local window = rawget(_G, known.window)
-    local book = { title = Core.Plain(guide.displayname) or Core.Plain(guide.name), at = at, total = #steps,
-                   hand = {}, ahead = {}, colours = {},
-                   shown = type(window) == "table" and window.IsShown and window:IsShown() and true or false }
-    if type(book.title) ~= "string" then book.title = "" end
-    local hand = type(window) == "table" and rawget(window, known.hand)
-    for _, step in ipairs(type(hand) == "table" and hand or {}) do
-        local number = type(step) == "table" and tonumber(Core.Plain(step.index))
-        if number and not step.hidewindow and not step.tip then
-            book.hand[#book.hand + 1] = { number = number, lines = Lines(step, known.commands) }
-        end
-    end
-    table.sort(book.hand, function(a, b) return a.number < b.number end)
-    local last = book.hand[#book.hand] and book.hand[#book.hand].number or at
-    book.after = math.max(at, last) + 1
-    local number = math.max(1, book.after + (shift or 0))
-    book.first = number
-    while #book.ahead < (ahead or 0) and steps[number] do
-        local step = steps[number]
-        if type(step) == "table" and not step.optional and not step.hidewindow and not step.tip then
-            local text = FirstWords(step)
-            if text then book.ahead[#book.ahead + 1] = { number = number, text = text, done = number < at } end
-        end
-        number = number + 1
-    end
-    book.place = ArrowPlace(object, known)
-    local colours = rawget(object, known.colourTable)
-    for ours, theirs in pairs(known.colours) do
-        local colour = type(colours) == "table" and Core.Plain(colours[theirs])
-        if type(colour) == "string" then book.colours[ours] = colour:lower() end
-    end
-    return book
-end
-
--- To a step of a known guide's loaded guide, by its own function.
-function Neighbours.GoTo(key, number)
-    local known = Neighbours.KNOWN[key]
-    local object = LoadedGuide(known)
-    local go = object and rawget(object, known.go)
-    if type(go) == "function" and type(number) == "number" then Core.Safe("neighbours: " .. key, go, number) end
-end
-
--- Where a known guide's arrow points now (as book.place), without the rest of its book.
-function Neighbours.Pointing(key)
-    local known = Neighbours.KNOWN[key]
-    local object = known and known.arrow and LoadedGuide(known)
-    return object and ArrowPlace(object, known) or nil
-end
-
--- A known guide's own menu, opened by its window's own function.
-function Neighbours.Menu(key)
-    local frame = Neighbours.Frame(key)
-    local known = Neighbours.KNOWN[key]
-    local open = frame and known.menu and rawget(frame, known.menu)
-    if type(open) == "function" then Core.Safe("neighbours: " .. key, open) end
-end
-
--- A known guide's arrow frame, while it is loaded.
-function Neighbours.Arrow(key)
-    local known = Neighbours.KNOWN[key]
-    local object = known and known.arrow and Loaded(known.addon) and Object(known)
-    local arrow = object and rawget(object, known.arrow)
-    if type(arrow) == "table" and type(arrow.GetObjectType) == "function" then return arrow end
-    return nil
-end
-
--- A known addon's boxes, by their global names, those made so far, while it is loaded.
-function Neighbours.Boxes(key)
-    local known = Neighbours.KNOWN[key]
-    local boxes = {}
-    if not known or not known.boxes or not Loaded(known.addon) then return boxes end
-    for _, name in ipairs(known.boxes) do
-        local frame = rawget(_G, name)
-        if type(frame) == "table" and type(frame.GetObjectType) == "function" then boxes[#boxes + 1] = frame end
-    end
-    return boxes
-end
-
--- A step of a known guide's loaded guide ticked off, each of its lines by its own function (as the box beside a line
--- in its window ticks it), so it goes on as it does then; false when it has no such function or no such step.
-function Neighbours.Complete(key, number)
-    local known = Neighbours.KNOWN[key]
-    local object, guide = LoadedGuide(known)
-    local complete = object and known.complete and rawget(object, known.complete)
-    local step = guide and type(number) == "number" and guide.steps[number]
-    if type(complete) ~= "function" or type(step) ~= "table" or type(step.elements) ~= "table" then return false end
-    for _, element in ipairs(step.elements) do
-        if type(element) == "table" then Core.Safe("neighbours: " .. key, complete, { element = element }) end
-    end
-    return true
-end
-
--- A known addon's window, by its global name, while it is loaded.
-function Neighbours.Frame(key)
-    local known = Neighbours.KNOWN[key]
-    if not known or not known.window or not Loaded(known.addon) then return nil end
-    local frame = rawget(_G, known.window)
-    if type(frame) == "table" and type(frame.GetObjectType) == "function" then return frame end
-    return nil
+    if not known or not known.lock then return nil end
+    local recipe = {}
+    for name, value in pairs(known.lock) do recipe[name] = value end
+    recipe.taps = { unpack(known.lock.taps) }
+    return recipe
 end
 
 -- The handle of a known addon by its key, while that addon is loaded and has what is used of it; nil otherwise.

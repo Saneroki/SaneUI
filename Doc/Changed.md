@@ -6,6 +6,39 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 148 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: independent of any other addon; it imports the paid guides itself (Saneroki, 2026-10-25)
+Saneroki (with the guide authors' leave) asked for the whole function built into Speed Leveling so it needs no other
+addon: our own display and engine, able to import, open and run the paid guides, which are locked to the account. He
+also reported the module was buggy — active targets showed looted items and gear, some steps would not skip, the
+priority order was off — and asked for a logical order: loot around you, then quest givers, then things on the ground,
+then enemies.
+- **Independent (`src/Core/Neighbours.lua`):** the leveling guide Sane UI knows is no longer used at runtime. Of it,
+  Sane UI reads only the words of its text format (`Neighbours.Format`: commands, marks, modes, colours, game tags)
+  and the recipe its bought guides are locked by (`Neighbours.Lock`), both as copies. The runtime integration (its
+  loaded guide, window, arrow, boxes, targets, items — `Book`/`Targets`/`Uses`/`GoTo`/`Complete`/`Pointing`/`Arrow`/
+  `Boxes`/`Menu`/`Frame`) is gone.
+- **Opening bought guides (`Unlock.lua`):** a bought guide comes as an import string locked to the buyer's account.
+  Sane UI makes the key from the BattleTag of the account played (`BNGetInfo`), in memory and never kept, and opens
+  each piece (base64 and zlib are the game's own, `C_EncodingUtil`) over frames (`Core.Steps`); a string bought for
+  another account stays shut. Checked offline against the real paid guide: 191 guides open and parse, 15,129 steps
+  for a Horde character, no error. No guide's text ships with Sane UI.
+- **Our own engine (`Format.lua`, `Lines.lua`, `Run.lua`, `Guide.lua`):** the reader now covers the full command and
+  mark set the guides use (61 commands, all the step marks), with game tags and per-character/level conditions;
+  `Lines.lua` asks the game what each line's thing is (quests, items, spells, skills, auras, the level, where you
+  are); the engine runs steps at hand, tests, places and the next guide. The guides are kept packed for the account,
+  read on demand, so the list needs no parse.
+- **The key's order (`Key.lua`, `Wanted.lua`, `Quests.lua`):** loot → fight-in-combat → talk → pick up → fight → find,
+  the order the game's own gamepad interact button keeps. What is found is ordered NPCs first, then creatures nearest
+  first by the zone you are in (the set *Spawns*); a quest Core lacks is found by the game's own objective words.
+  Find's macro is chained across hidden buttons for the 255-character limit the game runs. At a quest giver, the
+  guide's quests are taken and handed in (`Quests.lua`, the game's gossip and quest-frame functions; Shift held does
+  it yourself).
+- **The icons (`Icons.lua`):** only an item that can be used is shown (a bag item with a use, the game's quest items),
+  never the gear or the loot a step merely mentions — which is why gear and looted items showed before.
+- **Tests:** `dev/tests/speedleveling.lua` 60 checks, `dev/tests/speedguide.lua` 80; `dev/tests/encoding.lua` a
+  pure-Lua stand-in for the game's bit library and `C_EncodingUtil`.
+- **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`.
+
 ### Speed Leveling's guide: any step at hand ticked off, the list through the whole guide, no blocked actions (Saneroki, 2026-10-25)
 Saneroki, in Retail: steps 2 and 14 of the Shadowglen guide could not be skipped; he wants to scroll through every
 step, done ones too, and go to one with a right click; and chat said the game blocked an action (the error log:
