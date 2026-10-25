@@ -11,7 +11,8 @@ local _, ns = ...
 --
 --      AddOns    the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
---                title, A to Z; their clicks and tooltips their own
+--                title, A to Z, twice as large as the rest; their clicks and
+--                tooltips their own
 --      Pins      every kind of pin the map can show here, in the pin filter's
 --                order (ns.KINDS, ns.PIN_SECTIONS): a click switches it, as the
 --                pin filter on the full map's bar does (their sizes stay there)
@@ -37,6 +38,7 @@ Satchel.GAP = 6            -- between the window and the satchel
 Satchel.COLUMNS = 6
 Satchel.CELL = { 72, 58 }  -- a cell's width and height: compact (Saneroki, 2026-10-25)
 Satchel.ICON = 28          -- a cell's picture, on the paper as it is (no pencil slot round it)
+Satchel.ADDON = { 56, 84 } -- an addon's picture, twice the others' (Saneroki, 2026-10-25), and its row's height
 Satchel.HEAD = 22          -- a section's title and its rule
 Satchel.NOTE = 18          -- the line under an empty section's title
 Satchel.AFTER = 6          -- room under a section
@@ -163,14 +165,13 @@ local function Cell(index)
     local cell = cells[index]
     if cell then return cell end
     cell = CreateFrame("Button", nil, sheet)
-    cell:SetSize(Satchel.CELL[1], Satchel.CELL[2])
+    cell:SetWidth(Satchel.CELL[1])
     cell:RegisterForClicks("AnyUp")
     cell.shade = cell:CreateTexture(nil, "BACKGROUND")
     cell.shade:SetAllPoints()
     cell.shade:SetColorTexture(Journal.SHADE[1], Journal.SHADE[2], Journal.SHADE[3], Journal.SHADE[4])
     cell.shade:Hide()
     cell.spot = CreateFrame("Frame", nil, cell)
-    cell.spot:SetSize(Satchel.ICON, Satchel.ICON)
     cell.spot:SetPoint("TOP", 0, -3)
     cell.picture = cell.spot:CreateTexture(nil, "ARTWORK")
     cell.picture:SetAllPoints()
@@ -209,9 +210,12 @@ local function Empty(cell)
     cell:Hide()
 end
 
--- A cell holding item (a held button, a compartment's addon, a kind of pin, a tracking entry).
-local function Dress(cell, item)
+-- A cell holding item (a held button, a compartment's addon, a kind of pin, a tracking entry), its picture size
+-- across, the cell height high.
+local function Dress(cell, item, size, height)
     cell.item = item
+    cell:SetHeight(height)
+    cell.spot:SetSize(size, size)
     cell.name:SetText(item.title)
     local icon = cell.picture
     icon:SetTexCoord(0, 1, 0, 1)
@@ -221,7 +225,7 @@ local function Dress(cell, item)
         -- Its own button in the picture's place, as its addon made it.
         icon:Hide()
         cell.tick:Hide()
-        ns.Strays.Place(item.button, cell.spot, Satchel.ICON)
+        ns.Strays.Place(item.button, cell.spot, size)
         return cell:Show()
     end
     icon:Show()
@@ -319,10 +323,11 @@ end
 -- What it holds, laid out anew (opened, a switch changed, a button given back); nothing while it is closed.
 function Satchel.Fill()
     if not panel or not panel:IsShown() then return end
+    -- Each: its title, what it holds, the line while it holds nothing, its pictures' size and its rows' height.
     local sections = {
-        { Satchel.TEXT.addons, ns.Strays.List(), Satchel.TEXT.none },
-        { Satchel.TEXT.pins, Pins() },
-        { Satchel.TEXT.tracking, Tracking() },
+        { Satchel.TEXT.addons, ns.Strays.List(), Satchel.TEXT.none, Satchel.ADDON[1], Satchel.ADDON[2] },
+        { Satchel.TEXT.pins, Pins(), nil, Satchel.ICON, Satchel.CELL[2] },
+        { Satchel.TEXT.tracking, Tracking(), nil, Satchel.ICON, Satchel.CELL[2] },
     }
     for _, cell in ipairs(cells) do Empty(cell) end
     for _, head in ipairs(heads) do
@@ -332,7 +337,7 @@ function Satchel.Fill()
     end
     local y, used, titled = 0, 0, 0
     for _, section in ipairs(sections) do
-        local items = section[2]
+        local items, size, height = section[2], section[4], section[5]
         if #items > 0 or section[3] then
             titled = titled + 1
             Head(titled, section[1], y, #items == 0 and section[3] or nil)
@@ -343,10 +348,10 @@ function Satchel.Fill()
                 local cell = Cell(used)
                 local column, row = (index - 1) % Satchel.COLUMNS, math.floor((index - 1) / Satchel.COLUMNS)
                 cell:ClearAllPoints()
-                cell:SetPoint("TOPLEFT", sheet, "TOPLEFT", column * Satchel.CELL[1], -(y + row * Satchel.CELL[2]))
-                Dress(cell, item)
+                cell:SetPoint("TOPLEFT", sheet, "TOPLEFT", column * Satchel.CELL[1], -(y + row * height))
+                Dress(cell, item, size, height)
             end
-            y = y + math.ceil(#items / Satchel.COLUMNS) * Satchel.CELL[2] + Satchel.AFTER
+            y = y + math.ceil(#items / Satchel.COLUMNS) * height + Satchel.AFTER
         end
     end
     y = math.max(y - Satchel.AFTER, 1) -- no room under the last section: the page's own margin is there

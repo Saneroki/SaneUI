@@ -39,6 +39,10 @@ the guide the leveling guide Sane UI knows has loaded, while it is loaded, else 
 - **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`, `Doc/agent/README.md`, the
   public changelog.
 
+### Navigation: the satchel's addons twice as large (Saneroki, 2026-10-25)
+- **`src/Navigation/Satchel.lua`:** the section AddOns has pictures of 56 (twice the pins' and tracking's 28) in rows
+  84 high (`Satchel.ADDON`); each section its own picture size and row height. Test updated.
+
 ### Navigation: the satchel compact (Saneroki, 2026-10-25)
 Saneroki asked for a more compact satchel without the pencil slots behind its pictures.
 - **`src/Navigation/Satchel.lua`:** six columns of cells 72 by 58 (were five of 88 by 78), pictures of 28 on the paper

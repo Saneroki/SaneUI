@@ -1358,9 +1358,9 @@ end)()
     end
     local cells, count = Cells()
     local held = cells["Pretend Addon"]
-    check(held and held.item.button == W.stray and W.stray:GetParent() == held.spot and near(W.stray._scale, Satchel.ICON / 31)
+    check(held and held.item.button == W.stray and W.stray:GetParent() == held.spot and near(W.stray._scale, Satchel.ADDON[1] / 31) and near(held.spot._width, Satchel.ADDON[1])
         and count["Pretend Addon"] == 1,
-        "the addon's own button in its cell, as large as a cell's picture, under its title without colours, once")
+        "the addon's own button in its cell, twice as large as a pin's picture, under its title without colours, once")
     check(cells["Compartment Addon"] and cells["Compartment Addon"].item.entry and cells["Compartment Addon"].picture._shown,
         "the game's compartment's other addon in a cell of its own, its picture over its title")
     local entry = cells["Compartment Addon"]
