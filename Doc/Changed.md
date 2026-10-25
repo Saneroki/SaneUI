@@ -3,8 +3,41 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 (Speed Leveling), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: your leveling guide over the world (Saneroki, 2026-10-25)
+Saneroki asked for his leveling guide in Speed Leveling, over the world without a window, in Sane UI's own style:
+the guide the leveling guide Sane UI knows has loaded, while it is loaded, else guides pasted as text in its format
+(its import strings are locked to the buyer's account and are never read).
+- **`src/SpeedLeveling/Format.lua`** (new): a guide written as text read into our own shape for one character: its
+  head, steps, lines kept or left out for side, race and class (`Format.For`), each command into a line to do, words,
+  a place, a test that passes a step by, or names and items for the key; long brackets of a Lua file split into
+  guides (`Format.Parts`). The format's own words are Core's (`Core.Neighbours.Format`).
+- **`src/SpeedLeveling/Run.lua`** (new): a pasted guide run per character (`Core.Character`): the step you are at,
+  the steps at hand (those that stay, those that go along with the next or up to a named one), each line done as the
+  game tells it (quests, objectives, items, level, spells, zone and subzone, places by distance, home, hearth, flight
+  path, flight, vendor, trainer, spirit healer, a cast), tests that pass a step by, skip, back and go (held there),
+  the next guide when through.
+- **`src/SpeedLeveling/Guide.lua`** (new): the guide shown: the known guide's loaded guide while it is loaded (its
+  switch), else the pasted one; one picture for the view, names in the game's font colours, the guides kept as text
+  (`Core.Store`), the events that move a pasted guide on, a look at the known guide every half second while it is
+  loaded (told only when it changed). The key's names and items come from it (`Wanted.lua`, `Key.lua`).
+- **`src/SpeedLeveling/Steps.lua`** (new): the guide over the world, in Kalam with a dark outline: zone, levels and
+  how far, the steps at hand on faint shades (what to do large, counts with thin bars, ticks, notes), the next steps
+  fading; click skips, right click goes back, the wheel scrolls, a double click goes to a step, a right click on the
+  zone opens the guides' menu; placed in Edit Mode (`Core.Window`). The known guide's own window lent see-through
+  and small (`Core.Lend`) while its guide is shown here.
+- **`src/SpeedLeveling/Guides.lua`** (new): the window of the guides kept as text (`/sane guides`): the list, a box to
+  paste into, *Read*.
+- **`src/Core/Neighbours.lua`:** `Neighbours.Book`, `GoTo`, `Frame` and `Format`: the known guide's loaded guide as
+  plain copies, its step function, its window, its text format's words by ours.
+- **Switches:** *Show the guide*, *Your leveling guide's own guide*, *Hide its own window*, *Steps listed ahead*, the
+  button *Guides*; *Your leveling guide's targets* now means the guide shown.
+- **Tests:** `dev/tests/speedguide.lua` (new), 104 checks; `dev/tests/speedleveling.lua` 94. The shipped guides of
+  the known guide read with no problem for either side (checked outside the project).
+- **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`, `Doc/agent/README.md`, the
+  public changelog.
 
 ### Navigation: the satchel and the middle click (Saneroki, 2026-10-25)
 Saneroki asked for a middle click that centres the map on the player at a zoom where the minimap's icons show, and

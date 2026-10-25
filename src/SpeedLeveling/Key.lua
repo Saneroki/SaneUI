@@ -150,7 +150,7 @@ end
 -- for when none is found (the switch Quest items). In a fight (fighting): the names alone.
 function Key.Find(fighting)
     local items, spells
-    if ns.options.guide then items, spells = Core.Neighbours.Uses("guide") end
+    if ns.options.guide then items, spells = ns.Guide.Uses() end
     if not fighting and ns.options.hearth then
         local hearth = ns.Items.Hearth(items, spells)
         if hearth then return hearth end

@@ -27,9 +27,17 @@ target, mark, attack and interact only by the game's secure ways, and looting a 
   looted is the loot module's (board card 34). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the
   hearth when the guide's step says so, and one quest item when nothing wanted is around.
-- **Not yet:** the routes and their planner (below), our own guide view (Navigation), walking to the NPC found
-  (the game's click to move), quest givers of quests to take (only through the guide for now), an item to use on
-  the creature found (the player's click).
+- **Decision (Saneroki, 2026-10-25): the guide over the world, in Speed Leveling.** Its steps over the world, no
+  window: the zone, how far, the steps at hand, the next steps fading; a click skips, a right click goes back.
+  Where its steps come from, both: the guide the leveling guide Sane UI knows has loaded, while it is loaded (its own
+  window made unseen meanwhile; `Core.Neighbours.Book`), else guides pasted as text in that guide's format, read and
+  run by our own code (`Format.lua`, `Run.lua`). Its import strings are locked to the buyer's account and are never
+  read. Our own routes, once there, are a third place for its steps.
+- **Built: the guide over the world** (`src/SpeedLeveling/README.md`, *The guide over the world*): the view, the
+  guides kept as text and their window, the engine that runs a pasted guide, the known guide's loaded guide read.
+- **Not yet:** the routes and their planner (below), the guide's way on the map and an arrow to its place (now: the
+  key and the known guide's own arrow), walking to the NPC found (the game's click to move), quest givers of quests
+  to take (only through the guide for now), an item to use on the creature found (the player's click).
 
 ## What has to exist first
 

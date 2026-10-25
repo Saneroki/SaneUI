@@ -456,6 +456,10 @@ the game's own art and the game's own API.
 way, built with our own code. The guides are data in Core's database framework (`Doc/ideas/Data.md`, set
 *Guides*); Navigation reads them and shows them, as it does the rest of the map data (*Our own data*).
 
+**Since (Saneroki, 2026-10-25):** a guide's steps are shown over the world by Speed Leveling
+(`src/SpeedLeveling/README.md`, *The guide over the world*): the known leveling guide's loaded guide, else guides
+pasted as text. What stays Navigation's: a guide's places and way on the map.
+
 **What a guide is:** one leg of the way for one side, sometimes for one race or class, over a band of
 levels in one region, naming the guide that follows. Each step says:
 

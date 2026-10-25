@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Speed Leveling
-## Notes: One key for questing, pressed again and again: it opens the loot of the corpse beside you, picks up what your quests want beside you, finds what your quests and your leveling guide want around you, puts a skull on it, and attacks it or talks to it; it hearths when your guide says so, and uses a quest item when nothing is around. Give it a key in the game's key bindings, under Sane UI.
+## Notes: One key for questing, pressed again and again: it opens the loot of the corpse beside you, picks up what your quests want beside you, finds what your quests and your leveling guide want around you, puts a skull on it, and attacks it or talks to it; it hearths when your guide says so, and uses a quest item when nothing is around. Shows your leveling guide's steps over the world. Give it a key in the game's key bindings, under Sane UI.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -11,6 +11,11 @@
 
 # The module's own table, its words and settings. First: the other files will add to that table.
 SpeedLeveling.lua
+# A leveling guide written as text, read into our own shape; run for the character: where you are, what is done
+Format.lua
+Run.lua
+# The guide shown: the known guide's while it is loaded, else one pasted as text; what its steps at hand want
+Guide.lua
 # What the key looks for around you, by name: your guide's step, your quests' objectives, the NPCs to hand in to;
 # the things of the world your quests want, by ID
 Wanted.lua
@@ -18,3 +23,6 @@ Wanted.lua
 Items.lua
 # The key: loot, fight, talk or find, chosen by the game's secure ways at each press
 Key.lua
+# The guide over the world, and the window of the guides kept as text
+Steps.lua
+Guides.lua

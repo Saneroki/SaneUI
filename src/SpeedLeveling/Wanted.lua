@@ -4,8 +4,9 @@ local _, ns = ...
 --  Sane UI - Speed Leveling - Wanted
 --  What the key looks for around you, by name, in this order (the key takes
 --  the first it finds), the NPCs before the creatures (Saneroki, 2026-10-25):
---    1. the NPCs the step at hand of your leveling guide names (a guide Sane UI
---       knows, Core.Neighbours, while it is loaded and the switch is on)
+--    1. the NPCs the steps at hand of your leveling guide name (Guide.lua: the
+--       guide Sane UI knows while it is loaded, else a guide pasted as text;
+--       while the switch is on)
 --    2. the NPCs your finished quests are handed in to, of your side
 --    3. the creatures the guide's step names
 --    4. the creatures of your quests' open objectives (Core's sets Quests and
@@ -145,7 +146,7 @@ function Wanted.Names()
     if not quests then Read() end
     local names, have = {}, {}
     local foes, friends
-    if ns.options.guide then foes, friends = Core.Neighbours.Targets("guide") end
+    foes, friends = ns.Guide.Targets()
     for _, list in ipairs({ friends or EMPTY, quests.friends, foes or EMPTY, quests.foes, marked }) do
         for _, name in ipairs(list) do Add(names, have, name) end
     end
