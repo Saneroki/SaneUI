@@ -22,7 +22,9 @@ local _, ns = ...
 --  The plate of a player you cannot attack is out of sight altogether (the
 --  game's unit frame on it at alpha 0) unless the player is in your group,
 --  your guild or on your friends list, or is your target. Players you can
---  attack keep theirs.
+--  attack keep theirs. So is a critter's (wild and companion pets too), and
+--  with it its name, unless it is your target or wanted for a quest of yours,
+--  or the setting shows them.
 --
 --  One dress per plate, made the first time the game shows it and kept: the
 --  game hands its plates out again for other units, and takes its unit frames
@@ -46,6 +48,9 @@ Plate.WIDEST, Plate.PLAIN = 1000, 120
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
                  "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER", "UNIT_COMBAT" }
+-- Critters by the game's creature type (UnitCreatureType's ID, the same in both games): Critter, Non-combat Pet
+-- (a companion), Wild Pet.
+Plate.CRITTERS = { [8] = true, [12] = true, [14] = true }
 
 local dresses = {} -- [the game's plate] = our dress on it
 local shown = {}   -- [unit token] = the dress on that unit's plate, while the game shows it
@@ -81,10 +86,22 @@ local function Fill(dress)
     ns.Auras.Set(dress, unit)
 end
 
+-- Whether a unit is a critter, a wild pet or a companion pet; not where the game does not say.
+local function Critter(unit)
+    local _, kind = Core.Ask(UnitCreatureType, unit)
+    return Plate.CRITTERS[kind or 0] == true
+end
+
 -- Whether a unit's plate shows: every plate but that of a player you cannot attack who is a stranger to you (not
--- in your group or guild, not on your friends list, not your target). Where the game does not say, it shows.
-function Plate.Wanted(unit)
-    if (ns.options or {}).players == false or Plain(UnitIsPlayer(unit)) ~= true then return true end
+-- in your group or guild, not on your friends list, not your target), and that of a critter (not your target, not
+-- one your quest wants: the dress's quest piece) unless the setting shows them. Where the game does not say, it shows.
+function Plate.Wanted(unit, dress)
+    local options = ns.options or {}
+    if Plain(UnitIsPlayer(unit)) ~= true then
+        if options.critters or not Critter(unit) or (dress and dress.room.quest) then return true end
+        return Plain(UnitIsUnit(unit, "target")) ~= false
+    end
+    if options.players == false then return true end
     if Core.Ask(UnitCanAttack, "player", unit) ~= false then return true end
     if Plain(UnitIsUnit(unit, "target")) ~= false then return true end
     if Core.Ask(UnitInParty, unit) or Core.Ask(UnitInRaid, unit) or Core.Ask(UnitIsInMyGuild, unit) then return true end
@@ -104,19 +121,23 @@ local function Parts(frame, alpha)
     end
 end
 
--- A plate of a stranger out of sight altogether; else ours shown and the game's parts out of sight while the
--- game shows its health bar on the plate, the game's own plate as it is otherwise.
+-- A plate of a stranger or a critter out of sight altogether; else ours shown and the game's parts out of sight
+-- while the game shows its health bar on the plate, the game's own plate as it is otherwise. Ours filled anew when
+-- it comes back in sight: its texts measured while they show (a hidden one may not measure).
 local function Wear(dress)
     local frame = dress.frame
     local row = frame and rawget(frame, "HealthBarsContainer")
     local bar = type(row) == "table" and rawget(row, "healthBar")
-    local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit)
+    local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit, dress)
     local on = wanted and not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
     if frame then
         frame:SetAlpha(wanted and 1 or 0)
         Parts(frame, on and 0 or 1)
     end
+    local back = on and dress.away
+    dress.away = not on
     dress:SetShown(on)
+    if back then Fill(dress) end
 end
 
 local function Heard(dress, event, _, ...)
@@ -223,7 +244,7 @@ local function Off(dress)
     ns.Safe("scale", ns.Scale.Leave, dress) -- the game's unit frame at its own scale, before it is let go
     dress.out = nil -- the next unit's reach is its own
     local frame = dress.frame
-    dress.unit, dress.frame = nil, nil
+    dress.unit, dress.frame, dress.away = nil, nil, nil
     dress:Hide()
     if frame then
         frame:SetAlpha(1)
@@ -307,10 +328,14 @@ local function Threats()
 end
 local threats = Core.Later(Threats)
 
--- The quest log changed: every creature's quest piece as the game says now.
+-- The quest log changed: every creature's quest piece as the game says now, and every plate shown or not (a critter
+-- your quest wants).
 local function Quests()
     if ns.off then return end
-    for unit, dress in pairs(shown) do ns.Text.Quest(dress, unit) end
+    for unit, dress in pairs(shown) do
+        ns.Text.Quest(dress, unit)
+        Wear(dress)
+    end
 end
 local quests = Core.Later(Quests)
 

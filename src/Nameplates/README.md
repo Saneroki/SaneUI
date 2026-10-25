@@ -1,6 +1,6 @@
 # Sane UI: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' and critters' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
@@ -12,7 +12,7 @@ bar is as wide as that line, no wider. Along its bottom a thin line of the unit'
 and your combo points in a row of their own under the bar of the unit you have them on, inside the same outline. Its one border is lit on your target and focus, a line
 behind it tells the unit's rank, a red glow behind that your aggro or a player who may attack you. Right above the bar your own debuffs,
 left of it up to three of a foe's buffs, right of it the crowd control on the unit. Plates
-of players you cannot attack and do not know are hidden; every plate is smaller the farther away it is. When it
+of players you cannot attack and do not know are hidden, and critters' plates (a setting shows them); every plate is smaller the farther away it is. When it
 fails, every plate is the game's own again.
 
 ## How to use
@@ -24,6 +24,9 @@ fails, every plate is the game's own again.
 - **Players:** the plate of a player you cannot attack shows only while the player is in your party or raid,
   your guild, on your friends list (or a friend of your account), or your target; the others' plates are out of
   sight altogether. Players you can attack always have theirs, glowing red: they may attack you.
+- **Critters:** critters, wild pets and companion pets (rabbits, rats, deer, someone's pet) have no plate, and so no
+  name over them, unless one is your target or a quest of yours wants it (its plate then shows the count). Setting
+  *Plates on critters* (off at first) gives them their plates.
 - **The bar:** round at its corners, a quarter of its height. Health: a player's class colour; grey for a
   creature tapped by another player; light yellow for a creature that does not attack on sight; red for one
   that does; the game's colour for friends.
@@ -92,7 +95,7 @@ fails, every plate is the game's own again.
   its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
   client lacks those for its numbers over units, those numbers stay as the game has them.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
+  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
@@ -120,6 +123,13 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
+- **Critters' plates** (`Plate.Wanted`, setting `critters` off): a unit that is no player whose creature type
+  (`UnitCreatureType`'s ID, not its word) is in `Plate.CRITTERS` (8 Critter, 12 Non-combat Pet, 14 Wild Pet: the
+  client's CreatureType table, the same in both games), not your target, without a quest piece on its dress
+  (`dress.room.quest`): out of sight as a stranger's, the game's name on it with it. `QUEST_LOG_UPDATE` and
+  `UNIT_QUEST_LOG_CHANGED` look at every plate anew. A hidden type shows the plate. A dress that comes back in sight
+  (a stranger or critter targeted, a health bar shown again) is filled anew (`dress.away`): texts hidden while they
+  were filled may not have measured.
 - **The bar** (`Bar.lua`): each layer on a frame of its own one level above the last (the glow, the outline, the
   bar; the line of texts three above the bar), so the glow never covers the outline. From the back, `Bar.HALO` (6) glow plates in `Bar.GLOW` on a frame of their own a level
   under the dress (`dress.glow`, whose alpha alone switches the glow: a texture's own alpha would replace its vertex
@@ -322,7 +332,7 @@ fails, every plate is the game's own again.
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character; drawings for what did no harm |
 | `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by an image model and picked by Saneroki (`assets/interface/combat-text/`; the miss drawn by code), traced by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
-| `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
+| `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' and critters' plates hidden |
 
 ## Not there yet
 The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`,
@@ -412,3 +422,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   none while you have none (Saneroki).
 - **2026-10-25:** Retail: the combo points on your target's plate alone (Retail keeps them on your character), up to
   seven.
+- **2026-10-25:** critters, wild pets and companion pets without a plate or a name (Saneroki), unless your target or
+  wanted for a quest of yours; the setting *Plates on critters* shows them.

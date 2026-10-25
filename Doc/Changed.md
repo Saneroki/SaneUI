@@ -3,8 +3,20 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 96 and 139 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 139 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Nameplates: critters without a plate or a name, a setting shows them (Saneroki, 2026-10-25)
+Saneroki asked for critters to have no name or nameplate by default, with a setting to show them.
+- **`src/Nameplates/Plate.lua`:** `Plate.Wanted(unit, dress)`: a unit that is no player whose creature type
+  (`UnitCreatureType`'s ID) is in `Plate.CRITTERS` (8 Critter, 12 Non-combat Pet, 14 Wild Pet; the client's
+  CreatureType table, the same in Forever and Retail) is out of sight as a stranger's plate (the game's unit frame at
+  alpha 0, its name with it), unless it is your target or has a quest piece on its dress; a hidden type shows. The quest
+  log's events look at every plate anew. A dress that comes back in sight is filled anew (`dress.away`), so a stranger
+  or critter you target measures its line while it shows.
+- **`src/Nameplates/Nameplates.lua`:** the setting *Plates on critters* (`critters`, off).
+- **Tests:** `dev/tests/nameplates.lua` 247 checks.
+- **Docs:** `src/Nameplates/README.md`, `Doc/agent/README.md`.
 
 ### Speed Leveling: one press talks to the NPC in front of you; a click skips any step at hand (Saneroki, 2026-10-25)
 Saneroki, in Retail: the key said "You can't do that" in front of a quest giver, and a click on a step did not skip it.

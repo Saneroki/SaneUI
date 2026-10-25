@@ -103,6 +103,7 @@ C_NamePlate = {
 }
 UnitName = function(unit) return Unit(unit).name, Unit(unit).surname end
 UnitIsPlayer = function(unit) return Unit(unit).player or false end
+UnitCreatureType = function(unit) local kind = Unit(unit).creature if kind then return "a type", kind end end
 UnitIsFriend = function(_, unit) return Unit(unit).friend or false end
 UnitCanAttack = function(a, b)
     if a == "player" then return not Unit(b).friend end
@@ -604,6 +605,42 @@ check(not friend.raid:IsShown(), "and no raid marker, as on the game's plates")
 units.nameplate2.friend, units.nameplate2.party = true, true
 W.Fire("UNIT_FACTION", "nameplate2")
 check(friend.glow._alpha == 0, "a friend again: no glow")
+
+-- A critter: no plate and so no name, unless your target, wanted for a quest, or the setting on.
+units.nameplate6 = { name = "Rabbit", creature = 8, health = 5, most = 5, reaction = 4, level = 1 }
+plates.nameplate6 = GamePlate()
+W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate6")
+local rabbit = DressOf(plates.nameplate6)
+check(rabbit and not rabbit:IsShown() and plates.nameplate6.UnitFrame._alpha == 0, "a critter: no plate at all")
+units.target, plates.target = units.nameplate6, plates.nameplate6
+W.Fire("PLAYER_TARGET_CHANGED")
+check(rabbit:IsShown() and plates.nameplate6.UnitFrame._alpha == 1 and rabbit.name._text == "Rabbit", "your target: shown, filled")
+units.target, plates.target = units.nameplate2, plates.nameplate2
+W.Fire("PLAYER_TARGET_CHANGED")
+check(not rabbit:IsShown() and plates.nameplate6.UnitFrame._alpha == 0, "not any more")
+units.nameplate6.quest = { { type = 17, leftText = "Rabbit Stew" }, { type = 8, leftText = "Rabbit slain: 0/3" } }
+W.Fire("QUEST_LOG_UPDATE")
+W.Wait(0)
+check(rabbit:IsShown() and rabbit.count._text == "0/3", "a quest of yours wants it: shown with the count")
+units.nameplate6.quest = nil
+W.Fire("QUEST_LOG_UPDATE")
+W.Wait(0)
+check(not rabbit:IsShown(), "done: gone")
+Core.Set(ns.name, "critters", true)
+check(rabbit:IsShown() and plates.nameplate6.UnitFrame._alpha == 1, "the setting on: every critter's plate")
+Core.Set(ns.name, "critters", false)
+check(not rabbit:IsShown(), "off again: none")
+units.nameplate6.creature = 12
+check(not ns.Plate.Wanted("nameplate6"), "a companion pet: none")
+units.nameplate6.creature = 14
+check(not ns.Plate.Wanted("nameplate6"), "a wild pet: none")
+units.nameplate6.creature = Secret()
+check(ns.Plate.Wanted("nameplate6"), "where the game hides the type: shown")
+units.nameplate6.creature = 1
+check(ns.Plate.Wanted("nameplate6"), "a beast: shown")
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate6")
+check(plates.nameplate6.UnitFrame._alpha == 1, "taken back: the game's own again")
+units.nameplate6, plates.nameplate6 = nil, nil
 
 -------------------------------------------------------------------------------
 --  Combo points under the bar of the unit you have them on

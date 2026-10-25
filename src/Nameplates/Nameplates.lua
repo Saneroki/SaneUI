@@ -30,7 +30,8 @@ local ADDON, ns = ...
 --    CombatText.lua  what the unit takes (damage, heals; a miss, a parry, a
 --                  block as a drawing) rising over its bar, and over your own
 --                  character, in place of the game's own combat text
---  Players you cannot attack and do not know show no plate (Plate.lua).
+--  Players you cannot attack and do not know show no plate, nor do critters
+--  unless the setting shows them (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -57,6 +58,8 @@ ns.TEXT = {
     rangeTip = "A foe's border turns red while none of your attacks reach it, as the game checks your own spells from your character.",
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
+    critters = "Plates on critters",
+    crittersTip = "Critters, wild pets and companion pets (rabbits, rats, deer and the like) have a nameplate with their name. Off: none, unless one is your target or a quest of yours wants it.",
     distance = "Size by distance",
     distanceTip = "Nameplates by their distance from your character alone: full size within 10 yards, half at 40, a quarter at 60; they grow in when they appear. Off: the game's own scaling and fading.",
     castBar = "Cast bar",
@@ -89,6 +92,7 @@ local OPTIONS = {
     { key = "resource", default = true, text = ns.TEXT.resource, tip = ns.TEXT.resourceTip },
     { key = "range", default = true, text = ns.TEXT.range, tip = ns.TEXT.rangeTip },
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
+    { key = "critters", default = false, text = ns.TEXT.critters, tip = ns.TEXT.crittersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
     { key = "foundCVars", default = {} }, -- the game's nameplate CVars as they were before ours (Scale.lua)
     { key = "castBar", default = true, text = ns.TEXT.castBar, tip = ns.TEXT.castBarTip },
