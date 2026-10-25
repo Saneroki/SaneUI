@@ -220,6 +220,11 @@ The bigger changes of each version, newest first.
   take, the yellow ? for those in your log, grey for those too low and
   a red ? for those you cannot take yet; the pin filter in sections
   with larger icons.
+- Navigation: the maps of the dungeons and raids, chosen on the full
+  map's bar, floor by floor; the quest log a window of its own that
+  you can move, dock and size, and pin to stay on the screen with the
+  map small, see-through; the minimap zooms four times closer; quest
+  areas stay in place at every zoom.
 - Guild: a new window for your guild, on Social's full screen (or on
   its own), opened with your guild key. An overview of who is where,
   the guild's news and chat and the race to the highest level; the
@@ -227,11 +232,6 @@ The bigger changes of each version, newest first.
   doll, shared only within your guild and only if you allow it.
   Quests, dungeons, loot, professions, the raid's plan and the
   officers' tools come next.
-- Navigation: the maps of the dungeons and raids, chosen on the full
-  map's bar, floor by floor; the quest log a window of its own that
-  you can move, dock and size, and pin to stay on the screen with the
-  map small, see-through; the minimap zooms four times closer; quest
-  areas stay in place at every zoom.
 - Navigation: your trip at the top of the screen, on a flight, a ship
   or the Deeprun Tram: where it goes, how far you are, the next stop
   and the time to it, the time to the end. On a flight, Request Stop

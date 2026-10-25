@@ -389,6 +389,32 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   `VARIABLES_LOADED`, and after a `CVAR_UPDATE` of one of them; through `Core.Sync.SetCVar` where Sync is there.
 - Tests: `dev/tests/nameplates.lua` 176 checks (turned back on by something else: off again a little later).
 
+### Inventory: the character's stats a page of our own that follows its window (Saneroki, 2026-10-23)
+- **The stats' window on the journal's page** (`Board.DRESS.stats = "journal"`), no longer the game's right pane
+  (its stone, background and scrolling list of its rows). `Sheet/Stats.lua` anew: each stat a line of ours
+  (`Label`, `Value`, the tooltip's fields) filled by the game's own `PAPERDOLL_STATINFO[stat].updateFunc`, as the
+  game fills its rows; its colon taken off, the game's colour codes in a value darkened for the paper
+  (`Paper.InkHex`); its tooltip the game's (`onEnterFunc`, else `PaperDollStatTooltip`); the resistances by the
+  game's `PaperDollFrame_SetResistance`. A stat the game hides, or at its `hideAt`, is left out.
+- **Layout that follows the width:** the categories are sections (head in Kalam Bold with a pencil rule, lines with a
+  faint stripe on every other one) in as many columns as fit (`Stats.COLUMN` to `Stats.COLUMN_MOST` wide, the block
+  of them centred), cut in the game's order so the tallest column is as low as it can be (`Cuts`, every cut tried);
+  one column in a narrow window. The primary attributes (a section of only `Stats.PRIMARY`) stand over the columns
+  as five pencil boxes with the value large (`AsTile`) when they fit across the block, else a section like the
+  others. A `ScrollFrame` with the wheel; laid out again on every size change.
+- **The tabs** (`Sheet/Sidebar.lua`): drawn tabs in pencil (a pencil box, the word in Kalam; the chosen one strong
+  and shaded, one the game has nothing for faded) in a row with a rule under it, as wide as their words, squeezed to
+  share a narrow row. The window's least width is one column's.
+- **Gear sets and titles on the paper:** lines with the pencil's shading, the hand-drawn tick (Kalam's root sign), a
+  set's icon in a pencil slot, red ink for a set with an item lost; Equip, Save and New Set are pencil boxes
+  (`Gear.lua`, `Titles.lua`). `List.New` takes `paper = true` (without the game's long lines).
+- **The lab:** the inventory scene shows the stats, filled by the game's own character sheet files
+  (`Lab.BlizzardFiles`, new: some files of one of Blizzard's addons, from the newest export); the lab's client got
+  what those ask (`BreakUpLargeNumbers`, `GetUnitSpeed`, `LE_UNIT_STAT_*`, the ratings and enemy chances as zero, the
+  defense skill, `C_PaperDollInfo`'s armor share and shield) and `format`'s `%F`.
+- Tests: `dev/tests/inventory.lua` 143 checks (the sections, a resistance, the game's function and tooltip, one
+  column narrow and three wide, the restriction), `dev/tests/sheet.lua` 95 (the drawn tabs, red ink).
+
 ### Nameplates: the outline one screen pixel at every size (Saneroki, 2026-10-23)
 - **Fixed** (`Scale.lua`, `Plate.lua`): the border's pixel (and the bar's inset, the caps) was worked out at a plate's
   first size, so as plates grew in from nothing or shrank with distance it came out several pixels wide. A plate is
@@ -432,6 +458,18 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   with a minus. `CombatText.SCHOOLS` (a colour per school) is gone: it confused.
 - Tests: `dev/tests/nameplates.lua` 172 checks (a spell red, a blow on you white, physical and a spell school at once
   red).
+
+### Inventory: the doll's model back; Special Bags become Containers (Saneroki, 2026-10-23)
+- **The model was gone:** 25bd74d put the model scene into a frame that clipped its children, anchored to the scene
+  inside it; the game then drew no model at all. The scene stands on its place again (`Model.Build`, no `view`), and
+  the legs below the hero's column are hidden by the doll's own picture drawn again over the model: `Doll.Cover`
+  (the picture from `Doll.FOOT` down, as wide as `Model.SIZE`, its texture coordinates the doll's) on a frame of
+  `Sheet.Build` at the holder's level + 6, above the model and under the items (+10).
+- **Containers:** the category `special` (key kept) is named by the game's `AUCTION_CATEGORY_CONTAINERS` and takes
+  the classes Container and Quiver besides what lies in a special bag; no longer `unassignable`, so an item can be
+  put into it and it has its empty slot. `ns.TEXT.bagsSpecial` gone.
+- Tests: `dev/tests/inventory.lua` (no clipping frame; the cover's coordinates, place and level), `dev/tests/bags.lua`
+  321 checks (bags and quivers in Containers, its name, it takes items; nine empty slots in the grid).
 
 ### Nameplates: smaller drawings, your combat text at your feet, the "i" in Kalam (Saneroki, 2026-10-23)
 - `CombatText.lua`: the drawings 30 units (`CombatText.PICTURE`, was 48); your own combat text rises from about your
@@ -2648,21 +2686,6 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
 - Tests: `dev/tests/navigation.lua` (351 checks: a flight of two hops taken, flown, measured, drawn on the map,
   landed early by Request Stop, flown whole and its pace kept; the tram; a ship's trip; the trip view).
 
-### Navigation: the coast keeps its docks; the view Blended (Saneroki, 2026-10-20)
-- `dev/tools/terrain-art`: the land's alpha fades out over the first yard of water (`SHALLOW`), so a beach one wades
-  on stays; what stands on the water is kept as land (`standing`): where the minimap is brighter or warmer than the
-  water around it (its mean colour nearby, taken twice; a lone speck dropped, the rest widened by a sample), so docks,
-  piers, bridges and ships at their moorings are no longer cut away. `levels` reads a terrain file's ground and water
-  surface; `terrain` (used by the other tools) is unchanged.
-- A tile on a coast gets a mask of its own, 128 x 128 (`Art/Coasts/<key>.blp`, listed in the new `Coasts.lua`):
-  `Terrain.lua` cuts the game's tile by it up close instead of by its block's overview, which has a quarter of the
-  detail.
-- The view *Blended* (`blend`, between Parchment and Scrying): Parchment's art over Scrying's terrain, its alpha by the
-  view's height (`Canvas.Blend`, `Canvas.BLEND`: whole at 9,000 yards and up, gone at 1,200, faded by the zoom's
-  factor between), the sea's colour between the two; a layer at alpha 0 or under art at 1 is not drawn.
-- Tests: the coast tile's own mask, Blended at the world, between and close in; the views' count is three without
-  Atlas.
-
 ### Combat: our own talents (Saneroki, 2026-10-20)
 - **The talents** (new `Talents/`, 9 files in the TOC): the game's shared talent frame (`TalentFrameBaseTemplate`,
   `Blizzard_SharedTalentUI`) inherited, with the Camelot class layer the game's window adds ported (that layer is in
@@ -2679,25 +2702,20 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
 - Tests: `dev/tests/talents.lua` (64 checks, new, in `dev/tests/run`); `dev/tests/combat.lua` 36 (the first
   layout's shares with the talents there).
 
-### Navigation: indoor maps of our own, without the black (Saneroki, 2026-10-20)
-- **The pictures** (`dev/tools/indoor-art`, new; `src/Navigation/Art/Indoors/`, 2,785 pictures of 345 buildings,
-  47 MB): the game's own indoor minimap textures (its table WMOMinimapTexture: per building, part and block of 128
-  yards, 2 texels a yard), each part's blocks laid into one picture, the black under its clear texels replaced by
-  its edge's colour, its edge softened, resized to 1.4 to 2 texels a yard into a power of two (premultiplied, so no
-  black fringe); BLP2 DXT5 with mipmaps. Left out: parts whose textures were made for another shape of the building,
-  that the building lacks, or that draw almost nothing, and placements tilted more than 10 degrees.
-- **The data** (Core's new set *Indoors*, pack World; `assets/data/Indoors/`, source the game): per building (its root
-  file) its parts' pictures (where their corners lie in the building, their height, whether the game flags them
-  indoor), its placements (continent, place, height, turn, scale), its terrain tiles (`byTile`); 345 buildings,
-  1,054 placements.
-- **The layer** (`Indoors.lua`, new in the TOC; `Canvas.lua`: the layer `indoors` over the map's art, `Canvas.LEVELS`
-  and `Canvas.MAP` one up): indoors, the building the player stands in (its part holding the player's place,
-  `UnitPosition`, of those on the player's tile), its parts at the player's height (from `Indoors.BELOW`, a yard,
-  under their floor to their top; the floor nearest below on top; without a height every indoor part), each as the
-  square the canvas lays it out in, its texture coordinates turned to the building's turn inside it, clear around it
-  (`CLAMPTOBLACKADDITIVE`). Looked at again on the tracker's steps four times a second (`Indoors.Track`).
-- **Tests:** `dev/tests/navigation.lua`: a two-floored building at the player's place: the floor at the player's
-  height, its picture's corners, the floor above after the stairs, nothing outdoors.
+### Navigation: the coast keeps its docks; the view Blended (Saneroki, 2026-10-20)
+- `dev/tools/terrain-art`: the land's alpha fades out over the first yard of water (`SHALLOW`), so a beach one wades
+  on stays; what stands on the water is kept as land (`standing`): where the minimap is brighter or warmer than the
+  water around it (its mean colour nearby, taken twice; a lone speck dropped, the rest widened by a sample), so docks,
+  piers, bridges and ships at their moorings are no longer cut away. `levels` reads a terrain file's ground and water
+  surface; `terrain` (used by the other tools) is unchanged.
+- A tile on a coast gets a mask of its own, 128 x 128 (`Art/Coasts/<key>.blp`, listed in the new `Coasts.lua`):
+  `Terrain.lua` cuts the game's tile by it up close instead of by its block's overview, which has a quarter of the
+  detail.
+- The view *Blended* (`blend`, between Parchment and Scrying): Parchment's art over Scrying's terrain, its alpha by the
+  view's height (`Canvas.Blend`, `Canvas.BLEND`: whole at 9,000 yards and up, gone at 1,200, faded by the zoom's
+  factor between), the sea's colour between the two; a layer at alpha 0 or under art at 1 is not drawn.
+- Tests: the coast tile's own mask, Blended at the world, between and close in; the views' count is three without
+  Atlas.
 
 ### Data: quest areas, trainers, paths, and achievements, mounts, factions and more (Saneroki, 2026-10-20)
 - `dev/tools/game-data` reads more of the game's tables:
@@ -2719,6 +2737,26 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
 - Left out: the 16 spells whose trainers disagree, and 12 whose skill is one of the professions' child tiers. Also
   creatures with several paths (PatrolPaths holds one per creature), and vendors whose list as sent is shorter
   (sold out, or for the other side).
+
+### Navigation: indoor maps of our own, without the black (Saneroki, 2026-10-20)
+- **The pictures** (`dev/tools/indoor-art`, new; `src/Navigation/Art/Indoors/`, 2,785 pictures of 345 buildings,
+  47 MB): the game's own indoor minimap textures (its table WMOMinimapTexture: per building, part and block of 128
+  yards, 2 texels a yard), each part's blocks laid into one picture, the black under its clear texels replaced by
+  its edge's colour, its edge softened, resized to 1.4 to 2 texels a yard into a power of two (premultiplied, so no
+  black fringe); BLP2 DXT5 with mipmaps. Left out: parts whose textures were made for another shape of the building,
+  that the building lacks, or that draw almost nothing, and placements tilted more than 10 degrees.
+- **The data** (Core's new set *Indoors*, pack World; `assets/data/Indoors/`, source the game): per building (its root
+  file) its parts' pictures (where their corners lie in the building, their height, whether the game flags them
+  indoor), its placements (continent, place, height, turn, scale), its terrain tiles (`byTile`); 345 buildings,
+  1,054 placements.
+- **The layer** (`Indoors.lua`, new in the TOC; `Canvas.lua`: the layer `indoors` over the map's art, `Canvas.LEVELS`
+  and `Canvas.MAP` one up): indoors, the building the player stands in (its part holding the player's place,
+  `UnitPosition`, of those on the player's tile), its parts at the player's height (from `Indoors.BELOW`, a yard,
+  under their floor to their top; the floor nearest below on top; without a height every indoor part), each as the
+  square the canvas lays it out in, its texture coordinates turned to the building's turn inside it, clear around it
+  (`CLAMPTOBLACKADDITIVE`). Looked at again on the tracker's steps four times a second (`Indoors.Track`).
+- **Tests:** `dev/tests/navigation.lua`: a two-floored building at the player's place: the floor at the player's
+  height, its picture's corners, the floor above after the stairs, nothing outdoors.
 
 ### Navigation: herbs and ore found, sparkles, the finders in turn (Saneroki, 2026-10-20)
 Saneroki asked for the herbs and ore on the minimap in their own pictures, sparkles on them in the world, and Find
