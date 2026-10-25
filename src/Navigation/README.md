@@ -30,6 +30,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
     minimap's zoom steps first (its live dots show then), then goes on out to the whole continent and the
     world, and in past the game's nearest step four times nearer than it;
   - **right click:** one map out (a zone, its continent, the world), as on the game's map;
+  - **middle click:** back onto you, following you again, near enough for the game's minimap's dots: on the
+    small map at the game's middle zoom step (of its six), on the full map where that step's square takes half the
+    map's height (the game's dots show around you there too); in Retail on the map you are on;
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map;
   - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
@@ -88,6 +91,19 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
+- **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
+  the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
+  - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
+    minimap they would otherwise stand on our map only now and then, or nowhere), each its own button with its
+    addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists
+    (the game's own button for them is out of sight with its minimap's frame), a click on one as in the game's
+    menu. An addon with both shows once. With the game's own minimap chosen they are back round it;
+  - **Pins:** every kind of pin the map can show, a click shows it or not (as the pin filter; the sizes stay there);
+  - **Tracking:** what the game's own minimap tracks, as its tracking menu lists it (the townsfolk, a hunter's
+    beasts, Find Fish...), a click switches it; Find Herbs and Find Minerals are *Found herbs* and *Found ore*.
+
+  A cell that is on shows its picture whole with a pencil tick, one that is off faint and grey. The button
+  again, its X or Esc closes it, and so does the map filling the screen; the wheel scrolls it on a low screen.
 - **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): the herbs and ore the game's minimap
   shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in a round
   ring of stitched leather (the far herbs and ore below wear it with a point), grey while your skill is too low for it; on our small map and on the game's
@@ -421,6 +437,37 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the game's minimap draws them, where it lies over ours. The game's own minimap turns with the player where its
   setting says so and it is the game's (ours holds it north up): a ping's place is turned with it. In an instance
   (our map not drawn) a click on the game's minimap pings it there itself (`Hybrid.Ping`).
+- **The middle button** (`Canvas.Home`): the view follows again, on the player at once; its zoom `Hybrid.Home`'s:
+  the small view at the game's step `Hybrid.HOME` (its middle one, 2), the full map where that step's square takes
+  `Hybrid.ROOM` of its shorter side (so `Hybrid.Wide` shows that step around the player); where the game's minimap
+  is not ours, `Canvas.HOME` yards across the view. One map at a time (Retail), the map the player is on.
+- **Other addons' buttons** (`Strays.lua`, no frames but a hidden one to keep them in): while our window is the
+  minimap, a frame hanging on `Minimap`, `MinimapBackdrop`, `MinimapCluster` or its `MinimapContainer` that has a
+  name of its own whose global an addon set (`issecurevariable(name)` says not secure, and which addon; the game's
+  own are secure, Sane UI's left), no larger than `Strays.LARGEST` (64) each way, taking the mouse and not
+  protected, is held: its parent, points, scale, strata and level kept, the clicks the cluster's hiding took from
+  it given back (`Hybrid.Release`), then out of sight until the satchel lays it in a cell (`Strays.Place`, scaled to
+  the cell's picture). A hook after its `SetPoint` puts it back whenever its addon places it again (a drag, its own
+  update). Looked for at the login, 2 and 10 seconds after, a second after each addon that loads, and as the
+  satchel opens. Given back exactly when the game's minimap is the game's again (`Hybrid.Update` tells it) or the
+  module stands down. Its name in the satchel is its addon's title in the addon list (no colours). The game's addon
+  compartment (`AddonCompartmentFrame.registeredAddons`, both games): each addon a cell of its own, its click
+  `entry.func(nil, { buttonName })` and the mouse's coming and going its own, as the game's menu calls them, behind
+  `pcall` (a failure there is that addon's: its stack would hold our file, which Core reads as ours). One of the
+  same addon as a held button (its title or folder, letters and digits alone) is left out.
+- **The satchel** (`Satchel.lua`): its button on the canvas (level `Canvas.LEVELS.satchel`, over the marks), in the
+  corner `Satchel.Place` picks from where the window stands, shown only while the window stands small and is the
+  minimap. The page is a frame of its own (strata `DIALOG`) in Core's journal (`Core.Journal.Dress`: paper, leather
+  top, its X), beside the window toward the screen's middle, a scroll frame in it no higher than
+  `Satchel.ROOM` of the screen. Three sections, each a title over a pencil rule and a grid of `Satchel.COLUMNS`
+  cells: *AddOns* (`Strays.List`, A to Z; a note while it holds nothing), *Pins* (`ns.KINDS` offered here, in the
+  pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (`C_Minimap.GetTrackingInfo`, the
+  entries the game's tracking menu lists: a spell's, or one of its optional filters, Forever's
+  `MinimapConstants.OPTIONAL_FILTERS`, else Blizzard's list of them by `Enum.MinimapTrackingFilter` names; not the
+  finders `Nodes.FINDERS`). A tracking entry is switched as the game's menu switches it
+  (`MinimapUtil.SetTrackingFilterByFilterIndex`, else `C_Minimap.SetTracking`) and shown so at once until the game
+  agrees (a spell's takes its cast); `MINIMAP_UPDATE_TRACKING` and a change of the setting *Pins on the map* fill it
+  anew while it is open.
 - **Following on the full map:** the tracker follows again where `Again` says: the small view once the mouse has
   been off it for *Follow again after*; the full map only with *Follow me* ticked, as soon as the player moved since
   the last look and no button is held (a quest moved to counts as a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at
@@ -704,6 +751,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
+| `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
+| `Satchel.lua` | The satchel: its button on the small map and its page of the addons' buttons, the pins and the game's tracking, in Core's journal |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -718,6 +767,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-25, the satchel and the middle click:** as Saneroki asked, a middle click brings the map back onto you,
+  following, near enough for the game's minimap's dots (`Canvas.Home`, `Hybrid.HOME`); and one button on the small
+  map, the satchel, opens a page of the buttons other addons put round the minimap, gathered there
+  (`Strays.lua`), with the addons of the game's addon compartment, the kinds of pin and what the game's minimap
+  tracks, in large cells that switch at a click (`Satchel.lua`).
 - **2026-10-25, the Cosmic map's highlight:** a world under the mouse on Retail's Cosmic map (and Argus' maps,
   the Broken Isles on Azeroth) lights up in its whole piece of the game's atlas: the piece is set last, as the
   game's own highlight does, since a texture's coordinates after its atlas cut within the piece.

@@ -152,14 +152,6 @@ local function Zones(_, root)
     for _, zone in ipairs(list) do Radio(root, zone.name, zone.map) end
 end
 
--- One kind of pin on or off, kept in the setting Pins on the map.
-local function Switch(key)
-    local chosen = {}
-    for name, on in pairs(type(ns.options.pins) == "table" and ns.options.pins or {}) do chosen[name] = on end
-    chosen[key] = not ns.Pins.Shows(key) or nil
-    Core.Set(ns.name, "pins", chosen)
-end
-
 -- A kind's size kept, in the pin filter's steps (100 %: none kept).
 local function Resize(key, value)
     local sizes = ns.PinRange(key)
@@ -228,7 +220,7 @@ local function Filter(_, root)
             for _, kind in ipairs(section) do
                 local key = kind[1]
                 local box = root:CreateCheckbox(ns.KindLabel(kind, TopBar.ICON),
-                    ns.Guard(function() return ns.Pins.Shows(key) end), ns.Guard(function() Switch(key) end))
+                    ns.Guard(function() return ns.Pins.Shows(key) end), ns.Guard(function() ns.SwitchPin(key) end))
                 if sliders and (ns.Pins.SIZE[key] or SIZED[key]) then
                     box:AddInitializer(ns.Guard(function(button) return Sizer(button, key) end))
                 else

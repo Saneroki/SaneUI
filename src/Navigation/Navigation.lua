@@ -49,7 +49,7 @@ ns.TEXT = {
     nativeMap = "Show the game's map",
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
     pins = "Pins on the map",
-    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Books and treasures only full screen; services on the small map only near you.",
+    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Books and treasures only full screen; services on the small map only near you.",
     route = "Route to the map pin",
     minimap = "Minimap dots",
     log = "Quests in your log",
@@ -160,6 +160,14 @@ function ns.KindLabel(kind, size)
     end
     return ("|A:%s:%d:%d|a %s"):format(kind.icon, size, size, kind[2])
 end
+-- One kind of pin on or off, kept in the setting Pins on the map (the pin filter, the satchel).
+function ns.SwitchPin(key)
+    local chosen = {}
+    for name, on in pairs(type(ns.options.pins) == "table" and ns.options.pins or {}) do chosen[name] = on end
+    chosen[key] = not ns.Pins.Shows(key) or nil
+    Core.Set(ns.name, "pins", chosen)
+end
+
 -- A kind's size, by its slider in the pin filter: from low to high percent in steps (100: as drawn at first). The
 -- quest areas' slider is their opacity instead (PIN_OPACITY).
 ns.PIN_SIZES = { low = 50, high = 200, step = 10 }
@@ -267,6 +275,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
         found = now
         ns.Guarded(ns.Nodes.Update)
         ns.Guarded(ns.Found.Update)
+        ns.Guarded(ns.Satchel.Fill)
         return ns.Guarded(ns.Canvas.Refresh)
     end
     if key == "nativeMinimap" then
@@ -335,6 +344,8 @@ end
 -- not keep the next from its work. What must wait for the end of a fight waits for it.
 function ns.GiveBack()
     ns.Safe("giving back", ns.Native.GiveBack)
+    ns.Safe("giving back", ns.Satchel.Hide)
+    ns.Safe("giving back", ns.Strays.GiveBack)
     ns.Safe("giving back", ns.Hybrid.GiveBack)
     ns.Safe("giving back", ns.Window.Hide)
     ns.Safe("giving back", ns.TripView.Hide)
@@ -357,6 +368,7 @@ function ns.OnLogin()
     ns.Offer()
     ns.Window.Build()
     ns.Hybrid.Start(ns.Canvas.frame)
+    ns.Strays.Start()
     ns.Native.Start()
     found = tostring(ns.Pins.Shows("foundHerb")) .. " " .. tostring(ns.Pins.Shows("foundOre"))
     ns.Nodes.Start()

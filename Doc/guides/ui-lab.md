@@ -80,7 +80,9 @@ prints its log.
 
   The scenes: `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, and a minimap's stand-in with the
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
-  here one in `assets/generated/ui-lab/backdrops/`, local), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
+  here one in `assets/generated/ui-lab/backdrops/`, local), `satchel` (Navigation's satchel, `Satchel.lua` and
+  `Strays.lua`: its button on a small map's stand-in and its page, with a pretend addon's button and the game's
+  addon compartment; `LabSatchel` in the console), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest

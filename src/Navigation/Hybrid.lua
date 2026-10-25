@@ -20,6 +20,9 @@ local _, ns = ...
 --                   in again it takes the widest step; in past the narrowest our map goes on alone
 --                   too, up to its own nearest zoom (Camera.NEAR), and out again it takes the
 --                   narrowest step (Wheel)
+--      home         the middle button brings the view back onto the player at the game's middle step,
+--                   Hybrid.HOME, following (Canvas.Home); the full map where that step's square takes
+--                   Hybrid.ROOM of it, so its dots show there too
 --      clicks       the left and right button go through to our map (drag, a click, one map out): a
 --                   plain left click pings there as on the game's, by the place's yards from the player
 --                   (Ping.lua, PingAt), so on our map wherever its view reaches (in an instance, on it:
@@ -54,6 +57,8 @@ Hybrid.MASK = "Interface\\Buttons\\WHITE8X8" -- square: the corners of our map a
 Hybrid.ROUND = "Textures\\MinimapMask" -- the engine's round mask, given back where the game's code sets none (Retail)
 Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks.lua)
 Hybrid.ROOM = 0.5 -- the full map: its square takes at most so much of the canvas' shorter side
+Hybrid.HOME = 2 -- the step a middle click comes back to the player at (Canvas.Home): the game's middle one, its dots
+                -- in sight around you, neither its nearest nor its widest
 local WAIT = "navigation: minimap" -- what waits for the fight's end
 
 local taken, saved, canvas, hooked
@@ -200,10 +205,14 @@ function Hybrid.Update()
     local wanted = not ns.off and not ns.options.nativeMinimap and canvas ~= nil
     if wanted == (taken and true or false) then return end
     if InCombatLockdown() then return Core.AfterCombat(WAIT, ns.Guarded, Hybrid.Update) end
-    if not wanted then return Give() end
-    Take()
-    -- The small view starts at the step the player had the game's minimap at.
-    if taken then ns.Window.Native(saved.zoom) end
+    if not wanted then
+        Give()
+    else
+        Take()
+        -- The small view starts at the step the player had the game's minimap at.
+        if taken then ns.Window.Native(saved.zoom) end
+    end
+    ns.Safe("strays", ns.Strays.Update) -- the other addons' buttons held while it is ours, given back with it
 end
 
 function Hybrid.GiveBack()
@@ -269,6 +278,37 @@ function Hybrid.Fit(camera, width, height)
     if not camera.native then return end
     local zoom = taken and Hybrid.Zoom(camera.native, Hybrid.Side(width, height))
     if zoom then camera.k = zoom else camera.native = nil end
+end
+
+-- The zoom a view comes back to the player at (a middle click, Canvas.Home): the small view at Hybrid.HOME, the
+-- game's minimap showing; the full map where that step's square takes Hybrid.ROOM of its shorter side (Wide shows
+-- it there). False while the game's minimap is not ours, or that step is not measured yet.
+function Hybrid.Home(camera, width, height)
+    local radius = taken and radii[IsIndoors() and true or false][Hybrid.HOME]
+    if not radius then return false end
+    if camera == ns.Window.full then
+        camera.native, camera.k = nil, math.min(width, height) * Hybrid.ROOM / (2 * radius) * (1 - 1e-6)
+    else
+        camera.native, camera.k = Hybrid.HOME, Hybrid.Side(width, height) / 2 / radius
+    end
+    return true
+end
+
+-- A frame of the cluster Strays.lua holds now: its clicks, if they were taken here, are its own
+-- again, and it is not given them back here; so is every frame under it. Whether any were taken.
+function Hybrid.Release(frame)
+    if not saved then return false end
+    local released = false
+    for each in pairs(saved.mice) do
+        local up = each
+        while up and up ~= frame do up = up:GetParent() end
+        if up then
+            saved.mice[each] = nil
+            each:EnableMouse(true)
+            released = true
+        end
+    end
+    return released
 end
 
 -- Its size, layer and step for a view (mask: the one it is cut by).

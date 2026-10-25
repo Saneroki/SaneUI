@@ -2,7 +2,8 @@
 -- spaces and the map tree, the camera's levels, what the game tells (Live), the map drawn each way in both
 -- views, the views offered with and without the module Atlas (its index read, the level a zoom draws, the
 -- block under a point, loaded when first drawn, the fall back when it fails), the mouse (drag, wheel, right
--- click, Ctrl-click), the game's minimap taken over ours and given back, the game's map kept closed and its
+-- click, middle click, Ctrl-click), the game's minimap taken over ours and given back, other addons' buttons
+-- held in the satchel and given back, the satchel's page, the game's map kept closed and its
 -- keys; played as Retail (W.Play), without Forever's data, what stands down and what the game's own does instead.
 -- Then again as a Retail client from the start ("retail"): the game's own map tree, one map at a time
 -- (Camera.Retail.lua). The look itself can only be judged in the game.
@@ -357,6 +358,34 @@ local backdrop = W.NewWidget("Frame", "MinimapBackdrop", minimap)
 rawset(_G, "MinimapCluster", cluster)
 rawset(_G, "Minimap", minimap)
 rawset(_G, "MinimapBackdrop", backdrop)
+-- Other addons' buttons round it (Strays.lua): an addon's (its global set by that addon, as the game tells by
+-- issecurevariable), a frame of that addon too large for a button, and a button of the game's own on the cluster;
+-- the game's addon compartment with two addons, the first the same addon. Kept in W (the chunk has 200 locals).
+W.insecure = { PretendAddonButton = "PretendAddon", PretendAddonOverlay = "PretendAddon" }
+function issecurevariable(name) return W.insecure[name] == nil, W.insecure[name] end
+function methods:GetName() return self._name end
+function methods:IsObjectType(kind) return self._kind == kind end
+-- A scroll frame's place (the satchel's page): none past its range.
+function methods:SetVerticalScroll(offset) self._scroll = offset end
+function methods:GetVerticalScroll() return self._scroll or 0 end
+function methods:GetVerticalScrollRange() return 0 end
+W.stray = W.NewWidget("Button", "PretendAddonButton", minimap)
+W.stray:SetSize(31, 31)
+W.stray:SetPoint("TOPLEFT", minimap, "TOPLEFT", 4, -4)
+W.overlay = W.NewWidget("Frame", "PretendAddonOverlay", minimap)
+W.overlay:SetSize(198, 198)
+W.gameButton = W.NewWidget("Button", "GameTimeFrame", cluster)
+W.gameButton:SetSize(40, 40)
+for _, frame in ipairs({ W.stray, W.overlay, W.gameButton }) do
+    frame._mouse = true
+    rawset(_G, frame._name, frame)
+end
+W.addons[#W.addons + 1] = { name = "PretendAddon", title = "|cff33ff99Pretend|r Addon", metadata = {} }
+AddonCompartmentFrame = W.NewWidget("DropdownButton", "AddonCompartmentFrame", cluster)
+AddonCompartmentFrame.registeredAddons = {
+    { text = "Pretend Addon", icon = "Interface\\Icons\\INV_Misc_QuestionMark", func = function() end },
+    { text = "Compartment Addon", icon = 134400, func = function(_, input) W.compartment = input.buttonName end },
+}
 C_Minimap = {
     GetViewRadius = function() return radii[minimap._zoom] end,
     SetDrawGroundTextures = function(on) ground = on end,
@@ -1291,6 +1320,83 @@ check(small.native == 0, "and out through its steps to the widest")
     check(small.native == 0 and minimap._zoom == 0, "and back out, a notch a frame")
 end)()
 
+-- A middle click: back on the player, following, at the game's middle step (Hybrid.HOME), its dots in sight.
+;(function()
+    small.follow, small.native, small.k = false, nil, 3
+    small:Look(small.u + 300, small.v)
+    Canvas.Layout()
+    frame._scripts.OnMouseDown(frame, "MiddleButton")
+    frame._scripts.OnMouseUp(frame, "MiddleButton")
+    local _, u, v = Live.Player()
+    check(small.follow and small.native == Hybrid.HOME and near(small.k, 100 / radii[Hybrid.HOME]) and near(small.u, u)
+        and near(small.v, v) and minimap._shown and minimap._zoom == Hybrid.HOME,
+        "a middle click: back on the player and following, at the game's middle step, its minimap's dots in sight")
+    for _ = 1, Hybrid.HOME do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
+    check(small.native == 0, "and out to the widest step again")
+end)()
+
+-- Other addons' buttons held (Strays.lua), and the satchel (Satchel.lua): its button on the small map opens a page of
+-- the addons' buttons, the pins and the game's tracking.
+;(function()
+    local Satchel = ns.Satchel
+    check(W.stray:GetParent() ~= minimap and not W.stray:GetParent()._shown and W.overlay:GetParent() == minimap
+        and W.gameButton:GetParent() == cluster,
+        "another addon's button on the minimap is held out of sight; its larger frame and the game's own button stay")
+    local button = Satchel.button
+    check(button and button._shown and button._parent == frame and not Satchel.Shown(), "the satchel's button on the small map")
+    button._scripts.OnClick(button, "LeftButton")
+    check(Satchel.Shown(), "a click opens the satchel")
+    local function Cells()
+        local found, count = {}, {}
+        for _, widget in ipairs(W.frames) do
+            if widget._shown and widget.item then
+                found[widget.item.title] = widget
+                count[widget.item.title] = (count[widget.item.title] or 0) + 1
+            end
+        end
+        return found, count
+    end
+    local cells, count = Cells()
+    local held = cells["Pretend Addon"]
+    check(held and held.item.button == W.stray and W.stray:GetParent() == held.spot and near(W.stray._scale, Satchel.ICON / 31)
+        and count["Pretend Addon"] == 1,
+        "the addon's own button in its cell, as large as a cell's picture, under its title without colours, once")
+    check(cells["Compartment Addon"] and cells["Compartment Addon"].item.entry and cells["Compartment Addon"].picture._shown,
+        "the game's compartment's other addon in a cell of its own, its picture over its title")
+    local entry = cells["Compartment Addon"]
+    entry._scripts.OnClick(entry, "RightButton")
+    check(W.compartment == "RightButton", "a click on it is its addon's own, with its mouse button")
+    W.stray:ClearAllPoints()
+    W.stray:SetPoint("CENTER", minimap, "CENTER", 60, 60)
+    check(W.stray._points[1][2] == held.spot and W.stray:GetParent() == held.spot, "its addon placing it again: back in its cell")
+
+    local flight = cells["Flight points"]
+    check(flight and flight.tick._shown and flight.picture._alpha == 1, "a pin shown on the map: its picture whole, ticked")
+    flight._scripts.OnClick(flight, "LeftButton")
+    flight = Cells()["Flight points"]
+    check(not ns.Pins.Shows("flight") and flight and not flight.tick._shown and flight.picture._alpha == Satchel.FAINT,
+        "a click: the map no longer shows it, its cell faint, without the tick")
+    flight._scripts.OnClick(flight, "LeftButton")
+    check(ns.Pins.Shows("flight"), "and again: shown")
+
+    local switches, finders = #gather.switches, { gather.tracking[1].active, gather.tracking[2].active }
+    gather.tracking[3] = { name = "Track Beasts", spellID = 1494, active = false, type = "spell", texture = 132328 }
+    Satchel.Fill()
+    cells = Cells()
+    local beasts = cells["Track Beasts"]
+    check(beasts and not cells["Find Herbs"] and not cells["Find Minerals"] and not beasts.tick._shown,
+        "the game's tracking, but the finders Found herbs and Found ore switch")
+    beasts._scripts.OnClick(beasts, "LeftButton")
+    check(gather.tracking[3].active and Cells()["Track Beasts"].tick._shown, "a click switches it as the game's menu does")
+    gather.tracking[3] = nil
+    gather.tracking[1].active, gather.tracking[2].active = finders[1], finders[2]
+    for index = #gather.switches, switches + 1, -1 do gather.switches[index] = nil end
+
+    button._scripts.OnClick(button, "LeftButton")
+    check(not Satchel.Shown() and W.stray:GetParent() ~= held.spot and not W.stray:GetParent()._shown,
+        "the button again closes it: the addon's button waits out of sight again")
+end)()
+
 -- A drag: no longer following, the game's minimap goes; it follows again after a while without the mouse.
 frame._scripts.OnMouseDown(frame, "LeftButton")
 cursorX = cursorX + 30
@@ -1539,6 +1645,17 @@ do
     Core.Set(ns.name, "pins", chosen)
     check(minimap._shown, "on again: there")
     check(not Hybrid.Ping(0, 0), "a click on the full map is no ping: the game's minimap is not in its middle there")
+    -- A middle click: on the player and following, where the game's middle step's square takes Hybrid.ROOM of it.
+    local was = { u = full.u, v = full.v, k = full.k, follow = full.follow }
+    full.follow, full.k = false, full.k / 3
+    frame._scripts.OnMouseDown(frame, "MiddleButton")
+    frame._scripts.OnMouseUp(frame, "MiddleButton")
+    check(full.follow and math.abs(full.k - 868 * Hybrid.ROOM / (2 * radii[Hybrid.HOME])) < 1e-4 and near(full.u, u)
+        and minimap._shown and minimap._zoom == Hybrid.HOME,
+        "full, a middle click: on the player, near enough that the game's middle step shows around the player")
+    full.u, full.v, full.k, full.follow = was.u, was.v, was.k, was.follow
+    Canvas.Layout()
+    check(not ns.Satchel.button._shown, "full: no satchel button, the small map's alone")
 end
 -- The group's pings are not heard: MINIMAP_PING is one of the game's callback events with restrictions, whose
 -- callback the game blocks for an addon (a blocked action at every login); the game's minimap draws them itself.
@@ -2830,6 +2947,8 @@ check(not Window.handle.edge.away, "back in its corner")
 Core.Set(ns.name, "nativeMinimap", true)
 check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and minimap:IsMouseClickEnabled()
     and ground == true and ignoreRotation == false and configs > 0, "Show the game's minimap: its place, wheel, clicks, ground, rotation and mask back")
+check(W.stray:GetParent() == minimap and W.stray._points[1][1] == "TOPLEFT" and W.stray._points[1][2] == minimap
+    and W.stray._scale == 1, "and the other addon's button back on it, where and as large as its addon had it")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,
     "its cluster, border and buttons back")
 ;(function()
@@ -2859,6 +2978,7 @@ EventRegistry:TriggerEvent("EditMode.Exit")
 check(Window.frame._alpha == 0 and not Canvas.Laid(), "and rests again once Edit Mode closes")
 Core.Set(ns.name, "nativeMinimap", false)
 check(Hybrid.Taken() and Window.frame._alpha == 1 and Canvas.frame._mouse and Canvas.Laid(), "off again: taken again, our small window back")
+check(W.stray:GetParent() ~= minimap and ns.Satchel.button._shown, "the other addon's button held again, the satchel's button back")
 
 -- The dropdown Classic windows: both kept choices, ticked while chosen, chosen again to come back.
 Window.Toggle()
@@ -4970,6 +5090,8 @@ check(ns.off and not Window.frame:IsShown() and not Hybrid.Taken() and next(over
     "standing down: the window goes, the game's minimap and keys are back")
 check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("Sound_EnableSFX") == "1" and not gather.overlay._shown,
     "and the interact key's settings as they were, no found herbs drawn")
+check(W.stray:GetParent() == minimap and W.stray._points[1][2] == minimap and not ns.Satchel.button._shown,
+    "and the other addon's button back on the game's minimap, the satchel's button gone")
 
 check(os.execute(("lua5.1 '%s/dev/tests/navigation.lua' retail"):format(root)) == 0,
     "as a Retail client from the start the map is the game's own map tree, one map at a time")

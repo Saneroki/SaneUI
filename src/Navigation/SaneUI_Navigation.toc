@@ -67,6 +67,10 @@ Found.lua
 # Gold sparkles in the world on the herb or ore your interact key would gather
 Sparkles.lua
 Glints.lua
+# Other addons' buttons from round the game's minimap and the addons of its compartment, held for the satchel
+Strays.lua
+# The satchel: a button on the small map opening a page of the addons' buttons, the pins and the game's tracking
+Satchel.lua
 # The game's map kept closed: its keys and every way to it open ours
 Native.lua
 # The quest log, a window of its own over the full map; pinned, on the screen while the map is small too

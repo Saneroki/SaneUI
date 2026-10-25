@@ -11,7 +11,8 @@ Deeprun Tram, by lift, through portals, by the hearthstone and by the teleports 
 classic dungeons' and raids' maps of
 Core's set *Dungeons* in the game's map art, with their floors, bosses and the bosses' 3D models
 (`src/Navigation/README.md`). Not yet: a travel pin's ways under the mouse (*Map pins*), the leveling guide, the
-dungeons' three zooms, search, the minimap's small parts.
+dungeons' three zooms, search, the minimap's other small parts (zone text, clock, mail, difficulty, the calendar and
+the expansion summary); its addon buttons, tracking and pins are in the satchel (2026-10-25).
 
 How to read this page:
 
@@ -67,6 +68,17 @@ map shown. Retail's world (some 2,000 maps, continents at different scales on Az
 several versions) is the game's to keep up with every patch; Sane UI makes no map data of its own for it. Saneroki
 chose our own window for it (option 1 of two): our window, pins and look, Retail's maps and layers as the game has
 them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Navigation/Camera.Retail.lua`).
+
+## The satchel and the middle click (Saneroki, 2026-10-25)
+
+- **A middle click** on the map centres it on the player and zooms there: not the nearest zoom, but near enough to
+  see the minimap's icons. Built: the view follows again at the game's middle minimap step on the small map, at
+  the zoom where that step shows around the player on the full map.
+- **One place for the addon buttons** usually placed around the minimap, and **one button on the minimap** that
+  opens it: the gathered addon buttons and the pins that can be shown on the minimap (in the game a dropdown on its
+  minimap, the tracking menu), in a big, easily selectable way. Built: the satchel (`src/Navigation/Satchel.lua`,
+  `Strays.lua`): AddOns (other addons' buttons and the game's addon compartment), Pins (our kinds), Tracking (the
+  game's tracking menu's entries).
 
 ## One map, two views
 
@@ -1016,7 +1028,10 @@ As Blizzard's hybrid minimap does (*verified*), with our canvas under the native
   (`docked`).
 - **What else is on the minimap** (zone text, clock, mail, tracking, difficulty): our own small parts
   around the small view, reading the game's API, not Blizzard's buttons moved (no Blizzard frame given a
-  new parent, so no taint). Which ones: *Open questions*.
+  new parent, so no taint). Which ones: *Open questions*. Built (2026-10-25): the tracking, in the satchel's
+  section *Tracking* (the game's own entries, switched through its API); other addons' buttons are held in the
+  satchel (their frames moved, never one of Blizzard's: the game's own are told apart by `issecurevariable`).
+  Still to come: zone text, clock, mail, difficulty, the calendar and the expansion summary (Retail).
 - **Watch for:** the game's skin of this client sets the minimap's mask again when `rotateMinimap`
   changes (`Blizzard_Minimap/Camelot/Skin.lua`): our mask is set again after (`CVAR_UPDATE`). The queue
   eye is anchored to `Minimap` in this client and moves with it: placed by us. The game's key *Toggle

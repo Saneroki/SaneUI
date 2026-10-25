@@ -44,8 +44,10 @@ local _, ns = ...
 --  where a click opens nothing, it pings there to the group as a click on the
 --  game's minimap does (Ping.lua), at once (the game takes a ping only in the
 --  click itself). A click on a pin is the pin's first, where
---  it has one of its own (PinView.Act). A plane of its own (Zephras Isle) is drawn
---  as a continent is, as a zone (Camera.lua).
+--  it has one of its own (PinView.Act). The middle button brings the view back
+--  onto the player, following, near enough for the game's minimap's dots (Home).
+--  A plane of its own (Zephras Isle) is drawn as a continent is, as a zone
+--  (Camera.lua).
 --
 --  Retail shows one map at a time, as the game's own map does (Camera.Retail.lua:
 --  camera.shown): a click goes into the map the game says is under the mouse, at
@@ -86,9 +88,11 @@ Canvas.DRAG = 4      -- the mouse moves so many units with the button held befor
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
 Canvas.DOUBLE = 0.3  -- a second click so many seconds after the first, near where it was, is a double click
 Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a double click
+Canvas.HOME = 400    -- yards across the view's shorter side a middle click comes back at where the game's minimap
+                     -- is not ours (Home)
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
 Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, indoors = 5, light = 6, areas = 7, route = 8, pins = 12,
-                  marks = 20 }
+                  marks = 20, satchel = 30 }
 Canvas.MAP = 6 -- the highest level of the map itself: what stands on it is above this
 
 local frame, holder, camera, tracker, layers, hover, ground
@@ -342,6 +346,7 @@ local function Stack()
     for name, layer in pairs(layers) do layer:SetFrameLevel(base + Canvas.LEVELS[name]) end
     ns.PinView.Stack(base + Canvas.LEVELS.pins)
     ns.Marks.Stack(base + Canvas.LEVELS.marks)
+    ns.Satchel.Stack(base + Canvas.LEVELS.satchel)
 end
 
 -- Every layer laid out anew around the camera's middle.
@@ -571,6 +576,10 @@ local last
 -- (PinView.Act), else the map under the mouse opens, else a ping there, at once (Ping.Send: so the first click of a
 -- double click pings too). In an instance our map is not drawn: no place to pin, the game's minimap pings itself.
 local function Clicked(button, pin)
+    if button == "MiddleButton" then
+        last = nil
+        return Canvas.Home()
+    end
     local x, y = FromMiddle()
     if not x then return end
     if button == "RightButton" then
@@ -648,6 +657,29 @@ function Canvas.Center(viewCamera)
     local map, u, v = Live.Player()
     if not u or not viewCamera.map then return end
     if map == viewCamera.map then viewCamera:Look(u, v) else viewCamera:Show(map, u, v) end
+end
+
+-- The middle button: the view back on the player and following, near enough for the game's minimap's dots
+-- (Hybrid.Home: the small view at its middle step, the full map where that step's square takes Hybrid.ROOM of it;
+-- where the game's minimap is not ours, Canvas.HOME yards across the view's shorter side). One map at a time
+-- (Retail), the map the player is on. A dungeon's map over the full map goes.
+function Canvas.Home()
+    if not laid or held then return end
+    local width, height = frame:GetSize()
+    lastInput = GetTime()
+    camera.follow = true
+    if not ns.Hybrid.Home(camera, width, height) then
+        camera.native, camera.k = nil, math.min(width, height) / Canvas.HOME
+    end
+    local map, u, v = Live.Player()
+    if u and (map ~= camera.map or camera.shown and camera:Wants() ~= camera.shown) then
+        camera:Show(map, u, v, camera.k)
+    elseif u then
+        camera:Look(u, v, camera.k)
+    end
+    ns.Dungeons.Close()
+    nextLook = 0
+    Canvas.Layout()
 end
 
 -- The full map's box Follow me ticked or not (TopBar.lua, the settings): ticked, on the player at once and following;

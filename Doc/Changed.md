@@ -6,6 +6,27 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 235 (Nameplates), 94 (Speed Leveling), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the satchel and the middle click (Saneroki, 2026-10-25)
+Saneroki asked for a middle click that centres the map on the player at a zoom where the minimap's icons show, and
+for one button on the minimap that gathers the addon buttons usually placed round it and the pins to choose, in a
+big, easily selectable way.
+- **`src/Navigation/Canvas.lua`, `Hybrid.lua`:** the middle button (`Canvas.Home`): following again, on the player;
+  the small view at the game's step `Hybrid.HOME` (2), the full map where that step's square takes `Hybrid.ROOM` of
+  it (`Hybrid.Home`), `Canvas.HOME` yards across where the game's minimap is not ours. `Hybrid.Release` gives a frame
+  of the cluster its clicks back; `Hybrid.Update` tells `Strays.Update` after it takes or gives the minimap.
+- **`src/Navigation/Strays.lua`** (new): other addons' buttons on the minimap, its backdrop and cluster, told apart
+  from the game's own by `issecurevariable` on their global name, held while our window is the minimap (parent,
+  points, scale, strata, level kept; a hook after `SetPoint` keeps them in their cell), given back with the minimap
+  or at a stand-down; the game's addon compartment's addons, called behind `pcall`.
+- **`src/Navigation/Satchel.lua`** (new): the button on the small map (the leather ring, a satchel's icon) and its
+  page in Core's journal: AddOns, Pins (`ns.SwitchPin`, now shared with the pin filter, `TopBar.lua`), Tracking (the
+  game's tracking menu's entries, not Find Herbs and Find Minerals). `Window.lua` shows it only small and as the
+  minimap; `Canvas.LEVELS.satchel`.
+- **Tests:** `dev/tests/navigation.lua` 645 checks (20 new), Retail 26; the lab's scene `satchel`
+  (`dev/uilab/scenes/satchel.lua`, `Doc/guides/ui-lab.md`).
+- **Docs:** `src/Navigation/README.md`, `Doc/ideas/Navigation.md` (decision *The satchel and the middle click*),
+  `Doc/agent/navigation.md`, the public changelog.
+
 ### Navigation in Retail: the Cosmic map's highlight (Saneroki, 2026-10-25)
 The world under the mouse on Retail's Cosmic map lit up as a corner of its picture, blown up. Its highlight is a
 piece of an atlas (`worldmap-highlight-cosmic-azeroth` and the other worlds; also Argus' three maps and the Broken

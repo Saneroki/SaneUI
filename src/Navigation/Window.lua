@@ -94,6 +94,7 @@ local function Placed()
         local here = ns.Dungeons.Here() -- inside a dungeon: its map at once
         if here then ns.Dungeons.Show(here) end
     end
+    ns.Satchel.Place(not filled and not ns.options.nativeMinimap)
     if Sleeping() then return Rest(true) end
     if resting then Rest(false) end
     ns.Canvas.Open()
@@ -112,6 +113,7 @@ end
 -- opens on the player (but at a map the game was asked for).
 local function Filled(on, width, height)
     if resting then Rest(false) end
+    ns.Satchel.Place(false)
     if on and ns.options.followMap and not aimed then ns.Canvas.Center(full) end
     aimed = false
     going = on
@@ -178,6 +180,7 @@ function Window.Build()
     Window.handle = handle
     inside:SetAllPoints(handle.inside)
     canvas = ns.Canvas.Build(inside)
+    ns.Satchel.Build(canvas)
     ns.Dungeons.Build(canvas)
     ns.TopBar.Build(canvas)
     ns.QuestLog.Build()
@@ -250,6 +253,7 @@ function Window.ToggleShown()
     if not frame or resting then return end
     if frame:IsShown() then
         ns.Canvas.Close()
+        ns.Satchel.Close()
         frame:Hide()
     else
         frame:Show()

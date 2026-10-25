@@ -326,6 +326,25 @@ double clicks and Follow me; 599 with far sparkles), `dev/tests/walk.py`
 (125; 130 with the
 teleports' tool; 147 with the walking data's openings; 159 with the coarse layer).
 
+## Built (2026-10-25): the satchel and the middle click
+
+- **Middle click** (`Canvas.Home`, `Hybrid.Home`): back on the player, following; the small view at the game's
+  step `Hybrid.HOME` (2), the full map where that step's square takes `Hybrid.ROOM` of it; `Canvas.HOME` yards
+  across where the game's minimap is not ours.
+- **Strays** (`Strays.lua`): other addons' buttons on `Minimap`, `MinimapBackdrop`, `MinimapCluster` and its
+  `MinimapContainer`, told by `issecurevariable` on their global name (an addon's is not secure), button-sized,
+  not protected; held while `Hybrid.Taken()` (`Hybrid.Update` calls `Strays.Update`), a hook after `SetPoint` keeps
+  them in their cell, `Hybrid.Release` gives back the clicks the cluster's hiding took; given back exactly. The
+  game's addon compartment's addons (`AddonCompartmentFrame.registeredAddons`) called behind `pcall`.
+- **Satchel** (`Satchel.lua`): the button on the canvas (`Canvas.LEVELS.satchel`) in the corner at the screen's edge,
+  only small and as the minimap (`Window.lua`'s `Placed` and `Filled`); the page in Core's journal: AddOns, Pins
+  (`ns.SwitchPin`, shared with the pin filter), Tracking (the game's tracking menu's entries, not the finders).
+- **Tests:** `dev/tests/navigation.lua` 645 checks (20 new: the middle click in both views, an addon's button held
+  and given back, a larger frame and the game's own left, the satchel's cells, a pin and a tracking entry switched,
+  the compartment's click); the Retail run 26. The lab's scene `satchel` (`dev/uilab/scenes/satchel.lua`).
+- **Not yet:** the minimap's other parts (zone text, clock, mail, difficulty, the calendar, Retail's expansion
+  summary).
+
 ## What is not there yet
 
 1. **Core's data framework** has step 1a (`Doc/ideas/Data-build.md`): the sets (part of Core since 2026-10-21), `Data.Set`, `Get`,
