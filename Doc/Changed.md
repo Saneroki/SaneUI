@@ -39,6 +39,11 @@ the guide the leveling guide Sane UI knows has loaded, while it is loaded, else 
 - **Docs:** `src/SpeedLeveling/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`, `Doc/agent/README.md`, the
   public changelog.
 
+### Navigation: the satchel compact (Saneroki, 2026-10-25)
+Saneroki asked for a more compact satchel without the pencil slots behind its pictures.
+- **`src/Navigation/Satchel.lua`:** six columns of cells 72 by 58 (were five of 88 by 78), pictures of 28 on the paper
+  as they are (`Journal.Slot` gone), smaller words and titles, less room between the sections and none under the last.
+
 ### Navigation: the satchel and the middle click (Saneroki, 2026-10-25)
 Saneroki asked for a middle click that centres the map on the player at a zoom where the minimap's icons show, and
 for one button on the minimap that gathers the addon buttons usually placed round it and the pins to choose, in a

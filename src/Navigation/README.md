@@ -102,7 +102,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   - **Tracking:** what the game's own minimap tracks, as its tracking menu lists it (the townsfolk, a hunter's
     beasts, Find Fish...), a click switches it; Find Herbs and Find Minerals are *Found herbs* and *Found ore*.
 
-  A cell that is on shows its picture whole with a pencil tick, one that is off faint and grey. The button
+  Compact: six cells a row, each picture straight on the paper (no pencil slot). A cell that is on shows its
+  picture whole with a pencil tick, one that is off faint and grey. The button
   again, its X or Esc closes it, and so does the map filling the screen; the wheel scrolls it on a low screen.
 - **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): the herbs and ore the game's minimap
   shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in a round
@@ -772,6 +773,8 @@ Tests: `dev/tests/navigation.lua`.
   map, the satchel, opens a page of the buttons other addons put round the minimap, gathered there
   (`Strays.lua`), with the addons of the game's addon compartment, the kinds of pin and what the game's minimap
   tracks, in large cells that switch at a click (`Satchel.lua`).
+- **2026-10-25, the satchel compact:** as Saneroki asked, six smaller cells a row, the pictures without their pencil
+  slots, less room between the sections.
 - **2026-10-25, the Cosmic map's highlight:** a world under the mouse on Retail's Cosmic map (and Argus' maps,
   the Broken Isles on Azeroth) lights up in its whole piece of the game's atlas: the piece is set last, as the
   game's own highlight does, since a texture's coordinates after its atlas cut within the piece.

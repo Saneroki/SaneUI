@@ -34,11 +34,12 @@ Satchel.SIZE = 28          -- the button's ring across, in units
 Satchel.INSET = 4          -- the button from the window's corner
 Satchel.BAG = 133628       -- its picture: a leather satchel (INV_Misc_Bag_07, in both games)
 Satchel.GAP = 6            -- between the window and the satchel
-Satchel.COLUMNS = 5
-Satchel.CELL = { 88, 78 }  -- a cell's width and height
-Satchel.ICON = 34          -- a cell's picture
-Satchel.HEAD = 28          -- a section's title and its rule
-Satchel.AFTER = 10         -- room under a section
+Satchel.COLUMNS = 6
+Satchel.CELL = { 72, 58 }  -- a cell's width and height: compact (Saneroki, 2026-10-25)
+Satchel.ICON = 28          -- a cell's picture, on the paper as it is (no pencil slot round it)
+Satchel.HEAD = 22          -- a section's title and its rule
+Satchel.NOTE = 18          -- the line under an empty section's title
+Satchel.AFTER = 6          -- room under a section
 Satchel.ROOM = 0.8         -- the page takes at most so much of the screen's height; the wheel scrolls the rest
 Satchel.FAINT = 0.4        -- a cell switched off: its picture so faint
 Satchel.SPELL = { 0.0625, 0.9 } -- a tracking spell's icon cut inside its frame, as the game's menu cuts it
@@ -170,18 +171,17 @@ local function Cell(index)
     cell.shade:Hide()
     cell.spot = CreateFrame("Frame", nil, cell)
     cell.spot:SetSize(Satchel.ICON, Satchel.ICON)
-    cell.spot:SetPoint("TOP", 0, -6)
-    cell.slot = Journal.Slot(cell.spot, 2, "BORDER")
+    cell.spot:SetPoint("TOP", 0, -3)
     cell.picture = cell.spot:CreateTexture(nil, "ARTWORK")
     cell.picture:SetAllPoints()
     cell.tick = cell:CreateFontString(nil, "OVERLAY")
-    Journal.Font(cell.tick, 18, true, Journal.INK)
-    cell.tick:SetPoint("BOTTOMLEFT", cell.spot, "TOPRIGHT", -4, -10)
+    Journal.Font(cell.tick, 16, true, Journal.INK)
+    cell.tick:SetPoint("BOTTOMLEFT", cell.spot, "TOPRIGHT", -3, -9)
     cell.tick:SetText(Satchel.TICK)
     cell.name = cell:CreateFontString(nil, "OVERLAY")
-    Journal.Font(cell.name, 13, false, Journal.INK)
-    cell.name:SetPoint("TOP", cell.spot, "BOTTOM", 0, -4)
-    cell.name:SetWidth(Satchel.CELL[1] - 6)
+    Journal.Font(cell.name, 12, false, Journal.INK)
+    cell.name:SetPoint("TOP", cell.spot, "BOTTOM", 0, -2)
+    cell.name:SetWidth(Satchel.CELL[1] - 4)
     cell.name:SetMaxLines(2)
     cell.name:SetJustifyH("CENTER")
     cell:SetScript("OnEnter", ns.Guard(Entered))
@@ -218,15 +218,13 @@ local function Dress(cell, item)
     icon:SetVertexColor(1, 1, 1, 1)
     icon:SetDesaturated(false)
     if item.button then
-        -- Its own button over the slot, as its addon made it.
+        -- Its own button in the picture's place, as its addon made it.
         icon:Hide()
-        cell.slot:Hide()
         cell.tick:Hide()
         ns.Strays.Place(item.button, cell.spot, Satchel.ICON)
         return cell:Show()
     end
     icon:Show()
-    cell.slot:Show()
     local pin = item.pin
     if pin then
         Picture(icon, pin.texture or pin.icon)
@@ -253,8 +251,8 @@ local function Head(index, title, y, note)
     if not head then
         head = { text = sheet:CreateFontString(nil, "OVERLAY"), rule = Journal.Rule(sheet),
                  note = sheet:CreateFontString(nil, "OVERLAY") }
-        Journal.Font(head.text, 16, true, Journal.INK)
-        Journal.Font(head.note, 13, false, Journal.FAINT)
+        Journal.Font(head.text, 15, true, Journal.INK)
+        Journal.Font(head.note, 12, false, Journal.FAINT)
         head.note:SetJustifyH("LEFT")
         heads[index] = head
     end
@@ -339,7 +337,7 @@ function Satchel.Fill()
             titled = titled + 1
             Head(titled, section[1], y, #items == 0 and section[3] or nil)
             y = y + Satchel.HEAD
-            if #items == 0 then y = y + 22 end
+            if #items == 0 then y = y + Satchel.NOTE end
             for index, item in ipairs(items) do
                 used = used + 1
                 local cell = Cell(used)
@@ -351,6 +349,7 @@ function Satchel.Fill()
             y = y + math.ceil(#items / Satchel.COLUMNS) * Satchel.CELL[2] + Satchel.AFTER
         end
     end
+    y = math.max(y - Satchel.AFTER, 1) -- no room under the last section: the page's own margin is there
     local width = Satchel.COLUMNS * Satchel.CELL[1]
     sheet:SetSize(width, y)
     local _, chrome = Journal.Outer(width, 0)
