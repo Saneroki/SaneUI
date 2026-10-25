@@ -10,6 +10,22 @@ plan (`Doc/ideas/Navigation.md`, *Leveling guide*); the guides are the set *Guid
 enough to stand beside the best hand-made leveling guides. They are not written by hand step by step, and
 not copied from any guide.
 
+**Decision (Saneroki, 2026-10-25):** a module of its own, *Speed Leveling* (`SaneUI_SpeedLeveling`), with one key
+for questing, pressed again and again: it loots the corpse beside you, finds what your quests and your leveling
+guide want around you, marks it with a skull, and attacks it or talks to it. Its targets come from the quest log
+(Core's data) and from the step at hand of a leveling guide Sane UI knows (a known addon, `Core.Neighbours`);
+our own routes take that guide's place once they are there. Nothing happens without a key press: an addon may
+target, mark, attack and interact only by the game's secure ways, and looting a corpse needs the player's press.
+
+## Where it stands (2026-10-25)
+
+- **Built: the questing key** (`src/SpeedLeveling/README.md`). A secure state driver picks loot, fight, talk or
+  find at each press; the macro of Find targets the first wanted name around you. Its lists: the guide's step,
+  the quests' open objectives (kill, then the likeliest droppers of an item to loot), creatures the game marks
+  for a quest, the NPCs to hand finished quests in to.
+- **Not yet:** the routes and their planner (below), our own guide view (Navigation), walking to the NPC found
+  (the game's click to move), quest givers of quests to take (only through the guide for now).
+
 ## What has to exist first
 
 | Needed | Where | State (2026-10-18) |

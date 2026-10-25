@@ -107,8 +107,8 @@ module or data file has a licence of its own. Original art/name terms differ fro
 
 Observed on 2026-10-14, checked again on 2026-10-16; do not mistake older text for current behaviour:
 
-- Source has ten addons (2026-10-21): Core (`SaneUI`), Abilities, Tooltips, Social, Combat, Navigation, Atlas, Inventory,
-  Nameplates, Guild; Core's data sets are Core's own files (2026-10-21: no `SaneUI_Data_*` packs any more). Older text saying fewer (or an addon *Settings* or *Sync*)
+- Source has eleven addons (2026-10-25): Core (`SaneUI`), Abilities, Tooltips, Social, Combat, Navigation, Atlas, Inventory,
+  Nameplates, Guild, SpeedLeveling; Core's data sets are Core's own files (2026-10-21: no `SaneUI_Data_*` packs any more). Older text saying fewer (or an addon *Settings* or *Sync*)
   is stale.
 - Tooltips README's “Not there yet” sub-bullet on a player's specialisation (`src/Tooltips/README.md`,
   section *Not there yet*) conflicts with the spec its Player row and `Inspect.Talents` show; delete

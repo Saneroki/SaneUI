@@ -21,6 +21,12 @@ local Core = SaneUI.Core
 --      planner:Shown()                  -- open now
 --      planner:Open(), planner:Close()  -- by its own functions
 --      planner:Follow(fn)               -- fn() after each opening of it, whatever opened it
+--
+--  A leveling guide is asked what its step at hand wants, by name (Saneroki,
+--  2026-10-25: Speed Leveling's key finds it around you):
+--
+--      local foes, friends = Core.Neighbours.Targets("guide") -- nil: not installed, not loaded, or changed
+--      foes, friends                    -- the creatures, the NPCs: lists of names in the guide's order, copies
 -------------------------------------------------------------------------------
 local Neighbours = {}
 Core.Neighbours = Neighbours
@@ -31,6 +37,11 @@ Neighbours.KNOWN = {
     -- first time it opens; its table's UI opens (Show) and closes (Hide) it.
     talents = { addon = "TalentsForeverBook", title = "Talents Forever", window = "TalentsForeverBookFrame",
                 api = "TalentsForeverBook", open = "Show", close = "Hide" },
+    -- A leveling guide: what its step at hand wants killed or talked to, for Speed Leveling's key. Its addon object is
+    -- found by its name through the library it was made with (library, from the global stub); its part targeting has a
+    -- function (lists) that answers three lists of names: the NPCs, the creatures to kill, the creatures to look out for.
+    guide = { addon = "RXPGuides", title = "RestedXP", stub = "LibStub", library = "AceAddon-3.0", part = "targeting",
+              lists = "GetCurrentTargets" },
 }
 
 local handles = {} -- [key] = the handle made for it
@@ -82,6 +93,46 @@ function methods:Follow(fn)
     hooksecurefunc(ui, self.known.open, Core.Guard("neighbours: " .. self.key, function()
         if self.follow then self.follow() end
     end))
+end
+
+-- The addon object of a known addon made with a library that finds addons by their name (known.library, from the
+-- global known.stub).
+local function Object(known)
+    local stub = rawget(_G, known.stub)
+    local get = type(stub) == "table" and rawget(stub, "GetLibrary")
+    local library = Core.Ask(get, stub, known.library, true)
+    local object = type(library) == "table" and Core.Ask(library.GetAddon, library, known.addon, true)
+    return type(object) == "table" and object or nil
+end
+
+-- Each name of a list, plain and once (seen), into a list of ours: nothing of theirs is kept.
+local function Names(list, into, seen)
+    if type(list) ~= "table" then return end
+    for _, name in ipairs(list) do
+        name = Core.Plain(name)
+        if type(name) == "string" and name ~= "" and not seen[name] then
+            seen[name] = true
+            into[#into + 1] = name
+        end
+    end
+end
+
+-- What a known guide's step at hand wants: the creatures (those to kill, then those to look out for) and the NPCs,
+-- each a list of names; nil while it is not loaded or its ways changed.
+function Neighbours.Targets(key)
+    local known = Neighbours.KNOWN[key]
+    if not known or not known.lists or not Loaded(known.addon) then return nil end
+    local object = Object(known)
+    local part = object and rawget(object, known.part)
+    local lists = type(part) == "table" and rawget(part, known.lists)
+    if type(lists) ~= "function" then return nil end
+    local ok, friends, kill, look = pcall(lists)
+    if not ok then return nil end
+    local foes, wanted, seen = {}, {}, {}
+    Names(kill, foes, seen)
+    Names(look, foes, seen)
+    Names(friends, wanted, seen)
+    return foes, wanted
 end
 
 -- The handle of a known addon by its key, while that addon is loaded and has what is used of it; nil otherwise.

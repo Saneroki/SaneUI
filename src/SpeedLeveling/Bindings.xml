@@ -1,0 +1,6 @@
+<Bindings>
+	<!-- Speed Leveling's key, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua; its
+	     words in Key.lua); the game reads this file from the addon's folder by itself. A click on the button Find; Key.lua
+	     puts another action on the same keys while one is due (override bindings). -->
+	<Binding name="CLICK SaneUISpeedLevelingFind:LeftButton" category="BINDING_HEADER_SANEUI"/>
+</Bindings>

@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 60 (Speed Leveling), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: one key for questing (Saneroki, 2026-10-25)
+- **New module** `SaneUI_SpeedLeveling` (Saneroki asked for it): one key (the game's key bindings, under Sane UI),
+  pressed again and again: it loots the corpse beside you, finds what your quests and your leveling guide want around
+  you, marks it with a skull, and attacks it or talks to it. Looting without a press is not possible: the game lets an
+  addon interact with a corpse, target and attack only by its secure ways on the player's key press.
+- `Key.lua`: a secure state driver reads the macro conditions (`[@softinteract,exists,dead]` loot, a living foe in a
+  fight, a living foe, a living friend, else find); the header (`SecureHandlerAttributeTemplate`) puts that mode's
+  action on the key's keys as override bindings above the others: the game's `INTERACTTARGET` to loot or talk, the
+  button Fight (`/tm [harm,nodead] !8`, `/startattack`), or the button Find. A foe or friend counts only when the
+  module says it is wanted (the attribute `wanted`, set out of a fight); in a fight every living foe is fought. Find's
+  macro (`/cleartarget`, `/targetexact [noexists][dead] <name>` per name, up to 1023 characters, `/tm [exists] !8`,
+  `/startattack`) is written out of a fight, before each press (`PreClick`) and when the quests change. *Loot first*
+  switches on the game's interact key and auto loot (`softTargetInteract`, `autoLootDefault`), kept and put back.
+- `Wanted.lua`: the names, in order: the guide's step (creatures, then NPCs), the quests' open objectives from Core's
+  sets Quests, NPCs and Drops (to kill, then the three likeliest droppers of an item to loot), creatures the game marks
+  for a quest on nameplates (`Core.UnitQuest`), the NPCs your finished quests go to (of your side). Core's English
+  names on an English client only.
+- Core: `Neighbours.Targets(key)`, what the step at hand of a known leveling guide wants (`"guide"`, Saneroki,
+  2026-10-25), two lists of names.
+- Tests: `dev/tests/speedleveling.lua` 60 checks (the header's snippets run as the game runs them).
 
 ### Navigation: the found herbs' and ore's pictures without square edges in the ring (Saneroki, 2026-10-25)
 - `Found.lua`: an item's picture is cut 12 % in at each side (`Found.TRIM`, was 7 %: the icon's frame is 4 of 64
