@@ -76,7 +76,8 @@ Neighbours.KNOWN = {
               marks = { name = "name", displayname = "title", next = "after", group = "group", subgroup = "subgroup",
                         version = "version", defaultfor = "defaultFor", completewith = "together", label = "label",
                         sticky = "stays", requires = "needs", optional = "aside", loop = "loop", hidewindow = "hidden",
-                        map = "map", arrowtext = "arrowText", xprate = "xprate", phase = "phase" },
+                        map = "map", arrowtext = "arrowText", xprate = "xprate", phase = "phase", internal = "part",
+                        disabled = "divider" },
               modes = { "hardcore", "hardcoreserver", "som", "season", "ssf", "questguide", "speedrunguide", "beta",
                         "fresh", "aldor", "scryer" },
               -- Which games a guide's head marks it for (its first step onwards is read only for a game it names):

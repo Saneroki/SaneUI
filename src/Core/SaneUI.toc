@@ -50,6 +50,8 @@ Expand.lua
 Bar.lua
 # The other addons Sane UI knows and adapts to when they are installed (the one file that names them)
 Neighbours.lua
+# Quick switches the modules offer, for a view that gathers them (the minimap's satchel)
+Switches.lua
 # The words of Sane UI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)
 Bindings.lua
 # /sane window: a window to try them with

@@ -12,14 +12,18 @@ local _, ns = ...
 --      the zone  its title the zone and subzone you are in, in the colour the game's minimap
 --                gives them (friendly, hostile, contested, a sanctuary); under it in two
 --                columns your local time and the realm's, the frame rate, the latency home and
---                to the world, the time of day (Forever: C_DateAndTime.IsDayTime), new mail
+--                to the world on one line (Saneroki, 2026-10-26), the time of day (Forever: C_DateAndTime.IsDayTime), new mail
 --                and from whom, the calendar's invitations; looked at again every second while
 --                the page is open. Then the game's Calendar (a secure button of ours over its
 --                cell clicks the game's own calendar button, so the game opens its panel as
 --                its own code: out of a fight only), Clock (the game's clock window: its alarm
 --                and settings; while the alarm sounds, a click stops it) and Stopwatch (the
 --                game's, on the screen), each ticked while open (Saneroki, 2026-10-25)
---      AddOns    the buttons other addons hang round the minimap and the addons
+--      Sane UI   the quick switches Sane UI's modules offer (Core.Switches; Saneroki,
+--                2026-10-26): the Speed Leveling guide on, paused or off. A click is
+--                the module's own (the guide: pause or go on; a right click its
+--                three choices)
+--      AddOns    only while there are any (Saneroki, 2026-10-26): the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
 --                title, A to Z, twice as large as the rest: its picture round,
 --                cut inside its own frame, without the ring round it (Saneroki,
@@ -79,14 +83,15 @@ Satchel.TEXT = {
     addons = Core.Word("ADDONS", "AddOns"),
     pins = "Pins",
     tracking = Core.Word("TRACKING", "Tracking"),
-    none = "The buttons other addons put round the minimap gather here.",
     localTime = "Local time",
     realmTime = "Realm time",
     framerate = "Frame rate",
     fps = "%d fps",
-    home = "Latency, home",
-    world = "Latency, world",
+    latency = "Latency",
+    homeWorld = "%d ms home, %d world", -- home and world on one line (Saneroki, 2026-10-26)
     ms = "%d ms",
+    switches = "Sane UI",
+    paused = "paused",
     dayTime = "Time of day",
     day = "Day",
     night = "Night",
@@ -152,8 +157,11 @@ local function Lines()
     if stats then
         local _, _, home, world = stats()
         home, world = Core.Plain(home), Core.Plain(world)
-        if type(home) == "number" then Add(Satchel.TEXT.home, Satchel.TEXT.ms:format(home)) end
-        if type(world) == "number" then Add(Satchel.TEXT.world, Satchel.TEXT.ms:format(world)) end
+        if type(home) == "number" and type(world) == "number" then
+            Add(Satchel.TEXT.latency, Satchel.TEXT.homeWorld:format(home, world))
+        elseif type(home) == "number" or type(world) == "number" then
+            Add(Satchel.TEXT.latency, Satchel.TEXT.ms:format(home or world))
+        end
     end
     local times = rawget(_G, "C_DateAndTime")
     if times and times.IsDayTime then
@@ -199,6 +207,17 @@ local function Tools()
     end
     return list
 end
+-- The quick switches Sane UI's modules offer (Core.Switches): the Speed Leveling guide on, paused or off.
+local function Switches()
+    local list = {}
+    for _, switch in ipairs(Core.Switches()) do
+        local paused = switch.state == "paused"
+        list[#list + 1] = { switch = switch, title = paused and (switch.title .. "\n" .. Satchel.TEXT.paused)
+                            or switch.title, icon = switch.icon, on = switch.state ~= "off", paused = paused }
+    end
+    return list
+end
+
 -- The kinds of pin the map can show here, in the pin filter's order.
 local function Pins()
     local order, list = {}, {}
@@ -261,6 +280,11 @@ local function Entered(cell)
     cell.shade:Show()
     local item = cell.item
     if item and item.entry and not ns.Strays.Hover(item.entry, cell, true) then Tip(cell, item.title) end
+    if item and item.switch then
+        Tip(cell, item.switch.title)
+        if item.switch.tip then GameTooltip:AddLine(item.switch.tip, 1, 1, 1, true) end
+        GameTooltip:Show()
+    end
     if item and item.time then
         Tip(cell, item.title)
         local fight = item.time == "calendar" and InCombatLockdown()
@@ -290,6 +314,7 @@ local function Clicked(cell, mouse)
     local item = cell.item
     if not item then return end
     if item.entry then return ns.Strays.Click(item.entry, mouse) end
+    if item.switch then return item.switch.Click(mouse, cell) end -- its module tells Core, which fills the satchel anew
     if item.pin then
         ns.SwitchPin(item.pin[1]) -- the setting's change fills the satchel anew (Navigation.lua)
     elseif item.track then
@@ -418,8 +443,11 @@ local function Dress(cell, item, size, height)
         icon:SetTexCoord(Satchel.TRIM, 1 - Satchel.TRIM, Satchel.TRIM, 1 - Satchel.TRIM)
     elseif item.time then
         Picture(icon, item.art)
+    elseif item.switch then
+        Picture(icon, item.icon or 134400)
+        icon:SetTexCoord(Satchel.SPELL[1], Satchel.SPELL[2], Satchel.SPELL[1], Satchel.SPELL[2])
     end
-    local switch = item.on ~= nil -- a pin, a tracking entry: on or off
+    local switch = item.on ~= nil and not item.paused -- a pin, a tracking entry, a switch: on or off (paused: neither)
     local off = switch and not item.on
     if off then icon:SetDesaturated(true) end
     icon:SetAlpha(off and Satchel.FAINT or 1)
@@ -569,6 +597,7 @@ local function Build()
     scroll:SetScrollChild(sheet)
     panel:SetScript("OnUpdate", ns.Guard(Look))
     ns.On("MINIMAP_UPDATE_TRACKING", function() Satchel.Fill() end)
+    Core.OnSwitches(function() Satchel.Fill() end)
     for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
         ns.On(event, function() Satchel.Fill() end)
     end
@@ -582,7 +611,9 @@ function Satchel.Fill()
     local zone, colour = Zone()
     local sections = {
         { zone, Tools(), nil, Satchel.ICON, Satchel.CELL[2], colour = colour, lines = Lines() },
-        { Satchel.TEXT.addons, ns.Strays.List(), Satchel.TEXT.none, Satchel.ADDON[1], Satchel.ADDON[2] },
+        { Satchel.TEXT.switches, Switches(), nil, Satchel.ICON, Satchel.CELL[2] },
+        -- Only while other addons have buttons for it (Saneroki, 2026-10-26).
+        { Satchel.TEXT.addons, ns.Strays.List(), nil, Satchel.ADDON[1], Satchel.ADDON[2] },
         { Satchel.TEXT.pins, Pins(), nil, Satchel.ICON, Satchel.CELL[2] },
         { Satchel.TEXT.tracking, Tracking(), nil, Satchel.ICON, Satchel.CELL[2] },
     }

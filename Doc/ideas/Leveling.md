@@ -54,6 +54,11 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
 - **Built (Saneroki, 2026-10-25, board #163):** the key walks you to the NPC found (the game's Click-to-Move, lent
   only while such an NPC is your target) and uses a step's item on your target where the step's words say it is for
   that one (a corpse, or the creature or NPC they name), out of a fight. The game lets no addon walk to a map place.
+- **Decision (Saneroki, 2026-10-26): the guides that come for each game, chosen by a right click.** The guides
+  that come for each game are there from the start, in a guide pack per game (*Guides: Forever*, *Guides: Retail*,
+  made apart from the code and put into the game; no guide's text in the repository); a right click on the guide's
+  zone lists the guides for the character by group; the guide on, paused or off, also from the minimap's satchel
+  (Core's quick switches, `Core.Offer`). Built.
 - **Not yet:** the routes and their planner (below), the guide's way on the map (board #158).
 
 ## What has to exist first

@@ -313,9 +313,10 @@ ns.Guides.Open() -- closed again
 local names = Guide.AddAll(Format.Parts("Guide([[" .. TEXT .. "]])\nGuide([[" .. Mark("name", "6-10 Hills")
     .. "\n#forever\n<< Horde\n" .. Mark("group", "Our Group") .. "\nstep\n" .. Line("take", "20") .. "\n]])"), false)
 check(#names == 2 and names[1] == "1-6 Valley" and names[2] == "6-10 Hills", "two guides kept")
-check(type(Core.Store(ns.name).guides["Our Group\\1-6 Valley"]) == "table", "kept by group and name")
-check(Guide.Chosen() == "Our Group\\1-6 Valley", "a character without a guide takes the first for it")
-check(Core.Character(ns.name).guide == "Our Group\\1-6 Valley", "kept for the character")
+check(type(Core.Store(ns.name).guides["Our Group\\1-6 Valley << Horde"]) == "table",
+    "kept by group and name, and for whom its head says")
+check(Guide.Chosen() == "Our Group\\1-6 Valley << Horde", "a character without a guide takes the first for it")
+check(Core.Character(ns.name).guide == "Our Group\\1-6 Valley << Horde", "kept for the character")
 check(#Guide.Kept() == 2 and Guide.Kept()[1].group == "Our Group", "listed by group and name")
 Guide.AddAll(opened, true)
 check(#Guide.Kept() == 4, "the bought guides kept too")
@@ -335,6 +336,33 @@ check(picture.ahead[1].number == 2 and picture.ahead[1].text:find("copper", 1, t
 -- The quest givers: the step's quest to take, and the next step's.
 local wants = Guide.Quests()
 check(wants.take[10], "the quest giver takes the step's quest")
+
+-- Paused, by its switch in the minimap's satchel (Core.Offer): it holds where it is, the key and the quest givers leave
+-- it, its view says so; what was done meanwhile counts once it goes on.
+local function Switch()
+    for _, switch in ipairs(Core.Switches()) do if switch.key == "speedleveling" then return switch end end
+end
+check(Switch() and Switch().state == "on", "its switch offered: on")
+Switch().Click("LeftButton")
+W.Wait(0.1)
+check(ns.options.follow == "paused" and Switch().state == "paused", "a click pauses it")
+check(Guide.Targets() == nil and Guide.Quests() == nil and Guide.Uses() == nil, "paused: no targets, quests or items for it")
+Steps.Update()
+local pausedLine = Shown(ns.TEXT.paused)
+check(pausedLine and view._shown and Shown("Valley of Trials"), "paused: its head, and a line saying so")
+quests.on[10] = true
+W.Fire("QUEST_ACCEPTED", 10)
+W.Wait(1)
+check(Run.At() == 1, "paused: it holds where it is")
+pausedLine._parent._scripts.OnClick(pausedLine._parent, "LeftButton")
+W.Wait(1)
+check(ns.options.follow == "on" and Run.At() == 3, "a click on the line goes on, as far as was done: " .. Run.At())
+Core.Set(ns.name, "follow", "off")
+W.Wait(0.1)
+check(not view._shown and Guide.Targets() == nil and Switch().state == "off", "off: no view, no guide followed")
+Switch().Click("LeftButton")
+W.Wait(0.1)
+check(ns.options.follow == "on" and view._shown, "a click on the switch turns it on again")
 
 -- The quest taken: on past the step; the boars go along with the next one.
 quests.on[10] = true
@@ -388,7 +416,85 @@ local guard = 0
 while not Run.Through() and guard < 20 do Run.Skip(Run.At()) guard = guard + 1 end
 Guide.CheckSoon()
 W.Wait(1)
-check(Guide.Chosen() == "Our Group\\6-10 Hills", "through the guide: on to the one it names next")
+check(Guide.Chosen() == "Our Group\\6-10 Hills << Horde", "through the guide: on to the one it names next")
+
+-- Two guides of one name for different characters: both kept, apart; the one for this character is the one listed
+-- as its own.
+Guide.AddAll(Format.Parts("Guide([[#forever\n<< Horde\n" .. Mark("name", "Twin") .. "\n" .. Mark("group", "Our Group")
+    .. "\nstep\n" .. Line("take", "40") .. "\n]])\nGuide([[#forever\n<< Horde skip\n" .. Mark("name", "Twin") .. "\n"
+    .. Mark("group", "Our Group") .. "\nstep\n" .. Line("take", "41") .. "\n]])"), true)
+local twins, mineTwins = 0, 0
+for _, kept in ipairs(Guide.Kept()) do
+    if kept.name == "Twin" then
+        twins = twins + 1
+        if kept.mine then mineTwins = mineTwins + 1 end
+    end
+end
+check(twins == 2 and mineTwins == 1, "guides of one name for different characters kept apart: " .. twins)
+
+-------------------------------------------------------------------------------
+--  Guide packs, and the view's menu
+-------------------------------------------------------------------------------
+-- A pack of this game's guides, in the addon list, loaded on demand: its guide to choose; a part of a longer way
+-- (another's next) and a divider are not listed. The other game's pack is not loaded.
+local function Head(text)
+    local head = Format.Head(text)
+    head.zlib = E.Encode64(E.Zlib(text))
+    return head
+end
+local packWay = table.concat({ "#forever", "<< Horde", Mark("name", "Pack Way"), Mark("group", "Packed"),
+                               Mark("after", "Pack Part"), "step", Line("take", "30") }, "\n")
+local packPart = table.concat({ "#forever", Mark("name", "Pack Part"), Mark("group", "Packed"), Mark("part"), "step",
+                                Line("take", "31") }, "\n")
+local packDivider = table.concat({ "#forever", Mark("name", "A line"), Mark("group", "Packed"), Mark("divider"), "step",
+                                   "+1" }, "\n")
+local function Pack(name, game)
+    W.addons[#W.addons + 1] = { name = name, title = name, loadable = false, reason = "DEMAND_LOADED", enabled = 2,
+                                metadata = { LoadOnDemand = "1", ["X-SaneUI-Guides"] = "1", ["X-SaneUI-Games"] = game } }
+end
+Pack("SaneUI_GuidesForever", "forever")
+W.onDemand.SaneUI_GuidesForever = function()
+    SaneUI.SpeedLeveling.TakeGuides("SaneUI_GuidesForever", { Head(packWay), Head(packPart), Head(packDivider) })
+end
+Pack("SaneUI_GuidesRetail", "retail")
+W.onDemand.SaneUI_GuidesRetail = function() error("the other game's pack loaded") end
+Guide.LoadPacks()
+check(W.loaded.SaneUI_GuidesForever and not W.loaded.SaneUI_GuidesRetail, "this game's guide pack loaded, not the other's")
+local listed = {}
+for _, kept in ipairs(Guide.Kept()) do listed[kept.name] = kept end
+check(listed["Pack Way"] and listed["Pack Way"].pack and listed["Pack Way"].mine, "its guide listed, from the pack")
+check(not listed["Pack Part"] and not listed["A line"], "a part of a longer way and a divider: not listed")
+check(listed["1-6 Valley"] and not listed["1-6 Valley"].pack, "the guides kept beside it")
+-- The window: under their groups' headings; a pack's guide has no cross to forget it.
+ns.Guides.Open()
+local function Row(words)
+    for _, widget in ipairs(W.frames) do
+        if widget._shown and type(widget._text) == "string" and widget._text:sub(1, #words) == words then return widget end
+    end
+end
+local packRow = Row("Pack Way")
+check(Shown("Packed") and packRow and not packRow._parent.forget._shown, "the window: the pack's guide, nothing to forget")
+local keptRow = Row(listed["1-6 Valley"].title) -- a guide with a title is listed by it, its subgroup after it
+check(keptRow and keptRow._parent.forget._shown, "a kept one can be forgotten")
+ns.Guides.Open()
+-- A right click on the view: the guides by group, a click on one follows it (by its key).
+Steps.Update()
+local heading = Shown(Guide.Picture().title)
+heading._parent._scripts.OnClick(heading._parent, "RightButton")
+local menu, packed = W.menus[#W.menus], nil
+for _, item in ipairs(menu) do if item.text == "Packed" then packed = item end end
+local way
+for _, item in ipairs(packed and packed.sub or {}) do if item.text == "Pack Way" then way = item end end
+check(way ~= nil, "the view's menu: the pack's group, its guide in it")
+way.fn()
+check(Guide.Chosen() == "Packed\\Pack Way << Horde" and Run.Guide().name == "Pack Way", "chosen there: followed, read from the pack")
+check(way.checked(), "the menu shows it chosen")
+-- Through: on to its next, a part of the way that is not listed.
+quests.done[30] = true
+while not Run.Through() and guard < 40 do Run.Skip(Run.At()) guard = guard + 1 end
+Guide.CheckSoon()
+W.Wait(1)
+check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part from the pack")
 
 -------------------------------------------------------------------------------
 --  Standing down

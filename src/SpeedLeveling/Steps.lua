@@ -43,6 +43,7 @@ Steps.FAINTEST = 0.3
 Steps.GREY = 0.55     -- the next steps' words, greyed out; their numbers a little darker
 Steps.DONE = 0.5      -- a thing done, so faint
 Steps.BAR = 2         -- a count's bar, high
+Steps.MENU = 520      -- a group's menu of guides, high at most: a longer one scrolls
 Steps.FONT = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Fonts\\Expressway.ttf"
 Steps.TICK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t" -- the game's ready check's tick
 
@@ -167,7 +168,10 @@ local function Build()
     empty.text:SetPoint("TOPLEFT", empty, "TOPLEFT", 0, 0)
     empty.text:SetWidth(Steps.WIDTH)
     empty.text:SetTextColor(unpack(SOFT))
-    empty:SetScript("OnClick", ns.Guard(function() ns.Guides.Open() end))
+    -- No guide: the guides open; paused: the guide goes on.
+    empty:SetScript("OnClick", ns.Guard(function(self)
+        if self.resume then Core.Set(ns.name, "follow", "on") else ns.Guides.Open() end
+    end))
     empty:Hide()
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
                                       first = { point = "TOPRIGHT", x = -70, y = -200 },
@@ -179,19 +183,31 @@ end
 -------------------------------------------------------------------------------
 --  The menu
 -------------------------------------------------------------------------------
--- The guides kept: the one to follow, Paste a guide.
+-- The guides for this character, kept and from packs, by group (a menu of its own each, its subgroups as titles):
+-- the one to follow; then the window of the guides, to add one.
 function Menu(owner)
     local util = rawget(_G, "MenuUtil")
     if not (util and util.CreateContextMenu) then return end
     util.CreateContextMenu(owner, ns.Guard(function(_, root)
         root:CreateTitle(ns.TEXT.guides)
+        local groups = {}
         for _, kept in ipairs(ns.Guide.Kept()) do
             if kept.mine then
-                local name = kept.name
-                root:CreateRadio(name, ns.Guard(function() return ns.Guide.Chosen() == name end),
-                                 ns.Guard(function() ns.Guide.Choose(name) end))
+                local group = groups[kept.group]
+                if not group then
+                    local words = kept.group ~= "" and kept.group or ns.TEXT.ungrouped
+                    group = { menu = root:CreateButton(words) }
+                    if group.menu.SetScrollMode then group.menu:SetScrollMode(Steps.MENU) end
+                    groups[kept.group] = group
+                end
+                if kept.subgroup ~= "" and kept.subgroup ~= group.subgroup then group.menu:CreateTitle(kept.subgroup) end
+                group.subgroup = kept.subgroup
+                local key = kept.key
+                group.menu:CreateRadio(kept.title or kept.name, ns.Guard(function() return ns.Guide.Chosen() == key end),
+                                       ns.Guard(function() ns.Guide.Choose(key) end))
             end
         end
+        if not next(groups) then root:CreateTitle(ns.TEXT.noneHere) end
         root:CreateDivider()
         root:CreateButton(ns.TEXT.paste, ns.Guard(ns.Guides.Open))
     end))
@@ -330,6 +346,9 @@ end
 function Steps.Update()
     if ns.off then return Hide() end
     local count = ns.options.ahead or 0
+    -- Off: no guide over the world. Paused: its head and a line saying so, a click on it goes on (Saneroki, 2026-10-26).
+    local follow = ns.options.follow or "on"
+    if follow == "off" then return Hide() end
     local picture = ns.options.showGuide and ns.Guide.Picture(count, offset)
     if picture and lastAt ~= picture.at then
         -- The guide moved on: the list starts after the steps at hand again.
@@ -339,10 +358,16 @@ function Steps.Update()
     if picture then offset = picture.shift end
     -- No guide followed: the view stays, its head and a line saying so; a click on it opens the guides.
     local hint = not picture and ns.options.showGuide and ns.Guide.Empty() or nil
+    if picture and follow == "paused" then
+        hint = ns.TEXT.paused
+        picture = { title = picture.title, levels = picture.levels, total = picture.total, at = picture.at,
+                    hand = {}, ahead = {} }
+    end
     if not picture and not hint then return Hide() end
     if not frame then Build() end
     frame:Show()
-    if hint then picture = { title = ns.TEXT.guideView, total = 0, at = 0, hand = {}, ahead = {} } end
+    if not picture then picture = { title = ns.TEXT.guideView, total = 0, at = 0, hand = {}, ahead = {} } end
+    empty.resume = follow == "paused" and hint == ns.TEXT.paused
 
     -- The head: the zone, its levels, how far.
     local y = 0

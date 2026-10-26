@@ -1463,8 +1463,9 @@ end)()
     check(title and near(title._color[1], r) and near(title._color[2], g),
         "the satchel's first section: the zone and subzone you are in, in the friendly colour on the paper")
     check(texts[Satchel.TEXT.localTime] and texts["17:05"] and texts[Satchel.TEXT.framerate] and texts["60 fps"]
-        and texts["35 ms"] and texts["41 ms"] and texts["Mirabel, Tobin"],
-        "under it the local and the realm's time, the frame rate, the latency home and to the world, who sent new mail")
+        and texts[Satchel.TEXT.latency] and texts["35 ms home, 41 world"] and texts["Mirabel, Tobin"],
+        "under it the local and the realm's time, the frame rate, the latency home and to the world on one line, "
+        .. "who sent new mail")
     check(cells[Satchel.TEXT.calendar] and cells[Satchel.TEXT.clock] and cells[Satchel.TEXT.stopwatch]
         and Satchel.calendar._attributes.type == "click" and Satchel.calendar._attributes.clickbutton == W.gameButton,
         "the game's calendar, clock and stopwatch; the calendar's secure button clicks the game's own")
@@ -1487,6 +1488,54 @@ end)()
     for name in pairs(game) do rawset(_G, name, nil) end
     rawset(_G, "HasNewMail", nil)
     game.StopwatchFrame:Hide()
+end)()
+
+-- The satchel's Sane UI section: the quick switches the modules offer (Core.Offer), a click their module's own; and
+-- the AddOns section only while other addons have buttons for it.
+;(function()
+    local Satchel = ns.Satchel
+    local function Shown()
+        local texts, cells = {}, {}
+        for _, widget in ipairs(W.frames) do
+            if widget._shown and widget._text then texts[widget._text] = widget end
+            if widget._shown and widget.item then cells[widget.item.title] = widget end
+        end
+        return texts, cells
+    end
+    local state, clicked = "on", nil
+    Core.Offer("test", { title = "Test guide", icon = 132328,
+                         State = function() return state end, Tip = function() return "Its tip" end,
+                         Click = function(mouse) clicked = mouse end })
+    Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
+    local texts, cells = Shown()
+    local guide = cells["Test guide"]
+    check(texts[Satchel.TEXT.switches] and guide and guide.tick._shown and guide.picture._alpha == 1,
+        "the Sane UI section: a module's switch, on: whole and ticked")
+    guide._scripts.OnClick(guide, "RightButton")
+    check(clicked == "RightButton", "a click on it is its module's own, with its mouse button")
+    state = "paused"
+    Core.SwitchChanged()
+    W.Wait(0.1)
+    texts, cells = Shown()
+    local paused = cells["Test guide\n" .. Satchel.TEXT.paused]
+    check(paused and not paused.tick._shown and paused.picture._alpha == 1, "paused: said under its title, not ticked")
+    state = "off"
+    Core.SwitchChanged()
+    W.Wait(0.1)
+    local off = select(2, Shown())["Test guide"]
+    check(off and not off.tick._shown and off.picture._alpha == Satchel.FAINT, "off: faint")
+    -- No other addon's button to show: no AddOns section at all.
+    local list = ns.Strays.List
+    ns.Strays.List = function() return {} end
+    Satchel.Fill()
+    check(not Shown()[Satchel.TEXT.addons], "no addon's button to show: no AddOns section")
+    ns.Strays.List = list
+    Satchel.Fill()
+    check(Shown()[Satchel.TEXT.addons], "with one: the section is there")
+    state = nil -- the module gone: its switch is not listed
+    Satchel.Fill()
+    check(not Shown()[Satchel.TEXT.switches], "no switch offered: no Sane UI section")
+    Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
 end)()
 
 -- A drag: no longer following, the game's minimap goes; it follows again after a while without the mouse.

@@ -3,8 +3,46 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 148 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 661 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 79 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: the guides that come for each game, chosen by a right click; your guide on, paused or off; the satchel's switches (Saneroki, 2026-10-26)
+Saneroki: the guide was empty and no guide could be opened or loaded; the guides that come for each game should be
+there to choose by a right click on the guide, beside those imported; the minimap's satchel should show its AddOns
+section only with buttons in it, the latency home and world on one line, and switch the guide on, off or pause it.
+- **Guide packs (`Guide.lua`):** the guides that come for each game are in a pack of their own per game (*Guides:
+  Forever*, `SaneUI_GuidesForever`, 105 guides; *Guides: Retail*, `SaneUI_GuidesRetail`, 147 to choose and 116 parts
+  of longer ways), made apart from Sane UI's code and put into each game; no guide's text is in this repository. A
+  pack's TOC says `X-SaneUI-Guides`, its game and `LoadOnDemand`; Speed Leveling loads its game's pack at the start
+  (`Guide.LoadPacks`) and the pack hands over each guide's head and its zlib-packed text
+  (`SaneUI.SpeedLeveling.TakeGuides`); they are not kept. A guide added under the same key goes first; a new
+  character takes the first default guide of those added, then of the pack in its order. `dev/build` leaves a guide
+  pack in the game (not stale).
+- **The right-click menu (`Steps.lua`):** a click on a guide there chose it by its name, not its key, so no guide
+  could be chosen there. Now by key; the guides for this character by group, each group a menu of its own (its
+  subgroups as titles, a long one scrolls), then *All guides, or add one...*.
+- **Guides of one name for different characters (`Guide.lua`):** a guide's key is its group, its name and, where its
+  head keeps it for some only, for whom (`<< Horde`): 19 of the bought Forever guides came twice under one name (one
+  for a choice the guide offers), and the second replaced the first, so they were missing. The guide named next is
+  the one for this character (`Find`).
+- **Parts and dividers (`Format.Head`):** a guide that is a part of a longer way (reached only as another's next) is
+  not listed; a list's divider is no guide (the format's marks, `Core.Neighbours`: `part`, `divider`).
+- **The guides window (`Guides.lua`):** the guides under their groups' headings, by title where the head gives one,
+  the subgroup after it; a pack's guide has no cross to forget it.
+- **Your guide on, paused or off (`SpeedLeveling.lua`, the setting *Your guide*):** paused, the guide holds where it
+  is, its view shows its head and a line saying so (a click goes on), and the key and the quest givers leave it;
+  what was done meanwhile counts once it goes on. Off: no view, no guide followed. `Guide.Following`.
+- **Quick switches (`Core/Switches.lua`, new):** `Core.Offer`, `Core.Switches`, `Core.SwitchChanged`,
+  `Core.OnSwitches`: a module offers a switch, a view lists them; Speed Leveling offers *Leveling guide* (a click
+  pauses or goes on, a right click chooses on, paused or off).
+- **The satchel (`Navigation/Satchel.lua`):** a section *Sane UI* with the modules' switches (on ticked, paused said
+  under its name, off faint); the *AddOns* section only while it has a button; the latency *N ms home, N world* on
+  one line.
+- **Tests:** `dev/tests/navigation.lua` 661 checks (the switches section, its click, paused and off; no AddOns
+  section while empty), `dev/tests/speedguide.lua` 104 (paused and off, by the switch and by the view; a pack loaded
+  for its game only, its guide listed and chosen in the menu by key and read from it, its part followed next, not
+  listed; the window's rows; guides of one name for different characters apart).
+- A game restart takes it in (a new file in Core's TOC, the guide packs new addons).
 
 ### Speed Leveling's guide: shown with no guide yet, large guides pasted fast, the Retail guides read (Saneroki, 2026-10-26)
 Saneroki, after a restart in Retail: the guide was shown nowhere. No guide was kept (the view no longer shows the

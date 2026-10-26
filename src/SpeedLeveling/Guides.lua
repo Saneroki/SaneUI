@@ -2,10 +2,11 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Guides
---  The window of the guides kept (/sane guides, or Paste a guide in the
---  guide's menu): at the left the guides kept, a click follows one (those not
---  for this character or this game greyed), the cross beside one forgets it
---  (asked first). At the right, at the top, a line for the import string of
+--  The window of the guides (/sane guides, or the last line of the guide's
+--  menu): at the left the guides, those that come in this game's guide pack
+--  and those kept, under their groups' headings; a click follows one (those
+--  not for this character or this game greyed), the cross beside a kept one
+--  forgets it (asked first). At the right, at the top, a line for the import string of
 --  the guides you bought, or a large guide's text: what is pasted there is
 --  gathered as it comes (the line itself holds a character only, so megabytes
 --  do not hold the game up) and, once the paste is over, opened for your
@@ -27,15 +28,37 @@ Guides.INSET = 12
 Guides.QUIET = 0.25 -- seconds without a character before a paste counts as over
 
 local frame, window, list, child, box, status, line, lineHint
-local rows = {}
+local rows, heads = {}, {} -- the list's guides; its groups' headings
 local pasted, waited = {}, 0 -- the characters of the import line's paste so far; the time since the last
 local listening = false      -- the line waits for its paste to be over
 local Pasted, Opening        -- the line's and the window's OnUpdate while they wait, guarded once (below)
 
+-- A group's heading in the list, at y.
+local function Heading(index, words, y)
+    local head = heads[index]
+    if not head then
+        head = child:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        head:SetJustifyH("LEFT")
+        head:SetWordWrap(false)
+        heads[index] = head
+    end
+    head:ClearAllPoints()
+    head:SetPoint("TOPLEFT", child, "TOPLEFT", 2, -y - 4)
+    head:SetPoint("RIGHT", child, "RIGHT", -2, 0)
+    head:SetText(words)
+    head:Show()
+end
+
 local function Fill()
     local kept = ns.Guide.Kept()
     local chosen = ns.Guide.Chosen()
+    local y, groups, group = 0, 0, nil
     for index, guide in ipairs(kept) do
+        if guide.group ~= group then
+            group, groups = guide.group, groups + 1
+            Heading(groups, group ~= "" and group or ns.TEXT.ungrouped, y)
+            y = y + Guides.ROW
+        end
         local row = rows[index]
         if not row then
             row = CreateFrame("Button", nil, child)
@@ -61,17 +84,20 @@ local function Fill()
             end))
             rows[index] = row
         end
-        row.key, row.name, row.mine = guide.key, guide.name, guide.mine
+        row.key, row.name, row.mine = guide.key, guide.title or guide.name, guide.mine
         row:ClearAllPoints()
-        row:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -(index - 1) * Guides.ROW)
+        row:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
         row:SetPoint("RIGHT", child, "RIGHT")
-        local words = guide.group ~= "" and (guide.name .. "  |cff999999" .. guide.group .. "|r") or guide.name
+        y = y + Guides.ROW
+        local words = guide.subgroup ~= "" and (row.name .. "  |cff999999" .. guide.subgroup .. "|r") or row.name
         row.text:SetText((guide.key == chosen and "> " or "") .. words)
         row.text:SetFontObject(guide.mine and "GameFontHighlightSmall" or "GameFontDisableSmall")
+        row.forget:SetShown(not guide.pack) -- a pack's guide comes with it: nothing to forget
         row:Show()
     end
     for index = #kept + 1, #rows do rows[index]:Hide() end
-    child:SetHeight(math.max(1, #kept * Guides.ROW))
+    for index = groups + 1, #heads do heads[index]:Hide() end
+    child:SetHeight(math.max(1, y))
     if #kept == 0 and status:GetText() == "" then status:SetText(ns.TEXT.noneKept) end
 end
 

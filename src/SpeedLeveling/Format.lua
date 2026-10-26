@@ -29,7 +29,8 @@ local _, ns = ...
 --      local guide, problems = Format.Read(text, who)  -- one guide's, for that character; nil while Core knows no format
 --      who     { side = "Horde", race = "Orc", class = "WARRIOR", level = 7, game = "forever" }
 --      guide   { name, title, group, subgroup, after = { { name, only } }, defaultFor, only, games = { game },
---                mine, steps = { step }, labels = { [label] = index } }   -- mine: it is for this character
+--                part, divider, mine, steps = { step }, labels = { [label] = index } }
+--                -- mine: it is for this character; part: reached only as another's next; divider: no guide
 --      step    { lines = { line }, label, together ("next" or a label), stays, needs (a label), aside, loop, hidden,
 --                map, arrowText, unless = { test }, friends, foes, items, spells, uses = { { item, words } } }
 --      line    { what = a word of Format.DOING or Format.WORDS, words, ... what the command gave }
@@ -385,6 +386,10 @@ local function Head(guide, mark, value)
         end
     elseif mark == "defaultFor" then
         guide.defaultFor = value
+    elseif mark == "part" then
+        guide.part = true    -- a part of a longer way: reached as another guide's next, not chosen from the list
+    elseif mark == "divider" then
+        guide.divider = true -- a divider in a list of guides: no guide at all
     end
 end
 

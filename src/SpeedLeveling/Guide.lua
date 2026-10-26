@@ -23,16 +23,27 @@ local _, ns = ...
 --                         gossip = { option IDs }, choose = ... } (Run.Quests)
 --      Guide.Target()     where the arrow points: a place (Run.Way's), and the step there (the picture's)
 --      Guide.Doing(step)  what that step asks you to do: "talk", "kill", "loot", "use", ... (the arrow's picture)
---      Guide.Kept()       the guides kept: { { key, name, group, mine, bought } }, by group and name
+--      Guide.Kept()       the guides to choose from, kept and from packs: { { key, name, title, group, subgroup,
+--                         mine, bought, pack } }, by group, subgroup and name (parts and dividers not listed)
 --      Guide.AddAll(texts, bought)  each guide's text kept (one of the same group and name replaced): names, problems
+--      Guide.LoadPacks()  the guide packs of this game loaded (at the start); each hands its guides to Guide.Take
 --      Guide.Remove(key), Guide.Choose(key), Guide.Chosen()
 --      Guide.Empty()      while no guide is followed, the view's words for why (none kept, none for you); else nil
+--      Guide.Following()  whether the guide is followed now: one chosen, and on (not paused, not off)
 --      Guide.Watch(fn)    fn() whenever the picture may have changed (once a frame at most)
 --
 --  Kept for the account (Core.Store): each guide's text packed (the game's
 --  deflate and base64, C_EncodingUtil) with its head (Format.Head), so the list
 --  needs no guide read; for each character (Core.Character, Run.lua) which
 --  guide it follows and where it is in each.
+--
+--  Guide packs (Saneroki, 2026-10-26: the guides that come for each game, there
+--  to choose without a paste): an addon of Sane UI's for one game, made on this
+--  computer, its TOC "## X-SaneUI-Guides: 1", "## X-SaneUI-Games: <game>" and
+--  "## LoadOnDemand: 1". Loaded at the start, it hands its guides over:
+--  SaneUI.SpeedLeveling.TakeGuides(addon, { head }), each head Format.Head's
+--  fields and zlib, its text zlib-packed in base64. Not kept: the pack holds
+--  them; a guide kept under the same group and name goes before the pack's.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -42,7 +53,9 @@ ns.Guide = Guide
 Guide.AHEAD = 6   -- the steps after those at hand the picture lists, at most (the view may show fewer)
 
 local EMPTY = {}
-local DEFLATE = 0 -- the game's Enum.CompressionMethod.Deflate, should its name be missing
+local DEFLATE, ZLIB = 0, 1 -- the game's Enum.CompressionMethod.Deflate and Zlib, should their names be missing
+local shipped = {} -- [key] = a pack's guide: its head and its text packed (zlib), pack = the addon, order
+local taken = 0    -- the packs' guides handed over so far (their order)
 -- Our colours for names in a guide's words, by kind: the game's own font colours, these where it lacks one.
 local COLOURS = {
     friend = { "GREEN_FONT_COLOR", "19FF19" }, foe = { "RED_FONT_COLOR", "FF2020" },
@@ -224,24 +237,29 @@ function Guide.Skip(number)
     Changed()
 end
 
+-- Whether the guide is followed now: on (not paused, not off; Saneroki, 2026-10-26) and one is chosen.
+function Guide.Following()
+    return (ns.options.follow or "on") == "on" and ns.Run.Guide() ~= nil
+end
+
 function Guide.Targets()
-    if not ns.options.guide or not ns.Run.Guide() then return nil end
+    if not ns.options.guide or not Guide.Following() then return nil end
     return ns.Run.Targets()
 end
 
 function Guide.Uses()
-    if not ns.Run.Guide() then return nil end
+    if not Guide.Following() then return nil end
     return ns.Run.Uses()
 end
 
 -- The items the steps at hand name to use, with the words of their lines (what each is used on).
 function Guide.UseOn()
-    if not ns.options.guide or not ns.Run.Guide() then return nil end
+    if not ns.options.guide or not Guide.Following() then return nil end
     return ns.Run.UseOn()
 end
 
 function Guide.Things()
-    if not ns.Run.Guide() then return nil end
+    if not Guide.Following() then return nil end
     local names = {}
     for _, index in ipairs(ns.Run.Hand()) do
         for _, state in ipairs(ns.Run.Lines(index)) do
@@ -252,7 +270,7 @@ function Guide.Things()
 end
 
 function Guide.Quests()
-    if not ns.Run.Guide() then return nil end
+    if not Guide.Following() then return nil end
     return ns.Run.Quests()
 end
 
@@ -271,19 +289,25 @@ local function Pack(text)
     return { text = text }
 end
 
+-- A guide's text again: as kept, or a pack's (zlib).
 local function Unpack(kept)
     if type(kept.text) == "string" then return kept.text end
     local encoding = rawget(_G, "C_EncodingUtil")
-    local method = rawget(_G, "Enum") and Enum.CompressionMethod and Enum.CompressionMethod.Deflate or DEFLATE
-    if type(kept.packed) ~= "string" or not encoding then return nil end
-    local bytes = Core.Ask(encoding.DecodeBase64, kept.packed)
+    local methods = rawget(_G, "Enum") and Enum.CompressionMethod or EMPTY
+    local written, method = kept.packed, methods.Deflate or DEFLATE
+    if type(kept.zlib) == "string" then written, method = kept.zlib, methods.Zlib or ZLIB end
+    if type(written) ~= "string" or not encoding then return nil end
+    local bytes = Core.Ask(encoding.DecodeBase64, written)
     local text = type(bytes) == "string" and Core.Ask(encoding.DecompressString, bytes, method)
     return type(text) == "string" and text or nil
 end
 
--- A guide's key among those kept: its group and its name.
-local function KeyOf(group, name)
-    return (group and group ~= "" and (group .. "\\") or "") .. name
+-- A guide's key: its group and its name, and for whom when its head says ("<<"): guides of one name for different
+-- characters are kept apart.
+local function KeyOf(group, name, only)
+    local key = (group and group ~= "" and (group .. "\\") or "") .. name
+    if only and only ~= "" then key = key .. " << " .. only end
+    return key
 end
 
 -- Whether a kept guide is for this character in this game.
@@ -292,10 +316,17 @@ local function Mine(kept, who)
     return ns.Format.Plays(who, kept.games)
 end
 
--- A kept guide read for this character; nil for one not kept or that cannot be read.
-local function Read(key)
+-- A guide by its key: kept (pasted or bought), else a pack's; nil for neither.
+local function Entry(key)
     local kept = Store()[key]
-    if type(kept) ~= "table" then return nil end
+    if type(kept) == "table" then return kept end
+    return shipped[key]
+end
+
+-- A guide read for this character; nil for one not there or that cannot be read.
+local function Read(key)
+    local kept = Entry(key)
+    if not kept then return nil end
     local text = Unpack(kept)
     if not text then return nil end
     local guide = ns.Format.Read(text, Who())
@@ -304,15 +335,19 @@ local function Read(key)
 end
 
 function Guide.Kept()
-    local list, who = {}, Who()
-    for key, kept in pairs(Store()) do
-        if type(kept) == "table" then
-            list[#list + 1] = { key = key, name = kept.name or key, group = kept.group or "", mine = Mine(kept, who),
-                                bought = kept.bought == true }
-        end
+    local list, who, seen = {}, Who(), {}
+    local function Add(key, kept, pack)
+        if seen[key] or type(kept) ~= "table" or kept.part or kept.divider then return end
+        seen[key] = true
+        list[#list + 1] = { key = key, name = kept.name or key, title = kept.title, group = kept.group or "",
+                            subgroup = kept.subgroup or "", mine = Mine(kept, who), bought = kept.bought == true,
+                            pack = pack }
     end
+    for key, kept in pairs(Store()) do Add(key, kept, false) end
+    for key, kept in pairs(shipped) do Add(key, kept, true) end
     table.sort(list, function(a, b)
         if a.group ~= b.group then return a.group < b.group end
+        if a.subgroup ~= b.subgroup then return a.subgroup < b.subgroup end
         return a.name < b.name
     end)
     return list
@@ -349,17 +384,17 @@ function Guide.AddAll(texts, bought)
     local first
     for _, text in ipairs(texts) do
         local head = ns.Format.Head(text)
-        if head then
+        if head and not head.divider then
             local guide, found = ns.Format.Read(text, who)
-            local key = KeyOf(head.group, head.name)
+            local key = KeyOf(head.group, head.name, head.only)
             local kept = Pack(text)
             kept.name, kept.group, kept.subgroup, kept.title = head.name, head.group, head.subgroup, head.title
             kept.only, kept.defaultFor, kept.after, kept.games = head.only, head.defaultFor, head.after, head.games
-            kept.bought = bought or nil
+            kept.part, kept.bought = head.part, bought or nil
             store[key] = kept
             names[#names + 1] = head.name
             for _, problem in ipairs(found or EMPTY) do problems[#problems + 1] = head.name .. ", " .. problem end
-            if not first and guide and Mine(kept, who) then first = key end
+            if not first and guide and not head.part and Mine(kept, who) then first = key end
         end
     end
     -- A character without a guide yet takes the first one for it.
@@ -368,25 +403,78 @@ function Guide.AddAll(texts, bought)
     return names, problems
 end
 
+-- A kept guide forgotten (a pack's stays: the pack holds it).
 function Guide.Remove(key)
     Store()[key] = nil
     if Guide.Chosen() == key then ns.Run.Use(nil) end
     Changed()
 end
 
--- A kept guide by a name a guide's head gives ("Group\Name", or a name of the same group, else of any): its key.
-local function Find(name, group)
-    local store = Store()
-    if store[name] then return name end
-    local own = KeyOf(group, name)
-    if store[own] then return own end
-    for key, kept in pairs(store) do
-        if type(kept) == "table" and kept.name == name then return key end
+-- A guide by a name a guide's head gives ("Group\Name", or a name), kept or a pack's: its key. Of several, the one
+-- for this character first, then one of the same group; a kept one before a pack's.
+local function Find(name, group, who)
+    if Entry(name) then return name end
+    local found, rank
+    for _, guides in ipairs({ Store(), shipped }) do
+        for key, kept in pairs(guides) do
+            if type(kept) == "table" and (kept.name == name or KeyOf(kept.group, kept.name) == name) then
+                local this = (Mine(kept, who) and 0 or 2) + ((kept.group or "") == (group or "") and 0 or 1)
+                if not rank or this < rank then found, rank = key, this end
+            end
+        end
     end
-    return nil
+    return found
 end
 
--- The guide a character starts with: the one it ran, else the first kept one its head names for its race or class.
+-------------------------------------------------------------------------------
+--  Guide packs
+-------------------------------------------------------------------------------
+-- A pack hands its guides over as it is loaded: each a head with its text packed (zlib).
+function Guide.Take(addon, guides)
+    if type(guides) ~= "table" then return end
+    for _, head in ipairs(guides) do
+        if type(head) == "table" and type(head.name) == "string" and type(head.zlib) == "string" and not head.divider then
+            taken = taken + 1
+            head.pack, head.order = tostring(addon), taken
+            if type(head.games) ~= "table" then head.games = {} end
+            if type(head.after) ~= "table" then head.after = {} end
+            shipped[KeyOf(head.group, head.name, head.only)] = head
+        end
+    end
+end
+ns.TakeGuides = ns.Guard(Guide.Take) -- what a pack calls (SaneUI.SpeedLeveling.TakeGuides)
+
+-- The guide packs of this game (Sane UI's addons whose TOC says X-SaneUI-Guides), switched on for this character,
+-- loaded: each hands its guides to Guide.Take as it loads.
+function Guide.LoadPacks()
+    local api = rawget(_G, "C_AddOns")
+    if not (api and api.GetNumAddOns and api.LoadAddOn) then return end
+    local character = Plain(Core.Ask(UnitGUID, "player"))
+    for index = 1, Plain(Core.Ask(api.GetNumAddOns)) or 0 do
+        local name = Plain(Core.Ask(api.GetAddOnInfo, index))
+        if type(name) == "string" and name:find("^SaneUI_") and Core.Ask(api.GetAddOnMetadata, name, "X-SaneUI-Guides")
+            and Core.ServesGame(name) and Core.Ask(api.GetAddOnEnableState, name, character) ~= 0
+            and not Core.Ask(api.IsAddOnLoaded, name) then
+            pcall(api.LoadAddOn, name)
+        end
+    end
+end
+
+-- The guides a character may start with, in order: those kept, then the packs' in the order they come.
+local function Starts()
+    local keys, packed = {}, {}
+    for _, kept in ipairs(Guide.Kept()) do
+        if not kept.pack then keys[#keys + 1] = kept.key end
+    end
+    for key, head in pairs(shipped) do
+        if not head.part then packed[#packed + 1] = key end
+    end
+    table.sort(packed, function(a, b) return shipped[a].order < shipped[b].order end)
+    for _, key in ipairs(packed) do keys[#keys + 1] = key end
+    return keys
+end
+
+-- The guide a character starts with: the one it ran, else the first one whose head names it for its race or class.
 local function Start()
     local notes = Core.Character(ns.name)
     local guide = type(notes.guide) == "string" and Read(notes.guide)
@@ -395,10 +483,10 @@ local function Start()
         return
     end
     local who = Who()
-    for _, kept in ipairs(Guide.Kept()) do
-        local entry = Store()[kept.key]
-        if kept.mine and type(entry.defaultFor) == "string" and ns.Format.For(who, entry.defaultFor) then
-            local read = Read(kept.key)
+    for _, key in ipairs(Starts()) do
+        local entry = Entry(key)
+        if Mine(entry, who) and type(entry.defaultFor) == "string" and ns.Format.For(who, entry.defaultFor) then
+            local read = Read(key)
             if read and read.mine then
                 ns.Run.Use(read)
                 return
@@ -413,7 +501,7 @@ local function Onward()
     if not guide or not ns.Run.Through() then return end
     local who = Who()
     for _, after in ipairs(guide.after) do
-        local key = Find(after.name, guide.group)
+        local key = Find(after.name, guide.group, who)
         local next = key and (not after.only or ns.Format.For(who, after.only)) and Read(key)
         if next and next.mine then
             ns.Run.Use(next)
@@ -434,7 +522,7 @@ Changed = Core.Later(Tell)
 
 -- The game changed: the guide moves on as far as done steps go, and on to the next guide once it is through.
 local function Check()
-    if not ns.Run.Guide() then return end
+    if not Guide.Following() then return ns.Run.Stop() end -- paused or off: it holds where it is, no place watched
     ns.Run.Check()
     if ns.Run.Through() then Onward() end
     ns.Run.Watch(Changed)
@@ -446,7 +534,7 @@ Guide.CheckSoon = checkSoon
 -- Things the game tells only as they happen.
 local function Saw(what)
     return function()
-        if not ns.Run.Guide() then return end
+        if not Guide.Following() then return end
         ns.Run.Saw(what)
         checkSoon()
     end
@@ -458,6 +546,7 @@ local CHECKS = { "QUEST_LOG_UPDATE", "QUEST_TURNED_IN", "QUEST_ACCEPTED", "QUEST
                  "UNIT_INVENTORY_CHANGED", "NEW_RECIPE_LEARNED" }
 
 function Guide.Start()
+    Guide.LoadPacks()
     Start()
     for _, event in ipairs(CHECKS) do
         if event == "UNIT_AURA" or event == "UNIT_INVENTORY_CHANGED" then
@@ -476,7 +565,7 @@ function Guide.Start()
         if Core.Ask(rawget(_G, "UnitOnTaxi"), "player") then Saw("fly")() end
     end, 1))
     ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spell)
-        if unit ~= "player" or not ns.Run.Guide() then return end
+        if unit ~= "player" or not Guide.Following() then return end
         spell = Plain(spell)
         if spell == ns.Run.HEARTH_SPELL or spell == ns.Run.RECALL then ns.Run.Saw("hearth") end
         if type(spell) == "number" then ns.Run.Saw("cast" .. spell) end

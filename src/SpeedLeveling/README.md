@@ -4,8 +4,9 @@
 
 ## TL;DR
 One key for questing, pressed again and again, and your leveling guide over the world, run by Sane UI itself. It
-needs no other addon: it reads leveling guides written as text (the guides you bought, opened for your own account,
-and guides you paste) and runs them with an engine of its own.
+needs no other addon: it reads leveling guides written as text (the guides that come for each game in its guide
+pack, the guides you bought, opened for your own account, and guides you paste) and runs them with an engine of its
+own. A right click on the guide's zone chooses the one to follow.
 
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
@@ -39,10 +40,15 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 ## How to use
 - **Give it a key:** Esc > Options > Keybindings, under *Sane UI*: *Loot, talk, pick up, attack, find and mark, use*.
   Any key will do (E, for one). Until it has one, the module says so once in chat.
-- **Add your guides:** open *Guides* (`/sane guides`, or the button on the options page). Paste the **import string**
-  of the guides you bought into the line at the top — it is opened for the account you are playing, and no other —
-  or paste a guide's **text** into the box below and press *Read*. A character without a guide takes the first one
-  whose head names its race or class.
+- **Choose a guide:** right click the guide's zone over the world: the guides for this character, by group, each
+  group a menu of its own; a click follows one. The guides that come for each game are there from the start (the
+  guide pack of the game, *The guides*). A character without a guide takes the first one whose head names its race
+  or class.
+- **Add your guides:** open *Guides* (`/sane guides`, the last line of that menu, or the button on the options page).
+  Paste the **import string** of the guides you bought into the line at the top — it is opened for the account you
+  are playing, and no other — or paste a guide's **text** into the box below and press *Read*.
+- **Pause it, or switch it off:** *Your guide* on the options page, or the guide's switch in the minimap's satchel (a
+  click pauses it or goes on, a right click chooses on, paused or off).
 - **Switch it on or off:** tick or untick *Speed Leveling* under *Sane UI* in the game's addon list.
 - **Its page** in Sane UI's options, *Speed Leveling*:
 
@@ -60,11 +66,12 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | *Quest givers:* Take the guide's quests | on | The quests the steps at hand take (and the step after them) are accepted as the quest giver offers them. Hold Shift while you talk to do it yourself |
 | Hand in the guide's quests | on | The quests the steps at hand hand in are handed in, with the reward the guide names, else the only one |
 | Choose the guide's talk | on | Where a step names a gossip option, it is chosen |
-| *Guide:* Show the guide | on | The guide's steps over the world (*The guide over the world*) |
+| *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
+| Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
 | Steps listed ahead | 5 | How many steps the list under those at hand shows (0 to 12); the wheel scrolls it through the whole guide |
-| Guides | | Opens the window of the guides kept (also `/sane guides`) |
+| Guides | | Opens the window of the guides (also `/sane guides`) |
 
 ## What it looks for
 In this order, the NPCs before the creatures (Saneroki, 2026-10-25); the key takes the first it finds around you (as
@@ -94,19 +101,31 @@ guide's step's items and of the game's own quest items of your quests not yet do
 of what it is for. One a press.
 
 ## The guides
-Speed Leveling keeps the guides for the account (`Core.Store`, each packed with the game's own deflate), and for each
-character which guide it follows and where it is in each (`Core.Character`). A guide comes from one of two places,
-both read by our own reader (`Format.lua`) and run by our own engine (`Run.lua`):
+Speed Leveling keeps the guides you add for the account (`Core.Store`, each packed with the game's own deflate), and
+for each character which guide it follows and where it is in each (`Core.Character`). A guide comes from one of three
+places, all read by our own reader (`Format.lua`) and run by our own engine (`Run.lua`):
 
 - **The guides you bought** (`Unlock.lua`): a bought guide of the leveling guide Sane UI knows comes as an import
   string that is locked to the buyer's account. Sane UI opens it with the BattleTag of the account you are playing
   and no other (the key is made from the tag in memory and never kept; base64 and zlib are the game's own,
   `C_EncodingUtil`), and a string bought for another account stays shut. The work runs in steps over frames
-  (`Core.Steps`), so a string of megabytes does not hold the game up. No guide's text ships with Sane UI.
+  (`Core.Steps`), so a string of megabytes does not hold the game up.
+- **The guides that come for each game** (Saneroki, 2026-10-26): a guide pack, an addon of its own for one game
+  (*Guides: Forever*, `SaneUI_GuidesForever`; *Guides: Retail*, `SaneUI_GuidesRetail`), made apart from Sane UI's
+  code and put into the game (no guide's text is in Sane UI's repository). Its TOC says `## X-SaneUI-Guides: 1`,
+  its game (`## X-SaneUI-Games`) and `## LoadOnDemand: 1`; Speed Leveling loads the one for the game at the start
+  (`Guide.LoadPacks`), and the pack hands over each guide's head and its text, zlib-packed in base64
+  (`SaneUI.SpeedLeveling.TakeGuides`). They are not kept: the pack holds them. A guide you add under the same group
+  and name goes before the pack's; a new character takes the first default guide of those you added, then of the
+  pack in its own order. `dev/build` leaves a guide pack in the game.
 - **A guide pasted as text** (`Format.lua`): written in the text format the leveling guide Sane UI knows uses (its
   words for commands, step marks, colours and game tags are Core's to know, `Core.Neighbours.Format`; everything else
-  is ours). A head (name, group, the guides after it, who starts with it, which games it is for), then steps, each
-  with lines to do, to know or to check, each kept or left out for your side, race, class and level as the line says.
+  is ours). A head (name, group, the guides after it, who starts with it, which games it is for; a part of a longer
+  way, reached only as another guide's next, is not listed; a divider of a list is no guide), then steps, each with
+  lines to do, to know or to check, each kept or left out for your side, race, class and level as the line says.
+
+A guide is known by its group, its name and, when its head keeps it for some characters only, for whom: guides of one
+name for different characters stand apart, and the guide named next is the one for this character.
 
 ## The guide over the world
 - **What it shows,** from the top, in Expressway with a thin dark outline (Saneroki's pick of font, shipped in the
@@ -120,11 +139,13 @@ both read by our own reader (`Format.lua`) and run by our own engine (`Run.lua`)
     starts after the steps at hand again.
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
-- **No guide yet:** the view stays, its head and one line saying so (none kept, none chosen, or none of those kept
-  is for this character or game); a click on that line opens *Guides*.
+- **No guide yet:** the view stays, its head and one line saying so (none there, none chosen, or none of them is for
+  this character or game); a click on that line opens *Guides*.
+- **Paused** (*Your guide*): its head, and a line saying so; a click on it goes on. Off: nothing is shown.
 - **The mouse:** a click on a step at hand skips it, a right click goes back one step. The wheel over the list scrolls
-  it; a double click on a listed step goes to it; a right click on it opens its menu (*Go to step*, the guides kept);
-  a right click on the zone chooses the guide to follow, or *Paste a guide...*.
+  it; a double click on a listed step goes to it; a right click on it opens its menu (*Go to step*, the guides);
+  a right click on the zone chooses the guide to follow: the guides for this character by group, each group a menu of
+  its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
 ### The arrow
 A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide (at first over the middle of the screen),
@@ -153,9 +174,10 @@ sword, its portrait once you have seen it (its nameplate, your target). A click 
 buttons: set out of a fight only (in one the row stays as it was and follows once it is over), placed by the screen
 where the guide's top is.
 
-### The guides kept as text
-*Guides* (`/sane guides`, or the menu): at the left the guides kept, a click follows one (those for another side,
-race, class or game greyed), the cross beside one forgets it (asked first); at the right, at the top, a line for the
+### The guides window
+*Guides* (`/sane guides`, or the menu): at the left the guides, the pack's and those you added, under their groups'
+headings (by name, or by title where the head gives one, the subgroup after it); a click follows one (those for
+another side, race, class or game greyed), the cross beside one you added forgets it (asked first); at the right, at the top, a line for the
 import string of your bought guides or a large guide's text (what is pasted there is gathered as it comes, so
 megabytes do not hold the game up, then opened for your account or read as a guide; a guide whose line breaks did
 not come through is sent to the box below), and under it a box to paste a guide's text into, with *Read*. It says how many were kept and which lines could not be
@@ -218,7 +240,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Format.lua` | A guide written as text read into our shape (`Format.Head`, `Format.Read`, `Format.For`, `Format.Plays`) |
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
 | `Run.lua` | A guide run for the character: the steps at hand, what is done, skip, back, go, the places, the quest givers' wants |
-| `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed), what the steps want for the key |
+| `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
 | `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key, Click-to-Move) |
@@ -226,7 +248,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
 | `Icons.lua` | The icons over the guide: items to use and names to target, Sane UI's own secure buttons |
-| `Guides.lua` | The window of the guides kept: the list, the import line, the box to paste into, *Read* |
+| `Guides.lua` | The window of the guides: the list by group, the import line, the box to paste into, *Read* |
 | `Bindings.xml` | The key in the game's key bindings |
 
 ## Errors

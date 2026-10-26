@@ -74,6 +74,14 @@ ns.TEXT = {
     -- The guide over the world (Guide.lua, Steps.lua, Guides.lua).
     guideHeader = "Guide",
     guideHeaderTip = "Your leveling guide over the world: the zone, the steps at hand and the next ones.",
+    follow = "Your guide",
+    followTip = "On: the guide shows over the world and moves on as you play; the key and the quest givers follow it. Paused: it holds where it is, its view shows only that it is paused (a click goes on), and nothing is done for it; what you did meanwhile counts once it goes on. Off: no guide is followed; the key looks for your quests alone. Also in the minimap's satchel.",
+    followOn = "On",
+    followPaused = "Paused",
+    followOff = "Off",
+    paused = "Paused. Click here to go on with the guide.",
+    switchTitle = "Leveling guide",
+    switchTip = "Click: pause the guide, or go on with it. Right click: on, paused or off.",
     showGuide = "Show the guide",
     showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
     showArrow = "Show the arrow",
@@ -83,23 +91,25 @@ ns.TEXT = {
     ahead = "Steps listed ahead",
     aheadTip = "How many steps the list under those at hand shows; the wheel scrolls it through the whole guide.",
     guidesButton = "Guides",
-    guidesButtonTip = "The guides kept: paste the import string of the guides you bought, or a guide's text, and choose the one to follow.",
+    guidesButtonTip = "The guides: those that come for this game and those you added. Paste the import string of the guides you bought, or a guide's text, and choose the one to follow.",
     guideView = "Guide",
     guides = "Guides",
     step = "Step %d",
     progress = "%d/%d \194\183 %d%%",
-    paste = "Paste a guide...",
+    paste = "All guides, or add one...",
+    ungrouped = "Other guides",
+    noneHere = "No guide for this character yet",
     pasteHint = "Or paste a guide's text here (Ctrl+V), then Read.",
     readButton = "Read",
     read = "Kept %d: %s.",
     unread = "%d lines could not be read and are left out:",
     noneRead = "No guide was found in that text.",
-    noneKept = "No guide is kept yet: paste the import string of your bought guides at the right, or a guide's text, then Read.",
+    noneKept = "No guide yet: paste the import string of your bought guides at the right, or a guide's text, then Read.",
     noGuide = "No guide yet. Click here to add one: the import string of the guides you bought, or a guide's text (/sane guides).",
-    noGuideChosen = "No guide is followed. Click here to choose one of the guides kept (/sane guides).",
-    noGuideHere = "None of the guides kept is for this character or this game. Click here to add one (/sane guides).",
+    noGuideChosen = "No guide is followed. Click here, or right click the view, to choose one (/sane guides).",
+    noGuideHere = "None of the guides is for this character or this game. Click here to add one (/sane guides).",
     forget = "Forget the guide %s?",
-    command = "the guides kept: paste the import string of your bought guides or a guide's text, choose the one to follow",
+    command = "the guides: paste the import string of your bought guides or a guide's text, choose the one to follow",
     unnamed = "Guide",
     -- The import string of bought guides (Unlock.lua, Guides.lua).
     stringTitle = "The import string of the guides you bought, or a large guide's text",
@@ -173,8 +183,10 @@ local OPTIONS = {
       header = ns.TEXT.questsHeader, headerTip = ns.TEXT.questsHeaderTip },
     { key = "handin", default = true, text = ns.TEXT.handin, tip = ns.TEXT.handinTip },
     { key = "gossip", default = true, text = ns.TEXT.gossip, tip = ns.TEXT.gossipTip },
-    { key = "showGuide", default = true, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip,
+    { key = "follow", default = "on", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
+      choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
+    { key = "showGuide", default = true, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
     { key = "showArrow", default = true, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
     { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
@@ -190,9 +202,12 @@ local QUESTS = { take = true, handin = true, gossip = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then
         ns.Guarded(ns.Steps.Update)
-    elseif key == "guide" then
+    elseif key == "guide" or key == "follow" then
+        -- On, paused or off: what the key wants follows, the view is drawn anew, the satchel's switch told.
+        if key == "follow" then ns.Guarded(ns.Guide.CheckSoon) end
         ns.Guarded(ns.Wanted.Changed)
         ns.Guarded(ns.Steps.Update)
+        Core.SwitchChanged()
     elseif not QUESTS[key] then
         ns.Guarded(ns.Key.Update)
     end
@@ -223,3 +238,29 @@ function ns.OnLogin()
 end
 
 Core.Command("guides", ns.TEXT.command, function() ns.Guarded(ns.Guides.Open) end)
+
+-- The guide on, paused or off, as a quick switch for a view that gathers them (Core.Offer: the minimap's satchel).
+-- A click pauses it or goes on; a right click chooses on, paused or off.
+local function Follow(value) Core.Set(ns.name, "follow", value) end
+Core.Offer("speedleveling", {
+    title = ns.TEXT.switchTitle, icon = "Interface\\Icons\\Ability_Hunter_MarkedForDeath",
+    State = function()
+        if ns.off or not ns.options then return nil end
+        return ns.options.follow or "on"
+    end,
+    Tip = function() return ns.TEXT.switchTip end,
+    Click = function(mouse, owner)
+        local now = ns.options.follow or "on"
+        if mouse ~= "RightButton" then return Follow(now == "on" and "paused" or "on") end
+        local util = rawget(_G, "MenuUtil")
+        if not (util and util.CreateContextMenu) then return end
+        util.CreateContextMenu(owner, ns.Guard(function(_, root)
+            root:CreateTitle(ns.TEXT.switchTitle)
+            for _, choice in ipairs({ { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused },
+                                      { "off", ns.TEXT.followOff } }) do
+                root:CreateRadio(choice[2], ns.Guard(function() return (ns.options.follow or "on") == choice[1] end),
+                                 ns.Guard(function() Follow(choice[1]) end))
+            end
+        end))
+    end,
+})

@@ -95,15 +95,19 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
   - **the zone you are in** (its title, with the subzone, in the colour the game's minimap gives it: friendly,
     hostile, contested, a sanctuary), under it your local time and the realm's, the frame rate, the latency home and
-    to the world, the time of day (in WoW: Forever), new mail and from whom, the calendar's invitations, looked at
+    to the world on one line, the time of day (in WoW: Forever), new mail and from whom, the calendar's invitations, looked at
     again every second; then the game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
     click stops it) and **Stopwatch** (on the screen), each ticked while open. The calendar opens out of a fight
     only, as the game opens it only so for an addon;
+  - **Sane UI:** the quick switches Sane UI's modules offer (`Core.Offer`): Speed Leveling's *Leveling guide*, a
+    click pauses the guide or goes on, a right click chooses on, paused or off; on is ticked, paused says so under
+    its name, off is faint. Only while a module offers one;
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
     minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
     the golden ring round it, with its addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists
     (the game's own button for them is out of sight with its minimap's frame), a click on one as in the game's
-    menu. An addon with both shows once. With the game's own minimap chosen they are back round it;
+    menu. An addon with both shows once. With the game's own minimap chosen they are back round it. Only while
+    there is one: with none the section is not there;
   - **Pins:** every kind of pin the map can show, a click shows it or not (as the pin filter; the sizes stay there);
   - **Tracking:** what the game's own minimap tracks, as its tracking menu lists it (the townsfolk, a hunter's
     beasts, Find Fish...), a click switches it; Find Herbs and Find Minerals are *Found herbs* and *Found ore*.
@@ -469,8 +473,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   corner `Satchel.Place` picks from where the window stands, shown only while the window stands small and is the
   minimap. The page is a frame of its own (strata `DIALOG`) in Core's journal (`Core.Journal.Dress`: paper, leather
   top, its X), beside the window toward the screen's middle, a scroll frame in it no higher than
-  `Satchel.ROOM` of the screen. Three sections, each a title over a pencil rule and a grid of `Satchel.COLUMNS`
-  cells: *AddOns* (`Strays.List`, A to Z; a note while it holds nothing), *Pins* (`ns.KINDS` offered here, in the
+  `Satchel.ROOM` of the screen. Its sections, each a title over a pencil rule and a grid of `Satchel.COLUMNS`
+  cells, a section with no cells left out: *Sane UI* (`Core.Switches`, the modules' quick switches as offered; a
+  click its module's `Click` with the mouse button and the cell; filled anew when `Core.OnSwitches` tells a change),
+  *AddOns* (`Strays.List`, A to Z), *Pins* (`ns.KINDS` offered here, in the
   pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (`C_Minimap.GetTrackingInfo`, the
   entries the game's tracking menu lists: a spell's, or one of its optional filters, Forever's
   `MinimapConstants.OPTIONAL_FILTERS`, else Blizzard's list of them by `Enum.MinimapTrackingFilter` names; not the
@@ -480,7 +486,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   anew while it is open. Its first section, the zone's (`Zone`, `Lines`, `Tools`): its title the zone and subzone
   (`GetZoneText`, `GetSubZoneText`) in the minimap's colour for `C_PvP.GetZonePVPInfo` (`Satchel.ZONE`, made
   readable on the paper by `Journal.Ink`); its lines in two columns, each a label and a value, from
-  `GameTime_GetLocalTime` and `GameTime_GetGameTime` (the game's own time format), `GetFramerate`, `GetNetStats`,
+  `GameTime_GetLocalTime` and `GameTime_GetGameTime` (the game's own time format), `GetFramerate`, `GetNetStats`
+  (home and world on one line),
   `C_DateAndTime.IsDayTime` (Forever only), `HasNewMail` with `GetLatestThreeSenders`, and
   `C_Calendar.GetNumPendingInvites`, each only where the client has it; looked at again every `Satchel.EVERY`
   second while the page shows (its `OnUpdate`), the page laid out anew where a line comes or goes or the alarm
@@ -776,7 +783,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
-| `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; the addons' buttons, the pins and the game's tracking, in Core's journal |
+| `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -791,6 +798,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-26, the satchel's switches:** as Saneroki asked, the satchel has a section *Sane UI* with the modules'
+  quick switches (Speed Leveling's guide on, paused or off), the latency home and to the world on one line, and no
+  *AddOns* section while no other addon has a button for it.
 - **2026-10-25, the satchel and the middle click:** as Saneroki asked, a middle click brings the map back onto you,
   following, near enough for the game's minimap's dots (`Canvas.Home`, `Hybrid.HOME`); and one button on the small
   map, the satchel, opens a page of the buttons other addons put round the minimap, gathered there

@@ -11,9 +11,11 @@ The bigger changes of each version, newest first.
   window, just clear words on the game: the zone, how far you
   are, the steps to do now with their counts, and the next steps
   fading out. Click a step to skip it, right-click to go back.
-  Open the Guides window (/sane guides) and paste a guide you
-  bought - it opens for your own account - or any guide's text;
-  Sane UI runs it by itself as you quest. Over it, the items to
+  Right-click it to choose a guide: the guides that come for
+  each game are there, by group. Open the Guides window
+  (/sane guides) to paste a guide you bought - it opens for your
+  own account - or any guide's text; Sane UI runs it by itself as
+  you quest. Pause it or switch it off in the minimap's satchel. Over it, the items to
   use and the NPCs and creatures to target, as icons you click. A
   leather arrow of its own, placed in Edit Mode, points the way:
   in it a picture of what to do there (talk, fight, loot, use),
@@ -28,9 +30,10 @@ The bigger changes of each version, newest first.
   with the zone you are in, your time and the realm's, frame
   rate, latency, new mail, the game's calendar, clock (with its
   alarm) and stopwatch; the buttons other addons put round the
-  minimap (and the game's addon menu), round; every kind of pin
-  and what the game's minimap tracks, in large cells you switch
-  with a click.
+  minimap (and the game's addon menu), round; Sane UI's own
+  switches, such as your leveling guide on, paused or off; every
+  kind of pin and what the game's minimap tracks, in large cells
+  you switch with a click.
 - Navigation: a middle click on the map brings it back to you,
   following you again, near enough to see the minimap's icons.
 - Retail: Sane UI works in the main game too, beside WoW: Forever.
