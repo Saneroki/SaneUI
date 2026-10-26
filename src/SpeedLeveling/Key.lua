@@ -15,15 +15,16 @@ local _, ns = ...
 --            click does; what is taken is the game's loot window's to say
 --    fight   in a fight, your target a living foe: the button Fight, which
 --            marks it and attacks it
---    talk    a living friendly NPC right in front of you, the one the game's
---            interact key would talk to (the switch Talk to NPCs): Interact
---            With Target; a quest giver's quests then go as Quests.lua says
+--    talk    a living NPC right in front of you that is no foe, the one the
+--            game's interact key would talk to (the switch Talk to NPCs):
+--            Interact With Target; a quest giver's quests then go as
+--            Quests.lua says
 --    use     the thing of the world in front of you is one your quests or your
 --            guide want (Wanted.Object; the switch Quest objects): Interact
 --            With Target, which picks it up, opens or uses it
 --    fight   your target a living foe: Fight
---    talk    your target a living friendly NPC that is wanted (the switch Talk
---            to NPCs): Interact With Target. Far away, the game's own
+--    talk    your target a living NPC that is no foe and is wanted (the switch
+--            Talk to NPCs): Interact With Target. Far away, the game's own
 --            Click-to-Move runs you there first (the switch Walk to the NPC
 --            found: lent while such an NPC is your target, given back after)
 --    use     out of a fight, your target the one a step's item is used on, as
@@ -42,9 +43,13 @@ local _, ns = ...
 --  A state driver of the game reads loot, a foe in a fight, an NPC in front of
 --  you, a foe, a friend from the macro conditions; the header's snippet then
 --  puts that action on the key's keys as override bindings of its own (above
---  other overrides). Whether your friendly target is wanted and whether the
---  thing in front of you is a wanted one the module says out of a fight (the
---  attributes wanted and object), and the macros are written out of a fight
+--  other overrides). "Friend" is any living target that is no foe (noharm):
+--  the condition help holds only for one your spells could help, which many
+--  quest givers are not (Saneroki, 2026-10-26: the key talked to none in
+--  Retail). Whether your friendly target is wanted, whether the NPC in front of
+--  you is one to talk to (a creature, alive, no foe) and whether the thing in
+--  front of you is a wanted one the module says out of a fight (the
+--  attributes wanted, npc and object), and the macros are written out of a fight
 --  only: anew the moment before each press (PreClick) and when the quests
 --  change, without hearth and items as a fight begins. In a fight they all stay
 --  as they were.
@@ -74,13 +79,13 @@ _G["BINDING_NAME_" .. Key.COMMAND] = ns.TEXT.binding
 local LOOT = "[@softinteract,exists,dead] loot; "
 local FIGHT = "[@target,harm,nodead,combat] fight; "
 local NEAR = "[@softinteract,exists,help,nodead] near; "
-local REST = "[@target,harm,nodead] foe; [@target,help,nodead] friend; [@target,exists,dead] corpse; find"
+local REST = "[@target,harm,nodead] foe; [@target,noharm,nodead] friend; [@target,exists,dead] corpse; find"
 
 -- The header's snippets, which the game runs in its restricted environment, in a fight too. A change of the state
 -- or of what decides it: the action due on each of the key's keys.
 local ON_CHANGE = [[
     if name == "state-mode" or name == "wanted" or name == "object" or name == "talk" or name == "keys"
-        or name == "use" then
+        or name == "use" or name == "npc" then
         self:RunAttribute("_bind")
     end
 ]]
@@ -93,7 +98,7 @@ local BIND = [[
         action = "fight"
     elseif self:GetAttribute("use") then
         action = "use"
-    elseif state == "near" then
+    elseif state == "near" or self:GetAttribute("npc") then
         action = "interact"
     elseif self:GetAttribute("object") then
         action = "interact"
@@ -102,6 +107,7 @@ local BIND = [[
     elseif state == "friend" and self:GetAttribute("wanted") and self:GetAttribute("talk") then
         action = "interact"
     end
+    self:SetAttribute("action", action)
     self:ClearBindings()
     for index = 1, self:GetAttribute("keys") or 0 do
         local key = self:GetAttribute("key" .. index)
@@ -255,10 +261,22 @@ local function Before()
     if not InCombatLockdown() then WriteFind(Key.Find()) end
 end
 
--- Whether your target is a living friendly NPC (one to talk to or walk to).
+-- Whether a unit is a living NPC that is no foe (one to talk to or walk to): friendly or neutral, as long as it cannot
+-- be attacked.
+local function Peaceful(unit)
+    return Core.Ask(UnitExists, unit) and not Core.Ask(UnitIsPlayer, unit) and not Core.Ask(UnitIsDead, unit)
+        and Core.Ask(UnitCanAttack, "player", unit) ~= true
+end
+
 local function Friendly()
-    return Core.Ask(UnitExists, "target") and not Core.Ask(UnitIsPlayer, "target") and not Core.Ask(UnitIsDead, "target")
-        and Core.Ask(UnitIsFriend, "player", "target") == true
+    return Peaceful("target")
+end
+
+-- Whether the interact key's pick (its GUID) is an NPC to talk to: a creature, alive, no foe (the switch Talk to NPCs).
+local function Talkable(guid)
+    if not ns.options.talk or type(guid) ~= "string" then return false end
+    if not (guid:find("^Creature%-") or guid:find("^Vehicle%-")) then return false end
+    return Peaceful("softinteract") and true or false
 end
 
 local Aim
@@ -312,6 +330,7 @@ local function Fighting()
     if InCombatLockdown() or not header or ns.off then return end
     WriteFind(Key.Find(true))
     if header:GetAttribute("use") then header:SetAttribute("use", false) end
+    if header:GetAttribute("npc") then header:SetAttribute("npc", false) end
     using = nil
     Return(WALK)
     Watch(false)
@@ -328,6 +347,7 @@ function Key.Refresh()
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: refresh", Key.refreshLater) end
     header:SetAttribute("wanted", ns.Wanted.Unit("target"))
     local thing = soft or Core.Ask(UnitGUID, "softinteract")
+    header:SetAttribute("npc", Talkable(thing))
     header:SetAttribute("object", ns.options.objects and ns.Wanted.Object(thing) or false)
     WriteFind(Key.Find())
     Aim()
@@ -403,6 +423,41 @@ function Key.Start()
     end
 end
 Key.startLater = Later(Key.Start)
+
+-- /sane key: what the key sees now, in chat, and kept for the account (keyCheck, read after a /reload): its state and
+-- what a press does, the NPC or thing in front of you and your target as the game judges them, the item for your
+-- target, Click-to-Move.
+local function Seen(unit)
+    if not Core.Ask(UnitExists, unit) then return ns.TEXT.keyNobody end
+    local guid = Core.Ask(UnitGUID, unit)
+    local judged = {}
+    if Core.Ask(UnitIsDead, unit) then judged[#judged + 1] = "dead" end
+    judged[#judged + 1] = Core.Ask(UnitCanAttack, "player", unit) and "a foe" or "no foe"
+    if Core.Ask(UnitIsFriend, "player", unit) then judged[#judged + 1] = "friendly" end
+    if Core.Ask(UnitCanAssist, "player", unit) then judged[#judged + 1] = "helpable" end
+    return ns.TEXT.keyUnit:format(tostring(Core.Ask(UnitName, unit)),
+        tostring(type(guid) == "string" and guid:match("^(%a+)") or "?"), table.concat(judged, ", "))
+end
+
+function Key.Check()
+    local lines
+    if not header then
+        lines = { ns.TEXT.keyNone }
+    else
+        local guide = ns.Run.Guide()
+        lines = {
+            ns.TEXT.keyState:format(tostring(header:GetAttribute("state-mode")), tostring(header:GetAttribute("action")),
+                keys and table.concat(keys, ", ") or "?"),
+            ns.TEXT.keyFront:format(Seen("softinteract"), tostring(header:GetAttribute("npc")),
+                tostring(header:GetAttribute("object"))),
+            ns.TEXT.keyTarget:format(Seen("target"), tostring(header:GetAttribute("wanted")), tostring(using)),
+            ns.TEXT.keyWalk:format(tostring(Core.Ask(C_CVar.GetCVar, WALK)), tostring(ns.options.foundCVars[WALK] ~= nil),
+                guide and ns.Guide.Following() and tostring(guide.name) or "not followed"),
+        }
+    end
+    for _, line in ipairs(lines) do Core.Print(line) end
+    Core.Store(ns.name).keyCheck = { when = Core.Ask(date, "%Y-%m-%d %H:%M:%S"), lines = lines }
+end
 
 -- Standing down: the driver and the snippet stopped, no override binding of ours, the macros empty, the game's
 -- settings as they were.

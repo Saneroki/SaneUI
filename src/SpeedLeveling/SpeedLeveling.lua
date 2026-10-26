@@ -42,6 +42,15 @@ Core.NewModule(ADDON, "SpeedLeveling", ns)
 ns.TEXT = {
     binding = "Loot, talk, pick up, attack, find and mark, use",
     hint = "Speed Leveling: give it a key in Esc > Options > Keybindings, under Sane UI.",
+    -- /sane key: what the key sees now (Key.Check).
+    keyCommand = "what Speed Leveling's key sees now: what it would do, what is in front of you, your target",
+    keyNone = "Speed Leveling's key is not made yet.",
+    keyState = "Key: state %s, a press does %s; its keys %s.",
+    keyFront = "In front of you: %s; one to talk to %s, a thing your quests want %s.",
+    keyTarget = "Your target: %s; wanted %s, its item %s.",
+    keyWalk = "Click-to-Move %s (lent by the key: %s); the guide %s.",
+    keyUnit = "%s, a %s, %s",
+    keyNobody = "nothing",
     objects = "Quest objects",
     objectsTip = "A thing of the world your quests or your guide want, in front of you, is picked up, opened or used, as a right click on it does: a quest's chest or plant, what an item to loot comes from, the board a quest is handed in to. The game's interact key finds it and is switched on for it.",
     loot = "Loot first",
@@ -238,6 +247,7 @@ function ns.OnLogin()
 end
 
 Core.Command("guides", ns.TEXT.command, function() ns.Guarded(ns.Guides.Open) end)
+Core.Command("key", ns.TEXT.keyCommand, function() ns.Guarded(ns.Key.Check) end)
 
 -- The guide on, paused or off, as a quick switch for a view that gathers them (Core.Offer: the minimap's satchel).
 -- A click pauses it or goes on; a right click chooses on, paused or off.

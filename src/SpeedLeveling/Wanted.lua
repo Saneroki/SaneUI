@@ -266,14 +266,19 @@ function Wanted.Names()
     return names, have
 end
 
--- Whether a unit is wanted: a creature or NPC of those names, or one the game marks for a quest of yours.
+-- Whether a unit is wanted: a creature or NPC of those names, or one the game marks for a quest of yours: a creature
+-- to kill or loot, or an NPC that is no foe (one to hand a quest in to, or to speak to; on any client, without Core's
+-- data).
 function Wanted.Unit(unit)
     if not Core.Ask(UnitExists, unit) or Core.Ask(UnitIsPlayer, unit) then return false end
     local _, have = Wanted.Names()
     local name = Core.Ask(UnitName, unit)
     if type(name) == "string" and have[name] then return true end
     local doing = Core.UnitQuest(unit)
-    return doing == "kill" or doing == "loot"
+    if doing == "kill" or doing == "loot" then return true end
+    local log = rawget(_G, "C_QuestLog")
+    return Core.Ask(UnitCanAttack, "player", unit) ~= true and log ~= nil
+        and Core.Ask(log.UnitIsRelatedToActiveQuest, unit) == true
 end
 
 -- Whether the thing of the world in front of you (its GUID, "GameObject-0-...-<ID>-<spawn>") is one your quests or

@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 661 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 79 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 661 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling's key talks to the NPCs Retail's spells cannot help, and walks to neutral ones; `/sane key` (Saneroki, 2026-10-26)
+Saneroki: the key talked to no NPC and walked to none; a press said "I can't do that".
+- **Why (`Key.lua`):** the key's states for "an NPC in front of you" and "your target is a friend" used the macro
+  condition `help`, which holds only for a unit your spells could help, and many quest givers are not one; Click-to-
+  Move was lent only for the game's friends (`UnitIsFriend`), so not for neutral quest givers. Then a press ran Find,
+  which let your target go, or used a quest item (the "I can't do that").
+- **Now:** a target is a friend when it is alive and no foe (`noharm`); the NPC in front of you is told to the header
+  out of a fight when it is a creature, alive and no foe (the attribute `npc`, from `PLAYER_SOFT_INTERACT_CHANGED`);
+  Click-to-Move is lent for a wanted NPC that cannot be attacked. `Wanted.Unit` also takes an NPC the game says
+  belongs to a quest of yours (to hand it in to, or to speak to), on any client, without Core's data.
+- **`/sane key` (`Key.Check`):** what the key sees in chat, kept as `keyCheck` in Speed Leveling's store for after a
+  `/reload`.
+- **Blocked actions:** the 224 blocks (`UNKNOWN()`) of 08:08 to 08:11 did not come back in a test of the key with the
+  game's taint log on; left open until the log names one.
+- **Tests:** `dev/tests/speedleveling.lua` 88 checks (an NPC in front that `help` misses, a foe, a thing, Talk to NPCs
+  off; a neutral wanted NPC walked to; an NPC the game relates to a quest wanted, a foe so related not; `/sane key`).
+- A `/reload` takes it in.
 
 ### Speed Leveling: the guides that come for each game, chosen by a right click; your guide on, paused or off; the satchel's switches (Saneroki, 2026-10-26)
 Saneroki: the guide was empty and no guide could be opened or loaded; the guides that come for each game should be

@@ -55,7 +55,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Loot first | on | A corpse with loot beside you is opened before anything is looked for. The game's interact key (`softTargetInteract`) is switched on for it |
-| Talk to NPCs | on | A friendly NPC right in front of you is talked to at once (after a corpse to loot); a quest NPC the key found, at the next press. Off: the key looks on |
+| Talk to NPCs | on | An NPC right in front of you that is no foe (friendly or neutral) is talked to at once (after a corpse to loot); a quest NPC the key found or you targeted, at the next press. Off: the key looks on |
 | Walk to the NPC found | on | While a quest NPC the key found is your target, the game's Click-to-Move (`autointeract`) is lent, so the key runs you to it and talks; put back as it was when that NPC is no longer your target, and in a fight. While it is lent, a right click on the ground walks you there too |
 | Use items on what is found | on | Out of a fight, a step's item is used on your target when the step's words say it is for that one (a corpse, or the creature or NPC they name); before talking and fighting |
 | Quest objects | on | A thing of the world your quests or your guide want, in front of you, is picked up, opened or used. It needs the game's interact key too |
@@ -208,17 +208,22 @@ An addon may target, mark, attack, interact and use items only by the game's sec
 choice is made by those, in a fight too (`Key.lua`):
 
 - **A state driver** (the game's `RegisterStateDriver`) reads the macro conditions five times a second: a corpse with
-  loot, a living foe in a fight, a living friendly NPC right in front of you, a living foe, a living friend, or none
-  of these.
+  loot, a living foe in a fight, a living friendly NPC right in front of you, a living foe, a living target that is
+  no foe (`noharm`), or none of these. Not `help`: it holds only for one your spells could help, which many quest
+  givers are not (Saneroki, 2026-10-26: in Retail the key talked to none). So the module tells the header out of a
+  fight whether the interact key's pick is an NPC to talk to (the attribute `npc`: a creature, alive, no foe).
 - **The header** (`SaneUISpeedLevelingKey`, `SecureHandlerAttributeTemplate`) then puts that state's action on the
   key's keys as override bindings of its own: *Interact With Target* (`INTERACTTARGET`, the game's own) to loot, pick
   up or talk, the button *Fight* (`/startattack`), the button *Use* (`/use item:<ID>` on your target) or the button
-  *Find*. A foe or friend counts only when the module said it is wanted (out of a fight), a thing only when the
+  *Find*. A foe or friend counts only when the module said it is wanted (out of a fight: of the names wanted, or one
+  the game marks for a quest of yours, a creature to kill or loot or an NPC to hand a quest in to or speak to,
+  `C_QuestLog.UnitIsRelatedToActiveQuest`), a thing only when the
   interact key's thing is a wanted one, *Use* only while the module said your target is the one the step's item is
   for (the attribute `use`, set out of a fight, a friendly target's reach looked at again three times a second while
   it waits; cleared as a fight begins). A cast of the item the game refuses (`UNIT_SPELLCAST_FAILED`, not one too
   far) keeps the item off that target.
-- **Walking:** while your target is a living friendly NPC the key wants, the game's Click-to-Move (`autointeract`)
+- **Walking:** while your target is a living NPC that is no foe (friendly or neutral) and the key wants it, the game's
+  Click-to-Move (`autointeract`)
   is lent, so *Interact With Target* runs you there before it talks; given back when that is over, and as a fight
   begins. The game offers no way for an addon to walk you to a place on the map.
 - **Find** (`SaneUISpeedLevelingFind`, the key's own binding in `Bindings.xml`) runs a macro: the hearth alone when it
@@ -231,6 +236,9 @@ choice is made by those, in a fight too (`Key.lua`):
   those they hand in are handed in, by the game's own gossip and quest-frame functions; only the guide's quests, and
   only with the switches on and Shift not held.
 - **Nothing else is automatic:** each press does one thing, the player's.
+- **`/sane key`** says in chat what the key sees now: its state and what a press does, the NPC or thing in front of
+  you and your target as the game judges them (a foe or not, friendly, helpable), whether it is wanted, the item for
+  it, Click-to-Move; kept for the account too (`keyCheck`), so it can be read after a `/reload`.
 
 ## Files
 | File | What it holds |

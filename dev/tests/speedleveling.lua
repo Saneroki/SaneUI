@@ -54,6 +54,7 @@ end
 W.templates.SecureHandlerAttributeTemplate = function(frame)
     local handle = {}
     function handle:GetAttribute(name) return frame:GetAttribute(name) end
+    function handle:SetAttribute(name, value) frame:SetAttribute(name, value) end
     function handle:ClearBindings() for key in pairs(overrides) do overrides[key] = nil end end
     function handle:SetBinding(priority, key, action) overrides[key] = action end
     function handle:SetBindingClick(priority, key, name) overrides[key] = "CLICK " .. name .. ":LeftButton" end
@@ -77,7 +78,8 @@ UnitExists = function(unit) return units[unit] ~= nil or unit == "player" end
 UnitIsPlayer = function(unit) return unit == "player" or (units[unit] and units[unit].player) or false end
 UnitIsDead = function(unit) return units[unit] and units[unit].dead or false end
 UnitCanAttack = function(_, unit) return units[unit] and units[unit].foe or false end
-UnitIsFriend = function(_, unit) return units[unit] ~= nil and not units[unit].foe end
+UnitIsFriend = function(_, unit) return units[unit] ~= nil and not units[unit].foe and not units[unit].neutral end
+UnitCanAssist = function(_, unit) return units[unit] ~= nil and not units[unit].foe and not units[unit].neutral end
 C_Timer.NewTicker = function(every, fn)
     local ticker = { cancelled = false }
     function ticker:Cancel() self.cancelled = true end
@@ -102,7 +104,9 @@ C_TooltipInfo = { GetUnit = function(unit)
     return { lines = quest and { { type = 8, leftText = quest } } or {} }
 end }
 C_QuestLog = rawget(_G, "C_QuestLog") or {}
-C_QuestLog.UnitIsRelatedToActiveQuest = function(unit) return units[unit] ~= nil and units[unit].quest ~= nil end
+C_QuestLog.UnitIsRelatedToActiveQuest = function(unit)
+    return units[unit] ~= nil and (units[unit].quest ~= nil or units[unit].related == true)
+end
 
 -- The quest log.
 local log = { entries = {}, objectives = {}, complete = {} }
@@ -245,7 +249,7 @@ check(_G[Key.LINK .. 2] and _G[Key.LINK .. (Key.LINKS + 1)], "the chain's button
 local conditions = drivers[header].mode
 check(conditions:find("^%[@softinteract,exists,dead%] loot; "), "loot comes first while Loot first is on")
 check(conditions:find("%[@target,harm,nodead,combat%] fight; %[@softinteract,exists,help,nodead%] near; "
-    .. "%[@target,harm,nodead%] foe; %[@target,help,nodead%] friend; %[@target,exists,dead%] corpse; find$"),
+    .. "%[@target,harm,nodead%] foe; %[@target,noharm,nodead%] friend; %[@target,exists,dead%] corpse; find$"),
     "then a foe in a fight, an NPC in front of you, a foe, a friend, a corpse, else find: " .. conditions)
 check(W.cvars.softTargetInteract == "3", "Loot first: the interact key on")
 check(ns.options.foundCVars.softTargetInteract.was == "2", "what the interact key was is kept")
@@ -377,6 +381,35 @@ W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "", Thing(7001))
 check(header:GetAttribute("object") == true and overrides.E == "INTERACTTARGET", "a wanted thing in front of you: Interact")
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(7001), Thing(9999))
 check(header:GetAttribute("object") == false and overrides.E == FIND, "a thing nobody wants: Find")
+-- An NPC in front of you that the condition help misses (one your spells could not help, as many quest givers are):
+-- the module tells the header it is one to talk to; a thing, a foe or a corpse there is none.
+local npc = "Creature-0-1-0-12-4242-0000ABCD"
+units.softinteract = { name = "Gryan Stoutmantle", guid = npc }
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(9999), npc)
+check(header:GetAttribute("npc") == true and overrides.E == "INTERACTTARGET" and header:GetAttribute("action") == "interact",
+    "an NPC in front of you that help misses: talk at once")
+units.softinteract = { name = "Gryan Stoutmantle", guid = npc, foe = true }
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", npc, npc)
+check(header:GetAttribute("npc") == false and overrides.E == FIND, "a foe in front of you: no talk")
+units.softinteract = { name = "Stone", guid = Thing(9999) }
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", npc, Thing(9999))
+check(header:GetAttribute("npc") == false and overrides.E == FIND, "a thing in front of you is no NPC")
+units.softinteract = { name = "Gryan Stoutmantle", guid = npc }
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", Thing(9999), npc)
+Core.Set(ns.name, "talk", false)
+check(header:GetAttribute("npc") == false and overrides.E == FIND, "Talk to NPCs off: no talk to the NPC in front")
+Core.Set(ns.name, "talk", true)
+-- /sane key: what the key sees, in chat and kept for the account (to be read after a /reload).
+units.softinteract = { name = "Gryan Stoutmantle", guid = npc, neutral = true }
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "", npc)
+Key.Check()
+local seen = Core.Store(ns.name).keyCheck
+check(seen and #seen.lines == 4 and seen.lines[1]:find("a press does interact", 1, true)
+    and seen.lines[2]:find("Gryan Stoutmantle, a Creature, no foe", 1, true) and Printed("In front of you"),
+    "/sane key: what the key sees, said and kept: " .. tostring(seen and seen.lines[2]))
+units.softinteract = nil
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", npc, "")
+check(header:GetAttribute("npc") == false, "nothing in front of you: no NPC")
 
 -------------------------------------------------------------------------------
 --  A step's item used on the one found, and walking to the NPC found
@@ -437,6 +470,14 @@ W.Wait(1)
 check(header:GetAttribute("use") == true and useButton:GetAttribute("macrotext") == "/use item:7003"
     and overrides.E == USE, "within reach: the item on it")
 check(W.cvars.autointeract == "0" and ns.options.foundCVars.autointeract == nil, "Click-to-Move given back")
+-- An NPC the game says belongs to a quest of yours (one to hand it in to), that no list names: wanted, walked to.
+units.target = { name = "Sergeant Willem", guid = "Creature-0-1-0-1-777-01", related = true, neutral = true }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(header:GetAttribute("wanted") == true and overrides.E == "INTERACTTARGET" and W.cvars.autointeract == "1",
+    "an NPC the game says your quest wants: wanted, walked to, talked to")
+units.target = { name = "Sergeant Willem", guid = "Creature-0-1-0-1-777-01", related = true, foe = true }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(header:GetAttribute("wanted") == false, "a foe the game relates to a quest, with nothing to kill or loot: not wanted")
 -- An NPC nobody wants: neither.
 reach[7003] = false
 units.target = { name = "Brother Paxton", guid = "Creature-0-1-0-1-666-01" }
@@ -449,6 +490,10 @@ W.Fire("PLAYER_TARGET_CHANGED")
 check(W.cvars.autointeract == "0", "Walk to the NPC found off: Click-to-Move left alone")
 Core.Set(ns.name, "walk", true)
 check(W.cvars.autointeract == "1", "on again: lent")
+-- A neutral NPC, wanted (not the game's friend, yet it cannot be attacked): walked to and talked to as well.
+units.target = { name = "Wounded Guard", guid = "Creature-0-1-0-1-555-01", neutral = true }
+W.Fire("PLAYER_TARGET_CHANGED")
+check(W.cvars.autointeract == "1" and overrides.E == "INTERACTTARGET", "a neutral NPC that is wanted: walked to, talked to")
 -- A fight begins: no item on the target, Click-to-Move given back for the fight.
 W.Fire("PLAYER_REGEN_DISABLED")
 check(header:GetAttribute("use") == false and W.cvars.autointeract == "0", "a fight: no item, no Click-to-Move")
