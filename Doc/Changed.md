@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 624 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 96 and 148 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling's guide: shown with no guide yet, large guides pasted fast, the Retail guides read (Saneroki, 2026-10-26)
+Saneroki, after a restart in Retail: the guide was shown nowhere. No guide was kept (the view no longer shows the
+other addon's loaded guide, so a guide has to be added once), and the view hid itself without a word.
+- **The view's empty state (`Steps.lua`, `Guide.Empty`):** while no guide is followed the view stays, its head and one
+  line saying why (none kept, none chosen, or none kept is for this character or this game, as the bought Forever
+  guides are in Retail); a click on the line opens *Guides*.
+- **Large guides (`Guides.lua`):** the fast paste line (gathered as it comes, a multi-line box so line breaks come
+  along) now takes a guide's text as well as an import string; a text whose line breaks did not come through is sent
+  to the box below. The free Retail starting-zones file alone is about 1 MB.
+- **`.cast unit,spell` (`Format.lua`):** a word before the spell (`vehicle`) is passed over. All 398 free Retail guides
+  now read with no unread line (198 for a night elf hunter); the bought Forever guides still read with none.
+- **An event Retail lacks** (`LEARNED_SPELL_IN_TAB`) is no longer listened to (`Guide.lua`).
+- **Tests:** `dev/tests/speedguide.lua` 85 checks (the empty view, its click, the guides' window built).
+
 ### Speed Leveling: the key walks you to the NPC found and uses the step's item on your target (Saneroki, 2026-10-25)
 Saneroki asked for the follow-up (board #163): walk to the NPC the key found, and use a step's item on the creature
 found.

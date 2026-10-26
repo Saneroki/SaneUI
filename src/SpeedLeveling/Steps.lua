@@ -54,6 +54,7 @@ local FONTS = {
 local SOFT = { 0.8, 0.8, 0.8 }
 
 local frame, window, header, rule, ruleShadow, title, levels, progress
+local empty           -- the line shown while no guide is followed: a click opens the guides
 local cards, rows = {}, {}
 local fonts = {}
 local offset = 0      -- the list scrolled from its start after the steps at hand (back for less than 0)
@@ -160,6 +161,14 @@ local function Build()
     rule:SetColorTexture(1, 1, 1, 0.45)
     ruleShadow = frame:CreateTexture(nil, "ARTWORK")
     ruleShadow:SetColorTexture(0, 0, 0, 0.6)
+    empty = CreateFrame("Button", nil, frame)
+    empty:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    empty.text = Text(empty, "note")
+    empty.text:SetPoint("TOPLEFT", empty, "TOPLEFT", 0, 0)
+    empty.text:SetWidth(Steps.WIDTH)
+    empty.text:SetTextColor(unpack(SOFT))
+    empty:SetScript("OnClick", ns.Guard(function() ns.Guides.Open() end))
+    empty:Hide()
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
                                       first = { point = "TOPRIGHT", x = -70, y = -200 },
                                       -- moved in Edit Mode: the icons over it follow
@@ -328,9 +337,12 @@ function Steps.Update()
         if picture.shift ~= 0 then picture = ns.Guide.Picture(count, 0) end
     end
     if picture then offset = picture.shift end
-    if not picture then return Hide() end
+    -- No guide followed: the view stays, its head and a line saying so; a click on it opens the guides.
+    local hint = not picture and ns.options.showGuide and ns.Guide.Empty() or nil
+    if not picture and not hint then return Hide() end
     if not frame then Build() end
     frame:Show()
+    if hint then picture = { title = ns.TEXT.guideView, total = 0, at = 0, hand = {}, ahead = {} } end
 
     -- The head: the zone, its levels, how far.
     local y = 0
@@ -360,6 +372,21 @@ function Steps.Update()
     ruleShadow:SetPoint("TOPLEFT", rule, "BOTTOMLEFT")
     ruleShadow:SetSize(Steps.WIDTH, 1)
     y = y - 2 - 8
+
+    if hint then
+        empty.text:SetText(hint)
+        empty:ClearAllPoints()
+        empty:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
+        empty:SetSize(Steps.WIDTH, empty.text:GetStringHeight() + 2)
+        empty:Show()
+        for _, card in ipairs(cards) do card:Hide() end
+        for _, row in ipairs(rows) do row:Hide() end
+        frame:SetHeight(math.max(1, -y + empty.text:GetStringHeight() + 2))
+        ns.Arrow.Update(false)
+        ns.Icons.Update(false)
+        return
+    end
+    empty:Hide()
 
     -- The steps at hand.
     local warn = ns.Guide.WarnHex()

@@ -222,7 +222,11 @@ local COMMANDS = {
     zone = function(v) return v[1] and v[1] ~= "" and { what = "zone", to = tonumber(v[1]) or v[1] } or nil end,
     area = function(v) local area = tonumber(v[1]) return area and { what = "area", area = area } or nil end,
     revive = function() return { what = "revive", friends = { "Spirit Healer" } } end,
-    cast = function(v) local spell = tonumber(v[1]) return spell and { what = "cast", spell = spell } or nil end,
+    cast = function(v)
+        -- A word before the spell names who casts it ("vehicle,52362"): the spell is the first number.
+        local spell = tonumber(v[1]) or tonumber(v[2])
+        return spell and { what = "cast", spell = spell } or nil
+    end,
     shop = function() return { what = "shop" } end,
     trainer = function() return { what = "trainer" } end,
     stable = function() return { what = "stable" } end,

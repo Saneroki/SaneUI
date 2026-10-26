@@ -291,8 +291,25 @@ BNGetInfo = function() return 1, "Tester#4242" end
 -------------------------------------------------------------------------------
 --  The guides kept, one run
 -------------------------------------------------------------------------------
-check(Guide.Picture() == nil, "no guide yet: nothing to show")
-check(not rawget(_G, "SaneUISpeedLevelingSteps"), "and no view made")
+check(Guide.Picture() == nil, "no guide yet: no picture")
+check(Guide.Empty() == ns.TEXT.noGuide, "the view says no guide is kept")
+Steps.Update()
+local view = rawget(_G, "SaneUISpeedLevelingSteps")
+check(view and view._shown, "the view stays, with its head, while no guide is followed")
+local function Shown(text)
+    for _, widget in ipairs(W.frames) do
+        if widget._text == text and widget._shown then return widget end
+    end
+end
+local hintText = Shown(ns.TEXT.noGuide)
+check(hintText ~= nil, "its line says how to add a guide")
+-- A click on that line opens the window of the guides kept; built, with its import line and its box.
+hintText._parent._scripts.OnClick(hintText._parent, "LeftButton")
+local lineTitle = Shown(ns.TEXT.stringTitle)
+check(lineTitle ~= nil and lineTitle._parent:IsVisible() ~= false, "a click opens the guides, with the import line")
+check(not ns.off and #Core.log == 0, "the guides' window is built without an error: "
+    .. tostring(Core.log[1] and Core.log[1].text))
+ns.Guides.Open() -- closed again
 local names = Guide.AddAll(Format.Parts("Guide([[" .. TEXT .. "]])\nGuide([[" .. Mark("name", "6-10 Hills")
     .. "\n#forever\n<< Horde\n" .. Mark("group", "Our Group") .. "\nstep\n" .. Line("take", "20") .. "\n]])"), false)
 check(#names == 2 and names[1] == "1-6 Valley" and names[2] == "6-10 Hills", "two guides kept")

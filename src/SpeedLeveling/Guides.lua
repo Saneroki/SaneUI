@@ -6,12 +6,13 @@ local _, ns = ...
 --  guide's menu): at the left the guides kept, a click follows one (those not
 --  for this character or this game greyed), the cross beside one forgets it
 --  (asked first). At the right, at the top, a line for the import string of
---  the guides you bought: what is pasted there is gathered as it comes (the
---  line itself holds a character only, so a string of megabytes does not hold
---  the game up) and opened for your account once the paste is over
---  (Unlock.lua); under it a box to paste a guide's text into, and Read, which
---  keeps each guide of it (an import string pasted there is opened too). It
---  says how many were kept and which lines could not be read.
+--  the guides you bought, or a large guide's text: what is pasted there is
+--  gathered as it comes (the line itself holds a character only, so megabytes
+--  do not hold the game up) and, once the paste is over, opened for your
+--  account (Unlock.lua) or read as a guide; under it a box to paste a guide's
+--  text into, and Read, which keeps each guide of it (an import string pasted
+--  there is opened too). It says how many were kept and which lines could not
+--  be read.
 --  A panel of Sane UI's (Core.Window), made when first opened.
 --
 --      Guides.Open()     shown, or hidden again
@@ -135,8 +136,11 @@ Pasted = ns.Guard(function(_, elapsed)
     LineReset()
     line:SetText("")
     line:ClearFocus()
-    if not ns.Unlock.Looks(text) then
-        status:SetText(text:find("%S") and ns.TEXT.notString or "")
+    if not text:find("%S") then return end
+    -- An import string, or a guide's text with its lines; a guide's text whose line breaks did not come through
+    -- cannot be read: then the box below, which keeps them.
+    if not ns.Unlock.Looks(text) and not text:find("\n") then
+        status:SetText(ns.TEXT.notString)
         return
     end
     lineHint:SetText(ns.TEXT.pastedString:format(#text))
@@ -174,6 +178,7 @@ local function Build()
     lineTitle:SetText(ns.TEXT.stringTitle)
     line = CreateFrame("EditBox", nil, inside, "InputBoxTemplate")
     line:SetHeight(22)
+    line:SetMultiLine(true) -- so a guide's text pasted here keeps its line breaks
     line:SetPoint("TOPLEFT", lineTitle, "BOTTOMLEFT", 6, -4)
     line:SetPoint("RIGHT", inside, "RIGHT", -(I + 6), 0)
     line:SetAutoFocus(false)

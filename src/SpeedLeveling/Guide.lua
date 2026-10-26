@@ -26,6 +26,7 @@ local _, ns = ...
 --      Guide.Kept()       the guides kept: { { key, name, group, mine, bought } }, by group and name
 --      Guide.AddAll(texts, bought)  each guide's text kept (one of the same group and name replaced): names, problems
 --      Guide.Remove(key), Guide.Choose(key), Guide.Chosen()
+--      Guide.Empty()      while no guide is followed, the view's words for why (none kept, none for you); else nil
 --      Guide.Watch(fn)    fn() whenever the picture may have changed (once a frame at most)
 --
 --  Kept for the account (Core.Store): each guide's text packed (the game's
@@ -322,6 +323,18 @@ function Guide.Chosen()
     return guide and guide.key or nil
 end
 
+-- While no guide is followed, the words the view shows instead: none kept yet, or none of those kept is for this
+-- character or this game. nil while one is followed.
+function Guide.Empty()
+    if ns.Run.Guide() then return nil end
+    local kept = Guide.Kept()
+    if not kept[1] then return ns.TEXT.noGuide end
+    for _, guide in ipairs(kept) do
+        if guide.mine then return ns.TEXT.noGuideChosen end
+    end
+    return ns.TEXT.noGuideHere
+end
+
 -- A kept guide to follow; nil: none.
 function Guide.Choose(key)
     local guide = key and Read(key)
@@ -440,8 +453,7 @@ local function Saw(what)
 end
 
 local CHECKS = { "QUEST_LOG_UPDATE", "QUEST_TURNED_IN", "QUEST_ACCEPTED", "QUEST_REMOVED", "BAG_UPDATE_DELAYED",
-                 "PLAYER_LEVEL_UP", "PLAYER_XP_UPDATE", "PLAYER_MONEY", "SPELLS_CHANGED", "LEARNED_SPELL_IN_TAB",
-                 "SKILL_LINES_CHANGED", "ZONE_CHANGED", "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED_INDOORS",
+                 "PLAYER_LEVEL_UP", "PLAYER_XP_UPDATE", "PLAYER_MONEY", "SPELLS_CHANGED", "SKILL_LINES_CHANGED", "ZONE_CHANGED", "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED_INDOORS",
                  "PLAYER_ENTERING_WORLD", "UNIT_AURA", "PLAYER_DEAD", "PLAYER_ALIVE", "PLAYER_UNGHOST",
                  "UNIT_INVENTORY_CHANGED", "NEW_RECIPE_LEARNED" }
 

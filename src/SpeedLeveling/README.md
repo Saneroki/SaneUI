@@ -120,6 +120,8 @@ both read by our own reader (`Format.lua`) and run by our own engine (`Run.lua`)
     starts after the steps at hand again.
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
+- **No guide yet:** the view stays, its head and one line saying so (none kept, none chosen, or none of those kept
+  is for this character or game); a click on that line opens *Guides*.
 - **The mouse:** a click on a step at hand skips it, a right click goes back one step. The wheel over the list scrolls
   it; a double click on a listed step goes to it; a right click on it opens its menu (*Go to step*, the guides kept);
   a right click on the zone chooses the guide to follow, or *Paste a guide...*.
@@ -154,8 +156,9 @@ where the guide's top is.
 ### The guides kept as text
 *Guides* (`/sane guides`, or the menu): at the left the guides kept, a click follows one (those for another side,
 race, class or game greyed), the cross beside one forgets it (asked first); at the right, at the top, a line for the
-import string of your bought guides (what is pasted there is gathered as it comes and opened for your account), and
-under it a box to paste a guide's text into, with *Read*. It says how many were kept and which lines could not be
+import string of your bought guides or a large guide's text (what is pasted there is gathered as it comes, so
+megabytes do not hold the game up, then opened for your account or read as a guide; a guide whose line breaks did
+not come through is sent to the box below), and under it a box to paste a guide's text into, with *Read*. It says how many were kept and which lines could not be
 read. Kept for the account; which guide a character follows and where it is in each, per character.
 
 ## How a guide is run
