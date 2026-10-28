@@ -597,6 +597,8 @@ function W.Install(env)
             local sub = Description(item.sub)
             function sub:SetEnabled(enabled) item.disabled = not enabled end
             function sub:SetTooltip(fn) item.tooltip = fn end
+            -- what draws its line (a name in its class's colour), to call with a frame
+            function sub:AddInitializer(init) item.inits = item.inits or {}; item.inits[#item.inits + 1] = init end
             return sub
         end
         -- A line drawn by the addon (CreateFrame): its initializers, to call with a frame.

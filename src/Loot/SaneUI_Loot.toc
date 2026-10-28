@@ -1,0 +1,31 @@
+## Interface: 16001, 120105
+## Title: Loot
+## Notes: Loot on a page of Sane UI's journal: what a corpse, a chest or a catch holds, taken with a click or at once by your own rules (coins, quest items, a list of your own, everything up to a quality). A master looter's menu to give a thing away, cards for your group's rolls with who chose what, a feed of what you and your group receive, and a page that finds room when your bags are full.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\INV_Misc_Bag_10
+## X-License: MIT
+
+# The module's own table, its words, sizes and settings. First: the other files will add to that table.
+Loot.lua
+# What the open loot holds, read from the game into plain lines; what is taken at once
+Slots.lua
+# The game's sentences about loot (received, rolled, coins) read back into their parts
+Chat.lua
+# The game's own loot window and roll frames out of sight while ours stand in, and back
+Game.lua
+# One line of the loot window: a thing's picture in its pencil slot, its name and a note under it
+Row.lua
+# The loot window, at the mouse or where Edit Mode placed it
+Window.lua
+# A master looter's menu: who may have the thing, and a roll for it
+Master.lua
+# With your bags full: what the thing is worth, and the least worth of yours to make room
+Full.lua
+# A card for each roll of your group: Need, Greed, Pass, the time left, who chose what
+Rolls.lua
+# What you and your group receive, rising over the world and fading
+Feed.lua

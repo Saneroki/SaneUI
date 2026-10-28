@@ -6,6 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Loot: a loot window of Sane UI's own, a page of the journal
+  at your mouse. Click to take, or let your rules take coins,
+  quest items, the things on your own loot list (Alt-click to
+  add) and everything up to a quality at once. Master looters
+  give things from a menu. Bags full? A page beside it shows
+  what the thing is worth and the cheapest thing you could drop.
+  Group rolls come as paper cards that show who chose what, and
+  what you and your group receive rises over the world.
 - Speed Leveling: your leveling guide over the world, and one key
   for questing - on its own, with no other addon needed. No
   window, just clear words on the game: the zone, how far you

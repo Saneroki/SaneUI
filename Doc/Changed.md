@@ -3,8 +3,36 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling and Loot; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: a module of its own, with its loot window, rules, roll cards and feed (Saneroki, 2026-10-28)
+Saneroki asked for a loot module with a loot window of its own and what a full loot addon does (board #34, #109).
+- **New addon `SaneUI_Loot`** (`src/Loot/`, `src/Loot/README.md`): stands in for the game's loot window and roll
+  frames. The game's `LootFrame` no longer hears `LOOT_OPENED`; its `GroupLootContainer` is lent to a hidden frame
+  (`Core.Lend`): both given back when switched off or standing down (`Game.lua`).
+- **The loot window** (`Window.lua`, `Row.lua`, `Slots.lua`): a journal page (`Core.Journal.Dress`) at the mouse (or
+  placed in Edit Mode, `windowPlace`), titled by what is looted; a line a thing (picture in a pencil slot, name in its
+  quality's ink, a note: binds, kind, quest), Take all a pencil box. Click takes, Shift/Ctrl the game's modified
+  clicks, Alt the loot list (`kept`, `/sane loot list`). Taken at once by the rules: coins and currencies, quest
+  items, the loot list, everything up to a quality (`takeUpTo`), never what binds on pickup; no window when all is
+  taken; with the game's Auto Loot only what is left 0.4 s later; a thing refused for full bags shows again.
+- **Master looter** (`Master.lua`): a thing at the group's threshold opens the game's menu with the candidates (by
+  class in a raid, class colours), the game's yes or no, `GiveMasterLoot`; *Request Roll*.
+- **Bags full** (`Full.lua`, board #34's note): a paper page hanging out of the window's right edge: the thing's
+  vendor worth, the cheapest thing in the bags (`Full.Rank`: not unsellable, a quest's or epic), arrows through the
+  rest; a click picks it up to be dropped on the world (the game asks; `DeleteCursorItem` has restrictions).
+- **Roll cards** (`Rolls.lua`): paper cards placed in Edit Mode (`rollsPlace`): Need, Greed or Transmog, Disenchant
+  where offered, Pass as pencil boxes, refused ones faint with the game's reason; the time left a shrinking pencil
+  line; who chose what counted from the game's chat lines (`Chat.lua`), named in the tooltip.
+- **Loot feed** (`Feed.lua`): what you receive (and coins, currencies, the group's from a quality) rising over the
+  world in outlined Kalam, merged per thing, 5 s then a fade; placed in Edit Mode (`feedPlace`). `/sane loot try`
+  shows a card and the feed.
+- **Docs:** the module's README; `Doc/agent/README.md`'s table, Speed Leveling's README and `Doc/ideas/Leveling.md`
+  point to it.
+- **Tests:** `dev/tests/loot.lua`, 109 checks (Retail's path too), in `dev/tests/run`; `wowstub.lua`'s menu lines take
+  initializers.
+- A game restart takes it in (a new addon).
 
 ### Navigation: the finders switch every 15 yards, a slider sets how far (Saneroki, 2026-10-28)
 Saneroki: 15 yards at first, and a slider in the settings for how far you move before the finder switches.

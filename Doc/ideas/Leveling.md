@@ -31,7 +31,7 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   guide's step, the quests' open objectives (kill, then the likeliest droppers of an item to loot), creatures the
   game marks for a quest, the NPCs to hand finished quests in to; the quest objects beside you by ID.
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
-  looted is the loot module's (board card 34). Quest items, the hearth and things of the world that cannot be
+  looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the
   hearth when the guide's step says so, and one quest item when nothing wanted is around.
 - **Decision (Saneroki, 2026-10-25): the guide over the world, in Speed Leveling.** Its steps over the world, no

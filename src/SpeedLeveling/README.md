@@ -11,7 +11,7 @@ own. A right click on the guide's zone chooses the one to follow.
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
 1. **Loot:** a corpse with loot beside you is opened, as a right click does. What is taken is up to the game's loot
-   window (and later Sane UI's loot module).
+   window, or Sane UI's Loot module where it is switched on (its rules may take some of it at once).
 2. **Fight in a fight:** your target is a living foe and you are in a fight: it gets a skull and is attacked.
 3. **Use the step's item on your target:** out of a fight, your target is the one a step's item is used on, as the
    step's own words say — a corpse ("use the dust on their corpses"), or the creature or NPC they name ("use the cage
