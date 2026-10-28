@@ -15,8 +15,8 @@ local _, ns = ...
 --
 --  The finders follow the pin filter's kinds Found herbs, Found ore and Found fishing pools (Apply): the one
 --  switched on, the one switched off. With two or more on and their spells known they take turns while you move,
---  herbs, ore, fish and round again, those not wanted or not known left out (the setting Finders in turn: yards
---  moved between two turns). Dying takes Forever's tracking: alive again, the first finder wanted comes back on as
+--  herbs, ore, fish and round again, those not wanted or not known left out (the setting Switch finders every:
+--  yards moved between two turns, 15 at first). Dying takes Forever's tracking: alive again, the first finder wanted comes back on as
 --  soon as it can be cast (Revived), and the turns go on from it. Retail's tracking holds them all at once and keeps
 --  them through death (Nodes.TOGETHER): there each is simply on while its kind is, and no turns are taken. Fishing
 --  pools are no records of Core's: the game's own minimap dots show them, and only herbs and ore are told by their

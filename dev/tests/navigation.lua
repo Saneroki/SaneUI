@@ -4659,13 +4659,17 @@ do
     check(gather.tracking[1].active and not gather.tracking[2].active, "both on again: Find Herbs")
     W.Wait(Nodes.QUIET + 0.01)
     check(C_CVar.GetCVar("Sound_EnableSFX") == "1", "no cast heard of: the sounds back after a while all the same")
-    -- In turn while you move: every 7 yards at first, at your speed (7 yards a second: 1 second).
+    -- In turn while you move: every 15 yards at first, at your speed (15 yards a second: 1 second; 7 a second: not
+    -- yet after 2 seconds).
     local count = #gather.switches
     W.Wait(5)
-    check(ns.options.nodeYards == 7 and #gather.switches == count, "standing still: no turn")
+    check(ns.options.nodeYards == 15 and #gather.switches == count, "standing still: no turn")
     gather.speed = 7
+    W.Wait(2)
+    check(#gather.switches == count, "moving 14 yards: no turn yet")
+    gather.speed = 15
     W.Wait(1.01)
-    check(#gather.switches == count + 1 and gather.tracking[2].active, "moving 7 yards: Find Minerals in turn")
+    check(#gather.switches == count + 1 and gather.tracking[2].active, "moving 15 yards: Find Minerals in turn")
     -- Find Fish learnt: herbs, ore, fish and round again.
     gather.tracking[3] = { name = "Find Fish", spellID = 43308, active = false }
     W.Fire("SPELLS_CHANGED")

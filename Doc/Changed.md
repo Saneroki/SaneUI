@@ -3,8 +3,16 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 661 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the finders switch every 15 yards, a slider sets how far (Saneroki, 2026-10-28)
+Saneroki: 15 yards at first, and a slider in the settings for how far you move before the finder switches.
+- **The setting (`Navigation.lua`):** `nodeYards` 15 at first (was 7), still a slider of 0 to 50 yards on
+  Navigation's options page, under *Herbs and ore*, now named *Switch finders every* (was *Finders in turn*), its tip
+  saying what it measures. No upgrade: the settings had not yet been loaded with the 7 in the game.
+- **Tests:** `dev/tests/navigation.lua` 673 checks (14 yards moved: no turn yet; 15: the turn).
+- A `/reload` takes it in.
 
 ### Navigation: the finders take turns every 7 yards, Find Fish among them, and come back after death (Saneroki, 2026-10-28)
 Saneroki: Find Herbs, Find Minerals and Find Fish are lost at death; Sane UI should cast them again every 7 yards,

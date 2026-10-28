@@ -2038,8 +2038,8 @@ battlemaster, spirit healer, meeting stone.
   `C_TooltipInfo.GetMinimapMouseover`) while a finder is on, a few points a frame, never in a fight; each drawn
   in the picture of what it gives, a click puts the map pin there (2026-10-21). Kept as discoveries of Core's:
   not yet.
-  - **The finders (Saneroki, 2026-10-28):** Find Herbs, Find Minerals and Find Fish take turns every 7 yards you
-    move (the setting *Finders in turn*, yards), only those the character knows and the pin filter wants (*Found
+  - **The finders (Saneroki, 2026-10-28):** Find Herbs, Find Minerals and Find Fish take turns every 15 yards you
+    move at first (the slider *Switch finders every*, 0 to 50 yards; 7 at first until Saneroki asked for 15), only those the character knows and the pin filter wants (*Found
     herbs*, *Found ore*, the new *Found fishing pools*); alive again after dying, the finder wanted comes back on by
     itself. Fishing pools get no picture of ours (no records): the game's minimap dots show them.
 - **Far sparkles** (built 2026-10-25, `Glints.lua`, the setting *Far herbs and ore on the screen*): every live node

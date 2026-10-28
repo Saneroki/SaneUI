@@ -123,7 +123,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   Find Minerals in its place, while *Found ore* is on), and so on, without a sound; *Found fishing pools* is Find
   Fish, whose pools the game's minimap dots show (no picture of ours). With two or more on and their spells known
   they take turns while you move, herbs, ore, fish and round again, those you do not know left out (the setting
-  *Finders in turn*: every 7 yards you move at first, as fast as the global cooldown lets it, 0 never), silently
+  *Switch finders every*, a slider: 15 yards you move at first, 0 to 50, as fast as the global cooldown lets it, 0 never), silently
   too, and the ones of the finder that is off meanwhile stay on the map until you gather one, go far from it or it
   is five minutes old. Dying takes Forever's tracking: alive again (resurrected, at your corpse or by the spirit
   healer), the first finder wanted comes back on as soon as it can be cast, and the turns go on from it; one wanted
@@ -803,6 +803,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-28, the finders every 15 yards:** as Saneroki asked, the finders switch every 15 yards at first, set by
+  the slider *Switch finders every* (0 to 50 yards) on Navigation's options page, under *Herbs and ore*.
 - **2026-10-28, the finders by yards, Find Fish, and back after death:** as Saneroki asked, the finders take turns
   every 7 yards you move (the setting *Finders in turn*, in yards, was seconds), Find Fish among them (the pin
   filter's new *Found fishing pools*), only those you know; and alive again after dying, the finder wanted comes

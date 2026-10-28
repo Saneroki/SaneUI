@@ -66,8 +66,8 @@ ns.TEXT = {
     nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
     nodeGlints = "Far herbs and ore on the screen",
     nodeGlintsTip = "Each herb and ore the minimap found farther away shows on the screen in its direction: the picture of what it gives in a ring of stitched leather that runs out into a point the way to it (up: ahead, down: behind you), and how many yards away it is under it; one outside your view at the screen's edge, on the side you would turn to. Placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, and while you turn the camera with the left mouse button they wait until you ride on or turn with the right one.",
-    nodeYards = "Finders in turn",
-    nodeYardsTip = "With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish): the next one every so many yards you move, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: never.",
+    nodeYards = "Switch finders every",
+    nodeYardsTip = "How far you move before the next finder comes on. With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish), they take turns, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: they do not switch.",
     followMap = "Follow me",
     followMapTip = "The full map keeps you in its middle as you move. Dragged away, or moved to a quest, it comes back to you as soon as you walk on. Off: it stays where you leave it.",
     followAgain = "Follow again after",
@@ -212,7 +212,7 @@ local SPARKLES = { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSpar
                    header = ns.TEXT.nodes, hidden = function() return not ns.Nodes.Known() end }
 local GLINTS = { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, tip = ns.TEXT.nodeGlintsTip,
                  hidden = function() return not (ns.Nodes.Known() and ns.Found.Works()) end }
-local TURNS = { key = "nodeYards", default = 7, min = 0, max = 50, step = 1, unit = ns.TEXT.yards,
+local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, unit = ns.TEXT.yards,
                 text = ns.TEXT.nodeYards, tip = ns.TEXT.nodeYardsTip, hidden = function() return ns.Nodes.TOGETHER end }
 
 local OPTIONS = {
