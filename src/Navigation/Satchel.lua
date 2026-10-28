@@ -33,9 +33,10 @@ local _, ns = ...
 --                order (ns.KINDS, ns.PIN_SECTIONS): a click switches it, as the
 --                pin filter on the full map's bar does (their sizes stay there)
 --      Tracking  what the game's own minimap tracks, as its tracking menu lists
---                it (the townsfolk, the finders, a hunter's beasts...): a click
---                switches it as that menu does; not Find Herbs and Find Minerals,
---                which Found herbs and Found ore switch (Nodes.lua)
+--                it (the townsfolk, a hunter's beasts...): a click switches it as
+--                that menu does; not Find Herbs, Find Minerals and Find Fish,
+--                which Found herbs, Found ore and Found fishing pools switch
+--                (Nodes.lua)
 --
 --  A cell switched on shows its picture whole with a pencil tick, one switched
 --  off faint and grey. Closed by its X, Esc, the button again, or the window
@@ -249,13 +250,14 @@ local function Listed(index, optional)
     return type(filter) == "table" and (optional[filter.filterID] or filter.spellID) and true or false
 end
 
--- What the game's minimap tracks, as its menu lists it, but the finders Found herbs and Found ore switch.
+-- What the game's minimap tracks, as its menu lists it, but the finders Found herbs, Found ore and Found fishing
+-- pools switch.
 local function Tracking()
     local list, optional = {}, Optional()
-    local finders = ns.Nodes.FINDERS
+    local finders = ns.Nodes.KIND
     for index = 1, Core.Plain(Core.Ask(C_Minimap.GetNumTrackingTypes)) or 0 do
         local info = Core.Ask(C_Minimap.GetTrackingInfo, index)
-        if type(info) == "table" and info.spellID ~= finders.herb and info.spellID ~= finders.ore and Listed(index, optional) then
+        if type(info) == "table" and not finders[Core.Plain(info.spellID) or 0] and Listed(index, optional) then
             local on = Core.Plain(info.active) and true or false
             if predicted[index] ~= nil then
                 if predicted[index] == on then predicted[index] = nil else on = predicted[index] end

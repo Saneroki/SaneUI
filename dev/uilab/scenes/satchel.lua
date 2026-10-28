@@ -31,9 +31,11 @@ ns.KINDS = {
     { "treasure", "Treasures", section = "finds", icon = "vignetteloot" },
     { "foundHerb", "Found herbs", section = "gathering", texture = 133939 },
     { "foundOre", "Found ore", section = "gathering", texture = 136025 },
+    { "foundFish", "Found fishing pools", section = "gathering", texture = 133888 },
     { "group", "Party and raid", section = "around", icon = "partymember" },
 }
-ns.Nodes = { FINDERS = { herb = 2383, ore = 2580 }, FOUND = { herb = "foundHerb", ore = "foundOre" },
+ns.Nodes = { KIND = { [2383] = "herb", [2580] = "ore", [43308] = "fish" },
+             FOUND = { herb = "foundHerb", ore = "foundOre", fish = "foundFish" },
              Picture = function() return nil end, TooHard = function() return false end }
 ns.Coords = {}
 ns.Hybrid = { Taken = function() return true end, Release = function() return false end }

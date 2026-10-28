@@ -49,7 +49,7 @@ ns.TEXT = {
     nativeMap = "Show the game's map",
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
     pins = "Pins on the map",
-    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Books and treasures only full screen; services on the small map only near you.",
+    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you.",
     route = "Route to the map pin",
     minimap = "Minimap dots",
     log = "Quests in your log",
@@ -66,13 +66,14 @@ ns.TEXT = {
     nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
     nodeGlints = "Far herbs and ore on the screen",
     nodeGlintsTip = "Each herb and ore the minimap found farther away shows on the screen in its direction: the picture of what it gives in a ring of stitched leather that runs out into a point the way to it (up: ahead, down: behind you), and how many yards away it is under it; one outside your view at the screen's edge, on the side you would turn to. Placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, and while you turn the camera with the left mouse button they wait until you ride on or turn with the right one.",
-    nodeTurns = "Find Herbs and Find Minerals in turn",
-    nodeTurnsTip = "With Found herbs and Found ore both on in the pin filter and both spells known: the other one every so many seconds while you move, without a sound, so the map finds both. 0: never.",
+    nodeYards = "Finders in turn",
+    nodeYardsTip = "With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish): the next one every so many yards you move, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: never.",
     followMap = "Follow me",
     followMapTip = "The full map keeps you in its middle as you move. Dragged away, or moved to a quest, it comes back to you as soon as you walk on. Off: it stays where you leave it.",
     followAgain = "Follow again after",
     followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long (the full map with Follow me ticked: as soon as you walk on). 0: only when you zoom it with the mouse wheel close in.",
     seconds = "seconds",
+    yards = "yards",
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
@@ -116,9 +117,11 @@ ns.KINDS = {
     { "ore", "Possible ore", section = "gathering", on = true, small = true, icon = "professions_tracking_ore",
       data = SPAWNS },
     -- What the game's minimap shows now (Found.lua); each switches its finder (Nodes.lua). Their icons: the
-    -- finders' own, Find Herbs and Find Minerals.
+    -- finders' own, Find Herbs, Find Minerals and Find Fish. The fishing pools are drawn by the game's minimap
+    -- alone (Minimap dots): no pin of ours, no size.
     { "foundHerb", "Found herbs", section = "gathering", on = true, small = true, texture = 133939 },
     { "foundOre", "Found ore", section = "gathering", on = true, small = true, texture = 136025 },
+    { "foundFish", "Found fishing pools", section = "gathering", on = true, small = true, texture = 133888 },
     { "book", "Books", section = "finds", on = false, icon = "lorewalking-map-icon", data = SPAWNS },
     { "group", "Party and raid", section = "around", on = true, small = true, icon = "partymember" },
 }
@@ -203,14 +206,14 @@ local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "blend", ns.TEXT.vie
 
 -- The switches of what this game cannot have stand down (hidden): the trip and the docks need Core's set Travel; the
 -- sparkles Core's herbs and ore (Nodes.Known), the far ones also the game's minimap's answers (Found.Works), the turns
--- a game whose finders take turns (Nodes.TOGETHER: Retail's tracking holds both at once).
+-- a game whose finders take turns (Nodes.TOGETHER: Retail's tracking holds them all at once).
 local function NoTravel() return not ns.Has("Travel") end
 local SPARKLES = { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSparkles, tip = ns.TEXT.nodeSparklesTip,
                    header = ns.TEXT.nodes, hidden = function() return not ns.Nodes.Known() end }
 local GLINTS = { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, tip = ns.TEXT.nodeGlintsTip,
                  hidden = function() return not (ns.Nodes.Known() and ns.Found.Works()) end }
-local TURNS = { key = "nodeTurns", default = 6, min = 0, max = 30, step = 1, unit = ns.TEXT.seconds,
-                text = ns.TEXT.nodeTurns, tip = ns.TEXT.nodeTurnsTip, hidden = function() return ns.Nodes.TOGETHER end }
+local TURNS = { key = "nodeYards", default = 7, min = 0, max = 50, step = 1, unit = ns.TEXT.yards,
+                text = ns.TEXT.nodeYards, tip = ns.TEXT.nodeYardsTip, hidden = function() return ns.Nodes.TOGETHER end }
 
 local OPTIONS = {
     -- Every view a choice while the settings are first read, so a saved Atlas is kept; at login only those
@@ -236,7 +239,8 @@ Core.Edge.Options(OPTIONS, #OPTIONS + 1)
 
 -- Settings of an older shape: 1, the switch Route to the map pin became a kind of the pin filter, as the game's
 -- minimap's dots did (both on, but a route switched off); 2, the quests split: those in the log as Quests were,
--- the low and later ones on; 3, the found herbs and ore came, on.
+-- the low and later ones on; 3, the found herbs and ore came, on; 4, the found fishing pools came, on, and the
+-- finders' turns went from seconds to yards (the seconds let go: the yards at first).
 local function Upgrade(values, from)
     if type(values.pins) == "table" then
         if from < 1 then
@@ -248,13 +252,15 @@ local function Upgrade(values, from)
             values.pins.low, values.pins.later = true, true
         end
         if from < 3 then values.pins.foundHerb, values.pins.foundOre = true, true end
+        if from < 4 then values.pins.foundFish = true end
     end
     values.route = nil
+    values.nodeTurns = nil
 end
 
 local routed -- whether the pin filter let the route through when it last changed
-local found -- whether the pin filter let the found herbs and ore through when it last changed ("herb ore")
-Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = function(key)
+local found -- the found kinds the pin filter let through when it last changed (Nodes.Wanted: "herb ore fish")
+Core.Options(ns.name, OPTIONS, { version = 4, upgrade = Upgrade, changed = function(key)
     -- The section Expand window: Core's window takes it in by itself (Edge.lua).
     if Core.Edge.KEYS[key] then return end
     if key == "view" then return ns.Guarded(ns.Window.Restyle) end
@@ -269,8 +275,8 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
             routed = route
             ns.Guarded(ns.Planner.Update)
         end
-        -- The finders switched only when Found herbs or Found ore changed.
-        local now = tostring(ns.Pins.Shows("foundHerb")) .. " " .. tostring(ns.Pins.Shows("foundOre"))
+        -- The finders switched only when Found herbs, Found ore or Found fishing pools changed.
+        local now = ns.Nodes.Wanted()
         if found and now ~= found then ns.Guarded(ns.Nodes.Apply) end
         found = now
         ns.Guarded(ns.Nodes.Update)
@@ -292,7 +298,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end
     if key == "nodeGlints" then return ns.Guarded(ns.Glints.Update) end
-    if key == "nodeTurns" then return ns.Guarded(ns.Nodes.Update) end
+    if key == "nodeYards" then return ns.Guarded(ns.Nodes.Update) end
 end })
 
 -- Whether a view can be drawn: Atlas only while its module is there and has not failed.
@@ -370,7 +376,7 @@ function ns.OnLogin()
     ns.Hybrid.Start(ns.Canvas.frame)
     ns.Strays.Start()
     ns.Native.Start()
-    found = tostring(ns.Pins.Shows("foundHerb")) .. " " .. tostring(ns.Pins.Shows("foundOre"))
+    found = ns.Nodes.Wanted()
     ns.Nodes.Start()
     ns.Found.Start()
     ns.Sparkles.Start()

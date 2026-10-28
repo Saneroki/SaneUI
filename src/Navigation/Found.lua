@@ -288,11 +288,11 @@ local function Sweep(minimap, plane, pu, pv, scale, facing)
 end
 
 -- Whether a sweep may go on or begin now, and for which kind: its finder on and its kind shown, out of a
--- fight, the mouse elsewhere.
+-- fight, the mouse elsewhere. None while Find Fish is on: no fishing pool is told by its name (Nodes.DRAWN).
 local function SweepKind(minimap)
     if InCombatLockdown() or minimap:IsMouseOver() then return nil end
     local kind = Nodes.Active()
-    if kind and Shown(kind) then return kind end
+    if kind and Nodes.DRAWN[kind] and Shown(kind) then return kind end
     return nil
 end
 

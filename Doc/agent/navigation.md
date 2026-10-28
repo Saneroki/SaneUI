@@ -338,7 +338,7 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
   game's addon compartment's addons (`AddonCompartmentFrame.registeredAddons`) called behind `pcall`.
 - **Satchel** (`Satchel.lua`): the button on the canvas (`Canvas.LEVELS.satchel`) in the corner at the screen's edge,
   only small and as the minimap (`Window.lua`'s `Placed` and `Filled`); the page in Core's journal: AddOns, Pins
-  (`ns.SwitchPin`, shared with the pin filter), Tracking (the game's tracking menu's entries, not the finders).
+  (`ns.SwitchPin`, shared with the pin filter), Tracking (the game's tracking menu's entries, not the finders Find Herbs, Find Minerals and Find Fish).
 - **Tests:** `dev/tests/navigation.lua` 645 checks (20 new: the middle click in both views, an addon's button held
   and given back, a larger frame and the game's own left, the satchel's cells, a pin and a tracking entry switched,
   the compartment's click); the Retail run 26. The lab's scene `satchel` (`dev/uilab/scenes/satchel.lua`).

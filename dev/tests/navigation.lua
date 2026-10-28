@@ -1412,14 +1412,16 @@ end)()
 
     local switches, finders = #gather.switches, { gather.tracking[1].active, gather.tracking[2].active }
     gather.tracking[3] = { name = "Track Beasts", spellID = 1494, active = false, type = "spell", texture = 132328 }
+    gather.tracking[4] = { name = "Find Fish", spellID = 43308, active = false, type = "spell", texture = 133888 }
     Satchel.Fill()
     cells = Cells()
     local beasts = cells["Track Beasts"]
-    check(beasts and not cells["Find Herbs"] and not cells["Find Minerals"] and not beasts.tick._shown,
-        "the game's tracking, but the finders Found herbs and Found ore switch")
+    check(beasts and not cells["Find Herbs"] and not cells["Find Minerals"] and not cells["Find Fish"]
+        and cells["Found fishing pools"] and not beasts.tick._shown,
+        "the game's tracking, but the finders Found herbs, Found ore and Found fishing pools switch")
     beasts._scripts.OnClick(beasts, "LeftButton")
     check(gather.tracking[3].active and Cells()["Track Beasts"].tick._shown, "a click switches it as the game's menu does")
-    gather.tracking[3] = nil
+    gather.tracking[3], gather.tracking[4] = nil, nil
     gather.tracking[1].active, gather.tracking[2].active = finders[1], finders[2]
     for index = #gather.switches, switches + 1, -1 do gather.switches[index] = nil end
 
@@ -4636,7 +4638,8 @@ end
 -- The pin filter's Found herbs and Found ore switch the finders, silently.
 do
     local chosen = Core.Copy(ns.options.pins)
-    check(chosen.foundHerb and chosen.foundOre, "found herbs and ore: on (brought up to date from an older shape)")
+    check(chosen.foundHerb and chosen.foundOre and chosen.foundFish and ns.options.nodeTurns == nil,
+        "found herbs, ore and fishing pools: on (brought up to date from an older shape, its seconds let go)")
     chosen.foundHerb = nil
     Core.Set(ns.name, "pins", chosen)
     check(gather.tracking[2].active and not gather.tracking[1].active and gather.switches[#gather.switches].sounds == "0",
@@ -4656,14 +4659,77 @@ do
     check(gather.tracking[1].active and not gather.tracking[2].active, "both on again: Find Herbs")
     W.Wait(Nodes.QUIET + 0.01)
     check(C_CVar.GetCVar("Sound_EnableSFX") == "1", "no cast heard of: the sounds back after a while all the same")
-    -- In turn while you move.
+    -- In turn while you move: every 7 yards at first, at your speed (7 yards a second: 1 second).
     local count = #gather.switches
-    W.Wait(ns.options.nodeTurns + 1)
-    check(#gather.switches == count, "standing still: no turn")
+    W.Wait(5)
+    check(ns.options.nodeYards == 7 and #gather.switches == count, "standing still: no turn")
     gather.speed = 7
-    W.Wait(ns.options.nodeTurns + 1)
-    check(#gather.switches == count + 1 and gather.tracking[2].active, "moving: Find Minerals in turn after the setting's seconds")
+    W.Wait(1.01)
+    check(#gather.switches == count + 1 and gather.tracking[2].active, "moving 7 yards: Find Minerals in turn")
+    -- Find Fish learnt: herbs, ore, fish and round again.
+    gather.tracking[3] = { name = "Find Fish", spellID = 43308, active = false }
+    W.Fire("SPELLS_CHANGED")
+    local turns = {}
+    for _ = 1, 3 do
+        W.Wait(1.01)
+        turns[#turns + 1] = Nodes.Active()
+    end
+    check(table.concat(turns, " ") == "fish herb ore" and #gather.switches == count + 4, "Find Fish known: it takes its turn after ore")
+    -- The global cooldown keeps a turn waiting.
+    local cooldown = C_Spell.GetSpellCooldown
+    C_Spell.GetSpellCooldown = function() return { startTime = GetTime(), duration = 1.5 } end
+    W.Wait(2)
+    check(#gather.switches == count + 4, "the global cooldown running: no turn")
+    C_Spell.GetSpellCooldown = cooldown
+    W.Wait(Nodes.LOOK + 0.01)
+    check(#gather.switches == count + 5 and Nodes.Active() == "fish", "over: the turn at once")
+    -- Found fishing pools off: Find Fish gives way and is left out of the turns.
+    chosen = Core.Copy(ns.options.pins)
+    chosen.foundFish = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(Nodes.Active() == "herb", "Found fishing pools off: Find Herbs in its place")
+    turns = {}
+    for _ = 1, 2 do
+        W.Wait(1.01)
+        turns[#turns + 1] = Nodes.Active()
+    end
+    check(table.concat(turns, " ") == "ore herb", "the turns without Find Fish")
+    -- Dying takes the tracking: alive again, the finder back on as soon as it can be cast.
     gather.speed = 0
+    count = #gather.switches
+    for _, entry in ipairs(gather.tracking) do entry.active = false end
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    local dead = UnitIsDeadOrGhost
+    UnitIsDeadOrGhost = function() return true end
+    W.Fire("PLAYER_ALIVE") -- your spirit released: a ghost
+    W.Wait(Nodes.REVIVE + 1)
+    check(#gather.switches == count and not Nodes.Active(), "a ghost: no finder (none can be cast), the tries run out")
+    UnitIsDeadOrGhost = dead
+    W.Fire("PLAYER_UNGHOST")
+    W.Wait(Nodes.LOOK + 0.01)
+    check(#gather.switches == count + 1 and Nodes.Active() == "herb", "alive again: Find Herbs back on")
+    W.Wait(Nodes.REVIVE + 1)
+    check(#gather.switches == count + 1, "and only once")
+    -- One kind wanted: no turns, and it alone comes back.
+    chosen = Core.Copy(ns.options.pins)
+    chosen.foundHerb = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(Nodes.Active() == "ore", "Found herbs off too: Find Minerals alone")
+    count = #gather.switches
+    gather.speed = 7
+    W.Wait(3)
+    gather.speed = 0
+    check(#gather.switches == count, "one finder wanted: no turns")
+    for _, entry in ipairs(gather.tracking) do entry.active = false end
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    W.Fire("PLAYER_ALIVE") -- resurrected where you died
+    W.Wait(Nodes.LOOK + 0.01)
+    check(Nodes.Active() == "ore", "resurrected: Find Minerals back on")
+    gather.tracking[3] = nil
+    chosen = Core.Copy(chosen)
+    chosen.foundHerb, chosen.foundFish = true, true
+    Core.Set(ns.name, "pins", chosen)
+    W.Fire("SPELLS_CHANGED")
     W.Wait(Nodes.QUIET + 0.01)
 end
 
@@ -5124,7 +5190,7 @@ end)()
         local option = Core.Described(ns.name, key)
         return option.hidden and option.hidden() and true or false
     end
-    check(Hidden("tripView") and Hidden("dockTimes") and Hidden("nodeSparkles") and Hidden("nodeGlints") and Hidden("nodeTurns")
+    check(Hidden("tripView") and Hidden("dockTimes") and Hidden("nodeSparkles") and Hidden("nodeGlints") and Hidden("nodeYards")
         and not Hidden("nativeMinimap") and Core.Described(ns.name, "nodeSparkles").header == nil,
         "the switches of what Retail cannot have are not on the options page, nor the section Herbs and ore")
 
@@ -5169,7 +5235,7 @@ end)()
     Core.Set(ns.name, "pins", chosen)
     local count = #gather.switches
     gather.speed = 7
-    W.Wait(ns.options.nodeTurns + 1)
+    W.Wait(3)
     gather.speed = 0
     check(gather.tracking[1].active and gather.tracking[2].active and #gather.switches == count,
         "both on again, and no turns while moving")
@@ -5220,7 +5286,7 @@ end)()
     ns.Sparkles.Settings()
     ns.Glints.Update()
     check(ns.Offered("terrain") and ns.View() == view and Core.Described(ns.name, "nodeSparkles").header == ns.TEXT.nodes
-        and Core.Described(ns.name, "pins").choices[4][1] == "quest" and not Hidden("tripView") and not Hidden("nodeTurns")
+        and Core.Described(ns.name, "pins").choices[4][1] == "quest" and not Hidden("tripView") and not Hidden("nodeYards")
         and C_CVar.GetCVar("softTargetInteract") == sounds and not ns.off,
         "Forever again: every view, kind and switch back, the sparkles' settings set, the module running")
 end)()

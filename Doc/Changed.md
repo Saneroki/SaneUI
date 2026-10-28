@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 661 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild and Speed Leveling; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the finders take turns every 7 yards, Find Fish among them, and come back after death (Saneroki, 2026-10-28)
+Saneroki: Find Herbs, Find Minerals and Find Fish are lost at death; Sane UI should cast them again every 7 yards,
+in turn among those the character has (only the one, where it has one), and put it back on after reviving.
+- **Turns by yards (`Nodes.lua`):** the setting *Finders in turn* (`nodeYards`, 7 at first, 0 never) counts the
+  yards you move (your speed at each look, `GetUnitSpeed`) in place of seconds (`nodeTurns`, let go by the options'
+  shape 4); the next finder in `Nodes.ORDER` (herbs, ore, fish) that the pin filter wants and the game lists for the
+  character, as soon as the global cooldown lets it (`Free` asks that finder's own spell).
+- **Find Fish (43308):** a finder of its own, switched by the pin filter's new kind *Found fishing pools* (on at
+  first; a switch only, no pin or size: the game's minimap dots show the pools); left out of the satchel's tracking
+  as the other finders are (`Nodes.KIND`, which also knows Retail's other Find Herbs and Find Minerals spells).
+  Found.lua sweeps for herbs and ore only (`Nodes.DRAWN`), none while Find Fish is on.
+- **Back after death:** `PLAYER_ALIVE` and `PLAYER_UNGHOST` try the first finder wanted every half second for 10
+  seconds until it can be cast (`Revived`), none where a finder is on already; a ghost's tries run out, the corpse
+  or the spirit healer tries again. Retail keeps its tracking through death: nothing there.
+- **Tests:** `dev/tests/navigation.lua` 672 checks (the turns by yards, Find Fish in turn, the global cooldown,
+  *Found fishing pools* off, a ghost, alive again, one finder alone; the satchel without Find Fish), 26 in Retail.
+- A `/reload` takes it in.
+
 ### Speed Leveling's key talks to the NPCs Retail's spells cannot help, and walks to neutral ones; `/sane key` (Saneroki, 2026-10-26)
 Saneroki: the key talked to no NPC and walked to none; a press said "I can't do that".
 - **Why (`Key.lua`):** the key's states for "an NPC in front of you" and "your target is a friend" used the macro

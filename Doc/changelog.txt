@@ -311,8 +311,9 @@ The bigger changes of each version, newest first.
 - Navigation: herbs and ore on the minimap in their own pictures
   (Found herbs, Found ore in the pin filter; where they can grow is
   Possible herbs and ore), gold sparkles on the herb or ore beside
-  you, and Find Herbs and Find Minerals in turn as you move, without
-  a sound.
+  you, and Find Herbs, Find Minerals and Find Fish in turn every few
+  yards you move (those you know), without a sound - back on by
+  themselves when you are alive again after dying.
 - Navigation: at the dock of a boat or a zeppelin the top of the screen
   shows where each goes and when it arrives and leaves; aboard, when
   it lands. Ride a ship once on your realm and it knows its times, and

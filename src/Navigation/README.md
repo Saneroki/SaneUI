@@ -110,7 +110,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
     there is one: with none the section is not there;
   - **Pins:** every kind of pin the map can show, a click shows it or not (as the pin filter; the sizes stay there);
   - **Tracking:** what the game's own minimap tracks, as its tracking menu lists it (the townsfolk, a hunter's
-    beasts, Find Fish...), a click switches it; Find Herbs and Find Minerals are *Found herbs* and *Found ore*.
+    beasts...), a click switches it; Find Herbs, Find Minerals and Find Fish are *Found herbs*, *Found ore* and
+    *Found fishing pools*.
 
   Compact: six cells a row, each picture straight on the paper (no pencil slot), the addons' twice as large. A cell that is on shows its
   picture whole with a pencil tick, one that is off faint and grey. The button
@@ -119,10 +120,14 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in a round
   ring of stitched leather (the far herbs and ore below wear it with a point), grey while your skill is too low for it; on our small map and on the game's
   own minimap alike. Each switch is also its finder: *Found herbs* on puts Find Herbs on, off takes it off (or
-  Find Minerals in its place, while *Found ore* is on), and so on, without a sound. With both on and both spells
-  known they take turns while you move (the setting *Find Herbs and Find Minerals in turn*: every 6 seconds of
-  moving at first, 0 never), silently too, and the ones of the finder that is off meanwhile stay on the map until
-  you gather one, go far from it or it is five minutes old. As the pins do, each takes the mouse: its tooltip
+  Find Minerals in its place, while *Found ore* is on), and so on, without a sound; *Found fishing pools* is Find
+  Fish, whose pools the game's minimap dots show (no picture of ours). With two or more on and their spells known
+  they take turns while you move, herbs, ore, fish and round again, those you do not know left out (the setting
+  *Finders in turn*: every 7 yards you move at first, as fast as the global cooldown lets it, 0 never), silently
+  too, and the ones of the finder that is off meanwhile stay on the map until you gather one, go far from it or it
+  is five minutes old. Dying takes Forever's tracking: alive again (resurrected, at your corpse or by the spirit
+  healer), the first finder wanted comes back on as soon as it can be cast, and the turns go on from it; one wanted
+  alone comes back alone. As the pins do, each takes the mouse: its tooltip
   names it, a click pings it to your group and a double click puts the game's map pin where it is, so the game's
   arrow leads there.
 - **Indoor maps:** inside a building or a cave, its indoor map lies over the map at the floor you stand on (the
@@ -480,7 +485,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (`C_Minimap.GetTrackingInfo`, the
   entries the game's tracking menu lists: a spell's, or one of its optional filters, Forever's
   `MinimapConstants.OPTIONAL_FILTERS`, else Blizzard's list of them by `Enum.MinimapTrackingFilter` names; not the
-  finders `Nodes.FINDERS`). A tracking entry is switched as the game's menu switches it
+  finders `Nodes.KIND`). A tracking entry is switched as the game's menu switches it
   (`MinimapUtil.SetTrackingFilterByFilterIndex`, else `C_Minimap.SetTracking`) and shown so at once until the game
   agrees (a spell's takes its cast); `MINIMAP_UPDATE_TRACKING` and a change of the setting *Pins on the map* fill it
   anew while it is open. Its first section, the zone's (`Zone`, `Lines`, `Tools`): its title the zone and subzone
@@ -735,8 +740,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   - the pin kinds only Core's data has (offers, low, later, done, services, possible herbs and ore, books: their
     `data` in `ns.KINDS`) are not in the pin filter nor the setting's list (`ns.KindOffered`); the game's own
     (the log, flight points, places, rares, treasures, entrances, links, the group, quest areas) show;
-  - herbs and ore: Retail's tracking holds both finders at once (`Nodes.TOGETHER`): each on while its kind is,
-    no turns (the switch is not there); the found ones need the minimap's answers Retail does not give
+  - herbs and ore: Retail's tracking holds all finders at once and keeps them through death (`Nodes.TOGETHER`):
+    each on while its kind is, no turns (the switch is not there); the found ones need the minimap's answers Retail does not give
     (`Found.Works`), the sparkles Core's herbs and ore (`Nodes.Known`): neither runs, the far ones neither, the
     game's interact settings are left as they are, and their switches (and the section's header) are not on the
     options page; a game that tells no skill line's rank greys no herb (`Nodes.TooHard`);
@@ -774,7 +779,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's 3D model beside its tooltip with Alt |
 | `Marks.lua` | The player's arrow, the map pin, the party, the pings |
-| `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
+| `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
@@ -798,6 +803,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-28, the finders by yards, Find Fish, and back after death:** as Saneroki asked, the finders take turns
+  every 7 yards you move (the setting *Finders in turn*, in yards, was seconds), Find Fish among them (the pin
+  filter's new *Found fishing pools*), only those you know; and alive again after dying, the finder wanted comes
+  back on by itself (`Nodes.lua`: `PLAYER_ALIVE`, `PLAYER_UNGHOST`).
 - **2026-10-26, the satchel's switches:** as Saneroki asked, the satchel has a section *Sane UI* with the modules'
   quick switches (Speed Leveling's guide on, paused or off), the latency home and to the world on one line, and no
   *AddOns* section while no other addon has a button for it.
