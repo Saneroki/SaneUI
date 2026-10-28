@@ -1,9 +1,10 @@
 # Dialogue
 
-Planning notes for **Dialogue**, a feature of the **Social** module (Saneroki, 2026-10-16: not a module of
-its own; `src/Social/`, `Doc/ideas/Social.md`). It shows talking to an NPC, and reading a book or a
-letter, as a conversation instead of a parchment window. Saneroki asked for it on 2026-10-16. Nothing is
-built yet.
+Planning notes for **Dialogue**, the talk with an NPC, a part of the **Lore** module (Saneroki, 2026-10-28:
+"make that a lore module"; before, 2026-10-16, a feature of Social). It shows talking to an NPC, and reading a
+book or a letter, as a conversation instead of a parchment window. Saneroki asked for it on 2026-10-16.
+**Built (2026-10-28, `src/Lore/`, its README):** gossip and the quest windows as a scene, the interface out of
+sight meanwhile, the rewards read for you. Books and letters and Edit Mode are still to come.
 
 ## What it is
 
@@ -14,8 +15,7 @@ what the player can answer. One key, *Continue*, takes the talk forward; the mou
 The game's windows stay where they are and come back at once whenever ours steps aside or fails.
 
 - **Stands for:** `GossipFrame`, `QuestFrame` and the book and letter window `ItemTextFrame`
-  (`Blizzard_UIPanels_Game`, this client's `Mainline` and `Shared` files). Social's *Classic windows*
-  list names them.
+  (`Blizzard_UIPanels_Game`, this client's `Mainline` and `Shared` files).
 - **Not:** vendors, trainers, the bank, the auction house. Economy's windows take those
   (`Doc/ideas/Economy.md`). When the talk turns into one of them, Dialogue closes and that window opens.
 
@@ -23,13 +23,14 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 ### The talk box
 
-- **Where:** in the middle of the screen (Saneroki), at Core's dock place `CENTER`, where the windows the
-  player talks to stand (`Doc/ideas/Windows.md`), moved in Edit Mode like every Sane UI window. The face at
-  its left, the words and the answers beside it, top to bottom.
-- **The face:** the NPC's own 3D model (`PlayerModel:SetUnit` of `questnpc`, else `npc`) in Blizzard's
-  talking-head frame (atlas `TalkingHeads-PortraitFrame`). It plays its talk animation while a paragraph is
-  new and stands at rest otherwise. A thing with no face (a board, a chest) shows its quest's or item's icon
-  in the same frame.
+- **Where (Saneroki, 2026-10-28: the dialogues "the same way", more transparent):** low in the middle of the
+  screen, see-through over the world: the face at its left, the name and the words beside it; the answers in a
+  column of their own right of the words; a quest's objectives and rewards under the words, lifting the box (the
+  column's foot stays put). Moving it in Edit Mode is still to come.
+- **The face:** the NPC's own 3D model (`PlayerModel:SetUnit` of `questnpc`, else `npc`), with no frame or
+  background (see-through, Sane UI's own look: `Doc/guides/interface-style.md`, *The talk over the world*). It
+  plays its talk animation while a paragraph is new and stands at rest otherwise. A thing with no face (a board,
+  a chest) shows the game's quest book.
 - **Name and title:** in the game's fancy gold font. Beside them, the friendship or reputation bar
   where the NPC has one (Blizzard's own `NPCFriendshipStatusBarMixin`).
 - **A close button**, and the background of the quest's theme where the game gives one
@@ -51,9 +52,11 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 ### The answers
 
-- **Under the words, inside the box,** once the last paragraph is shown: the game's own order (quests to
-  hand in, quests offered, the NPC's other options, quests not done yet), each with the game's icon for
-  its kind (`QuestUtil`). A quest far below the player's level is dimmed, as the game does.
+- **Beside the words, in a column of their own** (Saneroki, 2026-10-28), from the start of the talk: quests to
+  hand in, quests offered, the NPC's other options, quests not done yet, Goodbye, each with the game's picture
+  for its kind (its `Interface\GossipFrame` files; not `QuestUtil`, whose quest cache our code would write). A
+  quest far below the player's level is dimmed, as the game does. A quest's own answers stand there too
+  (Accept, Decline; Complete Quest, Goodbye).
 - **Chosen by a click.** Highlighted under the mouse the way the game's gossip buttons are.
 - **Continue** on the last paragraph does what needs no choosing: accept the quest offered, hand in the
   quest whose reward is chosen, the one option there is, or goodbye when there is nothing to answer. Where
@@ -68,6 +71,10 @@ The game's windows stay where they are and come back at once whenever ours steps
   against the item the player wears in that slot (the stats that go up and down, as the game's own
   comparison tooltip works them out), an item the player cannot use marked as the game marks it. A click
   chooses one; Continue then takes it.
+- **Every reward item says, without its tooltip (Saneroki, 2026-10-28):** what gear it is (cloth, leather, mail,
+  plate and its slot; a weapon's kind), whether you can use it, what a vendor pays for it, and how much it
+  improves on what you wear (its item level against the one worn, the stats up and down). Its tooltip and the
+  game's comparison are still there, in sight over the faded interface.
 - **Rewards in the game's order:** items to choose, spells, a title, money, experience, items,
   currencies, honour. Each has the game's own tooltip on mouseover.
 - **From our data (later):** where the quest stands in its chain (*part 3 of 5*), and the breadcrumb
@@ -76,12 +83,12 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 ### Continue, the one key
 
-- **One binding:** *Continue*, chosen on Social's page (*proposal*: Space, as nothing in a talk needs a
-  jump). While the box shows, that key is bound to Continue over whatever it does elsewhere
+- **One binding:** *Continue* is Space (built: the switch *Space goes on* on Lore's page; nothing in a talk
+  needs a jump). While the box shows, Space is bound to Continue over whatever it does elsewhere
   (`SetOverrideBindingClick` on a button of ours), and given back the moment the box closes. Every other
   key works as always.
 - **Esc** ends the talk, as for the game's own windows.
-- **A controller:** the player binds a button to Continue the same way, on the same page.
+- **A controller:** the player binds a button to Continue the same way, on the same page (to come).
 
 ### Books and letters (Saneroki: yes)
 
@@ -96,12 +103,11 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 ### The rest of the screen (a choice)
 
-- **A veil while talking** (Saneroki: the rest of the interface out of sight by default; a setting keeps
-  it in sight): one dark full-screen frame of ours at the strata just under the box. It covers the bars,
-  the frames and the minimap, while everything the game puts on the dialog strata and above (questions,
-  alerts, tooltips) stands over it by the game's own layering. No frame of the game's is hidden, faded or
-  listed: nothing to keep in step with the game's own frames.
-- **Its darkness** is a setting; the veil fades in with the box and out when the talk ends.
+- **The interface hidden while talking, its tooltips in sight** (Saneroki, 2026-10-28, in place of the dark
+  veil planned before, so the world stays in sight around the see-through talk): the whole interface
+  (`UIParent`) fades out with the talk and back in when it ends, at once in a fight. Nothing is hidden, only
+  clear. The rewards' tooltips and their comparisons, the game's questions (`StaticPopup1`–`4`) and its error
+  lines stay in sight (`SetIgnoreParentAlpha`). A setting keeps the interface in sight.
 
 ## How it is built
 
@@ -115,14 +121,15 @@ The game's windows stay where they are and come back at once whenever ours steps
     into sight, so their `OnShow` and `OnHide` do not run.
   - The quest window checks after `ShowUIPanel` that it is shown (`QuestFrame:IsShown()`), else it ends
     the quest. A held window still counts as shown, so this holds.
-  - Parent, scale and alpha are noted before they are changed and put back exactly.
+  - Parent, strata and level are noted before they are changed and put back exactly (built: `src/Lore/Native.lua`).
   - No events of the game's windows are taken away, no global is replaced, and `UIPanelWindows` is left
     alone.
 - **The way back:**
-  - A *Classic* button on our box gives the game's window back for that talk. It is remembered as
-    Economy's choice is (Core's `window:Native`).
-  - A *Sane UI* button on the game's window brings ours back.
-  - If our code fails (`module.Guarded`), the game's window is given back at once.
+  - The switch *Talks as a scene* gives the game's windows back (built); a *Classic* button on our box for
+    one talk, and a *Sane UI* button on the game's window, are not built.
+  - If our code fails (`module.Guarded`), the game's window is given back at once (built).
+  - A talk the game shows in its window while ours does not show it (one of the kinds below, or one ours does
+    not know) is given back into sight at once (built: `Native.Check`).
 - **Talks the game shows its own way:**
   - Gossip with its own special window (`CustomGossipFrameManager`, by the talk's texture kit) is left to
     the game.
@@ -162,11 +169,11 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 ### Performance
 
-- **Nothing before the first talk:** Social registers Dialogue's events at login, and makes its frames at
+- **Nothing before the first talk:** Lore registers the talk's events at login, and makes its frames at
   the first talk.
-- **Reused, not made anew:** answers, reward lines and the veil come from pools or are made once.
-- **One timer**, and only while paragraphs go on by themselves (`C_Timer.NewTimer`, cancelled when the talk
-  ends). There is no `OnUpdate` while nothing moves.
+- **Reused, not made anew:** answers and reward lines come from pools or are made once.
+- **One timer**, and only while paragraphs go on by themselves (`C_Timer.After`; a later talk or paragraph makes
+  it do nothing). An `OnUpdate` only while something fades.
 - **No tables made per frame.**
 
 ### Rules Dialogue keeps
@@ -186,37 +193,52 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 ## Settings
 
-Under a heading *Dialogue* on Social's page; account-wide, with a switch for the whole feature (on).
+On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/README.md`).
 
 | Setting | Default |
 | --- | --- |
-| Hide Blizzard's windows (gossip and quest) | on |
-| Continue key | Space (*proposal*) |
-| Paragraphs go on by themselves | on |
-| Reading speed (words per minute) | to be chosen in play |
-| The veil while talking (its darkness; none keeps the interface in sight) | dark (Saneroki) |
-| Size of the talk box | 100 % |
+| Talks as a scene (off: the game's gossip and quest windows) | on |
+| Fade out the interface while talking | on |
+| Shade behind the words (0: the words alone over the world) | 30 % |
+| Size | 100 % |
+| Words go on by themselves | on |
+| Reading speed (words a minute) | 230 |
+| Space goes on | on |
 
-- **Moving the box:** it is moved in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`).
+- **Moving the talk:** in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`): still to come.
 
-## Decided (Saneroki, 2026-10-16)
+## Decided
 
-- **Name:** *Dialogue*, a feature of Social, not a module of its own.
-- **Place:** the middle of the screen.
-- **Hiding the rest of the interface:** on by default (the veil), with a setting to keep it in sight.
+Saneroki, 2026-10-16:
+
+- **Hiding the rest of the interface:** on by default, with a setting to keep it in sight.
 - **Combat** closes the dialogue.
 - **Books and letters:** yes.
 
+Saneroki, 2026-10-28 (superseding the name and the place of 2026-10-16, and the veil):
+
+- **A part of the Lore module** (`SaneUI_Lore`), not of Social.
+- **The same way as the talk he likes, more transparent:** the talk low in the middle of the screen, see-through
+  over the world; the answers in a column beside the words; the quest under them.
+- **The interface hidden while talking, the tooltips in sight** to see and compare the rewards.
+- **The rewards say what they are without their tooltip:** the gear's kind (cloth, leather, mail, plate, ...),
+  whether you can use it, what a vendor pays for it, what it improves.
+
+Claude's picks (2026-10-28), for Saneroki to change: Space as the Continue key (on by default, a switch); the
+answers there from the start of the talk; a quest that costs money handed in only by its answer; Expressway and
+the game's gold, as the guide over the world.
+
 ## Open questions for Saneroki
 
-- **The answers:** under the words, inside the box (as planned here), or beside it?
-- **Continue's default key:** Space, or none until the player picks one?
+- **Accepting and handing in by themselves** (board #107: "with auto accept quest and rewards"): every quest
+  offered accepted at once, and a quest with one reward or none handed in at once? Speed Leveling does so for the
+  guide's quests already (its *Quest givers*).
 
 ## Order of work
 
-1. In Social: its files (`Dialogue*.lua`, in Social's TOC), its settings, its part of the README. The holder
-   and the way back, proven with the gossip window and plain talk.
-2. The talk box: face, name, paragraphs, answers, Continue; combat closes it.
-3. Quests: offered, in progress, handed in, the rewards compared inline, the choice.
-4. Books and letters. The veil.
+1. ~~The holder and the way back, proven with the gossip window and plain talk.~~ Built 2026-10-28, in Lore.
+2. ~~The talk box: face, name, paragraphs, answers, Continue; combat closes it.~~ Built.
+3. ~~Quests: offered, in progress, handed in, the rewards compared inline, the choice.~~ Built, with each reward
+   read for you.
+4. Moving the talk in Edit Mode. Books and letters.
 5. The chain from Core's data, once it is there.

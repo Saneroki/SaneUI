@@ -383,6 +383,10 @@ function Host.Seat(tooltip, panel)
     Host.Blank(tooltip, panel)
     Align(tooltip, panel)
     Reach(tooltip, panel)
+    -- A tooltip kept in sight while the game's interface is faded out (a module's talk), its panel with it.
+    if panel.SetIgnoreParentAlpha and tooltip.IsIgnoringParentAlpha then
+        panel:SetIgnoreParentAlpha(Plain(tooltip:IsIgnoringParentAlpha()) == true)
+    end
 end
 
 -- The game hid the tooltip and fills it again at once: it refreshes a comparison so, several times

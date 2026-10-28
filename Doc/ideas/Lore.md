@@ -2,7 +2,9 @@
 
 Planning notes for the **Lore** module (`SaneUI_Lore`, title *Lore*). Saneroki, 2026-10-16: *just an idea for
 now*. A module that handles **voice overs**, a **library** about the world and its lore, and **lore
-tidbits** in tooltips and other places of Sane UI. Nothing is built.
+tidbits** in tooltips and other places of Sane UI. **Built first (Saneroki, 2026-10-28: "make that a lore
+module"):** the talk with an NPC as a scene (Dialogue, `Doc/ideas/Dialogue.md`, `src/Lore/README.md`); the
+voices, the library and the tidbits are still ideas.
 
 Saneroki: Lore is our own module, with all of this in one place. Our code, our data, our texts.
 
@@ -30,7 +32,7 @@ Core and its data are the backend, the modules are views (CLAUDE.md, *Backend an
 | The lore entries and tidbits | Core's data framework (`Doc/ideas/Data.md`): a pack `SaneUI_Data_Lore` with the set `Lore` | Data is Core's; modules only read it |
 | What the player has met and read: zones, NPCs, kills, quests done, books and letters, the game's texts | Core's watchers and character data (*Characters* in `Data.md`) | Gathered by Core whether Lore is on or not |
 | The library, the voice and its bar, the line of a completed tale, the line when a zone is entered | Lore | Its own views |
-| A tidbit in a tooltip, in a talk, on the map | The module whose view it is: Tooltips, Social's Dialogue, Navigation | A module draws only its own frames; none calls into another |
+| A tidbit in a tooltip, in a talk, on the map | The module whose view it is: Tooltips, Lore's talk (Dialogue), Navigation | A module draws only its own frames; none calls into another |
 | The voices: the sound files, and the index of their own lines | Voice packs (`SaneUI_Voice_*`), Sane UI downloads of their own (Saneroki, 2026-10-16) | Too big to come with Sane UI; on disk only, never in memory until played |
 
 - **Lore waits for the data framework** (`Doc/ideas/Data-build.md`). Only the game's text to speech needs no
@@ -382,7 +384,7 @@ separately. Lore plays a voice only when it finds its package installed.**
 | **A zone entered** | Lore | A line under the game's zone name, in its font, fading with it; the first visit on this character (a setting: every time). The game's `ZoneTextFrame` is only hooked (`HookScript`) |
 | **An instance entered** | Lore | Its line under the zone name, as for a zone; its primer joins the library (*Halls*) |
 | **A boss killed** | Lore | The boss joins its primer in the library (`ENCOUNTER_END`) |
-| **A talk** | Social's Dialogue | The NPC's tidbit under its name; where the quest stands in its story (*The Defias, part 3 of 5*) |
+| **A talk** | Lore's talk (Dialogue) | The NPC's tidbit under its name; where the quest stands in its story (*The Defias, part 3 of 5*) |
 | **The map** | Navigation | A zone's and an area's lore when the mouse is over it, with Listen |
 | **Later** | The character sheet, Abilities | Race and class; a class's lore at the top of its spellbook |
 

@@ -3,8 +3,35 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 88 and 104 (Speed Leveling, its guide), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling and Loot; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 88 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Lore: a module of its own, with talks as a scene (Saneroki, 2026-10-28)
+Saneroki asked for the NPC dialogues the way he likes them, more transparent, as a Lore module: the interface hidden
+while talking with its tooltips in sight to compare rewards, and each reward saying its gear kind, whether it can be
+used, its sell value and its improvement without its tooltip (board #107).
+- **New addon `SaneUI_Lore`** (`src/Lore/`, `src/Lore/README.md`): the first part of the Lore plan; Dialogue moves
+  into it from Social (`Doc/ideas/Dialogue.md`, `Doc/ideas/Lore.md`).
+- **The game's windows held** (`Native.lua`): `GossipFrame` and `QuestFrame` parented to a hidden frame of ours while
+  closed (`Core.Lend`, layer noted), so the game opens them unseen and their `OnHide` never ends a talk; given back in
+  a fight, with the switch off, on standing down, and at once for a talk ours does not show (`Native.Check`).
+- **The talk** (`Talk.lua`, `Box.lua`, `Answers.lua`, `Quest.lua`, `Look.lua`): gossip, a greeting, a quest offered,
+  in progress and handed in, low in the middle, see-through (soft shades fading out at the sides, Expressway
+  outlined): the NPC's 3D face, name, a paragraph at a time (*2/4*), actions in `<...>` in the emote colour; the
+  answers in a column beside (to hand in, offered, options, not done, Goodbye); the quest under the words, lifting
+  the box. Space (`Keys.lua`, an override binding only while it shows) or a click goes on, a right click back; on
+  the last paragraph the answer that needs no choosing. Words go on by themselves at a reading speed (230 a
+  minute). Esc, Goodbye, a vendor's window or a fight end it; a talk begun in a fight is the game's.
+- **Rewards read for you** (`Rewards.lua`): what it is (`Leather · Chest`; a ring by its slot; a weapon's kind), Can't
+  use (the game's `isUsable`), the vendor's price for all, its item level against the one worn and the stats that
+  change (`C_Item.GetItemStatDelta`), an empty slot; a click chooses, a double click hands in; a quest that costs
+  money only by its answer, which says the price.
+- **The interface out of sight** (`Quiet.lua`): `UIParent`'s alpha lent and faded to 0 while talking (at once back in
+  a fight); `StaticPopup1`–`4` and `UIErrorsFrame` kept in sight, `GameTooltip` and its comparisons only while a
+  reward shows one (`SetIgnoreParentAlpha`, each noted and put back).
+- **Tooltips:** a panel follows its tooltip's `IsIgnoringParentAlpha` (`Host.Seat`), so Sane UI's tooltip panels stay
+  in sight over the faded interface with it.
+- **Tests:** `dev/tests/lore.lua` (83 checks, Retail too), in `dev/tests/run`.
 
 ### Loot: a module of its own, with its loot window, rules, roll cards and feed (Saneroki, 2026-10-28)
 Saneroki asked for a loot module with a loot window of its own and what a full loot addon does (board #34, #109).

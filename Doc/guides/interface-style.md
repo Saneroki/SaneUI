@@ -283,6 +283,22 @@ Speed Leveling's guide, straight on the world without a window (`src/SpeedLeveli
   Hearthstone, a winged boot, a map); under it, words read at a glance: what to do there, then the yards and the time
   to get there.
 
+### The talk over the world
+
+Lore's talk with an NPC (`src/Lore/`; Saneroki, 2026-10-28: the dialogues "the same way, but more transparent"), as
+the guide over the world: no window, no paper.
+
+- **See-through over the world:** each part on a soft dark shade whose sides fade out into the world (its darkness a
+  setting, 30 % at first), the rest of the interface faded out meanwhile.
+- **Low in the middle:** the NPC's own 3D face with no frame or background at the left, its name beside it in the
+  game's gold, the paragraph under the name in white, *2/4* small and grey at the bottom right.
+- **The answers in a column right of the words,** a shade a line, darker under the mouse, the game's own pictures
+  for a quest's kind.
+- **The quest under the words,** as wide: its title in gold, headings in gold, each reward a line: its icon, its name
+  in its quality's colour, under it what it is in grey (*Leather · Chest*, *Can't use* in red), at the right what it
+  sells for and what it changes (green up, red down).
+- **Words in Expressway** with a thin dark outline, as the guide over the world.
+
 ## Views
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):
