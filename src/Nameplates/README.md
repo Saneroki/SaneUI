@@ -87,7 +87,10 @@ fails, every plate is the game's own again.
   far its unit is from your character and on nothing else (rank, the camera): full within 10 yards, gradually down to
   half at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. It
   shrinks and grows quickly and smoothly, eased: fast at first, slower as it arrives, never past its size, there in
-  about a quarter of a second; selected or let go, quicker still. A plate appears at the size of its distance, never larger, and fades in
+  about a quarter of a second; selected or let go, quicker still. The game tells addons only between which range
+  checks a unit stands (5, 8, 10, 15 yards and so on); between two of them the distance moves on every frame at the
+  pace its unit passed the last two (a run's before that is known), never past the next, so a plate follows a moving
+  unit all the way, not in a step at each. A plate appears at the size of its distance, never larger, and fades in
   from unseen in a straight line, in about 0.7 seconds: as long as running takes from 60 yards, where the game first
   shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
   at 60 yards is taken by the game at once. No other transparency of ours. The game's
@@ -235,14 +238,20 @@ fails, every plate is the game's own again.
   passive, not off-spec; `C_Spell.SpellHasRange`, `GetSpellInfo`'s `maxRange`; harmful ones for foes, helpful for
   friends; none with a least range), made anew at `SPELLS_CHANGED`. The first rung that reaches the unit bounds the
   distance from above, the last that did not from below (`Range.Check`; none reaches: up to `Range.FAR`, 60). The
-  distance kept (`Range.Settle`) is in the middle the first time, stays where it was while within those, and is at
-  the rung the unit just passed (the one distance the ladder knows for sure), so a plate glides from rung to rung.
+  distance kept (`Range.Follow`) is in the middle the first time; where the unit went on to the next two rungs, at the
+  rung it passed (the one distance the ladder knows for sure), with its pace (`dress.pace`): the two rungs passed last
+  over the time between (`dress.mark`, `dress.markAt`; not older than `Range.STALE`, 3 s), else `Range.RUN` (7 yards a
+  second) that way; none beyond `Range.FASTEST` (40) or where the rungs are no neighbours of the last (a jump, or the
+  ladder changed: then `Range.Settle` within them). Every frame `Range.Drift` (from Scale.lua's driver) moves it on at
+  that pace, never past the two rungs it stands between: there it waits, its pace spent, for the unit to pass. Each
+  look asks first the two rungs the unit stood between (`Still`, by `dress.rung`: two questions while it stays), else
+  up the ladder from the shortest.
   Where nothing answers (an item the game will not check), the last distance stays. In a fight no item is asked
   about a foe: the game forbids that to addons then (each question a blocked action), so its distance there comes
   from your spells alone (`Fighting`: the game's lockdown, or its addon restriction for combat). Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
   and none yes, or none can say and the ladder puts it beyond the farthest of them (`Range.longest`) (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
   for nothing); cleared when the plate goes; its border red at half its alpha (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
-  `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
+  `Range.EVERY` (0.1) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
   the distance found, and each of your attacks with its reach and the game's answer.
 - **Cast** (`Cast.lua`): a frame of ours under the dress (`TOPLEFT` on its `BOTTOMLEFT`, under the combo points'
   row where it shows, as high as the dress, `Cast.Fit`),
@@ -293,7 +302,7 @@ fails, every plate is the game's own again.
   the game still gives a plate (`GetScale`) is undone: our dress at our size over it, the game's unit frame (its
   cast bar) at the share alone over it. A driver frame's guarded `OnUpdate` (hidden while no plate shows) runs
   `Range.Look` every `Range.EVERY` seconds, aims each plate at its share (anew too when the game's scale for it
-  changed) and moves it every frame, eased, never past it (`Scale.Step`: each moment the same share of what is left,
+  changed; every frame as `Range.Drift` moves its distance on) and moves it every frame, eased, never past it (`Scale.Step`: each moment the same share of what is left,
   `exp(-elapsed / Scale.EASE)` (0.08 s) with its distance, `Scale.QUICK` (0.05 s) when selected or let go; within
   `Scale.SNAP` of its size, there).
   `Scale.Born`: a plate appearing is asked about at once (`Range.One`, not at the next look) and shows at the size of its
@@ -455,3 +464,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   thousands of "Interface action failed because of an AddOn" in Retail's taint log; the spells answer alone there.
 - **2026-10-29:** sizes change quickly and eased, no longer slowly and evenly; the raid marker in the line right
   after the level, as on the unit frames (Saneroki).
+- **2026-10-29:** sizes follow a moving unit every frame (Saneroki): between two range checks the distance moves on
+  at the pace its unit passed the last two; looked at twice as often, two questions a look while it stays.

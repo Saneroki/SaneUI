@@ -916,9 +916,49 @@ for index = 1, 500 do
 end
 check(never and Near(dress._scale, full * Scale.Size(20)) and #steps > 3 and steps[2] < steps[1] and steps[3] < steps[2]
     and there and there <= 0.5, "22 yards (past the 20 yard rung): smaller, eased, never past its size, there within half a second")
+-- Past the next rung (from 20 to 25): at that rung, then on at a run's pace (none known yet), every frame, never past
+-- the rung beyond (30), where it waits for the unit to pass it.
+yards.nameplate1 = 27
+for _ = 1, 10 do tick(Scale.driver, 0.02) end
+local walked = dress.yards
+for _ = 1, 5 do tick(Scale.driver, 0.02) end
+check(dress.yards > 25 and dress.yards < 30 and Near(dress.yards - walked, ns.Range.RUN * 0.1) and dress.pace == ns.Range.RUN,
+    "27 yards, past the 25 yard rung: from it on at a run's pace, every frame")
+Settle()
+check(dress.yards == 30 and dress.pace == 0 and Near(dress._scale, full * Scale.Size(30)), "never past the 30 yard rung: it waits there")
+-- Its own pace from the two rungs it passed last: in past 25, half a second later past 20: 10 yards a second, in.
+local function Walk(seconds)
+    for _ = 1, math.floor(seconds / 0.02 + 0.5) do
+        W.clock = W.clock + 0.02
+        tick(Scale.driver, 0.02)
+    end
+end
+yards.nameplate1 = 24
+Walk(0.1)
+local crossed = dress.markAt
+check(dress.mark == 25 and dress.pace == -ns.Range.RUN, "in past the 25 yard rung (it passed 25 going out long ago): on in at a run's pace")
+Walk(0.4)
+yards.nameplate1 = 19
+Walk(0.1)
+check(dress.mark == 20 and Near(dress.pace, -5 / (dress.markAt - crossed)) and dress.pace < -ns.Range.RUN,
+    "half a second later past the 20 yard rung: on at its own pace, from the two")
+local was = dress.yards
+Walk(0.1)
+check(dress.yards < was and dress.yards >= 15 and Near(dress._scale, full * Scale.Size(dress.yards)) == false
+    and dress.aim == Scale.Size(dress.yards), "its size aimed at that distance every frame, eased after it")
+-- Between two looks: the two rungs around it asked, nothing more.
+local questions = 0
+local itemAsk, spellAsk = C_Item.IsItemInRange, C_Spell.IsSpellInRange
+C_Item.IsItemInRange = function(...) questions = questions + 1 return itemAsk(...) end
+local least, most, _, at = ns.Range.Check("nameplate1", dress.rung)
+C_Item.IsItemInRange = itemAsk
+check(least == 15 and most == 20 and at == dress.rung and questions <= 2, "still between the 15 and 20 yard rungs: two questions")
+-- A jump past several rungs at once (a charge): at the nearer of them, no pace.
+yards.nameplate1 = 3
+Walk(0.1)
+check(dress.yards == 5 and dress.pace == 0, "from 18 to 3 yards at once: at the 5 yard rung, no pace")
 yards.nameplate1 = 27
 Settle()
-check(Near(dress._scale, full * Scale.Size(25)), "27 yards: past the 25 yard rung, so at 25 for sure")
 check(Near(dress.edge, Core.Pixels(dress, 1)) and dress.fitted == dress.now,
     "settled at its size: laid out anew, the border one screen pixel at it")
 -- Its texts measured anew as it grows or shrinks (the game draws small letters a little wider or narrower): within
@@ -930,8 +970,8 @@ check(room == N(10) and dress.measured == dress.now, "settled: its texts measure
 wide = 1.05
 yards.nameplate1 = 32
 Settle()
-check(Near(dress._scale, full * Scale.Size(30)) and dress.measured == dress.now and dress.room.name == room
-    and dress.want == want, "smaller, its name drawn a little wider: within its spare, the bar as wide as it was")
+check(dress.yards > 30 and Near(dress._scale, full * Scale.Size(dress.yards)) and dress.measured == dress.now
+    and dress.room.name == room and dress.want == want, "smaller, its name drawn a little wider: within its spare, the bar as wide as it was")
 wide = 1.15
 yards.nameplate1 = 22
 Settle()

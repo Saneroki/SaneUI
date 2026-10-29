@@ -22,7 +22,9 @@ local _, ns = ...
 --  arrives, never past it (Scale.EASE; Scale.QUICK as it is selected or let
 --  go), so a step from rung to rung of Range.lua's ladder is over in a
 --  moment. A driver frame looks at the distances
---  every Range.EVERY seconds and moves the plates every frame while one moves;
+--  every Range.EVERY seconds, moves them on between looks every frame
+--  (Range.Drift, so a plate follows a moving unit all the way) and moves the
+--  plates every frame while one moves;
 --  hidden while no plate shows. The game's unit frame on a plate (its cast
 --  bar) is scaled along, without our size setting.
 --
@@ -208,6 +210,11 @@ local function Tick(_, elapsed)
     end
     if not active then return end
     for _, dress in pairs(ns.Plate.shown) do
+        -- Its distance moved on between looks, and its size aimed at it every frame (your target's stays full).
+        if ns.Range.Drift(dress, elapsed) and not dress.target then
+            local aim = Scale.Size(dress.yards)
+            if aim ~= dress.aim then dress.aim, dress.moving = aim, true end
+        end
         if dress.moving then dress.moving = Scale.Step(dress, elapsed) end
     end
 end
@@ -239,6 +246,7 @@ function Scale.Leave(dress)
     dress:SetScale(Scale.Full())
     dress:SetAlpha(1)
     dress.now, dress.aim, dress.moving, dress.showing, dress.yards = nil, nil, nil, nil, nil
+    dress.least, dress.most, dress.pace, dress.mark, dress.markAt, dress.rung = nil, nil, nil, nil, nil, nil
     dress.quick, dress.target, dress.fitted, dress.measured = nil, nil, nil, nil
 end
 

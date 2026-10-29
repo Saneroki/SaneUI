@@ -13,9 +13,12 @@ local _, ns = ...
 --  ones for friends). The first that reaches it bounds the distance from
 --  above, the last that did not from below (Range.Check; nothing reaches it:
 --  up to the farthest the game shows plates, Range.FAR). The distance kept
---  (Range.Settle) stays where it was while it is within those, and is at the
---  rung a unit just moved past: the one distance known for sure, so a plate
---  glides from rung to rung as its unit moves (Scale.lua).
+--  (Range.Follow) is at the rung a unit just moved past (the one distance
+--  known for sure) and from there moves on every frame (Range.Drift) at the
+--  pace the unit passed its last two rungs (a run's, Range.RUN, before that
+--  is known), never past the two rungs it stands between: there it waits for
+--  the unit to pass the next. So a plate's size follows its unit smoothly
+--  between the rungs (Scale.lua), not in a step at each.
 --
 --  Out of reach: a foe none of your harmful spells reaches now (one says no,
 --  none yes; or none can say and the ladder puts it beyond the farthest of
@@ -26,8 +29,9 @@ local _, ns = ...
 --
 --  Looked at every Range.EVERY seconds for every plate shown (Scale.lua's
 --  driver calls Range.Look), and once as a plate appears (Range.One, so it
---  shows at its size at once); a few questions per plate, the shortest ranges
---  first. Where the game will not answer for an item (an item it has not
+--  shows at its size at once); first the two rungs it stood between at the
+--  last look (two questions while it stays there), else up the ladder from
+--  the shortest. Where the game will not answer for an item (an item it has not
 --  loaded), the spells answer alone, and a distance that cannot be told keeps
 --  the last one. An item is never asked about a foe in a fight: the game
 --  forbids that to addons then, and each such question was a blocked action
@@ -40,7 +44,10 @@ local Range = {}
 ns.Range = Range
 
 Range.FAR = 60     -- the farthest the game shows plates of units not targeted, in yards
-Range.EVERY = 0.2  -- seconds between looks
+Range.EVERY = 0.1  -- seconds between looks
+Range.RUN = 7      -- yards a second a running unit covers: the pace taken where it is not known yet
+Range.FASTEST = 40 -- a pace beyond this many yards a second is no pace but a jump (a charge, a blink): none then
+Range.STALE = 3    -- seconds after which the last rung passed tells nothing of a unit's pace any more
 Range.longest = 0
 -- Items whose use reaches a foe that far: { yards, item }, from the game's tables (its item effects, their spells'
 -- ranges and targets).
@@ -132,34 +139,54 @@ local function Reaches(rung, unit, foe, fighting)
     return Core.Ask(ask, rung.item, unit)
 end
 
+-- Whether a unit still stands where it stood at the last look (at: the index of the nearest rung that reached it,
+-- false for beyond them all): that rung still reaches it and the one under it still does not. Two questions.
+local function Still(ladder, at, unit, foe, fighting)
+    local above = at and ladder[at]
+    if at and not above then return false end -- the ladder is shorter now
+    local below = ladder[(at or #ladder + 1) - 1]
+    if not (above or below) then return false end
+    if above and Reaches(above, unit, foe, fighting) ~= true then return false end
+    if below and Reaches(below, unit, foe, fighting) ~= false then return false end
+    return true
+end
+
 -- Between which distances a unit stands (the farthest rung that did not reach it, the nearest that did; nil, nil
 -- where no rung could tell), and for a foe whether your attacks reach it (true, false, or nil where none of your
--- spells could tell).
-function Range.Check(unit)
+-- spells could tell); then where on the ladder (the index of that nearest rung, false beyond them all: the at of
+-- the next look, which asks those two rungs first; nil where none could tell).
+function Range.Check(unit, at)
     local foe = Core.Ask(UnitCanAttack, "player", unit) == true
     local fighting = foe and Fighting()
-    local below, above, told = nil, nil, false
-    for _, rung in ipairs(foe and ladders.foe or ladders.friend) do
-        local reach = Reaches(rung, unit, foe, fighting)
-        if reach == true then
-            above = rung[1]
-            break
-        elseif reach == false then
-            below, told = rung[1], true
+    local ladder = foe and ladders.foe or ladders.friend
+    local below, above, told, index = nil, nil, false, nil
+    if at ~= nil and Still(ladder, at, unit, foe, fighting) then
+        below = ladder[(at or #ladder + 1) - 1]
+        above, below, told, index = at and ladder[at][1], below and below[1], below ~= nil, at
+    else
+        for position, rung in ipairs(ladder) do
+            local reach = Reaches(rung, unit, foe, fighting)
+            if reach == true then
+                above, index = rung[1], position
+                break
+            elseif reach == false then
+                below, told = rung[1], true
+            end
         end
+        if not above and told then index = false end
     end
     local least, most = nil, nil
     if told or above then least, most = below or 0, above or Range.FAR end
-    if not foe then return least, most, nil end
+    if not foe then return least, most, nil, index end
     local no = false
     for _, entry in ipairs(attacks) do
         local reach = Core.Ask(C_Spell.IsSpellInRange, entry.spell, unit)
-        if reach == true then return least, most, true end
+        if reach == true then return least, most, true, index end
         if reach == false and (entry.least or 0) == 0 then no = true end
     end
     -- Beyond the farthest of your attacks by the ladder, though they could not say: out of reach too.
-    if no or (least and Range.longest > 0 and least >= Range.longest) then return least, most, false end
-    return least, most, nil
+    if no or (least and Range.longest > 0 and least >= Range.longest) then return least, most, false, index end
+    return least, most, nil, index
 end
 
 -- A unit's distance kept from look to look: where the ladder puts it between two rungs, it stays where it was if it
@@ -173,10 +200,60 @@ function Range.Settle(yards, least, most)
     return yards
 end
 
+-- A unit's distance followed from look to look (between least and most, the rungs the ladder puts it between now):
+-- where it went on to the next two rungs, at the rung it passed, its pace anew: from the rung passed before (if not
+-- long ago), else a run's that way. Where the rungs are the same, it moves on (Range.Drift); where they are others
+-- (a jump: a charge, a blink, or the ladder itself changed), within them (Range.Settle), without a pace. The first
+-- time in the middle, without a pace.
+function Range.Follow(dress, least, most, now)
+    if not least then return end -- nothing could tell: as it was
+    local yards, wasLeast, wasMost = dress.yards, dress.least, dress.most
+    dress.least, dress.most = least, most
+    if not yards then
+        dress.yards, dress.pace = Range.Settle(nil, least, most), 0
+        return
+    end
+    if wasLeast == least and wasMost == most then return end
+    local rung, way = nil, nil
+    if wasMost == least then
+        rung, way = least, 1 -- out, past the rung between them
+    elseif wasLeast == most then
+        rung, way = most, -1 -- in
+    end
+    if not rung then
+        dress.yards, dress.pace = Range.Settle(yards, least, most), 0
+        dress.mark, dress.markAt = dress.yards ~= yards and dress.yards or nil, now
+        return
+    end
+    local mark, since = dress.mark, now - (dress.markAt or now)
+    local pace = way * Range.RUN
+    if mark and mark ~= rung and since > 0 and since < Range.STALE and (rung - mark) * way > 0 then
+        pace = (rung - mark) / since
+    end
+    if math.abs(pace) > Range.FASTEST then pace = 0 end
+    dress.yards, dress.pace, dress.mark, dress.markAt = rung, pace, rung, now
+end
+
+-- A unit's distance moved on at its pace between looks, never past the rungs it stands between: at one it waits,
+-- its pace spent, until the unit passes it. Whether it moved.
+function Range.Drift(dress, elapsed)
+    local pace, yards, least, most = dress.pace, dress.yards, dress.least, dress.most
+    if not pace or pace == 0 or not yards or not least then return false end
+    yards = yards + pace * elapsed
+    if yards <= least then
+        yards, dress.pace = least, 0
+    elseif yards >= most then
+        yards, dress.pace = most, 0
+    end
+    dress.yards = yards
+    return true
+end
+
 -- One plate looked at: its distance and whether it is out of your reach; its border lit anew where that changed.
 function Range.One(unit, dress)
-    local least, most, reach = Range.Check(unit)
-    dress.yards = Range.Settle(dress.yards, least, most)
+    local least, most, reach, at = Range.Check(unit, dress.rung)
+    dress.rung = at
+    Range.Follow(dress, least, most, GetTime())
     local out = (ns.options or {}).range ~= false and reach == false
     if out ~= (dress.out == true) then
         dress.out = out

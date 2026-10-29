@@ -146,6 +146,26 @@ gear, junk or everything; what is to be looted taken as quickly as possible.
   slot once; Shift's Auto Loot; the list's ticks and words; the Auto Loot setting lent and given back).
 - A game restart takes it in (a new file in Loot's TOC).
 
+### Nameplates: sizes follow a moving unit every frame (Saneroki, 2026-10-29)
+Saneroki: with the quick easing the resizing happened only now and then; it should update much more often.
+- **Why:** the game tells addons only between which range checks a unit stands (`Range.lua`'s ladder: 5, 8, 10, 15
+  yards and so on), so the distance, and with it the size, changed only as a unit passed one: a step every few
+  yards, looked at every 0.2 s.
+- **Between the rungs (`Range.Follow`, `Range.Drift`):** where a unit went on to the next two rungs, its distance is
+  at the rung it passed, with a pace: the last two rungs passed over the time between (not older than
+  `Range.STALE`, 3 s), else a run's (`Range.RUN`, 7 yards a second) that way; none beyond `Range.FASTEST` (40) or
+  where the rungs are no neighbours of the last (a jump, or the ladder changed). Every frame, from Scale.lua's
+  driver, the distance moves on at that pace, never past the two rungs it stands between (there it waits, its pace
+  spent), and the plate's size is aimed at it (`Scale.Step` eases after it). A unit that stops between two rungs
+  shows at most one rung's step off, as before.
+- **Looked at twice as often (`Range.EVERY` 0.1 s), more cheaply (`Still`):** each look asks the two rungs the unit
+  stood between first (`dress.rung`, the index `Range.Check` gives back): two questions while it stays there, the
+  ladder from the shortest only once it left.
+- **Tests:** `dev/tests/nameplates.lua` 277 checks (on from a rung at a run's pace, every frame, waiting at the next;
+  the pace from the two rungs passed last; the size aimed every frame; two questions while a unit stays; a jump past
+  several rungs without a pace).
+- A `/reload` takes it in.
+
 ### Nameplates: sizes change quickly and eased; the raid marker after the level (Saneroki, 2026-10-29)
 Saneroki: resizing much snappier, smoother and quicker; the raid icon next to the level, as on the unit frames.
 - **Eased (`Scale.Step`):** each moment a plate closes the same share of what is left to its size,
