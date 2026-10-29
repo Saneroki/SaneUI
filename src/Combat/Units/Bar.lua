@@ -7,9 +7,12 @@ local _, ns = ...
 --  power a thin line along its bottom, inside it; and under it, while it
 --  shows, a row of its own (your target's target, your focus's target, your
 --  pet), as a cast bar hangs under a nameplate's bar: inside the same outline,
---  the bar square at its bottom then, the row round at its own. The frame does
---  not change size with what it shows, so every piece is laid out for its size
---  and the row alone (Bar.Fit, again when either changes).
+--  the bar square at its bottom then, the row round at its own. The frame is
+--  always as wide as it is: nothing it shows changes its size, and its border
+--  and rank's line lie inside it (a nameplate's rank line reaches outwards), so
+--  an elite's or a boss's frame is no wider than another's; every piece is laid
+--  out for its size, its rank and the row alone (Bar.Fit, again when one
+--  changes). Only the glow reaches beyond it.
 --
 --  How it is round: the bar's fill and background are masked at both ends,
 --  by Core's caps (Shape.CAP_LEFT, CAP_RIGHT, a quarter of the bar's height
@@ -25,9 +28,9 @@ local _, ns = ...
 --    the row      the same, its own unit's, a screen pixel under the bar (the
 --                 border's dark between them)
 --    the power    the unit's mana, rage or energy, in the game's colour for it
---    the border   one screen pixel, black
---    the rank     behind the border, reaching farther: gold and thick on a
---                 boss, gold on an elite, silver on a rare
+--    the rank     inside the border, between it and the bars: gold and thick
+--                 on a boss, gold on an elite, silver on a rare
+--    the border   one screen pixel, black, the frame's edge
 --    the glow     red, solid at the edge and fading outwards: you have the
 --                 unit's aggro (your own frame: anything's), or it is a player
 --                 who may attack you
@@ -53,6 +56,7 @@ if type(green) == "table" and type(green.r) == "number" then Bar.GREEN = { green
 local GOLD = { 1, 0.82, 0, 1 }
 local gold = rawget(_G, "NORMAL_FONT_COLOR")
 if type(gold) == "table" and type(gold.r) == "number" then GOLD = { gold.r, gold.g, gold.b, 1 } end
+-- A unit's rank: its line's colour, and how many screen pixels the border and the line take inside the frame's edge.
 Bar.RANKS = {
     boss = { colour = GOLD, width = 4 },
     elite = { colour = GOLD, width = 2 },
@@ -100,8 +104,8 @@ local function Plate(host, sublevel)
     return plate
 end
 
--- A plate reaching that far beyond the frame on every side, down to below under its bottom (the row, while it
--- shows), its corners round by radius and that reach.
+-- A plate reaching that far beyond the frame on every side (inside it where reach is less than 0), down to below under
+-- its bottom (the row, while it shows), its corners round by radius and that reach.
 local function Around(plate, frame, reach, height, below, radius)
     local half = (height + below + 2 * reach) / 2
     local upper, lower = plate[1], plate[2]
@@ -181,9 +185,9 @@ function Bar.Make(frame, row)
     local edges = CreateFrame("Frame", nil, frame)
     edges:SetAllPoints(frame)
     edges:SetFrameLevel(level + 2)
-    frame.rankLine = Plate(edges, -4)
+    frame.border = Plate(edges, -4)
+    frame.rankLine = Plate(edges, -3) -- over the border, a pixel inside it
     frame.rankLine:SetShown(false)
-    frame.border = Plate(edges, -3)
     frame.border:SetVertexColor(Bar.BORDER[1], Bar.BORDER[2], Bar.BORDER[3], Bar.BORDER[4])
     frame.health = Health(frame, level + 3)
     -- No background: where the unit's power is spent, the bar is seen through the line.
@@ -204,29 +208,29 @@ function Bar.Make(frame, row)
     frame.rank = Bar.PLAIN
 end
 
--- Laid out for the frame's size, the unit's rank and the row: the bar a screen pixel inside its border (down to the
--- row, square there, while it shows), the row a pixel under it, the rank's line reaching out from the same edge, the
--- glow beyond it, every round a quarter of the bar's height.
+-- Laid out for the frame's size, the unit's rank and the row, all inside the frame's edge: the border on it, the
+-- rank's line a pixel inside it, the bar inside both (down to the row, square there, while it shows), the row a pixel
+-- under the bar; the glow beyond the edge; every round a quarter of the bar's height.
 function Bar.Fit(frame)
     local height = Plain(frame:GetHeight()) or 0
     local pixel = Core.Pixels(frame, 1)
     local radius = height * Bar.CAP
     local row = frame.row and frame.rowShown and frame.rowHeight or 0
+    local inset = pixel * frame.rank.width -- the border and the rank's line
     Around(frame.border, frame, 0, height, row, radius)
-    local reach = frame.rank.width - 1 -- the border is the rank's first pixel
-    Around(frame.rankLine, frame, pixel * reach, height, row, radius)
-    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * (reach + band), height, row, radius) end
-    local health, inner = frame.health, math.max(radius - pixel, 0.01)
+    Around(frame.rankLine, frame, -pixel, height, row, radius)
+    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, row, radius) end
+    local health, inner = frame.health, math.max(radius - inset, 0.01)
     health:ClearAllPoints()
-    health:SetPoint("TOPLEFT", frame, "TOPLEFT", pixel, -pixel)
-    health:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, row > 0 and 0 or pixel)
-    Ends(health, row > 0 and "top" or "both", inner, height - 2 * pixel)
-    frame.power:SetHeight(math.max((height - 2 * pixel) * Bar.LINE, pixel * 2))
+    health:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -inset)
+    health:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, row > 0 and 0 or inset)
+    Ends(health, row > 0 and "top" or "both", inner, height - 2 * inset)
+    frame.power:SetHeight(math.max((height - 2 * inset) * Bar.LINE, pixel * 2))
     if frame.row then
         frame.row:ClearAllPoints()
-        frame.row:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", pixel, -pixel)
-        frame.row:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, pixel - frame.rowHeight)
-        Ends(frame.row, "bottom", math.min(inner, frame.rowHeight - 2 * pixel), frame.rowHeight)
+        frame.row:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", inset, -pixel)
+        frame.row:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, inset - frame.rowHeight)
+        Ends(frame.row, "bottom", math.max(math.min(inner, frame.rowHeight - pixel - inset), 0.01), frame.rowHeight)
         frame.row:SetShown(row > 0)
     end
 end

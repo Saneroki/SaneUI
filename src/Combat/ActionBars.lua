@@ -9,9 +9,9 @@ local _, ns = ...
 --  The bars stay the game's own, placed and set up in its Edit Mode, its
 --  buttons its secure ones; only how they look changes, by calls on what they
 --  show (alpha, a texture's look), nothing of theirs written:
---    the bars     the main bar's frame, its end caps (gryphons, wyverns), its
---                 page number with its arrows, the dividers between buttons:
---                 out of sight
+--    the bars     the main bar's frame, its end caps (gryphons, wyverns), the
+--                 dividers between buttons: out of sight; its page number and
+--                 arrows stay, to see and change which bar shows
 --    a button     its frame, its slot and the slot's background, the green
 --                 border of an equipped item: out of sight; the icon unmasked
 --                 and cropped (Bars.CROP), the cooldown's swipe over the whole
@@ -38,8 +38,7 @@ ns.ActionBars = Bars
 -- The game's bars by their globals: the main bar, the extra bars, the stance, pet and possess bars.
 Bars.BARS = { "MainActionBar", "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft",
               "MultiBar5", "MultiBar6", "MultiBar7", "StanceBar", "PetActionBar", "PossessActionBar" }
-Bars.ART = { "BorderArt", "EndCaps", "ActionBarPageNumber" } -- a bar's own art
-Bars.ARROWS = { "UpButton", "DownButton" }                   -- the page number's arrows: no clicks while unseen
+Bars.ART = { "BorderArt", "EndCaps" } -- a bar's own art (the main bar's page number and arrows stay)
 Bars.BUTTON_ART = { "NormalTexture", "SlotArt", "SlotBackground", "Border" } -- a button's own art
 Bars.COOLDOWNS = { "cooldown", "lossOfControlCooldown", "chargeCooldown" }    -- over the whole icon
 Bars.DIVIDERS = { "HorizontalDividersPool", "VerticalDividersPool" }
@@ -233,14 +232,6 @@ local function Clean()
                 local lend = Core.Lend(part)
                 lend:SetAlpha(0)
                 barLends[#barLends + 1] = lend
-                for _, arrow in ipairs(key == "ActionBarPageNumber" and Bars.ARROWS or {}) do
-                    local button = rawget(part, arrow)
-                    if type(button) == "table" and button.EnableMouse then
-                        local mouse = Core.Lend(button)
-                        mouse:SetMouse(false)
-                        barLends[#barLends + 1] = mouse
-                    end
-                end
             end
         end
         Dividers(bar)
@@ -258,8 +249,7 @@ local function Restore()
     wipe(hidden)
 end
 
--- Clean or as the game has them, as the setting says; out of a fight (the buttons' cooldowns and the arrows are
--- placed and switched only then).
+-- Clean or as the game has them, as the setting says; out of a fight (the buttons' cooldowns are placed only then).
 local function Apply()
     local want = not ns.off and (ns.options or {}).cleanBars ~= false
     if want == on then return end

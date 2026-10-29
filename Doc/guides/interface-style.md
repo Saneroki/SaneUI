@@ -326,13 +326,15 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   red glow, in the plates' font. Green for everyone, never class colours. One line inside: the level and the raid
   marker on the left, then the name anchored left, the current health and its share on the right ("850 | 85%").
   A player's name is always the whole name, first name and surname; your own frame has no name. No portrait, no
-  frame round it.
+  frame round it. A fixed width: every frame as wide as the others, whatever it shows; the rank's gold or silver
+  line lies inside the border (on a nameplate it reaches outwards).
 - **Rows under them, like a nameplate's cast bar:** the target's target appears under the target's frame while
   there is one, inside its outline, its name the only text in its health bar; so too the focus's target and your
   pet under your frame.
-- **Clean action bars:** no border, decoration or background, not on the bars (frame, end caps, page number,
-  dividers) nor on a button (frame, slot); only the filled slots, each its square icon alone, cut free of the edge
-  its picture is drawn with. What answers the mouse and keys is a flat wash over the icon.
+- **Clean action bars:** no border, decoration or background, not on the bars (frame, end caps, dividers) nor on a
+  button (frame, slot); only the filled slots, each its square icon alone, cut free of the edge its picture is drawn
+  with. What answers the mouse and keys is a flat wash over the icon. The main bar's page number and its arrows
+  stay visible.
 
 ## Views
 

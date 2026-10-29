@@ -3,8 +3,18 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 101 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 178 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 103 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 178 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Combat: every unit frame one width; the main bar's page number and arrows stay (Saneroki, 2026-10-29)
+Saneroki: a fixed width for the unit frames; the arrows and the number of the action bar shown still visible on the
+main bar.
+- **One width (`Units/Bar.lua`):** a frame's button was 240 wide already (scaled by *Unit frame size*), but an elite's,
+  a rare's or a boss's rank line reached outside its border, so those frames looked 2 to 6 pixels wider. The border now
+  lies on the frame's edge, the rank's line a pixel inside it, the bars inside both (1, 2 or 4 pixels in); the row
+  under the frame the same. Only the aggro glow reaches beyond the edge.
+- **Page number (`ActionBars.lua`):** the main bar's `ActionBarPageNumber` and its arrows are no longer lent away
+  (alpha, mouse): seen and clicked as the game has them; the bar's frame, end caps and dividers stay out of sight.
 
 ### Loot: smooth round corners; the green arrow on an upgrade, and Always show upgrades (Saneroki, 2026-10-29)
 Saneroki: smooth corners, as the nameplates are drawn, "our current loot window is very ugly"; a green arrow on a thing

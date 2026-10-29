@@ -452,7 +452,14 @@ do
     check(foe.name._text == "Kobold Miner" and foe.value._text == "40 | 33%" and foe.raid._shown and foe.raid._cell == 8,
         "your target: its name, health, and its raid marker beside its level")
     check(foe.rank == ns.UnitBar.RANKS.elite and foe.health._barColor[2] == green[2] and foe.health._barColor[1] == green[1],
-        "green for a foe too; the gold line of an elite behind its border")
+        "green for a foe too; the gold line of an elite")
+    -- One width for every frame: the border on its edge, an elite's gold line inside it, the bar inside both.
+    local pixel = Core.Pixels(foe, 1)
+    check(target._width == Units.WIDTH and target._width == player._width and foe.border[1]._points[1][4] == 0
+        and near(foe.rankLine[1]._points[1][4], pixel) and foe.rankLine[1]._shown
+        and near(foe.health._points[1][4], 2 * pixel) and near(face.health._points[1][4], pixel)
+        and near(foe.halo[1][1]._points[1][4], -pixel),
+        "an elite's frame as wide as any: its rank's line inside the border, only the glow beyond the edge")
     -- Your target's target: a row under your target's frame while there is one, as a cast bar under a nameplate.
     local row = foe.rowButton
     check(row and row._template == "SecureUnitButtonTemplate" and row:GetAttribute("unit") == "targettarget"
@@ -571,9 +578,10 @@ do
     local bar = MainActionBar
     local full, empty = bar.actionButtons[1], bar.actionButtons[2]
     local arrow = bar.ActionBarPageNumber.UpButton
-    check(ns.ActionBars.Clean() and bar.BorderArt._alpha == 0 and bar.EndCaps._alpha == 0
-        and bar.ActionBarPageNumber._alpha == 0 and arrow._mouse == false and divider._alpha == 0,
-        "the bar's frame, end caps, page number and dividers out of sight, the arrows take no clicks")
+    check(ns.ActionBars.Clean() and bar.BorderArt._alpha == 0 and bar.EndCaps._alpha == 0 and divider._alpha == 0,
+        "the bar's frame, end caps and dividers out of sight")
+    check(bar.ActionBarPageNumber._alpha == 1 and arrow._mouse == true,
+        "its page number and arrows stay: which bar shows, and the clicks to change it")
     check(full.NormalTexture._alpha == 0 and full.SlotArt._alpha == 0 and full.SlotBackground._alpha == 0
         and full.Border._alpha == 0, "a button's frame, slot, background and border out of sight")
     check(not full.icon._masks[full.IconMask] and full.icon._coords[1] == ns.ActionBars.CROP[1]

@@ -71,9 +71,10 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   power along the bottom. Inside it, on the left the level (coloured by how hard the unit is to you, a skull
   where it is too high to tell) and the raid marker beside it; then the name, from the left, a player's first
   name and surname (none on your own frame); on the right the health and how much is left ("850 | 85%"), *Dead*
-  or *Offline* where it is so. An elite has the gold line behind its border, a rare a silver one, a boss a thick
+  or *Offline* where it is so. An elite has a gold line inside its border, a rare a silver one, a boss a thick
   gold one; the frame glows red while you have the unit's aggro (your own: while anything is after you) or while
-  it is a player who may attack you.
+  it is a player who may attack you. Every frame is the same width, whatever it shows: 240 at 100 % (*Unit frame
+  size* scales all three alike); only the glow reaches beyond its edge.
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health (green) and its name alone; the same under your focus's frame for
     your focus's target, and under your own frame for your pet while you have one. The frame's outline goes
@@ -89,8 +90,8 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems, cast bar and a
     class's resource bar stay where it was, moved in Edit Mode by the game's box *Player Frame*.
 - **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
-  decoration or background: no frame, end caps, page number or dividers on the bars, no frame or slot on a
-  button. Only the buttons that hold something show, each its square icon alone; the mouse over one, a press and
+  decoration or background: no frame, end caps or dividers on the bars, no frame or slot on a button. The main
+  bar's page number and its arrows stay, to see and change which bar shows. Only the buttons that hold something show, each its square icon alone; the mouse over one, a press and
   an active action are a soft wash over the icon. While you drag something onto the bars, and in Edit Mode,
   every button shows, an empty one as a dark square to drop on. The reservations of Abilities still show on
   their empty buttons.
@@ -234,7 +235,9 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     masked by Core's caps (`Shape.CAP_LEFT`, `CAP_RIGHT`, a quarter of the height) or, while the row shows, by
     corner masks at the top alone (`Shape.CORNER`), the row's at its bottom; the border, rank line and the glow's
     six bands as halves round at their own corners, reaching down round the row while it shows, the row a pixel
-    under the bar (the border's dark between). Every bar `Bar.GREEN` (the game's
+    under the bar (the border's dark between). The frame keeps its width: the border lies on its edge, the rank's
+    line a pixel inside it, and the bars inside both (`rank.width` pixels in: 1 plain, 2 an elite or a rare, 4 a
+    boss); only the glow reaches outwards. Every bar `Bar.GREEN` (the game's
     `COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`, plain green without it); the power line a quarter of the bar
     (`Bar.LINE`); ranks and glow as on a plate. Hidden values (health, a creature's most, your threat against it)
     go to the bars, the glow's `SetAlphaFromBoolean` and the texts as they are.
@@ -249,8 +252,8 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     children `TotemFrame`, the attached cast bar and the class bars stay the game's; `PetFrame` (which the game's
     layout re-parents) alpha 0 and its mouse off while the pet's row is on.
 - **The action bars** (`ActionBars.lua`): the bars of `Bars.BARS` (main, the extra bars, stance, pet, possess)
-  keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`,
-  `ActionBarPageNumber`, its arrows' mouse off) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
+  keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`; the
+  main bar's `ActionBarPageNumber` and its arrows stay) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
   `SlotBackground`, `Border`) go to alpha 0, and its cooldowns cover the whole icon; the icon loses its
   `IconMask` and is cropped (`Bars.CROP`); its highlight, pushed and checked textures become flat colours
   (`Bars.LOOKS`, each texture's atlas or file and blend noted, written again where `UpdateButtonArt` set it anew).
@@ -320,3 +323,5 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
 - **2026-10-29:** rows under the frames (Saneroki: the target's target like the cast bar, appearing underneath while
   there is one, its name the only text): your target's target, your focus's target, your pet; every bar green, no
   class colours; names from the left; no name on your own frame.
+- **2026-10-29:** every unit frame one width (Saneroki: a fixed width), the rank's line inside the border; the main
+  action bar's page number and arrows visible again (Saneroki).
