@@ -39,6 +39,29 @@ gear, junk or everything; what is to be looted taken as quickly as possible.
   slot once; Shift's Auto Loot; the list's ticks and words; the Auto Loot setting lent and given back).
 - A game restart takes it in (a new file in Loot's TOC).
 
+### Nameplates: the line tight, no room wasted; players' plates dressed alike (Saneroki, 2026-10-29)
+Saneroki: no wasted space between the level and the name, nor after the health; player plates styled exactly like
+the enemies', shown for enemies who can attack you, your party, raid, guild, friends and your target, else hidden.
+- **The level right before the name (`Text.NEAR`, 0):** the letters' own spacing between them; the other pieces stay
+  `Text.GAP` (4) apart.
+- **No slack nor spare but the name's:** only the name is ever cut short, so only it keeps `Text.SLACK` and
+  `Text.SPARE`; every other text is as wide as it is (`SetWidth(0)`, never cut) and its room its width rounded up
+  (`Text.Width`, `Measure`); `Text.Spare` takes the share (0 for those, a unit of leeway).
+- **The health at the bar's right end:** anchored by its right at the end of its room (justified right), so the bar
+  ends close after it; what it shows less than its room (the most health it can show, a guess while the game hides
+  it: `888 | 100%` for a level 3 creature showing `101`) stands between the name and it.
+- **Friendly players not by name only (`Scale.ALWAYS`):** the game's *Show only names for friendly players*
+  (`nameplateShowOnlyNameForFriendlyPlayerUnits`) hid their health bar, auras and cast bar and took the plate's
+  clicks, so Sane UI left those plates to the game. Now 0 whenever the module is on (with *Size by distance* or
+  without), kept and given back like `Scale.CVARS` (`Ours`, `Restore` take the list; the logout, standing down and
+  `CVAR_UPDATE` cover both), so friendly players get the same dress as any other.
+- **Who shows (`Plate.Wanted`):** a player who may attack you, or whom you may attack (`UnitCanAttack` both ways),
+  your group, guild, friends and target; any other player's plate out of sight. *Only players you know* says so.
+- **Tests:** `dev/tests/nameplates.lua` 264 checks (the level against the name, the health right, the texts unbounded
+  but the name, the name's spare; a player who may attack you though you may not attack it shown, glowing; the
+  name-only setting 0 while on, with *Size by distance* off too, back at the logout).
+- A `/reload` takes it in.
+
 ### Nameplates: names not cut short as plates grow and shrink; room to spare (Saneroki, 2026-10-29)
 Saneroki: as a plate and its text scale together, names are often cut short with "..."; let the text follow the
 plate, so the text always has room, with a little to spare before the plate widens.

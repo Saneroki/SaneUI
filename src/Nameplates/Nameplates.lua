@@ -30,8 +30,8 @@ local ADDON, ns = ...
 --    CombatText.lua  what the unit takes (damage, heals; a miss, a parry, a
 --                  block as a drawing) rising over its bar, and over your own
 --                  character, in place of the game's own combat text
---  Players you cannot attack and do not know show no plate, nor do critters
---  unless the setting shows them (Plate.lua).
+--  Players who may not attack you nor you them and whom you do not know show
+--  no plate, nor do critters unless the setting shows them (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -57,7 +57,7 @@ ns.TEXT = {
     range = "Out of reach: red border",
     rangeTip = "A foe's border turns red while none of your attacks reach it, as the game checks your own spells from your character.",
     players = "Only players you know",
-    playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
+    playersTip = "Players' plates show only for your group, your guild, your friends and your target, and for every player who may attack you or whom you may attack. Off: every player's plate shows.",
     critters = "Plates on critters",
     crittersTip = "Critters, wild pets and companion pets (rabbits, rats, deer and the like) have a nameplate with their name. Off: none, unless one is your target or a quest of yours wants it.",
     distance = "Size by distance",

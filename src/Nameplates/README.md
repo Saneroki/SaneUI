@@ -12,18 +12,21 @@ bar is as wide as that line, no wider. Along its bottom a thin line of the unit'
 and your combo points in a row of their own under the bar of the unit you have them on, inside the same outline. Its one border is lit on your target and focus, a line
 behind it tells the unit's rank, a red glow behind that your aggro or a player who may attack you. Right above the bar your own debuffs,
 left of it up to three of a foe's buffs, right of it the crowd control on the unit. Plates
-of players you cannot attack and do not know are hidden, and critters' plates (a setting shows them); every plate is smaller the farther away it is. When it
+of players who may not attack you nor you them and whom you do not know are hidden, and critters' plates (a setting shows them); every plate is smaller the farther away it is. When it
 fails, every plate is the game's own again.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Nameplates* under *Sane UI* in the game's addon list (the game
   needs a restart when it was not in the list before).
 - **Which plates:** every plate the game shows with a health bar: creatures and players, foes and friends.
-  A plate the game shows by name only (a friendly player with the game's setting for that) or with widgets
-  only stays the game's own; so do the plates the game keeps from addons in some places, and your own.
-- **Players:** the plate of a player you cannot attack shows only while the player is in your party or raid,
-  your guild, on your friends list (or a friend of your account), or your target; the others' plates are out of
-  sight altogether. Players you can attack always have theirs, glowing red: they may attack you.
+  A plate the game shows with widgets only stays the game's own; so do the plates the game keeps from addons in
+  some places, and your own. Friendly players are never shown by name only while the module is on (the game's
+  setting *Show only names for friendly players* is off meanwhile and back as it was when the module is off).
+- **Players:** dressed exactly like the creatures: the bar, the power line, the line inside it, auras, cast bar. A
+  player's plate shows while a fight with the player can start (the player may attack you, or you the player), and
+  while the player is in your party or raid, your guild, on your friends list (or a friend of your account), or your
+  target; every other player's plate is out of sight altogether. Players who may attack you glow red. Whether
+  friendly players have plates at all is the game's own setting (*Friendly player nameplates*, its key).
 - **Critters:** critters, wild pets and companion pets (rabbits, rats, deer, someone's pet) have no plate, and so no
   name over them, unless one is your target or a quest of yours wants it (its plate then shows the count). Setting
   *Plates on critters* (off at first) gives them their plates.
@@ -122,7 +125,8 @@ fails, every plate is the game's own again.
   plates), `UNIT_THREAT_SITUATION_UPDATE`, `PLAYER_REGEN_ENABLED` and `PLAYER_LEVEL_UP` (threat and level colours)
   go over all of them, the last five once a frame (`Core.Later`). After a `/reload` the plates already shown are
   dressed at the login (`C_NamePlate.GetNamePlates`).
-- **Strangers' plates** (`Plate.Wanted`): a player (`UnitIsPlayer`) you cannot attack (`UnitCanAttack` false),
+- **Strangers' plates** (`Plate.Wanted`): a player (`UnitIsPlayer`) you cannot attack nor it you (`UnitCanAttack`
+  false both ways),
   not your target (`UnitIsUnit`), not in your party, raid or guild (`UnitInParty`, `UnitInRaid`,
   `UnitIsInMyGuild`), not a friend (`C_FriendList.IsFriend`, `C_BattleNet.GetAccountInfoByGUID`) by `UnitGUID`:
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
@@ -277,7 +281,9 @@ fails, every plate is the game's own again.
   `Scale.Full()` (the setting
   *Nameplate size*, key `plateSize`, `Scale.SIZE` 125% at first) times its share on `Scale.CURVE` (1 to 10 yards, 0.5 at 40, 0.25 at
   60). The game's scaling and fading are off by its CVars (`Scale.CVARS`: `nameplateMaxScale`, `MinScale`,
-  `SelectedScale`, `LargerScale`, `MinAlpha`, `MaxAlpha`, `SelectedAlpha`, `NotSelectedAlpha` 1), and whatever scale
+  `SelectedScale`, `LargerScale`, `MinAlpha`, `MaxAlpha`, `SelectedAlpha`, `NotSelectedAlpha` 1; and, whenever the
+  module is on, `Scale.ALWAYS`: `nameplateShowOnlyNameForFriendlyPlayerUnits` 0, so friendly players' plates keep their
+  health bar, auras, cast bar and clicks, kept and given back like the others), and whatever scale
   the game still gives a plate (`GetScale`) is undone: our dress at our size over it, the game's unit frame (its
   cast bar) at the share alone over it. A driver frame's guarded `OnUpdate` (hidden while no plate shows) runs
   `Range.Look` every `Range.EVERY` seconds, aims each plate at its share (anew too when the game's scale for it

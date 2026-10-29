@@ -27,6 +27,12 @@ local _, ns = ...
 --  hidden while no plate shows. The game's unit frame on a plate (its cast
 --  bar) is scaled along, without our size setting.
 --
+--  One more CVar is ours whenever the module is on, with the setting or
+--  without (Scale.ALWAYS): the game shows friendly players by name only
+--  (nameplateShowOnlyNameForFriendlyPlayerUnits), which hides their health
+--  bar, auras and cast bar and makes the plate not clickable; off, their
+--  plates are whole and Plate.lua dresses them like every other.
+--
 --  While on, the CVars are ours: set again a little after the game has its
 --  stored settings and Core's Sync has written a profile's (both come after
 --  the login and would bring the game's scaling back), and whenever one of
@@ -64,10 +70,15 @@ Scale.CVARS = {
     nameplateSelectedAlpha = "1",
     nameplateNotSelectedAlpha = "1",
 }
+-- And those ours whenever the module is on: friendly players' plates whole, not by name only.
+Scale.ALWAYS = {
+    nameplateShowOnlyNameForFriendlyPlayerUnits = "0",
+}
 
 local waiting = false
 local active = false  -- the CVars ours: the plates on our curve
 local applied = false -- ours were set this session: switched off, what was there before goes back
+local kept = false    -- the same for Scale.ALWAYS
 local driver
 
 -- Our bar's size within ten yards, from the setting.
@@ -91,11 +102,11 @@ local function Found()
     return options.foundCVars
 end
 
--- Each CVar ours, where this client has it; what it had before kept first (once: not a value of ours). Whether all
--- those there are ours.
-local function Ours()
+-- Each CVar of a list ours, where this client has it; what it had before kept first (once: not a value of ours).
+-- Whether all those there are ours.
+local function Ours(list)
     local found, done = Found(), true
-    for name, value in pairs(Scale.CVARS) do
+    for name, value in pairs(list) do
         local now = Core.Ask(C_CVar.GetCVarInfo, name)
         if now ~= nil and tostring(now) ~= value then
             if found[name] == nil then found[name] = tostring(now) end
@@ -105,11 +116,11 @@ local function Ours()
     return done
 end
 
--- Each CVar back to what it had before ours (the game's default for one of ours whose earlier value is not known),
--- and nothing kept any more: from now on they are the game's and the profiles' alone.
-local function Restore()
+-- Each CVar of a list back to what it had before ours (the game's default for one of ours whose earlier value is
+-- not known), and nothing kept any more: from now on they are the game's and the profiles' alone.
+local function Restore(list)
     local found = Found()
-    for name, value in pairs(Scale.CVARS) do
+    for name, value in pairs(list) do
         local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
         if now ~= nil then
             local back = found[name] or (tostring(now) == value and default) or nil
@@ -250,13 +261,22 @@ function Scale.Update()
     end
     if InCombatLockdown() then
         waiting = true
-    elseif on then
-        applied = true
-        active = Ours()
-    elseif applied then
-        -- Switched off (or standing down): what was there before ours, once; then the CVars are left alone.
-        applied = false
-        Restore()
+    else
+        if on then
+            applied = true
+            active = Ours(Scale.CVARS)
+        elseif applied then
+            -- Switched off (or standing down): what was there before ours, once; then the CVars are left alone.
+            applied = false
+            Restore(Scale.CVARS)
+        end
+        if not ns.off then
+            kept = true
+            Ours(Scale.ALWAYS)
+        elseif kept then
+            kept = false
+            Restore(Scale.ALWAYS)
+        end
     end
     if active then
         for _, dress in pairs(ns.Plate.shown) do
@@ -270,9 +290,14 @@ end
 -- The game about to write its settings (a logout, a /reload): what was there before ours goes back, so with the
 -- module gone the game and the profiles have their own; loaded again, it sets ours again at the login.
 function Scale.Logout()
-    if not applied then return end
-    applied, active = false, false
-    Restore()
+    if applied then
+        applied, active = false, false
+        Restore(Scale.CVARS)
+    end
+    if kept then
+        kept = false
+        Restore(Scale.ALWAYS)
+    end
 end
 
 -- The game's own again (standing down): out of a fight now, else at its end.
@@ -286,10 +311,12 @@ end
 Scale.AGAIN = 3
 local again = Core.Later(function() Scale.Update() end, Scale.AGAIN)
 local watched = {} -- [lower-case CVar name] = true
-for name in pairs(Scale.CVARS) do watched[name:lower()] = true end
+for _, list in ipairs({ Scale.CVARS, Scale.ALWAYS }) do
+    for name in pairs(list) do watched[name:lower()] = true end
+end
 
 local function Changed(name)
-    if applied and type(name) == "string" and watched[name:lower()] then again() end
+    if (applied or kept) and type(name) == "string" and watched[name:lower()] then again() end
 end
 
 function Scale.Start()

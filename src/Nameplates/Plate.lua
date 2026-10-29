@@ -14,15 +14,18 @@ local _, ns = ...
 --  marker, classification mark, level boxes, selection and threat glow) go out
 --  of sight while ours shows: their alpha 0, set by calls only, nothing of
 --  theirs written, and 1 again when the plate goes, when its health bar goes (a
---  friendly player shown by name only, a plate of widgets only: the game's own
---  plate then stays as it is) and when the module stands down. The rest of the
+--  plate of widgets only: the game's own plate then stays as it is; friendly
+--  players are not shown by name only while the module is on, Scale.ALWAYS)
+--  and when the module stands down. The rest of the
 --  game's plate stays: its cast bar, widgets and soft target icon, and what
 --  clicks it.
 --
---  The plate of a player you cannot attack is out of sight altogether (the
---  game's unit frame on it at alpha 0) unless the player is in your group,
---  your guild or on your friends list, or is your target. Players you can
---  attack keep theirs. So is a critter's (wild and companion pets too), and
+--  A player's plate is dressed like any other (bar, power line, the line,
+--  auras, cast bar) and shows while a fight with the player can start (the
+--  player may attack you, or you the player) or while the player is in your
+--  group, your guild or on your friends list, or is your target; any other
+--  player's is out of sight altogether (the game's unit frame on it at alpha
+--  0). So is a critter's (wild and companion pets too), and
 --  with it its name, unless it is your target or wanted for a quest of yours,
 --  or the setting shows them.
 --
@@ -92,9 +95,10 @@ local function Critter(unit)
     return Plate.CRITTERS[kind or 0] == true
 end
 
--- Whether a unit's plate shows: every plate but that of a player you cannot attack who is a stranger to you (not
--- in your group or guild, not on your friends list, not your target), and that of a critter (not your target, not
--- one your quest wants: the dress's quest piece) unless the setting shows them. Where the game does not say, it shows.
+-- Whether a unit's plate shows: every plate but that of a player who is a stranger to you (not in your group or
+-- guild, not on your friends list, not your target) and with whom no fight can start (who may not attack you, nor
+-- you them), and that of a critter (not your target, not one your quest wants: the dress's quest piece) unless the
+-- setting shows them. Where the game does not say, it shows.
 function Plate.Wanted(unit, dress)
     local options = ns.options or {}
     if Plain(UnitIsPlayer(unit)) ~= true then
@@ -102,7 +106,9 @@ function Plate.Wanted(unit, dress)
         return Plain(UnitIsUnit(unit, "target")) ~= false
     end
     if options.players == false then return true end
-    if Core.Ask(UnitCanAttack, "player", unit) ~= false then return true end
+    if Core.Ask(UnitCanAttack, "player", unit) ~= false or Core.Ask(UnitCanAttack, unit, "player") == true then
+        return true
+    end
     if Plain(UnitIsUnit(unit, "target")) ~= false then return true end
     if Core.Ask(UnitInParty, unit) or Core.Ask(UnitInRaid, unit) or Core.Ask(UnitIsInMyGuild, unit) then return true end
     local guid = Core.Ask(UnitGUID, unit)

@@ -107,7 +107,7 @@ UnitCreatureType = function(unit) local kind = Unit(unit).creature if kind then 
 UnitIsFriend = function(_, unit) return Unit(unit).friend or false end
 UnitCanAttack = function(a, b)
     if a == "player" then return not Unit(b).friend end
-    return not Unit(a).friend and Unit(a).player == true -- a player who may attack you
+    return (not Unit(a).friend or Unit(a).hunts == true) and Unit(a).player == true -- a player who may attack you
 end
 UnitReaction = function(unit) return Unit(unit).reaction or 2 end
 UnitIsBossMob = function(unit) return Unit(unit).boss or false end
@@ -267,7 +267,7 @@ for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", n
                              nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000",
                              nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6",
                              floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1",
-                             enableFloatingCombatText = "1" }) do
+                             enableFloatingCombatText = "1", nameplateShowOnlyNameForFriendlyPlayerUnits = "1" }) do
     W.cvarInfo[name] = { default = default }
 end
 W.LoadCore(root)
@@ -310,16 +310,20 @@ check(type(dress.value._text) == "table" and dress.value._text.form == "%s | %d%
 -- The line: level, name, health, one after the other; the bar as wide as it and its insets.
 local function X(region) return region._points[1][4] end
 local I, G = Text.INSET, Text.GAP
--- A text's room: six a letter, the slack, and its spare.
-local function L(letters) return Text.Spare(nil, letters * 6 + Text.SLACK) end
-check(L(10) == 61 + 4 and Text.Spare(65, 61) == 65 and Text.Spare(65, 66) == 70 and Text.Spare(70, 61) == 65,
-    "a text's room: a little to spare; kept while the text fits with at most twice that left over")
-check(X(dress.level) == I and X(dress.name) == I + L(2) + G and X(dress.value) == I + L(2) + G + L(10) + G,
-    "the level first, then the name, then the health")
+-- A text's room: six a letter; the name's with the slack and its spare.
+local function L(letters) return letters * 6 end
+local function N(letters) return Text.Spare(nil, letters * 6 + Text.SLACK, Text.SPARE) end
+local NEAR = Text.NEAR
+check(N(10) == 61 + 4 and Text.Spare(65, 61, Text.SPARE) == 65 and Text.Spare(65, 66, Text.SPARE) == 70
+    and Text.Spare(70, 61, Text.SPARE) == 65 and Text.Spare(13, 12, 0) == 13 and Text.Spare(14, 12, 0) == 12,
+    "the name's room: a little to spare, kept while it fits with at most twice that left over; the others' their width")
+check(X(dress.level) == I and X(dress.name) == I + L(2) + NEAR and X(dress.value) == I + L(2) + NEAR + N(10) + G + L(11)
+    and dress.value._points[1][1] == "RIGHT", "the level first, the name right after it, then the health at the bar's right end")
 check(Text.Guess("nameplate1") == "8.8k" and dress.room.value == L(11),
     "the most hidden: room for a guess from its level and rank (22, a rare: about 4k)")
-check(dress.want == I + L(2) + G + L(10) + G + L(11) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
-check(dress.value._width == 0 and dress.name._width == L(10), "the health as wide as it is (never cut short), the others their room")
+check(dress.want == I + L(2) + NEAR + N(10) + G + L(11) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
+check(dress.value._width == 0 and dress.level._width == 0 and dress.name._width == N(10),
+    "the texts as wide as they are (never cut short), but the name: its room")
 check(dress.now == 1 and dress.showing == 0 and dress._alpha == 0,
     "a plate that has just appeared: at its size at once (its distance not known: full), unseen at first")
 units.guess = { level = -1 }
@@ -401,7 +405,7 @@ W.Fire("UNIT_LEVEL", "nameplate1")
 units.nameplate1.health, units.nameplate1.most = 1325000, 1325000
 W.Fire("UNIT_HEALTH", "nameplate1")
 check(dress.health._value == 1325000 and dress.value._text == "1.32m | 100%", "health followed, short, and its percent")
-check(dress.room.value == L(12) and dress._width == I + L(2) + G + L(10) + G + L(12) + I, "its room the most it shows: the bar narrower")
+check(dress.room.value == L(12) and dress._width == I + L(2) + NEAR + N(10) + G + L(12) + I, "its room the most it shows")
 units.nameplate1.health = 4000
 W.Fire("UNIT_HEALTH", "nameplate1")
 check(dress.value._text == "4k | 1%" and dress.room.value == L(12), "health going down: the bar keeps its width")
@@ -413,10 +417,10 @@ check(Text.Short(850) == "850" and Text.Short(1250) == "1.2k" and Text.Short(129
 check(Text.Percent(1, 1000) == 1 and Text.Percent(999, 1000) == 99 and Text.Percent(0, 10) == 0, "whole percent, 1 while any is left")
 units.nameplate1.name = Secret()
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
-check(dress.name._text == units.nameplate1.name and dress.room.name == L(10), "a hidden name goes to the text as it is, in the room of the last")
+check(dress.name._text == units.nameplate1.name and dress.room.name == N(10), "a hidden name goes to the text as it is, in the room of the last")
 units.nameplate1.name = "Archmage Ataeric the Unforgiving of the Blue Dragonflight"
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
-check(dress.room.name == L(#units.nameplate1.name) and dress.name._width == dress.room.name and dress._width == dress.want,
+check(dress.room.name == N(#units.nameplate1.name) and dress.name._width == dress.room.name and dress._width == dress.want,
     "a long name: all of its room, the bar longer for it")
 units.nameplate1.name = "Young Wolf"
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
@@ -463,7 +467,7 @@ check(type(dress.glow._alpha) == "table" and dress.glow._alpha.from == hidden an
     "a hidden answer: the glow takes it as it is, never compared, with the game's own alphas")
 units.nameplate1.threat = nil
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + L(2) + G,
+check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + L(2) + NEAR,
     "off its list: none, and no room for it")
 
 -- A quest: the sword outside the bar, left of it, the count first in the line; done, gone.
@@ -504,7 +508,7 @@ check(dress._width > 0 and dress._width <= ns.Plate.WIDEST, "widths measured end
 methods.GetUnboundedStringWidth, methods.GetStringWidth = measure, measure
 W.Fire("PLAYER_ENTERING_WORLD")
 W.Wait(1)
-check(dress._width == dress.want and dress.room.name == L(10), "the world shown: every plate measured anew, right")
+check(dress._width == dress.want and dress.room.name == N(10), "the world shown: every plate measured anew, right")
 
 -------------------------------------------------------------------------------
 --  The auras: the game's containers, set up once
@@ -591,6 +595,12 @@ friendOf = nil
 W.Fire("FRIENDLIST_UPDATE")
 W.Wait(0)
 check(not friend:IsShown(), "not any more")
+units.nameplate2.hunts = true
+W.Fire("UNIT_FLAGS", "nameplate2")
+check(friend:IsShown() and friend.glow._alpha == 1, "a player who may attack you though you may not attack it: shown, glowing")
+units.nameplate2.hunts = nil
+W.Fire("UNIT_FLAGS", "nameplate2")
+check(not friend:IsShown(), "no fight possible either way: out of sight again")
 Core.Set(ns.name, "players", false)
 check(friend:IsShown(), "the setting off: every player's plate")
 Core.Set(ns.name, "players", true)
@@ -766,6 +776,8 @@ local CVar = C_CVar.GetCVar
 check(CVar("nameplateMinScale") == "1" and CVar("nameplateMaxScale") == "1" and CVar("nameplateSelectedScale") == "1"
     and CVar("nameplateNotSelectedAlpha") == "1" and CVar("nameplateMinAlpha") == "1",
     "the game's own scaling and fading off: nothing but the distance sizes a plate")
+check(CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "0" and ns.options.foundCVars.nameplateShowOnlyNameForFriendlyPlayerUnits == "1",
+    "friendly players not by name only while the module is on (their plates whole, dressed), yours kept")
 local function Near(a, b) return math.abs(a - b) < 1e-6 end
 check(Near(Scale.Size(0), 1) and Near(Scale.Size(10), 1) and Near(Scale.Size(25), 0.75) and Near(Scale.Size(40), 0.5)
     and Near(Scale.Size(50), 0.375) and Near(Scale.Size(60), 0.25) and Near(Scale.Size(500), 0.25),
@@ -873,7 +885,7 @@ check(Near(dress.edge, Core.Pixels(dress, 1)) and dress.fitted == dress.now,
 local drawn, wide = methods.GetUnboundedStringWidth, 1
 methods.GetUnboundedStringWidth = function(self) return drawn(self) * (self == dress.name and wide or 1) end
 local room, want = dress.room.name, dress.want
-check(room == L(10) and dress.measured == dress.now, "settled: its texts measured at its size")
+check(room == N(10) and dress.measured == dress.now, "settled: its texts measured at its size")
 wide = 1.05
 yards.nameplate1 = 32
 Settle()
@@ -882,7 +894,7 @@ check(Near(dress._scale, full * Scale.Size(30)) and dress.measured == dress.now 
 wide = 1.15
 yards.nameplate1 = 22
 Settle()
-check(dress.room.name == Text.Spare(nil, math.ceil(60 * 1.15) + Text.SLACK) and dress.want > want
+check(dress.room.name == Text.Spare(nil, math.ceil(60 * 1.15) + Text.SLACK, Text.SPARE) and dress.want > want
     and dress.name._width == dress.room.name and dress._width == dress.want,
     "drawn wider still: the name never cut short, the bar wider for it, with its spare again")
 wide = 1
@@ -945,6 +957,7 @@ check(CVar("nameplateSelectedScale") == "1" and Near(dress._scale, full) and pla
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(CVar("nameplateSelectedScale") == "1.2" and CVar("nameplateNotSelectedAlpha") == "0.5", "after it: the game's defaults")
+check(CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "0", "friendly players' plates whole with the setting off too")
 Core.Set(ns.name, "distance", true)
 check(CVar("nameplateSelectedScale") == "1", "on again")
 -- The game's stored settings or a profile put one back after the login: ours again a little later.
@@ -965,8 +978,8 @@ check(CVar("nameplateMinAlpha") == "0.7", "off: a value of yours left alone")
 Core.Set(ns.name, "distance", true)
 check(CVar("nameplateMinAlpha") == "1" and ns.options.foundCVars.nameplateMinAlpha == "0.7", "on: ours, yours kept")
 ns.OnLogout()
-check(CVar("nameplateMinAlpha") == "0.7" and next(ns.options.foundCVars) == nil,
-    "the game about to write its settings: yours back, so a module gone leaves them alone")
+check(CVar("nameplateMinAlpha") == "0.7" and CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "1"
+    and next(ns.options.foundCVars) == nil, "the game about to write its settings: yours back, so a module gone leaves them alone")
 W.Fire("CVAR_UPDATE", "nameplateMinAlpha", "0.7")
 W.Wait(Scale.AGAIN + 0.1)
 check(CVar("nameplateMinAlpha") == "0.7", "and nothing of ours sets them again before the next login")
