@@ -596,10 +596,14 @@ Core.On("PLAYER_REGEN_ENABLED", function()
 end)
 
 -- An action the game blocked because it came from Sane UI's code ("Interface action failed because of
--- an AddOn"): noted, so the error log says what did it. Another addon's are not ours to note.
+-- an AddOn"): noted, so the error log says what did it. Another addon's are not ours to note. The game
+-- tells it while the blocked call still runs, so the trace names the place that made it: the action
+-- alone is often UNKNOWN(), and the addon named is the one whose code came first (Core, whose guards
+-- every module's code runs through).
 local function Blocked(addon, action)
     if type(addon) ~= "string" or not addon:find("^SaneUI") then return end
-    Core.Report("blocked action", ("%s: the game blocked %s"):format(addon, tostring(action)))
+    local trace = debugstack and debugstack(2, 20, 10) or ""
+    Core.Report("blocked action", ("%s: the game blocked %s\n%s"):format(addon, tostring(action), trace))
 end
 Core.On("ADDON_ACTION_BLOCKED", Blocked)
 Core.On("ADDON_ACTION_FORBIDDEN", Blocked)

@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 179 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Retail: no item range asked about a friend in a fight either; a blocked action's log entry names its place (Saneroki, 2026-10-29)
+Saneroki: errors in the addon. The error log of both Retail accounts kept "SaneUI: the game blocked UNKNOWN()" thousands
+of times after 261ba6b8 was installed (5,184 on the second account in one evening). Retail's taint log of 2026-10-26
+had put every block on Nameplates asking the game an item's range (`C_Item.IsItemInRange`) in a fight; the fix spared
+foes only, so a friend's plate (a player of your group, a friendly NPC) was still asked at every look.
+- **Range (`src/Nameplates/Range.lua`):** no item is asked about any unit, foe or friend, while the game restricts
+  addons (`Core.Restricted`: a fight, the moment before one, an encounter, a keystone, a PvP match, a map); the
+  spells answer alone there, and a distance they cannot tell keeps the last one. Its own `Fighting` (the lockdown or
+  the combat restriction alone, foes alone) is gone.
+- **Core (`Core.lua`, `Blocked`):** the game tells a blocked action while the blocked call still runs, so its log
+  entry now has the trace under its line: `saneui showerrors` names the file and line that made it, not only
+  UNKNOWN() and the first addon on the stack (Core, whose guards every module's code runs through).
+- **Tests:** `dev/tests/nameplates.lua` (a friend in a fight, a foe and a friend in an encounter: no item asked; after
+  both, the items again), `dev/tests/core.lua` (the trace in a blocked action's entry, its kind the first line alone).
+- A `/reload` takes it in.
+
 ### Combat: power bars half the health bar's height; the most important auras around the unit frames; aura lists (Saneroki, 2026-10-29)
 Saneroki: the class resource bar the same 50% height of the health bar; with several, as a druid's, always the mana
 bar and also the energy or rage bar in that form; "<current> | <percentage>%" on the right in the bars. CC, debuffs and

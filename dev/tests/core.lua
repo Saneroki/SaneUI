@@ -1387,6 +1387,14 @@ W.Fire("ADDON_ACTION_FORBIDDEN", "SomeOther", "CastSpell()")
 check(Core.errors["blocked action"] and Core.errors["blocked action"].text:find("SaneUI_Social") and printedMatch("problem in blocked action"),
     "the game's blocked actions of ours are in the error log")
 check(not tostring(Core.errors["blocked action"].text):find("SomeOther"), "another addon's are left alone")
+-- The game tells it while the blocked call still runs: the log entry has the place that made it.
+debugstack = function() return "Interface/AddOns/SaneUI_Nameplates/Range.lua:131: in function 'Reaches'" end
+W.Fire("ADDON_ACTION_BLOCKED", "SaneUI", "UNKNOWN()")
+local blocked = Core.log[#Core.log]
+check(blocked and blocked.text:find("SaneUI: the game blocked UNKNOWN()", 1, true) and blocked.text:find("Range.lua:131", 1, true)
+    and Core.errors["blocked action"].text == "SaneUI: the game blocked UNKNOWN()",
+    "a blocked action's log entry names the place that made it; its kind keeps the first line")
+debugstack = nil
 
 -- Many kinds of problem: the list of kinds stays short
 for index = 1, 130 do Core.NoteError("many " .. index, "again") end

@@ -246,9 +246,10 @@ fails, every plate is the game's own again.
   that pace, never past the two rungs it stands between: there it waits, its pace spent, for the unit to pass. Each
   look asks first the two rungs the unit stood between (`Still`, by `dress.rung`: two questions while it stays), else
   up the ladder from the shortest.
-  Where nothing answers (an item the game will not check), the last distance stays. In a fight no item is asked
-  about a foe: the game forbids that to addons then (each question a blocked action), so its distance there comes
-  from your spells alone (`Fighting`: the game's lockdown, or its addon restriction for combat). Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
+  Where nothing answers (an item the game will not check), the last distance stays. While the game restricts
+  addons (`Core.Restricted`: a fight, an encounter, a keystone, a PvP match, a map) no item is asked about any unit,
+  foe or friend: the game forbids that to addons then (each question a blocked action), so distances there come from
+  your spells alone. Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
   and none yes, or none can say and the ladder puts it beyond the farthest of them (`Range.longest`) (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
   for nothing); cleared when the plate goes; its border red at half its alpha (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
   `Range.EVERY` (0.1) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
@@ -462,6 +463,8 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   wanted for a quest of yours; the setting *Plates on critters* shows them.
 - **2026-10-29:** no item's range asked about a foe in a fight (Saneroki): the game blocked each such question,
   thousands of "Interface action failed because of an AddOn" in Retail's taint log; the spells answer alone there.
+- **2026-10-29:** no item's range asked about a friend either while the game restricts addons (a fight, an
+  encounter, a keystone, a PvP match): thousands more blocked actions in Retail while friends were still asked.
 - **2026-10-29:** sizes change quickly and eased, no longer slowly and evenly; the raid marker in the line right
   after the level, as on the unit frames (Saneroki).
 - **2026-10-29:** sizes follow a moving unit every frame (Saneroki): between two range checks the distance moves on

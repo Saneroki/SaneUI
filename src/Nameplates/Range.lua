@@ -33,10 +33,12 @@ local _, ns = ...
 --  last look (two questions while it stays there), else up the ladder from
 --  the shortest. Where the game will not answer for an item (an item it has not
 --  loaded), the spells answer alone, and a distance that cannot be told keeps
---  the last one. An item is never asked about a foe in a fight: the game
---  forbids that to addons then, and each such question was a blocked action
---  (Saneroki, 2026-10-29: thousands in Retail's taint log); the spells answer
---  alone there.
+--  the last one. No item is asked about any unit, foe or friend, while the
+--  game restricts addons (a fight, an encounter, a keystone, a PvP match:
+--  Core.Restricted): the game forbids that to addons then, and each such
+--  question was a blocked action (Saneroki, 2026-10-29: thousands in Retail's
+--  taint log, and thousands more while friends were still asked); the spells
+--  answer alone there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -119,21 +121,11 @@ function Range.Rebuild()
     end
 end
 
--- Whether we are in a fight as the game's restrictions count it: its lockdown, or its addon restriction for combat,
--- which may begin a moment before.
-local function Fighting()
-    if InCombatLockdown() then return true end
-    local restricted, enum = rawget(_G, "C_RestrictedActions"), rawget(_G, "Enum")
-    local kinds = enum and enum.AddOnRestrictionType
-    return restricted and kinds and kinds.Combat
-        and Core.Ask(restricted.IsAddOnRestrictionActive, kinds.Combat) == true or false
-end
-
--- Whether a rung reaches the unit: true, false, or nil where the game will not tell (an item about a foe in a fight
--- is not asked: blocked).
+-- Whether a rung reaches the unit: true, false, or nil where the game will not tell (no item is asked about any unit
+-- while the game restricts addons: blocked).
 local function Reaches(rung, unit, foe, fighting)
     if rung.spell then return Core.Ask(C_Spell.IsSpellInRange, rung.spell, unit) end
-    if foe and fighting then return nil end
+    if fighting then return nil end
     local items = rawget(_G, "C_Item")
     local ask = items and items.IsItemInRange or rawget(_G, "IsItemInRange")
     return Core.Ask(ask, rung.item, unit)
@@ -157,7 +149,7 @@ end
 -- the next look, which asks those two rungs first; nil where none could tell).
 function Range.Check(unit, at)
     local foe = Core.Ask(UnitCanAttack, "player", unit) == true
-    local fighting = foe and Fighting()
+    local fighting = Core.Restricted() -- a fight or another of the game's restrictions: no item asked
     local ladder = foe and ladders.foe or ladders.friend
     local below, above, told, index = nil, nil, false, nil
     if at ~= nil and Still(ladder, at, unit, foe, fighting) then
