@@ -217,7 +217,9 @@ fails, every plate is the game's own again.
   distance from above, the last that did not from below (`Range.Check`; none reaches: up to `Range.FAR`, 60). The
   distance kept (`Range.Settle`) is in the middle the first time, stays where it was while within those, and is at
   the rung the unit just passed (the one distance the ladder knows for sure), so a plate glides from rung to rung.
-  Where nothing answers (an item the game will not check, on a foe in a fight perhaps), the last distance stays. Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
+  Where nothing answers (an item the game will not check), the last distance stays. In a fight no item is asked
+  about a foe: the game forbids that to addons then (each question a blocked action), so its distance there comes
+  from your spells alone (`Fighting`: the game's lockdown, or its addon restriction for combat). Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
   and none yes, or none can say and the ladder puts it beyond the farthest of them (`Range.longest`) (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
   for nothing); cleared when the plate goes; its border red (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
   `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
@@ -424,3 +426,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   seven.
 - **2026-10-25:** critters, wild pets and companion pets without a plate or a name (Saneroki), unless your target or
   wanted for a quest of yours; the setting *Plates on critters* shows them.
+- **2026-10-29:** no item's range asked about a foe in a fight (Saneroki): the game blocked each such question,
+  thousands of "Interface action failed because of an AddOn" in Retail's taint log; the spells answer alone there.

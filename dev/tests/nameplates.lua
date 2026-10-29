@@ -784,6 +784,21 @@ units.nameplate2.friend = true
 yards.nameplate2 = 47
 least, most, inReach = Between("nameplate2")
 check(least == 45 and most == 50 and inReach == nil, "a friend: on the friends' ladder (45, 50), no reach of attacks")
+-- In a fight no item is asked about a foe (the game blocks it): the spells alone; a friend's items still answer.
+local asked = {}
+local itemAsk = C_Item.IsItemInRange
+C_Item.IsItemInRange = function(item, unit) asked[unit] = (asked[unit] or 0) + 1 return itemAsk(item, unit) end
+W.combat = true
+yards.nameplate1 = 22
+least, most, inReach = Between("nameplate1")
+check(not asked.nameplate1 and inReach == true, "a foe in a fight: no item asked, your shot still says it reaches")
+Between("nameplate2")
+check((asked.nameplate2 or 0) > 0, "a friend in a fight: its items still asked")
+W.combat = false
+asked = {}
+Between("nameplate1")
+check((asked.nameplate1 or 0) > 0, "out of the fight: the items again")
+C_Item.IsItemInRange = itemAsk
 -- The distance kept: in the middle at first, where it was while within the rungs, at the rung just passed.
 check(Range.Settle(nil, 20, 25) == 22.5 and Range.Settle(22.5, 20, 25) == 22.5 and Range.Settle(22.5, 25, 30) == 25
     and Range.Settle(25, 20, 25) == 25 and Range.Settle(25, 15, 20) == 20 and Range.Settle(30, nil, nil) == 30,

@@ -243,7 +243,7 @@ end
 check(ns.title == "Speed Leveling" and SaneUI.SpeedLeveling == ns, "the module is Speed Leveling")
 check(header and find._template == "SecureActionButtonTemplate", "the header and Find are made")
 check(_G["BINDING_NAME_" .. FIND] == ns.TEXT.binding, "the key's words in the game's key bindings")
-check(Printed("give it a key"), "with no key, the module says how to give it one")
+check(Printed("has no key on this account"), "with no key, the module says how to give it one")
 check(_G[Key.LINK .. 2] and _G[Key.LINK .. (Key.LINKS + 1)], "the chain's buttons are made")
 
 local conditions = drivers[header].mode

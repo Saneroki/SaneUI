@@ -26,9 +26,12 @@ local _, ns = ...
 --
 --  Looked at every Range.EVERY seconds for every plate shown (Scale.lua's
 --  driver calls Range.Look); a few questions per plate, the shortest ranges
---  first. Where the game will not answer for an item (a foe in a fight, an
---  item it has not loaded), the spells answer alone, and a distance that
---  cannot be told keeps the last one.
+--  first. Where the game will not answer for an item (an item it has not
+--  loaded), the spells answer alone, and a distance that cannot be told keeps
+--  the last one. An item is never asked about a foe in a fight: the game
+--  forbids that to addons then, and each such question was a blocked action
+--  (Saneroki, 2026-10-29: thousands in Retail's taint log); the spells answer
+--  alone there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -108,9 +111,21 @@ function Range.Rebuild()
     end
 end
 
--- Whether a rung reaches the unit: true, false, or nil where the game will not tell.
-local function Reaches(rung, unit)
+-- Whether we are in a fight as the game's restrictions count it: its lockdown, or its addon restriction for combat,
+-- which may begin a moment before.
+local function Fighting()
+    if InCombatLockdown() then return true end
+    local restricted, enum = rawget(_G, "C_RestrictedActions"), rawget(_G, "Enum")
+    local kinds = enum and enum.AddOnRestrictionType
+    return restricted and kinds and kinds.Combat
+        and Core.Ask(restricted.IsAddOnRestrictionActive, kinds.Combat) == true or false
+end
+
+-- Whether a rung reaches the unit: true, false, or nil where the game will not tell (an item about a foe in a fight
+-- is not asked: blocked).
+local function Reaches(rung, unit, foe, fighting)
     if rung.spell then return Core.Ask(C_Spell.IsSpellInRange, rung.spell, unit) end
+    if foe and fighting then return nil end
     local items = rawget(_G, "C_Item")
     local ask = items and items.IsItemInRange or rawget(_G, "IsItemInRange")
     return Core.Ask(ask, rung.item, unit)
@@ -121,9 +136,10 @@ end
 -- spells could tell).
 function Range.Check(unit)
     local foe = Core.Ask(UnitCanAttack, "player", unit) == true
+    local fighting = foe and Fighting()
     local below, above, told = nil, nil, false
     for _, rung in ipairs(foe and ladders.foe or ladders.friend) do
-        local reach = Reaches(rung, unit)
+        local reach = Reaches(rung, unit, foe, fighting)
         if reach == true then
             above = rung[1]
             break

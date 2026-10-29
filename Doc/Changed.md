@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 88 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### The blocked actions in a fight (Nameplates); Speed Leveling's key says when it has no key (Saneroki, 2026-10-29)
+Saneroki: E did nothing again, and the error log held thousands of "the game blocked UNKNOWN()".
+- **The blocked actions (`Nameplates/Range.lua`):** Retail's taint log (`Logs/taint.log`) named them all, 768 of 768:
+  the range ladder asked `C_Item.IsItemInRange` about foes in a fight, which the game forbids to addons then; one
+  block per question, every 0.2 s per plate. Now no item is asked about a foe in a fight (`Fighting`: the lockdown or
+  the game's addon restriction for combat); your spells answer alone there. Not the key.
+- **E did nothing on the second account:** the game keeps key bindings per account; there E was still bound to the
+  button of the questing addon used before (switched off), so a press did nothing, and Sane UI's key had none. The
+  hint that the key has no key was said once per account ever; now at every login while it has none, in words that
+  name the per-account bindings (`Key.lua`, the setting `told` gone). `/sane key` says "none" for its keys.
+- **Tests:** `dev/tests/nameplates.lua` 250 checks (a foe in a fight: no item asked, the spells still answer; a
+  friend's items still; after the fight again), `dev/tests/speedleveling.lua` 88.
+- A `/reload` takes it in.
+
 ### Lore: a module of its own, with talks as a scene (Saneroki, 2026-10-28)
 Saneroki asked for the NPC dialogues the way he likes them, more transparent, as a Lore module: the interface hidden
 while talking with its tooltips in sight to compare rewards, and each reward saying its gear kind, whether it can be

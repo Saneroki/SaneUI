@@ -41,7 +41,7 @@ Core.NewModule(ADDON, "SpeedLeveling", ns)
 
 ns.TEXT = {
     binding = "Loot, talk, pick up, attack, find and mark, use",
-    hint = "Speed Leveling: give it a key in Esc > Options > Keybindings, under Sane UI.",
+    hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under Sane UI: Loot, talk, pick up, attack, find and mark, use.",
     -- /sane key: what the key sees now (Key.Check).
     keyCommand = "what Speed Leveling's key sees now: what it would do, what is in front of you, your target",
     keyNone = "Speed Leveling's key is not made yet.",
@@ -51,6 +51,7 @@ ns.TEXT = {
     keyWalk = "Click-to-Move %s (lent by the key: %s); the guide %s.",
     keyUnit = "%s, a %s, %s",
     keyNobody = "nothing",
+    keyNoKey = "none (Esc > Options > Keybindings, under Sane UI)",
     objects = "Quest objects",
     objectsTip = "A thing of the world your quests or your guide want, in front of you, is picked up, opened or used, as a right click on it does: a quest's chest or plant, what an item to loot comes from, the board a quest is handed in to. The game's interact key finds it and is switched on for it.",
     loot = "Loot first",
@@ -202,7 +203,6 @@ local OPTIONS = {
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
       button = function() ns.Guarded(ns.Guides.Open) end },
     { key = "foundCVars", default = {} }, -- the game's settings as they were before the key lent them (Key.lua)
-    { key = "told", default = false },    -- told once how to give the key a key (Key.lua)
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches are read as a quest giver talks.

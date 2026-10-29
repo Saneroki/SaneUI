@@ -39,7 +39,9 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 
 ## How to use
 - **Give it a key:** Esc > Options > Keybindings, under *Sane UI*: *Loot, talk, pick up, attack, find and mark, use*.
-  Any key will do (E, for one). Until it has one, the module says so once in chat.
+  Any key will do (E, for one). Until it has one, the module says so in chat at every login. The game keeps key
+  bindings per account: on a new account give it one again (a key there may still be bound to a button that is gone,
+  and then does nothing). `/sane key` shows the keys it has.
 - **Choose a guide:** right click the guide's zone over the world: the guides for this character, by group, each
   group a menu of its own; a click follows one. The guides that come for each game are there from the start (the
   guide pack of the game, *The guides*). A character without a guide takes the first one whose head names its race

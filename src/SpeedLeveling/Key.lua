@@ -354,8 +354,7 @@ function Key.Refresh()
 end
 Key.refreshLater = Later(Key.Refresh)
 
--- The key's keys from the game's key bindings onto the header, when they changed. None at the first start: told how
--- to give it one, once.
+-- The key's keys from the game's key bindings onto the header, when they changed.
 function Key.Keys()
     if not header or ns.off then return end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: keys", Key.keysLater) end
@@ -417,10 +416,9 @@ function Key.Start()
         soft = Core.Plain(now)
         Key.Refresh()
     end)
-    if #keys == 0 and not ns.options.told then
-        ns.options.told = true
-        Core.Print(ns.TEXT.hint)
-    end
+    -- No key: said at every login until it has one. The game keeps key bindings per account, so a new account starts
+    -- without it, and a key may still be bound to a button that is gone (Saneroki, 2026-10-29: E did nothing).
+    if #keys == 0 then Core.Print(ns.TEXT.hint) end
 end
 Key.startLater = Later(Key.Start)
 
@@ -447,7 +445,7 @@ function Key.Check()
         local guide = ns.Run.Guide()
         lines = {
             ns.TEXT.keyState:format(tostring(header:GetAttribute("state-mode")), tostring(header:GetAttribute("action")),
-                keys and table.concat(keys, ", ") or "?"),
+                keys and keys[1] and table.concat(keys, ", ") or ns.TEXT.keyNoKey),
             ns.TEXT.keyFront:format(Seen("softinteract"), tostring(header:GetAttribute("npc")),
                 tostring(header:GetAttribute("object"))),
             ns.TEXT.keyTarget:format(Seen("target"), tostring(header:GetAttribute("wanted")), tostring(using)),
