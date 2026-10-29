@@ -8,10 +8,13 @@ local _, ns = ...
 --  fill (its raid frames') in the thing's quality colour (a quest's things in
 --  the game's gold), its corners round a quarter of its height (Core's caps),
 --  behind it a border of one screen pixel, nearly black, round with it (Core's
---  corner masks), grey under the mouse as a nameplate's on your target. On the
---  bar the thing's picture with no border of its own, how many on it, the
---  game's green arrow where it would make the character better (Upgrade.lua);
---  its name in white in the game's outlined font of its nameplates; under it,
+--  corner masks), grey under the mouse as a nameplate's on your target. At the
+--  bar's left end, inside its border and as tall as its fill, the thing's
+--  picture with no border of its own, round at its corners as the bar is (the
+--  same caps, the same radius: its left corners follow the bar's), how many on
+--  it; then the game's green arrow where it would make the character better
+--  (Upgrade.lua) in front of its name in white in the game's outlined font of
+--  its nameplates; under it,
 --  smaller, its kind and how it binds (Slots.Note) and at the right what a
 --  vendor pays for all of it; at the top right an A, a small dark bar of the
 --  same make: the thing taken at once from now on (on the player's list: its
@@ -89,6 +92,19 @@ end
 -- The border is a plate of two halves behind the fill, each round at its own two corners by Core's corner masks (a
 -- texture takes three masks at most), so its round is the same at any width; the fill a screen pixel inside it, its
 -- ends round by Core's two caps.
+-- Two caps over a texture laid at a region's two ends (anchor), rounding them as a bar of that height is rounded;
+-- made on the texture's own frame, as a mask must be.
+local function Caps(texture, anchor, height)
+    for _, side in ipairs({ "LEFT", "RIGHT" }) do
+        local cap = texture:GetParent():CreateMaskTexture()
+        cap:SetTexture(side == "LEFT" and Core.Shape.CAP_LEFT or Core.Shape.CAP_RIGHT, "CLAMPTOWHITE", "CLAMPTOWHITE")
+        cap:SetPoint("TOP" .. side, anchor, "TOP" .. side)
+        cap:SetPoint("BOTTOM" .. side, anchor, "BOTTOM" .. side)
+        cap:SetWidth(math.max(height * CAP, 0.01))
+        texture:AddMaskTexture(cap)
+    end
+end
+
 function Row.Bar(frame, height)
     local bar = { lit = false }
     local pixel = Core.Pixels(frame, 1)
@@ -113,15 +129,9 @@ function Row.Bar(frame, height)
     bar.fill:SetTexture(FILL)
     bar.fill:SetPoint("TOPLEFT", frame, "TOPLEFT", pixel, -pixel)
     bar.fill:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, pixel)
-    local inner = math.max((height - 2 * pixel) * CAP, 0.01)
-    for _, side in ipairs({ "LEFT", "RIGHT" }) do
-        local cap = frame:CreateMaskTexture()
-        cap:SetTexture(side == "LEFT" and Core.Shape.CAP_LEFT or Core.Shape.CAP_RIGHT, "CLAMPTOWHITE", "CLAMPTOWHITE")
-        cap:SetPoint("TOP" .. side, bar.fill, "TOP" .. side)
-        cap:SetPoint("BOTTOM" .. side, bar.fill, "BOTTOM" .. side)
-        cap:SetWidth(inner)
-        bar.fill:AddMaskTexture(cap)
-    end
+    bar.inner = height - 2 * pixel
+    bar.pixel = pixel
+    Caps(bar.fill, bar.fill, bar.inner)
     function bar.Paint(_, r, g, b)
         bar.colour = { r, g, b }
         bar.fill:SetVertexColor(r, g, b, 1)
@@ -142,18 +152,20 @@ function Row.New(parent)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.bar = Row.Bar(row, S.row)
 
-    -- the picture alone, no border of its own; set in from the bar's round end
+    -- the picture at the bar's left end, inside its border, as tall as its fill; no border of its own, round at its
+    -- corners by the fill's own caps, so its left corners follow the bar's round
+    local inner, pixel = row.bar.inner, row.bar.pixel
     row.holder = CreateFrame("Frame", nil, row)
-    row.holder:SetSize(S.icon, S.icon)
-    row.holder:SetPoint("LEFT", row, "LEFT", S.pad, 0)
+    row.holder:SetSize(inner, inner)
+    row.holder:SetPoint("TOPLEFT", row, "TOPLEFT", pixel, -pixel)
     row.icon = row.holder:CreateTexture(nil, "ARTWORK")
     row.icon:SetAllPoints(row.holder)
     row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    -- the game's own sign of an upgrade (its bags have it): a green arrow on the picture's top left
-    row.upgrade = row.holder:CreateTexture(nil, "OVERLAY", nil, 2)
+    Caps(row.icon, row.holder, inner)
+    -- the game's own sign of an upgrade (its bags have it): a green arrow in front of the name
+    row.upgrade = row:CreateTexture(nil, "OVERLAY")
     row.upgrade:SetAtlas("bags-greenarrow")
     row.upgrade:SetSize(S.arrow, S.arrow)
-    row.upgrade:SetPoint("TOPLEFT", row.holder, "TOPLEFT", 1, -1)
     row.upgrade:Hide()
     row.count = row.holder:CreateFontString(nil, "OVERLAY")
     Row.Font(row.count, 11)
@@ -190,11 +202,13 @@ end
 -- reaches to the line's right end where it sells for nothing: no empty words to lean on). The words keep clear of
 -- the bar's round right end.
 local function Lay(row, second, worth)
-    local left, right = S.pad + S.icon + S.gap, S.row * CAP
-    for _, part in ipairs({ row.name, row.note, row.worth, row.auto }) do part:ClearAllPoints() end
+    local left, right = row.bar.pixel + row.bar.inner + S.gap, S.row * CAP
+    local named = left + (row.upgrade:IsShown() and S.arrow + S.gap / 2 or 0) -- the name after the green arrow
+    for _, part in ipairs({ row.name, row.note, row.worth, row.auto, row.upgrade }) do part:ClearAllPoints() end
+    row.upgrade:SetPoint("RIGHT", row.name, "LEFT", -S.gap / 2, 0)
     if second then
         row.auto:SetPoint("TOPRIGHT", row, "TOPRIGHT", -right, -S.pad)
-        row.name:SetPoint("TOPLEFT", row, "TOPLEFT", left, -S.pad)
+        row.name:SetPoint("TOPLEFT", row, "TOPLEFT", named, -S.pad)
         row.worth:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -right, S.pad)
         row.note:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left, S.pad)
         if worth then
@@ -204,7 +218,7 @@ local function Lay(row, second, worth)
         end
     else
         row.auto:SetPoint("RIGHT", row, "RIGHT", -right, 0)
-        row.name:SetPoint("LEFT", row, "LEFT", left, 0)
+        row.name:SetPoint("LEFT", row, "LEFT", named, 0)
     end
     if row.auto:IsShown() then
         row.name:SetPoint("RIGHT", row.auto, "LEFT", -S.gap / 2, 0)
@@ -254,6 +268,7 @@ end
 function Row.Width(row)
     local function Wide(fs) return tonumber(fs:GetStringWidth()) or 0 end
     local top = Wide(row.name) + (row.auto:IsShown() and S.auto + S.gap / 2 or 0)
+        + (row.upgrade:IsShown() and S.arrow + S.gap / 2 or 0)
     local second = Wide(row.note) + Wide(row.worth) + S.gap
-    return S.pad + S.icon + S.gap + math.max(top, second) + S.row * CAP
+    return row.bar.pixel + row.bar.inner + S.gap + math.max(top, second) + S.row * CAP
 end

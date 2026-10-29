@@ -338,7 +338,15 @@ check(Colour(rows[1].bar)[1] == ITEM_QUALITY_COLORS[1].r and Colour(rows[2].bar)
     "each line a bar in its quality's colour, as a nameplate's")
 check(rows[2].bar.fill._texture == "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" and #rows[2].bar.halves == 2,
     "the nameplates' shaded fill, its border two round halves")
-check(rows[2].holder.plate == nil and rows[2].icon._points[1][1] == "TOPLEFT", "the picture alone, no border of its own")
+check(rows[2].holder.plate == nil and rows[2].holder._width == rows[2].bar.inner and rows[2].holder._points[1][1] == "TOPLEFT",
+    "the picture at the bar's left end, as tall as its fill, no border of its own")
+local caps = 0
+for _, frame in ipairs(W.frames) do
+    if frame._parent == rows[2].holder and frame._kind == "MaskTexture" and frame._points[1] and frame._points[1][2] == rows[2].holder then
+        caps = caps + 1
+    end
+end
+check(caps == 2, "its corners round by the bar's own caps, the same radius")
 check(not rows[2].bar.lit, "its border dark")
 rows[2]._scripts.OnEnter(rows[2])
 check(rows[2].bar.lit, "grey under the mouse")
@@ -432,7 +440,7 @@ loot = { Slot(ROBE), Slot(CLOTH), Slot(GEM), Coins(7) }
 options.takeCoins = false
 Open()
 local top, step = 400 + ns.SIZE.row / 2, ns.SIZE.row + ns.SIZE.rowGap
-check(Window.frame._points[1][4] == 500 - ns.SIZE.pad - ns.SIZE.icon / 2 and Window.frame._points[1][5] == top,
+check(Window.frame._points[1][4] == 500 - ns.SIZE.row / 2 and Window.frame._points[1][5] == top,
     "the first line's picture under the mouse")
 check(Word(ns.TEXT.link):IsShown(), "Link while there are links")
 Rows()[1]._scripts.OnClick(Rows()[1], "LeftButton")
@@ -782,7 +790,8 @@ options.takeAll = true
 Open()
 check(#taken == 1 and taken[1] == 2 and Shown() and #Rows() == 1 and Rows()[1].line.slot == 1,
     "Always show upgrades: Everything takes the rest, the upgrade waits in the window")
-check(Rows()[1].upgrade:IsShown() and Rows()[1].upgrade._atlas == "bags-greenarrow", "the game's green arrow on it")
+check(Rows()[1].upgrade:IsShown() and Rows()[1].upgrade._atlas == "bags-greenarrow"
+      and Rows()[1].upgrade._points[1][2] == Rows()[1].name, "the game's green arrow in front of its name")
 options.kept[5000] = true
 Open()
 check(#taken == 1, "over your word too")

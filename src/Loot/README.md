@@ -20,12 +20,14 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
 - **The loot window** opens where the mouse is, its first line's picture under it (*At the mouse*; off: where you
   placed it in Edit Mode). No window round it: a line a thing, each a bar drawn as the nameplates draw theirs: the
   game's shaded health fill in its quality's colour (a quest's things, and things that begin a quest, in the game's
-  gold), round at its corners by a quarter of its height, a thin border nearly black (grey under the mouse). On it
-  the thing's picture, no border of its own, how many, its name in white in the game's outlined nameplate font;
+  gold), round at its corners by a quarter of its height, a thin border nearly black (grey under the mouse). At its
+  left end, inside the border and as tall as the bar, the thing's picture, no border of its own, round at its
+  corners as the bar is (the same radius: its left corners follow the bar's), how many on it; then its name in white
+  in the game's outlined nameplate font;
   under the name, smaller, its kind and how it binds,
   and at the right what a vendor pays for all of it (*A line under each name*, on); at the top right an **A**. At the
   foot two dark bars of the same make, **Link** and **Close** (Close alone when there is nothing to link).
-  - **The green arrow** (the game's own, as its bags show it) on a picture: the thing would make your character
+  - **The green arrow** (the game's own, as its bags show it) in front of a name: the thing would make your character
     better: gear you can wear now (as the game says, and of your level) where you wear nothing, or with a higher item
     level than what you wear there (of two rings or trinkets, the weaker one); never armour lighter than what you
     wear there, nor an off hand while you hold a two-handed weapon. Its tooltip says which.
@@ -103,8 +105,9 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   border of two halves (`WHITE8X8`, black at 0.9, grey under the mouse) round at their corners by Core's
   `Shape.CORNER` masks, the fill's ends by `Shape.CAP_LEFT`/`CAP_RIGHT`, both a quarter of the height; the fill in
   `ITEM_QUALITY_COLORS`, the game's gold `NORMAL_FONT_COLOR` for a quest's thing (`Slots.Quest`). The words in the
-  face and outline of the game's `SystemFont_NamePlate_Outlined`, white. The picture bare; the game's atlas
-  `bags-greenarrow` on an upgrade; the worth by `Core.Coins` (vendor price times the count); the A a small dark bar
+  face and outline of the game's `SystemFont_NamePlate_Outlined`, white. The picture bare at the bar's left end, a
+  screen pixel inside, as tall as the fill and rounded by the same caps; the game's atlas `bags-greenarrow` in front of
+  an upgrade's name; the worth by `Core.Coins` (vendor price times the count); the A a small dark bar
   of the same make. Link and Close are dark bars too. As wide as its widest line (`SIZE.least` to `SIZE.width`). Placed by
   `Core.Window.New` (key `windowPlace`, no title bar: Edit Mode only); at the mouse the first line's picture under the
   cursor, kept on the screen. A thing the player took (`LOOT_SLOT_CLEARED` of the slot clicked): the rows are laid
@@ -194,6 +197,8 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
 - 2026-10-29 — Like the nameplates (Saneroki: their font, colour, round, border and shading, the colour by the thing;
   no border on the picture): each line a bar as Nameplates' in its quality's colour, the game's nameplate font, the
   picture bare; Link, Close and the A dark bars of the same make. The round plates of Core's `Shape` are gone.
+- 2026-10-29 — The picture at the bar's left end, rounded as the bar is (Saneroki: "the same radius as the row corner
+  so they fit well together"); the green arrow in front of the name instead of on the picture.
 - 2026-10-29 — Smooth round corners (Saneroki: "our current loot window is very ugly"): every line, the picture, the
   A and the buttons on plates of Core's `Shape`, as the chat's bubbles. Upgrades: the game's green arrow on a thing
   that would make the character better, and the switch *Always show upgrades* (on) keeps them out of every rule.

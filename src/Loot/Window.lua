@@ -322,11 +322,11 @@ local function Put(x, y)
     panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
 end
 
--- The first line's picture under the mouse, as near as the screen lets it.
+-- The first line's picture (at its bar's left end, as tall as the bar) under the mouse, as near as the screen lets it.
 local function AtMouse()
     local scale = panel:GetEffectiveScale()
     local x, y = GetCursorPosition()
-    Put(x / scale - S.pad - S.icon / 2, y / scale + S.row / 2)
+    Put(x / scale - S.row / 2, y / scale + S.row / 2)
 end
 
 function Window.Place()

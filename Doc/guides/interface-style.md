@@ -303,16 +303,18 @@ the guide over the world: no window, no paper.
 
 Loot's window (`src/Loot/Window.lua`, `Row.lua`; Saneroki, 2026-10-29: first "minimalistic to the extreme", then
 each thing with an outline and a background, then like the nameplates: "their font, colour, border radius, shading,
-the colours driven by the item"; no border on the picture):
+the colours driven by the item"; no border on the picture, its corners the row's radius; the green arrow in front
+of the name):
 
 - **No window round it:** a transparent background, no paper, frame or title; the lines stand on the world, and at
   the foot two buttons, *Link* and *Close* (the word spelled out), dark bars of the lines' make so they read as
   buttons, their words light, gold under the mouse.
 - **A line a thing, a bar as the nameplates':** the game's shaded health fill (its raid frames') in the thing's
   quality colour, a quest's things in the game's gold; round at its corners by a quarter of its height; a border of
-  one screen pixel, nearly black, grey under the mouse (as a nameplate's on your target). On it the picture with no
-  border of its own, the game's green arrow on it where it is an upgrade, how many on it; the name in white in the
-  game's outlined nameplate font; under the name, smaller, its kind and how it binds, and at the right what a vendor
+  one screen pixel, nearly black, grey under the mouse (as a nameplate's on your target). At its left end, inside
+  the border and as tall as the bar, the picture with no border of its own, round at its corners with the bar's own
+  radius so the two fit together, how many on it; then the game's green arrow where it is an upgrade, in front of
+  the name in white in the game's outlined nameplate font; under the name, smaller, its kind and how it binds, and at the right what a vendor
   pays for all of it in the game's coins; at the top right a small **A**, a dark bar of the same make, its letter
   gold while the thing is on the player's list.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
