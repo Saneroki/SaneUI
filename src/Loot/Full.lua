@@ -252,7 +252,7 @@ function Full.Show()
     if not page then Build() end
     local parent = ns.Window.frame
     page:ClearAllPoints()
-    page:SetPoint("TOPLEFT", parent, "TOPRIGHT", S.gap, -S.top)
+    page:SetPoint("TOPLEFT", parent, "TOPRIGHT", S.gap, 0)
     Set(this, line.icon, line.name, line.quality, line.count, line.worth)
     at = math.min(math.max(at, 1), math.max(#things, 1))
     local thing = things[at]

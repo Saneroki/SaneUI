@@ -3,8 +3,41 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 122 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 163 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: each thing outlined on a dark shade with its worth and an A; Link and Close; your own switches for what is taken at once (Saneroki, 2026-10-29)
+Saneroki: Link and Close as buttons at the window's foot (Close spelled out) on a dark 50% background; each thing with
+an outline and a background, its vendor value and an "A" to add it to the auto-loot list; a list in the settings of
+what is auto looted and what is not; nothing auto looted at first, switches for quest items, currency, trade goods,
+gear, junk or everything; what is to be looted taken as quickly as possible.
+- **The lines (`Row.lua`):** each on a black shade at half (darker under the mouse), outlined in the quality's colour
+  (a quest's in gold); the picture bordered so too; the name; under it the kind and how it binds, at the right what a
+  vendor pays for the stack (`Core.Coins`); an A at the top right, gold while the item is on your list. *A line under
+  each name* is on again.
+- **The foot (`Window.lua`):** *Link* and *Close* as buttons on the same shade with a grey outline, side by side;
+  Close alone when there is nothing to link. The A (and Alt-click) puts the thing on your list and takes it now; again,
+  takes it off.
+- **Taken at once (`Slots.lua`):** every switch off at first: *Everything*, *Coins*, *Currencies*, *Quest items*,
+  *Trade goods*, *Gear*, *Consumables*, *Junk*, by the game's own item classes (`Enum.ItemClass`); `Slots.Rule` says
+  which takes a line. Over them your word on an item (`kept[id]`: true taken, false never). Gone: *Coins and
+  currencies* on, *Your loot list*, *Everything up to* a quality.
+- **As fast as the game lets it:** the rules' slots are taken on `LOOT_READY`, before the window opens, four at once
+  and four a frame after (a hidden frame's `OnUpdate`), each slot asked once a loot. A slot that changes (a roll ended)
+  is taken if the rules want it now.
+- **The game's Auto Loot (`Game.lua`):** `autoLootDefault` lent off while our window is on, what it was kept and set
+  back when the window is switched off or the module stands down (unless changed meanwhile), so your switches decide.
+  Shift while looting still takes everything; then we ask for nothing.
+- **Your items (`Items.lua`, new):** a tab of the Loot options: the items met in loot of late (`seen`, the newest
+  first, 60 at most, IDs only) and those with your word, under *Taken at once* (ticked, why at the right) and *Left
+  for a click*; a tick sets your word, or drops it where the switches say the same; *Forget the rest*. The options are
+  in tabs now: *Loot window*, *Taken at once*, *Rolls and feed*, *Your items*.
+- **Core:** `Core.Options` takes a hook `tabs` (`{ name, build = function(child) return height end }`): tabs a module
+  fills itself after its switches' (`Tabbed.lua`); `Core.Tabbed` counts them.
+- **Tests:** `dev/tests/loot.lua` 163 checks (the kinds, Everything, your word over them, never by a switch what binds
+  when picked up; the outline, the shade, the worth, the A; Link and Close; ready before opened, a few a frame, each
+  slot once; Shift's Auto Loot; the list's ticks and words; the Auto Loot setting lent and given back).
+- A game restart takes it in (a new file in Loot's TOC).
 
 ### Nameplates: names not cut short as plates grow and shrink; room to spare (Saneroki, 2026-10-29)
 Saneroki: as a plate and its text scale together, names are often cut short with "..."; let the text follow the

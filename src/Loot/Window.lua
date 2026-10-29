@@ -2,30 +2,39 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Loot - Window
---  The loot window, as little as it can be (Saneroki, 2026-10-29): no paper,
---  no frame, no title, a line for each thing the loot holds (Row.lua) straight
---  on the world, and over the lines at the right two words: Link and the X
---  that closes it. It opens where the mouse is, its first line under it, or
---  where it was placed in Edit Mode (switch At the mouse); more lines than a
---  good part of the screen scroll.
+--  The loot window (Saneroki, 2026-10-29): no paper, no frame, no title; a
+--  line for each thing the loot holds (Row.lua: a dark shade outlined in its
+--  quality's colour, its picture, name, kind, worth and an A), and at its foot
+--  two buttons on the same dark shade, Link and Close. It opens where the
+--  mouse is, its first line's picture under it, or where it was placed in Edit
+--  Mode (switch At the mouse); more lines than a good part of the screen
+--  scroll.
 --
 --  A thing taken, the lines close up and the next one stands where the taken
 --  one stood, under the mouse: at the mouse the window moves down a line when
 --  the last one was taken.
 --
---  As the loot opens, the player's rules take what they want at once
---  (Slots.Wanted); those lines are not shown. The game's own Auto Loot takes
---  everything itself: the window then shows only if something is left a
---  moment later (bags full, a thing locked to a roll).
+--  As soon as the game has the loot ready (LOOT_READY, before it opens), the
+--  player's rules take what they want (Slots.Wanted), a few slots in one frame
+--  and the rest in the frames after, so a big pile does not flood the server;
+--  those lines are not shown. Nothing is taken at first: the switches Taken at
+--  once and the player's word on an item (the A) decide. The game's own Auto
+--  Loot is lent off meanwhile (Game.lua); held Shift (its key) still takes
+--  everything, and the window then shows only what is left a moment later
+--  (bags full, a thing locked to a roll).
 --
 --  A click on a line takes the thing (LootSlot, as the game's window does: the
 --  game asks itself for one that binds when picked up); a master looter's click
 --  on a thing for the group opens the menu of who may have it (Master.lua).
---  Shift-click links it, Ctrl-click tries it on (the game's modified clicks);
---  Alt-click puts it on the player's loot list or takes it off. Link puts the
---  links of the loot's things into the chat box: the player sends them (an
---  addon may not send chat itself). Closing the window closes the loot
---  (CloseLoot); Esc closes it (Core.Escape).
+--  Shift-click links it, Ctrl-click tries it on (the game's modified clicks).
+--  The A (or Alt-click) puts it on the player's list, to be taken at once
+--  wherever it drops, and takes it; on the list, the A takes it off. Link puts
+--  the links of the loot's things into the chat box: the player sends them
+--  (an addon may not send chat itself). Close, or Esc, closes the window and
+--  the loot (CloseLoot).
+--
+--  The items met in loot are kept by their IDs (options.seen, the newest
+--  first) for the options' tab Your items (Items.lua).
 --
 --      Window.Start()   listens to the loot's events; places it for Edit Mode
 --      Window.Fill()    the lines anew, as the loot holds them now
@@ -38,14 +47,18 @@ local S = ns.SIZE
 local Window = {}
 ns.Window = Window
 
-local LIGHT = { 0.85, 0.85, 0.85 } -- the two words over the lines; gold under the mouse
+local LIGHT = { 0.9, 0.9, 0.9 } -- the buttons' words; gold under the mouse
 local CHAT_SHOWN, CHAT_BYTES = 250, 1270 -- what the game's chat box holds: 255 letters on show, 1280 bytes with links
+local STEP = S.row + S.rowGap
 
-local panel, scroll, sheet, linkButton, closeButton, placed
+local panel, scroll, sheet, linkButton, closeButton, placed, driver
 local rows = {}
 local lines = {}      -- what the loot holds now (Slots.Read), less what the rules are taking
 local taking = {}     -- [slot] = true: taken at once, waiting for the game to clear it
-local open = false    -- the loot is open and the window is ours
+local asked = {}      -- [slot] = true: LootSlot called for it while this loot is open
+local queue = {}      -- the slots the rules take, waiting for their frame
+local open = false    -- the loot is open (or ready) and the window is ours
+local met = false     -- its items noted for the tab Your items
 local sample = false  -- shown in Edit Mode only, to be placed
 local fromItem = false
 local full, view = 0, 0  -- the lines' height, and how much of it shows
@@ -54,13 +67,38 @@ local snap            -- the thing the player took: { slot, index, scroll }; the
 local hover           -- the line under the mouse
 
 -------------------------------------------------------------------------------
+--  Taking: the rules' things as fast as the game lets them go, a few a frame
+-------------------------------------------------------------------------------
+local function Loot(slot)
+    if asked[slot] then return end
+    asked[slot] = true
+    LootSlot(slot)
+end
+
+-- A few of the waiting slots now; the driver takes the rest in the frames after.
+local function Drain()
+    for _ = 1, S.burst do
+        local slot = table.remove(queue, 1)
+        if not slot then break end
+        Loot(slot)
+    end
+    if driver then driver:SetShown(#queue > 0) end
+end
+
+local function Queue(slot)
+    if asked[slot] or taking[slot] == "queued" then return end
+    taking[slot] = "queued"
+    queue[#queue + 1] = slot
+end
+
+-------------------------------------------------------------------------------
 --  The lines
 -------------------------------------------------------------------------------
 local function Tip(row)
     local line = row.line
     if not line or sample then return end
     hover = row
-    row.shade:Show()
+    row.shade:SetLit(true)
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     if line.kind == "item" then
         GameTooltip:SetLootItem(line.slot)
@@ -69,28 +107,16 @@ local function Tip(row)
     else
         GameTooltip:SetText(line.name)
     end
-    if line.id and ns.options.kept[line.id] then GameTooltip:AddLine(ns.TEXT.onList, 1, 0.82, 0, true) end
+    local word = line.id and ns.options.kept[line.id]
+    if word == true then GameTooltip:AddLine(ns.TEXT.onList, 1, 0.82, 0, true)
+    elseif word == false then GameTooltip:AddLine(ns.TEXT.offList, 0.7, 0.7, 0.7, true) end
     GameTooltip:Show()
 end
 
 local function Untip(row)
     if hover == row then hover = nil end
-    row.shade:Hide()
+    row.shade:SetLit(false)
     GameTooltip_Hide()
-end
-
--- Alt-click: the thing on the player's list, or off it.
-local function Keep(line)
-    if not line.id then return end
-    local kept = ns.options.kept
-    local name = line.link or line.name
-    if kept[line.id] then
-        kept[line.id] = nil
-        ns.Print(ns.TEXT.unlisted:format(name))
-    else
-        kept[line.id] = true
-        ns.Print(ns.TEXT.listed:format(name))
-    end
 end
 
 -- One thing taken, as the game's window takes it; a master looter's thing goes to the menu instead.
@@ -101,16 +127,46 @@ local function Take(line, row)
     LootSlot(line.slot)
 end
 
+-- The A, or Alt-click: the thing on the player's list (and taken now), or off it.
+local function Keep(row)
+    local line = row.line
+    if not line or not line.id or sample then return end
+    local kept = ns.options.kept
+    if kept[line.id] == true then
+        kept[line.id] = nil
+        ns.Row.Auto(row, false)
+    else
+        kept[line.id] = true
+        ns.Row.Auto(row, true)
+        Take(line, row)
+    end
+    ns.Safe("items", ns.Items.Refresh)
+end
+
 local function Click(row)
     local line = row.line
     if not line or sample then return end
-    if IsAltKeyDown() then return Keep(line) end
+    if IsAltKeyDown() then return Keep(row) end
     if IsModifiedClick() then
         local link = line.link or Core.Plain(GetLootSlotLink(line.slot))
         if link then HandleModifiedItemClick(link) end
         return
     end
     Take(line, row)
+end
+
+local function AutoTip(button)
+    local on = button.on
+    button.shade:SetLit(true)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    GameTooltip:SetText(on and ns.TEXT.autoOn or ns.TEXT.autoOff)
+    GameTooltip:AddLine(on and ns.TEXT.autoOnTip or ns.TEXT.autoOffTip, 1, 1, 1, true)
+    GameTooltip:Show()
+end
+
+local function AutoUntip(button)
+    button.shade:SetLit(false)
+    GameTooltip_Hide()
 end
 
 local function Row(index)
@@ -120,13 +176,16 @@ local function Row(index)
     row:SetScript("OnClick", ns.Guard(Click))
     row:SetScript("OnEnter", ns.Guard(Tip))
     row:SetScript("OnLeave", ns.Guard(Untip))
+    row.auto:SetScript("OnClick", ns.Guard(function(button) Keep(button:GetParent()) end))
+    row.auto:SetScript("OnEnter", ns.Guard(AutoTip))
+    row.auto:SetScript("OnLeave", ns.Guard(AutoUntip))
     rows[index] = row
     return row
 end
 
 local function Wheel(_, delta)
     local most = math.max(0, full - view)
-    scroll:SetVerticalScroll(math.min(most, math.max(0, (scroll:GetVerticalScroll() or 0) - delta * S.row)))
+    scroll:SetVerticalScroll(math.min(most, math.max(0, (scroll:GetVerticalScroll() or 0) - delta * STEP)))
 end
 
 -------------------------------------------------------------------------------
@@ -167,17 +226,22 @@ end
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
--- A word over the lines that is a button: light, gold under the mouse.
-local function Word(text, onClick, tip)
+-- A button at the window's foot: its word on a dark shade with a thin grey outline; darker, its word gold, under
+-- the mouse.
+local function Button(text, onClick, tip)
     local button = CreateFrame("Button", nil, panel)
+    button:SetHeight(S.foot)
+    button.shade = ns.Row.Shade(button)
+    button.outline = ns.Row.Outline(button)
+    button.outline:SetColor(0.45, 0.45, 0.45, 0.9)
     button.text = button:CreateFontString(nil, "OVERLAY")
     ns.Row.Font(button.text, 13, true)
     button.text:SetPoint("CENTER")
     button.text:SetText(text)
     button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
-    button:SetSize(math.max(S.top, (tonumber(button.text:GetStringWidth()) or 0) + S.gap), S.top)
     button:SetScript("OnClick", ns.Guard(onClick))
     button:SetScript("OnEnter", ns.Guard(function()
+        button.shade:SetLit(true)
         button.text:SetTextColor(ns.Row.Gold())
         if not tip then return end
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
@@ -186,10 +250,26 @@ local function Word(text, onClick, tip)
         GameTooltip:Show()
     end))
     button:SetScript("OnLeave", ns.Guard(function()
+        button.shade:SetLit(false)
         button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
         GameTooltip_Hide()
     end))
     return button
+end
+
+-- Link at the left half of the foot and Close at the right; Close alone across it when there is nothing to link.
+local function Foot(linkable)
+    linkButton:SetShown(linkable)
+    linkButton:ClearAllPoints()
+    closeButton:ClearAllPoints()
+    closeButton:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
+    if linkable then
+        linkButton:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, 0)
+        linkButton:SetPoint("RIGHT", panel, "BOTTOM", -S.gap / 4, 0)
+        closeButton:SetPoint("LEFT", panel, "BOTTOM", S.gap / 4, 0)
+    else
+        closeButton:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, 0)
+    end
 end
 
 -- Hidden by the game (its whole interface for a movie) or by us: the loot is closed with it.
@@ -213,14 +293,13 @@ local function Build()
     Window.frame = panel
     panel:SetScript("OnHide", ns.Guard(Hidden))
 
-    closeButton = Word("x", function() Window.Close() end)
-    closeButton:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
-    linkButton = Word(ns.TEXT.link, LinkAll, ns.TEXT.linkTip)
-    linkButton:SetPoint("RIGHT", closeButton, "LEFT", -S.gap / 2, 0)
+    linkButton = Button(ns.TEXT.link, LinkAll, ns.TEXT.linkTip)
+    closeButton = Button(ns.TEXT.close, function() Window.Close() end)
+    Foot(true)
 
     scroll = CreateFrame("ScrollFrame", nil, panel)
-    scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -S.top)
-    scroll:SetPoint("BOTTOMRIGHT")
+    scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+    scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, S.foot + S.gap)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", ns.Guard(Wheel))
     sheet = CreateFrame("Frame", nil, scroll)
@@ -246,7 +325,7 @@ end
 local function AtMouse()
     local scale = panel:GetEffectiveScale()
     local x, y = GetCursorPosition()
-    Put(x / scale - S.icon / 2, y / scale + S.top + S.row / 2)
+    Put(x / scale - S.pad - S.icon / 2, y / scale + S.row / 2)
 end
 
 function Window.Place()
@@ -259,11 +338,11 @@ function Window.Place()
     end
 end
 
--- The lines as the loot holds them now: the rows laid out, the window as wide as its widest words and as high as
--- its lines (to a share of the screen; the rest scrolls).
+-- The lines as the loot holds them now: the rows laid out, the window as wide as its widest line and as high as
+-- its lines (to a share of the screen; the rest scrolls) and its foot.
 function Window.Fill()
     if not panel or not panel:IsShown() then return end
-    local notes = ns.options.notes
+    local notes, kept = ns.options.notes, ns.options.kept
     local shown, wide, linkable = 0, S.least, sample
     for _, line in ipairs(lines) do
         if not (line.slot and taking[line.slot]) then
@@ -271,9 +350,9 @@ function Window.Fill()
             local row = Row(shown)
             row.index = shown
             row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", sheet, "TOPLEFT", 0, -(shown - 1) * S.row)
+            row:SetPoint("TOPLEFT", sheet, "TOPLEFT", 0, -(shown - 1) * STEP)
             row:SetPoint("RIGHT", sheet, "RIGHT")
-            ns.Row.Set(row, line, notes)
+            ns.Row.Set(row, line, notes, line.id and kept[line.id] == true)
             wide = math.max(wide, ns.Row.Width(row))
             linkable = linkable or line.kind ~= "money"
         end
@@ -285,11 +364,11 @@ function Window.Fill()
     local width = math.min(S.width, wide)
     local screen = tonumber(UIParent:GetHeight()) or 0
     if screen <= 0 then screen = 768 end -- not laid out yet: the UI's own height at scale 1
-    full = shown * S.row
-    view = math.min(full, math.max(S.row, screen * S.room - S.top))
+    full = math.max(shown * STEP - S.rowGap, 0)
+    view = math.min(full, math.max(S.row, screen * S.room))
     sheet:SetSize(width, math.max(full, 1))
-    panel:SetSize(width, S.top + view)
-    linkButton:SetShown(linkable)
+    panel:SetSize(width, view + S.gap + S.foot)
+    Foot(linkable)
     Wheel(nil, 0)
     -- what is under the mouse now is another thing: its tooltip
     if hover then
@@ -298,16 +377,42 @@ function Window.Fill()
     ns.Safe("full", ns.Full.Update)
 end
 
--- Reads the loot, takes at once what the rules want, and shows the rest.
-local function Read()
+-- Reads the loot and puts what the rules want in the queue (taken at once; not shown). Again (LOOT_READY, then
+-- LOOT_OPENED) it asks nothing twice. While the game's Auto Loot takes everything (auto), it only reads.
+local function Read(auto)
     lines = ns.Slots.Read()
-    wipe(taking)
+    if auto then return end
+    for slot in pairs(taking) do
+        if not asked[slot] and taking[slot] ~= "queued" then taking[slot] = nil end
+    end
     for _, line in ipairs(lines) do
-        if ns.Slots.Wanted(line, ns.options) and not ns.Master.Gives(line) then
+        if asked[line.slot] then
             taking[line.slot] = true
-            LootSlot(line.slot)
+        elseif ns.Slots.Wanted(line, ns.options) and not ns.Master.Gives(line) then
+            Queue(line.slot)
         end
     end
+    Drain()
+end
+
+-- The items of this loot noted for the tab Your items, the newest first, once a loot.
+local function Meet()
+    if met then return end
+    met = true
+    local seen, fresh, ids = ns.options.seen, {}, {}
+    for _, line in ipairs(lines) do
+        if line.kind == "item" and line.id and not fresh[line.id] then
+            fresh[line.id] = true
+            ids[#ids + 1] = line.id
+        end
+    end
+    if #ids == 0 then return end
+    for index = #seen, 1, -1 do
+        if fresh[seen[index]] then table.remove(seen, index) end
+    end
+    for index = #ids, 1, -1 do table.insert(seen, 1, ids[index]) end -- this loot's first, in its order
+    for index = #seen, S.seen + 1, -1 do seen[index] = nil end
+    ns.Safe("items", ns.Items.Refresh)
 end
 
 local function Remaining()
@@ -329,7 +434,7 @@ local function Show()
     Core.Escape(panel, function() ns.Guarded(Window.Close) end)
 end
 
--- A moment after the loot opened without the window (the game's Auto Loot or the rules took it all): what is still
+-- A moment after the loot opened without the window (Shift's Auto Loot, or the rules took it all): what is still
 -- there (bags full, a thing locked to a roll) shows after all.
 local function Check()
     if not open or (panel and panel:IsShown()) or #lines == 0 then return end
@@ -338,14 +443,28 @@ local function Check()
 end
 local late = Core.Later(function() ns.Guarded(Check) end, 0.4)
 
-local function Opened(auto, item)
-    if not ns.Game.Window() then return end
-    if sample and panel then -- in Edit Mode: the sample goes, the loot comes
+-- In Edit Mode the sample goes, the loot comes (hidden before the loot is ours: hiding closes our loot).
+local function Unsample()
+    if sample and panel then
         sample = false
         panel:Hide()
     end
-    open, fromItem = true, item and true or false
+end
+
+-- The loot is ready, a moment before it opens: the rules take at once (not while the game's Auto Loot takes all).
+local function Ready(auto)
+    if not ns.Game.Window() or auto then return end
+    Unsample()
+    open = true
     Read()
+end
+
+local function Opened(auto, item)
+    if not ns.Game.Window() then return end
+    Unsample()
+    open, fromItem = true, item and true or false
+    Read(auto)
+    Meet()
     if auto or Remaining() == 0 then return late() end
     Show()
     if fromItem then Core.Sound("UI_CONTAINER_ITEM_OPEN")
@@ -366,7 +485,7 @@ local function Under(took)
     local shown = Remaining()
     if shown == 0 then return end
     local index = math.min(took.index, shown)
-    Put(at.x, at.y - (took.index - index) * S.row + took.scroll - (scroll:GetVerticalScroll() or 0))
+    Put(at.x, at.y - (took.index - index) * STEP + took.scroll - (scroll:GetVerticalScroll() or 0))
 end
 
 local function Cleared(slot)
@@ -385,23 +504,33 @@ end
 local function Refused(_, message)
     if not open or message ~= rawget(_G, "ERR_INV_FULL") then return end
     wipe(taking)
+    wipe(queue)
+    if driver then driver:Hide() end
     Window.Fill()
 end
 
+-- A slot changed (a roll ended, the count grew): drawn anew, and taken if the rules want it now.
 local function Changed(slot)
     if not open then return end
     local index = Find(slot)
     if not index then return end
     local line = ns.Slots.Line(slot)
     if line then lines[index] = line else table.remove(lines, index) end
+    if line and not asked[slot] and ns.Slots.Wanted(line, ns.options) and not ns.Master.Gives(line) then
+        Queue(slot)
+        Drain()
+    end
     Window.Fill()
 end
 
 local function Closed()
-    open = false
+    open, met = false, false
     snap = nil
     wipe(lines)
     wipe(taking)
+    wipe(asked)
+    wipe(queue)
+    if driver then driver:Hide() end
     ns.Master.Close()
     if panel and panel:IsShown() and not sample then panel:Hide() end
 end
@@ -427,7 +556,8 @@ end
 -- Two lines as they will look, to place the window by.
 local function Sample()
     return {
-        { kind = "item", name = ns.TEXT.window, icon = "Interface\\Icons\\INV_Misc_Bag_10", quality = 2, count = 1 },
+        { kind = "item", name = ns.TEXT.window, icon = "Interface\\Icons\\INV_Misc_Bag_10", quality = 2, count = 1,
+          worth = 1234, sub = ns.TEXT.takeGear },
         { kind = "item", name = ns.TEXT.questItem, icon = "Interface\\Icons\\INV_Misc_Note_01", quality = 1, count = 1,
           quest = true },
     }
@@ -453,6 +583,10 @@ local function Edit(on)
 end
 
 function Window.Start()
+    driver = CreateFrame("Frame", nil, UIParent)
+    driver:Hide()
+    driver:SetScript("OnUpdate", ns.Guard(Drain))
+    ns.On("LOOT_READY", ns.Guard(Ready))
     ns.On("LOOT_OPENED", ns.Guard(Opened))
     ns.On("LOOT_SLOT_CLEARED", ns.Guard(Cleared))
     ns.On("LOOT_SLOT_CHANGED", ns.Guard(Changed))
@@ -463,6 +597,8 @@ end
 
 function Window.GiveBack()
     sample = false
+    wipe(queue)
+    if driver then driver:Hide() end
     if panel and panel:IsShown() then panel:Hide() end
     if panel then Core.Escape(panel, nil) end
     open = false

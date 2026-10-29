@@ -21,6 +21,7 @@ local Config = SaneUI.Core.Config -- Settings.lua
 --                parentValue, while that one of a few is not set to that value
 --      hidden    fn(settings): the line is not there while it says so, the lines
 --                under it close up
+--  After them the module's own tabs (Core.Options' hook tabs), each filled by the module.
 --  Over the tabs, at the right of the title: a search box that finds a switch of the
 --  page by its words (Core.Fuzzy), in every tab, and the button Defaults (it asks
 --  first). A change goes through Core.Set: checked, told to the module, a /reload
@@ -367,6 +368,12 @@ function Config.BuildTabbed(page, name, onPage, title)
             Build(state)
             return Layout(state)
         end }
+    end
+    -- The module's own tabs after its switches' (Core.Options' hook tabs), on its own page.
+    for _, own in ipairs(type(Core.described[name].tabs) == "table" and Core.described[name].tabs or {}) do
+        if own.page == onPage and type(own.build) == "function" then
+            tabs[#tabs + 1] = { name = own.name, label = ("Settings: %s %s"):format(name, own.name), build = own.build }
+        end
     end
     local _, parts, group = Panel.TabbedFrame(page, tabs, TOP)
     -- When the page shows its values anew, a line that came or went (hidden) closes up the others.

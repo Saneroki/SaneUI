@@ -176,7 +176,8 @@ but for a window to try those with (`/sane window`).
 
 - **A switch is described once,** by its module, while its files are read:
   `Core.Options(name, { { key, default, text, tip }, ... }, hooks)`, hooks a table (`changed(key, value)`,
-  `replaced()`, `moved()`, `capture()`, `version` and `upgrade(values, from)`, `game`) or only `changed`.
+  `replaced()`, `moved()`, `capture()`, `version` and `upgrade(values, from)`, `game`, `tabs`: tabs the module
+  fills itself after its switches', `{ name, build = function(child) return height end }`) or only `changed`.
   Core gives it its default and keeps it. The options (`Settings/`) show it as a checkbox and call
   `changed(key, value)` after a tick; Core calls it too when a profile changed it. A number is described the
   same way with its ends (`min`, `max`, `step`) and is shown as a slider; one of a few with its `choices`, as a

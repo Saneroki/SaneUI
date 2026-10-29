@@ -66,17 +66,19 @@ Enum.LootMethod = { Freeforall = 0, Roundrobin = 1, Masterlooter = 2, Group = 3,
 -- What the game knows of items: [link] = { name, quality, kind, where, icon, worth, bind }
 local items = {}
 local function Link(id, name) return ("|cff1eff00|Hitem:%d::::::::|h[%s]|h|r"):format(id, name) end
-local function Item(id, name, quality, worth, bind, where)
+local function Item(id, name, quality, worth, bind, where, class)
     local link = Link(id, name)
     items[link] = { name = name, quality = quality, kind = "Armor", sub = "Cloth", where = where or "", icon = 1000 + id,
-                    worth = worth or 0, bind = bind }
+                    worth = worth or 0, bind = bind, class = class or 4 }
     return link
 end
-local CLOTH = Item(2589, "Linen Cloth", 1, 13)
+local CLOTH = Item(2589, "Linen Cloth", 1, 13, nil, nil, 7)
 local ROBE = Item(6000, "Apprentice Robe", 2, 120, 2, "INVTYPE_CHEST")
 local RING = Item(7000, "Bound Ring", 3, 900, 1)
-local TUSK = Item(8000, "Boar Tusk", 1, 5)
-local GEM = Item(9000, "Shiny Gem", 4, 5000)
+local TUSK = Item(8000, "Boar Tusk", 1, 5, nil, nil, 15)
+local GEM = Item(9000, "Shiny Gem", 4, 5000, nil, nil, 3)
+local BREAD = Item(4540, "Tough Hunk of Bread", 1, 1, nil, nil, 0)
+local SCRAP = Item(3300, "Rabbit's Foot", 0, 4, nil, nil, 15)
 C_Item.GetItemInfo = function(link)
     local item = items[link] or items[Link(tonumber(link) or 0, "?")]
     if type(link) == "number" then
@@ -85,7 +87,8 @@ C_Item.GetItemInfo = function(link)
         end
     end
     if not item then return nil end
-    return item.name, link, item.quality, 10, 1, item.kind, item.sub, 20, item.where, item.icon, item.worth, 4, 1, item.bind
+    return item.name, link, item.quality, 10, 1, item.kind, item.sub, 20, item.where, item.icon, item.worth, item.class, 1,
+        item.bind
 end
 C_Item.GetItemCount = function() return 7 end
 C_CurrencyInfo = {
@@ -137,6 +140,7 @@ CreateFrame("Frame", "LootFrame", UIParent)
 LootFrame:RegisterEvent("LOOT_OPENED")
 LootFrame:RegisterEvent("LOOT_CLOSED")
 CreateFrame("Frame", "GroupLootContainer", UIParent)
+W.cvarInfo.autoLootDefault = { default = "1", scope = "account" } -- the game's Auto Loot, on as many players have it
 
 -- The bags: [bag] = { [slot] = { link, count, quest, noValue, locked } }; size slots each.
 local bags, size = { [0] = {}, {}, {}, {}, {} }, 4
@@ -210,9 +214,15 @@ check(LootFrame:IsEventRegistered("LOOT_CLOSED"), "what else it hears it still h
 check(GroupLootContainer:GetParent() ~= UIParent and not GroupLootContainer:GetParent():IsShown(),
     "the game's roll frames are held in a hidden frame")
 local options = ns.options
-check(options.window and options.atMouse and options.takeCoins and options.takeQuest and options.rolls and options.feed,
-    "the switches are on at first")
-check(options.takeUpTo == -1, "nothing more is taken at once at first")
+check(options.window and options.atMouse and options.notes and options.rolls and options.feed, "the switches are on at first")
+local nothing = true
+for _, key in ipairs({ "takeAll", "takeCoins", "takeCurrency", "takeQuest", "takeTrade", "takeGear", "takeConsumable",
+                       "takeJunk" }) do
+    if options[key] then nothing = false end
+end
+check(nothing, "nothing is taken at once at first")
+check(C_CVar.GetCVar("autoLootDefault") == "0" and options.lent.autoLootDefault.was == "1",
+    "the game's Auto Loot lent off while ours is on, what it was kept")
 
 -------------------------------------------------------------------------------
 --  The sentences read back
@@ -248,26 +258,38 @@ check(lines[3].id == 6000 and lines[3].bind == 2 and lines[3].worth == 120 and l
 check(ns.Slots.Note(lines[3]) == "Binds when equipped · Chest", "the note under a name")
 check(ns.Slots.Note(lines[1]) == ns.TEXT.coins and ns.Slots.Note(lines[5]) == ns.TEXT.questItem, "notes of coins and quests")
 local function Wanted(index, change)
-    local o = { takeCoins = options.takeCoins, takeQuest = options.takeQuest, takeKept = options.takeKept,
-                takeUpTo = options.takeUpTo, kept = options.kept }
+    local o = { kept = {} }
     for key, value in pairs(change or {}) do o[key] = value end
     return ns.Slots.Wanted(lines[index], o)
 end
-check(Wanted(1) and Wanted(5), "coins and quest items are taken at once")
-check(not Wanted(2) and not Wanted(3) and not Wanted(4), "nothing else at first")
-check(not Wanted(1, { takeCoins = false }), "coins stay without their switch")
-check(Wanted(2, { takeUpTo = 1 }) and not Wanted(3, { takeUpTo = 1 }), "everything up to a quality")
-check(not Wanted(4, { takeUpTo = 3 }), "never a thing that binds when picked up")
-check(Wanted(3, { kept = { [6000] = true } }), "a thing on the list")
+check(not Wanted(1) and not Wanted(2) and not Wanted(3) and not Wanted(4) and not Wanted(5), "nothing at first")
+check(Wanted(1, { takeCoins = true }) and not Wanted(2, { takeCoins = true }), "coins by their switch")
+check(Wanted(5, { takeQuest = true }) and not Wanted(3, { takeQuest = true }), "quest items by theirs")
+check(Wanted(2, { takeTrade = true }) and not Wanted(3, { takeTrade = true }), "trade goods (cloth) by theirs")
+check(Wanted(3, { takeGear = true }) and not Wanted(2, { takeGear = true }), "gear by its own")
+check(not Wanted(4, { takeGear = true }) and not Wanted(4, { takeAll = true }), "never by a switch what binds when picked up")
+check(Wanted(1, { takeAll = true }) and Wanted(2, { takeAll = true }) and Wanted(3, { takeAll = true }), "Everything")
+check(Wanted(3, { kept = { [6000] = true } }), "the player's word: taken")
+check(not Wanted(3, { takeAll = true, kept = { [6000] = false } }), "the player's word: never, over Everything")
+check(Wanted(4, { kept = { [7000] = true } }), "the player's word takes even what binds when picked up")
+check(ns.Slots.Rule(lines[2], { takeTrade = true, kept = {} }) == "takeTrade", "the rule that takes it")
+local food, junk = ns.Slots.Item(4540), ns.Slots.Item(3300)
+check(food and food.class == 0 and ns.Slots.Wanted(food, { takeConsumable = true, kept = {} }), "consumables by theirs")
+check(junk and ns.Slots.Wanted(junk, { takeJunk = true, kept = {} }) and not ns.Slots.Wanted(food, { takeJunk = true, kept = {} }),
+    "junk: the poor ones")
+check(ns.Slots.Quest({ kind = "item", class = 12 }), "an item of the quests' class is a quest's")
 lines[2].locked = true
-check(not Wanted(2, { takeUpTo = 5 }), "never a locked thing")
+check(not Wanted(2, { takeAll = true }), "never a locked thing")
 
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
 local Window = ns.Window
+-- A loot opened as the game opens one: the last one closed, this one ready, then open.
 local function Open(auto)
+    W.Fire("LOOT_CLOSED")
     taken, closed = {}, 0
+    W.Fire("LOOT_READY", auto or false)
     W.Fire("LOOT_OPENED", auto or false, false)
 end
 local function Shown() return Window.frame and Window.frame:IsShown() end
@@ -284,20 +306,32 @@ end
 
 loot = { Coins(42), Slot(CLOTH, { count = 2 }), Slot(ROBE), Slot(RING), Slot(TUSK, { questItem = true }) }
 Open()
-check(#taken == 2 and taken[1] == 1 and taken[2] == 5, "the coins and the quest item are taken as the loot opens")
+check(#taken == 0 and #W.frames > 0, "nothing taken at once at first")
+options.takeCoins, options.takeQuest = true, true
+Open()
+check(#taken == 2 and taken[1] == 1 and taken[2] == 5, "with their switches: the coins and the quest item at once")
 check(Shown(), "the window opens for the rest")
 check(Window.frame._points[1] and Window.frame._points[1][1] == "TOPLEFT", "it stands at the mouse")
 local rows = Rows()
 check(#rows == 3 and rows[1].line.slot == 2 and rows[3].line.slot == 4, "a line for each thing not taken at once")
 check(rows[1].count:GetText() == 2 and rows[1].name:GetText() == "Linen Cloth", "the count on the picture, the name")
-check(rows[2].note:GetText() == "", "no note under the name at first")
-options.notes = true
-Window.Fill()
-check(rows[2].note:GetText() == "Binds when equipped · Chest", "with the notes: the note under the name")
+check(rows[2].note:GetText() == "Binds when equipped · Chest" and rows[2].worth:GetText() == "120c",
+    "under the name its kind, at the right what a vendor pays")
+check(rows[1].worth:GetText() == "26c", "the worth of the whole stack")
 options.notes = false
+Window.Fill()
+check(rows[2].note:GetText() == "" and rows[2].worth:GetText() == "", "the line under the name switched off")
+options.notes = true
 Window.Fill()
 check(rows[1].border._color[1] == ITEM_QUALITY_COLORS[1].r and rows[2].border._color[1] == ITEM_QUALITY_COLORS[2].r,
     "each picture bordered in its quality's colour")
+check(rows[2].outline[1]._color[1] == ITEM_QUALITY_COLORS[2].r and rows[2].outline[4]._color[1] == ITEM_QUALITY_COLORS[2].r,
+    "each line outlined in it")
+check(rows[2].shade._color[4] == 0.5, "on a dark shade, half see-through")
+rows[2]._scripts.OnEnter(rows[2])
+check(rows[2].shade._color[4] > 0.5, "darker under the mouse")
+rows[2]._scripts.OnLeave(rows[2])
+check(rows[2].auto:IsShown() and not rows[2].auto.on, "an A on each item, not lit")
 check(Window.frame._width >= ns.SIZE.least and Window.frame._width <= ns.SIZE.width, "as wide as its words, within bounds")
 check(Window.frame._height and Window.frame._height > 3 * ns.SIZE.row, "the window as high as its lines")
 
@@ -321,6 +355,11 @@ check(options.kept[6000] == true, "Alt-click puts it on the loot list")
 rows[2]._scripts.OnClick(rows[2], "LeftButton")
 check(options.kept[6000] == nil, "and again takes it off")
 W.alt = false
+taken = {}
+rows[2].auto._scripts.OnClick(rows[2].auto)
+check(options.kept[6000] == true and rows[2].auto.on and taken[1] == 3, "the A: on the list, lit, and taken now")
+rows[2].auto._scripts.OnClick(rows[2].auto)
+check(options.kept[6000] == nil and not rows[2].auto.on, "the A again: off the list")
 
 -- a slot changed, cleared
 loot[2].count = 5
@@ -336,8 +375,10 @@ local function Word(text)
         if frame._parent == Window.frame and frame.text and frame.text:GetText() == text then return frame end
     end
 end
-local linkWord, closeWord = Word(ns.TEXT.link), Word("x")
-check(linkWord and linkWord:IsShown() and closeWord, "over the lines: Link and the X")
+local linkWord, closeWord = Word(ns.TEXT.link), Word(ns.TEXT.close)
+check(linkWord and linkWord:IsShown() and closeWord and closeWord:IsShown(), "at the foot: Link and Close")
+check(linkWord._points[1][1] == "BOTTOMLEFT" and closeWord._points[1][1] == "BOTTOMRIGHT", "side by side, at the bottom")
+check(linkWord.shade._color[4] == 0.5 and closeWord.shade._color[4] == 0.5, "each on a dark shade, half see-through")
 local opened, inserted
 ChatFrameUtil.OpenChat = function(text) opened = text end
 ChatFrameUtil.GetActiveWindow = function() return nil end
@@ -366,7 +407,7 @@ check(not Shown() and closed == 1, "the last thing taken closes the window and t
 W.Fire("LOOT_CLOSED")
 check(closed == 1, "the game's closing closes nothing twice")
 
--- the X and Esc close the loot
+-- Close and Esc close the loot
 loot = { Slot(ROBE) }
 Open()
 check(Shown(), "opened again")
@@ -378,8 +419,8 @@ W.cursorX, W.cursorY = 500, 400
 loot = { Slot(ROBE), Slot(CLOTH), Slot(GEM), Coins(7) }
 options.takeCoins = false
 Open()
-local top = 400 + ns.SIZE.top + ns.SIZE.row / 2
-check(Window.frame._points[1][4] == 500 - ns.SIZE.icon / 2 and Window.frame._points[1][5] == top,
+local top, step = 400 + ns.SIZE.row / 2, ns.SIZE.row + ns.SIZE.rowGap
+check(Window.frame._points[1][4] == 500 - ns.SIZE.pad - ns.SIZE.icon / 2 and Window.frame._points[1][5] == top,
     "the first line's picture under the mouse")
 check(Word(ns.TEXT.link):IsShown(), "Link while there are links")
 Rows()[1]._scripts.OnClick(Rows()[1], "LeftButton")
@@ -390,11 +431,11 @@ check(#Rows() == 3 and Rows()[1].line.slot == 2 and Window.frame._points[1][5] =
 Rows()[3]._scripts.OnClick(Rows()[3], "LeftButton")
 loot[4].gone = true
 W.Fire("LOOT_SLOT_CLEARED", 4)
-check(#Rows() == 2 and Window.frame._points[1][5] == top - ns.SIZE.row,
+check(#Rows() == 2 and Window.frame._points[1][5] == top - step,
     "the last taken: the window comes down a line, the one before under the mouse")
 loot[2].gone = true
 W.Fire("LOOT_SLOT_CLEARED", 2)
-check(Window.frame._points[1][5] == top - ns.SIZE.row, "a thing taken by something else moves nothing")
+check(Window.frame._points[1][5] == top - step, "a thing taken by something else moves nothing")
 Window.Close()
 options.takeCoins = true
 W.cursorX, W.cursorY = nil, nil
@@ -407,7 +448,7 @@ check(Rows()[1].border._color[1] == 1 and Rows()[1].border._color[2] == 0.82, "a
 Window.Close()
 loot = { Coins(3) }
 Open()
-check(Shown() and not Word(ns.TEXT.link):IsShown(), "money alone: no Link")
+check(Shown() and not Word(ns.TEXT.link):IsShown() and Word(ns.TEXT.close):IsShown(), "money alone: Close alone")
 Window.Close()
 options.takeQuest, options.takeCoins = true, true
 
@@ -439,6 +480,39 @@ check(#Rows() == 1, "the quest item is being taken")
 W.Fire("UI_ERROR_MESSAGE", 3, ERR_INV_FULL)
 check(#Rows() == 2, "the bags were full: it shows after all")
 Window.Close()
+
+-- as soon as the loot is ready, before it opens; a big pile a few slots a frame, nothing asked twice
+options.takeTrade = true
+loot = {}
+for _ = 1, 7 do loot[#loot + 1] = Slot(CLOTH) end
+W.Fire("LOOT_CLOSED")
+taken = {}
+W.Fire("LOOT_READY", false)
+check(#taken == ns.SIZE.burst, "ready: the first few taken at once")
+W.Fire("LOOT_OPENED", false, false)
+check(#taken == math.min(7, 2 * ns.SIZE.burst), "opened: the next few, nothing asked again")
+for _ = 1, 3 do
+    for _, frame in ipairs(W.frames) do
+        if frame._shown and frame._scripts.OnUpdate and frame._parent == UIParent then frame._scripts.OnUpdate(frame, 0.016) end
+    end
+end
+local once = {}
+for _, slot in ipairs(taken) do once[slot] = (once[slot] or 0) + 1 end
+local twice = false
+for _, n in pairs(once) do if n > 1 then twice = true end end
+check(#taken == 7 and not twice, "the rest in the frames after, each slot once")
+check(not Shown(), "all of it taken: no window")
+options.takeTrade = false
+W.Fire("LOOT_CLOSED")
+
+-- Shift's Auto Loot (the game takes everything): nothing asked by us
+loot = { Slot(TUSK, { questItem = true }) }
+W.Fire("LOOT_CLOSED")
+taken = {}
+W.Fire("LOOT_READY", true)
+W.Fire("LOOT_OPENED", true, false)
+check(#taken == 0, "the game's Auto Loot: we ask for nothing")
+W.Fire("LOOT_CLOSED")
 
 -- At the mouse off: where it was placed
 options.atMouse = false
@@ -658,6 +732,69 @@ Cards()[1]:GetParent()._scripts.OnUpdate(Cards()[1]:GetParent(), 1)
 Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 1)
 
 -------------------------------------------------------------------------------
+--  The options' tab Your items
+-------------------------------------------------------------------------------
+options.seen = { 2589, 6000 }
+options.kept = { [7000] = true, [9000] = false }
+local tab = CreateFrame("Frame", nil, UIParent)
+local height = ns.Items.Build(tab)
+check(type(height) == "number" and height > 0 and tab._height == height, "the tab filled, as high as its list")
+local function Listed()
+    local list = {}
+    for _, frame in ipairs(W.frames) do
+        if frame._parent == tab and frame.entry and frame._shown then
+            list[#list + 1] = { name = frame.name:GetText(), ticked = frame.check:GetChecked(), why = frame.why:GetText(),
+                                frame = frame }
+        end
+    end
+    table.sort(list, function(a, b) return a.name < b.name end)
+    return list
+end
+local list = Listed()
+check(#list == 4, "the things met of late and those with a word")
+check(list[1].name == "Apprentice Robe" and not list[1].ticked and list[1].why == "", "a thing left for a click")
+check(list[2].name == "Bound Ring" and list[2].ticked and list[2].why == ns.TEXT.whyList, "a thing on your word")
+check(list[4].name == "Shiny Gem" and not list[4].ticked and list[4].why == ns.TEXT.whyNever, "a thing never taken")
+options.takeTrade = true
+ns.Items.Refresh()
+list = Listed()
+check(list[3].name == "Linen Cloth" and list[3].ticked and list[3].why == ns.TEXT.takeTrade, "taken by its kind's switch")
+list[3].frame.check._scripts.OnClick(list[3].frame.check)
+check(options.kept[2589] == false, "unticked: your word, never, over the switch")
+list = Listed()
+list[3].frame.check._scripts.OnClick(list[3].frame.check)
+check(options.kept[2589] == nil, "ticked again: the switch says it anyway, the word goes")
+list = Listed()
+list[1].frame.check._scripts.OnClick(list[1].frame.check)
+check(options.kept[6000] == true, "a thing ticked: taken at once from now on")
+options.takeTrade = false
+ns.Items.forget._scripts.OnClick(ns.Items.forget)
+list = Listed()
+check(#list == 3 and #options.seen == 0, "Forget the rest: only those with a word stay")
+options.kept = {}
+ns.Items.Refresh()
+check(#Listed() == 0, "nothing left")
+loot = { Slot(GEM), Slot(TUSK) }
+Open()
+check(options.seen[1] == 9000 and options.seen[2] == 8000, "what is met in loot comes into the list, newest first")
+Window.Close()
+W.Fire("LOOT_CLOSED")
+
+-- the options page: in tabs, Your items last, filled by the module
+check(Core.Tabbed(ns.name), "the options page is one in tabs")
+local page = CreateFrame("Frame", nil, UIParent)
+Core.Config.BuildTabbed(page, ns.name)
+check(page.tabs and #page.tabs == 4 and page.parts[4].child and page.parts[4].child._height > 0,
+    "its tabs: the switches', then Your items")
+
+-- switched off: the game's own window, and its Auto Loot as it was
+Core.Set(ns.name, "window", false)
+check(LootFrame:IsEventRegistered("LOOT_OPENED") and C_CVar.GetCVar("autoLootDefault") == "1"
+      and options.lent.autoLootDefault == nil, "ours off: the game's window and its Auto Loot back")
+Core.Set(ns.name, "window", true)
+check(not LootFrame:IsEventRegistered("LOOT_OPENED") and C_CVar.GetCVar("autoLootDefault") == "0", "and ours again")
+
+-------------------------------------------------------------------------------
 --  Retail
 -------------------------------------------------------------------------------
 W.Play("retail")
@@ -675,6 +812,7 @@ Open()
 ns.StandDown("a test")
 check(ns.off and LootFrame:IsEventRegistered("LOOT_OPENED"), "stood down: the game's loot window hears loot again")
 check(GroupLootContainer:GetParent() == UIParent, "and its roll frames are back")
+check(C_CVar.GetCVar("autoLootDefault") == "1", "and its Auto Loot as it was")
 check(not Shown(), "ours is closed")
 Open()
 check(not Shown() and #taken == 0, "and opens no more")

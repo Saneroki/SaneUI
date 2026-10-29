@@ -87,9 +87,11 @@ Core.frames = {} -- the frame of a page of our own, built the first time it is s
 local PAGES = { { "Profiles", "Profiles", canvas = true }, { Core.name, type(GENERAL) == "string" and GENERAL or "General" },
     { "Appearance", "Appearance" } }
 
--- Whether a module's switches are in tabs: one of them names its tab.
+-- Whether a module's switches are in tabs: one of them names its tab, or the module has tabs of its own.
 function Core.Tabbed(name)
-    for _, option in ipairs(Core.described[name] and Core.described[name].list or {}) do
+    local described = Core.described[name]
+    if described and type(described.tabs) == "table" and #described.tabs > 0 then return true end
+    for _, option in ipairs(described and described.list or {}) do
         if option.tab then return true end
     end
     return false

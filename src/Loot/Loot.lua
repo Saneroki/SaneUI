@@ -11,18 +11,21 @@ local ADDON, ns = ...
 --  It stands in for the game's loot window and its roll frames, and adds what
 --  the game has not:
 --    Slots.lua   what the open loot holds, as plain lines read from the game;
---                what the player's rules take at once (coins and currencies,
---                quest items, the things on the player's list, everything up
---                to a quality; never what binds when picked up)
+--                what the player's rules take at once (everything, or kinds:
+--                coins, currencies, quest items, trade goods, gear,
+--                consumables, junk; the player's word on an item over them)
 --    Chat.lua    the game's sentences about loot (received, rolled for, coins)
 --                read back into their parts, by the game's own words
---    Game.lua    the game's loot window no longer told of loot, its roll
---                frames held out of sight; both given back
+--    Game.lua    the game's loot window no longer told of loot, its Auto
+--                Loot lent off, its roll frames held out of sight; all given
+--                back
 --    Row.lua     one line of the loot window
---    Window.lua  the loot window, as little as it can be: a line a thing
---                straight on the world, Link and an X over them; at the mouse
---                or where Edit Mode placed it; a thing taken, the next comes
---                under the mouse
+--    Window.lua  the loot window: a line a thing (Row.lua) on a dark shade
+--                outlined in its quality's colour, Link and Close at its foot;
+--                at the mouse or where Edit Mode placed it; a thing taken, the
+--                next comes under the mouse; the rules' things taken at once
+--    Items.lua   the options' tab Your items: the things met in loot, ticked
+--                where they are taken at once
 --    Master.lua  the master looter's menu on a thing: who may have it, a roll
 --    Full.lua    your bags full: a page beside the window with what the thing
 --                is worth and the least worth thing of yours, to make room
@@ -45,6 +48,12 @@ local function Quality(index, fallback) return Word("ITEM_QUALITY" .. index .. "
 ns.TEXT = {
     link = "Link",
     linkTip = "Puts the links of the loot's things into the chat box: Enter sends them where you write.",
+    close = Word("CLOSE", "Close"),
+    auto = "A",
+    autoOn = "Taken at once",
+    autoOnTip = "On your list: taken at once wherever it drops. Click to take it off the list.",
+    autoOff = "Take this at once",
+    autoOffTip = "Puts it on your list, to be taken at once wherever it drops, and takes it now.",
     coins = "Coins",
     currency = Word("CURRENCY", "Currency"),
     questItem = Word("ITEM_BIND_QUEST", "Quest Item"),
@@ -54,10 +63,10 @@ ns.TEXT = {
     use = Word("ITEM_BIND_ON_USE", "Binds when used"),
     locked = "Not yours to take now",
     onList = "On your list: taken at once wherever it drops",
-    listed = "%s is on your loot list now: taken at once wherever it drops.",
-    unlisted = "%s is off your loot list.",
-    listEmpty = "Your loot list is empty. Alt-click a thing in the loot window to put it on.",
+    offList = "Never taken at once: your word",
+    listEmpty = "Your loot list is empty. Click the A of a thing in the loot window to put it on.",
     listHead = "Your loot list (taken at once):",
+    neverHead = "Never taken at once:",
     -- Edit Mode's names of the parts placed there
     window = "Loot window",
     rollsView = "Group rolls",
@@ -81,31 +90,51 @@ ns.TEXT = {
     pass = Word("PASS", "Pass"),
     disenchant = Word("ROLL_DISENCHANT", "Disenchant"),
     transmog = Word("TRANSMOGRIFY", "Transmog"),
-    nobody = "Nobody yet",
     chose = "Chose %s:",
-    yours = "You chose %s.",
-    won = "%s won it",
     -- /sane loot
     about = "the loot window's list (/sane loot list), a try of the roll cards and the feed (/sane loot try)",
+    -- the options' tabs
+    windowTab = "Loot window",
+    takeTab = "Taken at once",
+    itemsTab = "Your items",
+    groupTab = "Rolls and feed",
     -- the options
     windowHeader = "Loot window",
     windowSwitch = "Sane UI's loot window",
-    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing straight on the world, each picture bordered in its quality's colour (a quest's in gold). A click takes a thing and the next comes under the mouse; Shift-click links it in the chat, Ctrl-click tries it on, Alt-click puts it on your loot list or takes it off. Off: the game's own loot window.",
+    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing on a dark shade, outlined in its quality's colour (a quest's in gold): its picture, its name, its kind and what a vendor pays for it, and an A to take it at once from now on. Link and Close at the foot. A click takes a thing and the next comes under the mouse. While it is on, the game's own Auto Loot is off: the switches Taken at once decide (Shift while looting still takes everything). Off: the game's own loot window.",
     atMouse = "At the mouse",
     atMouseTip = "The loot window opens where the mouse is, its first thing under it. Off: where you placed it in Edit Mode (Esc > Edit Mode).",
     notes = "A line under each name",
-    notesTip = "Under each thing's name, small: whether it binds, its kind, and whether a quest wants it.",
+    notesTip = "Under each thing's name, small: its kind, whether it binds, a quest's, and what a vendor pays for it.",
     takeHeader = "Taken at once",
-    takeHeaderTip = "What the loot window takes as soon as it opens, without a click. The game's own Auto Loot (Esc > Options > Controls) takes everything, whatever these say.",
-    takeCoins = "Coins and currencies",
-    takeCoinsTip = "Money and currencies are taken at once.",
+    takeHeaderTip = "What is taken as soon as the loot opens, without a click, as fast as the game lets it; the rest waits in the loot window. Nothing at first. Never by these a thing locked to a roll, or one that binds when picked up (the game asks first); your word on an item (its A, the tab Your items) goes over them.",
+    takeAll = "Everything",
+    takeAllTip = "Every thing the loot holds is taken at once, whatever the switches below say.",
+    takeCoins = "Coins",
+    takeCoinsTip = "Money is taken at once.",
+    takeCurrency = "Currencies",
+    takeCurrencyTip = "Currencies (tokens, marks, badges) are taken at once.",
     takeQuest = "Quest items",
     takeQuestTip = "Things a quest of yours wants, and things that begin a quest, are taken at once.",
-    takeKept = "Your loot list",
-    takeKeptTip = "The things on your list are taken at once. Alt-click a thing in the loot window to put it on the list or take it off; /sane loot list shows it.",
-    takeUpTo = "Everything up to",
-    takeUpToTip = "Every thing of that quality or below is taken at once. Never one that binds when picked up: the game asks you first.",
-    takeNothing = "Nothing more",
+    takeTrade = "Trade goods",
+    takeTradeTip = "Cloth, herbs, ore, leather, meat and the other goods of the professions, and reagents, are taken at once.",
+    takeGear = "Gear",
+    takeGearTip = "Armour and weapons are taken at once (never one that binds when picked up).",
+    takeConsumable = "Consumables",
+    takeConsumableTip = "Food, drinks, potions, scrolls and bandages are taken at once.",
+    takeJunk = "Junk",
+    takeJunkTip = "Poor things, the grey ones only a vendor wants, are taken at once.",
+    -- the tab Your items
+    itemsIntro = "The things you met in loot of late, and those you gave your word on. Ticked: taken at once. A tick changes it for that item alone, over the switches of Taken at once.",
+    itemsTaken = "Taken at once",
+    itemsLeft = "Left for a click",
+    itemsNone = "Nothing yet: what you loot comes here.",
+    itemsWaiting = "Asking the game for its name...",
+    whyList = "your word",
+    whyNever = "your word: never",
+    whyAll = "Everything",
+    itemsForget = "Forget the rest",
+    itemsForgetTip = "Takes the things you gave no word on off this list (until you loot them again).",
     rollsHeader = "Group rolls",
     rolls = "Sane UI's roll cards",
     rollsTip = "When your group rolls for a thing: a card on the page with its picture and name, Need, Greed and Pass (Disenchant or Transmog when the game offers them), the time left as a pencil line that shrinks. Placed in Edit Mode. Off: the game's own roll frames.",
@@ -126,18 +155,23 @@ ns.TEXT = {
 }
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the game's loot window and roll frames are back"
+ns.GIVEN_BACK = "the game's loot window, its Auto Loot and its roll frames are back"
 
 -- Sizes in UI units, one place for the module (Doc/guides/gui-development.md, Layout).
 ns.SIZE = {
-    width = 300,    -- the loot window at its widest (it is as wide as its words); longer names are cut
-    least = 140,    -- and at its narrowest: room for Link and the X over the lines
-    row = 32,       -- a line of the loot window
-    icon = 28,      -- a thing's picture with its border
+    width = 330,    -- the loot window at its widest (it is as wide as its words); longer names are cut
+    least = 190,    -- and at its narrowest: room for Link and Close
+    row = 38,       -- a line of the loot window
+    rowGap = 2,     -- between its lines
+    icon = 30,      -- a thing's picture with its border
     border = 1.5,   -- the quality's border round a picture
-    top = 18,       -- the strip over the lines with Link and the X
+    pad = 4,        -- round a line's parts inside its shade
+    auto = 16,      -- the A of a line
+    foot = 22,      -- the buttons Link and Close
     gap = 6,        -- between a picture and its words, and round the page's parts
     room = 0.6,     -- the most of the screen's height the window's lines take; more scroll
+    seen = 60,      -- the things met in loot kept for the tab Your items, the newest first
+    burst = 4,      -- slots taken at once in one frame; the rest in the frames after
     card = { 300, 50 }, -- a roll card
     cardGap = 6,    -- between roll cards
     choice = 54,    -- a choice's pencil box on a card
@@ -146,43 +180,54 @@ ns.SIZE = {
 }
 
 -- The qualities a choice lists, Poor to Legendary, as the game names them.
-local function Qualities(first, last, extra)
-    local list = extra and { extra } or {}
+local function Qualities(first, last)
+    local list = {}
     for index = first, last do list[#list + 1] = { index, Quality(index, tostring(index)) } end
     return list
 end
 
+local W, T, G = ns.TEXT.windowTab, ns.TEXT.takeTab, ns.TEXT.groupTab
 local OPTIONS = {
-    { key = "window", default = true, text = ns.TEXT.windowSwitch, tip = ns.TEXT.windowSwitchTip, header = ns.TEXT.windowHeader },
-    { key = "atMouse", default = true, text = ns.TEXT.atMouse, tip = ns.TEXT.atMouseTip, parent = "window" },
-    { key = "notes", default = false, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window" },
-    { key = "takeCoins", default = true, text = ns.TEXT.takeCoins, tip = ns.TEXT.takeCoinsTip,
-      header = ns.TEXT.takeHeader, headerTip = ns.TEXT.takeHeaderTip },
-    { key = "takeQuest", default = true, text = ns.TEXT.takeQuest, tip = ns.TEXT.takeQuestTip },
-    { key = "takeKept", default = true, text = ns.TEXT.takeKept, tip = ns.TEXT.takeKeptTip },
-    { key = "takeUpTo", default = -1, text = ns.TEXT.takeUpTo, tip = ns.TEXT.takeUpToTip,
-      choices = Qualities(0, 3, { -1, ns.TEXT.takeNothing }) },
-    { key = "kept", default = {} }, -- the player's loot list: [item ID] = true (Alt-click in the window)
-    { key = "rolls", default = true, text = ns.TEXT.rolls, tip = ns.TEXT.rollsTip, header = ns.TEXT.rollsHeader },
-    { key = "tally", default = true, text = ns.TEXT.tally, tip = ns.TEXT.tallyTip, parent = "rolls" },
-    { key = "feed", default = true, text = ns.TEXT.feed, tip = ns.TEXT.feedTip, header = ns.TEXT.feedHeader },
-    { key = "feedMoney", default = true, text = ns.TEXT.feedMoney, tip = ns.TEXT.feedMoneyTip, parent = "feed" },
-    { key = "feedGroup", default = true, text = ns.TEXT.feedGroup, tip = ns.TEXT.feedGroupTip, parent = "feed" },
+    { key = "window", default = true, text = ns.TEXT.windowSwitch, tip = ns.TEXT.windowSwitchTip, header = ns.TEXT.windowHeader, tab = W },
+    { key = "atMouse", default = true, text = ns.TEXT.atMouse, tip = ns.TEXT.atMouseTip, parent = "window", tab = W },
+    { key = "notes", default = true, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window", tab = W },
+    { key = "full", default = true, text = ns.TEXT.full, tip = ns.TEXT.fullTip, header = ns.TEXT.fullHeader, tab = W },
+    { key = "takeAll", default = false, text = ns.TEXT.takeAll, tip = ns.TEXT.takeAllTip, parent = "window",
+      header = ns.TEXT.takeHeader, headerTip = ns.TEXT.takeHeaderTip, tab = T },
+    { key = "takeCoins", default = false, text = ns.TEXT.takeCoins, tip = ns.TEXT.takeCoinsTip, parent = "window", tab = T },
+    { key = "takeCurrency", default = false, text = ns.TEXT.takeCurrency, tip = ns.TEXT.takeCurrencyTip, parent = "window", tab = T },
+    { key = "takeQuest", default = false, text = ns.TEXT.takeQuest, tip = ns.TEXT.takeQuestTip, parent = "window", tab = T },
+    { key = "takeTrade", default = false, text = ns.TEXT.takeTrade, tip = ns.TEXT.takeTradeTip, parent = "window", tab = T },
+    { key = "takeGear", default = false, text = ns.TEXT.takeGear, tip = ns.TEXT.takeGearTip, parent = "window", tab = T },
+    { key = "takeConsumable", default = false, text = ns.TEXT.takeConsumable, tip = ns.TEXT.takeConsumableTip, parent = "window", tab = T },
+    { key = "takeJunk", default = false, text = ns.TEXT.takeJunk, tip = ns.TEXT.takeJunkTip, parent = "window", tab = T },
+    { key = "kept", default = {} }, -- the player's word on items: [item ID] = true taken at once, false never
+    { key = "seen", default = {} }, -- the items met in loot of late, the newest first (IDs only; the tab Your items)
+    { key = "lent", default = {} }, -- the game's settings the window lends while it is on: [name] = { was, set }
+    { key = "rolls", default = true, text = ns.TEXT.rolls, tip = ns.TEXT.rollsTip, header = ns.TEXT.rollsHeader, tab = G },
+    { key = "tally", default = true, text = ns.TEXT.tally, tip = ns.TEXT.tallyTip, parent = "rolls", tab = G },
+    { key = "feed", default = true, text = ns.TEXT.feed, tip = ns.TEXT.feedTip, header = ns.TEXT.feedHeader, tab = G },
+    { key = "feedMoney", default = true, text = ns.TEXT.feedMoney, tip = ns.TEXT.feedMoneyTip, parent = "feed", tab = G },
+    { key = "feedGroup", default = true, text = ns.TEXT.feedGroup, tip = ns.TEXT.feedGroupTip, parent = "feed", tab = G },
     { key = "feedQuality", default = 2, text = ns.TEXT.feedQuality, tip = ns.TEXT.feedQualityTip,
-      choices = Qualities(0, 5), parent = { "feed", "feedGroup" } },
-    { key = "full", default = true, text = ns.TEXT.full, tip = ns.TEXT.fullTip, header = ns.TEXT.fullHeader },
+      choices = Qualities(0, 5), parent = { "feed", "feedGroup" }, tab = G },
 }
-Core.Options(ns.name, OPTIONS, { changed = function(key)
-    if key == "window" or key == "rolls" then
-        ns.Guarded(ns.Game.Update)
-    elseif key == "atMouse" then
-        ns.Guarded(ns.Window.Place)
-    elseif key == "notes" then
-        ns.Guarded(ns.Window.Fill)
-    elseif key == "full" then
-        ns.Guarded(ns.Full.Update)
-    end
-end })
+Core.Options(ns.name, OPTIONS, {
+    changed = function(key)
+        if key == "window" or key == "rolls" then
+            ns.Guarded(ns.Game.Update)
+        elseif key == "atMouse" then
+            ns.Guarded(ns.Window.Place)
+        elseif key == "notes" then
+            ns.Guarded(ns.Window.Fill)
+        elseif key == "full" then
+            ns.Guarded(ns.Full.Update)
+        end
+        if key == "kept" or key:find("^take") then ns.Guarded(ns.Items.Refresh) end
+    end,
+    -- the list of items, after the switches' tabs
+    tabs = { { name = ns.TEXT.itemsTab, build = function(child) return ns.Items.Build(child) end } },
+})
 
 -- Standing down: the game's loot window and roll frames are the game's again, ours out of sight.
 function ns.GiveBack()
@@ -192,15 +237,18 @@ function ns.GiveBack()
     ns.Game.GiveBack()
 end
 
--- The loot list: its things by name, one line each.
+-- The player's word on items: those taken at once, then those never, by name.
 local function List()
-    local kept, names = ns.options.kept, {}
-    for id in pairs(type(kept) == "table" and kept or {}) do
-        names[#names + 1] = ns.Slots.Name(id) or ("item " .. tostring(id))
+    local kept, taken, never = ns.options.kept, {}, {}
+    for id, word in pairs(type(kept) == "table" and kept or {}) do
+        local into = word and taken or never
+        into[#into + 1] = ns.Slots.Name(id) or ("item " .. tostring(id))
     end
-    if #names == 0 then return ns.Print(ns.TEXT.listEmpty) end
-    table.sort(names)
-    ns.Print(ns.TEXT.listHead .. " " .. table.concat(names, ", "))
+    if #taken == 0 and #never == 0 then return ns.Print(ns.TEXT.listEmpty) end
+    table.sort(taken)
+    table.sort(never)
+    if #taken > 0 then ns.Print(ns.TEXT.listHead .. " " .. table.concat(taken, ", ")) end
+    if #never > 0 then ns.Print(ns.TEXT.neverHead .. " " .. table.concat(never, ", ")) end
 end
 
 -- /sane loot: the list; /sane loot try: a roll card and the feed as they will look.
@@ -215,7 +263,9 @@ end
 
 function ns.OnLoad()
     ns.options = Core.Settings(ns.name)
-    if type(ns.options.kept) ~= "table" then ns.options.kept = {} end
+    for _, key in ipairs({ "kept", "seen", "lent" }) do
+        if type(ns.options[key]) ~= "table" then ns.options[key] = {} end
+    end
     Core.Command("loot", ns.TEXT.about, ns.Guard(Command))
 end
 

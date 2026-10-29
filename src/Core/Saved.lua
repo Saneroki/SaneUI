@@ -190,6 +190,9 @@ end
 --                            the switches are checked, so a value whose kind changed can still be read
 --      game = true           the settings are the game's own (Sync): kept in profiles only; while
 --                            Accountwide is off they are no one's and not used
+--      tabs                  tabs of the module's own after its switches' (the page is then one in
+--                            tabs): { { name = "Items", build = function(child) return height end } },
+--                            child a scroll area's frame the tab fills itself (Panel.TabbedFrame)
 -- The fourth argument may still be capture. Returns the settings in use, once Core's are loaded.
 function Core.Options(name, list, hooks, capture)
     if type(hooks) ~= "table" then hooks = { changed = hooks, capture = capture } end

@@ -301,13 +301,18 @@ the guide over the world: no window, no paper.
 
 ### The loot window
 
-Loot's window (`src/Loot/Window.lua`, `Row.lua`; Saneroki, 2026-10-29: "minimalistic to the extreme"):
+Loot's window (`src/Loot/Window.lua`, `Row.lua`; Saneroki, 2026-10-29: first "minimalistic to the extreme", then
+each thing with an outline and a background):
 
-- **No window at all:** a transparent background, no paper, frame, title or foot; only the lines straight on the
-  world, and over them at the right two words, *Link* and the X, light, gold under the mouse.
-- **A line a thing:** its picture in a thin border of its quality's colour (a dark hair round it so a light colour
-  reads on any ground), a quest's things in the game's gold; the name in its quality's colour in Kalam Bold with a
-  thin dark outline, as the combat text and the loot feed; under the mouse a soft dark shade fading out to the right.
+- **No window round it:** a transparent background, no paper, frame or title; the lines stand on the world, and at
+  the foot two buttons, *Link* and *Close* (the word spelled out), each on a dark shade half see-through with a thin
+  grey outline so they read as buttons, their words light, gold under the mouse.
+- **A line a thing:** a dark shade half see-through (darker under the mouse), outlined in the thing's quality colour,
+  a quest's things in the game's gold. In it the picture in a border of the same colour (a dark hair round it), how
+  many on it, the name in the quality's colour in Kalam Bold with a thin dark outline, as the combat text and the loot
+  feed; under the name, small and grey, its kind and how it binds, and at the right what a vendor pays for all of
+  it in the game's coins; at the top right a small **A** on its own shade, grey, gold while the thing is on the
+  player's list.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
 
 ## Views
