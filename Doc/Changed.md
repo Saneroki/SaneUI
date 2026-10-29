@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 122 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: appearing softly, at their size; the out-of-reach red half transparent (Saneroki, 2026-10-29)
+Saneroki: plates appeared with a springy overshoot; they should appear as subtly as possible, fading in linearly from
+nothing to full between 60 and 55 yards, and the red range border should be half transparent, less saturated.
+- **The overshoot (`Scale.lua`):** a plate appearing did not know its distance yet, so it grew from nothing to full
+  size in 0.2 s, and only at the next look (up to 0.2 s later) shrank, evenly but slowly, to the size of its
+  distance (some 3 s from 50 yards). Now `Scale.Born` asks its unit at once (`Range.One`, the one plate's part of
+  `Range.Look`) and shows it at that size (your target's full), never larger; `Scale.GROW` is gone.
+- **The fade:** its alpha from 0 to 1 in a straight line within `Scale.SHOW` (5/7 s, was 0.12): as long as running at
+  7 yards a second takes from 60 yards, where the game first shows plates, to 55. Timed, since nothing an addon may
+  ask tells 55 yards from 60: no item in Forever's tables reaches a foe that far (the farthest 45, grenades; those of
+  60 act on yourself), nor do your spells. A plate going out at 60 yards is taken by the game at once, as before.
+- **Red** (`Bar.lua`): `Bar.FAR` at alpha 0.5 (was 1).
+- **Tests:** `dev/tests/nameplates.lua` 255 checks (a plate appearing 50 yards off at its size at once and never
+  larger, its fade in a straight line, the red at half).
+- A `/reload` takes it in.
+
 ### Loot: the loot window as little as it can be (Saneroki, 2026-10-29)
 Saneroki: the loot window minimalistic to the extreme: a transparent background, Link and a close button; a thing
 looted, the list closes up so the next one is under the mouse again; quest items in a golden border, the others in a

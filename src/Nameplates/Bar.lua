@@ -27,8 +27,9 @@ local _, ns = ...
 --                 bottom, in the game's colour for that power; no background:
 --                 spent power shows nothing
 --    the border   one pixel: black; grey on your target (a hint), orange on
---                 your focus (the game's colour for it); red on a foe out of
---                 reach of all your attacks (Range.lua)
+--                 your focus (the game's colour for it); red at half its
+--                 strength (not too bright) on a foe out of reach of all
+--                 your attacks (Range.lua)
 --  and behind the border, from the same inner edge but reaching farther:
 --    the rank     a line in the rank's colour: gold and thick on a boss, gold
 --                 on an elite, silver on a rare
@@ -425,8 +426,8 @@ function Bar.Clear(dress)
 end
 
 -- The border: white on your target, orange on your focus ("target", "focus"), else black (nil); red on any of them
--- while the unit is out of your reach (out).
-Bar.FAR = { 1, 0.12, 0.08, 1 }
+-- while the unit is out of your reach (out), half transparent: not too bright.
+Bar.FAR = { 1, 0.12, 0.08, 0.5 }
 function Bar.Border(dress, lit, out)
     local colour = out and Bar.FAR or lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or Bar.BORDER
     dress.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])

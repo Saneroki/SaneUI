@@ -317,7 +317,8 @@ check(Text.Guess("nameplate1") == "8.8k" and dress.room.value == L(11),
     "the most hidden: room for a guess from its level and rank (22, a rare: about 4k)")
 check(dress.want == I + L(2) + G + L(10) + G + L(11) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
 check(dress.value._width == 0 and dress.name._width == L(10), "the health as wide as it is (never cut short), the others their room")
-check(dress.now == 0 and dress.showing == 0 and dress._alpha == 0, "a plate that has just appeared: it springs in from nothing, unseen at first")
+check(dress.now == 1 and dress.showing == 0 and dress._alpha == 0,
+    "a plate that has just appeared: at its size at once (its distance not known: full), unseen at first")
 units.guess = { level = -1 }
 check(Text.Guess("guess") == "8.88m", "a boss's in millions")
 units.guess = { level = 30, player = true }
@@ -827,6 +828,27 @@ local full = Scale.Full()
 check(Near(dress._scale, full) and Near(plates.nameplate1.UnitFrame._scale, 1) and dress._alpha == 1 and dress.showing == nil,
     "3 yards: full size, seen, settled")
 check(full == 1.25, "full: the setting Nameplate size, 125% at first")
+-- A plate appearing: its unit asked at once, at the size of its distance, never larger; unseen, fading in evenly.
+units.nameplate7 = { name = "Far Wolf", health = 50, most = 100, reaction = 2, level = 20 }
+plates.nameplate7 = GamePlate()
+yards.nameplate7 = 50
+W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate7")
+local far = DressOf(plates.nameplate7)
+local born, larger, alphas = far._scale, false, {}
+check(far._alpha == 0 and far.yards == 50, "a plate appearing 50 yards off (past the last rung, up to 60): unseen, its distance known")
+for _ = 1, 10 do
+    tick(Scale.driver, 0.02)
+    if far._scale > born + 1e-9 then larger = true end
+    alphas[#alphas + 1] = far._alpha
+end
+check(Near(born, full * Scale.Size(50)) and not larger, "at the size of its distance at once, never larger")
+check(Near(alphas[1], 0.02 / Scale.SHOW) and Near(alphas[10], 10 * 0.02 / Scale.SHOW)
+    and Near(alphas[10] - alphas[9], alphas[2] - alphas[1]), "fading in from unseen in a straight line")
+check(Near(Scale.SHOW * 7, 5), "within the time a run takes from 60 yards to 55")
+Settle()
+check(far._alpha == 1 and far.showing == nil, "then seen")
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
+units.nameplate7, plates.nameplate7, yards.nameplate7 = nil, nil, nil
 -- Walking away: the plate follows evenly, never past its size, the same pace all the way.
 yards.nameplate1 = 22
 local even, last, steps = true, dress._scale, {}
@@ -856,8 +878,8 @@ Settle()
 check(dress.border[1]._vertex[1] == 0.5 and dress.border[1]._vertex[2] == 0.5, "the shot reaches it: your target's border grey")
 yards.nameplate1 = 38
 Settle()
-check(dress.out == true and dress.border[1]._vertex[2] == Bar.FAR[2] and Near(dress._scale, full),
-    "38 yards: out of reach of all your attacks, red; your target still full size")
+check(dress.out == true and dress.border[1]._vertex[2] == Bar.FAR[2] and dress.border[1]._vertex[4] == 0.5
+    and Near(dress._scale, full), "38 yards: out of reach of all your attacks, red at half strength; your target still full size")
 units.target, plates.target = nil, nil
 W.Fire("PLAYER_TARGET_CHANGED")
 check(dress.border[1]._vertex[2] == Bar.FAR[2], "not your target, still out of reach: red over the black")

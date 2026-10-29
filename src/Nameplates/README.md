@@ -47,7 +47,7 @@ fails, every plate is the game's own again.
   cannot be told then). The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
 - **The border:** one thin outline: black, a quiet 50% grey on your target, orange on your focus (the game's
-  colour for it); red on any foe none of your attacks reach, as the game checks your own spells from your character (a
+  colour for it); a soft red, half transparent, on any foe none of your attacks reach, as the game checks your own spells from your character (a
   warrior's strikes, Charge, and Shoot only with a bow; a mage's bolts). Behind it, from the same edge but reaching
   farther, a line for the unit's rank: gold and thick on a boss, gold and thin on an elite (the game's gold
   dragon), silver and thin on a rare (its silver dragon, also a rare elite); and behind that, the red glow.
@@ -79,7 +79,10 @@ fails, every plate is the game's own again.
   far its unit is from your character and on nothing else (rank, the camera): full within 10 yards, gradually down to
   half at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. It
   shrinks and grows evenly, in a straight line, about as fast as a running unit changes its distance, never past its
-  size; selected or let go it moves quickly; it grows in from nothing when it appears. No transparency of ours. The game's
+  size; selected or let go it moves quickly. A plate appears at the size of its distance, never larger, and fades in
+  from unseen in a straight line, in about 0.7 seconds: as long as running takes from 60 yards, where the game first
+  shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
+  at 60 yards is taken by the game at once. No other transparency of ours. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
   (Kalam Bold, outlined): auto attacks and physical damage in white, spell damage in red, a critical hit larger with a short
@@ -221,7 +224,7 @@ fails, every plate is the game's own again.
   about a foe: the game forbids that to addons then (each question a blocked action), so its distance there comes
   from your spells alone (`Fighting`: the game's lockdown, or its addon restriction for combat). Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
   and none yes, or none can say and the ladder puts it beyond the farthest of them (`Range.longest`) (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
-  for nothing); cleared when the plate goes; its border red (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
+  for nothing); cleared when the plate goes; its border red at half its alpha (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
   `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
   the distance found, and each of your attacks with its reach and the game's answer.
 - **Cast** (`Cast.lua`): a frame of ours under the dress (`TOPLEFT` on its `BOTTOMLEFT`, under the combo points'
@@ -273,8 +276,10 @@ fails, every plate is the game's own again.
   `Range.Look` every `Range.EVERY` seconds, aims each plate at its share (anew too when the game's scale for it
   changed) and moves it every frame at an even pace, never past it (`Scale.Step`: `Scale.SPEED` 0.2 shares a second with its
   distance, `Scale.QUICK` 2 when selected or let go).
-  `Scale.Born`: a plate appearing grows from nothing within `Scale.GROW` (0.2 s), its alpha up within `Scale.SHOW`
-  (0.12 s).
+  `Scale.Born`: a plate appearing is asked about at once (`Range.One`, not at the next look) and shows at the size of its
+  distance (your target's full), never larger; its alpha from 0 to 1 in a straight line within `Scale.SHOW` (5/7 s:
+  running at 7 yards a second from 60 yards to 55; no item or spell reaches a foe at 55 or 60 yards, so nothing tells
+  the two apart).
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
   seen, the unit frame at 1. While on, the CVars are ours (`Ours`): what each had before is kept first (`foundCVars` in the
   module's settings, once, never a value of ours); set again `Scale.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD`

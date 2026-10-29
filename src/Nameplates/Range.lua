@@ -25,7 +25,8 @@ local _, ns = ...
 --  other foe's alike (the setting Out of reach: red border).
 --
 --  Looked at every Range.EVERY seconds for every plate shown (Scale.lua's
---  driver calls Range.Look); a few questions per plate, the shortest ranges
+--  driver calls Range.Look), and once as a plate appears (Range.One, so it
+--  shows at its size at once); a few questions per plate, the shortest ranges
 --  first. Where the game will not answer for an item (an item it has not
 --  loaded), the spells answer alone, and a distance that cannot be told keeps
 --  the last one. An item is never asked about a foe in a fight: the game
@@ -172,18 +173,20 @@ function Range.Settle(yards, least, most)
     return yards
 end
 
--- Every plate looked at: its distance and whether it is out of your reach; the borders lit anew where that changed.
-function Range.Look()
-    local on = (ns.options or {}).range ~= false
-    for unit, dress in pairs(ns.Plate.shown) do
-        local least, most, reach = Range.Check(unit)
-        dress.yards = Range.Settle(dress.yards, least, most)
-        local out = on and reach == false
-        if out ~= (dress.out == true) then
-            dress.out = out
-            ns.Plate.Light(dress)
-        end
+-- One plate looked at: its distance and whether it is out of your reach; its border lit anew where that changed.
+function Range.One(unit, dress)
+    local least, most, reach = Range.Check(unit)
+    dress.yards = Range.Settle(dress.yards, least, most)
+    local out = (ns.options or {}).range ~= false and reach == false
+    if out ~= (dress.out == true) then
+        dress.out = out
+        ns.Plate.Light(dress)
     end
+end
+
+-- Every plate looked at (Scale.lua's driver, every Range.EVERY seconds; a plate as it appears, Scale.Born).
+function Range.Look()
+    for unit, dress in pairs(ns.Plate.shown) do Range.One(unit, dress) end
 end
 
 local rebuild = Core.Later(Range.Rebuild)
