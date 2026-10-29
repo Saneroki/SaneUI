@@ -5,18 +5,17 @@ local _, ns = ...
 --  The line inside a unit frame's bar, in a nameplate's font and colours:
 --    left     the unit's level, in the game's colour for how hard it is to
 --             you (a skull where it is too high to tell), and right of it the
---             raid marker while there is one
---    middle   its name, centred on the bar: a player's first name and
---             surname (Core.FullName), as long as the room between the two
---             sides allows (cut short beyond it)
+--             raid marker while there is one; then the name: a player's first
+--             name and surname (Core.FullName), as long as the room up to the
+--             health allows (cut short beyond it); none on your own frame
 --    right    its health, short ("850", "1.2k", "1.32m"), and how much is
 --             left ("| 100%"); Dead or Offline instead where it is
+--  and in the row under the bar (your target's target, your focus's target,
+--  your pet) its unit's name alone, from the left.
 --
---  The name keeps the middle: it has the bar's width less twice the wider of
---  the two sides, so it never moves off the middle as the sides change. The
---  health's room is as wide as the most it can show ("1.32m | 100%"), so the
---  name does not shift as health goes; while the game hides the most health
---  (a creature's, in a fight), as wide as the last plain one, or a guess.
+--  The health's room is as wide as the most it can show ("1.32m | 100%"), so
+--  the name's does not change as health goes; while the game hides the most
+--  health (a creature's, in a fight), as wide as the last plain one, or a guess.
 --  Hidden health is written by the game's own abbreviation, in the same steps,
 --  and the percentage by its curve (secret values: shown, never computed).
 -------------------------------------------------------------------------------
@@ -101,10 +100,9 @@ function Text.Make(face)
     local top = CreateFrame("Frame", nil, face)
     top:SetAllPoints(face)
     top:SetFrameLevel(face.health:GetFrameLevel() + 3)
-    face.level, face.name, face.value = Line(top, "LEFT"), Line(top, "CENTER"), Line(top, "RIGHT")
+    face.level, face.name, face.value = Line(top, "LEFT"), Line(top, "LEFT"), Line(top, "RIGHT")
     face.level:SetPoint("LEFT", top, "LEFT", Text.INSET, 0)
     face.value:SetPoint("RIGHT", top, "RIGHT", -Text.INSET, 0)
-    face.name:SetPoint("CENTER", top, "CENTER", 0, 0)
     local raid = top:CreateTexture(nil, "OVERLAY")
     raid:SetTexture(Text.MARKS)
     local size = math.floor(Text.SIZE * Text.ICON + 0.5)
@@ -112,12 +110,23 @@ function Text.Make(face)
     raid:SetPoint("LEFT", face.level, "RIGHT", Text.GAP, 0)
     raid:Hide()
     face.raid, face.top, face.room = raid, top, { left = 0, right = 0 }
+    -- The row's name, on a frame of its own on the row: it shows and goes with it.
+    if face.row then
+        local over = CreateFrame("Frame", nil, face.row)
+        over:SetAllPoints(face.row)
+        over:SetFrameLevel(face.row:GetFrameLevel() + 3)
+        face.rowName = Line(over, "LEFT")
+        face.rowName:SetPoint("LEFT", face.row, "LEFT", Text.INSET - 1, 0)
+        face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
+    end
 end
 
--- The name's room: the bar's width less twice the wider side, so it stays in the middle.
+-- The name's room: from the left side's end to the health's.
 function Text.Layout(face)
-    local side = math.max(face.room.left, face.room.right) + Text.GAP
-    local width = (Plain(face:GetWidth()) or 0) - 2 * side
+    local room = face.room
+    local width = (Plain(face:GetWidth()) or 0) - room.left - room.right - 2 * Text.GAP
+    face.name:ClearAllPoints()
+    face.name:SetPoint("LEFT", face.top, "LEFT", room.left + Text.GAP, 0)
     face.name:SetWidth(math.max(width, 1))
 end
 
@@ -171,12 +180,23 @@ function Text.Raid(face, unit)
     Left(face)
 end
 
--- The name: a player's first name and surname; another unit's name as the game gives it, hidden or not.
-function Text.Name(face, unit, instead)
-    local text = instead or (Core.Ask(UnitIsPlayer, unit) and Core.FullName(unit))
+-- A unit's name: a player's first name and surname; another unit's as the game gives it, hidden or not.
+local function NameOf(unit)
+    local text = Core.Ask(UnitIsPlayer, unit) and Core.FullName(unit)
     if type(text) ~= "string" then text = Raw(UnitName, unit) end
     if type(text) == "nil" then text = "" end
-    face.name:SetText(text)
+    return text
+end
+
+-- The frame's name (none on your own: face.noName); instead: a name in its place (a sample in Edit Mode).
+function Text.Name(face, unit, instead)
+    if face.noName then return face.name:SetText("") end
+    face.name:SetText(instead or NameOf(unit))
+end
+
+-- The row's name, its unit's (or instead).
+function Text.Row(face, unit, instead)
+    face.rowName:SetText(instead or NameOf(unit))
 end
 
 -- A number cut (not rounded) to that many places, without the zeros at its end: 1.25 to one place is "1.2".

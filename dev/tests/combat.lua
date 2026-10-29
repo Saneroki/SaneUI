@@ -145,8 +145,7 @@ if RETAIL then
     check(listed.questMarks and listed.unitPlayer and listed.unitSize and listed.cleanBars and not listed.keys
         and not listed.expand, "its settings: the unit frames, the action bars and the quest marks")
     local player = ns.Units.KINDS[1].button
-    -- Retail's names have no surname (its second name is a realm, not shown): the name alone.
-    check(player and watched[player] and player.face.name._text == "Droopy" and PlayerFrame._mouse == false
+    check(player and watched[player] and player.face.level._text == "20" and PlayerFrame._mouse == false
         and TargetFrame._parent ~= UIParent and ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 0,
         "the unit frames and the clean action bars, as in Forever")
     Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
@@ -427,18 +426,18 @@ do
         "three secure unit buttons: a click targets, a right click opens the game's menu")
     check(watched[player] and watched[target] and watched[focus], "the game's unit watch shows each while its unit is there")
     local face = player.face
-    check(face.name._text == "Droopy Fairwind" and face.level._text == "20" and face.value._text == "850 | 85%",
-        "your frame: your level, your first name and surname, your health and how much is left")
-    check(face.health._max == 1000 and face.health._value == 850 and face.health._barColor[1] == 0.78
-        and face.power:IsShown() and face.power._max == 100 and face.power._value == 30,
-        "the bar in your class's colour, your rage along its bottom")
-    check(face.name._points[1][1] == "CENTER" and face.level._points[1][1] == "LEFT" and face.value._points[1][1] == "RIGHT",
-        "the level on the left, the name in the middle, the health on the right")
+    check(face.name._text == "" and face.level._text == "20" and face.value._text == "850 | 85%",
+        "your frame: your level, no name, your health and how much is left")
+    local green = ns.UnitBar.GREEN
+    check(face.health._max == 1000 and face.health._value == 850 and face.health._barColor[1] == green[1]
+        and face.health._barColor[2] == green[2] and face.power:IsShown() and face.power._max == 100
+        and face.power._value == 30, "the bar green, not in your class's colour; your rage along its bottom")
     face._width, face._height = Units.WIDTH, Units.HEIGHT -- the stand-in places nothing: as large as its button
     Text.Layout(face)
-    local side = math.max(face.room.left, face.room.right) + Text.GAP
-    check(face.room.right > face.room.left and near(face.name._width, Units.WIDTH - 2 * side),
-        "the name has the bar's width less twice the wider side: it stays in the middle")
+    check(face.level._points[1][1] == "LEFT" and face.value._points[1][1] == "RIGHT" and face.name._points[1][1] == "LEFT"
+        and face.name._points[1][4] == face.room.left + Text.GAP
+        and near(face.name._width, Units.WIDTH - face.room.left - face.room.right - 2 * Text.GAP),
+        "the level on the left, the name after it from the left up to the health, the health on the right")
     check(PlayerFrame.PlayerFrameContainer._alpha == 0 and PlayerFrame.PlayerFrameContent._alpha == 0
         and PlayerFrame._mouse == false and PlayerFrame._parent == UIParent,
         "the game's own frame out of sight and takes no clicks; it stays where it is, with what hangs on it")
@@ -452,8 +451,33 @@ do
     local foe = target.face
     check(foe.name._text == "Kobold Miner" and foe.value._text == "40 | 33%" and foe.raid._shown and foe.raid._cell == 8,
         "your target: its name, health, and its raid marker beside its level")
-    check(foe.rank == ns.UnitBar.RANKS.elite and foe.health._barColor[1] == 1 and foe.health._barColor[2] == 0,
-        "red for a creature that attacks on sight, the gold line of an elite behind its border")
+    check(foe.rank == ns.UnitBar.RANKS.elite and foe.health._barColor[2] == green[2] and foe.health._barColor[1] == green[1],
+        "green for a foe too; the gold line of an elite behind its border")
+    -- Your target's target: a row under your target's frame while there is one, as a cast bar under a nameplate.
+    local row = foe.rowButton
+    check(row and row._template == "SecureUnitButtonTemplate" and row:GetAttribute("unit") == "targettarget"
+        and row:GetAttribute("*type1") == "target" and row._parent == target and row._points[1][3] == "BOTTOMLEFT"
+        and watched[row] and not foe.rowShown and not foe.row._shown,
+        "its target's row: a secure button right under the frame, shown by the unit watch, none while it has no target")
+    units.targettarget = { name = "Droopy", surname = "Fairwind", player = true, health = 600, most = 1000 }
+    row:Show() -- the game's unit watch: your target has a target
+    check(foe.rowShown and foe.row._shown and foe.rowName._text == "Droopy Fairwind" and foe.row._value == 600
+        and foe.row._barColor[2] == green[2], "it shows under the frame: green, its name alone")
+    check(foe.border[2]._points[1][5] == -Units.ROW and foe.health._points[2][5] == 0,
+        "the frame's outline goes round both, the frame's bar square at its bottom over the row")
+    units.targettarget.health = 300
+    foe.row._scripts.OnUpdate(foe.row, Units.POLL)
+    check(foe.row._value == 300, "read again while it shows (the game sends no events of a target's target)")
+    row:Hide()
+    check(not foe.rowShown and not foe.row._shown and foe.border[2]._points[1][5] == 0, "gone: the frame alone again")
+    -- The game hides the row while the frame is out of sight (your target gone): no OnHide then; the frame looks again
+    -- as it shows.
+    foe.rowShown = true
+    row._shown = false
+    target:Hide()
+    target:Show()
+    check(not foe.rowShown and not foe.row._shown, "a row hidden while its frame was out of sight is gone when it shows")
+    units.targettarget = nil
     units.target.health = 30
     W.Fire("UNIT_HEALTH", "target")
     check(foe.value._text == "30 | 25%" and foe.health._value == 30, "its health as it goes, heard from its own events")
@@ -485,9 +509,15 @@ do
     EventRegistry:TriggerEvent("EditMode.Enter")
     check(not watched[focus] and focus._shown and focus.face.sample and focus.face.name._text == ns.TEXT.samples.focus
         and focus.face.level._text == "20", "in Edit Mode your focus's frame shows as a sample, named for it")
+    check(focus.face.rowShown and focus.face.rowName._text == ns.TEXT.samples.focustarget
+        and player.face.rowShown and player.face.rowName._text == ns.TEXT.samples.pet,
+        "and the rows under the frames too, named for what they stand for")
     check(not target.face.sample and target.face.name._text == "Kobold Miner", "a frame whose unit is there shows it")
     EventRegistry:TriggerEvent("EditMode.Exit")
-    check(watched[focus] and not focus.face.sample, "after Edit Mode the unit watch shows it again")
+    check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton],
+        "after Edit Mode the unit watch shows it again, and its row")
+    focus.face.rowButton:Hide() -- the game's unit watch: your focus has no target
+    player.face.rowButton:Hide() -- nor you a pet
     -- Edit Mode put the full screen back to its place (as every window of Core's): full again for what follows.
     if not handle.edge.full then
         Push()
@@ -504,6 +534,22 @@ do
     check(PlayerFrame.PlayerFrameContainer._alpha == 1 and PlayerFrame._mouse == true and not player._shown,
         "Your frame off: the game's own frame as it was")
     Core.Set(ns.name, "unitPlayer", true)
+    -- Your pet: a row under your frame; the game's pet frame by its alpha and clicks (its layout re-parents it).
+    local pet = player.face.rowButton
+    check(pet:GetAttribute("unit") == "pet" and watched[pet] and PetFrame._alpha == 0 and PetFrame._mouse == false
+        and PetFrame._parent == PlayerFrame, "your pet's row under your frame, the game's pet frame out of sight")
+    units.pet = { name = "Wolf", health = 80, most = 100 }
+    pet:Show()
+    check(player.face.rowName._text == "Wolf" and player.face.row._value == 80, "your pet: its name and health")
+    Core.Set(ns.name, "unitPet", false)
+    check(not watched[pet] and not pet._shown and PetFrame._alpha == 1 and PetFrame._mouse == true
+        and not player.face.rowShown, "Your pet off: no row, the game's pet frame back")
+    Core.Set(ns.name, "unitPet", true)
+    check(watched[pet] and PetFrame._alpha == 0, "on again")
+    Core.Set(ns.name, "unitTargetTarget", false)
+    check(not watched[target.face.rowButton] and watched[target], "Your target's target off: no row, the frame stays")
+    Core.Set(ns.name, "unitTargetTarget", true)
+    units.pet = nil
     Core.Set(ns.name, "unitSize", 150)
     check(player._scale == 1.5 and target._scale == 1.5 and PlayerFrame._mouse == false, "Unit frame size: all three larger")
     Core.Set(ns.name, "unitSize", 100)

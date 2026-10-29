@@ -3,8 +3,27 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 90 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 166 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 101 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 166 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Combat: your target's and focus's targets and your pet as rows under the frames; green bars, names from the left (Saneroki, 2026-10-29)
+Saneroki: the target's target like the casting bar: it appears underneath while there is one, and the only text in its
+health bar is the name; the unit frames green, not in class colours; the names anchored to the left instead of the
+middle; no name in the player frame. (The pet with it, as asked for with the target's target.)
+- **The rows (`Units/Units.lua`):** under your target's frame its target, under your focus's its target, under your own
+  your pet: each a secure unit button of the game's (a click targets, a right click opens its menu), a child of the
+  frame's button right under it, 18 high, shown by its own unit watch. Its health and name are read while it shows,
+  every 0.2 seconds (the game sends no events of a target's target) and at once on `UNIT_TARGET` and `UNIT_PET`. The
+  frame looks at its row again as it shows: a row hidden while its frame was out of sight heard no `OnHide`. In Edit
+  Mode the rows show as samples (*Target's target*, *Focus's target*, *Pet*). The game's pet frame goes by its alpha
+  and clicks (its layout re-parents it).
+- **The look (`Units/Bar.lua`, `Units/Text.lua`):** the row inside the frame's outline, as a nameplate's cast bar: the
+  border, rank line and glow reach round both, the frame's bar square at its bottom then, the row round at its own, a
+  pixel's dark between; the row's name alone, from the left. Every bar the game's health green
+  (`COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`), no class or reaction colours. The name from the left side's end (level
+  and raid marker) up to the health's room; your own frame has none.
+- **Settings:** *Your pet*, *Your target's target*, *Your focus's target* under their frames' switches, all on at
+  first. Your focus's first place a little higher, to leave room for your target's row.
 
 ### Loot: the game's Auto Loot stays off on every account; a lend Sync leaves alone (Saneroki, 2026-10-29)
 Saneroki: on his first account Loot works; on the second everything is looted at once.

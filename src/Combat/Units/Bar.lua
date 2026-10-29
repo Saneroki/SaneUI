@@ -4,24 +4,26 @@ local _, ns = ...
 --  Sane UI - Combat - Units - Bar
 --  A unit frame's bar, in the look of a nameplate's (the module Nameplates):
 --  a rectangle round at its corners, framed by one thin border, the unit's
---  power a thin line along its bottom, inside it. The frame does not change
---  size with what it shows, so every piece is laid out for its size alone
---  (Bar.Fit, again when its size or scale changes).
+--  power a thin line along its bottom, inside it; and under it, while it
+--  shows, a row of its own (your target's target, your focus's target, your
+--  pet), as a cast bar hangs under a nameplate's bar: inside the same outline,
+--  the bar square at its bottom then, the row round at its own. The frame does
+--  not change size with what it shows, so every piece is laid out for its size
+--  and the row alone (Bar.Fit, again when either changes).
 --
---  How it is round: the fill and its background are masked at both ends by
---  Core's caps (Shape.CAP_LEFT, CAP_RIGHT), a quarter of the bar's height
---  wide, wrapped with white beyond them, so the fill keeps its round left end
---  however short it is and meets the right one when full. Every plate around
---  it (the border, the rank's line, the glow's bands) is two halves, each round
---  at its own two corners by Core's corner masks (a texture takes few masks),
+--  How it is round: the bar's fill and background are masked at both ends,
+--  by Core's caps (Shape.CAP_LEFT, CAP_RIGHT, a quarter of the bar's height
+--  wide) or, while the row is under it, by Core's corner masks at its top
+--  alone (Shape.CORNER); the row's at its bottom corners. Every plate around
+--  them (the border, the rank's line, the glow's bands) is two halves, each
+--  round at its own two corners by corner masks (a texture takes few masks),
 --  its round fitting the bar's.
 --
 --  From the inside out:
 --    the bar      health as the game gives it (a hidden value in a fight: the
---                 bar takes it as it is); a player's class colour, grey when
---                 tapped by others, a light yellow for a creature that does
---                 not attack on sight, red for one that does, the game's
---                 colour for friends
+--                 bar takes it as it is), green: the game's colour for health
+--    the row      the same, its own unit's, a screen pixel under the bar (the
+--                 border's dark between them)
 --    the power    the unit's mana, rage or energy, in the game's colour for it
 --    the border   one screen pixel, black
 --    the rank     behind the border, reaching farther: gold and thick on a
@@ -41,11 +43,13 @@ Bar.CAP = 1 / 4  -- a cap's width and every corner's round, a share of the bar's
 Bar.LINE = 1 / 4 -- the power line's height, a share of the bar's
 Bar.BACKGROUND = { 0.07, 0.07, 0.09, 1 } -- where health is missing: solid, so nothing behind shows through
 Bar.BORDER = { 0, 0, 0, 0.9 }
-Bar.TAPPED = { 0.5, 0.5, 0.5 }
-Bar.CALM = { 1, 0.93, 0.55 }
-Bar.HOSTILE = { 1, 0, 0 }
 Bar.GLOW = { 1, 0.08, 0.05 }
 Bar.HALO = 6 -- the glow's bands, a screen pixel each, solid inside and fading out
+-- Every bar's health in the game's green for it (its compact frames' health, set by the client); plain green where
+-- it has none.
+Bar.GREEN = { 0, 1, 0 }
+local green = rawget(_G, "COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR")
+if type(green) == "table" and type(green.r) == "number" then Bar.GREEN = { green.r, green.g, green.b } end
 local GOLD = { 1, 0.82, 0, 1 }
 local gold = rawget(_G, "NORMAL_FONT_COLOR")
 if type(gold) == "table" and type(gold.r) == "number" then GOLD = { gold.r, gold.g, gold.b, 1 } end
@@ -96,17 +100,18 @@ local function Plate(host, sublevel)
     return plate
 end
 
--- A plate reaching that far beyond the frame on every side, its corners round by radius and that reach.
-local function Around(plate, frame, reach, height, radius)
-    local half = (height + 2 * reach) / 2
+-- A plate reaching that far beyond the frame on every side, down to below under its bottom (the row, while it
+-- shows), its corners round by radius and that reach.
+local function Around(plate, frame, reach, height, below, radius)
+    local half = (height + below + 2 * reach) / 2
     local upper, lower = plate[1], plate[2]
     upper:ClearAllPoints()
     upper:SetPoint("TOPLEFT", frame, "TOPLEFT", -reach, reach)
     upper:SetPoint("TOPRIGHT", frame, "TOPRIGHT", reach, reach)
     upper:SetHeight(half)
     lower:ClearAllPoints()
-    lower:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -reach, -reach)
-    lower:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", reach, -reach)
+    lower:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -reach, -reach - below)
+    lower:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", reach, -reach - below)
     lower:SetHeight(half)
     local round = math.max(math.min(radius + reach, half), 0.01)
     for _, piece in ipairs(plate) do
@@ -114,9 +119,54 @@ local function Around(plate, frame, reach, height, radius)
     end
 end
 
+-- A status bar of health on host, its background behind it, and a mask at each end over both (sized by End).
+local function Health(host, level)
+    local health = CreateFrame("StatusBar", nil, host)
+    health:SetFrameLevel(level)
+    health:SetStatusBarTexture(Bar.FILL)
+    health:SetStatusBarColor(Bar.GREEN[1], Bar.GREEN[2], Bar.GREEN[3])
+    health:SetMinMaxValues(0, 1)
+    health:SetValue(1)
+    local background = health:CreateTexture(nil, "BACKGROUND")
+    background:SetTexture(Bar.WHITE)
+    background:SetVertexColor(unpack(Bar.BACKGROUND))
+    background:SetAllPoints(health)
+    health.ends = {}
+    for index = 1, 2 do
+        local mask = health:CreateMaskTexture()
+        health:GetStatusBarTexture():AddMaskTexture(mask)
+        background:AddMaskTexture(mask)
+        health.ends[index] = mask
+    end
+    return health
+end
+
+-- One end's mask over a bar for what that end should be: "both" round at its top and bottom (a cap a quarter of the
+-- height wide), "top" or "bottom" round at that corner alone (a corner mask of that radius).
+local function End(mask, bar, side, mode, radius, height)
+    local shape = Core.Shape
+    mask:ClearAllPoints()
+    if mode == "both" then
+        mask:SetTexture(side == "LEFT" and shape.CAP_LEFT or shape.CAP_RIGHT, "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint("TOP" .. side, bar, "TOP" .. side)
+        mask:SetPoint("BOTTOM" .. side, bar, "BOTTOM" .. side)
+        mask:SetWidth(math.max(height * Bar.CAP, 0.01))
+    else
+        local corner = (mode == "top" and "TOP" or "BOTTOM") .. side
+        mask:SetTexture(shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint(corner, bar, corner)
+        mask:SetSize(math.max(radius, 0.01), math.max(radius, 0.01))
+    end
+end
+local function Ends(bar, mode, radius, height)
+    End(bar.ends[1], bar, "LEFT", mode, radius, height)
+    End(bar.ends[2], bar, "RIGHT", mode, radius, height)
+end
+
 -- The bar's pieces on the frame, each layer on a frame of its own one level above the last: the glow, then the
--- rank's line and the border, then the health with its background and power line (the texts above it all).
-function Bar.Make(frame)
+-- rank's line and the border, then the health with its power line and the row (the texts above it all). How high
+-- the row is: row (in the frame's units); the frame says while it shows (face.rowShown).
+function Bar.Make(frame, row)
     local level = Plain(frame:GetFrameLevel()) or 1
     local glow = CreateFrame("Frame", nil, frame)
     glow:SetAllPoints(frame)
@@ -135,57 +185,50 @@ function Bar.Make(frame)
     frame.rankLine:SetShown(false)
     frame.border = Plate(edges, -3)
     frame.border:SetVertexColor(Bar.BORDER[1], Bar.BORDER[2], Bar.BORDER[3], Bar.BORDER[4])
-    local health = CreateFrame("StatusBar", nil, frame)
-    health:SetFrameLevel(level + 3)
-    health:SetStatusBarTexture(Bar.FILL)
-    health:SetMinMaxValues(0, 1)
-    health:SetValue(1)
-    local background = health:CreateTexture(nil, "BACKGROUND")
-    background:SetTexture(Bar.WHITE)
-    background:SetVertexColor(unpack(Bar.BACKGROUND))
-    background:SetAllPoints(health)
-    frame.health = health
-    frame.caps = {}
-    for index, file in ipairs({ Core.Shape.CAP_LEFT, Core.Shape.CAP_RIGHT }) do
-        local mask = health:CreateMaskTexture()
-        mask:SetTexture(file, "CLAMPTOWHITE", "CLAMPTOWHITE")
-        local side = index == 1 and "LEFT" or "RIGHT"
-        mask:SetPoint("TOP" .. side, health, "TOP" .. side)
-        mask:SetPoint("BOTTOM" .. side, health, "BOTTOM" .. side)
-        health:GetStatusBarTexture():AddMaskTexture(mask)
-        background:AddMaskTexture(mask)
-        frame.caps[index] = mask
-    end
+    frame.health = Health(frame, level + 3)
     -- No background: where the unit's power is spent, the bar is seen through the line.
-    local power = CreateFrame("StatusBar", nil, health)
-    power:SetPoint("BOTTOMLEFT", health, "BOTTOMLEFT")
-    power:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT")
+    local power = CreateFrame("StatusBar", nil, frame.health)
+    power:SetPoint("BOTTOMLEFT", frame.health, "BOTTOMLEFT")
+    power:SetPoint("BOTTOMRIGHT", frame.health, "BOTTOMRIGHT")
     power:SetStatusBarTexture(Bar.FILL)
     power:SetMinMaxValues(0, 1)
     power:SetValue(0)
-    for _, mask in ipairs(frame.caps) do power:GetStatusBarTexture():AddMaskTexture(mask) end
+    for _, mask in ipairs(frame.health.ends) do power:GetStatusBarTexture():AddMaskTexture(mask) end
     power:Hide()
     frame.power = power
+    if row then
+        frame.rowHeight = row
+        frame.row = Health(frame, level + 3)
+        frame.row:Hide()
+    end
     frame.rank = Bar.PLAIN
 end
 
--- Laid out for the frame's size and the unit's rank: the bar a screen pixel inside its border, the rank's line
--- reaching out from the same edge, the glow beyond it, the caps a quarter of the bar's height.
+-- Laid out for the frame's size, the unit's rank and the row: the bar a screen pixel inside its border (down to the
+-- row, square there, while it shows), the row a pixel under it, the rank's line reaching out from the same edge, the
+-- glow beyond it, every round a quarter of the bar's height.
 function Bar.Fit(frame)
     local height = Plain(frame:GetHeight()) or 0
     local pixel = Core.Pixels(frame, 1)
     local radius = height * Bar.CAP
-    Around(frame.border, frame, 0, height, radius)
+    local row = frame.row and frame.rowShown and frame.rowHeight or 0
+    Around(frame.border, frame, 0, height, row, radius)
     local reach = frame.rank.width - 1 -- the border is the rank's first pixel
-    Around(frame.rankLine, frame, pixel * reach, height, radius)
-    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * (reach + band), height, radius) end
-    local health = frame.health
+    Around(frame.rankLine, frame, pixel * reach, height, row, radius)
+    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * (reach + band), height, row, radius) end
+    local health, inner = frame.health, math.max(radius - pixel, 0.01)
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", frame, "TOPLEFT", pixel, -pixel)
-    health:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, pixel)
-    local width = math.max((height - 2 * pixel) * Bar.CAP, 0.01)
-    for _, mask in ipairs(frame.caps) do mask:SetWidth(width) end
+    health:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, row > 0 and 0 or pixel)
+    Ends(health, row > 0 and "top" or "both", inner, height - 2 * pixel)
     frame.power:SetHeight(math.max((height - 2 * pixel) * Bar.LINE, pixel * 2))
+    if frame.row then
+        frame.row:ClearAllPoints()
+        frame.row:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", pixel, -pixel)
+        frame.row:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, pixel - frame.rowHeight)
+        Ends(frame.row, "bottom", math.min(inner, frame.rowHeight - 2 * pixel), frame.rowHeight)
+        frame.row:SetShown(row > 0)
+    end
 end
 
 -- A unit's rank by the line behind the border ("boss", "elite", "rare"), or nil.
@@ -195,28 +238,8 @@ function Bar.Rank(unit)
     return type(classification) == "string" and RANK_OF[classification] or nil
 end
 
--- The bar's colour for a unit: r, g, b.
-function Bar.Colour(unit)
-    if Core.Ask(UnitIsPlayer, unit) then
-        local _, class = Core.Ask(UnitClass, unit)
-        local colours = rawget(_G, "RAID_CLASS_COLORS")
-        local colour = type(class) == "string" and type(colours) == "table" and colours[class]
-        if colour then return colour.r, colour.g, colour.b end
-    elseif Core.Ask(UnitIsTapDenied, unit) then
-        return Bar.TAPPED[1], Bar.TAPPED[2], Bar.TAPPED[3]
-    else
-        local reaction = Core.Ask(UnitReaction, unit, "player")
-        if reaction == 4 then return Bar.CALM[1], Bar.CALM[2], Bar.CALM[3] end
-        if reaction and reaction < 4 then return Bar.HOSTILE[1], Bar.HOSTILE[2], Bar.HOSTILE[3] end
-    end
-    local r, g, b = Core.Ask(UnitSelectionColor, unit, true)
-    if r and g and b then return r, g, b end
-    return Bar.HOSTILE[1], Bar.HOSTILE[2], Bar.HOSTILE[3]
-end
-
--- The bar's colour, the rank's line and the glow of a player who may attack you, as the unit is now.
+-- The rank's line and the glow of a player who may attack you, as the unit is now.
 function Bar.Paint(frame, unit)
-    frame.health:SetStatusBarColor(Bar.Colour(unit))
     local rank = Bar.RANKS[Bar.Rank(unit)] or Bar.PLAIN
     if rank ~= frame.rank then
         frame.rank = rank
@@ -252,12 +275,12 @@ local function Raw(fn, ...)
 end
 Bar.Raw = Raw
 
--- Health as the game gives it, hidden or not; none (empty) for a dead unit.
-function Bar.Health(frame, unit)
+-- Health as the game gives it, hidden or not, on a bar (the frame's own, or its row's).
+function Bar.Health(bar, unit)
     local most, now = Raw(UnitHealthMax, unit), Raw(UnitHealth, unit)
     if type(most) == "nil" or type(now) == "nil" then return end
-    frame.health:SetMinMaxValues(0, most)
-    frame.health:SetValue(now)
+    bar:SetMinMaxValues(0, most)
+    bar:SetValue(now)
 end
 
 -- The game's colour for a power, by its token ("MANA", "RAGE", "ENERGY").

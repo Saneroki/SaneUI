@@ -58,6 +58,10 @@ Decided (Saneroki, 2026-10-16):
   health and its share on the right ("850 | 85%"), the name in the middle, the level and the raid marker on the
   left; a player's name is always the whole name, first name and surname. They are secure unit buttons placed in
   Edit Mode, the game's own frames out of sight while ours show.
+- **The target's target as a row** (Saneroki, 2026-10-29; built): like the nameplates' cast bar, it appears under
+  the target's frame while the target has a target, and the only text in its health bar is the name; the same for
+  the focus's target and, under your own frame, your pet. All unit frames green, not in class colours; the names
+  anchored left, after the level and raid marker; your own frame without a name.
 - **Clean action bars** (Saneroki, 2026-10-29; built): the game's action bars without any border, decoration or
   background, only the filled slots; they stay the game's bars, placed in its Edit Mode.
 
@@ -185,7 +189,8 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
 1. **Unit frames** for you and your target: the base every other part reuses (a secure unit button, its
    health and power bars, name, level, portrait, the buffs on it). Built 2026-10-29 with the focus, in the
    nameplates' look (no portrait, no buffs yet).
-2. **Pet, target's target, focus:** the same frame, smaller (the focus built with step 1).
+2. **Pet, target's target, focus:** the same frame, smaller (the focus built with step 1; the target's and
+   focus's targets and the pet built 2026-10-29 as rows under the frames).
 3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header.
 4. **Buffs:** your own, at the top right as the game has them.
 5. **Cast bars**, **bosses**, **class resources**, **swing timers**, **threat.**

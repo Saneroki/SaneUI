@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Combat
-## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look; the game's action bars clean, only the buttons that hold something. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
+## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them; the game's action bars clean, only the buttons that hold something. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -50,11 +50,11 @@ Keys.lua
 # A mark beside a creature's nameplate while it belongs to an objective of your quests still to do
 QuestMarks.lua
 # Unit frames: ours for you, your target and your focus, in a nameplate's look, in place of the game's (Units/)
-# The bar: round, its border, the rank's line, the glow, the power line
+# The bar: round and green, its border, the rank's line, the glow, the power line; the row under it
 Units\Bar.lua
-# The line inside it: level and raid marker left, the name in the middle, the health right
+# The line inside it: level and raid marker left, then the name, the health right; the row's name
 Units\Text.lua
-# The frames: the game's secure unit buttons, placed in Edit Mode; the game's own out of sight
+# The frames and their rows (their targets, your pet): the game's secure unit buttons, placed in Edit Mode
 Units\Units.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua

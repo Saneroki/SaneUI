@@ -77,6 +77,8 @@ function Client.Install(W)
     PlayerFrame._mouse = true
     TargetFrame = W.NewWidget("Button", "TargetFrame", UIParent)
     FocusFrame = W.NewWidget("Button", "FocusFrame", UIParent)
+    PetFrame = W.NewWidget("Button", "PetFrame", PlayerFrame)
+    PetFrame._mouse = true
     -- The game's main action bar: its art, a divider, two buttons, the first holding an action, the second empty.
     local function GameButton(slot)
         local button = W.NewWidget("CheckButton", nil, UIParent)

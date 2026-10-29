@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look (built); the game's action bars clean (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -13,9 +13,10 @@ the bottom edge, or press your spellbook or talents key, and it fills the screen
 talents windows, which look and work as the game's, on Core's board that you arrange; push there again, press
 the key again, or Esc, and it goes back. A talent planner Sane UI knows is a window of its own there.
 
-Your frame, your target's and your focus's are ours, in the look of a nameplate: the level and raid marker on
-the left, the name in the middle, the health and how much is left on the right. The game's action bars are
-clean: only the buttons that hold something, each its icon alone.
+Your frame, your target's and your focus's are ours, in the look of a nameplate and green: the level and raid
+marker on the left, then the name (none on your own), the health and how much is left on the right. Under your
+target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours,
+your pet's. The game's action bars are clean: only the buttons that hold something, each its icon alone.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -66,22 +67,27 @@ clean: only the buttons that hold something, each its icon alone.
   still open ("3/8"). It goes once the objective is done. As the game says it in the creature's tooltip; a
   creature the game says nothing about has none. *Quest marks on nameplates* switches it off.
 - **Unit frames:** your own frame, your target's and your focus's, in place of the game's, in the look of a
-  nameplate: a round bar in the unit's colour (a player's class colour; red for a creature that attacks on
-  sight, light yellow for one that does not, grey when another took it) with its power along the bottom. Inside
-  it, on the left the level (coloured by how hard the unit is to you, a skull where it is too high to tell) and
-  the raid marker beside it; in the middle the name, a player's first name and surname; on the right the health
-  and how much is left ("850 | 85%"), *Dead* or *Offline* where it is so. An elite has the gold line behind its
-  border, a rare a silver one, a boss a thick gold one; the frame glows red while you have the unit's aggro (your
-  own: while anything is after you) or while it is a player who may attack you.
+  nameplate: a round green bar (the game's green for health, for everyone: no class colours) with the unit's
+  power along the bottom. Inside it, on the left the level (coloured by how hard the unit is to you, a skull
+  where it is too high to tell) and the raid marker beside it; then the name, from the left, a player's first
+  name and surname (none on your own frame); on the right the health and how much is left ("850 | 85%"), *Dead*
+  or *Offline* where it is so. An elite has the gold line behind its border, a rare a silver one, a boss a thick
+  gold one; the frame glows red while you have the unit's aggro (your own: while anything is after you) or while
+  it is a player who may attack you.
+  - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
+    your target's frame with that one's health (green) and its name alone; the same under your focus's frame for
+    your focus's target, and under your own frame for your pet while you have one. The frame's outline goes
+    round both, a thin dark line between them. Click a row to target its unit, right click for its menu.
   - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
     tooltip; in a fight too. Your target's and focus's frames come and go with them.
   - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
-    middle, your target right of it, your focus above your target. A frame whose unit is not there shows a
-    sample there (your own, named *Target* or *Focus*).
-  - With the game's target and focus frames go what hangs on them: their auras, their cast bars and the
-    target's target (Forever's combo points show on your target's nameplate). Of the game's own frame only its
-    picture, bars and texts go: its pet frame, totems, cast bar and a class's resource bar stay where it was,
-    moved in Edit Mode by the game's box *Player Frame*.
+    middle, your target right of it, your focus above your target. A frame or row whose unit is not there shows
+    a sample there (your own, named *Target*, *Focus*, *Target's target*, *Focus's target* or *Pet*); the rows
+    move with their frames.
+  - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
+    target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
+    pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems, cast bar and a
+    class's resource bar stay where it was, moved in Edit Mode by the game's box *Player Frame*.
 - **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
   decoration or background: no frame, end caps, page number or dividers on the bars, no frame or slot on a
   button. Only the buttons that hold something show, each its square icon alone; the mouse over one, a press and
@@ -89,7 +95,8 @@ clean: only the buttons that hold something, each its icon alone.
   every button shows, an empty one as a dark square to drop on. The reservations of Abilities still show on
   their empty buttons.
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
-  frame*, *Your target's frame*, *Your focus's frame*, each off for the game's own, and *Unit frame size*); the
+  frame*, *Your pet*, *Your target's frame*, *Your target's target*, *Your focus's frame*, *Your focus's target*,
+  each frame off for the game's own, and *Unit frame size*); the
   section *Action bars* (*Clean action bars*, off for the game's look); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
@@ -214,22 +221,33 @@ clean: only the buttons that hold something, each its icon alone.
   hears its unit's `Units.EVENTS` (`RegisterUnitEvent`), and a frameless `Core.Window` (`store`, `playerPlace`,
   `targetPlace`, `focusPlace`) placed in Edit Mode. `PLAYER_TARGET_CHANGED`, `PLAYER_FOCUS_CHANGED`,
   `RAID_TARGET_UPDATE`, `PLAYER_LEVEL_UP` and `PLAYER_ENTERING_WORLD` fill them anew. In Edit Mode the unit watch is
-  off and every frame shown, one whose unit is not there filled for `player` as a sample (`face.sample`,
-  `TEXT.samples`). Secure work (making, the unit watch, showing, the scale, the game's frames) runs out of a fight
-  (`Core.AfterCombat("unit frames", ...)`); a setting changed in one waits for its end.
+  off and every frame and row shown, one whose unit is not there filled for `player` as a sample (`face.sample`,
+  `face.rowSample`, `TEXT.samples`). Secure work (making, the unit watch, showing, the scale, the game's frames)
+  runs out of a fight (`Core.AfterCombat("unit frames", ...)`); a setting changed in one waits for its end.
+  - Each kind's `row` (`targettarget`, `focustarget`, `pet`; settings `unitTargetTarget`, `unitFocusTarget`,
+    `unitPet`): a `SecureUnitButtonTemplate` child of the frame's button, right under it, `Units.ROW` (18) high,
+    shown by its own unit watch; its look is the face's (`face.row`, `face.rowName`), laid out as its button shows
+    or goes (its `OnShow`, `OnHide`, and the frame's `OnShow`: a row hidden while its frame was out of sight hears
+    no `OnHide`; `Rowed`). While it shows its unit is read every `Units.POLL` (0.2 s) on the row bar's `OnUpdate`
+    (the game sends no events of a target's target), and at once on `UNIT_TARGET` and `UNIT_PET`.
   - `Bar.lua` (`ns.UnitBar`): the nameplates' look rebuilt for a frame of one size: the fill and background
-    masked by Core's caps (`Shape.CAP_LEFT`, `CAP_RIGHT`, a quarter of the height), the border, rank line and the
-    glow's six bands as halves round at their own corners (`Shape.CORNER`); the power line a quarter of the bar
-    (`Bar.LINE`); the colours, ranks and glow as on a plate. Hidden values (health, a creature's most, your threat
-    against it) go to the bar, the glow's `SetAlphaFromBoolean` and the texts as they are.
+    masked by Core's caps (`Shape.CAP_LEFT`, `CAP_RIGHT`, a quarter of the height) or, while the row shows, by
+    corner masks at the top alone (`Shape.CORNER`), the row's at its bottom; the border, rank line and the glow's
+    six bands as halves round at their own corners, reaching down round the row while it shows, the row a pixel
+    under the bar (the border's dark between). Every bar `Bar.GREEN` (the game's
+    `COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`, plain green without it); the power line a quarter of the bar
+    (`Bar.LINE`); ranks and glow as on a plate. Hidden values (health, a creature's most, your threat against it)
+    go to the bars, the glow's `SetAlphaFromBoolean` and the texts as they are.
   - `Text.lua` (`ns.UnitText`): the game's plate font (`SystemFont_NamePlate_Outlined`) at `Text.SIZE` 12; level
     and raid marker (`SetSpriteSheetCell`) left, health right (`Text.Short`, `Text.Percent`; hidden: the game's
-    `AbbreviateNumbers` in `Text.STEPS` and `UnitHealthPercent` by its curve), the name centred, its width the
-    bar's less twice the wider side (`Text.Layout`; the health's room as wide as its most, measured on a ruler of
-    ours, `Text.SAMPLE` while a creature's most is hidden).
+    `AbbreviateNumbers` in `Text.STEPS` and `UnitHealthPercent` by its curve), the name from the left side's end up
+    to the health's room (`Text.Layout`; the health's room as wide as its most, measured on a ruler of ours,
+    `Text.SAMPLE` while a creature's most is hidden), none on your own frame (`face.noName`); the row's name alone
+    (`Text.Row`).
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
-    children `PetFrame`, `TotemFrame`, the attached cast bar and the class bars stay the game's.
+    children `TotemFrame`, the attached cast bar and the class bars stay the game's; `PetFrame` (which the game's
+    layout re-parents) alpha 0 and its mouse off while the pet's row is on.
 - **The action bars** (`ActionBars.lua`): the bars of `Bars.BARS` (main, the extra bars, stance, pet, possess)
   keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`,
   `ActionBarPageNumber`, its arrows' mouse off) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
@@ -277,9 +295,9 @@ clean: only the buttons that hold something, each its icon alone.
 | `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
-| `Units/Bar.lua` | A unit frame's bar in a nameplate's look: round, its border, the rank's line, the glow, the power line |
-| `Units/Text.lua` | The line inside it: level and raid marker left, the name in the middle, the health right |
-| `Units/Units.lua` | Your frame, your target's and your focus's: the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
+| `Units/Bar.lua` | A unit frame's bar in a nameplate's look, green: round, its border, the rank's line, the glow, the power line; the row under it |
+| `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; the row's name |
+| `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
 
 ## History
@@ -299,3 +317,6 @@ clean: only the buttons that hold something, each its icon alone.
   nameplates; the health and its share right, the name in the middle, players by their full names, the level and
   raid marker left), in place of the game's; the game's action bars clean (Saneroki: no borders, decorations or
   backgrounds, only the filled slots).
+- **2026-10-29:** rows under the frames (Saneroki: the target's target like the cast bar, appearing underneath while
+  there is one, its name the only text): your target's target, your focus's target, your pet; every bar green, no
+  class colours; names from the left; no name on your own frame.
