@@ -6,6 +6,25 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 122 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: names not cut short as plates grow and shrink; room to spare (Saneroki, 2026-10-29)
+Saneroki: as a plate and its text scale together, names are often cut short with "..."; let the text follow the
+plate, so the text always has room, with a little to spare before the plate widens.
+- **Why it was cut:** the game draws small letters a little wider or narrower than large ones, so a text measured
+  at one size (a plate appearing was measured at the full size, then shown at the size of its distance) could be
+  wider than its room at another.
+- **Measured again (`Text.Refit`, from `Scale.Step`):** after the plate took its new size, once it moved on by
+  `Scale.TEXT` (4%) and when it settles, the count, level, item level and name are measured again at that size; the
+  line is laid out anew only where a text outgrew its room or left too much of it. A text that answers its width
+  hidden, and a dress out of sight, are left as they are.
+- **Room to spare (`Text.Spare`):** every text's room `Text.SPARE` (6%) wider than it, and kept while the text fits in
+  it with no more than twice that left over, so small changes leave the bar's width alone.
+- **Not done:** drawing the text a little behind the plate's size: as a plate shrinks, the text would be larger than
+  its bar for a moment, and the room would still be measured at another size than the one drawn. The room follows
+  the text's size instead, measured right after the plate took it.
+- **Tests:** `dev/tests/nameplates.lua` 260 checks (the spare and when a room is kept; a name drawn 5% wider as the
+  plate shrinks: the bar as it was; 15% wider: wider for it, never cut; back: the bar's width again).
+- A `/reload` takes it in.
+
 ### Nameplates: appearing softly, at their size; the out-of-reach red half transparent (Saneroki, 2026-10-29)
 Saneroki: plates appeared with a springy overshoot; they should appear as subtly as possible, fading in linearly from
 nothing to full between 60 and 55 yards, and the red range border should be half transparent, less saturated.

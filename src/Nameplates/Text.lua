@@ -19,6 +19,11 @@ local _, ns = ...
 --    name     its name: a player's first name and surname
 --    health   short ("850", "1.2k", "1.32m") and how much is left ("| 100%")
 --  The bar is as wide as the line and its insets (Text.Layout, Plate.Place).
+--  Each text's room has a little to spare (Text.SPARE) and is kept while the
+--  text fits in it: the game draws small letters a little wider or narrower
+--  than large ones, so as a plate grows or shrinks its texts are measured
+--  anew at the size it shows at (Text.Refit, from Scale.lua), and the bar
+--  widens only once a text outgrows its spare.
 --
 --  The line's font is the game's for its plates' names, smaller (Text.SMALLER),
 --  the icons as high as it and a little more. A plain text is measured on
@@ -47,6 +52,7 @@ Text.OUTSIDE = 4 -- from the bar's left end to the icons outside it (past a boss
 Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
 Text.ICON = 1.2  -- an icon's size, times the font's height
 Text.SLACK = 1   -- room given to a text beyond its measured width, so it is never cut short by rounding
+Text.SPARE = 0.06 -- and beyond that, a share of its width: room to breathe before the bar widens for it
 Text.WIDEST = 1000 -- a text measured wider than this was not measured (the game not ready yet)
 Text.GUESS = 0.6   -- a letter's width, a share of the font's height, while the game cannot measure
 Text.NAME = 80   -- the room of a name the game hides, before a plain one was seen
@@ -165,8 +171,20 @@ function Text.Make(dress)
     dress.room = {} -- [piece] = its room on the line now; none while it does not show
 end
 
+-- The pieces of the line that are texts (not the icons outside it): their room has some to spare.
+local TEXTS = { count = true, level = true, gear = true, threat = true, name = true, value = true }
+
+-- A text's room for that width: the room it had while the text fits in it with no more than twice the spare left
+-- over, so a small change of its width leaves the bar as it is; else the width and its spare.
+function Text.Spare(had, width)
+    local spare = math.floor(width * Text.SPARE + 0.5)
+    if had and had >= width and had <= width + 2 * spare then return had end
+    return width + spare
+end
+
 -- A piece's room on the line (nil: it takes none), and the line laid out anew when it changed.
 local function Room(dress, piece, width)
+    if width and TEXTS[piece] then width = Text.Spare(dress.room[piece], width) end
     if dress.room[piece] == width then return end
     dress.room[piece] = width
     if not dress.holding then Text.Layout(dress) end
@@ -399,6 +417,31 @@ function Text.Health(dress, unit)
         return text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
     end
     Hidden(text, unit, now)
+end
+
+-- The texts measured on themselves, measured anew at the size the plate shows at now (Scale.lua, as it grows or
+-- shrinks); the line laid out anew only where one outgrew its spare or left too much of it. Not while the dress is
+-- out of sight (a hidden text may not measure), nor a text that answers its width hidden.
+local MEASURED = { "count", "level", "gear", "name" }
+function Text.Refit(dress)
+    if not dress.unit or not dress:IsShown() then return end
+    local room, changed = dress.room, false
+    dress.holding = true
+    for _, piece in ipairs(MEASURED) do
+        local had = room[piece]
+        local width = had and Drawn(dress[piece])
+        if width and width > 0 then
+            width = math.ceil(width) + Text.SLACK
+            if piece == "name" then
+                width = math.min(width, Text.MOST)
+                dress.nameRoom = width
+            end
+            Room(dress, piece, width)
+            changed = changed or room[piece] ~= had
+        end
+    end
+    dress.holding = false
+    if changed then Text.Layout(dress) end
 end
 
 -- Every piece for the unit (or none: a plate taken back keeps nothing of its last unit).

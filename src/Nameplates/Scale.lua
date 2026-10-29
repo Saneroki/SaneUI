@@ -50,6 +50,7 @@ Scale.CURVE = { { 10, 1 }, { 40, 0.5 }, { 60, 0.25 } } -- { yards, share of the 
 Scale.SPEED = 0.2  -- how fast a plate follows its unit's distance: shares of the full size a second, in a straight
                    -- line (about as fast as a running unit changes it)
 Scale.QUICK = 2    -- how fast it moves to a size for any other reason (selected, the setting)
+Scale.TEXT = 0.04  -- its texts measured anew each time its size moved on by this share since (Text.Refit)
 Scale.SHOW = 5 / 7 -- seconds a plate takes from unseen to seen as it appears, in a straight line: as long as
                    -- running (7 yards a second) takes from 60 yards (Range.FAR) to 55
 -- The game's CVars and ours for them: none of its scaling, none of its fading (but behind walls, which stays its own).
@@ -151,6 +152,13 @@ function Scale.Step(dress, elapsed)
     end
     dress.now = now
     Show(dress, now)
+    -- Its texts measured anew at this size, after the plate took it, once it moved on by Scale.TEXT or settled: the
+    -- room is there before a text needs it.
+    local measured = dress.measured
+    if not measured or (now == aim and measured ~= now) or math.abs(now - measured) > Scale.TEXT * math.max(now, 0.05) then
+        dress.measured = now
+        ns.Text.Refit(dress)
+    end
     if dress.showing then
         dress.showing = math.min(dress.showing + elapsed / Scale.SHOW, 1)
         dress:SetAlpha(dress.showing)
@@ -209,7 +217,7 @@ function Scale.Born(dress)
     ns.Range.One(dress.unit, dress)
     local target = Plain(UnitIsUnit(dress.unit, "target")) == true
     local size = target and 1 or Scale.Size(dress.yards or 0)
-    dress.now, dress.aim, dress.target, dress.moving, dress.fitted = size, size, target, true, 0
+    dress.now, dress.aim, dress.target, dress.moving, dress.fitted, dress.measured = size, size, target, true, 0, nil
     dress.showing = 0
     dress:SetAlpha(0)
     Show(dress, size)
@@ -223,7 +231,7 @@ function Scale.Leave(dress)
     dress:SetScale(Scale.Full())
     dress:SetAlpha(1)
     dress.now, dress.aim, dress.moving, dress.showing, dress.yards = nil, nil, nil, nil, nil
-    dress.quick, dress.target, dress.fitted = nil, nil, nil
+    dress.quick, dress.target, dress.fitted, dress.measured = nil, nil, nil, nil
 end
 
 local function Fought()

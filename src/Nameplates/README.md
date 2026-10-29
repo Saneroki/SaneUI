@@ -31,7 +31,9 @@ fails, every plate is the game's own again.
   creature tapped by another player; light yellow for a creature that does not attack on sight; red for one
   that does; the game's colour for friends.
 - **Inside the bar:** one line, left to right, each piece taking room only while it shows, and the bar as wide
-  as the line and a little inset, no wider:
+  as the line and a little inset, no wider. Each text has a little room to spare: the game draws small letters a
+  little wider or narrower than large ones, so as a plate grows or shrinks its texts are measured again at the size
+  it shows at, and the bar widens only once a text outgrows its spare (a name is never cut short by it):
   - *quest:* while the unit belongs to a quest in your log with an objective still open, the game's sword (to
     kill it) or sack (to loot it) outside the bar, left of it, and the count ("0/7") first in the line;
   - *raid marker*, outside the bar too, left of the quest's icon;
@@ -164,7 +166,12 @@ fails, every plate is the game's own again.
   x; the icons (the quest's, then the raid marker: `OUTSIDE`) right of the frame's left, `Text.OUTSIDE` (4) apart from
   it and each other, their width kept as `dress.outside` for the foe's buffs (`Auras.Place`), and wants the bar as wide as the line and its insets
   (`dress.want`, `Plate.Place`). A plain text's room is its own whole width (`GetUnboundedStringWidth`: not as cut
-  by the width it was given), rounded up, and `Text.SLACK` (1) more; a text that answers hidden (a font string once
+  by the width it was given), rounded up, and `Text.SLACK` (1) more; every text's room (not the icons') then
+  `Text.SPARE` (6%) of that more, kept while the text fits in it with at most twice that left over (`Text.Spare`), so
+  a small change of a width changes nothing. As a plate grows or shrinks (`Scale.Step`), once its size moved on by
+  `Scale.TEXT` (4%) since and when it settles, the texts measured on themselves (count, level, item level, name) are
+  measured again at that size, after the plate took it (`Text.Refit`; not while the dress is out of sight, nor a text
+  that answers hidden): the line is laid out anew only where one outgrew its spare or left too much of it. A text that answers hidden (a font string once
   given a hidden value may ever after), the health's most and the threat's "100%" are measured on a ruler of ours
   (`Text.Width`: a font string at alpha 0, never given a hidden value, on a frame of its own on `UIParent`, always
   shown, since a hidden one may not measure what it is given). A width the game gives as none, endless or beyond

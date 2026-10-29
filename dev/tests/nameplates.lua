@@ -310,7 +310,10 @@ check(type(dress.value._text) == "table" and dress.value._text.form == "%s | %d%
 -- The line: level, name, health, one after the other; the bar as wide as it and its insets.
 local function X(region) return region._points[1][4] end
 local I, G = Text.INSET, Text.GAP
-local function L(letters) return letters * 6 + Text.SLACK end -- a text's room: six a letter, and the slack
+-- A text's room: six a letter, the slack, and its spare.
+local function L(letters) return Text.Spare(nil, letters * 6 + Text.SLACK) end
+check(L(10) == 61 + 4 and Text.Spare(65, 61) == 65 and Text.Spare(65, 66) == 70 and Text.Spare(70, 61) == 65,
+    "a text's room: a little to spare; kept while the text fits with at most twice that left over")
 check(X(dress.level) == I and X(dress.name) == I + L(2) + G and X(dress.value) == I + L(2) + G + L(10) + G,
     "the level first, then the name, then the health")
 check(Text.Guess("nameplate1") == "8.8k" and dress.room.value == L(11),
@@ -865,6 +868,31 @@ Settle()
 check(Near(dress._scale, full * Scale.Size(25)), "27 yards: past the 25 yard rung, so at 25 for sure")
 check(Near(dress.edge, Core.Pixels(dress, 1)) and dress.fitted == dress.now,
     "settled at its size: laid out anew, the border one screen pixel at it")
+-- Its texts measured anew as it grows or shrinks (the game draws small letters a little wider or narrower): within
+-- their spare the bar keeps its width; past it the bar widens; narrower only with more than twice the spare left.
+local drawn, wide = methods.GetUnboundedStringWidth, 1
+methods.GetUnboundedStringWidth = function(self) return drawn(self) * (self == dress.name and wide or 1) end
+local room, want = dress.room.name, dress.want
+check(room == L(10) and dress.measured == dress.now, "settled: its texts measured at its size")
+wide = 1.05
+yards.nameplate1 = 32
+Settle()
+check(Near(dress._scale, full * Scale.Size(30)) and dress.measured == dress.now and dress.room.name == room
+    and dress.want == want, "smaller, its name drawn a little wider: within its spare, the bar as wide as it was")
+wide = 1.15
+yards.nameplate1 = 22
+Settle()
+check(dress.room.name == Text.Spare(nil, math.ceil(60 * 1.15) + Text.SLACK) and dress.want > want
+    and dress.name._width == dress.room.name and dress._width == dress.want,
+    "drawn wider still: the name never cut short, the bar wider for it, with its spare again")
+wide = 1
+yards.nameplate1 = 32
+Settle()
+check(Near(dress._scale, full * Scale.Size(30)) and dress.room.name == room and dress.want == want,
+    "smaller again, drawn as wide as at first: the bar back to its width")
+methods.GetUnboundedStringWidth = drawn
+yards.nameplate1 = 27
+Settle()
 -- Your target: always full, whatever its distance, reached quickly.
 units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")
