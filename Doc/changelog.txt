@@ -11,9 +11,13 @@ The bigger changes of each version, newest first.
   then the name (players by their full name; none on your own),
   the health and how much is left on the right. Under your
   target's and focus's frames their target, under yours your
-  pet, as a cast bar under a nameplate. Placed in Edit Mode. The
-  action bars are clean: no borders or decorations, only the
-  buttons that hold something.
+  pet, as a cast bar under a nameplate. Under the health the
+  power, half as high, with "current | percent" (a druid's mana
+  and its form's power); around them the three most important
+  buffs, debuffs and crowd control, with your lists Always show
+  and Never show (right click an icon, or /sane auras). Placed in
+  Edit Mode. The action bars are clean: no borders or
+  decorations, only the buttons that hold something.
 - Lore: talking to an NPC is a scene over the world. The NPC's
   face, name and words stand see-through low in the middle, a
   paragraph at a time, your answers beside them, the quest's

@@ -62,6 +62,10 @@ Decided (Saneroki, 2026-10-16):
   the target's frame while the target has a target, and the only text in its health bar is the name; the same for
   the focus's target and, under your own frame, your pet. All unit frames green, not in class colours; the names
   anchored left, after the level and raid marker; your own frame without a name.
+- **Power bars and auras** (Saneroki, 2026-10-29; built): the class resource bar half the health bar's height,
+  with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
+  bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
+  black and white lists by a right click on an icon, and a window to add auras to either list.
 - **Clean action bars** (Saneroki, 2026-10-29; built): the game's action bars without any border, decoration or
   background, only the filled slots; they stay the game's bars, placed in its Edit Mode.
 

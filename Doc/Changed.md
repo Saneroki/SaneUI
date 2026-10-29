@@ -3,8 +3,35 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 103 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 179 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 179 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Combat: power bars half the health bar's height; the most important auras around the unit frames; aura lists (Saneroki, 2026-10-29)
+Saneroki: the class resource bar the same 50% height of the health bar; with several, as a druid's, always the mana
+bar and also the energy or rage bar in that form; "<current> | <percentage>%" on the right in the bars. CC, debuffs and
+buffs on the unit frames as on the nameplates, at least the three most important; black or white list them by a right
+click, with an option to open a window to add them.
+- **Power bars (`Units/Bar.lua`, `Units/Text.lua`, `Units/Units.lua`):** the thin power line inside the health bar is
+  gone; under the health bar, inside the same outline, a power bar half its height (13 at 100 %) with the power and its
+  share at its right in a smaller size (hidden values by the game's `AbbreviateNumbers` and `UnitPowerPercent`). The bars
+  are one stack a pixel apart, round only at its top and bottom; the row (target's target, pet) under the power slots.
+  Your own frame keeps two slots as a druid (mana always, the form's energy or rage under it) or while your power is not
+  mana but you have mana; the button's height (health and slots) is set out of a fight only, the second bar comes and
+  goes with the form. The face is the health bar's height, the rest hangs under it.
+- **Auras (`Units/Auras.lua`):** per frame three containers of the game's (`CustomAuraContainerTemplate`, as the
+  nameplates'): debuffs above from the left (a foe: yours; a friend or you: any; the game's unit frame order), buffs
+  above from the right (a foe: as on its plates; a friend or you: any, big defensives first), crowd control right of
+  the frame; three each. A group for Always show in front (`includeSpellIDs`), the rest without both lists
+  (`excludeSpellIDs`): the game applies them, in a fight too, where it lets addons tell spells apart (buffs of you,
+  your group and friends; debuffs of foes). A right click on an icon out of a fight finds the spell by its name (the
+  game writes it into a text of ours, unseen) among the unit's auras and opens a menu: Always show, Never show, Aura
+  lists. The setting *Auras on the frames*.
+- **The lists (`Units/Lists.lua`):** `auraWhite` and `auraBlack`, spell number and name, a spell on one list at most;
+  a window of its own (`/sane auras`, and the menu): a box for a spell's number or one of your spells' names, the
+  buttons Always show and Never show, both lists side by side with icon, name, number and an X, what the game lets the
+  lists do under them.
+- **Tests:** `dev/tests/combat.lua` checks the bars (a druid's two), the containers, the menu, the lists and the window;
+  `dev/tests/combatclient.lua` gives the stand-in client the game's aura containers, aura data and powers by type.
 
 ### Loot: each line a bar as the nameplates draw theirs, in the thing's colour; the picture bare (Saneroki, 2026-10-29)
 Saneroki: no border round the item's picture, the line's own is enough; the border like the nameplates' (their font,

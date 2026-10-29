@@ -2,12 +2,17 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Bar
---  A unit frame's bar, in the look of a nameplate's (the module Nameplates):
---  a rectangle round at its corners, framed by one thin border, the unit's
---  power a thin line along its bottom, inside it; and under it, while it
---  shows, a row of its own (your target's target, your focus's target, your
---  pet), as a cast bar hangs under a nameplate's bar: inside the same outline,
---  the bar square at its bottom then, the row round at its own. The frame is
+--  A unit frame's bars, in the look of a nameplate's (the module Nameplates):
+--  one rectangle round at its corners, framed by one thin border, holding a
+--  stack of bars a screen pixel apart (the border's dark between them): the
+--  unit's health, under it its power at half that height (two powers on a
+--  frame that has two slots: mana always, and the power of a druid's form
+--  under it), and, while it shows, a row of its own (your target's target,
+--  your focus's target, your pet), as a cast bar hangs under a nameplate's
+--  bar. The stack's first bar is round at its top, its last at its bottom. The
+--  frame's face is as high as the health bar; the rest hangs under it, inside
+--  the same outline; its button is as high as the health and the power slots
+--  it keeps, and the row's button under that. The frame is
 --  always as wide as it is: nothing it shows changes its size, and its border
 --  and rank's line lie inside it (a nameplate's rank line reaches outwards), so
 --  an elite's or a boss's frame is no wider than another's; every piece is laid
@@ -25,9 +30,8 @@ local _, ns = ...
 --  From the inside out:
 --    the bar      health as the game gives it (a hidden value in a fight: the
 --                 bar takes it as it is), green: the game's colour for health
---    the row      the same, its own unit's, a screen pixel under the bar (the
---                 border's dark between them)
---    the power    the unit's mana, rage or energy, in the game's colour for it
+--    the powers   the unit's mana, rage or energy, in the game's colour for each
+--    the row      health again, its own unit's
 --    the rank     inside the border, between it and the bars: gold and thick
 --                 on a boss, gold on an elite, silver on a rare
 --    the border   one screen pixel, black, the frame's edge
@@ -42,8 +46,8 @@ ns.UnitBar = Bar
 
 Bar.FILL = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" -- the game's raid frames' health fill
 Bar.WHITE = "Interface\\Buttons\\WHITE8X8"
-Bar.CAP = 1 / 4  -- a cap's width and every corner's round, a share of the bar's height
-Bar.LINE = 1 / 4 -- the power line's height, a share of the bar's
+Bar.CAP = 1 / 4  -- a cap's width and every corner's round, a share of the health bar's height
+Bar.MANA = rawget(_G, "Enum") and Enum.PowerType and Enum.PowerType.Mana or 0 -- the game's number for mana
 Bar.BACKGROUND = { 0.07, 0.07, 0.09, 1 } -- where health is missing: solid, so nothing behind shows through
 Bar.BORDER = { 0, 0, 0, 0.9 }
 Bar.GLOW = { 1, 0.08, 0.05 }
@@ -146,7 +150,7 @@ local function Health(host, level)
 end
 
 -- One end's mask over a bar for what that end should be: "both" round at its top and bottom (a cap a quarter of the
--- height wide), "top" or "bottom" round at that corner alone (a corner mask of that radius).
+-- height wide), "top" or "bottom" round at that corner alone (a corner mask of that radius), "none" square.
 local function End(mask, bar, side, mode, radius, height)
     local shape = Core.Shape
     mask:ClearAllPoints()
@@ -155,6 +159,11 @@ local function End(mask, bar, side, mode, radius, height)
         mask:SetPoint("TOP" .. side, bar, "TOP" .. side)
         mask:SetPoint("BOTTOM" .. side, bar, "BOTTOM" .. side)
         mask:SetWidth(math.max(height * Bar.CAP, 0.01))
+    elseif mode == "none" then
+        mask:SetTexture(Bar.WHITE, "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint("TOP" .. side, bar, "TOP" .. side)
+        mask:SetPoint("BOTTOM" .. side, bar, "BOTTOM" .. side)
+        mask:SetWidth(1)
     else
         local corner = (mode == "top" and "TOP" or "BOTTOM") .. side
         mask:SetTexture(shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
@@ -168,9 +177,10 @@ local function Ends(bar, mode, radius, height)
 end
 
 -- The bar's pieces on the frame, each layer on a frame of its own one level above the last: the glow, then the
--- rank's line and the border, then the health with its power line and the row (the texts above it all). How high
--- the row is: row (in the frame's units); the frame says while it shows (face.rowShown).
-function Bar.Make(frame, row)
+-- rank's line and the border, then the bars (the texts above it all). sizes: how high the health bar, a power bar and
+-- the row are, and how many power slots the frame keeps (frame.slots); the frame says how many powers show
+-- (frame.powersShown) and whether the row does (frame.rowShown).
+function Bar.Make(frame, sizes)
     local level = Plain(frame:GetFrameLevel()) or 1
     local glow = CreateFrame("Frame", nil, frame)
     glow:SetAllPoints(frame)
@@ -190,49 +200,51 @@ function Bar.Make(frame, row)
     frame.rankLine:SetShown(false)
     frame.border:SetVertexColor(Bar.BORDER[1], Bar.BORDER[2], Bar.BORDER[3], Bar.BORDER[4])
     frame.health = Health(frame, level + 3)
-    -- No background: where the unit's power is spent, the bar is seen through the line.
-    local power = CreateFrame("StatusBar", nil, frame.health)
-    power:SetPoint("BOTTOMLEFT", frame.health, "BOTTOMLEFT")
-    power:SetPoint("BOTTOMRIGHT", frame.health, "BOTTOMRIGHT")
-    power:SetStatusBarTexture(Bar.FILL)
-    power:SetMinMaxValues(0, 1)
-    power:SetValue(0)
-    for _, mask in ipairs(frame.health.ends) do power:GetStatusBarTexture():AddMaskTexture(mask) end
-    power:Hide()
-    frame.power = power
-    if row then
-        frame.rowHeight = row
-        frame.row = Health(frame, level + 3)
-        frame.row:Hide()
+    frame.healthHeight, frame.powerHeight, frame.rowHeight = sizes.health, sizes.power, sizes.row
+    frame.slots, frame.powersShown, frame.powers = 1, 1, {}
+    for index = 1, 2 do
+        local power = Health(frame, level + 3)
+        power:SetValue(0)
+        power:Hide()
+        frame.powers[index] = power
     end
+    frame.row = Health(frame, level + 3)
+    frame.row:Hide()
     frame.rank = Bar.PLAIN
 end
 
--- Laid out for the frame's size, the unit's rank and the row, all inside the frame's edge: the border on it, the
--- rank's line a pixel inside it, the bar inside both (down to the row, square there, while it shows), the row a pixel
--- under the bar; the glow beyond the edge; every round a quarter of the bar's height.
+-- Laid out for the frame's sizes, the unit's rank, its powers and the row, all inside the frame's edge: the border on
+-- it, the rank's line a pixel inside it, the bars inside both, one under the other a pixel apart: the health, each
+-- power shown, the row while it shows (under the power slots the frame keeps, where its button is); the glow beyond
+-- the edge; every round a quarter of the health bar's height.
 function Bar.Fit(frame)
-    local height = Plain(frame:GetHeight()) or 0
+    local height, powerHeight, rowHeight = frame.healthHeight, frame.powerHeight, frame.rowHeight
     local pixel = Core.Pixels(frame, 1)
     local radius = height * Bar.CAP
-    local row = frame.row and frame.rowShown and frame.rowHeight or 0
     local inset = pixel * frame.rank.width -- the border and the rank's line
-    Around(frame.border, frame, 0, height, row, radius)
-    Around(frame.rankLine, frame, -pixel, height, row, radius)
-    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, row, radius) end
-    local health, inner = frame.health, math.max(radius - inset, 0.01)
-    health:ClearAllPoints()
-    health:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -inset)
-    health:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, row > 0 and 0 or inset)
-    Ends(health, row > 0 and "top" or "both", inner, height - 2 * inset)
-    frame.power:SetHeight(math.max((height - 2 * inset) * Bar.LINE, pixel * 2))
-    if frame.row then
-        frame.row:ClearAllPoints()
-        frame.row:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", inset, -pixel)
-        frame.row:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, inset - frame.rowHeight)
-        Ends(frame.row, "bottom", math.max(math.min(inner, frame.rowHeight - pixel - inset), 0.01), frame.rowHeight)
-        frame.row:SetShown(row > 0)
+    local slots, shown = frame.slots, math.min(frame.powersShown or 0, frame.slots)
+    local rowTop = height + slots * powerHeight
+    local below = frame.rowShown and (rowTop - height + rowHeight) or shown * powerHeight
+    Around(frame.border, frame, 0, height, below, radius)
+    Around(frame.rankLine, frame, -pixel, height, below, radius)
+    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, below, radius) end
+    -- The stack, top to bottom: { bar, its top and its height below the frame's top }.
+    local stack = { { frame.health, 0, height } }
+    for index = 1, shown do stack[#stack + 1] = { frame.powers[index], height + (index - 1) * powerHeight, powerHeight } end
+    if frame.rowShown then stack[#stack + 1] = { frame.row, rowTop, rowHeight } end
+    for index, piece in ipairs(stack) do
+        local bar, top, tall = piece[1], piece[2], piece[3]
+        local first, last = index == 1, index == #stack
+        bar:ClearAllPoints()
+        bar:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -top - (first and inset or pixel))
+        bar:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -inset, -top - tall + (last and inset or 0))
+        local mode = first and last and "both" or first and "top" or last and "bottom" or "none"
+        local round = math.max(math.min(radius - inset, tall - pixel - inset), 0.01)
+        Ends(bar, mode, round, tall - pixel - inset)
+        bar:Show()
     end
+    for index = shown + 1, #frame.powers do frame.powers[index]:Hide() end
+    if not frame.rowShown then frame.row:Hide() end
 end
 
 -- A unit's rank by the line behind the border ("boss", "elite", "rare"), or nil.
@@ -295,18 +307,37 @@ local function PowerColour(token)
     return 0, 0.55, 1
 end
 
--- The unit's power along the bar's bottom, as the game gives it; none where the unit has none (a most of 0, as
--- far as can be told: a hidden most shows the line).
-function Bar.Power(frame, unit)
-    local most = Raw(UnitPowerMax, unit)
-    local on = type(most) ~= "nil" and Plain(most) ~= 0
-    local power = frame.power
-    if on then
-        local _, token = Core.Ask(UnitPowerType, unit)
-        power:SetStatusBarColor(PowerColour(token))
-        power:SetMinMaxValues(0, most)
-        local now = Raw(UnitPower, unit)
-        if type(now) ~= "nil" then power:SetValue(now) end
+-- The powers a frame shows, by its slots: the unit's own; on a frame with two (frame.alternate), mana first and under
+-- it the unit's own while that is not mana (a druid's form). Each { type = the game's number, token = its name }; a
+-- unit without a power has an empty slot ({}).
+function Bar.Kinds(frame, unit)
+    local kind, token = Core.Ask(UnitPowerType, unit)
+    if not frame.alternate then return { { type = kind, token = token } } end
+    local kinds = { { type = Bar.MANA, token = "MANA" } }
+    if type(kind) == "number" and kind ~= Bar.MANA then kinds[2] = { type = kind, token = token } end
+    return kinds
+end
+
+-- The unit's powers in their bars, as the game gives them (hidden or not), in the game's colour for each; an empty
+-- bar where the unit has none (a most of 0, as far as can be told). Laid out anew when their number changed.
+function Bar.Powers(frame, unit)
+    local kinds = Bar.Kinds(frame, unit)
+    for index, kind in ipairs(kinds) do
+        local bar = frame.powers[index]
+        local most = kind.type and Raw(UnitPowerMax, unit, kind.type)
+        if type(most) ~= "nil" and Plain(most) ~= 0 then
+            bar:SetStatusBarColor(PowerColour(kind.token))
+            bar:SetMinMaxValues(0, most)
+            local now = Raw(UnitPower, unit, kind.type)
+            if type(now) ~= "nil" then bar:SetValue(now) end
+        else
+            bar:SetMinMaxValues(0, 1)
+            bar:SetValue(0)
+        end
     end
-    power:SetShown(on)
+    if #kinds ~= frame.powersShown then
+        frame.powersShown = #kinds
+        Bar.Fit(frame)
+    end
+    return kinds
 end

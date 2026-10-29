@@ -58,6 +58,18 @@ ns.TEXT = {
     unitFocusTargetTip = "Under your focus's frame while your focus has a target: a row with that one's health and name.",
     unitSize = "Unit frame size",
     unitSizeTip = "How large the three frames and their rows are.",
+    unitAuras = "Auras on the frames",
+    unitAurasTip = "The auras that matter most, three of each kind: debuffs above a frame from its left (on a foe yours), buffs above it from its right, crowd control right of it. Right click an icon (out of a fight) to always or never show it, or to open your aura lists (/sane auras).",
+    auraAlways = "Always show",
+    auraNever = "Never show",
+    auraLists = "Aura lists...",
+    auraFight = "In a fight the game keeps auras from addons: after it",
+    listsTitle = "Aura lists",
+    listsInput = "A spell's number, or its name (one of your own):",
+    listsEmpty = "None yet.",
+    listsPut = "%s: %s.",
+    listsUnknown = "The game does not know that spell here by its name: type its number, or right click its icon on a unit frame.",
+    listsRule = "The game lets the lists act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
     samples = { player = "You", target = Core.Word("TARGET", "Target"), focus = Core.Word("FOCUS", "Focus"),
                 targettarget = "Target's target", focustarget = "Focus's target", pet = Core.Word("PET", "Pet") },
     actionBars = "Action bars",
@@ -98,6 +110,9 @@ local OPTIONS = {
     { key = "unitFocus", default = true, text = ns.TEXT.unitFocus, tip = ns.TEXT.unitFocusTip },
     { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip },
     { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip },
+    { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip },
+    { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
+    { key = "auraBlack", default = {} }, -- those never shown
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
 }
@@ -124,12 +139,15 @@ function ns.GiveBack()
     ns.Safe("window", ns.Window.Hide)
     ns.Safe("quest marks", ns.QuestMarks.Hide)
     ns.Safe("unit frames", ns.Units.GiveBack)
+    ns.Safe("aura lists", ns.AuraLists.Hide)
     ns.Safe("action bars", ns.ActionBars.GiveBack)
 end
 
 function ns.OnLoad()
     ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
 end
+
+Core.Command("auras", "your aura lists for the unit frames: always and never shown", function() ns.Guarded(ns.AuraLists.Toggle) end)
 
 function ns.OnLogin()
     ns.Window.Build()

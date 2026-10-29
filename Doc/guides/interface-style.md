@@ -328,6 +328,10 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   A player's name is always the whole name, first name and surname; your own frame has no name. No portrait, no
   frame round it. A fixed width: every frame as wide as the others, whatever it shows; the rank's gold or silver
   line lies inside the border (on a nameplate it reaches outwards).
+- **Power bars under the health bar:** half its height, in the game's colour for each power, the power and its
+  share on the right in a smaller size ("2.4k | 80%"); a druid's mana bar always, its form's power under it.
+- **Auras around them:** the three most important debuffs above a frame from its left, buffs from its right,
+  crowd control right of it: small square icons cropped in a thin dark edge, the time gone as a swipe.
 - **Rows under them, like a nameplate's cast bar:** the target's target appears under the target's frame while
   there is one, inside its outline, its name the only text in its health bar; so too the focus's target and your
   pet under your frame.

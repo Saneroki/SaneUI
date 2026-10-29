@@ -51,9 +51,16 @@ function Client.Install(W)
     UnitExists = function(unit) return units[unit] ~= nil or unit == "player" end
     UnitHealth = function(unit) return Unit(unit).health end
     UnitHealthMax = function(unit) return Unit(unit).most end
-    UnitPower = function(unit) return Unit(unit).power end
-    UnitPowerMax = function(unit) return Unit(unit).powerMost or 0 end
-    UnitPowerType = function() return 1, "RAGE" end
+    -- A unit's own power (power, powerMost, powerType and its token, rage at first), and its mana (mana, manaMost).
+    UnitPower = function(unit, kind)
+        if kind == 0 and Unit(unit).powerType ~= 0 then return Unit(unit).mana end
+        return Unit(unit).power
+    end
+    UnitPowerMax = function(unit, kind)
+        if kind == 0 and Unit(unit).powerType ~= 0 then return Unit(unit).manaMost or 0 end
+        return Unit(unit).powerMost or 0
+    end
+    UnitPowerType = function(unit) return Unit(unit).powerType or 1, Unit(unit).powerToken or "RAGE" end
     UnitClassification = function(unit) return Unit(unit).classification or "normal" end
     UnitIsTapDenied = function() return false end
     UnitReaction = function(unit) return Unit(unit).reaction or 5 end
@@ -68,6 +75,33 @@ function Client.Install(W)
     RAID_CLASS_COLORS = rawget(_G, "RAID_CLASS_COLORS")
         or { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
     SystemFont_NamePlate_Outlined = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 14, "OUTLINE" end }
+    -- The game's aura containers for addons (CustomAuraContainerTemplate): their groups as given, one icon made for
+    -- each group (its initializeFrame), what they are set to. The unit's auras by index (W.auras[unit][filter]).
+    AnchorUtil = { FlowDirection = { Left = "Left", Right = "Right", Up = "Up", Down = "Down" } }
+    AuraContainerSortMethod = { Default = 0, BigDefensive = 1, UnitFrameDebuff = 2 }
+    AuraContainerSortDirection = { Normal = 0, Reverse = 1 }
+    W.templates.CustomAuraContainerTemplate = function(container)
+        container._groups = {}
+        function container:AddAuraGroup(key, filter, options)
+            local icon = W.NewWidget("Button", nil, self)
+            self._groups[key] = { filter = filter, options = options, enabled = true, icon = icon }
+            if options.initializeFrame then options.initializeFrame(icon) end
+        end
+        function container:SetAuraGroupFilterString(key, filter) self._groups[key].filter = filter end
+        function container:SetAuraGroupCandidateFilters(key, filters) self._groups[key].candidates = filters end
+        function container:SetAuraGroupEnabled(key, on) self._groups[key].enabled = on end
+        function container:SetUnit(unit) self._unit = unit end
+        function container:UpdateAllAuras() self._updates = (self._updates or 0) + 1 end
+    end
+    for _, name in ipairs({ "SetIcon", "SetDurationCooldown", "SetApplicationCount", "SetSpellName" }) do
+        methods[name] = function(self, region) self["_" .. name] = region end
+    end
+    W.auras = {}
+    C_UnitAuras = rawget(_G, "C_UnitAuras") or {}
+    C_UnitAuras.GetAuraDataByIndex = function(unit, index, filter)
+        local list = W.auras[unit] and W.auras[unit][filter]
+        return list and list[index]
+    end
     local watched = {}
     RegisterUnitWatch = function(frame) watched[frame] = true end
     UnregisterUnitWatch = function(frame) watched[frame] = nil end

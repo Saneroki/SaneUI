@@ -430,8 +430,13 @@ do
         "your frame: your level, no name, your health and how much is left")
     local green = ns.UnitBar.GREEN
     check(face.health._max == 1000 and face.health._value == 850 and face.health._barColor[1] == green[1]
-        and face.health._barColor[2] == green[2] and face.power:IsShown() and face.power._max == 100
-        and face.power._value == 30, "the bar green, not in your class's colour; your rage along its bottom")
+        and face.health._barColor[2] == green[2], "the bar green, not in your class's colour")
+    local rage = face.powers[1]
+    check(rage._shown and rage._max == 100 and rage._value == 30 and rage.value._text == "30 | 30%"
+        and not face.powers[2]._shown and player._height == Units.HEIGHT + Units.POWER and Units.POWER == Units.HEIGHT / 2,
+        "your rage in a bar under it, half as high, its words on the right: \"30 | 30%\"")
+    check(near(rage._points[1][5], -(Units.HEIGHT + Core.Pixels(face, 1))) and rage._points[2][3] == "TOPRIGHT",
+        "the power bar a pixel under the health bar, inside the outline")
     face._width, face._height = Units.WIDTH, Units.HEIGHT -- the stand-in places nothing: as large as its button
     Text.Layout(face)
     check(face.level._points[1][1] == "LEFT" and face.value._points[1][1] == "RIGHT" and face.name._points[1][1] == "LEFT"
@@ -470,13 +475,15 @@ do
     row:Show() -- the game's unit watch: your target has a target
     check(foe.rowShown and foe.row._shown and foe.rowName._text == "Droopy Fairwind" and foe.row._value == 600
         and foe.row._barColor[2] == green[2], "it shows under the frame: green, its name alone")
-    check(foe.border[2]._points[1][5] == -Units.ROW and foe.health._points[2][5] == 0,
-        "the frame's outline goes round both, the frame's bar square at its bottom over the row")
+    check(near(foe.border[2]._points[1][5], -(Units.POWER + Units.ROW)) and near(foe.health._points[2][5], -Units.HEIGHT)
+        and near(foe.powers[1]._points[2][5], -(Units.HEIGHT + Units.POWER)),
+        "the frame's outline goes round all, its power bar square at its bottom over the row")
     units.targettarget.health = 300
     foe.row._scripts.OnUpdate(foe.row, Units.POLL)
     check(foe.row._value == 300, "read again while it shows (the game sends no events of a target's target)")
     row:Hide()
-    check(not foe.rowShown and not foe.row._shown and foe.border[2]._points[1][5] == 0, "gone: the frame alone again")
+    check(not foe.rowShown and not foe.row._shown and near(foe.border[2]._points[1][5], -Units.POWER),
+        "gone: the frame alone again, its outline round its health and power")
     -- The game hides the row while the frame is out of sight (your target gone): no OnHide then; the frame looks again
     -- as it shows.
     foe.rowShown = true
@@ -557,6 +564,23 @@ do
     check(not watched[target.face.rowButton] and watched[target], "Your target's target off: no row, the frame stays")
     Core.Set(ns.name, "unitTargetTarget", true)
     units.pet = nil
+    -- A druid: your frame keeps two power slots, mana always, a form's power under it.
+    units.player.class, units.player.powerType, units.player.powerToken = "DRUID", 3, "ENERGY"
+    units.player.power, units.player.powerMost, units.player.mana, units.player.manaMost = 80, 100, 2400, 3000
+    ns.Units.Apply()
+    check(player._height == Units.HEIGHT + 2 * Units.POWER and face.powersShown == 2
+        and face.powers[1].value._text == "2.4k | 80%" and face.powers[2].value._text == "80 | 80%" and face.powers[2]._shown,
+        "a druid in cat form: mana in the first bar, energy under it")
+    units.player.powerType, units.player.powerToken, units.player.power, units.player.powerMost = 0, "MANA", 2400, 3000
+    W.Fire("UNIT_DISPLAYPOWER", "player")
+    check(face.powersShown == 1 and not face.powers[2]._shown and face.powers[1].value._text == "2.4k | 80%"
+        and player._height == Units.HEIGHT + 2 * Units.POWER,
+        "out of the form: the mana bar alone (the button keeps its size: it is changed out of a fight only)")
+    units.player.class, units.player.powerType, units.player.powerToken = "WARRIOR", 1, "RAGE"
+    units.player.power, units.player.powerMost, units.player.mana, units.player.manaMost = 30, 100, nil, nil
+    ns.Units.Apply()
+    check(player._height == Units.HEIGHT + Units.POWER and face.powers[1].value._text == "30 | 30%", "a warrior again: one bar")
+
     Core.Set(ns.name, "unitSize", 150)
     check(player._scale == 1.5 and target._scale == 1.5 and PlayerFrame._mouse == false, "Unit frame size: all three larger")
     Core.Set(ns.name, "unitSize", 100)
@@ -569,6 +593,85 @@ do
     check(not watched[target] and TargetFrame._parent == UIParent, "after the fight: ours hidden, the game's back")
     Core.Set(ns.name, "unitTarget", true)
     check(not ns.off, "and nothing failed")
+end
+
+-------------------------------------------------------------------------------
+--  Auras on the frames: the game's containers, three of each kind; your lists
+-------------------------------------------------------------------------------
+do
+    local target, player = unitButtons.target, unitButtons.player
+    units.target = { name = "Kobold Miner", level = 22, health = 40, most = 120, foe = true, reaction = 2 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    local auras = target.face.auras
+    local debuffs, buffs, control = auras.debuffs, auras.buffs, auras.control
+    check(debuffs and buffs and control and debuffs._template == "CustomAuraContainerTemplate"
+        and debuffs._groups.auto.options.maxFrameCount == 3 and buffs._groups.auto.options.maxFrameCount == 3
+        and control._groups.auto.options.maxFrameCount == 3, "three containers of the game's, three auras of each kind")
+    check(debuffs._groups.auto.filter == "HARMFUL|PLAYER|!CROWD_CONTROL" and buffs._groups.auto.filter == "HELPFUL|INCLUDE_NAME_PLATE_ONLY"
+        and control._groups.auto.filter == "HARMFUL|CROWD_CONTROL" and debuffs._unit == "target",
+        "on a foe: your debuffs, its buffs as the game shows them on plates, crowd control")
+    check(debuffs._groups.auto.options.sortMethod == AuraContainerSortMethod.UnitFrameDebuff
+        and buffs._groups.auto.options.sortMethod == AuraContainerSortMethod.BigDefensive,
+        "the most important first: the game's unit frame order for debuffs, big defensives for buffs")
+    local mine = player.face.auras
+    check(mine.debuffs._groups.auto.filter == "HARMFUL|!CROWD_CONTROL" and mine.buffs._groups.auto.filter == "HELPFUL",
+        "on you: any debuffs, any buffs")
+    check(debuffs._points[1][1] == "BOTTOMLEFT" and debuffs._points[1][3] == "TOPLEFT" and buffs._points[1][3] == "TOPRIGHT"
+        and control._points[1][3] == "TOPRIGHT" and control._points[1][1] == "TOPLEFT",
+        "debuffs above from the left, buffs above from the right, crowd control right of the frame")
+    check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
+    -- A right click on an icon, out of a fight: the spell on a list.
+    local icon = debuffs._groups.auto.icon
+    icon._SetSpellName._text = "Sunder Armor"
+    W.auras.target = { HARMFUL = { { name = "Rend", spellId = 772 }, { name = "Sunder Armor", spellId = 7386, icon = 132363 } } }
+    W.menus = {}
+    icon._scripts.OnMouseUp(icon, "RightButton")
+    local menu = W.menus[1]
+    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.auraAlways and menu[3].text == ns.TEXT.auraNever
+        and menu[4].text == ns.TEXT.auraLists, "its menu: Always show, Never show, Aura lists")
+    menu[2].fn()
+    check(ns.options.auraWhite[7386] == "Sunder Armor" and debuffs._groups.listed.enabled
+        and debuffs._groups.listed.candidates.includeSpellIDs[7386] and debuffs._groups.auto.candidates.excludeSpellIDs[7386]
+        and mine.buffs._groups.listed.candidates.includeSpellIDs[7386],
+        "Always show: shown in front of the rest (the game includes it there and leaves it out of the rest)")
+    W.menus = {}
+    icon._scripts.OnMouseUp(icon, "RightButton")
+    W.menus[1][3].fn()
+    check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
+        and control._groups.auto.candidates.excludeSpellIDs[7386], "Never show: off the other list, never shown")
+    W.combat = true
+    W.menus = {}
+    icon._scripts.OnMouseUp(icon, "RightButton")
+    check(W.menus[1][1].title == ns.TEXT.auraFight and W.menus[1][2].text == ns.TEXT.auraLists,
+        "in a fight the game keeps the icons from addons: only the lists' window")
+    W.combat = false
+    -- The window: the lists side by side, a spell added by its number, taken off by its X.
+    W.menus[1][2].fn()
+    local lists = ns.AuraLists
+    W.spells[1459] = { name = "Arcane Intellect" }
+    local box
+    for _, widget in ipairs(W.frames) do if widget._kind == "EditBox" and widget._template == "InputBoxTemplate" then box = widget end end
+    box:SetText("1459")
+    box._scripts.OnEnterPressed(box)
+    check(ns.options.auraWhite[1459] == "Arcane Intellect" and mine.buffs._groups.listed.candidates.includeSpellIDs[1459],
+        "typed by its number, Enter: on Always show")
+    local line
+    for _, widget in ipairs(W.frames) do
+        if widget.entry and widget.entry.id == 1459 and widget._shown then line = widget end
+    end
+    check(line and line.name._text == "Arcane Intellect" and line.number._text == 1459, "listed with its name and number")
+    box:SetText("Nonsense")
+    box._scripts.OnEnterPressed(box)
+    check(ns.options.auraWhite.Nonsense == nil, "a name the game does not know: nothing added")
+    lists.Take("white", 1459)
+    lists.Take("black", 7386)
+    check(next(ns.options.auraWhite) == nil and next(ns.options.auraBlack) == nil and debuffs._groups.auto.candidates == nil,
+        "taken off: no lists again")
+    Core.Set(ns.name, "unitAuras", false)
+    check(not debuffs._shown and debuffs._unit == "none", "Auras on the frames off: none")
+    Core.Set(ns.name, "unitAuras", true)
+    check(debuffs._shown and debuffs._unit == "target" and not ns.off, "on again")
+    units.target = nil
 end
 
 -------------------------------------------------------------------------------

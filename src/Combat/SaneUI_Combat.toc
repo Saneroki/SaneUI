@@ -54,6 +54,10 @@ QuestMarks.lua
 Units\Bar.lua
 # The line inside it: level and raid marker left, then the name, the health right; the row's name
 Units\Text.lua
+# The auras that matter most around them, in the game's own aura containers; the right click on an icon
+Units\Auras.lua
+# Your lists Always show and Never show, and their window (/sane auras)
+Units\Lists.lua
 # The frames and their rows (their targets, your pet): the game's secure unit buttons, placed in Edit Mode
 Units\Units.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone

@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -67,14 +67,26 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   still open ("3/8"). It goes once the objective is done. As the game says it in the creature's tooltip; a
   creature the game says nothing about has none. *Quest marks on nameplates* switches it off.
 - **Unit frames:** your own frame, your target's and your focus's, in place of the game's, in the look of a
-  nameplate: a round green bar (the game's green for health, for everyone: no class colours) with the unit's
-  power along the bottom. Inside it, on the left the level (coloured by how hard the unit is to you, a skull
+  nameplate: a round green bar (the game's green for health, for everyone: no class colours), and under it the
+  unit's power in a bar half as high, in the game's colour for it, with the power and how much is left on its
+  right ("2.4k | 80%"). A druid's own frame has two: mana always, and under it energy or rage while in a form;
+  so does yours in a specialization whose power is not mana but who has mana too. Inside the health bar, on the
+  left the level (coloured by how hard the unit is to you, a skull
   where it is too high to tell) and the raid marker beside it; then the name, from the left, a player's first
   name and surname (none on your own frame); on the right the health and how much is left ("850 | 85%"), *Dead*
   or *Offline* where it is so. An elite has a gold line inside its border, a rare a silver one, a boss a thick
   gold one; the frame glows red while you have the unit's aggro (your own: while anything is after you) or while
   it is a player who may attack you. Every frame is the same width, whatever it shows: 240 at 100 % (*Unit frame
   size* scales all three alike); only the glow reaches beyond its edge.
+  - **Auras:** the three that matter most of each kind: debuffs above the frame from its left (on a foe the ones
+    you put on it, on a friend or you any, what you can dispel and a boss's first), buffs above it from its right
+    (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
+    control right of it. **Right click** an icon, out of a fight, for its menu: *Always show* (in front of the
+    rest, whoever cast it), *Never show*, and *Aura lists...*, a window with both lists side by side: type a
+    spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
+    `/sane auras` opens it too. The game lets the lists act on the buffs of you, your group and friendly units and
+    on the debuffs of foes; on the rest it decides itself (and in a fight it keeps the icons from addons: their
+    menu comes after it).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health (green) and its name alone; the same under your focus's frame for
     your focus's target, and under your own frame for your pet while you have one. The frame's outline goes
@@ -97,7 +109,7 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   their empty buttons.
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
   frame*, *Your pet*, *Your target's frame*, *Your target's target*, *Your focus's frame*, *Your focus's target*,
-  each frame off for the game's own, and *Unit frame size*); the
+  each frame off for the game's own, *Unit frame size*, *Auras on the frames*); the
   section *Action bars* (*Clean action bars*, off for the game's look); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
@@ -237,16 +249,42 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     six bands as halves round at their own corners, reaching down round the row while it shows, the row a pixel
     under the bar (the border's dark between). The frame keeps its width: the border lies on its edge, the rank's
     line a pixel inside it, and the bars inside both (`rank.width` pixels in: 1 plain, 2 an elite or a rare, 4 a
-    boss); only the glow reaches outwards. Every bar `Bar.GREEN` (the game's
-    `COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`, plain green without it); the power line a quarter of the bar
-    (`Bar.LINE`); ranks and glow as on a plate. Hidden values (health, a creature's most, your threat against it)
+    boss); only the glow reaches outwards. The bars are one stack a pixel apart (`Bar.Fit`): the health
+    (`face.healthHeight`, the face's own height), each power shown (`face.powersShown` of `face.slots`, each
+    `Units.POWER` high, half the health's), the row under the power slots kept (where its button is); the first
+    round at its top, the last at its bottom, the rest square (`End`'s modes). `Bar.Kinds` picks the powers: the
+    unit's own (`UnitPowerType`), or on a frame with two slots (`face.alternate`) mana (`Bar.MANA`) and under it the
+    unit's own while that is not mana; `Bar.Powers` fills them (`UnitPower`/`UnitPowerMax` by type, hidden or not;
+    an empty bar where the unit has none) and lays them out anew when their number changes. Every health bar
+    `Bar.GREEN` (the game's `COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`, plain green without it); each power in the
+    game's `PowerBarColor`; ranks and glow as on a plate. Hidden values (health, a creature's most, your threat against it)
     go to the bars, the glow's `SetAlphaFromBoolean` and the texts as they are.
   - `Text.lua` (`ns.UnitText`): the game's plate font (`SystemFont_NamePlate_Outlined`) at `Text.SIZE` 12; level
     and raid marker (`SetSpriteSheetCell`) left, health right (`Text.Short`, `Text.Percent`; hidden: the game's
     `AbbreviateNumbers` in `Text.STEPS` and `UnitHealthPercent` by its curve), the name from the left side's end up
     to the health's room (`Text.Layout`; the health's room as wide as its most, measured on a ruler of ours,
-    `Text.SAMPLE` while a creature's most is hidden), none on your own frame (`face.noName`); the row's name alone
-    (`Text.Row`).
+    `Text.SAMPLE` while a creature's most is hidden), none on your own frame (`face.noName`); each power's words at
+    its bar's right in `Text.SMALL` 9 (`Text.Powers`; hidden: `AbbreviateNumbers` and `UnitPowerPercent` by its
+    curve); the row's name alone (`Text.Row`).
+  - The button's height is the health's and its power slots' (`Units.HEIGHT + slots * Units.POWER`), set out of a
+    fight (`Kind`): your own frame keeps two slots (`Alternate`) as a druid, or while your power is not mana but you
+    have mana (asked again on `PLAYER_SPECIALIZATION_CHANGED`); the face is the health bar's height, the rest hangs
+    under it.
+  - `Auras.lua` (`ns.UnitAuras`): per frame and kind (`Auras.KINDS`: debuffs, buffs, control) a container of the
+    game's (`CustomAuraContainerTemplate`, as the nameplates'), groups of `Auras.MOST` (3): `listed` (the filter
+    `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Always show, off while that list is empty) and `auto` (the kind's
+    filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
+    `BigDefensive`, `excludeSpellIDs` = both lists; control only Never show). The game applies those candidate filters
+    itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
+    Each icon (`initializeFrame`, `Dress`): the picture cropped in a dark edge, the swipe, the count, its name into a
+    text of ours at alpha 0 (`SetSpellName`), and an `OnMouseUp` hook: a right click, while not `Core.Restricted()`,
+    finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
+    context menu (`MenuUtil`). `Auras.Set` sets each container's unit (`none` while off), `UpdateAllAuras` at every fill.
+  - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack` (`{ [spell number] = name }`), one list at a
+    time per spell (`Put`, `Take`, then `Auras.Refresh`); the window a `Core.Window` panel (`auraListsPlace`, not
+    sizable, no full screen): the box (`InputBoxTemplate`; a number by `C_Spell.GetSpellName`, a name by
+    `C_Spell.GetSpellInfo`), the buttons *Always show* and *Never show*, the two lists in scroll areas, each line with
+    icon, name, number and the game's close button, the rule under them. `/sane auras` (`Core.Command`).
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
     children `TotemFrame`, the attached cast bar and the class bars stay the game's; `PetFrame` (which the game's
@@ -298,8 +336,10 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
 | `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
-| `Units/Bar.lua` | A unit frame's bar in a nameplate's look, green: round, its border, the rank's line, the glow, the power line; the row under it |
-| `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; the row's name |
+| `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar, the power bars under it (a druid's mana and form), the row |
+| `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
+| `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the right click on an icon |
+| `Units/Lists.lua` | Your lists Always show and Never show, and their window (`/sane auras`) |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
 
@@ -325,3 +365,7 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   class colours; names from the left; no name on your own frame.
 - **2026-10-29:** every unit frame one width (Saneroki: a fixed width), the rank's line inside the border; the main
   action bar's page number and arrows visible again (Saneroki).
+- **2026-10-29:** power bars half the health bar's height with "current | percent" (Saneroki: a druid's mana always,
+  and the energy or rage of its form); the three most important buffs, debuffs and crowd control around each frame,
+  as on the nameplates, with the lists Always show and Never show (Saneroki: by a right click on an icon, and a
+  window to add them).

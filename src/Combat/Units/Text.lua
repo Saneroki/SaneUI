@@ -10,8 +10,10 @@ local _, ns = ...
 --             health allows (cut short beyond it); none on your own frame
 --    right    its health, short ("850", "1.2k", "1.32m"), and how much is
 --             left ("| 100%"); Dead or Offline instead where it is
---  and in the row under the bar (your target's target, your focus's target,
---  your pet) its unit's name alone, from the left.
+--  in each power bar under it, at its right, the power as the health is
+--  written ("3.2k | 85%", in a smaller size); and in the row under them (your
+--  target's target, your focus's target, your pet) its unit's name alone, from
+--  the left.
 --
 --  The health's room is as wide as the most it can show ("1.32m | 100%"), so
 --  the name's does not change as health goes; while the game hides the most
@@ -28,6 +30,7 @@ ns.UnitText = Text
 -- The game's font for its plates' names: its face and outline, at Text.SIZE.
 Text.FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFontHighlightSmall" }
 Text.SIZE = 12   -- the font's height in the frame's units (the frame's scale makes it larger or smaller)
+Text.SMALL = 9   -- in a power bar
 Text.INSET = 6   -- from the bar's ends to the line
 Text.GAP = 4     -- between two pieces, and around the name
 Text.ICON = 1.2  -- the raid marker's size, times the font's height
@@ -62,10 +65,10 @@ local function Font()
     return font
 end
 
-local function Line(host, justify)
+local function Line(host, justify, size)
     local look = Font()
     local text = host:CreateFontString(nil, "OVERLAY", look.name or "GameFontHighlightSmall")
-    if look.file then text:SetFont(look.file, Text.SIZE, look.flags) end
+    if look.file then text:SetFont(look.file, size or Text.SIZE, look.flags) end
     text:SetJustifyH(justify)
     text:SetWordWrap(false)
     text:SetTextColor(1, 1, 1)
@@ -110,15 +113,20 @@ function Text.Make(face)
     raid:SetPoint("LEFT", face.level, "RIGHT", Text.GAP, 0)
     raid:Hide()
     face.raid, face.top, face.room = raid, top, { left = 0, right = 0 }
-    -- The row's name, on a frame of its own on the row: it shows and goes with it.
-    if face.row then
-        local over = CreateFrame("Frame", nil, face.row)
-        over:SetAllPoints(face.row)
-        over:SetFrameLevel(face.row:GetFrameLevel() + 3)
-        face.rowName = Line(over, "LEFT")
-        face.rowName:SetPoint("LEFT", face.row, "LEFT", Text.INSET - 1, 0)
-        face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
+    -- Each power's words and the row's name, on a frame of their own on their bar: they show and go with it.
+    local function Over(bar)
+        local over = CreateFrame("Frame", nil, bar)
+        over:SetAllPoints(bar)
+        over:SetFrameLevel(bar:GetFrameLevel() + 3)
+        return over
     end
+    for _, power in ipairs(face.powers) do
+        power.value = Line(Over(power), "RIGHT", Text.SMALL)
+        power.value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
+    end
+    face.rowName = Line(Over(face.row), "LEFT")
+    face.rowName:SetPoint("LEFT", face.row, "LEFT", Text.INSET - 1, 0)
+    face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
 end
 
 -- The name's room: from the left side's end to the health's.
@@ -222,10 +230,14 @@ function Text.Percent(now, most)
 end
 
 local steps
--- Hidden health as the game formats it: its abbreviation in our steps, the percentage by its curve to a hundred.
-local function Hidden(text, unit, now)
+-- A hidden value as the game formats it: its abbreviation in our steps, and the share the game gives by its curve to
+-- a hundred (share: the game's function for it, and what it takes before the curve).
+local function Hidden(text, now, share, ...)
     local curves = rawget(_G, "CurveConstants")
-    local share = curves and curves.ScaleTo100 and Raw(rawget(_G, "UnitHealthPercent"), unit, true, curves.ScaleTo100)
+    local count = select("#", ...)
+    local args = { ... }
+    args[count + 1] = curves and curves.ScaleTo100
+    share = args[count + 1] and Raw(share, unpack(args, 1, count + 1))
     steps = steps or { breakpointData = Text.STEPS }
     local ok, short = pcall(AbbreviateNumbers, now, steps)
     if not ok then ok, short = pcall(AbbreviateNumbers, now) end
@@ -256,9 +268,26 @@ function Text.Health(face, unit)
     elseif type(plainNow) == "number" and type(plainMost) == "number" then
         text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
     else
-        Hidden(text, unit, now)
+        Hidden(text, now, rawget(_G, "UnitHealthPercent"), unit, true)
     end
     Side(face, "right", Text.INSET + room)
+end
+
+-- Each power's words, as Bar.Powers read them (kinds): "3.2k | 85%"; none for an empty slot.
+function Text.Powers(face, unit, kinds)
+    for index, kind in ipairs(kinds) do
+        local text = face.powers[index].value
+        local now = kind.type and Raw(UnitPower, unit, kind.type)
+        local most = kind.type and Raw(UnitPowerMax, unit, kind.type)
+        local plainNow, plainMost = Plain(now), Plain(most)
+        if type(now) == "nil" or type(most) == "nil" or plainMost == 0 then
+            text:SetText("")
+        elseif type(plainNow) == "number" and type(plainMost) == "number" then
+            text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
+        else
+            Hidden(text, now, rawget(_G, "UnitPowerPercent"), unit, kind.type, false)
+        end
+    end
 end
 
 -- Every piece for the unit; instead: a name in its place (a sample in Edit Mode).

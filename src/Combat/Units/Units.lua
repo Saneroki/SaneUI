@@ -4,13 +4,15 @@ local _, ns = ...
 --  Sane UI - Combat - Units
 --  Our own frames for you, your target and your focus, each in place of the
 --  game's own, in the look of a nameplate (Bar.lua, Text.lua): a round green
---  bar with the unit's power along the bottom; inside it the level and the
---  raid marker on the left, the name after them (a player's first name and
---  surname; none on your own frame), the health and how much is left on the
---  right. Under each, as a cast bar under a nameplate, a row while its unit is
---  there, with that unit's name alone: your target's target under your
---  target's frame, your focus's target under your focus's, your pet under
---  yours.
+--  health bar, the level and the raid marker on its left, the name after them
+--  (a player's first name and surname; none on your own frame), the health and
+--  how much is left on its right; under it the unit's power at half its height
+--  with the same words on the right (on your own frame, where you may have two
+--  powers, a druid's in a form, two slots: mana always, the form's under it);
+--  around it the auras that matter most (Auras.lua). Under each, as a cast bar
+--  under a nameplate, a row while its unit is there, with that unit's name
+--  alone: your target's target under your target's frame, your focus's target
+--  under your focus's, your pet under yours.
 --
 --  Each frame and each row is the game's secure unit button
 --  (SecureUnitButtonTemplate): a click targets the unit, a right click opens
@@ -42,8 +44,9 @@ local Core = SaneUI.Core
 local Units = {}
 ns.Units = Units
 
-Units.WIDTH, Units.HEIGHT = 240, 26 -- a frame's size at 100 % (the setting Unit frame size scales it)
-Units.ROW = 18   -- a row's height under it
+Units.WIDTH, Units.HEIGHT = 240, 26 -- a frame's width and its health bar's height at 100 % (Unit frame size scales it)
+Units.POWER = Units.HEIGHT / 2      -- a power bar's height under it
+Units.ROW = 18   -- a row's height under them
 Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
@@ -102,10 +105,11 @@ local function Fill(face)
     if not face.sample and not Core.Ask(UnitExists, unit) then return end
     ns.UnitBar.Paint(face, unit)
     ns.UnitBar.Health(face.health, unit)
-    ns.UnitBar.Power(face, unit)
+    ns.UnitText.Powers(face, unit, ns.UnitBar.Powers(face, unit))
     ns.UnitText.Set(face, unit, face.sample and ns.TEXT.samples[face.unit] or nil)
     Threat(face)
     Row(face)
+    ns.UnitAuras.Set(face, unit)
 end
 
 local function Heard(face, event)
@@ -115,7 +119,7 @@ local function Heard(face, event)
         ns.UnitBar.Health(face.health, unit)
         ns.UnitText.Health(face, unit)
     elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
-        ns.UnitBar.Power(face, unit)
+        ns.UnitText.Powers(face, unit, ns.UnitBar.Powers(face, unit))
     elseif event == "UNIT_NAME_UPDATE" then
         ns.UnitText.Name(face, unit)
     elseif event == "UNIT_LEVEL" then
@@ -170,16 +174,20 @@ local function Button(parent, unit)
     return button
 end
 
--- A frame: the game's secure unit button, our face on it, a window of Core's to place it; its row's button under it.
+-- A frame: the game's secure unit button, our face on it (as high as the health bar, the rest hanging under it), a
+-- window of Core's to place it; its row's button under it.
 local function Make(kind)
     local button = Button(UIParent, kind.unit)
-    button:SetSize(Units.WIDTH, Units.HEIGHT)
+    button:SetSize(Units.WIDTH, Units.HEIGHT + Units.POWER)
     button:SetFrameStrata("LOW")
     local face = CreateFrame("Frame", nil, button)
-    face:SetAllPoints(button)
+    face:SetPoint("TOPLEFT", button, "TOPLEFT")
+    face:SetPoint("TOPRIGHT", button, "TOPRIGHT")
+    face:SetHeight(Units.HEIGHT)
     face.unit, face.noName = kind.unit, kind.noName
-    ns.UnitBar.Make(face, Units.ROW)
+    ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW })
     ns.UnitText.Make(face)
+    ns.UnitAuras.Make(face)
     for _, event in ipairs(Units.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
     face:SetScript("OnEvent", OnEvent)
     face:SetScript("OnSizeChanged", OnSizeChanged)
@@ -258,8 +266,19 @@ local function Unwatch(button)
     button:Hide()
 end
 
+-- Whether a frame keeps two power slots: your own, while you may have two powers (a druid, by its forms; in a
+-- specialization whose power is not mana but who has mana too). Asked out of a fight: the slots are the button's size.
+local function Alternate(kind)
+    if kind.unit ~= "player" then return false end
+    local _, class = Core.Ask(UnitClass, "player")
+    if class == "DRUID" then return true end
+    local power = Core.Ask(UnitPowerType, "player")
+    local mana = Core.Ask(UnitPowerMax, "player", ns.UnitBar.MANA)
+    return type(power) == "number" and power ~= ns.UnitBar.MANA and type(mana) == "number" and mana > 0
+end
+
 -- One frame and its row shown and the game's away, or ours hidden and the game's back, as their settings say; at
--- the size the setting Unit frame size says. Out of a fight.
+-- the size the setting Unit frame size says, with the power slots it keeps. Out of a fight.
 local function Kind(kind)
     local row = kind.row
     local wanted = not ns.off and ns.options[kind.option] ~= false
@@ -272,6 +291,10 @@ local function Kind(kind)
     if not kind.button then Make(kind) end
     local button = kind.button
     button:SetScale((tonumber(ns.options.unitSize) or 100) / 100)
+    local face = button.face
+    face.alternate = Alternate(kind)
+    face.slots = face.alternate and 2 or 1
+    button:SetHeight(Units.HEIGHT + face.slots * Units.POWER)
     Away(kind)
     Watch(button)
     if ns.options[row.option] ~= false then
@@ -339,6 +362,8 @@ function Units.Start()
         Again()
     end, 0.5))
     ns.On("UI_SCALE_CHANGED", Core.Later(Units.Apply))
+    -- Another specialization may have another power: your frame's slots anew (after a fight).
+    ns.On("PLAYER_SPECIALIZATION_CHANGED", Core.Later(Units.Apply))
     -- In Edit Mode every frame and row shows whether its unit is there or not (as a sample), to be placed; after it,
     -- as the game's unit watch says again.
     Core.EditMode.Watch(ns.Guard(Units.Apply))
@@ -359,5 +384,6 @@ function Units.GiveBack()
         end
         ns.Safe("unit frames", Back, kind.row)
         ns.Safe("unit frames", Back, kind)
+        if button then ns.Safe("unit frames", ns.UnitAuras.Set, button.face, nil) end
     end
 end

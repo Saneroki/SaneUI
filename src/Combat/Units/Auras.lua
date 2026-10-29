@@ -1,0 +1,225 @@
+local _, ns = ...
+
+-------------------------------------------------------------------------------
+--  Sane UI - Combat - Units - Auras
+--  Around a unit frame, as around a nameplate, the auras that matter most,
+--  Auras.MOST of each kind at most:
+--    above, from the left    debuffs: on a foe the ones you put on it, on a
+--                            friend (and you) any, the game's most important
+--                            first (its unit frames' order: what you can
+--                            dispel, a boss's)
+--    above, from the right   buffs: on a foe those the game shows on its own
+--                            plates, on a friend (and you) any, big defensives
+--                            first
+--    right of the frame      crowd control on it, by anyone
+--  and before them, in front of the rest, the ones on your list Always show;
+--  never the ones on your list Never show (Lists.lua keeps the two lists).
+--
+--  All are the game's own aura containers (CustomAuraContainerTemplate), one
+--  per kind and frame, as the nameplates' are. The game fills them, in a fight
+--  too, where aura data is hidden from addons, and applies the lists itself
+--  (an aura group's candidate filters: the spells to include, to exclude). It
+--  lets the lists act where it lets addons tell spells apart: on the buffs of
+--  you, your group and friendly units, and on the debuffs of foes; elsewhere it
+--  decides alone (the window says so).
+--
+--  A right click on an icon, out of a fight (in one the game keeps the icons
+--  from addons), opens a menu: Always show, Never show, Aura lists. Which spell
+--  it is: the icon's name (the game writes it into a text of ours, unseen),
+--  found among the unit's auras of its kind.
+-------------------------------------------------------------------------------
+local Core = SaneUI.Core
+local Plain = Core.Plain
+local Auras = {}
+ns.UnitAuras = Auras
+
+Auras.SIZE = 22 -- an icon, square
+Auras.GAP = 2   -- between icons, and from the frame
+Auras.MOST = 3  -- of each kind, and of each list
+Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
+-- The kinds: their place, their filters on a foe and a friend, the order the game gives them, and whether the lists
+-- act on them (listed: the filter of the group of the list Always show).
+Auras.KINDS = {
+    { key = "debuffs", harmful = true, corner = "BOTTOMLEFT", growth = "Right", sort = "UnitFrameDebuff",
+      foe = "HARMFUL|PLAYER|!CROWD_CONTROL", friend = "HARMFUL|!CROWD_CONTROL", listed = "HARMFUL" },
+    { key = "buffs", harmful = false, corner = "BOTTOMRIGHT", growth = "Left", sort = "BigDefensive",
+      foe = "HELPFUL|INCLUDE_NAME_PLATE_ONLY", friend = "HELPFUL", listed = "HELPFUL" },
+    { key = "control", harmful = true, corner = "TOPLEFT", growth = "Right", sort = "Default",
+      foe = "HARMFUL|CROWD_CONTROL", friend = "HARMFUL|CROWD_CONTROL" },
+}
+
+local owners = setmetatable({}, { __mode = "k" }) -- [an icon the game made] = { face, kind }
+local faces = {}                                   -- every face with containers
+
+-- The two lists as the game's candidate filters take them: { [spell] = true }; nil where empty.
+local function Set(...)
+    local set = nil
+    for index = 1, select("#", ...) do
+        for id in pairs(select(index, ...) or {}) do
+            id = tonumber(id)
+            if id then
+                set = set or {}
+                set[id] = true
+            end
+        end
+    end
+    return set
+end
+
+local function Lists()
+    local options = ns.options or {}
+    return options.auraWhite or {}, options.auraBlack or {}
+end
+
+-- The spell an icon shows, out of a fight: its name as the game wrote it, found among the unit's auras of its kind.
+-- { id, name, icon }, or nil where it cannot be told now.
+local function Which(frame)
+    local owner = owners[frame]
+    if not owner or Core.Restricted() then return nil end
+    local ok, name = pcall(owner.name.GetText, owner.name)
+    name = ok and Plain(name) or nil
+    if type(name) ~= "string" or name == "" then return nil end
+    local auras = rawget(_G, "C_UnitAuras")
+    local read = auras and auras.GetAuraDataByIndex
+    local unit = owner.face.sample and "player" or owner.face.unit
+    for index = 1, 40 do
+        local data = Core.Ask(read, unit, index, owner.kind.harmful and "HARMFUL" or "HELPFUL")
+        if type(data) ~= "table" then break end
+        if Plain(data.name) == name and type(Plain(data.spellId)) == "number" then
+            return { id = data.spellId, name = name, icon = Plain(data.icon) }
+        end
+    end
+    return nil
+end
+
+-- The menu of a right click on an icon: the spell on a list, or the lists' window.
+local function Menu(frame)
+    local spell = Which(frame)
+    MenuUtil.CreateContextMenu(frame, ns.Guard(function(_, root)
+        if spell then
+            root:CreateTitle(spell.name)
+            root:CreateButton(ns.TEXT.auraAlways, ns.Guard(function() ns.AuraLists.Put("white", spell) end))
+            root:CreateButton(ns.TEXT.auraNever, ns.Guard(function() ns.AuraLists.Put("black", spell) end))
+        else
+            root:CreateTitle(ns.TEXT.auraFight)
+        end
+        root:CreateDivider()
+        root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() ns.AuraLists.Open() end))
+    end))
+end
+
+local function Clicked(frame, button)
+    if button == "RightButton" then Menu(frame) end
+end
+local OnClicked = ns.Guard(Clicked)
+
+-- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
+-- square in a dark edge, the swipe of the time gone, the stack count over it, its name unseen (for the menu).
+local function Dress(frame, face, kind)
+    local size = Auras.SIZE
+    frame:SetSize(size, size)
+    local edge = frame:CreateTexture(nil, "BACKGROUND")
+    edge:SetAllPoints(frame)
+    edge:SetColorTexture(0, 0, 0, 0.9)
+    local icon = frame:CreateTexture(nil, "ARTWORK")
+    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+    icon:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+    icon:SetTexCoord(Auras.CROP[1], Auras.CROP[2], Auras.CROP[3], Auras.CROP[4])
+    local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
+    cooldown:SetAllPoints(icon)
+    cooldown:SetReverse(true)
+    cooldown:SetSwipeColor(0, 0, 0, 0.5)
+    local top = CreateFrame("Frame", nil, frame)
+    top:SetAllPoints(frame)
+    top:SetFrameLevel(cooldown:GetFrameLevel() + 1)
+    local count = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    count:SetJustifyH("RIGHT")
+    count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 2, -1)
+    local name = top:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    name:SetAlpha(0)
+    name:SetPoint("CENTER")
+    frame:SetIcon(icon)
+    frame:SetDurationCooldown(cooldown)
+    frame:SetApplicationCount(count)
+    frame:SetSpellName(name)
+    pcall(frame.HookScript, frame, "OnMouseUp", OnClicked) -- a client that keeps the icons' scripts: no menu, no harm
+    owners[frame] = { face = face, kind = kind, name = name }
+end
+
+-- A container of the game's for one kind on the face: the group of the list Always show first (where the lists act
+-- on the kind), then the rest. nil where this client has none.
+local function Container(face, kind)
+    local flow = rawget(_G, "AnchorUtil") and AnchorUtil.FlowDirection
+    if not flow or Auras.missing then return nil end
+    local ok, container = pcall(CreateFrame, "AuraContainer", nil, face, "CustomAuraContainerTemplate")
+    if not ok or not container then
+        Auras.missing = true -- asked once: the next frames do without
+        ns.Report("unit frame auras", "this client has no aura container for addons; the unit frames show no auras")
+        return nil
+    end
+    container:SetFlowLayoutAnchorPoint(kind.corner)
+    container:SetFlowLayoutGrowthDirection(flow[kind.growth], kind.corner:find("^TOP") and flow.Down or flow.Up)
+    local dressed = ns.Guard(function(frame) Dress(frame, face, kind) end) -- guarded: the game calls it per icon
+    local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
+    local function Options(sort)
+        return { maxFrameCount = Auras.MOST, initializeFrame = dressed, layout = { elementSpacing = Auras.GAP },
+                 sortMethod = sorts and sorts[sort] or nil, sortDirection = ways and ways.Normal or nil }
+    end
+    if kind.listed then container:AddAuraGroup("listed", kind.listed, Options("Default")) end
+    container:AddAuraGroup("auto", kind.friend, Options(kind.sort))
+    container.kind = kind
+    return container
+end
+
+function Auras.Make(face)
+    face.auras = {}
+    for _, kind in ipairs(Auras.KINDS) do face.auras[kind.key] = Container(face, kind) end
+    local auras = face.auras
+    if auras.debuffs then auras.debuffs:SetPoint("BOTTOMLEFT", face, "TOPLEFT", 0, Auras.GAP) end
+    if auras.buffs then auras.buffs:SetPoint("BOTTOMRIGHT", face, "TOPRIGHT", 0, Auras.GAP) end
+    if auras.control then auras.control:SetPoint("TOPLEFT", face, "TOPRIGHT", Auras.GAP * 3, 0) end
+    faces[#faces + 1] = face
+    Auras.Listed(face)
+end
+
+-- The lists into a face's containers: the group Always show its spells (off while the list is empty), the rest
+-- without them and without those of Never show; crowd control without those of Never show.
+function Auras.Listed(face)
+    local white, black = Lists()
+    for _, container in pairs(face.auras or {}) do
+        local kind = container.kind
+        if kind.listed then
+            local include = Set(white)
+            container:SetAuraGroupCandidateFilters("listed", include and { includeSpellIDs = include } or nil)
+            container:SetAuraGroupEnabled("listed", include ~= nil)
+            local exclude = Set(white, black)
+            container:SetAuraGroupCandidateFilters("auto", exclude and { excludeSpellIDs = exclude } or nil)
+        else
+            local exclude = Set(black)
+            container:SetAuraGroupCandidateFilters("auto", exclude and { excludeSpellIDs = exclude } or nil)
+        end
+    end
+end
+
+-- Every face's containers anew (a list changed).
+function Auras.Refresh()
+    for _, face in ipairs(faces) do ns.Safe("unit frame auras", Auras.Listed, face) end
+end
+
+-- The containers set for the face's unit (or none, nil: out of sight): the filters of a foe or a friend, the game
+-- asked to read its auras again (another unit behind the same token: a new target).
+function Auras.Set(face, unit)
+    local on = unit ~= nil and not ns.off and (ns.options or {}).unitAuras ~= false
+    local foe = on and Core.Ask(UnitCanAttack, "player", unit) == true
+    for _, container in pairs(face.auras or {}) do
+        if on then
+            container:SetAuraGroupFilterString("auto", foe and container.kind.foe or container.kind.friend)
+            container:SetUnit(unit)
+            container:UpdateAllAuras()
+        else
+            container:SetUnit("none")
+        end
+        container:SetEnabled(on)
+        container:SetShown(on)
+    end
+end
