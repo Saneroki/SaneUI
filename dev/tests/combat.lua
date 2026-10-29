@@ -109,6 +109,13 @@ end
 -- loose in its book, its two specializations each with a talent config of its own. Retail lacks both (W.Play).
 C_SpellBook.IsSpellBookItemLooseFlyoutMember = function() return false end
 C_SpecializationInfo = { GetCombatConfigIDForSpecGroup = function(group) return 100 + group end }
+
+-- The unit frames and the clean action bars: the game's unit functions, unit watch, frames and main action bar.
+local fight = require("combatclient").Install(W)
+local units, Unit, watched, divider = fight.units, fight.Unit, fight.watched, fight.divider
+units.player = { name = "Droopy", surname = "Fairwind", player = true, class = "WARRIOR", level = 20, health = 850,
+                 most = 1000, power = 30, powerMost = 100 }
+W.actions[1] = { kind = "spell", id = 6603 } -- the main bar's first button holds an action, its second is empty
 if RETAIL then W.Play("retail") end
 
 W.LoadCore(root)
@@ -135,7 +142,13 @@ if RETAIL then
     check(not ns.off and not ns.Window.Full(), "our own keys (in the game's key bindings) do nothing, and nothing fails")
     local listed = {}
     for _, option in ipairs(Core.described[ns.name].list) do listed[option.key] = true end
-    check(listed.questMarks and not listed.keys and not listed.expand, "its settings: the quest marks only")
+    check(listed.questMarks and listed.unitPlayer and listed.unitSize and listed.cleanBars and not listed.keys
+        and not listed.expand, "its settings: the unit frames, the action bars and the quest marks")
+    local player = ns.Units.KINDS[1].button
+    -- Retail's names have no surname (its second name is a realm, not shown): the name alone.
+    check(player and watched[player] and player.face.name._text == "Droopy" and PlayerFrame._mouse == false
+        and TargetFrame._parent ~= UIParent and ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 0,
+        "the unit frames and the clean action bars, as in Forever")
     Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
     local plate = W.NewWidget("Frame", nil, UIParent)
     C_NamePlate = { GetNamePlateForUnit = function(unit) return unit == "nameplate1" and plate or nil end }
@@ -148,8 +161,11 @@ if RETAIL then
     check(mark and mark._shown and mark.icon._texture == ns.QuestMarks.ICONS.kill and mark.count._text == "3/8",
         "the quest marks beside nameplates, as in Forever")
     ns.StandDown("a test")
-    check(ns.off and not mark._shown and ns.GIVEN_BACK == "no quest marks beside nameplates",
+    check(ns.off and not mark._shown
+        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit frames and action bars are back",
         "standing down: the quest marks go, and what is told says so")
+    check(PlayerFrame._mouse == true and TargetFrame._parent == UIParent and MainActionBar.BorderArt._alpha == 1,
+        "and the game's unit frames and action bars are its own again")
     io.write(("Combat in Retail: all %d checks passed.\n"):format(passed))
     return
 end
@@ -397,6 +413,152 @@ end
 
 
 -------------------------------------------------------------------------------
+--  Unit frames: ours for you, your target and your focus, the game's out of sight
+-------------------------------------------------------------------------------
+local unitButtons = {}
+do
+    UnitName, UnitIsPlayer = fight.UnitName, fight.UnitIsPlayer -- as before the quest marks' plates
+    local Units, Text = ns.Units, ns.UnitText
+    for index, kind in ipairs(Units.KINDS) do unitButtons[kind.unit] = kind.button end
+    local player, target, focus = unitButtons.player, unitButtons.target, unitButtons.focus
+    check(player and target and focus and player._template == "SecureUnitButtonTemplate"
+        and player:GetAttribute("unit") == "player" and target:GetAttribute("unit") == "target"
+        and player:GetAttribute("*type1") == "target" and player:GetAttribute("*type2") == "togglemenu",
+        "three secure unit buttons: a click targets, a right click opens the game's menu")
+    check(watched[player] and watched[target] and watched[focus], "the game's unit watch shows each while its unit is there")
+    local face = player.face
+    check(face.name._text == "Droopy Fairwind" and face.level._text == "20" and face.value._text == "850 | 85%",
+        "your frame: your level, your first name and surname, your health and how much is left")
+    check(face.health._max == 1000 and face.health._value == 850 and face.health._barColor[1] == 0.78
+        and face.power:IsShown() and face.power._max == 100 and face.power._value == 30,
+        "the bar in your class's colour, your rage along its bottom")
+    check(face.name._points[1][1] == "CENTER" and face.level._points[1][1] == "LEFT" and face.value._points[1][1] == "RIGHT",
+        "the level on the left, the name in the middle, the health on the right")
+    face._width, face._height = Units.WIDTH, Units.HEIGHT -- the stand-in places nothing: as large as its button
+    Text.Layout(face)
+    local side = math.max(face.room.left, face.room.right) + Text.GAP
+    check(face.room.right > face.room.left and near(face.name._width, Units.WIDTH - 2 * side),
+        "the name has the bar's width less twice the wider side: it stays in the middle")
+    check(PlayerFrame.PlayerFrameContainer._alpha == 0 and PlayerFrame.PlayerFrameContent._alpha == 0
+        and PlayerFrame._mouse == false and PlayerFrame._parent == UIParent,
+        "the game's own frame out of sight and takes no clicks; it stays where it is, with what hangs on it")
+    check(TargetFrame._parent ~= UIParent and TargetFrame._parent == FocusFrame._parent and not TargetFrame._parent._shown,
+        "the game's target and focus frames stand in a hidden frame of ours")
+
+    -- Your target: a creature, an elite, marked with a skull.
+    units.target = { name = "Kobold Miner", level = 22, health = 40, most = 120, foe = true, reaction = 2,
+                     classification = "elite", raid = 8 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    local foe = target.face
+    check(foe.name._text == "Kobold Miner" and foe.value._text == "40 | 33%" and foe.raid._shown and foe.raid._cell == 8,
+        "your target: its name, health, and its raid marker beside its level")
+    check(foe.rank == ns.UnitBar.RANKS.elite and foe.health._barColor[1] == 1 and foe.health._barColor[2] == 0,
+        "red for a creature that attacks on sight, the gold line of an elite behind its border")
+    units.target.health = 30
+    W.Fire("UNIT_HEALTH", "target")
+    check(foe.value._text == "30 | 25%" and foe.health._value == 30, "its health as it goes, heard from its own events")
+    units.target.tanking = true
+    W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
+    check(foe.glow._alpha == 1, "the glow while you have its aggro")
+    units.target.tanking = false
+    W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
+    check(foe.glow._alpha == 0, "and none while you do not")
+    -- In a fight the game hides its health and your threat: shown as they are, nothing computed with them.
+    issecretvalue = function(value) return type(value) == "table" and value.secret == true end
+    local hidden = { secret = true }
+    units.target.health, units.target.tanking = hidden, hidden
+    W.Fire("UNIT_HEALTH", "target")
+    W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
+    check(not ns.off and foe.health._value == hidden and type(foe.value._text) == "table"
+        and foe.value._text.abbreviated == hidden and foe.glow._alpha.from == hidden,
+        "hidden health and threat: the bar, the text and the glow take them as they are")
+    issecretvalue = nil
+    units.target.health, units.target.tanking, units.target.dead = 0, false, true
+    W.Fire("UNIT_HEALTH", "target")
+    check(foe.value._text == ns.UnitText.DEAD, "a dead unit: Dead in place of its health")
+    units.target.dead = false
+    units.target.raid = nil
+    W.Fire("RAID_TARGET_UPDATE")
+    check(not foe.raid._shown and foe.room.left == Text.INSET + foe.levelRoom, "its marker taken off: none, and no room kept")
+
+    -- Edit Mode: a frame whose unit is not there shows a sample, to be placed; after it, the unit watch again.
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(not watched[focus] and focus._shown and focus.face.sample and focus.face.name._text == ns.TEXT.samples.focus
+        and focus.face.level._text == "20", "in Edit Mode your focus's frame shows as a sample, named for it")
+    check(not target.face.sample and target.face.name._text == "Kobold Miner", "a frame whose unit is there shows it")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(watched[focus] and not focus.face.sample, "after Edit Mode the unit watch shows it again")
+    -- Edit Mode put the full screen back to its place (as every window of Core's): full again for what follows.
+    if not handle.edge.full then
+        Push()
+        Stand()
+    end
+
+    -- The settings: each frame on or off, their size.
+    Core.Set(ns.name, "unitFocus", false)
+    check(not focus._shown and not watched[focus] and FocusFrame._parent == UIParent,
+        "Your focus's frame off: ours hidden, the game's back")
+    Core.Set(ns.name, "unitFocus", true)
+    check(watched[focus] and FocusFrame._parent ~= UIParent, "on again: ours, the game's away")
+    Core.Set(ns.name, "unitPlayer", false)
+    check(PlayerFrame.PlayerFrameContainer._alpha == 1 and PlayerFrame._mouse == true and not player._shown,
+        "Your frame off: the game's own frame as it was")
+    Core.Set(ns.name, "unitPlayer", true)
+    Core.Set(ns.name, "unitSize", 150)
+    check(player._scale == 1.5 and target._scale == 1.5 and PlayerFrame._mouse == false, "Unit frame size: all three larger")
+    Core.Set(ns.name, "unitSize", 100)
+    -- In a fight secure frames are not changed: what is asked for waits for its end.
+    W.combat = true
+    Core.Set(ns.name, "unitTarget", false)
+    check(watched[target] and TargetFrame._parent ~= UIParent, "switched off in a fight: nothing changes yet")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(not watched[target] and TargetFrame._parent == UIParent, "after the fight: ours hidden, the game's back")
+    Core.Set(ns.name, "unitTarget", true)
+    check(not ns.off, "and nothing failed")
+end
+
+-------------------------------------------------------------------------------
+--  The action bars, clean: only the buttons that hold something, each its icon alone
+-------------------------------------------------------------------------------
+do
+    local bar = MainActionBar
+    local full, empty = bar.actionButtons[1], bar.actionButtons[2]
+    local arrow = bar.ActionBarPageNumber.UpButton
+    check(ns.ActionBars.Clean() and bar.BorderArt._alpha == 0 and bar.EndCaps._alpha == 0
+        and bar.ActionBarPageNumber._alpha == 0 and arrow._mouse == false and divider._alpha == 0,
+        "the bar's frame, end caps, page number and dividers out of sight, the arrows take no clicks")
+    check(full.NormalTexture._alpha == 0 and full.SlotArt._alpha == 0 and full.SlotBackground._alpha == 0
+        and full.Border._alpha == 0, "a button's frame, slot, background and border out of sight")
+    check(not full.icon._masks[full.IconMask] and full.icon._coords[1] == ns.ActionBars.CROP[1]
+        and full.cooldown._points[1][2] == full.icon and full.cooldown._points[1][4] == 0,
+        "its icon square and cropped, the cooldown over all of it")
+    check(full:GetHighlightTexture()._colour and full:GetHighlightTexture()._blend == "ADD"
+        and full:GetPushedTexture()._colour, "the mouse over it and a press: a flat wash")
+    check(full._alpha == 1 and empty._alpha == 0, "a button that holds something shows; an empty one does not")
+    W.Fire("ACTIONBAR_SHOWGRID")
+    local slot
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == empty and widget._colour and widget._colour[4] == ns.ActionBars.SLOT[4] then slot = widget end
+    end
+    check(empty._alpha == 1 and slot and slot._shown, "while something is dragged, the empty one shows as a dark square")
+    W.Fire("ACTIONBAR_HIDEGRID")
+    check(empty._alpha == 0 and not slot._shown, "dropped: out of sight again")
+    W.actions[2] = { kind = "spell", id = 78 }
+    empty:Update()
+    check(empty._alpha == 1, "given an action, it shows (after the game's own update)")
+    W.actions[2] = nil
+    empty:Update()
+    Core.Set(ns.name, "cleanBars", false)
+    check(not ns.ActionBars.Clean() and bar.BorderArt._alpha == 1 and arrow._mouse == true and divider._alpha == 1
+        and full.NormalTexture._alpha == 1 and full.icon._masks[full.IconMask] and full.icon._coords[2] == 1
+        and full:GetHighlightTexture()._texture == "highlight" and full.cooldown._points[1][4] == 3 and empty._alpha == 1,
+        "Clean action bars off: everything as the game had it")
+    Core.Set(ns.name, "cleanBars", true)
+    check(ns.ActionBars.Clean() and full.NormalTexture._alpha == 0 and empty._alpha == 0, "on again: clean")
+end
+
+-------------------------------------------------------------------------------
 --  A window of ours this game has not (Combat.lua, ns.Serves): it alone is not there
 -------------------------------------------------------------------------------
 do
@@ -437,6 +599,11 @@ ns.StandDown("a test")
 check(ns.off and not Core.Lent(planner) and not frame:IsShown(),
     "standing down, all is given back and the window goes, though a step of it failed")
 check(W.overrides[owner] == nil, "and the game's keys open the game's windows again")
+check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not watched[unitButtons.target]
+    and PlayerFrame._mouse == true and PlayerFrame.PlayerFrameContent._alpha == 1 and FocusFrame._parent == UIParent,
+    "our unit frames gone, the game's back")
+check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1,
+    "the action bars as the game has them")
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 check(not questMark._shown, "a plate the game shows after it gets no quest mark")

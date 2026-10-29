@@ -315,6 +315,19 @@ each thing with an outline and a background):
   player's list.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
 
+### Unit frames and action bars
+
+Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBars.lua`; Saneroki, 2026-10-29):
+
+- **Unit frames like the nameplates:** your frame, your target's and your focus's look very like a nameplate (the
+  module Nameplates): the round bar with its thin border, the power line along its bottom, the rank's line and the
+  red glow, in the plates' font. One line inside: the level and the raid marker on the left, the name in the
+  middle, the current health and its share on the right ("850 | 85%"). A player's name is always the whole name,
+  first name and surname. No portrait, no frame round it.
+- **Clean action bars:** no border, decoration or background, not on the bars (frame, end caps, page number,
+  dividers) nor on a button (frame, slot); only the filled slots, each its square icon alone, cut free of the edge
+  its picture is drawn with. What answers the mouse and keys is a flat wash over the icon.
+
 ## Views
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):

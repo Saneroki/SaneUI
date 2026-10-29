@@ -19,7 +19,9 @@ local ADDON, ns = ...
 --  (Talents/) and your spellbook (Book/), our own windows as the game's, and
 --  the window of a talent planner Sane UI knows (Core.Neighbours). Beside a
 --  creature's nameplate, a mark while it belongs to an objective still to do
---  (QuestMarks.lua). The game's own frames stay as they are. Each part falls back to the game's own when it fails
+--  (QuestMarks.lua). Our own frames for you, your target and your focus in a
+--  nameplate's look, in place of the game's (Units/); the game's action bars
+--  clean, their buttons' icons alone (ActionBars.lua). Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
 --  Our spellbook and talents are made after WoW: Forever's, so in Retail
@@ -40,6 +42,20 @@ ns.TEXT = {
     nameplates = "Nameplates",
     questMarks = "Quest marks on nameplates",
     questMarksTip = "A creature that belongs to a quest in your log shows a small mark beside its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count still open. As the game says it in the creature's tooltip.",
+    units = "Unit frames",
+    unitsTip = "Our own frames in place of the game's, in the look of a nameplate: the level and raid marker on the left, the name in the middle, the health and how much is left on the right. A click targets, a right click opens the game's menu. Placed in the game's Edit Mode.",
+    unitPlayer = "Your frame",
+    unitPlayerTip = "Your own frame instead of the game's. The game's pet frame, totems and cast bar stay where the game's frame was: move that in Edit Mode. Off: the game's own frame.",
+    unitTarget = "Your target's frame",
+    unitTargetTip = "Your target's frame instead of the game's; with the game's go its target's auras, its cast bar and its target. Off: the game's own frame.",
+    unitFocus = "Your focus's frame",
+    unitFocusTip = "Your focus's frame instead of the game's; with the game's go its auras and cast bar. Off: the game's own frame.",
+    unitSize = "Unit frame size",
+    unitSizeTip = "How large the three frames are.",
+    samples = { player = "You", target = Core.Word("TARGET", "Target"), focus = Core.Word("FOCUS", "Focus") },
+    actionBars = "Action bars",
+    cleanBars = "Clean action bars",
+    cleanBarsTip = "The game's action bars without their borders, decorations and backgrounds: only the buttons that hold something, each its icon alone. Empty buttons show while you drag something onto the bars, and in Edit Mode. Off: the game's own look.",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -62,11 +78,17 @@ function ns.Serves(key)
 end
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = ns.Serves()
-    and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again"
-    or "no quest marks beside nameplates"
+ns.GIVEN_BACK = (ns.Serves()
+    and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
+    or "no quest marks beside nameplates; ") .. "the game's own unit frames and action bars are back"
 
 local OPTIONS = {
+    { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
+      header = ns.TEXT.units, headerTip = ns.TEXT.unitsTip },
+    { key = "unitTarget", default = true, text = ns.TEXT.unitTarget, tip = ns.TEXT.unitTargetTip },
+    { key = "unitFocus", default = true, text = ns.TEXT.unitFocus, tip = ns.TEXT.unitFocusTip },
+    { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip },
+    { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
 }
 if ns.Serves() then
@@ -74,10 +96,13 @@ if ns.Serves() then
     -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
     Core.Edge.Options(OPTIONS, 1)
 end
--- Core's window takes the section in by itself (Edge.lua); the keys bound anew, the quest marks looked at again.
+-- Core's window takes the section in by itself (Edge.lua); the keys bound anew, the quest marks looked at again,
+-- the unit frames and action bars as the settings say.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "keys" then ns.Guarded(ns.Keys.Bind) end
     if key == "questMarks" then ns.Guarded(ns.QuestMarks.Update) end
+    if key:match("^unit") then ns.Guarded(ns.Units.Apply) end
+    if key == "cleanBars" then ns.Guarded(ns.ActionBars.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
@@ -88,6 +113,8 @@ function ns.GiveBack()
     ns.Safe("board", ns.Board.Leave)
     ns.Safe("window", ns.Window.Hide)
     ns.Safe("quest marks", ns.QuestMarks.Hide)
+    ns.Safe("unit frames", ns.Units.GiveBack)
+    ns.Safe("action bars", ns.ActionBars.GiveBack)
 end
 
 function ns.OnLoad()
@@ -99,4 +126,6 @@ function ns.OnLogin()
     ns.Board.Follow()
     ns.Keys.Start()
     ns.QuestMarks.Start()
+    ns.Units.Start()
+    ns.ActionBars.Start()
 end

@@ -53,6 +53,13 @@ Decided (Saneroki, 2026-10-16):
     no longer the Talents panel.
 - **Party style** (the game's raid style or classic party frames) and **click casting** are decided during
   development.
+- **Unit frames like the nameplates** (Saneroki, 2026-10-29; built, `src/Combat/README.md`): your frame, your
+  target's and your focus's, part of Combat, look very like the nameplates (the module Nameplates): the current
+  health and its share on the right ("850 | 85%"), the name in the middle, the level and the raid marker on the
+  left; a player's name is always the whole name, first name and surname. They are secure unit buttons placed in
+  Edit Mode, the game's own frames out of sight while ours show.
+- **Clean action bars** (Saneroki, 2026-10-29; built): the game's action bars without any border, decoration or
+  background, only the filled slots; they stay the game's bars, placed in its Edit Mode.
 
 ## Its parts
 
@@ -176,8 +183,9 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
 ## Order to build (proposal)
 
 1. **Unit frames** for you and your target: the base every other part reuses (a secure unit button, its
-   health and power bars, name, level, portrait, the buffs on it).
-2. **Pet, target's target, focus:** the same frame, smaller.
+   health and power bars, name, level, portrait, the buffs on it). Built 2026-10-29 with the focus, in the
+   nameplates' look (no portrait, no buffs yet).
+2. **Pet, target's target, focus:** the same frame, smaller (the focus built with step 1).
 3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header.
 4. **Buffs:** your own, at the top right as the game has them.
 5. **Cast bars**, **bosses**, **class resources**, **swing timers**, **threat.**

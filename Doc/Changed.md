@@ -3,8 +3,36 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 163 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 90 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 163 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Combat: unit frames for you, your target and your focus in the nameplates' look; the action bars clean (Saneroki, 2026-10-29)
+Saneroki: unit frames for the player, the target and the focus, part of Combat, looking very like the nameplates: the
+current health and its percent on the right, the name in the middle, the level and the raid marker on the left; players
+always by their full names (first name and surname). The action bars completely clean: no borders, decorations,
+backgrounds or anything on them, just the filled slots.
+- **The frames (`Units/Units.lua`):** three secure unit buttons of the game's (`SecureUnitButtonTemplate`, 240 x 26):
+  a click targets, a right click opens the game's menu (`togglemenu`), the mouse over one its tooltip; the game's unit
+  watch shows each while its unit is there, in a fight too. Each a frameless Core window placed in Edit Mode (at first
+  you left of the bottom middle, your target right of it, your focus above it); in Edit Mode a frame whose unit is not
+  there shows a sample, your own named *Target* or *Focus*. The game's `TargetFrame` and `FocusFrame` stand in a hidden
+  frame of ours (`Core.Lend`); of `PlayerFrame` only its picture, bars and texts go (their alpha) and its clicks, so its
+  pet frame, totems, cast bar and class bars stay the game's. Secure work waits for the end of a fight.
+- **The look (`Units/Bar.lua`, `Units/Text.lua`):** the nameplates' bar rebuilt for a frame of one size: round by
+  Core's caps and corner masks, a one-pixel border, the gold or silver rank line, the red glow (your aggro; your own
+  frame: anything's; a player who may attack you), the power along the bottom; the plates' font. The level (by
+  difficulty, a skull) and the raid marker left, the name centred in the room the wider side leaves, the health right
+  ("850 | 85%"; *Dead*, *Offline*); hidden values shown as they are.
+- **The action bars (`ActionBars.lua`):** the main bar's frame, end caps, page number (its arrows take no clicks) and
+  dividers, and each button's frame, slot, background and equipped border at alpha 0; the icon unmasked and cropped,
+  its cooldowns over all of it; the mouse over it, a press and an active action a flat wash. A button that holds
+  nothing is out of sight (its alpha), shown on a dark square while something is dragged and in Edit Mode. Hooks after
+  the game's own keep it so; off, all is the game's again.
+- **Settings:** *Unit frames* (*Your frame*, *Your target's frame*, *Your focus's frame*, *Unit frame size*) and
+  *Action bars* (*Clean action bars*), all on at first. Standing down gives the game's frames and bars back. In Retail
+  the same (names there have no surname).
+- **Tests:** `dev/tests/combat.lua` checks both, in Forever and Retail; `dev/tests/combatclient.lua` gives the stand-in
+  client what they need, for `combat.lua`, `book.lua` and `talents.lua`.
 
 ### Loot: each thing outlined on a dark shade with its worth and an A; Link and Close; your own switches for what is taken at once (Saneroki, 2026-10-29)
 Saneroki: Link and Close as buttons at the window's foot (Close spelled out) on a dark 50% background; each thing with

@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; in Retail the quest marks only (our spellbook and talents are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look (built); the game's action bars clean (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -12,6 +12,10 @@ Built so far: its window, docked in the screen's bottom middle. Push the mouse a
 the bottom edge, or press your spellbook or talents key, and it fills the screen with our own spellbook and
 talents windows, which look and work as the game's, on Core's board that you arrange; push there again, press
 the key again, or Esc, and it goes back. A talent planner Sane UI knows is a window of its own there.
+
+Your frame, your target's and your focus's are ours, in the look of a nameplate: the level and raid marker on
+the left, the name in the middle, the health and how much is left on the right. The game's action bars are
+clean: only the buttons that hold something, each its icon alone.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -61,13 +65,39 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count
   still open ("3/8"). It goes once the objective is done. As the game says it in the creature's tooltip; a
   creature the game says nothing about has none. *Quest marks on nameplates* switches it off.
-- **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*, *Quest marks on nameplates*,
-  the section *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and
-  texture) and *Window corners*.
+- **Unit frames:** your own frame, your target's and your focus's, in place of the game's, in the look of a
+  nameplate: a round bar in the unit's colour (a player's class colour; red for a creature that attacks on
+  sight, light yellow for one that does not, grey when another took it) with its power along the bottom. Inside
+  it, on the left the level (coloured by how hard the unit is to you, a skull where it is too high to tell) and
+  the raid marker beside it; in the middle the name, a player's first name and surname; on the right the health
+  and how much is left ("850 | 85%"), *Dead* or *Offline* where it is so. An elite has the gold line behind its
+  border, a rare a silver one, a boss a thick gold one; the frame glows red while you have the unit's aggro (your
+  own: while anything is after you) or while it is a player who may attack you.
+  - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
+    tooltip; in a fight too. Your target's and focus's frames come and go with them.
+  - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
+    middle, your target right of it, your focus above your target. A frame whose unit is not there shows a
+    sample there (your own, named *Target* or *Focus*).
+  - With the game's target and focus frames go what hangs on them: their auras, their cast bars and the
+    target's target (Forever's combo points show on your target's nameplate). Of the game's own frame only its
+    picture, bars and texts go: its pet frame, totems, cast bar and a class's resource bar stay where it was,
+    moved in Edit Mode by the game's box *Player Frame*.
+- **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
+  decoration or background: no frame, end caps, page number or dividers on the bars, no frame or slot on a
+  button. Only the buttons that hold something show, each its square icon alone; the mouse over one, a press and
+  an active action are a soft wash over the icon. While you drag something onto the bars, and in Edit Mode,
+  every button shows, an empty one as a dark square to drop on. The reservations of Abilities still show on
+  their empty buttons.
+- **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
+  frame*, *Your target's frame*, *Your focus's frame*, each off for the game's own, and *Unit frame size*); the
+  section *Action bars* (*Clean action bars*, off for the game's look); *Quest marks on nameplates*; the section
+  *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
+  *Window corners*.
 - **In Retail:** our spellbook and talents are made after WoW: Forever's, which Retail has not, so neither is
   there: the bottom edge fills no screen, your spellbook, pet book and talents keys open the game's own windows,
-  and the settings are *Quest marks on nameplates* only. The quest marks work as in Forever. Combat's own keys
-  still stand in the game's key bindings (the game reads `Bindings.xml` in both games) and do nothing there.
+  and the settings are the unit frames, the action bars and *Quest marks on nameplates*. Those work as in Forever
+  (Retail's names have no surname: a player's name alone). Combat's own keys still stand in the game's key
+  bindings (the game reads `Bindings.xml` in both games) and do nothing there.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -178,12 +208,48 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   (the entries' `window`), and its keys stay the game's (`Keys.Bind`, `Keys.Taken(action)`, `Keys.Press`). With
   neither (`ns.Serves()`), no window is made (`Window.Build`), the switch *keys* and the sections *Expand window*
   and *Window corners* are not described, and `GIVEN_BACK` says only the quest marks go.
+- **The unit frames** (`Units/`): each of `Units.KINDS` (player, target, focus) is the game's
+  `SecureUnitButtonTemplate` (`Units.WIDTH` x `Units.HEIGHT`, 240 x 26, scaled by `unitSize`; attributes `unit`,
+  `*type1` `target`, `*type2` `togglemenu`; `RegisterUnitWatch`), its look a plain frame on it (`button.face`) that
+  hears its unit's `Units.EVENTS` (`RegisterUnitEvent`), and a frameless `Core.Window` (`store`, `playerPlace`,
+  `targetPlace`, `focusPlace`) placed in Edit Mode. `PLAYER_TARGET_CHANGED`, `PLAYER_FOCUS_CHANGED`,
+  `RAID_TARGET_UPDATE`, `PLAYER_LEVEL_UP` and `PLAYER_ENTERING_WORLD` fill them anew. In Edit Mode the unit watch is
+  off and every frame shown, one whose unit is not there filled for `player` as a sample (`face.sample`,
+  `TEXT.samples`). Secure work (making, the unit watch, showing, the scale, the game's frames) runs out of a fight
+  (`Core.AfterCombat("unit frames", ...)`); a setting changed in one waits for its end.
+  - `Bar.lua` (`ns.UnitBar`): the nameplates' look rebuilt for a frame of one size: the fill and background
+    masked by Core's caps (`Shape.CAP_LEFT`, `CAP_RIGHT`, a quarter of the height), the border, rank line and the
+    glow's six bands as halves round at their own corners (`Shape.CORNER`); the power line a quarter of the bar
+    (`Bar.LINE`); the colours, ranks and glow as on a plate. Hidden values (health, a creature's most, your threat
+    against it) go to the bar, the glow's `SetAlphaFromBoolean` and the texts as they are.
+  - `Text.lua` (`ns.UnitText`): the game's plate font (`SystemFont_NamePlate_Outlined`) at `Text.SIZE` 12; level
+    and raid marker (`SetSpriteSheetCell`) left, health right (`Text.Short`, `Text.Percent`; hidden: the game's
+    `AbbreviateNumbers` in `Text.STEPS` and `UnitHealthPercent` by its curve), the name centred, its width the
+    bar's less twice the wider side (`Text.Layout`; the health's room as wide as its most, measured on a ruler of
+    ours, `Text.SAMPLE` while a creature's most is hidden).
+  - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
+    parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
+    children `PetFrame`, `TotemFrame`, the attached cast bar and the class bars stay the game's.
+- **The action bars** (`ActionBars.lua`): the bars of `Bars.BARS` (main, the extra bars, stance, pet, possess)
+  keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`,
+  `ActionBarPageNumber`, its arrows' mouse off) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
+  `SlotBackground`, `Border`) go to alpha 0, and its cooldowns cover the whole icon; the icon loses its
+  `IconMask` and is cropped (`Bars.CROP`); its highlight, pushed and checked textures become flat colours
+  (`Bars.LOOKS`, each texture's atlas or file and blend noted, written again where `UpdateButtonArt` set it anew).
+  A button's alpha is 0 while it holds nothing (`C_ActionBar.HasAction`, else its icon) unless the game shows its
+  grid (`ACTIONBAR_SHOWGRID`) or Edit Mode is open; then a dark square of ours (`Bars.SLOT`) lies under every
+  icon. Hooks after the game's own (each button's `Update`, `UpdateButtonArt`; a bar's `Update`, `UpdateState`,
+  `UpdateDividers`, the dividers of its pools at alpha 0, each kept to give back) keep it so. Cleaning waits for
+  the end of a fight; giving back is at once (what may not change in one, after it).
 - **Standing down** (`ns.GiveBack`): the keys are the game's again first, then each part gives back what it lent
   (the planner) and hides what is protected (the book's secure buttons, now or after the fight), the window hides,
-  the quest marks hide and no plate gets one after it; each step by itself, so one that fails keeps none of the
-  others from giving back.
-- Tests: `dev/tests/combat.lua` (the window, the board, the keys, the planner, the quest marks, a window of ours a
-  game lacks; at its end the file runs again as Retail loads the module, `combat.lua retail`),
+  the quest marks hide and no plate gets one after it, our unit frames go (alpha 0 at once, hidden and their unit
+  watch off after a fight) and the game's are back, and the action bars are as the game has them; each step by
+  itself, so one that fails keeps none of the others from giving back.
+- Tests: `dev/tests/combat.lua` (the window, the board, the keys, the planner, the quest marks, the unit frames,
+  the action bars, a window of ours a game lacks; at its end the file runs again as Retail loads the module,
+  `combat.lua retail`), with `dev/tests/combatclient.lua` (what the unit frames and action bars need of the
+  stand-in client, for every test that loads the module),
   `dev/tests/book.lua` (the spellbook), `dev/tests/talents.lua` (the talents).
 
 ## Files
@@ -211,6 +277,10 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 | `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
+| `Units/Bar.lua` | A unit frame's bar in a nameplate's look: round, its border, the rank's line, the glow, the power line |
+| `Units/Text.lua` | The line inside it: level and raid marker left, the name in the middle, the health right |
+| `Units/Units.lua` | Your frame, your target's and your focus's: the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
+| `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
 
 ## History
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.
@@ -225,3 +295,7 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 - **2026-10-20:** our own talents (the game's shared talent frame with the Camelot class layer ported).
 - **2026-10-25:** Retail (Saneroki: one interface for both games): our spellbook and talents stand down there and
   the game's own open with their keys; the quest marks run in both.
+- **2026-10-29:** unit frames for you, your target and your focus (Saneroki: part of Combat, very like the
+  nameplates; the health and its share right, the name in the middle, players by their full names, the level and
+  raid marker left), in place of the game's; the game's action bars clean (Saneroki: no borders, decorations or
+  backgrounds, only the filled slots).

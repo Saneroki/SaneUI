@@ -9,6 +9,7 @@ local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
+require("combatclient").Install(W) -- what the module's unit frames and action bars need of the client
 
 local passed = 0
 local function check(condition, what)
