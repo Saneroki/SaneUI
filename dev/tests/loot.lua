@@ -265,7 +265,22 @@ loot = { Coins(42), Slot(CLOTH, { count = 2 }), Slot(ROBE), Slot(RING), Slot(TUS
 local lines = ns.Slots.Read()
 check(#lines == 5 and lines[1].kind == "money" and lines[2].kind == "item" and lines[2].count == 2, "the loot read")
 check(lines[3].id == 6000 and lines[3].bind == 2 and lines[3].worth == 120 and lines[3].where == "Chest", "an item's facts")
-check(ns.Slots.Note(lines[3]) == "Binds when equipped · Chest", "the note under a name")
+check(ns.Slots.Note(lines[3]) == "|cffff8040BoE|r · Chest", "the note under a name: BoE short and orange, the kind")
+check(ns.Slots.Note(lines[4]) == "|cffff2020BoP|r · Cloth", "BoP short and red")
+-- an appearance the character could collect and has not (the game's collection): Uncollected, light blue
+C_TransmogCollection = {
+    GetItemInfo = function(link) if link == ROBE then return 77, 7700 elseif link == RING then return 78, 7800 end end,
+    PlayerCanCollectSource = function() return true, true end,
+    GetAppearanceInfoBySource = function(source) return { appearanceIsCollected = source == 7800 } end,
+}
+check(ns.Slots.Uncollected(ROBE) and not ns.Slots.Uncollected(RING) and not ns.Slots.Uncollected(CLOTH),
+    "uncollected: what the game says can be collected and is not")
+lines[3].uncollected = true
+check(ns.Slots.Note(lines[3]) == "|cffff8040BoE|r · |cff87abffUncollected|r · Chest", "Uncollected after the bind, light blue")
+lines[3].uncollected = nil
+C_TransmogCollection.PlayerCanCollectSource = function() return true, false end
+check(not ns.Slots.Uncollected(ROBE), "not where the character cannot collect it")
+C_TransmogCollection = nil
 check(ns.Slots.Note(lines[1]) == ns.TEXT.coins and ns.Slots.Note(lines[5]) == ns.TEXT.questItem, "notes of coins and quests")
 local function Wanted(index, change)
     local o = { kept = {} }
@@ -325,7 +340,7 @@ check(Window.frame._points[1] and Window.frame._points[1][1] == "TOPLEFT", "it s
 local rows = Rows()
 check(#rows == 3 and rows[1].line.slot == 2 and rows[3].line.slot == 4, "a line for each thing not taken at once")
 check(rows[1].count:GetText() == 2 and rows[1].name:GetText() == "Linen Cloth", "the count on the picture, the name")
-check(rows[2].note:GetText() == "Binds when equipped · Chest" and rows[2].worth:GetText() == "120c",
+check(rows[2].note:GetText() == "|cffff8040BoE|r · Chest" and rows[2].worth:GetText() == "120c",
     "under the name its kind, at the right what a vendor pays")
 check(rows[1].worth:GetText() == "26c", "the worth of the whole stack")
 options.notes = false

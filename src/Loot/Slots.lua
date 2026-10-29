@@ -19,7 +19,8 @@ local _, ns = ...
 --  begins a quest not taken yet), bind (the game's: 1 when picked up, 2 when
 --  equipped, 3 when used, 4 a quest's), class (the game's Enum.ItemClass),
 --  kind's words (what, where), worth (a vendor's price for one), upgrade (it
---  would make the character better: Upgrade.lua; "empty", "better" or nil).
+--  would make the character better: Upgrade.lua; "empty", "better" or nil),
+--  uncollected (a look the character could collect and has not).
 --
 --  The rules (the options Taken at once, every one off at first): Everything,
 --  else a kind (coins, currencies, quest items, trade goods, gear, consumables,
@@ -96,6 +97,7 @@ function Slots.Line(slot)
         line.what, line.sub, line.worth, line.bind, line.class = what, sub, worth, bind, class
         Where(line, where)
         if ns.Upgrade then line.upgrade = ns.Upgrade.Is(line) end
+        line.uncollected = Slots.Uncollected(line.link)
     end
     return line
 end
@@ -171,7 +173,42 @@ function Slots.Wanted(line, options)
     return Slots.Rule(line, options) ~= nil
 end
 
--- The note under a line's name: how it binds, its kind and where it is worn; a quest's.
+-- Words in one of the game's colours (its colour table, as its own windows use it); ours where a client has none.
+local function Coloured(text, name, hex)
+    local colour = rawget(_G, name)
+    if type(colour) == "table" and colour.WrapTextInColorCode then
+        local ok, wrapped = pcall(colour.WrapTextInColorCode, colour, text)
+        if ok and type(wrapped) == "string" then return wrapped end
+    end
+    return "|cff" .. hex .. text .. "|r"
+end
+
+-- How a thing binds, short, in the game's colours: when picked up red, when equipped (or used) orange.
+local BINDS = {
+    [1] = { "pickup", "RED_FONT_COLOR", "ff2020" },
+    [2] = { "equip", "ORANGE_FONT_COLOR", "ff8040" },
+    [3] = { "use", "ORANGE_FONT_COLOR", "ff8040" },
+    [7] = { "account" }, [8] = { "account" },
+    [9] = { "warbound", "ORANGE_FONT_COLOR", "ff8040" },
+}
+
+-- Whether the thing's look is one the character could collect and has not (the game's appearances: the light blue
+-- of its own "You haven't collected this appearance"). False where the game collects none or cannot say.
+function Slots.Uncollected(link)
+    local collection = rawget(_G, "C_TransmogCollection")
+    if type(link) ~= "string" or not (collection and collection.GetItemInfo and collection.PlayerCanCollectSource
+        and collection.GetAppearanceInfoBySource) then return false end
+    local _, source = Core.Ask(collection.GetItemInfo, link)
+    source = Plain(source)
+    if type(source) ~= "number" then return false end
+    local _, canCollect = Core.Ask(collection.PlayerCanCollectSource, source)
+    if not Plain(canCollect) then return false end
+    local info = Core.Ask(collection.GetAppearanceInfoBySource, source)
+    return type(info) == "table" and Plain(info.appearanceIsCollected) == false
+end
+
+-- The note under a line's name: short tags first (how it binds, red or orange; Uncollected, light blue), then its
+-- kind and where it is worn; a quest's.
 function Slots.Note(line)
     local T = ns.TEXT
     if line.kind == "money" then return T.coins end
@@ -179,8 +216,9 @@ function Slots.Note(line)
     if line.starts then return T.questStarts end
     if Slots.Quest(line) then return T.questItem end
     local parts = {}
-    if line.bind == 1 then parts[1] = T.pickup elseif line.bind == 2 then parts[1] = T.equip
-    elseif line.bind == 3 then parts[1] = T.use end
+    local bind = BINDS[line.bind]
+    if bind then parts[1] = bind[2] and Coloured(T[bind[1]], bind[2], bind[3]) or T[bind[1]] end
+    if line.uncollected then parts[#parts + 1] = Coloured(T.uncollected, "LIGHTBLUE_FONT_COLOR", "87abff") end
     local kind = line.where or line.sub or line.what
     if kind and kind ~= "" then parts[#parts + 1] = kind end
     return table.concat(parts, " · ")

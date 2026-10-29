@@ -3,8 +3,21 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 180 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 184 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: short tags under a name: BoP red, BoE orange, Uncollected light blue (Saneroki, 2026-10-29)
+Saneroki: things like uncollected, BoE, BoP as abbreviations, not whole words; BoP red, BoE orange, Uncollected in the
+uncollected colour (none of Sane UI's yet: the game's own, `LIGHTBLUE_FONT_COLOR`, as its "You haven't collected this
+appearance").
+- **`Slots.Note`:** BoP (`RED_FONT_COLOR`), BoE, BoU and WuE (`ORANGE_FONT_COLOR`), BoA; *Uncollected*
+  (`LIGHTBLUE_FONT_COLOR`) after it; a quest's item *Quest*, one that starts a quest *Starts a quest*. The colours from
+  the game's colour table, ours (its values) where a client has none.
+- **`Slots.Uncollected`:** the item's appearance source (`C_TransmogCollection.GetItemInfo`), one the character can
+  collect (`PlayerCanCollectSource`) whose look is not collected (`GetAppearanceInfoBySource`): nothing where the game
+  collects no looks or the class cannot.
+- **Tests:** `dev/tests/loot.lua` 184 checks.
+- A `/reload` takes it in.
 
 ### Loot: the picture rounded as its bar, at the bar's left end; the green arrow in front of the name (Saneroki, 2026-10-29)
 Saneroki: the item icons cornered with the same radius as the row so they fit together; the green arrow in front of

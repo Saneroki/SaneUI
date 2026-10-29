@@ -314,7 +314,9 @@ of the name):
   one screen pixel, nearly black, grey under the mouse (as a nameplate's on your target). At its left end, inside
   the border and as tall as the bar, the picture with no border of its own, round at its corners with the bar's own
   radius so the two fit together, how many on it; then the game's green arrow where it is an upgrade, in front of
-  the name in white in the game's outlined nameplate font; under the name, smaller, its kind and how it binds, and at the right what a vendor
+  the name in white in the game's outlined nameplate font; under the name, smaller, short tags (Saneroki: abbreviations, not whole words): **BoP** in the game's red,
+  **BoE** in its orange, **Uncollected** in its light blue (its own colour for an appearance not collected), then its
+  kind, and at the right what a vendor
   pays for all of it in the game's coins; at the top right a small **A**, a dark bar of the same make, its letter
   gold while the thing is on the player's list.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.

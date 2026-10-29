@@ -24,7 +24,9 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   left end, inside the border and as tall as the bar, the thing's picture, no border of its own, round at its
   corners as the bar is (the same radius: its left corners follow the bar's), how many on it; then its name in white
   in the game's outlined nameplate font;
-  under the name, smaller, its kind and how it binds,
+  under the name, smaller, short tags (how it binds: **BoP** red, **BoE** orange, BoU and WuE orange, BoA; then
+  **Uncollected** in the game's light blue where your character could collect the item's look and has not; a quest's
+  item *Quest*), then its kind,
   and at the right what a vendor pays for all of it (*A line under each name*, on); at the top right an **A**. At the
   foot two dark bars of the same make, **Link** and **Close** (Close alone when there is nothing to link).
   - **The green arrow** (the game's own, as its bags show it) in front of a name: the thing would make your character
@@ -123,6 +125,11 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   `LOOT_CLOSED`, `UI_ERROR_MESSAGE` with
   `ERR_INV_FULL` (what the rules could not take shows). Hidden, it closes the loot (`CloseLoot`). Esc by
   `Core.Escape`. The game's sounds for a container opened and a catch (`Core.Sound`).
+- **The tags under a name** (`Slots.Note`): the bind (`GetItemInfo`'s bindType: 1 BoP in `RED_FONT_COLOR`, 2 BoE, 3
+  BoU and 9 WuE in `ORANGE_FONT_COLOR`, 7 and 8 BoA), Uncollected in `LIGHTBLUE_FONT_COLOR` (the game's colour for "You
+  haven't collected this appearance") where `C_TransmogCollection.GetItemInfo` gives the item's source,
+  `PlayerCanCollectSource` says the character can collect it and `GetAppearanceInfoBySource` says the look is not
+  collected (`Slots.Uncollected`); each colour from the game's colour table, ours where a client lacks it.
 - **Upgrades** (`Upgrade.lua`): `C_PlayerInfo.CanUseItem` and the item's level asked (`UnitLevel`); where it is worn
   from its `INVTYPE_*` (the game's `INVSLOT_*`, the ranged place by `GetInventorySlotInfo("RangedSlot")`, else the
   main hand); what is worn by `GetInventoryItemLink`, its item level by `C_Item.GetDetailedItemLevelInfo` (else
@@ -199,6 +206,8 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   picture bare; Link, Close and the A dark bars of the same make. The round plates of Core's `Shape` are gone.
 - 2026-10-29 — The picture at the bar's left end, rounded as the bar is (Saneroki: "the same radius as the row corner
   so they fit well together"); the green arrow in front of the name instead of on the picture.
+- 2026-10-29 — Short tags under a name (Saneroki: abbreviations, not whole words): BoP red, BoE orange, Uncollected in
+  the game's light blue for a look the character could collect and has not; a quest's item *Quest*.
 - 2026-10-29 — Smooth round corners (Saneroki: "our current loot window is very ugly"): every line, the picture, the
   A and the buttons on plates of Core's `Shape`, as the chat's bubbles. Upgrades: the game's green arrow on a thing
   that would make the character better, and the switch *Always show upgrades* (on) keeps them out of every rule.
