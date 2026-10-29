@@ -299,6 +299,17 @@ the guide over the world: no window, no paper.
   sells for and what it changes (green up, red down).
 - **Words in Expressway** with a thin dark outline, as the guide over the world.
 
+### The loot window
+
+Loot's window (`src/Loot/Window.lua`, `Row.lua`; Saneroki, 2026-10-29: "minimalistic to the extreme"):
+
+- **No window at all:** a transparent background, no paper, frame, title or foot; only the lines straight on the
+  world, and over them at the right two words, *Link* and the X, light, gold under the mouse.
+- **A line a thing:** its picture in a thin border of its quality's colour (a dark hair round it so a light colour
+  reads on any ground), a quest's things in the game's gold; the name in its quality's colour in Kalam Bold with a
+  thin dark outline, as the combat text and the loot feed; under the mouse a soft dark shade fading out to the right.
+- **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
+
 ## Views
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):

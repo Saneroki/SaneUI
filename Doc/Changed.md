@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 122 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: the loot window as little as it can be (Saneroki, 2026-10-29)
+Saneroki: the loot window minimalistic to the extreme: a transparent background, Link and a close button; a thing
+looted, the list closes up so the next one is under the mouse again; quest items in a golden border, the others in a
+border of their quality.
+- **No window round it (`Window.lua`):** no paper, frame or title; the lines straight on the world, over them at the
+  right *Link* and the X (Kalam outlined, light, gold under the mouse). As wide as its widest words (140 to 300). Take
+  all and the looted thing's title are gone; *A line under each name* is off at first. In Edit Mode (At the mouse off)
+  two lines as they will look are placed.
+- **The lines (`Row.lua`):** the picture in a thin border of its quality's colour with a dark hair round it, a
+  quest's thing (a quest wants it, it begins one, it binds as a quest's: `Slots.Quest`, new) in the game's gold; the
+  name in the game's quality colour, outlined; under the mouse a soft dark shade fading out to the right.
+- **The next under the mouse:** a thing the player took cleared, the lines close up; at the mouse the window moves so
+  the line now in the taken one's place stands where it stood (the last taken: the window comes down a line), the
+  scroll counted in. A thing cleared by anything else moves nothing. The tooltip follows the thing now under the mouse.
+- **Link:** the links of the loot's items and currencies, as many as the game's chat box holds, into the chat box
+  being written in, else one opened with them; the player sends them (the game restricts `SendChatMessage`).
+- The bags-full page stands at the right of the lines, under the strip.
+- **Tests:** `dev/tests/loot.lua` 122 checks (borders, a quest's gold, the width, Link into a new and an open chat
+  box, money alone without Link, the X, the lines closing up under the mouse, the Edit Mode sample).
+- A `/reload` takes it in.
 
 ### Speed Leveling: gathering for the next zone; your bought Forever guides in the guide pack (Saneroki, 2026-10-29)
 Saneroki: Speed Leveling in WoW: Forever should have his bought guides installed, and hint at Herbalism and Mining

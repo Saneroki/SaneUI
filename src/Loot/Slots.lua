@@ -9,6 +9,7 @@ local _, ns = ...
 --      local lines = Slots.Read()       -- the loot open now (empty while none is)
 --      local line = Slots.Line(slot)    -- one slot anew; nil for one that is empty
 --      Slots.Wanted(line, options)      -- whether the player's rules take it at once
+--      Slots.Quest(line)                -- a quest's thing (the window's gold border)
 --      Slots.Name(id)                   -- an item's name, if the game knows it
 --
 --  A line: slot, kind ("item", "money", "currency"), icon, name, count,
@@ -91,12 +92,17 @@ function Slots.Read()
     return lines
 end
 
+-- Whether a quest wants the thing, or it begins one (or binds as a quest's).
+function Slots.Quest(line)
+    return (line.quest or line.starts or line.bind == 4) and true or false
+end
+
 -- Whether the player's rules (the module's options) take this line at once. A thing that binds when picked up is
 -- never taken by a rule but the quest's: the game would ask, and the player should see it first.
 function Slots.Wanted(line, options)
     if not line or line.locked then return false end
     if line.kind ~= "item" then return options.takeCoins and true or false end
-    if options.takeQuest and (line.quest or line.starts or line.bind == 4) then return true end
+    if options.takeQuest and Slots.Quest(line) then return true end
     if line.bind == 1 then return false end
     local kept = options.takeKept and type(options.kept) == "table" and line.id and options.kept[line.id]
     if kept then return true end
@@ -110,7 +116,7 @@ function Slots.Note(line)
     if line.kind == "money" then return T.coins end
     if line.kind == "currency" then return T.currency end
     if line.starts then return T.questStarts end
-    if line.quest or line.bind == 4 then return T.questItem end
+    if Slots.Quest(line) then return T.questItem end
     local parts = {}
     if line.bind == 1 then parts[1] = T.pickup elseif line.bind == 2 then parts[1] = T.equip
     elseif line.bind == 3 then parts[1] = T.use end

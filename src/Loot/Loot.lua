@@ -19,9 +19,10 @@ local ADDON, ns = ...
 --    Game.lua    the game's loot window no longer told of loot, its roll
 --                frames held out of sight; both given back
 --    Row.lua     one line of the loot window
---    Window.lua  the loot window: a page of the journal (Core.Journal), its
---                title the thing looted, a line a thing, Take all at its foot;
---                at the mouse or where Edit Mode placed it
+--    Window.lua  the loot window, as little as it can be: a line a thing
+--                straight on the world, Link and an X over them; at the mouse
+--                or where Edit Mode placed it; a thing taken, the next comes
+--                under the mouse
 --    Master.lua  the master looter's menu on a thing: who may have it, a roll
 --    Full.lua    your bags full: a page beside the window with what the thing
 --                is worth and the least worth thing of yours, to make room
@@ -42,11 +43,8 @@ local function Quality(index, fallback) return Word("ITEM_QUALITY" .. index .. "
 
 -- Every word the module shows; the game's own where it has one.
 ns.TEXT = {
-    title = Word("LOOT", "Loot"),
-    takeAll = "Take all",
-    takeAllTip = "Takes every thing the loot holds, as a click on each would.",
-    empty = "Nothing left",
-    fishing = Word("PROFESSIONS_FISHING", "Fishing"),
+    link = "Link",
+    linkTip = "Puts the links of the loot's things into the chat box: Enter sends them where you write.",
     coins = "Coins",
     currency = Word("CURRENCY", "Currency"),
     questItem = Word("ITEM_BIND_QUEST", "Quest Item"),
@@ -92,7 +90,7 @@ ns.TEXT = {
     -- the options
     windowHeader = "Loot window",
     windowSwitch = "Sane UI's loot window",
-    windowSwitchTip = "What a corpse, a chest or a catch holds, on a page of the journal. A click takes a thing; Shift-click links it in the chat, Ctrl-click tries it on, Alt-click puts it on your loot list or takes it off. Off: the game's own loot window.",
+    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing straight on the world, each picture bordered in its quality's colour (a quest's in gold). A click takes a thing and the next comes under the mouse; Shift-click links it in the chat, Ctrl-click tries it on, Alt-click puts it on your loot list or takes it off. Off: the game's own loot window.",
     atMouse = "At the mouse",
     atMouseTip = "The loot window opens where the mouse is, its first thing under it. Off: where you placed it in Edit Mode (Esc > Edit Mode).",
     notes = "A line under each name",
@@ -132,12 +130,14 @@ ns.GIVEN_BACK = "the game's loot window and roll frames are back"
 
 -- Sizes in UI units, one place for the module (Doc/guides/gui-development.md, Layout).
 ns.SIZE = {
-    width = 236,    -- the loot window's page: room for a picture, a name and its note
-    row = 34,       -- a line of the loot window
-    icon = 28,      -- a thing's picture in its pencil slot
+    width = 300,    -- the loot window at its widest (it is as wide as its words); longer names are cut
+    least = 140,    -- and at its narrowest: room for Link and the X over the lines
+    row = 32,       -- a line of the loot window
+    icon = 28,      -- a thing's picture with its border
+    border = 1.5,   -- the quality's border round a picture
+    top = 18,       -- the strip over the lines with Link and the X
     gap = 6,        -- between a picture and its words, and round the page's parts
-    foot = 28,      -- the foot with Take all
-    room = 0.6,     -- the most of the screen's height the window's page takes; more lines scroll
+    room = 0.6,     -- the most of the screen's height the window's lines take; more scroll
     card = { 300, 50 }, -- a roll card
     cardGap = 6,    -- between roll cards
     choice = 54,    -- a choice's pencil box on a card
@@ -155,7 +155,7 @@ end
 local OPTIONS = {
     { key = "window", default = true, text = ns.TEXT.windowSwitch, tip = ns.TEXT.windowSwitchTip, header = ns.TEXT.windowHeader },
     { key = "atMouse", default = true, text = ns.TEXT.atMouse, tip = ns.TEXT.atMouseTip, parent = "window" },
-    { key = "notes", default = true, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window" },
+    { key = "notes", default = false, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window" },
     { key = "takeCoins", default = true, text = ns.TEXT.takeCoins, tip = ns.TEXT.takeCoinsTip,
       header = ns.TEXT.takeHeader, headerTip = ns.TEXT.takeHeaderTip },
     { key = "takeQuest", default = true, text = ns.TEXT.takeQuest, tip = ns.TEXT.takeQuestTip },

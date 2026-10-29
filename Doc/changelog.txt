@@ -14,8 +14,11 @@ The bigger changes of each version, newest first.
   is (cloth, leather, mail, plate, a weapon), whether you can use
   it, what it sells for and what it changes against what you
   wear. Space goes on.
-- Loot: a loot window of Sane UI's own, a page of the journal
-  at your mouse. Click to take, or let your rules take coins,
+- Loot: a loot window of Sane UI's own, as little as can be:
+  the things straight on the world at your mouse, each picture
+  bordered in its quality's colour (a quest's in gold), Link
+  and an X. Click to take and the next comes under the mouse,
+  or let your rules take coins,
   quest items, the things on your own loot list (Alt-click to
   add) and everything up to a quality at once. Master looters
   give things from a menu. Bags full? A page beside it shows

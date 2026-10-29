@@ -1,6 +1,7 @@
 -- Runs the Loot module against the stand-in client (wowstub.lua): the game's loot window and roll frames kept out
 -- of the way and given back, the open loot read into lines, what the rules take at once (and what never), the window
--- with its lines, clicks (take, link, the loot list), Take all, a slot cleared and changed, the game's Auto Loot,
+-- with its lines (borders by quality, a quest's gold), clicks (take, link, the loot list), Link and the X, the lines
+-- closing up under the mouse, a slot cleared and changed, the game's Auto Loot,
 -- full bags (a thing the rules could not take shows again; the page that makes room, the cheapest first), the master
 -- looter's menu, the game's sentences read back, the roll cards (choices offered, a choice made, who chose what,
 -- the time line), the feed (merged lines, the group's by quality, money), Retail's path, and standing down.
@@ -28,6 +29,7 @@ function methods:GetEffectiveScale() return 1 end
 function methods:GetVerticalScroll() return self._scroll or 0 end
 function methods:SetVerticalScroll(at) self._scroll = at end
 function methods:Click(button) if self._scripts.OnClick then self._scripts.OnClick(self, button or "LeftButton") end end
+function methods:SetColorTexture(r, g, b, a) self._color = { r, g, b, a or 1 } end
 
 -- The game's sentences about loot (English).
 LOOT = "Loot"
@@ -288,7 +290,15 @@ check(Window.frame._points[1] and Window.frame._points[1][1] == "TOPLEFT", "it s
 local rows = Rows()
 check(#rows == 3 and rows[1].line.slot == 2 and rows[3].line.slot == 4, "a line for each thing not taken at once")
 check(rows[1].count:GetText() == 2 and rows[1].name:GetText() == "Linen Cloth", "the count on the picture, the name")
-check(rows[2].note:GetText() == "Binds when equipped · Chest", "the note under the name")
+check(rows[2].note:GetText() == "", "no note under the name at first")
+options.notes = true
+Window.Fill()
+check(rows[2].note:GetText() == "Binds when equipped · Chest", "with the notes: the note under the name")
+options.notes = false
+Window.Fill()
+check(rows[1].border._color[1] == ITEM_QUALITY_COLORS[1].r and rows[2].border._color[1] == ITEM_QUALITY_COLORS[2].r,
+    "each picture bordered in its quality's colour")
+check(Window.frame._width >= ns.SIZE.least and Window.frame._width <= ns.SIZE.width, "as wide as its words, within bounds")
 check(Window.frame._height and Window.frame._height > 3 * ns.SIZE.row, "the window as high as its lines")
 
 -- the game clears what was taken
@@ -320,17 +330,32 @@ loot[2].gone = true
 W.Fire("LOOT_SLOT_CLEARED", 2)
 check(#Rows() == 2 and Rows()[1].line.slot == 3, "a cleared slot's line goes")
 
--- Take all: everything but what is locked
+-- Link: the loot's links into the chat box, never sent by us
+local function Word(text)
+    for _, frame in ipairs(W.frames) do
+        if frame._parent == Window.frame and frame.text and frame.text:GetText() == text then return frame end
+    end
+end
+local linkWord, closeWord = Word(ns.TEXT.link), Word("x")
+check(linkWord and linkWord:IsShown() and closeWord, "over the lines: Link and the X")
+local opened, inserted
+ChatFrameUtil.OpenChat = function(text) opened = text end
+ChatFrameUtil.GetActiveWindow = function() return nil end
+linkWord._scripts.OnClick(linkWord)
+check(opened == ROBE .. " " .. RING, "Link opens the chat box with the loot's links")
+ChatFrameUtil.GetActiveWindow = function()
+    return { Insert = function(_, text) inserted = text end, SetFocus = function() end }
+end
+linkWord._scripts.OnClick(linkWord)
+check(inserted == ROBE .. " " .. RING, "or puts them into the chat box being written in")
+ChatFrameUtil.GetActiveWindow = function() return nil end
+
 loot[3].locked = true
 W.Fire("LOOT_SLOT_CHANGED", 3)
-taken = {}
-local take
-for _, frame in ipairs(W.frames) do
-    if frame.box and frame.text and frame.text:GetText() == ns.TEXT.takeAll then take = frame end
-end
-take._scripts.OnClick(take)
-check(#taken == 1 and taken[1] == 4, "Take all takes what is not locked")
 check(Rows()[1]:GetAlpha() < 1 and Rows()[1].note:GetText() == ns.TEXT.locked, "a locked thing is faint, and says so")
+taken = {}
+Rows()[1]._scripts.OnClick(Rows()[1], "LeftButton")
+check(#taken == 0, "and is not taken")
 
 -- all taken: the loot closes
 loot[3].gone, loot[4].gone = true, true
@@ -341,12 +366,50 @@ check(not Shown() and closed == 1, "the last thing taken closes the window and t
 W.Fire("LOOT_CLOSED")
 check(closed == 1, "the game's closing closes nothing twice")
 
--- the close button and Esc close the loot
+-- the X and Esc close the loot
 loot = { Slot(ROBE) }
 Open()
 check(Shown(), "opened again")
-Window.Close()
+closeWord._scripts.OnClick(closeWord)
 check(not Shown() and closed == 1, "closed by the player: the loot is closed")
+
+-- a thing taken: the lines close up, the next one under the mouse where the taken one stood
+W.cursorX, W.cursorY = 500, 400
+loot = { Slot(ROBE), Slot(CLOTH), Slot(GEM), Coins(7) }
+options.takeCoins = false
+Open()
+local top = 400 + ns.SIZE.top + ns.SIZE.row / 2
+check(Window.frame._points[1][4] == 500 - ns.SIZE.icon / 2 and Window.frame._points[1][5] == top,
+    "the first line's picture under the mouse")
+check(Word(ns.TEXT.link):IsShown(), "Link while there are links")
+Rows()[1]._scripts.OnClick(Rows()[1], "LeftButton")
+loot[1].gone = true
+W.Fire("LOOT_SLOT_CLEARED", 1)
+check(#Rows() == 3 and Rows()[1].line.slot == 2 and Window.frame._points[1][5] == top,
+    "the first taken: the second closes up under the mouse, the window stays")
+Rows()[3]._scripts.OnClick(Rows()[3], "LeftButton")
+loot[4].gone = true
+W.Fire("LOOT_SLOT_CLEARED", 4)
+check(#Rows() == 2 and Window.frame._points[1][5] == top - ns.SIZE.row,
+    "the last taken: the window comes down a line, the one before under the mouse")
+loot[2].gone = true
+W.Fire("LOOT_SLOT_CLEARED", 2)
+check(Window.frame._points[1][5] == top - ns.SIZE.row, "a thing taken by something else moves nothing")
+Window.Close()
+options.takeCoins = true
+W.cursorX, W.cursorY = nil, nil
+
+-- a quest's thing in gold; money alone has nothing to link
+options.takeQuest, options.takeCoins = false, false
+loot = { Slot(TUSK, { questItem = true }), Coins(3) }
+Open()
+check(Rows()[1].border._color[1] == 1 and Rows()[1].border._color[2] == 0.82, "a quest's thing: a gold border")
+Window.Close()
+loot = { Coins(3) }
+Open()
+check(Shown() and not Word(ns.TEXT.link):IsShown(), "money alone: no Link")
+Window.Close()
+options.takeQuest, options.takeCoins = true, true
 
 -- the rules take everything: no window, the game closes the loot
 loot = { Coins(10), Slot(TUSK, { questItem = true }) }
@@ -457,9 +520,6 @@ W.popups[1].data.callback()
 check(given and given[1] == 2 and given[2] == 2, "then the thing is given")
 menu[3].fn()
 check(asked == 2, "or a roll asked of the group")
-taken = {}
-take._scripts.OnClick(take)
-check(#taken == 1 and taken[1] == 1, "Take all leaves what is yours to give")
 Window.Close()
 method = Enum.LootMethod.Group
 
@@ -560,6 +620,13 @@ EventRegistry:TriggerEvent("EditMode.Exit")
 options.atMouse = false
 EventRegistry:TriggerEvent("EditMode.Enter")
 check(Window.frame:IsShown() and not Window.Shown(), "At the mouse off: the window shows to be placed, no loot in it")
+local samples = 0
+for _, frame in ipairs(W.frames) do
+    if frame.line and frame._shown and frame.holder and frame._parent and frame._parent._parent._parent == Window.frame then
+        samples = samples + 1
+    end
+end
+check(samples == 2, "two lines as they will look")
 check(#Cards() == 1 and Cards()[1].name:GetText() == ns.TEXT.rollsView, "a roll card to place")
 check(#Feed() == 3, "feed lines to place")
 W.clock = W.clock + 60

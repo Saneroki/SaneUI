@@ -1,11 +1,12 @@
 # Sane UI: Loot
 
-**Status:** built: the loot window on a page of the journal, things taken at once by your own rules, a loot list, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the loot window, as little as it can be, straight on the world, things taken at once by your own rules, a loot list, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
-Stands in for the game's loot window and its roll frames. What a corpse, a chest or a catch holds is a page of
-Sane UI's journal at the mouse: a line a thing, its picture in a pencil slot, its name in its quality's colour, a
-note under it (how it binds, its kind, a quest's). A click takes it; your rules take coins, quest items, the things on
+Stands in for the game's loot window and its roll frames. What a corpse, a chest or a catch holds stands at the
+mouse with no window round it: a line a thing, its picture bordered in its quality's colour (a quest's in gold), its
+name in that colour, Link and an X over the lines. A click takes it and the next comes under the mouse; your rules
+take coins, quest items, the things on
 your own loot list and everything up to a quality at once, never what binds when picked up. As master looter a click
 gives the thing away from a menu. With your bags full a page beside the window weighs the thing against the cheapest
 thing you carry. Your group's rolls are paper cards (Need, Greed, Pass; how many chose each and who), and what you and
@@ -14,13 +15,19 @@ your group receive rises over the world. When it fails, the game's own loot wind
 ## How to use
 - **Switch it on or off:** tick or untick *Loot* under *Sane UI* in the game's addon list (the game needs a restart
   when it was not in the list before). Its options: Esc > Options > AddOns > Sane UI > *Loot*.
-- **The loot window** opens where the mouse is, its first line under it (*At the mouse*; off: where you placed it in
-  Edit Mode). Its title is what you loot: the corpse's name, *Fishing*, else *Loot*.
+- **The loot window** opens where the mouse is, its first line's picture under it (*At the mouse*; off: where you
+  placed it in Edit Mode). No paper, no frame, no title: the lines straight on the world, each a picture in a thin
+  border of its quality's colour (a quest's things, and things that begin a quest, in the game's gold) and the name
+  in that colour with a thin dark outline. Over the lines at the right: *Link* and the X. *A line under each name*
+  (off at first) adds a small grey note: how it binds, its kind, a quest's.
   - **Click** a line: the thing is taken, as in the game's window (the game asks first for a thing that binds when
-    picked up). **Shift-click** links it in the chat, **Ctrl-click** tries it on.
+    picked up). The lines close up, and the next thing stands where the taken one stood, under the mouse; the last
+    one taken, the window comes down a line so the one before is under it. Click and click again where you are.
+    **Shift-click** links it in the chat, **Ctrl-click** tries it on.
   - **Alt-click** puts the thing on your **loot list**, or takes it off: what is on it is taken at once wherever it
     drops. `/sane loot list` names what is on it.
-  - **Take all** at the foot takes every thing a click could take.
+  - **Link** puts the links of the loot's things into the chat box (into the one you are writing in, else it opens
+    one): Enter sends them where you write. Sane UI sends nothing itself.
   - A thing that is not yours to take now (locked to a roll) is faint and says so.
   - Close it with its X or Esc: the loot closes with it. Everything taken, it closes by itself.
   - Many lines scroll with the mouse wheel.
@@ -31,10 +38,9 @@ your group receive rises over the world. When it fails, the game's own loot wind
   everything itself; the window then shows only what is left a moment later (bags full, a thing locked to a roll).
 - **Master looter:** a thing of the group's quality or better is yours to give, not to take: a click opens a menu
   beside its line with the thing, *Give to* and everybody who may have it (in a raid under their classes, each name
-  in its class's colour), and *Request Roll*. A name chosen, the game asks yes or no, then gives it. *Take all* leaves
-  those things alone.
+  in its class's colour), and *Request Roll*. A name chosen, the game asks yes or no, then gives it.
 - **Bags full** (*Make room for loot*, on): with your bags full while the loot window holds a thing, a page of paper
-  hangs out from the window's right edge: *This one*, the thing with what a vendor pays for it, and *Make room*, the
+  stands at the right of the window's lines: *This one*, the thing with what a vendor pays for it, and *Make room*, the
   thing of yours worth the least at a vendor; the pencil arrows go through the next cheapest ("2 of 9"). Click it
   (or drag it) to pick it up, then drop it on the world: the game asks before it is gone. Never offered: what a vendor
   will not take, a quest's things, epics and better. The page goes once there is room.
@@ -48,8 +54,8 @@ your group receive rises over the world. When it fails, the game's own loot wind
   name, how many and (faint) how many you carry; the same thing again adds to its line. *Coins* (on): money you loot.
   *Your group's* (on): what the others receive, named, from the quality *From* (Uncommon at first). Placed in Edit
   Mode (*Loot feed*).
-- **Edit Mode** (Esc > Edit Mode): the loot window (while *At the mouse* is off), a roll card and the feed show there
-  to be placed.
+- **Edit Mode** (Esc > Edit Mode): the loot window (two lines as they will look, while *At the mouse* is off), a roll
+  card and the feed show there to be placed.
 - `/sane loot try` shows a roll card and the feed as they will look.
 
 ## Technical details
@@ -65,9 +71,15 @@ your group receive rises over the world. When it fails, the game's own loot wind
   `GetLootSlotLink`; a currency through `CurrencyContainerUtil.GetCurrencyContainerInfo` as the game's window does;
   an item's kind, where it is worn, its vendor price and how it binds from `C_Item.GetItemInfo`. Every value through
   `Core.Plain`. `Slots.Wanted` is the rules, `Slots.Note` the note under a name.
-- **The window** (`Window.lua`, `Row.lua`): `Core.Journal.Dress` (the journal's window), a scroll frame, rows made once
-  and used again; Take all a pencil box (`Journal.Box`). Placed by `Core.Window.New` (key `windowPlace`, no title bar:
-  Edit Mode only); at the mouse its first line's middle under the cursor, clamped to the screen. `LOOT_OPENED` (the
+- **The window** (`Window.lua`, `Row.lua`): no art at all; a scroll frame, rows made once and used again (a border of
+  plain colour round the picture, `ITEM_QUALITY_COLORS`, the game's gold `NORMAL_FONT_COLOR` for a quest's thing:
+  `Slots.Quest`; Kalam outlined). As wide as its widest words (`SIZE.least` to `SIZE.width`). Placed by
+  `Core.Window.New` (key `windowPlace`, no title bar: Edit Mode only); at the mouse the first line's picture under the
+  cursor, kept on the screen. A thing the player took (`LOOT_SLOT_CLEARED` of the slot clicked): the rows are laid
+  out anew and, at the mouse, the window moved so the line now at the clicked place (the one before it, when the last
+  was taken) stands where the taken one stood, the scroll counted in. Link: the links of the items and currencies, as
+  many as the chat box holds (255 letters on show, 1280 bytes), into `ChatFrameUtil.GetActiveWindow()`, else
+  `ChatFrameUtil.OpenChat`; `SendChatMessage` has restrictions, so the player sends them. `LOOT_OPENED` (the
   rules take, then the window or a check `Core.Later` 0.4 s after for Auto Loot and for rules that took everything),
   `LOOT_SLOT_CLEARED` (the last one closes the loot), `LOOT_SLOT_CHANGED`, `LOOT_CLOSED`, `UI_ERROR_MESSAGE` with
   `ERR_INV_FULL` (what the rules could not take shows). Hidden, it closes the loot (`CloseLoot`). Esc by
@@ -109,7 +121,7 @@ your group receive rises over the world. When it fails, the game's own loot wind
 | `Slots.lua` | The open loot as plain lines; the rules that take at once; the note under a name |
 | `Chat.lua` | The game's sentences about loot read back into their parts |
 | `Game.lua` | The game's loot window and roll frames kept out of the way, and given back |
-| `Row.lua` | One line of the loot window |
+| `Row.lua` | One line of the loot window: its bordered picture, its name |
 | `Window.lua` | The loot window |
 | `Master.lua` | The master looter's menu |
 | `Full.lua` | The page that makes room when the bags are full |
@@ -120,3 +132,6 @@ your group receive rises over the world. When it fails, the game's own loot wind
 - 2026-10-28 — Built (Saneroki asked for a loot module with its own loot window): the window on the journal's page,
   the rules, the loot list, the master looter's menu, the bags-full page (board #34's note), the roll cards with who
   chose what, the feed, Edit Mode places, `/sane loot`.
+- 2026-10-29 — The window as little as it can be (Saneroki): no paper, frame or title, the lines straight on the
+  world, Link and the X over them; borders in the quality's colour, a quest's in gold; a thing taken, the next under
+  the mouse. Take all and the title gone; the note under a name off at first.

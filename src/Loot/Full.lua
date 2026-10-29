@@ -3,8 +3,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Loot - Full
 --  Your bags are full and the loot window holds a thing you cannot take: a
---  page of paper hangs out from the window's right edge (an overhang of the
---  journal, interface-style.md) with
+--  page of paper beside the window's lines, at their right, with
 --      the thing      its picture and name, and what a vendor pays for it
 --                     (all of the stack);
 --      to make room   the thing in your bags worth the least at a vendor
@@ -253,7 +252,7 @@ function Full.Show()
     if not page then Build() end
     local parent = ns.Window.frame
     page:ClearAllPoints()
-    page:SetPoint("TOPLEFT", parent, "TOPRIGHT", -S.gap * 2, -S.row * 2)
+    page:SetPoint("TOPLEFT", parent, "TOPRIGHT", S.gap, -S.top)
     Set(this, line.icon, line.name, line.quality, line.count, line.worth)
     at = math.min(math.max(at, 1), math.max(#things, 1))
     local thing = things[at]

@@ -2,11 +2,16 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Loot - Window
---  The loot window: a page of the journal (Core.Journal) whose title is what
---  is looted (the corpse's name, Fishing, Loot), a line for each thing it
---  holds (Row.lua), and at its foot a pencil box Take all. It opens where the
---  mouse is, its first line under it, or where it was placed in Edit Mode
---  (switch At the mouse); more lines than a good part of the screen scroll.
+--  The loot window, as little as it can be (Saneroki, 2026-10-29): no paper,
+--  no frame, no title, a line for each thing the loot holds (Row.lua) straight
+--  on the world, and over the lines at the right two words: Link and the X
+--  that closes it. It opens where the mouse is, its first line under it, or
+--  where it was placed in Edit Mode (switch At the mouse); more lines than a
+--  good part of the screen scroll.
+--
+--  A thing taken, the lines close up and the next one stands where the taken
+--  one stood, under the mouse: at the mouse the window moves down a line when
+--  the last one was taken.
 --
 --  As the loot opens, the player's rules take what they want at once
 --  (Slots.Wanted); those lines are not shown. The game's own Auto Loot takes
@@ -17,42 +22,36 @@ local _, ns = ...
 --  game asks itself for one that binds when picked up); a master looter's click
 --  on a thing for the group opens the menu of who may have it (Master.lua).
 --  Shift-click links it, Ctrl-click tries it on (the game's modified clicks);
---  Alt-click puts it on the player's loot list or takes it off. Closing the
---  window closes the loot (CloseLoot); Esc closes it (Core.Escape).
+--  Alt-click puts it on the player's loot list or takes it off. Link puts the
+--  links of the loot's things into the chat box: the player sends them (an
+--  addon may not send chat itself). Closing the window closes the loot
+--  (CloseLoot); Esc closes it (Core.Escape).
 --
 --      Window.Start()   listens to the loot's events; places it for Edit Mode
 --      Window.Fill()    the lines anew, as the loot holds them now
 --      Window.Place()   at the mouse or at its place, while it is open
 --      Window.Close()   closes it and the loot
---      Window.Shown(), Window.frame
+--      Window.Shown(), Window.Lines(), Window.frame
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local J = Core.Journal
 local S = ns.SIZE
 local Window = {}
 ns.Window = Window
 
-local panel, look, scroll, sheet, foot, take, placed
+local LIGHT = { 0.85, 0.85, 0.85 } -- the two words over the lines; gold under the mouse
+local CHAT_SHOWN, CHAT_BYTES = 250, 1270 -- what the game's chat box holds: 255 letters on show, 1280 bytes with links
+
+local panel, scroll, sheet, linkButton, closeButton, placed
 local rows = {}
 local lines = {}      -- what the loot holds now (Slots.Read), less what the rules are taking
 local taking = {}     -- [slot] = true: taken at once, waiting for the game to clear it
 local open = false    -- the loot is open and the window is ours
 local sample = false  -- shown in Edit Mode only, to be placed
 local fromItem = false
-
--- What is looted: the corpse you look at, Fishing, else the game's word Loot.
-local function Source()
-    if Core.Ask(rawget(_G, "IsFishingLoot")) then return ns.TEXT.fishing end
-    if not fromItem then
-        for _, unit in ipairs({ "target", "softinteract", "mouseover" }) do
-            if Core.Ask(UnitExists, unit) and Core.Ask(UnitIsDead, unit) then
-                local name = Core.Ask(UnitName, unit)
-                if name then return name end
-            end
-        end
-    end
-    return ns.TEXT.title
-end
+local full, view = 0, 0  -- the lines' height, and how much of it shows
+local at              -- at the mouse: the window's top left { x, y } from the screen's bottom left
+local snap            -- the thing the player took: { slot, index, scroll }; the next comes to its place
+local hover           -- the line under the mouse
 
 -------------------------------------------------------------------------------
 --  The lines
@@ -60,6 +59,7 @@ end
 local function Tip(row)
     local line = row.line
     if not line or sample then return end
+    hover = row
     row.shade:Show()
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     if line.kind == "item" then
@@ -69,11 +69,12 @@ local function Tip(row)
     else
         GameTooltip:SetText(line.name)
     end
-    if line.id and ns.options.kept[line.id] then GameTooltip:AddLine(ns.TEXT.onList, J.LIT[1], J.LIT[2], J.LIT[3], true) end
+    if line.id and ns.options.kept[line.id] then GameTooltip:AddLine(ns.TEXT.onList, 1, 0.82, 0, true) end
     GameTooltip:Show()
 end
 
 local function Untip(row)
+    if hover == row then hover = nil end
     row.shade:Hide()
     GameTooltip_Hide()
 end
@@ -95,6 +96,7 @@ end
 -- One thing taken, as the game's window takes it; a master looter's thing goes to the menu instead.
 local function Take(line, row)
     if line.locked then return end
+    snap = { slot = line.slot, index = row.index or 1, scroll = scroll:GetVerticalScroll() or 0 }
     if ns.Master.Gives(line) then return ns.Master.Open(row, line) end
     LootSlot(line.slot)
 end
@@ -111,13 +113,6 @@ local function Click(row)
     Take(line, row)
 end
 
-local function TakeAll()
-    if sample then return end
-    for _, line in ipairs(lines) do
-        if not line.locked and not ns.Master.Gives(line) then LootSlot(line.slot) end
-    end
-end
-
 local function Row(index)
     local row = rows[index]
     if row then return row end
@@ -130,33 +125,79 @@ local function Row(index)
 end
 
 local function Wheel(_, delta)
-    local most = math.max(0, sheet:GetHeight() - scroll:GetHeight())
-    local at = math.min(most, math.max(0, scroll:GetVerticalScroll() - delta * S.row))
-    scroll:SetVerticalScroll(at)
+    local most = math.max(0, full - view)
+    scroll:SetVerticalScroll(math.min(most, math.max(0, (scroll:GetVerticalScroll() or 0) - delta * S.row)))
+end
+
+-------------------------------------------------------------------------------
+--  Link: the loot's links into the chat box
+-------------------------------------------------------------------------------
+-- The links of the loot's things (items, currencies), as many as the chat box holds.
+local function Links()
+    local list, shown, bytes = {}, 0, 0
+    for _, line in ipairs(lines) do
+        local link = line.link
+        if not link and line.kind == "currency" then link = Core.Plain(GetLootSlotLink(line.slot)) end
+        if type(link) == "string" then
+            local letters = #(link:match("|h(%[.-%])|h") or link) + 1
+            if shown + letters > CHAT_SHOWN or bytes + #link + 1 > CHAT_BYTES then break end
+            shown, bytes = shown + letters, bytes + #link + 1
+            list[#list + 1] = link
+        end
+    end
+    return table.concat(list, " ")
+end
+
+-- Into the chat box being written in, else the chat box opened with them: Enter sends them where the player chose.
+local function LinkAll()
+    if sample then return end
+    local text = Links()
+    if text == "" then return end
+    local chat = rawget(_G, "ChatFrameUtil")
+    local active = chat and chat.GetActiveWindow and chat.GetActiveWindow()
+    if active then
+        active:Insert(text)
+        active:SetFocus()
+        return
+    end
+    local openChat = (chat and chat.OpenChat) or rawget(_G, "ChatFrame_OpenChat")
+    if openChat then openChat(text) end
 end
 
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
-local function TakeLit(on) take.box:SetStrong(on) end
-
-local function TakeTip(button)
-    TakeLit(true)
-    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-    GameTooltip:SetText(ns.TEXT.takeAll)
-    GameTooltip:AddLine(ns.TEXT.takeAllTip, 1, 1, 1, true)
-    GameTooltip:Show()
-end
-
-local function TakeUntip()
-    TakeLit(false)
-    GameTooltip_Hide()
+-- A word over the lines that is a button: light, gold under the mouse.
+local function Word(text, onClick, tip)
+    local button = CreateFrame("Button", nil, panel)
+    button.text = button:CreateFontString(nil, "OVERLAY")
+    ns.Row.Font(button.text, 13, true)
+    button.text:SetPoint("CENTER")
+    button.text:SetText(text)
+    button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
+    button:SetSize(math.max(S.top, (tonumber(button.text:GetStringWidth()) or 0) + S.gap), S.top)
+    button:SetScript("OnClick", ns.Guard(onClick))
+    button:SetScript("OnEnter", ns.Guard(function()
+        button.text:SetTextColor(ns.Row.Gold())
+        if not tip then return end
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(text)
+        GameTooltip:AddLine(tip, 1, 1, 1, true)
+        GameTooltip:Show()
+    end))
+    button:SetScript("OnLeave", ns.Guard(function()
+        button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
+        GameTooltip_Hide()
+    end))
+    return button
 end
 
 -- Hidden by the game (its whole interface for a movie) or by us: the loot is closed with it.
 local function Hidden()
     Core.Escape(panel, nil)
     ns.Safe("full", ns.Full.Hide)
+    snap = nil
+    if hover then Untip(hover) end
     if open then
         open = false
         CloseLoot()
@@ -168,37 +209,18 @@ local function Build()
     panel:SetFrameStrata("DIALOG")
     panel:SetToplevel(true)
     panel:SetClampedToScreen(true)
-    panel:EnableMouse(true)
     panel:Hide()
     Window.frame = panel
-    look = J.Dress(panel, ns.TEXT.title)
-    look.close:SetScript("OnClick", ns.Guard(function() Window.Close() end))
     panel:SetScript("OnHide", ns.Guard(Hidden))
 
-    foot = CreateFrame("Frame", nil, look.content)
-    foot:SetPoint("BOTTOMLEFT")
-    foot:SetPoint("BOTTOMRIGHT")
-    foot:SetHeight(S.foot)
-    take = CreateFrame("Button", nil, foot)
-    take.text = take:CreateFontString(nil, "ARTWORK")
-    J.Font(take.text, 13, true)
-    take.text:SetPoint("CENTER")
-    take.text:SetText(ns.TEXT.takeAll)
-    take:SetSize(math.max(S.foot * 3, (tonumber(take.text:GetStringWidth()) or 0) + 4 * S.gap), S.foot - 4)
-    take:SetPoint("RIGHT", foot, "RIGHT", 0, 0)
-    take.box = J.Box(take, 0.5)
-    TakeLit(false)
-    take:SetScript("OnClick", ns.Guard(TakeAll))
-    take:SetScript("OnEnter", ns.Guard(TakeTip))
-    take:SetScript("OnLeave", ns.Guard(TakeUntip))
-    foot.empty = foot:CreateFontString(nil, "ARTWORK")
-    J.Font(foot.empty, 12, false, J.FAINT)
-    foot.empty:SetPoint("LEFT")
-    foot.empty:SetText(ns.TEXT.empty)
+    closeButton = Word("x", function() Window.Close() end)
+    closeButton:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
+    linkButton = Word(ns.TEXT.link, LinkAll, ns.TEXT.linkTip)
+    linkButton:SetPoint("RIGHT", closeButton, "LEFT", -S.gap / 2, 0)
 
-    scroll = CreateFrame("ScrollFrame", nil, look.content)
-    scroll:SetPoint("TOPLEFT")
-    scroll:SetPoint("BOTTOMRIGHT", foot, "TOPRIGHT", 0, S.gap / 2)
+    scroll = CreateFrame("ScrollFrame", nil, panel)
+    scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -S.top)
+    scroll:SetPoint("BOTTOMRIGHT")
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", ns.Guard(Wheel))
     sheet = CreateFrame("Frame", nil, scroll)
@@ -209,55 +231,70 @@ local function Build()
                                        first = { point = "LEFT", x = 80, y = 120 } })
 end
 
--- The first line's middle under the mouse, as near as the screen lets it (the window is clamped to it).
+-- The window's top left at x, y (from the screen's bottom left), kept on the screen.
+local function Put(x, y)
+    local width, height = tonumber(panel:GetWidth()) or 0, tonumber(panel:GetHeight()) or 0
+    local right, top = tonumber(UIParent:GetWidth()) or 0, tonumber(UIParent:GetHeight()) or 0
+    if right > width then x = math.max(0, math.min(x, right - width)) end
+    if top > height then y = math.max(height, math.min(y, top)) end
+    at = { x = x, y = y }
+    panel:ClearAllPoints()
+    panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
+end
+
+-- The first line's picture under the mouse, as near as the screen lets it.
 local function AtMouse()
     local scale = panel:GetEffectiveScale()
     local x, y = GetCursorPosition()
-    x, y = x / scale, y / scale
-    panel:ClearAllPoints()
-    panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-    local left, top = look.content:GetLeft(), look.content:GetTop()
-    local dx = left and (left - (panel:GetLeft() or 0)) or 0
-    local dy = top and ((panel:GetTop() or 0) - top) or 0
-    panel:ClearAllPoints()
-    panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x - dx - S.icon / 2, y + dy + S.row / 2)
+    Put(x / scale - S.icon / 2, y / scale + S.top + S.row / 2)
 end
 
 function Window.Place()
     if not panel or not panel:IsShown() then return end
-    if ns.options.atMouse and not sample then AtMouse() else placed:Place() end
+    if ns.options.atMouse and not sample then
+        AtMouse()
+    else
+        at = nil
+        placed:Place()
+    end
 end
 
--- The lines as the loot holds them now: the rows laid out, the window as high as they are (to a share of the
--- screen; the rest scrolls), the foot's Take all while there is anything to take.
+-- The lines as the loot holds them now: the rows laid out, the window as wide as its widest words and as high as
+-- its lines (to a share of the screen; the rest scrolls).
 function Window.Fill()
     if not panel or not panel:IsShown() then return end
     local notes = ns.options.notes
-    local shown = 0
+    local shown, wide, linkable = 0, S.least, sample
     for _, line in ipairs(lines) do
-        if not taking[line.slot] then
+        if not (line.slot and taking[line.slot]) then
             shown = shown + 1
             local row = Row(shown)
+            row.index = shown
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", sheet, "TOPLEFT", 0, -(shown - 1) * S.row)
             row:SetPoint("RIGHT", sheet, "RIGHT")
             ns.Row.Set(row, line, notes)
+            wide = math.max(wide, ns.Row.Width(row))
+            linkable = linkable or line.kind ~= "money"
         end
     end
     for index = shown + 1, #rows do
         rows[index]:Hide()
         rows[index].line = nil
     end
-    local height = math.max(shown, 1) * S.row
-    sheet:SetSize(S.width, height)
-    local _, chrome = J.Outer(S.width, 0)
+    local width = math.min(S.width, wide)
     local screen = tonumber(UIParent:GetHeight()) or 0
     if screen <= 0 then screen = 768 end -- not laid out yet: the UI's own height at scale 1
-    local room = screen * S.room - chrome - S.foot
-    panel:SetSize(J.Outer(S.width, math.min(height, room) + S.foot + S.gap / 2))
-    take:SetShown(shown > 0)
-    foot.empty:SetShown(shown == 0)
+    full = shown * S.row
+    view = math.min(full, math.max(S.row, screen * S.room - S.top))
+    sheet:SetSize(width, math.max(full, 1))
+    panel:SetSize(width, S.top + view)
+    linkButton:SetShown(linkable)
     Wheel(nil, 0)
+    -- what is under the mouse now is another thing: its tooltip
+    if hover then
+        if hover:IsShown() and hover.line then Tip(hover) else Untip(hover) end
+    end
     ns.Safe("full", ns.Full.Update)
 end
 
@@ -285,7 +322,6 @@ local function Show()
     if not open then return end
     if not panel then Build() end
     sample = false
-    look.title:SetText(Source())
     panel:Show()
     panel:Raise()
     Window.Fill()
@@ -323,13 +359,26 @@ local function Find(slot)
     return nil
 end
 
+-- The line that closed up into the taken one's place stands where it stood, under the mouse; the last one taken,
+-- the line before it comes down to that place. Only at the mouse: a window placed in Edit Mode keeps its place.
+local function Under(took)
+    if not at or not ns.options.atMouse or sample then return end
+    local shown = Remaining()
+    if shown == 0 then return end
+    local index = math.min(took.index, shown)
+    Put(at.x, at.y - (took.index - index) * S.row + took.scroll - (scroll:GetVerticalScroll() or 0))
+end
+
 local function Cleared(slot)
     if not open then return end
     local index = Find(slot)
     if index then table.remove(lines, index) end
     taking[slot] = nil
     if #lines == 0 then return Window.Close() end -- all taken: the loot closes, shown or not
+    local took = snap and snap.slot == slot and snap or nil
+    if took then snap = nil end
     Window.Fill()
+    if took and panel and panel:IsShown() then Under(took) end
 end
 
 -- A thing the rules took could not be taken (the bags are full): its line shows again.
@@ -350,6 +399,7 @@ end
 
 local function Closed()
     open = false
+    snap = nil
     wipe(lines)
     wipe(taking)
     ns.Master.Close()
@@ -374,21 +424,31 @@ function Window.Lines()
     return lines
 end
 
--- In Edit Mode the window shows, empty, to be placed where it opens while At the mouse is off (on, its place is
--- the mouse's: nothing to place).
+-- Two lines as they will look, to place the window by.
+local function Sample()
+    return {
+        { kind = "item", name = ns.TEXT.window, icon = "Interface\\Icons\\INV_Misc_Bag_10", quality = 2, count = 1 },
+        { kind = "item", name = ns.TEXT.questItem, icon = "Interface\\Icons\\INV_Misc_Note_01", quality = 1, count = 1,
+          quest = true },
+    }
+end
+
+-- In Edit Mode the window shows two lines as they will look, to be placed where it opens while At the mouse is off
+-- (on, its place is the mouse's: nothing to place).
 local function Edit(on)
     if open then return end
     if on and ns.Game.Window() and not ns.options.atMouse then
         if not panel then Build() end
         sample = true
-        wipe(lines)
-        look.title:SetText(ns.TEXT.title)
+        lines = Sample()
+        wipe(taking)
         panel:Show()
         Window.Fill()
-        placed:Place()
+        Window.Place()
     elseif sample and panel then
         panel:Hide()
         sample = false
+        lines = {}
     end
 end
 
