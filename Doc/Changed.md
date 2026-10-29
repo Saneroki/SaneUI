@@ -3,8 +3,28 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 101 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 166 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 101 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 178 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: smooth round corners; the green arrow on an upgrade, and Always show upgrades (Saneroki, 2026-10-29)
+Saneroki: smooth corners, as the nameplates are drawn, "our current loot window is very ugly"; a green arrow on a thing
+that would improve the character (nothing worn in its place, or better than what is worn), and a switch "Always show
+upgrades": those never auto looted, even with everything set to be.
+- **Round plates (`Row.lua`):** each line, its picture, the A and the buttons Link and Close stand on a plate of Core's
+  `Shape` (`Row.Plate`), as the chat's bubbles: round corners (6 UI units; the picture's and the A's 4), a black fill
+  at half (darker under the mouse), a thin trim (1.25) in the quality's colour (a quest's gold; the buttons grey). The
+  square four-line outlines and the shades are gone.
+- **Core (`Shape.lua`):** a shape's settings may give its trim's width (`trim`; `Shape.TRIM` at first).
+- **Upgrades (`Upgrade.lua`, new):** gear the character can wear now (`C_PlayerInfo.CanUseItem`, its level) where
+  nothing is worn, or with a higher item level than what is worn there (the weaker of two rings or trinkets); never
+  armour lighter than the one worn, nor an off hand beside a two-handed weapon. The game's `bags-greenarrow` on its
+  picture, its tooltip saying which.
+- **Always show upgrades** (tab *Taken at once*, on): `Slots.Rule` takes no upgrade at once, over Everything, the
+  kinds and the player's word.
+- **Tests:** `dev/tests/loot.lua` 178 checks (the plates' trims, fill and width; an empty place, a better and a worse
+  item level, lighter armour, unusable, too low a level, no gear; the upgrade waiting under Everything and the word,
+  its arrow; the switch off).
+- A game restart takes it in (a new file in Loot's TOC).
 
 ### Combat: your target's and focus's targets and your pet as rows under the frames; green bars, names from the left (Saneroki, 2026-10-29)
 Saneroki: the target's target like the casting bar: it appears underneath while there is one, and the only text in its

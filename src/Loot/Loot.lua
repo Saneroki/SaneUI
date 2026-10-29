@@ -13,15 +13,17 @@ local ADDON, ns = ...
 --    Slots.lua   what the open loot holds, as plain lines read from the game;
 --                what the player's rules take at once (everything, or kinds:
 --                coins, currencies, quest items, trade goods, gear,
---                consumables, junk; the player's word on an item over them)
+--                consumables, junk; the player's word on an item over them;
+--                an upgrade never, with Always show upgrades)
+--    Upgrade.lua whether a thing would make the character better
 --    Chat.lua    the game's sentences about loot (received, rolled for, coins)
 --                read back into their parts, by the game's own words
 --    Game.lua    the game's loot window no longer told of loot, its Auto
 --                Loot lent off, its roll frames held out of sight; all given
 --                back
 --    Row.lua     one line of the loot window
---    Window.lua  the loot window: a line a thing (Row.lua) on a dark shade
---                outlined in its quality's colour, Link and Close at its foot;
+--    Window.lua  the loot window: a line a thing (Row.lua) on a round plate
+--                trimmed in its quality's colour, Link and Close at its foot;
 --                at the mouse or where Edit Mode placed it; a thing taken, the
 --                next comes under the mouse; the rules' things taken at once
 --    Items.lua   the options' tab Your items: the things met in loot, ticked
@@ -101,11 +103,15 @@ ns.TEXT = {
     -- the options
     windowHeader = "Loot window",
     windowSwitch = "Sane UI's loot window",
-    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing on a dark shade, outlined in its quality's colour (a quest's in gold): its picture, its name, its kind and what a vendor pays for it, and an A to take it at once from now on. Link and Close at the foot. A click takes a thing and the next comes under the mouse. While it is on, the game's own Auto Loot is off: the switches Taken at once decide (Shift while looting still takes everything). Off: the game's own loot window.",
+    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing on a dark plate with round corners, trimmed in its quality's colour (a quest's in gold): its picture (a green arrow on an upgrade), its name, its kind and what a vendor pays for it, and an A to take it at once from now on. Link and Close at the foot. A click takes a thing and the next comes under the mouse. While it is on, the game's own Auto Loot is off: the switches Taken at once decide (Shift while looting still takes everything). Off: the game's own loot window.",
     atMouse = "At the mouse",
     atMouseTip = "The loot window opens where the mouse is, its first thing under it. Off: where you placed it in Edit Mode (Esc > Edit Mode).",
     notes = "A line under each name",
     notesTip = "Under each thing's name, small: its kind, whether it binds, a quest's, and what a vendor pays for it.",
+    showUpgrades = "Always show upgrades",
+    showUpgradesTip = "A thing that would make your character better (gear you can wear now, where you wear nothing or something of a lower item level) is never taken at once, whatever the switches below and your word on it say: it waits in the loot window, a green arrow on its picture.",
+    upgradeEmpty = "An upgrade: you wear nothing there",
+    upgradeBetter = "An upgrade: a higher item level than what you wear there",
     takeHeader = "Taken at once",
     takeHeaderTip = "What is taken as soon as the loot opens, without a click, as fast as the game lets it; the rest waits in the loot window. Nothing at first. Never by these a thing locked to a roll, or one that binds when picked up (the game asks first); your word on an item (its A, the tab Your items) goes over them.",
     takeAll = "Everything",
@@ -163,11 +169,16 @@ ns.SIZE = {
     least = 190,    -- and at its narrowest: room for Link and Close
     row = 38,       -- a line of the loot window
     rowGap = 2,     -- between its lines
-    icon = 30,      -- a thing's picture with its border
-    border = 1.5,   -- the quality's border round a picture
-    pad = 4,        -- round a line's parts inside its shade
+    icon = 30,      -- a thing's picture with its round plate
+    iconInset = 2.5, -- the picture set into its plate: its square corners inside the plate's round
+    pad = 4,        -- round a line's parts inside its plate
     auto = 16,      -- the A of a line
     foot = 22,      -- the buttons Link and Close
+    radius = 6,     -- the round of a line's corners and the buttons'
+    iconRadius = 4, -- of the picture's plate
+    autoRadius = 4, -- of the A's
+    trim = 1.25,    -- the plates' trim
+    arrow = 14,     -- the green arrow of an upgrade on a picture
     gap = 6,        -- between a picture and its words, and round the page's parts
     room = 0.6,     -- the most of the screen's height the window's lines take; more scroll
     seen = 60,      -- the things met in loot kept for the tab Your items, the newest first
@@ -192,8 +203,9 @@ local OPTIONS = {
     { key = "atMouse", default = true, text = ns.TEXT.atMouse, tip = ns.TEXT.atMouseTip, parent = "window", tab = W },
     { key = "notes", default = true, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window", tab = W },
     { key = "full", default = true, text = ns.TEXT.full, tip = ns.TEXT.fullTip, header = ns.TEXT.fullHeader, tab = W },
-    { key = "takeAll", default = false, text = ns.TEXT.takeAll, tip = ns.TEXT.takeAllTip, parent = "window",
+    { key = "showUpgrades", default = true, text = ns.TEXT.showUpgrades, tip = ns.TEXT.showUpgradesTip, parent = "window",
       header = ns.TEXT.takeHeader, headerTip = ns.TEXT.takeHeaderTip, tab = T },
+    { key = "takeAll", default = false, text = ns.TEXT.takeAll, tip = ns.TEXT.takeAllTip, parent = "window", tab = T },
     { key = "takeCoins", default = false, text = ns.TEXT.takeCoins, tip = ns.TEXT.takeCoinsTip, parent = "window", tab = T },
     { key = "takeCurrency", default = false, text = ns.TEXT.takeCurrency, tip = ns.TEXT.takeCurrencyTip, parent = "window", tab = T },
     { key = "takeQuest", default = false, text = ns.TEXT.takeQuest, tip = ns.TEXT.takeQuestTip, parent = "window", tab = T },
@@ -223,7 +235,7 @@ Core.Options(ns.name, OPTIONS, {
         elseif key == "full" then
             ns.Guarded(ns.Full.Update)
         end
-        if key == "kept" or key:find("^take") then ns.Guarded(ns.Items.Refresh) end
+        if key == "kept" or key == "showUpgrades" or key:find("^take") then ns.Guarded(ns.Items.Refresh) end
     end,
     -- the list of items, after the switches' tabs
     tabs = { { name = ns.TEXT.itemsTab, build = function(child) return ns.Items.Build(child) end } },

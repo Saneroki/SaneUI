@@ -69,7 +69,7 @@ local function Link(id, name) return ("|cff1eff00|Hitem:%d::::::::|h[%s]|h|r"):f
 local function Item(id, name, quality, worth, bind, where, class)
     local link = Link(id, name)
     items[link] = { name = name, quality = quality, kind = "Armor", sub = "Cloth", where = where or "", icon = 1000 + id,
-                    worth = worth or 0, bind = bind, class = class or 4 }
+                    worth = worth or 0, bind = bind, class = class or 4, level = 10, subclass = 1 }
     return link
 end
 local CLOTH = Item(2589, "Linen Cloth", 1, 13, nil, nil, 7)
@@ -87,10 +87,16 @@ C_Item.GetItemInfo = function(link)
         end
     end
     if not item then return nil end
-    return item.name, link, item.quality, 10, 1, item.kind, item.sub, 20, item.where, item.icon, item.worth, item.class, 1,
-        item.bind
+    return item.name, link, item.quality, item.level, item.needs or 1, item.kind, item.sub, 20, item.where, item.icon, item.worth,
+        item.class, item.subclass, item.bind
 end
 C_Item.GetItemCount = function() return 7 end
+-- What the character wears ([place] = link) and whether the game says it can use an item ([item ID] = false: not).
+local worn, unusable = {}, {}
+INVSLOT_HEAD, INVSLOT_CHEST, INVSLOT_WAIST, INVSLOT_MAINHAND, INVSLOT_OFFHAND = 1, 5, 6, 16, 17
+INVSLOT_FINGER1, INVSLOT_FINGER2 = 11, 12
+GetInventoryItemLink = function(_, place) return worn[place] end
+C_PlayerInfo = { CanUseItem = function(id) return unusable[id] ~= true end }
 C_CurrencyInfo = {
     GetCoinTextureString = function(copper) return ("%dc"):format(copper) end,
     GetCurrencyInfoFromLink = function() return { name = "Honor", iconFileID = 500, quality = 1, quantity = 40 } end,
@@ -327,13 +333,15 @@ Window.Fill()
 check(rows[2].note:GetText() == "" and rows[2].worth:GetText() == "", "the line under the name switched off")
 options.notes = true
 Window.Fill()
-check(rows[1].border._color[1] == ITEM_QUALITY_COLORS[1].r and rows[2].border._color[1] == ITEM_QUALITY_COLORS[2].r,
-    "each picture bordered in its quality's colour")
-check(rows[2].outline[1]._color[1] == ITEM_QUALITY_COLORS[2].r and rows[2].outline[4]._color[1] == ITEM_QUALITY_COLORS[2].r,
-    "each line outlined in it")
-check(rows[2].shade._color[4] == 0.5, "on a dark shade, half see-through")
+local function Trim(plate) return plate.shape.look.trim end
+check(Trim(rows[1].holder.plate)[1] == ITEM_QUALITY_COLORS[1].r and Trim(rows[2].holder.plate)[1] == ITEM_QUALITY_COLORS[2].r,
+    "each picture on a round plate trimmed in its quality's colour")
+check(Trim(rows[2].plate)[1] == ITEM_QUALITY_COLORS[2].r and rows[2].plate.shape.settings.radius == ns.SIZE.radius,
+    "each line on a round plate trimmed in it")
+check(rows[2].plate.shape.look.alpha == 0.5 and rows[2].plate.shape.width == Window.frame._width,
+    "its fill half see-through, laid out as wide as the window")
 rows[2]._scripts.OnEnter(rows[2])
-check(rows[2].shade._color[4] > 0.5, "darker under the mouse")
+check(rows[2].plate.shape.look.alpha > 0.5, "darker under the mouse")
 rows[2]._scripts.OnLeave(rows[2])
 check(rows[2].auto:IsShown() and not rows[2].auto.on, "an A on each item, not lit")
 check(Window.frame._width >= ns.SIZE.least and Window.frame._width <= ns.SIZE.width, "as wide as its words, within bounds")
@@ -382,7 +390,8 @@ end
 local linkWord, closeWord = Word(ns.TEXT.link), Word(ns.TEXT.close)
 check(linkWord and linkWord:IsShown() and closeWord and closeWord:IsShown(), "at the foot: Link and Close")
 check(linkWord._points[1][1] == "BOTTOMLEFT" and closeWord._points[1][1] == "BOTTOMRIGHT", "side by side, at the bottom")
-check(linkWord.shade._color[4] == 0.5 and closeWord.shade._color[4] == 0.5, "each on a dark shade, half see-through")
+check(linkWord.plate.shape.look.alpha == 0.5 and closeWord.plate.shape.look.alpha == 0.5
+      and linkWord.plate.shape.width > 0, "each on a round plate, half see-through")
 local opened, inserted
 ChatFrameUtil.OpenChat = function(text) opened = text end
 ChatFrameUtil.GetActiveWindow = function() return nil end
@@ -448,7 +457,8 @@ W.cursorX, W.cursorY = nil, nil
 options.takeQuest, options.takeCoins = false, false
 loot = { Slot(TUSK, { questItem = true }), Coins(3) }
 Open()
-check(Rows()[1].border._color[1] == 1 and Rows()[1].border._color[2] == 0.82, "a quest's thing: a gold border")
+check(Trim(Rows()[1].plate)[1] == 1 and Trim(Rows()[1].plate)[2] == 0.82 and Trim(Rows()[1].holder.plate)[2] == 0.82,
+    "a quest's thing: trimmed in gold")
 check(Rows()[1].note:GetText() == ns.TEXT.questItem, "its line under the name: a quest's")
 check(Rows()[2].note:GetText() == ns.TEXT.coins and Rows()[2].note._points[2][2] == Rows()[2],
     "selling for nothing (coins): the line under the name reaches the line's end, not empty words")
@@ -737,6 +747,58 @@ check(#Cards() == 1 and #Feed() == 3, "/sane loot try: a card and the feed to lo
 W.clock = W.clock + 60
 Cards()[1]:GetParent()._scripts.OnUpdate(Cards()[1]:GetParent(), 1)
 Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 1)
+
+-------------------------------------------------------------------------------
+--  Upgrades
+-------------------------------------------------------------------------------
+W.level = 20
+local SASH = Item(5000, "Silk Sash", 2, 300, 2, "INVTYPE_WAIST")
+local HELM = Item(5001, "Mail Coif", 2, 400, 2, "INVTYPE_HEAD")
+local OLD_HELM = Item(5002, "Old Coif", 1, 40, 2, "INVTYPE_HEAD")
+local PLATE_HELM = Item(5003, "Plate Helm", 1, 40, 2, "INVTYPE_HEAD")
+items[HELM].level, items[HELM].subclass = 20, 3
+items[OLD_HELM].level, items[OLD_HELM].subclass = 12, 3
+items[PLATE_HELM].level, items[PLATE_HELM].subclass = 8, 4
+local function Up(link)
+    loot = { Slot(link) }
+    return ns.Slots.Line(1).upgrade
+end
+check(Up(SASH) == "empty", "nothing worn there: an upgrade")
+worn[INVSLOT_HEAD] = OLD_HELM
+check(Up(HELM) == "better", "a higher item level than worn: an upgrade")
+worn[INVSLOT_HEAD] = HELM
+check(Up(OLD_HELM) == nil, "a lower one: none")
+worn[INVSLOT_HEAD] = PLATE_HELM
+check(Up(HELM) == nil, "lighter armour than worn: none, whatever its level")
+worn[INVSLOT_HEAD] = nil
+unusable[5000] = true
+check(Up(SASH) == nil, "what the game says you cannot use: none")
+unusable[5000] = nil
+items[SASH].needs, W.level = 10, 5
+check(Up(SASH) == nil, "not yet of its level: none")
+W.level = 20
+check(Up(CLOTH) == nil and Up(TUSK) == nil, "no gear: none")
+
+loot = { Slot(SASH), Slot(CLOTH) }
+options.takeAll = true
+Open()
+check(#taken == 1 and taken[1] == 2 and Shown() and #Rows() == 1 and Rows()[1].line.slot == 1,
+    "Always show upgrades: Everything takes the rest, the upgrade waits in the window")
+check(Rows()[1].upgrade:IsShown() and Rows()[1].upgrade._atlas == "bags-greenarrow", "the game's green arrow on it")
+options.kept[5000] = true
+Open()
+check(#taken == 1, "over your word too")
+options.kept[5000] = nil
+options.showUpgrades = false
+Open()
+check(#taken == 2 and not Shown(), "the switch off: taken with the rest")
+options.showUpgrades, options.takeAll = true, false
+W.Fire("LOOT_CLOSED")
+loot = { Slot(CLOTH) }
+Open()
+check(not Rows()[1].upgrade:IsShown(), "no arrow on what is no upgrade")
+Window.Close()
+W.Fire("LOOT_CLOSED")
 
 -------------------------------------------------------------------------------
 --  The options' tab Your items

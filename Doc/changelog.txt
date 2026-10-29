@@ -23,10 +23,13 @@ The bigger changes of each version, newest first.
   it, what it sells for and what it changes against what you
   wear. Space goes on.
 - Loot: a loot window of Sane UI's own at your mouse: each
-  thing on a dark shade outlined in its quality's colour (a
-  quest's in gold), with what a vendor pays for it and an A to
+  thing on a dark plate with smooth round corners, trimmed in
+  its quality's colour (a quest's in gold), with what a vendor pays for it and an A to
   take it at once from now on; Link and Close at the foot.
-  Click to take and the next comes under the mouse. Nothing is
+  A green arrow marks gear that would make your character
+  better, and such upgrades always wait in the window to be
+  seen (Always show upgrades). Click to take and the next
+  comes under the mouse. Nothing is
   taken at once until you say so: everything, or coins,
   currencies, quest items, trade goods, gear, consumables or
   junk, as soon as the loot is ready; the options list your

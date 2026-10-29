@@ -18,13 +18,16 @@ local _, ns = ...
 --  quality, locked, link, id (an item's), quest (a quest wants it), starts (it
 --  begins a quest not taken yet), bind (the game's: 1 when picked up, 2 when
 --  equipped, 3 when used, 4 a quest's), class (the game's Enum.ItemClass),
---  kind's words (what, where), worth (a vendor's price for one).
+--  kind's words (what, where), worth (a vendor's price for one), upgrade (it
+--  would make the character better: Upgrade.lua; "empty", "better" or nil).
 --
 --  The rules (the options Taken at once, every one off at first): Everything,
 --  else a kind (coins, currencies, quest items, trade goods, gear, consumables,
 --  junk). Over them the player's own word on an item (options.kept[id]: true
 --  taken at once, false never). Never by a kind: a thing locked to a roll, or
 --  one that binds when picked up (the game would ask), a quest's excepted.
+--  Over everything the switch Always show upgrades: an upgrade is never taken
+--  at once, it waits in the window to be seen.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -92,6 +95,7 @@ function Slots.Line(slot)
         local _, what, sub, where, worth, bind, class = ItemFacts(line.link)
         line.what, line.sub, line.worth, line.bind, line.class = what, sub, worth, bind, class
         Where(line, where)
+        if ns.Upgrade then line.upgrade = ns.Upgrade.Is(line) end
     end
     return line
 end
@@ -148,6 +152,7 @@ Slots.KINDS = {
 -- kind's switch; nil for none. own = false leaves the player's word out (what the switches alone would do).
 function Slots.Rule(line, options, own)
     if not line or line.locked then return nil end
+    if options.showUpgrades and line.upgrade then return nil end -- to be seen in the window
     local kept = type(options.kept) == "table" and options.kept or {}
     local word
     if own ~= false and Item(line) and line.id then word = kept[line.id] end

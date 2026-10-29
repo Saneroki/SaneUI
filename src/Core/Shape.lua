@@ -20,7 +20,7 @@ local Core = SaneUI.Core
 --          settings   a table with those two switches, read at every Fit (a module's
 --                     settings); nil: as they are at first (Shape.DEFAULTS); or
 --                     { radius = 8 }: every corner that round, in UI units, wherever it is
---                     (a chat's bubble)
+--                     (a chat's bubble); trim = its trim's width in UI units (Shape.TRIM at first)
 --          rect       the frame whose place it fills; nil: host
 --      shape:Look(look)     -- look = { file = a tile, size = its size in UI units (or no file: a
 --                           -- colour), top = { r, g, b }, bottom = { r, g, b } (the fill's gradient),
@@ -208,13 +208,13 @@ local function Lay(shape)
         for _, piece in ipairs(trims) do piece:Hide() end
         return
     end
+    local trim = tonumber(settings.trim) or Shape.TRIM
     for index = 1, #CORNERS do
         local corner = CORNERS[index]
         local round = radii[index]
         Circle(shape, shape.holes[index], corner.left and round or width - round, corner.bottom and round or height - round,
-            round - Shape.TRIM)
+            round - trim)
     end
-    local trim = Shape.TRIM
     local function Out(gap)
         local out = square and Clamp(trim - gap, 0, trim) or 0
         return gap <= 0 and math.max(out, flat * trim) or out

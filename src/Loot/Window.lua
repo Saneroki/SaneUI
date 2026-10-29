@@ -3,9 +3,10 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Loot - Window
 --  The loot window (Saneroki, 2026-10-29): no paper, no frame, no title; a
---  line for each thing the loot holds (Row.lua: a dark shade outlined in its
---  quality's colour, its picture, name, kind, worth and an A), and at its foot
---  two buttons on the same dark shade, Link and Close. It opens where the
+--  line for each thing the loot holds (Row.lua: a round plate, dark and half
+--  see-through, trimmed in its quality's colour; its picture, name, kind,
+--  worth and an A), and at its foot two buttons on the same plates, Link and
+--  Close. It opens where the
 --  mouse is, its first line's picture under it, or where it was placed in Edit
 --  Mode (switch At the mouse); more lines than a good part of the screen
 --  scroll.
@@ -98,7 +99,7 @@ local function Tip(row)
     local line = row.line
     if not line or sample then return end
     hover = row
-    row.shade:SetLit(true)
+    row.plate:SetLit(true)
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     if line.kind == "item" then
         GameTooltip:SetLootItem(line.slot)
@@ -106,6 +107,9 @@ local function Tip(row)
         GameTooltip:SetLootCurrency(line.slot)
     else
         GameTooltip:SetText(line.name)
+    end
+    if line.upgrade then
+        GameTooltip:AddLine(line.upgrade == "empty" and ns.TEXT.upgradeEmpty or ns.TEXT.upgradeBetter, 0.1, 1, 0.1, true)
     end
     local word = line.id and ns.options.kept[line.id]
     if word == true then GameTooltip:AddLine(ns.TEXT.onList, 1, 0.82, 0, true)
@@ -115,7 +119,7 @@ end
 
 local function Untip(row)
     if hover == row then hover = nil end
-    row.shade:SetLit(false)
+    row.plate:SetLit(false)
     GameTooltip_Hide()
 end
 
@@ -157,7 +161,7 @@ end
 
 local function AutoTip(button)
     local on = button.on
-    button.shade:SetLit(true)
+    button.plate:SetLit(true)
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     GameTooltip:SetText(on and ns.TEXT.autoOn or ns.TEXT.autoOff)
     GameTooltip:AddLine(on and ns.TEXT.autoOnTip or ns.TEXT.autoOffTip, 1, 1, 1, true)
@@ -165,7 +169,7 @@ local function AutoTip(button)
 end
 
 local function AutoUntip(button)
-    button.shade:SetLit(false)
+    button.plate:SetLit(false)
     GameTooltip_Hide()
 end
 
@@ -226,14 +230,12 @@ end
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
--- A button at the window's foot: its word on a dark shade with a thin grey outline; darker, its word gold, under
--- the mouse.
+-- A button at the window's foot: its word on a round plate as the lines', its trim grey; darker, its word gold,
+-- under the mouse.
 local function Button(text, onClick, tip)
     local button = CreateFrame("Button", nil, panel)
     button:SetHeight(S.foot)
-    button.shade = ns.Row.Shade(button)
-    button.outline = ns.Row.Outline(button)
-    button.outline:SetColor(0.45, 0.45, 0.45, 0.9)
+    button.plate = ns.Row.Plate(button, S.radius)
     button.text = button:CreateFontString(nil, "OVERLAY")
     ns.Row.Font(button.text, 13, true)
     button.text:SetPoint("CENTER")
@@ -241,7 +243,7 @@ local function Button(text, onClick, tip)
     button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
     button:SetScript("OnClick", ns.Guard(onClick))
     button:SetScript("OnEnter", ns.Guard(function()
-        button.shade:SetLit(true)
+        button.plate:SetLit(true)
         button.text:SetTextColor(ns.Row.Gold())
         if not tip then return end
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
@@ -250,7 +252,7 @@ local function Button(text, onClick, tip)
         GameTooltip:Show()
     end))
     button:SetScript("OnLeave", ns.Guard(function()
-        button.shade:SetLit(false)
+        button.plate:SetLit(false)
         button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
         GameTooltip_Hide()
     end))
@@ -258,17 +260,22 @@ local function Button(text, onClick, tip)
 end
 
 -- Link at the left half of the foot and Close at the right; Close alone across it when there is nothing to link.
-local function Foot(linkable)
+-- Their plates laid out for the window's width.
+local function Foot(linkable, width)
     linkButton:SetShown(linkable)
     linkButton:ClearAllPoints()
     closeButton:ClearAllPoints()
     closeButton:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
+    local half = (width - S.gap / 2) / 2
     if linkable then
         linkButton:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, 0)
         linkButton:SetPoint("RIGHT", panel, "BOTTOM", -S.gap / 4, 0)
         closeButton:SetPoint("LEFT", panel, "BOTTOM", S.gap / 4, 0)
+        linkButton.plate:Fit(half, S.foot)
+        closeButton.plate:Fit(half, S.foot)
     else
         closeButton:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, 0)
+        closeButton.plate:Fit(width, S.foot)
     end
 end
 
@@ -295,7 +302,7 @@ local function Build()
 
     linkButton = Button(ns.TEXT.link, LinkAll, ns.TEXT.linkTip)
     closeButton = Button(ns.TEXT.close, function() Window.Close() end)
-    Foot(true)
+    Foot(true, S.least)
 
     scroll = CreateFrame("ScrollFrame", nil, panel)
     scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
@@ -368,7 +375,8 @@ function Window.Fill()
     view = math.min(full, math.max(S.row, screen * S.room))
     sheet:SetSize(width, math.max(full, 1))
     panel:SetSize(width, view + S.gap + S.foot)
-    Foot(linkable)
+    for index = 1, shown do ns.Row.Fit(rows[index], width) end
+    Foot(linkable, width)
     Wheel(nil, 0)
     -- what is under the mouse now is another thing: its tooltip
     if hover then
