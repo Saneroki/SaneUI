@@ -3,14 +3,15 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Text
 --  The line inside a plate's bar, left to right, each piece taking room only
---  while it shows; the icons stand outside the bar, at its left end (the raid
---  marker outermost, the quest's icon next to the bar: Text.OUTSIDE):
+--  while it shows; the quest's icon stands outside the bar, at its left end
+--  (Text.OUTSIDE):
 --    quest    the game's sword (to kill) or sack (to loot), outside, and the
 --             count ("0/7") inside, while the unit belongs to a quest in your
 --             log with an objective still open (Core.UnitQuest)
---    marker   the raid marker (Marks.lua), outside
 --    level    the unit's level in the game's colour for how hard it is to you
 --             (a skull where it is too high to tell)
+--    marker   the raid marker (Marks.lua), right after the level, as on Sane
+--             UI's unit frames (Text.BESIDE either side of it)
 --    gear     a player's item level ("i32"), once inspected (Core.Inspect)
 --    threat   your threat on it while you are on its threat list: grey while
 --             low, orange when you are about to take its aggro, red while you
@@ -52,7 +53,8 @@ Text.INSET = 3   -- from the bar's ends to the line
 Text.PAD = 2     -- over and under the line, inside the bar
 Text.GAP = 4     -- between two pieces of the line
 Text.NEAR = 0    -- between the level and the name right after it: the letters' own spacing, read as one
-Text.OUTSIDE = 4 -- from the bar's left end to the icons outside it (past a boss's rank line), and between two of them
+Text.BESIDE = 2  -- either side of the raid marker: about as near as the letters' own spacing (an icon has none)
+Text.OUTSIDE = 4 -- from the bar's left end to the quest's icon outside it (past a boss's rank line)
 Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
 Text.ICON = 1.2  -- an icon's size, times the font's height
 Text.SLACK = 1   -- room given to the name beyond its measured width, so it is never cut short by rounding
@@ -200,12 +202,20 @@ end
 Text.Room = Room
 
 -- The pieces of the line in their order: the region, and the key of its room.
-local ORDER = { { "quest", "quest" }, { "count", "count" }, { "raid", "raid" }, { "level", "level" }, { "gear", "gear" },
+local ORDER = { { "quest", "quest" }, { "count", "count" }, { "level", "level" }, { "raid", "raid" }, { "gear", "gear" },
                 { "threat", "threat" }, { "name", "name" }, { "value", "value" } }
 
 -- The pieces that stand outside the bar, at its left end, from the bar outward.
-local OUTSIDE = { "quest", "raid" }
-local outside = { quest = true, raid = true }
+local OUTSIDE = { "quest" }
+local outside = { quest = true }
+
+-- The gap before a piece after the last: Text.BESIDE either side of the raid marker, none of ours between the level
+-- and the name (Text.NEAR), else Text.GAP.
+local function Gap(last, key)
+    if last == "raid" or key == "raid" then return Text.BESIDE end
+    if last == "level" and key == "name" then return Text.NEAR end
+    return Text.GAP
+end
 
 -- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place);
 -- the icons outside, left of the bar, from it outward.
@@ -227,7 +237,7 @@ function Text.Layout(dress)
         local key = entry[2]
         local region, width = dress[entry[1]], room[key]
         if region and width and not outside[key] then
-            if last then x = x + ((last == "level" and key == "name") and Text.NEAR or Text.GAP) end
+            if last then x = x + Gap(last, key) end
             region:ClearAllPoints()
             if key == "value" then
                 -- The health at its room's right end, the bar's: its room is the most it can show (a guess while the

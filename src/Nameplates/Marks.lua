@@ -2,8 +2,9 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Marks
---  The raid marker, outside the bar at its left end, left of the quest's icon
---  (Text.lua), as large as the line's icons; it shows only while there is one.
+--  The raid marker, in the line right after the level (Text.lua), as on Sane
+--  UI's unit frames, as large as the line's icons; it shows only while there
+--  is one.
 --
 --  The raid marker's number may be hidden from addons (a secret value): the
 --  texture takes it as it is (SetSpriteSheetCell, the game's icon grid), and

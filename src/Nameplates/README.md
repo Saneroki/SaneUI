@@ -6,7 +6,7 @@
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
 nameplate settings), where they stand and stack, what clicks them, their cast bar and widgets. Over the game's
 health bar it lays its own: a rectangle with round corners, everything on one line inside it, each piece only
-while it shows: your quest objective on the unit (a sword or a sack, "0/7"), its raid marker, its level, a
+while it shows: your quest objective on the unit (a sword or a sack, "0/7"), its level, its raid marker, a
 player's item level ("i32"), your threat on it, its name, its health and how much is left ("1.32m | 100%"). The
 bar is as wide as that line, no wider. Along its bottom a thin line of the unit's mana, rage or energy,
 and your combo points in a row of their own under the bar of the unit you have them on, inside the same outline. Its one border is lit on your target and focus, a line
@@ -39,8 +39,9 @@ fails, every plate is the game's own again.
   it shows at, and the bar widens only once a text outgrows its spare (a name is never cut short by it):
   - *quest:* while the unit belongs to a quest in your log with an objective still open, the game's sword (to
     kill it) or sack (to loot it) outside the bar, left of it, and the count ("0/7") first in the line;
-  - *raid marker*, outside the bar too, left of the quest's icon;
-  - *level* in the game's colour for how hard it is to you (a skull where it is too high to tell);
+  - *level* in the game's colour for how hard it is to you (a skull where it is too high to tell), the name right
+    after it;
+  - *raid marker* right after the level, as on Sane UI's unit frames, a little apart from it and from what follows;
   - *item level* of a player ("i32"), once the game let Sane UI inspect them (out of a fight, near enough);
   - *threat* while you are on its threat list: grey while low, orange when you are about to take its aggro, red
     while you have it, and then the whole bar glows red;
@@ -80,13 +81,13 @@ fails, every plate is the game's own again.
   where the game names them. Done or interrupted, it stays half a second; failed, it goes at once. It shows every
   cast, also those the game hides from addons in a fight: the game then draws its progress, and the seconds come from
   the spell's cast time (none for a channel). Setting *Cast bar* (off: the game's own).
-- **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
-  foe's buffs stand left of the icons there.
+- **Raid marker:** in the line right after the level, as on Sane UI's unit frames (none on a player you could
+  fight, as on the game's plates).
 - **Size by distance:** your target's plate is always *Nameplate size* (125% at first). Any other's depends on how
   far its unit is from your character and on nothing else (rank, the camera): full within 10 yards, gradually down to
   half at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. It
-  shrinks and grows evenly, in a straight line, about as fast as a running unit changes its distance, never past its
-  size; selected or let go it moves quickly. A plate appears at the size of its distance, never larger, and fades in
+  shrinks and grows quickly and smoothly, eased: fast at first, slower as it arrives, never past its size, there in
+  about a quarter of a second; selected or let go, quicker still. A plate appears at the size of its distance, never larger, and fades in
   from unseen in a straight line, in about 0.7 seconds: as long as running takes from 60 yards, where the game first
   shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
   at 60 yards is taken by the game at once. No other transparency of ours. The game's
@@ -171,9 +172,10 @@ fails, every plate is the game's own again.
 - **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), in the game's nameplate
   font's face and outline (`SystemFont_NamePlate_Outlined`'s `GetFont`), `Text.SMALLER` (0.72) of its height, set on
   every text of ours once (`SetFont`), so later changes of the game's font object change none. Each piece has its room (`dress.room[piece]`, none while it does not
-  show); `Text.Layout` places the pieces from `Text.INSET` (3) in, `Text.GAP` apart, each at `LEFT` of the frame at its
-  x; the icons (the quest's, then the raid marker: `OUTSIDE`) right of the frame's left, `Text.OUTSIDE` (4) apart from
-  it and each other, their width kept as `dress.outside` for the foe's buffs (`Auras.Place`), and wants the bar as wide as the line and its insets
+  show); `Text.Layout` places the pieces from `Text.INSET` (3) in, `Text.GAP` apart (`Gap`: `Text.BESIDE` (2) either
+  side of the raid marker, `Text.NEAR` (0) between the level and the name), each at `LEFT` of the frame at its
+  x; the quest's icon (`OUTSIDE`) right of the frame's left, `Text.OUTSIDE` (4) apart from
+  it, its width kept as `dress.outside` for the foe's buffs (`Auras.Place`), and wants the bar as wide as the line and its insets
   (`dress.want`, `Plate.Place`). A plain text's room is its own whole width (`GetUnboundedStringWidth`: not as cut
   by the width it was given), rounded up, and `Text.SLACK` (1) more; every text's room (not the icons') then
   `Text.SPARE` (6%) of that more, kept while the text fits in it with at most twice that left over (`Text.Spare`), so
@@ -192,7 +194,6 @@ fails, every plate is the game's own again.
   - *quest*: `Core.UnitQuest(unit)` (`src/Core/Objectives.lua`), not for players: the icon `Text.QUEST` (the game's
     cursors `Attack` and `LootAll`) outside, the count inside; kept as it was while the game hides it; again on
     `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame.
-  - *raid marker* (`Marks.lua`), outside.
   - *level*: `UnitLevel`, coloured by the game's `GetRelativeDifficultyColor` against yours on a unit you can
     attack, `UNIT_LEVEL_NON_ATTACKABLE` otherwise, the game's skull (`Text.SKULL`) for a level below 1.
   - *gear*: `Core.Inspect.Level(unit, UnitGUID(unit))` for players, "i" and the level in `Text.GEAR`. Asked for when
@@ -223,8 +224,8 @@ fails, every plate is the game's own again.
   (`UI-HUD-CoolDownManager-IconOverlay`), a `CooldownFrameTemplate` with the game's swipe, the count in a frame
   above it, handed to the frame with `SetIcon`, `SetDurationCooldown`, `SetApplicationCount`. A plate taken back
   sets its containers to `"none"`, disabled. Without the template the plates show no auras (noted once).
-- **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, outside the bar left of the
-  quest's icon (`Text.size` square, placed by `Text.Layout`), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
+- **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, in the line after the
+  level (`Text.size` square, its room in the line, placed by `Text.Layout`), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
   secret: only its type is looked at).
 - **Range** (`Range.lua`): the game tells addons no distance, but whether a unit is within reach of an item's use
   (`C_Item.IsItemInRange`) or of one of your spells (`C_Spell.IsSpellInRange`), from your character. Each unit is
@@ -292,8 +293,9 @@ fails, every plate is the game's own again.
   the game still gives a plate (`GetScale`) is undone: our dress at our size over it, the game's unit frame (its
   cast bar) at the share alone over it. A driver frame's guarded `OnUpdate` (hidden while no plate shows) runs
   `Range.Look` every `Range.EVERY` seconds, aims each plate at its share (anew too when the game's scale for it
-  changed) and moves it every frame at an even pace, never past it (`Scale.Step`: `Scale.SPEED` 0.2 shares a second with its
-  distance, `Scale.QUICK` 2 when selected or let go).
+  changed) and moves it every frame, eased, never past it (`Scale.Step`: each moment the same share of what is left,
+  `exp(-elapsed / Scale.EASE)` (0.08 s) with its distance, `Scale.QUICK` (0.05 s) when selected or let go; within
+  `Scale.SNAP` of its size, there).
   `Scale.Born`: a plate appearing is asked about at once (`Range.One`, not at the next look) and shows at the size of its
   distance (your target's full), never larger; its alpha from 0 to 1 in a straight line within `Scale.SHOW` (5/7 s:
   running at 7 yards a second from 60 yards to 55; no item or spell reaches a foe at 55 or 60 yards, so nothing tells
@@ -451,3 +453,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   wanted for a quest of yours; the setting *Plates on critters* shows them.
 - **2026-10-29:** no item's range asked about a foe in a fight (Saneroki): the game blocked each such question,
   thousands of "Interface action failed because of an AddOn" in Retail's taint log; the spells answer alone there.
+- **2026-10-29:** sizes change quickly and eased, no longer slowly and evenly; the raid marker in the line right
+  after the level, as on the unit frames (Saneroki).

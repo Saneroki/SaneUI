@@ -18,11 +18,10 @@ local _, ns = ...
 --  and whatever scale the game still gives a plate is undone (our size over
 --  the plate's own scale), so ours is the only one.
 --
---  Each plate moves to its size at an even pace, in a straight line, never
---  past it: with its unit's distance about as fast as a running unit changes
---  it (Scale.SPEED), so it shrinks and grows smoothly from rung to rung of
---  Range.lua's ladder; quickly when selected or let go (Scale.QUICK). A
---  driver frame looks at the distances
+--  Each plate moves to its size eased: quickly at first, slower as it
+--  arrives, never past it (Scale.EASE; Scale.QUICK as it is selected or let
+--  go), so a step from rung to rung of Range.lua's ladder is over in a
+--  moment. A driver frame looks at the distances
 --  every Range.EVERY seconds and moves the plates every frame while one moves;
 --  hidden while no plate shows. The game's unit frame on a plate (its cast
 --  bar) is scaled along, without our size setting.
@@ -53,9 +52,10 @@ ns.Scale = Scale
 
 Scale.SIZE = 125 -- the setting Nameplate size at first: our bar's size within ten yards, in percent
 Scale.CURVE = { { 10, 1 }, { 40, 0.5 }, { 60, 0.25 } } -- { yards, share of the full size }, straight between
-Scale.SPEED = 0.2  -- how fast a plate follows its unit's distance: shares of the full size a second, in a straight
-                   -- line (about as fast as a running unit changes it)
-Scale.QUICK = 2    -- how fast it moves to a size for any other reason (selected, the setting)
+Scale.EASE = 0.08  -- how quickly a plate follows its unit's distance: within this many seconds it covers about two
+                   -- thirds of the way to its size, nearly all of it within three times as long, never past it
+Scale.QUICK = 0.05 -- the same for a size it takes for any other reason (selected or let go, the setting)
+Scale.SNAP = 0.002 -- this near its size (a share of the full size), it is there
 Scale.TEXT = 0.04  -- its texts measured anew each time its size moved on by this share since (Text.Refit)
 Scale.SHOW = 5 / 7 -- seconds a plate takes from unseen to seen as it appears, in a straight line: as long as
                    -- running (7 yards a second) takes from 60 yards (Range.FAR) to 55
@@ -150,17 +150,14 @@ local function Show(dress, share)
     if dress.frame then dress.frame:SetScale(math.max(share / own, 0.001)) end
 end
 
--- One step of a plate towards its size, at an even pace, and of its fade in; whether it still moves.
+-- One step of a plate towards its size, eased (the same share of what is left each moment: quick at first, slower as
+-- it arrives, never past it), and of its fade in; whether it still moves.
 function Scale.Step(dress, elapsed)
     elapsed = math.min(elapsed, 0.1)
     local aim = dress.aim or 1
     local now = dress.now or aim
-    local step = (dress.quick and Scale.QUICK or Scale.SPEED) * elapsed
-    if math.abs(aim - now) <= step then
-        now, dress.quick = aim, nil
-    else
-        now = now + (aim > now and step or -step)
-    end
+    now = aim + (now - aim) * math.exp(-elapsed / (dress.quick and Scale.QUICK or Scale.EASE))
+    if math.abs(aim - now) <= Scale.SNAP then now, dress.quick = aim, nil end
     dress.now = now
     Show(dress, now)
     -- Its texts measured anew at this size, after the plate took it, once it moved on by Scale.TEXT or settled: the
@@ -187,7 +184,7 @@ end
 
 -- Every plate's size aimed: your target's full, any other's that of its distance (Range.lua's; kept where it could
 -- not be told); shown anew where the game changed the scale it gives the plate. Selected or let go, a plate moves
--- quickly; by distance, evenly with its unit.
+-- more quickly still than by distance.
 local function Aim()
     for unit, dress in pairs(ns.Plate.shown) do
         local target = Plain(UnitIsUnit(unit, "target")) == true

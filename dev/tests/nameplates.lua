@@ -560,8 +560,9 @@ check(friend.health._barColor[1] == 0.78 and friend.name._text == "Bran Stonehea
 units.nameplate2.gear = 32
 check(inspected[#inspected] == "nameplate2" and friend.room.gear == nil, "a player: inspected, nothing shown before the answer")
 W.Fire("INSPECT_READY", "Player-nameplate2")
-check(friend.gear._text == "i32" and X(friend.gear) == X(friend.level) + L(2) + G and X(friend.name) == X(friend.gear) + L(3) + G,
-    "the answer: i32 between the level and the name")
+local B = Text.BESIDE
+check(friend.gear._text == "i32" and X(friend.gear) == X(friend.level) + L(2) + B + Text.size + B
+    and X(friend.name) == X(friend.gear) + L(3) + G, "the answer: i32 between the level (and its raid marker) and the name")
 Core.Set(ns.name, "gear", false)
 check(friend.room.gear == nil and friend.gear._text == "", "the setting off: none, no room")
 Core.Set(ns.name, "gear", true)
@@ -570,8 +571,9 @@ check(friend.level._color[1] == 0.3, "the level of someone you cannot attack in 
 check(not friend.foes:IsShown() and friend.own:IsShown(), "no buffs on someone you cannot attack")
 check(friend.raid:IsShown() and friend.raid._cell[1] == 8 and friend.raid._cell[2] == 4 and friend.raid._cell[3] == 4,
     "a raid marker: the game's icon at its index")
-check(friend.raid._points[1][1] == "RIGHT" and X(friend.raid) == -Text.OUTSIDE and X(friend.level) == I
-    and friend.control._points[1][2] == friend, "left of the bar, outside it; the line inside unmoved; the crowd control right")
+check(friend.raid._points[1][1] == "LEFT" and friend.raid._points[1][2] == friend.top and X(friend.level) == I
+    and X(friend.raid) == I + L(2) + B and friend.control._points[1][2] == friend,
+    "in the line right after the level, as on the unit frames; the crowd control right")
 units.nameplate2.raid = Secret()
 W.Fire("RAID_TARGET_UPDATE")
 check(friend.raid:IsShown() and friend.raid._cell[1] == units.nameplate2.raid, "an index hidden from addons goes to the icon as it is")
@@ -902,17 +904,18 @@ Settle()
 check(far._alpha == 1 and far.showing == nil, "then seen")
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
 units.nameplate7, plates.nameplate7, yards.nameplate7 = nil, nil, nil
--- Walking away: the plate follows evenly, never past its size, the same pace all the way.
+-- Walking away: the plate follows eased, quick at first and slower as it arrives, never past its size, there in a moment.
 yards.nameplate1 = 22
-local even, last, steps = true, dress._scale, {}
-for _ = 1, 500 do
+local never, last, steps, there = true, dress._scale, {}, nil
+for index = 1, 500 do
     tick(Scale.driver, 0.02)
-    if dress._scale > last + 1e-9 then even = false end
+    if dress._scale > last + 1e-9 or dress._scale < full * Scale.Size(20) - 1e-9 then never = false end
     if dress._scale ~= last then steps[#steps + 1] = last - dress._scale end
+    if not there and dress._scale == full * Scale.Size(20) then there = index * 0.02 end
     last = dress._scale
 end
-check(even and Near(dress._scale, full * Scale.Size(20)) and #steps > 10 and Near(steps[2], steps[5])
-    and Near(steps[2], full * Scale.SPEED * 0.02), "22 yards (past the 20 yard rung): smaller evenly, at its pace, never past its size")
+check(never and Near(dress._scale, full * Scale.Size(20)) and #steps > 3 and steps[2] < steps[1] and steps[3] < steps[2]
+    and there and there <= 0.5, "22 yards (past the 20 yard rung): smaller, eased, never past its size, there within half a second")
 yards.nameplate1 = 27
 Settle()
 check(Near(dress._scale, full * Scale.Size(25)), "27 yards: past the 25 yard rung, so at 25 for sure")

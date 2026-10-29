@@ -103,6 +103,19 @@ gear, junk or everything; what is to be looted taken as quickly as possible.
   slot once; Shift's Auto Loot; the list's ticks and words; the Auto Loot setting lent and given back).
 - A game restart takes it in (a new file in Loot's TOC).
 
+### Nameplates: sizes change quickly and eased; the raid marker after the level (Saneroki, 2026-10-29)
+Saneroki: resizing much snappier, smoother and quicker; the raid icon next to the level, as on the unit frames.
+- **Eased (`Scale.Step`):** each moment a plate closes the same share of what is left to its size,
+  `exp(-elapsed / Scale.EASE)`: quick at first, slower as it arrives, never past it, there within `Scale.SNAP`
+  (0.002). `Scale.EASE` 0.08 s by distance (about a quarter of a second for a step of the range ladder), `Scale.QUICK`
+  0.05 s selected or let go; was an even 0.2 shares a second (several seconds a step) and 2.
+- **The raid marker in the line (`Text.lua`, `Marks.lua`):** right after the level, as on Sane UI's unit frames,
+  `Text.BESIDE` (2) either side of it (`Gap`); no longer outside the bar left of the quest's icon, which is now the
+  only piece outside (the foe's buffs stand left of it alone).
+- **Tests:** `dev/tests/nameplates.lua` 271 checks (a plate eased to its size, never past it, within half a second;
+  the marker after the level, the item level after the marker).
+- A `/reload` takes it in.
+
 ### Nameplates: players' borders by how you know them (Saneroki, 2026-10-29)
 Saneroki: the border of player plates green for guild members, blue for party, purple for raid, pink for friends,
 in that order of priority: guild, party, raid, friend.
