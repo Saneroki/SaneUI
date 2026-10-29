@@ -273,6 +273,14 @@ C_QuestLog.SetSelectedQuest = function(quest) abandoned = quest end
 C_QuestLog.SetAbandonQuest = function() end
 C_QuestLog.AbandonQuest = function() abandoned = "gone:" .. tostring(abandoned) end
 GetQuestLogQuestText = function(index) return "The story of quest " .. index, "Kill eight wolves." end
+-- The way to each quest as the game measures it (the done one nearer), its tag, a done one's words to turn it in.
+local questDistance = { [7] = 400, [8] = 100 }
+C_QuestLog.GetDistanceSqToQuest = function(quest) return questDistance[quest], true end
+C_QuestLog.GetQuestTagInfo = function(quest) return quest == 7 and { tagName = "Elite", tagID = 1 } or nil end
+C_QuestLog.GetNextWaypointText = function() return nil end
+GetQuestLogCompletionText = function(index) return index == 3 and "Report back to Marshal Dughan." or nil end
+ObjectiveTrackerFrame = CreateFrame("Frame", "ObjectiveTrackerFrame", UIParent) -- the game's quest tracker
+function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
 C_SuperTrack.GetSuperTrackedQuestID = function() return focused end
 C_SuperTrack.SetSuperTrackedQuestID = function(quest) focused = quest end
 C_Map.GetMapLinksForMap = function() return {} end
@@ -2233,15 +2241,43 @@ pins = Drawn()
 check(full.level == "continent" and pins["flight:2"] and pins["place:1"] and not pins["quest:7"] and not pins["npc:69"],
     "a continent whole: its flight points, entrances, ways and places; no quests or services")
 
--- The quest log at the full map's left: zones, quests, objectives; a quest chosen.
+-- The quest log at the full map's left: sorted by proximity at first, a click on its title the next way (Level,
+-- Zone, Type); quests, objectives; a quest chosen.
 local QuestLog = ns.QuestLog
 check(QuestLog.Shown(), "full, the quest log stands at the map's left")
 local logBox
 for _, widget in ipairs(W.frames) do if widget.provider and widget.view and widget.Draw then logBox = widget end end
 local rows = logBox:Draw()
-check(#rows == 5 and rows[1].row.kind == "header" and rows[2].row.quest == 7 and rows[3].row.kind == "objective"
-    and rows[4].row.quest == 8 and rows[4].row.complete and rows[4].state._text == QuestLog.TEXT.complete,
-    "its zone, each quest with its objectives; a quest done says so")
+check(QuestLog.Sort() == "proximity" and #rows == 5 and rows[1].row.quest == 8 and rows[2].row.done
+    and rows[3].row.turnIn and rows[3].text._text == "- Report back to Marshal Dughan." and rows[4].row.quest == 7
+    and rows[5].row.kind == "objective" and not rows[5].row.done,
+    "sorted by proximity at first, no headers: the nearest quest first, every objective, a done one's turn in last")
+check(rows[1].row.complete and rows[1].state._text == "", "a quest done: no Complete at its right")
+check(QuestLog.handle.options.title == "|cffffffff2/25|r Proximity · Quest Log",
+    "its title bar: how many quests of how many, how they are sorted, then its title")
+do
+    local sortButton = QuestLog.handle.bar.find
+    GameTooltip._lines = nil
+    sortButton._scripts.OnEnter(sortButton)
+    check(GameTooltip._text == "Sorted by proximity" and GameTooltip._lines and GameTooltip._lines[1] == "A click sorts them by level.",
+        "its title's tip: how they are sorted, how a click sorts them")
+    sortButton._scripts.OnLeave(sortButton)
+    questDistance[7] = 50
+    W.Wait(QuestLog.RESORT)
+    rows = logBox:Draw()
+    check(rows[1].row.quest == 7 and rows[3].row.quest == 8, "the player walked on: the nearest first again, a moment later")
+    questDistance[7] = 400
+    sortButton._scripts.OnClick(sortButton)
+    rows = logBox:Draw()
+    check(QuestLog.Sort() == "level" and ns.store.questLogSort == "level" and rows[1].row.quest == 8 and rows[4].row.quest == 7
+        and QuestLog.handle.options.title:find("Level", 1, true), "a click on the title: sorted by level, the lowest first; kept")
+    sortButton._scripts.OnClick(sortButton)
+    rows = logBox:Draw()
+    check(QuestLog.Sort() == "zone" and #rows == 6 and rows[1].row.kind == "header" and rows[1].mark._shown
+        and rows[2].row.quest == 7 and rows[3].row.kind == "objective" and rows[4].row.quest == 8 and rows[4].row.complete
+        and rows[5].row.done and rows[6].row.turnIn,
+        "again: by zone, the game's own, its headers with their fold marks; each quest with its objectives")
+end
 check(rows[2].text._text == "[6] Wolves Across the Border", "a quest with its level")
 check(rows[2].icon._shown and rows[2].icon._atlas == Pins.ICONS.log and rows[4].icon._atlas == Pins.ICONS.log
     and not rows[1].icon._shown and not rows[3].icon._shown,
@@ -2413,7 +2449,7 @@ do
     end)()
     shown[2].remove._scripts.OnClick(shown[2].remove)
     shown = logBox:Draw()
-    check(shown[1].row.kind == "header" and shown[1].text._text ~= QuestLog.TEXT.previews and #shown == 5,
+    check(shown[1].row.kind == "header" and shown[1].text._text ~= QuestLog.TEXT.previews and #shown == 6,
         "its red X: out of the log again")
     full:Show(was.map, was.u, was.v, was.k)
     full.follow = was.follow
@@ -2662,10 +2698,24 @@ end)()
     local log = ns.QuestLog.handle
     check(log and log.frame._shown and log.frame._strata == "DIALOG" and Canvas.frame._points[1] and Window.FullSize() == 1600,
         "full: the quest log a window of its own over the map, which takes the whole screen")
+    local box
+    for _, widget in ipairs(W.frames) do if widget.provider and widget.view and widget.Draw then box = widget end end
+    local sort = log.bar.find
+    sort._scripts.OnClick(sort)
+    local rows = box:Draw()
+    check(ns.QuestLog.Sort() == "type" and #rows == 7 and rows[1].row.kind == "header" and rows[1].text._text == "Normal"
+        and not rows[1].mark._shown and rows[2].row.quest == 8 and rows[5].text._text == "Elite" and rows[6].row.quest == 7,
+        "a click on the title: by type, under the game's tag of each (none: Normal, first), no fold marks")
+    sort._scripts.OnClick(sort)
+    check(ns.QuestLog.Sort() == "proximity", "and round again: by proximity")
+    box._width = 300
     local pin = log.own and log.own[1]
     check(pin and pin.picture._atlas == ns.QuestLog.PIN_OFF and not ns.QuestLog.Pinned(), "its title bar's pin, grey: not pinned")
+    check(ObjectiveTrackerFrame._parent == UIParent, "not pinned: the game's quest tracker where it was")
     pin._scripts.OnClick(pin)
     check(ns.QuestLog.Pinned() and pin.picture._atlas == ns.QuestLog.PIN, "a click pins it: lit")
+    check(ObjectiveTrackerFrame._parent ~= UIParent and not ObjectiveTrackerFrame._parent._shown,
+        "pinned: the game's quest tracker out of sight, lent to a hidden frame")
     W.SmallAndBack(function()
         check(log.frame._shown and log.frame._strata == "LOW" and log.bar and not log.skin,
             "the map small: pinned, it stays on the screen, without a background or a border")
@@ -2674,10 +2724,33 @@ end)()
             if widget._parent == log.frame and widget._kind == "Texture" and widget._shown then transparent = false end
         end
         check(transparent, "nothing drawn behind it but its list")
-        pin._scripts.OnClick(pin)
-        check(not ns.QuestLog.Pinned() and not log.frame._shown, "unpinned: it goes with the full map")
+        check(not log.buttons._shown and not log.frame._mouse and not box._wheel,
+            "no pin, no close button; clicked through, the mouse wheel the game's while its list fits")
+        local point = log.frame._points[1]
+        check(log.options.key == "questLogSmallPlace" and point[1] == "TOPLEFT" and point[3] == "TOPLEFT" and point[4] == 0
+            and point[5] == 0, "at a place of its own: at first the screen's top left corner")
+        rows = box:Draw()
+        check(#rows == 4 and rows[1].row.quest == 8 and rows[2].row.turnIn and rows[3].row.quest == 7
+            and not rows[4].row.done, "the objectives done left out, a done quest's turn in kept")
+        check(rows[1]._hit and rows[1]._hit[2] > 0 and rows[2]._hit[2] > 0, "only its rows' words take the mouse")
+        ns.store.questLogSort = "zone"
+        ns.QuestLog.Refresh()
+        rows = box:Draw()
+        rows[1]._scripts.OnClick(rows[1], "LeftButton")
+        check(rows[1].row.kind == "header" and not rows[1].mark._shown and #box:Draw() == #rows,
+            "its headers without their fold marks; a click folds none")
+        ns.store.questLogSort = "proximity"
     end)
-    check(log.frame._shown and log.frame._strata == "DIALOG", "and comes back with it")
+    check(log.frame._shown and log.frame._strata == "DIALOG" and log.buttons._shown and log.frame._mouse and box._wheel
+        and log.options.key == "questLogPlace", "and comes back with it, at its place over the full map, with its buttons")
+    rows = box:Draw()
+    check(#rows == 5 and rows[2].row.done and rows[1]._hit[2] == 0, "every objective again, its rows whole")
+    pin._scripts.OnClick(pin)
+    check(not ns.QuestLog.Pinned() and ObjectiveTrackerFrame._parent == UIParent, "unpinned: the game's quest tracker back")
+    W.SmallAndBack(function()
+        check(not log.frame._shown, "unpinned: it goes with the full map")
+    end)
+    box._width = nil
 end)()
 
 -- The route's golden line: the parts in view, under the pins.

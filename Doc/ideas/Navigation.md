@@ -364,6 +364,14 @@ When the window fills the screen:
     game's arrow leads to it. **A double click puts the game's map pin there** (until 2026-10-23 a click did).
   - **The right button:** the quest's text (its dialogue: objectives and story), or the map moved to its
     objective (and the game's track, share and abandon).
+- **The quest log sorted, and its look on the screen alone (Saneroki, 2026-10-29; built):**
+  - **Sorted by proximity** at first, no *Complete* at a quest's right. Its title bar says how many quests of how
+    many and the sorting; a click there goes round Proximity, Level, Zone, Type.
+  - **Over the full map** always at the same place, every objective shown; **pinned with the map small** at a
+    place of its own (the screen's top left corner at first), without the pin and the close button, clicked
+    through, the objectives done and the fold marks (+) left out. A done quest's *Report back to ...* is an
+    objective still to do: never left out.
+  - **The game's quest tracker hidden** while the quest log is pinned.
 - **A bar on top** of the map with:
   - **Map selector:** pick a region or a dungeon, and the map shows it (*Map selector*). Dungeons are
     drawn the same way as the regions.

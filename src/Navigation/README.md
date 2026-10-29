@@ -149,10 +149,15 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   shades it on its map.
 - **The quest log**, a window over the full map (*Quest Log* on the bar puts it in or out; drag its title bar to
   move it, dock it at a screen edge, size it by its corner): the pin on its title bar keeps it on the screen while
-  the map is small too, there without a background, a border or a line under its title, only the list over the
-  game; its close button takes it out of both. Your quests by zone with
-  their level and state, each with its mark at the left as its pin on the map has it (the yellow question mark),
-  their objectives under them. No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
+  the map is small too, in place of the game's quest tracker (out of sight meanwhile), at a place and size of its
+  own (at first the screen's top left corner), there without a background, a border, a line under its title or
+  its buttons, only the list over the game, clicked through but its title bar and its words; its close button
+  takes it out of both. Its title bar says how many quests you have of how many you may, and how they are sorted:
+  *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
+  Elite, Group, Dungeon and the like; the rest Normal); a click there sorts them the next way, kept. Your quests
+  with their level, each with its mark at the left as its pin on the map has it (the yellow question mark), their
+  objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
+  to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
   left). A click leads the arrow to the quest and moves the map to its objective (its question mark on the map, or
   the middle of the area where its foes are), at the zoom it has; a double click puts the game's map pin there too.
@@ -416,12 +421,20 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the middle of a part. The art runs on from piece to piece and each glint starts at the pulse's moment
   (`Route.PULSE`), so the pieces pulse as one line; the head meets the line on the curve.
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
-  on it; place and size in `store.questLogPlace`), over the full map in the layer `DIALOG` with its dark background,
-  and pinned (`store.questLogPinned`, its title bar's pin) on the screen alone in the layer `LOW` without one (no
-  skin, `barLine = false`); a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
-  as the game keeps them: a folded one's quests, which the game still lists, left out; quests with level, state,
-  watched; objectives), built again on `QUEST_LOG_UPDATE` once
-  a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
+  on it), in two looks (`Dress`), each with its place and size (`window:Use`): over the full map
+  (`store.questLogPlace`) in the layer `DIALOG` with its dark background, the mouse taken, every objective; and
+  pinned (`store.questLogPinned`, its title bar's pin) on the screen alone (`store.questLogSmallPlace`, at first
+  the screen's top left corner) in the layer `LOW` without one (no skin, `barLine = false`, its buttons away by
+  Core's `bare`), the frame without the mouse and each row's hit rect only its words (`Reach`), the mouse wheel
+  the game's while the list fits, the objectives done left out, no fold marks; the game's `ObjectiveTrackerFrame`
+  lent to a hidden frame (`Core.Lend`) while pinned. Sorted (`store.questLogSort`, by Core's `titleClick` on its
+  title, `titleTip` its tip; the title `%d/%d <sorting> · Quest Log`): by `GetDistanceSqToQuest` (looked at again
+  every `QuestLog.RESORT` seconds by a ticker while shown, drawn anew only once the order changed), by level, the
+  game's own with its headers, or under `GetQuestTagInfo`'s tag. A `WowScrollBoxList` of rows read from
+  `C_QuestLog` (Zone: the game's headers, folded as the game keeps them: a folded one's quests, which the game
+  still lists, left out; quests with level, failed, watched; objectives; a done quest's turn in from
+  `GetQuestLogCompletionText`, else `GetNextWaypointText`, else `QUEST_WATCH_QUEST_READY`, as the game's tracker),
+  built again on `QUEST_LOG_UPDATE` once a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
   has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
   screen's half its middle is in); a click: the quest super-tracked and the map at `Where` (the game's quest on a
   map, `GetQuestsOnMap`; a preview's giver) through `Canvas.LookAt`, its zoom kept; the button's `OnDoubleClick`
@@ -790,7 +803,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
 | `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
 | `Native.lua` | The game's map kept closed; its keys |
-| `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
+| `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
 | `TripView.lua` | The travel overlay, two thirds up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly, *Request Stop* on a flight |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
@@ -991,6 +1004,11 @@ Tests: `dev/tests/navigation.lua`.
   The button *Sane UI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
   right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
   the pins on what the game tells, and lays nothing out on the window's way.
+- **2026-10-29, the quest log sorted, two looks:** its title bar says the quests of how many and the sorting
+  (Proximity first, Level, Zone, Type), a click there sorts the next way; no *Complete* at a quest's right, a done
+  quest's turn in kept as an objective; pinned on the screen alone at a place of its own (the screen's top left
+  corner at first), without its pin and close button, clicked through but its title bar and words, the objectives
+  done and the fold marks left out, the game's quest tracker out of sight meanwhile.
 - **2026-10-21, the quest log as Saneroki asked; found herbs clicked:** no scroll bar at rest (the wheel scrolls;
   the bar shows while the mouse is on a list longer than its room, at the window's docked side); each quest's mark at
   its row's left as on the map; a click puts the game's map pin on its objective (`QuestLog.Pin`, `PinView.Drop`)

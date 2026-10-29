@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 184 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 184 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the quest log sorted by proximity, level, zone or type; pinned, its own place and look, the game's tracker hidden (Saneroki, 2026-10-29)
+Saneroki: ordered by proximity, no "complete" text at the right; left of the title quests/max quests and the sorting,
+a click there cycles Proximity, Level, Zone, Type. The pin and close not shown and the background clicked through when
+not in full screen. The same place in the full screen, an independent one with the map collapsed (the top left corner
+at first). Completed objectives hidden with the map collapsed, all shown in the full screen; the + buttons always
+hidden collapsed; a completed quest's "Report back to ..." is an objective still to do, never hidden. The game's quest
+tracker hidden while the quest log is pinned.
+- **Sorting (`QuestLog.Sort`, `store.questLogSort`):** Proximity first (`C_QuestLog.GetDistanceSqToQuest`; another
+  continent or no measure last; a ticker every `QuestLog.RESORT` seconds while shown draws anew once the order
+  changed), Level, Zone (the game's own, its headers and folding), Type (under `GetQuestTagInfo`'s tag, the rest
+  Normal); equal ones by level, then name. The title bar: `12/25 Proximity · Quest Log`; a click on the title the
+  next sorting, its tip says the sorting and the next.
+- **A done quest:** no *Complete* at its right; its turn in as its last objective, in the game's tracker's words
+  (`GetQuestLogCompletionText`, else `GetNextWaypointText`, else `QUEST_WATCH_QUEST_READY`), in both looks.
+- **Two looks (`Dress`):** over the full map as before (background, the mouse taken, pin and close, every objective,
+  the done ones grey, fold marks); on the screen alone no buttons, the frame without the mouse and each row taking it
+  only over its words (`Reach`, hit rect insets), the mouse wheel the game's while the list fits, the objectives done
+  left out, no fold marks and no folding. Each look at its own place and size: `store.questLogPlace` and
+  `store.questLogSmallPlace` (first: the screen's top left corner).
+- **The game's quest tracker:** `ObjectiveTrackerFrame` lent to a hidden frame (`Core.Lend`) while the quest log is
+  pinned; given back once it is not, or the module stands down.
+- **Core's window:** options `titleClick` (a click on the title of a window without search), `titleTip` (its tip),
+  `bare` (no title bar buttons right now); `window:Use(key, first)`, a second kept place.
+- **Tests:** `dev/tests/navigation.lua` 690 checks, `dev/tests/window.lua` 426.
+- A `/reload` takes it in.
 
 ### Loot: short tags under a name: BoP red, BoE orange, Uncollected light blue (Saneroki, 2026-10-29)
 Saneroki: things like uncollected, BoE, BoP as abbreviations, not whole words; BoP red, BoE orange, Uncollected in the

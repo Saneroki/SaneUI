@@ -61,6 +61,10 @@ local Core = SaneUI.Core
 --          insets = { left = 0, right = 0, top = 0, bottom = 0 },  -- docked, the room it keeps from the
 --                                       -- screen's edges (UI units; without: flush with them)
 --          search = function(text) end, -- what is typed into its search box, at every change ("": none)
+--          titleClick = function() end, -- without search: what a click on its title does (a drag moves it still)
+--          titleTip = { title, text },  -- its title's tip (each words, or a function asked at each showing)
+--          bare = function() end,       -- its title bar without its buttons right now? (the quest log on the
+--                                       -- screen alone has none)
 --          help = function() end,       -- the question mark on its full screen: a tour of what it shows
 --          dragDocked = true,           -- its title bar moves it docked at a screen edge too (not in Edit Mode)
 --          escape = "close",            -- Esc closes it, small or full, as the game's panels close (close, else
@@ -116,6 +120,8 @@ local Core = SaneUI.Core
 --      window:Remember(what, value)     -- kept with its place (full, native)
 --      window:Refresh()                 -- its title bar and buttons as the window is now
 --      window:SetTitle(text)            -- its name anew, on its title bar and its box in Edit Mode
+--      window:Use(key, first)           -- its place kept under another name from now on, first its first place
+--                                       -- there, and put there (a window with a place for each of its looks)
 --      window:Hover(on)                 -- the mouse is on the window, or left it (grip = "hover")
 --      window.inside                    -- a frame for what it holds: below the title bar while there is one,
 --                                       -- the whole window while not; window.top: how far below its top that is
@@ -697,8 +703,11 @@ local function Bar(window)
     Title(window)
     find:SetScript("OnMouseDown", Core.Guard("window", function() find.dragged = false end))
     find:SetScript("OnClick", Core.Guard("window", function()
-        if not find.dragged then Core.Safe("window", Search, window, true) end
+        if find.dragged then return end
+        if options.titleClick and not options.search then return Core.Safe("window", options.titleClick) end
+        Core.Safe("window", Search, window, true)
     end))
+    if options.titleTip then Core.Tip(find, options.titleTip[1], options.titleTip[2], "ANCHOR_BOTTOM") end
 
     local box = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
     box:SetHeight(Window.BOX)
@@ -794,7 +803,7 @@ function methods:Refresh()
     local bar, buttons = Bar(self), Buttons(self)
     if not shown and bar.box:IsShown() then Search(self, false) end
     bar:SetShown(shown)
-    buttons:SetShown(not Core.EditMode.active)
+    buttons:SetShown(not Core.EditMode.active and not (self.options.bare and self.options.bare()))
     local full = self.full
     if full then
         full:SetShown(edge.settings.expand and not edge.off and true or false)
@@ -836,6 +845,14 @@ function methods:SetTitle(text)
     if self.bar then Title(self) end
     if self.box then self.box.title:SetText(text or "") end
     if Core.Selection then Core.Selection.Moved(self) end -- its dialog in Edit Mode, if chosen
+end
+
+-- Its place kept under another name from now on, first its first place there (a window with a place for each of
+-- its looks: the quest log over the full map and on the screen alone), and put there.
+function methods:Use(key, first)
+    if (self.options.key or "place") == key then return end
+    self.options.key, self.options.first = key, first or self.options.first
+    self:Place()
 end
 
 -- Its search closed, as Esc closes it, for a module that leaves the search itself (a tab of Combat's book chosen):

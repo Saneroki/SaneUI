@@ -348,6 +348,18 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
   Stopwatch. Tests: 654 checks.
 - **Not yet:** the instance difficulty, Retail's expansion summary.
 
+## Built (2026-10-29): the quest log sorted, its two looks
+
+- **Sorting** (`QuestLog.Sort`, `store.questLogSort`): Proximity (`GetDistanceSqToQuest`, a ticker every
+  `QuestLog.RESORT` seconds redraws once the order changed), Level, Zone (the game's headers), Type
+  (`GetQuestTagInfo`); the title `%d/%d <sorting> · Quest Log`, a click on it the next (Core's `titleClick`,
+  `titleTip`). A done quest's turn in as its last objective (`GetQuestLogCompletionText`, as the game's tracker).
+- **Two looks** (`Dress`): full map and screen alone, each at its own place (`window:Use`: `questLogPlace`,
+  `questLogSmallPlace`); alone: no buttons (Core's `bare`), the frame without the mouse, rows by their words only
+  (`Reach`), objectives done and fold marks left out; the game's `ObjectiveTrackerFrame` lent to a hidden frame
+  while pinned (`Tracker`).
+- **Tests:** `dev/tests/navigation.lua` 690 checks, `dev/tests/window.lua` 426.
+
 ## What is not there yet
 
 1. **Core's data framework** has step 1a (`Doc/ideas/Data-build.md`): the sets (part of Core since 2026-10-21), `Data.Set`, `Get`,

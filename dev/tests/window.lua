@@ -1150,6 +1150,44 @@ check(not full:IsShown() and toggle._points[1][2] == close and buttons.first == 
         "a module's own button shows its picture; the words of its tip stay in its tip")
 end)()
 
+-- A click on the title of a window without search: the module's; its title bar bare while the module says so; a
+-- second place, kept under another name, with a first place of its own.
+;(function()
+    local looked = CreateFrame("Frame", nil, UIParent)
+    local clicks, bare = 0, false
+    local store = {}
+    local lookedWindow = Window.New(looked, { store = store, key = "wide", title = "Log", titleBar = true,
+        first = { point = "TOPLEFT", x = 12, y = -84, width = 300, height = 200 },
+        titleClick = function() clicks = clicks + 1 end, titleTip = { "Sorted", function() return "A click: the next" end },
+        bare = function() return bare end })
+    lookedWindow:Place()
+    local find = lookedWindow.bar.find
+    find._scripts.OnMouseDown(find)
+    find._scripts.OnClick(find)
+    check(clicks == 1 and not lookedWindow.bar.box._shown, "a click on its title: the module's, no search")
+    find.dragged = true
+    find._scripts.OnClick(find)
+    check(clicks == 1, "a drag by its title: no click")
+    bare = true
+    lookedWindow:Refresh()
+    check(not lookedWindow.buttons._shown, "bare while the module says so: no buttons")
+    bare = false
+    lookedWindow:Refresh()
+    check(lookedWindow.buttons._shown, "and its buttons again")
+    lookedWindow:Use("small", { point = "TOPLEFT", x = 0, y = 0, width = 300, height = 200 })
+    local point = looked._points[1]
+    check(lookedWindow.options.key == "small" and point[1] == "TOPLEFT" and point[4] == 0 and point[5] == 0,
+        "another place: at its own first place")
+    looked:ClearAllPoints()
+    looked._left, looked._top = 400, 700
+    lookedWindow.bar._scripts.OnDragStart(lookedWindow.bar)
+    lookedWindow.bar._scripts.OnDragStop(lookedWindow.bar)
+    lookedWindow:Use("wide", { point = "TOPLEFT", x = 12, y = -84, width = 300, height = 200 })
+    point = looked._points[1]
+    check(store.small and store.small.x == 400 and not store.wide and point[4] == 12 and point[5] == -84,
+        "moved there, kept under its own name; the first place stands where it stood")
+end)()
+
 -- Without a title bar
 local plain = CreateFrame("Frame", nil, UIParent)
 local plainWindow = Window.New(plain, { store = {}, first = { point = "CENTER", x = 0, y = 0 }, edge = true })
