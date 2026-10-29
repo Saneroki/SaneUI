@@ -128,8 +128,9 @@ function Row.New(parent)
     return row
 end
 
--- The name alone beside the picture (the A at its right), or the name over the line of its kind and worth.
-local function Lay(row, second)
+-- The name alone beside the picture (the A at its right), or the name over the line of its kind and worth (the kind
+-- reaches to the line's right end where it sells for nothing: no empty words to lean on).
+local function Lay(row, second, worth)
     local left = S.pad + S.icon + S.gap
     for _, part in ipairs({ row.name, row.note, row.worth, row.auto }) do part:ClearAllPoints() end
     if second then
@@ -137,7 +138,11 @@ local function Lay(row, second)
         row.name:SetPoint("TOPLEFT", row, "TOPLEFT", left, -S.pad)
         row.worth:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -S.pad, S.pad)
         row.note:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left, S.pad)
-        row.note:SetPoint("RIGHT", row.worth, "LEFT", -S.gap, 0)
+        if worth then
+            row.note:SetPoint("RIGHT", row.worth, "LEFT", -S.gap, 0)
+        else
+            row.note:SetPoint("RIGHT", row, "RIGHT", -S.pad, 0)
+        end
     else
         row.auto:SetPoint("RIGHT", row, "RIGHT", -S.pad, 0)
         row.name:SetPoint("LEFT", row, "LEFT", left, 0)
@@ -180,10 +185,11 @@ function Row.Set(row, line, notes, onList)
     local note = notes and ns.Slots.Note(line) or ""
     if line.locked then note = ns.TEXT.locked end
     row.note:SetText(note)
-    row.worth:SetText(notes and Worth(line) or "")
+    local worth = notes and Worth(line) or ""
+    row.worth:SetText(worth)
     row.auto:SetShown(line.kind == "item" and line.id ~= nil)
     Row.Auto(row, onList)
-    Lay(row, note ~= "" or row.worth:GetText() ~= "")
+    Lay(row, note ~= "" or worth ~= "", worth ~= "")
     row.shade:SetLit(false)
     row:SetAlpha(line.locked and 0.5 or 1)
     row:Show()

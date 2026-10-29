@@ -97,6 +97,12 @@ the game's own chat channels on every character is the Social module's.)
   - CVars with `C_CVar.SetCVar` (`Sync.SetCVar`), only one the game lets addons set: not locked, not read
     only, a secure one not in a fight. One it does not take is noted once in the error log (`/sane errors`,
     *Sync: setting CVars*) and left alone for the session; the others are set all the same.
+  - **A CVar a module lends** (`Sync.Lend(name, value, own)`, `Sync.Return(name)`; Loot lends the game's Auto
+    Loot off): set the module's way for as long as it needs it. Sync writes it no more meanwhile: what it would
+    write becomes the player's own value (`Sync.Value(name)`), and its readings take that value, not the lent
+    one, so the profile keeps the player's. Given back, the player's own is set again, unless the game holds
+    another than the lent one (the player changed it). Without it a profile's value, written a moment after the
+    login, undid a lend made at the login.
   - Game functions in pairs (`SetAutoDeclineGuildInvites`, ...); modifier keys
     with `SetModifiedClick`, the key bindings in use then saved with `SaveBindings`; the extra action bars
     with `SetActionBarToggles` (not where the game forces them), read by the bars at the next load.
@@ -160,6 +166,8 @@ the game's own chat channels on every character is the Social module's.)
   `dev/tools/sync-pages`; Edit Mode layout, own channels, chat windows (with their places) and other
   per-character settings under *Elsewhere in the game*. Its settings are `off`, `taken`, `named`; settings
   saved in the earlier shape are not read.
+- 2026-10-29 — CVars a module lends (`Sync.Lend`, `Return`, `Value`): the profile's Auto Loot on, written after
+  the login, had undone Loot's lend on a second account, and everything was taken at once.
 - 2026-10-15 — Edit Mode layout: read as seen in the world, not at the logout (each logout kept the first
   preset, so every login set it); a layout that cannot be set yet waits (no layouts yet, Edit Mode open, a fight).
 - 2026-10-15 — Part of Core (`src/Core/Sync/`, `Core.Sync`), no addon of its own (was `SaneUI_Sync`); its saved

@@ -605,6 +605,22 @@ check(SaneUICharDB.settings and SaneUICharDB.settings.Sync == nil, "nor kept wit
 Profiles.SetOn(true)
 check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "switched on again, the character takes its profile's, the game's settings too")
 
+-- A CVar a module lends (Loot: the game's Auto Loot off) -----------------------------------------------
+W.cvars.autoLootDefault = "1"
+check(Sync.Lend("autoLootDefault", "0") and W.cvars.autoLootDefault == "0", "lent: the game holds the module's value")
+SaneUIDB.profiles.Mine.Sync.taken.CONTROLS_LABEL.cvars.autoLootDefault = "1"
+Sync.Give()
+check(W.cvars.autoLootDefault == "0", "the profile's own written meanwhile does not undo the lend")
+Sync.Capture()
+check(Sync.options.taken.CONTROLS_LABEL.cvars.autoLootDefault == "1", "read: the player's own value goes into the profile")
+check(Sync.Value("autoLootDefault") == "1" and C_CVar.GetCVar("autoLootDefault") == "0", "Sync.Value: the player's own")
+Sync.Return("autoLootDefault")
+check(W.cvars.autoLootDefault == "1", "given back: the player's own again")
+Sync.Lend("autoLootDefault", "0", "1")
+W.cvars.autoLootDefault = "1" -- the player set it on meanwhile, in the game's own options
+Sync.Return("autoLootDefault")
+check(W.cvars.autoLootDefault == "1", "changed meanwhile: left as the player set it")
+
 local problems = {}
 for label, problem in pairs(Core.errors) do problems[#problems + 1] = label .. ": " .. tostring(problem.text) end
 check(#problems == 0, "nothing went wrong on the way: " .. table.concat(problems, "; "))

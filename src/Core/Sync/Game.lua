@@ -62,14 +62,54 @@ end
 -------------------------------------------------------------------------------
 --  CVars by name
 -------------------------------------------------------------------------------
--- [name] = value of those of the list this client has.
+-- [name] = value of those of the list this client has (a lent one: the player's own, Sync.Value).
 local function ReadCVars(list)
     local values = {}
-    for _, name in ipairs(list) do values[name] = Plain(C_CVar.GetCVar(name)) end
+    for _, name in ipairs(list) do values[name] = Sync.Value(name) end
     return values
 end
 
 local refused = {} -- [lower-case name] = true: the game did not take it this session; not tried again
+
+-------------------------------------------------------------------------------
+--  CVars a module lends: the game set its way while the module needs it
+--  (Loot: the game's Auto Loot off, so its own switches decide what is taken).
+--  While one is lent, Sync writes it no more: what it would write becomes the
+--  player's own value, and it reads that value, not the lent one, so the
+--  profile keeps the player's. Given back, the player's own value is set again
+--  (unless the game holds another than the lent one: the player changed it).
+--      Sync.Lend(name, value, own)   own: the player's value, where the module knows it from before
+--      Sync.Return(name)
+--      Sync.Value(name)              the player's own value of a lent one, else the game's
+-------------------------------------------------------------------------------
+local lent = {} -- [lower-case name] = { name, value = lent, own = the player's }
+
+function Sync.Lend(name, value, own)
+    if type(name) ~= "string" or type(value) ~= "string" then return false end
+    local entry = lent[name:lower()]
+    if not entry then
+        entry = { name = name, own = own or Plain(Core.Ask(C_CVar.GetCVar, name)) }
+        lent[name:lower()] = entry
+    end
+    entry.value = value
+    if Plain(Core.Ask(C_CVar.GetCVar, name)) ~= value then Core.Ask(C_CVar.SetCVar, name, value) end
+    return Plain(Core.Ask(C_CVar.GetCVar, name)) == value
+end
+
+function Sync.Return(name)
+    local entry = type(name) == "string" and lent[name:lower()]
+    if not entry then return end
+    lent[name:lower()] = nil
+    if type(entry.own) == "string" and Plain(Core.Ask(C_CVar.GetCVar, name)) == entry.value then
+        Core.Ask(C_CVar.SetCVar, name, entry.own)
+    end
+end
+
+function Sync.Value(name)
+    local entry = type(name) == "string" and lent[name:lower()]
+    if entry and type(entry.own) == "string" then return entry.own end
+    return Plain(C_CVar.GetCVar(name))
+end
 
 -- Whether the game lets us set a CVar now: not one it locked or made read only, a secure one not in a fight
 -- (SetCVar refuses those). Its value (text), true or false, and why not ("fixed", "fight"); nil for a CVar
@@ -88,6 +128,11 @@ end
 -- True when it was set.
 function Sync.SetCVar(name, value)
     if type(name) ~= "string" or type(value) ~= "string" or refused[name:lower()] then return false end
+    local entry = lent[name:lower()]
+    if entry then -- lent: what is written is the player's own value, for when it is given back
+        entry.own = value
+        return false
+    end
     local now, free = Sync.Settable(name)
     if not free or now == value then return false end
     local done, set = pcall(C_CVar.SetCVar, name, value)

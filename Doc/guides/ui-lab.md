@@ -78,7 +78,9 @@ prints its log.
   Lab.Say("GUILD", "Mirabel Ashgrove", "Hello")   -- a chat line from the server now
   ```
 
-  The scenes: `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, and a minimap's stand-in with the
+  The scenes: `loot` (Core and Loot from their TOCs: the loot window over the world with a thing of every quality,
+  a quest's item and coins; the game's loot functions stand in for a corpse, a click takes a thing, `LabLoot.Open()`
+  in the console opens it again), `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, and a minimap's stand-in with the
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
   here one in `assets/generated/ui-lab/backdrops/`, local), `satchel` (Navigation's satchel, `Satchel.lua` and
   `Strays.lua`: its button on a small map's stand-in and its page, with a pretend addon's button and the game's

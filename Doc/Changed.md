@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 90 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 163 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 90 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 166 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: the game's Auto Loot stays off on every account; a lend Sync leaves alone (Saneroki, 2026-10-29)
+Saneroki: on his first account Loot works; on the second everything is looted at once.
+- **Why:** Loot lent the game's Auto Loot off at the login, and Core's Sync, which keeps the game's settings in the
+  profile, wrote the profile's own a moment later (the second account's profile had Auto Loot on; the first's had it
+  off), so the game took everything again.
+- **Sync (`Core/Sync/Game.lua`):** a CVar a module lends (`Sync.Lend(name, value, own)`, `Sync.Return(name)`): while
+  lent Sync writes it no more (what it would write becomes the player's own value) and reads the player's own value
+  (`Sync.Value`), so the profile keeps the player's, not the lent one; given back, the player's own again.
+- **Loot (`Game.lua`):** the Auto Loot lend goes through it, at every login even while the game has it off already.
+- **The line under a name (`Row.lua`):** where a thing sells for nothing (a quest's item, coins) it reaches the line's
+  end instead of leaning on the empty worth (the interface lab drew no "Quest Item", no "Coins").
+- **The interface lab:** a scene `loot` (`dev/uilab/scenes/loot.lua`): the window over the world with a thing of
+  every quality, a quest's item and coins, the A lit on one.
+- **Tests:** `dev/tests/sync.lua` 110 checks (lent, written over by the profile: kept; read: the player's own;
+  given back; changed meanwhile: left), `dev/tests/loot.lua` 166.
+- A `/reload` takes it in.
 
 ### Combat: unit frames for you, your target and your focus in the nameplates' look; the action bars clean (Saneroki, 2026-10-29)
 Saneroki: unit frames for the player, the target and the focus, part of Combat, looking very like the nameplates: the

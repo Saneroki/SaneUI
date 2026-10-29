@@ -11,11 +11,14 @@ local _, ns = ...
 --      game's own questions (a thing that binds when picked up, a master
 --      looter's choice) are the game's event handlers', not the window's;
 --    - the game's own Auto Loot (its setting autoLootDefault, Esc > Options >
---      Controls) is lent off while our window is on: the player's switches
---      Taken at once decide what is taken at once, not the game. What it was
---      is kept (options.lent) and given back when our window goes, unless the
---      player changed it meanwhile. The game's key for it (Shift while looting)
---      still takes everything;
+--      Controls) is lent off while our window is on (Core's Sync.Lend): the
+--      player's switches Taken at once decide what is taken at once, not the
+--      game. Sync then writes it no more from the profile (it did, a moment
+--      after the login, and Auto Loot was on again where the profile had it on)
+--      and keeps the player's own value in the profile. What it was is kept here
+--      too (options.lent), for the next session's lend; given back when our
+--      window goes, unless the player changed it meanwhile. The game's key for
+--      it (Shift while looting) still takes everything;
 --    - the game's roll frames (GroupLootContainer) are lent to a hidden frame
 --      of ours (Core.Lend): the game still adds, times and removes its rolls by
 --      its own code, unseen, so switched back they stand as they should.
@@ -32,20 +35,31 @@ local AUTO_LOOT = "autoLootDefault"
 
 local function Same(a, b) return tostring(a) == tostring(b) end
 
--- The game's Auto Loot lent off: what it was kept the first time, to be given back.
+-- The game's Auto Loot lent off, through Core's Sync (which then leaves it alone); what it was kept the first
+-- time, to be given back. Lent at every login, even while it is off already: the profile may hold it on.
 local function Lend()
     local kept = ns.options.lent
-    local now = Core.Ask(C_CVar.GetCVar, AUTO_LOOT)
-    if now == nil or Same(now, "0") then return end
-    Core.Ask(C_CVar.SetCVar, AUTO_LOOT, "0")
-    if not kept[AUTO_LOOT] and Same(Core.Ask(C_CVar.GetCVar, AUTO_LOOT), "0") then kept[AUTO_LOOT] = { was = now, set = "0" } end
+    local now = Core.Plain(Core.Ask(C_CVar.GetCVar, AUTO_LOOT))
+    if now == nil then return end
+    if not kept[AUTO_LOOT] and not Same(now, "0") then kept[AUTO_LOOT] = { was = now, set = "0" } end
+    local own = kept[AUTO_LOOT] and kept[AUTO_LOOT].was or now
+    local sync = Core.Sync
+    if sync and sync.Lend then
+        sync.Lend(AUTO_LOOT, "0", own)
+    elseif not Same(now, "0") then
+        Core.Ask(C_CVar.SetCVar, AUTO_LOOT, "0")
+    end
 end
 
--- The game's Auto Loot back as it was, unless the player set it otherwise meanwhile.
+-- The game's Auto Loot back as it was (Sync's own value of it, which the profile may have set meanwhile), unless
+-- the player set it otherwise.
 local function PutBack()
     local kept = ns.options.lent
     local entry = type(kept) == "table" and kept[AUTO_LOOT]
-    if type(entry) == "table" and Same(Core.Ask(C_CVar.GetCVar, AUTO_LOOT), entry.set) then
+    local sync = Core.Sync
+    if sync and sync.Return then
+        sync.Return(AUTO_LOOT)
+    elseif type(entry) == "table" and Same(Core.Ask(C_CVar.GetCVar, AUTO_LOOT), entry.set) then
         Core.Ask(C_CVar.SetCVar, AUTO_LOOT, entry.was)
     end
     if type(kept) == "table" then kept[AUTO_LOOT] = nil end

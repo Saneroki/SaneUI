@@ -23,7 +23,8 @@ local ADDON = ...
 --
 --  Only the game's stored settings are touched (CVars, its chat window and
 --  action bar settings, C_EditMode, the modifier keys), never its frames. Where
---  the game shows a change only after a /reload, one is offered once.
+--  the game shows a change only after a /reload, one is offered once. A CVar a
+--  module lends (Sync.Lend, Game.lua) is left to it: kept as the player's own.
 --
 --  Files: Data/Pages.lua (what each options page sets, made from Blizzard's
 --  code), Layout.lua (Edit Mode), Chat.lua (chat windows, own channels),
@@ -109,7 +110,7 @@ end
 function Sync.Keep(name, on)
     local named = Sync.options.named
     if on then
-        named[name] = Plain(C_CVar.GetCVar(name)) or named[name] or false
+        named[name] = Sync.Value(name) or named[name] or false
     else
         named[name] = nil
     end
@@ -118,7 +119,7 @@ end
 -- A name that is no text (a hand-edited file) is left as it is.
 local function ReadNamed(named)
     for name in pairs(named) do
-        local value = type(name) == "string" and Core.Ask(C_CVar.GetCVar, name)
+        local value = type(name) == "string" and Core.Ask(Sync.Value, name)
         if type(value) == "string" then named[name] = value end
     end
 end

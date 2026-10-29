@@ -77,8 +77,10 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   `CONFIRM_DISENCHANT_ROLL`, so taking and rolling from our parts asks as the game's would. The roll frames
   (`GroupLootContainer`) are lent to a hidden frame of ours (`Core.Lend`): the game adds, times and removes its rolls
   by its own code, unseen, so switched back they stand right. The game's Auto Loot (`autoLootDefault`) is lent `0`
-  while our window is on (`C_CVar`; what it was kept in `lent` the first time, given back only if nobody changed it
-  meanwhile). Nothing of Blizzard's is written, no function replaced. Switched off or standing down
+  while our window is on, through Core's Sync (`Sync.Lend`, `Sync.Return`): Sync then leaves it alone instead of
+  writing the profile's value a moment after the login, and keeps the player's own value in the profile. What it
+  was is kept in `lent` the first time too, for the next session's lend; given back only if nobody changed it
+  meanwhile. Nothing of Blizzard's is written, no function replaced. Switched off or standing down
   (`ns.GiveBack`): `LOOT_OPENED` registered again, Auto Loot as it was, the container's parent given back, ours
   closed.
 - **Reading the loot** (`Slots.lua`): `GetNumLootItems`, `GetLootSlotInfo`, `GetLootSlotType` (`Enum.LootSlotType`),
@@ -140,7 +142,7 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   (the game's settings lent). The places: `windowPlace`, `rollsPlace`, `feedPlace` in `Core.Store("Loot")`.
 - **Forever and Retail:** one way for both; every function asked for exists in both clients (the Forever-Retail
   lookup). Transmog is offered where the game offers it (Retail). Master loot only where the game has it.
-- **Tests:** `dev/tests/loot.lua`.
+- **Tests:** `dev/tests/loot.lua`. To look at it: the interface lab's scene `loot` (`Doc/guides/ui-lab.md`).
 
 ## Files
 | File | What it does |
@@ -169,3 +171,6 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   Link and Close as buttons at the foot; nothing taken at once at first, the switches by kind (Everything, coins,
   currencies, quest items, trade goods, gear, consumables, junk), taken as soon as the loot is ready; the game's Auto
   Loot lent off; the options in tabs with the list *Your items*; the line under a name on again.
+- 2026-10-29 — The Auto Loot lend through Core's Sync: on a second account the profile's Auto Loot on was written a
+  moment after the login and everything was taken at once. The line under a name reaches the line's end where a
+  thing sells for nothing (the quest's and the coins' words were not drawn).

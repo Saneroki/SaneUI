@@ -223,6 +223,10 @@ end
 check(nothing, "nothing is taken at once at first")
 check(C_CVar.GetCVar("autoLootDefault") == "0" and options.lent.autoLootDefault.was == "1",
     "the game's Auto Loot lent off while ours is on, what it was kept")
+-- Sync writes the profile's game settings a moment after the login: its Auto Loot on must not undo the lend.
+Core.Sync.SetCVar("autoLootDefault", "1")
+check(C_CVar.GetCVar("autoLootDefault") == "0" and Core.Sync.Value("autoLootDefault") == "1",
+    "Sync's writing of the profile leaves the lend alone, and keeps the player's own value")
 
 -------------------------------------------------------------------------------
 --  The sentences read back
@@ -445,6 +449,9 @@ options.takeQuest, options.takeCoins = false, false
 loot = { Slot(TUSK, { questItem = true }), Coins(3) }
 Open()
 check(Rows()[1].border._color[1] == 1 and Rows()[1].border._color[2] == 0.82, "a quest's thing: a gold border")
+check(Rows()[1].note:GetText() == ns.TEXT.questItem, "its line under the name: a quest's")
+check(Rows()[2].note:GetText() == ns.TEXT.coins and Rows()[2].note._points[2][2] == Rows()[2],
+    "selling for nothing (coins): the line under the name reaches the line's end, not empty words")
 Window.Close()
 loot = { Coins(3) }
 Open()
