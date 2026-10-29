@@ -302,19 +302,19 @@ the guide over the world: no window, no paper.
 ### The loot window
 
 Loot's window (`src/Loot/Window.lua`, `Row.lua`; Saneroki, 2026-10-29: first "minimalistic to the extreme", then
-each thing with an outline and a background, then smooth corners: "look at how our nameplates are rendered"):
+each thing with an outline and a background, then like the nameplates: "their font, colour, border radius, shading,
+the colours driven by the item"; no border on the picture):
 
 - **No window round it:** a transparent background, no paper, frame or title; the lines stand on the world, and at
-  the foot two buttons, *Link* and *Close* (the word spelled out), each on a round plate half see-through with a thin
-  grey trim so they read as buttons, their words light, gold under the mouse.
-- **Smooth corners everywhere:** every plate (a line, a picture, the A, a button) has round corners and a thin trim
-  that follows them (Core's Shape, as the chat's bubbles), never a square box of four lines.
-- **A line a thing:** a round plate, dark and half see-through (darker under the mouse), trimmed in the thing's
-  quality colour, a quest's things in the game's gold. In it the picture on a small round plate of its own, nearly
-  black and trimmed in the same colour, the game's green arrow on it where it is an upgrade, how many on it, the name in the quality's colour in Kalam Bold with a thin dark outline, as the combat text and the loot
-  feed; under the name, small and grey, its kind and how it binds, and at the right what a vendor pays for all of
-  it in the game's coins; at the top right a small **A** on its own round plate, grey, gold while the thing is on the
-  player's list.
+  the foot two buttons, *Link* and *Close* (the word spelled out), dark bars of the lines' make so they read as
+  buttons, their words light, gold under the mouse.
+- **A line a thing, a bar as the nameplates':** the game's shaded health fill (its raid frames') in the thing's
+  quality colour, a quest's things in the game's gold; round at its corners by a quarter of its height; a border of
+  one screen pixel, nearly black, grey under the mouse (as a nameplate's on your target). On it the picture with no
+  border of its own, the game's green arrow on it where it is an upgrade, how many on it; the name in white in the
+  game's outlined nameplate font; under the name, smaller, its kind and how it binds, and at the right what a vendor
+  pays for all of it in the game's coins; at the top right a small **A**, a dark bar of the same make, its letter
+  gold while the thing is on the player's list.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
 
 ### Unit frames and action bars

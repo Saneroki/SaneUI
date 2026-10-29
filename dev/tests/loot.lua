@@ -333,15 +333,15 @@ Window.Fill()
 check(rows[2].note:GetText() == "" and rows[2].worth:GetText() == "", "the line under the name switched off")
 options.notes = true
 Window.Fill()
-local function Trim(plate) return plate.shape.look.trim end
-check(Trim(rows[1].holder.plate)[1] == ITEM_QUALITY_COLORS[1].r and Trim(rows[2].holder.plate)[1] == ITEM_QUALITY_COLORS[2].r,
-    "each picture on a round plate trimmed in its quality's colour")
-check(Trim(rows[2].plate)[1] == ITEM_QUALITY_COLORS[2].r and rows[2].plate.shape.settings.radius == ns.SIZE.radius,
-    "each line on a round plate trimmed in it")
-check(rows[2].plate.shape.look.alpha == 0.5 and rows[2].plate.shape.width == Window.frame._width,
-    "its fill half see-through, laid out as wide as the window")
+local function Colour(bar) return bar.colour end
+check(Colour(rows[1].bar)[1] == ITEM_QUALITY_COLORS[1].r and Colour(rows[2].bar)[1] == ITEM_QUALITY_COLORS[2].r,
+    "each line a bar in its quality's colour, as a nameplate's")
+check(rows[2].bar.fill._texture == "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" and #rows[2].bar.halves == 2,
+    "the nameplates' shaded fill, its border two round halves")
+check(rows[2].holder.plate == nil and rows[2].icon._points[1][1] == "TOPLEFT", "the picture alone, no border of its own")
+check(not rows[2].bar.lit, "its border dark")
 rows[2]._scripts.OnEnter(rows[2])
-check(rows[2].plate.shape.look.alpha > 0.5, "darker under the mouse")
+check(rows[2].bar.lit, "grey under the mouse")
 rows[2]._scripts.OnLeave(rows[2])
 check(rows[2].auto:IsShown() and not rows[2].auto.on, "an A on each item, not lit")
 check(Window.frame._width >= ns.SIZE.least and Window.frame._width <= ns.SIZE.width, "as wide as its words, within bounds")
@@ -390,8 +390,7 @@ end
 local linkWord, closeWord = Word(ns.TEXT.link), Word(ns.TEXT.close)
 check(linkWord and linkWord:IsShown() and closeWord and closeWord:IsShown(), "at the foot: Link and Close")
 check(linkWord._points[1][1] == "BOTTOMLEFT" and closeWord._points[1][1] == "BOTTOMRIGHT", "side by side, at the bottom")
-check(linkWord.plate.shape.look.alpha == 0.5 and closeWord.plate.shape.look.alpha == 0.5
-      and linkWord.plate.shape.width > 0, "each on a round plate, half see-through")
+check(linkWord.bar and closeWord.bar and linkWord.bar.colour[1] < 0.3, "each a dark bar of the lines' make")
 local opened, inserted
 ChatFrameUtil.OpenChat = function(text) opened = text end
 ChatFrameUtil.GetActiveWindow = function() return nil end
@@ -457,8 +456,7 @@ W.cursorX, W.cursorY = nil, nil
 options.takeQuest, options.takeCoins = false, false
 loot = { Slot(TUSK, { questItem = true }), Coins(3) }
 Open()
-check(Trim(Rows()[1].plate)[1] == 1 and Trim(Rows()[1].plate)[2] == 0.82 and Trim(Rows()[1].holder.plate)[2] == 0.82,
-    "a quest's thing: trimmed in gold")
+check(Colour(Rows()[1].bar)[1] == 1 and Colour(Rows()[1].bar)[2] == 0.82, "a quest's thing: a gold bar")
 check(Rows()[1].note:GetText() == ns.TEXT.questItem, "its line under the name: a quest's")
 check(Rows()[2].note:GetText() == ns.TEXT.coins and Rows()[2].note._points[2][2] == Rows()[2],
     "selling for nothing (coins): the line under the name reaches the line's end, not empty words")

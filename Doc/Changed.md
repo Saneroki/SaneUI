@@ -3,8 +3,21 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 103 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 178 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 103 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 179 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Loot: each line a bar as the nameplates draw theirs, in the thing's colour; the picture bare (Saneroki, 2026-10-29)
+Saneroki: no border round the item's picture, the line's own is enough; the border like the nameplates' (their font,
+colour, border radius, shading), the colours by the item.
+- **`Row.Bar`:** made as Nameplates' bar: the game's shaded health fill (`Raid-Bar-Hp-Fill`) in the quality's colour
+  (a quest's thing gold), a screen pixel inside a border nearly black (grey under the mouse, as a nameplate's on your
+  target), both round by a quarter of the height (Core's corner masks on the border's two halves, Core's caps on the
+  fill). The words white, in the face and outline of the game's nameplate font.
+- **The picture** has no plate or border of its own; the A, Link and Close are dark bars of the same make. The round
+  plates of Core's `Shape` the lines had are gone (its `trim` width setting stays in Core).
+- **Tests:** `dev/tests/loot.lua` 179 checks (the bar's colour and fill, its two halves, lit under the mouse, the bare
+  picture, the buttons' dark bars, a quest's gold bar).
+- A `/reload` takes it in.
 
 ### Combat: every unit frame one width; the main bar's page number and arrows stay (Saneroki, 2026-10-29)
 Saneroki: a fixed width for the unit frames; the arrows and the number of the action bar shown still visible on the

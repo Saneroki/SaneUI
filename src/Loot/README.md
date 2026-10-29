@@ -1,10 +1,10 @@
 # Sane UI: Loot
 
-**Status:** built: the loot window (a line a thing on a plate with round corners trimmed in its quality's colour, its worth, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot), things taken at once by your own switches as soon as the loot is ready (nothing at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, its worth, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot), things taken at once by your own switches as soon as the loot is ready (nothing at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Stands in for the game's loot window and its roll frames. What a corpse, a chest or a catch holds stands at the
-mouse with no window round it: a line a thing on a dark plate with round corners, trimmed in its quality's colour (a quest's in gold), a green arrow on what would make your character better,
+mouse with no window round it: a line a thing, a bar as the nameplates draw theirs in its quality's colour (a quest's in gold), a green arrow on what would make your character better,
 its picture, its name, its kind and what a vendor pays for it, and an A; Link and Close at the foot. A click takes it
 and the next comes under the mouse. What is taken at once, as soon as the loot is ready, is yours to say: nothing at
 first, then everything or kinds (coins, currencies, quest items, trade goods, gear, consumables, junk), and over them
@@ -18,12 +18,13 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   when it was not in the list before). Its options: Esc > Options > AddOns > Sane UI > *Loot*, in four tabs: *Loot
   window*, *Taken at once*, *Rolls and feed*, *Your items*.
 - **The loot window** opens where the mouse is, its first line's picture under it (*At the mouse*; off: where you
-  placed it in Edit Mode). No window round it: a line a thing, each on a dark plate half see-through with smooth
-  round corners and a thin trim in its quality's colour (a quest's things, and things that begin a quest, in the
-  game's gold). In it the thing's picture on a small round plate trimmed in that colour, how many, its name in that
-  colour; under the name, small, its kind and how it binds,
+  placed it in Edit Mode). No window round it: a line a thing, each a bar drawn as the nameplates draw theirs: the
+  game's shaded health fill in its quality's colour (a quest's things, and things that begin a quest, in the game's
+  gold), round at its corners by a quarter of its height, a thin border nearly black (grey under the mouse). On it
+  the thing's picture, no border of its own, how many, its name in white in the game's outlined nameplate font;
+  under the name, smaller, its kind and how it binds,
   and at the right what a vendor pays for all of it (*A line under each name*, on); at the top right an **A**. At the
-  foot two buttons on the same round plates, **Link** and **Close** (Close alone when there is nothing to link).
+  foot two dark bars of the same make, **Link** and **Close** (Close alone when there is nothing to link).
   - **The green arrow** (the game's own, as its bags show it) on a picture: the thing would make your character
     better: gear you can wear now (as the game says, and of your level) where you wear nothing, or with a higher item
     level than what you wear there (of two rings or trinkets, the weaker one); never armour lighter than what you
@@ -97,13 +98,14 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   then `takeAll`, then `Slots.KINDS` by the game's item classes: Tradegoods and Reagent, Weapon and Armor,
   Consumable, Questitem; junk by quality 0), `Slots.Wanted` whether one takes it, `Slots.Note` the line under a name,
   `Slots.Item(id)` a line for an item by its ID (the list *Your items*).
-- **The window** (`Window.lua`, `Row.lua`): no art of its own; a scroll frame, rows made once and used again, each on
-  a plate of Core's `Shape` (`Row.Plate`: round corners of `SIZE.radius`, a black fill at half, darker under the
-  mouse, a trim of `SIZE.trim` in `ITEM_QUALITY_COLORS`, the game's gold `NORMAL_FONT_COLOR` for a quest's thing:
-  `Slots.Quest`), laid out for the window's width at each fill (`Row.Fit`); the picture on a smaller plate of its own
-  (`SIZE.iconRadius`), set in so its square corners stay inside the plate's round; the game's atlas
-  `bags-greenarrow` on an upgrade; Kalam outlined, the worth by `Core.Coins` (vendor price times the count), the A a
-  small button on a plate of its own. Link and Close are buttons on the same plates, trimmed grey. As wide as its widest line (`SIZE.least` to `SIZE.width`). Placed by
+- **The window** (`Window.lua`, `Row.lua`): no art of its own; a scroll frame, rows made once and used again, each a
+  bar made as Nameplates' (`Row.Bar`): the game's `Interface\RaidFrame\Raid-Bar-Hp-Fill` a screen pixel inside a
+  border of two halves (`WHITE8X8`, black at 0.9, grey under the mouse) round at their corners by Core's
+  `Shape.CORNER` masks, the fill's ends by `Shape.CAP_LEFT`/`CAP_RIGHT`, both a quarter of the height; the fill in
+  `ITEM_QUALITY_COLORS`, the game's gold `NORMAL_FONT_COLOR` for a quest's thing (`Slots.Quest`). The words in the
+  face and outline of the game's `SystemFont_NamePlate_Outlined`, white. The picture bare; the game's atlas
+  `bags-greenarrow` on an upgrade; the worth by `Core.Coins` (vendor price times the count); the A a small dark bar
+  of the same make. Link and Close are dark bars too. As wide as its widest line (`SIZE.least` to `SIZE.width`). Placed by
   `Core.Window.New` (key `windowPlace`, no title bar: Edit Mode only); at the mouse the first line's picture under the
   cursor, kept on the screen. A thing the player took (`LOOT_SLOT_CLEARED` of the slot clicked): the rows are laid
   out anew and, at the mouse, the window moved so the line now at the clicked place (the one before it, when the last
@@ -189,6 +191,9 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
 - 2026-10-29 — The Auto Loot lend through Core's Sync: on a second account the profile's Auto Loot on was written a
   moment after the login and everything was taken at once. The line under a name reaches the line's end where a
   thing sells for nothing (the quest's and the coins' words were not drawn).
+- 2026-10-29 — Like the nameplates (Saneroki: their font, colour, round, border and shading, the colour by the thing;
+  no border on the picture): each line a bar as Nameplates' in its quality's colour, the game's nameplate font, the
+  picture bare; Link, Close and the A dark bars of the same make. The round plates of Core's `Shape` are gone.
 - 2026-10-29 — Smooth round corners (Saneroki: "our current loot window is very ugly"): every line, the picture, the
   A and the buttons on plates of Core's `Shape`, as the chat's bubbles. Upgrades: the game's green arrow on a thing
   that would make the character better, and the switch *Always show upgrades* (on) keeps them out of every rule.
