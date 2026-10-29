@@ -32,6 +32,7 @@ local _, ns = ...
 --      Run.Saw(what), Run.Watch(changed), Run.Stop()
 --      Run.Way(place)        how far from a place, in yards, and which way; Run.Distance
 --      Run.Target()          where the arrow points: the place line and its step
+--      Run.ZonesAhead(most)  the zones the steps go to from the step you are at onward, each once, in order
 --      Run.ObjectiveKind(quest, goal), Run.Targets(), Run.Uses(), Run.UseOn(), Run.Quests(), Run.Words(line)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -466,6 +467,24 @@ function Run.Target()
         end
     end
     return nil
+end
+
+-- The zones the guide's steps go to from the step you are at onward, each once, in order: their maps' numbers (a
+-- place given by its zone's name, by that zone's), most of them at most (Gathering.lua).
+function Run.ZonesAhead(most)
+    local zones, have = {}, {}
+    if not guide then return zones end
+    for index = math.max(at or 1, 1), #guide.steps do
+        for _, line in ipairs(guide.steps[index].lines) do
+            local map = (line.what == "place" or line.what == "arrive") and line.map and MapId(line.map)
+            if map and not have[map] then
+                have[map] = true
+                zones[#zones + 1] = map
+                if #zones >= most then return zones end
+            end
+        end
+    end
+    return zones
 end
 
 local function Waiting()

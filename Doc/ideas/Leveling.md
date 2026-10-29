@@ -59,6 +59,9 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   made apart from the code and put into the game; no guide's text in the repository); a right click on the guide's
   zone lists the guides for the character by group; the guide on, paused or off, also from the minimap's satchel
   (Core's quick switches, `Core.Offer`). Built.
+- **Decision (Saneroki, 2026-10-29): gathering for the next zone.** Before the guide goes on to a harder zone, a
+  warning while your Herbalism or Mining is lower than that zone asks, worked out from Core's herbs, ore and their
+  spawns (half of a zone's spawns gathered). Built. Skinning is not looked at yet.
 - **Not yet:** the routes and their planner (below), the guide's way on the map (board #158).
 
 ## What has to exist first

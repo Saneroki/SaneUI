@@ -3,8 +3,24 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 88 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 104 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 52 and 8 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 109 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: gathering for the next zone; your bought Forever guides in the guide pack (Saneroki, 2026-10-29)
+Saneroki: Speed Leveling in WoW: Forever should have his bought guides installed, and hint at Herbalism and Mining
+high enough before the guide goes on to a harder zone.
+- **Gathering for the next zone (`Gathering.lua`, new; the setting of that name, on):** the next zone the steps ahead go
+  to (`Run.ZonesAhead`, a town or cave counted as its zone) where herbs or ore grow; what it asks worked out from the
+  game's own facts in Core's sets *Objects* (each herb's and ore's skill) and *Spawns* (where they grow): the lowest
+  skill that gathers at least half of that zone's spawns of that kind (`Gathering.SHARE`). Where a skill you have is
+  lower, a line under the guide's head in the warning colour (*Wetlands next: Herbalism 92 of 100. Gather here a
+  while first.*). Nothing without Core's data (Retail).
+- **Your bought guides:** the import string is opened on this computer for your account and its guides put into
+  *Guides: Forever* first, marked bought (191 guides, the same as on 2026-10-25), so Forever has them without a paste;
+  the pack now holds 296 (all read with no unread line, 46,377 steps for a Horde and an Alliance character).
+- **Tests:** `dev/tests/speedleveling.lua` 94 checks (a zone's asks; the next zone ahead short of Herbalism, Mining
+  not learnt; the view's line; enough, the switch off, there already: nothing).
+- A game restart takes it in (a new file in Speed Leveling's TOC; the guide pack anew).
 
 ### The blocked actions in a fight (Nameplates); Speed Leveling's key says when it has no key (Saneroki, 2026-10-29)
 Saneroki: E did nothing again, and the error log held thousands of "the game blocked UNKNOWN()".

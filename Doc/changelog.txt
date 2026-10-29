@@ -28,7 +28,9 @@ The bigger changes of each version, newest first.
   are, the steps to do now with their counts, and the next steps
   fading out. Click a step to skip it, right-click to go back.
   Right-click it to choose a guide: the guides that come for
-  each game are there, by group. Open the Guides window
+  each game are there, by group. In WoW: Forever it warns when
+  your Herbalism or Mining is too low for the next zone the
+  guide takes you to, so you gather a while first. Open the Guides window
   (/sane guides) to paste a guide you bought - it opens for your
   own account - or any guide's text; Sane UI runs it by itself as
   you quest. Pause it or switch it off in the minimap's satchel. Over it, the items to

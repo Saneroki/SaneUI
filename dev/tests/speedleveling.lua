@@ -194,8 +194,17 @@ local records = {
         ["npc:201"] = { points = { { map = 1411, x = 52, y = 52 } } }, -- a dropper, near
         ["npc:200"] = { points = { { map = 1411, x = 80, y = 80 } } }, -- a dropper, far
         ["npc:202"] = { points = { { map = 1411, x = 90, y = 10 } } }, -- a dropper, farther
+        -- Herbs and ore (Gathering.lua): a Peacebloom here and in the next zone (1413), where three Steelbloom grow
+        -- and one Iron Deposit.
+        ["object:1617"] = { points = { { map = 1411, x = 1, y = 1 }, { map = 1413, x = 1, y = 1 } } },
+        ["object:1623"] = { points = { { map = 1413, x = 2, y = 2 }, { map = 1413, x = 3, y = 3 }, { map = 1413, x = 4, y = 4 } } },
+        ["object:1735"] = { points = { { map = 1413, x = 5, y = 5 } } },
     },
+    Objects = { [1617] = { kind = "herb", skill = 182, skillLevel = 1 }, [1623] = { kind = "herb", skill = 182, skillLevel = 115 },
+                [1735] = { kind = "ore", skill = 186, skillLevel = 125 } },
+    SkillLines = { [182] = { name = "Herbalism" }, [186] = { name = "Mining" } },
 }
+local byKind = { herb = { 1617, 1623 }, ore = { 1735 } }
 local byItem = { [500] = { "npc:200", "npc:201", "npc:202", "npc:204", "object:7" } }
 local realSet = Core.Data.Set
 Core.Data.Set = function(name)
@@ -208,6 +217,7 @@ Core.Data.Set = function(name)
     end
     function handle:Keys(index, value)
         if name == "Drops" and index == "byItem" then return byItem[value] or {} end
+        if name == "Objects" and index == "byKind" then return byKind[value] or {} end
         return {}
     end
     return handle
@@ -575,6 +585,40 @@ Core.Set(ns.name, "talk", false)
 check(W.cvars.softTargetInteract == "2" and next(ns.options.foundCVars) == nil, "all off: the interact key back as it was")
 Core.Set(ns.name, "loot", true)
 check(W.cvars.softTargetInteract == "3", "on again: the interact key on")
+
+-------------------------------------------------------------------------------
+--  Gathering for the next zone
+-------------------------------------------------------------------------------
+-- The guide goes from here (1411) to the next zone (1413): there half the herbs need 115, the ore 125. Herbalism
+-- 92 is short; Mining not learnt says nothing.
+local skills = { { name = "Herbalism", rank = 92 } }
+C_SkillInfo = { GetNumSkillLines = function() return #skills end, GetSkillLineInfo = function(index) return skills[index] end }
+local trip = table.concat({ "#forever", "#" .. "name Trip", "#" .. "group G", "step", L("place", "1411,50,50"),
+    L("take", "60"), "step", L("place", "1413,40,40"), L("take", "61") }, "\n")
+ns.Guide.AddAll(ns.Format.Parts(trip), false)
+ns.Guide.Choose("G\\Trip")
+local need = ns.Gathering.Need(1413)
+check(need and need.herb == 115 and need.ore == 125 and ns.Gathering.Need(1411).herb == 1,
+    "a zone's asks: the skill that gathers half its herbs, its ore")
+local short = ns.Gathering.Short()
+check(short and short.map == 1413 and #short.short == 1 and short.short[1].skill == "Herbalism"
+    and short.short[1].have == 92 and short.short[1].need == 115, "the next zone ahead: Herbalism short, Mining not learnt")
+ns.Steps.Update()
+local said
+for _, widget in ipairs(W.frames) do
+    if widget._shown and type(widget._text) == "string" and widget._text:find("Herbalism 92 of 115", 1, true) then said = widget end
+end
+check(said ~= nil, "the view says so under its head")
+skills[1].rank = 120
+check(ns.Gathering.Short() == nil, "enough for it: nothing said")
+skills[1].rank = 92
+Core.Set(ns.name, "gather", false)
+check(ns.Gathering.Short() == nil and not said._shown, "Gathering for the next zone off: nothing said")
+Core.Set(ns.name, "gather", true)
+here.map = 1413
+check(ns.Gathering.Short() == nil, "there already, nothing further ahead: nothing said")
+here.map = 1411
+ns.Guide.Choose("G\\Test")
 
 check(not ns.off and #SaneUI.Core.log == 0, "no error stood the module down along the way: "
     .. tostring(SaneUI.Core.log[1] and SaneUI.Core.log[1].text))

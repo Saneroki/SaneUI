@@ -94,6 +94,10 @@ ns.TEXT = {
     switchTip = "Click: pause the guide, or go on with it. Right click: on, paused or off.",
     showGuide = "Show the guide",
     showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
+    gather = "Gathering for the next zone",
+    gatherTip = "Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks: the skill that gathers at least half of the herbs or the ore growing there (from Sane UI's data of the world; WoW: Forever).",
+    gatherShort = "%s next: %s. Gather here a while first.",
+    gatherSkill = "%s %d of %d",
     showArrow = "Show the arrow",
     showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode: the leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
     icons = "Targets and items over the guide",
@@ -197,6 +201,7 @@ local OPTIONS = {
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
     { key = "showGuide", default = true, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
+    { key = "gather", default = true, text = ns.TEXT.gather, tip = ns.TEXT.gatherTip },
     { key = "showArrow", default = true, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
     { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
@@ -206,7 +211,7 @@ local OPTIONS = {
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches are read as a quest giver talks.
-local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true }
+local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
 local QUESTS = { take = true, handin = true, gossip = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then

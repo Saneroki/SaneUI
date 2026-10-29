@@ -70,6 +70,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Choose the guide's talk | on | Where a step names a gossip option, it is chosen |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
+| Gathering for the next zone | on | Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks (*Gathering for the next zone*) |
 | Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
 | Steps listed ahead | 5 | How many steps the list under those at hand shows (0 to 12); the wheel scrolls it through the whole guide |
@@ -119,7 +120,8 @@ places, all read by our own reader (`Format.lua`) and run by our own engine (`Ru
   (`Guide.LoadPacks`), and the pack hands over each guide's head and its text, zlib-packed in base64
   (`SaneUI.SpeedLeveling.TakeGuides`). They are not kept: the pack holds them. A guide you add under the same group
   and name goes before the pack's; a new character takes the first default guide of those you added, then of the
-  pack in its own order. `dev/build` leaves a guide pack in the game.
+  pack in its own order. `dev/build` leaves a guide pack in the game. A pack may hold guides you bought as well
+  (marked bought, for that game only), put there on this computer so they need no paste (Saneroki, 2026-10-29).
 - **A guide pasted as text** (`Format.lua`): written in the text format the leveling guide Sane UI knows uses (its
   words for commands, step marks, colours and game tags are Core's to know, `Core.Neighbours.Format`; everything else
   is ours). A head (name, group, the guides after it, who starts with it, which games it is for; a part of a longer
@@ -165,6 +167,16 @@ shown while the guide is and has a place to go to:
   Within the place's reach the ring and the yards go, the words stay.
 - **Where it points:** the first place of the steps at hand not yet passed, the step you are at first (a point on the
   way, or a place to get to, is passed once you were within its reach; `Run.Target`).
+
+### Gathering for the next zone
+`Gathering.lua` (Saneroki, 2026-10-29): before the guide takes you on to a harder zone, whether your Herbalism and
+Mining keep up with it. The next zone is the first one the steps ahead go to (`Run.ZonesAhead`; a town or cave
+counts as its zone) where herbs or ore grow. What it asks is worked out from the game's own facts in Core's sets:
+each herb's and ore's skill (*Objects*) and where they grow (*Spawns*): per zone and kind, the lowest skill that
+gathers at least half of its spawns (`Gathering.SHARE`; Durotar 1 and 1, the Barrens 50 and 65, Stranglethorn Vale
+170 and 125, Felwood 260 and 230). Where a skill you have is lower, a line under the head says so in the warning
+colour: *Wetlands next: Herbalism 92 of 100. Gather here a while first.* A skill not learnt says nothing; neither does
+a zone you are ready for. Without Core's data (Retail, for now) there is no line.
 
 ### The icons
 Over the guide's top, a row of icons only (`Icons.lua`): first the items the steps want used (the Hearthstone while a
@@ -251,6 +263,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
 | `Run.lua` | A guide run for the character: the steps at hand, what is done, skip, back, go, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
+| `Gathering.lua` | Whether your Herbalism and Mining are enough for the next zone the guide goes to (Core's *Objects* and *Spawns*) |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
 | `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key, Click-to-Move) |
