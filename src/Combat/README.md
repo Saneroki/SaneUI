@@ -88,8 +88,9 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     on the debuffs of foes; on the rest it decides itself (and in a fight it keeps the icons from addons: their
     menu comes after it).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
-    your target's frame with that one's health (green) and its name alone; the same under your focus's frame for
-    your focus's target, and under your own frame for your pet while you have one. The frame's outline goes
+    your target's frame with that one's health, in the light yellow the nameplates give a neutral creature, and its
+    name alone in the middle; the same under your focus's frame for your focus's target, and under your own frame
+    for your pet while you have one (green). The frame's outline goes
     round both, a thin dark line between them. Click a row to target its unit, right click for its menu.
   - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
     tooltip; in a fight too. Your target's and focus's frames come and go with them.
@@ -265,7 +266,9 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     to the health's room (`Text.Layout`; the health's room as wide as its most, measured on a ruler of ours,
     `Text.SAMPLE` while a creature's most is hidden), none on your own frame (`face.noName`); each power's words at
     its bar's right in `Text.SMALL` 9 (`Text.Powers`; hidden: `AbbreviateNumbers` and `UnitPowerPercent` by its
-    curve); the row's name alone (`Text.Row`).
+    curve); the row's name alone, centred (`Text.Row`). A row's bar is the colour of its kind's `row.colour`: the
+    targets' rows `Bar.CALM` (the nameplates' light yellow for a creature that does not attack on sight), the pet's
+    green.
   - The button's height is the health's and its power slots' (`Units.HEIGHT + slots * Units.POWER`), set out of a
     fight (`Kind`): your own frame keeps two slots (`Alternate`) as a druid, or while your power is not mana but you
     have mana (asked again on `PLAYER_SPECIALIZATION_CHANGED`); the face is the health bar's height, the rest hangs
@@ -369,3 +372,5 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   and the energy or rage of its form); the three most important buffs, debuffs and crowd control around each frame,
   as on the nameplates, with the lists Always show and Never show (Saneroki: by a right click on an icon, and a
   window to add them).
+- **2026-10-29:** the target's and focus's target rows in the nameplates' light yellow of a neutral creature, the
+  rows' names centred (Saneroki).

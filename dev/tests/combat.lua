@@ -473,8 +473,11 @@ do
         "its target's row: a secure button right under the frame, shown by the unit watch, none while it has no target")
     units.targettarget = { name = "Droopy", surname = "Fairwind", player = true, health = 600, most = 1000 }
     row:Show() -- the game's unit watch: your target has a target
+    local calm = ns.UnitBar.CALM
     check(foe.rowShown and foe.row._shown and foe.rowName._text == "Droopy Fairwind" and foe.row._value == 600
-        and foe.row._barColor[2] == green[2], "it shows under the frame: green, its name alone")
+        and foe.row._barColor[1] == calm[1] and foe.row._barColor[2] == calm[2] and foe.row._barColor[3] == calm[3]
+        and foe.rowName._justify == "CENTER",
+        "it shows under the frame: in the nameplates' light yellow of a neutral creature, its name alone in the middle")
     check(near(foe.border[2]._points[1][5], -(Units.POWER + Units.ROW)) and near(foe.health._points[2][5], -Units.HEIGHT)
         and near(foe.powers[1]._points[2][5], -(Units.HEIGHT + Units.POWER)),
         "the frame's outline goes round all, its power bar square at its bottom over the row")
@@ -554,7 +557,8 @@ do
         and PetFrame._parent == PlayerFrame, "your pet's row under your frame, the game's pet frame out of sight")
     units.pet = { name = "Wolf", health = 80, most = 100 }
     pet:Show()
-    check(player.face.rowName._text == "Wolf" and player.face.row._value == 80, "your pet: its name and health")
+    check(player.face.rowName._text == "Wolf" and player.face.row._value == 80 and player.face.row._barColor[2] == green[2],
+        "your pet: its name and health, green")
     Core.Set(ns.name, "unitPet", false)
     check(not watched[pet] and not pet._shown and PetFrame._alpha == 1 and PetFrame._mouse == true
         and not player.face.rowShown, "Your pet off: no row, the game's pet frame back")

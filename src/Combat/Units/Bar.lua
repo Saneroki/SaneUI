@@ -31,7 +31,9 @@ local _, ns = ...
 --    the bar      health as the game gives it (a hidden value in a fight: the
 --                 bar takes it as it is), green: the game's colour for health
 --    the powers   the unit's mana, rage or energy, in the game's colour for each
---    the row      health again, its own unit's
+--    the row      health again, its own unit's: a target's target in the light
+--                 yellow of a nameplate's neutral creature (Bar.CALM), your
+--                 pet green
 --    the rank     inside the border, between it and the bars: gold and thick
 --                 on a boss, gold on an elite, silver on a rare
 --    the border   one screen pixel, black, the frame's edge
@@ -57,6 +59,7 @@ Bar.HALO = 6 -- the glow's bands, a screen pixel each, solid inside and fading o
 Bar.GREEN = { 0, 1, 0 }
 local green = rawget(_G, "COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR")
 if type(green) == "table" and type(green.r) == "number" then Bar.GREEN = { green.r, green.g, green.b } end
+Bar.CALM = { 1, 0.93, 0.55 } -- a target's target: the light yellow of a nameplate's creature that does not attack on sight
 local GOLD = { 1, 0.82, 0, 1 }
 local gold = rawget(_G, "NORMAL_FONT_COLOR")
 if type(gold) == "table" and type(gold.r) == "number" then GOLD = { gold.r, gold.g, gold.b, 1 } end

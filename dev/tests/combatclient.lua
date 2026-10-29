@@ -32,6 +32,7 @@ function Client.Install(W)
     function methods:SetColorTexture(r, g, b, a) self._colour = { r, g, b, a } end
     function methods:GetAtlas() return self._atlas end
     function methods:SetBlendMode(mode) self._blend = mode end
+    function methods:SetJustifyH(justify) self._justify = justify end
     function methods:GetBlendMode() return self._blend or "BLEND" end
     -- The game's unit functions for the units a test names (units.target = { name = , health = , ... }); for one it
     -- names not, the stand-in's own (your character: a Forever name, a mage, W.level).

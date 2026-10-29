@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 420 (windows), 269 (data in the game), 673 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 179 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Combat: the target's-target rows light yellow, the rows' names centred (Saneroki, 2026-10-29)
+Saneroki: the target of target's health bar the yellowish of the nameplates' neutral foes; its name centred in it.
+- **Colour (`Units/Bar.lua`, `Units/Units.lua`):** a row's bar takes its kind's `row.colour`: your target's and your
+  focus's target `Bar.CALM` (1, 0.93, 0.55, as a nameplate's creature that does not attack on sight); your pet's row
+  stays green as the frames.
+- **Name (`Units/Text.lua`):** the row's name centred in its bar (still its only text), the pet's too.
+
 ### Retail: no item range asked about a friend in a fight either; a blocked action's log entry names its place (Saneroki, 2026-10-29)
 Saneroki: errors in the addon. The error log of both Retail accounts kept "SaneUI: the game blocked UNKNOWN()" thousands
 of times after 261ba6b8 was installed (5,184 on the second account in one evening). Retail's taint log of 2026-10-26

@@ -333,8 +333,8 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
 - **Auras around them:** the three most important debuffs above a frame from its left, buffs from its right,
   crowd control right of it: small square icons cropped in a thin dark edge, the time gone as a swipe.
 - **Rows under them, like a nameplate's cast bar:** the target's target appears under the target's frame while
-  there is one, inside its outline, its name the only text in its health bar; so too the focus's target and your
-  pet under your frame.
+  there is one, inside its outline, its name the only text in its health bar, centred; its bar in the light yellow
+  of a nameplate's neutral creature, not green; so too the focus's target, and your pet under your frame (green).
 - **Clean action bars:** no border, decoration or background, not on the bars (frame, end caps, dividers) nor on a
   button (frame, slot); only the filled slots, each its square icon alone, cut free of the edge its picture is drawn
   with. What answers the mouse and keys is a flat wash over the icon. The main bar's page number and its arrows

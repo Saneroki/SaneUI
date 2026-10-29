@@ -12,8 +12,8 @@ local _, ns = ...
 --             left ("| 100%"); Dead or Offline instead where it is
 --  in each power bar under it, at its right, the power as the health is
 --  written ("3.2k | 85%", in a smaller size); and in the row under them (your
---  target's target, your focus's target, your pet) its unit's name alone, from
---  the left.
+--  target's target, your focus's target, your pet) its unit's name alone, in
+--  its middle.
 --
 --  The health's room is as wide as the most it can show ("1.32m | 100%"), so
 --  the name's does not change as health goes; while the game hides the most
@@ -124,7 +124,7 @@ function Text.Make(face)
         power.value = Line(Over(power), "RIGHT", Text.SMALL)
         power.value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
     end
-    face.rowName = Line(Over(face.row), "LEFT")
+    face.rowName = Line(Over(face.row), "CENTER")
     face.rowName:SetPoint("LEFT", face.row, "LEFT", Text.INSET - 1, 0)
     face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
 end

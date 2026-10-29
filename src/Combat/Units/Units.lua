@@ -50,17 +50,17 @@ Units.ROW = 18   -- a row's height under them
 Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
--- right, your focus above it), and its row: the same of the unit under it.
+-- right, your focus above it), and its row: the same of the unit under it, and its bar's colour (none: green).
 Units.KINDS = {
     { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts", noName = true,
       place = "playerPlace", first = { point = "BOTTOM", x = -190, y = 230 },
       row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade" } },
     { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent",
       place = "targetPlace", first = { point = "BOTTOM", x = 190, y = 230 },
-      row = { unit = "targettarget", option = "unitTargetTarget" } },
+      row = { unit = "targettarget", option = "unitTargetTarget", colour = ns.UnitBar.CALM } },
     { unit = "focus", option = "unitFocus", game = "FocusFrame", away = "parent",
       place = "focusPlace", first = { point = "BOTTOM", x = 190, y = 290 },
-      row = { unit = "focustarget", option = "unitFocusTarget" } },
+      row = { unit = "focustarget", option = "unitFocusTarget", colour = ns.UnitBar.CALM } },
 }
 -- Of your own frame (PlayerFrame), the parts out of sight: its picture, and its bars and texts.
 Units.PLAYER_PARTS = { "PlayerFrameContainer", "PlayerFrameContent" }
@@ -205,6 +205,8 @@ local function Make(kind)
     row:HookScript("OnHide", rowed)
     button:HookScript("OnShow", rowed)
     face.rowButton, face.rowUnit, face.rowShown = row, kind.row.unit, false
+    local colour = kind.row.colour
+    if colour then face.row:SetStatusBarColor(colour[1], colour[2], colour[3]) end
     kind.row.button = row
     -- While the row shows (its bar with it), its unit read again now and then.
     local waited = 0
