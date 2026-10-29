@@ -84,6 +84,20 @@ gear, junk or everything; what is to be looted taken as quickly as possible.
   slot once; Shift's Auto Loot; the list's ticks and words; the Auto Loot setting lent and given back).
 - A game restart takes it in (a new file in Loot's TOC).
 
+### Nameplates: players' borders by how you know them (Saneroki, 2026-10-29)
+Saneroki: the border of player plates green for guild members, blue for party, purple for raid, pink for friends,
+in that order of priority: guild, party, raid, friend.
+- **How you know a player (`Plate.Kin`):** `"guild"`, `"party"` (your group; in a raid your own subgroup, by
+  `UnitInRaid`'s index and `GetRaidRosterInfo`'s subgroup), `"raid"` (another subgroup), `"friend"` (friends list,
+  a friend of your account); found anew at each `Wear` (the plate added, a roster, guild or friends list change, a
+  unit's flags), kept as `dress.kin`, the border lit anew where it changed. `Plate.Wanted` asks it too: one answer
+  for which players show and how their border looks.
+- **The colours (`Bar.KIN`):** green (as the game's guild chat), blue, purple (as the game's epic items), pink;
+  your target's grey and your focus's orange over them, the red of a foe out of reach over all (`Bar.Border`, `Lit`).
+- **Tests:** `dev/tests/nameplates.lua` 271 checks (party blue; guild over party green; raid over friend purple;
+  your own subgroup of a raid blue; a friend alone pink; your target grey over green, green again after).
+- A `/reload` takes it in.
+
 ### Nameplates: the line tight, no room wasted; players' plates dressed alike (Saneroki, 2026-10-29)
 Saneroki: no wasted space between the level and the name, nor after the health; player plates styled exactly like
 the enemies', shown for enemies who can attack you, your party, raid, guild, friends and your target, else hidden.

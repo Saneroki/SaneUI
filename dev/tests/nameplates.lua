@@ -114,7 +114,9 @@ UnitIsBossMob = function(unit) return Unit(unit).boss or false end
 UnitLevel = function(unit) if unit == "player" then return 20 end return Unit(unit).level end
 UnitIsUnit = function(a, b) return b == "target" and plates[a] ~= nil and plates[a] == plates.target end
 UnitInParty = function(unit) return Unit(unit).party or false end
-UnitInRaid = function() return nil end
+local raidOf, groupOf = {}, {} -- [unit] = its index in your raid; [index] = that member's subgroup
+UnitInRaid = function(unit) return raidOf[unit] end
+GetRaidRosterInfo = function(index) return "Member", 0, groupOf[index] end
 UnitIsInMyGuild = function(unit) return Unit(unit).guild or false end
 UnitGUID = function(unit) return "Player-" .. unit end
 local friendOf
@@ -619,6 +621,42 @@ check(not friend.raid:IsShown(), "and no raid marker, as on the game's plates")
 units.nameplate2.friend, units.nameplate2.party = true, true
 W.Fire("UNIT_FACTION", "nameplate2")
 check(friend.glow._alpha == 0, "a friend again: no glow")
+-- The border of a player you know by how, the closest first: your guild, your party, your raid, a friend.
+local wasTarget, wasFocus = plates.target, plates.focus
+units.target, plates.target, units.focus, plates.focus = nil, nil, nil, nil
+W.Fire("PLAYER_TARGET_CHANGED")
+W.Fire("PLAYER_FOCUS_CHANGED")
+local function Edge(kin) return friend.border[1]._vertex[1] == Bar.KIN[kin][1] and friend.border[1]._vertex[3] == Bar.KIN[kin][3] end
+local function Roster(event) W.Fire(event) W.Wait(0) end
+check(Edge("party"), "in your party: blue")
+units.nameplate2.guild = true
+Roster("GUILD_ROSTER_UPDATE")
+check(Edge("guild"), "in your guild and your party: green, the guild first")
+units.nameplate2.guild, units.nameplate2.party = false, false
+raidOf.nameplate2, raidOf.player, groupOf[5], groupOf[1] = 5, 1, 2, 1
+friendOf = "nameplate2"
+Roster("GROUP_ROSTER_UPDATE")
+check(Edge("raid"), "in your raid, another subgroup, and a friend: purple, the raid before the friend")
+groupOf[5] = 1
+Roster("GROUP_ROSTER_UPDATE")
+check(Edge("party"), "in your own subgroup of the raid: your party, blue")
+raidOf.nameplate2, raidOf.player = nil, nil
+Roster("GROUP_ROSTER_UPDATE")
+check(Edge("friend") and friend:IsShown(), "only a friend: pink")
+units.nameplate2.guild = true
+units.target, plates.target = units.nameplate2, plates.nameplate2
+W.Fire("PLAYER_TARGET_CHANGED")
+check(friend.border[1]._vertex[1] == Bar.TARGET[1] and friend.border[1]._vertex[2] == Bar.TARGET[2],
+    "your target: its grey over the guild's green")
+units.target, plates.target = nil, nil
+W.Fire("PLAYER_TARGET_CHANGED")
+check(Edge("guild"), "let go: green again")
+units.nameplate2.guild, units.nameplate2.party, friendOf = false, true, nil
+Roster("GROUP_ROSTER_UPDATE")
+units.target, plates.target, plates.focus = units.nameplate2, wasTarget, wasFocus
+units.focus = plates.focus and units.nameplate1 or nil
+W.Fire("PLAYER_TARGET_CHANGED")
+W.Fire("PLAYER_FOCUS_CHANGED")
 
 -- A critter: no plate and so no name, unless your target, wanted for a quest, or the setting on.
 units.nameplate6 = { name = "Rabbit", creature = 8, health = 5, most = 5, reaction = 4, level = 1 }

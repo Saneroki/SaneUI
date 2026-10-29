@@ -68,12 +68,12 @@ local function PlateOf(unit)
     return type(plate) == "table" and plate or nil
 end
 
--- The border's light for a plate: your target's, your focus's, or none (red over any of them while the unit is out
--- of your reach: Range.lua, dress.out).
-local function Lit(plate, target, focus)
-    if plate == target then return "target" end
-    if plate == focus then return "focus" end
-    return nil
+-- The border's light for a plate: your target's, your focus's, else how you know its player (dress.kin, Plate.Kin)
+-- or none (red over any of them while the unit is out of your reach: Range.lua, dress.out).
+local function Lit(dress, target, focus)
+    if dress.plate == target then return "target" end
+    if dress.plate == focus then return "focus" end
+    return dress.kin
 end
 
 -- Everything for the dress's unit, as the game says it now.
@@ -82,7 +82,7 @@ local function Fill(dress)
     ns.Bar.Paint(dress, unit)
     ns.Bar.Health(dress, unit)
     ns.Bar.Power(dress, unit)
-    ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")), dress.out)
+    ns.Bar.Border(dress, Lit(dress, PlateOf("target"), PlateOf("focus")), dress.out)
     ns.Text.Set(dress, unit)
     ns.Marks.Raid(dress, unit)
     ns.Cast.Update(dress, unit)
@@ -95,10 +95,38 @@ local function Critter(unit)
     return Plate.CRITTERS[kind or 0] == true
 end
 
--- Whether a unit's plate shows: every plate but that of a player who is a stranger to you (not in your group or
--- guild, not on your friends list, not your target) and with whom no fight can start (who may not attack you, nor
+-- The subgroup of your raid that a member at that index of it is in; nil where the game does not say.
+local function Subgroup(index)
+    if type(index) ~= "number" then return nil end
+    local _, _, group = Core.Ask(rawget(_G, "GetRaidRosterInfo"), index)
+    return group
+end
+
+-- How you know a player, the closest first (its border's colour, Bar.KIN): "guild"; "party" (your group, or your own
+-- subgroup of a raid); "raid"; "friend" (on your friends list, or a friend of your account); nil for a stranger and
+-- for a creature.
+function Plate.Kin(unit)
+    if Plain(UnitIsPlayer(unit)) ~= true then return nil end
+    if Core.Ask(UnitIsInMyGuild, unit) == true then return "guild" end
+    local index = Core.Ask(UnitInRaid, unit)
+    if index then
+        local own = Subgroup(Core.Ask(UnitInRaid, "player"))
+        return (own ~= nil and Subgroup(index) == own) and "party" or "raid"
+    end
+    if Core.Ask(UnitInParty, unit) == true then return "party" end
+    local guid = Core.Ask(UnitGUID, unit)
+    local friends = rawget(_G, "C_FriendList")
+    if guid and friends and Core.Ask(friends.IsFriend, guid) then return "friend" end
+    local bnet = rawget(_G, "C_BattleNet")
+    local account = guid and bnet and Core.Ask(bnet.GetAccountInfoByGUID, guid)
+    if type(account) == "table" and account.isFriend == true then return "friend" end
+    return nil
+end
+
+-- Whether a unit's plate shows: every plate but that of a player who is a stranger to you (not in your guild, group
+-- or raid, not a friend: Plate.Kin; not your target) and with whom no fight can start (who may not attack you, nor
 -- you them), and that of a critter (not your target, not one your quest wants: the dress's quest piece) unless the
--- setting shows them. Where the game does not say, it shows.
+-- setting shows them. Where the game does not say, it shows. A dress's player as Wear last found it (dress.kin).
 function Plate.Wanted(unit, dress)
     local options = ns.options or {}
     if Plain(UnitIsPlayer(unit)) ~= true then
@@ -110,13 +138,8 @@ function Plate.Wanted(unit, dress)
         return true
     end
     if Plain(UnitIsUnit(unit, "target")) ~= false then return true end
-    if Core.Ask(UnitInParty, unit) or Core.Ask(UnitInRaid, unit) or Core.Ask(UnitIsInMyGuild, unit) then return true end
-    local guid = Core.Ask(UnitGUID, unit)
-    local friends = rawget(_G, "C_FriendList")
-    if guid and friends and Core.Ask(friends.IsFriend, guid) then return true end
-    local bnet = rawget(_G, "C_BattleNet")
-    local account = guid and bnet and Core.Ask(bnet.GetAccountInfoByGUID, guid)
-    return type(account) == "table" and account.isFriend == true
+    if dress then return dress.kin ~= nil end
+    return Plate.Kin(unit) ~= nil
 end
 
 -- The game's parts of a unit frame ours stand in for at that alpha: 0 out of sight under ours, 1 as the game has them.
@@ -129,11 +152,16 @@ end
 
 -- A plate of a stranger or a critter out of sight altogether; else ours shown and the game's parts out of sight
 -- while the game shows its health bar on the plate, the game's own plate as it is otherwise. Ours filled anew when
--- it comes back in sight: its texts measured while they show (a hidden one may not measure).
+-- it comes back in sight: its texts measured while they show (a hidden one may not measure). How you know its
+-- player found anew, the border lit anew where that changed.
 local function Wear(dress)
     local frame = dress.frame
     local row = frame and rawget(frame, "HealthBarsContainer")
     local bar = type(row) == "table" and rawget(row, "healthBar")
+    local kin = dress.unit and not ns.off and Plate.Kin(dress.unit) or nil
+    local relit = kin ~= dress.kin
+    dress.kin = kin
+    if relit then Plate.Light(dress) end
     local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit, dress)
     local on = wanted and not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
     if frame then
@@ -248,7 +276,7 @@ local function Off(dress)
     if dress.unit and shown[dress.unit] == dress then shown[dress.unit] = nil end
     dress:UnregisterAllEvents()
     ns.Safe("scale", ns.Scale.Leave, dress) -- the game's unit frame at its own scale, before it is let go
-    dress.out = nil -- the next unit's reach is its own
+    dress.out, dress.kin = nil, nil -- the next unit's reach and kin are its own
     local frame = dress.frame
     dress.unit, dress.frame, dress.away = nil, nil, nil
     dress:Hide()
@@ -304,7 +332,7 @@ local function Borders()
     if ns.off then return end
     local target, focus = PlateOf("target"), PlateOf("focus")
     for _, dress in pairs(shown) do
-        ns.Bar.Border(dress, Lit(dress.plate, target, focus), dress.out)
+        ns.Bar.Border(dress, Lit(dress, target, focus), dress.out)
         Wear(dress)
     end
 end
@@ -314,7 +342,7 @@ Plate.Borders = Borders
 -- One plate's border anew (its unit came in or went out of your reach: Range.lua).
 function Plate.Light(dress)
     if ns.off or not dress.unit then return end
-    ns.Bar.Border(dress, Lit(dress.plate, PlateOf("target"), PlateOf("focus")), dress.out)
+    ns.Bar.Border(dress, Lit(dress, PlateOf("target"), PlateOf("focus")), dress.out)
 end
 
 -- Your group, guild or friends changed: every plate shown or not.

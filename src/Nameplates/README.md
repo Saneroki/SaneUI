@@ -52,7 +52,9 @@ fails, every plate is the game's own again.
   cannot be told then). The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
 - **The border:** one thin outline: black, a quiet 50% grey on your target, orange on your focus (the game's
-  colour for it); a soft red, half transparent, on any foe none of your attacks reach, as the game checks your own spells from your character (a
+  colour for it); on a player you know, by how: green your guild, blue your party (in a raid, your own subgroup),
+  purple the rest of your raid, pink a friend (where more than one holds, in that order: a guild member in your raid
+  is green; your target's grey and your focus's orange over them); a soft red, half transparent, on any foe none of your attacks reach, as the game checks your own spells from your character (a
   warrior's strikes, Charge, and Shoot only with a bow; a mage's bolts). Behind it, from the same edge but reaching
   farther, a line for the unit's rank: gold and thick on a boss, gold and thin on an elite (the game's gold
   dragon), silver and thin on a rare (its silver dragon, also a rare elite); and behind that, the red glow.
@@ -125,10 +127,13 @@ fails, every plate is the game's own again.
   plates), `UNIT_THREAT_SITUATION_UPDATE`, `PLAYER_REGEN_ENABLED` and `PLAYER_LEVEL_UP` (threat and level colours)
   go over all of them, the last five once a frame (`Core.Later`). After a `/reload` the plates already shown are
   dressed at the login (`C_NamePlate.GetNamePlates`).
+- **Players you know** (`Plate.Kin`, found anew at each `Wear` and kept as `dress.kin`), the closest first:
+  `"guild"` (`UnitIsInMyGuild`), `"party"` (in a raid, `UnitInRaid` gives its index and `GetRaidRosterInfo` its
+  subgroup: yours is your party; else `UnitInParty`), `"raid"`, `"friend"` (`C_FriendList.IsFriend`,
+  `C_BattleNet.GetAccountInfoByGUID` by `UnitGUID`). The border takes its colour (`Bar.KIN`) under your target's
+  and focus's (`Lit`), and is lit anew where it changed (`Plate.Light`).
 - **Strangers' plates** (`Plate.Wanted`): a player (`UnitIsPlayer`) you cannot attack nor it you (`UnitCanAttack`
-  false both ways),
-  not your target (`UnitIsUnit`), not in your party, raid or guild (`UnitInParty`, `UnitInRaid`,
-  `UnitIsInMyGuild`), not a friend (`C_FriendList.IsFriend`, `C_BattleNet.GetAccountInfoByGUID`) by `UnitGUID`:
+  false both ways), not your target (`UnitIsUnit`), none you know (`Plate.Kin` nil):
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
