@@ -188,6 +188,17 @@ at; each mipmap's lines thickened for its size) and in each category's empty slo
 slot, 0.3); every word of the bags', the bank's and the alts' windows 1.2 times larger (`Paper.WORDS`), the heads,
 list lines and the sidebar (180 wide, rows of 28) grown with them.
 
+**Built (2026-10-30), Saneroki asked:** a slider for the item size in the bags and the alts (their dropdowns *View*, each
+window its own; the bank goes with the bags), and the items adjusting by themselves: the slider says how large they may
+be, a window too narrow for `Layout.FIT` (6) of them in a line makes them smaller, down to `Layout.SMALLEST` (28). Never
+larger than the slider, so a wide window does not blow them up. The windows narrower: bags about 410 units at their
+narrowest (it was 620), alts about 440 (it was some 680); what the leather's title line can hold sets that: the count
+leaves a narrow title line, the foot leaves out its currencies and then its boxes' words. The first layout still makes
+the bags as wide as before (`Bags.Width`). The bags' strip: a bag's icon drawn by a slot of ours, not the game's item
+button, read from the slot, else from the item worn there, else any bag's; its slots a little smaller; an empty one
+says what goes there by a drawing (a pouch, the mortar, a key). *The Armory* and *Consumables* folded in the sidebar at
+first (`Categories.FOLDED`); *divided in All Items* stays as it was.
+
 **Built (2026-10-30), Saneroki asked:** *Auto Sell* and *Auto Repair* as two checkboxes in the foot of the bags, left
 of the gold, on at first and on the settings page too: at a vendor the junk goes first, then the repair with the
 character's own money (`src/Inventory/README.md`, *Auto Sell and Auto Repair*). They first stood in Speed Leveling's
@@ -229,6 +240,14 @@ characters**, a roster of them all down its left (the one logged in first, its b
 too; the account's own bank last), the chosen one's places in one scrolling list. Core gives a character's places
 item by item (`Data.Items`). An alt's gear on a paper doll, slot by slot (`Data.Worn`), built the same day; a
 character Core has not read slot by slot yet (it has not logged in since) shows its gear as a list.
+
+**Built (2026-10-30), Saneroki asked:** the list of alts a dropdown, a column saved; the alts window made like the bags,
+with what makes sense there. It no longer has a list and a grid of its own: `Items.Sections` makes a character's places
+into sections for the bags' `Views`, and the bags' `Layout`, `Canvas`, `Sidebars`, `Columns` and `Cells` draw them, so
+the groups fold and divide, categories stand side by side, Sort By, the displays, the settings of how an item looks and
+Alt and a right click are the bags'. *Group by Category* went: the items always stand by category. Left out because they
+make no sense on read-only snapshots: Pinned and Recent, empty slots, the junk marker, the clean-up, Merge Stacks (Core
+keeps an item once a place), the upgrade arrow (it is for the character played), BoE (Core does not keep what is bound).
 
 ## Order
 

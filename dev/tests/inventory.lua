@@ -621,6 +621,8 @@ end
 --  The other characters
 -------------------------------------------------------------------------------
 local Alts, Snapshot, Items, Roster = ns.Alts, ns.Snapshot, ns.Items, ns.Roster
+CreateAtlasMarkup = function(atlas) return "[" .. atlas .. "]" end
+MenuResponse = MenuResponse or { Close = 3 }
 local alts = Board.Panel("alts")
 check(alts and alts:IsShown() and alts.title._text == "Alts" and not Alts.body.wait:IsShown(),
     "the other characters' window is on the full screen at first; Core's data of them is there from the login")
@@ -635,182 +637,291 @@ local function Steps()
 end
 W.Fire("LOADING_SCREEN_DISABLED")
 Steps()
-local people = Roster.box.rows
+-- The dropdown of the characters: its lines, one by a part of its name.
+local characters = Roster.menu
+local function Lines()
+    local lines = {}
+    for _, line in ipairs(characters._items) do
+        if line.data then lines[#lines + 1] = line end
+    end
+    return lines
+end
 local function Names()
     local names = {}
-    for index = 1, #Roster.box.provider.elements do names[index] = people[index].name._text end
+    for index, line in ipairs(Lines()) do names[index] = line.text:match("|c%x%x%x%x%x%x%x%x(.-)|r") end
     return table.concat(names, ", ")
 end
+local function Character(part)
+    for _, line in ipairs(Lines()) do
+        if line.text:find(part, 1, true) then return line end
+    end
+end
+local function Pick(part)
+    local line = Character(part)
+    line.fn(line.data)
+end
+-- What stands at a line's right, and how wide it makes the line.
+local function Right(line)
+    local right = { ClearAllPoints = function() end, SetPoint = function() end, SetFontObject = function() end,
+                    SetText = function(self, text) self.text = text end, GetUnboundedStringWidth = function() return 40 end }
+    local button = { AttachFontString = function() return right end,
+                     fontString = { GetUnboundedStringWidth = function() return 100 end } }
+    local wide, high = line.inits[1](button)
+    return right.text, wide, high
+end
+local function Blocks()
+    local list, blocks = {}, Alts.canvas.blocks
+    for index = 1, blocks.count do
+        local block = blocks[index]
+        local word = (block.word or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        list[index] = block.level == 1 and word .. (block.number and " (" .. block.number .. ")" or "") or word .. "=" .. #block.entries
+    end
+    return table.concat(list, ", ")
+end
+local function Shown()
+    local list = {}
+    for index, button in ipairs(Alts.cells:Each()) do list[index] = ns.Cells.Record(button) end
+    return list
+end
 check(not Alts.body.wait:IsShown() and Names() == "Tester Stub, Ann Brook, Droopy Fairwind, Account Bank",
-    "Core's data there: the roster, you first, the others by name, the account's own bank last: " .. Names())
-check(people[3].icon._atlas == "classicon-warrior" and people[3].name._color[1] == 0.78 and people[3].right._text == "1230000c"
-    and Roster.foot.gold._text == "1244467c", "each in its class's colour with its icon and its whole gold; under them the gold of them all")
-check(people[2].lit:IsShown() and not people[1].lit:IsShown() and Alts.head.name._text == "Ann Brook",
-    "shown at first: the first of the others")
-local function Elements() return ns.Items.box.provider.elements end
-check(Elements()[1].text == "Bags" and Elements()[2].kind == "grid" and Elements()[3].text == "Bank"
-    and Elements()[4].text == "Not seen yet: open the bank with this character" and Elements()[5].text == "Equipped"
-    and Elements()[6].text == "Empty", "its bags; a bank never opened says so; nothing worn: empty")
+    "Core's data there: the dropdown, you first, the others by name, the account's own bank last: " .. Names())
+check(Roster.WIDTH < 230 and not Alts.roster, "a dropdown on the title line, no column down the window's side")
+do
+    local droopy = Character("Droopy")
+    local gold, wide, high = Right(droopy)
+    check(droopy.text:find("[classicon-warrior]", 1, true) and droopy.text:find("|cffc79c6e", 1, true) and gold == "1230000c"
+        and wide == 100 + 40 + Roster.CHECK + Roster.APART and high == Roster.ROW and droopy.response == MenuResponse.Close,
+        "each by its class's icon, in its class's colour, its whole gold at the right: " .. droopy.text)
+    local total
+    for _, line in ipairs(characters._items) do total = total or line.title end
+    check(total == "Total: 1244467c", "under them the gold of them all")
+end
+check(Character("Ann").checked(Character("Ann").data) and not Character("Tester").checked(Character("Tester").data)
+    and characters.word:find("Ann Brook", 1, true) and Alts.foot.gold.text._text == "9900c",
+    "shown at first: the first of the others, its name the dropdown's word, its gold at the foot")
+check(Blocks() == "Bags (1), Miscellaneous=1, Bank  Not seen yet: open the bank with this character, Equipped  Empty",
+    "its bags by category; a bank never opened says so; nothing worn: empty: " .. Blocks())
 
 -- Another one chosen: its things.
-people[3]:GetScript("OnClick")(people[3], "LeftButton")
-people = Roster.box.rows
-check(people[3].lit:IsShown() and not people[2].lit:IsShown() and Alts.head.name._text == "Droopy Fairwind"
-    and Alts.head.gold._text == "1234567c"
-    and Alts.head.line._text == "Level 30 |c" .. ns.Paper.InkHex(0.78, 0.61, 0.43) .. "Warrior|r  |c" .. ns.Paper.FAINT_HEX .. "Seen 3 |4day:days; ago|r",
-    "a click in the roster: that one's head, its gold, its level and class as ink on the paper, when it was seen")
-local things = ns.Items.box.rows
-local grid = things[2]
-check(Elements()[1].kind == "head" and grid.buttons[1].item == 2589 and grid.buttons[2].item == 4500
-    and drawn[grid.buttons[1]].count == 20 and drawn[grid.buttons[1]].texture == 2000 + 2589 and drawn[grid.buttons[1]].quality == 1,
-    "its bags a grid of the game's item buttons in the order kept (by item ID): icon, count, quality")
-check(Elements()[3].text == "Bank" and Elements()[3].note == "Seen 5 |4day:days; ago" and Elements()[4].items[1].count == 8,
-    "its bank as last seen, and when")
-check(Elements()[5].text == "Equipped" and Elements()[6].kind == "gear" and things[6].line.text._text == "item:1001"
-    and things[7].line.text._text == "Linen Cloth" and requested[1001] == 1,
-    "what it wears a list (Core has not read it slot by slot: it has not logged in since); a name the game does not know yet is asked for")
-things[7].line:GetScript("OnEnter")(things[7].line)
+Pick("Droopy")
+check(characters.word == "|c" .. ns.Paper.InkHex(0.78, 0.61, 0.43) .. "Droopy Fairwind|r" and Alts.foot.gold.text._text == "1234567c"
+    and Alts.foot.line._text == "Level 30 |c" .. ns.Paper.InkHex(0.78, 0.61, 0.43) .. "Warrior|r  |c" .. ns.Paper.FAINT_HEX .. "Seen 3 |4day:days; ago|r",
+    "a click in the dropdown: that one's name as ink on the paper, its gold, its level and class, when it was seen")
+check(Blocks() == "Bags (2), Miscellaneous=2, Bank  Seen 5 |4day:days; ago (1), Miscellaneous=1, Equipped (2), Armor=1, Miscellaneous=1"
+    or Blocks():find("^Bags %(2%), Miscellaneous=2, Bank  Seen 5 |4day:days; ago %(1%)"), "each place under its head with how many, by category: " .. Blocks())
+local shown = Shown()
+local first = Alts.cells:Each()[1]
+check(shown[1].item == 2589 and shown[2].item == 4500 and shown[3].count == 8 and drawn[first].count == 20
+    and drawn[first].texture == 2000 + 2589 and drawn[first].quality == 1 and first._kind == "ItemButton",
+    "each the game's item button, sorted as the bags sort: icon, count, quality; a place's own count")
+check(requested[1001] == 1, "what it wears shown as items (Core has not read it slot by slot); a name the game does not know yet is asked for")
+first:GetScript("OnEnter")(first)
 check(GameTooltip._itemID == 2589, "its tooltip is the game's for the item")
+local draws, draw = 0, Alts.canvas.Draw
+Alts.canvas.Draw = function(...) draws = draws + 1 return draw(...) end
 W.items[1001] = { name = "Helm", quality = 3 }
 W.Fire("GET_ITEM_INFO_RECEIVED", 1001, true)
 W.Wait(0)
-check(ns.Items.box.rows == things, "a name that comes waits a moment for the others that come with it")
+check(draws == 0, "a name that comes waits a moment for the others that come with it")
 W.Wait(Alts.NAMES)
-things = ns.Items.box.rows
-check(things[6].line.text._text == "Helm" and things[6].line.text._color[3] == 0.87 and requested[1001] == 1,
-    "the name comes: drawn anew, in its quality's colour; asked once only")
+check(draws == 1 and Items.Record(1001).name == "Helm" and requested[1001] == 1, "the name comes: drawn anew; asked once only")
+Alts.canvas.Draw = nil
 check(Snapshot.Learned(1001) == false, "a name the window does not wait for draws nothing anew")
-grid = things[2]
 local was = linked
-grid.buttons[1]:GetScript("OnClick")(grid.buttons[1], "LeftButton")
+first = Alts.cells:Each()[1]
+first:GetScript("OnClick")(first, "LeftButton")
 check(linked == was and W.cursor == nil and #picked == 2, "a click moves nothing: an alt's things are only looked at")
 W.modifier = nil
-grid.buttons[1]:GetScript("OnClick")(grid.buttons[1], "LeftButton")
+first:GetScript("OnClick")(first, "LeftButton")
 W.modifier = false
 check(linked == "|Hitem:2589|h[Linen Cloth]|h", "a modified click links it")
-
--- The grid as wide as there is room for.
-check(Items.Fit(6 * (Items.SIZE + Items.GAP) - Items.GAP) and not Items.Fit(6 * (Items.SIZE + Items.GAP)),
-    "six items fit in six buttons and their gaps")
-local eight = {}
-for index = 1, 8 do eight[index] = { item = index, count = 1 } end
-local laid = Items.Elements({ { place = "bags", items = eight } }, function() return "Bags" end, false)
-check(#laid == 3 and laid[2].to == 6 and laid[3].from == 7 and laid[3].to == 8, "eight items, six to a row: two rows")
-Alts.Size(0)
-Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
+check(Alts.cells.make == Items.Button, "read-only buttons of its own, in the bags' pool")
+do
+    local menus = #W.menus
+    Alts.Clicked(first, "RightButton")
+    check(#W.menus == menus, "a right click alone: nothing")
+    IsAltKeyDown = function() return true end
+    Alts.Clicked(first, "RightButton")
+    IsAltKeyDown = nil
+    check(#W.menus == menus + 1, "Alt and a right click: the item's menu, as in the bags")
+end
 
 -- The search: across every character.
-local row = things[2] -- Droopy's grid of two, drawn again with Ann's: the game's list reuses its rows
-people[2]:GetScript("OnClick")(people[2], "LeftButton")
-ns.Items.box.view.factory(function(_, init) init(row, Elements()[2]) end, Elements()[2])
-check(row.buttons[1].item == 4501 and not row.buttons[2]:IsShown() and row.buttons[2].item == nil,
-    "a row the list reuses draws all of itself anew: a button it does not need now hidden")
-ns.Items.box.view.factory(function(_, init) init(row, Elements()[1]) end, Elements()[1])
-check(row.head:IsShown() and row.head.word._text == "Bags" and not row.buttons[1]:IsShown(), "a grid's row reused for a head")
+Pick("Ann")
 Board.Search("linen")
-people = Roster.box.rows
-check(people[3].right._text == 21 and people[2]:GetAlpha() == Roster.DIM and people[2].right._text == "" and people[1]:GetAlpha() == Roster.DIM,
-    "the roster says how many each has of what is found; one without any of it dimmed")
-check(Alts.head.name._text == "Droopy Fairwind" and people[3].lit:IsShown() and #Elements() == 4
-    and Elements()[1].text == "Bags" and Elements()[2].items[1].item == 2589 and #Elements()[2].items == 1 and Elements()[3].text == "Equipped",
-    "the chosen one has none: the first that has is shown, only what is found, a place without it left out")
+check((Right(Character("Droopy"))) == "21" and (Right(Character("Ann"))) == "" and Character("Ann").text:find("|cff808080", 1, true)
+    and Character("Tester").text:find("|cff808080", 1, true),
+    "the dropdown says how many each has of what is found; one without any of it greyed")
+local total
+for _, line in ipairs(characters._items) do total = total or line.title end
+check(not total, "no total while searching")
+check(characters.word:find("Droopy", 1, true) and Blocks():find("^Bags %(1%), Miscellaneous=1, Equipped %(1%)") and Shown()[1].item == 2589 and #Shown() == 2,
+    "the chosen one has none: the first that has is shown, only what is found, a place without it left out: " .. Blocks())
 Board.Search("4502")
-check(Alts.head.name._text == "Account Bank" and Elements()[2].items[1].item == 4502, "an item's ID finds it too: in the account's bank")
+check(characters.word:find("Account Bank", 1, true) and Shown()[1].item == 4502, "an item's ID finds it too: in the account's bank")
 Board.Search("zzz")
-check(Alts.head.name._text == "Ann Brook" and #Elements() == 1 and Elements()[1].text == "No items found", "nothing found: says so")
+check(characters.word:find("Ann Brook", 1, true) and Alts.canvas.blocks.count == 0 and Alts.body.none:IsShown(), "nothing found: says so")
 Board.Search("")
-people = Roster.box.rows
-check(Alts.head.name._text == "Ann Brook" and Elements()[1].text == "Bags" and people[2]:GetAlpha() == 1,
+check(characters.word:find("Ann Brook", 1, true) and Blocks():find("^Bags %(1%)") and not Alts.body.none:IsShown()
+    and (Right(Character("Ann"))) == "9900c",
     "the search cleared: the chosen one again, everything")
 check(requested[4500] == 1 and Snapshot.Name(4500) == nil, "a name the game never tells is asked for once")
 
--- Storage: the places and the bags' categories, a click shows one alone.
-people[3]:GetScript("OnClick")(people[3], "LeftButton")
+-- Storage: the bags' sidebar, the places and the bags' categories, a click shows one alone.
+Pick("Droopy")
 local function StorageRow(word)
     for _, storageRow in ipairs(Alts.rail:Rows()) do
         if storageRow.word == word and storageRow:IsShown() then return storageRow end
     end
 end
-check(StorageRow("All Places").bar:IsShown() and StorageRow("Bank") and StorageRow("All Categories").count._text == "3"
-    and StorageRow("Miscellaneous") and StorageRow("Miscellaneous").count._text == "3",
+local function Click(word)
+    local storageRow = StorageRow(word)
+    storageRow:GetScript("OnClick")(storageRow, "LeftButton")
+end
+check(StorageRow("All Places").bar:IsShown() and StorageRow("Bank").count._text == "1" and StorageRow("Equipped").count._text == "2"
+    and StorageRow("All Categories").count._text == "3" and StorageRow("Miscellaneous").count._text == "3",
     "Storage: the places, every category with how many of the character's items it holds")
-local storageRow = StorageRow("Bank")
-storageRow:GetScript("OnClick")(storageRow, "LeftButton")
-check(Elements()[1].text == "Bank" and #Elements() == 2, "a place alone")
-storageRow = StorageRow("All Places")
-storageRow:GetScript("OnClick")(storageRow, "LeftButton")
-storageRow = StorageRow("Miscellaneous")
-storageRow:GetScript("OnClick")(storageRow, "LeftButton")
-check(Elements()[1].text == "Bags" and Elements()[3].text == "Bank" and #Elements() == 4, "a category alone: its items in each place")
-storageRow = StorageRow("All Categories")
-storageRow:GetScript("OnClick")(storageRow, "LeftButton")
--- The displays, by category.
+check(StorageRow("The Armory") and StorageRow("Consumables") and not StorageRow("Head") and not StorageRow("Potions")
+    and StorageRow("The Armory").arrow:IsShown() and StorageRow("The Armory").box:IsShown() and StorageRow("All Places").icon._texture == Alts.ICONS.places,
+    "the bags' groups, folded at first, with their arrow and box, the bags' drawings")
+do
+    local armory = StorageRow("The Armory")
+    armory.arrow:GetScript("OnClick")(armory.arrow)
+    W.Wait(0)
+    check(StorageRow("Head") and not ns.Categories.Folded("armory"), "a group's arrow lists its members, here and in the bags")
+    armory = StorageRow("The Armory")
+    armory.arrow:GetScript("OnClick")(armory.arrow)
+    W.Wait(0)
+    check(not StorageRow("Head"), "and folds them again")
+end
+Click("Bank")
+check(Blocks():find("^Bank  Seen 5 |4day:days; ago %(1%), Miscellaneous=1$") ~= nil, "a place alone: " .. Blocks())
+Click("All Places")
+Click("Miscellaneous")
+check(Blocks():find("^Bags %(2%), Miscellaneous=2, Bank[^,]*%(1%), Miscellaneous=1$") ~= nil, "a category alone: its items in each place, no doll or worn: " .. Blocks())
+check(StorageRow("Miscellaneous").bar:IsShown() and StorageRow("All Places").bar:IsShown(), "the place and the category each lit")
+Click("Bank")
+check(Blocks():find("^Bank[^,]*%(1%), Miscellaneous=1$") ~= nil, "a place and a category together")
+Click("All Places")
+Click("Trade Goods")
+check(Blocks() == "" and not Alts.body.none:IsShown(), "a category with nothing of this one: nothing, no heads")
+Click("All Categories")
+Click("Consumables")
+check(Blocks() == "", "a group: its members' items")
+Click("All Categories")
+-- The sidebar folds as the bags' does, kept for the window.
+local foldArrow = Alts.rail.arrow
+foldArrow:GetScript("OnClick")(foldArrow)
+check(ns.store.alts.side == false and Alts.rail.folded and Alts.rail.frame:GetWidth() == ns.Sidebars.FOLDED, "folded to its edge, kept")
+foldArrow:GetScript("OnClick")(foldArrow)
+check(ns.store.alts.side == true and Alts.rail.frame:GetWidth() == ns.Sidebars.WIDTH, "and unfolded")
+-- The dropdown View: the bags' displays, Sort By, the item size.
 local altsMenu = Alts.menu
 local function AltsPick(text)
     altsMenu:GenerateMenu()
     for _, line in ipairs(altsMenu._items) do
         if line.text == text then return line.fn(line.data) end
     end
+    error("no line " .. text)
 end
+local function Kinds()
+    local kinds = {}
+    for index = 1, 40 do
+        local place = Alts.canvas.places[index]
+        if place and place.kind then kinds[place.kind] = (kinds[place.kind] or 0) + 1 end
+    end
+    return kinds
+end
+check(Kinds().cell == 5, "the grid: its items as cells")
 AltsPick("List")
-check(Elements()[2].kind == "row" and Elements()[3].kind == "row" and Elements()[4].kind == "head", "the list: a line per item")
+check(ns.store.alts.look == "list" and Kinds().row == 5 and Alts.columns:IsShown(), "the list: a line per item, the bags' columns over them")
 AltsPick("Compact")
-check(Elements()[2].kind == "compact" and #Elements()[2].places > 0, "compact: the categories side by side")
+check(Kinds().cell == 5 and Kinds().label ~= nil and not Alts.columns:IsShown(), "compact: the categories' names over them")
 AltsPick("Grid")
-AltsPick("Group by Category")
-check(Elements()[2].kind == "sub" and Elements()[2].text == "Miscellaneous" and Elements()[3].kind == "grid", "grouped by the bags' categories")
+AltsPick("Name")
+check(ns.store.alts.sort == "name" and Shown()[1].item == 4500, "Sort By, as the bags': a name not known yet first")
+AltsPick("Default")
 ns.Categories.Assign(2589, "trade") -- the player puts an item into another category in the bags
 Alts.Refresh(false)
-check(Items.Record(2589).category == "trade" and Elements()[2].text == ns.Categories.Word("trade"),
-    "an item put into another category in the bags: shown under that one at once")
+check(Items.Record(2589).category == "trade" and Blocks():find("Trade Goods=1", 1, true), "an item put into another category in the bags: shown under that one at once")
 ns.Categories.Assign(2589, nil)
-Alts.Refresh(false)
-AltsPick("Group by Category")
-check(Elements()[2].kind == "grid", "not grouped again")
+ns.options.coin, ns.options.itemLevel = true, false
+Core.Set(ns.name, "grey", false)
+W.Wait(0)
+ns.options.coin, ns.options.itemLevel = nil, nil
+-- The item size: the slider in the dropdown, kept for the window; a narrow window makes the items smaller by itself.
+do
+    local Layout = ns.Layout
+    MinimalSliderWithSteppersMixin = { Event = { OnValueChanged = 1 }, Label = { Right = 1 } }
+    altsMenu:GenerateMenu()
+    local row
+    for _, line in ipairs(altsMenu._items) do
+        if line.title == ns.TEXT.bagsItemSize then row = line end
+    end
+    check(row, "the row Item Size in the dropdown")
+    local told
+    local slider = { SetWidth = function() end, ClearAllPoints = function() end, SetPoint = function() end, UnregisterCallback = function() end,
+                     Init = function(self, value, low, high, steps, labels) self.value, self.low, self.high, self.steps, self.labels = value, low, high, steps, labels end,
+                     RegisterCallback = function(_, _, fn) told = fn end }
+    local wide, high = row.inits[1]({ AttachTemplate = function() return slider end })
+    check(slider.value == 100 and slider.low == Layout.SCALE.low and slider.high == Layout.SCALE.high and slider.labels[1](100) == "100%"
+        and wide == ns.Bags.SIZE_WORD + ns.Bags.SIZER + ns.Bags.SIZE_VALUE and high == ns.Bags.SIZE_ROW,
+        "the game's slider with its percent, at the size kept")
+    Alts.Size(1200)
+    local function SizeOf()
+        for index = 1, 40 do
+            local place = Alts.canvas.places[index]
+            if place and place.kind == "cell" then return place.size end
+        end
+    end
+    check(SizeOf() == Layout.SIZE, "wide enough: the items as large as chosen")
+    told(nil, 73)
+    check(ns.store.alts.scale == 75 and SizeOf() == math.floor(Layout.SIZE * 0.75 + 0.5), "the slider moved: on its steps, kept, drawn at once")
+    told(nil, 100)
+    Alts.Size(ns.Alts.LEAST[1] + 30)
+    check(SizeOf() < Layout.SIZE and SizeOf() >= Layout.SMALLEST, "a narrow window: its items smaller by themselves: " .. tostring(SizeOf()))
+end
+Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
+check(Board.Least("alts", Alts.LEAST[1], Alts.LEAST[2])[1] < Board.Least("alts", 600, 300)[1] and Alts.LEAST[1] <= 380, "the window can be narrow")
 
 -- Hidden, it listens to nothing; shown, it is as Core's data is now.
 Push()
-local before = ns.Items.box.provider
 worn[3] = { texture = "spaulders", count = 1, quality = 2, id = 1003 }
 W.Fire("PLAYER_EQUIPMENT_CHANGED", 3, false)
 Steps()
-check(ns.Items.box.provider == before and Core.Data.Items(Core.charKey, "worn")[3].item == 1003, "hidden: Core's data changes, nothing is drawn")
+check(Core.Data.Items(Core.charKey, "worn")[3].item == 1003, "hidden: Core's data changes, nothing is drawn")
 Stand()
 Push()
 Stand()
-people = Roster.box.rows
-people[1]:GetScript("OnClick")(people[1], "LeftButton")
-check(Alts.head.line._text:find("Logged in now", 1, true) and Elements()[2].text == "Empty" and Elements()[6].kind == "doll"
-    and Elements()[6].slots[3] == 1003, "shown again: drawn as it is now; you too, what you wear as Core last read it")
-people[3]:GetScript("OnEnter")(people[3])
+Pick("Tester")
+check(Alts.foot.line._text:find("Logged in now", 1, true) and Blocks():find("^Bags  Empty") and Alts.doll:IsShown()
+    and Blocks():find("Equipped"), "shown again: drawn as it is now; you too, what you wear as Core last read it: " .. Blocks())
+Character("Droopy").tooltip(GameTooltip)
 check(GameTooltip._lines and GameTooltip._lines[#GameTooltip._lines] == "1234567c", "a character's tooltip: the rest of what is known of it")
 -- A character's facts of a wrong kind (a hand edit, an older version) are left out; nothing fails.
 do
-    local odd, line = { key = "odd", name = "Odd Entry", class = 7, level = {}, realm = true, money = "lots" }, nil
-    Roster.box.view.factory(function(kind, init)
-        line = W.NewWidget(kind, nil, Roster.box)
-        init(line, odd)
-    end)
+    local odd = { key = "odd", name = "Odd Entry", class = 7, level = {}, realm = true, money = "lots" }
+    Roster.Show({ odd }, "odd", nil)
     local about = Alts.About(odd)
-    check(line.name._text == "Odd Entry" and #about == 2 and about[2][1] == "Level ? |cff1e1711|r" and not Core.errors["Inventory: alts"],
+    check(characters.word:find("Odd Entry", 1, true) and #about == 2 and about[2][1] == "Level ? |cff1e1711|r" and not Core.errors["Inventory: alts"],
         "a character's class, level and realm of a wrong kind: left out of its line and its tooltip, nothing fails")
+    Alts.Refresh(true)
 end
 
 -- What you wear, read by Core slot by slot (Core.Data.Worn): the game's paper doll, its slots as our sheet has
--- them, as wide as the grid (here six items), the weapons' row in the middle below.
+-- them, as wide as the items' room, the weapons' row in the middle below.
 function methods:SetMatchesSearch(on) self._matches = on end
 SHIRTSLOT = "Shirt"
 W.items[1002] = { name = "Amulet", quality = 4 }
-Items.Fit(6 * (Items.SIZE + Items.GAP) - Items.GAP)
-people[1]:GetScript("OnClick")(people[1], "LeftButton")
-things = ns.Items.box.rows
+Pick("Tester")
 local function Worn(doll, name)
     for _, button in ipairs(doll.buttons) do
         if button.slotName == name then return button end
     end
 end
-local doll = things[6].doll
-local edge, wide, step = Items.DOLL_EDGE, 6 * (Items.SIZE + Items.GAP) - Items.GAP, Slots.SIZE + Slots.GAP
+local doll = Alts.doll
+local edge, wide, step = Items.DOLL_EDGE, 228, Slots.SIZE + Slots.GAP
+Items.DrawDoll(doll, { slots = { [1] = 1001, [2] = 1002 } }, wide)
 local helm, amulet, shirt, hands = Worn(doll, "HeadSlot"), Worn(doll, "NeckSlot"), Worn(doll, "ShirtSlot"), Worn(doll, "HandsSlot")
 check(#doll.buttons == 20 and doll:IsShown() and helm.item == 1001 and drawn[helm].texture == 3001 and drawn[helm].quality == 3
     and amulet.item == 1002 and drawn[amulet].texture == 3002 and shirt.item == nil and drawn[shirt].texture == nil,
@@ -818,7 +929,7 @@ check(#doll.buttons == 20 and doll:IsShown() and helm.item == 1001 and drawn[hel
 check(helm._points[1][4] == edge and helm._points[1][5] == -edge and shirt._points[1][5] == -edge - 4 * step
     and hands._points[1][4] == edge and hands._points[1][5] == -edge - 7 * step
     and amulet._points[1][4] == wide - edge - Slots.SIZE and amulet._points[1][5] == -edge,
-    "eight down the left, eight down the right, as far apart as the grid is wide")
+    "eight down the left, eight down the right, as far apart as the room is wide")
 local main, off, ranged, ammo = Worn(doll, "MainHandSlot"), Worn(doll, "SecondaryHandSlot"), Worn(doll, "RangedSlot"), Worn(doll, "AmmoSlot")
 local weapons = 3 * Slots.SIZE + 2 * Slots.GAP
 check(main._points[1][4] == (wide - weapons) / 2 and main._points[1][5] == -edge - 8 * step
@@ -836,12 +947,12 @@ helm:GetScript("OnClick")(helm, "LeftButton")
 W.modifier = false
 check(linked == "|Hitem:1001|h[Helm]|h", "a modified click links it")
 -- Ammo worn: its slot beside the ranged one; a client without a ranged slot: neither.
-local element = { kind = "doll", slots = { [0] = 2512, [1] = 1001 } }
-local function Redraw() ns.Items.box.view.factory(function(_, init) init(things[6], element) end, element) end
+local element = { slots = { [0] = 2512, [1] = 1001 } }
+local function Redraw() Items.DrawDoll(doll, element, wide) end
 Redraw()
-local row = weapons + Slots.AMMO_GAP + Slots.AMMO
-check(ammo:IsShown() and ammo.item == 2512 and ammo._width == Slots.AMMO and main._points[1][4] == (wide - row) / 2
-    and ammo._points[1][4] == (wide - row) / 2 + weapons + Slots.AMMO_GAP and amulet.item == nil and drawn[amulet].texture == nil,
+local line = weapons + Slots.AMMO_GAP + Slots.AMMO
+check(ammo:IsShown() and ammo.item == 2512 and ammo._width == Slots.AMMO and main._points[1][4] == (wide - line) / 2
+    and ammo._points[1][4] == (wide - line) / 2 + weapons + Slots.AMMO_GAP and amulet.item == nil and drawn[amulet].texture == nil,
     "ammo worn: its slot beside the ranged one, smaller, the row still in the middle; a doll drawn anew is drawn whole")
 rangedShown = false
 Redraw()
@@ -850,25 +961,20 @@ element.slots[18] = 2504
 Redraw()
 check(ranged:IsShown() and ranged.item == 2504 and ammo:IsShown(), "unless something is in it")
 rangedShown = true
-ns.Items.box.view.factory(function(_, init) init(things[6], Elements()[5]) end, Elements()[5])
-check(not doll:IsShown() and things[6].head.word._text == "Equipped", "a doll's row reused for a head")
--- The bags worn in their slots: a row of the grid under the doll. While searching, the doll only if something in
--- it is found.
+-- The bags worn in their slots: items under Equipped's head, the doll below. While searching, the doll only if
+-- something in it is found.
 local function Equipped() return "Equipped" end
 local bagWorn = { item = 4500, count = 1 }
-laid = Items.Elements({ { place = "worn", items = { { item = 1001, count = 1 }, bagWorn }, slots = { [1] = 1001, [20] = 4500 } } }, Equipped, false)
-check(#laid == 3 and laid[2].kind == "doll" and laid[2].found == nil and laid[3].kind == "grid" and laid[3].items[1].item == 4500,
-    "the bags worn: a row of the grid under the doll")
-laid = Items.Elements({ { place = "worn", items = { bagWorn }, slots = { [1] = 1001, [20] = 4500 } } }, Equipped, true)
-check(#laid == 2 and laid[2].kind == "grid", "a bag found: its row, no doll")
+local sections, wornDoll = Items.Sections({ { place = "worn", items = { { item = 1001, count = 1 }, bagWorn }, slots = { [1] = 1001, [20] = 4500 } } }, Equipped, false)
+check(#sections == 1 and wornDoll.slots[1] == 1001 and wornDoll.found == nil and sections[1].doll and #sections[1].slots == 1
+    and sections[1].slots[1].item == 4500 and sections[1].slots[1].count == 1, "the bags worn: items under the head, the doll below")
+sections, wornDoll = Items.Sections({ { place = "worn", items = { bagWorn }, slots = { [1] = 1001, [20] = 4500 } } }, Equipped, true)
+check(#sections == 1 and not wornDoll and #sections[1].slots == 1, "a bag found: it alone, no doll")
 Board.Search("helm")
-things = ns.Items.box.rows
-doll = things[2].doll
-check(Alts.head.name._text == "Tester Stub" and Elements()[1].text == "Equipped" and Elements()[2].found[1001]
+check(characters.word:find("Tester Stub", 1, true) and Blocks():find("^Equipped") and Alts.doll:IsShown()
     and Worn(doll, "HeadSlot")._matches == true and Worn(doll, "NeckSlot")._matches == false and Worn(doll, "ShirtSlot")._matches == true,
     "searching: the doll whole, what is found lit, the rest dimmed as the game's bags dim it; an empty slot not")
 Board.Search("")
-Alts.Size(0)
 Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
 
 -------------------------------------------------------------------------------

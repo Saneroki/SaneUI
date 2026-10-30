@@ -32,10 +32,11 @@ local Categories = ns.Categories
 local TEXT = ns.TEXT
 local ACCEPT = Core.Word("ACCEPT", "Accept")
 
--- A choice kept: the bags drawn anew, and the bank (its items by category, a bank item's choice).
+-- A choice kept: the bags drawn anew, and the bank and the alts (their items by category, an item's choice).
 local function Changed()
     if ns.Bags then ns.Bags.Refresh() end
     if ns.Bank then ns.Bank.Refresh() end
+    if ns.Alts then ns.Alts.Changed() end
 end
 
 -- The game's green line for what a click does.

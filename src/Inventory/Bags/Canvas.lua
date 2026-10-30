@@ -2,14 +2,14 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags - Canvas
---  Where a window of items (the bags, the bank) draws what Layout.lua laid
---  out, in its scroll area's child: the heads (a part's and a group's title
+--  Where a window of items (the bags, the bank, the alts) draws what
+--  Layout.lua laid out, in its scroll area's child: the heads (a part's and a group's title
 --  with a pencil rule under them, a block's and a group member's: its words
 --  and number), the
 --  compact display's labels, a block's empty slots (a "+" in each), the
 --  list's lines (a word for each column shown, Columns.lua) and the item
 --  buttons (the window's pool, Cells.lua). Each window has its own
---  (Canvas.New).
+--  (Canvas.New): the bags, the bank, the alts.
 --
 --  A block's head takes an item let go over it and opens the category's menu
 --  at a right click (Menus.lua); in the list a click folds the block, Shift
@@ -395,8 +395,8 @@ local function Measure(canvas, block)
 end
 
 -- The blocks of a view drawn in a room so wide, in the window's display (store.look), each cell as how says
--- (Cells.Draw); returns the height they take.
-function Sheet:Draw(blocks, room, how)
+-- (Cells.Draw), the items size large (Layout.Fit; nil: Layout.SIZE); returns the height they take.
+function Sheet:Draw(blocks, room, how, size)
     local store = self.owner.store
     local look = store.look
     self.blocks = blocks
@@ -408,7 +408,7 @@ function Sheet:Draw(blocks, room, how)
         if list then Columns.Sort(block.entries) end
     end
     local places = self.places
-    local count, height = Layout.Lay(look, blocks, room - Canvas.INSET, places, self.measurer)
+    local count, height = Layout.Lay(look, blocks, room - Canvas.INSET, places, self.measurer, size)
     local cells = self.cells
     self.heads:Begin()
     self.rows:Begin()

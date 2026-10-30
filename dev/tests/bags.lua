@@ -664,6 +664,19 @@ check(Views.Merging({}), "away from it: merged again")
 local places = {}
 local width = 10 * (Layout.SIZE + Layout.GAP) - Layout.GAP
 check(Layout.Columns(width) == 10, "as many cells to a line as fit")
+-- The item size: the slider's percent, smaller in a narrow window, the layout at that size.
+check(Layout.Gap(Layout.SIZE) == Layout.GAP and Layout.Gap(Layout.SMALLEST) >= 2, "the gap goes with the size")
+check(Layout.Scale(nil) == 100 and Layout.Scale("big") == 100 and Layout.Scale(10) == Layout.SCALE.low and Layout.Scale(500) == Layout.SCALE.high
+    and Layout.Scale(73) == 75, "a kept size of a wrong kind: as at first; else within the slider, on its steps")
+check(Layout.Fit(100, 1000) == Layout.SIZE and Layout.Fit(75, 1000) == math.floor(Layout.SIZE * 0.75 + 0.5)
+    and Layout.Fit(Layout.SCALE.high, 1000) > Layout.SIZE, "room enough: as large as the slider says, larger too")
+do
+    local room = Layout.FIT * (Layout.SIZE + Layout.GAP) - Layout.GAP
+    check(Layout.Fit(100, room) == Layout.SIZE and Layout.Fit(100, room - 1) < Layout.SIZE, "a window narrower than that many in a line: smaller items")
+    local fit = Layout.Fit(100, room - 40)
+    check(Layout.Columns(room - 40, fit) >= Layout.FIT, "as many in a line as before: " .. fit)
+    check(Layout.Fit(100, 60) == Layout.SMALLEST and Layout.Fit(Layout.SCALE.high, 60) == Layout.SMALLEST, "never under the smallest")
+end
 blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
@@ -801,6 +814,12 @@ local function RowNamed(word)
         if row.word == word and row:IsShown() then return row end
     end
 end
+check(Categories.Folded("armory") and Categories.Folded("prep") and RowNamed("The Armory") and RowNamed("Consumables")
+    and not RowNamed("Head") and not RowNamed("Potions") and RowNamed("Professions"),
+    "The Armory and Consumables folded into their rows at first, the sidebar short")
+Categories.Fold("armory", false)
+Categories.Fold("prep", false)
+Bags.Refresh()
 check(RowNamed("All Items") and RowNamed("One Bag") and RowNamed("Each Bag") and RowNamed("Pinned Items")
     and RowNamed("The Armory") and RowNamed("Head") and RowNamed("Weapons") and RowNamed("Potions") and RowNamed("Professions")
     and RowNamed("Add Category") and not RowNamed("Quest Items"),
@@ -1546,11 +1565,44 @@ check(kept.side and Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars
 check(math.abs(headArrow._rotation + math.pi / 2) < 1e-6, "unfolded: it points left, the way it folds")
 local bagButtons = {}
 for _, widget in ipairs(W.frames) do
-    if widget._parent == Bags.strip and widget._kind == "ItemButton" and widget:IsShown() then bagButtons[#bagButtons + 1] = widget end
+    if widget._parent == Bags.strip and widget._kind == "Button" and widget:IsShown() then bagButtons[#bagButtons + 1] = widget end
 end
 check(#bagButtons == 7, "the bags in the strip: the backpack, four bag slots, the reagent bag's, the keyring")
-check(drawn[bagButtons[2]].texture == "bag-icon" and drawn[bagButtons[4]].texture == nil,
-    "a bag's icon; an empty bag slot the pencil slot alone, no picture")
+check(Foot.BAG < Layout.SIZE and bagButtons[1]:GetWidth() == Foot.BAG and Foot.STRIP == Foot.BAG + 10,
+    "the strip's slots a little smaller than the items")
+do
+    local function Picture(index) return Foot.Parts(bagButtons[index]) end
+    local function Empty(index) return select(2, Foot.Parts(bagButtons[index])) end
+    local ART = Categories.ART
+    check(Picture(1)._texture == "Interface\\Icons\\ui-hud-actionbar-bag" and Picture(2)._texture == "bag-icon" and Picture(2):IsShown()
+        and not Empty(2):IsShown(), "the backpack's icon, a bag's icon in its slot; no drawing over it")
+    local reagent, keys = SIZES[5], bags[-1]
+    SIZES[5], bags[-1] = 0, nil
+    Foot.Bags()
+    check(not Picture(4):IsShown() and Empty(4):IsShown() and Empty(4)._texture == ART .. Foot.EMPTY.bag
+        and Empty(6):IsShown() and Empty(6)._texture == ART .. Foot.EMPTY.reagent
+        and Empty(7):IsShown() and Empty(7)._texture == ART .. Foot.EMPTY.keyring,
+        "an empty slot says what goes there: a bag's drawing, the reagent bag's, a keyring without keys'")
+    SIZES[5], bags[-1] = reagent, keys
+    Foot.Bags()
+    check(Picture(7):IsShown() and Picture(7)._texture == "Interface\\Icons\\ui-hud-actionbar-keyring" and not Empty(7):IsShown(),
+        "a keyring with keys: its icon")
+    check(Empty(4):GetAlpha() == Foot.DRAWN and select(3, Foot.Parts(bagButtons[4])):GetAlpha() == ns.Cells.EMPTY_SLOT,
+        "its drawing faded, its pencil slot at half strength")
+    -- The game tells no icon for the slot: the item worn there's, else any bag's, never an empty look.
+    local texture, itemID = GetInventoryItemTexture, GetInventoryItemID
+    local icons = C_Item.GetItemIconByID
+    GetInventoryItemTexture = function() return nil end
+    GetInventoryItemID = function(_, slot) return slot == 31 and 804 or nil end
+    C_Item.GetItemIconByID = function(item) return item == 804 and "item-icon" or nil end
+    Foot.Bags()
+    check(Picture(2)._texture == "item-icon" and Picture(2):IsShown(), "no icon from the slot: the item's worn there")
+    C_Item.GetItemIconByID = function() return nil end
+    Foot.Bags()
+    check(Picture(2)._texture == Foot.BAG_ICON and not Picture(4):IsShown(), "none at all: a bag's, while the bag has slots; an empty slot stays empty")
+    GetInventoryItemTexture, GetInventoryItemID, C_Item.GetItemIconByID = texture, itemID, icons
+    Foot.Bags()
+end
 local freeOnIt
 for _, widget in ipairs(W.frames) do
     if widget._parent == bagButtons[1] and widget._kind == "FontString" and widget._text == "11" then freeOnIt = widget end
@@ -1572,6 +1624,27 @@ check(not Bags.strip:IsShown(), "hidden again")
 toggle:GetScript("OnClick")(toggle)
 check(Text("12345c"), "the gold, in the game's coins")
 check(Text("12"), "a currency watched in the backpack")
+
+-- A narrow window: the foot leaves out what does not fit, the currencies first, then the boxes' words.
+do
+    local token, box, gold = Text("12"):GetParent(), ns.Vendor.boxes[1], Text("12345c"):GetParent()
+    Foot.Room(3000)
+    check(token:IsShown() and box.text:IsShown(), "wide enough: all of it")
+    Foot.Room(2 * (Bags.INSET + Bags.EDGE) + gold:GetWidth() + ns.Vendor.Width(true) + 1)
+    check(not token:IsShown() and box.text:IsShown(), "less room: the currencies go first")
+    Foot.Room(Bags.LEAST[1] - 200)
+    check(not box.text:IsShown() and box:IsShown() and box:GetWidth() == ns.Vendor.BOX, "less still: the boxes' words, the boxes stay")
+    Foot.Room(3000)
+    check(token:IsShown() and box.text:IsShown() and box:GetWidth() > ns.Vendor.BOX, "wider again: all of it back")
+    Bags.Size(1000, 600)
+end
+-- The window can be narrow; the first layout keeps it wide; the count on the bar makes room.
+check(Bags.LEAST[1] <= 340 and Bags.Width > ns.Board.Least("bags", Bags.LEAST[1], Bags.LEAST[2])[1], "narrow at least, wider at first")
+check(Bags.ItemSize(2000) == Layout.SIZE, "the items as large as chosen in a wide window")
+kept.scale = 75
+check(Bags.ItemSize(2000) == math.floor(Layout.SIZE * 0.75 + 0.5), "the slider's size")
+kept.scale = 100
+check(Bags.ItemSize(200) < Layout.SIZE, "smaller in a narrow one")
 
 -- Auto Sell and Auto Repair: two boxes in the foot, ticked at first; a click takes off the tick and the setting.
 shop.sell, shop.repair = Text("Auto Sell"):GetParent(), Text("Auto Repair"):GetParent()
@@ -1962,7 +2035,7 @@ W.Fire("BAG_UPDATE_DELAYED")
 W.Wait(0)
 local retailStrip = {}
 for _, widget in ipairs(W.frames) do
-    if widget._parent == Bags.strip and widget._kind == "ItemButton" and widget:IsShown() then retailStrip[#retailStrip + 1] = widget end
+    if widget._parent == Bags.strip and widget._kind == "Button" and widget:IsShown() then retailStrip[#retailStrip + 1] = widget end
 end
 check(table.concat(Contents.Carried({}), ",") == "0,1,2,3,5" and not Cells.Shown(-1, 1) and Cells.Shown(0, 9) and #retailStrip == 6,
     "Retail: the bags without the keyring, in the window and its strip: " .. table.concat(Contents.Carried({}), ",") .. ", " .. #retailStrip)
@@ -1973,17 +2046,6 @@ W.Fire("BAG_UPDATE_DELAYED")
 W.Wait(0)
 check(Cells.Shown(-1, 1), "back in WoW: Forever: the keyring again")
 
-for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end
-ns.StandDown("a test")
-check(ns.off and not panel:IsShown(), "standing down: the bags go with the window")
-calls.sold, shop.repairs = nil, {}
-merchantOpen = true
-W.Fire("MERCHANT_SHOW")
-W.Wait(0)
-W.Wait(Foot.SOLD)
-check(not calls.sold and #shop.repairs == 0, "stood down: nothing sold or repaired")
-
-io.write(("Bags: all %d checks passed.\n"):format(passed))
 -- The box Speed Leveling: the profile in use. Last here: the bags' categories come anew with a profile.
 function W.CheckLeveling()
     local leveling = ns.Vendor.boxes[4]
@@ -2109,3 +2171,14 @@ function W.CheckRoom()
 end
 W.CheckRoom()
 
+for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end
+ns.StandDown("a test")
+check(ns.off and not panel:IsShown(), "standing down: the bags go with the window")
+calls.sold, shop.repairs = nil, {}
+merchantOpen = true
+W.Fire("MERCHANT_SHOW")
+W.Wait(0)
+W.Wait(Foot.SOLD)
+check(not calls.sold and #shop.repairs == 0, "stood down: nothing sold or repaired")
+
+io.write(("Bags: all %d checks passed.\n"):format(passed))

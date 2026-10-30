@@ -191,7 +191,9 @@ colour.
   shading, centred in a square with a little room round it, thickened a little so it reads at 16 to 18 units.
   Made large enough for its largest use (256 x 256), its smaller mipmaps thickened for their size, so one texture
   serves a row and a slot. In an empty slot, a category's drawing is faded to a grey, three quarters of the slot
-  (0.3; Saneroki, 2026-10-23: bigger and darker than first).
+  (0.3; Saneroki, 2026-10-23: bigger and darker than first). An empty slot of the bags' strip says what goes there the
+  same way, a little larger and stronger (Saneroki, 2026-10-30: a pouch for a bag, the mortar for the reagent bag, a
+  key for a keyring without keys).
 - **The words of the bags, the bank and the alts** are 1.2 times their first size (Saneroki, 2026-10-23: to be
   read); the heads, lines and the sidebar grow with them.
 - **The podium** (the guild's race): steps drawn as an artist's pencil sketch of real blocks in perspective (each
@@ -213,7 +215,8 @@ What a unit takes, rising over its nameplate and over your character (Saneroki, 
 
 - **Numbers in Kalam Bold**, outlined, in three colours only: auto attacks and physical damage white, spell damage
   red, heals green (Saneroki, 2026-10-23: a school's own colour confused).
-- **What did no harm is a drawing, not a word:** a miss, dodge, parry, block, evade or immunity is a pencil line
+- **What did no harm is the game's word, or by a setting a drawing** (Saneroki, 2026-10-30: the word by default,
+  white; before that the drawing): a miss, dodge, parry, block, evade or immunity is then a pencil line
   drawing, large, with thick lines, white in the game (an immunity, a bubble with an "i", bright red: tinted by
   code), on transparency with a dark edge round its lines so it reads over any ground, as the outlined numbers do.
 - **The drawings** are an image model's pencil sketches (`dev/imagegen/sets/combat-text/`), picked by Saneroki

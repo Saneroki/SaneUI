@@ -413,7 +413,7 @@ local function Draw()
     Bank.blocks = blocks
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
     how.level = options.itemLevel ~= false
-    child:SetHeight(math.max(1, canvas:Draw(blocks, room, how)))
+    child:SetHeight(math.max(1, canvas:Draw(blocks, room, how, Bags.ItemSize(room))))
     Count()
     Sidebar()
     deposit:SetShown(Foot.Deposits())

@@ -63,7 +63,7 @@ Bags\Canvas.lua
 Bags\Sidebar.lua
 Bags\Bags.lua
 Bags\Bank.lua
-# The other characters' things, as last seen: what is shown, the roster, the items, the window that holds them
+# The other characters' things, as last seen: what is shown, the dropdown of them, the items, the window that holds them
 Alts\Snapshot.lua
 Alts\Roster.lua
 Alts\Items.lua

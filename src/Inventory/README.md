@@ -76,8 +76,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     are taken (every bag's in its tooltip); at the line's end *Sell All Junk Items* at a vendor (a pencil box),
     then three small round buttons with a soft edge (the junk marker, the bags' button, the clean-up) and the
     dropdown *View*, a pencil box on the paper. Your bags stand in a strip at the top of
-    the page, at first; the bags' button hides it or shows it again: each bag's icon in a pencil slot with its corners
-    rounded and its free slots on it, an empty bag slot the pencil slot alone; point at one to light its items,
+    the page, at first; the bags' button hides it or shows it again: each bag's icon in a pencil slot a little smaller
+    than an item's, with its corners rounded and its free slots on it; an empty slot shows what goes there, in a faded
+    drawing (a pouch for a bag, the mortar for the reagent bag, a key for a keyring without keys); point at one to light its items,
     drop a bag on a slot to put it on, click one to pick it up. The clean-up
     in *One Bag* is our own sort: your items move into the order of your categories (pinned ones first, then each
     category in your order, inside one by *Sort By*, the larger stack first), partial stacks of one item joined
@@ -85,7 +86,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
     the other views it is the game's *Clean Up Bags*.
   - **The sidebar** at the left (its arrow at the top folds it to a narrow edge and the strip of your bags with
-    it; the arrow or the bags' button unfolds it, kept; every row with a small pencil drawing of its own: a
+    it, which leaves the items the room in a narrow window; the arrow or the bags' button unfolds it, kept; every row with a small pencil drawing of its own: a
     backpack for All Items, a helmet for Head, a flask for Potions ...): *All Items* (every item by category, the categories side by side, as many to a
     line as fit; every category that takes items shown with its items and an empty slot after them, its drawing
     faded in it, also while
@@ -105,11 +106,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     in All Items as its name over the whole width, its members that hold something side by side under it, then
     one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
     the group's first member). In the sidebar its members are set in under it; the pencil arrow on its row (the sidebar's
-    own, turned down or up) folds them into the row, and its pencil box, ticked, divides the group into its members in All Items; unticked, the group is
+    own, turned down or up) folds them into the row (*The Armory* and *Consumables* are folded at first), and its pencil box, ticked, divides the group into its members in All Items; unticked, the group is
     one part with all its items and one empty slot. An item let go anywhere over the window where nothing else
     takes it (the paper, the title line, the foot) goes into your bags, into the category the rules give it
     (what you put it into taken off). The items scroll with the mouse wheel; no scroll bar. Items and empty slots
-    are half again the game's size, the bags in the strip too, in the same look. Junk's first slot is a waste bin
+    are half again the game's size at first; the slider *Item Size* in the dropdown *View* makes them smaller or larger
+    (55% to 135%), and a window too narrow for six of them in a line makes them smaller by itself, down to 28 units,
+    so the window can be small (at its narrowest about 410 units wide; the words of the foot's checkboxes and the
+    currencies go first, and the count on the bar). Junk's first slot is a waste bin
     (a strong, dark pencil drawing a little larger than a slot, no slot around it; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
     `Menus.Destroy`): an item let go there or clicked onto it is offered to be destroyed in the game's own dialog, as when you
     drop it into the world (a rare item or better is typed out). *Pinned Items* and *Recent Items* (what
@@ -145,7 +149,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     item, in columns) or *Compact* (the categories side by side in bands, planned to take the fewest lines);
     *Sort By* (*Default*: gear by item level, then by kind, quality and name; or quality, name, item level);
     *Show Pinned Items*, *Show Recent Items*, *Merge Stacks*; *Open With* (the view the
-    window opens with); *Switched Off* lists what you switched off, to switch it on again.
+    window opens with); *Switched Off* lists what you switched off, to switch it on again; the slider *Item Size* (the
+    bank's items go with it).
   - **Splitting a stack:** Shift and a click on a stack opens a little splitter (in All Items and the categories
     always, as those show no empty slots; in One Bag and Each Bag with *Stack Splitter Everywhere*): how many
     (typed, - and +, the wheel), *Split* puts that many into the first free slot (Enter), *Auto Split* splits the
@@ -169,17 +174,23 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   bags. Alt and a right click opens an item's
   menu, a middle click pins it, Shift and a click splits a stack (with *Stack Splitter Everywhere*). Your gold at
   the foot. Away from the banker the window is gone and the others share its room.
-- **Your alts** (the window *Alts*): every character of the account down its left, you
-  first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
-  where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
-  character last had it open) and what it wears, on a paper doll slot by slot, with the game's tooltips; Shift or
-  Ctrl and a click links an item or tries it on. The search box finds an item across them all, by its name or its
-  number: each character says how many it has, and the window lists only what was found. A character's things are as Core last read
-  them while it was logged in; its bank, while it had it open. In the bags' look: each item in its quality's
-  border with its item level, each place under a head with how many items it holds. Beside the roster *Storage*:
-  *All Places*, *Bags*, *Bank*, *Equipped*, then *All Categories* and each of the bags' categories with how many
-  of that character's items it holds; a click shows only that place or category. The dropdown *View* on the head:
-  *Grid*, *List* (in the bags' list columns) or *Compact*, and *Group by Category*.
+- **Your alts** (the window *Alts*), in the bags' look and made of the bags' own parts, so what you learned there holds
+  here: on the title line after *Alts* the dropdown of the account's characters (you first, each in its class's
+  colour with its class's icon and its gold, the account's bank last where it holds something, the gold of them all
+  under them; its tooltip the level, realm and when it was seen), how many items are shown and the dropdown *View*:
+  *Grid*, *List* or *Compact*, *Sort By* and the slider *Item Size*, as in the bags. At the left the sidebar *Storage*,
+  which folds by its arrow: *All Places*, *Bags*, *Bank*, *Equipped*, then *All Categories* and the bags' categories
+  and groups as you arranged them, with how many of that character's items each holds. A click shows only that place,
+  that category or that group; a place and a category go together (the Potions in the bank). A group's arrow, its box,
+  a right click on a row and a row dragged do what they do in the bags, and count for the bags too. The items stand
+  under a head per place, by category, each with its item level and count (the settings *Show Item Level*, *Coin on
+  Junk* and *Grey Junk* hold here too; the green upgrade arrow does not: it is for the character you play); the wheel
+  scrolls them. What is worn is the paper doll under them, slot by slot, the bags worn as items above it. At the foot
+  that character's level, class and when it was seen, and its gold (every character's in its tooltip). Tooltips are the
+  game's; Shift or Ctrl and a click links an item or tries it on; Alt and a right click opens its menu, as in the bags.
+  Nothing moves an item. The search box finds an item across them all, by its name or its number: each character says
+  how many it has in the dropdown, and the window lists only what was found. A character's things are as Core last
+  read them while it was logged in; its bank, while it had it open.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
   *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
@@ -360,38 +371,43 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     all. The search: a number typed is an item's ID; words are found in the item's name whole, as a piece or as
     first letters (`Core.Fuzzy.Rank` from `Fuzzy.INSIDE` up; letters spread through a name are too loose a fit). A name the game does not know yet is asked for once
     (`C_Item.RequestLoadItemDataByID`); its answer draws the window anew (`Snapshot.Learned`).
-  - **The roster** (`Alts/Roster.lua`): the game's `WowScrollBoxList` and `MinimalScrollBar`, a line per character
-    (`GetClassAtlas`, `RAID_CLASS_COLORS`, whole gold by `Core.Coins`), the chosen one lit and the line under the
-    mouse as the game's options list lights its lines (`Options_List_Active`, `Options_List_Hover`); its tooltip
-    the level and class, realm, the day last seen, the gold to the copper. While searching, how many each has of
-    what is found (stacks counted whole), one without any dimmed (`Roster.DIM`).
-  - **The items** (`Alts/Items.lua`): one scrolling list: a head per place in the bags' style (the bank's with the
-    day it was last seen, or *Not seen yet*; the number of items), a bag or bank place as the display says: rows of
-    the game's item buttons in the bags' flat look (`ItemButton`, drawn by the game's `SetItemButtonTexture`,
-    `Count`, `Quality`, no border, its corners rounded as the bags' (`Cells.ROUNDED`), the item level of gear; as many to a
-    row as fit, `Items.Fit`), with Group by Category a head per category (the bags' order and names); lines in the
-    bags' list columns (`Columns.Place`, `Value`, `Sort`); or one compact piece (`Layout.Lay` *compact* over the
-    categories). An item's record as the bags' (`Items.Record`: `C_Item.GetItemInfoInstant`, `GetItemInfo`,
-    `GetDetailedItemLevelInfo`, `Categories.Classify`; what the game told kept once it knows the item, the category
-    worked out anew each time, as the player may have moved the item). What is worn as the
-    paper doll (below), or as a list (icon, name in its quality's colour) for a character Core has not read slot
-    by slot yet (it has not logged in since). Read only: the tooltip is `GameTooltip:SetItemByID`, a modified
-    click `HandleModifiedItemClick`; nothing picks an item up. `Items.Counts`: each category's count for Storage.
-  - **The paper doll** (`Alts/Items.lua`, one element of the list): the slots as the sheet has them
-    (`Slots.COLUMNS`, `Slots.SIZE`, `GAP`, `AMMO`, `AMMO_GAP`, the game's slot frames
-    `UI-Character-Info-GearSlot` and `...Small`; IDs and empty pictures from `GetInventorySlotInfo`), eight down
-    each side as far apart as the grid is wide, at most as on the sheet (`Items.DOLL`), the weapons' row in the
-    middle below them; the ranged slot where the game shows one (`C_PaperDollInfo.IsRangedSlotShown`) or something
-    is in it, the ammo beside it where some is worn. An empty slot shows its own picture, its tooltip its name.
-    The bags worn in their slots follow as a row of the grid, in their slots' order. While searching the doll is
-    shown only if something in it is found, whole, what is not found dimmed (`SetMatchesSearch`, as the game's
-    bags dim it); of the bags only what is found.
-  - **The window** (`Alts/Alts.lua`): the roster at the left, Storage beside it (`ns.Sidebars.New`: places and
-    categories, the choice held while the window lives), the chosen character's head (name, gold, the level line as
-    the sheet writes it, the day last seen, the dropdown *View*) and items at the right. Kept in `store.alts`:
-    `look`, `group`; the bags' store read for the categories and columns (`Bags.Store`). Shown at first: the first of the
-    others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
-    has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
+  - **The dropdown of the characters** (`Alts/Roster.lua`): `ns.Paper.Dropdown` on the title line, `Roster.WIDTH` wide,
+    `Roster.LEAST` on a narrow one, its word the chosen one's name as ink on the paper (`Paper.InkHex`). Its menu a radio
+    per character (`GetClassAtlas` by `CreateAtlasMarkup`, `RAID_CLASS_COLORS`), whole gold by `Core.Coins` at the line's
+    right (a font string attached by an initializer, which returns the line's size), its tooltip `Alts.About`, a title with
+    the gold of them all. While searching, how many each has of what is found (stacks counted whole), one without any
+    greyed, no total.
+  - **The items** (`Alts/Items.lua`): no frames of their own but the doll's. `Items.Record` an item as a record of the
+    bags' kind (`C_Item.GetItemInfoInstant`, `GetItemInfo`, `GetDetailedItemLevelInfo`, `Categories.Classify`; what the
+    game told kept once it knows the item, the category worked out anew each time, as the player may have moved the item).
+    `Items.Sections` makes the character's places into sections for `Views.Build`: `place = "alts"`, so Views gives them
+    no Pinned, Recent or empty slots; `slots` a record per item, a place's count on it (`Held`: the item's record by
+    `__index`, the count its own), `word` the head with what is said beside it in faint graphite (the day the bank was
+    seen, *Not seen yet*, *Empty*), `doll` and `total` for a place the doll stands under. `Items.Button` is a read-only
+    item button: the tooltip `GameTooltip:SetItemByID`, a modified click `HandleModifiedItemClick`; nothing picks an item
+    up. `Items.Counts`: each place's, category's and group's count for Storage.
+  - **The paper doll** (`Items.MakeDoll`, `Items.DrawDoll`; a frame in the scroll area's child, under what the canvas
+    drew): the slots as the sheet has them (`Slots.COLUMNS`, `Slots.SIZE`, `GAP`, `AMMO`, `AMMO_GAP`; IDs from
+    `GetInventorySlotInfo`), eight down each side as far apart as the room is wide, at most as on the sheet (`Items.DOLL`),
+    the weapons' row in the middle below them; the ranged slot where the game shows one
+    (`C_PaperDollInfo.IsRangedSlotShown`) or something is in it, the ammo beside it where some is worn. The icons as the
+    sheet's: the whole slot, corners rounded, no border. An empty slot is its pencil slot, its tooltip its name. The bags
+    worn in their slots stand as items under Equipped's head, in their slots' order. While searching the doll is shown
+    only if something in it is found, whole, what is not found dimmed (`SetMatchesSearch`, as the game's bags dim it).
+    A character Core has not read slot by slot yet (it has not logged in since) has what it wears by category.
+  - **The window** (`Alts/Alts.lua`): built as the bags' (`Bags.TitleBar`, `ns.Sidebars.New`, `Canvas.New` with a pool of
+    `Cells.New(child, Alts, Items.Button)`, `Columns.Build`, a scroll area the wheel moves by `Bags.Wheel`, the foot a
+    pencil-ruled band). `Views.Build` with `Alts.PLAIN` and, while searching, `Contents.FOUND` (what `Snapshot` found
+    stands; the bags' search also finds by category and item level, the dropdown's counts would not fit it); `Tidy` takes
+    out what the views left that is not shown here (a category without items; a place's head with nothing under it while
+    only some is shown) and gives a place's head its count. The sidebar's choice is two things: a place and a view
+    (`cat:<key>`, `group:<group>`), the latter dropped when its category is switched off or its group is no more. The rows
+    of the categories are the bags' (`BagSidebar.Categories`), and so is what a group's arrow and box, a row's menu and a
+    row's drag do (`BagSidebar.Aim`, `Place`). What the bags' windows change draws this one anew (`Alts.Changed`: `Menus`'
+    `Changed`, the sidebar's `Arranged`, a setting). Kept in `store.alts`: `look`, `sort`, `scale`, `folded` (a list's
+    folded blocks), `side` (the sidebar); the bags' store read for the categories and columns (`Bags.Store`). Shown at
+    first: the first of the others; the choice holds until a `/reload`. While searching, if the chosen one has none of
+    it, the first that has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
     `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`; the names the game tells
     together, `Alts.NAMES` later); drawn anew when shown. A character's class, level and realm of a wrong kind (Core
     checks only its name and places) are left out.
@@ -454,7 +470,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     many cells each category and group shows (Pinned and Recent too, stacks merged as they are shown), for the sidebar.
   - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (the blocks side by side in bands,
     `BAND_GAP` apart, as many as fit across, the next on a new band; each under its head (no rule under it): its
-    cells `Layout.SIZE` 51 (half again the game's) and `GAP` 5 apart, then where it takes items (`block.plus`) one empty slot; a block
+    cells `Layout.SIZE` 51 (half again the game's; the size a window draws at: `Layout.Fit`, the slider's percent `scale`
+    kept with the window, smaller while fewer than `Layout.FIT` stand in a line, never under `Layout.SMALLEST`; the gap
+    with it, `Layout.Gap`) and `GAP` 5 apart, then where it takes items (`block.plus`) one empty slot; a block
     takes the room of its cells or of its head's words (the canvas measures them), whichever is wider, at most the
     room, more cells in more lines; a block with nothing to show left out. A group's title over the whole width (no rule
     under it; a part's head with a pencil rule), its members' blocks side by side under it, a line of their own. An
@@ -707,8 +725,8 @@ classes' gains can be held against each other; `early` for a character without a
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
 | `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
-| `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
-| `Alts/Items.lua` | The other characters' window: the chosen one's places and items: a grid, the paper doll, a list |
+| `Alts/Roster.lua` | The other characters' window: the dropdown of the account's characters, their gold |
+| `Alts/Items.lua` | The other characters' window: the chosen one's things as the bags' records and sections, read-only buttons, the paper doll |
 | `Alts/Alts.lua` | The other characters' window: whose things, the search, the events; registers the part `alts` |
 
 ## History

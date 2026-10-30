@@ -9,7 +9,8 @@ local _, ns = ...
 --  code, in a fight too.
 --
 --  A pool per window (Cells.New: the bags' is Cells.bags, and Cells' own
---  functions are its): each drawing takes as many buttons as it shows cells,
+--  functions are its; the alts' makes read-only buttons of its own, drawn the
+--  same): each drawing takes as many buttons as it shows cells,
 --  in order (Take), so one slot may show twice (pinned and in its category)
 --  and a merged stack is one button. Each button stands in a holder of ours that
 --  carries the bag's ID (SetID): the template asks its parent for the bag
@@ -29,7 +30,8 @@ local _, ns = ...
 --  to see at a glance what is an upgrade). An item the character cannot use is
 --  tinted red.
 --  An empty slot is the pencil slot alone. What a search does not find is
---  faded.
+--  faded. A button is as large as Pool:Place makes it (Layout.Fit, the list's
+--  icon): the icon follows it, the words and marks shrink and grow with it.
 --
 --  Made out of a fight only: a button first needed in a fight waits for its
 --  end (Cells.short tells the window).
@@ -50,6 +52,7 @@ Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
 Cells.ARROW = 18                        -- the green arrow on an upgrade
+Cells.LEAST_SCALE = 0.72                -- the words and marks at their smallest, still to be read
 
 local look = {}     -- [button] = what is ours on it (kept apart from the game's button)
 local recordOf = {} -- [button] = the record it draws now
@@ -100,9 +103,10 @@ local function Clicked(pool, button, mouse)
 end
 
 -- A pool of buttons standing in parent (a scroll area's child), its window owner (its Hover and Clicked; nil:
--- the bags).
-function Cells.New(parent, owner)
-    return setmetatable({ parent = parent, owner = owner, buttons = {}, taken = 0, at = {},
+-- the bags); make(holder) makes a button of its own (nil: the game's bag button; made in a fight too then, it
+-- not being protected).
+function Cells.New(parent, owner, make)
+    return setmetatable({ parent = parent, owner = owner, make = make, buttons = {}, taken = 0, at = {},
         short = false }, Pool)
 end
 
@@ -192,7 +196,7 @@ local function Skin(button, holder)
     local border = Part(button, "IconBorder")
     if border then border:SetAlpha(0) end
 
-    local mine = { holder = holder, face = face }
+    local mine = { holder = holder, face = face, size = ns.Layout.SIZE }
     mine.slot = Core.Journal.Slot(button, 1, "BACKGROUND")
     mine.empty = button:CreateTexture(nil, "BACKGROUND", nil, 1)
     mine.empty:SetAllPoints(face)
@@ -246,7 +250,7 @@ function Pool:Take()
     self.taken = self.taken + 1
     local button = self.buttons[self.taken]
     if button then return button end
-    if InCombatLockdown() then
+    if InCombatLockdown() and not self.make then
         self.taken = self.taken - 1
         self.short = true
         if self.default then Cells.short = true end
@@ -254,7 +258,7 @@ function Pool:Take()
     end
     local holder = CreateFrame("Frame", nil, self.parent)
     holder:SetSize(ns.Layout.SIZE, ns.Layout.SIZE)
-    button = CreateFrame("ItemButton", nil, holder, Cells.TEMPLATE)
+    button = self.make and self.make(holder) or CreateFrame("ItemButton", nil, holder, Cells.TEMPLATE)
     button:SetAllPoints(holder)
     Skin(button, holder)
     local pool = self
@@ -306,7 +310,7 @@ end
 
 -- A button as the record says; how: { faded (a search did not find it), count (a merged stack's), coin (the
 -- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown), level (the item level
--- shown) }.
+-- shown), alt (another character's: no arrow for an upgrade of this one) }.
 function Pool:Draw(button, record, how)
     local mine = look[button]
     local holder = mine.holder
@@ -355,20 +359,34 @@ function Pool:Draw(button, record, how)
     end
     mine.set:SetText(how and how.set and record.set or "")
     mine.coin:SetShown((how and how.coin and record.junk) or false)
-    mine.upgrade:SetShown(ns.Contents.GEAR[record.class] and Core.Upgrade(record.link, record.item) ~= nil or false)
+    mine.upgrade:SetShown(not (how and how.alt) and ns.Contents.GEAR[record.class] and Core.Upgrade(record.link, record.item) ~= nil or false)
     local tip = rawget(_G, "GameTooltip")
     if tip and tip.IsOwned and tip:IsOwned(button) then Call(button, "UpdateTooltip") end
     Faded(button, mine, how and how.faded)
 end
 
+-- A button's face and words as large as the button, when that changed.
+local function Sized(mine, size)
+    if mine.size == size then return end
+    mine.size = size
+    local inset = size * Core.Journal.SLOT_ICON
+    mine.face:ClearAllPoints()
+    mine.face:SetPoint("TOPLEFT", inset, -inset)
+    mine.face:SetPoint("BOTTOMRIGHT", -inset, inset)
+    local scale = math.max(Cells.LEAST_SCALE, size / ns.Layout.SIZE)
+    mine.over:SetScale(scale)
+    mine.set:SetWidth((size - 4) / scale)
+end
+
 -- A button at its place in the parent (its top left, x right and y down), size wide and high; reach: the width
 -- of a list's line its click reaches over (nil: only the button).
 function Pool:Place(button, x, y, size, reach)
-    local holder = look[button].holder
+    local mine = look[button]
+    local holder = mine.holder
     holder:ClearAllPoints()
     holder:SetPoint("TOPLEFT", self.parent, "TOPLEFT", x, -y)
     holder:SetSize(size, size)
-    look[button].set:SetWidth(size - 4)
+    Sized(mine, size)
     button:SetHitRectInsets(0, reach and -(reach - size) or 0, 0, 0)
     holder:Show()
     button:Show()

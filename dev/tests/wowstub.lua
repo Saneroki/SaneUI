@@ -597,7 +597,11 @@ function W.Install(env)
     -- Menus: remember what an addon put in them, so a test can "click" a line.
     local function Description(list)
         local description = {}
-        function description:CreateTitle(text) list[#list + 1] = { title = text } end
+        function description:CreateTitle(text)
+            local item = { title = text, inits = {} }
+            list[#list + 1] = item
+            return { AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
+        end
         function description:CreateDivider() end
         function description:CreateSpacer() list[#list + 1] = { spacer = true } end
         function description:SetGridMode(direction, columns, padding) list.grid = { direction, columns, padding } end
@@ -622,9 +626,11 @@ function W.Install(env)
             return { AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
         end
         function description:CreateRadio(text, isSelected, setSelected, data)
-            local item = { text = text, checked = isSelected, fn = setSelected, data = data }
+            local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {} }
             list[#list + 1] = item
-            return { SetResponse = function(_, response) item.response = response end }
+            return { SetResponse = function(_, response) item.response = response end,
+                     SetTooltip = function(_, fn) item.tooltip = fn end,
+                     AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
         end
         function description:CreateCheckbox(text, isSelected, setSelected, data)
             local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {} }

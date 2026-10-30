@@ -72,8 +72,9 @@ local _, ns = ...
 --      hidden    { [key or group] = true }   not in All Items
 --      whole     { [group] = true }  a group shown as one part in All Items,
 --                                      not divided into its members
---      folded    { [group] = true }  a group's members not listed in the
---                                      sidebar
+--      folded    { [group] = true/false }  a group's members not listed in the
+--                                      sidebar, or listed (nil: as at first,
+--                                      Categories.FOLDED)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Categories = {}
@@ -190,6 +191,8 @@ for _, def in ipairs(Categories.LIST) do Categories.DEF[def.key] = def end
 -- The groups at first, and their names.
 Categories.GROUPS = { armory = ns.TEXT.bagsArmory, prep = ns.TEXT.bagsPrep }
 Categories.OFF = { quest = true }
+-- The groups folded into their rows at first (Saneroki, 2026-10-30: the sidebar short).
+Categories.FOLDED = { armory = true, prep = true }
 
 local kept = {}
 local First        -- the first category whose rules take a record (Classify)
@@ -265,7 +268,7 @@ function Categories.Check(bags)
     for _, name in ipairs({ "hidden", "whole", "folded" }) do
         local map = Table(bags, name)
         for key, on in pairs(map) do
-            if type(key) ~= "string" or on ~= true then map[key] = nil end
+            if type(key) ~= "string" or on ~= true and not (name == "folded" and on == false) then map[key] = nil end
         end
     end
     if type(bags.order) == "table" then
@@ -701,14 +704,16 @@ function Categories.Divide(group, on)
     kept.whole[group] = (not on) or nil
 end
 
--- A group's members listed under it in the sidebar (at first), or folded into its row.
+-- A group's members listed under it in the sidebar, or folded into its row; what the player chose, else as at first.
 function Categories.Folded(group)
-    return (kept.folded or {})[group] == true
+    local on = (kept.folded or {})[group]
+    if on == nil then return Categories.FOLDED[group] == true end
+    return on
 end
 
 function Categories.Fold(group, on)
     kept.folded = kept.folded or {}
-    kept.folded[group] = on and true or nil
+    kept.folded[group] = on and true or false
 end
 
 -- Where the rules put an item, whatever the player chose for it (by the game's instant item info): Camp Items,

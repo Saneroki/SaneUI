@@ -19,7 +19,9 @@ local _, ns = ...
 --                   locked while it runs), in the other views the game's
 --                   (C_Container.SortBags, as the game's bag window's button
 --                   does), the dropdown View: the display (Layout.LOOKS),
---                   what sorts the items (Contents.ORDERS), what is shown
+--                   what sorts the items (Contents.ORDERS), what is shown, the
+--                   slider Item Size (Bags.SizeRow; kept: scale; the items
+--                   shrink by themselves in a narrow window, Layout.Fit)
 --      the sidebar  at the left: the views and the categories (Sidebar.lua); folded by its
 --                   arrow to a narrow edge, the strip of the bags hidden with it (kept)
 --      the body     a scroll area (no scroll bar: the wheel scrolls it) with the view chosen as its blocks laid out
@@ -51,7 +53,6 @@ Bags.EDGE = 6        -- from the panel's sides to what is in it
 Bags.INSET = 8       -- from the scroll area's left to the items
 Bags.SCROLL = 20     -- room at the right for the game's scroll bar (the bank's)
 Bags.RIGHT = 6       -- room at the right of the bags' items (no scroll bar there)
-Bags.STEP = 56       -- the wheel's step: a line of items
 Bags.BAR = 18        -- the bar on the title line, inside the label's pencil lines
 Bags.PAGE_BAR = 35   -- a bar on the page (the bank's)
 Bags.BAR_BUTTON = 24 -- a button on a bar of the page (the bank's, the alts')
@@ -60,10 +61,16 @@ Bags.BAR_GAP = 7
 Bags.BAR_END = 34    -- from the title line's end to the bar's last button
 Bags.SOFT = { 0.42, 0.2, 0.08 } -- a round button's soft edge: the ink's alpha one, two, three pixels out
 Bags.MENU_WIDTH = 110
-Bags.TITLE_MENU = 74   -- the dropdown View on the title line
+Bags.TITLE_MENU = 56   -- the dropdown View on the title line
+Bags.COUNT_LEAST = 70  -- the least room for a title line's count: with less, it goes
 Bags.RULE = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.3 } -- the line by the sidebar
 Bags.COUNT_COLOR = ns.Paper.SOFT    -- the bar's count
-Bags.LEAST = { 560, 320 }
+Bags.LEAST = { 340, 240 } -- the window at its narrowest: the title line's word and buttons, the strip of the bags
+Bags.FIRST = 560          -- how wide the first layout makes it
+Bags.SIZER = 130          -- the slider Item Size in the dropdown View
+Bags.SIZE_WORD = 80       -- the room for its word, at its left
+Bags.SIZE_VALUE = 44      -- and for its percent, at its right
+Bags.SIZE_ROW = 26
 -- The settings that show Pinned and Recent (options.bags).
 Bags.SHOW = { pinned = "showPinned", recent = "showRecent" }
 
@@ -219,6 +226,13 @@ end
 
 local how = {} -- how a cell is drawn (Cells.Draw), used again
 
+-- How large the bags' items are in a room so wide (the slider's size, smaller in a narrow window: Layout.Fit); the
+-- bank's with them.
+function Bags.ItemSize(room)
+    local bags = Options().bags
+    return Layout.Fit(type(bags) == "table" and bags.scale or nil, room - ns.Canvas.INSET)
+end
+
 local function Draw()
     if not child then return end
     local room = child:GetWidth()
@@ -228,7 +242,7 @@ local function Draw()
     Bags.blocks = blocks
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
     how.level = options.itemLevel ~= false
-    child:SetHeight(math.max(1, Bags.canvas:Draw(blocks, room, how)))
+    child:SetHeight(math.max(1, Bags.canvas:Draw(blocks, room, how, Bags.ItemSize(room))))
     Bags.Count()
     coin:SetShown(Categories.Marker())
     Sidebar.Refresh(Views.Counts(carried, options), View(), options)
@@ -312,8 +326,8 @@ local UNIT_EVENTS = { UNIT_QUEST_LOG_CHANGED = Soon }
 --  The part (Board.lua)
 -------------------------------------------------------------------------------
 -- What is kept of the window: its display and Sort By (sort; the categories' own order is theirs, order), each one
--- of those there are; the categories' choices (Categories.lua checks them). In the profile in use (options.bags);
--- what the store holds from before starts a profile off.
+-- of those there are; the slider's size (scale, in percent); the categories' choices (Categories.lua checks them).
+-- In the profile in use (options.bags); what the store holds from before starts a profile off.
 local function Kept()
     local bags, before = ns.options.bags, ns.store.bags
     if not next(bags) and type(before) == "table" then
@@ -323,6 +337,7 @@ local function Kept()
     local known = false
     for _, order in ipairs(Contents.ORDERS) do known = known or order.key == bags.sort end
     if not known then bags.sort = "default" end
+    bags.scale = Layout.Scale(bags.scale)
     Categories.Use(bags)
     Columns.Use(bags)
     return bags
@@ -354,6 +369,39 @@ local function SwitchOn(key)
     Categories.SwitchOff(key, false)
     Bags.Refresh()
 end
+
+-- The row Item Size of a window's dropdown View: the game's slider with its steppers (lent to the row by the menu
+-- while it is open, as the map's pin filter has it), the percent at its right, the window drawn anew as it moves.
+-- get() and set(percent) are the window's. A client without that slider: no row.
+local OWNER = {} -- the sliders' callbacks are of this owner: a slider laid out anew replaces its last one
+local function Sizer(frame, get, set)
+    local mixin = MinimalSliderWithSteppersMixin
+    local scale = Layout.SCALE
+    local slider = frame:AttachTemplate("MinimalSliderWithSteppersTemplate")
+    slider:SetWidth(Bags.SIZER)
+    slider:ClearAllPoints()
+    slider:SetPoint("RIGHT", -Bags.SIZE_VALUE, 0)
+    slider:UnregisterCallback(mixin.Event.OnValueChanged, OWNER)
+    slider:Init(get(), scale.low, scale.high, (scale.high - scale.low) / scale.step,
+        { [mixin.Label.Right] = function(value) return ("%d%%"):format(value) end })
+    slider:RegisterCallback(mixin.Event.OnValueChanged, ns.Guard(function(_, value) set(Layout.Scale(value)) end), OWNER)
+    return Bags.SIZE_WORD + Bags.SIZER + Bags.SIZE_VALUE, Bags.SIZE_ROW
+end
+
+function Bags.SizeRow(root, get, set)
+    if not rawget(_G, "MinimalSliderWithSteppersMixin") then return end
+    root:CreateDivider()
+    root:CreateTitle(ns.TEXT.bagsItemSize):AddInitializer(ns.Guard(function(frame) return Sizer(frame, get, set) end))
+end
+
+local function GetScale() return kept.scale end
+local function SetScale(percent)
+    if percent == kept.scale then return end
+    kept.scale = percent
+    Bags.Redraw()
+    if ns.Bank then ns.Bank.Redraw() end
+end
+
 local Looked = ns.Guard(IsLook)
 local Look = ns.Guard(SetLook)
 local Ordered = ns.Guard(IsOrder)
@@ -384,6 +432,7 @@ local function Menu(_, root)
         local list = root:CreateButton(ns.TEXT.bagsOn)
         for _, key in ipairs(off) do list:CreateButton(ns.TEXT.bagsSwitchOn:format(Categories.Word(key)), Unoff, key) end
     end
+    Bags.SizeRow(root, GetScale, SetScale)
 end
 local ViewMenu = ns.Guard(Menu)
 
@@ -528,27 +577,51 @@ function Bags.Marked(on)
     if coin then coin:SetChecked(on) end
 end
 
--- The bar on the window's title line (panel.title, the journal's), after the title's word: the count, then at
--- the title line's end the junk marker, the bags' button, the clean-up and the dropdown View; the strip of the
--- bags at the body's top.
-local function Bar(body)
-    local title = panel.title
-    bar = CreateFrame("Frame", nil, panel)
+-- A bar on a window's title line (its panel's title, the journal's), after the title's word: its count, what ends
+-- the line left to the window; the alts' has one too. Returns the bar.
+function Bags.TitleBar(owner, body)
+    local title = owner.title
+    local line = CreateFrame("Frame", nil, owner)
     if title then
-        bar:SetPoint("LEFT", title, "LEFT")
-        bar:SetPoint("RIGHT", title, "RIGHT", -Bags.BAR_END, 0)
+        line:SetPoint("LEFT", title, "LEFT")
+        line:SetPoint("RIGHT", title, "RIGHT", -Bags.BAR_END, 0)
     else
-        bar:SetPoint("TOPLEFT", body, "TOPLEFT", 0, Bags.BAR)
-        bar:SetPoint("TOPRIGHT", body, "TOPRIGHT", 0, Bags.BAR)
+        line:SetPoint("TOPLEFT", body, "TOPLEFT", 0, Bags.BAR)
+        line:SetPoint("TOPRIGHT", body, "TOPRIGHT", 0, Bags.BAR)
     end
-    bar:SetHeight(Bags.BAR)
-    bar:SetFrameLevel((panel.head and panel.head:GetFrameLevel() or panel:GetFrameLevel()) + 5)
-    bar.count = bar:CreateFontString(nil, "ARTWORK")
+    line:SetHeight(Bags.BAR)
+    line:SetFrameLevel((owner.head and owner.head:GetFrameLevel() or owner:GetFrameLevel()) + 5)
+    line.count = line:CreateFontString(nil, "ARTWORK")
     local font = Fonts()
-    if font.count then bar.count:SetFontObject(font.count) end
-    bar.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3], Bags.COUNT_COLOR[4])
-    local words = title and title.GetStringWidth and title:GetStringWidth() or 0
-    bar.count:SetPoint("LEFT", words + 2 * Bags.BAR_GAP, 0)
+    if font.count then line.count:SetFontObject(font.count) end
+    line.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3], Bags.COUNT_COLOR[4])
+    line.count:SetJustifyH("LEFT")
+    line.count:SetWordWrap(false)
+    line.words = (title and title.GetStringWidth and title:GetStringWidth() or 0) + 2 * Bags.BAR_GAP
+    line.count:SetPoint("LEFT", line.words, 0)
+    return line
+end
+
+-- The bar's count ends at the first thing right of it: what can be done here (Foot.Act), else the junk marker. On a
+-- title line too narrow for it, it goes (the sidebar and the strip of the bags say as much); a line's words and
+-- buttons fit even then (Bags.LEAST).
+local before  -- what the count ends at, nil: the junk marker
+local function CountFit()
+    local room = (bar:GetWidth() or 0) - bar.words - Bags.TITLE_MENU - 3 * (Bags.TITLE_BUTTON + Bags.BAR_GAP)
+        - (before and (before:GetWidth() or 0) + Bags.BAR_GAP or 0) - Bags.BAR_GAP
+    bar.count:SetShown(room >= Bags.COUNT_LEAST)
+end
+
+function Bags.CountBefore(frame)
+    before = frame
+    bar.count:SetPoint("RIGHT", frame or coin, "LEFT", -Bags.BAR_GAP, 0)
+    if bar:GetWidth() and bar:GetWidth() > 0 then CountFit() end
+end
+
+-- The bar on the title line: the count, then at the title line's end the junk marker, the bags' button, the clean-up
+-- and the dropdown View; the strip of the bags at the body's top.
+local function Bar(body)
+    bar = Bags.TitleBar(panel, body)
     local hover = CreateFrame("Frame", nil, bar)
     hover:SetAllPoints(bar.count)
     hover:SetScript("OnEnter", function(self) ns.Safe("bags", Foot.FreeTip, self) end)
@@ -573,6 +646,8 @@ local function Bar(body)
     coin:SetScript("OnEnter", function(self) ns.Safe("bags", CoinTip, self) end)
     coin:SetScript("OnLeave", GameTooltip_Hide)
     bar.coin = coin
+    Bags.CountBefore()
+    bar:SetScript("OnSizeChanged", ns.Guard(CountFit))
     Bags.bar = bar
     strip = CreateFrame("Frame", nil, body)
     strip:SetPoint("TOPLEFT")
@@ -597,11 +672,17 @@ local function Back()
     end
 end
 
--- The wheel over the items: a line of them up or down, never past the ends.
+-- The wheel over a scroll area of items so large: a line of them up or down, never past the ends.
+function Bags.Wheel(area, delta, size)
+    local content = area:GetScrollChild()
+    local most = area.GetVerticalScrollRange and area:GetVerticalScrollRange()
+        or math.max(0, (content and content:GetHeight() or 0) - (area:GetHeight() or 0))
+    local step = size + ns.Layout.Gap(size)
+    area:SetVerticalScroll(math.max(0, math.min(most, area:GetVerticalScroll() - delta * step)))
+end
+
 local function Wheel(delta)
-    local most = scroll.GetVerticalScrollRange and scroll:GetVerticalScrollRange()
-        or math.max(0, (child:GetHeight() or 0) - (scroll:GetHeight() or 0))
-    scroll:SetVerticalScroll(math.max(0, math.min(most, scroll:GetVerticalScroll() - delta * Bags.STEP)))
+    Bags.Wheel(scroll, delta, Bags.ItemSize(child:GetWidth() or 0))
 end
 
 function Bags.Build(made)
@@ -653,6 +734,7 @@ function Bags.Size(newWidth, newHeight)
     if not child then return end
     child:SetWidth(math.max(1, width - Sidebar.Width() - Bags.EDGE - Bags.RIGHT))
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
+    ns.Safe("bags", Foot.Room, width)
     Bags.Redraw()
 end
 
@@ -666,5 +748,7 @@ function Bags.Search(text)
     Bags.Redraw()
 end
 
--- The board's least: the sidebar and some item buttons in a line, the foot, the panel's leather round them.
+-- The board's least: what the title line must hold, the panel's leather round it; the items make themselves smaller
+-- to fit (Layout.Fit), the foot leaves out what does not (Foot.Room). The first layout makes it wider.
+Bags.Width = ns.Board.Least("bags", Bags.FIRST, Bags.LEAST[2])[1]
 ns.Board.Part("bags", ns.TEXT.bags, ns.Board.Least("bags", Bags.LEAST[1], Bags.LEAST[2]), Bags)

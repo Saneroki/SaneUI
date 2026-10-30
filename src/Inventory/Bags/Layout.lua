@@ -24,8 +24,13 @@ local _, ns = ...
 --               whole width
 --  A part's head (the bags, the bank) goes over the whole width.
 --
---      local count, height = Layout.Lay(look, blocks, width, out, measure)
+--  Items are as large as the window says (Layout.Fit): the size the player chose
+--  with the slider in the dropdown View, smaller while the window is too narrow
+--  for Layout.FIT of them in a line at that size, never under Layout.SMALLEST.
+--
+--      local count, height = Layout.Lay(look, blocks, width, out, measure, size)
 --      measure(block): how wide its head's words are (the grid; nil: as wide as its cells)
+--      size: an item's side (nil: Layout.SIZE), the gap between two with it (Layout.Gap)
 --      out: the places, used again: out[i] = { kind = "head" | "cell" | "bin" | "plus" | "row" | "label", x, y,
 --           width, height, size (a cell's, a row's item), entry (a cell's or row's), block (a head's,
 --           a label's, a cell's), level (a head's: 1 a part, 2 a block, 3 a group's member) }
@@ -33,8 +38,11 @@ local _, ns = ...
 local Layout = {}
 ns.Layout = Layout
 
-Layout.SIZE = 51         -- an item button, an empty slot (Saneroki, 2026-10-23: half again the game's 34)
-Layout.GAP = 5           -- between two
+Layout.SIZE = 51         -- an item button, an empty slot, at first (Saneroki, 2026-10-23: half again the game's 34)
+Layout.GAP = 5           -- between two, at that size (Layout.Gap: with the size)
+Layout.SMALLEST = 28     -- the least an item is drawn at (Saneroki, 2026-10-30: the windows can be narrow)
+Layout.FIT = 6           -- a narrow window makes its items smaller to keep this many in a line
+Layout.SCALE = { low = 55, high = 135, step = 5, first = 100 } -- the slider's percent of Layout.SIZE
 Layout.ROW = ns.Paper.Fit(24)     -- a list's line (its words' size: ns.Paper.WORDS)
 Layout.ICON = 20         -- its item button
 Layout.HEAD = ns.Paper.Fit(20)    -- a head line
@@ -54,7 +62,21 @@ Layout.LOOK = {}
 for _, look in ipairs(Layout.LOOKS) do Layout.LOOK[look.key] = look end
 
 local out, count, y
+local side, gap = Layout.SIZE, Layout.GAP -- this laying out's item and the gap between two
 local NONE = {}
+
+-- The gap between two items of a size.
+function Layout.Gap(size)
+    return math.max(2, math.floor(size * Layout.GAP / Layout.SIZE + 0.5))
+end
+
+-- A percent kept for the slider, as it may be (a hand edit, an older version: as at first), on its steps.
+function Layout.Scale(percent)
+    local scale = Layout.SCALE
+    if type(percent) ~= "number" then return scale.first end
+    percent = math.max(scale.low, math.min(scale.high, percent))
+    return scale.low + math.floor((percent - scale.low) / scale.step + 0.5) * scale.step
+end
 
 local function Place(kind)
     count = count + 1
@@ -83,12 +105,12 @@ end
 -- A block's cells in lines from x and top, columns to a line (Junk's waste bin before them, block.bin), then its
 -- empty slot (block.plus); returns the lines taken.
 local function Cells(block, x, top, columns)
-    local step = Layout.SIZE + Layout.GAP
+    local step = side + gap
     local column, line = 0, 0
     if block.bin then -- Junk's waste bin, first
         local place = Place("bin")
-        place.x, place.y, place.width, place.height = x, top, Layout.SIZE, Layout.SIZE
-        place.size, place.block = Layout.SIZE, block
+        place.x, place.y, place.width, place.height = x, top, side, side
+        place.size, place.block = side, block
         column = 1
     end
     for _, entry in ipairs(block.entries) do
@@ -97,8 +119,8 @@ local function Cells(block, x, top, columns)
             line = line + 1
         end
         local place = Place("cell")
-        place.x, place.y, place.width, place.height = x + column * step, top + line * step, Layout.SIZE, Layout.SIZE
-        place.size, place.entry, place.block = Layout.SIZE, entry, block
+        place.x, place.y, place.width, place.height = x + column * step, top + line * step, side, side
+        place.size, place.entry, place.block = side, entry, block
         column = column + 1
     end
     if block.plus then
@@ -107,29 +129,42 @@ local function Cells(block, x, top, columns)
             line = line + 1
         end
         local place = Place("plus")
-        place.x, place.y, place.width, place.height = x + column * step, top + line * step, Layout.SIZE, Layout.SIZE
-        place.size, place.block = Layout.SIZE, block
+        place.x, place.y, place.width, place.height = x + column * step, top + line * step, side, side
+        place.size, place.block = side, block
         column = column + 1
     end
     return (column > 0 or line > 0) and line + 1 or 0
 end
 
-local function Columns(width)
-    return math.max(1, math.floor((width + Layout.GAP) / (Layout.SIZE + Layout.GAP)))
+-- How many items of a size (nil: Layout.SIZE) stand in a line of a room so wide.
+local function Columns(width, size)
+    size = size or Layout.SIZE
+    local between = Layout.Gap(size)
+    return math.max(1, math.floor((width + between) / (size + between)))
 end
 Layout.Columns = Columns
+
+-- The side items are drawn at in a room so wide: the size the slider chose (its percent), smaller while fewer than
+-- Layout.FIT of them would stand in a line, never under Layout.SMALLEST.
+function Layout.Fit(percent, room)
+    local chosen = math.floor(Layout.SIZE * Layout.Scale(percent) / 100 + 0.5)
+    for size = chosen, Layout.SMALLEST, -1 do
+        if Columns(room, size) >= Layout.FIT then return size end
+    end
+    return math.min(chosen, Layout.SMALLEST)
+end
 
 -- The grid's band under way: its top, where its next block goes, its lines of cells, its heads' height.
 local top, across, lines, high = 0, 0, 0, 0
 
 local function Close()
-    if across > 0 then y = top + high + Layout.HEAD_GAP + lines * (Layout.SIZE + Layout.GAP) - Layout.GAP + Layout.APART end
+    if across > 0 then y = top + high + Layout.HEAD_GAP + lines * (side + gap) - gap + Layout.APART end
     top, across, lines, high = y, 0, 0, 0
 end
 
 local function Grid(blocks, width, measure)
-    local columns = Columns(width)
-    local step = Layout.SIZE + Layout.GAP
+    local columns = Columns(width, side)
+    local step = side + gap
     top, across, lines, high = y, 0, 0, 0
     local member = false -- the band under way holds a group's members
     for index = 1, blocks.count do
@@ -144,7 +179,7 @@ local function Grid(blocks, width, measure)
             member = block.level == 3
             local wide = math.min(columns, slots)
             local words = not block.bare and measure and measure(block) or 0
-            local room = math.min(width, math.max(wide * step - Layout.GAP, words))
+            local room = math.min(width, math.max(wide * step - gap, words))
             if across > 0 and across + room > width then Close() end
             local height = block.level == 3 and Layout.MEMBER or Layout.HEAD
             if block.bare and across == 0 then height = 0 end -- alone on its line: no room for heads above it
@@ -197,13 +232,13 @@ end
 
 -- The fewest lines the blocks run[first..last] take side by side in a room so wide (nil: they do not fit).
 local function Lines(run, first, last, width)
-    local step = Layout.SIZE + Layout.GAP
+    local step = side + gap
     local most = 0
     for index = first, last do most = math.max(most, Slots(run[index])) end
     for lines = 1, most do
         local total = Layout.BAND_GAP * (last - first)
         for index = first, last do
-            total = total + Wide(Slots(run[index]), lines, index == last) * step - Layout.GAP
+            total = total + Wide(Slots(run[index]), lines, index == last) * step - gap
         end
         if total <= width then return lines end
     end
@@ -214,7 +249,7 @@ end
 -- cut[i] where its band ends, lines[i] that band's lines.
 local best, cut, lined = {}, {}, {}
 local function Plan(run, width)
-    local step = Layout.SIZE + Layout.GAP
+    local step = side + gap
     local n = #run
     best[n + 1] = 0
     for first = n, 1, -1 do
@@ -222,7 +257,7 @@ local function Plan(run, width)
         for last = first, n do
             local lines = Lines(run, first, last, width)
             if not lines then break end
-            local height = Layout.LABEL + Layout.LABEL_GAP + lines * step - Layout.GAP + Layout.APART + best[last + 1]
+            local height = Layout.LABEL + Layout.LABEL_GAP + lines * step - gap + Layout.APART + best[last + 1]
             if height <= best[first] then best[first], cut[first], lined[first] = height, last, lines end
         end
     end
@@ -232,7 +267,7 @@ local run = {}
 local function Bands(width)
     if #run == 0 then return end
     Plan(run, width)
-    local step = Layout.SIZE + Layout.GAP
+    local step = side + gap
     local first = 1
     while first <= #run do
         local last, lines = cut[first], lined[first]
@@ -242,12 +277,12 @@ local function Bands(width)
             local wide = Wide(Slots(block), lines, index == last)
             if not block.bare then
                 local label = Place("label")
-                label.x, label.y, label.width, label.height, label.block = x, top, wide * step - Layout.GAP, Layout.LABEL, block
+                label.x, label.y, label.width, label.height, label.block = x, top, wide * step - gap, Layout.LABEL, block
             end
             Cells(block, x, top + Layout.LABEL + Layout.LABEL_GAP, wide)
-            x = x + wide * step - Layout.GAP + Layout.BAND_GAP
+            x = x + wide * step - gap + Layout.BAND_GAP
         end
-        y = top + Layout.LABEL + Layout.LABEL_GAP + lines * step - Layout.GAP + Layout.APART
+        y = top + Layout.LABEL + Layout.LABEL_GAP + lines * step - gap + Layout.APART
         first = last + 1
     end
     for index = #run, 1, -1 do run[index] = nil end
@@ -266,10 +301,12 @@ local function Compact(blocks, width)
     Bands(width)
 end
 
--- The places of the blocks in a look ("grid", "list", "compact") in a room so wide; how many and how high.
-function Layout.Lay(look, blocks, width, places, measure)
+-- The places of the blocks in a look ("grid", "list", "compact") in a room so wide, the items size large (nil:
+-- Layout.SIZE); how many and how high.
+function Layout.Lay(look, blocks, width, places, measure, size)
     out, count, y = places, 0, 0
-    width = math.max(width, Layout.SIZE)
+    side, gap = size or Layout.SIZE, Layout.Gap(size or Layout.SIZE)
+    width = math.max(width, side)
     if look == "list" then List(blocks, width)
     elseif look == "compact" then Compact(blocks, width)
     else Grid(blocks, width, measure) end

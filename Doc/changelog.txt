@@ -6,6 +6,16 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Your alts: the list of characters is a dropdown, which leaves
+  room for the items, and the window now works like your bags:
+  collapsing groups, categories side by side, Sort By, Grid, List
+  and Compact, and the same settings.
+- Bags and alts: a slider for the size of the items in the View
+  dropdown. In a narrow window they shrink by themselves, and both
+  windows can now be made much narrower.
+- Bags: the bags you wear always show their icon, and an empty
+  slot shows what goes there: a bag, a reagent bag or keys. The
+  Armory and Consumables start collapsed.
 - Chat: a quiet start. The game's own chat stays out of sight, and each
   character starts in none of the public channels: join one when you
   want it, with /join or in the list on the chat's name. Loot, money,

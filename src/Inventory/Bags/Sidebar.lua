@@ -563,6 +563,45 @@ end
 -------------------------------------------------------------------------------
 local rail -- the bags' (Bag.Build)
 
+-- The categories' rows of a sidebar, in their order, every one switched on: a group's row with its arrow and its box,
+-- its members set in under it while it is not folded. counts: [key] and ["group:<group>"] = how many; viewing: the view
+-- shown ("cat:<key>", "group:<group>"); takes: items may be let go over the rows (the bags').
+function Bag.Categories(list, counts, viewing, takes)
+    local done = {}
+    for _, key in ipairs(Categories.order) do
+        local def = Categories.DEF[key]
+        local group = Categories.GroupOf(key)
+        if not (def and def.fixed) and not Categories.Off(key) then
+            if group and not done[group] then
+                done[group] = true
+                local row = list:Row(Categories.GroupWord(group), counts["group:" .. group] or 0,
+                    Categories.GroupIcon(group), nil, 0, viewing == "group:" .. group)
+                row.view, row.group, row.drag = "group:" .. group, group, true
+                row.takes = takes and ns.Menus.Takes("group:" .. group)
+                local folded = Categories.Folded(group)
+                list:Toggles(row, folded, Categories.Divided(group), Bag.FoldGroup, Bag.DivideGroup)
+                for _, member in ipairs(Categories.Members(group)) do
+                    if not Categories.Off(member) and not folded then
+                        local mfile, matlas = Categories.Icon(member)
+                        local memberRow = list:Row(Categories.Word(member), counts[member] or 0, mfile, matlas, 1,
+                            viewing == "cat:" .. member)
+                        memberRow.view, memberRow.key = "cat:" .. member, member
+                        memberRow.takes = takes and Categories.Takes(member)
+                        memberRow.drag, memberRow.inside = true, group
+                        row.last = memberRow
+                    end
+                end
+            elseif not group then
+                local file, atlas = Categories.Icon(key)
+                local row = list:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
+                row.view, row.key = "cat:" .. key, key
+                row.takes = takes and Categories.Takes(key)
+                row.drag = Categories.Movable(key)
+            end
+        end
+    end
+end
+
 -- The rows as they are now: counts are Views.Counts', viewing the view shown, options the module's settings.
 function Bag.Refresh(counts, viewing, options)
     if not rail then return end
@@ -586,37 +625,7 @@ function Bag.Refresh(counts, viewing, options)
         end
     end
     if shownFixed then rail:Divider() end
-    local done = {}
-    for _, key in ipairs(Categories.order) do
-        local def = Categories.DEF[key]
-        local group = Categories.GroupOf(key)
-        if not (def and def.fixed) and not Categories.Off(key) then
-            if group and not done[group] then
-                done[group] = true
-                local row = rail:Row(Categories.GroupWord(group), counts["group:" .. group] or 0,
-                    Categories.GroupIcon(group), nil, 0, viewing == "group:" .. group)
-                row.view, row.group, row.drag = "group:" .. group, group, true
-                row.takes = ns.Menus.Takes("group:" .. group)
-                local folded = Categories.Folded(group)
-                rail:Toggles(row, folded, Categories.Divided(group), Bag.FoldGroup, Bag.DivideGroup)
-                for _, member in ipairs(Categories.Members(group)) do
-                    if not Categories.Off(member) and not folded then
-                        local mfile, matlas = Categories.Icon(member)
-                        local memberRow = rail:Row(Categories.Word(member), counts[member] or 0, mfile, matlas, 1,
-                            viewing == "cat:" .. member)
-                        memberRow.view, memberRow.key, memberRow.takes = "cat:" .. member, member, Categories.Takes(member)
-                        memberRow.drag, memberRow.inside = true, group
-                        row.last = memberRow
-                    end
-                end
-            elseif not group then
-                local file, atlas = Categories.Icon(key)
-                local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
-                row.view, row.key, row.takes = "cat:" .. key, key, Categories.Takes(key)
-                row.drag = Categories.Movable(key)
-            end
-        end
-    end
+    Bag.Categories(rail, counts, viewing, true)
     if options.addCategory ~= false then
         local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.ART .. "add", nil, 0, false)
         row.add = true
@@ -630,18 +639,24 @@ function Bag.Width()
     return rail and rail:Width() or Sidebar.WIDTH
 end
 
+-- The categories as the player arranged them changed: every window that shows them drawn anew.
+local function Arranged()
+    ns.Bags.Refresh()
+    if ns.Bank then ns.Bank.Refresh() end
+    if ns.Alts then ns.Alts.Changed() end
+end
+
 -- A group's arrow: its members folded into its row, or listed again (kept).
 function Bag.FoldGroup(row)
     Categories.Fold(row.group, not Categories.Folded(row.group))
-    ns.Bags.Refresh()
+    Arranged()
 end
 
 -- A group's box: All Items divides it into its members, or shows it whole (kept).
 function Bag.DivideGroup(row)
     Categories.Divide(row.group, not Categories.Divided(row.group))
     Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
-    ns.Bags.Refresh()
-    if ns.Bank then ns.Bank.Refresh() end
+    Arranged()
 end
 
 -- Folded or unfolded (Bags.Fold keeps it).
@@ -664,7 +679,7 @@ function Bag.Aim(lifted, over, part)
     if group then
         if over.group == group or over.inside == group then return nil end
         if over.inside then
-            for _, row in ipairs(rail:Rows()) do
+            for _, row in ipairs(lifted.rail:Rows()) do
                 if row.group == over.inside then return "after", false, row.last end
             end
             return nil
@@ -710,7 +725,7 @@ function Bag.Place(lifted, over, where)
     else
         Categories.Place(key, target, after, into)
     end
-    ns.Bags.Refresh()
+    Arranged()
 end
 
 -- A drag under way given up (the window hidden).

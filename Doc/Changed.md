@@ -6,6 +6,39 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the alts made like the bags, an item size, narrow windows, the bags' strip (Saneroki, 2026-10-30)
+Saneroki: the list of alts a dropdown to save a column; the collapsing of categories and the bag/category column like the
+bags'; the alts window given the bags' functions and settings where it makes sense; a slider in both windows that scales
+the items, which also adjust to the window, so the windows can be narrower; the bags' icons on the equipped bag slots,
+empty slots that say what they are, a little smaller; The Armory and Consumables collapsed at first.
+- **`Alts/`, rebuilt on the bags' parts:** no list or grid of its own any more. `Items.Sections` makes a character's
+  places into sections for `Views.Build` (`place = "alts"`: no Pinned, Recent or empty slots; a place's count on a record
+  of its own that reads the item's by `__index`), and `Layout`, `Canvas`, `Sidebars`, `Columns` and a pool of `Cells`
+  draw them: categories side by side, groups that fold and divide, the sidebar folding by its arrow, Sort By, the
+  displays, *Show Item Level*, *Coin on Junk*, *Grey Junk*, Alt and a right click, a row's menu and drag. *Group by
+  Category* went: the items always stand by category. `Roster.lua` is the dropdown on the title line (`Roster.Show`); the
+  head over the items went: the level line and the gold are in a foot as the bags' (the gold's tooltip every character's).
+  The doll is a frame under the canvas (`Items.MakeDoll`, `DrawDoll`), its icons as the sheet's. `Bags.TitleBar` and
+  `Bags.Wheel` are shared; `Contents.FOUND` is a query that takes what the window's own search found.
+- **`Layout`, the item size:** `Layout.Lay` and `Canvas:Draw` take a size; `Layout.Fit(percent, room)` is the slider's size,
+  smaller while fewer than `Layout.FIT` (6) stand in a line, never under `Layout.SMALLEST` (28); the gap goes with it
+  (`Layout.Gap`). `Cells`: a button's face, words and marks follow its size (`Sized`; the list's icons no longer a fixed
+  inset of the large button's). `Bags.SizeRow`: the game's slider in the dropdown *View*, kept per window (`scale`); the
+  bank goes with the bags (`Bags.ItemSize`).
+- **Narrow windows:** `Bags.LEAST` 340 by 240 (was 560 by 320), `Alts.LEAST` 372 by 240; `Part.Width` keeps the first
+  layout's bags as wide as before. On a narrow title line the count goes (`CountFit`, `BarFit`), `Bags.TITLE_MENU` 56, the
+  characters' dropdown down to `Roster.LEAST`; `Foot.Room` leaves out the currencies, then the boxes' words
+  (`Vendor.Width`, `Vendor.Words`).
+- **`Foot.lua`, the strip:** its slots buttons of ours with a texture of ours in place of the game's item button, so
+  nothing of the game's touches the icon; `Icon` reads the slot, else the item worn there (`C_Item.GetItemIconByID`),
+  else `Foot.BAG_ICON` while the bag has slots. `Foot.BAG` 40 (was 51). An empty slot shows `Foot.EMPTY`'s drawing: a
+  pouch, the mortar, and a new `key` (`assets/interface/categories/key.png`, drawn by code, its row in the set for when
+  one is rendered), the keyring's while it holds no key.
+- **`Categories`:** `Categories.FOLDED`: The Armory and Consumables folded in the sidebar at first; `folded` keeps false too,
+  so a group unfolded stays so.
+- **Tests:** `dev/tests/inventory.lua`'s alts rewritten for the window; `bags.lua`: the sizes, the foot, the strip. The
+  lab's world has a bag worn and an empty keyring.
+
 ### Social: a quiet start, in no public channel (Saneroki, 2026-10-30)
 Saneroki: the game's chat off and short names off; at first in none of the public channels, to be activated when needed;
 loot, money, experience, General, Trade, Local Defense and Services turned off; on both profiles.

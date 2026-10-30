@@ -16,6 +16,8 @@ local _, ns = ...
 --
 --      Vendor.Build(foot, gold)   the boxes in the foot, left of gold (Foot.Build)
 --      Vendor.Refresh()           the ticks and widths as the settings have them
+--      Vendor.Width(words)        how wide the boxes are together, with their words or without
+--      Vendor.Words(on)           the boxes' words shown or left out (a narrow window: Foot.Room)
 --      Vendor.Start()             listens for vendors, from the login on
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -36,6 +38,7 @@ Vendor.BOXES = { { key = "autoRepair", word = "bagsAutoRepair", tip = "bagsAutoR
                    profile = true } } -- from the gold leftwards; a profile's: key only tells that its module is there
 
 local boxes = {}
+local worded = true -- the boxes' words shown
 
 local function Game(name, ...)
     return Core.Ask(rawget(_G, name), ...)
@@ -72,10 +75,10 @@ end
 -------------------------------------------------------------------------------
 -- Where a box's setting is: this module's, the one it names, or the profile in use.
 local function On(box)
+    if box.profile then return Core.Profiles.Leveling() end
     local options = box.module and Core.Settings(box.module) or ns.options
     return options[box.key] ~= false
 end
-    if box.profile then return Core.Profiles.Leveling() end
 
 local function Clicked(box)
     local on = not On(box)
@@ -136,12 +139,31 @@ local function Box(foot, spec, font)
     return box
 end
 
+-- A box's width, with its word or without.
+local function Wide(box, words)
+    return Vendor.BOX + (words and Vendor.WORD_GAP + (box.text:GetStringWidth() or 0) or 0)
+end
+
 function Vendor.Refresh()
     for _, box in ipairs(boxes) do
         local on = On(box)
         box:SetChecked(on)
         box.tick:SetShown(on)
-        box:SetWidth(Vendor.BOX + Vendor.WORD_GAP + (box.text:GetStringWidth() or 0))
+        box:SetWidth(Wide(box, worded))
+    end
+end
+
+function Vendor.Width(words)
+    local wide = 0
+    for _, box in ipairs(boxes) do wide = wide + Wide(box, words) + Vendor.APART end
+    return wide
+end
+
+function Vendor.Words(on)
+    worded = on
+    for _, box in ipairs(boxes) do
+        box.text:SetShown(on)
+        box:SetWidth(Wide(box, on))
     end
 end
 

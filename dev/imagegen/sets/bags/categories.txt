@@ -7,7 +7,8 @@
 #   legs-2 feet-1 finger-1 trinket-2 weapons-1 offhand-2 ranged-3 armor-2 sets-2 prep-2 potions-1 enhance-1 camp-2
 #   consumables-1 trade-3 professions-2 reagent-1 misc-3 quest-3 special-1 junk-3 add-2 own-3 containers-1
 # The doll's empty slots show these too (Sheet/Slots.lua). tabard is drawn by code in this line for now, not picked
-# from a render; its row is here for when one is made.
+# from a render; its row is here for when one is made. So is key (an empty keyring's slot in the bags' strip,
+# Bags/Foot.lua).
 workflow: qwen21-turbo-t2i
 set: aspect_ratio=1:1 (Square), megapixels=0.6
 count: 4
@@ -28,6 +29,7 @@ wrist: one leather bracer for a forearm with two laces.
 hands: one leather glove seen from the back, fingers together.
 waist: one belt in a loose loop with a square buckle.
 legs: one pair of trousers seen from the front.
+key: one old iron key with a round bow, tilted.
 feet: one tall leather boot seen from the side.
 finger: one ring with a round gem on top.
 trinket: one round medallion charm on a small loop, a star engraved in it.

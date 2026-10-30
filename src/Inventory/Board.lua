@@ -38,6 +38,7 @@ local _, ns = ...
 --      Part.Size(w, h)        its panel's body is that wide and high now (a part may lack it)
 --      Part.Search(text)      what is typed into the search box ("": nothing; a part may lack it)
 --      Part.Present()         whether it has something to show now (a part may lack it: always)
+--      Part.Width             how wide the first layout makes it (a part may lack it: its least width)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Board = {}
@@ -104,7 +105,7 @@ end
 -- a function giving it) and the part itself.
 function Board.Part(key, title, least, part)
     parts[key] = { part = part, spec = {
-        key = key, title = title, least = least, icon = Board.ICONS[key], dress = Board.DRESS[key],
+        key = key, title = title, least = least, width = part.Width, icon = Board.ICONS[key], dress = Board.DRESS[key],
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
         present = part.Present and function() return ns.Safe(key, part.Present) == true end or nil,
@@ -120,7 +121,7 @@ local function Windows()
     return list
 end
 
--- The first layout: the windows of Board.FIRST side by side, each as wide as its least width, the last taking
+-- The first layout: the windows of Board.FIRST side by side, each as wide as it asks, the last taking
 -- the rest of the room the board lays out in (the screen less Core's pads round and between the windows).
 local function Default(width)
     local list = {}
@@ -135,9 +136,10 @@ local function Default(width)
     for index, spec in ipairs(list) do
         local least = spec.least
         if type(least) == "function" then least = least() end
+        local wide = spec.width or least[1]
         nodes[index] = { key = spec.key }
-        shares[index] = least[1]
-        if index < #list then rest = rest - least[1] end
+        shares[index] = wide
+        if index < #list then rest = rest - wide end
     end
     shares[#list] = math.max(shares[#list], rest)
     return { split = "x", parts = nodes, shares = shares }

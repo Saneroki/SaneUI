@@ -472,10 +472,12 @@ end
 -------------------------------------------------------------------------------
 --  Search
 -------------------------------------------------------------------------------
+Contents.FOUND = {} -- a query that takes all: what was found already, by the window's own search (the alts')
+
 -- Whether a record with an item is found by a query (Core.Fuzzy.Query): by its name, its category's name or
 -- its item level.
 function Contents.Found(record, query)
-    if not query then return true end
+    if not query or query == Contents.FOUND then return true end
     if not record.item then return false end
     return Core.Fuzzy.Match(query, record.name, ns.Categories.Word(record.category), record.level and tostring(record.level)) ~= nil
 end

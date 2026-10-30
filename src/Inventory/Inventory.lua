@@ -166,6 +166,7 @@ ns.TEXT = {
     bagsShowPinned = "Show Pinned Items",
     bagsShowRecent = "Show Recent Items",
     bagsMerge = "Merge Stacks",
+    bagsItemSize = "Item Size",
     bagsFirst = "Open With",
     bagsOn = "Switched Off",
     bagsSwitchOn = "Switch On %s",
@@ -210,6 +211,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "autoSell" or key == "autoRepair" then return ns.Guarded(ns.Vendor.Refresh) end
     if key == "bags" then return ns.Guarded(ns.Bags.Reload) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
+    if ns.Alts then ns.Guarded(ns.Alts.Changed) end
 end })
 
 -- Standing down, the game's bag keys and bag windows are the game's again first, then the full screen's windows go

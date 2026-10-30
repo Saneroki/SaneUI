@@ -9,11 +9,18 @@ local _, ns = ...
 --      gold         at the right, the character's, in the game's coins; its
 --                   tooltip every character of the account's gold and the
 --                   total, from Core's data (Core.Data.Characters)
+--  What does not fit a narrow window goes (Foot.Room): the currencies first,
+--  then the words of the checkboxes (the boxes stay, their tooltips say them).
 --  The bags themselves, in a strip under the window's bar (its button shows
---  or hides it): a pencil slot for the backpack and for each bag slot (the
---  reagent bag's too) and the keyring; the bag's icon in it, its corners
---  rounded and no border (an empty bag slot the pencil slot alone), how
---  many of its slots are free on it, the game's tooltip for it (the bag, or
+--  or hides it): a pencil slot, a little smaller than an item's, for the
+--  backpack and for each bag slot (the reagent bag's too) and the keyring; the
+--  bag's icon in it, its corners rounded and no border (a slot of ours, not
+--  the game's item button, so nothing of the game's touches the icon: read
+--  from the slot, else from the item worn there; a bag worn whose icon the game
+--  does not tell shows a bag), how many of its slots are free on it. An empty
+--  one shows what goes there, in one of the bags' drawings (Foot.EMPTY: a pouch
+--  for a bag, the mortar for the reagent bag, a key for a keyring without keys;
+--  Saneroki, 2026-10-30). The game's tooltip for it (the bag, or
 --  Equip Container for an empty slot) with its slots taken of how many; the
 --  mouse on it lights that bag's items (Cells.Light); a click or a drag picks
 --  the bag up, a bag let go over a slot is put there (the game's
@@ -37,9 +44,14 @@ local Foot = {}
 ns.Foot = Foot
 
 Foot.HEIGHT = 28
-Foot.BAG = ns.Layout.SIZE    -- a bag's square in the strip: as large as an item's, in the same look
-Foot.BAG_GAP = ns.Layout.GAP
-Foot.STRIP = Foot.BAG + 12
+Foot.BAG = 40          -- a bag's square in the strip, in an item's look (Saneroki, 2026-10-30: a little smaller)
+Foot.BAG_GAP = 4
+Foot.STRIP = Foot.BAG + 10
+Foot.DRAWING = 0.8     -- an empty slot's drawing against the slot's side
+Foot.DRAWN = 0.6       -- and how much of it shows: plain to see, still empty
+-- What an empty slot shows: a drawing of the bags' (Categories.ART).
+Foot.EMPTY = { bag = "one", reagent = "reagent", keyring = "key" }
+Foot.BAG_ICON = "Interface\\Icons\\INV_Misc_Bag_08" -- a bag worn whose icon the game does not tell
 Foot.TOKENS = 3        -- the currencies the game lets the backpack watch (MAX_WATCHED_TOKENS)
 Foot.TOKEN = 17        -- a currency's icon
 Foot.TOKEN_CUT = 5 / 64
@@ -51,6 +63,7 @@ Foot.SOLD = 0.5        -- seconds after the game's sell-all until its money is t
 
 local Contents = ns.Contents
 local foot, strip, gold, act, tokens
+local room             -- the window's body is this wide (Foot.Room; nil: not known yet)
 local bags = {}        -- [index] = a bag's button; bagOf[button] = its container
 local bagOf = {}
 local doing            -- what the button does now: "junk" or nil
@@ -125,10 +138,11 @@ end
 
 local frees = {}  -- [button] = how many of its slots are free, on it
 local slotOf = {} -- [button] = its pencil slot, half drawn while no bag is in it (ns.Cells.EMPTY_SLOT)
+local iconOf = {} -- [button] = the bag's icon
+local emptyOf = {} -- [button] = the drawing of what goes into it
 
 local function MakeBag(index)
-    local made, button = pcall(CreateFrame, "ItemButton", nil, strip)
-    if not made then button = CreateFrame("Button", nil, strip, "ItemButtonTemplate") end
+    local button = CreateFrame("Button", nil, strip)
     button:SetSize(Foot.BAG, Foot.BAG)
     -- a pencil slot on the paper, the bag's icon in it (Core.Journal)
     local inset = Foot.BAG * Core.Journal.SLOT_ICON
@@ -136,31 +150,20 @@ local function MakeBag(index)
     local face = CreateFrame("Frame", nil, button)
     face:SetPoint("TOPLEFT", inset, -inset)
     face:SetPoint("BOTTOMRIGHT", -inset, inset)
-    local icon = ns.Cells.Part(button, "icon")
-    if icon then
-        icon:ClearAllPoints()
-        icon:SetAllPoints(face)
-        icon:SetTexCoord(ns.Cells.ZOOM, 1 - ns.Cells.ZOOM, ns.Cells.ZOOM, 1 - ns.Cells.ZOOM)
-        local mask = ns.Cells.Part(button, "IconMask")
-        if mask and icon.RemoveMaskTexture then
-            icon:RemoveMaskTexture(mask)
-            mask:Hide()
-        end
-        ns.Cells.Mask(button, ns.Cells.ROUNDED, icon)
-    end
-    local light = button.GetHighlightTexture and button:GetHighlightTexture()
-    if light then
-        light:ClearAllPoints()
-        light:SetAllPoints(face)
-        ns.Cells.Mask(button, ns.Cells.ROUNDED, light)
-    end
-    local normal = button.GetNormalTexture and button:GetNormalTexture()
-    if normal then normal:SetAlpha(0) end
-    local border = ns.Cells.Part(button, "IconBorder")
-    if border then border:SetAlpha(0) end
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints(face)
+    icon:SetTexCoord(ns.Cells.ZOOM, 1 - ns.Cells.ZOOM, ns.Cells.ZOOM, 1 - ns.Cells.ZOOM)
+    iconOf[button] = icon
+    button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    local light = button:GetHighlightTexture()
+    if light then light:SetAllPoints(face) end
+    ns.Cells.Mask(button, ns.Cells.ROUNDED, icon, light)
+    local drawing = button:CreateTexture(nil, "ARTWORK")
+    drawing:SetSize(Foot.BAG * Foot.DRAWING, Foot.BAG * Foot.DRAWING)
+    drawing:SetPoint("CENTER")
+    drawing:SetAlpha(Foot.DRAWN)
+    emptyOf[button] = drawing
     local font = ns.Cells.Fonts()
-    local count = ns.Cells.Part(button, "Count")
-    if count then count:Hide() end
     frees[button] = button:CreateFontString(nil, "OVERLAY")
     if font.count then frees[button]:SetFontObject(font.count) end
     frees[button]:SetPoint("BOTTOMRIGHT", face, "BOTTOMRIGHT", -1, 1)
@@ -187,12 +190,27 @@ local function Bar()
     return list
 end
 
--- A bag's icon: the backpack's and the keyring's, the bag's in its slot; nil for an empty slot.
-local function Icon(bag)
+-- A bag's icon: the backpack's, the keyring's while keys are on it, the bag's in its slot (the slot's as the game
+-- tells it, else the item's worn there, else any bag's: a slot with a bag in it never looks empty); nil for an
+-- empty slot.
+local function Icon(bag, size, left)
     if bag == Contents.BACKPACK then return "Interface\\Icons\\ui-hud-actionbar-bag" end
-    if bag == Contents.KEYRING then return "Interface\\Icons\\ui-hud-actionbar-keyring" end
+    if bag == Contents.KEYRING then
+        return left ~= size and "Interface\\Icons\\ui-hud-actionbar-keyring" or nil
+    end
     local slot = Slot(bag)
-    return slot and Core.Plain(Core.Ask(GetInventoryItemTexture, "player", slot)) or nil
+    local file = slot and Core.Ask(GetInventoryItemTexture, "player", slot)
+    if file then return file end
+    local item = slot and Core.Ask(rawget(_G, "GetInventoryItemID"), "player", slot)
+    local items = rawget(_G, "C_Item")
+    file = item and items and Core.Ask(items.GetItemIconByID, item)
+    return file or size > 0 and Foot.BAG_ICON or nil
+end
+
+-- What an empty slot of the strip shows: what goes there.
+local function Drawing(bag)
+    if bag == Contents.KEYRING then return Foot.EMPTY.keyring end
+    return Contents.Reagent(bag) and Foot.EMPTY.reagent or Foot.EMPTY.bag
 end
 
 function Foot.Bags()
@@ -201,13 +219,14 @@ function Foot.Bags()
     for index, bag in ipairs(Bar()) do
         local button = bags[index] or MakeBag(index)
         bagOf[button] = bag
-        local picture = Icon(bag)
-        Game("SetItemButtonTexture", button, picture)
-        local icon = ns.Cells.Part(button, "icon")
-        if icon then icon:SetShown(picture ~= nil) end
-        slotOf[button]:SetAlpha(picture and 1 or ns.Cells.EMPTY_SLOT)
         local size = Contents.Size(bag)
         local left = size > 0 and Core.Plain(Core.Ask(api.GetContainerNumFreeSlots, bag)) or nil
+        local picture = Icon(bag, size, left)
+        iconOf[button]:SetTexture(picture)
+        iconOf[button]:SetShown(picture ~= nil)
+        emptyOf[button]:SetShown(picture == nil)
+        if not picture then emptyOf[button]:SetTexture(ns.Categories.ART .. Drawing(bag)) end
+        slotOf[button]:SetAlpha(picture and 1 or ns.Cells.EMPTY_SLOT)
         frees[button]:SetText(left and tostring(left) or "")
         button:ClearAllPoints()
         if before then
@@ -219,6 +238,11 @@ function Foot.Bags()
         before = button
     end
     for index = #list + 1, #bags do bags[index]:Hide() end
+end
+
+-- A strip button's icon and drawing (the tests).
+function Foot.Parts(button)
+    return iconOf[button], emptyOf[button], slotOf[button]
 end
 
 -------------------------------------------------------------------------------
@@ -271,6 +295,7 @@ function Foot.Act()
     if doing == "junk" then act.text:SetText(Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")) end
     act:SetWidth(math.max(40, (act.text:GetStringWidth() or 0) + 14))
     act:SetShown(doing ~= nil)
+    ns.Bags.CountBefore(doing and act or nil)
 end
 
 -- The items still to sell, one at a time: { bag, slot, item, price } each; what was sold, for how much, and
@@ -346,6 +371,27 @@ local function Act()
     end
 end
 
+-- The foot as wide as the window: the gold and the checkboxes with their words, the currencies where they fit too;
+-- too narrow for that, the currencies go, then the boxes' words.
+local function Fit()
+    if not (room and gold) then return end
+    local left = room - 2 * (ns.Bags.INSET + ns.Bags.EDGE) - (gold:GetWidth() or 0)
+    local words = ns.Vendor.Width(true) <= left
+    ns.Vendor.Words(words)
+    left = left - ns.Vendor.Width(words)
+    local wide = 0
+    for _, token in ipairs(tokens) do
+        if token.has then wide = wide + (token:GetWidth() or 0) + 2 * Foot.TOKEN_GAP end
+    end
+    for _, token in ipairs(tokens) do token:SetShown(token.has and wide <= left) end
+end
+
+-- The window's body is this wide.
+function Foot.Room(width)
+    room = width
+    Fit()
+end
+
 -- The currencies watched in the backpack, at the foot's left.
 function Foot.Tokens()
     local info = rawget(_G, "C_CurrencyInfo")
@@ -353,7 +399,8 @@ function Foot.Tokens()
     for index = 1, Foot.TOKENS do
         local token = tokens[index]
         local data = info and info.GetBackpackCurrencyInfo and Core.Ask(info.GetBackpackCurrencyInfo, index)
-        if type(data) == "table" and Core.Plain(data.quantity) then
+        token.has = type(data) == "table" and Core.Plain(data.quantity) ~= nil
+        if token.has then
             local large = rawget(_G, "BreakUpLargeNumbers")
             token.text:SetText(large and large(data.quantity) or tostring(data.quantity))
             token.icon:SetTexture(data.iconFileID)
@@ -370,6 +417,7 @@ function Foot.Tokens()
             token:Hide()
         end
     end
+    Fit()
 end
 
 local function TokenEnter(token)
@@ -381,6 +429,7 @@ end
 function Foot.Gold()
     gold:SetText(Core.Coins(Core.Plain(Core.Ask(GetMoney)) or 0) or "")
     gold:SetWidth((gold.text:GetStringWidth() or 0) + 4)
+    Fit()
 end
 
 -- Every character of the account and its gold, this one's as it is now; the total.
@@ -406,6 +455,8 @@ local function GoldEnter(owner)
     tip:AddDoubleLine(Core.Word("TOTAL", "Total"), Core.Coins(total) or "", 1, 0.82, 0, 1, 1, 1)
     tip:Show()
 end
+
+Foot.GoldTip = GoldEnter -- the alts' gold says the same
 
 -------------------------------------------------------------------------------
 --  Built once, in the window's body
