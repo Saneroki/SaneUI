@@ -1,0 +1,16 @@
+## Interface: 16001, 120105
+## Title: Data: Auction Scans
+## Notes: Every full scan of the auction house, every auction in it, in a file of its own. Sane UI loads it when you open the auction house, so a login never has to read it. Switched off, the scans' prices are still kept, but not each auction.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## LoadOnDemand: 1
+## SavedVariables: SaneUIData_Scans
+## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## X-SaneUI-Games: forever
+## X-License: MIT
+
+# No code: this addon is the file. Core does the work (Doc/guides/data.md, *The full auction scan*)
+AuctionScans.lua

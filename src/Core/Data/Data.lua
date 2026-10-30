@@ -39,7 +39,7 @@ Data.frozen = false -- the tests' switch: records handed out read-only, changes 
 Data.SAVED = { Characters = true, Guild = true, Learned = true }
 -- The one with a file of its own, apart from the settings (Saneroki, 2026-10-30): [name] = the addon that declares it.
 -- The game keeps a file per addon, and reads that one's after Core's.
-Data.APART = { Market = "SaneUI_AuctionData" }
+Data.APART = { Market = "SaneUI_AuctionData", Scans = "SaneUI_AuctionScans" }
 local WEAK = { __mode = "v" }
 local LIST, VERSION = "\030", "\028"
 

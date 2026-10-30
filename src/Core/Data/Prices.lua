@@ -16,8 +16,9 @@ local Core = SaneUI.Core
 --                              server time to (nil: from the first point, to now). One table used again: read it at once
 --      Prices:Stamp()          a number that moves with every change of a price, for a view to know its picture is old
 --      Prices:OnChange(fn)     fn() on the next frame after prices changed: a list of the game's, or a scan kept
---      Prices.Database(game, houses)   what all accounts hold together, from the addon SaneUI_AuctionDatabase, which a tool
---                              on this computer makes: read over this account's own where it is newer
+--      Prices.Account()        takes in what another account's file left in the global: the addon
+--                              SaneUI_AuctionDatabase is links to every account's file (Doc/guides/data.md, *Across
+--                              accounts*), read over this account's own points where they are newer
 --
 --  item is an item's ID or its link. A link names its kind (gear by level and suffix, a pet by species); an ID, or a
 --  link of a kind no scan saw, the cheapest of its kinds.
@@ -358,9 +359,50 @@ function Prices:Range(item, from, to)
     return range
 end
 
--- Called by the file of the addon SaneUI_AuctionDatabase as the game reads it; another game's is not taken.
-function Prices.Database(game, houses)
-    if game == Data.Game() and type(houses) == "table" then database = houses end
+-- A house of an account's file joined to what the accounts hold together. Texts of a day join plainly, the last to scan at
+-- the end: each line starts the string or follows a ";", and Entry takes the last market there is.
+local function Join(key, house)
+    local shared = database[key]
+    if not shared then
+        shared = { index = "", days = {}, recent = {}, kept = 0 }
+        database[key] = shared
+    end
+    local kept = tonumber(house.kept) or 0
+    local newer = kept >= shared.kept
+    if type(house.index) == "string" then shared.index = shared.index .. house.index end
+    for day, text in pairs(type(house.days) == "table" and house.days or NONE) do
+        if type(text) == "string" then
+            local held = shared.days[day] or ""
+            shared.days[day] = newer and held .. text or text .. held
+        end
+    end
+    for at, text in pairs(type(house.recent) == "table" and house.recent or NONE) do shared.recent[at] = text end
+    if newer then shared.kept = kept end
+end
+
+-- Called after each link of the addon SaneUI_AuctionDatabase: that account's file has just run, and left its saved
+-- variable in the global. What it holds of this game version is joined, and the global cleared: this account's own file is
+-- read after these (the addon SaneUI_AuctionData says so), and must find nothing there.
+function Prices.Account()
+    local saved = rawget(_G, "SaneUIData_Market")
+    rawset(_G, "SaneUIData_Market", nil)
+    local client = type(saved) == "table" and saved[Data.Game()]
+    local houses = type(client) == "table" and client.houses
+    if type(houses) ~= "table" then return end
+    database = database or {}
+    for key, house in pairs(houses) do
+        if type(house) == "table" then Join(key, house) end
+    end
+end
+
+-- What the accounts hold together forgotten (the tests' way back).
+function Prices.Clear()
+    database = nil
+end
+
+-- The key of a house's part.
+function Prices.Key(house)
+    return keys[house]
 end
 
 function Data.Series(name)

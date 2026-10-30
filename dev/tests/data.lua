@@ -1658,6 +1658,21 @@ do
     local key = "eu/1234/alliance"
     local state = Scan.State()
     local saved = function() return SaneUIData_Market.forever.houses[key] end
+    -- This account's scans kept whole, in the file of their own, loaded when the auction house opens.
+    local function Scanned() return SaneUIData_Scans.forever.houses[key] end
+    -- What an account's file leaves when its link runs: for a moment the global is that account's.
+    local function Account(houses, game)
+        local own = rawget(_G, "SaneUIData_Market")
+        SaneUIData_Market = { [game or "forever"] = { houses = houses } }
+        Data.Series("Prices").Account()
+        local left = rawget(_G, "SaneUIData_Market")
+        SaneUIData_Market = own
+        return left
+    end
+    local function Accounts(houses, game)
+        Data.Series("Prices").Clear()
+        return Account(houses, game)
+    end
     local function Read()
         for _ = 1, 200 do
             Frame()
@@ -1679,7 +1694,12 @@ do
     rows = { Plain(10, 5, 500, "Ann"), Plain(10, 5, 1500, "Bob"), Plain(10, 10, 2000, "Ann"), Plain(20, 1, 0, "Cid"),
         Plain(666, 1, 100, "Dee"), Plain(30, 0, 100, "Eve") }
     check(state.phase == "closed", "no auction house open: nothing runs")
+    check(rawget(_G, "SaneUIData_Scans") == nil, "a login reads no whole scan")
+    local loaded = C_AddOns.LoadAddOn
+    C_AddOns.LoadAddOn = function(name) W.Fire("ADDON_LOADED", name) end
     W.Fire("AUCTION_HOUSE_SHOW")
+    C_AddOns.LoadAddOn = loaded
+    check(type(SaneUIData_Scans) == "table" and SaneUIData_Scans.forever.format == 1, "the auction house opens: their file is read, as this account will add to it")
     check(state.phase == "waiting" and asks == 0, "the auction house opens: the window gets a moment for its own first searches")
     check(select(2, Strip()):find("Next full scan in 0:00", 1, true), "the bar under the game's window says so")
     W.Wait(Scan.SETTLE + Scan.TICK)
@@ -1702,7 +1722,7 @@ do
     check(Line(text, "20") == "20=0,0,1,1,1;", "bid only: counted, no price")
     check(not text:find("666=") and not text:find("30="), "an item the game does not know and a row of nothing are left out")
     check(saved().scans[day] == 1 and SaneUIData_Market.forever.format == 1, "one scan that day, in the saved variable of this game version")
-    local whole = saved().whole[answered]
+    local whole = Scanned()[answered]
     local build = whole and whole:match("^(%d+)\n")
     check(build and whole:find("10,5,500,1,1,0,2,0,Ann,,", 1, true) and whole:find("20,1,0,1,1,0,2,0,Cid,,", 1, true) and not whole:find("666,", 1, true),
         "Forever keeps the scan whole: every row of it, with its build, a seller's name beside it: " .. tostring(whole))
@@ -1739,7 +1759,7 @@ do
         "each scan has its own lowest there, not the day's")
     check(Prices:Low(20) == nil and Prices:Last(20) == 0, "what the last scan did not see keeps its last point")
     local scans = 0
-    for _ in pairs(saved().whole) do scans = scans + 1 end
+    for _ in pairs(Scanned()) do scans = scans + 1 end
     check(scans == 2, "both scans of the day kept whole, each by itself")
 
     -- The server refuses: it says nothing
@@ -1775,7 +1795,7 @@ do
     check(state.outcome == "kept" and saved().left == 1, "after the wait what is still not known is left out")
     check(Line(text, "50:60:-7:0") == "50:60:-7:0=900,900,1,1,0;" and Line(text, "82800:0:0:39") == "82800:0:0:39=600,600,1,1,0;",
         "gear by item, level and suffix, a pet by its species: " .. text)
-    check(saved().whole[saved().at]:find("item:50:0:0:0:0:0:-7:0:60", 1, true), "a row of gear whole with its item string")
+    check(Scanned()[saved().at]:find("item:50:0:0:0:0:0:-7:0:60", 1, true), "a row of gear whole with its item string")
     check(Prices:Low(50) == 900 and Prices:Low("|Hitem:50:0:0:0:0:0:-7:0:60|h[x]|h") == 900 and Prices:Low("|Hbattlepet:39:1:3:0:0:0:0|h[z]|h") == 600,
         "gear and pets read by their ID and by a link")
 
@@ -1805,7 +1825,7 @@ do
     local point = saved().index
     W.Fire("PLAYER_LOGOUT")
     check(saved().index ~= point and saved().index:find("40=%d+,55,70,44,1,1;"), "what the game listed is written at the logout: " .. saved().index)
-    check(whole ~= nil and saved().whole[answered] == whole, "and never into the scans, which stay as the server gave them")
+    check(whole ~= nil and Scanned()[answered] == whole, "and never into the scans, which stay as the server gave them")
 
     -- A scan another addon asked for, and the auction house closed halfway
     rows = {}
@@ -1817,7 +1837,7 @@ do
     check(asks == before and state.phase == "reading", "any full scan is read, whoever asked for it")
     local gone = saved().days[Today()]
     local wholes = 0
-    for _ in pairs(saved().whole) do wholes = wholes + 1 end
+    for _ in pairs(Scanned()) do wholes = wholes + 1 end
     rowCost = 1
     Frame()
     rowCost = 0
@@ -1827,7 +1847,7 @@ do
     rows = {}
     for _ = 1, 20 do Frame() end
     local after = 0
-    for _ in pairs(saved().whole) do after = after + 1 end
+    for _ in pairs(Scanned()) do after = after + 1 end
     check(saved().days[Today()] == gone and after == wholes and not Steps.Running("Full auction scan"), "the list gone halfway: nothing of it is kept")
     local waited = asks
     W.Wait(Scan.INTERVAL * 2)
@@ -1876,7 +1896,7 @@ do
     W.Wait(Scan.INTERVAL + Scan.TICK)
     W.Fire("REPLICATE_ITEM_LIST_UPDATE")
     Read()
-    check(state.outcome == "kept" and saved().whole[saved().at] == nil and saved().days[Today()]:find("10=", 1, true),
+    check(state.outcome == "kept" and Scanned()[saved().at] == nil and saved().days[Today()]:find("10=", 1, true),
         "a game that keeps no scan whole: the day's points, the newest prices")
     check(saved().recent[saved().at] == nil, "and no line per item of a scan")
     Scan.WHOLE.forever, Scan.RECENT.forever = true, true
@@ -1919,21 +1939,21 @@ do
         home.days[today - 6] = "4242=700,750,1,1,1;"
 
         -- The database has what the file does not; where both have a day it took this account's in with the others'
-        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;", [today - 8] = "2=2,2,2,2,2;4242=100,200,1,1,1;" },
+        Accounts({ ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;", [today - 8] = "2=2,2,2,2,2;4242=100,200,1,1,1;" },
             recent = { [now - 1800] = "4242=610,660;" } } })
         Prices.Changed()
         check(Prices4242() == "300/350 900/950 100/200 700/750 640/690 600/650 610/660 554/0",
             "whichever is more current: the database's days where it has them, this account's where not, the scans of both: " .. Prices4242())
-        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;9=9,9,9,9,9;4242=250,0,1,1,1;" } } })
+        Accounts({ ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;9=9,9,9,9,9;4242=250,0,1,1,1;" } } })
         Prices.Changed()
         check(Prices4242():find("^250/350 "), "two accounts' strings of a day joined: the lowest price of them, the last market price there is")
-        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "9=9,9,9,9,9;4242=0,0,1,1,1;4242=250,260,1,1,1;4242=280,270,1,1,1;" } } })
+        Accounts({ ["eu/1234/alliance"] = { days = { [today - 12] = "9=9,9,9,9,9;4242=0,0,1,1,1;4242=250,260,1,1,1;4242=280,270,1,1,1;" } } })
         Prices.Changed()
         check(Prices4242():find("^250/270 "), "a price of 0 (no buyout) is passed over, in the string or at its head")
-        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;" } } })
+        Accounts({ ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;" } } })
         Prices.Changed()
         check(Prices4242():find("300/350 900/950 800/850", 1, true), "a database made before it held scans")
-        Prices.Database("forever", {})
+        Accounts({})
         Prices.Changed()
         check(Prices4242():find("^900/950"), "a house the database does not have")
 
@@ -1955,9 +1975,33 @@ do
         Prices.Changed()
     end
 
+    -- Every account's file through its link: joined, the global left clear for this account's own, which is read after them
+    do
+        local Prices = Data.Series("Prices")
+        check(Accounts({ ["eu/1234/orc"] = { kept = 200, index = "5=200,50,50,1,1,1;", days = { [100] = "5=50,50,1,1,1;" }, recent = { [200] = "5=50,50;" } } }) == nil,
+            "a link read: the global left clear")
+        Account({ ["eu/1234/orc"] = { kept = 100, index = "5=100,70,70,1,1,1;6=100,8,8,1,1,1;", days = { [100] = "5=70,70,1,1,1;", [99] = "6=8,8,1,1,1;" }, recent = { [100] = "6=8,8;" } } })
+        Account({ ["eu/1234/orc"] = "no shape" })
+        Account(nil)
+        local exists, faction, opened = rawget(_G, "UnitExists"), rawget(_G, "UnitFactionGroup"), nil
+        rawset(_G, "UnitExists", function(unit) return unit == "npc" end)
+        rawset(_G, "UnitFactionGroup", function() return "Orc" end)
+        W.Fire("AUCTION_HOUSE_CLOSED")
+        W.Fire("AUCTION_HOUSE_SHOW")
+        rawset(_G, "UnitExists", exists)
+        rawset(_G, "UnitFactionGroup", faction)
+        check(Prices:Last(5) == 50 and Prices:Last(6) == 8, "each item's newest point of any account")
+        local house = SaneUIData_Market.forever.houses["eu/1234/orc"]
+        check(house.index == nil or not house.index:find("6=", 1, true), "nothing of another account goes into this one's file by reading it")
+        W.Fire("AUCTION_HOUSE_CLOSED")
+        W.Fire("AUCTION_HOUSE_SHOW")
+        Accounts({})
+    end
+
     -- What all accounts hold together: read when a house is first asked about, over this account's where newer
-    Prices.Database("retail", { ["eu/1234/neutral"] = { index = "777=9,1,1,1,1,1;" } })
-    Prices.Database("forever", { ["eu/1234/neutral"] = { index = "10=" .. GetServerTime() .. ",333,1,1,1,1;777=" .. GetServerTime() .. ",222,2,3,4,5;" } })
+    Accounts({ ["eu/1234/neutral"] = { index = "777=9,1,1,1,1,1;" } }, "retail")
+    check(Prices:Low(777) == nil, "another game's file is not taken")
+    Accounts({ ["eu/1234/neutral"] = { index = "10=" .. GetServerTime() .. ",333,1,1,1,1;777=" .. GetServerTime() .. ",222,2,3,4,5;" } })
 
     -- A house of a wrong shape goes to broken; the goblin towns' house has its own key
     W.Fire("AUCTION_HOUSE_CLOSED")

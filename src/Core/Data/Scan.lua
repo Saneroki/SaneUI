@@ -12,10 +12,12 @@ local Core = SaneUI.Core
 --  scan another addon asked for is read the same: the game tells every addon.
 --
 --  The history, per auction house (part.houses["eu/1234/horde"]), as few values as a saved file can hold it
---  (Doc/guides/data.md, *Saved variables*):
+--  (Doc/guides/data.md, *Saved variables*). Every scan whole has a file of its own, the addon SaneUI_AuctionScans, which
+--  this account loads when the auction house opens, as every account reads the rest at each login:
 --
---      whole[at]  = every row of the scan the server answered at that time, as the game gave it (Scan.WHOLE,
---                   Forever's; what goes on into the database is filtered there): "<build>\n<block>\n<block>...",
+--      whole[at]  = (SaneUIData_Scans, part.houses[house]) every row of the scan the server answered at that time, as
+--                   the game gave it (Scan.WHOLE, Forever's; what goes on into the database is filtered there):
+--                   "<build>\n<block>\n<block>...",
 --                   a block being Scan.BLOCK rows packed by the game (zlib, Base64), a row
 --                   "key,count,buyout,minBid,increment,bid,timeLeft,status,seller,bidder,link" (link: gear's,
 --                   the game's item string). The sellers' and bidders' names are the only ones kept: local,
@@ -70,6 +72,7 @@ local Prices = Data.Series("Prices")
 local state = { phase = "closed", read = 0, rows = 0, next = 0, span = 0 }
 local listeners = {}
 local part            -- this game version's part of SaneUIData_Market
+local scans           -- this game version's part of SaneUIData_Scans, once its addon is loaded
 local house           -- the part of the auction house that is open
 local open = false
 local openedAt, askedAt, finished = 0, 0, false
@@ -251,7 +254,12 @@ local function Keep(scan, home, day, now)
         Steps.Fresh()
     end
     Prices.Save(home)
-    if whole then home.whole[now] = whole end
+    if whole then
+        scans.houses = type(scans.houses) == "table" and scans.houses or {}
+        local key = Prices.Key(home)
+        scans.houses[key] = type(scans.houses[key]) == "table" and scans.houses[key] or {}
+        scans.houses[key][now] = whole
+    end
     Prices.Changed()
     Steps.Spend()
     home.scans[day] = (tonumber(home.scans[day]) or 0) + 1
@@ -268,7 +276,7 @@ end
 
 -- The job: every row, read in steps. Nothing is kept of a scan the game took away halfway.
 local function Read(home, day, now)
-    local scan = { found = {}, later = {}, wanted = {}, asked = {}, whole = Core.ForGame(Scan.WHOLE) }
+    local scan = { found = {}, later = {}, wanted = {}, asked = {}, whole = Core.ForGame(Scan.WHOLE) and scans ~= nil }
     local index = 0
     while index < state.rows do
         if not Row(scan, index) then return end
@@ -335,6 +343,10 @@ local function Opened()
     house = Prices.House(Core.Ask(rawget(_G, "UnitExists"), "npc") and "npc" or "player")
     if not house then return end
     open, openedAt = true, now
+    if Core.ForGame(Scan.WHOLE) and not scans then
+        local addons = rawget(_G, "C_AddOns")
+        Core.Ask(addons and addons.LoadAddOn, "SaneUI_AuctionScans") -- its file read now: a moment that grows with it
+    end
     Prices.Open(house)
     Remember(house)
     state.outcome = house.kept and "kept" or nil
@@ -354,6 +366,7 @@ Core.On("AUCTION_HOUSE_CLOSED", Closed)
 Core.On("REPLICATE_ITEM_LIST_UPDATE", Answered)
 
 Data.Saved("Market", function(saved) part = saved end)
+Data.Saved("Scans", function(saved) scans = saved end)
 
 function Scan.State()
     return state
@@ -378,7 +391,8 @@ Data.reports[#Data.reports + 1] = function()
     for key, known in pairs(part.houses) do
         local days, wholes, bytes = 0, 0, 0
         for _ in pairs(type(known) == "table" and type(known.days) == "table" and known.days or {}) do days = days + 1 end
-        for _, text in pairs(type(known) == "table" and type(known.whole) == "table" and known.whole or {}) do
+        local whole = scans and type(scans.houses) == "table" and scans.houses[key]
+        for _, text in pairs(type(whole) == "table" and whole or {}) do
             wholes, bytes = wholes + 1, bytes + #text
         end
         local kept = type(known) == "table" and known.kept

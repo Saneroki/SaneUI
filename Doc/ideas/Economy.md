@@ -223,9 +223,9 @@ window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.m
 - **The price's history (Saneroki, 2026-10-30):** `Prices:Range`, from whichever of the account's file and the database is more
   current; a scan's own line kept for today and yesterday beside `whole`, so a graph of a day need not open a whole scan. The
   first view is Tooltips' graph with Alt, in the Gold section (`src/Tooltips/PriceGraph.lua`).
-- **Across accounts (Saneroki):** each account's file keeps all; `dev/tools/auction-database` makes the addon
-  `SaneUI_AuctionDatabase` in the game's `AddOns` folder from them, daily points and newest prices, so every account of the
-  game folder reads them (`Doc/guides/data.md`, *Across accounts*).
+- **Across accounts (Saneroki):** each account writes its own files only; the addon `SaneUI_AuctionDatabase` in the game's `AddOns`
+  folder is links to them, so every account reads every account's prices and daily history at a login or `/reload`, with no
+  program running. Every scan whole is a file apart, loaded when the house opens (`Doc/guides/data.md`, *Across accounts*).
 - **Idle logout: not prevented (2026-10-30).** The newest export has no call that resets the game's idle time. The one
   handle near it, `CancelLogout` on `PLAYER_CAMPING`, only stops the 20 seconds of a logout outside a rest area, and most
   auction houses stand in rest areas, where a logout has no such wait. Working around the game's idle logout would also

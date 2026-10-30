@@ -730,7 +730,11 @@ game in the background, and it reads a full scan another addon asked for just th
   `SaneUIData_Market`, so the game writes it to `WTF/Account/<account>/SavedVariables/SaneUI_AuctionData.lua`. It is
   read in the loading screen, like any saved file, so a login and a `/reload` take longer as it grows. Switched off, Sane
   UI neither scans nor shows prices.
-- **Every scan whole (Forever, `Scan.WHOLE`):** `whole[at]`, one string per scan, by the time the server answered:
+- **The whole scans' file:** the addon `SaneUI_AuctionScans` (`src/AuctionScans/`, *Data: Auction Scans*, Forever's) holds only
+  `SaneUIData_Scans`, each account's own. Core loads it when the auction house opens, so a login never reads it; opening the
+  house for the first time in a session takes longer as it grows, and the game writes it at the logout of such a session.
+- **Every scan whole (Forever, `Scan.WHOLE`):** `SaneUIData_Scans[game].houses[house][at]`, one string per scan, by the time the
+  server answered:
   `<build>\n<block>\n<block>...`. A block is `Scan.BLOCK` rows packed by the game (zlib, then Base64), each block by itself so
   that packing stays within a frame's budget; the rows stand grouped by item, cut by `\n`:
 
@@ -805,23 +809,24 @@ Prices:OnChange(fn)   -- fn() on the next frame after prices changed
 
 ### Across accounts *(Saneroki, 2026-10-30)*
 
-A scan on one WoW account shows on the others of that game folder. The game keeps saved files per account, and its
-machine-wide kind (`## SavedVariablesMachine`, `WTF/SavedVariables/`) is closed to addons, so an addon cannot reach another
-account's file. What the accounts of a game folder share is its `AddOns` folder:
+Every WoW account of a game folder reads every account's auction data. The game keeps saved files per account, and its
+machine-wide kind (`## SavedVariablesMachine`, `WTF/SavedVariables/`) is closed to addons. Nor can accounts share one file:
+the game writes a new file at every save in place of what stood there, so a link in the `WTF` folder is gone at the first
+save, and each running game writes only what it read itself, over what the others scanned. So each account stays the only
+writer of its own files, and what the accounts share is the `AddOns` folder:
 
-- **`dev/tools/auction-database`** (`saneui auctiondatabase make`; `saneui start auctiondatabase` for the user service, which
-  looks every 5 seconds) reads every account's `SaneUI_AuctionData.lua`, passing over the whole scans, and writes the addon
-  `SaneUI_AuctionDatabase` into the game's `AddOns` folder: per house each item's newest point, the daily points, a day's
-  lowest of any account and the rest from the account that scanned last, and every account's `recent` of the newest scan's day
-  and the day before, so a graph of a day works on an account that did not scan. It only reads the `WTF` folder. Made on this computer
-  (`## X-SaneUI-Made`), so it is in neither the repository nor a build; `dev/build` leaves it alone.
-- **In the game:** its one file calls `Prices.Database(game, houses)`; a house's points are read over the account's own where
-  newer, when the house is first asked about. Its daily points are the filtered history; each account's own file keeps every
-  scan whole.
-- **When an account sees it:** the game writes a saved file at a `/reload` or logout, and reads addon files at a login or
-  `/reload`. So a scan on one account shows on another after a `/reload` or logout there, a few seconds, then a `/reload` or
-  login here. Never at once: a running client cannot be told. Only the addon's first appearance takes a restart of the game.
-- **Other players** have neither the tool nor the addon, and Core does without. Sane Sync is the way to give it to them.
+- **The addon `SaneUI_AuctionDatabase`** is made of links, one to each account's `SaneUI_AuctionData.lua`. A link there follows the
+  file's name, so it stays good through every save. `dev/tools/auction-database link` (`saneui auctiondatabase link`) makes it;
+  again after a new account, with a restart of the game. Nothing runs in the background, and the `WTF` folder is never written.
+  Made on this computer (`## X-SaneUI-Made`), so it is in neither the repository nor a build; `dev/build` leaves it alone.
+- **In the game:** each link runs as a file of that addon and leaves its saved variable in the global; the file after it calls
+  `Prices.Account()`, which takes what it holds of this game version and clears the global. So the addon must be read before this
+  account's own file (`## OptionalDeps` of `SaneUI_AuctionData`), and an account's own file is read twice, which does no harm.
+  `database[house]` then holds `index`, `days` (the accounts' texts joined plainly, the last to scan at the end) and `recent`.
+- **When an account sees it:** the game writes a saved file only at a `/reload` or logout, and reads addon files only at a login or
+  `/reload`. So a scan on one account shows on another after a `/reload` or logout there, then a `/reload` or login here.
+- **Every scan whole** stays on the disk in each account's `SaneUI_AuctionScans.lua`; a login reads none of it.
+- **Other players** have neither the links nor the addon, and Core does without. Sane Sync is the way to give it to them.
 
 ### The harvest
 
@@ -926,8 +931,8 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
 - **In Core's saved file:** `SaneUIDB` and the data's own, `SaneUIData_<Name>` (`Data.SAVED`:
   Characters, Guild, Learned; later the other series), are declared in Core's TOC, so the game writes
   them all into one file, `WTF/Account/<account>/SavedVariables/SaneUI.lua`.
-- **The auction data apart (`Data.APART`):** `SaneUIData_Market` has a file of its own (*The full auction scan*); `Data.Saved`
-  hands over its part once `SaneUI_AuctionData` has loaded, after Core.
+- **The auction data apart (`Data.APART`):** `SaneUIData_Market` and `SaneUIData_Scans` have files of their own (*The full auction
+  scan*); `Data.Saved` hands over a part once its addon has loaded, after Core.
 - **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Characters["forever-beta"]`. Core
   uses only its client's key; the others (a copied `WTF`) are left as they are.
 - **Core's** (`SaneUIDB.data[game]`) *(1c)*: `format` (1); `checked` (`[set] = build`, the patch check);

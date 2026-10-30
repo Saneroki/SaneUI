@@ -2,8 +2,8 @@
 
 ## TL;DR
 
-The file that holds the auction house's history and current prices, apart from Sane UI's settings. It has no code and
-no options: Core fills and reads it. Switched off in the game's addon list, Sane UI neither scans the auction house nor
+The file that holds the auction house's current prices and daily history, apart from Sane UI's settings. It has no code
+and no options: Core fills and reads it. Every scan whole has a file of its own, *Data: Auction Scans*. Switched off in the game's addon list, Sane UI neither scans the auction house nor
 shows its prices.
 
 ## How to use
@@ -18,8 +18,8 @@ take longer as it grows.
   `SaneUIData_Market` and holds nothing else.
 - Core's `Data.APART` names it: `Data.Saved("Market", fn)` hands over the part once this addon has loaded.
 - What the file holds and how the scans fill it: [Doc/guides/data.md](../../Doc/guides/data.md), *The full auction scan*.
-- The file is per WoW account. What all accounts hold together, daily, is another addon, made on the computer from these
-  files: *Across accounts* in the same guide.
+- The file is per WoW account, and every account reads every account's: *Across accounts* in the same guide. That is why it
+  names `SaneUI_AuctionDatabase` an optional dependency: the links are read first, and this account's own file last.
 
 ## History
 

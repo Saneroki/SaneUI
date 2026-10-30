@@ -1,130 +1,42 @@
 #!/usr/bin/env python3
-"""The auction data of every WoW account on this computer, for every account (Doc/guides/data.md, *Across accounts*).
+"""Every WoW account on this computer reads every account's auction data (Doc/guides/data.md, *Across accounts*).
 
-The game keeps a saved file per WoW account, and the one it shares between accounts is closed to addons, so an addon
-cannot reach another account's scans. What every account of a game folder does share is its AddOns folder. So this
-tool reads each account's SaneUI_AuctionData.lua, which keeps every scan whole, and writes what they hold together,
-filtered to the daily points, the newest prices and the last days' scans as a line per item, into the addon
-SaneUI_AuctionDatabase in the AddOns folder. It only reads the WTF folder. The game reads the addon at a login or a /reload.
+The game keeps a saved file per WoW account, and the kind it shares between accounts is closed to addons. A link cannot
+stand in for an account's file in the WTF folder either: the game writes a new file at every save, in place of whatever
+stood there, and each running game would write only what it read itself, over the others' scans. So each account keeps
+writing its own file, and what all accounts of a game folder share is its AddOns folder: the addon SaneUI_AuctionDatabase
+there is made of links, one to each account's SaneUI_AuctionData.lua. A link there follows the file's name, so it stays
+good. The game reads them as that addon's files at a login or a /reload; Core takes in what each one holds. Nothing
+runs in the background, and the WTF folder is never written.
 
-  dev/tools/auction-database make        for every game folder, once
-  dev/tools/auction-database run         for ever: anew whenever an account's file changed (what the service runs)
-  dev/tools/auction-database start       as a user service: now and with the computer
-  dev/tools/auction-database stop        the service stopped, and it does not start by itself any more
-  dev/tools/auction-database status      what each game folder holds; the service
+  dev/tools/auction-database link        the addon made anew for every game folder; run it again after a new account,
+                                         and restart the game
+  dev/tools/auction-database status      the accounts of each game folder, and what their files weigh
 """
 import argparse
 import os
 import re
-import subprocess
 import sys
-import time
 from pathlib import Path
 
 sys.dont_write_bytecode = True
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "dev" / "data"))
-import compile as compiler  # noqa: E402
-
-CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-UNIT = "saneui-auction-database"
-SERVICE = CONFIG_HOME / "systemd" / "user" / f"{UNIT}.service"
 FOREVER = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"
                               "/Program Files (x86)/World of Warcraft/_forever_"))
 RETAIL = Path(os.environ.get("WOW_RETAIL", FOREVER.parent / "_retail_"))
 ADDON = "SaneUI_AuctionDatabase"
-LOOK = 5     # seconds between two looks at the files
-SETTLE = 3   # seconds a file must have rested: the game may still be writing it
-DAY = 86400
-
-OPENS = re.compile(r'^(?:\[(?:"([^"]*)"|(\d+))\]|(\w+)) = \{$')
-VALUE = re.compile(r'^\[(?:"([^"]*)"|(\d+))\] = (.*?),?$')
-POINT = re.compile(r"([^=;]+)=(\d+),([^;]*);")
+SAVED = "SaneUI_AuctionData.lua"
+TAKE = 'SaneUI.Core.Data.Series("Prices").Account()\n'
 
 
-def read_houses(path, game):
-    """{house: {index, days, recent, kept}} of a game version in an account's saved file, read line by line, as the game writes
-    it, so that the whole scans (most of the file) are passed over."""
-    houses, stack = {}, []
-    with open(path, encoding="utf-8", errors="replace") as lines:
-        for raw in lines:
-            line = raw.strip()
-            if line.startswith("}"):
-                if stack:
-                    stack.pop()
-                continue
-            if len(stack) >= 5 and stack[4] == "whole":
-                continue
-            opened = OPENS.match(line[:200]) if line.endswith("{") else None
-            if opened:
-                stack.append(opened.group(1) or opened.group(2) or opened.group(3))
-                continue
-            if len(stack) < 4 or stack[1] != game or stack[2] != "houses":
-                continue
-            value = VALUE.match(line)
-            if not value:
-                continue
-            house = houses.setdefault(stack[3], {"index": "", "days": {}, "recent": {}, "kept": 0})
-            name, number, text = value.group(1), value.group(2), value.group(3)
-            if len(stack) == 5 and stack[4] in ("days", "recent") and number and text.startswith('"'):
-                house[stack[4]][int(number)] = text[1:-1]
-            elif len(stack) == 4 and name == "index" and text.startswith('"'):
-                house["index"] = text[1:-1]
-            elif len(stack) == 4 and name == "kept" and text.isdigit():
-                house["kept"] = int(text)
-    return houses
+def accounts(folder):
+    """The WoW accounts of a game folder, by their folders in WTF/Account."""
+    root = folder / "WTF" / "Account"
+    return sorted(path.name for path in root.iterdir() if path.is_dir() and path.name != "SavedVariables") if root.is_dir() else []
 
 
-def merged(accounts):
-    """What the accounts hold together, {house: {"index": {key: point}, "days": {day: {key: [low, rest]}}, "recent": {at:
-    text}}}: each item's newest point; per day the lowest price of any account, the rest from the account that scanned last;
-    every account's scans of the newest scan's day and the day before, as each file keeps them for a graph of a day."""
-    together = {}
-    by_house = {}
-    for houses in accounts:
-        for name, house in houses.items():
-            by_house.setdefault(name, []).append(house)
-    for name, houses in by_house.items():
-        index, days, recent = {}, {}, {}
-        for house in sorted(houses, key=lambda each: each["kept"]):
-            recent.update(house["recent"])
-            for key, at, rest in POINT.findall(house["index"]):
-                if key not in index or int(at) >= int(index[key].split(",", 1)[0]):
-                    index[key] = f"{at},{rest}"
-            for day, text in house["days"].items():
-                points = days.setdefault(day, {})
-                for key, low, rest in POINT.findall(text):
-                    low, known = int(low), points.get(key)
-                    if known and known[0] and (low == 0 or known[0] < low):
-                        low = known[0]
-                    points[key] = [low, rest]
-        first = max(recent, default=0) // DAY - 1
-        together[name] = {"index": index, "days": days, "recent": {at: text for at, text in recent.items() if at // DAY >= first}}
-    return together
-
-
-def lua_file(game, together):
-    """The addon's one file: what the accounts hold together, handed to Core as the game reads it."""
-    out = ["-- Made by Sane UI's auction-database tool from every account's SaneUI_AuctionData.lua: never edited by hand.",
-           f'SaneUI.Core.Data.Series("Prices").Database("{game}", {{']
-    for name in sorted(together):
-        house = together[name]
-        index = "".join(f"{key}={house['index'][key]};" for key in sorted(house["index"]))
-        out += [f'    ["{name}"] = {{', f'        index = "{index}",', "        days = {"]
-        for day in sorted(house["days"]):
-            points = house["days"][day]
-            text = "".join(f"{key}={points[key][0]},{points[key][1]};" for key in sorted(points))
-            out.append(f'            [{day}] = "{text}",')
-        out += ["        },", "        recent = {"]
-        out += [f'            [{at}] = "{house["recent"][at]}",' for at in sorted(house["recent"])]
-        out += ["        },", "    },"]
-    out += ["})", ""]
-    return "\n".join(out)
-
-
-def toc_file(folder):
-    """The addon's TOC, for the game's Interface number and Sane UI's version as Core's says them. A file named here from
-    the start, so that a new copy needs a /reload, not a restart of the game."""
+def toc_file(folder, count):
+    """The addon's TOC, with the game's Interface number and Sane UI's version as Core's say them: each link, and after it
+    a file that hands what it left to Core. None where Sane UI is not there."""
     core = folder / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
     if not core.is_file():
         return None
@@ -133,121 +45,58 @@ def toc_file(folder):
     version = re.search(r"^## Version: *(.+?)\s*$", head, re.M)
     if not interface:
         return None
-    return "\n".join([f"## Interface: {interface.group(1)}", "## Title: Data: Auction Database",
-                      "## Notes: Daily auction prices of all your accounts on this computer, made from each account's "
-                      "own Data: Auction House by a tool of Sane UI's.",
-                      "## Author: Saneroki", f"## Version: {version.group(1) if version else '0'}", "## Category: Sane UI",
-                      "## Group: SaneUI", "## Dependencies: SaneUI", "## X-SaneUI-Made: 1", "## X-License: MIT", "",
-                      "Prices.lua", ""])
+    lines = [f"## Interface: {interface.group(1)}", "## Title: Data: Auction Database",
+             "## Notes: Every account's auction data on this computer, read through links to each account's own Data: "
+             "Auction House. Made by a tool of Sane UI's.",
+             "## Author: Saneroki", f"## Version: {version.group(1) if version else '0'}", "## Category: Sane UI",
+             "## Group: SaneUI", "## Dependencies: SaneUI", "## X-SaneUI-Made: 1", "## X-License: MIT", ""]
+    for number in range(1, count + 1):
+        lines += [f"Account{number}.lua", f"Take{number}.lua"]
+    return "\n".join(lines) + "\n"
 
 
-def write(path, text):
-    """A file anew only when it changed, all at once: a game reading it never sees half. True when it was written."""
-    if path.is_file() and path.read_text(encoding="utf-8", errors="replace") == text:
-        return False
-    fresh = path.with_name(path.name + ".new")
-    fresh.write_text(text, encoding="utf-8")
-    os.replace(fresh, path)
-    return True
-
-
-def saved_paths(folder):
-    return sorted(folder.glob("WTF/Account/*/SavedVariables/SaneUI_AuctionData.lua"))
-
-
-def make(folder, game=None):
-    """The addon of a game folder made anew; (accounts read, houses, whether it changed), None where Sane UI is not there."""
-    game = game or compiler.product_game(folder)
-    toc = toc_file(folder)
-    if not (game and toc):
+def link(folder):
+    """The addon of a game folder made anew: the number of accounts, None where Sane UI is not there."""
+    names = accounts(folder)
+    toc = toc_file(folder, len(names))
+    if toc is None:
         return None
-    paths = saved_paths(folder)
-    together = merged([read_houses(path, game) for path in paths])
     addon = folder / "Interface" / "AddOns" / ADDON
     addon.mkdir(exist_ok=True)
-    changed = write(addon / f"{ADDON}.toc", toc)
-    changed = write(addon / "Prices.lua", lua_file(game, together)) or changed
-    return len(paths), len(together), changed
+    for old in addon.iterdir():
+        old.unlink()
+    (addon / f"{ADDON}.toc").write_text(toc, encoding="utf-8")
+    for number, name in enumerate(names, 1):
+        (addon / f"Take{number}.lua").write_text(TAKE, encoding="utf-8")
+        os.symlink(f"../../../WTF/Account/{name}/SavedVariables/{SAVED}", addon / f"Account{number}.lua")
+    return len(names)
 
 
 def folders():
     return [folder for folder in (FOREVER, RETAIL) if folder.is_dir()]
 
 
-def make_all():
+def link_all():
     for folder in folders():
-        done = make(folder)
-        if done is None:
-            print(f"{folder.name}: Sane UI is not in this game folder, or the game cannot be told.")
-        else:
-            print(f"{folder.name}: {done[0]} accounts' files, {done[1]} auction houses, {'made anew' if done[2] else 'nothing new'}.")
-
-
-def stamps(folder):
-    out = []
-    for path in saved_paths(folder):
-        info = path.stat()
-        out.append((str(path), info.st_mtime_ns, info.st_size))
-    return out
-
-
-def run():
-    """Every file looked at every few seconds; a game folder's addon made anew once a changed file has rested."""
-    os.nice(10)
-    seen = {}
-    while True:
-        for folder in folders():
-            try:
-                now = stamps(folder)
-                rested = all(time.time() - stamp / 1e9 >= SETTLE for _, stamp, _ in now)
-                if now != seen.get(folder) and rested:
-                    done = make(folder)
-                    seen[folder] = now
-                    if done and done[2]:
-                        print(f"{folder.name}: {done[0]} accounts' files, {done[1]} auction houses, made anew.", flush=True)
-            except (OSError, ValueError, UnicodeError) as problem:
-                print(f"{folder.name}: {problem}", flush=True)  # a file changing under us: the next look takes it
-        time.sleep(LOOK)
-
-
-def systemctl(*words):
-    return subprocess.run(["systemctl", "--user", *words], capture_output=True, text=True)
-
-
-def start():
-    SERVICE.parent.mkdir(parents=True, exist_ok=True)
-    SERVICE.write_text("\n".join([
-        f"# Sane UI's auction data of all accounts ({Path(__file__).resolve()}).",
-        "# Written by auction-database start; auction-database stop keeps it from starting by itself.",
-        "[Unit]", "Description=Sane UI's auction data of all accounts", "", "[Service]", "Type=simple",
-        f"WorkingDirectory={ROOT}", f"ExecStart={sys.executable} {Path(__file__).resolve()} run", "Restart=on-failure",
-        "RestartSec=30", "MemoryMax=8G", "", "[Install]", "WantedBy=default.target", ""]), encoding="utf-8")
-    for step in (["daemon-reload"], ["enable", "--now", UNIT]):
-        done = systemctl(*step)
-        if done.returncode:
-            sys.exit(f"systemctl {' '.join(step)}: {done.stderr.strip()}")
-    print(f"Running as the user service {UNIT}, and with the computer.")
-
-
-def stop():
-    systemctl("disable", "--now", UNIT)
-    print(f"The service {UNIT} is stopped and does not start by itself.")
+        count = link(folder)
+        print(f"{folder.name}: Sane UI is not in this game folder." if count is None else f"{folder.name}: links to {count} accounts' files.")
 
 
 def status():
     for folder in folders():
-        size = sum(path.stat().st_size for path in saved_paths(folder))
-        made = folder / "Interface" / "AddOns" / ADDON / "Prices.lua"
-        when = time.strftime("%Y-%m-%d %H:%M", time.localtime(made.stat().st_mtime)) if made.is_file() else "not yet"
-        print(f"{folder.name}: {len(saved_paths(folder))} accounts' files, {size / 1048576:.1f} MB; the addon made: {when}.")
-    print(f"The service: {systemctl('is-active', UNIT).stdout.strip()}, {systemctl('is-enabled', UNIT).stdout.strip() or 'not installed'}.")
+        print(f"{folder.name}:")
+        for name in accounts(folder):
+            parts = []
+            for file in (SAVED, "SaneUI_AuctionScans.lua"):
+                path = folder / "WTF" / "Account" / name / "SavedVariables" / file
+                parts.append(f"{file}: {path.stat().st_size / 1048576:.1f} MB" if path.is_file() else f"{file}: none yet")
+            print(f"  {name}: {', '.join(parts)}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["make", "run", "start", "stop", "status"], nargs="?", default="status")
-    command = parser.parse_args().command
-    {"make": make_all, "run": run, "start": start, "stop": stop, "status": status}[command]()
+    parser.add_argument("command", choices=["link", "status"], nargs="?", default="status")
+    {"link": link_all, "status": status}[parser.parse_args().command]()
 
 
 if __name__ == "__main__":
