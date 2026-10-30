@@ -12,6 +12,33 @@ is a reference or an input for image models; the rest of the picture is excluded
 he did not name, with the words that made them. The cut boxes and where each cut came from are recorded with the
 cutting tool, outside the project.
 
+## The new direction (Saneroki, 2026-10-30)
+
+**The journal described below is being replaced.** It stays in force for what is built, until a part is rebuilt from
+the picks; where this section and the rest disagree, this section wins. Saneroki's decisions:
+
+- **Windows look like WoW: Forever's own style**, built from the game's own images instead of the leather and the
+  paper. The layouts stay Sane UI's own.
+- **The pencil drawing icons stay.**
+- **The game's default fonts** instead of the hand-drawn font (Kalam).
+- **No red buttons.** Natural buttons with golden or silver, beaten-up metal borders.
+- **The references:**
+  - the character list: the general look, structure and images to mimic. Its frame is `heavybronze-frame-basic`, its
+    plate `heavybronze-frame-background`, its corners `heavybronze-vert-cornerbracket-*`, the cards
+    `glues-characterselect-card-*`;
+  - the character screen's top bar: the look of tabs on a full screen and of the buttons on its top bar
+    (`glues-characterselect-tophud-*`).
+
+**The parts are picked from the numbered catalogue** (`saneui makegameart`, `saneui showgameart`; 127.0.0.1 port 8776,
+`overview.pdf` beside it). Each pick is written here with its number and its atlas, the moment it is taken. A number
+stays with its piece from round to round.
+
+**Forever's art and Retail.** Forever's own art (the sheets with `c60` in their names, the heavy bronze) is not in
+Retail's build, so it cannot be drawn there from the game's files. Forever's code names the plain atlas
+(`UI-Frame-Metal-CornerTopLeft`) and its table holds it as `...-c60-2x`, so a plain name should give each game its
+own picture. Each card says what Retail has: nothing said, the same file; *Retail: own look*, its own picture under
+that name; *Forever only*, none. What stands in for the last kind in Retail is still to be decided.
+
 ## Scope
 
 Sane UI is a complete redesign (Saneroki, 2026-10-21): every window and view Sane UI makes or recreates gets this

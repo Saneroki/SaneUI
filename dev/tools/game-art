@@ -1,0 +1,723 @@
+#!/usr/bin/env python3
+"""The game's own interface art, numbered (Saneroki, 2026-10-30): the frames, panels, buttons, tabs, bars and ornaments
+of Forever's look, cut out of the newest export and laid out on one page, so Saneroki can go through them and say
+what Sane UI's windows are built from.
+
+  dev/tools/game-art make        cuts the catalogue into assets/generated/game-art (saneui makegameart)
+  dev/tools/game-art find WORD   the numbers and atlases whose name holds WORD
+
+The page is 127.0.0.1 port 8776 (dev/tools/web-pages); overview.pdf beside it is the same numbers on paper, to read
+anywhere. A number stays with its piece from round to round (numbers.json beside the page), so a pick said once keeps
+meaning the same picture.
+
+Forever's own art is Forever's alone: Retail's build does not hold the c60 sheets. A card says so: "Retail: own look"
+when Retail has its own picture under the same name, "Forever only" when it has none.
+
+What it reads:
+- the atlases, from the client's tables of the export's build (UiTextureAtlas, UiTextureAtlasMember): a piece's
+  sheet, where it lies on it. Forever's own art is the sheets with c60 in their names: the same names as Retail's
+  with -c60 added, the larger of the two sizes taken (-2x);
+- a sheet the export has no name for lies in sheets/ beside the page by its file ID (the heavy bronze);
+- Blizzard's nine-slice layouts (the shared NineSliceLayouts.lua), to put whole windows together;
+- the older art that is no atlas (OLD_ART's folders), whole files.
+"""
+import csv
+import hashlib
+import html
+import json
+import re
+import sys
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
+import export  # noqa: E402
+
+OUT = ROOT / "assets" / "generated" / "game-art"
+SHEETS = OUT / "sheets"
+NUMBERS = OUT / "numbers.json"
+LARGEST = 1100          # a catalogue picture's longest side
+STATE = re.compile(r"-(hover|highlight|over|mouseover|pressed|depressed|down|up|disabled|disable|dis|selected|glow|"
+                   r"normal|inactive|active|flash|shadowless)$")
+RANK = ("normal", "up", "", "hover", "over", "mouseover", "highlight", "pressed", "depressed", "down", "selected",
+        "active", "inactive", "glow", "disabled", "disable", "dis")
+SKIP = re.compile(r"gamepad|flipbook|mask|kiosk|credits|housing|plunderstorm|wowlabs|/shop/|/store/|shop-|cguy|^xbox|"
+                  r"-fx|fx-|_fx|^fx|interstitial|raceicon|skyborne|achievement_|tutorial|/worldmap/|/minimap/|"
+                  r"/icons/|arrowglow|-spark|radial|objecticons|objectivetracker-|/adventuremap/|timerunning|"
+                  r"portrait-mask|-shadow$|^ui-hud-micromenu|-trial-|purple|electrified|empower|-tier\d|-pip|-fill-")
+
+# The sections, in the order the page shows them: (key, title, what is in it, which atlases by name). The first match
+# takes a piece; what is left of Forever's own sheets ends in "marks".
+SECTIONS = [
+    ("windows", "Whole windows, put together", "Blizzard's own frames assembled from their pieces, the way the game "
+     "lays them out, at their real size.", None),
+    ("bronze", "Heavy bronze", "The frame of the character list: your first screenshot.", r"heavybronze"),
+    ("character", "The character screen", "The cards, the top bar of your second screenshot, its buttons and marks.",
+     r"^glues-characterselect|^glue-characterselect"),
+    ("frames", "Frame pieces", "Corners, edges and title bars of the game's windows.",
+     r"^[!_]?ui-frame-|^[!_]?optionsframe|^[!_]?tooltip-|^[!_]?macropopup|ui-diamonddialog|dressingroom-sideframe|"
+     r"common-insideframe|options_innerframe|common-glues-overlay|^[!_]?ui-hud-actionbar-frame|nineslice"),
+    ("buttons", "Buttons", "Plain, square, list and arrow buttons. Forever's versions of the red buttons are here too: "
+     "they are what the game draws, you said no to red, so judge their shape and metal.",
+     r"redbutton|common-button|common-gray-button|groupfinder-button|profession-button|mode-selection-arrow|"
+     r"legacy-.*(button|arrow)|-button"),
+    ("tabs", "Tabs", "Tabs across a window's bottom and top, side tabs, the small tabs inside a page.",
+     r"internaltab|sidetab|metal-tabs|uiframe-tab|spellbook-tab|-tab[s]?(-|$)"),
+    ("controls", "Lists, menus, scroll bars, sliders, checkboxes",
+     "What a page is operated with.", r"dropdown|scrollbar|slider|checkbox|searchbar|common-button-list|search"),
+    ("bars", "Bars", "Stat bars, cast bars, experience, progress.",
+     r"stat-bar|experiencebar|castingbar|castbar|swingtimer|progressbar|honor-bar|-bar(-|$)"),
+    ("dividers", "Dividers and headings", "Lines between parts of a page, section heads, banners.",
+     r"divider|header|banner|ribbon|title|-line"),
+    ("slots", "Slots and icon frames", "Where an item or a spell sits.",
+     r"slot|iconframe|icon-frame|icon-border|-pet-frame|collections-icon|talents-.*frame"),
+    ("panels", "Panels and cards", "Framed plates that hold content.",
+     r"card|panel|sideframe|-frame|footer|plate|legacy-"),
+    ("art", "Backgrounds and full pictures", "What fills a window behind its content: class art, professions, "
+     "collections, the spellbook's pages.",
+     r"-bg$|background|spellbook-page|ui-character-info|profession-"),
+    ("hud", "Unit frames, action bars, minimap", "The game's own HUD: for Combat, Navigation and the bars.",
+     r"^ui-hud-|^gm-|^uf-|^ui-lfg|^ui-questtracker|^ui-stables"),
+    ("marks", "Marks and small icons", "The rest of Forever's own sheets.", r"."),
+    ("elsewhere", "Elsewhere in the game", "Metal, gold, stone and wood that is not part of Forever's own set.", None),
+    ("old", "The old art", "Whole files, older than the atlases: the look the game grew up with.", None),
+]
+KEEP_ELSEWHERE = re.compile(r"nineslice|metal|gold|silver|bronze|iron|stone|wood|parchment|rivet", re.I)
+SKIP_ELSEWHERE = re.compile(r"azerite|torghast|covenant|oribos|maw|venthyr|necrolord|kyrian|nightfae|dragonflight|"
+                            r"dragonriding|delve|perks|plunder|legion|garr|warboard|artifact|azerit|corrupt|horde|"
+                            r"alliance|shadowlands|bfa|ui-frame-(metal|diamond|simple|portrait)|runecarv|soulbind|"
+                            r"anima|renown|weeklyreward|professions|expansion|tooltip|mount|journey|pvp|"
+                            r"hud|cooldown|calendar|hunter|voice|talents|class|emblem|wow-|warfront|island|"
+                            r"nzoth|vignette|ping|map|quest|rune|crafting|auction|transmog|charactercreate|highlight|glow|"
+                            r"selected|coin|lightstone|neutralstone|darkstone|gearenchant|cardshine|nameplates|"
+                            r"mythicplus|challenge|iron_and_wood|communities|raf|parchmentpopup|mission", re.I)
+OLD_ART = re.compile(r"^interface/(dialogframe|tooltips|framegeneral|common|glues/common|achievementframe|questframe|"
+                     r"paperdollinfoframe|characterframe|spellbook|auctionframe|bankframe|guildbankframe|merchantframe|"
+                     r"mailframe|helpframe|itemtextframe|optionsframe|lootframe|macroframe|tabardframe|tradeframe|"
+                     r"buttons)/", re.I)
+SKIP_OLD = re.compile(r"(flash|glow|mask|shine|spark|icon|arrow|checkbox|slider|portrait|numbers?|ability|-noborder|"
+                      r"bubble|mmo|cursor|squiggle|elitetexture|quickslot|ui-paperdoll-slot|paperdollrotate|rotationleft|"
+                      r"rotationright|ui-(class|race|skill|pvp|spellbook-spellicon)|_\d|tracking|locked|unlocked|"
+                      r"checkmark|readycheck|quest(bang|mark)|legacy|microbutton|watermark|logo|lang-|bluemenu|voicechat|"
+                      r"friendship|reputation|hourglass|indicator|tsunami|8x|race|talktome|legendary|warband|archaeology|"
+                      r"cinematic|streamframe|totembar|glyph|nameshadow|corrupted|autoquest|inspect|gmchat|lfg|pvp|"
+                      r"keyring|hunter|shadow|hilight|bug|socket)", re.I)
+
+# The windows Saneroki named or the game's own windows use come first.
+FIRST = ("window:heavybronze", "window:tophud", "window:PortraitFrameTemplate", "window:ButtonFrameTemplateNoPortrait",
+         "window:Dialog", "window:SimplePanelTemplate", "window:InsetFrameTemplate", "window:SelectionFrameTemplate",
+         "window:GenericMetal", "window:TooltipDefaultLayout", "window:TooltipGluesLayout")
+
+# Layouts that are only shapes, no look of their own.
+NOT_WINDOWS = ("IdenticalCornersLayout", "UniqueCornersLayout", "ThreeSliceVerticalLayout", "ThreeSliceHorizontalLayout",
+               "HeldBagLayout", "PerksProgramProductsPanelTemplate", "PerksProgramHoldPanelTemplate")
+
+
+def rows_of(path, delimiter=","):
+    with open(path, encoding="utf-8", newline="") as f:
+        yield from csv.DictReader(f, delimiter=delimiter)
+
+
+class Art:
+    """The newest export's art with the tables of its build: the sheets, cut as the game cuts them."""
+
+    def __init__(self):
+        self.folder = export.required("art")
+        conf = json.loads((Path.home() / ".config" / "saneui" / "uilab.json").read_text())
+        self.tables = Path(conf["client"]).parent / self.folder.parents[1].name
+        self.paths = {}
+        for row in rows_of(self.folder / "files.tsv", "\t"):
+            if row["status"] == "ok":
+                self.paths[int(row["fdid"])] = row["path"]
+        sheets = {}
+        for row in rows_of(self.tables / "UiTextureAtlas.csv"):
+            sheets[int(row["ID"])] = int(row["FileDataID"])
+        names = {int(r["ID"]): r["Name"] for r in rows_of(self.tables / "UiTextureAtlasElement.csv")}
+        self.pieces = {}
+        for row in rows_of(self.tables / "UiTextureAtlasMember.csv"):
+            sheet = sheets.get(int(row["UiTextureAtlasID"]))
+            if sheet is None:
+                continue
+            # the elements hold the names Blizzard's code uses; a member's own may be an older one
+            name = names.get(int(row["UiTextureAtlasElementID"])) or row["CommittedName"]
+            self.pieces[name.lower()] = {
+                "name": name, "sheet": sheet,
+                "box": (int(row["CommittedLeft"]), int(row["CommittedTop"]), int(row["CommittedRight"]),
+                        int(row["CommittedBottom"])),
+                "element": int(row["UiTextureAtlasElementID"]),
+            }
+        self.slices = {}
+        for row in rows_of(self.tables / "UiTextureAtlasElementSliceData.csv"):
+            self.slices[int(row["UiTextureAtlasElementID"])] = tuple(int(row[k]) for k in ("Left", "Top", "Right", "Bottom"))
+        # files.tsv also lists what a build does not hold: only these statuses are really there
+        retail = export.newest("art", "retail")
+        self.retail = {int(r["fdid"]) for r in rows_of(retail / "files.tsv", "\t") if r["status"] in ("ok", "decrypted")}
+        self.retail_names = set()
+        for row in rows_of(Path(conf["client"]).parent / retail.parents[1].name / "UiTextureAtlasElement.csv"):
+            self.retail_names.add(row["Name"].lower().replace("-2x", ""))
+        self.loaded = {}
+
+    def sheet_file(self, fdid):
+        extra = SHEETS / f"{fdid}.blp"
+        if extra.is_file():
+            return extra
+        path = self.paths.get(fdid)
+        return self.folder / path if path else None
+
+    @staticmethod
+    def read(path):
+        data = path.read_bytes()
+        if data[:4] == b"BLP2" and data[8] == 3:    # uncompressed pixels, which the image library does not read
+            width = int.from_bytes(data[12:16], "little")
+            height = int.from_bytes(data[16:20], "little")
+            offset = int.from_bytes(data[20:24], "little")
+            return Image.frombytes("RGBA", (width, height), data[offset:offset + width * height * 4], "raw", "BGRA")
+        image = Image.open(path)
+        image.load()
+        return image.convert("RGBA")
+
+    def sheet(self, fdid):
+        if fdid not in self.loaded:
+            path = self.sheet_file(fdid)
+            try:
+                self.loaded[fdid] = self.read(path) if path and path.is_file() else None
+            except Exception as err:
+                print(f"  cannot read {path}: {err}")
+                self.loaded[fdid] = None
+        return self.loaded[fdid]
+
+    def cut(self, piece):
+        sheet = self.sheet(piece["sheet"])
+        return sheet.crop(piece["box"]) if sheet else None
+
+    def best(self, name):
+        """The piece Forever draws for a name of Blizzard's code: its own, the larger size, and how many times too
+        large that is for the screen."""
+        name = name.lower()
+        for suffix, scale in (("-c60-2x", 2), ("-c60", 1), ("-2x", 2), ("", 1)):
+            found = self.pieces.get(name + suffix)
+            if found and self.sheet_file(found["sheet"]):
+                return found, scale
+        return None, 1
+
+
+def retail_says(art, item):
+    """What a card says of Retail: nothing where it draws the same file."""
+    if "file" in item:
+        return "" if item["file"] in art.retail else "Forever only"
+    piece = item["states"][0][1][1]
+    if piece["sheet"] in art.retail:
+        return ""
+    return "Retail: own look" if item["key"][len("atlas:"):] in art.retail_names else "Forever only"
+
+
+def root_of(name):
+    """A piece's name without the size, Forever's mark and its state, and the state: the states of one thing share a
+    number."""
+    base = name.lower().replace("-c60", "").replace("-2x", "")
+    state = []
+    while True:
+        found = STATE.search(base)
+        if not found or found.start() == 0:
+            break
+        state.insert(0, found.group(1))
+        base = base[:found.start()]
+    return base, "-".join(state)
+
+
+def strip(pictures, gap=12, width=LARGEST):
+    """Pictures side by side, in rows no wider than width."""
+    rows, row, used = [], [], 0
+    for picture in pictures:
+        if row and used + gap + picture.width > width:
+            rows.append(row)
+            row, used = [], 0
+        row.append(picture)
+        used += picture.width + gap
+    rows.append(row)
+    total = max(sum(p.width for p in r) + gap * (len(r) - 1) for r in rows)
+    high = sum(max(p.height for p in r) for r in rows) + gap * (len(rows) - 1)
+    out = Image.new("RGBA", (total, high), (0, 0, 0, 0))
+    y = 0
+    for r in rows:
+        x, tall = 0, max(p.height for p in r)
+        for p in r:
+            out.alpha_composite(p, (x, y + (tall - p.height) // 2))
+            x += p.width + gap
+        y += tall + gap
+    return out
+
+
+def fitted(picture):
+    if max(picture.size) > LARGEST:
+        k = LARGEST / max(picture.size)
+        picture = picture.resize((max(1, round(picture.width * k)), max(1, round(picture.height * k))), Image.LANCZOS)
+    return picture
+
+
+def empty(picture):
+    return picture is None or min(picture.size) < 1 or picture.getchannel("A").getextrema()[1] < 16
+
+
+# Whole windows ------------------------------------------------------------------------------------------------------
+def layouts(code):
+    """Blizzard's nine-slice layouts: name -> piece -> what its entry says."""
+    text = (code / "Interface/AddOns/Blizzard_SharedXML/Mainline/NineSliceLayouts.lua").read_text(encoding="utf-8")
+    found = {}
+    name = None
+    for line in text.splitlines():
+        head = re.match(r"\t([A-Za-z0-9_]+) *=\s*$", line)
+        if head:
+            name = head.group(1)
+            found[name] = {"mirror": False}
+            continue
+        if name is None:
+            continue
+        if re.match(r"\t\tmirrorLayout = true", line):
+            found[name]["mirror"] = True
+        piece = re.match(r'\t\t\[?"?(\w+)"?\]?\s*=\s*\{(.*)\}', line)
+        if piece and 'atlas' in piece.group(2):
+            fields = dict(re.findall(r'(\w+)\s*=\s*"?(-?[\w!_%-]+)"?', piece.group(2)))
+            found[name][piece.group(1)] = fields
+    return found
+
+
+def fill(canvas, tile, box, across):
+    """A tile repeated over a box of the canvas (across: along its width, else along its height)."""
+    x0, y0, x1, y1 = [int(v) for v in box]
+    if x1 <= x0 or y1 <= y0:
+        return
+    if across:
+        tile = tile.resize((tile.width, y1 - y0)) if tile.height != y1 - y0 else tile
+        for x in range(x0, x1, tile.width):
+            canvas.alpha_composite(tile.crop((0, 0, min(tile.width, x1 - x), tile.height)), (x, y0))
+    else:
+        tile = tile.resize((x1 - x0, tile.height)) if tile.width != x1 - x0 else tile
+        for y in range(y0, y1, tile.height):
+            canvas.alpha_composite(tile.crop((0, 0, tile.width, min(tile.height, y1 - y))), (x0, y))
+
+
+def window(art, layout, width=620, height=420, margin=44):
+    """A layout put together at twice the screen's size, as the -2x pieces are drawn, over a plain dark page."""
+    canvas = Image.new("RGBA", (width + margin * 2, height + margin * 2), (0, 0, 0, 0))
+    canvas.paste((20, 16, 13, 255), (margin + 8, margin + 8, margin + width - 8, margin + height - 8))
+    part = {}
+    for key in ("TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner", "TopEdge", "BottomEdge",
+                "LeftEdge", "RightEdge", "Center"):
+        entry = layout.get(key)
+        if not entry or "%" in entry.get("atlas", ""):
+            continue
+        piece, scale = art.best(entry["atlas"])
+        picture = art.cut(piece) if piece else None
+        if empty(picture):
+            continue
+        if scale == 1:
+            picture = picture.resize((picture.width * 2, picture.height * 2), Image.LANCZOS)
+        mirror = layout["mirror"] or entry.get("mirrorLayout") == "true"
+        if mirror and key in ("TopRightCorner", "BottomRightCorner"):
+            picture = picture.transpose(Image.FLIP_LEFT_RIGHT)
+        if mirror and key in ("BottomLeftCorner", "BottomRightCorner"):
+            picture = picture.transpose(Image.FLIP_TOP_BOTTOM)
+        if mirror and key == "BottomEdge" and entry.get("mirrorLayout") != "false":
+            picture = picture.transpose(Image.FLIP_TOP_BOTTOM)
+        if mirror and key == "RightEdge" and entry.get("mirrorLayout") != "false":
+            picture = picture.transpose(Image.FLIP_LEFT_RIGHT)
+        part[key] = (picture, int(float(entry.get("x", 0))) * 2, int(float(entry.get("y", 0))) * 2)
+    if not {"TopLeftCorner", "TopEdge"} <= set(part):
+        return None
+    l, t, r, b = margin, margin, margin + width, margin + height
+    tl, tr, bl, br = (part.get(k, (Image.new("RGBA", (1, 1)), 0, 0)) for k in
+                      ("TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner"))
+    if "Center" in part:
+        fill(canvas, part["Center"][0], (l, t, r, b), True)
+    if "TopEdge" in part:
+        fill(canvas, part["TopEdge"][0], (l + tl[1] + tl[0].width, t - tl[2], r + tr[1] - tr[0].width,
+                                          t - tl[2] + part["TopEdge"][0].height), True)
+    if "BottomEdge" in part:
+        fill(canvas, part["BottomEdge"][0], (l + bl[1] + bl[0].width, b - bl[2] - part["BottomEdge"][0].height,
+                                             r + br[1] - br[0].width, b - bl[2]), True)
+    if "LeftEdge" in part:
+        fill(canvas, part["LeftEdge"][0], (l + tl[1], t - tl[2] + tl[0].height, l + tl[1] + part["LeftEdge"][0].width,
+                                           b - bl[2] - bl[0].height), False)
+    if "RightEdge" in part:
+        fill(canvas, part["RightEdge"][0], (r + tr[1] - part["RightEdge"][0].width, t - tr[2] + tr[0].height,
+                                            r + tr[1], b - br[2] - br[0].height), False)
+    canvas.alpha_composite(tl[0], (max(0, l + tl[1]), max(0, t - tl[2])))
+    canvas.alpha_composite(tr[0], (max(0, r + tr[1] - tr[0].width), max(0, t - tr[2])))
+    canvas.alpha_composite(bl[0], (max(0, l + bl[1]), max(0, b - bl[2] - bl[0].height)))
+    canvas.alpha_composite(br[0], (max(0, r + br[1] - br[0].width), max(0, b - br[2] - br[0].height)))
+    return canvas.crop(canvas.getbbox())
+
+
+def stretched(picture, sides, width, height):
+    """A nine-slice piece at any size: its corners whole, its sides and middle stretched."""
+    left, top, right, bottom = sides
+    w, h = picture.size
+    out = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    xs = [(0, left, 0, left), (left, w - right, left, width - right), (w - right, w, width - right, width)]
+    ys = [(0, top, 0, top), (top, h - bottom, top, height - bottom), (h - bottom, h, height - bottom, height)]
+    for sy0, sy1, dy0, dy1 in ys:
+        for sx0, sx1, dx0, dx1 in xs:
+            if sx1 > sx0 and sy1 > sy0 and dx1 > dx0 and dy1 > dy0:
+                part = picture.crop((sx0, sy0, sx1, sy1)).resize((dx1 - dx0, dy1 - dy0), Image.LANCZOS)
+                out.alpha_composite(part, (dx0, dy0))
+    return out
+
+
+def bronze_window(art):
+    """The character list's frame as Forever's XML lays it: the bronze rim over the dark plate, its brackets at the
+    right corners."""
+    rim, _ = art.best("heavybronze-frame-basic")
+    back, _ = art.best("heavybronze-frame-background")
+    if not rim or not back or empty(art.cut(rim)):
+        return None
+    width, height, reach = 300, 400, 30         # 2x: the rim stands 9 by 15 outside the plate
+    out = Image.new("RGBA", (width + 2 * 18, height + 2 * reach), (0, 0, 0, 0))
+    out.alpha_composite(art.cut(back).resize((width, height), Image.LANCZOS), (18, reach))
+    sides = art.slices.get(rim["element"], (50, 50, 50, 50))
+    out.alpha_composite(stretched(art.cut(rim), sides, out.width, out.height), (0, 0))
+    for name, corner in (("heavybronze-vert-cornerbracket-TR", "tr"), ("heavybronze-vert-cornerbracket-BR", "br")):
+        piece, _ = art.best(name)
+        picture = art.cut(piece)
+        out.alpha_composite(picture, (out.width - picture.width, 0 if corner == "tr" else out.height - picture.height))
+    return out
+
+
+def top_bar(art):
+    """The top bar of the character screen, three buttons, as the game joins them."""
+    parts = []
+    for name in ("glues-characterselect-tophud-left-bg", "glues-characterselect-tophud-middle-bg",
+                 "glues-characterselect-tophud-right-bg"):
+        piece, _ = art.best(name)
+        parts.append(art.cut(piece))
+    if any(empty(p) for p in parts):
+        return None
+    out = Image.new("RGBA", (sum(p.width for p in parts), max(p.height for p in parts)), (0, 0, 0, 0))
+    x = 0
+    for p in parts:
+        out.alpha_composite(p, (x, 0))
+        x += p.width
+    return out
+
+
+# The list -----------------------------------------------------------------------------------------------------------
+def section_of(root):
+    for key, _, _, rule in SECTIONS:
+        if rule and re.search(rule, root):
+            return key
+    return "marks"
+
+
+def atlas_items(art):
+    """Every piece worth a number: one per root, its states together; Forever's own before the rest."""
+    groups = {}
+    for lower, piece in art.pieces.items():
+        path = (art.paths.get(piece["sheet"]) or "").lower()
+        own = "c60" in lower or "c60" in path or (SHEETS / f"{piece['sheet']}.blp").is_file()
+        if SKIP.search(lower) or SKIP.search(path) or not art.sheet_file(piece["sheet"]):
+            continue
+        root, state = root_of(lower)
+        double = lower.endswith("-2x") or "2x" in path
+        entry = groups.setdefault(root, {"own": False, "states": {}})
+        entry["own"] = entry["own"] or own
+        known = entry["states"].get(state)
+        rank = (own, double, piece["box"][2] - piece["box"][0])
+        if known is None or rank > known[0]:
+            entry["states"][state] = (rank, piece, double)
+    items = []
+    for root, entry in sorted(groups.items()):
+        if entry["own"]:
+            section = section_of(root)
+        else:
+            if not KEEP_ELSEWHERE.search(root) or SKIP_ELSEWHERE.search(root):
+                continue
+            section = "elsewhere"
+        states = sorted(entry["states"].items(), key=lambda s: RANK.index(s[0]) if s[0] in RANK else len(RANK))
+        states = [s for s in states if s[1][0][0] == entry["own"]] or states
+        items.append({"key": "atlas:" + root, "section": section, "words": root.strip("!_"), "states": states})
+    return items
+
+
+def old_items(art):
+    """The old files, the states of one thing together."""
+    sheets = {art.pieces[k]["sheet"] for k in art.pieces}
+    groups = {}
+    for fdid, path in sorted(art.paths.items(), key=lambda p: p[1].lower()):
+        lower = path.lower()
+        if fdid in sheets or "c60" in lower or not OLD_ART.match(lower) or SKIP_OLD.search(Path(lower).name):
+            continue
+        if SKIP.search(lower) or not lower.endswith(".blp"):
+            continue
+        root, state = root_of(lower[:-4])
+        groups.setdefault(root, {})[state] = fdid
+    items = []
+    for root, states in sorted(groups.items()):
+        order = sorted(states, key=lambda s: RANK.index(s) if s in RANK else len(RANK))
+        items.append({"key": "file:" + root, "section": "old", "words": root[len("interface/"):],
+                      "files": [states[s] for s in order]})
+    return items
+
+
+def text(value):
+    return html.escape(str(value), quote=True)
+
+
+def page(sections, cards, info):
+    head = []
+    for key, title, about, _ in SECTIONS:
+        count = len(sections.get(key, ()))
+        if count:
+            head.append(f'<a href="#{key}">{text(title)} <i>{count}</i></a>')
+    body = []
+    for key, title, about, _ in SECTIONS:
+        numbers = sections.get(key)
+        if not numbers:
+            continue
+        body.append(f'<section id="{key}"><h2>{text(title)} <i>{len(numbers)}</i></h2><p>{text(about)}</p><div class="grid">')
+        body.extend(cards[n] for n in numbers)
+        body.append("</div></section>")
+    return (TEMPLATE.replace("/*INFO*/{}", json.dumps(info, separators=(",", ":")))
+            .replace("<!--NAV-->", "".join(head)).replace("<!--BODY-->", "\n".join(body)))
+
+
+def make():
+    art = Art()
+    OUT.mkdir(parents=True, exist_ok=True)
+    pictures = OUT / "art"
+    pictures.mkdir(exist_ok=True)
+    numbers = json.loads(NUMBERS.read_text()) if NUMBERS.is_file() else {}
+    seen = set()
+    made = []
+
+    def add(key, section, words, picture, source, scale, states=(), retail=""):
+        if empty(picture):
+            return
+        digest = hashlib.sha1(picture.tobytes()).hexdigest()
+        if digest in seen:
+            return
+        seen.add(digest)
+        made.append({"key": key, "section": section, "words": words, "picture": picture, "source": source,
+                     "scale": scale, "states": list(states), "retail": retail})
+
+    code = export.required("code")
+    bronze = bronze_window(art)
+    add("window:heavybronze", "windows", "the character list's frame: heavy bronze", bronze,
+        "heavybronze-frame-basic, -background, -vert-cornerbracket", 1, retail="Forever only")
+    bar = top_bar(art)
+    add("window:tophud", "windows", "the character screen's top bar, joined", bar, "glues-characterselect-tophud-*", 1, retail="Retail: own look")
+    for name, layout in layouts(code).items():
+        if name in NOT_WINDOWS:
+            continue
+        picture = window(art, layout)
+        add("window:" + name, "windows", re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name).lower(), picture,
+            "NineSliceLayouts: " + name, 2)
+
+    for item in atlas_items(art):
+        cuts, names, double = [], [], False
+        for state, (_, piece, wide) in item["states"]:
+            picture = art.cut(piece)
+            if not empty(picture) and (item["section"] != "elsewhere" or max(picture.size) >= 24):
+                cuts.append(picture)
+                names.append(piece["name"])
+                double = double or wide
+        if cuts:
+            sheet = art.paths.get(item["states"][0][1][1]["sheet"]) or f"file ID {item['states'][0][1][1]['sheet']}"
+            add(item["key"], item["section"], item["words"], fitted(strip(cuts[:6])), sheet, 2 if double else 1, names,
+                retail_says(art, item))
+
+    for item in old_items(art):
+        cuts = [art.sheet(fdid) for fdid in item["files"]]
+        for fdid in item["files"]:
+            art.loaded.pop(fdid, None)
+        cuts = [c for c in cuts if c is not None and min(c.size) >= 16 and not empty(c)]
+        if cuts:
+            add(item["key"], "old", item["words"], fitted(strip(cuts[:6])), art.paths[item["files"][0]], 1,
+                [art.paths[f] for f in item["files"]], retail_says(art, {"file": item["files"][0]}))
+
+    order = {s[0]: i for i, s in enumerate(SECTIONS)}
+    made.sort(key=lambda m: (order[m["section"]], FIRST.index(m["key"]) if m["key"] in FIRST else len(FIRST), m["words"]))
+    next_number = max(numbers.values(), default=0) + 1
+    sections, cards, info = {}, {}, {}
+    for item in made:
+        number = numbers.get(item["key"])
+        if number is None:
+            number = numbers[item["key"]] = next_number
+            next_number += 1
+        target = pictures / f"{number}.png"
+        item["picture"].save(target, compress_level=6)
+        w, h = item["picture"].size
+        scale = item["scale"]
+        show = (max(1, round(w / scale)), max(1, round(h / scale)))
+        if max(show) < 44:                  # too small to judge: shown larger
+            k = 44 / max(show)
+            show = (round(show[0] * k), round(show[1] * k))
+        wide = " wide" if show[0] > 300 else ""
+        sections.setdefault(item["section"], []).append(number)
+        said = item["retail"]
+        tag = f'<em>{said}</em>' if said else ""
+        cards[number] = (f'<figure class="card{wide}" id="n{number}" data-n="{number}" '
+                         f'data-w="{text(item["words"] + " " + said.lower())}">'
+                         f'<div class="art"><img loading="lazy" src="art/{number}.png" width="{show[0]}" '
+                         f'height="{show[1]}" alt=""></div><figcaption><b>{number}</b><span>{text(item["words"])}</span>{tag}'
+                         '</figcaption><div class="marks"><button data-m="y" title="yes">✓</button>'
+                         '<button data-m="m" title="maybe">?</button><button data-m="n" title="no">✕</button></div></figure>')
+        info[number] = {"w": item["words"], "s": item["source"], "z": [w, h], "a": item["states"], "r": said}
+        item["number"] = number
+    NUMBERS.write_text(json.dumps(numbers, indent=0, sort_keys=True))
+    (OUT / "index.html").write_text(page(sections, cards, info), encoding="utf-8")
+    overview(sections, {m["number"]: m for m in made})
+    for key, title, _, _ in SECTIONS:
+        print(f"{len(sections.get(key, ())):5d}  {title}")
+    print(f"{len(made):5d}  numbered, in {OUT.relative_to(ROOT)}")
+
+
+def overview(sections, items, columns=5, rows=7, cell=(320, 250)):
+    """The catalogue on paper: overview.pdf, a page per so many pieces, each under its number."""
+    number_font = title_font = small = None
+    for name in ("DejaVuSans-Bold.ttf", "DejaVuSans.ttf"):
+        try:
+            title_font = ImageFont.truetype(name, 34)
+            number_font = ImageFont.truetype(name, 26)
+            small = ImageFont.truetype(name, 13)
+            break
+        except OSError:
+            continue
+    if small is None:
+        title_font, number_font, small = (ImageFont.load_default(size) for size in (34, 26, 13))
+    width, height = columns * cell[0], rows * cell[1] + 70
+    pages = []
+    for key, title, _, _ in SECTIONS:
+        numbers = sections.get(key, [])
+        for start in range(0, len(numbers), columns * rows):
+            page_ = Image.new("RGB", (width, height), (60, 52, 44))
+            draw = ImageDraw.Draw(page_)
+            draw.text((16, 16), title, font=title_font, fill=(240, 200, 110))
+            for i, number in enumerate(numbers[start:start + columns * rows]):
+                item = items[number]
+                x, y = (i % columns) * cell[0] + 8, (i // columns) * cell[1] + 70
+                picture = item["picture"].copy()
+                picture.thumbnail((cell[0] - 16, cell[1] - 52), Image.LANCZOS)
+                page_.paste(picture, (x + (cell[0] - 16 - picture.width) // 2, y), picture)
+                draw.text((x, y + cell[1] - 46), f"#{number}", font=number_font, fill=(255, 225, 130))
+                if item["retail"]:
+                    draw.text((x + 96, y + cell[1] - 38), item["retail"], font=small, fill=(200, 185, 160))
+            pages.append(page_)
+    pages[0].save(OUT / "overview.pdf", save_all=True, append_images=pages[1:], quality=88, resolution=100)
+    print(f"{len(pages):5d}  pages in overview.pdf")
+
+
+def find(word):
+    numbers = json.loads(NUMBERS.read_text()) if NUMBERS.is_file() else {}
+    for key, number in sorted(numbers.items(), key=lambda kv: kv[1]):
+        if word.lower() in key:
+            print(f"#{number}  {key}")
+
+
+TEMPLATE = r"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game art</title>
+<style>
+:root { --bg:#14100c; --panel:#1e1812; --line:#3b2f22; --text:#e6dcc8; --dim:#9d8f78; --gold:#e8c060; --art:#231c15;
+  --yes:#5fae5f; --maybe:#d8a93c; --no:#c25b4e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui, sans-serif; padding-bottom:64px; }
+header { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:10px 16px; }
+h1 { font-size:18px; margin:0 0 6px; color:var(--gold); }
+nav { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:13px; }
+nav a { color:var(--text); text-decoration:none; } nav a:hover { color:var(--gold); } i { font-style:normal; color:var(--dim); }
+.tools { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+input { background:#0d0a07; color:var(--text); border:1px solid var(--line); padding:5px 8px; width:220px; font:inherit; }
+button { background:var(--panel); color:var(--text); border:1px solid var(--line); padding:4px 10px; font:inherit; cursor:pointer; }
+button:hover { border-color:var(--gold); } button.on { background:var(--line); color:var(--gold); }
+main { padding:0 16px; } section { padding-top:18px; scroll-margin-top:120px; }
+h2 { color:var(--gold); font-size:18px; margin:0; } section > p { margin:2px 0 12px; color:var(--dim); }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px; }
+.card { margin:0; background:var(--panel); border:1px solid var(--line); display:flex; flex-direction:column; min-width:0; }
+.card.wide { grid-column:span 2; } .card[data-mark="y"] { border-color:var(--yes); }
+.card[data-mark="m"] { border-color:var(--maybe); } .card[data-mark="n"] { opacity:.45; }
+.art { background:var(--art); flex:1; display:flex; align-items:center; justify-content:center; padding:10px; min-height:130px; cursor:zoom-in; overflow:hidden; }
+.art img { max-width:100%; height:auto; max-height:320px; object-fit:contain; }
+figcaption { display:flex; gap:8px; align-items:baseline; padding:5px 8px 2px; }
+figcaption b { color:var(--gold); font-size:19px; } figcaption b::before { content:"#"; color:var(--dim); font-weight:400; }
+figcaption span { color:var(--dim); font-size:12px; overflow-wrap:anywhere; flex:1; }
+figcaption em { color:var(--maybe); font-size:11px; font-style:normal; white-space:nowrap; }
+.marks { display:flex; gap:4px; padding:3px 8px 8px; } .marks button { padding:1px 10px; }
+.card[data-mark="y"] [data-m="y"] { background:var(--yes); color:#000; }
+.card[data-mark="m"] [data-m="m"] { background:var(--maybe); color:#000; }
+.card[data-mark="n"] [data-m="n"] { background:var(--no); color:#000; }
+footer { position:fixed; left:0; right:0; bottom:0; background:var(--bg); border-top:1px solid var(--line); padding:8px 16px;
+  display:flex; gap:12px; align-items:center; flex-wrap:wrap; z-index:5; }
+#big { position:fixed; inset:0; background:rgba(0,0,0,.88); display:none; z-index:10; padding:20px; overflow:auto; }
+#big.on { display:block; } #big .box { max-width:1180px; margin:auto; }
+#big .pic { background:var(--art); padding:16px; text-align:center; }
+#big img { max-width:100%; height:auto; } #big h3 { color:var(--gold); margin:10px 0 2px; font-size:22px; }
+#big code { display:block; color:var(--dim); font-size:13px; overflow-wrap:anywhere; }
+[hidden] { display:none !important; }
+@media (max-width:520px) { .card.wide { grid-column:span 1; } }
+</style></head><body>
+<header><h1>Game art</h1><nav><!--NAV--></nav>
+<div class="tools"><input id="find" type="search" placeholder="Find a number or a word">
+<span>Behind the art:</span><button data-bg="#231c15" class="on">Dark</button><button data-bg="#57504a">Stone</button><button data-bg="#c9c0b0">Light</button></div>
+</header>
+<main><!--BODY--></main>
+<footer><span id="count">Nothing marked yet</span><button id="copy">Copy my marks</button><span id="done"></span></footer>
+<div id="big"><div class="box"><div class="pic"><img alt=""></div><h3></h3><code></code></div></div>
+<script>
+const INFO = /*INFO*/{};
+const KEY = "game-art-marks";
+let marks = {};
+try { marks = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+const cards = [...document.querySelectorAll(".card")];
+function save() { try { localStorage.setItem(KEY, JSON.stringify(marks)); } catch (e) {} }
+function list(m) { return Object.keys(marks).filter(k => marks[k] === m).map(Number).sort((a, b) => a - b); }
+function count() {
+  const y = list("y").length, q = list("m").length, n = list("n").length;
+  document.getElementById("count").textContent = y + q + n ? `${y} yes, ${q} maybe, ${n} no` : "Nothing marked yet";
+}
+function show(card) { const m = marks[card.dataset.n]; if (m) card.dataset.mark = m; else delete card.dataset.mark; }
+cards.forEach(show); count();
+document.querySelector("main").addEventListener("click", e => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  const n = card.dataset.n, m = e.target.dataset.m;
+  if (m) { if (marks[n] === m) delete marks[n]; else marks[n] = m; save(); show(card); count(); return; }
+  if (e.target.closest(".art")) {
+    const big = document.getElementById("big"), i = INFO[n];
+    big.querySelector("img").src = `art/${n}.png`;
+    big.querySelector("h3").textContent = `#${n}  ${i.w}  (${i.z[0]} × ${i.z[1]})`;
+    big.querySelector("code").textContent = [i.r, i.s, ...(i.a || [])].filter(Boolean).join("\n");
+    big.querySelector("code").style.whiteSpace = "pre-wrap";
+    big.classList.add("on");
+  }
+});
+document.getElementById("big").addEventListener("click", e => e.currentTarget.classList.remove("on"));
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("big").classList.remove("on"); });
+document.getElementById("find").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase().replace(/^#/, "");
+  cards.forEach(c => { c.hidden = q && !(c.dataset.n === q || c.dataset.w.includes(q)); });
+  document.querySelectorAll("section").forEach(s => { s.hidden = !s.querySelector(".card:not([hidden])"); });
+});
+document.querySelectorAll("[data-bg]").forEach(b => b.addEventListener("click", () => {
+  document.documentElement.style.setProperty("--art", b.dataset.bg);
+  document.querySelectorAll("[data-bg]").forEach(o => o.classList.toggle("on", o === b));
+}));
+document.getElementById("copy").addEventListener("click", async () => {
+  const words = [["Yes", "y"], ["Maybe", "m"], ["No", "n"]].filter(p => list(p[1]).length)
+    .map(p => `${p[0]}: ${list(p[1]).join(", ")}`).join("\n");
+  let done = "Copied. Paste it into the chat.";
+  try { await navigator.clipboard.writeText(words); } catch (e) { done = words; }
+  document.getElementById("done").textContent = done;
+});
+</script></body></html>
+"""
+
+if __name__ == "__main__":
+    if len(sys.argv) > 2 and sys.argv[1] == "find":
+        find(sys.argv[2])
+    elif sys.argv[1:] == ["make"]:
+        make()
+    else:
+        sys.exit(__doc__)

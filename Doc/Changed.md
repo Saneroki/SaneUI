@@ -6,6 +6,15 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Interface style: a new direction, the game's own art numbered to pick from (Saneroki, 2026-10-30)
+Saneroki: windows more like WoW: Forever's own style, its images instead of the leather and the paper, the game's default
+fonts, the pencil icons kept, no red buttons but natural ones with golden or silver beaten-up metal borders; find a lot of
+the game's elements and show them numbered. Nothing in the addon changes yet: the look is built from the picks.
+- **`dev/tools/game-art` (new, `saneui makegameart`, `saneui showgameart`, 127.0.0.1 port 8776):** 1447 numbered pieces cut
+  out of the newest export by the client's atlas tables, the states of a piece side by side, whole windows put together from
+  Blizzard's nine-slice layouts, with a mark for each card and a PDF of the same numbers. A number stays with its piece.
+- **`Doc/guides/interface-style.md`, *The new direction*:** the decisions, the references and what Retail has of Forever's art.
+
 ### Core: meters and 24 hours, the setting Units; the toast's time in minutes, no switch; the overlay level with it (Saneroki, 2026-10-30)
 Saneroki: the travel widget at the same height as the level-up screen; the time with minutes as well; the off switch
 removed, "just default and not clutter the ui"; the entire addon everywhere in Metric, meters and hh:mm in 24 hours like
