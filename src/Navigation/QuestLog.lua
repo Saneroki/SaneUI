@@ -6,7 +6,8 @@ local _, ns = ...
 --  button, TopBar.lua). Our own
 --  list (the game's belongs to its map window, which stays closed), read from
 --  the game's quest log: each quest with its level, its objectives under it, no
---  mark before it and no tick after it (Saneroki 2026-10-30).
+--  mark before it and no tick after it (Saneroki 2026-10-30). A + on the level says
+--  it is meant for a group, as WoW: Forever's own log writes it ([60+], Saneroki 2026-10-30).
 --  Built again once a frame after the game says the log changed, and only while
 --  it is in sight.
 --
@@ -38,9 +39,10 @@ local _, ns = ...
 --                    gold. What it gives: experience and coin in words, its things as big icons with their names, two
 --                    side by side where they fit (The rewards). A click there or on the quest folds it away
 --      previews      ghosts: quests of Core's data a click on their giver's exclamation mark on the map added, not in
---                    the game's log (QuestLog.Preview): on top, under Not in your log, see through, the exclamation mark
---                    and the title red (Saneroki 2026-10-30). The game's red X or the right button takes one out, the X
---                    on Not in your log all of them; one taken from its giver meanwhile goes by itself. A click unfolds
+--                    the game's log (QuestLog.Preview): on top, under Not in your log, each between a red exclamation
+--                    mark and the game's red X, which say so; the rest as any quest (Saneroki 2026-10-30). That X or the
+--                    right button takes one out, the X on Not in your log all of them; one taken from its giver
+--                    meanwhile goes by itself. A click unfolds
 --                    what the data knows of it (why it is not for you yet, its level, who gives and takes it, what it
 --                    asks first, its objectives, its rewards) and moves the map to its giver, a double click puts the
 --                    game's map pin there. Kept until the next /reload
@@ -89,7 +91,6 @@ QuestLog.ITEM = 24        -- a quest's item's button, and the height of a row wi
 QuestLog.OVER = 30        -- the items' frame level above the log's
 QuestLog.INDENT = 10      -- an objective's words from its quest's
 QuestLog.MARK = 16        -- a preview's mark at its row's start; its words after it
-QuestLog.GHOST = 0.7      -- a preview's mark and title: how much of them shows, a ghost of a quest
 QuestLog.ROOM = 6         -- under a quest's words
 QuestLog.SECTION = 24     -- a heading in a quest's text, with the room over it
 QuestLog.INSET = 10       -- a quest's text from the sides of its panel
@@ -136,6 +137,8 @@ QuestLog.TEXT = {
     objects = Core.Word("QUEST_OBJECTS_FOUND", "%s: %d/%d"),
 }
 QuestLog.REMOVE = "xmarksthespot" -- the game's red X (ObjectIconsAtlas) on a preview's row
+-- The game's tags of a quest meant for a group (Enum.QuestTag): Group (Forever's Elite), Raid, Dungeon, Heroic, Raid10, Raid25.
+QuestLog.GROUP_TAGS = { [1] = true, [62] = true, [81] = true, [85] = true, [88] = true, [89] = true }
 QuestLog.RIM = "Interface\\Common\\WhiteIconFrame" -- the game's frame round a reward's icon, in its quality's colour
 QuestLog.PLATE = "Interface\\QuestFrame\\UI-QuestItemNameFrame" -- the game's plate behind a reward's name
 QuestLog.PLATE_PART = { 10 / 128, 118 / 128, 11 / 64, 53 / 64 } -- the plate itself in that picture
@@ -204,7 +207,8 @@ local function Entries()
             elseif not info.isHidden and info.questID then
                 quests = quests + 1
                 entries[#entries + 1] = { kind = "quest", quest = info.questID, text = info.title, level = info.level,
-                                          index = index, scaling = info.isScaling, folded = folded }
+                                          index = index, scaling = info.isScaling, folded = folded,
+                                          suggested = info.suggestedGroup }
             end
         end
     end
@@ -277,6 +281,15 @@ local function Special(index, complete)
     return nil
 end
 
+-- Whether a quest is meant for a group: the game calls it elite (Forever alone asks that), suggests a group for it or
+-- tags it for one. By its ID, so a preview is asked too, though the game may not tell of one out of the log.
+local function ForGroup(quest, suggested)
+    if type(suggested) == "number" and suggested > 1 then return true end
+    if Core.Ask(C_QuestLog.IsEliteQuest, quest) then return true end
+    local tag = Core.Ask(C_QuestLog.GetQuestTagInfo, quest)
+    return type(tag) == "table" and (tag.isElite or QuestLog.GROUP_TAGS[tag.tagID]) and true or false
+end
+
 -- A quest's row and its objectives under it: over the full map every one, the done ones grey; on the screen alone
 -- only those still to do. A quest done: its turn in last, an objective still to do in both.
 local function Add(entry)
@@ -286,7 +299,7 @@ local function Add(entry)
     local item, picture, charges = Special(entry.index, complete)
     rows[#rows + 1] = { kind = "quest", quest = quest, text = entry.text, level = entry.level, index = entry.index,
                         complete = complete, failed = failed, scaling = entry.scaling,
-                        item = item, picture = picture, charges = charges,
+                        group = ForGroup(quest, entry.suggested), item = item, picture = picture, charges = charges,
                         watched = (Core.Ask(C_QuestLog.GetQuestWatchType, quest)) ~= nil }
     local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, quest)
     for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
@@ -319,7 +332,8 @@ local function Read()
         rows[#rows + 1] = { kind = "header", text = QuestLog.TEXT.previews, ghosts = true }
         for _, quest in ipairs(previews) do
             rows[#rows + 1] = { kind = "preview", quest = quest, text = QUESTS:Get(quest, "name") or ("#" .. quest),
-                                level = QUESTS:Get(quest, "level") }
+                                level = QUESTS:Get(quest, "level"),
+                                group = ForGroup(quest, QUESTS:Get(quest, "groupSize")) }
             if open and quest == chosen then AddText(quest) end
         end
     end
@@ -518,13 +532,12 @@ end
 
 local function Colour(row)
     if row.kind == "header" or row.kind == "section" then return 1, 0.82, 0 end
-    if row.kind == "preview" then return unpack(ns.Pins.RED) end
     if row.part then return 0.9, 0.9, 0.9 end
     if row.kind == "objective" then
         if row.done then return 0.5, 0.5, 0.5 end
         return 0.85, 0.85, 0.85
     end
-    local difficulty = rawget(_G, "GetQuestDifficultyColor")
+    local difficulty = row.level and rawget(_G, "GetQuestDifficultyColor")
     local colour = difficulty and Core.Safe("quest log", difficulty, row.level, row.scaling, row.quest)
     if type(colour) == "table" then return colour.r, colour.g, colour.b end
     return 1, 1, 1
@@ -567,7 +580,8 @@ local function Left()
     ns.Areas.Hover(nil)
 end
 
--- A preview's mark at its row's start: the game's exclamation mark in red, whatever its giver's pin shows on the map.
+-- A preview's mark at its row's start: the game's exclamation mark in red, whatever its giver's pin shows on the map:
+-- with its red X what tells it from a quest in the log.
 local function Mark(icon)
     local red = ns.Pins.RED
     icon:SetAtlas(ns.Pins.ICONS.offer)
@@ -696,12 +710,17 @@ local function Rewards(element, row, near, far, sign)
     end
 end
 
+-- A quest's words in the list: its level, with a + if it is meant for a group, and its name.
+local function Title(row)
+    if not row.level then return row.text or "" end
+    return ("[%d%s] %s"):format(row.level, row.group and "+" or "", row.text or "")
+end
+
 -- A row's frame, made the first time the list draws one (the list's elements are plain buttons).
 local function Draw(element, row)
     if not element.text then
         element.icon = element:CreateTexture(nil, "ARTWORK")
         element.icon:SetSize(QuestLog.MARK, QuestLog.MARK)
-        element.icon:SetAlpha(QuestLog.GHOST)
         element.text = element:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         element.text:SetJustifyH("LEFT")
         element.text:SetWordWrap(false)
@@ -781,7 +800,7 @@ local function Draw(element, row)
         text:SetFontObject("GameFontHighlight")
         text:SetPoint(near, sign * element.left, 0)
         text:SetPoint(far, element.remove, near, -sign * 4, 0)
-        text:SetText(row.level and ("[%d] %s"):format(row.level, row.text) or row.text)
+        text:SetText(Title(row))
     elseif row.kind == "quest" then
         element.left = 0
         -- At its far end its item, if it has one (Seat), and before that Failed.
@@ -789,7 +808,7 @@ local function Draw(element, row)
         text:SetFontObject("GameFontHighlight")
         text:SetPoint(near, 0, 0)
         text:SetPoint(far, state, near, -sign * 4, 0)
-        text:SetText(("[%d] %s"):format(row.level or 0, row.text or ""))
+        text:SetText(Title(row))
         if row.failed then
             state:SetText(QuestLog.TEXT.failed)
             state:SetTextColor(1, 0.2, 0.2)
@@ -819,7 +838,6 @@ local function Draw(element, row)
     text:SetWordWrap(row.kind == "text")
     text:SetSpacing(row.kind == "text" and 2 or 0)
     text:SetTextColor(Colour(row))
-    text:SetAlpha(row.kind == "preview" and QuestLog.GHOST or 1)
     Reach(element)
     if row.quest and row.quest == chosen and (row.kind == "quest" or row.kind == "preview") then
         element.light:SetColorTexture(1, 0.82, 0, 0.15)

@@ -1,7 +1,7 @@
 -- The quest log: its list with a quest unfolded, its text and its big reward icons (QuestLog.lua)
 -- The rest of Navigation stands in, the game's quest log is the scene's own: three quests in two zones, one to pick a
--- reward from, one that teaches a spell, the items the game's own from the data master, and two ghosts from a giver's
--- exclamation mark on the map on top. In the console, LabQuestLog is
+-- reward from, one that teaches a spell, one for a group, the items the game's own from the data master, and two ghosts
+-- from a giver's exclamation mark on the map on top, one for a group. In the console, LabQuestLog is
 -- the module's log: LabQuestLog.Text(1102) unfolds another quest, LabQuestLog.Text(nil) folds it; LabOnScreen() shows its
 -- look on the screen alone, pinned, LabOnScreen(true) back over the full map; LabRight() moves it to the right half.
 Lab.TOC("src/Core/SaneUI.toc")
@@ -41,7 +41,7 @@ local QUESTS = {
         xp = 880, money = 900, spells = { 133 },
     },
     [1103] = {
-        title = "A Long Way Down", level = 14, zone = "Westfall",
+        title = "A Long Way Down", level = 14, zone = "Westfall", group = 3,
         objectives = { { text = "Harvest Golems destroyed: 2/8" } },
         asks = "Destroy 8 Harvest Golems.", story = "They march at night.", xp = 1250, money = 0,
     },
@@ -49,7 +49,8 @@ local QUESTS = {
 local ORDER = { "Elwynn Forest", 1101, 1102, "Westfall", 1103 }
 
 -- Ghosts: quests of Core's data, as a click on their giver's exclamation mark adds them.
-local GHOSTS = { [2001] = { name = "The Jasperlode Mine", level = 8 }, [2002] = { name = "Bounty on Murlocs", level = 9 } }
+local GHOSTS = { [2001] = { name = "The Jasperlode Mine", level = 8 },
+                 [2002] = { name = "Bounty on Murlocs", level = 9, groupSize = 5 } }
 local Set = Core.Data.Set("Quests")
 local get = Set.Get
 Set.Get = function(self, quest, field)
@@ -66,7 +67,7 @@ C_QuestLog.GetInfo = function(index)
     local entry = Entry(index)
     if type(entry) == "string" then return { isHeader = true, title = entry } end
     local quest = QUESTS[entry]
-    return { title = quest.title, level = quest.level, questID = entry }
+    return { title = quest.title, level = quest.level, questID = entry, suggestedGroup = quest.group }
 end
 C_QuestLog.GetLogIndexForQuestID = function(id)
     for index, entry in ipairs(ORDER) do if entry == id then return index end end

@@ -159,7 +159,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   Elite, Group, Dungeon and the like; the rest Normal; a quest always shows under its zone, however the game's own log
   has its headers; over the full map a click on a zone folds it, kept); a click on those words sorts them the next way, kept. **A click
   on the title bar beside them hides the list,** so that only the title bar stays, and shows it again, kept. Your quests
-  with their level, no mark before them and no tick after them, their
+  with their level, a **+** on it for one meant for a group (`[60+]`, as the game's own log writes it), no mark before them
+  and no tick after them, their
   objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
   to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
@@ -177,8 +178,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   The
   right button: *Quest Details* (its text, as a click unfolds it), *Show Map* (the map at its objective), *Track*, *Share* and *Abandon*. A click on a quest's pin on
   the map shows its text too. **A click on a quest giver's exclamation mark on the map adds its quests as ghosts:** on
-  top, under *Not in your log*, see through, the exclamation mark and the title red, so they never pass for quests you
-  took. A red X or the right button takes one out at once, the red X over them all of them, and one you take from its
+  top, under *Not in your log*, each between a red exclamation mark and a red X, which say so; the rest of it as any
+  quest. That X or the right button takes one out at once, the red X over them all of them, and one you take from its
   giver goes by itself. Below a ghost what the data knows of it: why it is not for you yet,
   its level, who gives and takes it, its objectives and rewards, as big icons too. A click on one moves the map to its giver, a double
   click puts the map pin there.
@@ -1052,7 +1053,8 @@ Tests: `dev/tests/navigation.lua`.
   right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
   the pins on what the game tells, and lays nothing out on the window's way.
 - **2026-10-30, ghosts:** a quest's story comes first in its text; the quests of a giver's exclamation mark stand in the log
-  as see-through ghosts, the mark and the title red, out by the red X, the right button or the X over them all.
+  as ghosts, a red exclamation mark and a red X saying so, their titles normal, out by that X, the right button or the X
+  over them all. A + on the level of a quest meant for a group (`ForGroup`, `Title`).
 - **2026-10-30, an open quest's text and rewards:** its text in rows of the list under headings, on a dark panel; its
   rewards as big icons with their names and the game's tooltip, currencies and spells too, a preview's as well; a
   quest's gold shows at last (`Core.Coins`).

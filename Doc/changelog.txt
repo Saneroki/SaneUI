@@ -151,8 +151,9 @@ The bigger changes of each version, newest first.
   you there. An open quest reads like a page: headings in gold, its
   gold and experience, its rewards as big icons, the mouse on one for
   its tooltip. A click on an exclamation mark on the map adds its
-  quests on top as red, see-through ghosts, not in your log: their red
-  X or a right click takes them out. Quest
+  quests on top, a red ! and a red X saying they are not in your log:
+  that X or a right click takes them out. A + on a quest's level says
+  it is meant for a group. Quest
   items stand beside their quests, on the right half of the screen
   it mirrors.
   Pinned, it takes the place of the game's quest tracker: in its

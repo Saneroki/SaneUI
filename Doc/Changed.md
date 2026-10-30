@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 777 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 786 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Combat: your breath over your health bar, in the game's bubbles (Saneroki, 2026-10-30)
@@ -73,6 +73,19 @@ in Core's TOC, a new saved variable).
 - **Interface lab:** the scene `auctionscan`; a flipbook's grid is taken (`dev/uilab/lab/anim.lua`).
 - **Tests:** `dev/tests/data.lua`, the scan start to end, the day's merge, refusals, gear and pets, a house of a wrong shape.
 - **Docs:** `Doc/guides/data.md` (*The full auction scan*), `Doc/ideas/Economy.md`, `Doc/ideas/Data.md`, `Doc/ideas/Data-build.md`.
+
+### Navigation: ghosts in their normal colours, a + on the level of a group quest (Saneroki, 2026-10-30)
+Saneroki: the red X and the red exclamation mark are enough to mark a quest not in the log, its title and the rest normal;
+group and epic quests show a + on the level number, to say they are meant for a group. A `/reload` takes it in.
+- **`src/Navigation/QuestLog.lua`:** `QuestLog.GHOST` gone: a preview's title in its level's colour, nothing see through; its
+  mark stays the exclamation mark in `Pins.RED`. `Colour` asks the game's colour only of a row with a level.
+- **The + (`ForGroup`, `Title`):** `[60+]`, as Forever's own quest log writes it: `C_QuestLog.IsEliteQuest` (Forever alone), a
+  suggested group of two or more, the game's tag of one (`QuestLog.GROUP_TAGS`: Group, which is Forever's Elite, Raid, Dungeon,
+  Heroic, Raid10, Raid25) or `isElite`. A preview: by the same calls, and Core's `groupSize`, which the data does not hold yet
+  but for quests taken (board).
+- **Interface lab:** a group quest and a group ghost in the scene `questlog`.
+- **Tests:** `dev/tests/navigation.lua`, what makes a + and what does not, a ghost's colour.
+- **Docs:** `src/Navigation/README.md`, `Doc/agent/navigation.md`, `Doc/ideas/Navigation.md`.
 
 ### Navigation: a quest's story first; ghosts from the map's exclamation marks (Saneroki, 2026-10-30)
 Saneroki: the description above the objectives, as the first part of a quest; a click on an exclamation mark on the map adds

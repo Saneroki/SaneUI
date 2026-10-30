@@ -277,6 +277,7 @@ GetQuestLogQuestText = function(index) return "The story of quest " .. index, "K
 local questDistance = { [7] = 400, [8] = 100 }
 C_QuestLog.GetDistanceSqToQuest = function(quest) return questDistance[quest], true end
 C_QuestLog.GetQuestTagInfo = function(quest) return quest == 7 and { tagName = "Elite", tagID = 1 } or nil end
+C_QuestLog.IsEliteQuest = function() return false end
 C_QuestLog.GetNextWaypointText = function() return nil end
 GetQuestLogCompletionText = function(index) return index == 3 and "Report back to Marshal Dughan." or nil end
 ObjectiveTrackerFrame = CreateFrame("Frame", "ObjectiveTrackerFrame", UIParent) -- the game's quest tracker
@@ -2354,7 +2355,42 @@ do
         and rows[5].row.done and rows[6].row.turnIn,
         "again: by zone, the game's own, its headers with their fold marks; each quest with its objectives")
 end
-check(rows[2].text._text == "[6] Wolves Across the Border", "a quest with its level")
+check(rows[2].text._text == "[6+] Wolves Across the Border", "a quest with its level, a + for one meant for a group")
+;(function()
+    -- What makes a +: the game's tag of a group, its elite (Forever's own), a group it suggests; any other tag none.
+    local tag, elite, info, list = C_QuestLog.GetQuestTagInfo, C_QuestLog.IsEliteQuest, C_QuestLog.GetInfo, logBox:Draw()
+    local function Level()
+        QuestLog.Refresh()
+        return logBox:Draw()[2].text._text:match("^%\[(.-)%\]")
+    end
+    C_QuestLog.GetQuestTagInfo = function() return nil end
+    check(Level() == "6", "no tag: no +")
+    C_QuestLog.GetQuestTagInfo = function() return { tagName = "PvP", tagID = 41 } end
+    check(Level() == "6", "a tag that is no group's: no +")
+    C_QuestLog.GetQuestTagInfo = function() return { tagName = "Dungeon", tagID = 81 } end
+    check(Level() == "6+", "a dungeon's: a +")
+    C_QuestLog.GetQuestTagInfo = function() return { tagName = "", tagID = 0, isElite = true } end
+    check(Level() == "6+", "an elite's: a +")
+    C_QuestLog.GetQuestTagInfo = function() return nil end
+    C_QuestLog.IsEliteQuest = function() return true end
+    check(Level() == "6+", "the game calls it elite: a +")
+    C_QuestLog.IsEliteQuest = elite
+    C_QuestLog.GetInfo = function(index)
+        local entry = info(index)
+        if type(entry) == "table" and not entry.isHeader then entry.suggestedGroup = 3 end
+        return entry
+    end
+    check(Level() == "6+", "a group suggested: a +")
+    C_QuestLog.GetInfo = function(index)
+        local entry = info(index)
+        if type(entry) == "table" and not entry.isHeader then entry.suggestedGroup = 1 end
+        return entry
+    end
+    check(Level() == "6", "one player suggested: no +")
+    C_QuestLog.GetQuestTagInfo, C_QuestLog.GetInfo = tag, info
+    QuestLog.Refresh()
+    rows = logBox:Draw()
+end)()
 check(not rows[2].icon._shown and not rows[4].icon._shown and rows[2].left == 0
     and rows[2].text._points[1][1] == "LEFT" and rows[2].text._points[1][4] == 0 and rows[3].left == QuestLog.INDENT,
     "no mark before a quest: its words at the very start of its row, its objectives a little in")
@@ -2802,10 +2838,27 @@ do
     check(shown[1].row.kind == "header" and shown[1].text._text == QuestLog.TEXT.previews and shown[2].row.kind == "preview"
         and shown[2].row.quest == 101 and shown[2].text._text == "[30] A Quest for Later" and shown[2].remove._shown
         and not shown[4].remove._shown, "its quest in the log on top, with the red X; the log's own below")
-    check(shown[2].text._alpha == QuestLog.GHOST and shown[2].icon._alpha == QuestLog.GHOST
-        and shown[2].icon._atlas == Pins.ICONS.offer and shown[2].icon._vertex[2] == Pins.RED[2]
-        and shown[2].text._color[1] == Pins.RED[1] and shown[2].text._color[2] == Pins.RED[2]
-        and shown[4].text._alpha == 1, "a ghost: see through, its exclamation mark and its title red, for later too")
+    check(shown[2].icon._atlas == Pins.ICONS.offer and shown[2].icon._vertex[2] == Pins.RED[2]
+        and shown[2].icon._alpha == 1 and shown[2].text._alpha == 1,
+        "a ghost: its exclamation mark red, for later too, nothing see through")
+    ;(function()
+        local shade = rawget(_G, "GetQuestDifficultyColor")
+        GetQuestDifficultyColor = function(level, _, quest)
+            return quest == 101 and level == 30 and { r = 0.25, g = 0.75, b = 0.25 } or { r = 1, g = 1, b = 1 }
+        end
+        local Quests, get = Core.Data.Set("Quests"), Core.Data.Set("Quests").Get
+        Quests.Get = function(self, id, field)
+            if id == 101 and field == "groupSize" then return 5 end
+            return get(self, id, field)
+        end
+        QuestLog.Refresh()
+        local row = logBox:Draw()[2]
+        check(row.text._color[1] == 0.25 and row.text._color[2] == 0.75, "its title in its level's colour, as any quest's")
+        check(row.text._text == "[30+] A Quest for Later", "with a + for a group the data knows of")
+        Quests.Get = get
+        GetQuestDifficultyColor = shade
+        QuestLog.Refresh()
+    end)()
     check(shown[1].remove._shown and shown[1].row.ghosts, "the red X over them too")
     local said = {}
     for _, element in ipairs(shown) do

@@ -392,8 +392,9 @@ When the window fills the screen:
   - **An open quest formatted nicely, its reward icons big,** to mouse over them for their tooltip: headings in gold, the
     words a size up, its gold and experience, each reward an icon of 40 with its name, two to a row where they fit. **The
     description first,** above the objectives.
-  - **Quests from the map's exclamation marks are ghosts:** see through, the exclamation mark and the title red, so he
-    knows they are not in his log and just an extra; quick to take out again.
+  - **Quests from the map's exclamation marks are ghosts:** the red exclamation mark and the red X tell him they are not in
+    his log and just an extra, the title and the rest normal; quick to take out again.
+  - **Group and epic quests show a + on the level number,** to say they are meant for a group.
   - **A click on the title row beside its words minimizes the log:** he can hide the quests when he wants to.
   - **By zone the quests stand under the zone's name:** how the game's own log has its headers folded does not count.
   - **The items to use on quests** anchored to the log's right side; **on the screen's right half mirrored:** the
