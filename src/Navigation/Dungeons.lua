@@ -505,6 +505,17 @@ local function ItemLine(id, mark)
     if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
     return Iconed(Core.Ask(C_Item.GetItemIconByID, id), (mark or "") .. name), r, g, b
 end
+Dungeons.ItemLine = ItemLine
+
+-- How often an item came from a boss of that name, in words (Core's Drops: the set Encounters names no creature, so its
+-- name finds it among those that gave the item); nil where nobody counted it.
+local function Rate(name, id)
+    local drops = Core.Data.Drops()
+    for _, entry in ipairs(drops:From(id)) do
+        if entry.key:find("^npc:") and drops:Name(entry.key) == name then return ns.PinView.Often(entry) end
+    end
+    return nil
+end
 
 -- A boss's abilities or items (kind "a" or "l"): the set's, then those confirmed in play that it does not name (Core's
 -- Data.ConfirmedParts: seen cast, looted from the boss).
@@ -529,8 +540,8 @@ end
 
 -- Up to Dungeons.LINES lines of a list under its title, and how many more there are; with Alt held, each one's
 -- details under it (details: nil for none). One not yet confirmed by the game (kind: the part's letter,
--- Bosses:Unverified) has the red ! before its name; true when any shown is.
-local function Listed(title, ids, line, details, encounter, kind)
+-- Bosses:Unverified) has the red ! before its name; true when any shown is. right(id): the words at a line's right.
+local function Listed(title, ids, line, details, encounter, kind, right)
     local shown, more, unconfirmed = 0, 0, false
     for _, id in ipairs(ids or {}) do
         if shown >= Dungeons.LINES then
@@ -541,7 +552,12 @@ local function Listed(title, ids, line, details, encounter, kind)
             if words then
                 if shown == 0 then Core.TipSection(GameTooltip, title) end
                 shown = shown + 1
-                GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
+                local beside = right and right(id)
+                if beside then
+                    GameTooltip:AddDoubleLine(words, beside, r or 1, g or 1, b or 1, 1, 1, 1)
+                else
+                    GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
+                end
                 if details then details(id) end
                 if doubt then unconfirmed = true end
             end
@@ -571,8 +587,8 @@ local function BossTip(part)
         local alt = IsAltKeyDown()
         unconfirmed = Listed(Dungeons.TEXT.abilities, Parts(encounter, "abilities", "a"), SpellLine, alt and SpellDetails,
             encounter, "a")
-        unconfirmed = Listed(Dungeons.TEXT.loot, Parts(encounter, "loot", "l"), ItemLine, alt and ItemDetails, encounter, "l")
-            or unconfirmed
+        unconfirmed = Listed(Dungeons.TEXT.loot, Parts(encounter, "loot", "l"), ItemLine, alt and ItemDetails, encounter, "l",
+            function(id) return Rate(mark.name, id) end) or unconfirmed
     end
     if unconfirmed then Core.Unconfirmed(GameTooltip) end
     GameTooltip:Show()
@@ -681,6 +697,10 @@ local function FoeTip(foe)
     -- Where it stands is the set Dungeons' (its instance's entry), and so is whether that is confirmed
     local doubt = SET:Unverified(foe.instance)
     GameTooltip:SetText((doubt and Core.UNCONFIRMED_MARK or "") .. name, red[1], red[2], red[3])
+    if foe.npc then
+        local _, unsure = ns.PinView.Drops("npc:" .. foe.npc, ns.PinView.DROPS)
+        doubt = doubt or unsure
+    end
     if doubt then Core.Unconfirmed(GameTooltip) end
     GameTooltip:Show()
 end

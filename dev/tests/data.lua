@@ -1541,7 +1541,7 @@ do
         W.AddSets(MakeSets("Yields", { ["Drops.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Drops", { game = "forever", hash = "00000033", build = 65000, key = "text", '
             .. 'fields = { "loots", "levelMin", "levelMax", "items" }, types = { "int", "int", "int", "list tuple(item:int,how:text,drops:int,chance:number,quest:int)" }, patches = {} })\n'
             .. 'if not S then return end\nS.rows["object:1731"] = "65000\\t\\t\\t\\t\\t2770\\031gather\\031\\03195"\n'
-            .. 'S.rows["object:7"] = "65000\\t\\t200\\t\\t\\t2775\\031gather\\03110\\0315\\0302776\\031\\031\\03112"\n' }))
+            .. 'S.rows["object:7"] = "65000\\t\\t200\\t\\t\\t2775\\031gather\\03110\\0315\\0302776\\031\\031\\03112"\nS.unverified = "object:7"\n' }))
         for _ = 1, 3 do Frame() end
         local vein = "GameObject-0-1-2-3-1731-00000002"
         local function Mine(items)
@@ -1609,9 +1609,10 @@ do
         check(#Drops:Of("object:9", "period") == 2, "this build period alone")
         local shipped = Drops:Of("object:7")
         check(#shipped == 2 and shipped[1].item == 2776 and shipped[1].chance == 12 and shipped[1].shipped and shipped[2].chance == 5 and shipped[2].rare
-            and shipped[2].loots == 200, "what only the set lists: its chance, marked")
+            and shipped[2].loots == 200 and shipped[1].doubt, "what only the set lists: its chance, marked, and not yet confirmed where the set says so")
         local firstHalf = Drops:Of("object:1731")
-        check(firstHalf[1].item == 2770 and firstHalf[1].chance == 95, "below enough loots the set's own chance stands over a few gathers")
+        check(firstHalf[1].item == 2770 and firstHalf[1].chance == 95 and firstHalf[1].listed and not firstHalf[1].doubt,
+            "below enough loots the set's own chance stands over a few gathers, and says so")
         W.printed = {}
         SlashCmdList.SANEUI("data gathered")
         check(printedMatch("object:9: 61 gathered in 20 visits%. Rare: item 774 4%.9%% %(3 of 61%)"), "/sane data gathered: how often, in how many visits, what came seldom")

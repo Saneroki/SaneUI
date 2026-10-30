@@ -17,7 +17,8 @@ local Core = SaneUI.Core
 --
 --  An entry: item, how (loot, skin, pickpocket, gather, fish), quest (0: for everybody), drops (loots it came in), units
 --  (how many in all), loots (of that way), chance (percent), rate (percent, however few came), yield (units a time it came),
---  perVisit (units a visit, a node's), rare, shipped (only the set says so). The list also has loots[how] and visits[how].
+--  perVisit (units a visit, a node's), rare, shipped (only the set lists it), listed (its chance is the set's), doubt (what
+--  the set says of it the game has not confirmed yet). The list also has loots[how] and visits[how].
 --
 --  - **A chance needs Drops.SURE drops;** until then a view has how many of how many: a rare gem seen once is counted, not
 --    made a percentage. Below Drops.ENOUGH loots the set's own chance stands, where it has one.
@@ -136,7 +137,7 @@ local function Likelier(a, b)
 end
 
 -- The set's word on a counted entry, or the entry of what only the set lists.
-local function Shipped(list, record)
+local function Shipped(list, record, doubt)
     for _, drop in ipairs(type(record) == "table" and record.items or {}) do
         local entry
         for _, each in ipairs(list) do
@@ -147,12 +148,12 @@ local function Shipped(list, record)
         end
         if entry then
             if entry.loots < Drops.ENOUGH and drop.chance then
-                entry.chance, entry.rate = drop.chance, drop.chance
+                entry.chance, entry.rate, entry.listed, entry.doubt = drop.chance, drop.chance, true, doubt
             end
         else
             local chance = drop.chance
             list[#list + 1] = { item = drop.item, how = drop.how or "loot", quest = drop.quest or 0, drops = drop.drops or 0,
-                units = drop.drops or 0, loots = record.loots or 0, chance = chance, rate = chance or 0, shipped = true }
+                units = drop.drops or 0, loots = record.loots or 0, chance = chance, rate = chance or 0, shipped = true, doubt = doubt }
         end
     end
 end
@@ -179,7 +180,8 @@ function Drops:Of(key, period)
                 perVisit = (total.visits[how] or 0) > 0 and given[2] / total.visits[how] or nil }
         end
     end
-    Shipped(list, DROPS:Ready() and DROPS:Get(key) or nil)
+    local record = DROPS:Ready() and DROPS:Get(key) or nil
+    Shipped(list, record, record ~= nil and DROPS:Unverified(key))
     for _, entry in ipairs(list) do entry.rare = entry.rate > 0 and entry.rate <= Drops.RARE end
     table.sort(list, Likelier)
     answers[name] = list

@@ -323,13 +323,17 @@ local function DoubleClicked(button)
     ns.PinView.Drop({ map = map, x = x, y = y })
 end
 
--- Its tooltip: the herb's or ore's name, grey while your skill is too low for it (as its picture is).
+-- Its tooltip: the herb's or ore's name, grey while your skill is too low for it (as its picture is), and what it gives.
 local function Tip(button)
     local entry = button.entry
     if not entry then return end
     local low = Nodes.TooHard(entry.node)
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     GameTooltip:SetText(entry.node.name or "", low and 0.6 or 1, low and 0.6 or 1, low and 0.6 or 1)
+    if entry.node.key then
+        local _, doubt = ns.PinView.Drops("object:" .. entry.node.key, ns.PinView.DROPS)
+        if doubt then Core.Unconfirmed(GameTooltip) end
+    end
     GameTooltip:Show()
 end
 

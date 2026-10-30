@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Drop rates on the map's pins (Saneroki, 2026-10-30)
+Saneroki: "When you hover over rare enemies or other map pins that contain this information can we have in the map pins tooltips
+information of its drop rates?" A game restart takes it in, with the gathering work before it.
+- **`src/Navigation/PinView.lua`:** `PinView.Drops(key, limit, inset)` and `PinView.Often(entry)`: on a rare's, a chest's, a herb's and a
+  vein's tooltip what it gives, the likeliest first, at most `PinView.DROPS` lines, read from `Data.Drops()` when hovered; inset under
+  each name in a gathered marker. `pin.rare` keeps a rare that offers a quest in. An item not loaded yet draws the tooltip again.
+- **`src/Navigation/Found.lua`, `Dungeons.lua`:** the same on a found herb or ore and on an enemy's dot; a boss's loot has how often at each
+  item's right, the boss found by its name among those that gave the item, as the set Encounters names no creature.
+- **`src/Core/Data/Drops.lua`:** entries say `listed` (the chance is the set's) and `doubt` (the set's word, not yet confirmed).
+- **Tests:** `dev/tests/navigation.lua` 801 checks, `dev/tests/data.lua`.
+
 ### Gathering counted, rare drops, discoveries, and both shared (Saneroki, 2026-10-30)
 Saneroki: implement the drop rates and gathering counts, "esp focusing on how often rare drops from skinning, mining and herb gathering was
 found with nodes", and the new discoveries. A game restart takes it in (new files and a new saved variable in Core's TOC).

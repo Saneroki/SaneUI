@@ -18,6 +18,10 @@ local _, ns = ...
 --                  trainers: the trainer's), else the game's plus (PinView.PLUS; Saneroki, 2026-10-23); its
 --                  tooltip what is there, each with its own pin's icon before its name; a click zooms in, a double
 --                  click puts the game's map pin on the first
+--      what it gives  on a rare's, a chest's, a herb's and a vein's tooltip, and on the dots of a dungeon's enemies and its
+--                  bosses' loot (Dungeons.lua): each item with how often it comes, from Core's Data.Drops: what shipped
+--                  and what play counted. A percent once enough came, until then how many of how many; the likeliest
+--                  first, at most PinView.DROPS lines. In a gathered marker a line or so under each name
 --      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
@@ -41,6 +45,8 @@ PinView.GLOW = "UI-QuestPoi-OuterGlow" -- behind the quest the game's arrow lead
 PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
 PinView.PLUS = "Garr_Building-AddFollowerPlus" -- a gathered marker of pins with different icons: the game's round plus
 PinView.TIP_ICON = 16 -- a pin's icon before its name in a gathered marker's tooltip
+PinView.DROPS = 8     -- what a thing gives, lines of a tooltip at most (a gathered marker's, over all its pins)
+PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true } -- the kinds of pin that tell what they give
 
 -- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
 -- stands over a lower one. Kinds that share a level are those Pins.Gather gathers where they would cover each other
@@ -55,6 +61,7 @@ PinView.MODEL_TURN = -0.5 -- radians: a little from the side, as the tooltips tu
 local layer, holder, view
 local used, free = {}, {} -- [key] = button while in view; buttons let go
 local hovered             -- the pin's button the mouse is on (Tip), for the rare's model
+local tipped              -- the pin's button whose tooltip was drawn last: again when an item it asked for has come
 local stage               -- the rare's model frame, once made; false where the client has none
 local Model               -- below
 
@@ -82,25 +89,92 @@ local function Iconed(pin, words)
 end
 PinView.Iconed = Iconed
 
+-- A percent as short as it goes: 100, 7.5.
+local function Percent(chance)
+    return (("%.1f"):format(chance):gsub("%.0$", ""))
+end
+
+-- How often an entry of Core's Drops comes, in words; nil when nobody can say. A chance the set gives alone; one counted with
+-- what it was counted from; while too few came, only how many of how many; a chance of 0 in the set is one under 1 %.
+function PinView.Often(entry)
+    local TEXT = Pins.TEXT
+    if entry.chance == 0 then return TEXT.dropUnder end
+    if entry.chance and (entry.shipped or entry.listed) then return TEXT.dropChance:format(Percent(entry.chance)) end
+    if entry.chance then return TEXT.dropCounted:format(Percent(entry.chance), entry.drops, entry.loots) end
+    if entry.drops > 0 and entry.loots > 0 then return TEXT.dropCount:format(entry.drops, entry.loots) end
+    return nil
+end
+
+-- The heading of what a thing gives: a creature's corpse, a node's gather, a chest.
+local function DropsTitle(key, entry)
+    if key:find("^npc:") then return Pins.TEXT.dropsCorpse end
+    return entry.how == "gather" and Pins.TEXT.dropsNode or Pins.TEXT.dropsChest
+end
+
+-- What a thing ("npc:69", "object:1617") gives on the tooltip being written, the likeliest first, at most limit lines: under a
+-- heading, or inset under its name (a gathered marker). An item only for those on a quest only while you are. How many lines
+-- it wrote, and whether one of them is not yet confirmed (the red ! before its name).
+function PinView.Drops(key, limit, inset)
+    local shown, more, doubt = 0, 0, false
+    for _, entry in ipairs(Core.Data.Drops():Of(key)) do
+        if entry.quest == 0 or Core.Plain(Core.Ask(C_QuestLog.IsOnQuest, entry.quest)) == true then
+            if shown >= limit then
+                more = more + 1
+            else
+                local words, r, g, b = ns.Dungeons.ItemLine(entry.item, entry.doubt and Core.UNCONFIRMED_MARK or nil)
+                if words then
+                    if shown == 0 and not inset then Core.TipSection(GameTooltip, DropsTitle(key, entry)) end
+                    shown = shown + 1
+                    doubt = doubt or entry.doubt == true
+                    words = (inset and "    " or "") .. words
+                        .. (entry.how == "skin" and Pins.TEXT.dropSkinned or entry.how == "pickpocket" and Pins.TEXT.dropPicked or "")
+                    local often = PinView.Often(entry)
+                    if often then
+                        GameTooltip:AddDoubleLine(words, often, r or 1, g or 1, b or 1, 1, 1, 1)
+                    else
+                        GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
+                    end
+                end
+            end
+        end
+    end
+    if more > 0 and shown > 0 and not inset then GameTooltip:AddLine(ns.Dungeons.TEXT.more:format(more), 0.6, 0.6, 0.6) end
+    return shown, doubt
+end
+
+-- The thing a pin's tooltip tells the gifts of: a rare, a chest, a herb, a vein; nil for any other.
+local function Dropper(pin)
+    if not (PinView.DROPPERS[pin.kind] or pin.rare) then return nil end
+    local key = pin.thing or pin.key
+    return type(key) == "string" and key:find("^%a+:%d+$") and key or nil
+end
+
 local function Tip(button)
     local pin = button.pin
     if not pin then return end
+    tipped = button
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     wipe(said)
     if pin.gathered then
         -- What is there, one under the other, each with its own pin's icon: the first as the heading; Unconfirmed Data
-        -- under them where one is not yet confirmed
-        local doubt = false
+        -- under them where one is not yet confirmed; what each gives inset under its name, while there is room
+        local doubt, room = false, PinView.DROPS
         for index, each in ipairs(pin.gathered) do
             if each.doubt then doubt = true end
             if index > 12 then break end
             local words = each.role or each.name or "?"
+            local new = not said[words]
             if index == 1 then
                 said[words] = true
                 GameTooltip:SetText(Iconed(each, words), 1, 1, 1)
-            elseif not said[words] then
+            elseif new then
                 said[words] = true
                 GameTooltip:AddLine(Iconed(each, words), 1, 0.82, 0)
+            end
+            local key = new and room > 0 and Dropper(each)
+            if key then
+                local shown, unsure = PinView.Drops(key, room, true)
+                room, doubt = room - shown, doubt or unsure
             end
         end
         if doubt then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
@@ -126,12 +200,25 @@ local function Tip(button)
             if type(line) == "table" then Say(line[1], line[2], line[3], line[4], true)
             else Say(line, 1, 1, 1, true) end
         end
-        if pin.unverified then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
+        local key, unsure = Dropper(pin), false
+        if key then
+            local _
+            _, unsure = PinView.Drops(key, PinView.DROPS)
+        end
+        if pin.unverified or unsure then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
     end
     GameTooltip:Show()
     hovered = button
     Model()
 end
+
+-- An item the tooltip asked for has come from the game: drawn again, once, on the next frame.
+local Again = Core.Later(function()
+    if tipped and tipped:IsMouseOver() and GameTooltip:GetOwner() == tipped then Tip(tipped) end
+end)
+ns.On("ITEM_DATA_LOAD_RESULT", function()
+    if tipped then Again() end
+end)
 
 -- The game's map pin where a pin stands (its own map and its place there; a gathered marker's first pin), as Ctrl
 -- and a click puts it on the map: the golden line leads there. Also for what else is clicked to put it somewhere

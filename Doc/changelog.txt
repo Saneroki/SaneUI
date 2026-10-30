@@ -22,6 +22,9 @@ The bigger changes of each version, newest first.
   often you gathered it and what it gave. Rare drops show on the
   tooltip of the node and of the item, with how often they came.
   /sane data gathered lists it all.
+- The map's pins show drop rates: hover a rare, a chest, a herb or
+  a vein to see what it gives and how often. A dungeon's enemies
+  and its bosses' loot show them too.
 - Discoveries: Sane UI keeps a list of what the game showed that
   its data lacked, such as a new quest or a drop nobody listed.
   /sane data found shows it, and General has two chat messages

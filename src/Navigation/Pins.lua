@@ -106,6 +106,16 @@ Pins.TEXT = {
     questGiver = "Quest giver",
     level = "Level %d to %d",
     towards = "To %s",
+    -- What a thing gives, on its pin's tooltip (PinView.Drops)
+    dropsCorpse = "Drops, per corpse looted",
+    dropsNode = "Gives, per gather",
+    dropsChest = "Holds, each time opened",
+    dropChance = "%s%%",
+    dropCounted = "%s%% (%d of %d)",
+    dropCount = "%d of %d",
+    dropUnder = "under 1%",
+    dropSkinned = " (skinned)",
+    dropPicked = " (pickpocket)",
 }
 -- A way's kind in the tooltip.
 Pins.WAY_WORDS = { boat = "Boat", zeppelin = "Zeppelin", tram = "Tram", lift = "Lift", portal = "Portal" }
@@ -457,6 +467,7 @@ local function FromData(place)
         end
         pin.lines = #lines > 0 and lines or nil
         pin.roles = services
+        pin.rare = what.rare -- also one that offers a quest: what it gives is told all the same
         if not what.rare then pin.role = Pins.SERVICE_WORDS[role] or role or Pins.TEXT.questGiver end
     elseif kind == "object" then
         local look = OBJECTS[what]

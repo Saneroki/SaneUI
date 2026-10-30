@@ -564,6 +564,7 @@ Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "ra
     .. 'R[72] = "70245\t\tA Quest Giver\t\tnormal\t\t"\n'
     .. 'R[73] = "70245\t\tAn Old Friend\t\tnormal\t\t"\n'
     .. 'R[74] = "70245\t\tA Waiting Giver\t\tnormal\t\t"\n'
+    .. 'R[79] = "70245\t\tThe First Boss\t\telite\t\t"\n'
     .. 'R[75] = "70245\t\tA Teacher\ttrainer\tnormal\t\tWarrior Trainer"\n'
     .. 'S.unverified = "69\\03070\\03071\\03072\\03073\\03074\\03075"\n')
 Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind", "skill", "skillLevel"', '"text", "text", "int", "int"',
@@ -2172,6 +2173,71 @@ check(GameTooltip._text == "|A:innkeeper:16:16|a " .. Core.UNCONFIRMED_MARK .. "
     and GameTooltip._lines[2] == Pins.TEXT.unverified,
     "its tooltip: each thing there with its own pin's icon before its name, the red ! after it where the thing is not "
     .. "yet confirmed (the innkeeper, not the herb), and then Unconfirmed Data")
+-- What a thing gives, on its pin's tooltip: how often, as Core counted it; the likeliest first, at most so many lines
+;(function()
+    local Tally, Pelt, Charm, Gem, Hide, Note = Core.Data.Tally, 3000, 3001, 3002, 3003, 3004
+    W.methods.AddDoubleLine = function(self, left, right) self:AddLine(left .. " | " .. right) end
+    local onQuest, itemInfo = rawget(C_QuestLog, "IsOnQuest"), C_Item.GetItemInfo
+    C_Item.GetItemInfo = function(id)
+        if W.items[id] then return W.items[id].name, nil, W.items[id].quality end
+    end
+    for id, name in pairs({ [Pelt] = "Wolf Pelt", [Charm] = "Fang Charm", [Gem] = "Moon Gem", [Hide] = "Thick Hide", [Note] = "Torn Note" }) do
+        W.items[id] = { name = name, quality = id == Charm and 3 or 1 }
+    end
+    for index = 1, 40 do
+        Tally.Loot("npc:70", "loot", 0)
+        Tally.Drop("npc:70", "loot", Pelt, 0, 1)
+        if index <= 3 then Tally.Drop("npc:70", "loot", Charm, 0, 1) end
+    end
+    Tally.Drop("npc:70", "loot", Gem, 0, 1)
+    Tally.Loot("npc:70", "skin", 0)
+    Tally.Drop("npc:70", "skin", Hide, 0, 1)
+    Tally.Loot("npc:70", "loot", 77)
+    Tally.Drop("npc:70", "loot", Note, 77, 1)
+    local rare = pins["npc:70"]
+    local function Tipped(pin)
+        GameTooltip._lines = nil
+        pin._scripts.OnEnter(pin)
+        return GameTooltip._lines or {}
+    end
+    local lines = Tipped(rare)
+    local text = table.concat(lines, "\n")
+    check(lines[1] == Pins.TEXT.dropsCorpse and text:find("Thick Hide (skinned) | 1 of 1", 1, true),
+        "a rare's tooltip: what it drops, under its heading; another way said; too few, how many of how many")
+    check(text:find("Wolf Pelt | 100% (40 of 40)", 1, true) and text:find("Fang Charm | 7.5% (3 of 40)", 1, true)
+        and text:find("Moon Gem | 1 of 40", 1, true), "how often each came, a percent once enough did")
+    check(not text:find("Torn Note", 1, true), "an item only for those on a quest: not while you are not")
+    C_QuestLog.IsOnQuest = function(quest) return quest == 77 end
+    check(table.concat(Tipped(rare), "\n"):find("Torn Note | 1 of 1", 1, true), "while you are, it is")
+    C_QuestLog.IsOnQuest = onQuest
+    local most = ns.PinView.DROPS
+    ns.PinView.DROPS = 2
+    lines = Tipped(rare)
+    check(#lines == 4 and lines[4] == ns.Dungeons.TEXT.more:format(2), "at most so many lines, and how many more")
+    ns.PinView.DROPS = most
+    rare._mouseOver = true
+    W.items[Gem] = nil
+    GameTooltip._lines = nil
+    rare._scripts.OnEnter(rare)
+    W.items[Gem] = { name = "Moon Gem", quality = 1 }
+    GameTooltip._lines = nil
+    W.Fire("ITEM_DATA_LOAD_RESULT", Gem, true)
+    W.Wait(0)
+    check(table.concat(GameTooltip._lines or {}, "\n"):find("Moon Gem", 1, true), "an item the game had not loaded: the tooltip drawn again once it has")
+    rare._mouseOver = false
+    rare._scripts.OnLeave(rare)
+    check(ns.PinView.Often({ chance = 0, drops = 0, loots = 0 }) == Pins.TEXT.dropUnder
+        and ns.PinView.Often({ chance = 12, listed = true, drops = 1, loots = 2 }) == "12%"
+        and ns.PinView.Often({ drops = 0, loots = 0 }) == nil, "a 0 of the set is under 1 %, the set's chance stands alone, nothing known says nothing")
+    for index = 1, 4 do
+        Tally.Loot("object:1617", "gather", 0)
+        if index == 1 then Tally.Drop("object:1617", "gather", Gem, 0, 1) end
+    end
+    lines = Tipped(marker)
+    check(lines[#lines] == Pins.TEXT.unverified and table.concat(lines, "\n"):find("    [^\n]*Moon Gem | 1 of 4"),
+        "a gathered marker: what a herb gives inset under its name")
+    W.methods.AddDoubleLine, C_Item.GetItemInfo = nil, itemInfo
+end)()
 check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,
@@ -5660,6 +5726,17 @@ end)()
     Frames(1)
     lines = GameTooltip._lines or {}
     check(lines[7] and lines[7]:find("Item 902", 1, true), "the item come: the tooltip drawn again with it")
+    -- How often an item came from this boss, at its line's right: Core's counts, the boss found by its name
+    W.methods.AddDoubleLine = function(self, left, right) self:AddLine(left .. " | " .. right) end
+    for index = 1, 4 do
+        Core.Data.Tally.Loot("npc:79", "loot", 0)
+        if index > 1 then Core.Data.Tally.Drop("npc:79", "loot", 901, 0, 1) end
+    end
+    GameTooltip._lines = nil
+    marks[1]._scripts.OnEnter(marks[1])
+    lines = GameTooltip._lines or {}
+    check(lines[6]:find("Item 901", 1, true) and lines[6]:find(" | 75% (3 of 4)", 1, true) and not lines[7]:find(" | ", 1, true),
+        "a boss's loot: how often each item came from it, nothing where nobody counted")
     -- Alt held: each ability's description under its name, each item's own tooltip read for its lines.
     local describe, read = C_Spell.GetSpellDescription, {}
     C_Spell.GetSpellDescription = function(id) return id == 801 and "Hits the target and those beside it." or "" end
@@ -5738,7 +5815,7 @@ end)()
     IsAltKeyDown = function() return false end
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
     Frames(1)
-    C_Spell.GetSpellDescription, W.methods.SetItemByID, W.methods.AddDoubleLine = describe, nil, nil
+    C_Spell.GetSpellDescription, W.methods.SetItemByID = describe, nil
     ITEM_SPELL_TRIGGER_ONEQUIP, TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN = nil, nil
     marks[1]._mouseOver = false
     C_Spell.GetSpellInfo, C_Item.GetItemInfo, C_Item.GetItemIconByID, C_Item.RequestLoadItemDataByID =
@@ -5755,6 +5832,15 @@ end)()
             "its enemy on this floor where it stands (three quarters across, a quarter down), under the boss's mark")
         foes[1]._scripts.OnEnter(foes[1])
         check(GameTooltip._text == "A Wolf", "its tooltip: the creature's name")
+        local itemInfo = C_Item.GetItemInfo
+        C_Item.GetItemInfo = function() return "A Fang", nil, 1 end
+        Core.Data.Tally.Loot("npc:71", "loot", 0)
+        Core.Data.Tally.Drop("npc:71", "loot", 766, 0, 1)
+        GameTooltip._lines = nil
+        foes[1]._scripts.OnEnter(foes[1])
+        check(GameTooltip._lines and GameTooltip._lines[1] == Pins.TEXT.dropsCorpse and GameTooltip._lines[2]:find("A Fang | 1 of 1", 1, true),
+            "and what it drops, as on a pin")
+        C_Item.GetItemInfo = itemInfo
     end
     local model = marks[1].model
     check(model and model._kind == "PlayerModel" and model._display == 4203 and model._shown

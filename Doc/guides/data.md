@@ -738,7 +738,10 @@ Drops:Knows("npc:69", "skin", 2318) -- whether the set lists it for that way
   `Drops.ENOUGH` (50) loots the set's own chance stands, where it has one.
 - **Rare** is by how seldom it comes, not an item's colour.
 - **In the game:** `/sane data gathered` lists what was gathered and skinned, how often, in how many visits, and its rare
-  drops. Tooltips shows the rare drops on a herb or a vein, and on a rare item where it came from.
+  drops. Tooltips shows the rare drops on a herb or a vein, and on a rare item where it came from. Navigation's pins show what
+  a rare, a chest, a herb or a vein gives, and a dungeon's enemies and bosses too (`PinView.Drops`).
+- **Marked:** `listed` an entry whose chance is the set's, `doubt` what the set says of it the game has not confirmed: a view
+  gives a chance so counted without its counts, and marks a doubtful one.
 
 ### Discoveries (`Data.Found`) *(Saneroki, 2026-10-30)*
 

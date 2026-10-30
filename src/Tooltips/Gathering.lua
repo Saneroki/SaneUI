@@ -232,7 +232,8 @@ end
 
 -- One small line of what came seldom: the thing, and how often.
 local function Seldom(name, entry)
-    local often = entry.chance and TEXT.RARE_CHANCE:format(entry.chance, entry.drops, entry.loots)
+    local often = entry.listed and TEXT.RARE_LISTED:format(entry.chance)
+        or entry.chance and TEXT.RARE_CHANCE:format(entry.chance, entry.drops, entry.loots)
         or TEXT.RARE_COUNT:format(entry.drops, entry.loots)
     Read.Text("small", TEXT.RARE_DROP:format(name, often), ASIDE[1], ASIDE[2], ASIDE[3]).indent = 20
 end

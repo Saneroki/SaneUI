@@ -56,6 +56,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
   steps. Out of it, our map is back.
+- **What a thing gives.** Hover a rare, a chest, a herb or a vein, on the map or a found node: its tooltip lists what it gives, the
+  likeliest first, each with how often: `Fang Charm 7.5% (3 of 40)`, `Moon Gem 1 of 40` while too few came, `12%` where only our data
+  says so. So do the red dots of a dungeon's enemies; a boss's loot has it at each item's right. All of it is Core's `Data.Drops()`
+  (what shipped, what you counted, what your guild and group counted); `PinView.Drops`, at most `PinView.DROPS` lines, and a gathered
+  marker's inset under each name. An item only for those on a quest shows while you are.
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
   where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side,
   red while your character has not found them (the routes fly only the found ones);
