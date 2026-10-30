@@ -193,6 +193,10 @@ of the gold, on at first and on the settings page too: at a vendor the junk goes
 character's own money (`src/Inventory/README.md`, *Auto Sell and Auto Repair*). They first stood in Speed Leveling's
 errands; they belong to the bags.
 
+**Built (2026-10-30), Saneroki asked:** the doll's slots in an order of our own: on the right the necklace, rings
+and trinkets together at the top, the belt, legs and boots under them; the gloves at the foot of the left side under
+the wrists, so each side keeps its eight slots (`Slots.COLUMNS`; the alts' doll reads the same).
+
 **Built (2026-10-30), Saneroki asked:** the drawings painted into the doll's slots taken out, the shield and the
 ammo's too (`dev/tools/journal-art`, `blank_slots`); an empty slot shows our own pencil drawing of what goes there
 instead (`Slots.DRAWINGS`, the bags' `Art/Categories`; the ammo a quiver, the shirt the shirt, a tabard drawing of

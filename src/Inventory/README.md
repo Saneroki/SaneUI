@@ -36,7 +36,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     your model in the middle on the page's plain paper, from under your level down to the ground if you are
     full-grown, every race at the same scale (a gnome stands as small as it is; drag it with the left button to
     turn it, the wheel zooms in on its head; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in two arcs of pencil slots round it (the head
-    and the hands at the top as large as the others; the icons without a border, their corners rounded) with a
+    and the necklace at the top as large as the others; the necklace, rings and trinkets together at the top right,
+    the belt, legs and boots under them; the icons without a border, their corners rounded) with a
     paper strip beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
     Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
     Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
@@ -228,7 +229,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `Core.Journal.Ink`) and the model; the panel's head (to drag it) is the doll's top, its X on the right strap.
     `Sheet.LEFT` (the game's 398) is still what the other characters' paper doll reads.
   - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` without its frame, in the doll's painted slots
-    (`Doll.INSET` from their sides), in the game's order; the ranged slot (and its strip) only where
+    (`Doll.INSET` from their sides): the left from the head to the hands, the right the necklace, rings and trinkets
+    together at the top, the belt, legs and boots under them (`Slots.COLUMNS`); the ranged slot (and its strip) only where
     `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo` (Retail has neither slot: the game knows
     no `RangedSlot` or `AmmoSlot`, so no button is made and the doll's painted slots stay empty). Drawn as
     `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while

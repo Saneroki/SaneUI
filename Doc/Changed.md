@@ -3,8 +3,15 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 124 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 133 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 133 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Inventory: the doll's jewellery together at the top right (Saneroki, 2026-10-30)
+Saneroki: the rings, trinkets and the necklace together on the right at the top, so the boots, pants, belt and gloves
+go toward the bottom. `Slots.COLUMNS`: the right side the necklace, rings and trinkets, then the belt, legs and boots;
+the left from the head to the wrists, the gloves at its foot, so each side keeps its eight painted slots. The necklace
+stands in the right top slot, which has no strip; the gloves gain one. The alts' doll reads the same list. Tests:
+`dev/tests/sheet.lua` 128 checks, `dev/tests/inventory.lua` the alts' doll in the new order.
 
 ### Inventory: the doll's slots empty of painted drawings, our own drawings in empty slots (Saneroki, 2026-10-30)
 Saneroki: the sketches painted into the doll's gear slots go, the shield too, and our own rendered simplified gear

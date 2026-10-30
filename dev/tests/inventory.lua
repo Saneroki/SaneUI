@@ -815,8 +815,9 @@ local helm, amulet, shirt, hands = Worn(doll, "HeadSlot"), Worn(doll, "NeckSlot"
 check(#doll.buttons == 20 and doll:IsShown() and helm.item == 1001 and drawn[helm].texture == 3001 and drawn[helm].quality == 3
     and amulet.item == 1002 and drawn[amulet].texture == 3002 and shirt.item == nil and drawn[shirt].texture == nil,
     "your gear in its slots, drawn as the game draws an item; an empty slot its pencil slot alone")
-check(helm._points[1][4] == edge and helm._points[1][5] == -edge and shirt._points[1][5] == -edge - 5 * step
-    and hands._points[1][4] == wide - edge - Slots.SIZE and hands._points[1][5] == -edge,
+check(helm._points[1][4] == edge and helm._points[1][5] == -edge and shirt._points[1][5] == -edge - 4 * step
+    and hands._points[1][4] == edge and hands._points[1][5] == -edge - 7 * step
+    and amulet._points[1][4] == wide - edge - Slots.SIZE and amulet._points[1][5] == -edge,
     "eight down the left, eight down the right, as far apart as the grid is wide")
 local main, off, ranged, ammo = Worn(doll, "MainHandSlot"), Worn(doll, "SecondaryHandSlot"), Worn(doll, "RangedSlot"), Worn(doll, "AmmoSlot")
 local weapons = 3 * Slots.SIZE + 2 * Slots.GAP

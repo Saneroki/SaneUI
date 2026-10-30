@@ -357,7 +357,9 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
     stood after ten seconds left alone (Saneroki, 2026-10-23).
     Nothing behind him but the page's own paper: no rectangle, no frame, no stony ground (Saneroki, 2026-10-23;
     `dev/tools/journal-art` covers the column with the page's paper);
-  - the two top slots (head, hands) as large as the others (Saneroki, 2026-10-23);
+  - the two top slots (head, necklace) as large as the others (Saneroki, 2026-10-23);
+  - the left side from the head down to the hands; on the right the necklace, rings and trinkets together at the
+    top, the belt, legs and boots under them (Saneroki, 2026-10-30);
   - the gear slots in a rounded layout, eight a side: each row shifted outward a little more toward the middle
     rows, so the slots form an arc round the hero, not a straight column (Saneroki, 2026-10-21);
   - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,

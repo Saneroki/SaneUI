@@ -399,6 +399,13 @@ local neck = Slots.Button(2)
 check(neck.drawing:IsShown() and neck.drawing:GetAlpha() == Slots.DRAWN, "an empty slot shows its drawing, faded")
 check(neck.drawing:GetTexture() == ns.Categories.ART .. "neck", "the drawing of what goes there")
 check(not head.drawing:IsShown(), "a slot with an item shows no drawing")
+-- The right side: the jewellery together at its top, the belt, legs and boots under it; the gloves on the left.
+check(table.concat(Slots.COLUMNS.right, " ", 1, 5) == "NeckSlot Finger0Slot Finger1Slot Trinket0Slot Trinket1Slot",
+    "the necklace, rings and trinkets together at the top of the right side")
+check(table.concat(Slots.COLUMNS.right, " ", 6) == "WaistSlot LegsSlot FeetSlot", "the belt, legs and boots under them")
+check(Slots.COLUMNS.left[8] == "HandsSlot" and #Slots.COLUMNS.left == 8 and #Slots.COLUMNS.right == 8,
+    "the gloves at the foot of the left side, eight a side")
+check(not neck.strip and Slots.Button(SLOT_IDS.HandsSlot).strip, "the necklace in the top slot, which has no strip; the gloves have one")
 worn[2] = { texture = "chain", count = 1, quality = 2, id = 1002, link = "|Hitem:1002|h[Chain]|h" }
 Slots.Update(2)
 check(not neck.drawing:IsShown(), "the item put on: the drawing gone")

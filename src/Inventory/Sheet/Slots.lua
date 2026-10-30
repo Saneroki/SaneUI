@@ -3,9 +3,10 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Slots
 --  The equipment slots of our character sheet, in the slots painted on the
---  doll (Doll.lua): the game's sheet's slots in its order (Camelot's
---  PaperDollFrame.xml), eight down the left, eight down the right in their
---  arcs, the weapons along the bottom, and the ammo beside them for a
+--  doll (Doll.lua): eight down the left, what is worn from the head to the
+--  hands, eight down the right in their arcs, the necklace, rings and trinkets
+--  together at the top, the belt, legs and boots under them (Saneroki,
+--  2026-10-30), the weapons along the bottom, and the ammo beside them for a
 --  character that uses ammo. Each is an item button (the game's ItemButton)
 --  without the game's frame: the item's icon (no border, its corners rounded
 --  as the bags' icons) and count, a red tint while it is broken or cannot be
@@ -37,8 +38,8 @@ Slots.DRAWN = 0.5               -- how much of an empty slot's drawing shows
 
 -- The slots by the game's names, in their columns.
 Slots.COLUMNS = {
-    left = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot", "WristSlot" },
-    right = { "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot" },
+    left = { "HeadSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot", "WristSlot", "HandsSlot" },
+    right = { "NeckSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot", "WaistSlot", "LegsSlot", "FeetSlot" },
     bottom = { "MainHandSlot", "SecondaryHandSlot", "RangedSlot" },
 }
 

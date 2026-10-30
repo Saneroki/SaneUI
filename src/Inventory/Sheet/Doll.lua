@@ -28,7 +28,7 @@ Doll.PIXELS = { 680, 902 }              -- its size in a 1080p layout's pixels
 Doll.WIDTH, Doll.HEIGHT = Doll.PIXELS[1] * PX, Doll.PIXELS[2] * PX
 
 -- The slots { left, top, right, bottom }, each with its strip; by the game's slot names in Slots.COLUMNS' order.
-Doll.TOP = { { 149, 64, 213, 128 }, { 465, 64, 529, 128 } }   -- head and hands, as large as the others: no strip
+Doll.TOP = { { 149, 64, 213, 128 }, { 465, 64, 529, 128 } }   -- head and necklace, as large as the others: no strip
 Doll.LEFT = {
     { { 155, 146, 219, 210 }, { 45, 142, 151, 212 } },
     { { 145, 228, 209, 292 }, { 35, 224, 141, 294 } },
