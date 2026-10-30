@@ -3,8 +3,24 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 123 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 99 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 123 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Bags: Auto Sell and Auto Repair, two checkboxes in the foot (Saneroki, 2026-10-30)
+Saneroki: both belong to the bags, not to Speed Leveling, as a checkbox in the bag at first. New file `Bags/Vendor.lua`,
+new settings `autoSell` and `autoRepair`, on at first, also on the page Inventory.
+- **The boxes:** left of the gold in the foot, which always shows: `Journal.Box` as a 15 unit square, a tick of two
+  pencil strokes, the word in the bags' count font, a tooltip. A change on the settings page moves the ticks; the bags
+  are not drawn anew for it.
+- **At a vendor:** a frame after `MERCHANT_SHOW`, heard from the login on, so the bags need never have been opened. The
+  junk first, what the bar's button sells (`Foot.Sell`, now with an `after`), then `RepairAllItems` with the
+  character's own money if `CanMerchantRepair`, `GetRepairAllCost` and the money allow. Shift held leaves both to the
+  player.
+- **The chat:** the game's sell-all now says what was sold as selling item by item did; *Junk sold: 3 for 12s.* in
+  place of *Sold 3 junk items*, which read badly for one; *Repaired for 1g 20s.*
+- Tests: `dev/tests/bags.lua` 349 checks (the boxes and their ticks, the vendor before the bags' window was built, the
+  order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
+  does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
 
 ### Speed Leveling: all loot taken, equip and delete unasked, the key walks to corpses, a talk that is done closes (Saneroki, 2026-10-30)
 Saneroki: by default Speed Leveling sets Loot to take everything, and equipping or deleting never asks. The key walks to

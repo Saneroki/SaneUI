@@ -26,8 +26,8 @@ local _, ns = ...
 --                   (Views.lua, Layout.lua) and drawn (Canvas.lua), each item
 --                   the game's own item button (Cells.lua); the bank has a
 --                   window of its own (Bank.lua)
---      the foot     a band at the bottom, a pencil rule over it: the currencies, the gold
---                   (Foot.lua)
+--      the foot     a band at the bottom, a pencil rule over it: the currencies, the checkboxes
+--                   Auto Sell and Auto Repair (Vendor.lua), the gold (Foot.lua)
 --  The search box of the full window finds items by their name, their
 --  category or their item level: the views of the bags as they are fade what
 --  it does not find, the others leave it out.

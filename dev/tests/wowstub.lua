@@ -266,6 +266,7 @@ for _, state in ipairs({ "Normal", "Highlight", "Pushed" }) do
 end
 function methods:CreateMaskTexture() return NewWidget("MaskTexture", nil, self) end
 function methods:CreateFontString() return NewWidget("FontString", nil, self) end
+function methods:CreateLine() return NewWidget("Line", nil, self) end
 function methods:SetScript(name, fn) self._scripts[name] = fn end
 function methods:GetScript(name) return self._scripts[name] end
 function methods:HookScript(name, fn)

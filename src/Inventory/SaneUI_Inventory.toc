@@ -39,8 +39,9 @@ Sheet\PvP.lua
 Sheet\Currency.lua
 Sheet\Statistics.lua
 # The bags, our own: what they hold, the categories as the player arranged them, what came in lately, what each
-# view shows and where it goes, the game's item buttons, the foot, the menus, choosing items by clicks, the stack
-# splitter, our sort, the list's columns, the drawing, the sidebar, the window; the bank's window
+# view shows and where it goes, the game's item buttons, the foot, Auto Sell and Auto Repair, the menus, choosing
+# items by clicks, the stack splitter, our sort, the list's columns, the drawing, the sidebar, the window; the bank's
+# window
 Bags\Contents.lua
 Bags\Categories.lua
 Bags\Recent.lua
@@ -48,6 +49,7 @@ Bags\Views.lua
 Bags\Layout.lua
 Bags\Cells.lua
 Bags\Foot.lua
+Bags\Vendor.lua
 Bags\Menus.lua
 Bags\Select.lua
 Bags\Split.lua

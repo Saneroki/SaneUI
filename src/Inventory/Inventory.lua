@@ -146,8 +146,13 @@ ns.TEXT = {
     bagsSplit = "Split Stack",
     bagsSplitOne = "Split",
     bagsSplitAll = "Auto Split",
-    bagsSold = "Sold %d junk items for %s.",
+    bagsSold = "Junk sold: %d for %s.",
     bagsUnsold = "%d junk items could not be sold.",
+    bagsRepaired = "Repaired for %s.",
+    bagsAutoSell = "Auto Sell",
+    bagsAutoSellTip = "At a vendor your junk is sold as the window opens, what you marked as junk too. Hold Shift to leave it to you.",
+    bagsAutoRepair = "Auto Repair",
+    bagsAutoRepairTip = "At a vendor who repairs, your gear is mended as the window opens, after the junk is sold, with your own gold if you have enough. Hold Shift to leave it to you.",
     -- The bags' dropdown View (Bags/Bags.lua)
     bagsLook = "Display",
     bagsShowPinned = "Show Pinned Items",
@@ -167,6 +172,8 @@ local OPTIONS = {
     { key = "first", default = "all", choices = OPENS, text = ns.TEXT.bagsFirst, tip = ns.TEXT.bagsFirstTip,
       header = ns.TEXT.bags },
     { key = "bagKeys", default = true, text = ns.TEXT.bagsKeys, tip = ns.TEXT.bagsKeysTip },
+    { key = "autoSell", default = true, text = ns.TEXT.bagsAutoSell, tip = ns.TEXT.bagsAutoSellTip },
+    { key = "autoRepair", default = true, text = ns.TEXT.bagsAutoRepair, tip = ns.TEXT.bagsAutoRepairTip },
     { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
     { key = "pinnedOne", default = true, text = ns.TEXT.bagsPinnedOne, tip = ns.TEXT.bagsPinnedOneTip },
     { key = "showRecent", default = true, text = ns.TEXT.bagsShowRecent, tip = ns.TEXT.bagsShowRecentTip },
@@ -184,10 +191,12 @@ local OPTIONS = {
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, 1)
 -- Core's window takes the section Expand window in by itself (Edge.lua); without Can expand to fullscreen the bag
--- keys are the game's again (Keys.Taken); a bags' setting draws the bags anew.
+-- keys are the game's again (Keys.Taken); Auto Sell and Auto Repair change only their boxes; a bags' setting draws
+-- the bags anew.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "bagKeys" or key == "expand" then return ns.Guarded(ns.Keys.Apply) end
     if Core.Edge.KEYS[key] then return end
+    if key == "autoSell" or key == "autoRepair" then return ns.Guarded(ns.Vendor.Refresh) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
 end })
 
@@ -207,5 +216,6 @@ function ns.OnLogin()
     ns.Window.Build()
     ns.Recent.Start()
     ns.Bank.Start()
+    ns.Vendor.Start()
     ns.Keys.Start()
 end

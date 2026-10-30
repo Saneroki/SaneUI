@@ -27,9 +27,10 @@ local _, ns = ...
 --  where that is just the game's junk, the game's own sell-all sells it
 --  (C_MerchantFrame.SellAllJunkItems); else each item is sold as a click on it
 --  at the vendor sells it (C_Container.UseContainerItem), one at a time, while
---  the vendor is there, out of a fight and with nothing on the cursor; at the
---  end the chat says how many were sold and for how much, and how many could
---  not be.
+--  the vendor is there, out of a fight and with nothing on the cursor; either
+--  way the chat says how many were sold and for how much, and how many could
+--  not be. Auto Sell and Auto Repair, the two checkboxes left of the gold, are
+--  Vendor.lua's; they sell through Foot.Sell, unasked.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Foot = {}
@@ -46,6 +47,7 @@ Foot.TOKEN_GAP = 5
 Foot.ACT = 22          -- the bank bar's button for what can be done there: a leather patch
 Foot.ACT_COLOR = { Core.Journal.LEATHER[1], Core.Journal.LEATHER[2], Core.Journal.LEATHER[3] } -- pressed into the patch
 Foot.STEP = 0.08       -- seconds between two items sold
+Foot.SOLD = 0.5        -- seconds after the game's sell-all until its money is there
 
 local Contents = ns.Contents
 local foot, strip, gold, act, tokens
@@ -274,12 +276,21 @@ end
 -- The items still to sell, one at a time: { bag, slot, item, price } each; what was sold, for how much, and
 -- what could not be.
 local selling, sold, earned, unsold = {}, 0, 0, 0
+local afterwards -- what comes once the selling is done (Foot.Sell)
+
+local function Afterwards()
+    local run = afterwards
+    afterwards = nil
+    if run then run() end
+end
+local AfterGame = Core.Later(function() ns.Guarded(Afterwards) end, Foot.SOLD)
 
 local function Finish()
     for index = #selling, 1, -1 do selling[index] = nil end
     if sold > 0 then Core.Print(ns.TEXT.bagsSold:format(sold, Core.Coins(earned) or tostring(earned))) end
     if unsold > 0 then Core.Print(ns.TEXT.bagsUnsold:format(unsold)) end
     sold, earned, unsold = 0, 0, 0
+    Afterwards()
 end
 
 -- The next item sold, if it is still where it was and the vendor still there; then the next, a moment later.
@@ -304,19 +315,25 @@ local function Next()
 end
 Step = ns.Guard(Next)
 
--- The junk sold, the bags read anew first (they may have changed while the question was open).
-local function Sell()
+-- The junk sold, the bags read anew first (they may have changed while the question was open); after, if given,
+-- once that is done, or at once with nothing to sell.
+function Foot.Sell(after)
     if not Talking("Merchant") or #selling > 0 then return end
+    afterwards = after
     local list, same = Contents.Junk(ns.Bags.Carried().slots, junk)
+    if #list == 0 then return Afterwards() end
     local merchant = rawget(_G, "C_MerchantFrame")
     local game = merchant and merchant.SellAllJunkItems
         and not (merchant.IsSellAllJunkEnabled and Core.Ask(merchant.IsSellAllJunkEnabled) == false)
     if same and game then
         merchant.SellAllJunkItems()
-        return
+        local worth = 0
+        for _, record in ipairs(list) do worth = worth + (record.sell or 0) * (record.count or 1) end
+        Core.Print(ns.TEXT.bagsSold:format(#list, Core.Coins(worth) or tostring(worth)))
+        return AfterGame()
     end
     local api = Container()
-    if not api.UseContainerItem or Game("CursorHasItem") then return end
+    if not api.UseContainerItem or Game("CursorHasItem") then return Afterwards() end
     for _, record in ipairs(list) do
         selling[#selling + 1] = { bag = record.bag, slot = record.slot, item = record.item, price = record.sell or 0 }
     end
@@ -325,7 +342,7 @@ end
 
 local function Act()
     if doing == "junk" then
-        Core.Confirm(Core.Word("SELL_ALL_JUNK_ITEMS_POPUP", Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")), nil, Sell)
+        Core.Confirm(Core.Word("SELL_ALL_JUNK_ITEMS_POPUP", Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")), nil, Foot.Sell)
     end
 end
 
@@ -425,6 +442,7 @@ function Foot.Build(body, beside, holder)
     gold:SetPoint("RIGHT", -(ns.Bags.INSET + ns.Bags.EDGE), 0)
     gold:SetScript("OnEnter", function(self) ns.Safe("bags", GoldEnter, self) end)
     gold:SetScript("OnLeave", GameTooltip_Hide)
+    ns.Vendor.Build(foot, gold)
     tokens = {}
     for index = 1, Foot.TOKENS do
         local token = Label(foot, font)
@@ -460,4 +478,5 @@ function Foot.Refresh(section)
     Foot.Act()
     Foot.Gold()
     Foot.Tokens()
+    ns.Vendor.Refresh()
 end

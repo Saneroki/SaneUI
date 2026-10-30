@@ -180,6 +180,9 @@ colour.
     has the same pencil).
   - Boxes are used for section frames, drawn tabs, buttons on the paper and item and gear slots.
   - The chosen tab or button has stronger lines.
+- **The checkbox** (Saneroki, 2026-10-30, the bags' *Auto Sell* and *Auto Repair*): the box as a small square (15
+  units, half weight), drawn stronger under the mouse, on the paper a tick of two pencil strokes in the ink when on,
+  its word in Kalam beside it. Never the game's checkbox art on the paper.
 - **The rule:** the box's top line, stretched: a section's header underline and dividers.
 - **More pieces** drawn like #14 come from variants to pick from (`catalog.py`, *variants*): a wide section frame,
   a long divider with small flourishes, a corner piece.

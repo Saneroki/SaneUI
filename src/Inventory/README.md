@@ -597,6 +597,15 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     each, one every `Foot.STEP` seconds while the vendor is there, out of a fight and with the cursor empty, the
     item checked to be still in its slot; `Core.Print` says how many were sold for how much and how many could
     not be; `C_Bank.AutoDepositItemsIntoBank` where `DoesBankTypeSupportAutoDeposit`).
+  - **Auto Sell and Auto Repair** (`Bags/Vendor.lua`, Saneroki, 2026-10-30): two checkboxes in the foot, left of the
+    gold (the settings `autoSell` and `autoRepair`, on at first, also on the page Inventory): a pencil box
+    (`Journal.Box`), a tick of two pencil strokes (Kalam has no such letter), the word beside it. A frame after
+    `MERCHANT_SHOW`, heard from the login on, so the bags need never have been opened (`Vendor.Start`; the two events
+    a vendor may send make one run, `Core.Later`), the junk goes first, so its money goes to the repair: `Foot.Sell`,
+    what the bar's button sells, unasked, `after` run when it is done (`Foot.SOLD` seconds after the game's sell-all,
+    which brings the money a moment later). Then `RepairAllItems` with the character's own money, if the vendor
+    repairs (`CanMerchantRepair`), `GetRepairAllCost` says so and the money is there. The chat says what was sold and
+    what the repair cost. Shift held as the window opens leaves both to the player.
   - **Events, while shown only** (`Bags.Show`): `BAG_UPDATE_DELAYED`, `BAG_NEW_ITEMS_UPDATED`,
     `BAG_CONTAINER_UPDATE`, the quest events, the vendor's, mailbox's, trade's and auction house's opening and
     closing, `EQUIPMENT_SETS_CHANGED`, `BANKFRAME_OPENED`/`CLOSED` and the bank's slot and tab events: everything

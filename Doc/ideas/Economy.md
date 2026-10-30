@@ -349,10 +349,12 @@ names (`AUCTION_HOUSE_BUY_TAB`, `AUCTION_HOUSE_SELL_TAB`, `AUCTION_HOUSE_AUCTION
 - **What the vendor sells:** price, stock, and the auction house value next to it.
 - **Selling:** the bags with what the vendor pays and what the auction house would give, marked *Better at
   the auction house* or *Vendor it*. *Sell junk* button (`C_MerchantFrame.SellAllJunkItems`, which needs no
-  click; Blizzard's window asks first with a dialog, ours too); *proposal*: an option to do it on opening.
+  click; Blizzard's window asks first with a dialog, ours too). Done on opening by the bags' *Auto Sell*
+  (`src/Inventory/Bags/Vendor.lua`, built 2026-10-30), so the vendor window needs no switch of its own.
   Selling one item is the game's own: a right click on a bag item (`C_Container.UseContainerItem`) while
   the vendor is open. *Better at the auction house* only with a market value (*few data* or none: no mark).
-- **Repair all:** own gold or the guild's (`RepairAllItems`, `RepairAllItems(true)`), the cost shown.
+- **Repair all:** own gold or the guild's (`RepairAllItems`, `RepairAllItems(true)`), the cost shown. The bags'
+  *Auto Repair* does it with own gold on opening (built 2026-10-30).
 - **Buyback.**
 
 ## The trainer window

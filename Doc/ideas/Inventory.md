@@ -188,6 +188,11 @@ at; each mipmap's lines thickened for its size) and in each category's empty slo
 slot, 0.3); every word of the bags', the bank's and the alts' windows 1.2 times larger (`Paper.WORDS`), the heads,
 list lines and the sidebar (180 wide, rows of 28) grown with them.
 
+**Built (2026-10-30), Saneroki asked:** *Auto Sell* and *Auto Repair* as two checkboxes in the foot of the bags, left
+of the gold, on at first and on the settings page too: at a vendor the junk goes first, then the repair with the
+character's own money (`src/Inventory/README.md`, *Auto Sell and Auto Repair*). They first stood in Speed Leveling's
+errands; they belong to the bags.
+
 **Built (2026-10-23), Saneroki asked:** the doll's model shows again (the clipping frame round it hid it whole; the
 doll's picture is drawn over its legs below the hero's column instead). Then, as Saneroki explained it: a bag or a
 quiver lying in the bags is an item like any other and always empty (the game puts no full bag into another); only

@@ -4,7 +4,7 @@
 -- Bag, Each Bag, a category, a group) as blocks, stacks merged, the search; the three displays laid out as plain
 -- numbers; the window: its bar, the sidebar, the game's item buttons in the flat look, the menus and drops, the
 -- dropdown View; the game's events while shown; the bank while it is open; the foot and the bags' strip; selling
--- junk. The window, the board and the other parts are tried in dev/tests/inventory.lua. The look can only be
+-- junk; Auto Sell and Auto Repair. The window, the board and the other parts are tried in dev/tests/inventory.lua. The look can only be
 -- judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/bags.lua
 
@@ -272,6 +272,11 @@ C_MerchantFrame = { SellAllJunkItems = function() calls.sold = true end, IsSellA
 C_CurrencyInfo = { GetCoinTextureString = function(copper) return copper .. "c" end,
                    GetBackpackCurrencyInfo = function(index) if index == 1 then return { quantity = 12, iconFileID = "honor" } end end }
 GetMoney = function() return 12345 end
+local shop = { repairs = {}, cost = 250, can = true, repairer = true, shift = false } -- the vendor, and Shift
+CanMerchantRepair = function() return shop.repairer end
+GetRepairAllCost = function() return shop.cost, shop.can end
+RepairAllItems = function(guild) shop.repairs[#shop.repairs + 1] = guild or "own" end
+IsShiftKeyDown = function() return shop.shift end
 local cursor = false
 CursorHasItem = function() return cursor end
 local holding
@@ -305,6 +310,17 @@ W.Fire("PLAYER_LOGIN")
 check(SaneUI.Inventory == ns and not ns.off, "the module is made and started")
 local Contents, Layout, Cells, Bags, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Bags, ns.Foot
 local Categories, Views, Recent, Sidebar = ns.Categories, ns.Views, ns.Recent, ns.BagSidebar
+
+-- A vendor before the bags' window was ever built: Auto Sell and Auto Repair do their work all the same.
+merchantOpen = true
+W.Fire("MERCHANT_SHOW")
+W.Wait(0)
+check(not ns.Vendor.boxes and calls.sold and #shop.repairs == 0, "at a vendor, the bags never opened: the junk sold, unasked")
+W.Wait(Foot.SOLD)
+check(#shop.repairs == 1, "then the repair")
+merchantOpen = false
+W.Fire("MERCHANT_CLOSED")
+calls.sold, shop.repairs = nil, {}
 
 -------------------------------------------------------------------------------
 --  What the bags hold, without a frame
@@ -1535,10 +1551,27 @@ toggle:GetScript("OnClick")(toggle)
 check(Text("12345c"), "the gold, in the game's coins")
 check(Text("12"), "a currency watched in the backpack")
 
--- At a vendor: the junk sold, asked first.
+-- Auto Sell and Auto Repair: two boxes in the foot, ticked at first; a click takes off the tick and the setting.
+shop.sell, shop.repair = Text("Auto Sell"):GetParent(), Text("Auto Repair"):GetParent()
+do
+local autoSell, autoRepair = shop.sell, shop.repair
+check(autoSell:GetChecked() and autoRepair:GetChecked() and autoSell.tick:IsShown() and autoRepair.tick:IsShown(),
+    "Auto Sell and Auto Repair: in the foot, ticked at first")
+check(ns.Vendor.boxes[1] == autoRepair and ns.Vendor.boxes[2] == autoSell, "both left of the gold")
+check(autoSell:GetWidth() > ns.Vendor.BOX, "a box as wide as its word")
+autoSell:GetScript("OnClick")(autoSell)
+autoRepair:GetScript("OnClick")(autoRepair)
+check(ns.options.autoSell == false and ns.options.autoRepair == false and not autoSell:GetChecked()
+    and not autoRepair.tick:IsShown(), "a click takes off the tick and the setting")
+check(Text("12345c"), "the bags stay as they were")
+end
+
+-- At a vendor with both off: nothing by itself; the junk sold, asked first.
 merchantOpen = true
 W.Fire("MERCHANT_SHOW")
 W.Wait(0)
+W.Wait(Foot.SOLD)
+check(not calls.sold and #shop.repairs == 0, "both off: nothing is sold or repaired by itself")
 local act = Text("Sell All Junk Items")
 check(act, "at a vendor with junk: the button to sell it, on the bar")
 act:GetParent():GetScript("OnClick")(act:GetParent())
@@ -1565,7 +1598,7 @@ check(#calls.used == 1, "the player's junk: sold one item at a time")
 W.Wait(Foot.STEP)
 W.Wait(Foot.STEP)
 check(not calls.sold and table.concat(calls.used, ",") == "0:3,0:4", "the player's junk: each item sold, not the set's sword")
-check(W.printed[#W.printed]:find("Sold 2 junk items for 28c", 1, true), "the chat says how many, for how much: " .. W.printed[#W.printed])
+check(W.printed[#W.printed]:find("Junk sold: 2 for 28c", 1, true), "the chat says how many, for how much: " .. W.printed[#W.printed])
 merchantOpen = false
 calls.used = {}
 act:GetParent():GetScript("OnClick")(act:GetParent())
@@ -1579,6 +1612,83 @@ merchantOpen = false
 W.Fire("MERCHANT_CLOSED")
 W.Wait(0)
 check(not Text("Sell All Junk Items"), "the vendor gone: the button too")
+
+-- Auto Sell and Auto Repair at work: the junk first, the repair after it, with the character's own money.
+do
+local autoSell, autoRepair = shop.sell, shop.repair
+local function AtVendor()
+    calls.sold, calls.used, shop.repairs = nil, {}, {}
+    W.printed = {}
+    merchantOpen = true
+    W.Fire("MERCHANT_SHOW")
+    W.Fire("MERCHANT_SHOW")
+    W.Wait(0)
+end
+local function Away()
+    W.Wait(Foot.SOLD)
+    merchantOpen = false
+    W.Fire("MERCHANT_CLOSED")
+    W.Wait(0)
+end
+autoSell:GetScript("OnClick")(autoSell)
+autoRepair:GetScript("OnClick")(autoRepair)
+check(ns.options.autoSell and ns.options.autoRepair and autoSell:GetChecked() and autoRepair.tick:IsShown(), "ticked again")
+C_Container.UseContainerItem = nil
+local asked = #W.popups
+AtVendor()
+check(calls.sold and #W.popups == asked, "Auto Sell: the junk sold by the game, unasked, once though the event came twice")
+check(#shop.repairs == 0, "the repair waits for the junk's money")
+check(W.printed[1] and W.printed[1]:find("Junk sold: 1 for", 1, true), "the chat says what was sold: " .. tostring(W.printed[1]))
+W.Wait(Foot.SOLD)
+check(#shop.repairs == 1 and shop.repairs[1] == "own", "Auto Repair: then all the gear, with the character's own money")
+check(W.printed[2] and W.printed[2]:find("Repaired for 250c", 1, true), "the chat says what it cost: " .. tostring(W.printed[2]))
+Away()
+Categories.MarkJunk(118, true)
+C_Container.UseContainerItem = function(bag, slot) calls.used[#calls.used + 1] = bag .. ":" .. slot end
+AtVendor()
+check(not calls.sold and #calls.used == 1 and #shop.repairs == 0, "the player's junk too: one item at a time, no repair yet")
+W.Wait(Foot.STEP)
+W.Wait(Foot.STEP)
+check(#calls.used == 2 and #shop.repairs == 1, "the repair after the last item")
+Away()
+Categories.MarkJunk(118, false)
+Bags.Refresh()
+shop.shift = true
+AtVendor()
+Away()
+check(not calls.sold and #shop.repairs == 0, "Shift held: both left to the player")
+shop.shift = false
+Core.Set(ns.name, "autoSell", false)
+AtVendor()
+check(not calls.sold and #shop.repairs == 1, "Auto Sell off: only the repair, at once")
+Away()
+Core.Set(ns.name, "autoSell", true)
+Core.Set(ns.name, "autoRepair", false)
+AtVendor()
+Away()
+check(calls.sold and #shop.repairs == 0, "Auto Repair off: only the junk")
+Core.Set(ns.name, "autoRepair", true)
+check(autoSell:GetChecked() and autoRepair:GetChecked(), "a change on the settings page moves the ticks")
+shop.cost = 20000
+AtVendor()
+Away()
+check(calls.sold and #shop.repairs == 0, "more than the character has: no repair")
+shop.cost, shop.can = 0, false
+AtVendor()
+Away()
+check(#shop.repairs == 0, "nothing to repair")
+shop.cost, shop.can, shop.repairer = 250, true, false
+AtVendor()
+Away()
+check(#shop.repairs == 0, "a vendor who does not repair")
+shop.repairer = true
+AtVendor()
+merchantOpen = false
+W.Wait(Foot.SOLD)
+check(#shop.repairs == 0, "the vendor gone before the repair: none")
+W.Fire("MERCHANT_CLOSED")
+W.Wait(0)
+end
 
 -------------------------------------------------------------------------------
 --  The bank, a window of its own while at a banker
@@ -1834,5 +1944,11 @@ check(Cells.Shown(-1, 1), "back in WoW: Forever: the keyring again")
 for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end
 ns.StandDown("a test")
 check(ns.off and not panel:IsShown(), "standing down: the bags go with the window")
+calls.sold, shop.repairs = nil, {}
+merchantOpen = true
+W.Fire("MERCHANT_SHOW")
+W.Wait(0)
+W.Wait(Foot.SOLD)
+check(not calls.sold and #shop.repairs == 0, "stood down: nothing sold or repaired")
 
 io.write(("Bags: all %d checks passed.\n"):format(passed))
