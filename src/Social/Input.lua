@@ -64,7 +64,8 @@ local function Label(editBox)
     if not label then
         label = CreateFrame("Button")
         label:SetHeight(24)
-        label:SetScript("OnClick", function(self) ns.Guarded(ns.Menu.Open, self, seated) end)
+        label:SetScript("OnClick", function() ns.Guarded(ns.Menu.Toggle, window, seated) end)
+        ns.Menu.Button(label)
     end
     local header = editBox.header
     label:SetShown(header ~= nil)
@@ -261,7 +262,7 @@ end
 -- What it had is lent, to give back.
 local function Lift(editBox)
     drawn[editBox] = drawn[editBox] or Core.Lend(editBox)
-    drawn[editBox]:SetLayer(window:GetFrameStrata(), window:GetFrameLevel() + 10)
+    drawn[editBox]:SetLayer(window:GetFrameStrata(), window:GetFrameLevel() + Layout.INPUT_LEVEL)
 end
 
 -- The window is drawn in another layer now (it fills the screen, or is back): a line in use goes with it.
@@ -334,7 +335,7 @@ function Input.Take(frame, makeRoom, chat)
     window, room, area = frame, makeRoom, chat or frame
     if not plate then
         plate = CreateFrame("Frame", nil, frame)
-        plate:SetFrameLevel(frame:GetFrameLevel() + 5) -- above the list, below the edit box
+        plate:SetFrameLevel(frame:GetFrameLevel() + Layout.INPUT_LEVEL - 1) -- above the list, below the edit box
         fill = Core.Shape.New(plate, { radius = Layout.RADIUS }) -- the bubbles' plate, following the line's size
         fill:Follow()
         plate:Hide()
@@ -353,13 +354,14 @@ function Input.Take(frame, makeRoom, chat)
 end
 
 -- The window's button: closes the line as Esc does, or opens it as Enter does and shows where you
--- can write, the chat you write in marked.
-function Input.Toggle(owner)
+-- can write, the chat you write in marked. The list of chats, if open, closes with it.
+function Input.Toggle()
+    local listed = ns.Menu.Close()
     if seated and seated:IsShown() and not resting[seated] then
         seated:ClearChat()
-    else
+    elseif not listed then
         ChatFrameUtil.OpenChat(nil)
-        ns.Menu.Open(owner, seated)
+        ns.Menu.Toggle(window, seated)
     end
 end
 

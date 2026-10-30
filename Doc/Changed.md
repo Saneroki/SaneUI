@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 156 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 156 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Social: the list of chats in columns, open until you close it (Saneroki, 2026-10-30)
+Saneroki, on the collapsed chat: the list behind the chat button has where you write, what the window shows and the
+game's channels in separate columns, and it no longer closes when the mouse leaves the window or at a tick, a join or
+a leave; only a click outside it or on its button closes it.
+- **Columns:** the game's menu in its grid (`SetGridMode`, three columns, two without any of the game's channels). The
+  grid runs down each column and on at the top of the next, all equally long: `Menu.lua`'s `Column` fills the shorter
+  ones up with spacers.
+- **Open:** the chat button hides with the mouse away, and the game closes a menu whose owner is gone, so the menu's
+  owner is the window now (`Menu.Toggle(window, line)`, was `Menu.Open(owner, line)`). Radio lines close a menu by
+  default: `MenuResponse.Refresh` on the chats to write in and on the three choices per channel.
+- **Closed by its button:** a press outside a menu closes it, so a click on its button would close and open it again.
+  `Menu.Button` gives the chat button and the chat's name `HandlesGlobalMouseEvent`, as the game's dropdown buttons,
+  and `Menu.Toggle` and `Input.Toggle` close it. A channel joined or left shows under *Write in* the next time the
+  list opens. Tests: `dev/tests/social.lua` 626 checks, the columns, what closes the list and what does not.
+
+### Social: the chat lies on the full screen's panels (Saneroki, 2026-10-30)
+Saneroki: on the full screen the chat lay behind the see-through background and was much darker than it had to be
+(board #2). Core's board draws a panel `Board.LEVEL` above what the window holds, and the chat's frame stood below that,
+under the panel's plate. `Window.lua` puts the chat's frame as high as the panels; the line to write in, its plate and
+the smiley over the messages (`Layout.INPUT_LEVEL`, 13 above the window). Tests: `dev/tests/social.lua`.
 
 ### Inventory: the doll's jewellery together at the top right (Saneroki, 2026-10-30)
 Saneroki: the rings, trinkets and the necklace together on the right at the top, so the boots, pants, belt and gloves

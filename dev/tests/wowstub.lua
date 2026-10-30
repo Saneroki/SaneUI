@@ -592,6 +592,12 @@ function W.Install(env)
         local description = {}
         function description:CreateTitle(text) list[#list + 1] = { title = text } end
         function description:CreateDivider() end
+        function description:CreateSpacer() list[#list + 1] = { spacer = true } end
+        function description:SetGridMode(direction, columns, padding) list.grid = { direction, columns, padding } end
+        function description:AddMenuReleasedCallback(fn)
+            list.released = list.released or {}
+            list.released[#list.released + 1] = fn
+        end
         function description:CreateButton(text, fn, data)
             local item = { text = text, fn = fn, data = data, sub = {} }
             list[#list + 1] = item
@@ -609,7 +615,9 @@ function W.Install(env)
             return { AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
         end
         function description:CreateRadio(text, isSelected, setSelected, data)
-            list[#list + 1] = { text = text, checked = isSelected, fn = setSelected, data = data }
+            local item = { text = text, checked = isSelected, fn = setSelected, data = data }
+            list[#list + 1] = item
+            return { SetResponse = function(_, response) item.response = response end }
         end
         function description:CreateCheckbox(text, isSelected, setSelected, data)
             local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {} }
@@ -620,10 +628,17 @@ function W.Install(env)
     end
     W.Description = Description
     env.MenuUtil = { CreateContextMenu = function(owner, generator)
-        local menu = {}
+        local menu = { owner = owner }
         generator(owner, Description(menu))
         W.menus[#W.menus + 1] = menu
+        function menu:Close()
+            self.closed = true
+            for _, released in ipairs(self.released or {}) do released(self) end
+        end
+        return menu
     end }
+    env.MenuResponse = { Open = 1, Refresh = 2, Close = 3, CloseAll = 4 }
+    env.MenuConstants = { VerticalGridDirection = 2, HorizontalGridDirection = 3 }
     env.Menu = { ModifyMenu = function(tag, callback) W.menuModifiers = W.menuModifiers or {}; W.menuModifiers[tag] = callback end }
 
     -- The game's event registry: callbacks by event name and owner.

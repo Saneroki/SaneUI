@@ -710,12 +710,30 @@ for _, widget in ipairs(W.frames) do if widget._kind == "Button" and widget._par
 check(label and label:IsShown() and label._points[1][2] == editBox.header and not label._scripts.OnEnter, "the chat's name in the line is a button, without a tooltip")
 label._scripts.OnClick(label)
 local menu = W.menus[#W.menus]
-check(menu[1].title == "Write in" and menu[9].title == "Show in the window" and #menu == 29 and menu[2].checked(menu[2].data) and not menu[5].checked(menu[5].data),
+check(menu[1].title == "Write in" and menu[2].checked(menu[2].data) and not menu[5].checked(menu[5].data),
     "a click lists the chats, the one you write in marked")
 menu[5].fn(menu[5].data)
 check(editBox.kind == "GUILD" and editBox.sticky == "GUILD" and editBox.active and menu[5].checked(menu[5].data), "choosing one makes the line write there, and keeps it so")
 menu[8].fn(menu[8].data)
 check(editBox.kind == "CHANNEL" and editBox.target == 2 and menu[8].checked(menu[8].data) and not menu[7].checked(menu[7].data), "a channel is chosen by its number")
+;(function() -- the list in columns, open until a click outside it or on its button
+    check(menu.grid[1] == MenuConstants.VerticalGridDirection and menu.grid[2] == 2 and menu.grid[3] > 0 and #menu % 2 == 0
+        and menu[#menu / 2 + 1].title == "Show in the window" and menu[#menu / 2].spacer,
+        "the chats to write in and what the window shows stand in columns of their own, the shorter filled up to the longest")
+    check(menu[5].response == MenuResponse.Refresh, "choosing a chat leaves the list open, as the ticks do by themselves")
+    check(menu.owner == window, "it belongs to the window: the game closes a menu with its owner, and the chat button goes with the mouse")
+    check(label:HandlesGlobalMouseEvent("LeftButton", "GLOBAL_MOUSE_DOWN") and not label:HandlesGlobalMouseEvent("RightButton", "GLOBAL_MOUSE_DOWN"),
+        "a press on the button is no click outside the list")
+    local count = #W.menus
+    label._scripts.OnClick(label)
+    check(menu.closed and #W.menus == count, "a click on the button it came from closes it")
+    label._scripts.OnClick(label)
+    check(#W.menus == count + 1 and not W.menus[#W.menus].closed, "the next opens it")
+    W.menus[#W.menus]:Close() -- the game's, at a click outside it
+    label._scripts.OnClick(label)
+    check(#W.menus == count + 2, "closed by a click outside it, the button opens it again at once")
+    ns.Menu.Close()
+end)()
 
 -- The smiley beside the line: the raid marks to write, the emotes to do
 local smiley
@@ -798,7 +816,16 @@ menu = W.menus[#W.menus]
 check(#W.menus == menus + 1 and menu[1].title == "Write in" and menu[8].checked(menu[8].data) and not menu[2].checked(menu[2].data),
     "and the list of the chats you can write in, the one you write in marked")
 write._scripts.OnClick(write)
-check(not editBox:IsShown() and bottom() == Layout.EDGE and #W.menus == menus + 1, "another one closes it, without a list")
+check(not editBox:IsShown() and bottom() == Layout.EDGE and #W.menus == menus + 1 and menu.closed, "another one closes it and the list, without a new list")
+;(function()
+    check(write:HandlesGlobalMouseEvent("LeftButton", "GLOBAL_MOUSE_DOWN"), "a press on the chat button is no click outside the list either")
+    write._scripts.OnClick(write)
+    local list, count = W.menus[#W.menus], #W.menus
+    check(list.owner == window, "opened by the chat button, the list stays when the button goes with the mouse")
+    editBox:ClearChat() -- a message sent
+    write._scripts.OnClick(write)
+    check(list.closed and not editBox:IsShown() and #W.menus == count, "the line gone meanwhile, the chat button closes the list alone")
+end)()
 check(not smiley:IsShown(), "the smiley goes with the line")
 
 -- The line's look and height
@@ -883,7 +910,7 @@ check(not editBox:IsShown() and editBox._alpha == 1 and editBox._mouse == true, 
 -- Our window goes: the game gets its line back as it had it
 open()
 W.Wait(0)
-check(editBox._strata == "MEDIUM" and editBox._level == Layout.LEVEL + 10, "(the line is drawn with the window)")
+check(editBox._strata == "MEDIUM" and editBox._level == Layout.LEVEL + Layout.INPUT_LEVEL, "(the line is drawn with the window)")
 SlashCmdList.SANEUI("social")
 check(editBox._points[1][2] == native and editBox._strata == "DIALOG" and editBox._level == 7, "in use, it is where the game had it and above everything again")
 close()
@@ -1299,10 +1326,16 @@ open()
 label._scripts.OnClick(label)
 menu = W.menus[#W.menus]
 local shows = {}
-for index = 10, #menu do shows[#shows + 1] = menu[index].text end
+do
+    local under
+    for _, item in ipairs(menu) do
+        if item.title then under = item.title == "Show in the window" elseif under then shows[#shows + 1] = item.text end
+    end
+end
 check(table.concat(shows, ", ") == "Say, Yell, Emote, Whisper, Party, Raid, Instance, Guild, Officer, Creature messages, Pings, Loot, money and experience, Battlegrounds, Pet battles, Channel joins and leaves, System messages, Addon messages, 1. General, 2. Trade, 3. Muted",
-    "under the chats to write in, the list has every kind of chat and every channel you are in")
-local saying, shownBefore = menu[10], #box.provider.list
+    "beside the chats to write in, the list has every kind of chat and every channel you are in")
+ns.Menu.Close()
+local saying, shownBefore = menu[#menu / 2 + 2], #box.provider.list
 check(saying.checked(saying.data) and shownBefore == #Log.list, "all of them ticked at first: everything is shown")
 saying.fn(saying.data)
 local said = 0
@@ -1315,7 +1348,7 @@ W.Fire("CHAT_MSG_GUILD", "shown", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 1,
 check(#box.provider.list == shownBefore - said + 1, "one of another chat is")
 saying.fn(saying.data)
 check(saying.checked(saying.data) and Core.Store("Social").options.mute.SAY == nil and #box.provider.list == #Log.list, "ticked again, they are all back")
-local trade = menu[28]
+local trade = menu[#menu - 1]
 check(trade.text == "2. Trade" and trade.data.group == "CHANNEL:2", "a channel is known by its number")
 trade.fn(trade.data)
 shownBefore = #box.provider.list
@@ -1341,7 +1374,7 @@ local function count(group)
     return found
 end
 local everything, works = #box.provider.list, 0
-for index = 10, #menu do
+for index = #menu / 2 + 2, #menu do
     local tick = menu[index]
     local group, had = tick.data.group, count(tick.data.group)
     local wasOn = tick.checked(tick.data)
@@ -1354,7 +1387,7 @@ for index = 10, #menu do
     if not wasOn then tick.fn(tick.data) end
     if off and on then works = works + 1 end
 end
-check(works == #menu - 9 and #box.provider.list == everything, "every tick in the list hides its messages, and only those, and brings them back")
+check(works == #menu / 2 - 1 and #box.provider.list == everything, "every tick in the list hides its messages, and only those, and brings them back")
 close()
 
 -- A few kinds of messages have a switch of their own in the settings, the same as their tick in the list
@@ -1374,6 +1407,7 @@ do
     check(tick and not tick.checked(tick.data), "and their tick in the list is off")
     tick.fn(tick.data)
     check(ns.options.showSystem == true and #box.provider.list == before, "ticked there, the switch is on again")
+    ns.Menu.Close()
     close()
 end
 
@@ -1457,7 +1491,7 @@ end
 check(coreBar == nil, "the small chat has no title bar of Core's, nor its buttons")
 open()
 W.Wait(0)
-check(editBox._strata == "MEDIUM" and editBox._level == Layout.LEVEL + 10, "the line to write in is drawn with the window, not above everything")
+check(editBox._strata == "MEDIUM" and editBox._level == Layout.LEVEL + Layout.INPUT_LEVEL, "the line to write in is drawn with the window, not above everything")
 close()
 
 -- A message the list's top edge cuts through
@@ -2658,6 +2692,10 @@ do
     check(own and own:IsShown() and rows.provider.list[1].pinned == "view" and column:IsVisible() and box:IsVisible()
         and column._width == own._width and column._points[1][4] == own._points[1][4],
         "a layout with the chat's own window: the chat stands there, with its line, and is no row of the conversations")
+    local plate = own.skin:GetFrameLevel()
+    check(column:GetFrameLevel() > plate and column:GetFrameLevel() >= own:GetFrameLevel() and column:GetFrameLevel() > ns.Board.panels.talks.skin:GetFrameLevel()
+        and Layout.INPUT_LEVEL > column:GetFrameLevel() + 5,
+        "the chat lies on its panel's see-through plate, not under it, and the line to write in over its messages")
     click(rows.rows[1])
     check(column:IsVisible() and box:IsVisible(), "a chat view chosen beside the list, the chat stays in its own window")
     ns.store.board.tabs[1].tree = nil
@@ -3120,7 +3158,7 @@ local names = {}
 for index, channel in ipairs(ns.Join.List()) do names[index] = channel.name end
 check(table.concat(names, ", ") == "General, Trade, LocalDefense, LookingForGroup",
     "the game's channels: those the character is in by their number, then those on offer here; not one of its own")
-ns.Menu.Open(W.NewWidget("Frame"), nil)
+ns.Menu.Toggle(W.NewWidget("Frame"), nil)
 local menu, entries = W.menus[#W.menus], {}
 local titled
 for _, item in ipairs(menu) do
@@ -3130,6 +3168,9 @@ local general = entries.General
 check(titled and general and #general == 3 and general[1].text == "The game decides" and general[2].text == "Always in it"
     and general[3].text == "Never in it" and general[1].checked(general[1].data) and not general[3].checked(general[3].data),
     "last in the list on the chat's name, each of the game's channels opens its three choices: the game decides at first")
+check(menu.grid[2] == 3 and #menu % 3 == 0 and menu[2 * #menu / 3 + 1].title == "On every character" and general[3].response == MenuResponse.Refresh,
+    "the game's channels stand in a third column, and joining or leaving one leaves the list open")
+ns.Menu.Close()
 general[3].fn(general[3].data)
 check(calls[1] == "Leave General" and options.presence.General == false and general[3].checked(general[3].data),
     "never in it: left as soon as it is chosen")

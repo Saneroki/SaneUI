@@ -197,8 +197,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 
     A speed is the time a whole fade (out of sight to all there, or back) or a slide takes. A line under one
     that is off is greyed out.
-- **The game's chat channels, the same on every character:** last in the list on the chat's name, under *On
-  every character*, each of the game's channels (as the game names them, in its language: those you are in,
+- **The game's chat channels, the same on every character:** in the last column of the list on the chat's name,
+  under *On every character*, each of the game's channels (as the game names them, in its language: those you are in,
   those on offer where you are, and any you chose for) opens three choices: *The game decides* (at first),
   *Always in it* or *Never in it*. A channel you are always in is joined wherever the game offers it (a city's
   channels only in a city); one you are never in is left whenever the game puts you in it. It acts a while
@@ -217,7 +217,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   taller (up to 6 lines), and the messages move up.
 - **The chat button also shows where you can write:** it opens the line and, with it, the list of the
   chats you can write in, the one you write in marked. A click on the chat's name in the line shows
-  the same list.
+  the same list. Each part of it has its own column: where you write, what the window shows, the game's channels.
+  It stays open while you choose and when the mouse leaves the window; a click outside it, or on the button it
+  came from, closes it.
 - **Links in messages** (an item, a spell, a quest, an achievement): the mouse over one shows its
   tooltip; a click does what it does in the game's chat (the item's window, Shift+click puts the link
   into the line you write in, a player's link opens the player's menu), but only where that opens none of
@@ -228,7 +230,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   name: G for Guild, P for Party, R for Raid, RW for Raid Warning, S for Say, T for a trade channel,
   G for General. Guild and General share the G; their colours differ. A setting, on at first.
 - **Choose what the window shows:** the same list (the chat button, or a click on the chat's name in
-  the line) has, under the chats to write in, a tick for every kind of chat (say, yell, emote,
+  the line) has, beside the chats to write in, a tick for every kind of chat (say, yell, emote,
   whisper, party, raid, instance, guild, officer, creatures, system, addons and the game's notes) and
   for every channel you are in. Untick one and its messages leave the window; tick it and they are
   back, the earlier ones too. Kept between sessions.
@@ -348,6 +350,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   the edit box above everything while you write (`DIALOG`); a frame after it was shown it gets the
   window's strata and a level just above the window's. Strata and level are given back when our window
   goes (unless the game has set its own strata since), and so are the alpha and the mouse of a line at rest.
+  The chat's frame stands as high as the panels of Core's board (`Board.LEVEL` above what the window holds), so
+  on the full screen the messages lie on their panel's see-through plate, not under it, and the line to write in
+  stands over them (`Layout.INPUT_LEVEL`).
 - **No background, clickthrough:** the window is a plain frame that takes no click; it takes only the
   mouse's coming (Core's `Core.Hover`: `SetMouseMotionEnabled`, its `OnEnter`), and the list the wheel. Its
   chrome (the chat button, which takes clicks) is hidden while the mouse is not over the window, so then
@@ -494,7 +499,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   alpha; the fades touch no position: neither knows the other.
 - **The list of chats** (`Channels.lua`, no frames) is built when the label is clicked: `IsInGroup`,
   `IsInRaid`, `IsInGuild`, `C_GuildInfo.IsGuildOfficer`, `GetChannelList`. The menu (`Menu.lua`) is the
-  game's (`MenuUtil.CreateContextMenu`, radio lines). A choice calls the edit box's own `SetChatType`,
+  game's (`MenuUtil.CreateContextMenu`, radio lines) in its grid (`SetGridMode`): the grid runs down each column and
+  on at the top of the next, all equally long, so the shorter ones are filled up with spacers. It stays open: its
+  owner is the window, not the button clicked (the game closes a menu whose owner goes, and the chat button goes
+  with the mouse), its radio lines answer `MenuResponse.Refresh`, and the two buttons that open it say a press on
+  them is theirs (`HandlesGlobalMouseEvent`, as the game's dropdown buttons), so `Menu.Toggle` can close it. A
+  channel joined or left shows under *Write in* the next time the list opens. A choice calls the edit box's own `SetChatType`,
   `SetStickyType`, `SetChannelTarget` and `ChatFrameUtil.ActivateChat`, as the game's friends list
   does for a whisper. The button on the label is a child of the edit box (above it, shown with it);
   no field is written into the edit box.
@@ -754,6 +764,8 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-10-30 — Full screen: the chat lies on its panel's see-through plate, no more under it; the list on the chat's
+  name in columns, open until a click outside it or on its button (Saneroki).
 - 2026-10-25 — Retail: the tab *Group Finder* and its switch stand down (Retail's finder is its own), *Group finder*
   in *Classic windows* opens Retail's, invites are blocked by Retail's own function, *Extend Raid Lock* as Retail's
   raid info offers it; the button *Sane UI* also on the game's newer social window.

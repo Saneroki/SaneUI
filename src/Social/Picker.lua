@@ -125,7 +125,7 @@ function Picker.Take(frame, area)
     button = CreateFrame("Button", nil, frame)
     button:SetSize(Layout.FACE, Layout.FACE)
     button:SetPoint("BOTTOMRIGHT", area or frame, "BOTTOMRIGHT", -Layout.GRIP_ROOM, Layout.INPUT_BOTTOM + (Layout.INPUT_HEIGHT - Layout.FACE) / 2)
-    button:SetFrameLevel(frame:GetFrameLevel() + 10) -- with the line, above the list
+    button:SetFrameLevel(frame:GetFrameLevel() + Layout.INPUT_LEVEL) -- with the line, above the list
     for _, kind in ipairs({ "Normal", "Pushed" }) do
         local art = button:CreateTexture()
         if not art:SetTexture(ART) then art:SetTexture(FALLBACK) end -- false: the file is missing

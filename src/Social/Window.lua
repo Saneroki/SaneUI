@@ -589,7 +589,9 @@ local function Build()
     hover = Core.Hover(frame, { every = 0.2, label = ns.name .. ": mouse",
         enter = function() ns.Guarded(Wake) end, leave = function() ns.Guarded(Left) end })
 
+    -- As high as the panels of Core's board: full, the chat lies on its panel's see-through plate, not under it.
     column = CreateFrame("Frame", nil, frame)
+    column:SetFrameLevel(handle.inside:GetFrameLevel() + Core.Board.LEVEL)
     Seat()
 
     -- Opens and closes the line to write in, in the corner where that line starts and as high as it.
@@ -600,7 +602,8 @@ local function Build()
     write:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
     write:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Down")
     write:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    write:SetScript("OnClick", function(self) ns.Guarded(ns.Input.Toggle, self) end)
+    write:SetScript("OnClick", function() ns.Guarded(ns.Input.Toggle) end)
+    ns.Menu.Button(write)
 
     box = CreateFrame("Frame", nil, column, "WowScrollBoxList")
     box:SetPoint("TOPLEFT", column, "TOPLEFT", Layout.EDGE, -Layout.EDGE)
