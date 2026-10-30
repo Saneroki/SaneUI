@@ -163,7 +163,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
   to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
-  left). **A click on a quest unfolds its objectives, its rewards and its story under it,** one quest's at a time, each
+  left). **A click on a quest unfolds its story, its objectives and its rewards under it,** one quest's at a time, each
   under its heading in gold, on a dark panel with a thin gold line down its side; a click on it or on that text folds
   them away again. **Its rewards stand as big icons:** experience and gold in words, each thing with its name beside
   its icon, two side by side where they fit, those to choose from under them. The mouse on one shows the game's tooltip,
@@ -176,9 +176,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   **On the screen's right half the log mirrors itself:** its title and words right aligned, the items at the left.
   The
   right button: *Quest Details* (its text, as a click unfolds it), *Show Map* (the map at its objective), *Track*, *Share* and *Abandon*. A click on a quest's pin on
-  the map shows its text too. A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out,
-  each with its giver's mark (the yellow exclamation mark, grey for a quest too low, the red question mark for one
-  for later) and a red X that takes it out again; below what the data knows of it: why it is not for you yet,
+  the map shows its text too. **A click on a quest giver's exclamation mark on the map adds its quests as ghosts:** on
+  top, under *Not in your log*, see through, the exclamation mark and the title red, so they never pass for quests you
+  took. A red X or the right button takes one out at once, the red X over them all of them, and one you take from its
+  giver goes by itself. Below a ghost what the data knows of it: why it is not for you yet,
   its level, who gives and takes it, its objectives and rewards, as big icons too. A click on one moves the map to its giver, a double
   click puts the map pin there.
   They stay until the next `/reload`.
@@ -1050,6 +1051,8 @@ Tests: `dev/tests/navigation.lua`.
   The button *Sane UI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
   right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
   the pins on what the game tells, and lays nothing out on the window's way.
+- **2026-10-30, ghosts:** a quest's story comes first in its text; the quests of a giver's exclamation mark stand in the log
+  as see-through ghosts, the mark and the title red, out by the red X, the right button or the X over them all.
 - **2026-10-30, an open quest's text and rewards:** its text in rows of the list under headings, on a dark panel; its
   rewards as big icons with their names and the game's tooltip, currencies and spells too, a preview's as well; a
   quest's gold shows at last (`Core.Coins`).

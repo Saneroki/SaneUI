@@ -146,11 +146,13 @@ The bigger changes of each version, newest first.
   you to, so the golden line on the map leads you there.
 - Quest log: sorted by proximity, nearest first; click its title
   to sort by level, zone or type, click beside it to hide the list.
-  A click on a quest unfolds its objectives, rewards and story under
+  A click on a quest unfolds its story, objectives and rewards under
   it, a double click puts the map pin on it, so the golden line leads
   you there. An open quest reads like a page: headings in gold, its
   gold and experience, its rewards as big icons, the mouse on one for
-  its tooltip. Quest
+  its tooltip. A click on an exclamation mark on the map adds its
+  quests on top as red, see-through ghosts, not in your log: their red
+  X or a right click takes them out. Quest
   items stand beside their quests, on the right half of the screen
   it mirrors.
   Pinned, it takes the place of the game's quest tracker: in its

@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 771 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 777 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Combat: your breath over your health bar, in the game's bubbles (Saneroki, 2026-10-30)
@@ -73,6 +73,20 @@ in Core's TOC, a new saved variable).
 - **Interface lab:** the scene `auctionscan`; a flipbook's grid is taken (`dev/uilab/lab/anim.lua`).
 - **Tests:** `dev/tests/data.lua`, the scan start to end, the day's merge, refusals, gear and pets, a house of a wrong shape.
 - **Docs:** `Doc/guides/data.md` (*The full auction scan*), `Doc/ideas/Economy.md`, `Doc/ideas/Data.md`, `Doc/ideas/Data-build.md`.
+
+### Navigation: a quest's story first; ghosts from the map's exclamation marks (Saneroki, 2026-10-30)
+Saneroki: the description above the objectives, as the first part of a quest; a click on an exclamation mark on the map adds
+its quests to the log as see-through ghosts, the exclamation mark and the title red, so he knows they are not in his log;
+quick to take out again. A `/reload` takes it in.
+- **`src/Navigation/QuestLog.lua`:** `Story`: description, objectives, rewards. A preview's row: `QuestLog.GHOST` (0.7) of its
+  mark and title, both `Pins.RED`; `Mark` always the game's exclamation mark, whatever its giver's pin shows, so `row.standing`
+  and `MARKS` are gone (why it is not for you yet stays in its text).
+- **Taken out:** the red X, now the right button too (no menu on a ghost's row; its text keeps the menu), and a red X on
+  *Not in your log* for all of them (`row.ghosts`, `QuestLog.Unpreview()` with no quest, `Gone`). `Read`: a ghost taken from its
+  giver meanwhile goes by itself, no quest twice.
+- **Interface lab:** two ghosts in the scene `questlog`.
+- **Tests:** `dev/tests/navigation.lua`, the order, the ghost's look, the right button, the X over them, one taken meanwhile.
+- **Docs:** `src/Navigation/README.md`, `Doc/agent/navigation.md`, `Doc/ideas/Navigation.md`, `Doc/guides/ui-lab.md`.
 
 ### Navigation: an open quest's text under headings, its rewards as big icons, its gold (Saneroki, 2026-10-30)
 Saneroki: the quest text and rewards formatted nicely, the reward icons big, to mouse over them for their tooltip. A `/reload`

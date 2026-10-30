@@ -34,14 +34,16 @@ local _, ns = ...
 --                    it: its area on the map (Areas.lua). The item it wants used, as the game's tracker shows
 --                    one, stands at the far end of its row (The quests' items)
 --      under it      a quest's text, by a click on it, from its menu or by a click on its pin on the map, one quest's
---                    at a time, on a dark panel: what it asks, what it gives and its story, each under its heading in
+--                    at a time, on a dark panel: its story, what it asks and what it gives, each under its heading in
 --                    gold. What it gives: experience and coin in words, its things as big icons with their names, two
 --                    side by side where they fit (The rewards). A click there or on the quest folds it away
---      previews      quests of Core's data a click on their giver's pin showed (QuestLog.Preview): on top,
---                    under Not in your log, grey, each with its giver's mark and the game's red X that takes
---                    it out again; a click unfolds what the data knows of it (why it is not for you yet, its level, who
---                    gives and takes it, what it asks first, its objectives, its rewards) and moves the map to
---                    its giver, a double click puts the game's map pin there. Kept until the next /reload
+--      previews      ghosts: quests of Core's data a click on their giver's exclamation mark on the map added, not in
+--                    the game's log (QuestLog.Preview): on top, under Not in your log, see through, the exclamation mark
+--                    and the title red (Saneroki 2026-10-30). The game's red X or the right button takes one out, the X
+--                    on Not in your log all of them; one taken from its giver meanwhile goes by itself. A click unfolds
+--                    what the data knows of it (why it is not for you yet, its level, who gives and takes it, what it
+--                    asks first, its objectives, its rewards) and moves the map to its giver, a double click puts the
+--                    game's map pin there. Kept until the next /reload
 --
 --  It reads from the screen's edge inwards (Saneroki 2026-10-30): on the screen's left half its words at the
 --  left and the items at the right; on the right half (or docked at its right edge) mirrored, its title and words
@@ -87,6 +89,7 @@ QuestLog.ITEM = 24        -- a quest's item's button, and the height of a row wi
 QuestLog.OVER = 30        -- the items' frame level above the log's
 QuestLog.INDENT = 10      -- an objective's words from its quest's
 QuestLog.MARK = 16        -- a preview's mark at its row's start; its words after it
+QuestLog.GHOST = 0.7      -- a preview's mark and title: how much of them shows, a ghost of a quest
 QuestLog.ROOM = 6         -- under a quest's words
 QuestLog.SECTION = 24     -- a heading in a quest's text, with the room over it
 QuestLog.INSET = 10       -- a quest's text from the sides of its panel
@@ -120,6 +123,7 @@ QuestLog.TEXT = {
     pin = "Pin",
     pinTip = "Keeps the quest log on the screen while the map is small too, at a place of its own, without its background, in place of the game's quest tracker. Click again: only over the full map.",
     remove = "Take it out of the log",
+    removeAll = "Take them all out of the log",
     offered = "You can take this quest.",
     level = "Level %d",
     givenBy = "Given by: %s",
@@ -167,6 +171,13 @@ end
 local function Previewed(quest)
     for index, each in ipairs(previews) do if each == quest then return index end end
     return nil
+end
+
+-- One of them out of the list, its text with it.
+local function Gone(quest)
+    table.remove(previews, Previewed(quest))
+    givers[quest] = nil
+    if chosen == quest then chosen, open = nil, false end
 end
 
 -------------------------------------------------------------------------------
@@ -295,15 +306,20 @@ end
 local function Read()
     wipe(rows)
     opened, missing = nil, false
+    -- A ghost taken from its giver meanwhile stands in the log itself now.
+    for index = #previews, 1, -1 do
+        local at = Core.Ask(C_QuestLog.GetLogIndexForQuestID, previews[index])
+        if at and at > 0 then Gone(previews[index]) end
+    end
     if chosen and not Previewed(chosen) then
         local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, chosen)
         if not index or index <= 0 then chosen, open = nil, false end
     end
     if #previews > 0 then
-        rows[#rows + 1] = { kind = "header", text = QuestLog.TEXT.previews }
+        rows[#rows + 1] = { kind = "header", text = QuestLog.TEXT.previews, ghosts = true }
         for _, quest in ipairs(previews) do
             rows[#rows + 1] = { kind = "preview", quest = quest, text = QUESTS:Get(quest, "name") or ("#" .. quest),
-                                level = QUESTS:Get(quest, "level"), standing = (ns.Pins.Standing(QUESTS:Get(quest), quest)) }
+                                level = QUESTS:Get(quest, "level") }
             if open and quest == chosen then AddText(quest) end
         end
     end
@@ -502,7 +518,7 @@ end
 
 local function Colour(row)
     if row.kind == "header" or row.kind == "section" then return 1, 0.82, 0 end
-    if row.kind == "preview" then return 0.55, 0.55, 0.55 end
+    if row.kind == "preview" then return unpack(ns.Pins.RED) end
     if row.part then return 0.9, 0.9, 0.9 end
     if row.kind == "objective" then
         if row.done then return 0.5, 0.5, 0.5 end
@@ -525,7 +541,10 @@ local function Clicked(element, mouse)
         return QuestLog.Refresh()
     end
     local quest = row.quest
-    if mouse == "RightButton" then return Menu(element, quest) end
+    if mouse == "RightButton" then
+        if row.kind == "preview" then return QuestLog.Unpreview(quest) end
+        return Menu(element, quest)
+    end
     if row.part then return Unfold(quest) end
     if row.kind == "preview" then return Pressed(quest) end
     if IsModifiedClick("CHATLINK") then
@@ -548,15 +567,11 @@ local function Left()
     ns.Areas.Hover(nil)
 end
 
--- A preview's mark at its row's start, as its giver's pin on the map has it: the yellow exclamation mark, grey for a
--- quest too low, the red question mark for one for later.
-local MARKS = { offered = "offer", low = "grey", later = "later" }
-local function Mark(icon, row)
-    local standing = row.standing
-    icon:SetAtlas(ns.Pins.ICONS[MARKS[standing] or "done"])
-    icon:SetDesaturated(standing == "low")
-    local red = standing == "later" and ns.Pins.RED
-    if red then icon:SetVertexColor(red[1], red[2], red[3], 1) else icon:SetVertexColor(1, 1, 1, 1) end
+-- A preview's mark at its row's start: the game's exclamation mark in red, whatever its giver's pin shows on the map.
+local function Mark(icon)
+    local red = ns.Pins.RED
+    icon:SetAtlas(ns.Pins.ICONS.offer)
+    icon:SetVertexColor(red[1], red[2], red[3], 1)
     icon:Show()
 end
 
@@ -686,6 +701,7 @@ local function Draw(element, row)
     if not element.text then
         element.icon = element:CreateTexture(nil, "ARTWORK")
         element.icon:SetSize(QuestLog.MARK, QuestLog.MARK)
+        element.icon:SetAlpha(QuestLog.GHOST)
         element.text = element:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         element.text:SetJustifyH("LEFT")
         element.text:SetWordWrap(false)
@@ -701,18 +717,19 @@ local function Draw(element, row)
         element.rule = element:CreateTexture(nil, "BORDER")
         element.rule:SetWidth(2)
         element.rule:SetColorTexture(1, 0.82, 0, 0.5)
-        -- A preview's red X: takes it out of the log again.
+        -- A preview's red X: takes it out of the log again; the one on Not in your log all of them.
         element.remove = CreateFrame("Button", nil, element)
         element.remove:SetSize(16, 16)
         element.remove:SetNormalAtlas(QuestLog.REMOVE)
         element.remove:SetHighlightAtlas(QuestLog.REMOVE, "ADD")
         element.remove:SetScript("OnClick", ns.Guard(function(self)
             local row = self:GetParent().row
-            if row and row.kind == "preview" then QuestLog.Unpreview(row.quest) end
+            if row then QuestLog.Unpreview(row.quest) end
         end))
         element.remove:SetScript("OnEnter", ns.Guard(function(self)
+            local row = self:GetParent().row
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(QuestLog.TEXT.remove, 1, 1, 1)
+            GameTooltip:SetText(row and row.ghosts and QuestLog.TEXT.removeAll or QuestLog.TEXT.remove, 1, 1, 1)
             GameTooltip:Show()
         end))
         element.remove:SetScript("OnLeave", GameTooltip_Hide)
@@ -733,7 +750,9 @@ local function Draw(element, row)
     state:SetText("")
     mark:Hide()
     element.icon:Hide()
-    element.remove:SetShown(row.kind == "preview")
+    element.remove:SetShown(row.kind == "preview" or row.ghosts)
+    element.remove:ClearAllPoints()
+    element.remove:SetPoint(far, -sign * 2, 0)
     element.light:SetShown(not row.part)
     element.back:SetShown(row.part)
     element.back:SetColorTexture(0, 0, 0, full and QuestLog.PANEL or QuestLog.PANEL_SMALL)
@@ -755,11 +774,9 @@ local function Draw(element, row)
         end
         text:SetText(row.text or "")
     elseif row.kind == "preview" then
-        Mark(element.icon, row)
+        Mark(element.icon)
         element.icon:ClearAllPoints()
         element.icon:SetPoint(near, 0, 0)
-        element.remove:ClearAllPoints()
-        element.remove:SetPoint(far, -sign * 2, 0)
         element.left = QuestLog.MARK + 4
         text:SetFontObject("GameFontHighlight")
         text:SetPoint(near, sign * element.left, 0)
@@ -802,6 +819,7 @@ local function Draw(element, row)
     text:SetWordWrap(row.kind == "text")
     text:SetSpacing(row.kind == "text" and 2 or 0)
     text:SetTextColor(Colour(row))
+    text:SetAlpha(row.kind == "preview" and QuestLog.GHOST or 1)
     Reach(element)
     if row.quest and row.quest == chosen and (row.kind == "quest" or row.kind == "preview") then
         element.light:SetColorTexture(1, 0.82, 0, 0.15)
@@ -959,12 +977,13 @@ local function Others(things, quest)
     end
 end
 
--- A quest's text from the game's log: what it asks, what it gives, its story.
+-- A quest's text from the game's log: its story, what it asks, what it gives.
 local function Story(quest)
     local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, quest)
     local description, objectives
     if index and rawget(_G, "GetQuestLogQuestText") then description, objectives = GetQuestLogQuestText(index) end
     local parts = {}
+    Section(parts, QuestLog.TEXT.description, description)
     Section(parts, QuestLog.TEXT.objectives, objectives)
     local things, choices = {}, {}
     Things(things, quest, "reward", "GetNumQuestLogRewards", "GetQuestLogRewardInfo")
@@ -972,7 +991,6 @@ local function Story(quest)
     Things(choices, quest, "choice", "GetNumQuestLogChoices", "GetQuestLogChoiceInfo")
     Given(parts, Core.Ask(rawget(_G, "GetQuestLogRewardXP"), quest), Core.Ask(rawget(_G, "GetQuestLogRewardMoney"), quest),
           things, choices)
-    Section(parts, QuestLog.TEXT.description, description)
     return parts
 end
 
@@ -1029,13 +1047,11 @@ function QuestLog.Preview(quests, map, x, y)
     Reveal()
 end
 
--- A preview taken out of the log again (its red X).
+-- A preview taken out of the log again (its red X, the right button), or all of them (none named: the X over them).
 function QuestLog.Unpreview(quest)
-    local at = Previewed(quest)
-    if not at then return end
-    table.remove(previews, at)
-    givers[quest] = nil
-    if chosen == quest then chosen, open = nil, false end
+    if quest and not Previewed(quest) then return end
+    if quest then Gone(quest) end
+    while not quest and previews[1] do Gone(previews[1]) end
     QuestLog.Refresh()
 end
 

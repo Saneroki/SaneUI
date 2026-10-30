@@ -374,6 +374,8 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
   a text's height, `Reveal`); no panel below the list. A reward is a cell (`Rewards`, `RewardCell`, `RewardTip`: the
   game's tooltip by the quest's ID), a plain button of its row; `Core.Coins` for its gold. Lab scene `questlog`. It waits `Canvas.DOUBLE` for a second click (`Pressed`, no `OnDoubleClick`): two are
   the map pin (`Pin`, `PinView.Drop`), its text as it was.
+- **Ghosts** (previews, `QuestLog.Preview`): `QuestLog.GHOST` of their mark and title, in `Pins.RED`; out by the red X, the right
+  button, the X on *Not in your log* (`row.ghosts`, `Unpreview()`, `Gone`); `Read` drops one that is in the log by now.
 - **Folded** (`QuestLog.Fold`, `store.questLogFolded`, `Body`; Core's `barClick`): only the title bar. Zones: not the
   game's `isCollapsed`; a zone folded by its + over the full map is ours (`store.questLogFolds`).
 - **Rows:** no mark on a quest (a preview keeps its giver's), no tick; `Margin`: pinned closer to the screen's edge.
