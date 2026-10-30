@@ -69,10 +69,11 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Hearthstone | on | When the guide's step says to hearth, the key hearths once nothing is to be looted, talked to, picked up or fought |
 | Quest items | on | When the key finds nothing wanted around you, it uses one item: the guide's step's first, then a quest item of your quest log; the first in your bags that is ready |
 | *Quest givers:* Take the guide's quests | on | The quests the steps at hand take (and the step after them) are accepted as the quest giver offers them. Hold Shift during a talk and the rest of it is yours |
-| Hand in the guide's quests | on | The quests the steps at hand hand in are handed in, with the reward the guide names, else the only one |
+| Hand in the guide's quests | on | The quests the steps at hand hand in are handed in |
+| Choose quest rewards | on | With several rewards to choose from: the biggest upgrade for your gear (`Core.Upgrade`, the most item levels), else the reward the guide names, else the one worth the most: what a vendor pays, or what the auction house brings after its cut where the thing does not bind when picked up and you saw a price (the module Tooltips keeps those). Off: the reward the guide names; with none named the choice is yours |
 | Choose the guide's talk | on | Where a step names a gossip option, it is chosen |
-| Close the talk when it is done | on | After a quest is taken or handed in the key leaves that NPC alone, and a talk that comes up with nothing for you closes by itself (*The key*). A talk with quests your guide does not know stays open |
-| *On the way:* Take all loot | on | Sets the module Loot to take everything at once (its *Everything* on, its *Always show upgrades* off) and answers the game's question on a thing that binds when picked up. Set once: what you change on Loot's page afterwards stays; this switch off puts the rest back. Things locked to a group's roll are not taken |
+| Close the talk when it is done | on | After a quest is taken or handed in the key leaves that NPC alone, unless your guide still wants a quest there, and a talk that comes up with nothing for you closes by itself (*The key*). Quests your guide does not know are ignored: never taken, and right after a quest done there the talk closes over them. A talk you open yourself after that stays open for them |
+| *On the way:* Take all loot | on | Sets the module Loot to take everything at once (its *Everything* on) and answers the game's question on a thing that binds when picked up. Loot's *Always show upgrades* stays as you have it, so an upgrade still waits in its window, the rest is taken. Set once: what you change on Loot's page afterwards stays; this switch off puts it back. Things locked to a group's roll are not taken |
 | Equip and delete without asking | on | The game's questions before gear binds to you or loses its refund, and before an item is destroyed whatever its quality, are answered as their own Yes would. Destroying is a call the game keeps for a click of the player's: where it refuses, its question comes up with the word it wants typed in, and it is not tried again |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
@@ -265,11 +266,13 @@ choice is made by those, in a fight too (`Key.lua`):
   after a window closed with no NPC left (the game closes the gossip window for a quest's, which is the same talk). An
   NPC you did a quest at, or whose talk had nothing for your guide,
   is one you are through with (`Quests.Left`): the key leaves it alone (the attribute `left`) until the interact key
-  picks something else, the quest log changes after the quest has settled, or `Quests.LEFT` seconds are over; right
-  after a quest, an NPC your guide still names may be talked to once more, for a chain at the same NPC. A talk that
+  picks something else, the quest log changes after the quest has settled, or `Quests.LEFT` seconds are over. An NPC
+  with two of the guide's quests: both are taken, by the talk that opens again or by the next press (its list showed
+  more, so the key is not through with it). After a hand-in, while the guide still wants a quest to take or a finished
+  one handed in (or names the NPC), the key may talk once more: the next quest of a chain may be there. A talk that
   comes up with nothing to do is closed a frame later (`Bye`): at once where nothing can be chosen (the goodbye
-  screen), and within `Quests.AFTER` seconds of a quest done there whatever else the NPC offers, unless your guide
-  still names it. A completed quest or one on offer that the guide does not know keeps a talk open.
+  screen), and once within `Quests.AFTER` seconds of a quest done there whatever else the NPC offers, a quest the guide
+  does not know included. Only the guide's quests are ever taken.
 - **Nothing else is automatic:** each press does one thing, the player's.
 - **`/sane key`** says in chat what the key sees now: its state and what a press does, the NPC or thing in front of
   you and your target as the game judges them (a foe or not, friendly, helpable), whether it is wanted, the item for
@@ -288,6 +291,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
 | `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key and how far it looks, Click-to-Move) |
+| `Rewards.lua` | Which reward to take where a quest offers a choice (`Rewards.Best`) |
 | `Quests.lua` | What a quest giver does for your guide: takes and hands in its quests, closes a talk that is done, the NPC you are through with |
 | `Errands.lua` | What would hold you up: Loot's switches set for all loot, the game's questions on binding and destroying answered (a hook on `StaticPopup_Show`) |
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |

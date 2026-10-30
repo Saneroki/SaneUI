@@ -5,11 +5,12 @@ local _, ns = ...
 --  What would hold you up on the way, done for you (Saneroki, 2026-10-30), each
 --  with a switch of its own, on at first:
 --    Take all loot    the module Loot set to take everything at once (its
---                     switches Everything on, Always show upgrades off, which
---                     would keep an upgrade waiting in its window). Set once:
---                     what you change on Loot's page after that stays, and this
---                     switch off puts back what you did not change. The game's
---                     question on a thing that binds when picked up is answered.
+--                     switch Everything; Always show upgrades stays yours, so
+--                     an upgrade still waits in its window, the rest is taken).
+--                     Set once: what you change on Loot's page after that
+--                     stays, and this switch off puts it back if you did not
+--                     change it. The game's question on a thing that binds
+--                     when picked up is answered.
 --    Equip and delete without asking
 --                     the game's questions before gear binds to you or ends a
 --                     refund, and before an item is destroyed, answered as its
@@ -25,7 +26,7 @@ ns.Errands = Errands
 Errands.CHECK = 0.3   -- seconds after an item was destroyed before the cursor shows whether the game let it
 
 local LOOT = "Loot"   -- the module whose switches Take all loot sets
-local LENT = { takeAll = true, showUpgrades = false }
+local LENT = { takeAll = true }
 -- The game's questions, each with the switch that answers it.
 local ASKS = {
     LOOT_BIND = "lootAll",

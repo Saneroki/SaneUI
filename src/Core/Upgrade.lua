@@ -1,22 +1,21 @@
-local _, ns = ...
+local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Upgrade
---  Whether a thing of the loot would make the character better (Saneroki,
---  2026-10-29: a green arrow on it, and the switch Always show upgrades): gear
---  the character can wear now, by the game's own word (C_PlayerInfo.CanUseItem)
+--  Sane UI - Core - Upgrade
+--  Whether an item would make the character better (Saneroki, 2026-10-29: a
+--  green arrow on it, and Loot's switch Always show upgrades; 2026-10-30: the
+--  arrow on the items in the bags too, Speed Leveling's rewards): gear the
+--  character can wear now, by the game's own word (C_PlayerInfo.CanUseItem)
 --  and its level, and in its place either nothing is worn, or what is worn has
 --  a lower item level (of two places of a kind, rings and trinkets, the weaker
 --  one). Never armour of a lighter kind than the one worn there (cloth over
 --  mail), nor an off hand while a two-handed weapon is held. Shirts, tabards
 --  and bags are no gear here.
 --
---      Upgrade.Is(line)   "empty" (nothing worn there) or "better" (a higher item level); nil: no upgrade
+--      Core.Upgrade(link, id)   "empty" (nothing worn there) or "better" (a higher item level), and the item levels
+--                               it brings; nil: no upgrade. id: the item's, read from the link without it
 -------------------------------------------------------------------------------
-local Core = SaneUI.Core
 local Plain = Core.Plain
-local Upgrade = {}
-ns.Upgrade = Upgrade
 
 local ARMOR = 4                                 -- the game's item class of armour (Enum.ItemClass)
 local CLOTH, PLATE = 1, 4                       -- its kinds by weight, cloth to plate (Enum.ItemArmorSubclass)
@@ -60,9 +59,9 @@ local function Facts(item)
 end
 
 -- Whether the character can wear it now: the game's word on the item, and the level it asks.
-local function Wearable(line, facts)
+local function Wearable(id, facts)
     local player = rawget(_G, "C_PlayerInfo")
-    if line.id and player and player.CanUseItem and Core.Ask(player.CanUseItem, line.id) == false then return false end
+    if id and player and player.CanUseItem and Core.Ask(player.CanUseItem, id) == false then return false end
     local level = Plain(Core.Ask(UnitLevel, "player"))
     return not (type(level) == "number" and facts.needs > level)
 end
@@ -74,11 +73,11 @@ local function Weight(facts)
     return nil
 end
 
-function Upgrade.Is(line)
-    if not line or line.kind ~= "item" or not line.link then return nil end
-    local facts = Facts(line.link)
+function Core.Upgrade(link, id)
+    if type(link) ~= "string" then return nil end
+    local facts = Facts(link)
     local places = facts and PLACES[facts.where]
-    if not places or not Wearable(line, facts) then return nil end
+    if not places or not Wearable(id or tonumber(link:match("item:(%d+)")), facts) then return nil end
     local weakest
     for _, name in ipairs(places) do
         local place = Place(name)
@@ -88,11 +87,11 @@ function Upgrade.Is(line)
             if held and TWO_HANDS[held.where] then return nil end -- both hands hold one weapon
         end
         local worn = Facts(Core.Ask(GetInventoryItemLink, "player", place))
-        if not worn then return "empty" end
+        if not worn then return "empty", facts.level end
         if not weakest or worn.level < weakest.level then weakest = worn end
     end
     local mine, theirs = Weight(facts), Weight(weakest)
     if mine and theirs and mine < theirs then return nil end -- lighter armour than worn
-    if facts.level > weakest.level then return "better" end
+    if facts.level > weakest.level then return "better", facts.level - weakest.level end
     return nil
 end

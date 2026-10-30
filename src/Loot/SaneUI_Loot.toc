@@ -13,8 +13,6 @@
 Loot.lua
 # What the open loot holds, read from the game into plain lines; what is taken at once
 Slots.lua
-# Whether a thing of the loot would make the character better: wearable now, better than what is worn
-Upgrade.lua
 # The game's sentences about loot (received, rolled, coins) read back into their parts
 Chat.lua
 # The game's own loot window and roll frames out of sight while ours stand in, and back

@@ -770,6 +770,24 @@ for _, widget in ipairs(W.frames) do
     if widget._kind == "FontString" and widget._text == 20 or widget._text == "20" then levelText = widget end
 end
 check(levelText, "the item level of gear on its button")
+-- The green arrow on gear that would make the character better, always; what you wear changes it.
+local function Arrows()
+    local count = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._atlas == "bags-greenarrow" and widget._shown then count = count + 1 end
+    end
+    return count
+end
+local upgrade = Core.Upgrade
+check(Arrows() == 0, "no upgrade: no arrow")
+Core.Upgrade = function(_, item) if item == 2001 then return "better", 5 end end
+W.Fire("PLAYER_EQUIPMENT_CHANGED")
+W.Wait(0)
+check(Arrows() == 1, "an upgrade in the bags: its arrow, drawn anew as what you wear changes")
+Core.Upgrade = upgrade
+W.Fire("PLAYER_EQUIPMENT_CHANGED")
+W.Wait(0)
+check(Arrows() == 0, "worn something better: gone")
 local trade = HeadNamed("Trade Goods")
 check(trade and trade.number._text == "(1)" and drawn[Cells.Button(0, 2)].count == 27, "the two stacks of cloth as one cell of 27")
 

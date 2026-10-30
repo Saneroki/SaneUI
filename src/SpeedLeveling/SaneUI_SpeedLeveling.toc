@@ -28,6 +28,8 @@ Wanted.lua
 Items.lua
 # The key: loot, talk, pick up, fight or find, chosen by the game's secure ways at each press
 Key.lua
+# Which reward to take where a quest offers a choice
+Rewards.lua
 # What a quest giver does for your guide: takes and hands in its quests, closes a talk that is done
 Quests.lua
 # What would hold you up on the way: all loot taken, the game's questions answered

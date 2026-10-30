@@ -292,6 +292,7 @@ local EVENTS = {
     QUEST_ACCEPTED = Soon, QUEST_REMOVED = Soon, MERCHANT_SHOW = Soon, MERCHANT_CLOSED = Soon,
     MAIL_SHOW = Soon, MAIL_CLOSED = Soon, TRADE_SHOW = Soon, TRADE_CLOSED = Soon,
     AUCTION_HOUSE_SHOW = Soon, AUCTION_HOUSE_CLOSED = Soon, EQUIPMENT_SETS_CHANGED = Soon,
+    PLAYER_EQUIPMENT_CHANGED = Soon, -- what is an upgrade changed
     BANKFRAME_OPENED = Soon, BANKFRAME_CLOSED = Soon,
     ITEM_LOCK_CHANGED = Locked, GET_ITEM_INFO_RECEIVED = Arrived,
     PLAYER_LEVEL_UP = function() Contents.Leveled(); Soon() end,

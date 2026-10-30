@@ -669,6 +669,130 @@ units.npc, units.softinteract = nil, nil
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "Creature-0-1-0-1-889-01", nil)
 header:SetAttribute("state-mode", "find")
 
+-- Two of the guide's quests at one NPC: both taken, the key not through with it before; one it does not know ignored.
+do
+    local quests = ns.Guide.Quests
+    local wanted = { take = { [40] = true, [42] = true }, handin = {}, gossip = {} }
+    ns.Guide.Quests = function() return wanted end
+    local accepted, shownQuest = {}, 40
+    GetQuestID, AcceptQuest = function() return shownQuest end, function() accepted[#accepted + 1] = shownQuest end
+    local talker = "Creature-0-1-0-1-890-01"
+    units.npc, units.softinteract = { name = "Two Quests", guid = talker }, { name = "Two Quests", guid = talker }
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, talker)
+    header:SetAttribute("state-mode", "near")
+    gossip.active, gossip.options, gossip.available = {}, {}, { { questID = 40 }, { questID = 42 }, { questID = 99 } }
+    gossip.chosenAvailable = nil
+    W.Fire("GOSSIP_SHOW")
+    check(gossip.chosenAvailable == 40, "two of the guide's quests: the first")
+    W.Fire("QUEST_DETAIL")
+    wanted.take[40] = nil
+    check(accepted[1] == 40 and header:GetAttribute("left") == false and overrides.E == "INTERACTTARGET",
+        "taken: the key is not through with the NPC, the next press talks")
+    gossip.available = { { questID = 42 }, { questID = 99 } }
+    W.Fire("GOSSIP_SHOW")
+    check(gossip.chosenAvailable == 42, "the talk again: the second")
+    shownQuest = 42
+    W.Fire("QUEST_DETAIL")
+    wanted.take[42] = nil
+    check(accepted[2] == 42 and header:GetAttribute("left") == true, "both taken: through with it")
+    local shut = closed
+    gossip.available = { { questID = 99 } }
+    W.Fire("GOSSIP_SHOW")
+    W.Wait(0.1)
+    check(gossip.chosenAvailable == 42 and closed == shut + 1, "a quest the guide does not know, right after: ignored, closed")
+    W.Fire("GOSSIP_SHOW")
+    W.Wait(0.1)
+    check(closed == shut + 1, "a talk you open after that stays open for it")
+    -- A quest offered alone that the guide does not know.
+    local closedQuest = 0
+    CloseQuest = function() closedQuest = closedQuest + 1 end
+    wanted.take[43] = true
+    shownQuest = 43
+    W.Fire("QUEST_DETAIL")
+    wanted.take[43] = nil
+    shownQuest = 99
+    W.Fire("QUEST_DETAIL")
+    W.Wait(0.1)
+    check(#accepted == 3 and accepted[3] == 43 and closedQuest == 1, "offered right after a quest: never taken, closed")
+    W.Fire("QUEST_DETAIL")
+    W.Wait(0.1)
+    check(#accepted == 3 and closedQuest == 1, "offered in a talk of your own: never taken, open")
+    -- A hand-in that may open the next quest there: while the guide wants one, the key talks once more.
+    wanted.take[44] = true
+    local next = "Creature-0-1-0-1-891-01"
+    units.npc = { name = "Two Quests", guid = next }
+    units.softinteract = units.npc
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", talker, next)
+    GetNumQuestChoices, GetQuestReward = function() return 0 end, function() end
+    wanted.handin[41] = true
+    shownQuest = 41
+    W.Fire("QUEST_COMPLETE")
+    check(header:GetAttribute("left") == false, "the guide still wants a quest: the key may talk again")
+    wanted.take[44], wanted.handin[41] = nil, nil
+    ns.Key.Refresh()
+    check(header:GetAttribute("left") == true, "it wants none: the key leaves it alone")
+    ns.Quests.Forget()
+    ns.Guide.Quests = quests
+    units.npc, units.softinteract = nil, nil
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", next, nil)
+    header:SetAttribute("state-mode", "find")
+    GetQuestID, AcceptQuest, CloseQuest, GetNumQuestChoices, GetQuestReward = nil, nil, nil, nil, nil
+    gossip.available, gossip.chosenAvailable = {}, nil
+end
+
+-- The rewards: the biggest upgrade, else the guide's, else the one worth the most.
+do
+    local quests, upgrade, info = ns.Guide.Quests, Core.Upgrade, C_Item.GetItemInfo
+    local wanted = { take = {}, handin = { [41] = true }, gossip = {} }
+    ns.Guide.Quests = function() return wanted end
+    units.npc = { name = "Reward Giver", guid = "Creature-0-1-0-1-892-01" }
+    local links = { "item:1:x", "item:2:x", "item:3:x" }
+    local items = { [links[1]] = { 100, 1 }, [links[2]] = { 300, 1 }, [links[3]] = { 200, 2 } }
+    local gains, picked = {}, nil
+    Core.Upgrade = function(link) if gains[link] then return "better", gains[link] end end
+    C_Item.GetItemInfo = function(link)
+        local item = items[link]
+        if item then return "Thing", link, 1, 1, 1, "", "", 1, "", 1, item[1], 1, 1, item[2] end
+    end
+    GetQuestID, GetNumQuestChoices = function() return 41 end, function() return 3 end
+    GetQuestReward = function(index) picked = index end
+    GetQuestItemLink = function(_, index) return links[index] end
+    GetQuestItemInfo = function() return "Thing", 1, 1 end
+    gains[links[2]], gains[links[3]] = 5, 9
+    W.Fire("QUEST_COMPLETE")
+    check(picked == 3, "the biggest upgrade")
+    gains[links[2]], gains[links[3]], picked = nil, nil, nil
+    wanted.handin[41] = 1
+    W.Fire("QUEST_COMPLETE")
+    check(picked == 1, "no upgrade: the reward the guide names")
+    wanted.handin[41], picked = true, nil
+    W.Fire("QUEST_COMPLETE")
+    check(picked == 2, "none named: the one a vendor pays the most for")
+    Core.Store("Tooltips").prices = { [2] = 9000, [3] = 1000 }
+    picked = nil
+    W.Fire("QUEST_COMPLETE")
+    check(picked == 3, "or the auction house, for what can go there; what binds when picked up cannot")
+    Core.Store("Tooltips").prices = nil
+    items[links[2]], picked = nil, nil
+    W.Fire("QUEST_COMPLETE")
+    check(picked == nil, "the game does not know one yet: not yet")
+    items[links[2]] = { 300, 1 }
+    W.Wait(ns.Quests.WAIT)
+    check(picked == 2, "then it does: chosen")
+    Core.Set(ns.name, "rewards", false)
+    picked = nil
+    W.Fire("QUEST_COMPLETE")
+    check(picked == nil, "Choose quest rewards off: yours")
+    wanted.handin[41] = 3
+    W.Fire("QUEST_COMPLETE")
+    check(picked == 3, "or the one the guide names")
+    Core.Set(ns.name, "rewards", true)
+    ns.Guide.Quests, Core.Upgrade, C_Item.GetItemInfo = quests, upgrade, info
+    GetQuestID, GetNumQuestChoices, GetQuestReward, GetQuestItemLink, GetQuestItemInfo = nil, nil, nil, nil, nil
+    units.npc = nil
+    ns.Quests.Forget()
+end
+
 -- Shift seen once in a talk: the rest of it is yours, let go or not, until the talk is over.
 do
     local Quests, did = ns.Quests, {}
@@ -749,13 +873,13 @@ end
 lootOptions.takeAll, lootOptions.showUpgrades = false, true
 ns.options.lootLent = {}
 ns.Errands.Update()
-check(lootOptions.takeAll == true and lootOptions.showUpgrades == false, "Take all loot: Everything on, upgrades not held back")
-lootOptions.showUpgrades = true
+check(lootOptions.takeAll == true and lootOptions.showUpgrades == true, "Take all loot: Everything on, upgrades still shown")
+lootOptions.takeAll = false
 ns.Errands.Update()
-check(lootOptions.showUpgrades == true, "what you change on Loot's page afterwards stays")
+check(lootOptions.takeAll == false, "what you change on Loot's page afterwards stays")
+lootOptions.takeAll = true
 Core.Set(ns.name, "lootAll", false)
-check(lootOptions.takeAll == false and lootOptions.showUpgrades == true and next(ns.options.lootLent) == nil,
-    "off: put back what you did not change")
+check(lootOptions.takeAll == false and next(ns.options.lootLent) == nil, "off: put back")
 Core.Set(ns.name, "lootAll", true)
 check(lootOptions.takeAll == true, "on again: set")
 

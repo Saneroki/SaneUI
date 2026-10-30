@@ -6,8 +6,9 @@ local _, ns = ...
 --  the quest giver, and the guide's quests are taken and handed in): while you
 --  talk to an NPC, the quests the steps at hand take are accepted (those of the
 --  step after them too, which a quest giver often offers at once), those they
---  hand in are handed in, with the reward the step names, else the only one (a
---  choice of several is yours), and the talk option a step names is chosen.
+--  hand in are handed in, the reward chosen among several (Rewards.lua), and the
+--  talk option a step names is chosen. An NPC with two of the guide's quests
+--  gets the second with the talk that opens again, or the next press.
 --  Only the guide's quests (Guide.Quests). The switches Take the guide's quests,
 --  Hand in the guide's quests, Choose the guide's talk.
 --
@@ -25,10 +26,12 @@ local _, ns = ...
 --  when it is done): an NPC you took or handed in a quest at, or whose talk
 --  had nothing for your guide, is one you are through with, and the key leaves
 --  it alone (Quests.Left) until you move on to something else, the quest log
---  changes or Quests.LEFT is over. A talk that comes up with nothing for you
---  is closed: at once where nothing can be chosen at all, and for Quests.AFTER
---  seconds after a quest done there whatever else the NPC offers. Quests the
---  guide does not know keep a talk open: those are yours to choose.
+--  changes or Quests.LEFT is over, unless your guide still wants a quest it
+--  may have. A talk that comes up with nothing for you is closed: at once where
+--  nothing can be chosen at all, and once within Quests.AFTER seconds of a
+--  quest done there whatever else the NPC offers, the quests the guide does not
+--  know included (Saneroki, 2026-10-30: those are ignored). A talk you open
+--  yourself after that stays open for them.
 --
 --      Quests.Left(guid, wanted)  whether the key leaves that NPC alone; wanted: your guide still wants it by name
 --      Quests.Moved(thing, target)  what the key sees now; another thing: the NPC is forgotten
@@ -42,9 +45,14 @@ Quests.AFTER = 5   -- seconds after a quest done at an NPC in which a talk that 
 Quests.SETTLE = 2  -- seconds the quest log goes on changing after that quest
 Quests.LEFT = 30   -- seconds the key leaves an NPC alone, at most
 Quests.OVER = 0.5  -- seconds after a window closed before the talk counts as over
+Quests.WAIT = 0.2  -- seconds before the rewards are looked at again, while the game does not know them yet
+Quests.TRIES = 10  -- how often, at most
 
 local EMPTY = {}
-local left = {}    -- the NPC you are through with: guid, when, did (when a quest was done there), looked (a talk found nothing)
+local left = {}    -- the NPC you are through with: guid, when, looked (a talk found nothing), sure (its list showed no more)
+local did = {}     -- the last quest done at an NPC, until a talk there came up again: guid, when
+local more = 0     -- how many more of the guide's quests the NPC's list showed in this talk
+local tries = 0    -- looks at the rewards on show
 local held         -- whose talk is yours: Shift was seen in it (true: a quest that came without an NPC)
 
 local function Talking()
@@ -80,23 +88,45 @@ function Quests.Moved(thing, target)
     if left.guid and thing and thing ~= left.guid and target ~= left.guid then left.guid = nil end
 end
 
+-- Whether your guide still wants a quest: one to take that is not in your log (sure: that NPC showed no more), or a
+-- finished one to hand in. The NPC may well be the one who has it.
+local function Owed(sure)
+    local wants = ns.Guide.Quests()
+    if not wants then return false end
+    if not sure then
+        for id in pairs(wants.take) do
+            if not ns.Lines.OnQuest(id) then return true end
+        end
+    end
+    for id in pairs(wants.handin) do
+        if ns.Lines.Ready(id) then return true end
+    end
+    return false
+end
+
 function Quests.Left(guid, wanted)
-    return guid ~= nil and guid == left.guid and (left.looked or not wanted) and true or false
+    if not ns.options.leave or guid == nil or guid ~= left.guid then return false end
+    return left.looked or not (wanted or Owed(left.sure))
 end
 
 local ForgetSoon = Core.Later(function() ns.Guarded(Quests.Forget) end, Quests.LEFT)
 
-local function Through(guid, looked)
+local function Through(guid, looked, sure)
     if type(guid) ~= "string" then return end
-    left.guid, left.when, left.looked = guid, GetTime(), looked
+    left.guid, left.when, left.looked, left.sure = guid, GetTime(), looked, sure
     ForgetSoon()
     ns.Guarded(ns.Key.Refresh)
 end
 
--- A quest taken or handed in at that NPC.
-local function Done(guid)
-    left.did = GetTime()
-    Through(guid, false)
+-- A quest taken or handed in at that NPC. More of the guide's on its list: not through with it yet. taken: its list
+-- showed no more, where a hand-in may open the next.
+local function Done(guid, taken)
+    did.guid, did.when = guid, GetTime()
+    if more > 0 then
+        more, left.guid = 0, nil
+        return ns.Guarded(ns.Key.Refresh)
+    end
+    Through(guid, false, taken)
 end
 
 -- The talk closed a frame later: the game's own window has heard of it by then.
@@ -111,11 +141,11 @@ end)
 -- The talk has nothing for your guide. offers: quests of the NPC's that are yours to choose; choices: its other options.
 local function Nothing(offers, choices)
     local guid = Talking()
-    local just = guid == left.guid and left.did and GetTime() - left.did < Quests.AFTER
-    local wanted = ns.Wanted.Unit("npc")
+    local just = guid and did.guid == guid and GetTime() - did.when < Quests.AFTER
+    did.guid = nil
     Through(guid, true)
-    if not ns.options.leave or offers then return end
-    if choices == 0 or (just and not wanted) then Bye() end
+    if not ns.options.leave then return end
+    if just or (choices == 0 and not offers) then Bye() end
 end
 
 -- The gossip window: a quest to hand in that is done, else one to take, else the option a step names.
@@ -127,19 +157,23 @@ local function Gossip()
     local available = Core.Ask(gossip.GetAvailableQuests) or EMPTY
     local options = Core.Ask(gossip.GetOptions) or EMPTY
     local offers = available[1] ~= nil
+    local give, take, count = nil, nil, 0
     for _, quest in ipairs(active) do
         local id = Plain(quest.questID)
         if Plain(quest.isComplete) then
-            if ns.options.handin and id and wants.handin[id] then return Core.Ask(gossip.SelectActiveQuest, id) end
             offers = true
+            if ns.options.handin and id and wants.handin[id] then give, count = give or id, count + 1 end
         end
     end
     if ns.options.take then
         for _, quest in ipairs(available) do
             local id = Plain(quest.questID)
-            if id and wants.take[id] then return Core.Ask(gossip.SelectAvailableQuest, id) end
+            if id and wants.take[id] then take, count = take or id, count + 1 end
         end
     end
+    more = math.max(count - 1, 0)
+    if give then return Core.Ask(gossip.SelectActiveQuest, give) end
+    if take then return Core.Ask(gossip.SelectAvailableQuest, take) end
     if ns.options.gossip then
         for _, wanted in ipairs(wants.gossip) do
             for index, option in ipairs(options) do
@@ -157,36 +191,42 @@ end
 local function Greeting()
     local wants = Wants()
     if not wants then return end
-    local count = Call("GetNumAvailableQuests") or 0
-    local offers = count > 0
+    local available = Call("GetNumAvailableQuests") or 0
+    local offers = available > 0
+    local give, take, count = nil, nil, 0
     for index = 1, Call("GetNumActiveQuests") or 0 do
         local _, done = Call("GetActiveTitle", index)
         local id = Call("GetActiveQuestID", index)
         if done then
-            if ns.options.handin and id and wants.handin[id] then return Call("SelectActiveQuest", index) end
             offers = true
+            if ns.options.handin and id and wants.handin[id] then give, count = give or index, count + 1 end
         end
     end
     if ns.options.take then
-        for index = 1, count do
+        for index = 1, available do
             -- Its fifth answer is the quest's ID.
             local answers = { pcall(rawget(_G, "GetAvailableQuestInfo") or error, index) }
             local id = answers[1] and Plain(answers[6]) or nil
-            if id and wants.take[id] then return Call("SelectAvailableQuest", index) end
+            if id and wants.take[id] then take, count = take or index, count + 1 end
         end
     end
+    more = math.max(count - 1, 0)
+    if give then return Call("SelectActiveQuest", give) end
+    if take then return Call("SelectAvailableQuest", take) end
     Nothing(offers, 0)
 end
 
--- A quest offered: taken when the guide takes it.
+-- A quest offered: taken when the guide takes it; one the guide does not know is never taken, and closed when it comes
+-- right after a quest done there.
 local function Offered()
     local wants = Wants()
     local id = Call("GetQuestID")
-    if not (wants and ns.options.take and id and wants.take[id]) then return end
+    if not (wants and ns.options.take and id) then return end
+    if not wants.take[id] then return Nothing(true, 1) end
     if Call("QuestFlagsPVP") then return end
     local guid = Talking()
     if Call("QuestGetAutoAccept") then Call("AcknowledgeAutoAcceptQuest") else Call("AcceptQuest") end
-    Done(guid)
+    Done(guid, true)
 end
 
 -- A quest's progress: on to its rewards when it can be handed in and the guide hands it in.
@@ -196,7 +236,9 @@ local function Progress()
     if wants and ns.options.handin and id and wants.handin[id] and Call("IsQuestCompletable") then Call("CompleteQuest") end
 end
 
--- A quest's rewards: the one the step names, else the only one; with several and none named, the choice is yours.
+-- A quest's rewards: the only one; of several the one Rewards.lua picks (the switch off: the one the step names); with
+-- nothing to go by the choice is yours. While the game does not know them all yet, looked at again in a moment.
+local RewardsSoon
 local function Rewards()
     local wants = Wants()
     local id = Call("GetQuestID")
@@ -204,15 +246,28 @@ local function Rewards()
     local choices = Call("GetNumQuestChoices") or 0
     local named = wants.handin[id]
     local reward
-    if type(named) == "number" and named >= 1 and named <= choices then
-        reward = named
-    elseif choices <= 1 then
+    if choices <= 1 then
         reward = choices
+    elseif ns.options.rewards then
+        reward = ns.Rewards.Best(named, choices)
+    elseif type(named) == "number" and named >= 1 and named <= choices then
+        reward = named
+    end
+    if reward == false then
+        tries = tries + 1
+        if tries < Quests.TRIES then RewardsSoon() end
+        return
     end
     if not reward then return end
     local guid = Talking()
     Call("GetQuestReward", reward)
     Done(guid)
+end
+RewardsSoon = Core.Later(function() ns.Guarded(Rewards) end, Quests.WAIT)
+
+local function RewardsShown()
+    tries = 0
+    Rewards()
 end
 
 -- The quest log changed after the quest done has settled: that NPC may be wanted again.
@@ -225,7 +280,7 @@ function Quests.Start()
     ns.On("QUEST_GREETING", Greeting)
     ns.On("QUEST_DETAIL", Offered)
     ns.On("QUEST_PROGRESS", Progress)
-    ns.On("QUEST_COMPLETE", Rewards)
+    ns.On("QUEST_COMPLETE", RewardsShown)
     ns.On("QUEST_LOG_UPDATE", LogChanged)
     ns.On("GOSSIP_CLOSED", Closed)
     ns.On("QUEST_FINISHED", Closed)

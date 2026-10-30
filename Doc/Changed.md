@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 133 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 151 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Inventory: the doll's jewellery together at the top right (Saneroki, 2026-10-30)
@@ -50,13 +50,33 @@ new settings `autoSell` and `autoRepair`, on at first, also on the page Inventor
   order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
   does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
 
+### Speed Leveling: quest rewards chosen, two guide quests at one NPC; Always show upgrades stays; Bags: the green arrow on upgrades (Saneroki, 2026-10-30)
+Saneroki: Always show upgrades stays on with Take all loot, he wants to see an upgrade; the green arrow always on the icon
+in the bag view; an NPC with two of the guide's quests gives both, quests not in the guide are ignored; and the reward
+chosen on turning in, the best upgrade, else the highest vendor or auction house value, on by default.
+- **Take all loot** sets only Loot's *Everything* (`LENT`); *Always show upgrades* stays as it is, an upgrade waits in the
+  window, the rest is taken.
+- **`Core.Upgrade(link, id)`** (`src/Core/Upgrade.lua`, moved from Loot so that the modules share it): the kind, and now the
+  item levels it brings. `Slots.Line` asks it.
+- **Bags:** the game's `bags-greenarrow` at a cell's top right on gear that is an upgrade, bank too, always (`Cells.ARROW`);
+  drawn anew on `PLAYER_EQUIPMENT_CHANGED`.
+- **Two quests at one NPC:** `Gossip` and `Greeting` count the guide's quests on the list (`more`); while there are more the
+  key is not through with the NPC, so the talk that opens again or the next press takes the next. After a hand-in the key may
+  talk once more while the guide wants a quest to take or a finished one handed in (`Owed`), the next of a chain may be
+  there. Only the guide's quests are taken: a quest it does not know is ignored, and right after a quest done there the talk
+  closes over it, one time; a talk opened after that stays open for it. `Offered` does the same for a quest offered alone.
+  `Quests.Left` also asks the switch *Close the talk when it is done*.
+- **Choose quest rewards** (`Rewards.lua`, on at first): the biggest upgrade, else the guide's named reward, else the highest
+  value: a vendor's, or the auction house's after its cut where the thing does not bind when picked up and a price was seen
+  (Tooltips' store). Looked at again for a moment while the game does not know a reward yet (`Quests.WAIT`, `Quests.TRIES`).
+
 ### Speed Leveling: all loot taken, equip and delete unasked, the key walks to corpses, a talk that is done closes (Saneroki, 2026-10-30)
 Saneroki: by default Speed Leveling sets Loot to take everything, and equipping or deleting never asks. The key walks to
 a corpse around you, not only one in front and close. After a quest is taken and handed in the key no longer talks
 again and stays on the goodbye screen. New file `Errands.lua`, new switches *Walk to corpses*, *Close the talk when it
 is done*, *Take all loot*, *Equip and delete without asking*, each on at first.
-- **Take all loot:** sets Loot's *Everything* on and *Always show upgrades* off, once (`lootLent`): what is changed on
-  Loot's page afterwards stays, the switch off puts the rest back. `LOOT_BIND` is answered.
+- **Take all loot:** sets Loot's *Everything* on, once (`lootLent`): what is changed on Loot's page afterwards stays, the
+  switch off puts it back. `LOOT_BIND` is answered.
 - **Loot:** *Everything* now takes what binds when picked up too (the game asks first); the kinds still leave it.
 - **Equip and delete without asking:** a hook on `StaticPopup_Show` answers `EQUIP_BIND`, `EQUIP_BIND_TRADEABLE`,
   `EQUIP_BIND_REFUNDABLE` and the four `DELETE_*` questions by the dialog's own `OnAccept`. `DeleteCursorItem` is

@@ -24,7 +24,10 @@ local _, ns = ...
 --  at the bottom right, the item level of gear at the top left in its
 --  quality's colour, BoE at the bottom left on gear not yet bound, the
 --  equipment set's name at the bottom, a quest mark on an item that starts a
---  quest, a coin on junk. An item the character cannot use is tinted red.
+--  quest, a coin on junk, the game's green arrow at the top right on gear that
+--  would make the character better (Core.Upgrade; Saneroki, 2026-10-30: always,
+--  to see at a glance what is an upgrade). An item the character cannot use is
+--  tinted red.
 --  An empty slot is the pencil slot alone. What a search does not find is
 --  faded.
 --
@@ -46,6 +49,7 @@ Cells.EMPTY_SLOT = 0.5                  -- an empty slot's pencil lines (Sanerok
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
+Cells.ARROW = 18                        -- the green arrow on an upgrade
 
 local look = {}     -- [button] = what is ours on it (kept apart from the game's button)
 local recordOf = {} -- [button] = the record it draws now
@@ -229,6 +233,10 @@ local function Skin(button, holder)
     mine.coin:SetSize(Cells.COIN, Cells.COIN)
     mine.coin:SetPoint("BOTTOMLEFT", -3, -3)
     Cells.Mask(over, Cells.CIRCLE, mine.coin)
+    mine.upgrade = over:CreateTexture(nil, "OVERLAY", nil, 6)
+    mine.upgrade:SetAtlas("bags-greenarrow")
+    mine.upgrade:SetSize(Cells.ARROW, Cells.ARROW)
+    mine.upgrade:SetPoint("TOPRIGHT", face, "TOPRIGHT", 1, 1)
     look[button] = mine
     return mine
 end
@@ -275,6 +283,7 @@ local function Plain(mine)
     mine.set:SetText("")
     mine.quest:Hide()
     mine.coin:Hide()
+    mine.upgrade:Hide()
 end
 
 -- An empty slot: the dark square, the mouse taken (an item may be put there).
@@ -346,6 +355,7 @@ function Pool:Draw(button, record, how)
     end
     mine.set:SetText(how and how.set and record.set or "")
     mine.coin:SetShown((how and how.coin and record.junk) or false)
+    mine.upgrade:SetShown(ns.Contents.GEAR[record.class] and Core.Upgrade(record.link, record.item) ~= nil or false)
     local tip = rawget(_G, "GameTooltip")
     if tip and tip.IsOwned and tip:IsOwned(button) then Call(button, "UpdateTooltip") end
     Faded(button, mine, how and how.faded)

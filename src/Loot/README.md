@@ -53,7 +53,7 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   drink, potions, scrolls, bandages), *Junk* (the grey things). Never a thing locked to a roll, and only by
   *Everything* one that binds when picked up (the game asks first). Your word on an item goes over the switches: the A
   (taken) or the list *Your items* (taken, or never). When everything is taken at once the window does not open.
-  Speed Leveling's switch *Take all loot* sets *Everything* on and *Always show upgrades* off, once.
+  Speed Leveling's switch *Take all loot* sets *Everything* on, once; *Always show upgrades* stays as you have it.
 - **The game's own Auto Loot** (Esc > Options > Controls) is off while Sane UI's loot window is on, so the switches
   decide; it is set back as it was when the window is switched off. Held Shift while looting still takes everything,
   as the game has it; the window then shows only what is left a moment later (bags full, a thing locked to a roll).
@@ -131,7 +131,7 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   haven't collected this appearance") where `C_TransmogCollection.GetItemInfo` gives the item's source,
   `PlayerCanCollectSource` says the character can collect it and `GetAppearanceInfoBySource` says the look is not
   collected (`Slots.Uncollected`); each colour from the game's colour table, ours where a client lacks it.
-- **Upgrades** (`Upgrade.lua`): `C_PlayerInfo.CanUseItem` and the item's level asked (`UnitLevel`); where it is worn
+- **Upgrades** (`Core.Upgrade`, `src/Core/Upgrade.lua`): `C_PlayerInfo.CanUseItem` and the item's level asked (`UnitLevel`); where it is worn
   from its `INVTYPE_*` (the game's `INVSLOT_*`, the ranged place by `GetInventorySlotInfo("RangedSlot")`, else the
   main hand); what is worn by `GetInventoryItemLink`, its item level by `C_Item.GetDetailedItemLevelInfo` (else
   `GetItemInfo`); armour's weight by its subclass (cloth 1 to plate 4). `Slots.Line` marks `line.upgrade` ("empty",
@@ -177,7 +177,6 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
 | `SaneUI_Loot.toc` | The addon: its files in order |
 | `Loot.lua` | The module's table, words, sizes, settings, `/sane loot`, standing down |
 | `Slots.lua` | The open loot as plain lines; the rules that take at once; the note under a name |
-| `Upgrade.lua` | Whether a thing would make the character better |
 | `Chat.lua` | The game's sentences about loot read back into their parts |
 | `Game.lua` | The game's loot window, Auto Loot and roll frames kept out of the way, and given back |
 | `Row.lua` | One line of the loot window: its shade and outline, picture, name, kind, worth and A |

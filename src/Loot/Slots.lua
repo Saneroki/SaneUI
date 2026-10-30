@@ -19,7 +19,7 @@ local _, ns = ...
 --  begins a quest not taken yet), bind (the game's: 1 when picked up, 2 when
 --  equipped, 3 when used, 4 a quest's), class (the game's Enum.ItemClass),
 --  kind's words (what, where), worth (a vendor's price for one), upgrade (it
---  would make the character better: Upgrade.lua; "empty", "better" or nil),
+--  would make the character better: Core.Upgrade; "empty", "better" or nil),
 --  uncollected (a look the character could collect and has not).
 --
 --  The rules (the options Taken at once, every one off at first): Everything,
@@ -97,7 +97,7 @@ function Slots.Line(slot)
         local _, what, sub, where, worth, bind, class = ItemFacts(line.link)
         line.what, line.sub, line.worth, line.bind, line.class = what, sub, worth, bind, class
         Where(line, where)
-        if ns.Upgrade then line.upgrade = ns.Upgrade.Is(line) end
+        line.upgrade = Core.Upgrade(line.link, line.id)
         line.uncollected = Slots.Uncollected(line.link)
     end
     return line

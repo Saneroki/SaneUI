@@ -340,6 +340,7 @@ but for a window to try those with (`/sane window`).
   | `Core.Neighbours.Window(key)` | The known addons (Saneroki, 2026-10-20), named in `Neighbours.lua` only: a handle on one while it is loaded (`"talents"`: a talent planner), nil otherwise: `handle.title`, `handle:Frame()`, `Shown()`, `Open()`, `Close()` (by its own functions), `Follow(fn)` (after each opening of it, a hook after its opening function, made once) |
   | `Core.Neighbours.Format(key)` | A known leveling guide's text format (`"guide"`, Saneroki, 2026-10-25): its command words, step marks, colour words and game tags, each by Sane UI's own word for it (`commands`, `marks`, `modes`, `colours`, `gameTags`), copies; nil for one without. Speed Leveling runs guides written in it with an engine of its own, so nothing of the addon is read or called at runtime |
   | `Core.Neighbours.Lock(key)` | The recipe a known guide's bought import strings are locked to the buyer's account by (`"guide"`): a copy of `{ account, tag, width, taps, mark, close, version }`; nil for one without. Speed Leveling (`Unlock.lua`) opens the guides bought for the player's own account with it |
+  | `Core.Upgrade(link, id)` | Whether an item would make the character better (`Upgrade.lua`): gear wearable now, with nothing worn in its place or a lower item level there, never lighter armour than worn. `"empty"` or `"better"` and the item levels it brings; nil: no upgrade |
   | `Core.Offer(key, switch)`, `Core.Switches()`, `Core.SwitchChanged()`, `Core.OnSwitches(fn)` | Quick switches the modules offer, for a view that gathers them (Saneroki, 2026-10-26: the minimap's satchel), so neither knows the other (`Switches.lua`). `switch = { title, icon, State, Tip, Click }`: `State()` says `"on"`, `"paused"` or `"off"` (nil: not offered now, its module off), `Tip()` its tooltip's words, `Click(mouseButton, owner)` what a click does. `Core.Switches()` lists those offered, in the order offered, with their state and tip as now; a module calls `Core.SwitchChanged()` when one changed, and the views given to `Core.OnSwitches` are told on the next frame |
 
   - **The title bar** (`Window.lua`, `Bar`, `Refresh`): with `titleBar` (a kind of window that has one; the
@@ -519,6 +520,7 @@ but for a window to try those with (`/sane window`).
 | `Board.lua` | A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs |
 | `Neighbours.lua` | The other addons Sane UI knows and adapts to when they are installed: the one file that names them |
 | `Switches.lua` | The quick switches the modules offer, for a view that gathers them (`Core.Offer`) |
+| `Upgrade.lua` | Whether an item would make the character better (`Core.Upgrade`), for the loot, the bags and quest rewards |
 | `Expand.lua` | A window that opens while the mouse rests on it, and can be kept open |
 | `Bar.lua` | A progress bar whose value and size move |
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |

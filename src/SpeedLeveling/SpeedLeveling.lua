@@ -29,6 +29,7 @@ local ADDON, ns = ...
 --                finished quests go to; the thing in front of you
 --    Items.lua   what the key uses: the hearth, one quest item
 --    Key.lua     the key: what one press does now, by the game's secure ways
+--    Rewards.lua which reward to take where a quest offers a choice
 --    Quests.lua  what a quest giver does for your guide, a talk that is done closed
 --    Errands.lua what would hold you up: all loot taken, the game's questions
 --                on equipping and destroying answered
@@ -82,17 +83,19 @@ ns.TEXT = {
     take = "Take the guide's quests",
     takeTip = "The quests the steps at hand of your guide take (and those of the step after them) are accepted as the quest giver offers them.",
     handin = "Hand in the guide's quests",
-    handinTip = "The quests the steps at hand hand in are handed in: the reward the guide names, else the only one. With several rewards to choose from and none named, the choice is yours.",
+    handinTip = "The quests the steps at hand hand in are handed in. With several rewards to choose from, Choose quest rewards decides; with that off, the reward the guide names, and with none named the choice is yours.",
+    rewards = "Choose quest rewards",
+    rewardsTip = "With several rewards to choose from: the biggest upgrade for your gear; with no upgrade among them, the reward your guide names; else the one worth the most, what a vendor pays or what the auction house brings where it can go there and you saw a price (the module Tooltips notes those).",
     gossip = "Choose the guide's talk",
     gossipTip = "Where a step names what to say to an NPC (a gossip option), it is chosen.",
     leave = "Close the talk when it is done",
-    leaveTip = "After a quest is taken or handed in, the key leaves that NPC alone and goes on to what is next, and a talk that comes up with nothing for you closes by itself. A talk with quests your guide does not know stays open: those are yours to choose. The key talks to that NPC again once you moved on, the quest log changed, or half a minute is over.",
+    leaveTip = "After a quest is taken or handed in, the key leaves that NPC alone and goes on to what is next, unless your guide still wants a quest there, and a talk that comes up with nothing for you closes by itself, quests your guide does not know included. Talk to the NPC yourself to take those. The key talks to that NPC again once you moved on, the quest log changed, or half a minute is over.",
 
     -- What would hold you up (Errands.lua).
     errandsHeader = "On the way",
     errandsHeaderTip = "What Speed Leveling does for you so that nothing holds you up.",
     lootAll = "Take all loot",
-    lootAllTip = "Sets the module Loot to take everything at once: its Everything on, its Always show upgrades off, which would keep an upgrade waiting in its window. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts the rest back. Things locked to a group's roll are not taken.",
+    lootAllTip = "Sets the module Loot to take everything at once: its Everything on. Its Always show upgrades stays as you have it, so an upgrade still waits in the loot window for you to see. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts it back. Things locked to a group's roll are not taken.",
     noAsk = "Equip and delete without asking",
     noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
 
@@ -212,6 +215,7 @@ local OPTIONS = {
     { key = "take", default = true, text = ns.TEXT.take, tip = ns.TEXT.takeTip,
       header = ns.TEXT.questsHeader, headerTip = ns.TEXT.questsHeaderTip },
     { key = "handin", default = true, text = ns.TEXT.handin, tip = ns.TEXT.handinTip },
+    { key = "rewards", default = true, text = ns.TEXT.rewards, tip = ns.TEXT.rewardsTip, parent = "handin" },
     { key = "gossip", default = true, text = ns.TEXT.gossip, tip = ns.TEXT.gossipTip },
     { key = "leave", default = true, text = ns.TEXT.leave, tip = ns.TEXT.leaveTip },
     { key = "lootAll", default = true, text = ns.TEXT.lootAll, tip = ns.TEXT.lootAllTip,
@@ -234,7 +238,7 @@ local OPTIONS = {
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches and those of what is on the way are read when they are needed.
 local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
-local QUESTS = { take = true, handin = true, gossip = true, leave = true, noAsk = true, lootLent = true,
+local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, lootLent = true,
                  deleteRefused = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then

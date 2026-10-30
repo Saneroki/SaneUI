@@ -15,8 +15,7 @@ local ADDON, ns = ...
 --                coins, currencies, quest items, trade goods, gear,
 --                consumables, junk; the player's word on an item over them;
 --                an upgrade never, with Always show upgrades)
---    Upgrade.lua whether a thing would make the character better
---    Chat.lua    the game's sentences about loot (received, rolled for, coins)
+--    Chat.lua   the game's sentences about loot (received, rolled for, coins)
 --                read back into their parts, by the game's own words
 --    Game.lua    the game's loot window no longer told of loot, its Auto
 --                Loot lent off, its roll frames held out of sight; all given
