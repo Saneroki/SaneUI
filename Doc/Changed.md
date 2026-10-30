@@ -18,8 +18,8 @@ a leave; only a click outside it or on its button closes it.
   default: `MenuResponse.Refresh` on the chats to write in and on the three choices per channel.
 - **Closed by its button:** a press outside a menu closes it, so a click on its button would close and open it again.
   `Menu.Button` gives the chat button and the chat's name `HandlesGlobalMouseEvent`, as the game's dropdown buttons,
-  and `Menu.Toggle` and `Input.Toggle` close it. A channel joined or left shows under *Write in* the next time the
-  list opens. Tests: `dev/tests/social.lua` 626 checks, the columns, what closes the list and what does not.
+  and `Menu.Toggle` and `Input.Toggle` close it. A channel joined or left shows or goes in the first two columns the
+  next time the list opens. Tests: `dev/tests/social.lua` 626 checks, the columns, what closes the list and what does not.
 
 ### Social: the chat lies on the full screen's panels (Saneroki, 2026-10-30)
 Saneroki: on the full screen the chat lay behind the see-through background and was much darker than it had to be

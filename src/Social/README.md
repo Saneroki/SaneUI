@@ -504,7 +504,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   owner is the window, not the button clicked (the game closes a menu whose owner goes, and the chat button goes
   with the mouse), its radio lines answer `MenuResponse.Refresh`, and the two buttons that open it say a press on
   them is theirs (`HandlesGlobalMouseEvent`, as the game's dropdown buttons), so `Menu.Toggle` can close it. A
-  channel joined or left shows under *Write in* the next time the list opens. A choice calls the edit box's own `SetChatType`,
+  channel joined or left shows or goes in the first two columns the next time the list opens. A choice calls the edit box's own `SetChatType`,
   `SetStickyType`, `SetChannelTarget` and `ChatFrameUtil.ActivateChat`, as the game's friends list
   does for a whisper. The button on the label is a child of the edit box (above it, shown with it);
   no field is written into the edit box.
