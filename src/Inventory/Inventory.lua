@@ -153,8 +153,14 @@ ns.TEXT = {
     bagsAutoSellTip = "At a vendor your junk is sold as the window opens, what you marked as junk too. Hold Shift to leave it to you.",
     bagsAutoRepair = "Auto Repair",
     bagsAutoRepairTip = "At a vendor who repairs, your gear is mended as the window opens, after the junk is sold, with your own gold if you have enough. Hold Shift to leave it to you.",
-    bagsSolo = "Solo",
-    bagsSoloTip = "Speed Leveling's automation on: the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again, for playing with others. Your own two characters together count as solo.",
+    bagsMakeRoom = "Make Room",
+    bagsMakeRoomTip = "One slot of your bags stays free: when the last one fills, your cheapest junk is destroyed at your next key press, and the chat says what went. With no junk to destroy, a warning comes up on the screen. It is the switch Make room for loot of the module Loot.",
+    bagsRoomGone = "Destroyed %s to keep a slot free.",
+    bagsRoomNone = "Your bags are full, and there is no junk to destroy.",
+    bagsSpeedLeveling = "Speed Leveling",
+    bagsSpeedLevelingTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation. Off: it goes back to the profile it used before, Accountwide if it had no other.",
+    noAsk = "Equip and delete without asking",
+    noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
     -- The bags' dropdown View (Bags/Bags.lua)
     bagsLook = "Display",
     bagsShowPinned = "Show Pinned Items",
@@ -178,6 +184,8 @@ local OPTIONS = {
     { key = "autoSell", default = true, text = ns.TEXT.bagsAutoSell, tip = ns.TEXT.bagsAutoSellTip },
     { key = "autoRepair", default = true, text = ns.TEXT.bagsAutoRepair, tip = ns.TEXT.bagsAutoRepairTip },
     { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
+    { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
+    { key = "deleteRefused", default = false }, -- the game refused to destroy an item without its question (Asks.lua)
     { key = "pinnedOne", default = true, text = ns.TEXT.bagsPinnedOne, tip = ns.TEXT.bagsPinnedOneTip },
     { key = "showRecent", default = true, text = ns.TEXT.bagsShowRecent, tip = ns.TEXT.bagsShowRecentTip },
     { key = "recentOne", default = false, text = ns.TEXT.bagsRecentOne, tip = ns.TEXT.bagsRecentOneTip },
@@ -223,4 +231,6 @@ function ns.OnLogin()
     ns.Vendor.Start()
     ns.Weights.Start()
     ns.Keys.Start()
+    ns.Asks.Start()
+    ns.Room.Start()
 end

@@ -317,7 +317,7 @@ local options = ns.options
 check(options == Core.Settings("Tooltips"), "the switches are the table Core keeps for the module")
 check(options.cursor == "always" and options.classColors == true and options.icons == true and options.textSize == 14 and options.opacity == 97,
     "its settings: the mouse off, class colours and icons on, the text 14 high, the background almost solid")
-check(options.show == "always", "and tooltips shown always (a saved value that is no choice of the option gets that)")
+check(options.show == "shift", "and tooltips shown while Shift is held (a saved value that is no choice of the option gets that)")
 check(Core.described.Tooltips.list[2].choices[1][1] == "default" and Core.described.Tooltips.list[2].default == "default",
     "the mouse option at first: the game's place; one saved as switched on (an older version) is Always now")
 options.cursor = "default"

@@ -66,6 +66,9 @@ the game's own chat channels on every character is the Social module's.)
   | `taken` | `[part id] = data`: what each kept part read last |
   | `named` | `[CVar] = value`: single CVars kept by name (the tab *CVars*, `Sync.Keep`/`Sync.Kept`), our recommended ones among them (`Presets.lua`) |
 
+  A character that comes over from another profile to one that holds nothing yet of a part with a `Default` (the key
+  bindings) gets the game's own there, not what the profile it left had (`Sync.Moved`).
+
   Settings of an earlier version in another shape are not read: an unknown value counts as unset.
 - **The parts** (`Sync.Part(id, group, part)`; `part.Read()`, `part.Write(data)`, `reload` words):
   - **A part per options page** of the game's groups Gameplay and Accessibility (`Game.lua`), its id the

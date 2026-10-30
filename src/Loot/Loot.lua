@@ -161,7 +161,7 @@ ns.TEXT = {
     feedQualityTip = "The least quality of the group's things shown.",
     fullHeader = "Bags full",
     full = "Make room for loot",
-    fullTip = "With your bags full while the loot window is open, a page beside it shows what the thing is worth, and the thing of yours worth the least at a vendor (arrows go through the others). Click it to pick it up; drop it on the world to get rid of it.",
+    fullTip = "With your bags full while the loot window is open, a page beside it shows what the thing is worth, and the thing of yours worth the least at a vendor (arrows go through the others). Click it to pick it up; drop it on the world to get rid of it. And one slot of your bags stays free: your cheapest junk is destroyed at your next key press, with a warning on the screen when there is no junk. Also a box at the foot of the bags.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -233,6 +233,7 @@ Core.Options(ns.name, OPTIONS, {
             ns.Guarded(ns.Window.Fill)
         elseif key == "full" then
             ns.Guarded(ns.Full.Update)
+            Core.SwitchChanged() -- its box in the bags
         end
         if key == "kept" or key == "showUpgrades" or key:find("^take") then ns.Guarded(ns.Items.Refresh) end
     end,

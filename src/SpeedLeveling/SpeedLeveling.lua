@@ -44,8 +44,6 @@ ns.title = "Speed Leveling"
 Core.NewModule(ADDON, "SpeedLeveling", ns)
 
 ns.TEXT = {
-    solo = "Solo",
-    soloTip = "On: all of Speed Leveling works, the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again: your key does nothing, the guide is hidden and what it changed in Loot is put back. For playing with others. Your own two characters together count as solo. On in the profile Speedleveling, off in the others. Also a box at the foot of the bags.",
     binding = "Loot, talk, pick up, attack, find and mark, use",
     hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under Sane UI: Loot, talk, pick up, attack, find and mark, use.",
     keyFirst = "Speed Leveling's key is %s: loot, talk, pick up, attack, find and mark, use. Change it in Esc > Options > Keybindings, under Sane UI.",
@@ -103,9 +101,7 @@ ns.TEXT = {
     cinematics = "Skip cinematics",
     cinematicsTip = "Cinematics and the game's movies are skipped as they start, those the game lets you skip yourself.",
     rolls = "Roll on group loot",
-    rollsTip = "When your group rolls for a thing, the Sane UI of each of your characters says what it would bring, and the one it brings the most Needs it; the others Greed. With nobody to agree with, Need on an upgrade, else Greed. In a fight it waits for the end of the fight, as long as the roll's clock allows.",
-    noAsk = "Equip and delete without asking",
-    noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
+    rollsTip = "When your group rolls for a thing, the Sane UI of each of your characters says what it would bring, and the one it brings the most Needs it; the others Greed. One of them always rolls, so nothing is left lying. With nobody to agree with, Need on an upgrade, else Greed. In a fight it waits for the end of the fight, as long as the roll's clock allows.",
     equipUpgrades = "Equip upgrades",
     equipUpgradesTip = "Gear that comes into your bags, looted or a quest's reward, and is an upgrade is put on at once, or after a fight: anything you can wear for a place with nothing in it, else one worth more to you: its stats as your class and specialization want them (the module Inventory's weights), else its item level. What you took off yourself stays off. The chat says what was put on.",
     equipped = "Equipped %s.",
@@ -216,53 +212,60 @@ ns.TEXT = {
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the key is the game's own again, the guide hidden"
 
+-- Every switch off at first: all of them are on in the profile Speedleveling alone (Core's Presets.lua).
 local OPTIONS = {
-    { key = "solo", default = false, text = ns.TEXT.solo, tip = ns.TEXT.soloTip },
-    { key = "loot", default = true, text = ns.TEXT.loot, tip = ns.TEXT.lootTip },
-    { key = "corpses", default = true, text = ns.TEXT.corpses, tip = ns.TEXT.corpsesTip, parent = "loot" },
-    { key = "talk", default = true, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
-    { key = "walk", default = true, text = ns.TEXT.walk, tip = ns.TEXT.walkTip, parent = "talk" },
-    { key = "objects", default = true, text = ns.TEXT.objects, tip = ns.TEXT.objectsTip },
-    { key = "useOn", default = true, text = ns.TEXT.useOn, tip = ns.TEXT.useOnTip },
-    { key = "skull", default = true, text = ns.TEXT.skull, tip = ns.TEXT.skullTip },
-    { key = "guide", default = true, text = ns.TEXT.guide, tip = ns.TEXT.guideTip },
-    { key = "hearth", default = true, text = ns.TEXT.hearth, tip = ns.TEXT.hearthTip },
-    { key = "items", default = true, text = ns.TEXT.items, tip = ns.TEXT.itemsTip },
-    { key = "take", default = true, text = ns.TEXT.take, tip = ns.TEXT.takeTip,
+    { key = "loot", default = false, text = ns.TEXT.loot, tip = ns.TEXT.lootTip },
+    { key = "corpses", default = false, text = ns.TEXT.corpses, tip = ns.TEXT.corpsesTip, parent = "loot" },
+    { key = "talk", default = false, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
+    { key = "walk", default = false, text = ns.TEXT.walk, tip = ns.TEXT.walkTip, parent = "talk" },
+    { key = "objects", default = false, text = ns.TEXT.objects, tip = ns.TEXT.objectsTip },
+    { key = "useOn", default = false, text = ns.TEXT.useOn, tip = ns.TEXT.useOnTip },
+    { key = "skull", default = false, text = ns.TEXT.skull, tip = ns.TEXT.skullTip },
+    { key = "guide", default = false, text = ns.TEXT.guide, tip = ns.TEXT.guideTip },
+    { key = "hearth", default = false, text = ns.TEXT.hearth, tip = ns.TEXT.hearthTip },
+    { key = "items", default = false, text = ns.TEXT.items, tip = ns.TEXT.itemsTip },
+    { key = "take", default = false, text = ns.TEXT.take, tip = ns.TEXT.takeTip,
       header = ns.TEXT.questsHeader, headerTip = ns.TEXT.questsHeaderTip },
-    { key = "handin", default = true, text = ns.TEXT.handin, tip = ns.TEXT.handinTip },
-    { key = "rewards", default = true, text = ns.TEXT.rewards, tip = ns.TEXT.rewardsTip, parent = "handin" },
-    { key = "gossip", default = true, text = ns.TEXT.gossip, tip = ns.TEXT.gossipTip },
-    { key = "leave", default = true, text = ns.TEXT.leave, tip = ns.TEXT.leaveTip },
-    { key = "lootAll", default = true, text = ns.TEXT.lootAll, tip = ns.TEXT.lootAllTip,
+    { key = "handin", default = false, text = ns.TEXT.handin, tip = ns.TEXT.handinTip },
+    { key = "rewards", default = false, text = ns.TEXT.rewards, tip = ns.TEXT.rewardsTip, parent = "handin" },
+    { key = "gossip", default = false, text = ns.TEXT.gossip, tip = ns.TEXT.gossipTip },
+    { key = "leave", default = false, text = ns.TEXT.leave, tip = ns.TEXT.leaveTip },
+    { key = "lootAll", default = false, text = ns.TEXT.lootAll, tip = ns.TEXT.lootAllTip,
       header = ns.TEXT.errandsHeader, headerTip = ns.TEXT.errandsHeaderTip },
-    { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
-    { key = "equipUpgrades", default = true, text = ns.TEXT.equipUpgrades, tip = ns.TEXT.equipUpgradesTip },
-    { key = "rolls", default = true, text = ns.TEXT.rolls, tip = ns.TEXT.rollsTip },
-    { key = "cinematics", default = true, text = ns.TEXT.cinematics, tip = ns.TEXT.cinematicsTip },
-    { key = "follow", default = "on", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
+    { key = "equipUpgrades", default = false, text = ns.TEXT.equipUpgrades, tip = ns.TEXT.equipUpgradesTip },
+    { key = "rolls", default = false, text = ns.TEXT.rolls, tip = ns.TEXT.rollsTip },
+    { key = "cinematics", default = false, text = ns.TEXT.cinematics, tip = ns.TEXT.cinematicsTip },
+    { key = "follow", default = "off", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
-    { key = "showGuide", default = true, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
-    { key = "gather", default = true, text = ns.TEXT.gather, tip = ns.TEXT.gatherTip },
-    { key = "showArrow", default = true, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
-    { key = "mapPin", default = true, text = ns.TEXT.mapPin, tip = ns.TEXT.mapPinTip },
-    { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
+    { key = "showGuide", default = false, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
+    { key = "gather", default = false, text = ns.TEXT.gather, tip = ns.TEXT.gatherTip },
+    { key = "showArrow", default = false, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
+    { key = "mapPin", default = false, text = ns.TEXT.mapPin, tip = ns.TEXT.mapPinTip },
+    { key = "icons", default = false, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
       button = function() ns.Guarded(ns.Guides.Open) end },
     { key = "foundCVars", default = {} }, -- the game's settings as they were before the key lent them (Key.lua)
     { key = "lootLent", default = {} },   -- Loot's switches as they were before Take all loot set them (Errands.lua)
     { key = "keyGiven", default = false }, -- the key was given its first key (Key.lua)
-    { key = "deleteRefused", default = false }, -- the game refused to destroy an item without its question (Errands.lua)
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches and those of what is on the way are read when they are needed.
 local VIEW = { showGuide = true, showArrow = true, mapPin = true, icons = true, ahead = true, gather = true }
-local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, equipUpgrades = true,
-                 rolls = true, cinematics = true, lootLent = true, deleteRefused = true }
--- Solo off: all of the module rests until it is ticked again, as a module stood down but for good reason: ns.off is
--- what every part of it asks. The guide's run goes on knowing where it is, so that it catches up after.
+local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, equipUpgrades = true,
+                 rolls = true, cinematics = true, lootLent = true }
+-- Nothing of the module is wanted in the settings in use: it rests until a switch is on again, as a module stood down
+-- but for good reason: ns.off is what every part of it asks. The guide's run goes on knowing where it is, so that it
+-- catches up after.
+local function Idle()
+    if ns.options.follow ~= "off" then return false end
+    for _, option in ipairs(OPTIONS) do
+        if option.text and option.default == false and ns.options[option.key] then return false end
+    end
+    return true
+end
+
 local resting = false
 local function Rest(on)
     if on == resting or (ns.off and not resting) then return end
@@ -283,10 +286,10 @@ local function Rest(on)
     Core.SwitchChanged()
 end
 
-Core.Options(ns.name, OPTIONS, { changed = function(key, now)
-    if key == "solo" then
-        Rest(now == false)
-    elseif VIEW[key] then
+Core.Options(ns.name, OPTIONS, { moved = function() ns.Guarded(ns.Key.First) end, changed = function(key)
+    Rest(Idle())
+    if ns.off then return end
+    if VIEW[key] then
         ns.Guarded(ns.Steps.Update)
     elseif key == "lootAll" then
         ns.Guarded(ns.Errands.Update)
@@ -327,7 +330,7 @@ function ns.OnLogin()
     ns.Guide.Watch(ns.Steps.Update)
     ns.Guide.Watch(ns.Key.Refresh)
     ns.Steps.Update()
-    if ns.options.solo == false then Rest(true) end
+    if Idle() then Rest(true) end
 end
 
 Core.Command("guides", ns.TEXT.command, function() ns.Guarded(ns.Guides.Open) end)

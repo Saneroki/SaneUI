@@ -1589,7 +1589,7 @@ do
     W.Fire("PLAYER_LOGIN")
     check(SaneUIDB.profiles.Speedleveling and SaneUIDB.profiles.Accountwide and SaneUIDB.profiles[Profiles.OWN] == nil,
         "Speedleveling and Accountwide are there; none is made for a character")
-    check(SaneUIDB.profiles.Speedleveling.SpeedLeveling.solo == true and SaneUIDB.characters["Player-70-00000099"].profile == "Speedleveling"
+    check(SaneUIDB.profiles.Speedleveling.SpeedLeveling.take == true and SaneUIDB.characters["Player-70-00000099"].profile == "Speedleveling"
         and Profiles.InUse() == "Speedleveling", "a character not seen yet starts on Speedleveling, its automation on")
     check(Profiles.Character(Profiles.NEW).profile == "Speedleveling", "as the line New Characters says")
     check(Profiles.Character("Player-70-00000002") == nil or Profiles.Character("Player-70-00000002").profile == "Accountwide",
@@ -1601,7 +1601,24 @@ do
         "where they differ Accountwide names the game's own value: a character on it is not left with Speedleveling's")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,
         "Character specific can be what new characters start with")
-    check(Profiles.Reset() and SaneUIDB.profiles.Speedleveling.SpeedLeveling.solo == true, "Defaults: what the profile sets stays")
+    check(Profiles.Reset() and SaneUIDB.profiles.Speedleveling.SpeedLeveling.take == true, "Defaults: what the profile sets stays")
+    check(SaneUIDB.profiles.Accountwide.SpeedLeveling == nil, "Accountwide has nothing of Speed Leveling on")
+    -- The box Speed Leveling in the bags: the profile, or back on the one before.
+    check(Profiles.Leveling() and Profiles.SetLeveling(false) and Profiles.InUse() == "Accountwide",
+        "off: Accountwide, as this character never used another")
+    check(not Profiles.Leveling() and Profiles.SetLeveling(true) and Profiles.InUse() == "Speedleveling", "on: Speedleveling again")
+    Profiles.Create("Mine")
+    Profiles.Use("Mine")
+    check(Profiles.SetLeveling(true) and Profiles.SetLeveling(false) and Profiles.InUse() == "Mine", "off: back on the one it used before")
+    Profiles.Use("Speedleveling")
+    check(Profiles.SetLeveling(false) and Profiles.InUse() == "Mine", "also when Speedleveling was chosen on the page")
+    Profiles.SetLeveling(true)
+    Profiles.Rename("Mine", "Ours")
+    check(Profiles.SetLeveling(false) and Profiles.InUse() == "Ours", "and when that one was renamed meanwhile")
+    Profiles.SetLeveling(true)
+    Profiles.Delete("Ours")
+    check(Profiles.SetLeveling(false) and Profiles.InUse() == "Accountwide", "deleted meanwhile: Accountwide")
+    Profiles.SetLeveling(true)
     NextSession({ version = 2, profiles = { Accountwide = { Demo = { shy = true } } }, accountwide = false, ownSince = 5 }, {})
     check(SaneUIDB.profiles.Speedleveling.Demo.shy == true and SaneUIDB.accountwide == nil and SaneUIDB.ownSince == nil,
         "an account with settings: Speedleveling starts as a copy of them, the old switch is gone")

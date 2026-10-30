@@ -6,8 +6,9 @@ local Core = SaneUI.Core
 --  recommended CVars, kept as single CVars of Sync's (Sync.Keep, the tick in the
 --  tab CVars), so they are written into the game at the login and what the
 --  player changes afterwards goes into the profile as anything else. A CVar one
---  of the two games lacks is passed over. Character specific has none: it stays
---  as the game has it.
+--  of the two games lacks is passed over. And all of Speed Leveling's switches,
+--  off by default, on in Speedleveling alone. Character specific has none of
+--  this: it stays as the game has it.
 --
 --  Given to a profile once for each Presets.VERSION, and then only what it does
 --  not have yet (Profiles.lua: Standard): raise the number when something is
@@ -61,6 +62,14 @@ local SPEEDLEVELING = {
     autoDismountFlying = "1",        -- a spell cast in the air takes you down
 }
 
+-- Speed Leveling's switches: every one of them, which is what makes the profile Speedleveling.
+local LEVELING = { follow = "on" }
+for _, switch in ipairs({ "loot", "corpses", "talk", "walk", "objects", "useOn", "skull", "guide", "hearth", "items",
+                          "take", "handin", "rewards", "gossip", "leave", "lootAll", "equipUpgrades", "rolls", "cinematics",
+                          "showGuide", "gather", "showArrow", "mapPin", "icons" }) do
+    LEVELING[switch] = true
+end
+
 local function Both(extra)
     local named = {}
     for name, value in pairs(RECOMMENDED) do named[name] = value end
@@ -69,4 +78,4 @@ local function Both(extra)
 end
 
 Presets.profiles.Accountwide = { Sync = { named = Both(ACCOUNTWIDE) } }
-Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = { solo = true } }
+Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = LEVELING }

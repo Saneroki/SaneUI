@@ -258,7 +258,7 @@ end
 -- Another profile came into use: what it keeps of the bags.
 function Bags.Reload()
     if not kept then return end
-    kept = Kept()
+    kept = Bags.Store()
     Bags.Refresh()
 end
 

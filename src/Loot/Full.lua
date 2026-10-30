@@ -9,8 +9,8 @@ local _, ns = ...
 --      to make room   the thing in your bags worth the least at a vendor
 --                     (Full.Rank), with pencil arrows to the next cheapest and
 --                     back ("2 of 9"); a click on it picks it up, and dropped
---                     on the world the game asks before it is gone (Sane UI
---                     destroys nothing itself: the game does not let it).
+--                     on the world the game asks before it is gone (what the
+--                     bags do to keep a slot free is Inventory's: Bags/Room.lua).
 --  Never offered: what a vendor will not take, a quest's things, the epic and
 --  better. The page goes once there is room again (BAG_UPDATE_DELAYED).
 --

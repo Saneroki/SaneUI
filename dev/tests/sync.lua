@@ -385,6 +385,37 @@ do
     ChatTypeInfo = game.colours
 end
 
+-- A window's channels: what a character left stays left, whatever the profile's windows name (Social leaves the
+-- public channels on a first load), and one no kept window names is no change: a new character is offered no /reload.
+do
+    local channelsWere, firstWas, secondWas, ownWas = game.channels, game.windows[1].channels, game.windows[2].channels, options.taken.ownChannels
+    local joinWas = JoinPermanentChannel
+    local asked, popups = {}, #W.popups
+    JoinPermanentChannel = function(name) asked[#asked + 1] = name end
+    options.taken.ownChannels = {}
+    game.channels, game.windows[1].channels, game.windows[2].channels = { { 1, "Raiders" } }, {}, {}
+    local changed = Sync.part.chatFrames.Write({ tabs = { { channels = { "General", "Trade" } } } })
+    check(not changed and #game.windows[1].channels == 0 and #asked == 0, "a channel the profile's windows name and this character left is not brought back")
+    game.channels, game.windows[1].channels = { { 1, "General" }, { 2, "LocalDefense" } }, { "General", "LocalDefense" }
+    changed = Sync.part.chatFrames.Write({ tabs = { { channels = {} }, { channels = {} } } })
+    check(not changed and #game.windows[1].channels == 2, "a new character's channels, which no kept window names, stay as the game has them")
+    game.channels, game.windows[1].channels = { { 1, "General" }, { 2, "Raiders" } }, { "General", "Raiders" }
+    changed = Sync.part.chatFrames.Write({ tabs = { { channels = { "Raiders" } }, { channels = { "General" } } } })
+    check(changed and #game.windows[1].channels == 1 and game.windows[1].channels[1] == "Raiders" and game.windows[2].channels[1] == "General",
+        "a channel the character is in goes to the kept windows that show it, and leaves the others")
+    options.taken.ownChannels = { "World" }
+    game.channels, game.windows[2].channels = { { 1, "General" } }, {}
+    changed = Sync.part.chatFrames.Write({ tabs = { { channels = {} }, { channels = { "World" } } } })
+    check(changed and game.windows[2].channels[1] == "World", "one of the player's own, joined in this same writing, still gets its window")
+    check(#W.popups == popups, "the windows' writing itself offers nothing")
+    game.channels = { { 1, "Raiders" } } -- the public ones left: read at the logout, the profile has only the player's own
+    check(#Sync.part.ownChannels.Read() == 1 and Sync.part.ownChannels.Read()[1] == "Raiders", "the game's channels are never kept as the player's own")
+    Sync.part.ownChannels.Write(Sync.part.ownChannels.Read())
+    check(#asked == 0, "so a character on the same profile rejoins none of them")
+    game.channels, game.windows[1].channels, game.windows[2].channels = channelsWere, firstWas, secondWas
+    options.taken.ownChannels, JoinPermanentChannel = ownWas, joinWas
+end
+
 -- Again: nothing differs, so nothing is set, and no dialog -----------------------------------------
 game.calls, W.cvarSets = {}, 0
 local popups = #W.popups
@@ -664,6 +695,11 @@ do
     part.Default()
     check(loaded == 0, "with no profile: the game's own keys")
     options.taken.keyBindings = nil
+    loaded = nil
+    Sync.Give()
+    check(loaded == nil, "a login with no keys in the profile: the keys stay as the game has them")
+    Sync.Moved()
+    check(loaded == 0, "come over from another profile: the game's own keys, not the keys of the one left")
     GetNumBindings, GetBinding, SetBinding, GetCurrentBindingSet, SaveBindings, LoadBindings = nil, nil, nil, nil, nil, nil
 end
 

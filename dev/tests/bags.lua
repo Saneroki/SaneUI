@@ -304,8 +304,9 @@ local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Inventory", "SaneUI_Inventory")
 W.Fire("ADDON_LOADED", "SaneUI_Inventory")
--- Speed Leveling, as far as the box Solo in the foot needs it: its switch.
-Core.Options("SpeedLeveling", { { key = "solo", default = true, text = "Solo" } },
+-- Loot and Speed Leveling, as far as their boxes in the foot need them: that they are there, Loot's switch.
+Core.Options("SpeedLeveling", { { key = "take", default = false, text = "Take" } })
+Core.Options("Loot", { { key = "full", default = true, text = "Make room for loot" } },
     { changed = function() Core.SwitchChanged() end })
 -- Only the bags on the full screen: the other parts are tried elsewhere.
 ns.store.board = { chosen = 1, tabs = { { name = "Default", tree = { key = "bags" } } } }
@@ -1579,15 +1580,16 @@ local autoSell, autoRepair = shop.sell, shop.repair
 check(autoSell:GetChecked() and autoRepair:GetChecked() and autoSell.tick:IsShown() and autoRepair.tick:IsShown(),
     "Auto Sell and Auto Repair: in the foot, ticked at first")
 check(ns.Vendor.boxes[1] == autoRepair and ns.Vendor.boxes[2] == autoSell, "both left of the gold")
-local solo = ns.Vendor.boxes[3]
-check(solo and solo == Text("Solo"):GetParent() and solo:GetChecked(), "Solo beside them, ticked at first")
-solo:GetScript("OnClick")(solo)
-check(Core.Settings("SpeedLeveling").solo == false, "a click: that module's own switch")
+do
+local makeRoom = ns.Vendor.boxes[3]
+check(makeRoom and makeRoom == Text("Make Room"):GetParent() and makeRoom:GetChecked(), "Make Room beside them, ticked at first")
+makeRoom:GetScript("OnClick")(makeRoom)
+check(Core.Settings("Loot").full == false and not makeRoom:GetChecked() and not makeRoom.tick:IsShown() and ns.options.full == nil,
+    "a click: that module's own switch, its tick follows, nothing of it kept here")
+Core.Set("Loot", "full", true)
 W.Wait(0)
-check(not solo:GetChecked() and not solo.tick:IsShown() and ns.options.solo == nil, "its tick follows; nothing of it kept here")
-Core.Set("SpeedLeveling", "solo", true)
-W.Wait(0)
-check(solo:GetChecked(), "changed on that module's page: the box follows")
+check(makeRoom:GetChecked(), "changed on that module's page: the box follows")
+end
 check(autoSell:GetWidth() > ns.Vendor.BOX, "a box as wide as its word")
 autoSell:GetScript("OnClick")(autoSell)
 autoRepair:GetScript("OnClick")(autoRepair)
@@ -1982,3 +1984,128 @@ W.Wait(Foot.SOLD)
 check(not calls.sold and #shop.repairs == 0, "stood down: nothing sold or repaired")
 
 io.write(("Bags: all %d checks passed.\n"):format(passed))
+-- The box Speed Leveling: the profile in use. Last here: the bags' categories come anew with a profile.
+function W.CheckLeveling()
+    local leveling = ns.Vendor.boxes[4]
+    check(leveling and leveling == Text("Speed Leveling"):GetParent() and leveling:GetChecked(), "Speed Leveling beside them, ticked on its profile")
+    leveling:GetScript("OnClick")(leveling)
+    W.Wait(0)
+    check(Core.Profiles.InUse() == "Accountwide" and not leveling:GetChecked() and not leveling.tick:IsShown(), "a click: back on Accountwide, its tick follows")
+    leveling:GetScript("OnClick")(leveling)
+    W.Wait(0)
+    check(Core.Profiles.InUse() == "Speedleveling" and leveling:GetChecked(), "and on the profile Speedleveling again")
+end
+W.CheckLeveling()
+
+-- Equip and delete without asking (Asks.lua): the game's questions, answered by what their own Yes does.
+function W.CheckAsks()
+    local onCursor, answered, hidden, shown = true, {}, {}, {}
+    local cursorWas = CursorHasItem
+    CursorHasItem = function() return onCursor end
+    local function Question(which)
+        StaticPopupDialogs[which] = { OnAccept = function(_, data) answered[#answered + 1] = which .. ":" .. tostring(data) end }
+    end
+    for _, which in ipairs({ "EQUIP_BIND", "EQUIP_BIND_TRADEABLE", "EQUIP_BIND_REFUNDABLE", "DELETE_ITEM", "DELETE_GOOD_ITEM", "OTHER_QUESTION" }) do
+        Question(which)
+    end
+    StaticPopupDialogs.DELETE_ITEM.OnAccept = function() answered[#answered + 1] = "deleted"; onCursor = false end
+    StaticPopup_FindVisible = function(which) return shown[which] end
+    StaticPopup_Hide = function(which) hidden[#hidden + 1] = which; shown[which] = nil end
+    local showPopup = StaticPopup_Show
+    local function Ask(which, data)
+        local box = { text = "" }
+        function box:IsShown() return true end
+        function box:SetText(text) self.text = text end
+        shown[which] = { which = which, data = data, GetEditBox = function() return box end }
+        W.popups[#W.popups + 1] = shown[which]
+        showPopup(which, nil, nil, data)
+        return box
+    end
+    check(ns.options.noAsk == true, "on at first")
+    Ask("EQUIP_BIND", 16)
+    check(answered[1] == "EQUIP_BIND:16" and hidden[1] == "EQUIP_BIND", "equipping: answered, the question gone")
+    Ask("OTHER_QUESTION", 1)
+    check(#answered == 1 and #hidden == 1, "another question is the game's")
+    Ask("DELETE_ITEM")
+    W.Wait(1)
+    check(answered[2] == "deleted" and ns.options.deleteRefused == false, "destroying: answered, the item gone")
+    Core.Set(ns.name, "noAsk", false)
+    Ask("EQUIP_BIND", 16)
+    check(#answered == 2, "off: the game asks")
+    Core.Set(ns.name, "noAsk", true)
+    -- The game refuses: the item stays on the cursor, the question stands with its word typed in, not tried again.
+    DELETE_ITEM_CONFIRM_STRING = "DELETE"
+    onCursor = true
+    local box = Ask("DELETE_GOOD_ITEM")
+    W.Wait(1)
+    check(ns.options.deleteRefused == true and box.text == "DELETE", "refused: the word typed in, kept for next time")
+    local count = #answered
+    box = Ask("DELETE_GOOD_ITEM")
+    check(#answered == count and box.text == "DELETE", "not tried again: the word at once")
+    ns.options.deleteRefused = false
+    CursorHasItem, StaticPopup_FindVisible, StaticPopup_Hide = cursorWas, nil, nil
+end
+W.CheckAsks()
+
+-- One slot kept free (Bags/Room.lua).
+function W.CheckRoom()
+    local free, list, gone, picked, onCursor, refuse = 1, {}, {}, nil, false, false
+    local numFree, junkOf, carriedOf, store = C_Container.GetContainerNumFreeSlots, Contents.Junk, Bags.Carried, Bags.Store
+    local pick, cursorWas = C_Container.PickupContainerItem, CursorHasItem
+    C_Container.GetContainerNumFreeSlots = function(bag) return bag == 0 and free or 0, 0 end
+    Contents.Junk = function() return list end
+    Bags.Carried = function() return { slots = {} } end
+    Bags.Store = function() end
+    C_Container.PickupContainerItem = function(bag, slot) picked, onCursor = bag .. ":" .. slot, true end
+    CursorHasItem = function() return onCursor end
+    DeleteCursorItem = function()
+        if refuse then return end
+        gone[#gone + 1], onCursor = picked, false
+    end
+    local errors = #W.errors
+    local function Bagged()
+        W.Fire("BAG_UPDATE_DELAYED")
+        W.Wait(0)
+    end
+    local function Press()
+        ns.Room.catcher:GetScript("OnKeyDown")(ns.Room.catcher, "W")
+        W.Wait(1)
+    end
+    Bagged()
+    check(ns.Room.catcher == nil and #W.errors == errors, "a slot free: nothing to do, nothing listens")
+    free = 0
+    Bagged()
+    check(#W.errors == errors + 1 and W.errors[#W.errors]:find("no junk"), "full, and no junk: a warning on the screen")
+    Bagged()
+    check(#W.errors == errors + 1, "once a minute, not at every change of the bags")
+    list = { { bag = 1, slot = 2, link = "[Rags]", sell = 5, count = 2 }, { bag = 1, slot = 3, link = "[Bone]", sell = 1, count = 3 },
+             { bag = 1, slot = 4, link = "[Locked]", sell = 0, count = 1, locked = true } }
+    Bagged()
+    check(ns.Room.catcher and ns.Room.catcher:IsShown() and #gone == 0, "full, with junk: it waits for your next key")
+    W.combat = true
+    Press()
+    check(#gone == 0 and not ns.Room.catcher:IsShown(), "in a fight: not then")
+    W.combat = false
+    Bagged()
+    check(ns.Room.catcher:IsShown(), "after it, it waits again")
+    Press()
+    check(gone[1] == "1:3" and not ns.Room.catcher:IsShown(), "a key: the cheapest junk of all its stack goes")
+    Core.Set("Loot", "full", false)
+    W.Wait(0)
+    Bagged()
+    check(not ns.Room.catcher:IsShown(), "the switch off: nothing goes")
+    Core.Set("Loot", "full", true)
+    W.Wait(0)
+    refuse = true
+    local cleared = ClearCursor
+    ClearCursor = function() onCursor = false end
+    Bagged()
+    Press()
+    check(#gone == 1 and not onCursor and W.errors[#W.errors]:find("no junk"), "refused by the game: back in the bags, a warning")
+    Bagged()
+    check(not ns.Room.catcher:IsShown(), "and not tried again")
+    C_Container.GetContainerNumFreeSlots, Contents.Junk, Bags.Carried, Bags.Store = numFree, junkOf, carriedOf, store
+    C_Container.PickupContainerItem, CursorHasItem, ClearCursor, DeleteCursorItem = pick, cursorWas, cleared, nil
+end
+W.CheckRoom()
+

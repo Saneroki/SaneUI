@@ -30,7 +30,7 @@ only read.
 
   | Setting | At first | What it does |
   |---|---|---|
-  | *Show tooltips* | Always | A dropdown: *Always* (at once, as the game does), or only while Shift, Ctrl, Alt, or Shift and Alt are held. Until the key is held a tooltip is there but unseen; pressing it shows the tooltip at once, letting go hides it again. (Shift is also the game's key for comparing an item with what you wear; with Alt, the technical details show too.) |
+  | *Show tooltips* | While Shift is held | A dropdown: *Always* (at once, as the game does), or only while Shift, Ctrl, Alt, or Shift and Alt are held. Until the key is held a tooltip is there but unseen; pressing it shows the tooltip at once, letting go hides it again. (Shift is also the game's key for comparing an item with what you wear; with Alt, the technical details show too.) |
   | *Tooltips at the mouse cursor* | Default | A dropdown: *Default* (where the game puts them), while Shift, Ctrl or Alt is held, or *Always*. The tooltips that stand in the corner of the screen (creatures, players, things in the world, your action bars) follow the mouse instead. Pressing or letting go of the key moves a shown tooltip at once, to the mouse and back |
   | *Colour players by their class* | on | Off: a player's tooltip takes the colour the game gives the name |
   | *Show the icon of items and spells* | on | Off: no icon of an item, spell or buff, and no portrait for units: the level stands beside the name |

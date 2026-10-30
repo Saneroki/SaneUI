@@ -102,6 +102,7 @@ local waiting -- a fight held the writing up: it follows when the fight is over
 local offered -- a /reload was offered for this writing
 local left    -- what the last capture read: the game's settings the character may be turning away from
 local leftNamed -- and the CVars kept by name then
+local arrived   -- the settings in use just came from elsewhere: a part they hold nothing of goes to the game's own
 
 -------------------------------------------------------------------------------
 --  Single CVars kept by name (Settings/CVars.lua)
@@ -190,10 +191,12 @@ function Sync.Give()
         if type(data) == "table" and Sync.PartKept(part.id) and Sync.Safe("writing " .. part.id, part.Write, data)
             and part.reload and not tContains(later, part.reload) then
             later[#later + 1] = part.reload
+        elseif arrived and data == nil and part.Default and Sync.PartKept(part.id) then
+            Sync.Safe("defaults of " .. part.id, part.Default)
         end
     end
     Sync.Safe("writing CVars kept by name", WriteNamed, Sync.options.named)
-    given = true
+    given, arrived = true, false
     Sync.OfferReload(later)
 end
 
@@ -223,7 +226,9 @@ end
 -- once, if the character is in the world already (otherwise that happens anyway).
 function Sync.Moved()
     if not On() then return Sync.Safe("defaults", ToDefaults) end
-    if settled then Sync.Safe("writing", Sync.Give) end
+    if not settled then return end
+    arrived = true
+    Sync.Safe("writing", Sync.Give)
 end
 
 -- Kept with the settings like a module's switches, in the profile in use (never a character's own), none with a

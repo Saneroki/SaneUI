@@ -40,8 +40,8 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 `Core.Neighbours.Lock`, copies — nothing of the addon is called at runtime), and runs the guides itself.
 
 ## How to use
-- **Its key:** where it has none it gets E, once for each profile with *Solo* on, in place of the game's Strafe Right, and
-  the chat says so. Change it in Esc > Options > Keybindings, under *Sane UI*: *Loot, talk, pick up, attack, find and mark,
+- **Its key:** on the profile *Speedleveling*, where it has none it gets E, once, in place of the game's Strafe Right, and
+  the chat says so. The other profiles have key bindings of their own, without it. Change it in Esc > Options > Keybindings, under *Sane UI*: *Loot, talk, pick up, attack, find and mark,
   use*. Taken off again, it stays off, and the module says so in chat at every login. The game keeps key
   bindings per account: on a new account give it one again (a key there may still be bound to a button that is gone,
   and then does nothing). `/sane key` shows the keys it has.
@@ -55,11 +55,14 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 - **Pause it, or switch it off:** *Your guide* on the options page, or the guide's switch in the minimap's satchel (a
   click pauses it or goes on, a right click chooses on, paused or off).
 - **Switch it on or off:** tick or untick *Speed Leveling* under *Sane UI* in the game's addon list.
+- **On or off:** the box *Speed Leveling* at the foot of the bags (Saneroki, 2026-10-30) is the profile: ticked, this
+  character uses *Speedleveling*; unticked, it goes back to the profile it used before, *Accountwide* if it had no other.
+  Every switch below is off at first and on in *Speedleveling* alone (Core's `Presets.lua`), so a switch ticked in another
+  profile works there by itself; with none on, all of the module rests: the key does nothing, the guide is hidden.
 - **Its page** in Sane UI's options, *Speed Leveling*:
 
-| Setting | Default | What it does |
+| Setting | In *Speedleveling* | What it does |
 | --- | --- | --- |
-| Solo | off, on in the profile *Speedleveling* | All of the module on. Off: all of it rests until it is ticked again: the key does nothing, the guide is hidden, the quest givers, the loot, the upgrades and the rolls are yours, and what it set in Loot is put back. For playing with others; your own two characters together count as solo. Also a box at the foot of the bags (`Vendor.lua`) |
 | Loot first | on | A corpse with loot beside you is opened before anything is looked for. The game's interact key (`softTargetInteract`) is switched on for it |
 | Walk to corpses | on | For a moment after a fight the interact key looks all around you and 30 yards far, your target's corpse counts however far it is, and the game's Click-to-Move (`autointeract`) is lent while there is a corpse, so the key runs you to it and opens it; all put back after the last corpse, and in a fight. While it is lent, a right click on the ground walks you there too |
 | Talk to NPCs | on | An NPC right in front of you that is no foe (friendly or neutral) is talked to at once (after a corpse to loot); a quest NPC the key found or you targeted, at the next press. Off: the key looks on |
@@ -77,7 +80,6 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Close the talk when it is done | on | After a quest is taken or handed in the key leaves that NPC alone, unless your guide still wants a quest there, and a talk that comes up with nothing for you closes by itself (*The key*). Quests your guide does not know are ignored: never taken, and right after a quest done there the talk closes over them. A talk you open yourself after that stays open for them |
 | *On the way:* Take all loot | on | Sets the module Loot to take everything at once (its *Everything* on, its *Always show upgrades* off, as *Equip upgrades* puts those on) and answers the game's question on a thing that binds when picked up. Each set once: what you change on Loot's page afterwards stays; this switch off puts back the rest. Things locked to a group's roll are not taken |
 | Skip cinematics | on | The game's cinematics and movies stopped as they start (`StopCinematic`, `CancelScene`, `MovieFrame:FinishMovie`), but one the game does not let you leave |
-| Equip and delete without asking | on | The game's questions before gear binds to you or loses its refund, and before an item is destroyed whatever its quality, are answered as their own Yes would. Destroying is a call the game keeps for a click of the player's: where it refuses, its question comes up with the word it wants typed in, and it is not tried again |
 | Equip upgrades | on | Gear that comes into your bags, looted or a quest's reward, and is an upgrade (`Core.Upgrade`: anything you can wear for a place with nothing in it, else one worth more by your class's and specialization's weights, Inventory's `Weights.lua`, else a higher item level) is put on, one at a time, out of a fight; the chat says what. Only what the game flags as new (`C_NewItems`), so what you took off yourself stays off, and an item the game refused is not tried again |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |

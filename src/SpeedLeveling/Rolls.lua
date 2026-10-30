@@ -9,6 +9,10 @@ local _, ns = ...
 --  over Core's addon messages. Then the one it brings the most Needs it and the
 --  others Greed, where the game lets them, else Pass. Nobody it brings anything:
 --  all Greed. No word from anybody: Need on an upgrade.
+--  One of you always rolls, so that nothing is left lying (Saneroki, the same
+--  day): the first in line (the most gain, of two the same the lower GUID)
+--  takes what the game lets it, Need last; a character that can roll nothing at
+--  all says so (a gain under 0), and the next one is first.
 --
 --  Core's messages wait for the end of a fight on both sides, so a roll started
 --  in one waits too, as long as its clock allows (Rolls.LAST); the rest of the
@@ -29,13 +33,21 @@ Rolls.LAST = 10000   -- milliseconds left on a roll's clock at which it is decid
 Rolls.TICK = 0.5     -- seconds between looks at the open rolls
 Rolls.KEEP = 90      -- seconds a word heard stays good: about as long as a roll lasts
 
-local PASS, NEED, GREED = 0, 1, 2
+local PASS, NEED, GREED, DISENCHANT, TRANSMOG = 0, 1, 2, 3, 4
 local EMPTY = {}
 
 local open = {}      -- [rollID] = { item, gain, need, greed, said, quiet (out of a fight since) }
 local heard = {}     -- [item] = { { gain, who, when } }
 local mine = {}      -- [rollID] = true: rolled here, the game's question is ours to answer
 local Look
+
+-- What you can roll that claims no upgrade, the best first; Need last, for a thing that would go to nobody otherwise.
+local function Any(roll)
+    if roll.greed then return GREED end
+    if roll.transmog then return TRANSMOG end
+    if roll.disenchant then return DISENCHANT end
+    return roll.need and NEED or PASS
+end
 
 local function Channel()
     local instance = rawget(_G, "LE_PARTY_CATEGORY_INSTANCE") or 2
@@ -51,7 +63,7 @@ local function Say(roll, late)
     if roll.need and not late and not Core.Ask(info, roll.link) then return end
     local gain
     if roll.need then gain = select(2, Core.Upgrade(roll.link, roll.item)) end
-    gain = gain or 0
+    gain = Any(roll) == PASS and -1 or gain or 0
     roll.gain, roll.said = gain, GetTime()
     local channel = Channel()
     if channel then
@@ -72,11 +84,11 @@ end
 
 local function Decide(rollID, roll)
     open[rollID] = nil
-    local best = roll.gain > 0 and not Beaten(roll)
+    local first = not Beaten(roll)
     heard[roll.item] = nil
     mine[rollID] = true
-    local choice = PASS
-    if best and roll.need then choice = NEED elseif roll.greed then choice = GREED end
+    local choice = roll.greed and GREED or PASS
+    if first then choice = roll.gain > 0 and roll.need and NEED or Any(roll) end
     Core.Ask(rawget(_G, "RollOnLoot"), rollID, choice)
 end
 
@@ -105,10 +117,11 @@ local function Started(rollID)
     rollID = Plain(rollID)
     if ns.off or not ns.options.rolls or open[rollID] then return end
     local link = Plain(Core.Ask(rawget(_G, "GetLootRollItemLink"), rollID))
-    local ok, _, _, _, _, _, canNeed, canGreed = pcall(GetLootRollItemInfo, rollID)
+    local ok, _, _, _, _, _, canNeed, canGreed, canDisenchant, _, _, _, _, canTransmog = pcall(GetLootRollItemInfo, rollID)
     if not ok or type(link) ~= "string" then return end
     open[rollID] = { link = link, item = tonumber(link:match("item:(%d+)")), need = Plain(canNeed) and true or false,
-                     greed = Plain(canGreed) and true or false, gain = 0 }
+                     greed = Plain(canGreed) and true or false, disenchant = Plain(canDisenchant) and true or false,
+                     transmog = Plain(canTransmog) and true or false, gain = 0 }
     Tick()
 end
 

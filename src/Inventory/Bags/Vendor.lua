@@ -9,9 +9,10 @@ local _, ns = ...
 --  not. The junk goes first, so its money goes to the repair: what the bar's
 --  Sell All Junk Items sells (Foot.Sell), unasked. Then all the gear, with the
 --  character's own money and only if that is enough. Shift held as the window
---  opens leaves both to the player. Beside them Solo, Speed Leveling's own
---  switch (the same day: all of that module on or resting); no box where that
---  module is off.
+--  opens leaves both to the player. Beside them Make Room, Loot's own switch
+--  (Room.lua), and Speed Leveling, which is the profile Speedleveling for this
+--  character or the one it used before (Core's Profiles.SetLeveling), Saneroki,
+--  the same day; no box where that module is off.
 --
 --      Vendor.Build(foot, gold)   the boxes in the foot, left of gold (Foot.Build)
 --      Vendor.Refresh()           the ticks and widths as the settings have them
@@ -30,7 +31,9 @@ Vendor.TICK = 2                 -- the tick's pencil
 Vendor.TICK_WAY = { { -4, 0 }, { -1, -3 }, { 5, 4 } } -- the tick's line from the box's middle
 Vendor.BOXES = { { key = "autoRepair", word = "bagsAutoRepair", tip = "bagsAutoRepairTip" },
                  { key = "autoSell", word = "bagsAutoSell", tip = "bagsAutoSellTip" },
-                 { key = "solo", word = "bagsSolo", tip = "bagsSoloTip", module = "SpeedLeveling" } } -- from the gold leftwards
+                 { key = "full", word = "bagsMakeRoom", tip = "bagsMakeRoomTip", module = "Loot" },
+                 { key = "take", word = "bagsSpeedLeveling", tip = "bagsSpeedLevelingTip", module = "SpeedLeveling",
+                   profile = true } } -- from the gold leftwards; a profile's: key only tells that its module is there
 
 local boxes = {}
 
@@ -67,16 +70,22 @@ end
 -------------------------------------------------------------------------------
 --  The boxes
 -------------------------------------------------------------------------------
--- Where a box's setting is: this module's, or the one it names.
+-- Where a box's setting is: this module's, the one it names, or the profile in use.
 local function On(box)
     local options = box.module and Core.Settings(box.module) or ns.options
     return options[box.key] ~= false
 end
+    if box.profile then return Core.Profiles.Leveling() end
 
 local function Clicked(box)
     local on = not On(box)
     Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
-    Core.Set(box.module or ns.name, box.key, on)
+    if box.profile then
+        Core.Profiles.SetLeveling(on)
+    else
+        Core.Set(box.module or ns.name, box.key, on)
+        Vendor.Refresh()
+    end
 end
 
 local function Entered(box)
@@ -111,7 +120,7 @@ end
 local function Box(foot, spec, font)
     local box = CreateFrame("CheckButton", nil, foot)
     box:SetHeight(Vendor.BOX)
-    box.key, box.word, box.tip, box.module = spec.key, spec.word, spec.tip, spec.module
+    box.key, box.word, box.tip, box.module, box.profile = spec.key, spec.word, spec.tip, spec.module, spec.profile
     local square = CreateFrame("Frame", nil, box)
     square:SetSize(Vendor.BOX, Vendor.BOX)
     square:SetPoint("LEFT")

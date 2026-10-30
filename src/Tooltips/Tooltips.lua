@@ -30,16 +30,12 @@ local Guarded = ns.Guarded -- runs a step; its error stands the module down (Cor
 -- Settings saved by an older version, in each copy of them (a profile's, a character's own), brought up
 -- to this shape before Core checks them against their defaults (Core.Options: version, upgrade). 2: the
 -- background was 90 percent solid at first; it is 97 now, and 90 is taken for the old default, not for a
--- choice. 3: the mouse switch, on or off, is one of a few now (always, or while a key is held); tooltips
--- were shown only while Shift was held at first, for a day: Always is that default now.
+-- choice. 3: the mouse switch, on or off, is one of a few now (always, or while a key is held).
 local VERSION = 3
 local function Upgrade(saved, from)
     if from < 2 then
         if saved.opacity == 90 then saved.opacity = 97 end
         saved.border = nil -- a setting that is gone
-    end
-    if from < 3 then
-        if saved.show == "shift" then saved.show = "always" end
     end
     if type(saved.cursor) == "boolean" then saved.cursor = saved.cursor and "always" or "default" end
 end
@@ -47,7 +43,7 @@ end
 -- The keys the two options below can wait for
 local KEYS = { { "shift", "While Shift is held" }, { "ctrl", "While Ctrl is held" }, { "alt", "While Alt is held" } }
 Core.Options(ns.name, {
-    { key = "show", default = "always", text = "Show tooltips", header = "When and where",
+    { key = "show", default = "shift", text = "Show tooltips", header = "When and where",
       headerTip = "When tooltips show, and where they stand.",
       choices = { { "always", "Always" }, KEYS[1], KEYS[2], KEYS[3], { "shiftalt", "While Shift and Alt are held" } },
       tip = "Always: tooltips show at once, as the game's do. Or they stay hidden until you hold a key down, and hide again when you let go." },
@@ -102,7 +98,7 @@ end
 -- A tooltip that may not is there all the same, filled and placed by the game, its panel drawn;
 -- only it and its panel are see-through, until the key is pressed (Gate).
 function ns.Allowed()
-    return Holds(ns.options and ns.options.show or "always")
+    return Holds(ns.options and ns.options.show or "shift")
 end
 
 -- What a tooltip can hold that a panel cannot show: another tooltip inside it, bars, frames

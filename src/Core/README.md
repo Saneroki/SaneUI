@@ -91,8 +91,10 @@ but for a window to try those with (`/sane window`).
   in its section *Expand window* (Social, tab *Appearance*), which can be *Use global type*: this one.
 - **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
   - Every character uses one of three standard profiles, or one you made. None is made for a character by itself.
-    - *Speedleveling*: Speed Leveling's automation on (its switch *Solo*), our recommended CVars and some more that
-      keep you moving (`Presets.lua`). For now where every new character starts.
+    - *Speedleveling*: all of Speed Leveling's switches on, our recommended CVars and some more that keep you moving
+      (`Presets.lua`), and the key E. For now where every new character starts. The box *Speed Leveling* at the foot of
+      the bags is this profile (`Profiles.SetLeveling`): ticked, the character uses it; unticked, the one it used before
+      (`line.before`), *Accountwide* if it had no other.
     - *Accountwide*: Sane UI's recommended settings and CVars (`Presets.lua`), every change shared by all the
       characters on it.
     - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's

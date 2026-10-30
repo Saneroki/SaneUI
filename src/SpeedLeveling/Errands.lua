@@ -3,20 +3,13 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Errands
 --  What would hold you up on the way, done for you (Saneroki, 2026-10-30), each
---  with a switch of its own, on at first:
+--  with a switch of its own, on in the profile Speedleveling:
 --    Take all loot    the module Loot set to take everything at once (its
 --                     switches Everything on, Always show upgrades off: what
 --                     is an upgrade goes on by Equip upgrades). Each set once:
 --                     what you change on Loot's page after that stays, and this
 --                     switch off puts back what you did not change. The game's
 --                     question on a thing that binds when picked up is answered.
---    Equip and delete without asking
---                     the game's questions before gear binds to you or ends a
---                     refund, and before an item is destroyed, answered as its
---                     own Yes would. Destroying is held back by the game for a
---                     click of the player's: where it refuses, its question
---                     comes up as ever with the word it wants typed in, and is
---                     not tried again (options.deleteRefused).
 --    Equip upgrades   gear that just came into your bags and is an upgrade
 --                     (Core.Upgrade; the game's own flag of a new item, so what
 --                     you took off yourself stays off) is put on, one at a time
@@ -29,19 +22,11 @@ local Core = SaneUI.Core
 local Errands = {}
 ns.Errands = Errands
 
-Errands.CHECK = 0.3   -- seconds after an item was destroyed before the cursor shows whether the game let it
 Errands.EQUIP = 0.3   -- seconds after the bags changed, or a piece went on, before the next new upgrade is put on
 
 local LOOT = "Loot"   -- the module whose switches Take all loot sets
 local LENT = { takeAll = true, showUpgrades = false }
--- The game's questions, each with the switch that answers it.
-local ASKS = {
-    LOOT_BIND = "lootAll",
-    EQUIP_BIND = "noAsk", EQUIP_BIND_TRADEABLE = "noAsk", EQUIP_BIND_REFUNDABLE = "noAsk",
-    DELETE_ITEM = "noAsk", DELETE_QUEST_ITEM = "noAsk", DELETE_GOOD_ITEM = "noAsk", DELETE_GOOD_QUEST_ITEM = "noAsk",
-}
 
-local deleting        -- the question an item was just destroyed for
 local tried = {}      -- the upgrades put on or tried (links): one the game refuses is not tried again
 
 -------------------------------------------------------------------------------
@@ -71,45 +56,17 @@ function Errands.Update()
 end
 
 -------------------------------------------------------------------------------
---  The game's questions
+--  The game's question on a thing that binds when picked up
 -------------------------------------------------------------------------------
--- The word the game wants typed for a good item, typed in; its Yes is then one click.
-local function TypeWord(dialog)
-    local box = dialog.GetEditBox and Core.Ask(dialog.GetEditBox, dialog) or dialog.editBox
-    local word = rawget(_G, "DELETE_ITEM_CONFIRM_STRING")
-    if box and box.SetText and word and Core.Ask(box.IsShown, box) then Core.Ask(box.SetText, box, word) end
-end
-
--- A moment after the item was destroyed: gone, or the game refused and the question stands.
-local CheckDeleted = Core.Later(function()
-    ns.Guarded(function()
-        local which = deleting
-        deleting = nil
-        local find = rawget(_G, "StaticPopup_FindVisible")
-        local dialog = which and find and Core.Ask(find, which)
-        if not dialog or not Core.Ask(rawget(_G, "CursorHasItem")) then return end
-        ns.options.deleteRefused = true
-        TypeWord(dialog)
-    end)
-end, Errands.CHECK)
-
--- A question of the game's has come up: answered as its own Yes would.
+-- Answered as its own Yes would.
 local function Answer(which)
-    local switch = ASKS[which]
-    if not switch or ns.off or not ns.options[switch] then return end
+    if which ~= "LOOT_BIND" or ns.off or not ns.options.lootAll then return end
     local dialogs, find = rawget(_G, "StaticPopupDialogs"), rawget(_G, "StaticPopup_FindVisible")
     local info = type(dialogs) == "table" and dialogs[which]
     local dialog = info and find and Core.Ask(find, which)
     if not dialog or type(info.OnAccept) ~= "function" then return end
-    if not which:find("^DELETE") then
-        Core.Ask(info.OnAccept, dialog, dialog.data, dialog.data2)
-        return Core.Ask(rawget(_G, "StaticPopup_Hide"), which)
-    end
-    if ns.options.deleteRefused then return TypeWord(dialog) end
-    -- The game's question hides itself once the item is off the cursor.
-    deleting = which
     Core.Ask(info.OnAccept, dialog, dialog.data, dialog.data2)
-    CheckDeleted()
+    Core.Ask(rawget(_G, "StaticPopup_Hide"), which)
 end
 
 -------------------------------------------------------------------------------

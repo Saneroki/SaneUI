@@ -13,6 +13,7 @@
 Inventory.lua
 # What each stat is worth to a character, by class and specialization (Core.Upgrade asks)
 Weights.lua
+Asks.lua
 # Its window: docked in the bottom right corner, filling the screen from that corner
 Window.lua
 # Your bag keys and the game's bag buttons open ours; the game's bags kept closed
@@ -52,6 +53,7 @@ Bags\Layout.lua
 Bags\Cells.lua
 Bags\Foot.lua
 Bags\Vendor.lua
+Bags\Room.lua
 Bags\Menus.lua
 Bags\Select.lua
 Bags\Split.lua

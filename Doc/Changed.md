@@ -100,6 +100,29 @@ Saneroki: the travel widget a little higher, with the exit vehicle icon, the gam
   (`trip.canLand`), so pressing it past the last stop keeps the flight's pace.
 - Tests: `dev/tests/navigation.lua` 737 checks; `wowstub.lua` has `Enable` and `Disable`.
 
+### Speed Leveling is the profile; Make Room; one of two characters always rolls (Saneroki, 2026-10-30)
+Saneroki: the box Solo is the word Speed Leveling and changes the profile, everything of Speed Leveling off elsewhere, E only
+in Speedleveling, equip and delete without asking in Inventory, every group roll rolled by one of his two characters,
+Make Room a box in the bags with one slot kept free, tooltips on Shift.
+- **`Profiles.SetLeveling`, `Profiles.Leveling`** (`Profiles.lua`): the box's two sides. `Assign` keeps what a character
+  left (`line.before`, Speedleveling never); a rename follows it, a deleted one falls back on Accountwide. A move tells
+  the switches (`Core.SwitchChanged`).
+- **Speed Leveling:** the switch Solo is gone. Every switch defaults to off and `follow` to `off`; `Presets.lua` turns all
+  of them on in Speedleveling. `Idle()`: with none on the module rests, as Solo did, and wakes for one ticked.
+  `FirstKey` gives E on Speedleveling alone; the module's `moved` asks for it after a move.
+- **`Sync.Moved`:** a part with a `Default` that the profile come to holds nothing of gets the game's own (`arrived`), so
+  Accountwide does not keep Speedleveling's E; not at a login, where the game's keys stay.
+- **`Rolls.lua`:** the first in line (most gain, then the lower GUID) takes what the game lets it (`Any`: Greed, Transmog,
+  Disenchant, Need last); a character that can roll nothing says a gain under 0. Rolls read `canDisenchant`, `canTransmog`.
+- **`Inventory/Asks.lua`** (new): Equip and delete without asking, from `Errands.lua`, option `noAsk` on in every profile;
+  Errands keeps only the question on what binds when picked up.
+- **`Inventory/Bags/Room.lua`** (new): one slot kept free, Loot's switch `full`, a box in `Vendor.BOXES`.
+  `DeleteCursorItem` wants a press of the player's, so it runs from `OnKeyDown` on a frame shown only while something
+  waits.
+- **`Bags.Reload`:** read a local defined further down, so a profile move with the bags built stood Inventory down.
+- **Tooltips:** `show` defaults to `shift`; the old step that turned `shift` into `always` is gone.
+- Tests: `dev/tests/core.lua`, `sync.lua`, `speedleveling.lua`, `bags.lua`, `tooltips.lua`.
+
 ### Core: the recommended CVars in Accountwide and Speedleveling (Saneroki, 2026-10-30)
 Saneroki: the world's distance, grass, weather, shadows, water and 115 frames a second set by the profiles, nothing to
 type on a new install, and what loads quicker.

@@ -904,6 +904,36 @@ do
     W.Wait(ns.Rolls.TICK * 2)
     check(rolled[6] == 1, "the clock running out: decided")
     W.combat = false
+    -- One of you always rolls: all you can but Need first, Need last rather than leaving it.
+    local info = GetLootRollItemInfo
+    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, true, false end
+    gains[500], left[21] = nil, 60000
+    W.Fire("START_LOOT_ROLL", 21, 60000)
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[21] == 1, "no upgrade, and the game lets you only Need: Need, so that it is rolled")
+    left[22] = 60000
+    W.Fire("START_LOOT_ROLL", 22, 60000)
+    ns.Rolls.Heard("x", { "500", "3", other })
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[22] == 0, "with another one first: Pass")
+    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, false, false, false, nil, nil, nil, nil, true end
+    left[23] = 60000
+    W.Fire("START_LOOT_ROLL", 23, 60000)
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[23] == 4, "what the game lets you instead of Greed")
+    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, false, false end
+    left[24] = 60000
+    W.Fire("START_LOOT_ROLL", 24, 60000)
+    check(said[#said].fields[2] == -1, "nothing you can roll: said, so that another one is first")
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[24] == 0, "and Pass")
+    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, true, false end
+    left[25] = 60000
+    W.Fire("START_LOOT_ROLL", 25, 60000)
+    ns.Rolls.Heard("x", { "500", "-1", other })
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[25] == 1, "the other one can roll nothing: yours to roll, whatever its GUID")
+    GetLootRollItemInfo = info
     -- The game's question on a thing that binds, for a roll made here only.
     local confirmed, hiddenRoll = {}, 0
     ConfirmLootRoll = function(id, choice) confirmed[id] = choice end
@@ -951,15 +981,20 @@ do
     StopCinematic, CancelScene, CanCancelScene, MovieFrame = nil, nil, nil, nil
 end
 
--- Solo off: all of the module rests, and comes back as it was.
+-- Out of the profile Speedleveling all of the module rests, and comes back as it was.
 do
     W.Wait(Key.LOOK + Key.TICK)
     header:SetAttribute("state-mode", "loot")
     check(overrides.E == "INTERACTTARGET", "before the rest: the key's action on its key")
-    Core.Set(ns.name, "solo", false)
-    check(ns.off and next(overrides) == nil and drivers[header].mode == nil, "Solo off: no action on the key, the driver stopped")
-    Core.Set(ns.name, "solo", true)
-    check(not ns.off and drivers[header].mode ~= nil, "Solo on: the module back")
+    Core.Profiles.SetLeveling(false)
+    check(ns.off and next(overrides) == nil and drivers[header].mode == nil, "Speed Leveling off: no action on the key, the driver stopped")
+    check(ns.options.take == false and ns.options.follow == "off", "every switch off on Accountwide")
+    Core.Set(ns.name, "cinematics", true)
+    check(not ns.off, "one switch ticked there: the module wakes for it")
+    Core.Set(ns.name, "cinematics", false)
+    check(ns.off, "and rests again")
+    Core.Profiles.SetLeveling(true)
+    check(not ns.off and drivers[header].mode ~= nil and ns.options.take == true, "Speed Leveling on: the module back")
     check(next(overrides) ~= nil, "the key's action back on its key")
     header:SetAttribute("state-mode", "find")
 end
@@ -1055,23 +1090,18 @@ ns.options.lootLent = { takeAll = { was = false, set = true } }
 lootOptions.takeAll = true
 Core.Set(ns.name, "lootAll", true)
 check(lootOptions.showUpgrades == false, "one switch set before, the other still is")
-Core.Set(ns.name, "solo", false)
-check(lootOptions.takeAll == false and lootOptions.showUpgrades == true, "Solo off: Loot's switches back")
-Core.Set(ns.name, "solo", true)
-check(lootOptions.takeAll == true and lootOptions.showUpgrades == false, "Solo on: set again")
+Core.Profiles.SetLeveling(false)
+check(lootOptions.takeAll == false and lootOptions.showUpgrades == true, "Speed Leveling off: Loot's switches back")
+Core.Profiles.SetLeveling(true)
+check(lootOptions.takeAll == true and lootOptions.showUpgrades == false, "Speed Leveling on: set again")
 
--- The game's questions, answered by what their own Yes does.
-local cursor, answered, hidden = true, {}, {}
-CursorHasItem = function() return cursor end
+-- The game's question on what binds when picked up, answered by what its own Yes does.
+local answered, hidden = {}, {}
 local shown = {}
 local function Question(which)
     StaticPopupDialogs[which] = { OnAccept = function(_, data) answered[#answered + 1] = which .. ":" .. tostring(data) end }
 end
-for _, which in ipairs({ "LOOT_BIND", "EQUIP_BIND", "EQUIP_BIND_TRADEABLE", "EQUIP_BIND_REFUNDABLE", "DELETE_ITEM",
-                         "DELETE_GOOD_ITEM", "OTHER_QUESTION" }) do
-    Question(which)
-end
-StaticPopupDialogs.DELETE_ITEM.OnAccept = function() answered[#answered + 1] = "deleted"; cursor = false end
+for _, which in ipairs({ "LOOT_BIND", "OTHER_QUESTION" }) do Question(which) end
 StaticPopup_FindVisible = function(which) return shown[which] end
 StaticPopup_Hide = function(which) hidden[#hidden + 1] = which; shown[which] = nil end
 local showPopup = StaticPopup_Show
@@ -1085,30 +1115,10 @@ local function Ask(which, data)
     return box
 end
 -- The module hooked the function as it started; the hook runs after the game's.
-Ask("EQUIP_BIND", 16)
-check(answered[1] == "EQUIP_BIND:16" and hidden[1] == "EQUIP_BIND", "equipping: answered, the question gone")
 Ask("LOOT_BIND", 3)
-check(answered[2] == "LOOT_BIND:3" and hidden[2] == "LOOT_BIND", "what binds when picked up: answered")
+check(answered[1] == "LOOT_BIND:3" and hidden[1] == "LOOT_BIND", "what binds when picked up: answered")
 Ask("OTHER_QUESTION", 1)
-check(#answered == 2 and #hidden == 2, "another question is the game's")
-Ask("DELETE_ITEM")
-W.Wait(1)
-check(answered[3] == "deleted" and ns.options.deleteRefused == false, "destroying: answered, the item gone")
-Core.Set(ns.name, "noAsk", false)
-Ask("EQUIP_BIND", 16)
-check(#answered == 3, "Equip and delete without asking off: the game asks")
-Core.Set(ns.name, "noAsk", true)
--- The game refuses: the item stays on the cursor, the question stands with its word typed in, not tried again.
-DELETE_ITEM_CONFIRM_STRING = "DELETE"
-cursor = true
-local box = Ask("DELETE_GOOD_ITEM")
-W.Wait(1)
-check(ns.options.deleteRefused == true and box.text == "DELETE", "refused: the word typed in, kept for next time")
-local count = #answered
-box = Ask("DELETE_GOOD_ITEM")
-check(#answered == count and box.text == "DELETE", "not tried again: the word at once")
-ns.options.deleteRefused = false
-cursor = false
+check(#answered == 1 and #hidden == 1, "another question is the game's")
 shown = {}
 
 -------------------------------------------------------------------------------

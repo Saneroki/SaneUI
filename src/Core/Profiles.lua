@@ -32,8 +32,9 @@ local Core = SaneUI.Core
 --
 --      SaneUIDB.version      the shape of these settings (Profiles.VERSION)
 --      SaneUIDB.profiles     [name] = { [module] = its settings }; Accountwide and Speedleveling are always there
---      SaneUIDB.characters   [key] = { name, realm, class, profile }: every character seen; profile: a name,
---                            or Character specific (Profiles.OWN); nil: Accountwide
+--      SaneUIDB.characters   [key] = { name, realm, class, profile, before }: every character seen; profile: a name,
+--                            or Character specific (Profiles.OWN); nil: Accountwide. before: the last one it used
+--                            that was not Speedleveling, for the box Speed Leveling in the bags (Profiles.SetLeveling)
 --      SaneUIDB.newProfile   the profile a character not seen yet starts with (nil: Speedleveling)
 --      SaneUIDB.presets      [name] = the Presets.VERSION a standard profile was given
 --      SaneUICharDB.settings [module] = this character's own settings (Character specific)
@@ -129,6 +130,13 @@ local function Assigned(line)
     local name = line and line.profile
     if Usable(name) then return name end
     return ACCOUNTWIDE
+end
+
+-- A character takes a profile; the one it leaves is remembered, Speedleveling itself not.
+local function Assign(line, name)
+    local was = Assigned(line)
+    if was ~= SPEEDLEVELING then line.before = was end
+    line.profile = name
 end
 
 -- The profile a character not seen yet starts with.
@@ -250,6 +258,7 @@ local function Move(to)
         Holder(to, name)[name] = live[name]
         return new
     end)
+    if Core.SwitchChanged then Core.SwitchChanged() end
 end
 
 -------------------------------------------------------------------------------
@@ -487,9 +496,24 @@ function Profiles.Use(name)
     local line = Line()
     if not line then return false, TEXT.unknown end
     Capture() -- the game's settings into the profile left, while Sync still reads them
-    line.profile = name
+    Assign(line, name)
     Move(Want())
     return true
+end
+
+-- Whether this character plays with Speed Leveling: it uses the profile Speedleveling.
+function Profiles.Leveling()
+    return Profiles.InUse() == SPEEDLEVELING
+end
+
+-- The box Speed Leveling in the bags: on, this character uses Speedleveling; off, it goes back to the profile it used
+-- before that, Accountwide if there was none or it is gone.
+function Profiles.SetLeveling(on)
+    if (on and true or false) == Profiles.Leveling() then return true end
+    if on then return Profiles.Use(SPEEDLEVELING) end
+    local line = Line()
+    local back = line and line.before
+    return Profiles.Use(Usable(back) and back or ACCOUNTWIDE)
 end
 
 -- Renamed, it stays every character's profile that had it, and in use where it was.
@@ -502,6 +526,7 @@ function Profiles.Rename(name, as)
     db.profiles[new], db.profiles[name] = db.profiles[name], nil
     for _, line in pairs(db.characters) do
         if type(line) == "table" and line.profile == name then line.profile = new end
+        if type(line) == "table" and line.before == name then line.before = new end
     end
     if db.newProfile == name then db.newProfile = new end
     if source == name then source = new end
@@ -638,7 +663,7 @@ function Profiles.SetCharacter(which, name)
     local line = Line(which)
     if not line then return false, TEXT.unknown end
     if which == key then Capture() end
-    line.profile = name
+    Assign(line, name)
     if which == key then Move(Want()) end
     return true
 end

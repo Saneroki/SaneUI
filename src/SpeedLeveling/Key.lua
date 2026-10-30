@@ -442,11 +442,12 @@ function Key.Keys()
 end
 Key.keysLater = Later(Key.Keys)
 
--- No key: it gets Key.FIRST, once for a profile, and the chat says so; one taken off again stays off, and the module
--- says so at every login. The game keeps key bindings per account, so a new account starts without it, and a key may
--- still be bound to a button that is gone (Saneroki, 2026-10-29: E did nothing).
+-- No key on the profile Speedleveling: it gets Key.FIRST, once, and the chat says so; one taken off again stays off,
+-- and the module says so at every login. The game keeps key bindings per account, so a new account starts without it,
+-- and a key may still be bound to a button that is gone (Saneroki, 2026-10-29: E did nothing). The other profiles have
+-- key bindings of their own, without it (Saneroki, 2026-10-30).
 local function FirstKey()
-    if not header or ns.off or #keys > 0 then return end
+    if not header or ns.off or #keys > 0 or not Core.Profiles.Leveling() then return end
     if ns.options.keyGiven then return Core.Print(ns.TEXT.hint) end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: first key", Key.firstLater) end
     ns.options.keyGiven = true
@@ -456,6 +457,7 @@ local function FirstKey()
 end
 Key.firstLater = Later(FirstKey)
 local FirstSoon = Core.Later(Key.firstLater, Key.SETTLE)
+Key.First = FirstSoon
 
 -- The switches as they are: the game's interact key for Loot first, Talk to NPCs and Quest objects, the driver's
 -- conditions, the macros.
@@ -552,7 +554,7 @@ end
 function Key.GiveBack()
     if not header then return PutBack() end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: give back", Key.GiveBack) end
-    if not ns.off then return end -- woken up in the same fight (Solo)
+    if not ns.off then return end -- woken up in the same fight
     UnregisterStateDriver(header, "mode")
     header:SetAttribute("_onattributechanged", nil)
     ClearOverrideBindings(header)
@@ -565,7 +567,8 @@ function Key.GiveBack()
     PutBack()
 end
 
--- After a rest (the switch Solo): the header hears again, the settings lent, the action due put on the key's keys anew.
+-- After a rest (no switch on, then one is): the header hears again, the settings lent, the action due put on the key's
+-- keys anew.
 function Key.Wake()
     if not header then return end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: wake", Key.wakeLater) end
