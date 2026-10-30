@@ -33,9 +33,10 @@ local _, ns = ...
 --                    objective with its zone whole, watch, share, abandon after a question). The mouse over
 --                    it: its area on the map (Areas.lua). The item it wants used, as the game's tracker shows
 --                    one, stands at the far end of its row (The quests' items)
---      under it      a quest's text, by a click on it, from its menu or by a click on its pin on the map: its
---                    objectives' words, its rewards and its story, one quest's at a time; a click there or on the
---                    quest folds it away
+--      under it      a quest's text, by a click on it, from its menu or by a click on its pin on the map, one quest's
+--                    at a time, on a dark panel: what it asks, what it gives and its story, each under its heading in
+--                    gold. What it gives: experience and coin in words, its things as big icons with their names, two
+--                    side by side where they fit (The rewards). A click there or on the quest folds it away
 --      previews      quests of Core's data a click on their giver's pin showed (QuestLog.Preview): on top,
 --                    under Not in your log, grey, each with its giver's mark and the game's red X that takes
 --                    it out again; a click unfolds what the data knows of it (why it is not for you yet, its level, who
@@ -86,7 +87,14 @@ QuestLog.ITEM = 24        -- a quest's item's button, and the height of a row wi
 QuestLog.OVER = 30        -- the items' frame level above the log's
 QuestLog.INDENT = 10      -- an objective's words from its quest's
 QuestLog.MARK = 16        -- a preview's mark at its row's start; its words after it
-QuestLog.ROOM = 6         -- under a quest's text
+QuestLog.ROOM = 6         -- under a quest's words
+QuestLog.SECTION = 24     -- a heading in a quest's text, with the room over it
+QuestLog.INSET = 10       -- a quest's text from the sides of its panel
+QuestLog.PANEL = 0.35     -- that panel's opacity over the full map, on the log's background
+QuestLog.PANEL_SMALL = 0.75 -- and on the screen alone, right on the game's world
+QuestLog.REWARD = 40      -- a reward's icon (the game's own: 39)
+QuestLog.REWARD_WIDTH = 130 -- a reward with its name at the least: two side by side where two of these fit
+QuestLog.GAP = 4          -- between rewards
 QuestLog.TEXT = {
     title = Core.Word("QUEST_LOG", "Quest Log"),
     heading = "|cffffffff%d/%d|r %s", -- quests, of how many, sorted by
@@ -118,12 +126,15 @@ QuestLog.TEXT = {
     takenBy = "Turned in to: %s",
     rewards = Core.Word("QUEST_REWARDS", "Rewards"),
     choices = Core.Word("REWARD_CHOICES", "You will be able to choose one of these rewards:"),
-    experience = "%d experience",
+    experience = "%s experience",
     killed = Core.Word("QUEST_MONSTERS_KILLED", "%s slain: %d/%d"),
     items = Core.Word("QUEST_ITEMS_NEEDED", "%s: %d/%d"),
     objects = Core.Word("QUEST_OBJECTS_FOUND", "%s: %d/%d"),
 }
 QuestLog.REMOVE = "xmarksthespot" -- the game's red X (ObjectIconsAtlas) on a preview's row
+QuestLog.RIM = "Interface\\Common\\WhiteIconFrame" -- the game's frame round a reward's icon, in its quality's colour
+QuestLog.PLATE = "Interface\\QuestFrame\\UI-QuestItemNameFrame" -- the game's plate behind a reward's name
+QuestLog.PLATE_PART = { 10 / 128, 118 / 128, 11 / 64, 53 / 64 } -- the plate itself in that picture
 QuestLog.PIN = "friendslist-recentallies-pin-yellow" -- the game's pin, lit while pinned
 QuestLog.PIN_OFF = "friends-icon-pinned-dis"         -- and grey while not
 
@@ -143,8 +154,9 @@ local ticker       -- sorted by proximity and in sight: the order looked at agai
 local away, lent   -- the hidden frame the game's quest tracker is lent to while ours is pinned (Tracker)
 local chosen       -- the quest last clicked or shown, lit in the list
 local open = false -- its text shows under it
-local opened       -- that text's row, while it is listed (Read)
-local AddText      -- that row, under its quest (The chosen quest's text)
+local opened       -- that text's rows while they are listed (Read): the first, the last, how high they are together
+local missing      -- that text names an item the game does not know yet (ITEM_DATA_LOAD_RESULT)
+local AddText      -- those rows, under its quest (The chosen quest's text)
 local Hover        -- the mouse came onto the window or one of its rows (The panel)
 
 local function Plain(value)
@@ -282,7 +294,7 @@ end
 -- open quest's text under it. Returns how many quests the log holds.
 local function Read()
     wipe(rows)
-    opened = nil
+    opened, missing = nil, false
     if chosen and not Previewed(chosen) then
         local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, chosen)
         if not index or index <= 0 then chosen, open = nil, false end
@@ -389,7 +401,8 @@ end
 local function Reveal()
     if not opened then return end
     local tall = opened.height >= (box:GetHeight() or 0)
-    box:ScrollToElementData(opened, tall and ScrollBoxConstants.AlignBegin or ScrollBoxConstants.AlignNearest)
+    if not tall then box:ScrollToElementData(opened.last, ScrollBoxConstants.AlignNearest) end
+    box:ScrollToElementData(opened.first, tall and ScrollBoxConstants.AlignBegin or ScrollBoxConstants.AlignNearest)
 end
 
 -- A quest's text under it (or none: nil), lit in the list.
@@ -480,17 +493,17 @@ end
 --  The rows
 -------------------------------------------------------------------------------
 local function Height(_, row)
+    if row.height then return row.height end
     if row.kind == "header" then return QuestLog.HEADER end
-    if row.kind == "text" then return row.height end
     if row.item then return QuestLog.ITEM end
     if row.kind == "quest" or row.kind == "preview" then return QuestLog.QUEST end
     return QuestLog.OBJECTIVE
 end
 
 local function Colour(row)
-    if row.kind == "header" then return 1, 0.82, 0 end
+    if row.kind == "header" or row.kind == "section" then return 1, 0.82, 0 end
     if row.kind == "preview" then return 0.55, 0.55, 0.55 end
-    if row.kind == "text" then return 0.85, 0.85, 0.85 end
+    if row.part then return 0.9, 0.9, 0.9 end
     if row.kind == "objective" then
         if row.done then return 0.5, 0.5, 0.5 end
         return 0.85, 0.85, 0.85
@@ -513,7 +526,7 @@ local function Clicked(element, mouse)
     end
     local quest = row.quest
     if mouse == "RightButton" then return Menu(element, quest) end
-    if row.kind == "text" then return Unfold(quest) end
+    if row.part then return Unfold(quest) end
     if row.kind == "preview" then return Pressed(quest) end
     if IsModifiedClick("CHATLINK") then
         local link = rawget(_G, "GetQuestLink") and GetQuestLink(quest)
@@ -556,6 +569,118 @@ local function Reach(element)
     if mirrored then element:SetHitRectInsets(spare, 0, 0, 0) else element:SetHitRectInsets(0, spare, 0, 0) end
 end
 
+-------------------------------------------------------------------------------
+--  The rewards
+-------------------------------------------------------------------------------
+--  Each a cell in a row under the open quest: its icon big, its name beside it, and the game's tooltip with the mouse
+--  anywhere on the two, compared with what is worn as on the game's own rewards. Nothing here is used, so unlike the
+--  quests' items they need no secure button and stay in the list's rows. What the game cannot tell of a quest not in
+--  the log (a preview's) comes from the item itself.
+local function RewardTip(cell)
+    local thing = cell.thing
+    if not thing then return end
+    Hover()
+    GameTooltip:SetOwner(cell, mirrored and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
+    if thing.list then GameTooltip:SetQuestLogItem(thing.list, thing.index, thing.quest)
+    elseif thing.spell then GameTooltip:SetSpellByID(thing.spell)
+    elseif thing.currency then GameTooltip:SetCurrencyByID(thing.currency)
+    else GameTooltip:SetItemByID(thing.item) end
+    local compare = rawget(_G, "GameTooltip_ShowCompareItem")
+    if compare and (thing.list or thing.item) then compare(GameTooltip) end
+    GameTooltip:Show()
+end
+
+-- As on the game's own rewards: a click with the chat link's or the dressing room's modifier; a plain one does nothing.
+local function RewardClicked(cell)
+    local thing, modified = cell.thing, rawget(_G, "HandleModifiedItemClick")
+    if not thing or not modified or not IsModifiedClick() then return end
+    local link
+    if thing.list then link = Core.Ask(rawget(_G, "GetQuestLogItemLink"), thing.list, thing.index, thing.quest)
+    elseif thing.item then link = select(2, Core.Ask(C_Item.GetItemInfo, thing.item)) end
+    if link then modified(link) end
+end
+
+local function RewardCell(element)
+    local cell = CreateFrame("Button", nil, element)
+    cell:SetHeight(QuestLog.REWARD)
+    cell.icon = cell:CreateTexture(nil, "ARTWORK")
+    cell.icon:SetSize(QuestLog.REWARD, QuestLog.REWARD)
+    cell.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    cell.rim = cell:CreateTexture(nil, "OVERLAY")
+    cell.rim:SetAllPoints(cell.icon)
+    cell.rim:SetTexture(QuestLog.RIM)
+    cell.plate = cell:CreateTexture(nil, "BACKGROUND")
+    cell.plate:SetTexture(QuestLog.PLATE)
+    cell.count = cell:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+    cell.count:SetPoint("BOTTOMRIGHT", cell.icon, "BOTTOMRIGHT", -3, 3)
+    cell.name = cell:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    cell.light = cell:CreateTexture(nil, "HIGHLIGHT")
+    cell.light:SetAllPoints()
+    cell.light:SetColorTexture(1, 1, 1, 0.08)
+    cell:SetScript("OnEnter", ns.Guard(RewardTip))
+    cell:SetScript("OnLeave", ns.Guard(function() Core.HideTip() end))
+    cell:SetScript("OnClick", ns.Guard(RewardClicked))
+    return cell
+end
+
+-- A cell as its thing is: its name and rim in its quality's colour, its icon red where this character cannot use it,
+-- as the game has them; from the side the log stands at inwards (Sided).
+local function RewardShown(cell, thing, near, far, sign)
+    cell.thing = thing
+    cell.icon:ClearAllPoints()
+    cell.icon:SetPoint(near)
+    cell.icon:SetTexture(thing.picture)
+    if thing.usable == false then cell.icon:SetVertexColor(0.9, 0, 0) else cell.icon:SetVertexColor(1, 1, 1) end
+    local colours = rawget(_G, "ITEM_QUALITY_COLORS")
+    local colour = colours and thing.quality and colours[thing.quality]
+    if colour then
+        cell.rim:SetVertexColor(colour.r, colour.g, colour.b)
+        cell.name:SetTextColor(colour.r, colour.g, colour.b)
+    else
+        cell.name:SetTextColor(1, 1, 1)
+    end
+    cell.rim:SetShown(colour and true or false)
+    -- From behind the icon to the cell's far end; its picture turned round where the log is mirrored.
+    local part = QuestLog.PLATE_PART
+    cell.plate:ClearAllPoints()
+    cell.plate:SetPoint("TOP" .. near, cell.icon, "TOP" .. far, -sign * 4, 0)
+    cell.plate:SetPoint("BOTTOM" .. far)
+    cell.plate:SetTexCoord(mirrored and part[2] or part[1], mirrored and part[1] or part[2], part[3], part[4])
+    -- Between the icon and the cell's far end, as many lines as fit, in the middle of the icon's height.
+    cell.name:ClearAllPoints()
+    cell.name:SetPoint("TOP" .. near, cell.icon, "TOP" .. far, sign * 6, 0)
+    cell.name:SetPoint("BOTTOM" .. far, -sign * 6, 0)
+    cell.name:SetJustifyH(near)
+    cell.name:SetText(thing.name)
+    cell.count:SetText((thing.count or 1) > 1 and thing.count or "")
+end
+
+-- A row's rewards side by side; the cells it had for another row go. The row sets what a cell's width is (AddText).
+local function Rewards(element, row, near, far, sign)
+    local cells = element.cells
+    if not cells then
+        cells = {}
+        element.cells = cells
+    end
+    local things = row.kind == "reward" and row.things or {}
+    for index, thing in ipairs(things) do
+        local cell = cells[index]
+        if not cell then
+            cell = RewardCell(element)
+            cells[index] = cell
+        end
+        cell:ClearAllPoints()
+        cell:SetPoint("TOP" .. near, sign * (QuestLog.INSET + (index - 1) * (row.width + QuestLog.GAP)), 0)
+        cell:SetWidth(row.width)
+        RewardShown(cell, thing, near, far, sign)
+        cell:Show()
+    end
+    for index = #things + 1, #cells do
+        cells[index].thing = nil
+        cells[index]:Hide()
+    end
+end
+
 -- A row's frame, made the first time the list draws one (the list's elements are plain buttons).
 local function Draw(element, row)
     if not element.text then
@@ -570,6 +695,12 @@ local function Draw(element, row)
         element.light = element:CreateTexture(nil, "HIGHLIGHT")
         element.light:SetAllPoints()
         element.light:SetColorTexture(1, 1, 1, 0.08)
+        -- An open quest's text: its rows' panel, a thin gold line down the side the words start at.
+        element.back = element:CreateTexture(nil, "BACKGROUND")
+        element.back:SetAllPoints()
+        element.rule = element:CreateTexture(nil, "BORDER")
+        element.rule:SetWidth(2)
+        element.rule:SetColorTexture(1, 0.82, 0, 0.5)
         -- A preview's red X: takes it out of the log again.
         element.remove = CreateFrame("Button", nil, element)
         element.remove:SetSize(16, 16)
@@ -603,7 +734,14 @@ local function Draw(element, row)
     mark:Hide()
     element.icon:Hide()
     element.remove:SetShown(row.kind == "preview")
-    element.light:SetShown(row.kind ~= "text")
+    element.light:SetShown(not row.part)
+    element.back:SetShown(row.part)
+    element.back:SetColorTexture(0, 0, 0, full and QuestLog.PANEL or QuestLog.PANEL_SMALL)
+    element.rule:SetShown(row.part)
+    element.rule:ClearAllPoints()
+    element.rule:SetPoint("TOP" .. near)
+    element.rule:SetPoint("BOTTOM" .. near)
+    Rewards(element, row, near, far, sign)
     if row.kind == "header" then
         -- The game's fold mark only for a zone, and only over the full map.
         local folds = full and row.index ~= nil
@@ -639,12 +777,21 @@ local function Draw(element, row)
             state:SetText(QuestLog.TEXT.failed)
             state:SetTextColor(1, 0.2, 0.2)
         end
-    elseif row.kind == "text" then
-        element.left = QuestLog.INDENT
-        text:SetFontObject("GameFontHighlightSmall")
-        text:SetPoint("TOP" .. near, sign * element.left, 0)
-        text:SetPoint("TOP" .. far, -sign * 4, 0)
+    elseif row.kind == "section" then
+        element.left = QuestLog.INSET
+        text:SetFontObject("GameFontNormal")
+        text:SetPoint("BOTTOM" .. near, sign * element.left, 4)
+        text:SetPoint("BOTTOM" .. far, -sign * element.left, 4)
         text:SetText(row.text)
+    elseif row.kind == "text" then
+        element.left = QuestLog.INSET
+        text:SetFontObject("GameFontHighlight")
+        text:SetPoint("TOP" .. near, sign * element.left, 0)
+        text:SetPoint("TOP" .. far, -sign * element.left, 0)
+        text:SetText(row.text)
+    elseif row.kind == "reward" then
+        element.left = QuestLog.INSET
+        text:SetText("")
     else
         element.left = QuestLog.INDENT
         text:SetFontObject("GameFontHighlightSmall")
@@ -683,6 +830,7 @@ end
 local function Item(id)
     local name = Core.Ask(C_Item.GetItemNameByID, id)
     if name then return name end
+    missing = true
     Core.Ask(C_Item.RequestLoadItemDataByID, id)
     return "#" .. tostring(id)
 end
@@ -702,9 +850,48 @@ local function Objective(objective)
     return objective.text
 end
 
--- A part of a quest's text: its title in gold, its lines under it; none without lines.
-local function Section(parts, title, lines)
-    if #lines > 0 then parts[#parts + 1] = "|cffffd100" .. title .. "|r\n" .. table.concat(lines, "\n") end
+-- The game's words without the blank lines around them, and no more than one blank line between paragraphs.
+local function Tidy(words)
+    return ((words or ""):gsub("\r", ""):gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n%s*\n%s*\n", "\n\n"))
+end
+
+-- A part of a quest's text: its words, none without.
+local function Words(parts, words)
+    words = Tidy(words)
+    if words ~= "" then parts[#parts + 1] = { kind = "text", text = words } end
+end
+
+-- Under a heading in gold, none without words.
+local function Section(parts, title, words)
+    if Tidy(words) == "" then return end
+    parts[#parts + 1] = { kind = "section", text = title }
+    Words(parts, words)
+end
+
+-- What a quest gives: experience and coin in words, its things side by side, then those to choose from.
+local function Given(parts, experience, money, things, choices)
+    local words = {}
+    if experience and experience > 0 then
+        words[1] = QuestLog.TEXT.experience:format(Core.Ask(rawget(_G, "BreakUpLargeNumbers"), experience) or experience)
+    end
+    if money and money > 0 then words[#words + 1] = Core.Coins(money) end
+    if #words == 0 and #things == 0 and #choices == 0 then return end
+    parts[#parts + 1] = { kind = "section", text = QuestLog.TEXT.rewards }
+    Words(parts, table.concat(words, "    "))
+    if #things > 0 then parts[#parts + 1] = { kind = "reward", things = things } end
+    if #choices > 0 then
+        Words(parts, QuestLog.TEXT.choices)
+        parts[#parts + 1] = { kind = "reward", things = choices }
+    end
+end
+
+-- Rewards of Core's data as cells, known from the items themselves.
+local function Listed(things, entries)
+    for _, entry in ipairs(entries or {}) do
+        things[#things + 1] = { item = entry.item, count = entry.count, name = Item(entry.item),
+                                picture = Core.Ask(C_Item.GetItemIconByID, entry.item),
+                                quality = Core.Ask(C_Item.GetItemQualityByID, entry.item) }
+    end
 end
 
 -- What Core's data knows of a quest not in the log, as the log's words: why it is not for this character yet, its
@@ -713,81 +900,112 @@ local function Preview(quest)
     local record = QUESTS:Get(quest) or {}
     local parts = {}
     local standing, reason = ns.Pins.Standing(record, quest)
-    if reason then parts[#parts + 1] = "|cffff4040" .. reason .. "|r"
-    elseif standing == "offered" then parts[#parts + 1] = "|cff20ff20" .. QuestLog.TEXT.offered .. "|r" end
+    if reason then Words(parts, "|cffff4040" .. reason .. "|r")
+    elseif standing == "offered" then Words(parts, "|cff20ff20" .. QuestLog.TEXT.offered .. "|r") end
     local facts = {}
     if record.level then facts[#facts + 1] = QuestLog.TEXT.level:format(record.level) end
     local givers = Names(record.startNPCs, "npc", NPCS) or Names(record.startObjects, "object", OBJECTS)
     if givers then facts[#facts + 1] = QuestLog.TEXT.givenBy:format(givers) end
     local takers = Names(record.finishNPCs, "npc", NPCS) or Names(record.finishObjects, "object", OBJECTS)
     if takers then facts[#facts + 1] = QuestLog.TEXT.takenBy:format(takers) end
-    if #facts > 0 then parts[#parts + 1] = table.concat(facts, "\n") end
+    Words(parts, table.concat(facts, "\n"))
     local objectives = {}
     for _, objective in ipairs(record.objectives or {}) do
         local words = Objective(objective)
         if words and words ~= "" then objectives[#objectives + 1] = "- " .. words end
     end
-    Section(parts, QuestLog.TEXT.objectives, objectives)
-    local rewards = {}
-    if record.rewardXP and record.rewardXP > 0 then rewards[#rewards + 1] = QuestLog.TEXT.experience:format(record.rewardXP) end
-    local coins = rawget(_G, "GetCoinTextureString")
-    if record.rewardMoney and record.rewardMoney > 0 and coins then rewards[#rewards + 1] = coins(record.rewardMoney) end
-    for _, list in ipairs({ record.rewardItems or {}, record.rewardChoices or {} }) do
-        for _, entry in ipairs(list) do
-            rewards[#rewards + 1] = Item(entry.item) .. ((entry.count or 1) > 1 and (" x" .. entry.count) or "")
-        end
-    end
-    Section(parts, QuestLog.TEXT.rewards, rewards)
-    return table.concat(parts, "\n\n")
+    Section(parts, QuestLog.TEXT.objectives, table.concat(objectives, "\n"))
+    local things, choices = {}, {}
+    Listed(things, record.rewardItems)
+    Listed(choices, record.rewardChoices)
+    Given(parts, record.rewardXP, record.rewardMoney, things, choices)
+    return parts
 end
 
--- The things a quest in the log gives, in the game's words: its picture, its name, how many. An item the game does
--- not know yet is left out, until the log is read again.
-local function Things(lines, quest, count, info)
+-- The things a quest in the log gives, by the quest's ID, no quest chosen in the game's own log for it (list: the
+-- game's word for which of them, "reward" or "choice"). An item the game does not know yet follows once it does.
+local function Things(things, quest, list, count, info)
     for index = 1, Core.Ask(rawget(_G, count), quest) or 0 do
-        local name, picture, many = Core.Ask(rawget(_G, info), index, quest)
-        if name then
-            local shown = picture and ("|T%s:16:16|t %s"):format(tostring(picture), name) or name
-            lines[#lines + 1] = (many or 1) > 1 and (shown .. " x" .. many) or shown
+        local ok, name, picture, many, quality, usable, item = pcall(rawget(_G, info), index, quest)
+        if ok and name and name ~= "" then
+            things[#things + 1] = { list = list, index = index, quest = quest, name = name, picture = picture,
+                                    count = many, quality = quality, usable = usable, item = item }
+        elseif ok and item then
+            missing = true
+            Core.Ask(C_Item.RequestLoadItemDataByID, item)
         end
     end
 end
 
--- What the game says a quest in the log gives: by the quest's ID, no quest chosen in the game's own log for it.
-local function Rewards(parts, quest)
-    local rewards, choices = {}, {}
-    local experience = Core.Ask(rawget(_G, "GetQuestLogRewardXP"), quest)
-    if experience and experience > 0 then rewards[1] = QuestLog.TEXT.experience:format(experience) end
-    local money = Core.Ask(rawget(_G, "GetQuestLogRewardMoney"), quest)
-    local coins = rawget(_G, "GetCoinTextureString")
-    if money and money > 0 and coins then rewards[#rewards + 1] = coins(money) end
-    Things(rewards, quest, "GetNumQuestLogRewards", "GetQuestLogRewardInfo")
-    Things(choices, quest, "GetNumQuestLogChoices", "GetQuestLogChoiceInfo")
-    Section(parts, QuestLog.TEXT.rewards, rewards)
-    Section(parts, QuestLog.TEXT.choices, choices)
+-- Its currencies, and the spells it teaches that this character does not know yet (the game's own rewards leave
+-- out the others too).
+local function Others(things, quest)
+    local system = rawget(_G, "C_QuestInfoSystem")
+    if not system then return end
+    local currencies = Core.Ask(system.GetQuestRewardCurrencies, quest)
+    for _, info in ipairs(type(currencies) == "table" and currencies or {}) do
+        things[#things + 1] = { currency = info.currencyID, name = info.name, picture = info.texture,
+                                quality = info.quality, count = info.totalRewardAmount or info.baseRewardAmount }
+    end
+    local spells = Core.Ask(system.GetQuestRewardSpells, quest)
+    local book = rawget(_G, "C_SpellBook")
+    local bank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Player
+    for _, spell in ipairs(type(spells) == "table" and spells or {}) do
+        local info = Core.Ask(system.GetQuestRewardSpellInfo, quest, spell)
+        local known = book and bank and Core.Ask(book.IsSpellInSpellBook, spell, bank, true)
+        if type(info) == "table" and info.texture and not known then
+            things[#things + 1] = { spell = spell, name = info.name, picture = info.texture }
+        end
+    end
 end
 
--- A quest's text from the game's log: what it asks, its rewards, its story.
+-- A quest's text from the game's log: what it asks, what it gives, its story.
 local function Story(quest)
     local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, quest)
     local description, objectives
     if index and rawget(_G, "GetQuestLogQuestText") then description, objectives = GetQuestLogQuestText(index) end
     local parts = {}
-    if objectives and objectives ~= "" then Section(parts, QuestLog.TEXT.objectives, { objectives }) end
-    Rewards(parts, quest)
-    if description and description ~= "" then Section(parts, QuestLog.TEXT.description, { description }) end
-    return table.concat(parts, "\n\n")
+    Section(parts, QuestLog.TEXT.objectives, objectives)
+    local things, choices = {}, {}
+    Things(things, quest, "reward", "GetNumQuestLogRewards", "GetQuestLogRewardInfo")
+    Others(things, quest)
+    Things(choices, quest, "choice", "GetNumQuestLogChoices", "GetQuestLogChoiceInfo")
+    Given(parts, Core.Ask(rawget(_G, "GetQuestLogRewardXP"), quest), Core.Ask(rawget(_G, "GetQuestLogRewardMoney"), quest),
+          things, choices)
+    Section(parts, QuestLog.TEXT.description, description)
+    return parts
 end
 
--- The open quest's text as a row of the list, wrapped in the list's width and as high as that takes: a preview's from
--- Core's data, else the game's.
+-- One row of the open quest's text, as high as it takes.
+local function Put(row, height)
+    row.part, row.quest, row.height = true, opened.quest, height
+    rows[#rows + 1] = row
+    opened.first, opened.last = opened.first or row, row
+    opened.height = opened.height + height
+end
+
+-- The open quest's text as rows of the list: a preview's from Core's data, else the game's. Words wrapped in the
+-- list's width, its rewards two to a row where two fit.
 function AddText(quest)
-    local text = Previewed(quest) and Preview(quest) or Story(quest)
-    if text == "" then return end
-    measure:SetWidth(math.max((box:GetWidth() or 0) - QuestLog.INDENT - 4, 1))
-    measure:SetText(text)
-    opened = { kind = "text", quest = quest, text = text, height = measure:GetStringHeight() + QuestLog.ROOM }
-    rows[#rows + 1] = opened
+    local parts = Previewed(quest) and Preview(quest) or Story(quest)
+    if #parts == 0 then return end
+    local width = math.max((box:GetWidth() or 0) - 2 * QuestLog.INSET, 1)
+    local columns = width >= 2 * QuestLog.REWARD_WIDTH + QuestLog.GAP and 2 or 1
+    measure:SetWidth(width)
+    opened = { quest = quest, height = 0 }
+    for _, part in ipairs(parts) do
+        if part.kind == "section" then
+            Put(part, QuestLog.SECTION)
+        elseif part.kind == "text" then
+            measure:SetText(part.text)
+            Put(part, measure:GetStringHeight() + QuestLog.ROOM)
+        else
+            for first = 1, #part.things, columns do
+                Put({ kind = "reward", things = { part.things[first], columns == 2 and part.things[first + 1] or nil },
+                      width = (width - (columns - 1) * QuestLog.GAP) / columns }, QuestLog.REWARD + QuestLog.GAP)
+            end
+        end
+    end
 end
 
 -- Quests of Core's data shown in the log (a click on their giver's pin): on top under Not in your log, the first
@@ -1144,7 +1362,7 @@ function QuestLog.Build()
     box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(function() seat() end), QuestLog)
 
     -- What a quest's text will take in the list: as its row draws it (Draw), not to be seen.
-    measure = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    measure = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     measure:SetPoint("TOPLEFT")
     measure:SetSpacing(2)
     measure:SetAlpha(0)
@@ -1264,10 +1482,10 @@ ns.Listen("LIVE", function(what)
     if what == "quests" or what == "waypoint" then QuestLog.Refresh() end
 end)
 
--- An item a preview names arrived from the game: its name in the words, once on the next frame however many came.
+-- An item the open text waits for arrived from the game: read again, once on the next frame however many came.
 local named = Core.Later(function()
-    if open and chosen and Previewed(chosen) then QuestLog.Refresh() end
+    if open then QuestLog.Refresh() end
 end)
 ns.On("ITEM_DATA_LOAD_RESULT", function()
-    if chosen and Previewed(chosen) then named() end
+    if missing then named() end
 end)

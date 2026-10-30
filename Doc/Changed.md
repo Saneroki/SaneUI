@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 771 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: an open quest's text under headings, its rewards as big icons, its gold (Saneroki, 2026-10-30)
+Saneroki: the quest text and rewards formatted nicely, the reward icons big, to mouse over them for their tooltip. A `/reload`
+takes it in.
+- **`src/Navigation/QuestLog.lua`:** an open quest is rows of the list, each marked `part`, in place of one row of words:
+  `section` (a heading in gold), `text` (words, the game's font object one size up, wrapped), `reward` (cells side by side)
+  on a dark panel (`element.back`, 0.35 over the full map, 0.75 on the screen alone) with a thin gold line down the side the
+  words start at (`element.rule`). `Words`, `Section`, `Given`, `Listed`, `Things`, `Others`, `Story` and `Preview` make parts,
+  `AddText` and `Put` rows of them. `Tidy`: no blank lines round the game's words, no more than one inside them.
+- **The rewards (`Rewards`, `RewardCell`, `RewardShown`):** the icon 40 high, the rim in its quality's colour, its name on the
+  game's plate, how many on the icon, the icon red where this character cannot use it, as the game has them; two to a row
+  where two of `REWARD_WIDTH` fit. Plain buttons in the row (nothing is used, so no secure tray). The mouse on the icon or its
+  name: the game's tooltip by the quest's ID (`SetQuestLogItem`), compared with what is worn; `SetSpellByID`,
+  `SetCurrencyByID`, `SetItemByID` for a preview's. A modified click links it, a plain one does nothing. Currencies and spells not
+  known yet are read too (`C_QuestInfoSystem`). Previews the same, from Core's data.
+- **Fixed:** a quest's gold never showed: `GetCoinTextureString` is no global in either game; `Core.Coins`.
+- **An item not known yet** comes in once the game has it (`missing`, `ITEM_DATA_LOAD_RESULT`), the list not drawn anew for
+  others. `Reveal` brings the first and the last row into sight.
+- **Interface lab:** the scene `questlog`, with the three looks.
+- **Tests:** `dev/tests/navigation.lua`, the parts, the cells, the tooltips, the links, an item coming late, one to a row.
+- **Docs:** `src/Navigation/README.md`, `Doc/agent/navigation.md`, `Doc/ideas/Navigation.md`, `Doc/guides/ui-lab.md`.
 
 ### Interface style: a new direction, the game's own art numbered to pick from (Saneroki, 2026-10-30)
 Saneroki: windows more like WoW: Forever's own style, its images instead of the leather and the paper, the game's default

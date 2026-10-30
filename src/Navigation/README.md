@@ -163,8 +163,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
   to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
-  left). **A click on a quest unfolds its objectives, its rewards and its story under it,** one quest's at a time; a
-  click on it or on that text folds them away again. It also leads the arrow to it and moves the map to its objective (its question mark on the map, or the middle of the
+  left). **A click on a quest unfolds its objectives, its rewards and its story under it,** one quest's at a time, each
+  under its heading in gold, on a dark panel with a thin gold line down its side; a click on it or on that text folds
+  them away again. **Its rewards stand as big icons:** experience and gold in words, each thing with its name beside
+  its icon, two side by side where they fit, those to choose from under them. The mouse on one shows the game's tooltip,
+  compared with what you wear; the chat link's modifier links it. It also leads the arrow to it and moves the map to its objective (its question mark on the map, or the middle of the
   area where its foes are), at the zoom it has. **A double click does the same but for its text, and puts the game's
   map pin there, so the golden line leads you there.** A click waits a moment for a second one, so a double click
   leaves the text as it was. Shift and a click tracks it. **The item a quest wants used** (the one the game's
@@ -176,7 +179,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the map shows its text too. A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out,
   each with its giver's mark (the yellow exclamation mark, grey for a quest too low, the red question mark for one
   for later) and a red X that takes it out again; below what the data knows of it: why it is not for you yet,
-  its level, who gives and takes it, its objectives and rewards. A click on one moves the map to its giver, a double
+  its level, who gives and takes it, its objectives and rewards, as big icons too. A click on one moves the map to its giver, a double
   click puts the map pin there.
   They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
@@ -467,10 +470,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   `lifted`), and the log is not moved in a fight (`usable`).
   A quest's text from `GetQuestLogQuestText`, its rewards by the quest's ID (`GetQuestLogRewardXP`,
   `GetQuestLogRewardMoney`, `GetNumQuestLogRewards`, `GetQuestLogRewardInfo`, `GetNumQuestLogChoices`,
-  `GetQuestLogChoiceInfo`: no quest chosen for them), read only while the text shows,
-  as a row of the list under the quest, a preview's too (kind `text`, `AddText`: as high as `measure` says its words
-  wrap at the list's width, `Reveal` brings it into sight), for the open quest alone (`open`: a click, the menu's
-  *Quest Details*, a click on its pin); abandon
+  `GetQuestLogChoiceInfo`, `C_QuestInfoSystem`'s currencies and spells: no quest chosen for them), read only while the
+  text shows, as rows of the list under the quest, a preview's too (kinds `section`, `text` and `reward`, each `part`;
+  `AddText`: as high as `measure` says its words wrap at the list's width, `Reveal` brings them into sight), for the open
+  quest alone (`open`: a click, the menu's *Quest Details*, a click on its pin). A reward is a cell of its row
+  (`Rewards`, `RewardCell`), a plain button, its tooltip the game's by the quest's ID (`SetQuestLogItem`); an item the
+  game does not know yet comes in by `ITEM_DATA_LOAD_RESULT` (`missing`). The lab's scene `questlog` shows it all; abandon
   after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map (their
   details window is opened by the game's panel manager, which our call would leave tainted).
 - **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
@@ -1045,6 +1050,9 @@ Tests: `dev/tests/navigation.lua`.
   The button *Sane UI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
   right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
   the pins on what the game tells, and lays nothing out on the window's way.
+- **2026-10-30, an open quest's text and rewards:** its text in rows of the list under headings, on a dark panel; its
+  rewards as big icons with their names and the game's tooltip, currencies and spells too, a preview's as well; a
+  quest's gold shows at last (`Core.Coins`).
 - **2026-10-30, the quest log leaner, its items, a click for the pin:** no question mark before a quest, no tick
   after it, its title only the count and the sorting, rows closer to the screen's edge (pinned too its list and
   title); the items of quests at the far end of their rows, secure buttons on a tray of their own; mirrored on the

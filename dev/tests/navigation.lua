@@ -2504,10 +2504,14 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
     point = items[1]._points[#items[1]._points]
     check(point[1] == "LEFT" and point[4] == 20 and point[5] == 720, "and its item at the list's left")
     QuestLog.Text(7)
-    local unfolded
-    for _, element in ipairs(logBox:Draw()) do if element.row.kind == "text" then unfolded = element end end
-    check(unfolded and unfolded.text._points[1][1] == "TOPRIGHT" and unfolded.text._justify == "RIGHT",
-        "a quest's text right aligned too")
+    local unfolded, headed
+    for _, element in ipairs(logBox:Draw()) do
+        if element.row.kind == "text" then unfolded = element end
+        if element.row.kind == "section" then headed = element end
+    end
+    check(unfolded and unfolded.text._points[1][1] == "TOPRIGHT" and unfolded.text._justify == "RIGHT"
+        and headed.text._points[1][1] == "BOTTOMRIGHT" and headed.text._justify == "RIGHT",
+        "a quest's text right aligned too, its headings and all")
     QuestLog.Text(nil)
     log.frame.GetCenter = nil
     log:Place()
@@ -2521,9 +2525,22 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
 end)()
 -- A click unfolds a quest's text under it, one quest's at a time; the right button: its text, the map at its objective.
 do
+    -- The first row of the open quest's text, where in the list it stands, and all of them.
     local function Text()
         rows = logBox:Draw()
-        for index, element in ipairs(rows) do if element.row.kind == "text" then return element, index end end
+        local first, at, parts = nil, nil, {}
+        for index, element in ipairs(rows) do
+            if element.row.part then
+                first, at = first or element, at or index
+                parts[#parts + 1] = element
+            end
+        end
+        return first, at, parts
+    end
+    local function Words(parts)
+        local words = {}
+        for _, element in ipairs(parts) do words[#words + 1] = element.text._text or "" end
+        return table.concat(words, "\n")
     end
     local function Click(element)
         element._scripts.OnClick(element, "LeftButton")
@@ -2532,11 +2549,16 @@ do
     check(not Text(), "no text under a quest at first")
     logBox._height = 200
     Click(rows[2])
-    local said, at = Text()
-    check(said and said.row.quest == 7 and at == 4 and said.text._wrap and said.text._text:find("Quest Objectives", 1, true)
-        and said.text._text:find("The story of quest 2", 1, true), "a click: its text unfolds under it and its objectives")
-    check(said.text._points[1][1] == "TOPLEFT" and logBox.view.height(nil, said.row) == 40 + QuestLog.ROOM,
-        "the row as high as its words take")
+    local said, at, parts = Text()
+    check(said and said.row.quest == 7 and at == 4 and #parts == 4 and parts[1].row.kind == "section"
+        and parts[1].text._text == "Quest Objectives" and parts[2].row.kind == "text" and parts[2].text._wrap
+        and parts[2].text._text == "Kill eight wolves." and parts[3].row.kind == "section"
+        and parts[3].text._text == "Description" and parts[4].text._text == "The story of quest 2",
+        "a click: its text unfolds under it and its objectives, each part under its heading")
+    check(parts[2].text._points[1][1] == "TOPLEFT" and logBox.view.height(nil, parts[2].row) == 40 + QuestLog.ROOM
+        and logBox.view.height(nil, parts[1].row) == QuestLog.SECTION, "the words' row as high as they take")
+    check(parts[1].back._shown and parts[1].rule._shown and parts[4].back._shown and not rows[2].back._shown
+        and not rows[2].rule._shown and not parts[2].light._shown, "on a panel of its own, the quest's row without")
     check(logBox.brought == said.row and logBox.aligned == ScrollBoxConstants.AlignNearest, "and brought into sight")
     Click(rows[2])
     check(not Text(), "a click again: folded away")
@@ -2546,7 +2568,8 @@ do
     Click(rows[2])
     said, at = Text()
     check(said and said.row.quest == 7 and at == 4, "and another: one quest's at a time")
-    said._scripts.OnClick(said, "LeftButton")
+    said, at, parts = Text()
+    parts[2]._scripts.OnClick(parts[2], "LeftButton")
     check(not Text(), "a click on the text itself folds it away too")
     logBox._height = 20
     Click(rows[2])
@@ -2555,24 +2578,127 @@ do
     logBox._height = nil
     QuestLog.Text(nil)
     rows = logBox:Draw()
-    -- Its rewards, as the game has them, in its text.
+    -- Its rewards, as the game has them: experience and coin in words, the things as big icons with their names.
     GetQuestLogRewardXP = function() return 450 end
     GetQuestLogRewardMoney = function() return 1250 end
-    GetCoinTextureString = function(money) return money .. " coins" end
-    GetNumQuestLogRewards = function() return 1 end
-    GetQuestLogRewardInfo = function(_, quest) return quest == 7 and "Wolf Cloak" or nil, 133, 2 end
-    GetNumQuestLogChoices = function() return 2 end
-    GetQuestLogChoiceInfo = function(index) if index == 1 then return "Boots", 134, 1 end return nil end
+    local currency = rawget(_G, "C_CurrencyInfo")
+    C_CurrencyInfo = { GetCoinTextureString = function(money) return money .. " coins" end }
+    ITEM_QUALITY_COLORS = { [2] = { r = 0.1, g = 1, b = 0 } }
+    GetNumQuestLogRewards = function() return 3 end
+    GetQuestLogRewardInfo = function(index, quest)
+        if quest ~= 7 then return nil end
+        if index == 1 then return "Wolf Cloak", 133, 2, 2, true, 901 end
+        if index == 2 then return "Old Sword", 135, 1, 1, false, 902 end
+        return nil, nil, nil, nil, nil, 903 -- not known to the game yet
+    end
+    GetNumQuestLogChoices = function() return 3 end
+    GetQuestLogChoiceInfo = function(index)
+        if index <= 3 then return ({ "Boots", "Gloves", "Belt" })[index], 134, 1, nil, true, 910 + index end
+    end
+    local system, book, bank = rawget(_G, "C_QuestInfoSystem"), rawget(_G, "C_SpellBook"), Enum.SpellBookSpellBank
+    C_QuestInfoSystem = { GetQuestRewardSpells = function() return { 77, 78 } end,
+                          GetQuestRewardSpellInfo = function(_, spell) return { texture = 136, name = "Spell " .. spell } end,
+                          GetQuestRewardCurrencies = function()
+                              return { { currencyID = 5, name = "Token", texture = 137, quality = 2, totalRewardAmount = 3 } }
+                          end }
+    C_SpellBook = { IsSpellInSpellBook = function(spell) return spell == 78 end }
+    Enum.SpellBookSpellBank = { Player = 0 }
+    logBox._width = 300
     Click(rows[2])
-    local words = Text().text._text
-    check(words:find("Rewards", 1, true) and words:find("450 experience", 1, true) and words:find("1250 coins", 1, true)
-        and words:find("|T133:16:16|t Wolf Cloak x2", 1, true) and words:find(QuestLog.TEXT.choices, 1, true)
-        and words:find("|T134:16:16|t Boots", 1, true) and not words:find("Boots x", 1, true),
-        "its rewards in its text: experience, coin, its things, what to choose from; a thing not known yet left out")
-    check(words:find("Quest Objectives", 1, true) < words:find("Rewards", 1, true)
-        and words:find("Rewards", 1, true) < words:find("The story of quest", 1, true), "objectives, rewards, then its story")
-    GetQuestLogRewardXP, GetQuestLogRewardMoney, GetCoinTextureString = nil, nil, nil
-    GetNumQuestLogRewards, GetQuestLogRewardInfo, GetNumQuestLogChoices, GetQuestLogChoiceInfo = nil, nil, nil, nil
+    said, at, parts = Text()
+    local kinds = {}
+    for _, element in ipairs(parts) do kinds[#kinds + 1] = element.row.kind end
+    check(table.concat(kinds, " ") == "section text section text reward reward text reward reward section text",
+        "what it asks, what it gives, then its story: " .. table.concat(kinds, " "))
+    check(parts[3].text._text == "Rewards" and parts[4].text._text == "450 experience    1250 coins"
+        and parts[7].text._text == QuestLog.TEXT.choices, "experience and coin in words, then what to choose from")
+    local first = parts[5].row
+    check(#first.things == 2 and first.things[1].name == "Wolf Cloak" and first.things[2].name == "Old Sword"
+        and #parts[6].row.things == 2 and parts[6].row.things[1].name == "Token" and parts[6].row.things[2].name == "Spell 77"
+        and #parts[8].row.things == 2 and parts[8].row.things[1].name == "Boots" and #parts[9].row.things == 1,
+        "two side by side, its currency and the spell not known yet too; a thing not known yet left out for now")
+    local cell = parts[5].cells[1]
+    check(cell._shown and first.width == 138 and logBox.view.height(nil, first) == QuestLog.REWARD + QuestLog.GAP
+        and cell._points[1][1] == "TOPLEFT" and cell._points[1][4] == QuestLog.INSET
+        and parts[5].cells[2]._points[1][4] == QuestLog.INSET + 142, "each in its half of the row")
+    check(cell.icon._width == 40 and cell.icon._height == 40 and cell.name._text == "Wolf Cloak" and cell.count._text == 2
+        and cell.rim._shown and cell.rim._vertex[2] == 1 and cell.name._color[1] == 0.1,
+        "a big icon, its name and how many, its rim and name in its quality's colour")
+    local sword = parts[5].cells[2]
+    check(sword.icon._vertex[2] == 0 and sword.count._text == "" and not sword.rim._shown and sword.name._color[1] == 1,
+        "one this character cannot use: its icon red, as the game has it; one of a kind: no number")
+    ;(function()
+        local tip = {}
+        local was = {}
+        for _, name in ipairs({ "SetOwner", "SetQuestLogItem", "SetItemByID", "SetSpellByID", "SetCurrencyByID", "Show" }) do
+            was[name] = GameTooltip[name]
+            GameTooltip[name] = function(_, a, b, c) tip[#tip + 1] = { name, a, b, c } end
+        end
+        local compared
+        GameTooltip_ShowCompareItem = function() compared = true end
+        cell._scripts.OnEnter(cell)
+        check(tip[1][1] == "SetOwner" and tip[1][2] == cell and tip[1][3] == "ANCHOR_RIGHT" and tip[2][1] == "SetQuestLogItem"
+            and tip[2][2] == "reward" and tip[2][3] == 1 and tip[2][4] == 7 and compared and tip[3][1] == "Show",
+            "the mouse on a reward: the game's tooltip of it, by the quest's ID, compared with what is worn")
+        wipe(tip)
+        compared = false
+        parts[6].cells[1]._scripts.OnEnter(parts[6].cells[1])
+        check(tip[2][1] == "SetCurrencyByID" and tip[2][2] == 5 and not compared, "of a currency")
+        wipe(tip)
+        parts[6].cells[2]._scripts.OnEnter(parts[6].cells[2])
+        check(tip[2][1] == "SetSpellByID" and tip[2][2] == 77 and not compared, "of a spell")
+        wipe(tip)
+        parts[8].cells[1]._scripts.OnEnter(parts[8].cells[1])
+        check(tip[2][2] == "choice" and tip[2][3] == 1, "of a thing to choose from")
+        for name, fn in pairs(was) do GameTooltip[name] = fn end
+        GameTooltip_ShowCompareItem = nil
+    end)()
+    ;(function()
+        -- As on the game's own rewards: a modified click links it, a plain one does nothing, not even folding.
+        local linked
+        HandleModifiedItemClick = function(link) linked = link end
+        GetQuestLogItemLink = function(list, index, quest) return list .. index .. "/" .. quest end
+        local modified = IsModifiedClick
+        IsModifiedClick = function() return false end
+        cell._scripts.OnClick(cell, "LeftButton")
+        check(linked == nil and Text(), "a plain click on a reward: nothing, its text stays")
+        IsModifiedClick = function() return true end
+        cell._scripts.OnClick(cell, "LeftButton")
+        check(linked == "reward1/7", "a modified click: the game's own for its link")
+        IsModifiedClick, HandleModifiedItemClick, GetQuestLogItemLink = modified, nil, nil
+    end)()
+    ;(function()
+        -- An item the game did not know yet: read again once it does, once however many came; none is waited for then.
+        local refresh, drawn = QuestLog.Refresh, 0
+        local info = GetQuestLogRewardInfo
+        GetQuestLogRewardInfo = function(index, quest)
+            if index == 3 then return "Late Ring", 139, 1, 2, true, 903 end
+            return info(index, quest)
+        end
+        QuestLog.Refresh = function(...) drawn = drawn + 1 return refresh(...) end
+        W.Fire("ITEM_DATA_LOAD_RESULT", 903, true)
+        W.Fire("ITEM_DATA_LOAD_RESULT", 904, true)
+        W.Wait(0)
+        check(drawn == 1, "an item the text waited for arrived: read again once")
+        local _, _, shown = Text()
+        check(shown[6].row.things[1].name == "Late Ring" and shown[6].row.things[2].name == "Token", "and there it is")
+        W.Fire("ITEM_DATA_LOAD_RESULT", 905, true)
+        W.Wait(0)
+        QuestLog.Refresh = refresh
+        check(drawn == 1, "another item: the list not drawn anew for it")
+        GetQuestLogRewardInfo = info
+    end)()
+    -- Narrow: one to a row; mirrored: from the other side, the plate turned round.
+    logBox._width = 200
+    QuestLog.Refresh()
+    said, at, parts = Text()
+    check(#parts[5].row.things == 1 and parts[5].row.width == 180, "too narrow for two: one to a row, as wide as the row")
+    logBox._width = nil
+    GetNumQuestLogRewards, GetNumQuestLogChoices = nil, nil
+    C_QuestInfoSystem, C_SpellBook, ITEM_QUALITY_COLORS = system, book, nil
+    Enum.SpellBookSpellBank = bank
+    GetQuestLogRewardXP, GetQuestLogRewardMoney, C_CurrencyInfo = nil, nil, currency
+    GetQuestLogRewardInfo, GetQuestLogChoiceInfo = nil, nil
     QuestLog.Text(nil)
     rows = logBox:Draw()
     rows[2]._scripts.OnClick(rows[2], "RightButton")
@@ -2585,8 +2711,8 @@ do
     check(Canvas.camera == full and full.level == "zone" and near(full.u, -200) and near(full.v, -9100),
         "Show Map: the map at its objective, in the middle")
     items[QuestLog.TEXT.details].fn()
-    said = Text()
-    check(said and said.text._text:find("Kill eight wolves.", 1, true), "Quest Details: its text under it")
+    said, at, parts = Text()
+    check(said and Words(parts):find("Kill eight wolves.", 1, true), "Quest Details: its text under it")
     local index = C_QuestLog.GetLogIndexForQuestID
     C_QuestLog.GetLogIndexForQuestID = function() return nil end
     QuestLog.Refresh()
@@ -2675,18 +2801,43 @@ do
     check(shown[1].row.kind == "header" and shown[1].text._text == QuestLog.TEXT.previews and shown[2].row.kind == "preview"
         and shown[2].row.quest == 101 and shown[2].text._text == "[30] A Quest for Later" and shown[2].remove._shown
         and not shown[4].remove._shown, "its quest in the log on top, greyed out, with the red X; the log's own below")
-    local said = shown[3].row.kind == "text" and shown[3].row.quest == 101 and shown[3].text._text
-    check(said and said:find(Pins.TEXT.needsLevel:format(60), 1, true) and said:find(QuestLog.TEXT.level:format(30), 1, true)
+    local said = {}
+    for _, element in ipairs(shown) do
+        if element.row.part and element.row.quest == 101 then said[#said + 1] = element.text._text or "" end
+    end
+    said = table.concat(said, "\n")
+    check(shown[3].row.part and said:find(Pins.TEXT.needsLevel:format(60), 1, true)
+        and said:find(QuestLog.TEXT.level:format(30), 1, true)
         and said:find(QuestLog.TEXT.givenBy:format("A Waiting Giver"), 1, true),
         "under it what the data knows: why not yet (the level it asks), its level, who gives it")
     ;(function()
-        -- Items the game tells of in a burst: the words drawn again once, on the next frame.
-        local refresh, drawn = QuestLog.Refresh, 0
+        -- What the data knows it gives: big icons too, the tooltip the item's own. Items the game tells of in a burst, while
+        -- the text waits for one: drawn again once, on the next frame.
+        local Quests, refresh, drawn = Core.Data.Set("Quests"), QuestLog.Refresh, 0
+        local get = Quests.Get
+        Quests.Get = function(self, id, field)
+            local record = get(self, id, field)
+            if id == 101 and not field then record.rewardItems = { { item = 905, count = 2 } } end
+            return record
+        end
+        QuestLog.Refresh()
+        local cell
+        for _, element in ipairs(logBox:Draw()) do
+            if element.row.kind == "reward" then cell = element.cells[1] end
+        end
+        check(cell and cell.thing.item == 905 and cell.name._text == "#905" and cell.count._text == 2,
+            "a preview's rewards as big icons too, by what the data knows")
+        local tips, tip = {}, GameTooltip.SetItemByID
+        GameTooltip.SetItemByID = function(_, item) tips[1] = item end
+        cell._scripts.OnEnter(cell)
+        GameTooltip.SetItemByID = tip
+        check(tips[1] == 905, "with the item's own tooltip")
         QuestLog.Refresh = function(...) drawn = drawn + 1 return refresh(...) end
         for item = 1, 3 do W.Fire("ITEM_DATA_LOAD_RESULT", item, true) end
         local before = drawn
         W.Wait(0)
         QuestLog.Refresh = refresh
+        Quests.Get = get
         check(before == 0 and drawn == 1, "a burst of items told by the game: the preview's words drawn again once")
     end)()
     shown[2].remove._scripts.OnClick(shown[2].remove)

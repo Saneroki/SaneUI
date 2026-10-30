@@ -369,9 +369,10 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
 
 ## Built (2026-10-30): the quest log's items, mirrored, a click for the pin
 
-- **A click on a quest** (`Look`): the arrow, the map and its text in or out (`QuestLog.Text`): a row of kind `text`
-  under the quest (`AddText`, `Story`, `Rewards` by the quest's ID; `measure` for its height, `Reveal`), a preview's
-  too; no panel below the list. It waits `Canvas.DOUBLE` for a second click (`Pressed`, no `OnDoubleClick`): two are
+- **A click on a quest** (`Look`): the arrow, the map and its text in or out (`QuestLog.Text`): rows of kinds `section`,
+  `text` and `reward` under the quest, each `part` (`AddText`, `Put`; `Story`, `Preview`, `Given` make the parts; `measure` for
+  a text's height, `Reveal`); no panel below the list. A reward is a cell (`Rewards`, `RewardCell`, `RewardTip`: the
+  game's tooltip by the quest's ID), a plain button of its row; `Core.Coins` for its gold. Lab scene `questlog`. It waits `Canvas.DOUBLE` for a second click (`Pressed`, no `OnDoubleClick`): two are
   the map pin (`Pin`, `PinView.Drop`), its text as it was.
 - **Folded** (`QuestLog.Fold`, `store.questLogFolded`, `Body`; Core's `barClick`): only the title bar. Zones: not the
   game's `isCollapsed`; a zone folded by its + over the full map is ours (`store.questLogFolds`).

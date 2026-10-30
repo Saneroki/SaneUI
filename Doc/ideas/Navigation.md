@@ -389,6 +389,8 @@ When the window fills the screen:
   - **A double click on a quest puts the map pin on it,** so the route in Forever leads there; **a click expands the
     quest under it** with its full text, the lore and the rewards in gold and items, and collapses it again to its
     headline and open objectives.
+  - **An open quest formatted nicely, its reward icons big,** to mouse over them for their tooltip: headings in gold, the
+    words a size up, its gold and experience, each reward an icon of 40 with its name, two to a row where they fit.
   - **A click on the title row beside its words minimizes the log:** he can hide the quests when he wants to.
   - **By zone the quests stand under the zone's name:** how the game's own log has its headers folded does not count.
   - **The items to use on quests** anchored to the log's right side; **on the screen's right half mirrored:** the

@@ -141,7 +141,9 @@ The bigger changes of each version, newest first.
   to sort by level, zone or type, click beside it to hide the list.
   A click on a quest unfolds its objectives, rewards and story under
   it, a double click puts the map pin on it, so the golden line leads
-  you there. Quest
+  you there. An open quest reads like a page: headings in gold, its
+  gold and experience, its rewards as big icons, the mouse on one for
+  its tooltip. Quest
   items stand beside their quests, on the right half of the screen
   it mirrors.
   Pinned, it takes the place of the game's quest tracker: in its
