@@ -20,9 +20,7 @@ local _, ns = ...
 --                and settings; while the alarm sounds, a click stops it) and Stopwatch (the
 --                game's, on the screen), each ticked while open (Saneroki, 2026-10-25)
 --      Sane UI   the quick switches Sane UI's modules offer (Core.Switches; Saneroki,
---                2026-10-26): the Speed Leveling guide on, paused or off. A click is
---                the module's own (the guide: pause or go on; a right click its
---                three choices)
+--                2026-10-26): Speed Leveling on or off. A click is the module's own
 --      AddOns    only while there are any (Saneroki, 2026-10-26): the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
 --                title, A to Z, twice as large as the rest: its picture round,
@@ -92,7 +90,6 @@ Satchel.TEXT = {
     homeWorld = "%d ms home, %d world", -- home and world on one line (Saneroki, 2026-10-26)
     ms = "%d ms",
     switches = "Sane UI",
-    paused = "paused",
     dayTime = "Time of day",
     day = "Day",
     night = "Night",
@@ -204,13 +201,11 @@ local function Tools()
     end
     return list
 end
--- The quick switches Sane UI's modules offer (Core.Switches): the Speed Leveling guide on, paused or off.
+-- The quick switches Sane UI's modules offer (Core.Switches): Speed Leveling on or off.
 local function Switches()
     local list = {}
     for _, switch in ipairs(Core.Switches()) do
-        local paused = switch.state == "paused"
-        list[#list + 1] = { switch = switch, title = paused and (switch.title .. "\n" .. Satchel.TEXT.paused)
-                            or switch.title, icon = switch.icon, on = switch.state ~= "off", paused = paused }
+        list[#list + 1] = { switch = switch, title = switch.title, icon = switch.icon, on = switch.state ~= "off" }
     end
     return list
 end
@@ -445,7 +440,7 @@ local function Dress(cell, item, size, height)
         Picture(icon, item.icon or 134400)
         icon:SetTexCoord(Satchel.SPELL[1], Satchel.SPELL[2], Satchel.SPELL[1], Satchel.SPELL[2])
     end
-    local switch = item.on ~= nil and not item.paused -- a pin, a tracking entry, a switch: on or off (paused: neither)
+    local switch = item.on ~= nil -- a pin, a tracking entry, a switch: on or off
     local off = switch and not item.on
     if off then icon:SetDesaturated(true) end
     icon:SetAlpha(off and Satchel.FAINT or 1)

@@ -1548,12 +1548,6 @@ end)()
         "the Sane UI section: a module's switch, on: whole and ticked")
     guide._scripts.OnClick(guide, "RightButton")
     check(clicked == "RightButton", "a click on it is its module's own, with its mouse button")
-    state = "paused"
-    Core.SwitchChanged()
-    W.Wait(0.1)
-    texts, cells = Shown()
-    local paused = cells["Test guide\n" .. Satchel.TEXT.paused]
-    check(paused and not paused.tick._shown and paused.picture._alpha == 1, "paused: said under its title, not ticked")
     state = "off"
     Core.SwitchChanged()
     W.Wait(0.1)

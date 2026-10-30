@@ -29,7 +29,10 @@ local _, ns = ...
 --  game's own functions, which are watched; the game's own joins do not. A wish
 --  goes first. The notes are the character's own (char.public), whichever
 --  profile it uses, and are made only at its first load, with nothing saved for
---  it yet: a character saved before stays in what it is in.
+--  it yet: a character saved before stays in what it is in. Retail's Newcomer
+--  Chat, which the game joins by itself, carries the wish never in it in both
+--  standard profiles (Core's Presets.lua), so it is left on every character, and
+--  again each time the game puts one back in it.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain

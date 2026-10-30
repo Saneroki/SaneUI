@@ -75,7 +75,7 @@ The bigger changes of each version, newest first.
   loot are put on. On group rolls you Need your upgrades and Greed
   the rest. Cinematics are skipped. Its key is E unless you pick
   another. Each has its switch, and a
-  box Speed Leveling in the bags turns the profile on or off. A right click unlocks the guide and the
+  box Speed Leveling in the bags or in the minimap's satchel turns the profile on or off. A right click unlocks the guide and the
   arrow to drag them.
 - Bags: Make Room keeps one slot free. When the last one fills,
   your cheapest junk goes at your next key press; with no junk you

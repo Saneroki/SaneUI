@@ -31,6 +31,7 @@ local _, ns = ...
 --      Guide.LoadPacks()  the guide packs of this game loaded (at the start); each hands its guides to Guide.Take
 --      Guide.Remove(key), Guide.Choose(key), Guide.Chosen()
 --      Guide.Empty()      while no guide is followed, the view's words for why (none kept, none for you); else nil
+--      Guide.State()      "on", "paused" or "off": your setting, and off wherever Speed Leveling is off
 --      Guide.Following()  whether the guide is followed now: one chosen, and on (not paused, not off)
 --      Guide.Watch(fn)    fn() whenever the picture may have changed (once a frame at most)
 --
@@ -244,9 +245,15 @@ function Guide.Skip(number)
     Changed()
 end
 
+-- The guide on, paused or off. Off wherever Speed Leveling is off, that is outside the profile Speedleveling, whatever
+-- the setting there says: nothing of it is to be seen then (Saneroki, 2026-10-30).
+function Guide.State()
+    return Core.Profiles.Leveling() and (ns.options.follow or "on") or "off"
+end
+
 -- Whether the guide is followed now: on (not paused, not off; Saneroki, 2026-10-26) and one is chosen.
 function Guide.Following()
-    return (ns.options.follow or "on") == "on" and ns.Run.Guide() ~= nil
+    return Guide.State() == "on" and ns.Run.Guide() ~= nil
 end
 
 function Guide.Targets()

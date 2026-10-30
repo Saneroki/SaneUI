@@ -482,8 +482,9 @@ local options = Core.Store("Social").options
 check(options.showNative == false, "the game's own chat is out of sight at first")
 check(options.shortNames == false, "a chat's whole name stands above a message at first")
 check(options.mute.REWARDS and options.mute["CHANNEL:General"] and options.mute["CHANNEL:Trade"] and options.mute["CHANNEL:TradeLocal"]
-    and options.mute["CHANNEL:LocalDefense"] and options.mute["CHANNEL:Services"] and options.mute.SAY == nil,
-    "loot, money and experience, General, Trade, Local Defense and Services are not shown at first; every other chat is")
+    and options.mute["CHANNEL:LocalDefense"] and options.mute["CHANNEL:Services"] and options.mute["CHANNEL:NewcomerChat"]
+    and options.mute.SAY == nil,
+    "loot, money and experience, General, Trade, Local Defense, Services and Newcomer Chat are not shown at first; every other chat is")
 check(not ns.Channels.Shown("REWARDS") and not ns.Channels.Shown("CHANNEL:Trade") and not ns.Channels.Shown("CHANNEL:Services")
     and ns.Channels.Shown("GUILD") and ns.Channels.Shown("CHANNEL:Raiders"), "so the window leaves those out, and a channel of the player's own is shown")
 options.mute = {} -- what follows shows every chat, and starts with the chats' names in short
@@ -3254,6 +3255,15 @@ local shortcutOf = C_ChatInfo.GetChannelShortcut
 C_ChatInfo.GetChannelShortcut = function(number) return number == 4 and "Services" or nil end
 ns.Join.Settle()
 check(#calls == 0 and second.public.services, "a wish by the shortcut is a wish for the channel")
+-- The standard profiles' wish on Retail's Newcomer Chat: left at once, and again when the game puts the character back.
+options.presence["Newcomer Chat"] = false
+joined["Newcomer Chat"], calls = 5, {}
+ns.Join.Settle()
+check(calls[1] == "Leave Newcomer Chat" and joined["Newcomer Chat"] == nil, "Newcomer Chat is left")
+joined["Newcomer Chat"], calls = 6, {}
+ns.Join.Settle()
+check(calls[1] == "Leave Newcomer Chat", "and again when the game puts the character back in it")
+options.presence["Newcomer Chat"] = nil
 C_ChatInfo.GetChannelShortcut, options.presence.Services, joined["Trade (Services)"] = shortcutOf, nil, nil
 options.presence.Trade = false
 joined.Trade, calls = 3, {}

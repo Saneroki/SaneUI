@@ -1657,6 +1657,13 @@ do
         "given to a profile with settings, the presets add only what it lacks: the player's word stays")
     kept.named.shadowMode = nil
     NextSession(SaneUIDB, {})
+    local presets, game = Core.Presets, Core.GAME
+    check(presets.profiles.Accountwide.Social == nil, "Forever has no Newcomer Chat to leave")
+    Core.GAME = "retail"
+    W.Load(root, "SaneUI", "Core/Presets", {})
+    check(Core.Presets.profiles.Accountwide.Social.presence["Newcomer Chat"] == false
+        and Core.Presets.profiles.Speedleveling.Social.presence["Newcomer Chat"] == false, "in Retail both profiles leave it")
+    Core.GAME, Core.Presets = game, presets
     check(SaneUIDB.profiles.Accountwide.Sync.named.shadowMode == nil and SaneUIDB.presets.Accountwide == Core.Presets.VERSION,
         "and only once: one the player unticked stays out, until a new version brings what is new")
     UnitGUID = guid

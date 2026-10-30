@@ -110,13 +110,13 @@ ns.TEXT = {
     guideHeader = "Guide",
     guideHeaderTip = "Your leveling guide over the world: the zone, the steps at hand and the next ones.",
     follow = "Your guide",
-    followTip = "On: the guide shows over the world and moves on as you play; the key and the quest givers follow it. Paused: it holds where it is, its view shows only that it is paused (a click goes on), and nothing is done for it; what you did meanwhile counts once it goes on. Off: no guide is followed; the key looks for your quests alone. Also in the minimap's satchel.",
+    followTip = "On: the guide shows over the world and moves on as you play; the key and the quest givers follow it. Paused: it holds where it is, its view shows only that it is paused (a click goes on), and nothing is done for it; what you did meanwhile counts once it goes on. Off: no guide is followed; the key looks for your quests alone.",
     followOn = "On",
     followPaused = "Paused",
     followOff = "Off",
     paused = "Paused. Click here to go on with the guide.",
-    switchTitle = "Leveling guide",
-    switchTip = "Click: pause the guide, or go on with it. Right click: on, paused or off.",
+    switchTitle = "Speed Leveling",
+    switchTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     showGuide = "Show the guide",
     showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
     gather = "Professions before the next zone",
@@ -258,7 +258,7 @@ local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leav
 -- but for good reason: ns.off is what every part of it asks. The guide's run goes on knowing where it is, so that it
 -- catches up after.
 local function Idle()
-    if ns.options.follow ~= "off" then return false end
+    if ns.Guide.State() ~= "off" then return false end
     for _, option in ipairs(OPTIONS) do
         if option.text and option.default == false and ns.options[option.key] then return false end
     end
@@ -285,7 +285,16 @@ local function Rest(on)
     Core.SwitchChanged()
 end
 
-Core.Options(ns.name, OPTIONS, { moved = function() ns.Guarded(ns.Key.First) end, changed = function(key)
+-- Another profile: what depends on which it is follows, also where no setting differs between the two.
+local function Moved()
+    Rest(Idle())
+    ns.Guarded(ns.Key.First)
+    if ns.off then return end
+    ns.Guarded(ns.Guide.CheckSoon)
+    ns.Guarded(ns.Steps.Update)
+end
+
+Core.Options(ns.name, OPTIONS, { moved = Moved, changed = function(key)
     Rest(Idle())
     if ns.off then return end
     if VIEW[key] then
@@ -337,28 +346,17 @@ end
 Core.Command("guides", ns.TEXT.command, function() ns.Guarded(ns.Guides.Open) end)
 Core.Command("key", ns.TEXT.keyCommand, function() ns.Guarded(ns.Key.Check) end)
 
--- The guide on, paused or off, as a quick switch for a view that gathers them (Core.Offer: the minimap's satchel).
--- A click pauses it or goes on; a right click chooses on, paused or off.
-local function Follow(value) Core.Set(ns.name, "follow", value) end
+-- Speed Leveling on or off, as a quick switch for a view that gathers them (Core.Offer: the minimap's satchel): the box
+-- at the foot of the bags in another place, the profile Speedleveling or the one used before. Offered while the module
+-- rests too: that is how it comes back.
 Core.Offer("speedleveling", {
     title = ns.TEXT.switchTitle, icon = "Interface\\Icons\\Ability_Hunter_MarkedForDeath",
     State = function()
-        if ns.off or not ns.options then return nil end
-        return ns.options.follow or "on"
+        if not ns.options or (ns.off and not resting) then return nil end
+        return Core.Profiles.Leveling() and "on" or "off"
     end,
     Tip = function() return ns.TEXT.switchTip end,
-    Click = function(mouse, owner)
-        local now = ns.options.follow or "on"
-        if mouse ~= "RightButton" then return Follow(now == "on" and "paused" or "on") end
-        local util = rawget(_G, "MenuUtil")
-        if not (util and util.CreateContextMenu) then return end
-        util.CreateContextMenu(owner, ns.Guard(function(_, root)
-            root:CreateTitle(ns.TEXT.switchTitle)
-            for _, choice in ipairs({ { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused },
-                                      { "off", ns.TEXT.followOff } }) do
-                root:CreateRadio(choice[2], ns.Guard(function() return (ns.options.follow or "on") == choice[1] end),
-                                 ns.Guard(function() Follow(choice[1]) end))
-            end
-        end))
+    Click = function(mouse)
+        if mouse ~= "RightButton" then Core.Profiles.SetLeveling(not Core.Profiles.Leveling()) end
     end,
 })

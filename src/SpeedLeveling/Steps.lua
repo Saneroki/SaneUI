@@ -366,7 +366,7 @@ function Steps.Update()
     if ns.off then return Hide() end
     local count = ns.options.ahead or 0
     -- Off: no guide over the world. Paused: its head and a line saying so, a click on it goes on (Saneroki, 2026-10-26).
-    local follow = ns.options.follow or "on"
+    local follow = ns.Guide.State()
     if follow == "off" then return Hide() end
     local picture = ns.options.showGuide and ns.Guide.Picture(count, offset)
     if picture and lastAt ~= picture.at then

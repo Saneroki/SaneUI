@@ -350,15 +350,15 @@ check(picture.ahead[1].number == 2 and picture.ahead[1].text:find("copper", 1, t
 local wants = Guide.Quests()
 check(wants.take[10], "the quest giver takes the step's quest")
 
--- Paused, by its switch in the minimap's satchel (Core.Offer): it holds where it is, the key and the quest givers leave
--- it, its view says so; what was done meanwhile counts once it goes on.
+-- Paused, by the setting Your guide: it holds where it is, the key and the quest givers leave it, its view says so; what
+-- was done meanwhile counts once it goes on.
 local function Switch()
     for _, switch in ipairs(Core.Switches()) do if switch.key == "speedleveling" then return switch end end
 end
 check(Switch() and Switch().state == "on", "its switch offered: on")
-Switch().Click("LeftButton")
+Core.Set(ns.name, "follow", "paused")
 W.Wait(0.1)
-check(ns.options.follow == "paused" and Switch().state == "paused", "a click pauses it")
+check(Switch().state == "on", "the switch is Speed Leveling's, not the guide's: paused, it stays on")
 check(Guide.Targets() == nil and Guide.Quests() == nil and Guide.Uses() == nil, "paused: no targets, quests or items for it")
 Steps.Update()
 local pausedLine = Shown(ns.TEXT.paused)
@@ -372,10 +372,30 @@ W.Wait(1)
 check(ns.options.follow == "on" and Run.At() == 3, "a click on the line goes on, as far as was done: " .. Run.At())
 Core.Set(ns.name, "follow", "off")
 W.Wait(0.1)
-check(not view._shown and Guide.Targets() == nil and Switch().state == "off", "off: no view, no guide followed")
+check(not view._shown and Guide.Targets() == nil, "off: no view, no guide followed")
+Core.Set(ns.name, "follow", "on")
+W.Wait(0.1)
+check(view._shown, "on again")
+
+-- The switch of the minimap's satchel and the box in the bags are one: the profile, and off nothing of the guide shows.
 Switch().Click("LeftButton")
 W.Wait(0.1)
-check(ns.options.follow == "on" and view._shown, "a click on the switch turns it on again")
+check(not Core.Profiles.Leveling() and Switch() and Switch().state == "off" and not view._shown and Guide.Targets() == nil,
+    "a click: Speed Leveling off, the guide gone, and the switch still there to turn it on")
+Switch().Click("RightButton")
+check(not Core.Profiles.Leveling(), "the right button does nothing, as on the box")
+Core.Set(ns.name, "follow", "on")
+W.Wait(0.1)
+check(not view._shown and Guide.Targets() == nil, "whatever Your guide says there: nothing of it shows")
+Core.Profiles.SetLeveling(true)
+W.Wait(0.1)
+check(Switch().state == "on" and view._shown, "turned on elsewhere, as the box does: the switch follows, the guide is back")
+Core.Profiles.SetLeveling(false)
+W.Wait(0.1)
+check(Switch().state == "off" and not view._shown, "and off again, though the setting is the same on both profiles")
+Switch().Click("LeftButton")
+W.Wait(0.1)
+check(Core.Profiles.Leveling() and view._shown, "a click brings it back")
 
 -- The quest taken: on past the step; the boars go along with the next one.
 quests.on[10] = true

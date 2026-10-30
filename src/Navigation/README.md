@@ -101,9 +101,8 @@ is small, and the maps of the dungeons and raids. The plan is in
     again every second; then the game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
     click stops it) and **Stopwatch** (on the screen), each ticked while open. The calendar opens out of a fight
     only, as the game opens it only so for an addon;
-  - **Sane UI:** the quick switches Sane UI's modules offer (`Core.Offer`): Speed Leveling's *Leveling guide*, a
-    click pauses the guide or goes on, a right click chooses on, paused or off; on is ticked, paused says so under
-    its name, off is faint. Only while a module offers one;
+  - **Sane UI:** the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the same as the box at
+    the foot of the bags; on is ticked, off is faint. Only while a module offers one;
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
     minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
     the golden ring round it, with its addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists

@@ -158,7 +158,7 @@ ns.TEXT = {
     bagsRoomGone = "Destroyed %s to keep a slot free.",
     bagsRoomNone = "Your bags are full, and there is no junk to destroy.",
     bagsSpeedLeveling = "Speed Leveling",
-    bagsSpeedLevelingTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation. Off: it goes back to the profile it used before, Accountwide if it had no other.",
+    bagsSpeedLevelingTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     noAsk = "Equip and delete without asking",
     noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
     -- A new level, in the middle of the screen (LevelUp.lua)

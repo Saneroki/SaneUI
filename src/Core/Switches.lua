@@ -3,12 +3,12 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Switches
 --  Quick switches the modules offer for a view that gathers them (Saneroki,
---  2026-10-26: the Speed Leveling guide switched on, paused or off from the
---  minimap's satchel). A module offers a switch; a view (Navigation's satchel)
+--  2026-10-26: Speed Leveling switched on or off from the minimap's satchel). A
+--  module offers a switch; a view (Navigation's satchel)
 --  lists them and is told when one changed, so neither needs the other.
 --
 --      Core.Offer(key, switch)   switch = { title, icon, State = fn() -> state, Tip = fn() -> words,
---                                Click = fn(mouseButton, owner) }; state: "on", "paused" or "off"
+--                                Click = fn(mouseButton, owner) }; state: "on" or "off"
 --      Core.Switches()           the switches offered by modules that stand, in the order offered:
 --                                { { key, title, icon, state, tip, Click } }, their state and tip as now
 --      Core.SwitchChanged()      a module's switch changed: the views told on the next frame

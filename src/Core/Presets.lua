@@ -7,8 +7,9 @@ local Core = SaneUI.Core
 --  tab CVars), so they are written into the game at the login and what the
 --  player changes afterwards goes into the profile as anything else. A CVar one
 --  of the two games lacks is passed over. And all of Speed Leveling's switches,
---  off by default, on in Speedleveling alone. Character specific has none of
---  this: it stays as the game has it.
+--  off by default, on in Speedleveling alone. And in Retail the Newcomer Chat,
+--  which the game puts a character in by itself: left every time, in both
+--  profiles. Character specific has none of this: it stays as the game has it.
 --
 --  Given to a profile once for each Presets.VERSION, and then only what it does
 --  not have yet (Profiles.lua: Standard): raise the number when something is
@@ -18,7 +19,7 @@ local Core = SaneUI.Core
 --      Core.Presets.VERSION
 --      Core.Presets.profiles[name]   { [module] = { [switch] = value } }
 -------------------------------------------------------------------------------
-local Presets = { VERSION = 1, profiles = {} }
+local Presets = { VERSION = 2, profiles = {} }
 Core.Presets = Presets
 
 -- What both Accountwide and Speedleveling hold.
@@ -70,6 +71,10 @@ for _, switch in ipairs({ "loot", "corpses", "talk", "walk", "objects", "useOn",
     LEVELING[switch] = true
 end
 
+-- Social's wish for a channel of the game, by the game's name of it: never in it (Join.lua). Forever has that one
+-- switched off.
+local SOCIAL = Core.ForGame({ retail = { presence = { ["Newcomer Chat"] = false } } })
+
 local function Both(extra)
     local named = {}
     for name, value in pairs(RECOMMENDED) do named[name] = value end
@@ -77,5 +82,5 @@ local function Both(extra)
     return named
 end
 
-Presets.profiles.Accountwide = { Sync = { named = Both(ACCOUNTWIDE) } }
-Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = LEVELING }
+Presets.profiles.Accountwide = { Sync = { named = Both(ACCOUNTWIDE) }, Social = SOCIAL }
+Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = LEVELING, Social = SOCIAL }

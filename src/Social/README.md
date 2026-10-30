@@ -210,8 +210,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   character is seen in it, so also a city's when it first comes to one. That happens once per channel and character,
   on every profile. Join one when you want it, with `/join Trade` or with *Always in it* above: it stays, on that
   login and any other. A channel you made yourself is not touched.
+- **Retail's Newcomer Chat is left every time.** The game puts a character in it by itself, so *Accountwide* and
+  *Speedleveling* hold *Never in it* for it, on every character, old ones too. To stay in it, choose *Always in it*.
 - **Not shown at first** in the list of what to show: *Loot, money and experience*, and General, Trade (Forever's Trade
-  (Local) too), Local Defense and Services, also after you join one: tick it there to read it. A tick belongs to the
+  (Local) too), Local Defense, Services and Newcomer Chat, also after you join one: tick it there to read it. A tick belongs to the
   channel, whatever number the game gives it.
 - **The bubbles and the line to write in** are plain fills with round corners: no border, no ornament.
   Every bubble, yours too, and the line are drawn the same way: the same fill (a color or one of the game's

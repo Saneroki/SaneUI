@@ -52,10 +52,10 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 - **Add your guides:** open *Guides* (`/sane guides`, the last line of that menu, or the button on the options page).
   Paste the **import string** of the guides you bought into the line at the top — it is opened for the account you
   are playing, and no other — or paste a guide's **text** into the box below and press *Read*.
-- **Pause it, or switch it off:** *Your guide* on the options page, or the guide's switch in the minimap's satchel (a
-  click pauses it or goes on, a right click chooses on, paused or off).
+- **Pause it, or switch it off:** *Your guide* on the options page.
 - **Switch it on or off:** tick or untick *Speed Leveling* under *Sane UI* in the game's addon list.
-- **On or off:** the box *Speed Leveling* at the foot of the bags (Saneroki, 2026-10-30) is the profile: ticked, this
+- **On or off:** the box *Speed Leveling* at the foot of the bags and the switch of that name in the minimap's satchel
+  (Saneroki, 2026-10-30) are one and the same: off, nothing of the guide is to be seen, whatever *Your guide* says (`Guide.State`). Each is the profile: ticked, this
   character uses *Speedleveling*; unticked, it goes back to the profile it used before, *Accountwide* if it had no other.
   Every switch below is off at first and on in *Speedleveling* alone (Core's `Presets.lua`), so a switch ticked in another
   profile works there by itself; with none on, all of the module rests: the key does nothing, the guide is hidden.

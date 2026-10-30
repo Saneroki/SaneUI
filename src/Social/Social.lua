@@ -165,9 +165,10 @@ local OPTIONS = {
     -- The ticks of the list on the chat's name for every other group ([group] = true: not shown):
     -- kept with the settings, so profiles and a character's own settings carry them; no control.
     -- Off at first (Saneroki, 2026-10-30): loot, money and experience, and the busy public channels by the game's own word
-    -- for them (Channels.Group; TradeLocal is Forever's Trade (Local), Services Trade (Services)).
+    -- for them (Channels.Group; TradeLocal is Forever's Trade (Local), Services Trade (Services), NewcomerChat Retail's
+    -- Newcomer Chat).
     { key = "mute", default = { REWARDS = true, ["CHANNEL:General"] = true, ["CHANNEL:Trade"] = true, ["CHANNEL:TradeLocal"] = true,
-                                ["CHANNEL:LocalDefense"] = true, ["CHANNEL:Services"] = true } },
+                                ["CHANNEL:LocalDefense"] = true, ["CHANNEL:Services"] = true, ["CHANNEL:NewcomerChat"] = true } },
 
     -- The full screen's windows (Board.lua): which stand there is the layouts' (the dropdown Windows in its title bar).
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
