@@ -97,17 +97,9 @@ local function Pattern(name, english)
     return "^" .. sentence .. "$"
 end
 
--- Finds the words in any mix of capitals and small letters: "Damage per Second" also finds
--- "damage per second" and "Damage Per Second".
-local function AnyCase(words)
-    words = words:gsub("[%(%)%.%+%-%*%?%[%]%^%$%%]", "%%%0")
-    return (words:gsub("%a", function(letter) return "[" .. letter:lower() .. letter:upper() .. "]" end))
-end
-
 ns.PATTERN = {
     MIN_LEVEL = Pattern("ITEM_MIN_LEVEL", "Requires Level %d"),
     DPS = Pattern("DPS_TEMPLATE", "(%s damage per second)"),
-    DPS_WORDS = AnyCase(Global("ITEM_MOD_DAMAGE_PER_SECOND_SHORT") or "Damage per Second"),
     ARMOR = Pattern("ARMOR_TEMPLATE", "%s Armor"),
     DURABILITY = Pattern("DURABILITY_TEMPLATE", "Durability %d / %d"),
     ITEM_LEVEL = Pattern("ITEM_LEVEL", "Item Level %d"),

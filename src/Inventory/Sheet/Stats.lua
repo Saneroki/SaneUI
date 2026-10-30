@@ -215,7 +215,7 @@ local function Fill(view, unit, stat, info)
         Give(view, row)
         return nil
     end
-    row.Label:SetText(Bare(row.Label:GetText()))
+    row.Label:SetText(Core.StatWord(Bare(row.Label:GetText())))
     row.Value:SetText(Inked(row.Value:GetText()))
     row.stat = stat.stat
     return row
@@ -237,7 +237,7 @@ local function Resistance(view, unit, name)
         row.Value:SetText(Game("PaperDollFrame_FormatBonusValue", text, bonus or 0) or text)
         Game("PaperDollFrame_SetResistanceTooltips", row, word, effective, unit, class)
     end
-    row.Label:SetText(Bare(row.Label:GetText()))
+    row.Label:SetText(Core.StatWord(Bare(row.Label:GetText())))
     row.Value:SetText(Inked(row.Value:GetText()))
     row.stat = nil
     return row

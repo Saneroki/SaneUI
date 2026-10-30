@@ -277,6 +277,7 @@ GetMoney = function() return 12345 end
 -- and where they live (Profiles), Fuzzy for a text without its codes, the data framework, and the inspections.
 W.Load(root, "SaneUI", "Core/Core", {})
 W.Load(root, "SaneUI", "Core/Kit", {})
+W.Load(root, "SaneUI", "Core/Stats", {})
 W.Load(root, "SaneUI", "Core/Serial", {})
 W.Load(root, "SaneUI", "Core/Motion", {})
 W.Load(root, "SaneUI", "Core/Saved", {})
@@ -628,7 +629,7 @@ check(row(panel, 4).font == "big" and row(panel, 4).left == "53.8 |cff" .. DETAI
     "a weapon's damage per second, large, first in Info")
 check(row(panel, 4).label == "\194\183  44 - 115 dmg  \194\183  1.90 spd" and row(panel, 4).labelFont == "sub",
     "its hit's damage and its speed after it in the same line, smaller")
-check(row(panel, 5).left == "+5 Agility" and row(panel, 6).lg == 1, "then its lines; what it does in green, in Info too")
+check(row(panel, 5).left == "+5 Agi" and row(panel, 6).lg == 1, "then its lines; what it does in green, in Info too")
 check(row(panel, 7).kind == "bar" and row(panel, 7).inside and row(panel, 7).value == 61 and row(panel, 7).max == 120
     and row(panel, 7).left == "Durability" and row(panel, 7).right == "61 / 120", "its durability as a bar, last of its own lines")
 local durable = panel.liveBars.inside
@@ -654,7 +655,7 @@ tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plans: Gloves", nil, { 0.64, 0.2
     { " ", nil, nil, nil, LINE.SellPrice, price = 400 } })
 check(row(panel, 3).kind == "caption" and row(panel, 3).left == "Creates" and row(panel, 4).left == "Veteran's Gloves" and row(panel, 4).font == "title"
     and row(panel, 4).icon == 2000 + 19019, "a recipe: what it makes under a caption, with that thing's icon")
-check(row(panel, 5).left == "115 Armor" and row(panel, 7).left == "Vendor" and row(panel, 7).right == "400c" and shape(panel) == "text text CREATES text text GOLD text",
+check(row(panel, 5).left == "115 Arm" and row(panel, 7).left == "Vendor" and row(panel, 7).right == "400c" and shape(panel) == "text text CREATES text text GOLD text",
     "the thing's lines are left as they are, all of them in the section Creates; the price under Gold")
 -- An item set: its name, its pieces and its bonuses one section, Set; the description after it its own
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Belt of Might", nil, { 0.64, 0.21, 0.93 } }, { "+9 Strength" },
@@ -776,7 +777,7 @@ tip:Fill({ type = TYPE.Item, id = 2589 }, { { "Linen Cloth" }, { " ", nil, nil, 
 check(math.abs(hairline() - 3 * pixel) < 1e-9, "and the nearest whole dots elsewhere: three on a 4K screen")
 pixel = 1
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plate", nil, { 0.64, 0.21, 0.93 } }, { "115 Armor" } })
-check(row(panel, 2).left == "Info" and row(panel, 3).font == "big" and row(panel, 3).left == "115 Armor", "an armour's number is large too, in Info")
+check(row(panel, 2).left == "Info" and row(panel, 3).font == "big" and row(panel, 3).left == "115 Arm", "an armour's number is large too, in Info")
 options.icons = false
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" }, { "Epic" } })
 check(head(panel).icon == nil and head(panel).accent, "the icons can be switched off")
@@ -1935,7 +1936,7 @@ shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 
     { "", added = true }, { "If you replace this item, the following stat changes will occur:", nil, GOLD, added = true },
     { "|cff00ff00+2.2|r damage per second", added = true }, { "+3 Stamina", added = true } })
 check(head(worn).tag == "|cffffd100EQUIPPED|r" and count(worn) == 4 and row(worn, 2).left == "Info" and row(worn, 3).left == "|cff00ff00+2.2|r DPS"
-    and row(worn, 3).font == "row" and row(worn, 4).left == "+3 Stamina" and row(worn, 4).font == "row",
+    and row(worn, 3).font == "row" and row(worn, 4).left == "+3 Stam" and row(worn, 4).font == "row",
     "a comparison's changes without the sentence over them, as the game's own lines under Info, damage per second short")
 
 -- What you wear beside what you look at, at places of the module's own: the game moves its

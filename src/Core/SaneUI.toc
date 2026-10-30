@@ -53,6 +53,8 @@ Bar.lua
 Neighbours.lua
 # Quick switches the modules offer, for a view that gathers them (the minimap's satchel)
 Switches.lua
+# The stats as players write them (Str, Stam, Crit), for every view that names one
+Stats.lua
 # Whether an item would make the character better, for the loot, the bags and quest rewards
 Upgrade.lua
 # The words of Sane UI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)

@@ -124,7 +124,7 @@ function Rewards.Changes(new, old)
         amount = Core.Plain(amount)
         local name = type(key) == "string" and rawget(_G, key)
         if type(amount) == "number" and amount ~= 0 and type(name) == "string" then
-            list[#list + 1] = { key = key, name = name, amount = amount }
+            list[#list + 1] = { key = key, name = Core.StatWord(name), amount = amount }
         end
     end
     table.sort(list, function(a, b)

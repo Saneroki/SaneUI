@@ -161,6 +161,13 @@ ns.TEXT = {
     bagsSpeedLevelingTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation. Off: it goes back to the profile it used before, Accountwide if it had no other.",
     noAsk = "Equip and delete without asking",
     noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
+    -- A new level, in the middle of the screen (LevelUp.lua)
+    levelHeader = "Level Up",
+    levelToast = "Level-up Toast",
+    levelToastTip = "At a new level: the level, the stats it brought and how long you played on the level before, in the middle of the screen, in place of the game's toast and its lines in the chat. Off: the game's own.",
+    levelTitle = "Level %d!",
+    levelStat = "%s |cff6fe06f+%d|r",
+    levelTook = "Leveled %s",
     -- The bags' dropdown View (Bags/Bags.lua)
     bagsLook = "Display",
     bagsShowPinned = "Show Pinned Items",
@@ -173,7 +180,7 @@ ns.TEXT = {
 }
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the bottom right corner no longer fills the screen with your inventory; the bag keys open the game's bags"
+ns.GIVEN_BACK = "the bottom right corner no longer fills the screen with your inventory; the bag keys open the game's bags; a new level is told by the game again"
 
 -- The bags' settings (Bags/): what they show, how items look on them.
 local OPENS = { { "all", ns.TEXT.bagsAllItems }, { "one", ns.TEXT.bagsOneBag }, { "each", ns.TEXT.bagsEachBag } }
@@ -199,6 +206,7 @@ local OPTIONS = {
     { key = "setName", default = false, text = ns.TEXT.bagsSetName, tip = ns.TEXT.bagsSetNameTip },
     { key = "coin", default = false, text = ns.TEXT.bagsCoin, tip = ns.TEXT.bagsCoinTip },
     { key = "grey", default = false, text = ns.TEXT.bagsGrey, tip = ns.TEXT.bagsGreyTip },
+    { key = "levelToast", default = true, text = ns.TEXT.levelToast, tip = ns.TEXT.levelToastTip, header = ns.TEXT.levelHeader },
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, 1)
@@ -210,6 +218,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if Core.Edge.KEYS[key] then return end
     if key == "autoSell" or key == "autoRepair" then return ns.Guarded(ns.Vendor.Refresh) end
     if key == "bags" then return ns.Guarded(ns.Bags.Reload) end
+    if key == "levelToast" then return ns.Guarded(ns.LevelUp.Apply) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
     if ns.Alts then ns.Guarded(ns.Alts.Changed) end
 end })
@@ -220,6 +229,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Keys.Leave)
     ns.Safe("giving back", ns.Board.Hide)
     ns.Safe("giving back", ns.Window.Hide)
+    ns.Safe("giving back", ns.LevelUp.GiveBack)
 end
 
 function ns.OnLoad()
@@ -232,6 +242,7 @@ function ns.OnLogin()
     ns.Bank.Start()
     ns.Vendor.Start()
     ns.Weights.Start()
+    ns.LevelUp.Start()
     ns.Keys.Start()
     ns.Asks.Start()
     ns.Room.Start()

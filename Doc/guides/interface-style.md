@@ -402,6 +402,18 @@ moves to its own heading here once it is decided, with its picture.
 - **Raid markers:** the eight markers in our own style, wherever Sane UI shows them (the nameplates, the marks in
   the chat's picker).
 
+### A new level over the world
+
+Inventory's toast of a new level (`src/Inventory/LevelUp.lua`; Saneroki, 2026-10-30), in the place of the game's: below
+the screen's top, in its middle, no window, no paper.
+
+- **Words in Expressway** with a thin dark outline, as the guide and the talk over the world, on a faint dark shade whose
+  sides fade out into the world.
+- **Centred, from the top:** *Level 22!* large in the game's gold, a line for each stat it brought, *Str +2*, the name in
+  white and the number in green, then *Leveled 7h* in grey. Stats in Core's short words.
+- **It comes and goes by itself:** a quick fade in, five seconds, a second's fade out; no mouse. It stays in sight while
+  the talk fades the interface out.
+
 ## Animation
 
 - Windows and panels appear out of nothing and disappear the same way (the appearing played backwards): a quick,

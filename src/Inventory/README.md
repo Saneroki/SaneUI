@@ -197,6 +197,22 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   categories), *Stack Splitter Everywhere*, *Show Item Level*, *Show BoE*, *Show Set Name*, *Coin
   on Junk*, *Grey Junk*. The dropdown *View* switches some of them too.
 
+### A new level
+
+At a new level the middle of the screen says it, for a few seconds, in place of the game's toast and its lines in the
+chat: the level, the stats it brought and how long you played on the level before.
+
+```
+Level 22!
+Str +2
+Stam +1
+Leveled 7h
+```
+
+Over the world, also while Lore fades the interface out for a talk. *Level-up Toast* on the page Inventory switches
+it off: the game tells a new level again. The first level after a login may have no last line for the first seconds,
+until the game has said your time.
+
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOMRIGHT` at first,
   `Window.WIDTH` x `Window.HEIGHT`, not sizable, see-through and empty while small (no mouse); in Edit Mode its
@@ -663,6 +679,19 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   board's windows go and the window with them, each step by itself (`ns.Safe`). A `/reload` starts the module afresh.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
   and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags); each also as Retail (`W.Play("retail")`: the level line, the stats, the windows that stand down, the icons, our bar, the bags without a keyring).
+
+`LevelUp.lua` (Saneroki, 2026-10-30) tells a new level in the middle of the screen. The stats come with
+`PLAYER_LEVEL_UP`, in Core's short words (`Core.StatWord`; Retail's event has no Spirit); the time from `TIME_PLAYED_MSG`,
+asked once five seconds after the login with the chat windows deaf to that one answer (`Core.Lend`, `SetDeaf`), so
+`/played` stays as it was; `GetTime()` counts on from there and the level's start is the level-up itself.
+The chat windows write their level-up lines at `PLAYER_LEVEL_UP` themselves (no `CHAT_MSG_`, no filter), Retail's at
+`PLAYER_LEVEL_CHANGED`, and Social's window takes what they write (`AddMessage`). So they are lent deaf to those two, at
+the world's entry and each `PLAYER_XP_UPDATE`: the game adds the events again when the player changes what a window
+shows. The game's toast is `EventToastManagerFrame`, a toast of `Enum.EventToastEventType.LevelUp` in it; it must run on,
+since its animations end it and bring the next toast, and they stop on a hidden frame, and its alpha would be its fade's
+during those. So at `DisplayToast` (hooked) it is lent under a frame of ours at alpha 0, and back at the next toast or
+at the end of them: every other toast shows as ever. `ns.GiveBack` and the switch give both back. Its look:
+`Doc/guides/interface-style.md`, *A new level over the world*.
 
 ## Stat weights
 `Asks.lua` (Saneroki, 2026-10-30): *Equip and delete without asking*, on in every profile: the game's questions before gear

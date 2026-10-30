@@ -287,6 +287,17 @@ CloseAllBags = function() ContainerFrameCombinedBags:Hide() end
 local cursorItem = false
 CursorHasItem = function() return cursorItem end
 
+-- The game's chat windows, and its toast in the middle of the screen (Blizzard_FrameXML/EventToastManager.lua)
+CHAT_FRAMES = { "ChatFrame1", "ChatFrame2" }
+for _, name in ipairs(CHAT_FRAMES) do _G[name] = W.NewWidget("Frame", name, UIParent) end
+for _, event in ipairs({ "PLAYER_LEVEL_UP", "PLAYER_LEVEL_CHANGED", "TIME_PLAYED_MSG" }) do ChatFrame1:RegisterEvent(event) end
+ChatFrame1:SetScript("OnEvent", function(_, event) W.chatHeard = W.chatHeard or {}; W.chatHeard[event] = true end)
+Enum.EventToastEventType = { LevelUp = 0, LevelUpSpell = 1 }
+EventToastManagerFrame = W.NewWidget("Frame", "EventToastManagerFrame", UIParent)
+function EventToastManagerFrame:DisplayToast(firstToast) self.toastsShown = (self.toastsShown or 0) + (firstToast and 1 or 0) end
+local timeAsked = 0
+RequestTimePlayed = function() timeAsked = timeAsked + 1 end
+
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -463,7 +474,7 @@ do
     end
     ITEM_MOD_STAMINA_SHORT, RESISTANCE0_NAME, ITEM_MOD_DAMAGE_PER_SECOND_SHORT = "Stamina", "Armor", "Damage Per Second"
     ITEM_MOD_CRIT_RATING_SHORT, ITEM_MOD_INTELLECT_SHORT, STAT_DPS_SHORT = "Critical Strike", "Intellect", "DPS"
-    check(table.concat(ns.Slots.Stats("|Hitem:1|h[x]|h"), ",") == "12.5 DPS,62 Armor,+8 Stamina,+3 Intellect,+1 Critical Strike",
+    check(table.concat(ns.Slots.Stats("|Hitem:1|h[x]|h"), ",") == "12.5 DPS,62 Arm,+8 Stam,+3 Int,+1 Crit",
         "a strip's stats: DPS, armor, the primary stats, then the rest")
     GetItemStats = stats
 end
@@ -1117,6 +1128,101 @@ check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~
 --  Standing down
 -------------------------------------------------------------------------------
 Push()
+-- The stats' short words (Core), and a new level: the middle of the screen says it, in place of the game's toast and
+-- its lines in the chat.
+do
+    local LevelUp, game = ns.LevelUp, EventToastManagerFrame
+    local view
+    local function Said()
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Frame" and widget._width == LevelUp.WIDTH then view = widget end
+        end
+        local texts = {}
+        for _, part in ipairs(W.frames) do
+            if part._parent == view and part._kind == "FontString" and part._shown and part._text then texts[#texts + 1] = part._text end
+        end
+        return table.concat(texts, "/")
+    end
+    local function Toast(kind)
+        game.currentDisplayingToast = kind and { toastInfo = { eventType = kind } } or nil
+        game:DisplayToast()
+    end
+    local LEVEL = Enum.EventToastEventType.LevelUp
+
+    check(Core.StatWord("Strength") == "Str" and Core.StatWord("critical strike") == "Crit" and Core.StatWord("Crit Chance") == "Crit"
+        and Core.StatWord("Crit Damage") == "Crit dmg" and Core.StatWord("Armor") == "Arm" and Core.StatWord("Fire Resistance") == "Fire res",
+        "the stats' short words, in any case")
+    check(Core.StatWord("Spellbook") == "Spellbook" and Core.StatWord(nil) == nil, "a word that is no stat stays as it came")
+    check(Core.StatLine("+8 Stamina") == "+8 Stam" and Core.StatLine("62 Armor") == "62 Arm" and Core.StatLine("-2 Agility") == "-2 Agi"
+        and Core.StatLine("|cff00ff00+2.2|r damage per second") == "|cff00ff00+2.2|r DPS",
+        "a line of a number and a stat is shortened, a coloured number too")
+    check(Core.StatLine("Increases Stamina by 26.") == "Increases Stamina by 26." and Core.StatLine("12 Goblins") == "12 Goblins"
+        and Core.StatLine("Equip: +20 Attack Power.") == "Equip: +20 Attack Power.", "a sentence stays as it is")
+
+    check(LevelUp.Took(40) == "40s" and LevelUp.Took(35 * 60 + 20) == "35m" and LevelUp.Took(7 * 3600 + 600) == "7h",
+        "how long a level took, as short as the toast has it")
+
+    W.Fire("PLAYER_ENTERING_WORLD")
+    check(not ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP") and not ChatFrame1:IsEventRegistered("PLAYER_LEVEL_CHANGED"),
+        "the chat windows no longer hear a level: Retail's event too")
+    check(ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "they do hear /played")
+    ChatFrame1:RegisterEvent("PLAYER_LEVEL_UP") -- the player chose what the window shows: the game adds its events again
+    W.Fire("PLAYER_XP_UPDATE", "player")
+    check(not ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP"), "the game added it again: at the next XP it goes")
+
+    W.Wait(LevelUp.ASK_AFTER + LevelUp.ASK_MOST)
+    local asked = timeAsked
+    check(asked == 1, "the time is asked once after the login")
+    check(ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "no answer: the chat hears /played again all the same")
+    LevelUp.Apply()
+    check(timeAsked == asked + 1 and not ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "asked with the chat deaf to that one answer")
+    LevelUp.Apply()
+    check(timeAsked == asked + 1, "and not again while it is on its way")
+    W.Fire("TIME_PLAYED_MSG", 90000, 7 * 3600 - 100)
+    W.Wait(0.1)
+    check(ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG") and not (W.chatHeard or {}).TIME_PLAYED_MSG, "the answer went by, the chat hears /played again")
+    LevelUp.Apply()
+    check(timeAsked == asked + 1, "the game has said: not asked again")
+
+    W.Wait(100)
+    W.chatHeard = nil -- what it heard of the levels of the tests above, before it was made deaf
+    W.Fire("PLAYER_LEVEL_UP", 22, 18, 20, 1, 0, 2, 0, 1, 0, 0)
+    check(Said() == "Level 22!/Str |cff6fe06f+2|r/Stam |cff6fe06f+1|r/Leveled 7h", "the level, what it brought, how long it took (" .. Said() .. ")")
+    check(view._shown and not (W.chatHeard or {}).PLAYER_LEVEL_UP, "in the middle of the screen, nothing in the chat")
+    W.Wait(LevelUp.FADE_IN + LevelUp.HOLD + LevelUp.FADE_OUT + 0.1)
+    check(not view._shown, "and it goes by itself")
+
+    W.Fire("PLAYER_LEVEL_UP", 23, 18, 20, 1, 0, 0, 0, 0, 0)
+    check(Said() == "Level 23!/Leveled 6s", "no stats in Retail's shorter event; the next level's time counts from this one (" .. Said() .. ")")
+    W.Fire("PLAYER_LEVEL_UP", 24, 18, 20, 1, 0, 0, 0, 0, 0, 3)
+    check(Said() == "Level 24!/Spi |cff6fe06f+3|r/Leveled 0s", "a level on top of the last: the toast anew")
+    W.Wait(LevelUp.FADE_IN + LevelUp.HOLD - 1)
+    check(view._shown, "with its own time, the last one's end keeps away")
+    W.Wait(LevelUp.FADE_OUT + 1.1)
+    check(not view._shown, "till its own end")
+
+    local parent = game:GetParent()
+    Toast(LEVEL)
+    check(game:GetParent() ~= parent and game:GetParent()._alpha == 0, "the game's toast of a level runs on under a frame of ours, unseen")
+    Toast(Enum.EventToastEventType.LevelUpSpell)
+    check(game:GetParent() == parent, "any other toast of the game's is seen")
+    Toast(LEVEL)
+    Toast(nil)
+    check(game:GetParent() == parent, "no toast left: it stands where it stood")
+
+    ns.options.levelToast = false
+    LevelUp.Apply()
+    check(ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP") and ChatFrame1:IsEventRegistered("PLAYER_LEVEL_CHANGED"), "switched off: the chat hears a level again")
+    Toast(LEVEL)
+    check(game:GetParent() == parent, "and the game's toast is left alone")
+    W.Fire("PLAYER_LEVEL_UP", 25, 18, 20, 1, 0, 2, 0, 0, 0, 0)
+    check(not view._shown, "and ours says nothing")
+    ns.options.levelToast = true
+    LevelUp.Apply()
+    check(not ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP"), "switched on again: not")
+    Toast(LEVEL)
+end
+
 Stand()
 -- Each step of giving back by itself: one that fails stops none of the others.
 local hide = ns.Board.Hide
@@ -1130,6 +1236,7 @@ check(ns.off and not frame:IsShown() and not handle.edge.full and bags.shown == 
     "standing down: the windows go and the window with them, a step that fails stopping none of the others")
 check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrame1:GetParent() == UIParent,
     "and the bag keys and the game's bag windows are the game's again")
+check(ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP") and EventToastManagerFrame:GetParent() == UIParent, "and a new level is the game's to tell again")
 
 -- The weights: every line of both games reads, by the game's stat keys; the stat a character builds on is 1.
 do

@@ -5476,7 +5476,7 @@ end)()
     lines = GameTooltip._lines or {}
     local blade
     for index, line in ipairs(lines) do if line:find("Hidden Blade", 1, true) then blade = index end end
-    check(blade and lines[blade + 1] == "    50 Armor" and lines[blade + 2] == "    +7 ITEM_MOD_STAMINA_SHORT",
+    check(blade and lines[blade + 1] == "    50 Arm" and lines[blade + 2] == "    +7 ITEM_MOD_STAMINA_SHORT",
         "Alt over an item the game keeps hidden: its armour and stats as Core's data has them")
     IsAltKeyDown = function() return false end
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)

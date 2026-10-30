@@ -424,7 +424,7 @@ local function Recorded(id)
         stats[#stats + 1] = { words, white[1], white[2], white[3], speed, white[1], white[2], white[3] }
     end
     if known.armor then
-        stats[#stats + 1] = { (rawget(_G, "ARMOR_TEMPLATE") or "%s Armor"):format(known.armor), white[1], white[2], white[3] }
+        stats[#stats + 1] = { Core.StatLine((rawget(_G, "ARMOR_TEMPLATE") or "%s Armor"):format(known.armor)), white[1], white[2], white[3] }
     end
     if type(known.stats) == "table" then
         local keys = {}
@@ -432,7 +432,7 @@ local function Recorded(id)
         table.sort(keys)
         for _, key in ipairs(keys) do
             local value, word = known.stats[key], rawget(_G, key)
-            word = type(word) == "string" and word or key
+            word = type(word) == "string" and Core.StatWord(word) or key
             stats[#stats + 1] = { ("%s%d %s"):format(value >= 0 and "+" or "", value, word), white[1], white[2], white[3] }
         end
     end

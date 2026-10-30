@@ -210,10 +210,9 @@ local function Section(line, _, fresh)
     return TEXT.INFO
 end
 
--- A comparison's changes: "+2.2 damage per second" says "+2.2 DPS".
-local deltaAt
-local function Delta(row, line, index)
-    if deltaAt and index > deltaAt then row.left = row.left:gsub(PATTERN.DPS_WORDS, TEXT.DPS) end
+-- Its stats as players write them ("+8 Stam"), a comparison's changes too ("+2.2 DPS").
+local function Stat(row)
+    row.left = Core.StatLine(row.left)
 end
 
 local function Item(ctx)
@@ -223,7 +222,6 @@ local function Item(ctx)
     -- What the lines are. Only the item's own, not those of a thing it makes.
     local slot, bind, level, required, dps, damage, armor, durability, now, most, look, begins
     local last = ctx.count
-    deltaAt = nil
     wipe(requires)
     for index = 2, ctx.count do
         if L[index].type == NESTED then
@@ -243,7 +241,7 @@ local function Item(ctx)
             end
         elseif left == LINES.DELTA or left == LINES.DELTA_BOTH then
             -- The sentence over a comparison's changes: left out. The changes are the game's own lines.
-            line.used, deltaAt = true, index
+            line.used = true
             for under = index + 1, ctx.count do
                 if L[under].blank then break end
                 L[under].own = true
@@ -348,7 +346,7 @@ local function Item(ctx)
             damage.used = true
         end
     end
-    if armor then Read.Line(armor, "big") end
+    if armor then Stat(Read.Line(armor, "big")) end
 
     -- Its quests. The game's line that it begins a quest is left out where the panel names the quest.
     local quests = ns.Quests.Item(id)
@@ -366,7 +364,7 @@ local function Item(ctx)
             ctx.nestedIcon = Plain(C_Item.GetItemIconByID(which))
         end
     end
-    ctx.each = Delta
+    ctx.each = Stat
     Read.Rest()
     ctx.each, ctx.name = nil, nil
 

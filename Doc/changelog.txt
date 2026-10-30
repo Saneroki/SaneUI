@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A new level is told in the middle of the screen: the stats it
+  brought and how long you played on the level before, in place of
+  the game's lines in the chat. Switch: Inventory, Level-up Toast.
+- Stats are written short wherever Sane UI shows them: Str, Stam,
+  Agi, Int, Spi, Arm, Crit, Crit dmg, AP, SP and the rest.
 - Your alts: the list of characters is a dropdown, which leaves
   room for the items, and the window now works like your bags:
   collapsing groups, categories side by side, Sort By, Grid, List

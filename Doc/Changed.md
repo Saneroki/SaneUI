@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: a new level in the middle of the screen; Core: the stats written short everywhere (Saneroki, 2026-10-30)
+Saneroki: hide the level-up lines in the chat; the toast in the middle of the screen with the stat changes and how long
+you played on that level (*Level 22! / Str +2 / Stam +1 / Leveled 7h*); in the entire game all stats shortened. A game
+restart takes it in (new files in Core's and Inventory's TOCs, Core's new font).
+- **`src/Core/Stats.lua` (new):** `Core.StatWord`, `Core.StatLine`, the one place of the short words: Str, Agi, Stam, Int, Spi,
+  HP, Arm, Def, Block val, Crit, Crit dmg, Hit, AP, RAP, Haste, Exp, ArP, SP, Spell dmg, Heal, SPen, MP5, HP5, Mast, Vers,
+  Resil, Avoid, Move, DPS, iLvl, and for each school its res, dmg and pen. Sentences stay as they are.
+- **Everywhere Sane UI names a stat:** the tooltips' item lines and comparisons (`Kinds/Item.lua`: every line goes through
+  `Core.StatLine`, which also does the comparisons' DPS, so `PATTERN.DPS_WORDS` is gone), the stats' window and the slots'
+  strips (`Sheet/Stats.lua`, `Sheet/Slots.lua`), a quest reward's changes (`Lore/Rewards.lua`), a boss's loot with Alt
+  (`Navigation/Dungeons.lua`). The game's own windows keep its words: its strings are not ours to write.
+- **`src/Inventory/LevelUp.lua` (new):** the toast, by the event's stats and the time from `TIME_PLAYED_MSG`, asked once after
+  the login with the chat windows deaf to that one answer. The chat windows lent deaf to `PLAYER_LEVEL_UP` and
+  `PLAYER_LEVEL_CHANGED`, so Social's window gets nothing from them either; checked at each XP gain, as the game adds the
+  events again. The game's toast of a level lent under a frame at alpha 0 while it runs its course; every other toast of the
+  game's shows. *Level-up Toast* on the page Inventory; `ns.GiveBack` gives all of it back.
+- **Core's font:** Expressway beside Kalam (`assets/optimized/Core/Fonts/`).
+- **The interface lab:** scene `levelup`.
+- Tests: `dev/tests/inventory.lua` the words, the lines, the time, the chat, the game's toast, the switch and standing down.
+
 ### Nameplates: what did no harm in words by default; a hidden school's colour in the text (Saneroki, 2026-10-30)
 Saneroki: a setting for whether a parry, dodge, immune, block and so on is an icon or text, by default text in both
 Accountwide and Speedleveling; at least in Retail auto attacks and spell attacks both white, spells should be red.

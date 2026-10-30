@@ -188,8 +188,8 @@ Slots.FIRST = { "ITEM_MOD_DAMAGE_PER_SECOND_SHORT", "RESISTANCE0_NAME", "ITEM_MO
 local first = {}
 for index, key in ipairs(Slots.FIRST) do first[key] = index end
 
--- An item's stats as words for its strip ("12.5 DPS", "62 Armor", "+8 Stamina"): the game's (GetItemStats), by
--- the game's words.
+-- An item's stats as words for its strip ("12.5 DPS", "62 Arm", "+8 Stam"): the game's (GetItemStats), in Core's
+-- short words.
 function Slots.Stats(link)
     local get = (rawget(_G, "C_Item") or {}).GetItemStats or rawget(_G, "GetItemStats")
     local stats = link and get and Core.Ask(get, link)
@@ -213,9 +213,9 @@ function Slots.Stats(link)
         if stat.key == "ITEM_MOD_DAMAGE_PER_SECOND_SHORT" then
             words[i] = ("%.1f %s"):format(stat.value, Core.Word("STAT_DPS_SHORT", "DPS"))
         elseif stat.key == "RESISTANCE0_NAME" then
-            words[i] = ("%d %s"):format(stat.value, stat.word)
+            words[i] = ("%d %s"):format(stat.value, Core.StatWord(stat.word))
         else
-            words[i] = ("+%d %s"):format(stat.value, stat.word)
+            words[i] = ("+%d %s"):format(stat.value, Core.StatWord(stat.word))
         end
     end
     return words

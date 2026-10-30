@@ -14,6 +14,8 @@ Inventory.lua
 # What each stat is worth to a character, by class and specialization (Core.Upgrade asks)
 Weights.lua
 Asks.lua
+# A new level told in the middle of the screen, in place of the game's toast and its lines in the chat
+LevelUp.lua
 # Its window: docked in the bottom right corner, filling the screen from that corner
 Window.lua
 # Your bag keys and the game's bag buttons open ours; the game's bags kept closed

@@ -129,6 +129,9 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 
 ## Text
 
+- **Stats are written short** (Saneroki, 2026-10-30): every view that names a stat takes the word from `Core.StatWord`, a
+  line of a number and a stat from `Core.StatLine` (`src/Core/Stats.lua`): Str, Stam, Crit. A new stat's word goes there,
+  never into a module.
 - **Sane UI's own windows:** text on paper is Kalam in pencil grey with the paper's grain, text on leather is
   pressed into the leather, both made in code ([interface-style.md](interface-style.md), *Text*). The font
   is Sane UI's own font file, behind a font object of our own; for a language Kalam lacks, that object

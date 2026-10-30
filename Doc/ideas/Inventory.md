@@ -86,6 +86,9 @@ Everything the game's (Camelot) character window has, in our panel:
     addon code: a comparison of one is an error), every script behind its guard (`ns.Guard`);
   - what the game allows only its own code (equipping in a fight, some protected calls) is left to the game.
 
+- **A new level** (built 2026-10-30, `LevelUp.lua`): the level, the stats it brought in Core's short words and how long
+  the level before took, in the middle of the screen, in place of the game's toast and its lines in the chat.
+
 ## The bags
 
 Sane UI's own bag view of the player's bags (and the bank, while it is open): one window with every slot,

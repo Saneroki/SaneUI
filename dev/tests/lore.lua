@@ -283,7 +283,7 @@ check(rewards.items[1].what == "Potion", "anything else says its kind")
 check(vest.value == 1450 and rewards.items[1].value == 75, "what a vendor pays, for all of them")
 check(plate.cantUse == true and plate.changes == nil, "what you cannot use says so, with nothing to compare")
 check(vest.level == 20 and vest.worn == 16, "its item level and the one worn")
-check(vest.changes[1].key == "RESISTANCE0_NAME" and vest.changes[2].name == "Stamina" and vest.changes[3].amount == -2
+check(vest.changes[1].key == "RESISTANCE0_NAME" and vest.changes[2].name == "Stam" and vest.changes[3].amount == -2
       and #vest.changes == 3, "the stats that change: armour first, then by how much, no zeros")
 check(ring.empty == true, "an empty slot (the second ring) says so")
 check(rewards.xp == 450 and rewards.money == 1500, "experience and money")
@@ -303,8 +303,8 @@ for _, frame in ipairs(W.frames) do
 end
 check(row ~= nil, "the rewards are drawn under the words")
 check(row.what._text == "Leather \194\183 Chest" and row.value._text == "1450c", "a reward's line says what it is and what it sells for")
-check(row.change._text:find("iLvl 20") and row.change._text:find("%(%+4%)") and row.change._text:find("%+3 Stamina")
-      and row.change._text:find("%-2 Agility"), "and what it changes (" .. tostring(row.change._text) .. ")")
+check(row.change._text:find("iLvl 20") and row.change._text:find("%(%+4%)") and row.change._text:find("%+3 Stam")
+      and row.change._text:find("%-2 Agi"), "and what it changes (" .. tostring(row.change._text) .. ")")
 row._scripts.OnEnter(row)
 check(GameTooltip._ignoreAlpha == true and GameTooltip._owner == row, "its tooltip is in sight over the faded interface")
 row._scripts.OnLeave(row)
