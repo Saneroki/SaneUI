@@ -80,6 +80,8 @@ local Core = SaneUI.Core
 --          corners = ns.options,        -- the module's settings with the switches Corner radius and Don't
 --                                       -- round corners on screen edges (Shape.Options); without: edge's
 --          usable = function() end,     -- may it be moved and sized right now? Without: yes
+--          lifted = function() end,     -- a drag begins to carry it (what cannot follow it goes out of sight;
+--                                       -- docked says where it was let go)
 --          docked = function(zone) end, -- after it was placed, and once it has filled the screen (edge):
 --                                       -- the entry of Dock.ZONES it hangs on, or nil
 --          edge = ns.options,           -- docked, it fills the screen when the mouse is pushed against
@@ -120,6 +122,7 @@ local Core = SaneUI.Core
 --      window:Remember(what, value)     -- kept with its place (full, native)
 --      window:Refresh()                 -- its title bar and buttons as the window is now
 --      window:SetTitle(text)            -- its name anew, on its title bar and its box in Edit Mode
+--      window:TitleAt(side, inset)      -- its title at the bar's "LEFT" or "RIGHT" (a window that mirrors itself)
 --      window:Use(key, first)           -- its place kept under another name from now on, first its first place
 --                                       -- there, and put there (a window with a place for each of its looks)
 --      window:Hover(on)                 -- the mouse is on the window, or left it (grip = "hover")
@@ -725,6 +728,7 @@ local function Bar(window)
         usable = function() return window:Draggable() end,
         started = function()
             window.moving = true
+            if options.lifted then Core.Safe("window", options.lifted) end
             -- Outside Edit Mode a drag docks only where a screen edge is not (the middle), or not at all.
             if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil, options.insets) end
         end,
@@ -790,6 +794,24 @@ local function Inside(window, bar)
     window.inside:SetPoint("BOTTOMRIGHT")
 end
 
+-- Its title at the side TitleAt asked for: at the bar's left, or at its right, left of the buttons that show.
+local function TitleSide(window, buttons)
+    local bar, inset = window.bar, window.titleInset or Window.TEXT_INSET
+    local find, title = bar.find, bar.title
+    find:ClearAllPoints()
+    title:ClearAllPoints()
+    if window.titleSide == "RIGHT" then
+        local stop = buttons:IsShown() and buttons.first
+        find:SetHeight(Window.BAR)
+        if stop then find:SetPoint("RIGHT", stop, "LEFT") else find:SetPoint("RIGHT") end
+        title:SetPoint("RIGHT", -inset, 0)
+    else
+        find:SetPoint("TOPLEFT")
+        find:SetPoint("BOTTOMLEFT")
+        title:SetPoint("LEFT", inset, 0)
+    end
+end
+
 -- The title bar as the window is now: there with titleBar (a kind of window that has one; the chat, small,
 -- has none), and on every window while it fills the screen, at the top of it. Its buttons not in Edit Mode;
 -- full screen only while the window may fill the screen, offering what it does not do now; side by side
@@ -824,6 +846,7 @@ function methods:Refresh()
         end
     end
     buttons.first = right
+    if self.titleSide then TitleSide(self, buttons) end
     local menu = edge and edge.classic
     local stop = menu and menu:IsShown() and menu or right
     local windows = self.board and self.board.menu -- the board's dropdown Windows, left of Classic windows (Board.lua)
@@ -845,6 +868,13 @@ function methods:SetTitle(text)
     if self.bar then Title(self) end
     if self.box then self.box.title:SetText(text or "") end
     if Core.Selection then Core.Selection.Moved(self) end -- its dialog in Edit Mode, if chosen
+end
+
+-- Its title at the bar's left or right ("LEFT", "RIGHT"), so far from the bar's edge (nil: as every title's), for a
+-- window without search that mirrors itself on the screen's right half.
+function methods:TitleAt(side, inset)
+    self.titleSide, self.titleInset = side, inset
+    self:Refresh()
 end
 
 -- Its place kept under another name from now on, first its first place there (a window with a place for each of

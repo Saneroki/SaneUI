@@ -1186,6 +1186,23 @@ end)()
     point = looked._points[1]
     check(store.small and store.small.x == 400 and not store.wide and point[4] == 12 and point[5] == -84,
         "moved there, kept under its own name; the first place stands where it stood")
+    -- Its title at the right, left of its buttons or at the bar's end; a drag tells that it begins.
+    lookedWindow:TitleAt("RIGHT", 4)
+    local find, title = lookedWindow.bar.find, lookedWindow.bar.title
+    check(find._points[1][1] == "RIGHT" and find._points[1][2] == lookedWindow.buttons.first and #find._points == 1
+        and title._points[1][1] == "RIGHT" and title._points[1][4] == -4, "its title at the right, left of its buttons")
+    bare = true
+    lookedWindow:Refresh()
+    check(find._points[1][1] == "RIGHT" and find._points[1][2] == nil and #find._points == 1, "bare: at the bar's right end")
+    bare = false
+    lookedWindow:TitleAt("LEFT")
+    check(find._points[1][1] == "TOPLEFT" and #find._points == 2 and title._points[1][1] == "LEFT"
+        and title._points[1][4] == Window.TEXT_INSET, "and back at its left, where every title stands")
+    local lifted = 0
+    lookedWindow.options.lifted = function() lifted = lifted + 1 end
+    lookedWindow.bar._scripts.OnDragStart(lookedWindow.bar)
+    check(lifted == 1, "a drag begins: the module told")
+    lookedWindow.bar._scripts.OnDragStop(lookedWindow.bar)
 end)()
 
 -- Without a title bar

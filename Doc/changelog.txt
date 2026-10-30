@@ -88,9 +88,12 @@ The bigger changes of each version, newest first.
 - Navigation: a middle click on the map brings it back to you,
   following you again, near enough to see the minimap's icons.
 - Quest log: sorted by proximity, nearest first; click its title
-  to sort by level, zone or type. Pinned, it takes the place of
-  the game's quest tracker: in its own spot (top left at first),
-  clicked through, showing only what is still to do.
+  to sort by level, zone or type. A click on a quest puts the map
+  pin on it, so the golden line leads you there. Quest items stand
+  beside their quests, on the right half of the screen it mirrors.
+  Pinned, it takes the place of the game's quest tracker: in its
+  own spot (top left at first), clicked through, showing only what
+  is still to do.
 - Retail: Sane UI works in the main game too, beside WoW: Forever.
   Everything that both games have works in both; what only Forever
   has (its painted Atlas, its data of the world, Combat's own

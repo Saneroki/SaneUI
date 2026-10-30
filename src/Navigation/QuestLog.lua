@@ -5,12 +5,13 @@ local _, ns = ...
 --  The quest log, a window of its own over the full map (in or out by the bar's
 --  button, TopBar.lua). Our own
 --  list (the game's belongs to its map window, which stays closed), read from
---  the game's quest log: each quest with its level, its objectives under it.
+--  the game's quest log: each quest with its level, its objectives under it, no
+--  mark before it and no tick after it (Saneroki 2026-10-30).
 --  Built again once a frame after the game says the log changed, and only while
 --  it is in sight.
 --
 --  Its title bar says how many quests the log holds of how many it may, and how
---  they are sorted; a click there sorts them the next way, kept (Saneroki
+--  they are sorted, no more; a click there sorts them the next way, kept (Saneroki
 --  2026-10-29):
 --      Proximity     the nearest first, as the game measures the way to each (first; looked at again every
 --                    QuestLog.RESORT seconds while in sight, drawn anew once the order changed)
@@ -20,25 +21,31 @@ local _, ns = ...
 --  A quest done keeps one objective: to be turned in, in the game's words ("Report back to ..."), never left out.
 --
 --      a header      a click folds it in or out, as the game's own log keeps it (Zone)
---      a quest       its mark at the left, as its pin on the map has it (the yellow question mark). A click:
---                    the game's arrow leads to it, and the map moves to its objective, where the map shows it
+--      a quest       a click: the game's map pin at its objective, so the golden line leads there (Saneroki
+--                    2026-10-30), the game's arrow leads to it, and the map moves there, where the map shows it
 --                    (its question mark, or the middle of the area where its foes are), at the zoom it has, as
---                    a drag would move it (Canvas.LookAt). A double click: the game's map pin there too. Shift
+--                    a drag would move it (Canvas.LookAt). Shift
 --                    and a click: watched or not (the game's objective tracker); the chat link's modifier: its
 --                    link into the chat; the right button: a menu (its text below the list, the map at its
 --                    objective with its zone whole, watch, share, abandon after a question). The mouse over
---                    it: its area on the map (Areas.lua)
+--                    it: its area on the map (Areas.lua). The item it wants used, as the game's tracker shows
+--                    one, stands at the far end of its row (The quests' items)
 --      below         a quest's text, chosen from its menu (or by a click on its pin on the map): its
 --                    objectives' words and its story, and its buttons; its X closes it
 --      previews      quests of Core's data a click on their giver's pin showed (QuestLog.Preview): on top,
 --                    under Not in your log, grey, each with its giver's mark and the game's red X that takes
 --                    it out again; what the data knows of it below (why it is not for you yet, its level, who
---                    gives and takes it, what it asks first, its objectives, its rewards); a click moves the
---                    map to its giver, a double click puts the game's map pin there. Kept until the next /reload
+--                    gives and takes it, what it asks first, its objectives, its rewards); a click puts the
+--                    game's map pin at its giver and moves the map there. Kept until the next /reload
+--
+--  It reads from the screen's edge inwards (Saneroki 2026-10-30): on the screen's left half its words at the
+--  left and the items at the right; on the right half (or docked at its right edge) mirrored, its title and words
+--  right aligned, the items at the left.
 --
 --  No scroll bar at rest: the mouse wheel scrolls the list. While the mouse is on the window and the list is
 --  longer than its room, the game's thin scroll bar shows at the side the window stands at (docked at the
---  screen's left edge: at its left), in the room of the window's edge.
+--  screen's left edge: at its left), in the room of the window's edge; on the screen alone, where the list stands
+--  close to that edge, at the other side.
 --
 --  The window (one of Core's): moved by its title bar, docked at a screen edge,
 --  sized by its corner's grip while the mouse is on it. Its title bar's pin (the
@@ -49,7 +56,8 @@ local _, ns = ...
 --                           every objective, the done ones grey; the pin and the close button (out of both)
 --      on the screen alone  at first in the screen's top left corner; no background, no border, no line under
 --                           its title bar and none of its buttons, only the list and its words over the game;
---                           clicked through but its title bar and its words; the objectives done left out, the
+--                           closer to the screen's edge; clicked through but its title bar, its words and its
+--                           items; the objectives done left out, the
 --                           headers without their fold marks; the game's quest tracker out of sight meanwhile
 --                           (lent to a hidden frame, Core.Lend; back once it is not pinned)
 --
@@ -68,12 +76,16 @@ QuestLog.SORTS = { "proximity", "level", "zone", "type" } -- a click on its titl
 QuestLog.RESORT = 2       -- sorted by proximity: the order looked at again every so many seconds while in sight
 QuestLog.BACK = 0.88      -- its background's opacity over the full map (pinned on the screen alone: none)
 QuestLog.EDGE = 10        -- room inside its edges
+QuestLog.EDGE_SMALL = 4   -- on the screen alone: at the side it stands at (and its title)
 QuestLog.HEADER, QuestLog.QUEST, QuestLog.OBJECTIVE = 24, 20, 16 -- the rows' heights
-QuestLog.MARK = 16        -- a quest's mark at its row's left; its words start after it
+QuestLog.ITEM = 24        -- a quest's item's button, and the height of a row with one
+QuestLog.OVER = 30        -- the items' frame level above the log's
+QuestLog.INDENT = 10      -- an objective's words from its quest's
+QuestLog.MARK = 16        -- a preview's mark at its row's start; its words after it
 QuestLog.DETAILS = 0.42   -- the share of the panel's height the chosen quest's text takes
 QuestLog.TEXT = {
     title = Core.Word("QUEST_LOG", "Quest Log"),
-    heading = "|cffffffff%d/%d|r %s · %s", -- quests, of how many, sorted by, the title
+    heading = "|cffffffff%d/%d|r %s", -- quests, of how many, sorted by
     sorts = { proximity = "Proximity", level = Core.Word("LEVEL", "Level"), zone = Core.Word("ZONE", "Zone"),
               type = Core.Word("TYPE", "Type") },
     sorted = "Sorted by %s",
@@ -116,6 +128,7 @@ local givers = {}   -- [quest] = { map, x, y }: where the pin stood that showed 
 local panel, box, view, bar, details, story, words, buttons
 local frame, handle, back, pinButton
 local full = false -- its look over the full map, else on the screen alone (Dress)
+local mirrored = false -- it stands on the screen's right half: its words at the right, the items at the left (Sided)
 local rows = {}    -- what the list shows: { kind = "header" | "quest" | "objective", ... }
 local stale = true -- the log changed while out of sight
 local order = ""   -- the quests in the order shown (Proximity: drawn anew once it changes)
@@ -224,14 +237,25 @@ local function TurnIn(quest, index)
     return QuestLog.TEXT.ready
 end
 
+-- The item a quest wants used, where the game's tracker shows one (QuestUtil.QuestShowsItemByIndex): its ID, its
+-- picture and how many charges it has; none for a quest done, unless the game keeps it then.
+local function Special(index, complete)
+    local link, picture, charges, keeps = Core.Ask(rawget(_G, "GetQuestLogSpecialItemInfo"), index)
+    local item = type(link) == "string" and tonumber(link:match("item:(%d+)"))
+    if item and (not complete or keeps) then return item, picture, charges end
+    return nil
+end
+
 -- A quest's row and its objectives under it: over the full map every one, the done ones grey; on the screen alone
 -- only those still to do. A quest done: its turn in last, an objective still to do in both.
 local function Add(entry)
     local quest = entry.quest
     local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
     local failed = Core.Ask(C_QuestLog.IsFailed, quest) and true or false
+    local item, picture, charges = Special(entry.index, complete)
     rows[#rows + 1] = { kind = "quest", quest = quest, text = entry.text, level = entry.level, index = entry.index,
                         complete = complete, failed = failed, scaling = entry.scaling,
+                        item = item, picture = picture, charges = charges,
                         watched = (Core.Ask(C_QuestLog.GetQuestWatchType, quest)) ~= nil }
     local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, quest)
     for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
@@ -354,21 +378,16 @@ local function Lead(quest)
     end
 end
 
--- A click on a quest in the list: the arrow leads to it, lit in the list, and the map at its objective (a preview's:
--- at its giver) in the middle, at the zoom it has.
+-- A click on a quest in the list (Saneroki 2026-10-30): the game's map pin at its objective (a preview's: at its
+-- giver), so the golden line leads there; the arrow leads to it, lit in the list, and the map there in the middle,
+-- at the zoom it has. Where the game takes no pin it says so (PinView.Drop).
 local function Look(quest)
     Lead(quest)
     chosen = quest
     local map, x, y = Place(quest)
+    ns.PinView.Drop({ map = map, x = x, y = y })
     if map then ns.Canvas.LookAt(map, x, y) end
     QuestLog.Refresh()
-end
-
--- A double click on it (the game's button tells the second click as one of its own, after the first's OnClick):
--- the game's map pin there too.
-local function Pin(quest)
-    local map, x, y = Place(quest)
-    ns.PinView.Drop({ map = map, x = x, y = y })
 end
 
 -- A click on its pin on the map: the arrow leads to it, its text below the list.
@@ -406,6 +425,7 @@ end
 -------------------------------------------------------------------------------
 local function Height(_, row)
     if row.kind == "header" then return QuestLog.HEADER end
+    if row.item then return QuestLog.ITEM end
     if row.kind == "quest" or row.kind == "preview" then return QuestLog.QUEST end
     return QuestLog.OBJECTIVE
 end
@@ -445,15 +465,6 @@ local function Clicked(element, mouse)
     Look(quest)
 end
 
--- The second click of a double click: on a quest, plain and with the left button, the map pin; else a click as the
--- first was (a header folds back, a quest watched is watched no more).
-local function DoubleClicked(element, mouse)
-    local row = element.row
-    local plain = mouse == "LeftButton" and not IsShiftKeyDown() and not IsModifiedClick("CHATLINK")
-    if plain and row and row.quest and (row.kind == "quest" or row.kind == "preview") then return Pin(row.quest) end
-    Clicked(element, mouse)
-end
-
 local function Entered(element)
     Hover()
     local row = element.row
@@ -464,11 +475,11 @@ local function Left()
     ns.Areas.Hover(nil)
 end
 
--- A quest's mark at its row's left, as its pin on the map has it: a quest in the log the yellow question mark; a
--- preview its giver's (the yellow exclamation mark, grey for a quest too low, the red question mark for one for later).
-local MARKS = { offered = "offer", low = "grey", later = "later", log = "log" }
+-- A preview's mark at its row's start, as its giver's pin on the map has it: the yellow exclamation mark, grey for a
+-- quest too low, the red question mark for one for later.
+local MARKS = { offered = "offer", low = "grey", later = "later" }
 local function Mark(icon, row)
-    local standing = row.kind == "quest" and "log" or row.standing
+    local standing = row.standing
     icon:SetAtlas(ns.Pins.ICONS[MARKS[standing] or "done"])
     icon:SetDesaturated(standing == "low")
     local red = standing == "later" and ns.Pins.RED
@@ -481,7 +492,8 @@ end
 local function Reach(element)
     if full or not element.text then return element:SetHitRectInsets(0, 0, 0, 0) end
     local used = (element.left or 0) + (element.text:GetStringWidth() or 0) + 4
-    element:SetHitRectInsets(0, math.max(0, (box:GetWidth() or 0) - used), 0, 0)
+    local spare = math.max(0, (box:GetWidth() or 0) - used)
+    if mirrored then element:SetHitRectInsets(spare, 0, 0, 0) else element:SetHitRectInsets(0, spare, 0, 0) end
 end
 
 -- A row's frame, made the first time the list draws one (the list's elements are plain buttons).
@@ -489,12 +501,10 @@ local function Draw(element, row)
     if not element.text then
         element.icon = element:CreateTexture(nil, "ARTWORK")
         element.icon:SetSize(QuestLog.MARK, QuestLog.MARK)
-        element.icon:SetPoint("LEFT", 0, 0)
         element.text = element:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         element.text:SetJustifyH("LEFT")
         element.text:SetWordWrap(false)
         element.state = element:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        element.state:SetPoint("RIGHT", -4, 0)
         element.mark = element:CreateTexture(nil, "ARTWORK")
         element.mark:SetSize(12, 12)
         element.light = element:CreateTexture(nil, "HIGHLIGHT")
@@ -503,7 +513,6 @@ local function Draw(element, row)
         -- A preview's red X: takes it out of the log again.
         element.remove = CreateFrame("Button", nil, element)
         element.remove:SetSize(16, 16)
-        element.remove:SetPoint("RIGHT", -2, 0)
         element.remove:SetNormalAtlas(QuestLog.REMOVE)
         element.remove:SetHighlightAtlas(QuestLog.REMOVE, "ADD")
         element.remove:SetScript("OnClick", ns.Guard(function(self)
@@ -518,14 +527,18 @@ local function Draw(element, row)
         element.remove:SetScript("OnLeave", GameTooltip_Hide)
         element:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         element:SetScript("OnClick", ns.Guard(Clicked))
-        element:SetScript("OnDoubleClick", ns.Guard(DoubleClicked))
         element:SetScript("OnEnter", ns.Guard(Entered))
         element:SetScript("OnLeave", ns.Guard(Left))
     end
     element.row = row
     local text, state, mark = element.text, element.state, element.mark
+    -- From the side it stands at inwards (Sided): near is where a row starts, far where it ends; sign: inwards.
+    local near, far, sign = "LEFT", "RIGHT", 1
+    if mirrored then near, far, sign = "RIGHT", "LEFT", -1 end
     text:ClearAllPoints()
+    text:SetJustifyH(near)
     mark:ClearAllPoints()
+    state:ClearAllPoints()
     state:SetText("")
     mark:Hide()
     element.icon:Hide()
@@ -535,44 +548,41 @@ local function Draw(element, row)
         local folds = full and row.index ~= nil
         element.left = folds and 16 or 0
         text:SetFontObject("GameFontNormal")
-        text:SetPoint("LEFT", element.left, 0)
+        text:SetPoint(near, sign * element.left, 0)
         if folds then
             mark:SetAtlas(row.collapsed and "campaign_headericon_closed" or "campaign_headericon_open")
-            mark:SetPoint("LEFT", 0, 0)
+            mark:SetPoint(near, 0, 0)
             mark:Show()
         end
         text:SetText(row.text or "")
     elseif row.kind == "preview" then
         Mark(element.icon, row)
+        element.icon:ClearAllPoints()
+        element.icon:SetPoint(near, 0, 0)
+        element.remove:ClearAllPoints()
+        element.remove:SetPoint(far, -sign * 2, 0)
         element.left = QuestLog.MARK + 4
         text:SetFontObject("GameFontHighlight")
-        text:SetPoint("LEFT", element.left, 0)
-        text:SetPoint("RIGHT", element.remove, "LEFT", -4, 0)
+        text:SetPoint(near, sign * element.left, 0)
+        text:SetPoint(far, element.remove, near, -sign * 4, 0)
         text:SetText(row.level and ("[%d] %s"):format(row.level, row.text) or row.text)
     elseif row.kind == "quest" then
-        Mark(element.icon, row)
-        element.left = QuestLog.MARK + 4
+        element.left = 0
+        -- At its far end its item, if it has one (Seat), and before that Failed.
+        state:SetPoint(far, -sign * (row.item and QuestLog.ITEM + 4 or 4), 0)
         text:SetFontObject("GameFontHighlight")
-        text:SetPoint("LEFT", element.left, 0)
+        text:SetPoint(near, 0, 0)
+        text:SetPoint(far, state, near, -sign * 4, 0)
         text:SetText(("[%d] %s"):format(row.level or 0, row.text or ""))
         if row.failed then
             state:SetText(QuestLog.TEXT.failed)
             state:SetTextColor(1, 0.2, 0.2)
         end
-        -- Watched: the game's tick right of its words.
-        if row.watched then
-            mark:SetAtlas("checkmark-minimal")
-            mark:SetPoint("RIGHT", state, "LEFT", -2, 0)
-            mark:Show()
-            text:SetPoint("RIGHT", mark, "LEFT", -2, 0)
-        else
-            text:SetPoint("RIGHT", state, "LEFT", -4, 0)
-        end
     else
-        element.left = 30
+        element.left = QuestLog.INDENT
         text:SetFontObject("GameFontHighlightSmall")
-        text:SetPoint("LEFT", element.left, 0)
-        text:SetPoint("RIGHT", -4, 0)
+        text:SetPoint(near, sign * element.left, 0)
+        text:SetPoint(far, -sign * 4, 0)
         text:SetText("- " .. (row.text or ""))
     end
     text:SetTextColor(Colour(row))
@@ -661,6 +671,21 @@ local function Preview(quest)
     return table.concat(parts, "\n\n")
 end
 
+-- The list's room from a side of the window ("LEFT", "RIGHT"): QuestLog.EDGE; on the screen alone less at the side
+-- it stands at, closer to the screen's edge.
+local function Margin(side)
+    return (not full and (side == "RIGHT") == mirrored) and QuestLog.EDGE_SMALL or QuestLog.EDGE
+end
+
+-- The list's lower right corner: above the words below it, else at the panel's foot.
+local function Foot()
+    if details:IsShown() then
+        box:SetPoint("BOTTOMRIGHT", details, "TOPRIGHT", QuestLog.EDGE - Margin("RIGHT"), 6)
+    else
+        box:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -Margin("RIGHT"), QuestLog.EDGE)
+    end
+end
+
 -- The words below the list (a preview's from Core's data), the buttons only for a quest in the log.
 local function Words(text, inLog)
     local width = math.max(details.scroll:GetWidth() - 4, 1)
@@ -670,13 +695,13 @@ local function Words(text, inLog)
     details.scroll:SetVerticalScroll(0)
     for _, button in pairs(buttons) do button:SetShown(inLog) end
     details:Show()
-    box:SetPoint("BOTTOMRIGHT", details, "TOPRIGHT", 0, 6)
+    Foot()
 end
 
 -- The words below the list away: the list down to the panel's foot.
 local function NoWords()
     details:Hide()
-    box:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -QuestLog.EDGE, QuestLog.EDGE)
+    Foot()
 end
 
 function QuestLog.Details()
@@ -731,6 +756,114 @@ function QuestLog.Unpreview(quest)
     if chosen == quest then chosen, open = nil, false end
     QuestLog.Refresh()
 end
+
+-------------------------------------------------------------------------------
+--  The quests' items
+-------------------------------------------------------------------------------
+--  Each at the far end of its quest's row, to be used as the game's tracker uses it. Only a secure button may use
+--  an item (the game's SecureActionButtonTemplate), and the game protects the parent of one (Doc/guides/windows.md,
+--  Combat), while the log has to come and go with the map in a fight. So they stand on a tray of their own over
+--  the whole screen, placed by the screen, never anchored to the log. What each uses, where it stands and whether it is
+--  there is set out of a fight only: in one they stay as they stood (their pictures do change) and follow once it
+--  is over. Over the full map none shows in a fight: the map may go then, and they could not go with it.
+local WAIT = "quest log: items"
+local itemButtons = {}
+local tray, trayLook -- as the tray was last set (Tray): "full", "small", or nil while hidden
+
+local function Cooled(button)
+    local bags = rawget(_G, "C_Container")
+    local start, duration = Core.Ask(bags and bags.GetItemCooldown, button.item)
+    if type(start) == "number" and type(duration) == "number" and duration > 0 then
+        button.cooldown:SetCooldown(start, duration)
+    else
+        button.cooldown:Clear()
+    end
+end
+
+local function ItemTip(button)
+    if not button.item then return end
+    GameTooltip:SetOwner(button, mirrored and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
+    GameTooltip:SetItemByID(button.item)
+    GameTooltip:Show()
+end
+
+local function ItemButton(index)
+    local button = CreateFrame("Button", nil, tray, "SecureActionButtonTemplate")
+    button:RegisterForClicks("AnyUp", "AnyDown")
+    button:SetAttribute("type", "item")
+    button:SetSize(QuestLog.ITEM, QuestLog.ITEM)
+    button.icon = button:CreateTexture(nil, "ARTWORK")
+    button.icon:SetAllPoints()
+    button.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    button.light = button:CreateTexture(nil, "HIGHLIGHT")
+    button.light:SetAllPoints()
+    button.light:SetColorTexture(1, 1, 1, 0.2)
+    button.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+    button.cooldown:SetAllPoints()
+    button.count = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    button.count:SetPoint("BOTTOMRIGHT", -1, 1)
+    button:SetScript("OnEnter", ns.Guard(ItemTip))
+    button:SetScript("OnLeave", ns.Guard(function() Core.HideTip() end))
+    itemButtons[index] = button
+    return button
+end
+
+-- The tray shown or not, above the log, in its layer; over the full map out of sight in a fight, by the game's own
+-- driver, which alone can hide it then.
+local function Tray(on)
+    local look = on and (full and "full" or "small") or nil
+    if look == trayLook then return end
+    trayLook = look
+    UnregisterStateDriver(tray, "visibility")
+    tray:SetShown(on)
+    if on then
+        tray:SetFrameStrata(frame:GetFrameStrata())
+        tray:SetFrameLevel(frame:GetFrameLevel() + QuestLog.OVER)
+    end
+    if look == "full" then RegisterStateDriver(tray, "visibility", "[combat] hide; show") end
+end
+
+-- Each row in sight with an item gets a button at its far end, the others go; a row half out of the list has none.
+local function Seat()
+    if InCombatLockdown() then return Core.AfterCombat(WAIT, Seat) end
+    local used, top, bottom = 0, box:GetTop(), box:GetBottom()
+    local half = QuestLog.ITEM / 2
+    if frame:IsShown() and top and box.ForEachFrame then
+        local edge = mirrored and box:GetLeft() or box:GetRight()
+        box:ForEachFrame(function(element)
+            local row, middle = element.row, select(2, element:GetCenter())
+            if row and row.item and middle and middle + half <= top + 1 and middle - half >= bottom - 1 then
+                used = used + 1
+                local button = itemButtons[used] or ItemButton(used)
+                button.item = row.item
+                button:SetAttribute("item", "item:" .. row.item)
+                button.icon:SetTexture(row.picture)
+                button.count:SetText((row.charges or 0) > 1 and row.charges or "")
+                button:ClearAllPoints()
+                button:SetPoint(mirrored and "LEFT" or "RIGHT", tray, "BOTTOMLEFT", edge, middle)
+                button:Show()
+                Cooled(button)
+            end
+        end)
+    end
+    for index = used + 1, #itemButtons do
+        itemButtons[index].item = nil
+        itemButtons[index]:Hide()
+    end
+    Tray(used > 0)
+end
+local seat = Core.Later(Seat) -- on the next frame: the list has laid its rows out by then
+
+-- Out of sight while it is carried: they could not follow it, and come back where it is let go (Sided).
+local function Lifted()
+    if not InCombatLockdown() then Tray(false) end
+end
+
+ns.On("BAG_UPDATE_COOLDOWN", function()
+    for _, button in ipairs(itemButtons) do
+        if button.item then Cooled(button) end
+    end
+end)
 
 -------------------------------------------------------------------------------
 --  The panel
@@ -798,14 +931,14 @@ local function Side()
 end
 
 -- The scroll bar, out of sight at rest: shown while the mouse is on the window and the list is longer than its
--- room, at the window's side (Side), in the room of its edge (QuestLog.EDGE). On the screen alone a list that
--- fits leaves the mouse wheel to the game (its camera).
+-- room, at the window's side (Side), in the room of its edge (QuestLog.EDGE); on the screen alone at the other, the
+-- list stands too close to that one (Room). There a list that fits leaves the mouse wheel to the game (its camera).
 local function Scroller()
     local long = box.HasScrollableExtent and box:HasScrollableExtent() and true or false
     box:EnableMouseWheel(full or long)
     local shown = frame:IsMouseOver() and long
     if shown then
-        local left = Side() == "LEFT"
+        local left = (Side() == "LEFT") == full
         bar:ClearAllPoints()
         bar:SetPoint(left and "TOPRIGHT" or "TOPLEFT", box, left and "TOPLEFT" or "TOPRIGHT", left and -1 or 1, 0)
         bar:SetPoint(left and "BOTTOMRIGHT" or "BOTTOMLEFT", box, left and "BOTTOMLEFT" or "BOTTOMRIGHT", left and -1 or 1, 0)
@@ -827,6 +960,28 @@ function Hover()
     handle:Hover(true)
     Scroller()
     if not frame:GetScript("OnUpdate") then frame:SetScript("OnUpdate", watching) end
+end
+
+-- The list and its title at the side it stands at (Margin), its words from there inwards.
+local function Room()
+    local left, right = Margin("LEFT"), Margin("RIGHT")
+    box:SetPoint("TOPLEFT", left, -4)
+    Foot()
+    panel.empty:SetPoint("TOPLEFT", left, -4)
+    panel.empty:SetPoint("TOPRIGHT", -right, -4)
+    panel.empty:SetJustifyH(mirrored and "RIGHT" or "LEFT")
+    handle:TitleAt(mirrored and "RIGHT" or "LEFT", not full and QuestLog.EDGE_SMALL or nil)
+end
+
+-- Wherever it was put (Core's docked): which half of the screen it stands on, drawn anew once that changed.
+local function Sided()
+    if not box then return end
+    local right = Side() == "RIGHT"
+    local changed = right ~= mirrored
+    mirrored = right
+    Room()
+    if changed then QuestLog.Refresh() end
+    seat()
 end
 
 -- The sorting after this one (QuestLog.SORTS, round).
@@ -871,9 +1026,15 @@ function QuestLog.Build()
         titleClick = function() ns.Guarded(Resorted) end,
         titleTip = { SortedTip, NextTip },
         bare = function() return not full end, -- on the screen alone: no pin, no close button
+        usable = function() return not InCombatLockdown() end, -- its items cannot follow it in a fight
+        lifted = function() ns.Guarded(Lifted) end,
+        docked = function() ns.Guarded(Sided) end,
     })
     QuestLog.handle = handle
     full = true
+    tray = CreateFrame("Frame", nil, UIParent)
+    tray:SetAllPoints(UIParent)
+    tray:Hide()
     frame:EnableMouse(true) -- over the full map: the map behind it is not clicked through it (Dress)
     frame:SetScript("OnEnter", ns.Guard(Hover))
     back = frame:CreateTexture(nil, "BACKGROUND")
@@ -883,14 +1044,9 @@ function QuestLog.Build()
     panel = CreateFrame("Frame", nil, handle.inside)
     panel:SetAllPoints()
     panel.empty = panel:CreateFontString(nil, "ARTWORK", "GameFontDisable")
-    panel.empty:SetPoint("TOPLEFT", QuestLog.EDGE, -4)
-    panel.empty:SetPoint("RIGHT", -QuestLog.EDGE, 0)
-    panel.empty:SetJustifyH("LEFT")
     panel.empty:SetText(QuestLog.TEXT.empty)
 
     box = CreateFrame("Frame", nil, panel, "WowScrollBoxList")
-    box:SetPoint("TOPLEFT", QuestLog.EDGE, -4)
-    box:SetPoint("BOTTOMRIGHT", -QuestLog.EDGE, QuestLog.EDGE)
     bar = CreateFrame("EventFrame", nil, panel, "MinimalScrollBar")
     bar:Hide()
     view = CreateScrollBoxListLinearView()
@@ -898,6 +1054,7 @@ function QuestLog.Build()
     view:SetElementExtentCalculator(function(_, row) return ns.Safe("quest log", Height, nil, row) or QuestLog.OBJECTIVE end)
     view:SetElementInitializer("Button", function(element, row) ns.Safe("quest log", Draw, element, row) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
+    box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(function() seat() end), QuestLog)
 
     -- The chosen quest's words and buttons.
     details = CreateFrame("Frame", nil, panel)
@@ -950,6 +1107,7 @@ function QuestLog.Build()
         if chosen and details:IsShown() then QuestLog.Details() end
         if not full and box.ForEachFrame then box:ForEachFrame(Reach) end
         Scroller()
+        seat()
     end
     panel:SetScript("OnSizeChanged", ns.Guard(Sized))
     handle:Place() -- where it was left; at its first place and size if it never was moved
@@ -979,7 +1137,7 @@ function QuestLog.Refresh()
     stale = false
     local quests = Read()
     local most = Plain(Core.Ask(C_QuestLog.GetMaxNumQuestsCanAccept)) or 25
-    local text = QuestLog.TEXT.heading:format(quests, most, QuestLog.TEXT.sorts[QuestLog.Sort()], QuestLog.TEXT.title)
+    local text = QuestLog.TEXT.heading:format(quests, most, QuestLog.TEXT.sorts[QuestLog.Sort()])
     if text ~= heading then
         heading = text
         handle:SetTitle(text)
@@ -988,6 +1146,7 @@ function QuestLog.Refresh()
     box:SetDataProvider(CreateDataProvider(rows), ScrollBoxConstants.RetainScrollPosition)
     QuestLog.Details()
     Scroller()
+    seat()
     Tick(QuestLog.Sort() == "proximity")
 end
 
@@ -1018,6 +1177,7 @@ function QuestLog.Lay(on)
     Dress(on)
     local shown = (full and ns.TopBar.LogShown()) or QuestLog.Pinned()
     frame:SetAlpha(1)
+    tray:SetAlpha(1)
     if shown and not frame:IsShown() then frame:Show() elseif not shown and frame:IsShown() then frame:Hide() end
     PinLook()
     Tracker()
@@ -1026,6 +1186,7 @@ function QuestLog.Lay(on)
         ns.Areas.Hover(nil)
         Tick(false)
     end
+    seat()
 end
 
 -- On the window's way to the full screen and back (share: how far it has come towards the full screen, 0 to 1):
@@ -1036,8 +1197,10 @@ function QuestLog.Fade(share, coming)
         Dress(true)
         frame:Show()
         if stale then QuestLog.Refresh() end
+        seat()
     end
     frame:SetAlpha(share)
+    tray:SetAlpha(share)
 end
 
 function QuestLog.Shown()
@@ -1049,6 +1212,7 @@ function QuestLog.Hide()
     if frame then frame:Hide() end
     Tick(false)
     Tracker()
+    seat()
 end
 
 ns.Listen("LIVE", function(what)

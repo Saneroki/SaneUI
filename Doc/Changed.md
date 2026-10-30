@@ -3,8 +3,28 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 173 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 430 (windows), 269 (data in the game), 707 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 173 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the quest log leaner, its items, a click for the map pin (Saneroki, 2026-10-30)
+Saneroki: no question marks, not the word Quest Log, everything closer to the screen's edge, no ticks; the quests' items
+anchored to the log's right side, and on the screen's right half the text right aligned with the items at the left; a
+click on a quest puts the map pin there, so the route in Forever leads there.
+- **Rows** (`QuestLog.lua`): a quest has no mark and no tick (a preview keeps its giver's mark, it says whether it can
+  be taken); the title `%d/%d <sorting>`. An objective stands `QuestLog.INDENT` in. Pinned, the list and title stand
+  `QuestLog.EDGE_SMALL` from the side the log stands at (`Margin`), the scroll bar then at the other side.
+- **A click:** `Look` puts the game's map pin too (`PinView.Drop`, the error words where the game takes none); the
+  row's `OnDoubleClick` is gone, a second click is a click.
+- **Items:** `GetQuestLogSpecialItemInfo`, by the game's rule for its tracker (`Special`); a row with one is
+  `QuestLog.ITEM` high. Secure buttons (`SecureActionButtonTemplate`, type `item`) on a tray of their own on `UIParent`
+  and placed by the screen (`Seat`): the game protects a secure button's parent, and the log has to come and go with
+  the map in a fight. Set out of a fight only (`Core.AfterCombat`). Over the full map the tray is hidden in a fight by
+  the game's state driver, as the map may go then. `Fade` takes it along.
+- **Mirrored:** `Sided`, from Core's `docked` wherever the log was put: `Draw` lays each row out from its near end,
+  `Reach` and the items follow.
+- **Core's window:** `window:TitleAt(side, inset)` (the title at the bar's right, left of its buttons; its inset), the
+  option `lifted` (a drag begins), `usable` keeps the log still in a fight.
+- Tests: `dev/tests/navigation.lua` 707 checks, `dev/tests/window.lua` 430.
 
 ### Social: the list of chats in columns, open until you close it (Saneroki, 2026-10-30)
 Saneroki, on the collapsed chat: the list behind the chat button has where you write, what the window shows and the

@@ -358,10 +358,11 @@ When the window fills the screen:
 - **The quest log as Saneroki asked it (Saneroki, 2026-10-21):**
   - **No scroll bar:** the mouse over the list and its wheel scroll it. Only while the list is longer than fits
     and the mouse is on it, a scroll bar shows, on the side the window is docked to (at the left edge: its left).
-  - **Each quest's icon at its left,** as its pin on the map has it.
+  - **Each quest's icon at its left,** as its pin on the map has it (gone, Saneroki 2026-10-30).
   - **A click moves the map to the quest's area (Saneroki, 2026-10-23; built):** its objective, the quest's mark
     on the map (its question mark) or the area where its foes are, in the middle at the zoom the map has; the
-    game's arrow leads to it. **A double click puts the game's map pin there** (until 2026-10-23 a click did).
+    game's arrow leads to it. **A double click puts the game's map pin there** (until 2026-10-23 a click did;
+    since 2026-10-30 a click does again).
   - **The right button:** the quest's text (its dialogue: objectives and story), or the map moved to its
     objective (and the game's track, share and abandon).
 - **The quest log sorted, and its look on the screen alone (Saneroki, 2026-10-29; built):**
@@ -372,6 +373,11 @@ When the window fills the screen:
     through, the objectives done and the fold marks (+) left out. A done quest's *Report back to ...* is an
     objective still to do: never left out.
   - **The game's quest tracker hidden** while the quest log is pinned.
+- **The quest log leaner, its items (Saneroki, 2026-10-30; built):**
+  - **No question marks, no ticks, not the word Quest Log:** he knows what it is. The rows closer to the screen's edge.
+  - **A click on a quest puts the map pin on it,** so the route in Forever leads there.
+  - **The items to use on quests** anchored to the log's right side; **on the screen's right half mirrored:** the
+    text right aligned, the items at the left.
 - **A bar on top** of the map with:
   - **Map selector:** pick a region or a dungeon, and the map shows it (*Map selector*). Dungeons are
     drawn the same way as the regions.
@@ -413,7 +419,7 @@ When the window fills the screen:
   game's own minimap the icons Sane UI draws, the gathering nodes found around the player among them, take a
   click and put the game's map pin there. (The game's own minimap dots take no clicks of an addon.)
 - **A double click for the map pin (Saneroki, 2026-10-23; built):** a double click on a pin, on the map or on a quest
-  in the quest log puts the game's map pin there, in place of Ctrl and a click (which still works, as on the game's
+  in the quest log (a click there since 2026-10-30) puts the game's map pin there, in place of Ctrl and a click (which still works, as on the game's
   map). A single click is a pin's own (a quest's text, a giver's quests, a gathered marker zoomed in), else the
   map's: a ping there.
 - **Rares:** Blizzard's own rare marker, and on a click the area where the rare can spawn.
@@ -1100,7 +1106,7 @@ hidden but what the small view needs.
   `QUEST_LOG_UPDATE`.
 - **Actions:** a click focuses it (`C_SuperTrack.SetSuperTrackedQuestID`) and moves the camera to its objective
   (`GetQuestsOnMap`, else `GetNextWaypoint`; a preview's at its giver), its zoom kept (`Canvas.LookAt`; 2026-10-23);
-  a double click puts the game's map pin there (the row's `OnDoubleClick`); the right
+  a double click put the game's map pin there (the row's `OnDoubleClick`; a click since 2026-10-30); the right
   button: its text below the list (`GetQuestLogQuestText`, shown only once asked for), show on the map (the camera
   goes to the objective), track (`AddQuestWatch`, `RemoveQuestWatch`), share, abandon (`SetAbandonQuest`,
   `AbandonQuest`, after a question of our own). Built 2026-10-21.

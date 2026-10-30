@@ -352,13 +352,23 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
 
 - **Sorting** (`QuestLog.Sort`, `store.questLogSort`): Proximity (`GetDistanceSqToQuest`, a ticker every
   `QuestLog.RESORT` seconds redraws once the order changed), Level, Zone (the game's headers), Type
-  (`GetQuestTagInfo`); the title `%d/%d <sorting> · Quest Log`, a click on it the next (Core's `titleClick`,
+  (`GetQuestTagInfo`); the title `%d/%d <sorting>` (2026-10-30), a click on it the next (Core's `titleClick`,
   `titleTip`). A done quest's turn in as its last objective (`GetQuestLogCompletionText`, as the game's tracker).
 - **Two looks** (`Dress`): full map and screen alone, each at its own place (`window:Use`: `questLogPlace`,
   `questLogSmallPlace`); alone: no buttons (Core's `bare`), the frame without the mouse, rows by their words only
   (`Reach`), objectives done and fold marks left out; the game's `ObjectiveTrackerFrame` lent to a hidden frame
   while pinned (`Tracker`).
 - **Tests:** `dev/tests/navigation.lua` 690 checks, `dev/tests/window.lua` 426.
+
+## Built (2026-10-30): the quest log's items, mirrored, a click for the pin
+
+- **A click on a quest** (`Look`): the map pin (`PinView.Drop`), the arrow and the map; the row has no `OnDoubleClick`.
+- **Rows:** no mark on a quest (a preview keeps its giver's), no tick; `Margin`: pinned closer to the screen's edge.
+- **Mirrored** (`mirrored`, `Sided` from Core's `docked`; Core's `window:TitleAt`): on the screen's right half.
+- **Items** (`Special`, `Seat`, `Tray`): secure buttons on a tray on `UIParent`, never on the log: a protected frame's
+  parent is protected, and the log comes and goes with the map in a fight. Out of a fight only (`Core.AfterCombat`);
+  over the full map hidden in a fight by the game's state driver; out of sight while carried (Core's `lifted`).
+- **Tests:** `dev/tests/navigation.lua` 707 checks, `dev/tests/window.lua` 430.
 
 ## What is not there yet
 

@@ -281,6 +281,22 @@ C_QuestLog.GetNextWaypointText = function() return nil end
 GetQuestLogCompletionText = function(index) return index == 3 and "Report back to Marshal Dughan." or nil end
 ObjectiveTrackerFrame = CreateFrame("Frame", "ObjectiveTrackerFrame", UIParent) -- the game's quest tracker
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
+-- A quest's item, as the game's tracker shows it: [log index] = { link, picture, charges, shown when done }.
+W.special = {}
+GetQuestLogSpecialItemInfo = function(index)
+    local item = W.special[index]
+    if item then return item[1], item[2], item[3], item[4] end
+    return nil
+end
+W.drivers = {} -- [frame] = the game's state driver of its visibility
+RegisterStateDriver = function(frame, _, rule) W.drivers[frame] = rule end
+UnregisterStateDriver = function(frame) W.drivers[frame] = nil end
+BaseScrollBoxEvents = { OnScroll = "OnScroll" }
+function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
+function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
+function methods:GetRight() return self._right or 0 end
+function methods:GetTop() return self._top or 0 end
+function methods:SetJustifyH(side) self._justify = side end
 C_SuperTrack.GetSuperTrackedQuestID = function() return focused end
 C_SuperTrack.SetSuperTrackedQuestID = function(quest) focused = quest end
 C_Map.GetMapLinksForMap = function() return {} end
@@ -297,6 +313,8 @@ RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 W.templates.WowScrollBoxList = function(box)
     function box:SetDataProvider(provider) self.provider = provider end
     function box:HasScrollableExtent() return self._long or false end -- longer than its room (the test says)
+    function box:RegisterCallback(event, fn) self.scrolled = event == BaseScrollBoxEvents.OnScroll and fn or self.scrolled end
+    function box:ForEachFrame(fn) for _, element in ipairs(self.rows or {}) do fn(element) end end
     function box:Draw()
         self.rows = {}
         for index, entry in ipairs(self.provider.list) do
@@ -2253,8 +2271,8 @@ check(QuestLog.Sort() == "proximity" and #rows == 5 and rows[1].row.quest == 8 a
     and rows[5].row.kind == "objective" and not rows[5].row.done,
     "sorted by proximity at first, no headers: the nearest quest first, every objective, a done one's turn in last")
 check(rows[1].row.complete and rows[1].state._text == "", "a quest done: no Complete at its right")
-check(QuestLog.handle.options.title == "|cffffffff2/25|r Proximity · Quest Log",
-    "its title bar: how many quests of how many, how they are sorted, then its title")
+check(QuestLog.handle.options.title == "|cffffffff2/25|r Proximity",
+    "its title bar: how many quests of how many and how they are sorted, nothing more")
 do
     local sortButton = QuestLog.handle.bar.find
     GameTooltip._lines = nil
@@ -2279,9 +2297,9 @@ do
         "again: by zone, the game's own, its headers with their fold marks; each quest with its objectives")
 end
 check(rows[2].text._text == "[6] Wolves Across the Border", "a quest with its level")
-check(rows[2].icon._shown and rows[2].icon._atlas == Pins.ICONS.log and rows[4].icon._atlas == Pins.ICONS.log
-    and not rows[1].icon._shown and not rows[3].icon._shown,
-    "each quest with its mark at the left, as its pin on the map has it: the yellow question mark")
+check(not rows[2].icon._shown and not rows[4].icon._shown and rows[2].left == 0
+    and rows[2].text._points[1][1] == "LEFT" and rows[2].text._points[1][4] == 0 and rows[3].left == QuestLog.INDENT,
+    "no mark before a quest: its words at the very start of its row, its objectives a little in")
 ;(function()
     -- A header folded: the game lists its quests all the same, our log not (as the game's own log has it).
     local info = C_QuestLog.GetInfo
@@ -2302,12 +2320,12 @@ do
     local u, v = Coords.MapToPlane(1429, 0.4, 0.4, Coords.PlaneOf(1429))
     waypoint = nil
     rows[2]._scripts.OnClick(rows[2], "LeftButton")
-    check(focused == 7 and not waypoint and full.map == Coords.PlaneOf(1429) and near(full.u, u) and near(full.v, v)
+    check(focused == 7 and full.map == Coords.PlaneOf(1429) and near(full.u, u) and near(full.v, v)
         and full.k == was.k and not full.follow,
-        "a click: the game's arrow leads to it, the map moves to its objective at the zoom it has; no map pin")
-    rows[2]._scripts.OnDoubleClick(rows[2], "LeftButton")
+        "a click: the game's arrow leads to it, the map moves to its objective at the zoom it has")
     check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4),
-        "a double click: the game's map pin on its objective")
+        "and the game's map pin on its objective, for the route to lead there")
+    check(not rows[2]._scripts.OnDoubleClick, "no double click of its own: it would only say the same again")
     waypoint = saved
     full:Show(was.map, was.u, was.v, was.k)
     full.follow = was.follow
@@ -2315,6 +2333,94 @@ do
 end
 rows = logBox:Draw()
 check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
+-- A watched quest has no tick; a quest's item at the far end of its row; the log mirrored on the screen's right half.
+;(function()
+    watched[7] = true
+    QuestLog.Refresh()
+    rows = logBox:Draw()
+    check(not rows[2].mark._shown and not rows[4].mark._shown, "a watched quest: no tick")
+    watched[7] = nil
+    local function Items()
+        local list = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._template == "SecureActionButtonTemplate" and widget._attributes and widget._attributes.type == "item" then
+                list[#list + 1] = widget
+            end
+        end
+        return list
+    end
+    logBox._left, logBox._right, logBox._top, logBox._bottom = 20, 300, 800, 100
+    W.special[2] = { "|cffffffff|Hitem:5000:0:0|h[Torch]|h|r", 134400, 3 }
+    W.special[3] = { "|Hitem:5001|h[Spent]|h", 134401, 1 }
+    QuestLog.Refresh()
+    rows = logBox:Draw()
+    local function Laid(wanted)
+        for index, element in ipairs(rows) do
+            local middle = wanted or (760 - index * 20)
+            element.GetCenter = function() return 0, middle end
+        end
+    end
+    Laid()
+    W.Wait(0)
+    local quest = rows[2] -- by zone yet: the header, then this quest
+    check(quest.row.item == 5000 and logBox.view.height(nil, quest.row) == QuestLog.ITEM and not rows[4].row.item,
+        "a quest with its item, its row as high as the item; a quest done has none, unless the game keeps it")
+    local items = Items()
+    check(#items == 1 and items[1]._shown and items[1]._attributes.item == "item:5000" and items[1]._attributes.type == "item"
+        and items[1].count._text == 3, "its button uses that item, and says how many charges it has")
+    local point = items[1]._points[#items[1]._points]
+    check(items[1]._parent._parent == UIParent, "its button no part of the log: a fight may not lock the log")
+    check(point[1] == "RIGHT" and point[4] == 300 and point[5] == 720, "at the list's right, beside its row")
+    local state = quest.state._points[1]
+    check(state[1] == "RIGHT" and state[4] == -(QuestLog.ITEM + 4), "its row's words keep clear of it")
+    GameTooltip._text = nil
+    items[1]._scripts.OnEnter(items[1])
+    items[1]._scripts.OnLeave(items[1])
+
+    -- Scrolled away: its button goes with it; a fight holds them as they stand, and they follow once it is over.
+    Laid(900)
+    logBox.scrolled()
+    W.Wait(0)
+    check(not items[1]._shown and items[1]._parent.Hide and not items[1]._parent._shown, "its row scrolled out of the list: its button away")
+    Laid()
+    W.combat = true
+    logBox.scrolled()
+    W.Wait(0)
+    check(not items[1]._shown, "in a fight it stays as it was")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(items[1]._shown and items[1]._parent._shown and W.drivers[items[1]._parent] == "[combat] hide; show",
+        "once over it follows; over the full map a fight takes it out of sight, by the game's driver")
+    W.special[2], W.special[3] = nil, nil
+    QuestLog.Refresh()
+    logBox:Draw()
+    W.Wait(0)
+    check(not items[1]._shown and not items[1]._parent._shown and not W.drivers[items[1]._parent], "no item any more: no button")
+    W.special[2] = { "|Hitem:5000|h[Torch]|h", 134400, 1 }
+
+    -- On the screen's right half: mirrored, as soon as it stands there.
+    local log = QuestLog.handle
+    log.frame.GetCenter = function() return 1200, 400 end
+    log:Place()
+    rows = logBox:Draw()
+    Laid()
+    W.Wait(0)
+    quest = rows[2]
+    check(quest.text._points[1][1] == "RIGHT" and quest.text._justify == "RIGHT" and rows[1].text._points[1][1] == "RIGHT"
+        and rows[3].text._points[1][4] == -QuestLog.INDENT, "on the screen's right half: its words at the right, right aligned")
+    check(log.titleSide == "RIGHT" and log.bar.title._points[1][1] == "RIGHT", "its title too")
+    point = items[1]._points[#items[1]._points]
+    check(point[1] == "LEFT" and point[4] == 20 and point[5] == 720, "and its item at the list's left")
+    log.frame.GetCenter = nil
+    log:Place()
+    rows = logBox:Draw()
+    check(rows[2].text._points[1][1] == "LEFT" and rows[2].text._justify == "LEFT" and log.titleSide == "LEFT",
+        "back on the left half: as it was")
+    W.special[2] = nil
+    QuestLog.Refresh()
+    rows = logBox:Draw()
+    W.Wait(0)
+end)()
 -- The right button: its text below the list, the map at its objective; the text's X closes it.
 do
     local function Story()
@@ -2733,6 +2839,10 @@ end)()
         check(#rows == 4 and rows[1].row.quest == 8 and rows[2].row.turnIn and rows[3].row.quest == 7
             and not rows[4].row.done, "the objectives done left out, a done quest's turn in kept")
         check(rows[1]._hit and rows[1]._hit[2] > 0 and rows[2]._hit[2] > 0, "only its rows' words take the mouse")
+        local inset
+        for _, each in ipairs(box._points) do if each[1] == "TOPLEFT" then inset = each end end
+        check(log.titleInset == ns.QuestLog.EDGE_SMALL and inset[4] == ns.QuestLog.EDGE_SMALL,
+            "its list and its title close to the screen's edge")
         ns.store.questLogSort = "zone"
         ns.QuestLog.Refresh()
         rows = box:Draw()
@@ -2745,6 +2855,7 @@ end)()
         and log.options.key == "questLogPlace", "and comes back with it, at its place over the full map, with its buttons")
     rows = box:Draw()
     check(#rows == 5 and rows[2].row.done and rows[1]._hit[2] == 0, "every objective again, its rows whole")
+    check(not log.titleInset, "its title as every title's again")
     pin._scripts.OnClick(pin)
     check(not ns.QuestLog.Pinned() and ObjectiveTrackerFrame._parent == UIParent, "unpinned: the game's quest tracker back")
     W.SmallAndBack(function()
