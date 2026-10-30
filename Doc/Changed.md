@@ -3,8 +3,30 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 714 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 178 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 724 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 178 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: a double click on a quest puts the pin, whatever the list does (Saneroki, 2026-10-30)
+Saneroki: a double click only opened the quest and put no marker, and a second one closed it.
+- **`Pressed`** (`QuestLog.lua`): a plain click on a quest waits `Canvas.DOUBLE` for a second one, told by its own clock as
+  a click on the map is; the row's `OnDoubleClick` is gone. The first click no longer draws the list anew, and with it
+  the buttons under the mouse, before the second comes. One click: `Unfold`. Two: `Pin`, the arrow, the map and the map
+  pin, the text as it was. A click on a quest's text folds it at once.
+- **`Where`:** after the player's map the one `GetQuestUiMapID` names for the quest (and `GetNextWaypointForMap` there),
+  before going through the zones.
+- Nothing of the quest log asks anything of Speed Leveling; only the guide's own pin is its.
+- Tests: `dev/tests/navigation.lua` 724 checks.
+
+### Navigation: a quest's text under the quest (Saneroki, 2026-10-30)
+Saneroki: a click expands the quest, with its full text, the lore and the rewards in gold and items, and collapses it
+again to its headline and open objectives.
+- **A row of the list** (`QuestLog.lua`, kind `text`) under the quest's objectives, in place of the panel below the list:
+  `AddText` (`Story`, or `Preview` for a quest not in the log), its height from `measure`, a hidden font string wrapped
+  at the list's width; drawn again once the list is sized. One quest's at a time (`chosen`, `open`). A click on the text
+  folds it too. `Reveal` brings it into sight: whole where it fits, else from its start. Right aligned on the right half.
+- **Gone:** the panel with its scroll frame, X and buttons (`Words`, `NoWords`, `QuestLog.Details`, `Button`,
+  `QuestLog.DETAILS`); *Track*, *Share* and *Abandon* stand in the right button's menu, as before.
+- Tests: `dev/tests/navigation.lua` 721 checks.
 
 ### Navigation: the quest log's click and minimize (Saneroki, 2026-10-30)
 Saneroki, on the click of the same day: a double click for the marker is fine after all; a click could toggle the quest's

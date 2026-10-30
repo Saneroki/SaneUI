@@ -374,8 +374,9 @@ When the window fills the screen:
   - **The game's quest tracker hidden** while the quest log is pinned.
 - **The quest log leaner, its items (Saneroki, 2026-10-30; built):**
   - **No question marks, no ticks, not the word Quest Log:** he knows what it is. The rows closer to the screen's edge.
-  - **A double click on a quest puts the map pin on it,** so the route in Forever leads there; **a click shows or
-    hides its information,** its objectives and rewards.
+  - **A double click on a quest puts the map pin on it,** so the route in Forever leads there; **a click expands the
+    quest under it** with its full text, the lore and the rewards in gold and items, and collapses it again to its
+    headline and open objectives.
   - **A click on the title row beside its words minimizes the log:** he can hide the quests when he wants to.
   - **The items to use on quests** anchored to the log's right side; **on the screen's right half mirrored:** the
     text right aligned, the items at the left.
@@ -1107,7 +1108,7 @@ hidden but what the small view needs.
   `QUEST_LOG_UPDATE`.
 - **Actions:** a click focuses it (`C_SuperTrack.SetSuperTrackedQuestID`) and moves the camera to its objective
   (`GetQuestsOnMap`, else `GetNextWaypoint`; a preview's at its giver), its zoom kept (`Canvas.LookAt`; 2026-10-23);
-  a double click puts the game's map pin there (the row's `OnDoubleClick`); the right
+  a double click puts the game's map pin there (`Pressed`, its own clock, since 2026-10-30); the right
   button: its text below the list (`GetQuestLogQuestText`, shown only once asked for), show on the map (the camera
   goes to the objective), track (`AddQuestWatch`, `RemoveQuestWatch`), share, abandon (`SetAbandonQuest`,
   `AbandonQuest`, after a question of our own). Built 2026-10-21.

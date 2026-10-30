@@ -297,6 +297,7 @@ function methods:GetAttribute(name) return self._attributes and self._attributes
 function methods:GetRight() return self._right or 0 end
 function methods:GetTop() return self._top or 0 end
 function methods:SetJustifyH(side) self._justify = side end
+function methods:SetWordWrap(on) self._wrap = on end
 C_SuperTrack.GetSuperTrackedQuestID = function() return focused end
 C_SuperTrack.SetSuperTrackedQuestID = function(quest) focused = quest end
 C_Map.GetMapLinksForMap = function() return {} end
@@ -315,6 +316,7 @@ W.templates.WowScrollBoxList = function(box)
     function box:HasScrollableExtent() return self._long or false end -- longer than its room (the test says)
     function box:RegisterCallback(event, fn) self.scrolled = event == BaseScrollBoxEvents.OnScroll and fn or self.scrolled end
     function box:ForEachFrame(fn) for _, element in ipairs(self.rows or {}) do fn(element) end end
+    function box:ScrollToElementData(row, alignment) self.brought, self.aligned = row, alignment end
     function box:Draw()
         self.rows = {}
         for index, entry in ipairs(self.provider.list) do
@@ -332,7 +334,7 @@ CreateScrollBoxListLinearView = function()
 end
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
 CreateDataProvider = function(list) return { list = list or {} } end
-ScrollBoxConstants = { RetainScrollPosition = true }
+ScrollBoxConstants = { RetainScrollPosition = true, AlignBegin = 0, AlignNearest = -1 }
 function methods:CreateLine() return W.NewWidget("Line", nil, self) end
 function methods:SetStartPoint(_, _, x, y) self._start = { x, y } end
 function methods:SetEndPoint(_, _, x, y) self._end = { x, y } end
@@ -2321,13 +2323,37 @@ do
     local u, v = Coords.MapToPlane(1429, 0.4, 0.4, Coords.PlaneOf(1429))
     waypoint = nil
     rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    check(focused == 0 and not waypoint, "a click waits a moment for a second one")
+    W.Wait(ns.Canvas.DOUBLE)
     check(focused == 7 and not waypoint and full.map == Coords.PlaneOf(1429) and near(full.u, u) and near(full.v, v)
         and full.k == was.k and not full.follow,
         "a click: the game's arrow leads to it, the map moves to its objective at the zoom it has; no map pin")
-    rows[2]._scripts.OnDoubleClick(rows[2], "LeftButton")
-    check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4),
-        "a double click: the game's map pin on its objective")
     QuestLog.Text(nil)
+    full:Show(was.map, was.u, was.v, was.k)
+    full.follow = was.follow
+    Canvas.Layout()
+    focused = 0
+    rows = logBox:Draw()
+    local element = rows[2]
+    element._scripts.OnClick(element, "LeftButton")
+    rows = logBox:Draw()
+    rows[2]._scripts.OnClick(rows[2], "LeftButton") -- the list's rows drawn anew between: another button, the same quest
+    check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4)
+        and focused == 7 and near(full.u, u) and near(full.v, v), "a double click: the same, and the game's map pin on its objective")
+    W.Wait(ns.Canvas.DOUBLE * 2)
+    rows = logBox:Draw()
+    local unfolded = false
+    for _, each in ipairs(rows) do unfolded = unfolded or each.row.kind == "text" end
+    check(not unfolded, "and its text as it was: no text unfolds for a double click")
+    -- A quest not on the player's map, nor found zone by zone: the map the game names for it.
+    local best, planes = C_Map.GetBestMapForUnit, ns.Coords.Planes
+    C_Map.GetBestMapForUnit, ns.Coords.Planes = function() return 12 end, function() return {} end
+    GetQuestUiMapID = function() return 1429 end
+    waypoint = nil
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    check(waypoint and waypoint.uiMapID == 1429, "elsewhere: on the map the game names for the quest")
+    C_Map.GetBestMapForUnit, ns.Coords.Planes, GetQuestUiMapID = best, planes, nil
     waypoint = saved
     full:Show(was.map, was.u, was.v, was.k)
     full.follow = was.follow
@@ -2413,6 +2439,12 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
     check(log.titleSide == "RIGHT" and log.bar.title._points[1][1] == "RIGHT", "its title too")
     point = items[1]._points[#items[1]._points]
     check(point[1] == "LEFT" and point[4] == 20 and point[5] == 720, "and its item at the list's left")
+    QuestLog.Text(7)
+    local unfolded
+    for _, element in ipairs(logBox:Draw()) do if element.row.kind == "text" then unfolded = element end end
+    check(unfolded and unfolded.text._points[1][1] == "TOPRIGHT" and unfolded.text._justify == "RIGHT",
+        "a quest's text right aligned too")
+    QuestLog.Text(nil)
     log.frame.GetCenter = nil
     log:Place()
     rows = logBox:Draw()
@@ -2423,25 +2455,41 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
     rows = logBox:Draw()
     W.Wait(0)
 end)()
--- The right button: its text below the list, the map at its objective; the text's X closes it.
+-- A click unfolds a quest's text under it, one quest's at a time; the right button: its text, the map at its objective.
 do
-    local function Story()
-        for _, widget in ipairs(W.frames) do
-            if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:find("The story of quest", 1, true) then
-                return widget
-            end
-        end
+    local function Text()
+        rows = logBox:Draw()
+        for index, element in ipairs(rows) do if element.row.kind == "text" then return element, index end end
     end
-    local said = Story()
-    local details = said and said._parent._parent._parent
-    check(not (details and details._shown), "no text below the list at first")
-    rows[2]._scripts.OnClick(rows[2], "LeftButton")
-    said = Story()
-    details = said and said._parent._parent._parent
-    check(details and details._shown and said._text:find("Quest Objectives", 1, true), "a click: its text below the list")
-    rows = logBox:Draw()
-    rows[2]._scripts.OnClick(rows[2], "LeftButton")
-    check(not details._shown, "a click again: away")
+    local function Click(element)
+        element._scripts.OnClick(element, "LeftButton")
+        W.Wait(ns.Canvas.DOUBLE)
+    end
+    check(not Text(), "no text under a quest at first")
+    logBox._height = 200
+    Click(rows[2])
+    local said, at = Text()
+    check(said and said.row.quest == 7 and at == 4 and said.text._wrap and said.text._text:find("Quest Objectives", 1, true)
+        and said.text._text:find("The story of quest 2", 1, true), "a click: its text unfolds under it and its objectives")
+    check(said.text._points[1][1] == "TOPLEFT" and logBox.view.height(nil, said.row) == 40 + QuestLog.ROOM,
+        "the row as high as its words take")
+    check(logBox.brought == said.row and logBox.aligned == ScrollBoxConstants.AlignNearest, "and brought into sight")
+    Click(rows[2])
+    check(not Text(), "a click again: folded away")
+    Click(rows[4])
+    said, at = Text()
+    check(said and said.row.quest == 8 and at == 7, "another quest: its text, under its objectives and its turn in")
+    Click(rows[2])
+    said, at = Text()
+    check(said and said.row.quest == 7 and at == 4, "and another: one quest's at a time")
+    said._scripts.OnClick(said, "LeftButton")
+    check(not Text(), "a click on the text itself folds it away too")
+    logBox._height = 20
+    Click(rows[2])
+    said = Text()
+    check(logBox.brought == said.row and logBox.aligned == ScrollBoxConstants.AlignBegin, "taller than the list: from its start")
+    logBox._height = nil
+    QuestLog.Text(nil)
     rows = logBox:Draw()
     -- Its rewards, as the game has them, in its text.
     GetQuestLogRewardXP = function() return 450 end
@@ -2451,8 +2499,8 @@ do
     GetQuestLogRewardInfo = function(_, quest) return quest == 7 and "Wolf Cloak" or nil, 133, 2 end
     GetNumQuestLogChoices = function() return 2 end
     GetQuestLogChoiceInfo = function(index) if index == 1 then return "Boots", 134, 1 end return nil end
-    rows[2]._scripts.OnClick(rows[2], "LeftButton")
-    local words = Story()._text
+    Click(rows[2])
+    local words = Text().text._text
     check(words:find("Rewards", 1, true) and words:find("450 experience", 1, true) and words:find("1250 coins", 1, true)
         and words:find("|T133:16:16|t Wolf Cloak x2", 1, true) and words:find(QuestLog.TEXT.choices, 1, true)
         and words:find("|T134:16:16|t Boots", 1, true) and not words:find("Boots x", 1, true),
@@ -2473,15 +2521,14 @@ do
     check(Canvas.camera == full and full.level == "zone" and near(full.u, -200) and near(full.v, -9100),
         "Show Map: the map at its objective, in the middle")
     items[QuestLog.TEXT.details].fn()
-    said = Story()
-    details = said and said._parent._parent._parent
-    check(details and details._shown and said._text:find("Kill eight wolves.", 1, true), "Quest Details: its objectives and story below the list")
-    local close
-    for _, widget in ipairs(W.frames) do
-        if widget._parent == details and widget._kind == "Button" and not widget._text then close = widget end
-    end
-    close._scripts.OnClick(close)
-    check(not details._shown, "its X: the text away again")
+    said = Text()
+    check(said and said.text._text:find("Kill eight wolves.", 1, true), "Quest Details: its text under it")
+    local index = C_QuestLog.GetLogIndexForQuestID
+    C_QuestLog.GetLogIndexForQuestID = function() return nil end
+    QuestLog.Refresh()
+    check(not Text(), "a quest gone from the log: its text gone too")
+    C_QuestLog.GetLogIndexForQuestID = index
+    rows = logBox:Draw()
 end
 -- No scroll bar at rest; the mouse on a list longer than its room: at the side the window stands at.
 do
@@ -2564,23 +2611,18 @@ do
     check(shown[1].row.kind == "header" and shown[1].text._text == QuestLog.TEXT.previews and shown[2].row.kind == "preview"
         and shown[2].row.quest == 101 and shown[2].text._text == "[30] A Quest for Later" and shown[2].remove._shown
         and not shown[4].remove._shown, "its quest in the log on top, greyed out, with the red X; the log's own below")
-    local said
-    for _, widget in ipairs(W.frames) do
-        if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:find("A Quest for Later|r", 1, true) then
-            said = widget._text
-        end
-    end
+    local said = shown[3].row.kind == "text" and shown[3].row.quest == 101 and shown[3].text._text
     check(said and said:find(Pins.TEXT.needsLevel:format(60), 1, true) and said:find(QuestLog.TEXT.level:format(30), 1, true)
         and said:find(QuestLog.TEXT.givenBy:format("A Waiting Giver"), 1, true),
-        "below it what the data knows: why not yet (the level it asks), its level, who gives it")
+        "under it what the data knows: why not yet (the level it asks), its level, who gives it")
     ;(function()
         -- Items the game tells of in a burst: the words drawn again once, on the next frame.
-        local details, drawn = QuestLog.Details, 0
-        QuestLog.Details = function(...) drawn = drawn + 1 return details(...) end
+        local refresh, drawn = QuestLog.Refresh, 0
+        QuestLog.Refresh = function(...) drawn = drawn + 1 return refresh(...) end
         for item = 1, 3 do W.Fire("ITEM_DATA_LOAD_RESULT", item, true) end
         local before = drawn
         W.Wait(0)
-        QuestLog.Details = details
+        QuestLog.Refresh = refresh
         check(before == 0 and drawn == 1, "a burst of items told by the game: the preview's words drawn again once")
     end)()
     shown[2].remove._scripts.OnClick(shown[2].remove)
