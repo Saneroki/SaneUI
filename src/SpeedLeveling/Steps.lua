@@ -173,7 +173,8 @@ local function Build()
     empty.text:SetWidth(Steps.WIDTH)
     empty.text:SetTextColor(unpack(SOFT))
     -- No guide: the guides open; paused: the guide goes on.
-    empty:SetScript("OnClick", ns.Guard(function(self)
+    empty:SetScript("OnClick", ns.Guard(function(self, button)
+        if button == "RightButton" then return Menu(self) end
         if self.resume then Core.Set(ns.name, "follow", "on") else ns.Guides.Open() end
     end))
     empty:Hide()
@@ -183,7 +184,8 @@ local function Build()
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
                                       first = { point = "TOPRIGHT", x = -70, y = -200 },
                                       -- moved in Edit Mode: the icons over it follow
-                                      docked = function() ns.Guarded(Steps.Update) end })
+                                      docked = function() ns.Guarded(Steps.Update) end,
+                                      unlockedMenu = function(owner) Steps.LockMenu(owner, window) end })
     window:Place()
 end
 
@@ -217,7 +219,20 @@ function Menu(owner)
         if not next(groups) then root:CreateTitle(ns.TEXT.noneHere) end
         root:CreateDivider()
         root:CreateButton(ns.TEXT.paste, ns.Guard(ns.Guides.Open))
+        Steps.LockItem(root, window)
     end))
+end
+
+-- A menu's line that unlocks a window of the guide's, to drag it, or locks it again.
+function Steps.LockItem(root, which)
+    root:CreateButton(which.unlocked and ns.TEXT.lock or ns.TEXT.unlock, ns.Guard(function() which:Unlock(not which.unlocked) end))
+end
+
+-- That line alone: a right click on the arrow, or on the box over a window unlocked.
+function Steps.LockMenu(owner, which)
+    local util = rawget(_G, "MenuUtil")
+    if not (util and util.CreateContextMenu) then return end
+    util.CreateContextMenu(owner, ns.Guard(function(_, root) Steps.LockItem(root, which) end))
 end
 
 -- A listed step's menu: go to it; the guides kept a line under it.

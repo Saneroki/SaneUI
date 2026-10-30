@@ -157,7 +157,8 @@ local Core = SaneUI.Core
 local Sync = Core.Sync
 check(Sync and SaneUI.Sync == nil and Sync.name == "Sync", "Sync is part of Core, no module; its settings are kept under the name Sync")
 -- Settings an earlier version saved, in a shape this one does not know: nothing of them counts.
-SaneUIDB = { modules = { Sync = { options = { camera = false, saved = { camera = { cvars = { cameraSavedDistance = "3" } } } } } } }
+SaneUIDB = { modules = { Sync = { options = { camera = false, saved = { camera = { cvars = { cameraSavedDistance = "3" } } } } } },
+    newCharacters = { autoLoad = true, profile = "Accountwide" } }
 W.Fire("ADDON_LOADED", "SaneUI")
 local options = SaneUIDB.modules.Sync.options
 check(Sync.options == options and type(options.off) == "table" and type(options.taken) == "table" and type(options.named) == "table"
@@ -590,11 +591,12 @@ check(SaneUIDB.profiles.Mine.Sync.taken.hudLayout.name == "Mine", "a profile kee
 Profiles.Use("Mine")
 check(game.active == 3, "used, its layout is set again")
 
--- Accountwide off: the game's settings are left to the game ----------------------------------------
+-- Character specific: the game's settings back at its defaults, then left to the game --------------
 W.cvars.nameplateSize = "2"
-Profiles.SetOn(false)
+Profiles.Use(Profiles.OWN)
 check(SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
-    "switched off, the game's settings as they are go into the profile last used, read while Sync still keeps them")
+    "the game's settings as they are go into the profile left, read while Sync still keeps them")
+check(W.cvars.nameplateSize == W.cvarInfo.nameplateSize.default, "and the game holds its defaults, as on a fresh install")
 W.cvars.nameplateSize = "4"
 local sets = W.cvarSets
 Sync.Give()
@@ -602,8 +604,33 @@ W.Fire("PLAYER_LOGOUT")
 check(W.cvars.nameplateSize == "4" and W.cvarSets == sets and SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
     "off, nothing of the game's is written or read, not even at the logout")
 check(SaneUICharDB.settings and SaneUICharDB.settings.Sync == nil, "nor kept with the character's own settings")
-Profiles.SetOn(true)
-check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "switched on again, the character takes its profile's, the game's settings too")
+Profiles.Use("Mine")
+check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "back on the profile, the character takes its settings, the game's too")
+
+-- The addons switched on: kept in the profile, written with a /reload offered -----------------------
+do
+    local states = { One = 2, Two = 0, SaneUI = 2 }
+    local names = { "One", "Two", "SaneUI" }
+    local saved = 0
+    C_AddOns = C_AddOns or {}
+    local wasNum, wasInfo, wasState, wasOn, wasOff, wasSave = C_AddOns.GetNumAddOns, C_AddOns.GetAddOnInfo, C_AddOns.GetAddOnEnableState,
+        C_AddOns.EnableAddOn, C_AddOns.DisableAddOn, C_AddOns.SaveAddOns
+    C_AddOns.GetNumAddOns = function() return #names end
+    C_AddOns.GetAddOnInfo = function(which) return type(which) == "number" and names[which] or (states[which] and which) or nil end
+    C_AddOns.GetAddOnEnableState = function(name) return states[name] end
+    C_AddOns.EnableAddOn = function(name) states[name] = 2 end
+    C_AddOns.DisableAddOn = function(name) states[name] = 0 end
+    C_AddOns.SaveAddOns = function() saved = saved + 1 end
+    local part = Sync.part.addons
+    local read = part.Read()
+    check(read.One == true and read.Two == false and read.SaneUI == true, "which addons are on, read")
+    check(part.Write({ One = false, Two = true, SaneUI = false, Gone = true }) == true and states.One == 0 and states.Two == 2,
+        "written as the profile has them: a /reload is due")
+    check(states.SaneUI == 2 and states.Gone == nil and saved == 1, "never Sane UI itself, nor one this client lacks")
+    check(part.Write({ One = false, Two = true }) == false and saved == 1, "nothing to change: nothing asked")
+    C_AddOns.GetNumAddOns, C_AddOns.GetAddOnInfo, C_AddOns.GetAddOnEnableState, C_AddOns.EnableAddOn, C_AddOns.DisableAddOn, C_AddOns.SaveAddOns =
+        wasNum, wasInfo, wasState, wasOn, wasOff, wasSave
+end
 
 -- A CVar a module lends (Loot: the game's Auto Loot off) -----------------------------------------------
 W.cvars.autoLootDefault = "1"

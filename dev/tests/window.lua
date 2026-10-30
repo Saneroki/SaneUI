@@ -2163,5 +2163,27 @@ end)()
     check(seat:Hold(100, 900, 200, 600, "HIGH", 50) == false, "a closed window is not seated")
 end)()
 
+-- Unlocked: its box outside Edit Mode, dragged by it, its place kept; locked again it stays there.
+do
+    local free = CreateFrame("Frame", "UnlockedWindow", UIParent)
+    free:SetSize(100, 100)
+    local store, menus = {}, 0
+    local unlocked = Window.New(free, { store = store, key = "free", title = "Free", first = { point = "TOP", x = 0, y = 0 },
+                                        unlockedMenu = function() menus = menus + 1 end })
+    unlocked:Place()
+    check(not unlocked.usable(), "at rest it cannot be moved")
+    unlocked:Unlock(true)
+    check(unlocked.box:IsShown() and unlocked.usable(), "unlocked: its box over it, to drag it")
+    local box = unlocked.box
+    box._scripts.OnDragStart(box)
+    check(free._moving, "dragged by the box")
+    box._scripts.OnDragStop(box)
+    check(not free._moving and type(store.free) == "table", "let go: its place kept")
+    box._scripts.OnMouseUp(box, "RightButton")
+    check(menus == 1, "a right click on the box: its menu")
+    unlocked:Unlock(false)
+    check(not box:IsShown() and not unlocked.usable(), "locked again")
+end
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

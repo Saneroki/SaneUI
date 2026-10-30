@@ -204,7 +204,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   channels only in a city); one you are never in is left whenever the game puts you in it. It acts a while
   after a character comes into the world, when the game changes its channels, and at once when you choose.
   It works whether the window is open or not, and on every character (the settings of *Social* are account
-  wide unless unticked in *Profiles > Accountwide*).
+  wide unless unticked in *Profiles > Game settings*).
 - **The bubbles and the line to write in** are plain fills with round corners: no border, no ornament.
   Every bubble, yours too, and the line are drawn the same way: the same fill (a color or one of the game's
   textures, as set), the same corners, as see-through. Only the text's color tells the kind of message.

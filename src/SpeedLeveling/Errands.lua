@@ -21,6 +21,9 @@ local _, ns = ...
 --                     (Core.Upgrade; the game's own flag of a new item, so what
 --                     you took off yourself stays off) is put on, one at a time
 --                     so that the next is measured against it, out of a fight.
+--    Skip cinematics  the game's cinematics and movies stopped as they start, a
+--                     frame later when the game has them going, as Esc does.
+--                     One the game does not let you leave plays on.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Errands = {}
@@ -143,8 +146,37 @@ local function PutOn()
 end
 PutOnSoon = Core.Later(function() ns.Guarded(PutOn) end, Errands.EQUIP)
 
+-------------------------------------------------------------------------------
+--  Skip cinematics
+-------------------------------------------------------------------------------
+local stoppable       -- the cinematic starting can be stopped as such; else only a scene that lets you
+
+local SkipScene = Core.Later(function()
+    ns.Guarded(function()
+        if ns.off or not ns.options.cinematics then return end
+        if stoppable then
+            Core.Ask(rawget(_G, "StopCinematic"))
+        elseif Core.Ask(rawget(_G, "CanCancelScene")) then
+            Core.Ask(rawget(_G, "CancelScene"))
+        end
+    end)
+end)
+
+local SkipMovie = Core.Later(function()
+    ns.Guarded(function()
+        local movie = rawget(_G, "MovieFrame")
+        if ns.off or not ns.options.cinematics or not movie then return end
+        Core.Ask(movie.FinishMovie, movie)
+    end)
+end)
+
 function Errands.Start()
     Errands.Update()
+    ns.On("CINEMATIC_START", function(canStop)
+        stoppable = Core.Plain(canStop) and true or false
+        SkipScene()
+    end)
+    ns.On("PLAY_MOVIE", SkipMovie)
     if rawget(_G, "StaticPopup_Show") then hooksecurefunc("StaticPopup_Show", ns.Guard(Answer)) end
     ns.On("BAG_UPDATE_DELAYED", PutOnSoon)
     ns.On("PLAYER_REGEN_ENABLED", PutOnSoon)

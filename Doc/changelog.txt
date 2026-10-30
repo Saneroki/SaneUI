@@ -9,6 +9,11 @@ The bigger changes of each version, newest first.
 - Bags: Auto Sell and Auto Repair, two checkboxes at the foot of
   your bags, on at first. At a vendor your junk is sold, then your
   gear repaired with your own gold. Hold Shift to do it yourself.
+- Profiles: every character uses one of three, or one you make.
+  Speedleveling has all the automation on and is where new
+  characters start for now; Accountwide has our recommended
+  settings, shared by all its characters; Character specific is
+  the game's defaults, as a fresh install, each character its own.
 - Speed Leveling: nothing holds you up. Loot takes everything by
   default, the game no longer asks before equipping or destroying,
   the key runs you to the corpses around you and opens them, and
@@ -16,7 +21,9 @@ The bigger changes of each version, newest first.
   closes the goodbye screen. Quest rewards are chosen for you: the
   biggest upgrade, else what is worth the most, and upgrades you
   loot are put on. Group rolls are settled between your own
-  characters. Each has its switch; Solo in the bags rests it all.
+  characters. Cinematics are skipped. Each has its switch; Solo in
+  the bags rests it all. A right click unlocks the guide and the
+  arrow to drag them.
 - Bags: a green arrow on the items that would be an upgrade, by
   what your class and specialization want.
 - Combat: your frame, your target's and your focus's in the look
@@ -87,6 +94,8 @@ The bigger changes of each version, newest first.
   you switch with a click.
 - Navigation: a middle click on the map brings it back to you,
   following you again, near enough to see the minimap's icons.
+- Speed Leveling: the map pin goes on each place your guide sends
+  you to, so the golden line on the map leads you there.
 - Quest log: sorted by proximity, nearest first; click its title
   to sort by level, zone or type. A click on a quest puts the map
   pin on it, so the golden line leads you there. Quest items stand

@@ -11,7 +11,7 @@
 ## X-License: MIT
 
 # Core is the addon every module depends on. Saved.lua describes the settings of all of them,
-# Profiles.lua keeps them: in a profile (Accountwide, at first, for every character) or a character's own.
+# Profiles.lua keeps them: in a profile (Speedleveling, Accountwide, your own) or a character's own (Character specific).
 Core.lua
 # Small helpers for every module: the game's words, colours, pixels, tooltips, pools, dialogs, fonts,
 # sounds, and frames of the game's lent for a while
@@ -104,6 +104,7 @@ Inspect.lua
 Sync\Sync.lua
 Sync\Data\Pages.lua
 Sync\Layout.lua
+Sync\Addons.lua
 Sync\Chat.lua
 Sync\Game.lua
 # Settings: the options, last: they show what everything above describes. The pages are put up

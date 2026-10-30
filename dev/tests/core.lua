@@ -31,7 +31,7 @@ check(printedMatch("version 1%.2%.3%. No module is switched on") and printedMatc
 -- The game reads the saved settings of an earlier session: one switch already flipped, and something a module kept.
 -- Some of it is spoiled (an older version, a hand edit): a switch that is no switch, a log that is no list.
 SaneUIDB = { modules = { Demo = { options = { shy = true, loud = "yes" }, kept = 7 }, Spoiled = "?" }, log = "lost",
-    characters = { ["Player-70-00000002"] = { name = "Alt", realm = "Stub Realm", class = "WARRIOR" } } } -- a character seen before
+    newCharacters = { autoLoad = true, profile = "Accountwide" }, characters = { ["Player-70-00000002"] = { name = "Alt", realm = "Stub Realm", class = "WARRIOR" } } } -- a character seen before
 ScriptErrorsFrame = { DisplayMessageInternal = function() end } -- the game's error window, there from the start
 W.Fire("ADDON_LOADED", "SaneUI")
 check(SaneUIDB.errors.early and SaneUIDB.errors.early.text:find("too soon") and Core.errors == SaneUIDB.errors, "errors are kept in the saved settings, earlier ones too")
@@ -683,7 +683,7 @@ local function Pick(menu, name)
     for _, item in ipairs(Items(menu)) do if item.text == name then item.fn(item.data) end end
 end
 local function Dialog() return W.popups[#W.popups] end
-local onCheck, profileMenu = Control("Accountwide settings"), Menu("Profile")
+local profileMenu = Menu("Profile")
 local buttons = {}
 for _, name in ipairs({ "New", "Rename", "Delete", "Defaults", "Export", "Import" }) do buttons[name] = Control(name) end
 
@@ -691,12 +691,10 @@ local tabNames = {}
 for index, tab in ipairs(canvas.tabs) do tabNames[index] = tab.Text._text end
 check(table.concat(tabNames, ", ") == "Profiles, Game settings, CVars", "its tabs: Profiles, Game settings and CVars")
 check(canvas.parts[1]:IsShown() and not canvas.parts[2]:IsShown(), "the first is shown at first")
-check(Shows("Profiles keep the settings of Sane UI and of the game"), "over the tabs a line says what profiles are")
-check(Shows("Accountwide") and Shows("This character") and Shows("Characters"), "the tab Profiles: boxes Accountwide, This character, Characters")
-check(onCheck and onCheck:GetChecked() and Profiles.On() and Shows("every character uses the profile Accountwide"),
-    "first Accountwide settings, on at first, and what it means")
-check(Names(profileMenu) == "Accountwide" and Ticked(profileMenu) == "Accountwide" and Profiles.InUse() == "Accountwide",
-    "this character's profile: at first the only one there is, Accountwide")
+check(Shows("Speedleveling: all the automation on"), "over the tabs a line says what the three profiles are")
+check(Shows("This character") and Shows("Characters"), "the tab Profiles: boxes This character, Characters")
+check(Names(profileMenu) == "Speedleveling, Accountwide, Character specific" and Ticked(profileMenu) == "Accountwide"
+    and Profiles.InUse() == "Accountwide" and Profiles.On(), "this character's profile: the three standard ones to choose from")
 for _, name in ipairs({ "New", "Rename", "Delete", "Defaults", "Export", "Import" }) do check(buttons[name], "a button " .. name) end
 -- The button New and the line New Characters each have their own tip.
 do
@@ -718,7 +716,7 @@ do
     check(updates == 1 and builds == 0, "the same profiles: a dropdown of them only reads which is ticked")
     Profiles.Create("Spare")
     watch:Refresh()
-    check(builds == 1 and Names(profileMenu) == "Accountwide, Spare", "another one made: its menu is built anew")
+    check(builds == 1 and Names(profileMenu) == "Speedleveling, Accountwide, Character specific, Spare", "another one made: its menu is built anew")
     Profiles.Delete("Spare")
     watch:Refresh()
     profileMenu.GenerateMenu, profileMenu.Update = nil, nil
@@ -759,8 +757,9 @@ check(SaneUIDB.profiles.Accountwide.Demo ~= held and SaneUIDB.profiles.Accountwi
     "Accountwide keeps a copy of its own of what it had")
 check(printedMatch("the profile Quiet is made"), "chat says so")
 W.Wait(0.1)
-check(Ticked(profileMenu) == "Quiet" and Names(profileMenu) == "Accountwide, Quiet" and buttons.Rename:IsEnabled() and buttons.Delete:IsEnabled(),
-    "a moment later the page shows it: chosen, listed after Accountwide; it can be renamed and deleted")
+check(Ticked(profileMenu) == "Quiet" and Names(profileMenu) == "Speedleveling, Accountwide, Character specific, Quiet"
+    and buttons.Rename:IsEnabled() and buttons.Delete:IsEnabled(),
+    "a moment later the page shows it: chosen, listed after the standard ones; it can be renamed and deleted")
 check(Profiles.Create("quiet") == false and Profiles.Create("  ") == false and Profiles.Create("Quiet") == false,
     "a name needs letters, and one that is taken is refused, in any letter case")
 -- Made, but not taken into use (as with Accountwide switched off while the name was asked): chat says why,
@@ -815,7 +814,7 @@ end
 
 -- Copy from another profile
 local copyMenu = Menu("Copy from")
-check(Names(copyMenu) == "Accountwide", "Copy from lists the other profiles, not the one in use")
+check(Names(copyMenu) == "Speedleveling, Accountwide", "Copy from lists the other profiles, not the one in use, nor Character specific")
 Pick(copyMenu, "Accountwide")
 dialog = Dialog()
 check(dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Accountwide" and held.loud == true, "it asks first")
@@ -913,23 +912,26 @@ check(Profiles.Forget(Core.charKey) == false, "not the one played")
 W.Wait(0.1)
 check(not alt.menu:IsEnabled() and me.menu:IsEnabled(), "a character forgotten has no profile to choose any more")
 
--- Accountwide off: each character keeps its own settings
+-- Character specific: each character keeps its own settings, from the defaults
 local loudWas = held.loud
-Tick(onCheck, false)
-check(not Profiles.On() and Profiles.InUse() == nil and SaneUICharDB.settings.Demo == held and held.loud == loudWas,
-    "switched off, this character keeps what it uses as its own: the module's table lives in its file now")
-check(SaneUIDB.profiles.Accountwide.Demo.loud == loudWas and SaneUIDB.profiles.Accountwide.Demo ~= held, "its profile keeps a copy")
+check(Profiles.Use(Profiles.OWN) and not Profiles.On() and Profiles.InUse() == Profiles.OWN and SaneUICharDB.settings.Demo == held
+    and held.shy == false, "Character specific: the module's table lives in this character's file now, as a fresh install has it")
+check(SaneUIDB.profiles.Accountwide.Demo.loud == loudWas and SaneUIDB.profiles.Accountwide.Demo ~= held, "the profile it left keeps its own")
 check(SaneUICharDB.settings.Sync == nil, "the game's settings are kept nowhere then")
 W.Wait(0.1)
-check(not buttons.New:IsEnabled() and not buttons.Defaults:IsEnabled(), "the profiles' buttons are switched off")
-loud.setting:SetValue(not loudWas)
-check(SaneUIDB.profiles.Accountwide.Demo.loud == loudWas and held.loud == not loudWas, "a change is this character's alone")
-Tick(onCheck, true)
-dialog = Dialog()
-check(not Profiles.On() and dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Accountwide", "switching it on asks first")
-dialog.data.callback()
-check(Profiles.On() and Profiles.InUse() == "Accountwide" and held.loud == loudWas and SaneUIDB.profiles.Accountwide.Demo == held,
-    "on again, this character takes its profile's settings")
+check(buttons.New:IsEnabled() and buttons.Defaults:IsEnabled() and not buttons.Export:IsEnabled() and not buttons.Rename:IsEnabled(),
+    "what is of a shared profile alone is switched off; a new profile can still be made")
+local shyThere = SaneUIDB.profiles.Accountwide.Demo.shy
+held.shy = true
+check(SaneUIDB.profiles.Accountwide.Demo.shy == shyThere, "a change is this character's alone")
+check(Profiles.Use("Accountwide") and Profiles.On() and held.loud == loudWas and held.shy == shyThere and SaneUIDB.profiles.Accountwide.Demo == held,
+    "back on a profile, this character takes its settings")
+check(SaneUICharDB.settings.Demo.shy == true, "and its own stay for the next time")
+Profiles.Use(Profiles.OWN)
+check(held.shy == true, "there they are")
+Profiles.Use("Accountwide")
+check(select(2, Profiles.Create("character SPECIFIC")) ~= nil and SaneUIDB.profiles["character SPECIFIC"] == nil, "its name cannot be taken")
+check(Profiles.Delete(Profiles.OWN) == false and Profiles.Rename(Profiles.SPEEDLEVELING, "x") == false, "the three standard ones stay")
 shy.setting:SetValue(false)
 
 W.printed = {}
@@ -1551,28 +1553,47 @@ check(fourth and fourth.profile == "Shared" and Profiles.InUse() == "Shared" and
     "named at the login, it gets the profile for new characters, and uses it from then on")
 check(#toldDemo > toldBefore, "the modules are told of what changed")
 
--- Accountwide off: two characters, each with its own settings
-Profiles.SetOn(false)
+-- Character specific: two characters, each with its own settings
+Profiles.Use(Profiles.OWN)
 Core.Set("Demo", "shy", true)
 local fourthFile = Written(SaneUICharDB)
 UnitGUID = guid
 NextSession(SaneUIDB, {})
-check(not Profiles.On() and Profiles.InUse() == nil and SaneUICharDB.settings.Demo.shy == SaneUIDB.profiles.Raid.Demo.shy
-    and Core.Settings("Demo").loud == false, "another character's own settings start as a copy of its profile's")
+Profiles.Use(Profiles.OWN)
+check(not Profiles.On() and Core.Settings("Demo").shy == false, "another character on it starts from the defaults, not from anybody's")
 Core.Set("Demo", "loud", true)
-local firstFile = Written(SaneUICharDB)
 UnitGUID = function() return "Player-70-00000004" end
 NextSession(SaneUIDB, fourthFile)
-check(Core.Settings("Demo").shy == true and Core.Settings("Demo").loud == SaneUIDB.profiles.Shared.Demo.loud,
-    "each keeps its own: the fourth has what it set")
--- On, then off again: own settings from before start anew
-Profiles.SetOn(true)
-check(Profiles.InUse() == "Shared" and Core.Settings("Demo").shy == SaneUIDB.profiles.Shared.Demo.shy, "on again, its profile")
-Profiles.SetOn(false)
+check(Core.Settings("Demo").shy == true and Profiles.InUse() == Profiles.OWN, "each keeps its own: the fourth has what it set")
+Profiles.Use("Shared")
 UnitGUID = guid
-NextSession(SaneUIDB, firstFile)
-check(Core.Settings("Demo").loud == SaneUIDB.profiles.Raid.Demo.loud, "own settings from an earlier time off start anew from the profile")
-Profiles.SetOn(true)
+NextSession(SaneUIDB, {})
+Profiles.Use("Raid")
+
+-- The profiles an account has at first, and new characters on Speedleveling
+do
+    local account = { characters = { ["Player-70-00000002"] = { name = "Alt", realm = "Stub Realm", class = "WARRIOR" } } }
+    UnitGUID = function() return "Player-70-00000099" end
+    NextSession(account, {})
+    W.Fire("PLAYER_LOGIN")
+    check(SaneUIDB.profiles.Speedleveling and SaneUIDB.profiles.Accountwide and SaneUIDB.profiles[Profiles.OWN] == nil,
+        "Speedleveling and Accountwide are there; none is made for a character")
+    check(SaneUIDB.profiles.Speedleveling.SpeedLeveling.solo == true and SaneUIDB.characters["Player-70-00000099"].profile == "Speedleveling"
+        and Profiles.InUse() == "Speedleveling", "a character not seen yet starts on Speedleveling, its automation on")
+    check(Profiles.Character(Profiles.NEW).profile == "Speedleveling", "as the line New Characters says")
+    check(Profiles.Character("Player-70-00000002") == nil or Profiles.Character("Player-70-00000002").profile == "Accountwide",
+        "a character seen before stays where it was")
+    check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,
+        "Character specific can be what new characters start with")
+    check(Profiles.Reset() and SaneUIDB.profiles.Speedleveling.SpeedLeveling.solo == true, "Defaults: what the profile sets stays")
+    NextSession({ version = 2, profiles = { Accountwide = { Demo = { shy = true } } }, accountwide = false, ownSince = 5 }, {})
+    check(SaneUIDB.profiles.Speedleveling.Demo.shy == true and SaneUIDB.accountwide == nil and SaneUIDB.ownSince == nil,
+        "an account with settings: Speedleveling starts as a copy of them, the old switch is gone")
+    UnitGUID = guid
+    NextSession(SaneUIDB, {})
+    Profiles.Create("Raid")
+    Profiles.Use("Raid")
+end
 
 -- A module installed later: in the profile it starts at its defaults; off, a copy of the profile's
 SaneUIDB.profiles.Raid.Later = nil
@@ -1619,14 +1640,13 @@ check(Profiles.On() and Profiles.InUse() == "Raid" and SaneUICharDB.settings == 
     and SaneUIDB.account == nil and SaneUIDB.newCharacters == nil, "all settings were account wide: Accountwide on, nothing of the first shape left")
 check(SaneUIDB.profiles.Accountwide.Demo._version == 1, "a module's own count of its shape is carried by its copies")
 NextSession({ modules = { Demo = { options = { loud = false } } }, separate = true }, { settings = { Demo = { loud = true } } })
-check(not Profiles.On() and Core.Settings("Demo").loud == true and SaneUICharDB.since == 1,
-    "every setting each character's own (All settings accountwide unticked): Accountwide off, each keeps its own")
-Profiles.SetOn(true)
-check(Profiles.InUse() == "Accountwide" and Core.Settings("Demo").loud == false, "switched on, the account's are in use")
+Profiles.Use("Accountwide")
+check(Profiles.InUse() == "Accountwide" and Core.Settings("Demo").loud == false, "the account's are in use")
 Profiles.Create("Raid")
 W.printed = {}
 SlashCmdList.SANEUI("profile")
-check(printedMatch("profiles: Accountwide, Raid%.") and printedMatch("This character uses Accountwide"), "/sane profile lists them")
+check(printedMatch("profiles: Speedleveling, Accountwide, Character specific, Raid%.") and printedMatch("This character uses Accountwide"),
+    "/sane profile lists them")
 SlashCmdList.SANEUI("profile raid")
 check(Profiles.InUse() == "Raid" and printedMatch("uses the profile Raid"), "/sane profile <name> uses one, in any letter case")
 SlashCmdList.SANEUI("profiles nothing")

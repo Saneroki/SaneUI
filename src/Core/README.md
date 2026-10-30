@@ -4,8 +4,8 @@
 
 ## TL;DR
 The main addon, the one every module needs: chat lines, game events, error catching, the list of modules,
-the `/sane` command, the saved settings of all modules (in profiles: *Accountwide* at first, the same for
-every character), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
+the `/sane` command, the saved settings of all modules (in profiles: *Speedleveling*, *Accountwide*, *Character
+specific*, your own), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
 Sane UI's (`Sync/`), and what every window can use: moving, sizing,
 docking to a screen edge, round corners, opening while the mouse rests on it, filling the screen, tabs
 in the game's style, Esc, Edit Mode's dialog, and a progress bar. It does nothing you can see by itself,
@@ -90,24 +90,28 @@ but for a window to try those with (`/sane window`).
   settling softly), *Swing* (a little past, then back), *Even* (a gentle start and end), *Instant* (no motion). A window can have its own type,
   in its section *Expand window* (Social, tab *Appearance*), which can be *Use global type*: this one.
 - **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
-  - *Accountwide settings* (on at first): every character uses a profile, a named set of the settings of
-    every module and of the game's own (its options, CVars, Edit Mode layout, chat windows: as far as the
-    tab *Game settings* ticks them). At first there is one, *Accountwide*, used by every character, so all of
-    them have the same settings: the game's are set from it a moment after a character comes into the world,
-    and read back into it when the character leaves (logout, `/reload`).
-  - Off: no profile is in use. Each character keeps its own Sane UI settings (a copy of its profile's to begin
-    with), and the game's settings are left to the game, as without Sane UI. Switched on again, a character
-    takes its profile's settings (asked first).
+  - Every character uses one of three standard profiles, or one you made. None is made for a character by itself.
+    - *Speedleveling*: Speed Leveling's automation on (its switch *Solo*, `Profiles.PRESET`). For now where every
+      new character starts.
+    - *Accountwide*: Sane UI's recommended settings, every change shared by all the characters on it.
+    - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's
+      settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
+      (they stay in the profile it left).
+  - A profile is a named set of the settings of every module and of the game's own (its options, CVars, Edit Mode
+    layout, chat windows, addons switched on: as far as the tab *Game settings* ticks them): the game's are set
+    from it a moment after a character comes into the world, and read back into it when the character leaves
+    (logout, `/reload`).
   - *This character:* the profile it uses (choose another: its settings, Sane UI's and the game's, are that
     profile's at once). *New* makes a copy of the settings in use under a name and uses it; *Rename*, *Delete*
     (every character that had it uses *Accountwide*); *Defaults* sets Sane UI's settings of the profile in use
     back to their defaults (the game's stay); *Copy from* takes another profile's settings; *Export* shows the
     profile as a line of text to copy, *Import* makes a profile from one (of the single CVars it keeps, only
-    those the game's options set). *Accountwide* cannot be renamed or deleted. `/sane profile` lists the
+    those the game's options set). The three standard ones cannot be renamed or deleted. `/sane profile` lists the
     profiles, `/sane profile <name>` uses one.
   - *Characters:* every character seen on the account, each with its profile (for another character it counts
     at its next login) and *Forget* (its line and what Sane UI keeps for it: for a character deleted or moved).
-    The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with.
+    The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with: *Speedleveling*
+    at first.
   - Every change on any options page goes into the profile in use, for every character that uses it. Nothing
     is copied at a logout: the settings live in their profile, and only the game's are read into it.
 
@@ -130,37 +134,36 @@ but for a window to try those with (`/sane window`).
   |---|---|
   | `SaneUIDB.modules.<Module>` | What that module keeps besides its settings: `Core.Store(name)`, from `OnLoad` on |
   | `SaneUIDB.modules.<Module>.chars[GUID]` | Its notes per character: `Core.Character(name)`, from `OnLogin` on |
-  | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` is always there |
-  | `SaneUIDB.accountwide` | false: *Accountwide settings* is off (nil: on) |
-  | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (nil: Accountwide) |
-  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Accountwide) |
-  | `SaneUIDB.ownSince` | When *Accountwide settings* was last switched off: a character's own settings from before then start anew |
+  | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` and `Speedleveling` are always there |
+  | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (a name, *Character specific* for none; nil: Accountwide) |
+  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Speedleveling) |
   | `SaneUIDB.version` | The shape of these settings (`Profiles.VERSION`, 2) |
   | `SaneUIDB.errors` | What went wrong (`Core.errors`), for `/sane errors` |
   | `SaneUIDB.log` | The same, every time it happened: the error log (`Core.log`) |
   | `SaneUICharDB` | Per character (`WTF/Account/<account>/<realm>/<character>/SavedVariables/SaneUI.lua`): `settings.<Module>` (its own, with *Accountwide settings* off), `since` (the `ownSince` they were made under), `key` (its key in `characters`, to find it before the login) |
 
-- **Profiles (`Profiles.lua`).** Each module's settings live in one place only, the one in use: a profile
-  (*Accountwide settings* on), or the character's own (`SaneUICharDB.settings`, off). The module holds that
+- **Profiles (`Profiles.lua`).** Each module's settings live in one place only, the one in use: a profile,
+  or the character's own (`SaneUICharDB.settings`, *Character specific*). The module holds that
   table for the whole session (`Core.Settings(name)`, also `Core.Store(name).options`, which is found through
   the store but never kept there).
-  - **Moving** (`Move`): another profile used, *Accountwide settings* switched, the profile in use deleted.
+  - **Moving** (`Move`): another profile used, *Character specific* chosen, the profile in use deleted.
     The modules that hold something of the game's bring it up to date first (`capture`); what each module
     holds stays in the old place as a copy of its own; the table it holds takes what the new place has
     (`Core.Settle` makes it right) and lives there now; each module is told what differs (`changed`, or
     `replaced` once), then `moved`. The options page shows it a frame later.
   - **At the load** (Core's `ADDON_LOADED`, before any module reads its settings): the place is the
-    character's profile (its line's, if that is there, else *Accountwide*) or, off, its own. The character's
+    character's profile (its line's, if that is there, else *Accountwide*) or its own. The character's
     key is its GUID, else `SaneUICharDB.key`; at `PLAYER_LOGIN` a character the game names only then (or
     another one) moves to its profile. A module's settings come into use when it describes them
-    (`Core.Options`), from the place in use; a profile that has none for it gives its defaults, a character's
-    own that have none a copy of its profile's.
+    (`Core.Options`), from the place in use; a place that has none for it gives its defaults.
   - **At the logout** nothing moves: only `capture` runs (Sync reads the game's settings into the profile).
-  - **Own settings** start as a copy of the character's profile's whenever they are older than the last time
-    *Accountwide settings* was switched off (`ownSince`, `since`): every time it is off, each character
-    starts from its profile.
-  - **The game's settings** (Sync's, `game = true`) live in profiles only; with *Accountwide settings* off they
-    are kept nowhere (a table of the session) and Sync reads and writes nothing.
+  - **Own settings** start at the defaults, as a fresh install, and stay the character's whenever it comes back.
+  - **Standard profiles** (`Standard`, in `Mend`): *Speedleveling* is made once if it is not there: a copy of
+    *Accountwide*'s, so that an account with settings loses nothing by using it, with `Profiles.PRESET` over it,
+    which *Defaults* sets again.
+  - **The game's settings** (Sync's, `game = true`) live in profiles only; on *Character specific* they are kept
+    nowhere (a table of the session) and Sync reads and writes nothing. Turning to it, what the last capture read
+    goes back to `C_CVar.GetCVarDefault` (`ToDefaults`).
   - **The first shape** (version 1: the account's settings in `modules.<Module>.options` or kept aside in
     `account`, profiles copied in and out with `autoLoad`/`autoSave`, `separate`, `perCharacter`,
     `newCharacters`) is brought over once: the account's settings are *Accountwide* (a profile of the player's

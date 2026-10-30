@@ -4,16 +4,16 @@ local ADDON = ...
 --  Sane UI - Core - Sync
 --  The game keeps much of what a player sets for each character alone. Sync
 --  keeps it with Sane UI's settings instead, in the profile in use
---  (Core/Profiles.lua): with Accountwide on (at first), every character that
---  uses a profile has the game's settings of that profile, the same for all of
---  them with the profile Accountwide. With Accountwide off, Sync does nothing:
---  the game keeps its settings for each character, as it does without Sane UI.
+--  (Core/Profiles.lua): every character that uses a profile has the game's
+--  settings of that profile, the same for all of them. On Character specific
+--  Sync does nothing: the game keeps its settings for each character, as it does
+--  without Sane UI; turning to it, they go back to the game's defaults (Sync.Moved).
 --
 --  What it keeps comes in parts, laid out as the game lays out its own options
 --  (Esc > Options): a part per options page of the game, in the game's groups
 --  Gameplay, Accessibility and System, and a few parts for what is on none of
 --  its pages (Edit Mode layout, chat windows, own channels, what it keeps per
---  character). Each part has a checkbox in the tab Game settings of the page
+--  character, the addons switched on). Each part has a checkbox in the tab Game settings of the page
 --  Profiles (Settings/Synced.lua), ticked at first. A ticked part is read from
 --  the game whenever Sane UI's settings are saved (Core's capture: a new
 --  profile, another one used, the logout) and written back into the game when a
@@ -28,7 +28,7 @@ local ADDON = ...
 --
 --  Files: Data/Pages.lua (what each options page sets, made from Blizzard's
 --  code), Layout.lua (Edit Mode), Chat.lua (chat windows, own channels),
---  Game.lua (the CVar parts). Settings/CVars.lua keeps single CVars by name
+--  Game.lua (the CVar parts), Addons.lua (the addon list). Settings/CVars.lua keeps single CVars by name
 --  (Sync.Keep).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -98,6 +98,7 @@ end
 local given   -- written into the game this session: from now on the parts may be read
 local waiting -- a fight held the writing up: it follows when the fight is over
 local offered -- a /reload was offered for this writing
+local left    -- what the last capture read: the game's settings the character may be turning away from
 
 -------------------------------------------------------------------------------
 --  Single CVars kept by name (Settings/CVars.lua)
@@ -133,7 +134,7 @@ end
 -------------------------------------------------------------------------------
 --  Reading and writing
 -------------------------------------------------------------------------------
--- Whether Sync keeps the game's settings at all: only with Accountwide on (Profiles.lua).
+-- Whether Sync keeps the game's settings at all: not for a character on Character specific (Profiles.lua).
 local function On()
     return Core.Profiles.On()
 end
@@ -155,6 +156,7 @@ function Sync.Capture()
         end
     end
     options.taken, options.from = taken, Core.GAME
+    left = taken
     ReadNamed(options.named)
 end
 
@@ -194,14 +196,27 @@ end
 
 local settled -- the character is in the world, and its first writing came due (GiveSoon)
 
--- The settings in use came from elsewhere (another profile, Accountwide switched on): what they hold
--- goes into the game at once, if the character is in the world already (otherwise that happens anyway).
+-- A character turned to Character specific: the CVars its profile held are the game's defaults again, as on a fresh
+-- install. Nothing is lost: they stay in the profile it left.
+local function ToDefaults()
+    for _, data in pairs(left or {}) do
+        for name in pairs(type(data) == "table" and type(data.cvars) == "table" and data.cvars or {}) do
+            local default = Plain(Core.Ask(C_CVar.GetCVarDefault, name))
+            if type(default) == "string" then Sync.SetCVar(name, default) end
+        end
+    end
+    left = nil
+end
+
+-- The settings in use came from elsewhere (another profile, Character specific): what they hold goes into the game at
+-- once, if the character is in the world already (otherwise that happens anyway).
 function Sync.Moved()
+    if not On() then return Sync.Safe("defaults", ToDefaults) end
     if settled then Sync.Safe("writing", Sync.Give) end
 end
 
--- Kept with the settings like a module's switches, in the profile in use (never a character's own:
--- the game's settings are kept only with Accountwide on), none with a control of the game's options:
+-- Kept with the settings like a module's switches, in the profile in use (never a character's own), none with a
+-- control of the game's options:
 --      off     [part id] = true: left to the game, which keeps it per character
 --      taken   [part id] = what the part read last
 --      named   [CVar] = its value: single CVars kept by name

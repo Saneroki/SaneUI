@@ -45,7 +45,7 @@ Core.NewModule(ADDON, "SpeedLeveling", ns)
 
 ns.TEXT = {
     solo = "Solo",
-    soloTip = "On: all of Speed Leveling works, the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again: your key does nothing, the guide is hidden and what it changed in Loot is put back. For playing with others. Your own two characters together count as solo. Also a box at the foot of the bags.",
+    soloTip = "On: all of Speed Leveling works, the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again: your key does nothing, the guide is hidden and what it changed in Loot is put back. For playing with others. Your own two characters together count as solo. On in the profile Speedleveling, off in the others. Also a box at the foot of the bags.",
     binding = "Loot, talk, pick up, attack, find and mark, use",
     hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under Sane UI: Loot, talk, pick up, attack, find and mark, use.",
     -- /sane key: what the key sees now (Key.Check).
@@ -99,6 +99,8 @@ ns.TEXT = {
     errandsHeaderTip = "What Speed Leveling does for you so that nothing holds you up.",
     lootAll = "Take all loot",
     lootAllTip = "Sets the module Loot to take everything at once: its Everything on, its Always show upgrades off, as Equip upgrades puts those on. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts back the rest. Things locked to a group's roll are not taken.",
+    cinematics = "Skip cinematics",
+    cinematicsTip = "Cinematics and the game's movies are skipped as they start, those the game lets you skip yourself.",
     rolls = "Roll on group loot",
     rollsTip = "When your group rolls for a thing, the Sane UI of each of your characters says what it would bring, and the one it brings the most Needs it; the others Greed. With nobody to agree with, Need on an upgrade, else Greed. In a fight it waits for the end of the fight, as long as the roll's clock allows.",
     noAsk = "Equip and delete without asking",
@@ -119,17 +121,19 @@ ns.TEXT = {
     switchTitle = "Leveling guide",
     switchTip = "Click: pause the guide, or go on with it. Right click: on, paused or off.",
     showGuide = "Show the guide",
-    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
+    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
     gather = "Gathering for the next zone",
     gatherTip = "Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks: the skill that gathers at least half of the herbs or the ore growing there (from Sane UI's data of the world; WoW: Forever).",
     gatherShort = "%s next: %s. Gather here a while first.",
     gatherSkill = "%s %d of %d",
     showArrow = "Show the arrow",
-    showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode: the leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
+    showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
     icons = "Targets and items over the guide",
     iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row over the guide's top: a click uses the item or targets the name. Changed out of a fight only: the game holds such buttons in one.",
     ahead = "Steps listed ahead",
     aheadTip = "How many steps the list under those at hand shows; the wheel scrolls it through the whole guide.",
+    unlock = "Unlock to drag",
+    lock = "Lock in place",
     guidesButton = "Guides",
     guidesButtonTip = "The guides: those that come for this game and those you added. Paste the import string of the guides you bought, or a guide's text, and choose the one to follow.",
     guideView = "Guide",
@@ -210,7 +214,7 @@ ns.TEXT = {
 ns.GIVEN_BACK = "the key is the game's own again, the guide hidden"
 
 local OPTIONS = {
-    { key = "solo", default = true, text = ns.TEXT.solo, tip = ns.TEXT.soloTip },
+    { key = "solo", default = false, text = ns.TEXT.solo, tip = ns.TEXT.soloTip },
     { key = "loot", default = true, text = ns.TEXT.loot, tip = ns.TEXT.lootTip },
     { key = "corpses", default = true, text = ns.TEXT.corpses, tip = ns.TEXT.corpsesTip, parent = "loot" },
     { key = "talk", default = true, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
@@ -232,6 +236,7 @@ local OPTIONS = {
     { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
     { key = "equipUpgrades", default = true, text = ns.TEXT.equipUpgrades, tip = ns.TEXT.equipUpgradesTip },
     { key = "rolls", default = true, text = ns.TEXT.rolls, tip = ns.TEXT.rollsTip },
+    { key = "cinematics", default = true, text = ns.TEXT.cinematics, tip = ns.TEXT.cinematicsTip },
     { key = "follow", default = "on", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
@@ -250,7 +255,7 @@ local OPTIONS = {
 -- givers' switches and those of what is on the way are read when they are needed.
 local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
 local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, equipUpgrades = true,
-                 rolls = true, lootLent = true, deleteRefused = true }
+                 rolls = true, cinematics = true, lootLent = true, deleteRefused = true }
 -- Solo off: all of the module rests until it is ticked again, as a module stood down but for good reason: ns.off is
 -- what every part of it asks. The guide's run goes on knowing where it is, so that it catches up after.
 local resting = false

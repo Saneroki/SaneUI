@@ -6,8 +6,8 @@
 The game keeps much of what you set for each character alone: the options you chose on its pages, the Edit
 Mode layout in use, the chat windows, the channels you joined, the map filters, the tutorials you have seen.
 A new character starts without them. Sync keeps them with Sane UI's settings instead, laid out as the game's
-own options are, in the profile in use: with *Accountwide settings* on (at first) they are the same on all
-your characters that use one profile. With it off, Sync does nothing. (Joining or leaving
+own options are, in the profile in use: they are the same on all your characters that use one profile. On
+*Character specific* Sync does nothing, and a character turning to it gets the game's default CVars back. (Joining or leaving
 the game's own chat channels on every character is the Social module's.)
 
 ## How to use
@@ -31,9 +31,12 @@ the game's own chat channels on every character is the Social module's.)
 - **The game shows chat windows and the extra action bars after a `/reload`,** and after another Edit Mode
   layout or chat colour a reload gives its frames back untainted. When a character got such changes, a
   dialog offers the reload (*Reload* / *Later*), once each time.
-- **Whose settings:** the profile's in use (*Accountwide* at first, which every character shares; tab
-  *Profiles*). The first character to log out after a part was ticked gives its settings to the others of that
-  profile. With *Accountwide settings* off nothing is kept: each character has the game's own, per character.
+- **Whose settings:** the profile's in use (tab *Profiles*). The first character to log out after a part was
+  ticked gives its settings to the others of that profile. On *Character specific* nothing is kept: each
+  character has the game's own, per character.
+- **Addons** (`Addons.lua`): which addons are switched on, in the box *Elsewhere in the game*. Written where the
+  profile differs, for this character (`C_AddOns`), with the reload offered; never Sane UI itself, nor one this
+  client lacks.
 - **Single CVars:** in the tab *CVars*, tick any CVar to keep it the same way.
 - **Not keeping any:** untick every part (and no CVar ticked in the tab *CVars*): the game's settings stay as
   they are, each character with its own. Sync is part of Sane UI, so it is not in the addon list.
@@ -41,8 +44,8 @@ the game's own chat channels on every character is the Social module's.)
 ## Technical details
 - **Part of Core,** not a module: its files are in Core's TOC and share `Core.Sync` (no `SaneUI.Sync`). Its
   settings are described to Core as a module's are, under the name `Sync` (`Core.Settings("Sync")`), with the
-  hook `game = true`: they live in the profile in use only, never in a character's own (with *Accountwide
-  settings* off they are a table of the session, and `Give` and `Capture` do nothing). Being no module, it
+  hook `game = true`: they live in the profile in use only, never in a character's own (on *Character
+  specific* they are a table of the session, and `Give` and `Capture` do nothing). Being no module, it
   gets no page of its own: the tab *Game settings* of the page Profiles (`Settings/Synced.lua`) shows a checkbox per part, a box per
   `Sync.GROUPS` entry. Its work starts from Core's events: its settings at Core's `ADDON_LOADED` (after
   `Saved.lua` and `Profiles.lua`, which come first in the TOC), the writing at `PLAYER_ENTERING_WORLD`.

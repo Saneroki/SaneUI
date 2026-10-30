@@ -58,7 +58,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Solo | on | All of the module on. Off: all of it rests until it is ticked again: the key does nothing, the guide is hidden, the quest givers, the loot, the upgrades and the rolls are yours, and what it set in Loot is put back. For playing with others; your own two characters together count as solo. Also a box at the foot of the bags (`Vendor.lua`) |
+| Solo | off, on in the profile *Speedleveling* | All of the module on. Off: all of it rests until it is ticked again: the key does nothing, the guide is hidden, the quest givers, the loot, the upgrades and the rolls are yours, and what it set in Loot is put back. For playing with others; your own two characters together count as solo. Also a box at the foot of the bags (`Vendor.lua`) |
 | Loot first | on | A corpse with loot beside you is opened before anything is looked for. The game's interact key (`softTargetInteract`) is switched on for it |
 | Walk to corpses | on | For a moment after a fight the interact key looks all around you and 30 yards far, your target's corpse counts however far it is, and the game's Click-to-Move (`autointeract`) is lent while there is a corpse, so the key runs you to it and opens it; all put back after the last corpse, and in a fight. While it is lent, a right click on the ground walks you there too |
 | Talk to NPCs | on | An NPC right in front of you that is no foe (friendly or neutral) is talked to at once (after a corpse to loot); a quest NPC the key found or you targeted, at the next press. Off: the key looks on |
@@ -75,12 +75,14 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Choose the guide's talk | on | Where a step names a gossip option, it is chosen |
 | Close the talk when it is done | on | After a quest is taken or handed in the key leaves that NPC alone, unless your guide still wants a quest there, and a talk that comes up with nothing for you closes by itself (*The key*). Quests your guide does not know are ignored: never taken, and right after a quest done there the talk closes over them. A talk you open yourself after that stays open for them |
 | *On the way:* Take all loot | on | Sets the module Loot to take everything at once (its *Everything* on, its *Always show upgrades* off, as *Equip upgrades* puts those on) and answers the game's question on a thing that binds when picked up. Each set once: what you change on Loot's page afterwards stays; this switch off puts back the rest. Things locked to a group's roll are not taken |
+| Skip cinematics | on | The game's cinematics and movies stopped as they start (`StopCinematic`, `CancelScene`, `MovieFrame:FinishMovie`), but one the game does not let you leave |
 | Equip and delete without asking | on | The game's questions before gear binds to you or loses its refund, and before an item is destroyed whatever its quality, are answered as their own Yes would. Destroying is a call the game keeps for a click of the player's: where it refuses, its question comes up with the word it wants typed in, and it is not tried again |
 | Equip upgrades | on | Gear that comes into your bags, looted or a quest's reward, and is an upgrade (`Core.Upgrade`: anything you can wear for a place with nothing in it, else one worth more by your class's and specialization's weights, Inventory's `Weights.lua`, else a higher item level) is put on, one at a time, out of a fight; the chat says what. Only what the game flags as new (`C_NewItems`), so what you took off yourself stays off, and an item the game refused is not tried again |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Gathering for the next zone | on | Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks (*Gathering for the next zone*) |
 | Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
+| Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
 | Steps listed ahead | 5 | How many steps the list under those at hand shows (0 to 12); the wheel scrolls it through the whole guide |
 | Guides | | Opens the window of the guides (also `/sane guides`) |
@@ -176,6 +178,17 @@ shown while the guide is and has a place to go to:
   Within the place's reach the ring and the yards go, the words stay.
 - **Where it points:** the first place of the steps at hand not yet passed, the step you are at first (a point on the
   way, or a place to get to, is passed once you were within its reach; `Run.Target`).
+
+### The map pin
+`Pin.lua` (Saneroki, 2026-10-30): as soon as the guide sends you to a new place, the game's own map pin goes there, so
+Navigation's golden line leads you there, by flight and boat too, and the game's map shows it as well. It is the game's
+pin: Speed Leveling asks nothing of Navigation, whose route follows it as it follows any pin. The place is the one the
+arrow points to (`Run.Target`, looked at every `Pin.ASK` seconds, with the arrow switched off too), put on a map by
+`Run.Point` (a place written in the world: `GetMapPosFromWorldPos`).
+
+Set once for each place: a pin you put yourself, or took away, stays until the guide goes on to its next place, whose
+pin takes its place. Once the guide has no place to go to, or is paused, off or resting, the pin goes if it still stands
+where the guide put it; a pin of yours stays. A place the game takes no pin on (a dungeon, a whole continent) has none.
 
 ### Gathering for the next zone
 `Gathering.lua` (Saneroki, 2026-10-29): before the guide takes you on to a harder zone, whether your Herbalism and
@@ -277,6 +290,7 @@ choice is made by those, in a fight too (`Key.lua`):
   does not know included. Only the guide's quests are ever taken.
 - **Group rolls** (`Rolls.lua`, the switch *Roll on group loot*): as a roll starts each Sane UI says what the thing would bring its character (`Core.Upgrade`'s gain, 0 for none or where the game lets it not Need) to the party, raid or instance group, Core's `Wire`, kind `SLR`, by the item's ID (a roll's number is not shared between clients). Decided `Rolls.WAIT` seconds out of a fight: the one it brings the most Needs, the others Greed, else Pass; as much: the lower GUID, so all come to the same; no word: Need on an upgrade. `Wire` sends and takes in nothing in a fight, so a roll waits for its end while its clock has more than `Rolls.LAST` left. Weights hold a stat a character builds on at 1, so gains of two classes can be held against each other.
 - **Nothing else is automatic:** each press does one thing, the player's.
+- **Moving the guide and the arrow:** a right click on the zone, or on the arrow, has *Unlock to drag*: `window:Unlock`, the box Edit Mode shows, outside it; dragged, the place is kept as in Edit Mode; a right click on the box, or the same line, locks it again.
 - **`/sane key`** says in chat what the key sees now: its state and what a press does, the NPC or thing in front of
   you and your target as the game judges them (a foe or not, friendly, helpable), whether it is wanted, the item for
   it, Click-to-Move; kept for the account too (`keyCheck`), so it can be read after a `/reload`.
@@ -300,6 +314,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Rolls.lua` | Group rolls agreed between the Sane UI of your characters (Core's `Wire`), `RollOnLoot`, the game's question on a roll answered |
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
+| `Pin.lua` | The game's map pin on the guide's place |
 | `Icons.lua` | The icons over the guide: items to use and names to target, Sane UI's own secure buttons |
 | `Guides.lua` | The window of the guides: the list by group, the import line, the box to paste into, *Read* |
 | `Bindings.xml` | The key in the game's key bindings |

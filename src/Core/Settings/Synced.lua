@@ -5,8 +5,8 @@ local Config = SaneUI.Core.Config -- Settings.lua
 --  Profiles. Which of the game's own settings the profiles keep (Sync's parts),
 --  a titled box per group of them (Sync.GROUPS: the game's own groups of
 --  options pages, then what is on none), two columns of checkboxes. Each
---  profile keeps its own ticks. With Accountwide off the profiles keep nothing
---  of the game's: the checkboxes are switched off.
+--  profile keeps its own ticks. For a character on Character specific nothing
+--  of the game's is kept: the checkboxes are switched off.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Panel = Config.Panel
@@ -14,7 +14,7 @@ local Profiles = Core.Profiles
 
 local TEXT = {
     tab = "Game settings",
-    intro = "The game's own settings the profile in use keeps, so every character that uses it has them: set when a character comes into the world, read back when it leaves. Unticked ones the game keeps for each character, as it does without Sane UI. With Accountwide settings off (tab Profiles) none are kept.",
+    intro = "The game's own settings the profile in use keeps, so every character that uses it has them: set when a character comes into the world, read back when it leaves. Unticked ones the game keeps for each character, as it does without Sane UI. A character on Character specific keeps none here.",
 }
 
 -- One box of checkboxes at y; returns the y under it.

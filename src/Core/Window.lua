@@ -126,6 +126,8 @@ local Core = SaneUI.Core
 --      window:Use(key, first)           -- its place kept under another name from now on, first its first place
 --                                       -- there, and put there (a window with a place for each of its looks)
 --      window:Hover(on)                 -- the mouse is on the window, or left it (grip = "hover")
+--      window:Unlock(on)                -- on: its box over it and dragged by it outside Edit Mode too, until
+--                                       -- off (window.unlocked); a right click on the box: options.unlockedMenu(box)
 --      window.inside                    -- a frame for what it holds: below the title bar while there is one,
 --                                       -- the whole window while not; window.top: how far below its top that is
 --      window:Locked()                  -- it holds the game's protected frames and a fight is on: nothing of
@@ -588,9 +590,14 @@ local function Box(window)
         hover:Hide()
         title:Hide()
     end))
+    box:HookScript("OnMouseUp", Core.Guard("window", function(_, button)
+        if button == "RightButton" and window.unlocked and window.options.unlockedMenu then
+            Core.Safe("window", window.options.unlockedMenu, box)
+        end
+    end))
     -- A click on it chooses the window, as Edit Mode's own frames are chosen (Selection.lua).
     box:HookScript("OnMouseDown", Core.Guard("window", function()
-        if Core.Selection then Core.Safe("Edit Mode", Core.Selection.Select, window) end
+        if Core.Selection and Core.EditMode.active then Core.Safe("Edit Mode", Core.Selection.Select, window) end
     end))
     Window.Mover(box, frame, {
         usable = window.usable,
@@ -1028,8 +1035,15 @@ local function Edit(window, on)
 end
 
 Core.EditMode.Watch(function(on)
-    for _, window in ipairs(windows) do Core.Safe("Edit Mode", Edit, window, on) end
+    for _, window in ipairs(windows) do Core.Safe("Edit Mode", Edit, window, on or window.unlocked or false) end
 end)
+
+function methods:Unlock(on)
+    on = on and true or false
+    if (self.unlocked or false) == on then return end
+    self.unlocked = on
+    if not Core.EditMode.active then Edit(self, on) end
+end
 
 -- Every window made by New, in the order they were made (a list of its own: changing it changes nothing).
 function Window.All()
@@ -1096,7 +1110,9 @@ function Window.New(frame, options)
     if options.edge then window.edge = Core.Edge.New(window) end
     -- Only in Edit Mode, and not while it fills the screen or is on its way, nor in a fight (Locked).
     function window.usable()
-        if not Core.EditMode.active or (window.edge and window.edge.away) or window:Locked() then return false end
+        if not (Core.EditMode.active or window.unlocked) or (window.edge and window.edge.away) or window:Locked() then
+            return false
+        end
         return not options.usable or options.usable()
     end
     if options.sizable then

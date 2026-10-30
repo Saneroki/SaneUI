@@ -12,7 +12,7 @@ local Core = SaneUI.Core
 --      SaneUIDB.profiles.<Profile>.<Module> its settings, in a profile (Profiles.lua)
 --      SaneUIDB.errors                      what went wrong (Core.errors)
 --      SaneUIDB.log                         the same, every time it happened (Core.log)
---  and SaneUICharDB for the character played (its own settings, while Accountwide is off).
+--  and SaneUICharDB for the character played (its own settings, on Character specific).
 --
 --  It is kept here, in the addon every module depends on, so that a module
 --  finds its settings whichever other modules are switched on, and keeps them
@@ -180,7 +180,7 @@ end
 -- of hooks:
 --      changed(key, value)   a switch was changed: on the options page, by Core.Set, by another profile
 --      replaced()            instead of changed: once, after the settings in use came from elsewhere
---                            (another profile, Accountwide switched), if any of them differs
+--                            (another profile, Character specific), if any of them differs
 --      moved()               after the settings in use came from elsewhere, changed or not
 --      capture()             before the settings in use are copied or saved anywhere (a new profile, the
 --                            logout): for settings that hold something of the game's own, to bring it up
@@ -188,8 +188,8 @@ end
 --      version, upgrade      the shape of the settings now (a number), and upgrade(values, from) that
 --                            brings a copy of an older shape (from: 0 for none) up to it; it runs before
 --                            the switches are checked, so a value whose kind changed can still be read
---      game = true           the settings are the game's own (Sync): kept in profiles only; while
---                            Accountwide is off they are no one's and not used
+--      game = true           the settings are the game's own (Sync): kept in profiles only; on
+--                            Character specific they are no one's and not used
 --      tabs                  tabs of the module's own after its switches' (the page is then one in
 --                            tabs): { { name = "Items", build = function(child) return height end } },
 --                            child a scroll area's frame the tab fills itself (Panel.TabbedFrame)

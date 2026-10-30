@@ -5,8 +5,7 @@ local Config = SaneUI.Core.Config -- Settings.lua
 --  The page Profiles, a page of our own in the game's options (a canvas: Core
 --  puts it up, Core.frames.Profiles): its title, a line on what profiles are,
 --  and tabs:
---      Profiles        Accountwide: the switch, and what it means
---                      This character: the profile it uses, and what can be done
+--      Profiles        This character: the profile it uses, and what can be done
 --                      with profiles (new, rename, delete, defaults, copy from
 --                      another, export and import as text)
 --                      Characters: first New Characters, the profile a character not
@@ -14,8 +13,8 @@ local Config = SaneUI.Core.Config -- Settings.lua
 --                      its profile (and a button to forget it)
 --      Game settings   which of the game's settings the profiles keep (Synced.lua)
 --      CVars           the list of the game's CVars (CVars.lua)
---  With Accountwide off, everything about profiles is switched off: each
---  character keeps its own settings.
+--  A character on Character specific uses no profile: what is of a profile
+--  alone (the game's settings in it, Export) is switched off for it.
 --
 --  Core keeps the profiles and does the work (Core/Profiles.lua); this file only
 --  shows them. Questions and names are asked in the game's own dialogs for
@@ -26,26 +25,19 @@ local Profiles = Core.Profiles
 
 local TEXT = {
     title = "Profiles",
-    intro = "Profiles keep the settings of Sane UI and of the game. With Accountwide on, every character uses a profile: Accountwide at first, the same for all of them.",
+    intro = "Speedleveling: all the automation on, for now where new characters start. Accountwide: our recommended settings, every change shared by all the characters on it. Character specific: the game's defaults, as a fresh install, each character keeping its own.",
     tab = "Profiles",
-    accountwide = "Accountwide",
-    on = "Accountwide settings",
-    onTip = "On: your characters share their settings through profiles: Sane UI's and the game's (its options, CVars, Edit Mode layout, chat windows: the tab Game settings). The game's are set from the profile when a character comes into the world and read back into it when the character leaves. Off: each character keeps its own Sane UI settings, a copy of its profile's to begin with, and the game's settings are left to the game.",
-    onNote = "On, every character uses the profile Accountwide unless it is given another below. Off, each character keeps its own settings and nothing of the game's is touched.",
-    askOn = "Switch Accountwide settings on? This character takes the settings of its profile, %s, the game's settings too.",
-    turnedOn = "Accountwide settings are on: this character uses the profile %s.",
-    turnedOff = "Accountwide settings are off: each character keeps its own settings, and the game's are left to the game.",
     yours = "This character",
     profile = "Profile",
-    profileTip = "The profile this character uses: its settings, Sane UI's and the game's, are the profile's. A change made on any options page goes into it, for every character that uses it.",
+    profileTip = "The profile this character uses: its settings, Sane UI's and the game's, are the profile's. A change made on any options page goes into it, for every character that uses it. Character specific is no shared profile: Sane UI at its defaults, the game's settings back at the game's defaults, and from then on each character keeps its own.",
     new = "New",
-    newTip = "A new profile, a copy of the settings in use, which this character uses from then on.",
+    newTip = "A new profile of your own, a copy of the settings in use, which this character uses from then on.",
     askNew = "A new profile, a copy of the settings in use. Its name:",
     rename = "Rename",
-    renameTip = "Gives the profile in use another name. Not Accountwide.",
+    renameTip = "Gives the profile in use another name. Not the three standard ones.",
     askRename = "Rename the profile %s to:",
     delete = "Delete",
-    deleteTip = "Deletes the profile in use. Every character that used it uses Accountwide from then on, this one at once. Not Accountwide.",
+    deleteTip = "Deletes the profile in use. Every character that used it uses Accountwide from then on, this one at once. Not the three standard ones.",
     askDelete = "Delete the profile %s? Every character that used it uses Accountwide from then on, this one at once.",
     defaults = "Defaults",
     defaultsTip = "Every setting of Sane UI in the profile in use back to its default. The game's settings stay as they are.",
@@ -102,14 +94,14 @@ local function Run(fn, ...)
     Core.Safe("Settings: profiles", fn, ...)
 end
 
--- The profile in use; nil while Accountwide is off.
+-- The profile in use.
 local function InUse()
     return Profiles.InUse()
 end
 
--- Whether what acts on the profile in use can be used: Accountwide on, and (fixed) not Accountwide itself.
-local function Usable() return Profiles.On() end
-local function Changeable() return Profiles.On() and not Profiles.Fixed(InUse()) end
+-- Whether what acts on a profile can be used: it is one of the character's, and (changeable) one of your own.
+local function Shared() return Profiles.On() end
+local function Changeable() return not Profiles.Fixed(InUse()) end
 
 -------------------------------------------------------------------------------
 --  Export and import: a window with a box of text
@@ -203,11 +195,10 @@ end
 -------------------------------------------------------------------------------
 -- What the buttons do with the profile in use; needs: when the button can be used.
 local ACTIONS = {
-    { button = TEXT.new, tip = TEXT.newTip, needs = Usable, run = function()
+    { button = TEXT.new, tip = TEXT.newTip, run = function()
         Core.AskText(TEXT.askNew, nil, TEXT.new, nil, function(name)
             local ok, made = Profiles.Create(name)
             if not Tell(ok, made) then return end
-            -- Made, but not in use (Accountwide switched off while the name was asked): chat says why, not "uses it".
             if Tell(Profiles.Use(made)) then Core.Print(TEXT.created:format(made)) end
         end, Profiles.MAX_NAME)
     end },
@@ -226,7 +217,7 @@ local ACTIONS = {
             Tell(ok, why, TEXT.deleted, name)
         end, true)
     end },
-    { button = TEXT.defaults, tip = TEXT.defaultsTip, needs = Usable, run = function()
+    { button = TEXT.defaults, tip = TEXT.defaultsTip, run = function()
         local name = InUse()
         Core.Confirm(TEXT.askDefaults, name, function()
             local ok, why = Profiles.Reset()
@@ -235,8 +226,8 @@ local ACTIONS = {
     end },
 }
 local MORE = {
-    { button = TEXT.export, tip = TEXT.exportTip, needs = Usable, run = Export },
-    { button = TEXT.import, tip = TEXT.importTip, needs = Usable, run = Import },
+    { button = TEXT.export, tip = TEXT.exportTip, needs = Shared, run = Export },
+    { button = TEXT.import, tip = TEXT.importTip, run = Import },
 }
 
 -- A row of buttons from x, y in box.
@@ -284,28 +275,8 @@ end
 
 -- The tab Profiles. Returns the height of what it holds.
 local function ProfilesTab(child)
-    -- Accountwide: the switch
-    local whose = Panel.Box(child, TEXT.accountwide, -4)
-    local on = Panel.Check(whose, TEXT.on, TEXT.onTip, Profiles.On, function(value)
-        if value then
-            -- Its profile's settings come into use, the game's too: asked first. Till then it shows off.
-            Core.Confirm(TEXT.askOn, Profiles.Character(Core.charKey) and Profiles.Character(Core.charKey).profile
-                or Profiles.ACCOUNTWIDE, function()
-                Profiles.SetOn(true)
-                Tell(true, nil, TEXT.turnedOn, InUse())
-            end)
-            Refresh()
-        else
-            Profiles.SetOn(false)
-            Tell(true, nil, TEXT.turnedOff)
-        end
-    end)
-    on:SetPoint("TOPLEFT", 12, -10)
-    Panel.Text(whose, TEXT.onNote, "GameFontDisableSmall", 18, -40)
-    whose:SetHeight(64)
-
     -- This character's profile, and what can be done with profiles
-    local yours = Panel.Box(child, TEXT.yours, -100)
+    local yours = Panel.Box(child, TEXT.yours, -4)
     local label = yours:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     label:SetPoint("TOPLEFT", 16, -20)
     label:SetText(TEXT.profile)
@@ -313,7 +284,7 @@ local function ProfilesTab(child)
         function(name)
             local ok, why = Profiles.Use(name)
             Tell(ok, why, TEXT.used, name)
-        end, Usable)
+        end, function() return true end)
     menu:SetPoint("LEFT", label, "RIGHT", 16, 0)
     Buttons(yours, ACTIONS, 14, -50)
     local copy = Menu(yours, 196, TEXT.copyFromTip, TEXT.copyFrom, function() return false end, function(name)
@@ -321,7 +292,7 @@ local function ProfilesTab(child)
             local ok, why = Profiles.CopyFrom(name)
             Tell(ok, why, TEXT.copied, name)
         end, true)
-    end, Usable, function(name) return name == InUse() end)
+    end, function() return true end, function(name) return name == InUse() or name == Profiles.OWN end)
     if copy.OverrideText then copy:OverrideText(TEXT.copyFrom) end
     copy:SetPoint("TOPLEFT", 14, -80)
     Buttons(yours, MORE, 222, -80)
@@ -330,7 +301,7 @@ local function ProfilesTab(child)
     -- First the line for characters not seen yet, then every character seen on the account.
     local list = Profiles.Characters()
     table.insert(list, 1, Profiles.Character(Profiles.NEW))
-    local box = Panel.Box(child, TEXT.characters, -232)
+    local box = Panel.Box(child, TEXT.characters, -136)
     for _, head in ipairs({ { TEXT.character, 16 }, { TEXT.profile, 220 } }) do
         local text = box:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         text:SetPoint("TOPLEFT", head[2], -12)
@@ -358,7 +329,7 @@ local function ProfilesTab(child)
         -- A character forgotten has no profile to choose any more.
         row.menu = Menu(box, 180, character.new and TEXT.newCharactersTip or TEXT.useTip,
             character.new and TEXT.newCharacters or character.name, function(value) return Line().profile == value end,
-            function(value) Tell(Profiles.SetCharacter(key, value)) end, function() return Usable() and not row.gone end)
+            function(value) Tell(Profiles.SetCharacter(key, value)) end, function() return not row.gone end)
         row.menu:SetPoint("TOPLEFT", 220, y)
         if not character.new and not character.current then
             row.forget = Panel.Button(box, TEXT.forget, TEXT.forgetTip, function()
@@ -376,7 +347,7 @@ local function ProfilesTab(child)
         Config.characters[key] = row
     end
     box:SetHeight(40 + #list * 30)
-    return 232 + 18 + box:GetHeight() + 8
+    return 136 + 18 + box:GetHeight() + 8
 end
 
 -- Builds the page into the frame Core put up for it (the first time it is shown): its title, a line,

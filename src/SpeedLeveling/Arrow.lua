@@ -199,8 +199,13 @@ local function Build()
             Turn()
         end
     end))
+    frame:EnableMouse(true)
+    frame:SetScript("OnMouseUp", ns.Guard(function(self, button)
+        if button == "RightButton" then ns.Steps.LockMenu(self, window) end
+    end))
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "arrowPlace", title = ns.TEXT.arrowView,
-                                      first = { point = "TOP", x = 0, y = -110 } })
+                                      first = { point = "TOP", x = 0, y = -110 },
+                                      unlockedMenu = function(owner) ns.Steps.LockMenu(owner, window) end })
     window:Place()
 end
 

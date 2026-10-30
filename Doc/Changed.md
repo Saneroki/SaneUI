@@ -3,8 +3,19 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 430 (windows), 269 (data in the game), 707 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 173 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 430 (windows), 269 (data in the game), 707 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 178 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: the map pin on the guide's place (Saneroki, 2026-10-30)
+Saneroki: yes, the guide should put the map pin on a task as it becomes active, so that the route leads there.
+- **`Pin.lua`** (new): the game's own map pin (`C_Map.SetUserWaypoint`) on the place the arrow points to, once for each
+  place, looked at every `Pin.ASK` seconds (`Run.Target` moves on past a place by being asked, the arrow may be off). It
+  is the game's pin, so no module leans on another: Navigation's route follows it as any pin. What you do to the pin
+  stays until the next place; when the guide stops or has no place the pin goes if it stands where the guide put it.
+- **`Run.Point(place)`:** a place on a map of the game's, 0 to 1; one written in the world by `GetMapPosFromWorldPos`,
+  on the map its line names if it lies on that, else on the one the game has there. `Run.SamePlace` (was `Arrow.lua`'s).
+- **The switch** *Map pin on the guide's place* (on). A new file in the TOC.
+- Tests: `dev/tests/speedguide.lua` 119 checks.
 
 ### Navigation: the quest log leaner, its items, a click for the map pin (Saneroki, 2026-10-30)
 Saneroki: no question marks, not the word Quest Log, everything closer to the screen's edge, no ticks; the quests' items
@@ -90,6 +101,24 @@ new settings `autoSell` and `autoRepair`, on at first, also on the page Inventor
 - Tests: `dev/tests/bags.lua` 349 checks (the boxes and their ticks, the vendor before the bags' window was built, the
   order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
   does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
+
+### Core: three standard profiles; Speed Leveling: Skip cinematics, the guide and the arrow unlocked by a right click (Saneroki, 2026-10-30)
+Saneroki: Speedleveling, Accountwide and Character specific by default. Accountwide our recommended settings, all changes
+synced; Character specific 100% the game's defaults, each character its own, as a fresh install; Speedleveling all the
+automation on, for now the default of new characters. No profile made for a character by itself; the user can make new ones.
+A setting in Speed Leveling that skips all cinematics. A right click on the arrow and the guide to lock or unlock them, to drag them.
+- **The switch Accountwide is gone** (`SetOn`, `db.accountwide`, `ownSince`): *Character specific* is a choice per character
+  (`Profiles.OWN`, `line.profile`); `Profiles.On()` now says whether this character uses a shared profile.
+- **Speedleveling** (`Profiles.PRESET`, `Standard`): made once, a copy of Accountwide's so that an account loses nothing, Speed
+  Leveling's `solo` on; `solo` itself is off at first now, so the other profiles leave all that automation off. `db.newProfile`
+  nil means Speedleveling. *Defaults* sets the preset again.
+- **Own settings** start at the defaults, no copy of a profile's. Turning to Character specific the CVars the last capture
+  read go back to the game's defaults (`ToDefaults`, `C_CVar.GetCVarDefault`); they stay in the profile left.
+- **Sync: `Addons.lua`**, a new part: which addons are on, kept in the profile, a /reload offered; never Sane UI itself.
+- **Skip cinematics** (`cinematics`): on `CINEMATIC_START` and `PLAY_MOVIE`, a frame later, `StopCinematic`, `CancelScene` where
+  `CanCancelScene`, `MovieFrame:FinishMovie`; not the game's own `CinematicFrame_CancelCinematic`, which would leave a vehicle.
+- **`window:Unlock(on)`** (`Window.lua`): the box of Edit Mode outside it, `options.unlockedMenu` on its right click. The zone's
+  menu and a right click on the arrow (its frame takes the mouse now) lock and unlock them (`Steps.LockItem`, `Steps.LockMenu`).
 
 ### Inventory: stat weights decide upgrades; Speed Leveling: Solo, group rolls agreed between your characters (Saneroki, 2026-10-30)
 Saneroki: Always show upgrades off after all, Speed Leveling puts upgrades on. Stat weights for all classes, part of the

@@ -903,6 +903,34 @@ do
     IsInGroup, IsInRaid, ConfirmLootRoll, StaticPopup_Hide = nil, nil, nil, nil
 end
 
+-- Skip cinematics: a cinematic stopped as it starts, a scene only where the game lets you leave it, a movie finished.
+do
+    local stopped, cancelled, finished, leave = 0, 0, 0, false
+    StopCinematic, CancelScene = function() stopped = stopped + 1 end, function() cancelled = cancelled + 1 end
+    CanCancelScene = function() return leave end
+    MovieFrame = { FinishMovie = function() finished = finished + 1 end }
+    W.Fire("CINEMATIC_START", true)
+    W.Wait(0.1)
+    check(stopped == 1, "a cinematic: stopped")
+    W.Fire("CINEMATIC_START", false)
+    W.Wait(0.1)
+    check(stopped == 1 and cancelled == 0, "one that cannot be left: it plays on")
+    leave = true
+    W.Fire("CINEMATIC_START", false)
+    W.Wait(0.1)
+    check(cancelled == 1, "a scene that can be left: left")
+    W.Fire("PLAY_MOVIE", 1)
+    W.Wait(0.1)
+    check(finished == 1, "a movie: finished")
+    Core.Set(ns.name, "cinematics", false)
+    W.Fire("CINEMATIC_START", true)
+    W.Fire("PLAY_MOVIE", 1)
+    W.Wait(0.1)
+    check(stopped == 1 and finished == 1, "Skip cinematics off: they play")
+    Core.Set(ns.name, "cinematics", true)
+    StopCinematic, CancelScene, CanCancelScene, MovieFrame = nil, nil, nil, nil
+end
+
 -- Solo off: all of the module rests, and comes back as it was.
 do
     W.Wait(Key.LOOK + Key.TICK)

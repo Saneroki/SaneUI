@@ -15,25 +15,24 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
   they open by themselves once the fight is over.
 - **Sane UI** itself shows only Sane UI's logo. Under it, in this order (the button in front of *Sane UI* folds
   them in and out):
-  - *Profiles:* a page of its own: its title, the line *Profiles keep the settings of Sane UI and of the
-    game...*, and tabs, each with titled boxes (Saneroki, 2026-10-17):
+  - *Profiles:* a page of its own: its title, a line on the three standard profiles, and tabs, each with titled
+    boxes (Saneroki, 2026-10-17; 2026-10-30):
     - *Profiles:*
-      - *Accountwide*: *Accountwide settings* (on at first) and what it means. On, every character uses a
-        profile, Sane UI's settings and the game's; off, each character keeps its own Sane UI settings and the
-        game's are left to the game. Switching it on asks first (the character takes its profile's settings).
-      - *This character*: the profile it uses (a dropdown: choosing one uses it at once), the buttons *New*
+      - *This character*: the profile it uses (a dropdown: *Speedleveling*, *Accountwide*, *Character specific*,
+        your own; choosing one uses it at once), the buttons *New*
         (asks for a name: a copy of the settings in use, used from then on), *Rename*, *Delete* (asks first;
         the characters that had it use *Accountwide*), *Defaults* (asks first: Sane UI's settings of the
         profile in use back to their defaults), then *Copy from* (a dropdown of the other profiles; asks
         first), *Export* (a window with the profile as a line of text, selected to copy) and *Import* (the same
-        window, empty: paste, *Import*, a name). *Accountwide* cannot be renamed or deleted. Chat says what was
+        window, empty: paste, *Import*, a name). The three standard ones cannot be renamed or deleted, and on
+        *Character specific* there is nothing to export. Chat says what was
         done, and why a name was refused.
       - *Characters*: first *New Characters*, the profile a character not seen yet starts with; then every
         character seen on the account, this one marked, each with its profile (a dropdown) and, but this one,
-        *Forget* (asks first). Everything here is switched off while *Accountwide settings* is off.
+        *Forget* (asks first).
     - *Game settings:* which of the game's settings the profiles keep: a box per group of Sync's parts
       (`Sync.GROUPS`: the game's own options groups, then *Elsewhere in the game*), checkboxes in two columns,
-      kept per profile. All ticked at first; switched off while *Accountwide settings* is off.
+      kept per profile. All ticked at first; switched off for a character on *Character specific*.
     - *CVars:* *Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with Sane
       UI's settings.* Every CVar of the game in one list, to look up, change and keep:
       - Over the list a search box (a CVar's name, or the label the game's own options give it) and the game's
@@ -147,7 +146,7 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
     into the game's `StaticPopupDialogs`. Should a client update take one away, it is noted and nothing happens.
   - Export and import show a window of ours (`SaneUIProfileText`, `ButtonFrameTemplate` with an
     `InputScrollFrameTemplate` box; Esc closes it): the text of `Core.Profiles.Export`, or a box to paste into.
-  - **Shown anew:** when values change under the controls (another profile used, Accountwide switched, a
+  - **Shown anew:** when values change under the controls (another profile used, a
     switch set elsewhere with `Core.Set`), `Config.Refresh`, a frame later, asks each setting of the list pages
     to show its value again (`SettingMixin:NotifyUpdate`, what the game does for a value changed elsewhere) and
     the pages of our own to show theirs (`Panel.Refresh`). The settings only read their values then: nothing is

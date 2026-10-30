@@ -801,6 +801,10 @@ function W.Install(env)
         end
     end
     env.C_CVar = {
+        GetCVarDefault = function(name)
+            local known, info = Known(name)
+            return known and info.default or nil
+        end,
         GetCVar = function(name)
             local known = Known(name)
             return known and (W.cvars[known] or W.cvarInfo[known].default) or nil
