@@ -6,7 +6,7 @@ what Sane UI's windows are built from.
   dev/tools/game-art make        cuts the catalogue into assets/generated/game-art (saneui makegameart)
   dev/tools/game-art find WORD   the numbers and atlases whose name holds WORD
 
-The page is 127.0.0.1 port 8776 (dev/tools/web-pages); overview.pdf beside it is the same numbers on paper, to read
+The page is one of dev/tools/web-pages' (saneui showgameart); overview.pdf beside it is the same numbers on paper, to read
 anywhere. A number stays with its piece from round to round (numbers.json beside the page), so a pick said once keeps
 meaning the same picture.
 

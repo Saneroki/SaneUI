@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 771 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### One server for every tool page: one port, running by default (Saneroki, 2026-10-30)
+Saneroki: all local websites for development on the same framework, server and runner, on the same port, always running.
+- **`dev/tools/web-pages` is the server:** 127.0.0.1 port 8768, the pages under their names (`/board/`, `/lab/`, `/art/`,
+  `/pieces/`, `/maps/`, `/world/`, `/instances/`, `/concepts/`), a list of them at the root. A user service
+  (`saneui-web-pages`, written by `saneui start webpages`) that starts with the computer and comes back when it stops;
+  `saneui stop webpages` stops it until it is started again. The seven ports and five servers are gone.
+- **A page is one line in `PAGES`:** folders (the first with the file answers), or a tool with `web(request)`, read again
+  when its file changed, so a tool's new code needs no restart; an error stays in its page. The server puts the ☰ menu
+  into every HTML page; the tools' pages lost their own tag and use relative links.
+- **Only this computer's pages may ask:** now the server is always there, a request by another host name or from another
+  site's page is refused (it could reach the board and the lab through the browser).
+- **The tools:** the board's and the lab's own servers became `web()`; `saneui show...` opens the page in the browser. The
+  world map and the maps compared serve their page from its own folder, the build only makes the data; the maps'
+  pictures are made by `saneui makemapcompare` (showing them no longer builds). The lab's game stops after 15 minutes
+  without a page, its saved settings kept, and starts again at the next call. `dev/tools/web-pages run --port N` (or
+  `ui-lab serve --port N`) is a session's own copy, for a lab of its own.
+
 ### Speed Leveling: simple group rolls, professions as steps of the guide; junk tried again; rewards' tooltips (Saneroki, 2026-10-30)
 Saneroki: roll Need on an upgrade, else Greed, nobody Passes, off Speedleveling nothing automatic, no talk between the
 accounts; gathering for the next zone as a normal step of the guide at the right time, one per profession, crafts too;

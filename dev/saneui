@@ -58,7 +58,7 @@ GROUPS = {
         "makejournalart": (["dev/tools/journal-art"], "the journal look's textures for Core (Art/Journal)", None),
         "makegameart": (["dev/tools/game-art", "make"], "the game's own interface art cut out, numbered, on one page",
                         None),
-        "showgameart": (["dev/tools/web-pages", "folder", "8776", "assets/generated/game-art"],
+        "showgameart": (["dev/tools/web-pages", "open", "art"],
                         "the numbered game art in the browser, to mark what to use", "game art, numbered"),
         "makecategoryart": (["dev/tools/category-art"], "the bags' category icons, pencil, from the chosen drawings", None),
         "measureart": (["dev/tools/art-measure"], "how sharp the game draws a picture", None),
@@ -75,15 +75,16 @@ GROUPS = {
                           None),
         "makeworldmap": (["dev/tools/world-map", "build"], "the world map offline: every layer, the game's and ours, built",
                          None),
-        "showworldmap": (["dev/tools/world-map", "serve"], "the world map offline in the browser, every layer stacked",
+        "showworldmap": (["dev/tools/web-pages", "open", "world"], "the world map offline in the browser, every layer stacked",
                          "world map offline, layered"),
-        "showmaps": (["dev/tools/map-compare", "serve"], "the finished maps in the browser, each level against the "
+        "makemapcompare": (["dev/tools/map-compare", "build"], "the finished maps' pictures for their page", None),
+        "showmaps": (["dev/tools/web-pages", "open", "maps"], "the finished maps in the browser, each level against the "
                      "game's, overlaid or side by side", "finished maps compared"),
-        "showinstancemaps": (["dev/tools/world-map", "serve", "--only", "instances"],
-                             "the instance maps offline in the browser, on a port of their own", None),
-        "webpages": (["dev/tools/web-pages"], "every tool's web page, each on its own port: which are up, run them all",
-                     "tools' web pages and ports"),
-        "showuilab": (["dev/tools/ui-lab", "serve"], "the interface lab: Sane UI's Lua drawn in the browser with a fake "
+        "showinstancemaps": (["dev/tools/web-pages", "open", "instances"],
+                             "the instance maps offline in the browser", None),
+        "webpages": (["dev/tools/web-pages"], "every tool's web page, one server on one port: which are ready",
+                     "tools' web pages"),
+        "showuilab": (["dev/tools/web-pages", "open", "lab"], "the interface lab: Sane UI's Lua drawn in the browser with a fake "
                       "server", "interface lab: Lua in browser"),
         "checkuilab": (["dev/tools/ui-lab", "check"], "a scene of the interface lab run without the page, its log", None),
     },
@@ -112,7 +113,7 @@ GROUPS = {
     "Plans": {
         "board": (["dev/tools/board"], "the task board: every todo as a card, backlog to finalized (list add move done)",
                   "task board: list add move"),
-        "showboard": (["dev/tools/board", "serve"], "the task board in the browser: drag, create, edit, prioritize",
+        "showboard": (["dev/tools/web-pages", "open", "board"], "the task board in the browser: drag, create, edit, prioritize",
                       "task board in the browser"),
     },
 }

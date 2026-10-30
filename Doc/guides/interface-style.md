@@ -29,7 +29,7 @@ the picks; where this section and the rest disagree, this section wins. Saneroki
   - the character screen's top bar: the look of tabs on a full screen and of the buttons on its top bar
     (`glues-characterselect-tophud-*`).
 
-**The parts are picked from the numbered catalogue** (`saneui makegameart`, `saneui showgameart`; 127.0.0.1 port 8776,
+**The parts are picked from the numbered catalogue** (`saneui makegameart`, `saneui showgameart`; `/art/` on 127.0.0.1 port 8768,
 `overview.pdf` beside it). Each pick is written here with its number and its atlas, the moment it is taken. A number
 stays with its piece from round to round.
 

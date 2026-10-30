@@ -19,7 +19,8 @@ Usage:
   dev/tools/board start|review|done ID                       the same as move ID doing|review|done
   dev/tools/board delete ID
   dev/tools/board import FILE                                the cards of a Markdown list (## priority, ### area, - [ ])
-  dev/tools/board serve [--port 8775]                        the page, 127.0.0.1 port 8775 (saneui showboard)
+
+The page is one of dev/tools/web-pages' (saneui showboard): web() below.
 
 --by NAME says who made a change (default: Claude on the command line, Saneroki on the page).
 """
@@ -29,17 +30,15 @@ import fcntl
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PAGE = ROOT / "dev" / "tools" / "board-page" / "index.html"
 PRIVATE = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "saneui" / "private.json"
-PORT = 8775
+JSON = "application/json; charset=utf-8"
 COLUMNS = [   # key, name, what it means
     ("backlog", "Backlog", "everything not yet planned"),
     ("next", "Next up", "chosen, to be started"),
@@ -223,63 +222,34 @@ def parse_markdown(text):
     return cards
 
 
-def web_nav():
-    """The pages' menu with every tool page in it (dev/tools/web-pages nav), sent as /web-nav.js."""
-    return subprocess.run([str(ROOT / "dev" / "tools" / "web-pages"), "nav"], capture_output=True).stdout
-
-
 # --- The page --------------------------------------------------------------------------------------
 
-class Handler(BaseHTTPRequestHandler):
-    path_board = None
+def web(request):
+    """The page and its calls (dev/tools/web-pages serves them)."""
+    path = board_file()
 
-    def log_message(self, *args):
-        pass
-
-    def send(self, code, body, kind="application/json"):
-        data = body if isinstance(body, bytes) else json.dumps(body, ensure_ascii=False).encode()
-        self.send_response(code)
-        self.send_header("Content-Type", kind + "; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    def state(self):
-        return {"board": read(self.path_board), "columns": [{"key": k, "name": n, "means": m} for k, n, m in COLUMNS],
+    def state():
+        return {"board": read(path), "columns": [{"key": k, "name": n, "means": m} for k, n, m in COLUMNS],
                 "priorities": PRIORITIES}
 
-    def do_GET(self):
-        if self.path in ("/", "/index.html"):
-            return self.send(200, PAGE.read_bytes(), "text/html")
-        if self.path == "/web-nav.js":
-            return self.send(200, web_nav(), "text/javascript")
-        if self.path.startswith("/api/board"):
-            after = re.search(r"after=(\d+)", self.path)
-            board = read(self.path_board)
-            if after and board["version"] == int(after.group(1)):
-                return self.send(200, {"same": True})
-            return self.send(200, self.state())
-        self.send(404, {"error": "not found"})
-
-    def do_POST(self):
-        if self.path != "/api/op":
-            return self.send(404, {"error": "not found"})
+    if request.method == "POST":
+        if request.path != "/api/op":
+            return 404, JSON, {"error": "not found"}
         try:
-            op = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-            with changing(self.path_board) as board:
+            op = request.json()
+            with changing(path) as board:
                 apply(board, op, op.get("by") or "Saneroki")
         except (KeyError, ValueError, TypeError) as error:
-            return self.send(400, {"error": str(error).strip("'\"")})
-        self.send(200, self.state())
-
-
-def serve(port):
-    Handler.path_board = board_file()
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"The task board: 127.0.0.1 port {port} ({Handler.path_board})", flush=True)
-    with contextlib.suppress(KeyboardInterrupt):
-        server.serve_forever()
+            return 400, JSON, {"error": str(error).strip("'\"")}
+        return 200, JSON, state()
+    if request.path in ("/", "/index.html"):
+        return 200, "text/html; charset=utf-8", PAGE.read_bytes()
+    if request.path == "/api/board":
+        after = request.query.get("after")
+        if after and read(path)["version"] == int(after[0]):
+            return 200, JSON, {"same": True}
+        return 200, JSON, state()
+    return 404, JSON, {"error": "not found"}
 
 
 # --- The commands ----------------------------------------------------------------------------------
@@ -313,9 +283,8 @@ def main(argv):
     for verb in ("start", "review", "done", "delete"):
         sub.add_parser(verb).add_argument("id")
     sub.add_parser("import").add_argument("file")
-    sub.add_parser("serve").add_argument("--port", type=int, default=PORT)
     args = parser.parse_args(argv)
-    path = board_file() if args.cmd != "serve" else None
+    path = board_file()
 
     try:
         if args.cmd in (None, "list"):
@@ -339,8 +308,6 @@ def main(argv):
             print()
             for when, by, text in card.get("log", []):
                 print(f"  {when}  {by}: {text}")
-        elif args.cmd == "serve":
-            serve(args.port)
         elif args.cmd == "import":
             cards = parse_markdown(Path(args.file).read_text())
             with changing(path) as board:

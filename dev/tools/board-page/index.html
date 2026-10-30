@@ -168,7 +168,7 @@ function toast(text) { const t = $("toast"); t.textContent = text; t.classList.a
   t.timer = setTimeout(() => t.classList.remove("show"), 2200); }
 
 async function send(op) {
-  const res = await fetch("/api/op", { method: "POST", headers: { "Content-Type": "application/json" },
+  const res = await fetch("api/op", { method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...op, by: "Saneroki" }) });
   const body = await res.json();
   if (!res.ok) { toast(body.error || "Not saved"); return false; }
@@ -177,7 +177,7 @@ async function send(op) {
 
 async function poll() {
   try {
-    const res = await fetch("/api/board?after=" + version);
+    const res = await fetch("api/board?after=" + version);
     const body = await res.json();
     if (!body.same) take(body);
     $("status").textContent = "synced"; $("status").classList.remove("off");
@@ -460,6 +460,5 @@ document.addEventListener("keydown", (ev) => {
 });
 poll();
 </script>
-<script src="/web-nav.js" defer></script>
 </body>
 </html>

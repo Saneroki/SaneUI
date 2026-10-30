@@ -139,6 +139,35 @@ expect(not errors(told), f"Core's options open: {[e['text'] for e in errors(told
 expect(result('SettingsPanel:IsShown()') == "true", "the game's settings panel shows Core's options")
 host.stop(keep=False)
 
+# The server runs all the time: a game no page asks for goes (web(), watch()).
+class Quiet:
+    def kill(self):
+        Quiet.killed = True
+
+
+class Stop(Exception):
+    pass
+
+
+rests = []
+
+
+def rest(_):
+    rests.append(1)
+    if len(rests) > 1:
+        raise Stop
+
+
+lab.HOST.proc, lab.HOST.asked, sleep = Quiet(), 0, lab.time.sleep
+lab.time.sleep = rest
+try:
+    lab.watch()
+except Stop:
+    pass
+lab.time.sleep = sleep
+if lab.HOST.proc is not None or not getattr(Quiet, "killed", False):
+    failed.append("a game no page asks for stops")
+
 if failed:
     print("uilab.py failed:\n  " + "\n  ".join(failed))
     sys.exit(1)

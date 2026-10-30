@@ -1,7 +1,6 @@
 // The tools' pages menu (dev/tools/web-pages): a ☰ button on every tool page of Sane UI that opens the list of
-// them all, each on its port, with a dot for whether it is up, so one page leads to the others. Every tool's
-// server sends this file as /web-nav.js with the list filled in (dev/tools/web-pages nav); the pages load it
-// with <script src="/web-nav.js" defer>, the folders' pages get it put in by web-pages' own server.
+// them all, with a dot for whether a page is ready, so one page leads to the others. The server sends this file as
+// /web-nav.js with the list filled in and puts it into every HTML page it sends.
 // It also asks the browser for its dark controls and scrollbars, as the pages are dark.
 (() => {
   "use strict";
@@ -10,8 +9,7 @@
   window.__saneNav = true;
   document.documentElement.style.colorScheme = "dark";
 
-  const host = location.hostname || "127.0.0.1";
-  const here = Number(location.port);
+  const here = location.pathname.split("/")[1];
   const box = document.createElement("div");
   box.id = "sane-web-nav";
   const root = box.attachShadow({ mode: "open" });
@@ -38,47 +36,31 @@
       text-decoration: none; }
     a:hover, a:focus-visible { background: #2e2b27; outline: none; }
     a[aria-current="page"] { background: #3a3027; color: #d9a56b; }
-    a small { margin-left: auto; color: #a39a8c; font-size: 12px; }
     i { width: 8px; height: 8px; border-radius: 50%; background: #5a544c; flex: none; }
     i.up { background: #7fb08a; } i.down { background: #6b3a33; }
     a.down { color: #8c8478; }
-    .foot { margin-top: auto; padding: 10px 16px; color: #8c8478; font-size: 12px; border-top: 1px solid #3b3732; }
   </style>
   <button class="open" title="Every tool page (Alt+M)" aria-label="Every tool page"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
   <div class="layer"><div class="scrim"></div>
     <aside class="drawer" role="dialog" aria-label="Every tool page">
       <div class="head"><b>Sane UI <span>pages</span></b><button title="Close (Esc)" aria-label="Close">×</button></div>
       <nav></nav>
-      <div class="foot">saneui start webpages runs them all</div>
     </aside></div>`;
 
   const layer = root.querySelector(".layer"), nav = root.querySelector("nav"), open = root.querySelector("button.open");
   for (const page of PAGES) {
     const a = document.createElement("a");
-    a.href = `${location.protocol}//${host}:${page.port}${page.path || "/"}`;
-    a.innerHTML = `<i></i><span></span><small>${page.port}</small>`;
+    a.href = page.href;
+    a.innerHTML = `<i class="${page.ready ? "up" : "down"}"></i><span></span>`;
     a.querySelector("span").textContent = page.name.charAt(0).toUpperCase() + page.name.slice(1);
-    if (page.port === here) a.setAttribute("aria-current", "page");
-    a.dataset.port = page.port;
+    if (page.place === here) a.setAttribute("aria-current", "page");
+    if (!page.ready) { a.classList.add("down"); a.title = "not built yet"; }
     nav.append(a);
-  }
-
-  async function probe(a) {   // up or down: any answer counts, even one the browser does not let us read
-    const stop = new AbortController(), timer = setTimeout(() => stop.abort(), 1200);
-    let up = Number(a.dataset.port) === here;
-    if (!up) {
-      try { await fetch(`${location.protocol}//${host}:${a.dataset.port}/`, { mode: "no-cors", cache: "no-store", signal: stop.signal }); up = true; }
-      catch { up = false; }
-    }
-    clearTimeout(timer);
-    a.querySelector("i").className = up ? "up" : "down";
-    a.classList.toggle("down", !up);
-    a.title = up ? "" : "not running: saneui start webpages";
   }
 
   const show = (on) => {
     layer.classList.toggle("on", on);
-    if (on) { nav.querySelectorAll("a").forEach(probe); (nav.querySelector("a[aria-current]") || nav.querySelector("a"))?.focus(); }
+    if (on) (nav.querySelector("a[aria-current]") || nav.querySelector("a"))?.focus();
   };
   open.onclick = () => show(true);
   root.querySelector(".scrim").onclick = root.querySelector(".head button").onclick = () => show(false);

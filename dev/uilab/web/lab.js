@@ -50,7 +50,7 @@ async function loop(now) {
   const t0 = performance.now();
   try {
     const events = input; input = [];
-    const r = await post("/api/frame", { dt: paused ? 0 : dt, input: events });
+    const r = await post("api/frame", { dt: paused ? 0 : dt, input: events });
     apply(r);
     $("#perf").textContent = `${Math.round(performance.now() - t0)} ms a frame · ${els.size} regions`;
     $("#status").textContent = paused ? "paused" : `running · ${(r.time || 0).toFixed(1)} s since the login`;
@@ -61,7 +61,7 @@ async function loop(now) {
 }
 
 // Drawing ------------------------------------------------------------------------------------------------------------
-const texUrl = (p) => "/tex?p=" + encodeURIComponent(p);
+const texUrl = (p) => "tex?p=" + encodeURIComponent(p);
 function rgba(hex, a) {
   const n = parseInt(hex || "ffffff", 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a == null ? 1 : a})`;
@@ -457,7 +457,7 @@ function setPeople(list) {
 $("#chatKind").onchange = () => { $("#chatChannelLabel").hidden = $("#chatKind").value !== "CHANNEL"; };
 $("#chatForm").onsubmit = async (e) => {
   e.preventDefault();
-  apply(await post("/api/server", { what: "chat", kind: $("#chatKind").value, from: $("#chatFrom").value,
+  apply(await post("api/server", { what: "chat", kind: $("#chatKind").value, from: $("#chatFrom").value,
     text: $("#chatText").value, channel: +$("#chatChannel").value }));
   $("#chatText").value = "";
 };
@@ -465,17 +465,17 @@ $("#eventForm").onsubmit = async (e) => {
   e.preventDefault();
   let args = [];
   try { args = JSON.parse($("#eventArgs").value || "[]"); } catch (err) { log({ kind: "warn", text: "the arguments are no JSON list" }); return; }
-  apply(await post("/api/server", { what: "event", name: $("#eventName").value.trim(), args }));
+  apply(await post("api/server", { what: "event", name: $("#eventName").value.trim(), args }));
 };
-$("#replay").onclick = async () => apply(await post("/api/server", { what: "replay" }));
-$("#combat").onchange = async () => apply(await post("/api/server", { what: "combat", on: $("#combat").checked }));
+$("#replay").onclick = async () => apply(await post("api/server", { what: "replay" }));
+$("#combat").onchange = async () => apply(await post("api/server", { what: "combat", on: $("#combat").checked }));
 
 // The inspector ----------------------------------------------------------------------------------------------------------------
 let inspectBusy = false;
 async function inspectAt(p) {
   if (inspectBusy) return;
   inspectBusy = true;
-  try { apply(await post("/api/inspect", p)); } finally { inspectBusy = false; }
+  try { apply(await post("api/inspect", p)); } finally { inspectBusy = false; }
 }
 function showInspect(list) {
   overlay.textContent = "";
@@ -526,7 +526,7 @@ async function runCode() {
   if (!code.trim()) return;
   history.push(code); historyAt = history.length;
   log({ kind: "note", text: "> " + code });
-  apply(await post("/api/run", { code }));
+  apply(await post("api/run", { code }));
   $("#code").value = "";
   document.querySelector('nav button[data-tab="log"]').click();
 }
@@ -540,7 +540,7 @@ $("#code").addEventListener("keydown", (e) => {
 // Header ---------------------------------------------------------------------------------------------------------------------------
 async function start(body) {
   busy = true;
-  try { apply(await post("/api/start", body)); } finally { busy = false; }
+  try { apply(await post("api/start", body)); } finally { busy = false; }
 }
 $("#scene").onchange = () => { remember(); start({ scene: $("#scene").value }); };
 $("#world").onchange = () => { remember(); $("#worldFile").textContent = `dev/uilab/worlds/${$("#world").value}.lua`; start({ world: $("#world").value }); };
@@ -549,18 +549,18 @@ $("#screen").onchange = async () => {
   screen.pw = pw; screen.ph = ph;
   layout(); remember();
   clearStage();
-  apply(await post("/api/screen", { pw, ph, scale: screen.scale }));
+  apply(await post("api/screen", { pw, ph, scale: screen.scale }));
 };
 $("#scale").oninput = () => { $("#scaleOut").textContent = (+$("#scale").value).toFixed(2); };
 $("#scale").onchange = async () => {
   screen.scale = +$("#scale").value; remember();
   clearStage();
-  apply(await post("/api/screen", { pw: screen.pw, ph: screen.ph, scale: screen.scale }));
+  apply(await post("api/screen", { pw: screen.pw, ph: screen.ph, scale: screen.scale }));
 };
 $("#backdrop").onchange = backdrop;
 $("#zoom").onchange = () => { layout(); remember(); };
 $("#reload").onclick = () => start({});
-$("#fresh").onclick = async () => { busy = true; try { apply(await post("/api/reset", {})); } finally { busy = false; } };
+$("#fresh").onclick = async () => { busy = true; try { apply(await post("api/reset", {})); } finally { busy = false; } };
 $("#pause").onclick = () => { paused = !paused; $("#pause").classList.toggle("on", paused); };
 document.addEventListener("keydown", (e) => {
   if (document.activeElement === stage || ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
@@ -579,7 +579,7 @@ async function init() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem("lab.view") || "{}"); } catch (e) {}
   try { $("#backdrop").value = localStorage.getItem("lab.backdrop") || "world"; } catch (e) {}
-  const info = await (await fetch("/api/scenes")).json();
+  const info = await (await fetch("api/scenes")).json();
   for (const s of info.scenes) {
     const o = document.createElement("option"); o.value = s.path; o.textContent = s.name; o.title = s.about;
     $("#scene").appendChild(o);

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """The interface lab: Sane UI's Lua drawn in the browser as the game would draw it (Doc/guides/ui-lab.md).
 
-  dev/tools/ui-lab serve [--port 8774]     the lab in a browser, on 127.0.0.1 port 8774
+  saneui showuilab                         the lab in a browser (dev/tools/web-pages serves it at /lab/)
+  dev/tools/ui-lab serve --port PORT       a session's own server with a lab of its own (web-pages run --port)
   dev/tools/ui-lab check [SCENE]           runs a scene headless for a few seconds, prints its log; exit 1 on errors
 
 The page runs the code of a scene (dev/uilab/scenes/) under Lua 5.1 in the lab's host (dev/uilab/host.lua), with the
 lab's stand-in for the game's API and a fake server (dev/uilab/worlds/), and draws what it makes; the files it
-read are watched, and a change runs it again, as /reload does. This server starts the host, answers its questions
+read are watched, and a change runs it again, as /reload does. This file starts the host, answers its questions
 (a font's widths, an item, a spell, the client's tables, an atlas) and gives the page the textures and fonts.
 
 Where the textures come from, by the path code gives them:
@@ -34,7 +35,6 @@ import sys
 import threading
 import time
 import urllib.parse
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -267,7 +267,7 @@ def font_answer(path):
                     adv[str(cp)] = round(font.getlength(chr(cp)) / 1000, 4)
                 except Exception:
                     pass
-        FONTS[key] = {"ok": True, "adv": adv, "url": "/font?p=" + urllib.parse.quote(key)}
+        FONTS[key] = {"ok": True, "adv": adv, "url": "font?p=" + urllib.parse.quote(key)}
     return FONTS[key]
 
 
@@ -387,6 +387,8 @@ class Host:
         self.saved = {}
         self.checked = 0
         self.reset = False
+        self.asked = 0
+        self.watched = False
 
     def saved_file(self):
         name = Path(self.scene or "none").stem
@@ -477,6 +479,8 @@ class Host:
 
 
 HOST = Host()
+IDLE = 900      # seconds without a page asking
+JSON = "application/json"
 
 
 def scenes():
@@ -492,107 +496,90 @@ def scenes():
     return {"scenes": out, "worlds": worlds, "scene": HOST.scene, "world": HOST.world, "screen": HOST.screen}
 
 
-class Handler(BaseHTTPRequestHandler):
-    def log_message(self, *args):
-        pass
-
-    def reply(self, body, kind="application/json", code=200, cache=False):
-        if isinstance(body, (dict, list)):
-            body = json.dumps(body).encode()
-        elif isinstance(body, str):
-            body = body.encode()
-        self.send_response(code)
-        self.send_header("Content-Type", kind)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
-        self.end_headers()
-        self.wfile.write(body)
-
-    def do_GET(self):
-        url = urllib.parse.urlparse(self.path)
-        q = urllib.parse.parse_qs(url.query)
-        if url.path in ("/", "/index.html"):
-            return self.reply((WEB / "index.html").read_bytes(), "text/html; charset=utf-8")
-        if url.path == "/web-nav.js":
-            return self.reply(web_nav(), "text/javascript; charset=utf-8")
-        if url.path in ("/lab.js", "/lab.css"):
-            kind = "text/javascript" if url.path.endswith(".js") else "text/css"
-            return self.reply((WEB / url.path[1:]).read_bytes(), kind + "; charset=utf-8")
-        if url.path == "/api/scenes":
-            return self.reply(scenes())
-        if url.path == "/tex":
-            p = q.get("p", [""])[0]
-            f = texture_file(p)
-            if not f:
-                return self.reply(b"", "image/png", 404)
-            try:
-                return self.reply(png_of(f), "image/png", cache=False)
-            except Exception as e:
-                return self.reply(str(e), "text/plain", 500)
-        if url.path == "/font":
-            p = q.get("p", [""])[0]
-            if p in FONTS or os.path.exists(p):
-                return self.reply(Path(p).read_bytes(), "font/ttf", cache=True)
-            return self.reply(b"", "font/ttf", 404)
-        if url.path == "/api/source":
-            p = (ROOT / q.get("f", [""])[0]).resolve()
-            if ROOT in p.parents and p.suffix == ".lua" and p.exists():
-                return self.reply(p.read_text(encoding="utf-8"), "text/plain; charset=utf-8")
-            return self.reply("", "text/plain", 404)
-        return self.reply(b"", "text/plain", 404)
-
-    def do_POST(self):
-        n = int(self.headers.get("Content-Length") or 0)
+def web(request):
+    """The page and its calls (dev/tools/web-pages serves them). The game behind them stops when no page has asked
+    for a while, and starts again at the next call."""
+    if HOST.scene is None:
+        first = sorted((LAB / "scenes").glob("*.lua"))
+        HOST.scene = str(first[0].relative_to(ROOT)) if first else None
+    if not HOST.watched:
+        HOST.watched = True
+        threading.Thread(target=watch, daemon=True).start()
+    HOST.asked = time.time()
+    if request.method == "POST":
         try:
-            body = json.loads(self.rfile.read(n) or b"{}")
+            body = request.json()
         except ValueError:
             body = {}
-        path = urllib.parse.urlparse(self.path).path
-        if path == "/api/start":
-            with HOST.lock:
-                r = HOST.start(scene=body.get("scene"), world=body.get("world"), screen=body.get("screen"))
-            return self.reply(r)
-        if path == "/api/frame":
-            return self.reply(HOST.call({"op": "frame", "dt": body.get("dt", 0), "input": body.get("input", [])}))
-        if path == "/api/run":
-            return self.reply(HOST.call({"op": "run", "code": body.get("code", "")}))
-        if path == "/api/server":
-            return self.reply(HOST.call({"op": "server", **body}))
-        if path == "/api/inspect":
-            return self.reply(HOST.call({"op": "inspect", "x": body.get("x", 0), "y": body.get("y", 0)}))
-        if path == "/api/screen":
-            HOST.screen.update(body)
-            return self.reply(HOST.call({"op": "screen", **HOST.screen}))
-        if path == "/api/redraw":
-            return self.reply(HOST.call({"op": "redraw"}))
-        if path == "/api/reset":
-            with HOST.lock:
-                HOST.saved = {}
-                try:
-                    HOST.saved_file().unlink()
-                except OSError:
-                    pass
-                HOST.stop(keep=False)
-                r = HOST.start()
-            return self.reply(r)
-        return self.reply({"error": "unknown"}, code=404)
+        return call(request.path, body)
+    path, q = request.path, request.query
+    if path in ("/", "/index.html"):
+        return 200, "text/html; charset=utf-8", (WEB / "index.html").read_bytes()
+    if path in ("/lab.js", "/lab.css"):
+        kind = "text/javascript" if path.endswith(".js") else "text/css"
+        return 200, kind + "; charset=utf-8", (WEB / path[1:]).read_bytes()
+    if path == "/api/scenes":
+        return 200, JSON, scenes()
+    if path == "/tex":
+        f = texture_file(q.get("p", [""])[0])
+        if not f:
+            return 404, "image/png", b""
+        try:
+            return 200, "image/png", png_of(f)
+        except Exception as e:
+            return 500, "text/plain", str(e)
+    if path == "/font":
+        p = q.get("p", [""])[0]
+        if p in FONTS or os.path.exists(p):
+            return 200, "font/ttf", Path(p).read_bytes()
+        return 404, "font/ttf", b""
+    if path == "/api/source":
+        p = (ROOT / q.get("f", [""])[0]).resolve()
+        if ROOT in p.parents and p.suffix == ".lua" and p.exists():
+            return 200, "text/plain; charset=utf-8", p.read_text(encoding="utf-8")
+        return 404, "text/plain", ""
+    return 404, "text/plain", b""
 
 
-def web_nav():
-    """The pages' menu with every tool page in it (dev/tools/web-pages nav), sent as /web-nav.js."""
-    return subprocess.run([str(ROOT / "dev" / "tools" / "web-pages"), "nav"], capture_output=True).stdout
+def call(path, body):
+    if path == "/api/start":
+        with HOST.lock:
+            return 200, JSON, HOST.start(scene=body.get("scene"), world=body.get("world"), screen=body.get("screen"))
+    if path == "/api/frame":
+        return 200, JSON, HOST.call({"op": "frame", "dt": body.get("dt", 0), "input": body.get("input", [])})
+    if path == "/api/run":
+        return 200, JSON, HOST.call({"op": "run", "code": body.get("code", "")})
+    if path == "/api/server":
+        return 200, JSON, HOST.call({"op": "server", **body})
+    if path == "/api/inspect":
+        return 200, JSON, HOST.call({"op": "inspect", "x": body.get("x", 0), "y": body.get("y", 0)})
+    if path == "/api/screen":
+        HOST.screen.update(body)
+        return 200, JSON, HOST.call({"op": "screen", **HOST.screen})
+    if path == "/api/redraw":
+        return 200, JSON, HOST.call({"op": "redraw"})
+    if path == "/api/reset":
+        with HOST.lock:
+            HOST.saved = {}
+            try:
+                HOST.saved_file().unlink()
+            except OSError:
+                pass
+            HOST.stop(keep=False)
+            return 200, JSON, HOST.start()
+    return 404, JSON, {"error": "unknown"}
 
 
-def serve(port):
-    first = sorted((LAB / "scenes").glob("*.lua"))
-    HOST.scene = str(first[0].relative_to(ROOT)) if first else None
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"The interface lab on 127.0.0.1 port {port}, in a browser (Ctrl+C stops it)")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
+def watch():
+    """The server runs all the time: a game no page asks for goes, its saved settings kept."""
+    while True:
+        time.sleep(60)
+        if HOST.proc and time.time() - HOST.asked > IDLE:
+            stop()
+
+
+def stop():
+    with HOST.lock:
         HOST.stop()
 
 
@@ -628,14 +615,17 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd")
     s = sub.add_parser("serve")
-    s.add_argument("--port", type=int, default=8774)
+    s.add_argument("--port", type=int, required=True)
     c = sub.add_parser("check")
     c.add_argument("scene", nargs="?")
     c.add_argument("--seconds", type=float, default=3)
     a = ap.parse_args()
     if a.cmd == "check":
         sys.exit(check(a.scene, a.seconds))
-    serve(getattr(a, "port", 8774))
+    if a.cmd != "serve":
+        ap.exit(2, ap.format_help())
+    pages = str(ROOT / "dev" / "tools" / "web-pages")
+    os.execv(pages, [pages, "run", "--port", str(a.port)])
 
 
 if __name__ == "__main__":
