@@ -22,9 +22,10 @@ local _, ns = ...
 --  would make the character better: Core.Upgrade; "empty", "better" or nil),
 --  uncollected (a look the character could collect and has not).
 --
---  The rules (the options Taken at once, every one off at first): Everything,
---  else a kind (coins, currencies, quest items, trade goods, gear, consumables,
---  junk). Over them the player's own word on an item (options.kept[id]: true
+--  The rules (the options Taken at once; coins, currencies, quest items and
+--  junk on at first, each its own switch, in every profile): Everything, else a
+--  kind (coins, currencies, quest items, trade goods, gear, consumables, junk).
+--  Over them the player's own word on an item (options.kept[id]: true
 --  taken at once, false never). Never a thing locked to a roll. Never by a kind
 --  one that binds when picked up (the game asks first), a quest's excepted; by
 --  Everything it is, and the game asks. Over everything the switch Always show

@@ -81,6 +81,8 @@ function ns.Open()
     Lab.Fire("LOOT_CLOSED")
     wipe(gone)
     ns.options.atMouse = false -- placed here, not at the lab's mouse
+    -- every line on show: what is taken at once at first would not stand in the window
+    ns.options.takeCoins, ns.options.takeQuest, ns.options.takeJunk = false, false, false
     ns.options.kept[2589] = nil
     Lab.Fire("LOOT_READY", false)
     Lab.Fire("LOOT_OPENED", false, false)

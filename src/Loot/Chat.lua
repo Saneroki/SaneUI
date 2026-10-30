@@ -12,7 +12,9 @@ local _, ns = ...
 --                           -- "disenchant", "transmog", "pass", "won"), the link
 --      Chat.Money(text)     -- the copper in a line about money you looted
 --      Chat.Currency(text)  -- a currency's link and how many, received
+--  A line the game hides from addons (a secret value) reads as nothing.
 -------------------------------------------------------------------------------
+local Plain = SaneUI.Core.Plain
 local Chat = {}
 ns.Chat = Chat
 
@@ -68,6 +70,7 @@ local function Patterns(list)
 end
 
 function Chat.Received(text)
+    text = Plain(text)
     if type(text) ~= "string" then return nil end
     for _, p in ipairs(Patterns(RECEIVED)) do
         local a, b, c = text:match(p.pattern)
@@ -82,6 +85,7 @@ end
 
 -- Returns found (true), who, the choice, the link: who is nil for you.
 function Chat.Rolled(text)
+    text = Plain(text)
     if type(text) ~= "string" then return nil end
     for _, p in ipairs(Patterns(ROLLED)) do
         local a, b = text:match(p.pattern)
@@ -94,6 +98,7 @@ function Chat.Rolled(text)
 end
 
 function Chat.Money(text)
+    text = Plain(text)
     if type(text) ~= "string" then return nil end
     for _, p in ipairs(Patterns(MONEY)) do
         local amount = text:match(p.pattern)
@@ -112,6 +117,7 @@ function Chat.Money(text)
 end
 
 function Chat.Currency(text)
+    text = Plain(text)
     if type(text) ~= "string" then return nil end
     for _, p in ipairs(Patterns(CURRENCY)) do
         local link, count = text:match(p.pattern)

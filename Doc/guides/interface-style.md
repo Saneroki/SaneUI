@@ -310,18 +310,19 @@ the colours driven by the item"; no border on the picture, its corners the row's
 of the name):
 
 - **No window round it:** a transparent background, no paper, frame or title; the lines stand on the world, and at
-  the foot two buttons, *Link* and *Close* (the word spelled out), dark bars of the lines' make so they read as
-  buttons, their words light, gold under the mouse.
+  the foot two buttons, *Link* and *Close* (the word spelled out): only their words, no border and no background
+  (Saneroki, 2026-10-30: "Just have the off white text"), off white (238, 229, 208), gold under the mouse.
 - **A line a thing, a bar as the nameplates':** the game's shaded health fill (its raid frames') in the thing's
   quality colour, a quest's things in the game's gold; round at its corners by a quarter of its height; a border of
   one screen pixel, nearly black, grey under the mouse (as a nameplate's on your target). At its left end, inside
   the border and as tall as the bar, the picture with no border of its own, round at its corners with the bar's own
   radius so the two fit together, how many on it; then the game's green arrow where it is an upgrade, in front of
-  the name in white in the game's outlined nameplate font; under the name, smaller, short tags (Saneroki: abbreviations, not whole words): **BoP** in the game's red,
-  **BoE** in its orange, **Uncollected** in its light blue (its own colour for an appearance not collected), then its
-  kind, and at the right what a vendor
-  pays for all of it in the game's coins; at the top right a small **A**, a dark bar of the same make, its letter
-  gold while the thing is on the player's list.
+  the name in white in the game's outlined nameplate font; at the right a small **A**, a dark bar of the same make,
+  its letter gold while the thing is on the player's list.
+- **No line under the name** (Saneroki, 2026-10-30): the name stands alone in its bar. The switch *A line under each
+  name*, off at first, brings it back: smaller, short tags (Saneroki: abbreviations, not whole words): **BoP** in the
+  game's red, **BoE** in its orange, **Uncollected** in its light blue (its own colour for an appearance not
+  collected), then its kind, and at the right what a vendor pays for all of it in the game's coins.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
 
 ### Unit frames and action bars

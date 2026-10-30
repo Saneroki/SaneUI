@@ -1,10 +1,11 @@
 -- Runs the Loot module against the stand-in client (wowstub.lua): the game's loot window and roll frames kept out
 -- of the way and given back, the open loot read into lines, what the rules take at once (and what never), the window
--- with its lines (borders by quality, a quest's gold), clicks (take, link, the loot list), Link and the X, the lines
--- closing up under the mouse, a slot cleared and changed, the game's Auto Loot,
+-- with its lines (bars by quality, a quest's gold), clicks (take, link, the loot list), Link and Close as bare words,
+-- the lines closing up under the mouse, a slot cleared and changed, the game's Auto Loot,
 -- full bags (a thing the rules could not take shows again; the page that makes room, the cheapest first), the master
 -- looter's menu, the game's sentences read back, the roll cards (choices offered, a choice made, who chose what,
--- the time line), the feed (merged lines, the group's by quality, money), Retail's path, and standing down.
+-- the time line), the feed (merged lines, the group's by quality, money, what was taken at once, a big pile, a hidden
+-- line), Retail's path, and standing down.
 -- The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/loot.lua
 
@@ -220,13 +221,14 @@ check(LootFrame:IsEventRegistered("LOOT_CLOSED"), "what else it hears it still h
 check(GroupLootContainer:GetParent() ~= UIParent and not GroupLootContainer:GetParent():IsShown(),
     "the game's roll frames are held in a hidden frame")
 local options = ns.options
-check(options.window and options.atMouse and options.notes and options.rolls and options.feed, "the switches are on at first")
-local nothing = true
-for _, key in ipairs({ "takeAll", "takeCoins", "takeCurrency", "takeQuest", "takeTrade", "takeGear", "takeConsumable",
-                       "takeJunk" }) do
-    if options[key] then nothing = false end
+check(options.window and options.atMouse and options.rolls and options.feed and options.feedMoney, "the switches are on at first")
+check(options.notes == false, "no line under a name at first")
+for _, key in ipairs({ "takeCoins", "takeCurrency", "takeQuest", "takeJunk" }) do
+    check(options[key] == true, key .. " is on at first, Loot's own default")
 end
-check(nothing, "nothing is taken at once at first")
+for _, key in ipairs({ "takeAll", "takeTrade", "takeGear", "takeConsumable" }) do
+    check(options[key] == false, key .. " is off at first")
+end
 check(C_CVar.GetCVar("autoLootDefault") == "0" and options.lent.autoLootDefault.was == "1",
     "the game's Auto Loot lent off while ours is on, what it was kept")
 -- Sync writes the profile's game settings a moment after the login: its Auto Loot on must not undo the lend.
@@ -332,7 +334,17 @@ end
 
 loot = { Coins(42), Slot(CLOTH, { count = 2 }), Slot(ROBE), Slot(RING), Slot(TUSK, { questItem = true }) }
 Open()
-check(#taken == 0 and #W.frames > 0, "nothing taken at once at first")
+check(#taken == 2 and taken[1] == 1 and taken[2] == 5, "at first the coins and the quest item at once, nothing lent")
+check(not options.takeAll, "by their own switches, Everything off")
+check(Shown() and #Rows() == 3, "the rest waits in the window")
+check(Rows()[2].note:GetText() == "" and Rows()[2].worth:GetText() == "", "no line under a name at first")
+check(Rows()[2].name._points[1][1] == "LEFT", "the name alone in the middle of its line")
+Window.Close()
+-- The switches each stand alone: off, nothing is taken.
+options.takeCoins, options.takeCurrency, options.takeQuest, options.takeJunk = false, false, false, false
+options.notes = true
+Open()
+check(#taken == 0 and #W.frames > 0, "with every switch off nothing is taken")
 options.takeCoins, options.takeQuest = true, true
 Open()
 check(#taken == 2 and taken[1] == 1 and taken[2] == 5, "with their switches: the coins and the quest item at once")
@@ -414,7 +426,16 @@ end
 local linkWord, closeWord = Word(ns.TEXT.link), Word(ns.TEXT.close)
 check(linkWord and linkWord:IsShown() and closeWord and closeWord:IsShown(), "at the foot: Link and Close")
 check(linkWord._points[1][1] == "BOTTOMLEFT" and closeWord._points[1][1] == "BOTTOMRIGHT", "side by side, at the bottom")
-check(linkWord.bar and closeWord.bar and linkWord.bar.colour[1] < 0.3, "each a dark bar of the lines' make")
+check(linkWord.bar == nil and closeWord.bar == nil, "no border and no background: the word alone")
+local function Off(word)
+    local r, g, b = word.text:GetTextColor()
+    return math.abs(r - 238 / 255) < 0.01 and math.abs(g - 229 / 255) < 0.01 and math.abs(b - 208 / 255) < 0.01
+end
+check(Off(linkWord) and Off(closeWord), "their words off white")
+linkWord._scripts.OnEnter(linkWord)
+check(not Off(linkWord), "gold under the mouse")
+linkWord._scripts.OnLeave(linkWord)
+check(Off(linkWord), "off white again")
 local opened, inserted
 ChatFrameUtil.OpenChat = function(text) opened = text end
 ChatFrameUtil.GetActiveWindow = function() return nil end
@@ -430,6 +451,18 @@ ChatFrameUtil.GetActiveWindow = function() return nil end
 loot[3].locked = true
 W.Fire("LOOT_SLOT_CHANGED", 3)
 check(Rows()[1]:GetAlpha() < 1 and Rows()[1].note:GetText() == ns.TEXT.locked, "a locked thing is faint, and says so")
+options.notes = false
+Window.Fill()
+check(Rows()[1]:GetAlpha() < 1 and Rows()[1].note:GetText() == "", "the line under its name off: faint, no line")
+local said
+local addLine = GameTooltip.AddLine
+GameTooltip.AddLine = function(_, text) said = said or text == ns.TEXT.locked end
+Rows()[1]._scripts.OnEnter(Rows()[1])
+GameTooltip.AddLine = addLine
+Rows()[1]._scripts.OnLeave(Rows()[1])
+check(said, "and its tooltip says so")
+options.notes = true
+Window.Fill()
 taken = {}
 Rows()[1]._scripts.OnClick(Rows()[1], "LeftButton")
 check(#taken == 0, "and is not taken")
@@ -723,6 +756,72 @@ check(#Feed() == 4 and Feed()[4].text:GetText():find("Honor x12", 1, true), "a c
 W.clock = W.clock + 10
 Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 0.1)
 check(#Feed() == 0, "they fade and go")
+
+-- What is taken at once is seen all the same: Loot's own defaults, nothing lent, and the feed says what came.
+options.takeCoins, options.takeCurrency, options.takeQuest, options.takeJunk = true, true, true, true
+local pile = { Coins(42), Slot(SCRAP), Slot(TUSK, { questItem = true }), Slot(ROBE),
+               { kind = 3, icon = 500, name = "Honor", count = 12, currency = 1792 } }
+loot = pile
+Open()
+check(#taken == 4 and taken[1] == 1 and taken[2] == 2 and taken[3] == 3 and taken[4] == 5,
+    "coins, junk, the quest item and the currency at once by their own switches")
+check(Shown() and #Rows() == 1 and Rows()[1].line.link == ROBE, "the rest waits in the window")
+W.Fire("CHAT_MSG_MONEY", "You loot 42 Copper")
+W.Fire("CHAT_MSG_LOOT", "You receive loot: " .. SCRAP .. ".")
+W.Fire("CHAT_MSG_LOOT", "You receive loot: " .. TUSK .. ".")
+W.Fire("CHAT_MSG_CURRENCY", "You receive currency: |Hcurrency:1792|h[Honor]|h x12.")
+check(#Feed() == 4 and Feed()[1].text:GetText() == "42c" and Feed()[2].text:GetText():find("Rabbit's Foot", 1, true)
+      and Feed()[3].text:GetText():find("Boar Tusk", 1, true) and Feed()[4].text:GetText():find("Honor x12", 1, true),
+    "and every one of them rises in the feed")
+Window.Close()
+-- Speed Leveling's Take all loot is lent over them; given back, they stand as they stood.
+loot = { Coins(42), Slot(SCRAP), Slot(ROBE) }
+Core.Set(ns.name, "takeAll", true)
+Core.Set(ns.name, "showUpgrades", false)
+Open()
+check(#taken == 3 and not Shown(), "Everything lent: all of it at once")
+Core.Set(ns.name, "takeAll", false)
+Core.Set(ns.name, "showUpgrades", true)
+Open()
+check(#taken == 2 and Shown() and options.takeCoins and options.takeCurrency and options.takeQuest and options.takeJunk,
+    "given back, the switches of kinds still decide")
+Window.Close()
+W.clock = W.clock + 10
+Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 0.1)
+
+-- A big pile: nothing goes unseen. What comes while the lines are full waits and rises as they go.
+local heaps = {}
+for index = 1, 10 do
+    heaps[index] = Item(20000 + index, "Heap " .. index, 1)
+    W.Fire("CHAT_MSG_LOOT", "You receive loot: " .. heaps[index] .. ".")
+end
+check(#Feed() == 8 and Feed()[1].text:GetText():find("Heap 1", 1, true) and Feed()[8].text:GetText():find("Heap 8", 1, true),
+    "eight lines at a time, the first of the pile still there")
+W.Fire("CHAT_MSG_LOOT", "You receive loot: " .. heaps[3] .. ".")
+check(#Feed() == 8 and Feed()[3].text:GetText():find("Heap 3 x2", 1, true), "the same thing still adds to its line")
+W.clock = W.clock + 10
+Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 0.1)
+check(#Feed() == 2 and Feed()[1].text:GetText():find("Heap 9", 1, true) and Feed()[2].text:GetText():find("Heap 10", 1, true),
+    "the two that waited rise as the others go")
+W.clock = W.clock + 10
+Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 0.1)
+check(#Feed() == 0, "and go in their turn")
+
+-- The game does not name the currency: the name in its line.
+local currencyInfo = C_CurrencyInfo.GetCurrencyInfoFromLink
+C_CurrencyInfo.GetCurrencyInfoFromLink = function() return nil end
+W.Fire("CHAT_MSG_CURRENCY", "You receive currency: |Hcurrency:9|h[Marks]|h x2.")
+C_CurrencyInfo.GetCurrencyInfoFromLink = currencyInfo
+check(#Feed() == 1 and Feed()[1].text:GetText() == "Marks x2", "a currency the game does not describe still rises")
+W.clock = W.clock + 10
+Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 0.1)
+
+-- A line the game hides from addons (a secret value) is passed over: nothing breaks, nothing stands down.
+local hidden = "You receive loot: " .. ROBE .. "."
+issecretvalue = function(value) return value == hidden end
+W.Fire("CHAT_MSG_LOOT", hidden)
+issecretvalue = nil
+check(#Feed() == 0 and not ns.off, "a hidden line is passed over")
 
 -------------------------------------------------------------------------------
 --  Edit Mode and /sane loot

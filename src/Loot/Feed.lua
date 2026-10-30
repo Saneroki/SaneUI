@@ -7,11 +7,15 @@ local _, ns = ...
 --  with a thin dark outline (Kalam Bold, as Sane UI's combat text), how many
 --  ("x3") and, faint, how many you carry now. A new line comes in at the foot
 --  and pushes the older up; each stands a few seconds and fades. The same thing
---  again while its line stands adds to that line.
+--  again while its line stands adds to that line. What comes while the lines
+--  are full waits its turn: nothing of a big pile goes unseen.
 --
 --  Read from the game's own lines (Chat.lua): loot, items pushed into your bags,
 --  what you make, currencies; money you loot (switch Coins); what the others of
 --  your group receive, named, from a quality on (switches Your group's, From).
+--  The game says them of all you receive, so what is taken at once, by the
+--  rules, by Shift or for a roll won, rises as well: on every profile the feed
+--  is how you know what you looted.
 --
 --      Feed.Start(), Feed.Try()   -- listening; lines to look at (/sane loot try)
 -------------------------------------------------------------------------------
@@ -29,6 +33,7 @@ local COIN = "Interface\\Icons\\INV_Misc_Coin_01"
 
 local holder, placed
 local lines = {}  -- shown, the oldest first
+local waiting = {} -- what came while the lines were full, the oldest first
 local spare = {}
 
 local function Item(link)
@@ -99,9 +104,8 @@ local function Add(entry)
         end
     end
     if #lines >= MOST then
-        local gone = table.remove(lines, 1)
-        gone:Hide()
-        spare[#spare + 1] = gone
+        waiting[#waiting + 1] = entry
+        return
     end
     local line = table.remove(spare) or NewLine()
     line.entry, line.born = entry, now
@@ -128,6 +132,7 @@ local function Tick()
             line:SetAlpha(math.max(0, 1 - (age - HOLD) / FADE))
         end
     end
+    while #waiting > 0 and #lines < MOST do Add(table.remove(waiting, 1)) end
     if gone then
         Stack()
         if #lines == 0 then holder:Hide() end
@@ -162,8 +167,9 @@ local function Currency(text)
     if not link then return end
     local currency = rawget(_G, "C_CurrencyInfo")
     local info = currency and currency.GetCurrencyInfoFromLink and Plain(currency.GetCurrencyInfoFromLink(link))
-    if type(info) ~= "table" then return end
-    Add({ key = link, name = Plain(info.name) or link, icon = Plain(info.iconFileID), quality = Plain(info.quality) or 1,
+    if type(info) ~= "table" then info = {} end -- the game does not say: the name its line gave
+    Add({ key = link, name = Plain(info.name) or link:match("%[(.-)%]") or link, icon = Plain(info.iconFileID),
+          quality = Plain(info.quality) or 1,
           count = count, carried = Plain(info.quantity) })
 end
 
@@ -205,5 +211,6 @@ function Feed.GiveBack()
         spare[#spare + 1] = line
     end
     wipe(lines)
+    wipe(waiting)
     holder:Hide()
 end

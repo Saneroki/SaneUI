@@ -4,11 +4,10 @@ local _, ns = ...
 --  Sane UI - Loot - Window
 --  The loot window (Saneroki, 2026-10-29): no paper, no frame, no title; a
 --  line for each thing the loot holds (Row.lua: a bar as the nameplates draw
---  theirs, in its quality's colour; its picture, name, kind, worth and an A),
---  and at its foot two dark bars of the same make, Link and Close. It opens where the
---  mouse is, its first line's picture under it, or where it was placed in Edit
---  Mode (switch At the mouse); more lines than a good part of the screen
---  scroll.
+--  theirs, in its quality's colour; its picture, name and an A), and at its
+--  foot two bare words in off white, Link and Close. It opens where the mouse
+--  is, its first line's picture under it, or where it was placed in Edit Mode
+--  (switch At the mouse); more lines than a good part of the screen scroll.
 --
 --  A thing taken, the lines close up and the next one stands where the taken
 --  one stood, under the mouse: at the mouse the window moves down a line when
@@ -17,9 +16,10 @@ local _, ns = ...
 --  As soon as the game has the loot ready (LOOT_READY, before it opens), the
 --  player's rules take what they want (Slots.Wanted), a few slots in one frame
 --  and the rest in the frames after, so a big pile does not flood the server;
---  those lines are not shown. Nothing is taken at first: the switches Taken at
---  once and the player's word on an item (the A) decide. The game's own Auto
---  Loot is lent off meanwhile (Game.lua); held Shift (its key) still takes
+--  those lines are not shown here, the feed tells what came (Feed.lua). The
+--  switches Taken at once (coins, currencies, quest items and junk at first)
+--  and the player's word on an item (the A) decide. The game's own Auto Loot
+--  is lent off meanwhile (Game.lua); held Shift (its key) still takes
 --  everything, and the window then shows only what is left a moment later
 --  (bags full, a thing locked to a roll).
 --
@@ -47,7 +47,7 @@ local S = ns.SIZE
 local Window = {}
 ns.Window = Window
 
-local LIGHT = { 0.9, 0.9, 0.9 } -- the buttons' words; gold under the mouse
+local OFF_WHITE = { 238 / 255, 229 / 255, 208 / 255 } -- the buttons' words; gold under the mouse
 local CHAT_SHOWN, CHAT_BYTES = 250, 1270 -- what the game's chat box holds: 255 letters on show, 1280 bytes with links
 local STEP = S.row + S.rowGap
 
@@ -110,6 +110,7 @@ local function Tip(row)
     if line.upgrade then
         GameTooltip:AddLine(line.upgrade == "empty" and ns.TEXT.upgradeEmpty or ns.TEXT.upgradeBetter, 0.1, 1, 0.1, true)
     end
+    if line.locked then GameTooltip:AddLine(ns.TEXT.locked, 1, 0.3, 0.3, true) end
     local word = line.id and ns.options.kept[line.id]
     if word == true then GameTooltip:AddLine(ns.TEXT.onList, 1, 0.82, 0, true)
     elseif word == false then GameTooltip:AddLine(ns.TEXT.offList, 0.7, 0.7, 0.7, true) end
@@ -229,20 +230,18 @@ end
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
--- A button at the window's foot: its word on a dark bar of the lines' make; under the mouse its border grey and its
--- word gold.
+-- A button at the window's foot: its word alone, no border and no background (Saneroki, 2026-10-30), gold under the
+-- mouse.
 local function Button(text, onClick, tip)
     local button = CreateFrame("Button", nil, panel)
     button:SetHeight(S.foot)
-    button.bar = ns.Row.Bar(button, S.foot)
     button.text = button:CreateFontString(nil, "OVERLAY")
     ns.Row.Font(button.text, 13)
     button.text:SetPoint("CENTER")
     button.text:SetText(text)
-    button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
+    button.text:SetTextColor(OFF_WHITE[1], OFF_WHITE[2], OFF_WHITE[3])
     button:SetScript("OnClick", ns.Guard(onClick))
     button:SetScript("OnEnter", ns.Guard(function()
-        button.bar:SetLit(true)
         button.text:SetTextColor(ns.Row.Gold())
         if not tip then return end
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
@@ -251,8 +250,7 @@ local function Button(text, onClick, tip)
         GameTooltip:Show()
     end))
     button:SetScript("OnLeave", ns.Guard(function()
-        button.bar:SetLit(false)
-        button.text:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
+        button.text:SetTextColor(OFF_WHITE[1], OFF_WHITE[2], OFF_WHITE[3])
         GameTooltip_Hide()
     end))
     return button

@@ -14,18 +14,18 @@ local _, ns = ...
 --  same caps, the same radius: its left corners follow the bar's), how many on
 --  it; then the game's green arrow where it would make the character better
 --  (Upgrade.lua) in front of its name in white in the game's outlined font of
---  its nameplates; under it,
---  smaller, its kind and how it binds (Slots.Note) and at the right what a
---  vendor pays for all of it; at the top right an A, a small dark bar of the
---  same make: the thing taken at once from now on (on the player's list: its
---  letter gold). A thing that is not the player's to take now is faint.
+--  its nameplates; with the switch A line under each name (off at first) under
+--  it, smaller, its kind and how it binds (Slots.Note) and at the right what a
+--  vendor pays for all of it; at the right an A, a small dark bar of the same
+--  make: the thing taken at once from now on (on the player's list: its letter
+--  gold). A thing that is not the player's to take now is faint.
 --
 --      local row = Row.New(parent)          -- made once, used again
 --      Row.Set(row, line, notes, onList)    -- shows a line of Slots (notes: the line under the name)
 --      Row.Auto(row, onList)                -- the A as the player's word stands
 --      Row.Color(quality), Row.Gold()       -- a quality's colour, the game's gold
 --      Row.Font(fontString, size)           -- the game's outlined font of its nameplates, that size
---      Row.Bar(frame, height)               -- a bar of that make behind a frame (the line's, the buttons')
+--      Row.Bar(frame, height)               -- a bar of that make behind a frame (the line's, the A's)
 --      Row.Width(row)                       -- how wide its parts run
 --  The clicks and the tooltips are the window's (Window.lua).
 -------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ local BORDER = { 0, 0, 0, 0.9 }
 local HOVER = { 0.5, 0.5, 0.5, 1 }
 -- The game's font objects for its nameplates' names: their face and outline.
 local FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate" }
-local DARK = { 0.16, 0.16, 0.18 } -- a bar of no thing (the A, the buttons)
+local DARK = { 0.16, 0.16, 0.18 } -- a bar of no thing (the A)
 local SOFT = { 0.88, 0.88, 0.88 } -- the line under the name
 
 function Row.Color(quality)
@@ -250,8 +250,7 @@ function Row.Set(row, line, notes, onList)
     local r, g, b
     if ns.Slots.Quest(line) then r, g, b = Row.Gold() else r, g, b = Row.Color(line.quality) end
     row.bar:Paint(r, g, b)
-    local note = notes and ns.Slots.Note(line) or ""
-    if line.locked then note = ns.TEXT.locked end
+    local note = notes and (line.locked and ns.TEXT.locked or ns.Slots.Note(line)) or ""
     row.note:SetText(note)
     local worth = notes and Worth(line) or ""
     row.worth:SetText(worth)

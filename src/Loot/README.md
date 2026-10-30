@@ -1,17 +1,17 @@
 # Sane UI: Loot
 
-**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, its worth, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot), things taken at once by your own switches as soon as the loot is ready (nothing at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot as bare words), things taken at once by your own switches as soon as the loot is ready (coins, currencies, quest items and junk at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Stands in for the game's loot window and its roll frames. What a corpse, a chest or a catch holds stands at the
 mouse with no window round it: a line a thing, a bar as the nameplates draw theirs in its quality's colour (a quest's in gold), a green arrow on what would make your character better,
-its picture, its name, its kind and what a vendor pays for it, and an A; Link and Close at the foot. A click takes it
-and the next comes under the mouse. What is taken at once, as soon as the loot is ready, is yours to say: nothing at
-first, then everything or kinds (coins, currencies, quest items, trade goods, gear, consumables, junk), and over them
-your word on an item (its A, or the options' list *Your items*). As master looter a click gives the thing away from a
+its picture, its name and an A; Link and Close, two words in off white, at the foot. A click takes it and the next
+comes under the mouse. What is taken at once, as soon as the loot is ready, is yours to say: coins, currencies, quest
+items and junk at first, in every profile; everything or more kinds (trade goods, gear, consumables) by a switch; and
+over them your word on an item (its A, or the options' list *Your items*). As master looter a click gives the thing away from a
 menu. With your bags full a page beside the window weighs the thing against the cheapest thing you carry. Your
 group's rolls are paper cards (Need, Greed, Pass; how many chose each and who), and what you and your group receive
-rises over the world. When it fails, the game's own loot window, its Auto Loot and its roll frames are back.
+rises over the world, also what was taken at once: that is how you see what you looted. When it fails, the game's own loot window, its Auto Loot and its roll frames are back.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Loot* under *Sane UI* in the game's addon list (the game needs a restart
@@ -23,12 +23,12 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   gold), round at its corners by a quarter of its height, a thin border nearly black (grey under the mouse). At its
   left end, inside the border and as tall as the bar, the thing's picture, no border of its own, round at its
   corners as the bar is (the same radius: its left corners follow the bar's), how many on it; then its name in white
-  in the game's outlined nameplate font;
-  under the name, smaller, short tags (how it binds: **BoP** red, **BoE** orange, BoU and WuE orange, BoA; then
-  **Uncollected** in the game's light blue where your character could collect the item's look and has not; a quest's
-  item *Quest*), then its kind,
-  and at the right what a vendor pays for all of it (*A line under each name*, on); at the top right an **A**. At the
-  foot two dark bars of the same make, **Link** and **Close** (Close alone when there is nothing to link).
+  in the game's outlined nameplate font; at the right an **A**. Nothing under the name at first; with *A line under
+  each name* (off) under it, smaller, short tags (how it binds: **BoP** red, **BoE** orange, BoU and WuE orange, BoA;
+  then **Uncollected** in the game's light blue where your character could collect the item's look and has not; a
+  quest's item *Quest*), then its kind, and at the right what a vendor pays for all of it. At the foot two bare
+  words in off white, no border and no background, **Link** and **Close** (Close alone when there is nothing to link),
+  gold under the mouse.
   - **The green arrow** (the game's own, as its bags show it) in front of a name: the thing would make your character
     better: gear you can wear now (as the game says, and of your level) where you wear nothing, or with a higher item
     level than what you wear there (of two rings or trinkets, the weaker one); never armour lighter than what you
@@ -41,12 +41,13 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
     taken now; on the list, the A takes it off. `/sane loot list` names the items you gave a word on.
   - **Link** puts the links of the loot's things into the chat box (into the one you are writing in, else it opens
     one): Enter sends them where you write. Sane UI sends nothing itself.
-  - A thing that is not yours to take now (locked to a roll) is faint and says so.
+  - A thing that is not yours to take now (locked to a roll) is faint; its tooltip says so.
   - **Close** or Esc closes it, and the loot with it. Everything taken, it closes by itself.
   - Many lines scroll with the mouse wheel.
 - **Always show upgrades** (tab *Taken at once*, on): a thing with the green arrow is never taken at once, whatever
   the switches and your word on it say: it waits in the loot window to be seen.
-- **Taken at once** (tab *Taken at once*; every switch off at first): as soon as the game has the loot ready, before
+- **Taken at once** (tab *Taken at once*; *Coins*, *Currencies*, *Quest items* and *Junk* on at first, in every
+  profile, each a switch of its own): as soon as the game has the loot ready, before
   the window opens, what the switches want is taken, a few things a frame so a big pile goes quickly without flooding
   the game: *Everything*, or kinds: *Coins*, *Currencies*, *Quest items* (things a quest wants, things that begin
   one), *Trade goods* (cloth, herbs, ore, leather, meat, reagents), *Gear* (armour and weapons), *Consumables* (food,
@@ -54,7 +55,8 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   *Everything* one that binds when picked up (the game asks first). Your word on an item goes over the switches: the A
   (taken) or the list *Your items* (taken, or never). When everything is taken at once the window does not open.
   Speed Leveling's switch *Take all loot* sets *Everything* on and *Always show upgrades* off, once, as its *Equip
-  upgrades* puts those on.
+  upgrades* puts those on; the switches of kinds stand on their own beside it. What is taken at once shows no line in
+  the window: it rises in the feed.
 - **The game's own Auto Loot** (Esc > Options > Controls) is off while Sane UI's loot window is on, so the switches
   decide; it is set back as it was when the window is switched off. Held Shift while looting still takes everything,
   as the game has it; the window then shows only what is left a moment later (bags full, a thing locked to a roll).
@@ -76,8 +78,10 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   with the time left. *Who chose what* (on): each choice counts how many chose it ("Greed 2"); the mouse on it names
   them. A modified click on the picture links it or tries it on. The cards stack up from their place (Edit Mode,
   *Group rolls*). Off: the game's own roll frames.
-- **Loot feed** (*What you receive*, on): each thing you receive rises over the world for a few seconds, its picture,
-  name, how many and (faint) how many you carry; the same thing again adds to its line. *Coins* (on): money you loot.
+- **Loot feed** (*What you receive*, on, in every profile): each thing you receive rises over the world for a few
+  seconds, its picture, name, how many and (faint) how many you carry; the same thing again adds to its line. So you
+  see what you looted also when it was taken at once, by the switches, by Shift or for a roll won by Speed Leveling's
+  automatic rolls. Eight lines at a time; what comes after waits its turn. *Coins* (on): money you loot.
   *Your group's* (on): what the others receive, named, from the quality *From* (Uncommon at first). Placed in Edit
   Mode (*Loot feed*).
 - **Edit Mode** (Esc > Edit Mode): the loot window (two lines as they will look, while *At the mouse* is off), a roll
@@ -112,7 +116,7 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   face and outline of the game's `SystemFont_NamePlate_Outlined`, white. The picture bare at the bar's left end, a
   screen pixel inside, as tall as the fill and rounded by the same caps; the game's atlas `bags-greenarrow` in front of
   an upgrade's name; the worth by `Core.Coins` (vendor price times the count); the A a small dark bar
-  of the same make. Link and Close are dark bars too. As wide as its widest line (`SIZE.least` to `SIZE.width`). Placed by
+  of the same make. Link and Close are only their words, off white (238, 229, 208), gold under the mouse. As wide as its widest line (`SIZE.least` to `SIZE.width`). Placed by
   `Core.Window.New` (key `windowPlace`, no title bar: Edit Mode only); at the mouse the first line's picture under the
   cursor, kept on the screen. A thing the player took (`LOOT_SLOT_CLEARED` of the slot clicked): the rows are laid
   out anew and, at the mouse, the window moved so the line now at the clicked place (the one before it, when the last
@@ -158,14 +162,18 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   `C_Loot.GetLootRollDuration`). Who chose what from `CHAT_MSG_LOOT` (`Chat.Rolled`), on the card of that item whose
   chooser has not chosen yet. Placed by `Core.Window.New` (key `rollsPlace`).
 - **The feed** (`Feed.lua`): `CHAT_MSG_LOOT` (`Chat.Received`), `CHAT_MSG_MONEY` (`Chat.Money`), `CHAT_MSG_CURRENCY`
-  (`Chat.Currency`, `C_CurrencyInfo.GetCurrencyInfoFromLink`); how many carried by `C_Item.GetItemCount`. Eight lines
-  at most, 5 s each, then a 1.2 s fade; in Edit Mode they stand. Placed by `Core.Window.New` (key `feedPlace`).
+  (`Chat.Currency`, `C_CurrencyInfo.GetCurrencyInfoFromLink`, else the name in the line); how many carried by
+  `C_Item.GetItemCount`. The game says these lines of everything received, so what the rules, Shift or a won roll took
+  comes the same way, the window not involved. Their text may be a secret value (the export marks it not
+  `NeverSecret`): `Chat` reads it through `Core.Plain`, a hidden line is passed over. Eight lines
+  at most, 5 s each, then a 1.2 s fade, the rest waiting (`waiting`) until a line goes; in Edit Mode they stand. Placed by `Core.Window.New` (key `feedPlace`).
 - **The game's sentences** (`Chat.lua`): each of the game's strings (`LOOT_ITEM_SELF_MULTIPLE`, `LOOT_ROLL_GREED`,
   `YOU_LOOT_MONEY`, `GOLD_AMOUNT`, `CURRENCY_GAINED`...) made once into a pattern: its `%s` and `%d` (and `%1$s`)
   marked, the rest made plain, the marks made captures. A string the client lacks is left out.
 - **Settings** (`Loot.lua`, `Core.Options`, in tabs): `window`, `atMouse`, `notes`, `full`; `takeAll`,
-  `takeCoins`, `takeCurrency`, `takeQuest`, `takeTrade`, `takeGear`, `takeConsumable`, `takeJunk` (all off at
-  first); `rolls`, `tally`, `feed`, `feedMoney`, `feedGroup`, `feedQuality`. Kept without a control: `kept` (the
+  `takeCoins`, `takeCurrency`, `takeQuest`, `takeTrade`, `takeGear`, `takeConsumable`, `takeJunk` (`takeCoins`,
+  `takeCurrency`, `takeQuest`, `takeJunk` on at first, Loot's own defaults, no profile sets them; `notes` and the rest
+  off); `rolls`, `tally`, `feed`, `feedMoney`, `feedGroup`, `feedQuality`. Kept without a control: `kept` (the
   player's word: item ID = true taken at once, false never), `seen` (item IDs met in loot, the newest first), `lent`
   (the game's settings lent). The places: `windowPlace`, `rollsPlace`, `feedPlace` in `Core.Store("Loot")`.
 - **Forever and Retail:** one way for both; every function asked for exists in both clients (the Forever-Retail
@@ -199,6 +207,11 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   Link and Close as buttons at the foot; nothing taken at once at first, the switches by kind (Everything, coins,
   currencies, quest items, trade goods, gear, consumables, junk), taken as soon as the loot is ready; the game's Auto
   Loot lent off; the options in tabs with the list *Your items*; the line under a name on again.
+- 2026-10-30 — Saneroki: Link and Close only their words in off white, no border, no background; no line under a
+  name at first (the switch stays, off; a locked thing says so in its tooltip). Coins, currencies, quest items and
+  junk taken at once by Loot's own defaults, in every profile. "I do want to know what I loot": the feed keeps
+  everything of a big pile (the rest waits instead of pushing the first out), a currency the game does not describe
+  still rises, a hidden chat line is passed over.
 - 2026-10-29 — The Auto Loot lend through Core's Sync: on a second account the profile's Auto Loot on was written a
   moment after the login and everything was taken at once. The line under a name reaches the line's end where a
   thing sells for nothing (the quest's and the coins' words were not drawn).

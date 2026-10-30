@@ -22,7 +22,8 @@ local ADDON, ns = ...
 --                back
 --    Row.lua     one line of the loot window
 --    Window.lua  the loot window: a line a thing (Row.lua), a bar as the
---                nameplates' in its quality's colour, Link and Close at its foot;
+--                nameplates' in its quality's colour, Link and Close, bare
+--                words, at its foot;
 --                at the mouse or where Edit Mode placed it; a thing taken, the
 --                next comes under the mouse; the rules' things taken at once
 --    Items.lua   the options' tab Your items: the things met in loot, ticked
@@ -106,7 +107,7 @@ ns.TEXT = {
     -- the options
     windowHeader = "Loot window",
     windowSwitch = "Sane UI's loot window",
-    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing, a bar as the nameplates draw theirs in its quality's colour (a quest's in gold): its picture, its name (a green arrow in front of it on an upgrade), its kind and what a vendor pays for it, and an A to take it at once from now on. Link and Close at the foot. A click takes a thing and the next comes under the mouse. While it is on, the game's own Auto Loot is off: the switches Taken at once decide (Shift while looting still takes everything). Off: the game's own loot window.",
+    windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing, a bar as the nameplates draw theirs in its quality's colour (a quest's in gold): its picture, its name (a green arrow in front of it on an upgrade) and an A to take it at once from now on. Link and Close at the foot. A click takes a thing and the next comes under the mouse. While it is on, the game's own Auto Loot is off: the switches Taken at once decide (Shift while looting still takes everything). Off: the game's own loot window.",
     atMouse = "At the mouse",
     atMouseTip = "The loot window opens where the mouse is, its first thing under it. Off: where you placed it in Edit Mode (Esc > Edit Mode).",
     notes = "A line under each name",
@@ -116,7 +117,7 @@ ns.TEXT = {
     upgradeEmpty = "An upgrade: you wear nothing there",
     upgradeBetter = "An upgrade: a higher item level than what you wear there",
     takeHeader = "Taken at once",
-    takeHeaderTip = "What is taken as soon as the loot opens, without a click, as fast as the game lets it; the rest waits in the loot window. Nothing at first. Never a thing locked to a roll, and only by Everything one that binds when picked up (the game asks first); your word on an item (its A, the tab Your items) goes over them.",
+    takeHeaderTip = "What is taken as soon as the loot opens, without a click, as fast as the game lets it; the rest waits in the loot window. At first coins, currencies, quest items and junk. Never a thing locked to a roll, and only by Everything one that binds when picked up (the game asks first); your word on an item (its A, the tab Your items) goes over them.",
     takeAll = "Everything",
     takeAllTip = "Every thing the loot holds is taken at once, whatever the switches below say; for one that binds when picked up the game asks first. Speed Leveling's switch Take all loot sets this.",
     takeCoins = "Coins",
@@ -151,7 +152,7 @@ ns.TEXT = {
     tallyTip = "On each choice of a card, how many of your group took it; the mouse on it names them. Read from the game's own lines about the rolls.",
     feedHeader = "Loot feed",
     feed = "What you receive",
-    feedTip = "Each thing you receive rises over the world for a few seconds: its picture, its name and how many, then how many you carry. Placed in Edit Mode.",
+    feedTip = "Each thing you receive, also what is taken at once, rises over the world for a few seconds: its picture, its name and how many, then how many you carry. Placed in Edit Mode.",
     feedMoney = "Coins",
     feedMoneyTip = "Money you loot rises with the rest.",
     feedGroup = "Your group's",
@@ -199,18 +200,18 @@ local W, T, G = ns.TEXT.windowTab, ns.TEXT.takeTab, ns.TEXT.groupTab
 local OPTIONS = {
     { key = "window", default = true, text = ns.TEXT.windowSwitch, tip = ns.TEXT.windowSwitchTip, header = ns.TEXT.windowHeader, tab = W },
     { key = "atMouse", default = true, text = ns.TEXT.atMouse, tip = ns.TEXT.atMouseTip, parent = "window", tab = W },
-    { key = "notes", default = true, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window", tab = W },
+    { key = "notes", default = false, text = ns.TEXT.notes, tip = ns.TEXT.notesTip, parent = "window", tab = W },
     { key = "full", default = true, text = ns.TEXT.full, tip = ns.TEXT.fullTip, header = ns.TEXT.fullHeader, tab = W },
     { key = "showUpgrades", default = true, text = ns.TEXT.showUpgrades, tip = ns.TEXT.showUpgradesTip, parent = "window",
       header = ns.TEXT.takeHeader, headerTip = ns.TEXT.takeHeaderTip, tab = T },
     { key = "takeAll", default = false, text = ns.TEXT.takeAll, tip = ns.TEXT.takeAllTip, parent = "window", tab = T },
-    { key = "takeCoins", default = false, text = ns.TEXT.takeCoins, tip = ns.TEXT.takeCoinsTip, parent = "window", tab = T },
-    { key = "takeCurrency", default = false, text = ns.TEXT.takeCurrency, tip = ns.TEXT.takeCurrencyTip, parent = "window", tab = T },
-    { key = "takeQuest", default = false, text = ns.TEXT.takeQuest, tip = ns.TEXT.takeQuestTip, parent = "window", tab = T },
+    { key = "takeCoins", default = true, text = ns.TEXT.takeCoins, tip = ns.TEXT.takeCoinsTip, parent = "window", tab = T },
+    { key = "takeCurrency", default = true, text = ns.TEXT.takeCurrency, tip = ns.TEXT.takeCurrencyTip, parent = "window", tab = T },
+    { key = "takeQuest", default = true, text = ns.TEXT.takeQuest, tip = ns.TEXT.takeQuestTip, parent = "window", tab = T },
     { key = "takeTrade", default = false, text = ns.TEXT.takeTrade, tip = ns.TEXT.takeTradeTip, parent = "window", tab = T },
     { key = "takeGear", default = false, text = ns.TEXT.takeGear, tip = ns.TEXT.takeGearTip, parent = "window", tab = T },
     { key = "takeConsumable", default = false, text = ns.TEXT.takeConsumable, tip = ns.TEXT.takeConsumableTip, parent = "window", tab = T },
-    { key = "takeJunk", default = false, text = ns.TEXT.takeJunk, tip = ns.TEXT.takeJunkTip, parent = "window", tab = T },
+    { key = "takeJunk", default = true, text = ns.TEXT.takeJunk, tip = ns.TEXT.takeJunkTip, parent = "window", tab = T },
     { key = "kept", default = {} }, -- the player's word on items: [item ID] = true taken at once, false never
     { key = "seen", default = {} }, -- the items met in loot of late, the newest first (IDs only; the tab Your items)
     { key = "lent", default = {} }, -- the game's settings the window lends while it is on: [name] = { was, set }

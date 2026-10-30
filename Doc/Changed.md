@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 727 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Loot: bare Link and Close, no line under a name, coins and quest items at once, nothing lost in the feed (Saneroki, 2026-10-30)
+Saneroki: "I don't think the Link and close button should have borders or backgrounds. Just have the off white text
+and there should be no line under the name in the lootwindows." "Take all Coins, currencies, questitems, junk, Should
+be on even on accountwide." "But I do want to know what I loot."
+- **`Window.lua`:** `Button`: no `Row.Bar` any more, the word alone, off white (238, 229, 208), gold under the mouse.
+- **`Loot.lua`:** `notes` off at first (the switch stays). `takeCoins`, `takeCurrency`, `takeQuest`, `takeJunk` on at
+  first: Loot's own defaults, so in every profile, each its own switch; `takeAll`, which Speed Leveling lends, stays off.
+  The tips say so.
+- **`Row.lua`:** a locked thing's words under its name only with the switch; its tooltip says so always (`Window.lua`).
+- **`Feed.lua`:** what the game says of all you receive rises, taken at once or not, and that held already. Closed: a
+  pile over eight lines pushed its first out at once, now the rest waits (`waiting`) until a line goes; a currency the
+  game does not describe still rises, by the name in its line.
+- **`Chat.lua`:** every line through `Core.Plain`: the text of these events may be a secret value in both games.
+- `dev/uilab/scenes/loot.lua` keeps every line on show. `Doc/guides/interface-style.md`, *The loot window*, updated.
+- The roll cards are paper with no line under the name and no Link or Close: unchanged.
+- Tests: `dev/tests/loot.lua` 219 checks.
+
 ### Navigation: the travel overlay higher, the way out in it (Saneroki, 2026-10-30)
 Saneroki: the travel widget a little higher, with the exit vehicle icon, the game's own hidden.
 - **`TripView.lua`:** `TripView.UP` 0.72 (was 2/3): the labels end just under the game's error messages. The way out
