@@ -101,6 +101,9 @@ def serve_folder(port, folder):
                 return self.send(page[:at] + tag + page[at:] if at >= 0 else page + tag, "text/html; charset=utf-8")
             super().do_GET()
 
+    if up(port):
+        print(f"Already up: 127.0.0.1 port {port}", flush=True)
+        return
     handler = functools.partial(Handler, directory=str(folder))
     print(f"{folder} on 127.0.0.1 port {port}", flush=True)
     http.server.ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
