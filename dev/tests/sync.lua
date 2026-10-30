@@ -219,9 +219,10 @@ check(not Has("GRAPHICS_LABEL", "graphicsFixed") and not Has("AUDIO_LABEL", "sou
     "nor a CVar the game does not let us set: read only, locked, secure")
 check(not Core.Steps.Running(FINDING), "found once a session")
 check(Has("perCharacter", "cameraSavedDistance") and Has("perCharacter", "questLogOpen"), "what the game keeps per character")
-check(not Has("perCharacter", "trackedQuests") and not Has("perCharacter", "lastSelectedTab") and not Has("perCharacter", "accountThing")
+check(Has("perCharacter", "accountThing"), "and the account's too")
+check(not Has("perCharacter", "trackedQuests") and not Has("perCharacter", "lastSelectedTab")
     and not Has("perCharacter", "nameplateSize") and not Has("perCharacter", "debugThing"),
-    "not a character's state, not the account's, not what a page holds")
+    "not a character's state, not what a page holds, not this computer's alone")
 
 W.Fire("PLAYER_LOGIN")
 -- Before the character was given its settings, nothing is read: one that leaves at once spreads nothing.
@@ -254,7 +255,7 @@ check(not Control("General") and not Control("Sync"), "Game settings: no box of 
 check(Shows("Gameplay") and Shows("Accessibility") and Shows("System") and Shows("Elsewhere in the game"),
     "then the game's groups of options pages, and what is on none")
 check(Control("Controls") and Control("Nameplate options") and Control("Graphics") and Control("Edit Mode layout")
-    and Control("Chat windows") and Control("Your own chat channels") and Control("Other per-character settings")
+    and Control("Chat windows") and Control("Your own chat channels") and Control("All other game settings")
     and Control("Controls"):GetChecked(), "a checkbox for each part, showing whether it is kept")
 
 -- Character A comes into the game: nothing kept yet, so nothing is written --------------------------
@@ -416,14 +417,14 @@ Sync.Capture()
 check(Sync.options.from == "forever", "Forever's own again")
 
 -- A part that is not kept is neither read nor written -------------------------------------------
-Tick(Control("Other per-character settings"), false)
+Tick(Control("All other game settings"), false)
 check(options.off.perCharacter == true and not Sync.PartKept("perCharacter"), "unticked, the part is left to the game")
 W.cvars.cameraSavedDistance = "8"
 Sync.Capture()
 check(options.taken.perCharacter == nil, "an unticked part is forgotten when the settings are read")
 Sync.Give()
 check(W.cvars.cameraSavedDistance == "8", "and not written")
-Tick(Control("Other per-character settings"), true)
+Tick(Control("All other game settings"), true)
 check(options.off.perCharacter == nil, "ticked again, it is kept")
 
 -- The modifier keys: kept with the key bindings in use, which the game saves when they changed -------
@@ -606,6 +607,61 @@ check(W.cvars.nameplateSize == "4" and W.cvarSets == sets and SaneUIDB.profiles.
 check(SaneUICharDB.settings and SaneUICharDB.settings.Sync == nil, "nor kept with the character's own settings")
 Profiles.Use("Mine")
 check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "back on the profile, the character takes its settings, the game's too")
+
+-- The key bindings: every key by its command, written where they differ, saved in the game's set ---
+do
+    local list = { { "HEADER_MOVE" }, { "JUMP", "Jump", "SPACE" }, { "MOVEFORWARD", "Move", "W", "UP" }, { "SITORSTAND", "Sit" } }
+    local saved, loaded = {}, nil
+    GetNumBindings = function() return #list end
+    GetBinding = function(index) return unpack(list[index]) end
+    SetBinding = function(key, command)
+        for _, line in ipairs(list) do
+            for at = #line, 3, -1 do if line[at] == key then table.remove(line, at) end end
+            if line[1] == command then line[#line + 1] = key end
+        end
+    end
+    GetCurrentBindingSet = function() return 2 end
+    SaveBindings = function(set) saved[#saved + 1] = set end
+    LoadBindings = function(set) loaded = set end
+    local part = Sync.part.keyBindings
+    local read = part.Read()
+    check(read.JUMP[1] == "SPACE" and read.MOVEFORWARD[2] == "UP" and read.SITORSTAND == nil and read.HEADER_MOVE == nil,
+        "what is bound, by command; nothing for what has no key")
+    part.Write({ JUMP = { "BUTTON4" }, SITORSTAND = { "X" }, MOVEFORWARD = { "W", "UP" } })
+    check(list[2][3] == "BUTTON4" and list[2][4] == nil and list[4][3] == "X" and saved[1] == 2, "written where they differ, saved in the set in use")
+    part.Write({ JUMP = { "BUTTON4" }, SITORSTAND = { "X" }, MOVEFORWARD = { "W", "UP" } })
+    check(#saved == 1, "nothing differs: nothing saved")
+    part.Write({ JUMP = { "BUTTON4" }, MOVEFORWARD = { "W", "UP" } })
+    check(list[4][3] == nil, "a key the profile does not have is taken off")
+    options.taken.keyBindings = { OTHERADDON = { "F9" } }
+    check(part.Read().OTHERADDON[1] == "F9", "a command this client does not list keeps its keys")
+    part.Default()
+    check(loaded == 0, "with no profile: the game's own keys")
+    options.taken.keyBindings = nil
+    GetNumBindings, GetBinding, SetBinding, GetCurrentBindingSet, SaveBindings, LoadBindings = nil, nil, nil, nil, nil, nil
+end
+
+-- A layout a character does not have comes from the profile's text of it
+do
+    local layouts = { layouts = { { layoutName = "Mine", layoutType = 1 } }, activeLayout = 3 }
+    local added, savedAll
+    local stubs = { "ConvertLayoutInfoToString", "ConvertStringToLayoutInfo", "GetLayouts", "IsValidLayoutName", "SaveLayouts", "OnLayoutAdded" }
+    local was = {}
+    for _, name in ipairs(stubs) do was[name] = C_EditMode[name] end
+    C_EditMode.ConvertLayoutInfoToString = function(layout) return "text of " .. layout.layoutName end
+    C_EditMode.ConvertStringToLayoutInfo = function(text) return { from = text } end
+    C_EditMode.GetLayouts = function() return layouts end
+    C_EditMode.IsValidLayoutName = function(name) return name ~= "bad" end
+    C_EditMode.SaveLayouts = function(all) savedAll = all end
+    C_EditMode.OnLayoutAdded = function(index, activate) added = { index, activate } end
+    local part = Sync.part.hudLayout
+    check(part.Write({ name = "Theirs", kind = 2, text = "their text" }) == true, "not there: added, a /reload due")
+    check(savedAll == layouts and layouts.layouts[2].from == "their text" and layouts.layouts[2].layoutName == "Theirs"
+        and layouts.layouts[2].layoutType == 2 and added[2] == true, "saved through the game, its name and kind, made the one in use")
+    check(part.Write({ name = "bad", kind = 1, text = "x" }) == false, "one that cannot be added: the layout in use stays")
+    check(part.Write({ name = "Nothing", kind = 1 }) == false, "nor one without its text")
+    for _, name in ipairs(stubs) do C_EditMode[name] = was[name] end
+end
 
 -- The addons switched on: kept in the profile, written with a /reload offered -----------------------
 do

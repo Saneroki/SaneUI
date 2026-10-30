@@ -15,7 +15,8 @@ local Core = SaneUI.Core
 --                         are left to the game, back at its defaults the moment
 --                         a character turns to it from a profile (Sync.Moved)
 --  A profile is a named set of the settings of every module and of the game's
---  own settings Sync keeps (CVars, Edit Mode layout, chat windows, addons, ...):
+--  own settings Sync keeps (CVars, Edit Mode layouts, chat windows, addons, key
+--  bindings, ...), where the windows stand too (Window.lua):
 --  the game's are set from it when a character comes into the world, and read
 --  back into it when the character leaves. More can be made; none is made for a
 --  character by itself.
@@ -233,6 +234,7 @@ local function Fill(fill)
         local moved = live[name] and Core.described[name].moved
         if moved then Core.Safe(name .. ": settings", moved) end
     end
+    if Core.Window then Core.Safe("profiles: windows", Core.Window.PlaceAll) end
     Shown()
 end
 

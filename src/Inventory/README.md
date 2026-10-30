@@ -431,7 +431,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     "A & B"; a group of one is none), an item's category (`Categories.Classify`: the reagent bag's, a special
     bag's, the player's, Camp Items by the game's item IDs, Quest Items, Junk for grey, Item Set Gear, then by
     class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). Kept by item
-    ID in `store.bags` (account-wide, the player's own settings, never shared): `assigned`, `before` (where a
+    ID in `options.bags` (account-wide, the player's own settings, never shared): `assigned`, `before` (where a
     junk-marked item was), `pinned`, `own`, `order`, `words`, `member`, `groups`, `off`, `hidden`; checked when
     read (`Categories.Check`). Moved by the menus (`Move`: one place, past a whole group; a group's member among its
     members; `MoveGroup`: a group as one; what is switched off stepped over) and by the sidebar's drag (`Place`: before or
@@ -444,7 +444,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **The views** (`Bags/Views.lua`, no frames: `Views.Build`): the sidebar's choice as blocks: *all* (Pinned,
     Recent, then a block per category in order, a group as its title (`block.title`) and its members that hold
     something as blocks of their own (level 3) and the group's one empty slot (`block.bare`, `block.drop`
-    "group:<group>"), or, with `Categories.Divided` off (`store.bags.whole`), one block of all its members' items,
+    "group:<group>"), or, with `Categories.Divided` off (`options.bags.whole`), one block of all its members' items,
     hidden ones left out, empty ones shown
     but not while searching nor in the bank), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
     reagent bag), *each* (every bag), `cat:<key>`, `group:<group>` (its members each a block). Stacks of an item
@@ -462,7 +462,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (a line `Layout.ROW` high per cell, a folded block its head only, a folded group's title its members too),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
     takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
-    least three wide; on a tie the fuller band first; the empty slots after the cells as in the grid). The display and the window's Sort By are kept (`store.bags`:
+    least three wide; on a tie the fuller band first; the empty slots after the cells as in the grid). The display and the window's Sort By are kept (`options.bags`:
     `look`, `sort`; `order` is the categories').
   - **The splitter** (`Bags/Split.lua`): a dialog of ours in the flat look, opened by `Bags.Clicked` after the
     template's own Shift-click, only where that opened the game's `StackSplitFrame` for that button (then hidden:
@@ -488,10 +488,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `bind`, `setName`, `coin`, `grey`; read by the views, the sidebar, the categories (`Categories.Marker`)
     and the cells; changed from the dropdown and menus by `Core.Set`; a change draws the bags anew
     (`Bags.Settled`). What the window keeps of itself (the display, the order, the columns, the strip, the sidebar
-    folded: `side`, the folded blocks) and the categories' choices stay in `store.bags`.
+    folded: `side`, the folded blocks) and the categories' choices stay in `options.bags`.
   - **The list's columns** (`Bags/Columns.lua`): `Columns.LIST` (icon, name, level, required, kind, bind, count,
     sell), the ones shown in order (`columns`), widths (`widths`), the sort (`listSort`, `listDown`), round icons
-    (`round`), all kept in `store.bags`. `Columns.Place` gives each its place in a line (the name the room left,
+    (`round`), all kept in `options.bags`. `Columns.Place` gives each its place in a line (the name the room left,
     the others narrower together where the name would keep less than `Columns.NAME_LEAST`), `Columns.Value` what
     it shows, `Columns.Sort` a block's entries by it. A head per window (`Columns.Build(parent, redraw)`: the bags'
     is `Columns.head`, the bank has one), all arranging the bags' columns; a change refreshes every head and draws

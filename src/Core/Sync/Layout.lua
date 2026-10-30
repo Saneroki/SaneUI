@@ -1,7 +1,10 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync - Layout: which Edit Mode layout is in use
+--  Sane UI - Core - Sync - Layout: the Edit Mode layout in use
 --  Kept by its name and kind (the game numbers its layouts in a list that is
---  not the same on every character). Read from Edit Mode's manager, the game's
+--  not the same on every character), and as the game's own text of it (Saneroki,
+--  2026-10-30: the layouts themselves too): one that a character does not have
+--  is added from that text, through C_EditMode alone, as Edit Mode adds one
+--  (Add). Read from Edit Mode's manager, the game's
 --  own state of it (its list: the game's presets first, then the saved layouts;
 --  and which one is active). Set through C_EditMode: the manager answers the
 --  game's event itself, as when the player picks a layout in Edit Mode. That
@@ -13,16 +16,18 @@
 --  world, and the last one seen is kept. One that cannot be set yet (the
 --  manager has no layouts yet, Edit Mode is open, a fight) waits and counts as
 --  the one in use meanwhile; one the player picks meanwhile wins over it. One
---  that is not there (deleted, another character's own) leaves the layout in
---  use as it is, and still counts as the one kept until the layout in use
---  changes this session (the player picks one): this character's own does not
---  take its place at the logout.
+--  that is not there and cannot be added leaves the layout in use as it is,
+--  and still counts as the one kept until the layout in use changes this
+--  session (the player picks one): this character's own does not take its
+--  place at the logout.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sync = Core.Sync -- Sync.lua
 
 local ID = "hudLayout"
 local RELOAD = "the Edit Mode layout"
+local TYPES = rawget(_G, "Enum") and Enum.EditModeLayoutType or {}
+local PRESET, ACCOUNT, CHARACTER = TYPES.Preset or 0, TYPES.Account or 1, TYPES.Character or 2
 
 local seen    -- { name, kind } of the layout in use, as last seen in the world
 local waiting -- the one to set as soon as the game lets us
@@ -41,7 +46,8 @@ local function InUse()
     local info = Layouts()
     local layout = info and info.layouts[info.activeLayout]
     if type(layout) ~= "table" or type(layout.layoutName) ~= "string" then return nil end
-    return { name = layout.layoutName, kind = layout.layoutType }
+    local text = layout.layoutType ~= PRESET and Core.Ask(C_EditMode.ConvertLayoutInfoToString, layout) or nil
+    return { name = layout.layoutName, kind = layout.layoutType, text = text }
 end
 
 -- The layout in use, as the manager says it in the world. Another one than seen last, which we did not set
@@ -55,21 +61,45 @@ local function See()
     seen = now
 end
 
+-- A layout this character does not have, from the game's text of it: put after those of its kind in the game's list
+-- and made the one in use, as Edit Mode does; its manager hears of it by the game's event. Whether it could be.
+local function Add(want, info)
+    local all = Core.Ask(C_EditMode.GetLayouts)
+    local layout = type(want.text) == "string" and Core.Ask(C_EditMode.ConvertStringToLayoutInfo, want.text)
+    if type(all) ~= "table" or type(all.layouts) ~= "table" or type(layout) ~= "table"
+        or not Core.Ask(C_EditMode.IsValidLayoutName, want.name) then return false end
+    layout.layoutName, layout.layoutType = want.name, want.kind
+    local at, presets = 0, 0
+    for index, known in ipairs(info.layouts) do
+        if known.layoutType == PRESET then presets = index end
+        if known.layoutType == want.kind or known.layoutType == PRESET
+            or (want.kind == CHARACTER and known.layoutType == ACCOUNT) then at = index end
+    end
+    table.insert(all.layouts, at + 1 - presets, layout)
+    Core.Ask(C_EditMode.SaveLayouts, all)
+    Core.Ask(C_EditMode.OnLayoutAdded, at + 1, true, false)
+    return true
+end
+
 -- Sets a layout. Returns nil when it has to wait; else true, and whether another layout was set. One
--- that is not there (deleted, another character's own) is left alone: the layout in use stays, and the
--- one wanted is kept as missing.
+-- that is not there is added from its text; without one the layout in use stays, and the one wanted is
+-- kept as missing.
 local function Choose(want)
     local info = Layouts()
     if not info or InCombatLockdown() or Core.EditMode.active then return nil end
     for index, layout in ipairs(info.layouts) do
         if type(layout) == "table" and layout.layoutName == want.name and layout.layoutType == want.kind then
-            seen, missing = { name = want.name, kind = want.kind }, nil
+            seen, missing = { name = want.name, kind = want.kind, text = want.text }, nil
             if index == info.activeLayout then return true, false end
             C_EditMode.SetActiveLayout(index)
             return true, true
         end
     end
-    missing = { name = want.name, kind = want.kind }
+    if Add(want, info) then
+        seen, missing = { name = want.name, kind = want.kind, text = want.text }, nil
+        return true, true
+    end
+    missing = { name = want.name, kind = want.kind, text = want.text }
     return true, false
 end
 
@@ -102,7 +132,7 @@ end)
 
 Sync.Part(ID, "elsewhere", {
     text = "Edit Mode layout",
-    tip = "Which Edit Mode layout is in use, not the layouts themselves. A layout only one character has is set on that character only.",
+    tip = "The Edit Mode layout in use, and the layout itself: a character that does not have it gets it.",
     reload = RELOAD,
     Read = function()
         if waiting then return waiting end

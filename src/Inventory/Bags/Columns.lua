@@ -21,7 +21,7 @@ local _, ns = ...
 --  icons round, or puts it all back as it was. Each window with a list has a
 --  head of its own (Columns.Build: the bags', the bank's); what they arrange
 --  is one, the bags', and a change draws every window with a head anew.
---  Kept in store.bags:
+--  Kept in options.bags:
 --      columns { key, ... }   shown, in order (icon and name first at first)
 --      widths  { [key] = width }
 --      listSort, listDown     the column the list is sorted by, which way

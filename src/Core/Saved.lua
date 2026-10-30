@@ -28,6 +28,7 @@ local Core = SaneUI.Core
 local db -- SaneUIDB, once the game has read it
 
 Core.described = {}   -- [module name] = { list = { option, ... }, keys, changed, capture, version, upgrade, ... }
+Core.storeNames = setmetatable({}, { __mode = "k" }) -- [a module's store] = its name
 Core.optionOrder = {} -- module names, in the order they described their switches
 
 -- t[key] as a table: what is there if it is one, a new one if not. Saved data comes from older
@@ -40,12 +41,18 @@ end
 -- store.options: the module's settings in use (Core.Settings). Found through the store, but not kept in
 -- it: they are kept where Profiles.lua keeps them, and the game writes a table only once.
 local function Alias(store, name)
+    Core.storeNames[store] = name
     if getmetatable(store) == nil then
         setmetatable(store, { __index = function(_, key)
             if key == "options" then return Core.Settings(name) end
         end })
     end
     return store
+end
+
+-- Whose a store is: the module's name; nil for a table that is no module's store.
+function Core.StoreName(store)
+    return Core.storeNames[store]
 end
 
 -- What a module keeps between sessions. From OnLoad on.
@@ -259,6 +266,7 @@ end
 -- The general switches (Core.general): described here like a module's, shown on Sane UI's own pages
 -- General and Appearance.
 Core.Options(Core.name, {
+    { key = "places", default = {} }, -- where the windows stand, by module and window (Window.lua: Held)
     { key = "errors", default = true, text = "Errors in chat", header = "Errors",
       headerTip = "What Sane UI says when something of it goes wrong.",
       tip = "Says in chat when something of Sane UI goes wrong: one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },

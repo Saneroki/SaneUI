@@ -13,7 +13,7 @@ local ADDON = ...
 --  (Esc > Options): a part per options page of the game, in the game's groups
 --  Gameplay, Accessibility and System, and a few parts for what is on none of
 --  its pages (Edit Mode layout, chat windows, own channels, what it keeps per
---  character, the addons switched on). Each part has a checkbox in the tab Game settings of the page
+--  character, the addons switched on, the key bindings). Each part has a checkbox in the tab Game settings of the page
 --  Profiles (Settings/Synced.lua), ticked at first. A ticked part is read from
 --  the game whenever Sane UI's settings are saved (Core's capture: a new
 --  profile, another one used, the logout) and written back into the game when a
@@ -28,7 +28,8 @@ local ADDON = ...
 --
 --  Files: Data/Pages.lua (what each options page sets, made from Blizzard's
 --  code), Layout.lua (Edit Mode), Chat.lua (chat windows, own channels),
---  Game.lua (the CVar parts), Addons.lua (the addon list). Settings/CVars.lua keeps single CVars by name
+--  Game.lua (the CVar parts), Addons.lua (the addon list), Keys.lua (the key
+--  bindings). Settings/CVars.lua keeps single CVars by name
 --  (Sync.Keep).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -61,6 +62,7 @@ Sync.GROUPS = {
 -- The parts, in the order they are written into the game; by id too. A part:
 --      id, group   its key in the settings, and the box it is shown in (Sync.GROUPS)
 --      text, tip   its checkbox's words
+--      Default()   with no profile any more: the game's own again, where a CVar's default does not do it
 --      Read()      what the game holds now, as plain data (nil: nothing to keep)
 --      Write(data) gives it back, setting only what differs; true when the game shows it only after a
 --                  /reload, then named by reload ("the chat windows")
@@ -199,11 +201,16 @@ local settled -- the character is in the world, and its first writing came due (
 -- A character turned to Character specific: the CVars its profile held are the game's defaults again, as on a fresh
 -- install. Nothing is lost: they stay in the profile it left.
 local function ToDefaults()
-    for _, data in pairs(left or {}) do
+    if not left then return end
+    if InCombatLockdown() then return Core.AfterCombat("Sync: defaults", ToDefaults) end
+    for _, data in pairs(left) do
         for name in pairs(type(data) == "table" and type(data.cvars) == "table" and data.cvars or {}) do
             local default = Plain(Core.Ask(C_CVar.GetCVarDefault, name))
             if type(default) == "string" then Sync.SetCVar(name, default) end
         end
+    end
+    for _, part in ipairs(Sync.parts) do
+        if part.Default then Sync.Safe("defaults of " .. part.id, part.Default) end
     end
     left = nil
 end

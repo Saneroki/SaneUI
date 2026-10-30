@@ -105,6 +105,7 @@ Sync\Sync.lua
 Sync\Data\Pages.lua
 Sync\Layout.lua
 Sync\Addons.lua
+Sync\Keys.lua
 Sync\Chat.lua
 Sync\Game.lua
 # Settings: the options, last: they show what everything above describes. The pages are put up

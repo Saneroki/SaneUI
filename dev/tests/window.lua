@@ -159,6 +159,11 @@ local function stands(frame, point, x, y)
 end
 
 W.LoadCore(root)
+-- Where the demo window's place is kept: in the profile in use; an empty one is none.
+function W.DemoPlace()
+    local place = SaneUI.Core.general.places["Core:demo"]
+    return place and next(place) and place or nil
+end
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
 local Dock, Window, Expand, Edge, Shape, Bar = Core.Dock, Core.Window, Core.Expand, Core.Edge, Core.Shape, Core.Bar
@@ -1815,7 +1820,7 @@ do
         if widget._kind == "StatusBar" and widget._bar == Bar.ART.fill then demoFill = widget end
     end
     check(views[2] and views[2]:IsShown() and not views[1]:IsShown() and tabs.selected == 2 and addButton and demoFill
-        and SaneUIDB.modules.Core.demo.tab == 2, "the second tab: its view is built now, and shown; the tab chosen is kept")
+        and W.DemoPlace().tab == 2, "the second tab: its view is built now, and shown; the tab chosen is kept")
     addButton:GetScript("OnClick")(addButton)
     demoFill._parent._groups[1]:Run(1)
     check(demoFill._value == 0.15, "Add fills the bar a step")
@@ -1836,14 +1841,14 @@ do
     SlashCmdList.SANEUI("window")
     check(not demo:IsShown(), "typed again it hides it")
     SlashCmdList.SANEUI("window reset")
-    check(demo:IsShown() and SaneUIDB.modules.Core.demo == nil, "and reset shows it at its first place (its first tab is no more to keep)")
+    check(demo:IsShown() and W.DemoPlace() == nil, "and reset shows it at its first place (its first tab is no more to keep)")
     W.printed = {}
     at(demo, 100, 100)
     demoWindow.bar:GetScript("OnDragStart")(demoWindow.bar)
     demoWindow.bar:GetScript("OnDragStop")(demoWindow.bar)
-    check(SaneUIDB.modules.Core.demo.x == 100, "(moved)")
+    check(W.DemoPlace().x == 100, "(moved)")
     SlashCmdList.SANEUI("window reset all")
-    check(SaneUIDB.modules.Core.demo == nil and demo._points[1][1] == "CENTER" and W.printed[1]:find("first place"),
+    check(W.DemoPlace() == nil and demo._points[1][1] == "CENTER" and W.printed[1]:find("first place"),
         "/sane window reset all puts every window of Sane UI at its first place and size")
     check(next(Core.errors) == nil, "nothing went wrong on the way")
 end
@@ -2183,6 +2188,22 @@ end)()
         "closed while seated, it is given back, and that is told")
     check(seat:Hold(100, 900, 200, 600, "HIGH", 50) == false, "a closed window is not seated")
 end)()
+
+-- A module's window keeps its place in the profile in use, each profile its own.
+do
+    local store = Core.Store("Places")
+    store.seen = { x = 10, y = 20 }
+    local free = CreateFrame("Frame", "ProfiledWindow", UIParent)
+    free:SetSize(100, 100)
+    local profiled = Window.New(free, { store = store, key = "seen", title = "Seen", first = { point = "TOP", x = 0, y = 0 } })
+    profiled:Place()
+    check(Core.general.places["Places:seen"].x == 10, "what the store held from before starts the profile off")
+    profiled:Reset()
+    check(type(Core.general.places["Places:seen"]) == "table" and Core.general.places["Places:seen"].x == nil, "reset: empty, not filled again from the store")
+    Core.general.places["Places:seen"] = { x = 40, y = 50 }
+    check(pcall(Window.PlaceAll), "another profile: every window is placed anew")
+    Core.general.places["Places:seen"] = nil
+end
 
 -- Unlocked: its box outside Edit Mode, dragged by it, its place kept; locked again it stays there.
 do

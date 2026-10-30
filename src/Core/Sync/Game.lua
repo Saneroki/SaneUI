@@ -28,13 +28,13 @@ local TEXT = {
         ACTIONBARS_LABEL = "The game's page Action Bars: which extra bars are shown (in place after a /reload), whether they are locked, numbers on cooldowns.",
         COMBAT_LABEL = "The game's page Combat: self and mouseover cast, spell alerts, loss of control, floating combat text, the target of your target.",
         SOCIAL_LABEL = "The game's page Social: chat style, new whispers, time stamps, the language filter, what is blocked or declined, friends coming online.",
-        SETTINGS_KEYBINDINGS_LABEL = "The modifier keys of clicks (to link in chat, to self cast, to split a stack, to compare items), not the key bindings, which the game keeps itself.",
+        SETTINGS_KEYBINDINGS_LABEL = "The modifier keys of clicks (to link in chat, to self cast, to split a stack, to compare items). The keys themselves: Key bindings, under Elsewhere in the game.",
         NAMEPLATE_OPTIONS_LABEL = "The game's page Nameplates: which nameplates and names over heads show, their size and style.",
         GRAPHICS_LABEL = "The game's graphics settings (System > Graphics), not the screen and its hardware.",
         AUDIO_LABEL = "The volumes and sound settings (System > Audio), not the sound devices.",
     },
-    perCharacter = "Other per-character settings",
-    perCharacterTip = "Everything else the game keeps for each character on its own: filters of the world map and the minimap, the quest log, the calendar, the tutorials you have seen, and more. Not what a character tracks or last chose.",
+    perCharacter = "All other game settings",
+    perCharacterTip = "Everything else the game keeps for a character or an account: filters of the world map and the minimap, the quest log, the calendar, the tutorials you have seen, and more. Not what a character tracks or last chose, nor what belongs to this computer.",
     bars = "the action bars",
 }
 
@@ -275,12 +275,12 @@ local function Matches(lower, patterns)
     return false
 end
 
--- Whether the game stores a CVar for each character; and whether it lets us set it at all: not locked,
--- not secure, not read only.
+-- Whether the game stores a CVar for a character or an account, not this computer alone; and whether it lets us
+-- set it at all: not locked, not secure, not read only.
 local function Info(name)
-    local ok, _, _, _, character, locked, secure, readOnly = pcall(C_CVar.GetCVarInfo, name)
+    local ok, _, _, account, character, locked, secure, readOnly = pcall(C_CVar.GetCVarInfo, name)
     if not ok then return false, false end
-    return character == true, not (locked or secure or readOnly)
+    return character == true or account == true, not (locked or secure or readOnly)
 end
 
 -- One pass over the game's list, for every such part at once, as a job of the scheduler (Steps.lua): the

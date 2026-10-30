@@ -748,7 +748,7 @@ Stand()
 local panel = ns.Board.Panel("bags")
 check(panel and panel:IsShown() and panel.title._text == "Bags", "the bags on the full screen, headed Bags")
 for label, e in pairs(Core.errors) do check(not label:find("bags"), "no problem noted: " .. label .. " " .. tostring(e.text)) end
-kept = ns.store.bags
+kept = ns.options.bags
 local function Y(button) return -button:GetParent()._points[1][5] end
 local function HeadNamed(word)
     for _, widget in ipairs(W.frames) do

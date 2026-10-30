@@ -64,7 +64,7 @@ Bags.TITLE_MENU = 74   -- the dropdown View on the title line
 Bags.RULE = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.3 } -- the line by the sidebar
 Bags.COUNT_COLOR = ns.Paper.SOFT    -- the bar's count
 Bags.LEAST = { 560, 320 }
--- The settings that show Pinned and Recent (store.bags).
+-- The settings that show Pinned and Recent (options.bags).
 Bags.SHOW = { pinned = "showPinned", recent = "showRecent" }
 
 local Contents, Layout, Cells, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Foot
@@ -72,7 +72,7 @@ local Categories, Views, Menus, Sidebar, Select = ns.Categories, ns.Views, ns.Me
 local Columns, Sort = ns.Columns, ns.Sort
 
 local panel, scroll, child, menu, sort, bar, strip, side, coin, columns
-local kept            -- store.bags: the display, the order, what is shown; the categories' choices
+local kept            -- options.bags: the display, the order, what is shown; the categories' choices
 local query           -- what the search found by (Core.Fuzzy.Query), nil: nothing typed
 local shown = false
 local viewing         -- the view chosen in the sidebar while the window is open (nil: the first)
@@ -255,6 +255,13 @@ function Bags.Choose(view)
     Bags.Redraw()
 end
 
+-- Another profile came into use: what it keeps of the bags.
+function Bags.Reload()
+    if not kept then return end
+    kept = Kept()
+    Bags.Refresh()
+end
+
 -- One of the bags' settings changed (Core's options page, the dropdown, a menu): the categories as the junk
 -- marker has them, the window drawn anew.
 function Bags.Settled()
@@ -305,11 +312,13 @@ local UNIT_EVENTS = { UNIT_QUEST_LOG_CHANGED = Soon }
 --  The part (Board.lua)
 -------------------------------------------------------------------------------
 -- What is kept of the window: its display and Sort By (sort; the categories' own order is theirs, order), each one
--- of those there are; the categories' choices (Categories.lua checks them).
+-- of those there are; the categories' choices (Categories.lua checks them). In the profile in use (options.bags);
+-- what the store holds from before starts a profile off.
 local function Kept()
-    local store = ns.store
-    if type(store.bags) ~= "table" then store.bags = {} end
-    local bags = store.bags
+    local bags, before = ns.options.bags, ns.store.bags
+    if not next(bags) and type(before) == "table" then
+        for key, value in pairs(before) do bags[key] = Core.Copy(value) end
+    end
     if not Layout.LOOK[bags.look] then bags.look = "grid" end
     local known = false
     for _, order in ipairs(Contents.ORDERS) do known = known or order.key == bags.sort end

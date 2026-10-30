@@ -37,6 +37,14 @@ the game's own chat channels on every character is the Social module's.)
 - **Addons** (`Addons.lua`): which addons are switched on, in the box *Elsewhere in the game*. Written where the
   profile differs, for this character (`C_AddOns`), with the reload offered; never Sane UI itself, nor one this
   client lacks.
+- **Key bindings** (`Keys.lua`, Saneroki, 2026-10-30): every key of the game's list by command, Sane UI's and other
+  addons' too, written where they differ and saved in the game's binding set in use. A command this client does not
+  list now keeps its keys in the profile. Turning to *Character specific*: the game's default keys (`part.Default`).
+- **Edit Mode layouts** (`Layout.lua`): which one is in use and the layout itself, as the game's own text of it; a
+  character that does not have it gets it, through `C_EditMode` alone (`Add`). The game's own account layouts are
+  shared by the game as well.
+- **All other CVars:** the part *All other game settings* takes every CVar the game stores for a character or an account,
+  on no page (it was the character's alone before), not what a character tracks or last chose, nor this computer's.
 - **Single CVars:** in the tab *CVars*, tick any CVar to keep it the same way.
 - **Not keeping any:** untick every part (and no CVar ticked in the tab *CVars*): the game's settings stay as
   they are, each character with its own. Sync is part of Sane UI, so it is not in the addon list.

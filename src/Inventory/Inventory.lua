@@ -174,6 +174,7 @@ local OPTIONS = {
     { key = "first", default = "all", choices = OPENS, text = ns.TEXT.bagsFirst, tip = ns.TEXT.bagsFirstTip,
       header = ns.TEXT.bags },
     { key = "bagKeys", default = true, text = ns.TEXT.bagsKeys, tip = ns.TEXT.bagsKeysTip },
+    { key = "bags", default = {} }, -- the bags' display, order, categories and columns (Bags.lua), each profile its own
     { key = "autoSell", default = true, text = ns.TEXT.bagsAutoSell, tip = ns.TEXT.bagsAutoSellTip },
     { key = "autoRepair", default = true, text = ns.TEXT.bagsAutoRepair, tip = ns.TEXT.bagsAutoRepairTip },
     { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
@@ -199,6 +200,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "bagKeys" or key == "expand" then return ns.Guarded(ns.Keys.Apply) end
     if Core.Edge.KEYS[key] then return end
     if key == "autoSell" or key == "autoRepair" then return ns.Guarded(ns.Vendor.Refresh) end
+    if key == "bags" then return ns.Guarded(ns.Bags.Reload) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
 end })
 

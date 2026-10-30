@@ -116,6 +116,18 @@ new settings `autoSell` and `autoRepair`, on at first, also on the page Inventor
   order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
   does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
 
+### Core: key bindings, Edit Mode layouts, all CVars, window places and the bags' layout in the profile (Saneroki, 2026-10-30)
+Saneroki: key bindings part of Accountwide and saved and loaded; key bindings, Edit Mode layouts, CVars, all game settings and
+all addon settings automatically saved in the profile the character has active.
+- **`Sync/Keys.lua`** (new): every key of the game's list by command; a command not listed now keeps its keys. `part.Default`: the
+  game's own keys for a character turning to Character specific (`ToDefaults` waits for the end of a fight).
+- **`Sync/Layout.lua`:** the layout in use is kept with the game's text of it too; one a character lacks is added through
+  `C_EditMode` alone (`Add`), not the manager.
+- **`Sync/Game.lua`:** the part *All other game settings* (`perCharacter`) takes CVars the game stores for an account too.
+- **Window places** go with the profile: `Core.general.places`, `Held` in `Window.lua`, `Core.StoreName`; `Window.PlaceAll` after a
+  profile's settings came into use; a module's old store starts each profile off. Tests read them there.
+- **The bags' layout** moved from `store.bags` to `options.bags` (`Bags.Reload`).
+
 ### Core: three standard profiles; Speed Leveling: Skip cinematics, the guide and the arrow unlocked by a right click (Saneroki, 2026-10-30)
 Saneroki: Speedleveling, Accountwide and Character specific by default. Accountwide our recommended settings, all changes
 synced; Character specific 100% the game's defaults, each character its own, as a fresh install; Speedleveling all the

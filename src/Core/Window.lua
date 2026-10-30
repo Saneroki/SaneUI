@@ -117,6 +117,8 @@ local Core = SaneUI.Core
 --      })
 --      window:Place()                   -- where it was left; call it once the window is built
 --      window:Reset()                   -- its first place and size again
+--  A module's window keeps its place in the profile in use, each profile its own (Held); Window.PlaceAll() puts them
+--  there when the profile changes.
 --      window:Open()                    -- the game asks for it: the game's own window or ours, as last chosen;
 --                                       -- ours filling the screen if it was left so ("native" / "ours")
 --      window:Native(on)                -- the game's own window instead (on), or ours again; kept for Open
@@ -310,9 +312,23 @@ local function Key(window)
     return window.options.key or "place"
 end
 
+-- Where a window's place is kept: with the settings of the profile in use, by its module and key (Saneroki, 2026-10-30:
+-- everything goes with the profile). What a module's store holds of it from before starts each profile off. A store
+-- that is no module's keeps the place itself. Returns the table and the key in it.
+local function Held(window)
+    local store, key = window.options.store, Key(window)
+    local name = Core.StoreName(store)
+    local places = name and Core.general and Core.general.places
+    if type(places) ~= "table" then return store, key end
+    local id = name .. ":" .. key
+    if places[id] == nil and type(rawget(store, key)) == "table" then places[id] = Core.Copy(rawget(store, key)) end
+    return places, id
+end
+
 -- What is kept, if it can be used: it comes from older versions and from hand edits.
 local function Kept(window)
-    local place = window.options.store[Key(window)]
+    local held, key = Held(window)
+    local place = held[key]
     if type(place) == "table" and type(place.x) == "number" and type(place.y) == "number" then return place end
     return nil
 end
@@ -323,9 +339,10 @@ local function Keep(window, zone, x, y)
     local frame = window.frame
     local place = { x = x or frame:GetLeft(), y = y or frame:GetTop(), dock = zone }
     if window.options.sizable then place.width, place.height = frame:GetWidth(), frame:GetHeight() end
-    local was = window.options.store[Key(window)] -- what it was left as stays (Remember)
+    local held, key = Held(window)
+    local was = held[key] -- what it was left as stays (Remember)
     if type(was) == "table" then place.full, place.native, place.tab = was.full, was.native, was.tab end
-    window.options.store[Key(window)] = place
+    held[key] = place
     window:Place()
 end
 
@@ -444,10 +461,12 @@ end
 
 -- Its first place and size again; what it was left as (full, native, its tab) stays.
 function methods:Reset()
-    local store, key = self.options.store, Key(self)
-    local was = store[key]
-    store[key] = type(was) == "table" and (was.full or was.native or was.tab)
+    local held, key = Held(self)
+    local was = held[key]
+    local left = type(was) == "table" and (was.full or was.native or was.tab)
         and { full = was.full, native = was.native, tab = was.tab } or nil
+    -- In a profile an empty place, so that what a store holds from before does not come back.
+    held[key] = left or (held ~= self.options.store and {}) or nil
     self:Place()
 end
 
@@ -920,19 +939,20 @@ end
 -- native (the game's own window was chosen instead), tab (the view chosen, Views.lua). Open acts on the
 -- first two. Nothing is kept for a value that is none.
 function methods:Remember(what, value)
-    local store, key = self.options.store, Key(self)
-    local place = store[key]
+    local held, key = Held(self)
+    local place = held[key]
     if type(place) ~= "table" then
         if not value then return end
         place = {}
-        store[key] = place
+        held[key] = place
     end
     place[what] = value or nil
 end
 
 -- What it was left as (Remember), or nil.
 function methods:Recall(what)
-    local place = self.options.store[Key(self)]
+    local held, key = Held(self)
+    local place = held[key]
     return type(place) == "table" and place[what] or nil
 end
 
@@ -956,7 +976,8 @@ end
 -- "ours"; "locked" if ours may not be shown now (Locked): then the module lets the game's own show.
 function methods:Open()
     if self:Locked() and not self.frame:IsShown() then return "locked" end
-    local place = self.options.store[Key(self)]
+    local held, key = Held(self)
+    local place = held[key]
     local left = type(place) == "table" and place or {}
     if left.native and self.options.native then
         if self.options.native.show then self.options.native.show() end
@@ -1083,6 +1104,11 @@ local Rescreen = Core.Later(function()
 end)
 Core.On("DISPLAY_SIZE_CHANGED", Rescreen)
 Core.On("UI_SCALE_CHANGED", Rescreen)
+
+-- Another profile came into use: each window where that one has it, hidden ones too.
+function Window.PlaceAll()
+    for _, window in ipairs(windows) do Core.Safe("window", Rescreened, window) end
+end
 
 function Window.New(frame, options)
     local kind = Window.KINDS[options.kind]

@@ -939,7 +939,7 @@ window._left, window._top, window._width, window._height = 300, 700, 500, 320
 grip:GetScript("OnMouseUp")(grip)
 check(sized == "TOPRIGHT" and window._bounds[1] == Layout.MIN_WIDTH and window._bounds[2] == Layout.MIN_HEIGHT,
     "the grip sizes it from its corner away from the screen's edges, down to a smallest size")
-local place = Core.Store("Social").place
+local place = Core.general.places["Social:place"]
 check(place.x == 300 and place.y == 700 and place.width == 500 and place.height == 320, "after sizing, place and size are kept")
 EventRegistry:TriggerEvent("EditMode.Exit")
 SlashCmdList.SANEUI("social")
@@ -959,7 +959,7 @@ SlashCmdList.SANEUI("social")
 check(window:IsShown() and #box.provider.list == #Log.list and Core.Store("Social").options.window == true, "shown again, it has what came meanwhile")
 check(native._parent == away, "and the game's chat is out of sight again")
 SlashCmdList.SANEUI("social reset")
-check(Core.Store("Social").place == nil and window._width == Layout.WIDTH and window._points[1][1] == "BOTTOMLEFT",
+check(next(Core.general.places["Social:place"] or {}) == nil and window._width == Layout.WIDTH and window._points[1][1] == "BOTTOMLEFT",
     "/sane social reset puts it back at its first place and size")
 
 -- Messages fade, each by itself: the fade is the message's own, not its row's -------------------------
@@ -1622,7 +1622,7 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and widget ~= grip and widget._scripts.OnEnter and widget:IsShown() then strip = widget end
     end
-    check(Core.Store("Social").place.dock == "LEFT" and strip and strip._strata == "DIALOG", "let go at the left edge it docks there, a strip along that edge")
+    check(Core.general.places["Social:place"].dock == "LEFT" and strip and strip._strata == "DIALOG", "let go at the left edge it docks there, a strip along that edge")
     local old = #box.provider.list
     step(options.fadeAfter + 2)
     check(seen(old) == 0, "(a message that has faded)")
@@ -3056,10 +3056,10 @@ do
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
     SlashCmdList.SANEUI("social")
-    check(not window:IsShown() and kept.place.full == true and kept.place.native == true and options.window == false,
+    check(not window:IsShown() and Core.general.places["Social:place"].full == true and Core.general.places["Social:place"].native == true and options.window == false,
         "put away while it fills the screen: the switch and Core's window say the same, the game's chat; ours was left full")
     SlashCmdList.SANEUI("social")
-    check(window:IsShown() and window._width == 1920 and kept.place.native == nil, "brought back, it fills the screen again, as it was left")
+    check(window:IsShown() and window._width == 1920 and Core.general.places["Social:place"].native == nil, "brought back, it fills the screen again, as it was left")
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
     check(window._width == Layout.WIDTH, "(back in its zone)")
@@ -3074,7 +3074,7 @@ do
     end
     W.printed = {}
     toggleButton:GetScript("OnClick")(toggleButton)
-    check(not window:IsShown() and options.window == false and W.printed[1]:find("/sane social") and Core.Store("Social").place.native == true,
+    check(not window:IsShown() and options.window == false and W.printed[1]:find("/sane social") and Core.general.places["Social:place"].native == true,
         "full, its button for the game's own window puts ours away and the game's chat is back: the switch and Core's window agree")
     SlashCmdList.SANEUI("social")
     W.Wait(1)

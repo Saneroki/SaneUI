@@ -38,7 +38,7 @@ local _, ns = ...
 --  search box of the full window fades what it does not find (with Group by
 --  Category: leaves it out). The window opens with All Bank Tabs; the view
 --  chosen holds while it is open. Kept in store.bank: look, order, group,
---  folded (the list's columns are the bags', store.bags).
+--  folded (the list's columns are the bags', options.bags).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Bank = {}

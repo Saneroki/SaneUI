@@ -97,10 +97,12 @@ but for a window to try those with (`/sane window`).
     - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's
       settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
       (they stay in the profile it left).
-  - A profile is a named set of the settings of every module and of the game's own (its options, CVars, Edit Mode
-    layout, chat windows, addons switched on: as far as the tab *Game settings* ticks them): the game's are set
-    from it a moment after a character comes into the world, and read back into it when the character leaves
-    (logout, `/reload`).
+  - A profile is a named set of the settings of every module, where the windows stand, the bags' layout, and the game's
+    own (its options, CVars, key bindings, Edit Mode layouts, chat windows, addons switched on: as far as the tab
+    *Game settings* ticks them): the game's are set from it a moment after a character comes into the world, and read
+    back into it when the character leaves (logout, `/reload`). What is no setting (a module's `Core.Store`: guides
+    added, prices, notes on characters; also the full screen's layouts and the quest log's sort) is the account's, the
+    same for every profile.
   - *This character:* the profile it uses (choose another: its settings, Sane UI's and the game's, are that
     profile's at once). *New* makes a copy of the settings in use under a name and uses it; *Rename*, *Delete*
     (every character that had it uses *Accountwide*); *Defaults* sets Sane UI's settings of the profile in use
@@ -132,7 +134,7 @@ but for a window to try those with (`/sane window`).
 
   | Where | What |
   |---|---|
-  | `SaneUIDB.modules.<Module>` | What that module keeps besides its settings: `Core.Store(name)`, from `OnLoad` on |
+  | `SaneUIDB.modules.<Module>` | What that module keeps besides its settings: `Core.Store(name)`, from `OnLoad` on (`Core.StoreName(store)`: whose it is) |
   | `SaneUIDB.modules.<Module>.chars[GUID]` | Its notes per character: `Core.Character(name)`, from `OnLogin` on |
   | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` and `Speedleveling` are always there |
   | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (a name, *Character specific* for none; nil: Accountwide) |
@@ -158,6 +160,8 @@ but for a window to try those with (`/sane window`).
     (`Core.Options`), from the place in use; a place that has none for it gives its defaults.
   - **At the logout** nothing moves: only `capture` runs (Sync reads the game's settings into the profile).
   - **Own settings** start at the defaults, as a fresh install, and stay the character's whenever it comes back.
+  - **Where the windows stand** is kept in the profile too (`Core.general.places`, `Window.lua`'s `Held`, by module and
+    key); what a module's store holds from before starts each profile off. `Fill` ends with `Window.PlaceAll`.
   - **Standard profiles** (`Standard`, in `Mend`): *Speedleveling* is made once if it is not there: a copy of
     *Accountwide*'s, so that an account with settings loses nothing by using it, with `Profiles.PRESET` over it,
     which *Defaults* sets again.
