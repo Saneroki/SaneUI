@@ -36,8 +36,10 @@ Quests.lua
 Errands.lua
 # Group rolls decided with the Sane UI of the other characters in your group
 Rolls.lua
-# The guide over the world, its arrow, its icons to use and to target, and the window of the guides kept
+# The guide over the world, its arrow, its icons to use and to target, the game's map pin on its place, and the
+# window of the guides kept
 Steps.lua
 Arrow.lua
 Icons.lua
+Pin.lua
 Guides.lua

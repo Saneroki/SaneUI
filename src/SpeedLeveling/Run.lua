@@ -157,6 +157,33 @@ function Run.Distance(place)
     return (Run.Way(place))
 end
 
+-- Whether two places are the same place.
+function Run.SamePlace(a, b)
+    return a ~= nil and b ~= nil and a.x == b.x and a.y == b.y and a.map == b.map and a.continent == b.continent
+end
+
+-- Where a place stands on a map of the game's: that map, x and y from 0 to 1; nil where the game does not say. A place
+-- written in the world: on the map its line names if it lies on that, else on the one the game has there.
+function Run.Point(place)
+    if not place.continent then
+        local map = MapId(place.map)
+        if map then return map, place.x / 100, place.y / 100 end
+        return nil
+    end
+    local maps, vector = rawget(_G, "C_Map"), rawget(_G, "CreateVector2D")
+    if not (maps and vector) then return nil end
+    -- The format writes a place in the world west first, then north; the game's own two numbers go north first.
+    local world = vector(place.y, place.x)
+    for _, named in ipairs({ MapId(place.map) or false, false }) do
+        local map, point = Core.Ask(maps.GetMapPosFromWorldPos, place.continent, world, named or nil)
+        local x, y = type(point) == "table" and Plain(point.x), type(point) == "table" and Plain(point.y)
+        if map and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 and Core.Ask(maps.CanSetUserWaypointOnMap, map) then
+            return map, x, y
+        end
+    end
+    return nil
+end
+
 -------------------------------------------------------------------------------
 --  Whether a line is done
 -------------------------------------------------------------------------------

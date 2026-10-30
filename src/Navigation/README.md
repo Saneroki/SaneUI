@@ -199,7 +199,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
   terrain, the open sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on
   the continents. The painted map does not cover the isle yet: *Atlas* shows the terrain there.
-- **Routes:** put the game's map pin (a double click, Ctrl and a click, or a click on a quest in the quest log) and a golden line leads you there from where you stand,
+- **Routes:** put the game's map pin (a double click, Ctrl and a click, or a click on a quest in the quest log; Speed Leveling's guide puts it on its places by itself) and a golden line leads you there from where you stand,
   pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
   into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
   city in a mountain, a building's storeys), and by the flights your character has found where that is quicker:

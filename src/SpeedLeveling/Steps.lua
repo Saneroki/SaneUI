@@ -18,7 +18,8 @@ local _, ns = ...
 --      go down; the wheel scrolls the list through every step of the guide,
 --      the done ones above (a tick before each), a right click on one offers
 --      to go to it.
---  Over its top the row of icons to use and to target (Icons.lua); the arrow is
+--  Over its top the row of icons to use and to target (Icons.lua); the game's
+--  map pin goes with it (Pin.lua); the arrow is
 --  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
 --  anew with it.
 --  A click on a step at hand skips it, a right click goes back one; the wheel
@@ -363,6 +364,7 @@ local function Hide()
     if frame then frame:Hide() end
     ns.Arrow.Update(false)
     ns.Icons.Update(false)
+    ns.Pin.Update(false)
 end
 
 function Steps.Update()
@@ -432,6 +434,7 @@ function Steps.Update()
         frame:SetHeight(math.max(1, -y + empty.text:GetStringHeight() + 2))
         ns.Arrow.Update(false)
         ns.Icons.Update(false)
+        ns.Pin.Update(false)
         return
     end
     empty:Hide()
@@ -498,6 +501,7 @@ function Steps.Update()
     frame:SetHeight(math.max(1, -y))
     ns.Arrow.Update(true)
     ns.Icons.Update(true)
+    ns.Pin.Update(true)
 end
 
 function Steps.Frame()

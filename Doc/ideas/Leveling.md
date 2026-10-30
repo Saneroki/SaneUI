@@ -70,7 +70,10 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
 - **Decision (Saneroki, 2026-10-29): gathering for the next zone.** Before the guide goes on to a harder zone, a
   warning while your Herbalism or Mining is lower than that zone asks, worked out from Core's herbs, ore and their
   spawns (half of a zone's spawns gathered). Built. Skinning is not looked at yet.
-- **Not yet:** the routes and their planner (below), the guide's way on the map (board #158).
+- **Not yet:** the routes and their planner (below).
+
+- **The map pin on the guide's place (Saneroki, 2026-10-30; built):** as a step becomes active the game's map pin goes on
+  its place, so the route in Forever leads there. The game's own pin, so Speed Leveling needs nothing of Navigation.
 
 ## What has to exist first
 

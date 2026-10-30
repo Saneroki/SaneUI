@@ -124,6 +124,17 @@ C_Map.GetWorldPosFromMapPos = function(_, p)
     -- map (0,0) is world (2000,2000); each unit of fraction is 2000 yards, x to the east, y to the south.
     return 1, { x = 2000 - p.x * 2000, y = 2000 - p.y * 2000 }
 end
+-- The game's map pin: Durotar takes one, nothing else does.
+local pinned
+UiMapPoint = { CreateFromCoordinates = function(map, x, y) return { uiMapID = map, position = { x = x, y = y } } end }
+C_Map.CanSetUserWaypointOnMap = function(map) return map == 1411 end
+C_Map.SetUserWaypoint = function(point) pinned = point end
+C_Map.HasUserWaypoint = function() return pinned ~= nil end
+C_Map.GetUserWaypoint = function() return pinned end
+C_Map.ClearUserWaypoint = function() pinned = nil end
+C_Map.GetMapPosFromWorldPos = function(_, world, named)
+    return named or 1411, { x = (2000 - world.y) / 2000, y = (2000 - world.x) / 2000 }
+end
 
 W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -389,6 +400,53 @@ check(Run.Lines(3)[2].done and Run.Lines(3)[2].have == 4, "an objective the game
 -- The place reached: the arrow stops pointing to it once you are near.
 local line, idx = Run.Target()
 check(line and line.map == 1411 and idx == 3, "the arrow points to the step's place")
+-- The game's map pin there, set once for the place: what you do to it stays until the guide goes on.
+;(function()
+    local function At(x, y)
+        return pinned and pinned.uiMapID == 1411 and math.abs(pinned.position.x - x) < 1e-6
+            and math.abs(pinned.position.y - y) < 1e-6
+    end
+    W.Wait(ns.Pin.ASK)
+    check(At(0.455, 0.622), "the game's map pin on the place the guide sends you to")
+    pinned = nil
+    W.Wait(ns.Pin.ASK * 3)
+    check(not pinned, "taken away by hand: it stays away while the place is the same")
+    Core.Set(ns.name, "mapPin", false)
+    Core.Set(ns.name, "mapPin", true)
+    check(At(0.455, 0.622), "the switch off and on: there again")
+    Core.Set(ns.name, "mapPin", false)
+    check(not pinned, "the switch off: the guide's pin goes")
+    local own = { uiMapID = 1411, position = { x = 0.1, y = 0.2 } }
+    pinned = own
+    Core.Set(ns.name, "mapPin", true)
+    check(At(0.455, 0.622), "on again: the guide's pin in place of yours")
+    pinned = own
+    W.Wait(ns.Pin.ASK * 2)
+    check(pinned == own, "a pin you put yourself stays while the place is the same")
+    Core.Set(ns.name, "mapPin", false)
+    check(pinned == own, "and when the guide stops: that one is not the guide's")
+    pinned = nil
+    Core.Set(ns.name, "mapPin", true)
+
+    local map, x, y = Run.Point({ map = "Durotar", x = 45.5, y = 62.2 })
+    check(map == 1411 and x == 0.455 and math.abs(y - 0.622) < 1e-6, "a place on a map named: the game's map, 0 to 1")
+    map, x, y = Run.Point({ map = 1411, continent = 1, x = 1000, y = 500 })
+    check(map == 1411 and x == 0.5 and y == 0.75, "a place in the world: north first, as the game asks")
+    check(Run.Point({ map = 1411, continent = 1, x = 9000, y = 500 }) == nil, "off the map: no point")
+    check(Run.Point({ map = "Nowhere", x = 1, y = 1 }) == nil, "a map the game does not know: none")
+    check(Run.SamePlace(line, line) and not Run.SamePlace(line, nil) and not Run.SamePlace(line, { map = 1, x = 1, y = 1 }),
+        "whether two places are the same")
+
+    local any = C_Map.CanSetUserWaypointOnMap
+    C_Map.CanSetUserWaypointOnMap = function() return false end
+    Core.Set(ns.name, "mapPin", false)
+    Core.Set(ns.name, "mapPin", true)
+    check(not pinned, "a place the game takes no pin on: none, and no fuss")
+    C_Map.CanSetUserWaypointOnMap = any
+    Core.Set(ns.name, "mapPin", false)
+    Core.Set(ns.name, "mapPin", true)
+    check(At(0.455, 0.622), "taken again where it may")
+end)()
 pos.x, pos.y = 0.455, 0.622
 check(Run.Distance({ map = 1411, x = 45.5, y = 62.2 }) < 2, "the distance on a map, in yards")
 
@@ -504,5 +562,6 @@ check(not ns.off and #Core.log == 0, "no error stood the module down along the w
 ns.off = true
 ns.GiveBack()
 check(not Steps.Frame(), "stood down: the guide is hidden")
+check(not pinned, "and its map pin gone")
 
 io.write(("Speed Leveling guide: all %d checks passed.\n"):format(passed))

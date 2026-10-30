@@ -128,6 +128,8 @@ ns.TEXT = {
     gatherSkill = "%s %d of %d",
     showArrow = "Show the arrow",
     showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
+    mapPin = "Map pin on the guide's place",
+    mapPinTip = "The game's map pin goes on each place the guide sends you to, as soon as it comes up, so the golden line on Navigation's map leads there. A pin you put yourself stays until the guide goes on to its next place.",
     icons = "Targets and items over the guide",
     iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row over the guide's top: a click uses the item or targets the name. Changed out of a fight only: the game holds such buttons in one.",
     ahead = "Steps listed ahead",
@@ -243,6 +245,7 @@ local OPTIONS = {
     { key = "showGuide", default = true, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
     { key = "gather", default = true, text = ns.TEXT.gather, tip = ns.TEXT.gatherTip },
     { key = "showArrow", default = true, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
+    { key = "mapPin", default = true, text = ns.TEXT.mapPin, tip = ns.TEXT.mapPinTip },
     { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
     { key = "ahead", default = 5, min = 0, max = 12, step = 1, text = ns.TEXT.ahead, tip = ns.TEXT.aheadTip },
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
@@ -253,7 +256,7 @@ local OPTIONS = {
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches and those of what is on the way are read when they are needed.
-local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
+local VIEW = { showGuide = true, showArrow = true, mapPin = true, icons = true, ahead = true, gather = true }
 local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, equipUpgrades = true,
                  rolls = true, cinematics = true, lootLent = true, deleteRefused = true }
 -- Solo off: all of the module rests until it is ticked again, as a module stood down but for good reason: ns.off is

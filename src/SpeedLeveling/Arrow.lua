@@ -70,11 +70,6 @@ local function Font(name, size)
     return font
 end
 
--- Whether two places are the same place.
-local function Same(a, b)
-    return a ~= nil and b ~= nil and a.x == b.x and a.y == b.y and a.map == b.map and a.continent == b.continent
-end
-
 -- The time to get there, at the pace you have been closing in; nil while you are not.
 local function Time(yards)
     local now = Core.Plain(Core.Ask(rawget(_G, "GetTime"))) or 0
@@ -188,7 +183,7 @@ local function Build()
         if asked >= Arrow.ASK then
             asked = 0
             local place, at = ns.Guide.Target()
-            if not Same(place, target) then pace = nil end
+            if not ns.Run.SamePlace(place, target) then pace = nil end
             target, step = place, at
             if not target then return Arrow.Update(true) end
             Picture()
