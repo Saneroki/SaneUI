@@ -76,6 +76,8 @@ Key.AIM = 0.3   -- seconds between looks at a target's reach while a step's item
 Key.LOOK = 2    -- seconds after a fight, and after the last corpse it found, the interact key looks all around you
 Key.LOOKS = 30  -- seconds it does that at most after a fight, should a corpse be out of reach
 Key.TICK = 0.5  -- seconds between looks at the corpses meanwhile
+Key.FIRST = "E" -- the key it gets where it has none (Saneroki, 2026-10-30), once: the game's Strafe Right is the game's
+Key.SETTLE = 3  -- seconds after the login before that: the profile's key bindings are written first (Sync)
 Key.REACH = { SoftTargetInteractArc = "2", SoftTargetInteractRange = "30" } -- all around you, as far as a spell reaches
 Key.HEADER, Key.FIND, Key.FIGHT = "SaneUISpeedLevelingKey", "SaneUISpeedLevelingFind", "SaneUISpeedLevelingFight"
 Key.USE = "SaneUISpeedLevelingUse"
@@ -440,6 +442,21 @@ function Key.Keys()
 end
 Key.keysLater = Later(Key.Keys)
 
+-- No key: it gets Key.FIRST, once for a profile, and the chat says so; one taken off again stays off, and the module
+-- says so at every login. The game keeps key bindings per account, so a new account starts without it, and a key may
+-- still be bound to a button that is gone (Saneroki, 2026-10-29: E did nothing).
+local function FirstKey()
+    if not header or ns.off or #keys > 0 then return end
+    if ns.options.keyGiven then return Core.Print(ns.TEXT.hint) end
+    if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: first key", Key.firstLater) end
+    ns.options.keyGiven = true
+    Core.Ask(rawget(_G, "SetBinding"), Key.FIRST, Key.COMMAND)
+    Core.Ask(rawget(_G, "SaveBindings"), Core.Ask(rawget(_G, "GetCurrentBindingSet")))
+    Core.Print(ns.TEXT.keyFirst:format(Key.FIRST))
+end
+Key.firstLater = Later(FirstKey)
+local FirstSoon = Core.Later(Key.firstLater, Key.SETTLE)
+
 -- The switches as they are: the game's interact key for Loot first, Talk to NPCs and Quest objects, the driver's
 -- conditions, the macros.
 function Key.Update()
@@ -489,9 +506,7 @@ function Key.Start()
         soft = Core.Plain(now)
         Key.Refresh()
     end)
-    -- No key: said at every login until it has one. The game keeps key bindings per account, so a new account starts
-    -- without it, and a key may still be bound to a button that is gone (Saneroki, 2026-10-29: E did nothing).
-    if #keys == 0 then Core.Print(ns.TEXT.hint) end
+    FirstSoon()
 end
 Key.startLater = Later(Key.Start)
 
@@ -558,5 +573,6 @@ function Key.Wake()
     header:SetAttribute("keys", 0)
     Key.Update()
     header:SetAttribute("keys", keys and #keys or 0)
+    FirstSoon()
 end
 Key.wakeLater = Later(Key.Wake)

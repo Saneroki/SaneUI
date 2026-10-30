@@ -257,7 +257,27 @@ end
 check(ns.title == "Speed Leveling" and SaneUI.SpeedLeveling == ns, "the module is Speed Leveling")
 check(header and find._template == "SecureActionButtonTemplate", "the header and Find are made")
 check(_G["BINDING_NAME_" .. FIND] == ns.TEXT.binding, "the key's words in the game's key bindings")
-check(Printed("has no key on this account"), "with no key, the module says how to give it one")
+-- With no key: E, once, a moment after the login (the profile's key bindings come first), and the chat says so.
+do
+    local set, saved = {}, 0
+    SetBinding = function(key, command) set[#set + 1] = key .. ">" .. command end
+    SaveBindings = function(which) saved = which end
+    GetCurrentBindingSet = function() return 1 end
+    W.Wait(Key.SETTLE + 0.1)
+    check(set[1] == "E>" .. Key.COMMAND and saved == 1 and ns.options.keyGiven == true and Printed("key is E"),
+        "no key: it gets E, saved in the game's set in use, and the chat says so")
+    ns.Key.firstLater()
+    check(#set == 1 and Printed("has no key on this account"), "taken off again: not given again, the module says how to give it one")
+    ns.options.keyGiven = false
+    bound[Key.COMMAND] = { "F" }
+    W.Fire("UPDATE_BINDINGS")
+    ns.Key.firstLater()
+    check(#set == 1 and ns.options.keyGiven == false, "a key of its own: left alone")
+    bound[Key.COMMAND] = nil
+    W.Fire("UPDATE_BINDINGS")
+    ns.options.keyGiven = true
+    SetBinding, SaveBindings, GetCurrentBindingSet = nil, nil, nil
+end
 check(_G[Key.LINK .. 2] and _G[Key.LINK .. (Key.LINKS + 1)], "the chain's buttons are made")
 
 local conditions = drivers[header].mode

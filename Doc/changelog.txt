@@ -23,7 +23,8 @@ The bigger changes of each version, newest first.
   closes the goodbye screen. Quest rewards are chosen for you: the
   biggest upgrade, else what is worth the most, and upgrades you
   loot are put on. Group rolls are settled between your own
-  characters. Cinematics are skipped. Each has its switch; Solo in
+  characters. Cinematics are skipped. Its key is E unless you pick
+  another. Each has its switch; Solo in
   the bags rests it all. A right click unlocks the guide and the
   arrow to drag them.
 - Bags: a green arrow on the items that would be an upgrade, by

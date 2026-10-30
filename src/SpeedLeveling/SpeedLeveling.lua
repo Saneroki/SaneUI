@@ -48,6 +48,7 @@ ns.TEXT = {
     soloTip = "On: all of Speed Leveling works, the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again: your key does nothing, the guide is hidden and what it changed in Loot is put back. For playing with others. Your own two characters together count as solo. On in the profile Speedleveling, off in the others. Also a box at the foot of the bags.",
     binding = "Loot, talk, pick up, attack, find and mark, use",
     hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under Sane UI: Loot, talk, pick up, attack, find and mark, use.",
+    keyFirst = "Speed Leveling's key is %s: loot, talk, pick up, attack, find and mark, use. Change it in Esc > Options > Keybindings, under Sane UI.",
     -- /sane key: what the key sees now (Key.Check).
     keyCommand = "what Speed Leveling's key sees now: what it would do, what is in front of you, your target",
     keyNone = "Speed Leveling's key is not made yet.",
@@ -252,6 +253,7 @@ local OPTIONS = {
       button = function() ns.Guarded(ns.Guides.Open) end },
     { key = "foundCVars", default = {} }, -- the game's settings as they were before the key lent them (Key.lua)
     { key = "lootLent", default = {} },   -- Loot's switches as they were before Take all loot set them (Errands.lua)
+    { key = "keyGiven", default = false }, -- the key was given its first key (Key.lua)
     { key = "deleteRefused", default = false }, -- the game refused to destroy an item without its question (Errands.lua)
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest

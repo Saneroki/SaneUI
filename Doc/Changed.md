@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 724 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 178 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 724 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Navigation: a double click on a quest puts the pin, whatever the list does (Saneroki, 2026-10-30)
@@ -137,6 +137,11 @@ new settings `autoSell` and `autoRepair`, on at first, also on the page Inventor
 - Tests: `dev/tests/bags.lua` 349 checks (the boxes and their ticks, the vendor before the bags' window was built, the
   order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
   does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
+
+### Speed Leveling: its key gets E (Saneroki, 2026-10-30)
+Saneroki: E as the key by default, for a fresh install. `Key.FIRST`: where the key has none, `Key.SETTLE` seconds after the login
+(the profile's key bindings come first) or on waking from a rest, it gets E, once for a profile (`keyGiven`), over the game's
+Strafe Right, saved in the game's binding set, said in chat. Taken off again, the old hint at every login.
 
 ### Core: key bindings, Edit Mode layouts, all CVars, window places and the bags' layout in the profile (Saneroki, 2026-10-30)
 Saneroki: key bindings part of Accountwide and saved and loaded; key bindings, Edit Mode layouts, CVars, all game settings and
