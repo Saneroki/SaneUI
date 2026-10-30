@@ -366,13 +366,14 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
   under the quest (`AddText`, `Story`, `Rewards` by the quest's ID; `measure` for its height, `Reveal`), a preview's
   too; no panel below the list. It waits `Canvas.DOUBLE` for a second click (`Pressed`, no `OnDoubleClick`): two are
   the map pin (`Pin`, `PinView.Drop`), its text as it was.
-- **Folded** (`QuestLog.Fold`, `store.questLogFolded`, `Body`; Core's `barClick`): only the title bar.
+- **Folded** (`QuestLog.Fold`, `store.questLogFolded`, `Body`; Core's `barClick`): only the title bar. Zones: not the
+  game's `isCollapsed`; a zone folded by its + over the full map is ours (`store.questLogFolds`).
 - **Rows:** no mark on a quest (a preview keeps its giver's), no tick; `Margin`: pinned closer to the screen's edge.
 - **Mirrored** (`mirrored`, `Sided` from Core's `docked`; Core's `window:TitleAt`): on the screen's right half.
 - **Items** (`Special`, `Seat`, `Tray`): secure buttons on a tray on `UIParent`, never on the log: a protected frame's
   parent is protected, and the log comes and goes with the map in a fight. Out of a fight only (`Core.AfterCombat`);
   over the full map hidden in a fight by the game's state driver; out of sight while carried (Core's `lifted`).
-- **Tests:** `dev/tests/navigation.lua` 724 checks, `dev/tests/window.lua` 440.
+- **Tests:** `dev/tests/navigation.lua` 727 checks, `dev/tests/window.lua` 440.
 
 ## What is not there yet
 

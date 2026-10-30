@@ -3,8 +3,15 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 724 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 727 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: by zone the quests stand under their zone (Saneroki, 2026-10-30)
+Saneroki: sorted by zone it showed the zones but not the quests. The list followed the game's own log's folded headers
+(`isCollapsed`), and on the screen alone a window without fold marks could not open them again. `Entries` no longer
+looks at that state, and `CollapseQuestHeader` and `ExpandQuestHeader` are no longer called: the game's own log keeps its
+headers as it likes. The + over the full map folds a zone in ours (`store.questLogFolds`, by its name); on the screen
+alone none is folded. Tests: `dev/tests/navigation.lua` 727 checks.
 
 ### Navigation: a double click on a quest puts the pin, whatever the list does (Saneroki, 2026-10-30)
 Saneroki: a double click only opened the quest and put no marker, and a second one closed it.

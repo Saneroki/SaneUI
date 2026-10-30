@@ -17,11 +17,12 @@ local _, ns = ...
 --      Proximity     the nearest first, as the game measures the way to each (first; looked at again every
 --                    QuestLog.RESORT seconds while in sight, drawn anew once the order changed)
 --      Level         the lowest first
---      Zone          the game's own: its zones as headers, each quest under its zone
+--      Zone          the game's own order: its zones as headers, each quest under its zone, always: how the game's
+--                    own log keeps its headers folded is that log's (Saneroki 2026-10-30)
 --      Type          under the game's tag of each (Elite, Group, Dungeon, ...; the rest Normal)
 --  A quest done keeps one objective: to be turned in, in the game's words ("Report back to ..."), never left out.
 --
---      a header      a click folds it in or out, as the game's own log keeps it (Zone)
+--      a header      over the full map a click folds it in or out, kept (Zone); on the screen alone none is folded
 --      a quest       a click: its text unfolds under it, or folds away again (Saneroki 2026-10-30), a moment later,
 --                    once no second click came; the game's arrow leads to it, and the map moves to its objective,
 --                    where the map shows it (its question mark, or the middle of the area where its foes are), at
@@ -167,7 +168,7 @@ function QuestLog.Sort()
 end
 
 -- The game's log in its own order: its headers and its quests (not the hidden ones), each quest marked folded under
--- a folded header (the game lists those all the same; its own log leaves them out). And how many quests it holds.
+-- a zone folded over the full map (store.questLogFolds, by its name). And how many quests it holds.
 local function Entries()
     local entries, quests, folded = {}, 0, false
     local count = Plain(Core.Ask(C_QuestLog.GetNumQuestLogEntries)) or 0
@@ -175,8 +176,8 @@ local function Entries()
         local info = Core.Ask(C_QuestLog.GetInfo, index)
         if type(info) == "table" then
             if info.isHeader then
-                folded = info.isCollapsed and true or false
-                entries[#entries + 1] = { kind = "header", text = info.title, index = index, collapsed = info.isCollapsed }
+                folded = (full and ns.store.questLogFolds and ns.store.questLogFolds[info.title]) and true or false
+                entries[#entries + 1] = { kind = "header", text = info.title, index = index, collapsed = folded }
             elseif not info.isHidden and info.questID then
                 quests = quests + 1
                 entries[#entries + 1] = { kind = "quest", quest = info.questID, text = info.title, level = info.level,
@@ -277,7 +278,7 @@ local function Add(entry)
 end
 
 -- The log as rows, sorted as chosen: the previews on top; then each quest with its objectives, under its zone's
--- header (Zone: a folded header's quests not shown, but counted) or its type's (Type), else one after the other; the
+-- header (Zone: those of a zone folded not shown, but counted) or its type's (Type), else one after the other; the
 -- open quest's text under it. Returns how many quests the log holds.
 local function Read()
     wipe(rows)
@@ -504,10 +505,11 @@ local function Clicked(element, mouse)
     local row = element.row
     if not row then return end
     if row.kind == "header" then
-        -- Not in your log, a type: no header of the game's; on the screen alone no fold mark, no folding.
+        -- Not in your log, a type: no zone; on the screen alone no fold mark, no folding.
         if not row.index or not full then return end
-        if row.collapsed then ExpandQuestHeader(row.index) else CollapseQuestHeader(row.index) end
-        return
+        ns.store.questLogFolds = ns.store.questLogFolds or {}
+        ns.store.questLogFolds[row.text] = not row.collapsed or nil
+        return QuestLog.Refresh()
     end
     local quest = row.quest
     if mouse == "RightButton" then return Menu(element, quest) end
@@ -603,7 +605,7 @@ local function Draw(element, row)
     element.remove:SetShown(row.kind == "preview")
     element.light:SetShown(row.kind ~= "text")
     if row.kind == "header" then
-        -- The game's fold mark only for its own headers (Zone), and only over the full map.
+        -- The game's fold mark only for a zone, and only over the full map.
         local folds = full and row.index ~= nil
         element.left = folds and 16 or 0
         text:SetFontObject("GameFontNormal")

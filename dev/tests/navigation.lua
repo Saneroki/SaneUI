@@ -2304,7 +2304,7 @@ check(not rows[2].icon._shown and not rows[4].icon._shown and rows[2].left == 0
     and rows[2].text._points[1][1] == "LEFT" and rows[2].text._points[1][4] == 0 and rows[3].left == QuestLog.INDENT,
     "no mark before a quest: its words at the very start of its row, its objectives a little in")
 ;(function()
-    -- A header folded: the game lists its quests all the same, our log not (as the game's own log has it).
+    -- The game's own log has its headers folded: each zone's quests are listed under it all the same.
     local info = C_QuestLog.GetInfo
     C_QuestLog.GetInfo = function(index)
         local entry = info(index)
@@ -2312,11 +2312,20 @@ check(not rows[2].icon._shown and not rows[4].icon._shown and rows[2].left == 0
         return entry
     end
     QuestLog.Refresh()
-    local folded = logBox:Draw()
-    check(#folded == 1 and folded[1].row.kind == "header" and folded[1].row.collapsed,
-        "a header folded: its quests and their objectives not listed")
+    local listed = logBox:Draw()
+    check(#listed == 6 and not listed[1].row.collapsed and listed[2].row.quest == 7 and listed[4].row.quest == 8,
+        "the game's own log's headers folded: the quests under their zone all the same")
     C_QuestLog.GetInfo = info
     QuestLog.Refresh()
+    listed = logBox:Draw()
+    listed[1]._scripts.OnClick(listed[1], "LeftButton")
+    listed = logBox:Draw()
+    check(#listed == 1 and listed[1].row.collapsed and listed[1].mark._atlas == "campaign_headericon_closed"
+        and ns.store.questLogFolds["Elwynn Forest"], "a click on a zone over the full map: folded, its quests not listed; kept")
+    listed[1]._scripts.OnClick(listed[1], "LeftButton")
+    listed = logBox:Draw()
+    check(#listed == 6 and not listed[1].row.collapsed and not ns.store.questLogFolds["Elwynn Forest"], "again: open")
+    ns.store.questLogFolds = nil
 end)()
 do
     local was, saved = { map = full.map, u = full.u, v = full.v, k = full.k, follow = full.follow }, waypoint
@@ -2916,8 +2925,12 @@ end)()
         check(log.titleInset == ns.QuestLog.EDGE_SMALL and inset[4] == ns.QuestLog.EDGE_SMALL,
             "its list and its title close to the screen's edge")
         ns.store.questLogSort = "zone"
+        ns.store.questLogFolds = { ["Elwynn Forest"] = true }
         ns.QuestLog.Refresh()
         rows = box:Draw()
+        check(#rows == 5 and rows[2].row.kind == "quest" and not rows[1].row.collapsed,
+            "by zone the quests under each zone, one folded over the full map too")
+        ns.store.questLogFolds = nil
         rows[1]._scripts.OnClick(rows[1], "LeftButton")
         check(rows[1].row.kind == "header" and not rows[1].mark._shown and #box:Draw() == #rows,
             "its headers without their fold marks; a click folds none")

@@ -154,7 +154,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   its buttons, only the list over the game, clicked through but its title bar and its words; its close button
   takes it out of both. Its title bar says how many quests you have of how many you may, and how they are sorted:
   *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
-  Elite, Group, Dungeon and the like; the rest Normal); a click on those words sorts them the next way, kept. **A click
+  Elite, Group, Dungeon and the like; the rest Normal; a quest always shows under its zone, however the game's own log
+  has its headers; over the full map a click on a zone folds it, kept); a click on those words sorts them the next way, kept. **A click
   on the title bar beside them hides the list,** so that only the title bar stays, and shows it again, kept. Your quests
   with their level, no mark before them and no tick after them, their
   objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
@@ -437,8 +438,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   title, `titleTip` its tip; the title `%d/%d <sorting>`): by `GetDistanceSqToQuest` (looked at again
   every `QuestLog.RESORT` seconds by a ticker while shown, drawn anew only once the order changed), by level, the
   game's own with its headers, or under `GetQuestTagInfo`'s tag. A `WowScrollBoxList` of rows read from
-  `C_QuestLog` (Zone: the game's headers, folded as the game keeps them: a folded one's quests, which the game
-  still lists, left out; quests with level, failed, watched; objectives; a done quest's turn in from
+  `C_QuestLog` (Zone: the game's headers, not as the game keeps them folded, which a window of ours could not undo on
+  the screen alone: a zone folded is ours, `store.questLogFolds`, over the full map only; quests with level, failed, watched; objectives; a done quest's turn in from
   `GetQuestLogCompletionText`, else `GetNextWaypointText`, else `QUEST_WATCH_QUEST_READY`, as the game's tracker),
   built again on `QUEST_LOG_UPDATE` once a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
   has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
