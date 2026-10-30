@@ -16,8 +16,8 @@ local Core = SaneUI.Core
 --                           -- (yards a second now) and t (the GetTime() of that look: at + pace * (GetTime() - t)
 --                           -- is where it is between two looks) }
 --      Trips:CanLand()      -- a flight with a flight point before its end, not yet asked to land
---      Trips:Land()         -- that flight lands at its next flight point (the game's TaxiRequestEarlyLanding);
---                           -- only from a click
+--      Trips:Land()         -- a flight lands at its next flight point (the game's TaxiRequestEarlyLanding), as the
+--                           -- game's button does on any flight; only from a click
 --      Trips:OnChange(fn)   -- fn() on the frame after a trip began, ended, or a flight's end changed
 --      Trips:NearTram(yards)    -- waiting at a station of the tram, within so many yards of it: the tram's key in
 --                               -- the set and the station's number (1 or 2, as its path); nil else
@@ -270,7 +270,7 @@ function Trips:CanLand()
 end
 
 function Trips:Land()
-    if not self:CanLand() then return end
+    if not OnTaxi() then return end
     Core.Ask(rawget(_G, "TaxiRequestEarlyLanding"))
 end
 
@@ -508,7 +508,7 @@ local function Hook()
     -- Asked to land at the next flight point (our button or the game's): the flight ends there.
     if rawget(_G, "TaxiRequestEarlyLanding") then
         hooksecurefunc("TaxiRequestEarlyLanding", Core.Guard("data: trips", function()
-            if flight and trip and trip.next and not flight.landing then
+            if flight and trip and trip.canLand then
                 flight.landing = trip.next
                 Set(Flying(GetTime()))
                 tell()

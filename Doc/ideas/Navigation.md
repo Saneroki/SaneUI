@@ -1264,11 +1264,12 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     arrives and leaves, counting down (grey, how often it sails, until a ride taught its times); aboard, when
     it lands. The setting *Ship times at a dock* (on); not while the map fills the screen.
   - **The trip on screen (built 2026-10-20, `TripView.lua`, Core's `Data.Trips`):** on a flight, a ship or the
-    tram, two thirds up the screen (2026-10-21, Saneroki): the start and the end named above the ends of a fine
+    tram, high up the screen (2026-10-21 and 2026-10-30, Saneroki): the start and the end named above the ends of a fine
     golden line in the map route's art, filling smoothly (eased every frame between Core's looks), the vehicle's
     icon at its tip, a flight point's mark at each stop, the time to the end, the next stop and its time, the zone
-    below; on a flight with a stop before its end the game's own *Request Stop* button
-    (`TaxiRequestEarlyLanding`, its art and words). A flight's route is read at the flight master
+    below; the way out beside it, in place of the game's button at the action bars (2026-10-30, Saneroki): on any
+    flight *Request Stop* (`TaxiRequestEarlyLanding`), in a vehicle *Leave Vehicle* (`VehicleExit`), the game's art
+    and words, alone where nothing else shows. A flight's route is read at the flight master
     (`TakeTaxiNode`: its hops, each the set's flight), kept per character for a `/reload` in the air; how far
     along from the player's place on the hops' points, how long at the pace measured on this flight, before that
     the median of the character's last five. The setting *Your trip on screen* (on). While flying the planner

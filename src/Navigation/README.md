@@ -240,11 +240,14 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   arrives (*Board now* while it is in) and when it leaves; the others that stop there in a line each below. A ship
   or the tram you have not ridden on this realm yet shows how often it comes; one ride teaches its times (kept on
   this computer for the realm, half a day). *Ship times at a dock* in the settings switches it off.
-- **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay two thirds up
+- **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay high up
   the screen: where it began and where it goes at the ends of a fine golden line (the map route's art, its glint
   pulsing along) that fills smoothly as you go, the vehicle's icon riding at its tip, a flight point's mark at each
-  stop on it (dim once passed); below it the time to the end, the next stop and the time to it, and the zone. On a flight with a stop before its
-  end, the game's own *Request Stop* button: you land at the next flight point, and the trip ends there. A flight's
+  stop on it (dim once passed); below it the time to the end, the next stop and the time to it, and the zone. The
+  way out stands beside the line, in place of the game's button at the action bars: on any flight the game's *Request
+  Stop* (you land at the next flight point, and the trip ends there), in a vehicle its *Leave Vehicle*, the button
+  alone where the overlay stands. The game's button is out of sight only while this setting is on, and back in Edit
+  Mode; a vehicle's own action bar keeps its own leave button. A flight's
   time comes from your own pace on it, before that from your character's last flights; a ship's from its
   timetable; the tram's from the game's own. A `/reload` in the air finds the flight again. *Your trip on screen*
   in the settings switches it off.
@@ -828,7 +831,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
-| `TripView.lua` | The travel overlay, two thirds up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly, *Request Stop* on a flight |
+| `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
@@ -1064,7 +1067,11 @@ Tests: `dev/tests/navigation.lua`.
   *Possible ore*; new are *Found herbs* and *Found ore* (`Found.lua`): what the game's minimap shows now, each in
   its own picture, the switches doubling as Find Herbs and Find Minerals, which take turns while you move, without a
   sound (`Nodes.lua`); and sparkles on the herb or ore your interact key would gather (`Sparkles.lua`).
-- **2026-10-21, the travel overlay:** at Saneroki's ask the trip view stands two thirds up the screen, a fine
+- **2026-10-30, the way out:** at Saneroki's ask the overlay stands a little higher (`TripView.UP` 0.72, just under
+  the game's error messages) and holds the way out of every flight and vehicle (what the game's own button asks,
+  `CanExitVehicle`), alone in a vehicle. The game's `MainMenuBarVehicleLeaveButton` is lent (`Core.Lend`: alpha 0, no
+  mouse), never hidden by us: its OnHide has Edit Mode's manager lay out the action bars, which would run tainted.
+- **2026-10-21, the travel overlay:** at Saneroki's ask the trip view stood two thirds up the screen, a fine
   golden line in the map route's art (its glint pulsing along) in place of Core's bar, eased every frame between
   Core's looks (`TripView.EASE`; Data.Trips gives each trip's `pace` and `t`), the vehicle's icon at its tip, the
   ends' names above the line's ends. Waiting at a dock or the tram's station it shows the next to come there

@@ -127,11 +127,12 @@ its next departure once a ride on the realm taught its times (`Ships:Next`), els
 (setting `dockTimes`) shows at a dock where its ships go and when they arrive and leave, aboard when it lands
 (under `UIWidgetTopCenterContainerFrame`, a guarded 1-2 s chain). Ship periods: Travel's `wait` from batch 6.
 
-Trips (2026-10-20, 21): `TripView.lua` (settings `tripView`, `dockTimes`) is the travel overlay two thirds up the
-screen: Core's `Data.Trips` (flight, ship, tram) or the wait at a dock or the tram's station (`DockWatch.Rows()`,
+Trips (2026-10-20, 21): `TripView.lua` (settings `tripView`, `dockTimes`) is the travel overlay high up the
+screen (`TripView.UP`): Core's `Data.Trips` (flight, ship, tram) or the wait at a dock or the tram's station (`DockWatch.Rows()`,
 no frames): a fine golden line of Route.lua's art (Line widgets, the glint template), eased every frame (OnUpdate
-only while shown), the vehicle's icon at its tip, stop marks (`TaxiNode_Neutral`), the game's leave button art for
-Request Stop; `Planner.lua` draws a flight's way on as the first leg (`Flying`, `Fly`, `Trips:OnChange`). The Deeprun Tram
+only while shown), the vehicle's icon at its tip, stop marks (`TaxiNode_Neutral`), the way out of every flight and vehicle
+in the game's leave button art, its `MainMenuBarVehicleLeaveButton` lent (alpha, mouse; never `Hide`: its OnHide runs
+Edit Mode's layout of the bars) while `tripView` is on and Edit Mode closed; `Planner.lua` draws a flight's way on as the first leg (`Flying`, `Fly`, `Trips:OnChange`). The Deeprun Tram
 is Travel's key 1000369 (kind `tram`, `dev/tools/travel-data`); the planner takes it between its two entrances
 (`Tram` in `Planner.lua`: `Planner.STATION` + half of Travel's `wait` + `time`, a straight red leg).
 

@@ -552,7 +552,7 @@ Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
 local Trips = SaneUI.Core.Data.Trips()
 local trip = Trips:Now()   -- nil, or { kind, stops = { { name or map and area, at } }, yards, at, next, left, nextLeft,
                            --   landing, canLand, points = { { world, x, y } } }
-Trips:Land()               -- a flight lands at its next flight point (only from a click)
+Trips:Land()               -- any flight lands at its next flight point, as the game's button (only from a click)
 Trips:OnChange(fn)         -- fn() after a trip began, ended, or a flight's end changed
 Trips:NearTram(200)        -- waiting at a station of the tram: its key and the station's number
 Trips:TramNext(key)        -- when its next train arrives at a station, leaves, whether one stands there (server times)

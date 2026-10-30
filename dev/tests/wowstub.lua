@@ -311,6 +311,8 @@ function methods:IsMouseOver() return self._mouseOver or false end
 function methods:SetText(text) self._text = text end
 function methods:SetEnabled(enabled) self._disabled = not enabled end
 function methods:IsEnabled() return not self._disabled end
+function methods:Enable() self._disabled = false end
+function methods:Disable() self._disabled = true end
 -- A dropdown (WowStyle1DropdownTemplate): its menu is made anew when asked; _items is what it holds.
 function methods:SetupMenu(generator)
     self._generator = generator

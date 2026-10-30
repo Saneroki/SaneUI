@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 727 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the travel overlay higher, the way out in it (Saneroki, 2026-10-30)
+Saneroki: the travel widget a little higher, with the exit vehicle icon, the game's own hidden.
+- **`TripView.lua`:** `TripView.UP` 0.72 (was 2/3): the labels end just under the game's error messages. The way out
+  (`DrawExit`) shows on any flight and wherever the game's button asks (`Leaving`, `CanExitVehicle` of the game's button:
+  a vehicle's own action bar keeps its own leave button); in a vehicle, or a flight whose route is not known, the
+  button alone (`DrawAlone`). Its click and tooltip as the game's: Request Stop on a flight, `VehicleExit` and Leave
+  Vehicle else. Heard at once by a hook after the game's button's `Update`.
+- **The game's button** (`Stand`): lent (`Core.Lend`: alpha 0, no mouse), so it stays shown to the game. Never hidden by
+  us: its OnHide has Edit Mode's manager lay out the action bars, which would run tainted. Back in Edit Mode, with
+  the setting *Your trip on screen* off, when the module stands down; it stays as it is if the game's button changed
+  (`Game`).
+- **`Data.Trips`:** `Land` on any flight, as the game's button; a stop is noted only where one can be made
+  (`trip.canLand`), so pressing it past the last stop keeps the flight's pace.
+- Tests: `dev/tests/navigation.lua` 737 checks; `wowstub.lua` has `Enable` and `Disable`.
+
 ### Core: the recommended CVars in Accountwide and Speedleveling (Saneroki, 2026-10-30)
 Saneroki: the world's distance, grass, weather, shadows, water and 115 frames a second set by the profiles, nothing to
 type on a new install, and what loads quicker.

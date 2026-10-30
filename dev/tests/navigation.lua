@@ -3877,8 +3877,8 @@ local function Rides()
     DockWatch.Update()
     local overlay = ns.TripView.frame
     local point = overlay and overlay._points[1]
-    check(overlay and overlay:IsShown() and point and point[1] == "CENTER" and point[3] == "BOTTOM" and near(point[5], 600),
-        "waiting at its dock: the overlay, two thirds up the screen")
+    check(overlay and overlay:IsShown() and point and point[1] == "CENTER" and point[3] == "BOTTOM" and near(point[5], 648),
+        "waiting at its dock: the overlay, high up the screen")
     UIParent:SetSize(width, height)
     Core.Set(ns.name, "dockTimes", false)
     check(not overlay:IsShown(), "not while its setting is off")
@@ -3953,11 +3953,45 @@ local function Flights()
     Frames(2)
     check(Trips:Now() == nil and not Core.Character(Core.name).trip and not Core.Character(Core.name).flightPaces
         and not TripView.frame:IsShown(), "landed early: the trip ends, nothing learnt from it")
+    -- The way out: the game's leave button out of sight and without clicks, never hidden by us; ours wherever it offers one.
+    local leave, canLeave, left = CreateFrame("Button"), false, 0
+    leave.CanExitVehicle = function() return canLeave end
+    leave.Update = function() end
+    leave.IsMouseEnabled = function(self) return self._mouse end
+    leave:EnableMouse(true)
+    MainMenuBarVehicleLeaveButton = leave
+    VehicleExit = function() left = left + 1 end
+    leave:Show()
+    TripView.Update()
+    check(leave:GetAlpha() == 0 and not leave:IsMouseEnabled() and leave:IsShown() and not TripView.frame:IsShown(),
+        "the game's leave button out of sight while ours stands in for it, and still shown to the game")
+    canLeave = true
+    leave:Update()
+    check(TripView.frame:IsShown() and TripView.exit:IsShown(), "in a vehicle: the way out, heard from the game's button")
+    TripView.exit._scripts.OnClick(TripView.exit)
+    check(left == 1 and TripView.exit:IsEnabled(), "its click leaves the vehicle")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(leave:GetAlpha() == 1 and leave:IsMouseEnabled(), "in Edit Mode the game's button is back, to be placed")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(leave:GetAlpha() == 0, "and away again after it")
+    Core.Set(ns.name, "tripView", false)
+    check(leave:GetAlpha() == 1 and leave:IsMouseEnabled() and not TripView.frame:IsShown(),
+        "the setting off: the game's button is back, ours gone")
+    Core.Set(ns.name, "tripView", true)
+    check(leave:GetAlpha() == 0 and TripView.exit:IsShown(), "the setting on: ours stands in again")
+    canLeave = false
+    leave:Update()
+    check(not TripView.frame:IsShown(), "out of the vehicle: nothing")
     Planner.Track(1415, -1000, 1000, GetTime() + 200)
     check(shownWay == nil, "after the flight, without a map pin: no line")
     -- A whole flight: its pace learnt for this character.
     Fly()
-    for _ = 1, 82 do W.Wait(1) end
+    for _ = 1, 50 do W.Wait(1) end
+    trip = Trips:Now()
+    check(trip.next == 3 and not Trips:CanLand() and TripView.exit:IsShown(), "past its last stop the way out is there too, as the game's")
+    TripView.exit._scripts.OnClick(TripView.exit)
+    check(not Trips:Now().landing and not TripView.exit:IsEnabled(), "pressed there: no stop asked for, the flight goes on to its end")
+    for _ = 1, 32 do W.Wait(1) end
     onTaxi = false
     W.Fire("PLAYER_CONTROL_GAINED")
     local paces = Core.Character(Core.name).flightPaces
@@ -3968,8 +4002,8 @@ local function Flights()
     for _ = 1, 10 do W.Wait(1) end
     trip = Trips:Now()
     check(trip and trip.kind == "tram" and trip.next == 2 and math.abs(trip.at - 400) < 41 and math.abs(trip.left - 40) < 1.1
-        and TripView.Lines(trip).title == "Deeprun Tram: Stormwind City to Ironforge",
-        "on the tram: how far along, how long to the station")
+        and TripView.Lines(trip).title == "Deeprun Tram: Stormwind City to Ironforge" and not TripView.exit:IsShown(),
+        "on the tram: how far along, how long to the station, no way out")
     local trams = Core.Store(Core.name).trams
     local learnt = trams and trams["Stub Realm"] and trams["Stub Realm"][7]
     check(learnt and math.abs(learnt.epoch - (W.serverStart + start)) < 1.5,

@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the travel overlay sits a little higher and holds the
+  button to leave a flight or a vehicle, in place of the game's.
 - Bags: Auto Sell and Auto Repair, two checkboxes at the foot of
   your bags, on at first. At a vendor your junk is sold, then your
   gear repaired with your own gold. Hold Shift to do it yourself.

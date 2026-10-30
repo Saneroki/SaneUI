@@ -2,19 +2,23 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - TripView
---  The overlay of a trip, centred two thirds up the screen: a fine golden line
---  in the art of the map's route (Route.lua: the game's dependency bar, its glint
---  pulsing along), the vehicle's icon riding at its tip.
+--  The overlay of a trip, centred high up the screen (TripView.UP): a fine golden
+--  line in the art of the map's route (Route.lua: the game's dependency bar, its
+--  glint pulsing along), the vehicle's icon riding at its tip.
 --
 --    on a trip   (Core's Data.Trips: a flight, a boat or a zeppelin, the tram) where it began at the
 --                line's left end, where it ends at its right, a flight point's mark at each stop on it (dim
---                once passed); under it the time to the end, the next stop and its time, the zone. On a
---                flight with a stop before its end, the game's own Request Stop button: it lands at the
---                next flight point. Setting: Your trip on screen.
+--                once passed); under it the time to the end, the next stop and its time, the zone.
+--                Setting: Your trip on screen.
 --    waiting     at a dock or a tram's station (DockWatch.lua): the next to come there, the line filling as it
 --                nears (from when it last left here to when it arrives), then when it leaves; how often it
 --                sails while its times are not known; the others there in a line each below. Setting: Ship
 --                times at a dock.
+--    the way out wherever the game offers one, beside the line, alone in the overlay's place in a vehicle:
+--                the game's art and words, Request Stop on a flight (it lands at the next flight point),
+--                Leave Vehicle in a vehicle. It stands in for the game's button at the action bars, which
+--                is out of sight and takes no clicks while Your trip on screen is on; in Edit Mode the
+--                game's is back, to be placed. A vehicle's own action bar keeps its own leave button.
 --
 --      TripView.Lines(trip)   the words for a trip: { from, to, title, next, left, zone } (knows no frames)
 --      TripView.Update()      looked at again now (a trip began or ended, a setting changed)
@@ -27,14 +31,14 @@ local Core = SaneUI.Core
 local TripView = {}
 ns.TripView = TripView
 
-TripView.UP = 2 / 3      -- the overlay's middle, this share of the screen up from its bottom
+TripView.UP = 0.72       -- the overlay's middle, this share of the screen up from its bottom (just under the game's error messages)
 TripView.WIDTH = 320     -- the line's length
 TripView.THICK = 4       -- its thickness; its dark edge EDGE
 TripView.EDGE = 7
 TripView.MARK = 16       -- a stop's mark on it, an end's END, the vehicle's RIDER
 TripView.END = 20
 TripView.RIDER = 24
-TripView.BUTTON = 32     -- the Request Stop button, as large as the game's
+TripView.BUTTON = 32     -- the way out, as large as the game's
 TripView.GAP = 6         -- pixels between the parts
 TripView.EASE = 5        -- how quickly the line follows where the trip is (eased, a share of the gap a second)
 TripView.LOOK = 2        -- seconds between two looks while nothing shows
@@ -52,6 +56,7 @@ TripView.TEXT = {
     unknown = "...",
     stop = Core.Word("TAXI_CANCEL", "Request Stop"),
     stopTip = Core.Word("TAXI_CANCEL_DESCRIPTION", "Stop at the next flight point."),
+    leave = Core.Word("LEAVE_VEHICLE", "Leave Vehicle"),
 }
 
 -- The game's own leave button's art (MainMenuBarVehicleLeaveButton), and its look once a stop was asked for.
@@ -63,6 +68,7 @@ local FLIGHT = "flightmaster"    -- a flight master, as the game's map shows one
 
 local Trips, Ships = Core.Data.Trips(), Core.Data.Ships()
 local frame, track, lines, fromLabel, toLabel, timeLine, subLine, zoneLine, rider, exit
+local lent, hooked        -- the game's leave button lent to us; hooked: its updates heard
 local ends, marks, others = {}, {}, {}
 local shown = nil         -- what is drawn: { trip } or { row, rows }, with the line's share as drawn
 local looking = false
@@ -123,7 +129,13 @@ local function Reach(line, x, thickness)
     line:Show()
 end
 
+local function OnTaxi()
+    return Core.Ask(rawget(_G, "UnitOnTaxi"), "player") and true or false
+end
+
+-- What the game's button does when clicked.
 local function Exit()
+    if not OnTaxi() then return Core.Ask(rawget(_G, "VehicleExit")) end
     Trips:Land()
     exit:Disable()
     exit:SetHighlightTexture(EXIT.asked, "ADD")
@@ -132,8 +144,12 @@ end
 
 local function Tip(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip_SetTitle(GameTooltip, TripView.TEXT.stop)
-    GameTooltip:AddLine(TripView.TEXT.stopTip, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+    if OnTaxi() then
+        GameTooltip_SetTitle(GameTooltip, TripView.TEXT.stop)
+        GameTooltip:AddLine(TripView.TEXT.stopTip, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+    else
+        GameTooltip_SetTitle(GameTooltip, TripView.TEXT.leave)
+    end
     GameTooltip:Show()
 end
 
@@ -187,7 +203,6 @@ local function Build()
     exit = CreateFrame("Button", nil, frame)
     TripView.exit = exit
     exit:SetSize(TripView.BUTTON, TripView.BUTTON)
-    exit:SetPoint("LEFT", track, "RIGHT", TripView.END / 2 + TripView.GAP, 0)
     for _, art in ipairs({ { "SetNormalTexture", EXIT.up }, { "SetPushedTexture", EXIT.down } }) do
         local texture = exit:CreateTexture()
         texture:SetTexture(art[2])
@@ -204,7 +219,7 @@ local function Build()
     frame:Hide()
 end
 
--- Two thirds up the screen, placed again when the screen's height changed.
+-- High up the screen, placed again when the screen's height changed.
 local function Place()
     local height = UIParent:GetHeight()
     if height == placed then return end
@@ -235,7 +250,7 @@ end
 
 -- Every frame while shown: the line eased towards where the trip is, the vehicle at its tip, the time.
 Moving = function(elapsed)
-    if not shown then return end
+    if not shown or shown.alone then return end
     local target, left, docked = Target()
     local share = shown.share or target
     share = share + (target - share) * math.min(1, (elapsed or 0) * TripView.EASE)
@@ -334,17 +349,6 @@ local function DrawTrip(trip)
     subLine:SetText(lines.next)
     zoneLine:SetText(lines.zone or "")
     Others({})
-    if trip.kind == "flight" and (trip.canLand or trip.landing) then
-        if not exit:IsShown() then
-            exit:Enable()
-            exit:SetHighlightTexture(EXIT.light, "ADD")
-            exit:UnlockHighlight()
-        end
-        if trip.landing then exit:Disable() end
-        exit:Show()
-    else
-        exit:Hide()
-    end
 end
 
 local function DrawWait(rows)
@@ -367,7 +371,33 @@ local function DrawWait(rows)
     end
     zoneLine:SetText("")
     Others(rows)
-    exit:Hide()
+end
+
+-- Nothing but the way out: in a vehicle, on a flight whose route is not known.
+local function DrawAlone()
+    shown = { alone = true }
+    for _, text in ipairs({ fromLabel, toLabel, timeLine, subLine, zoneLine }) do text:SetText("") end
+    Others({})
+end
+
+-- The way out: beside the line, alone in its place; new each time it comes, not to be pressed again once a
+-- landing was asked for.
+local function DrawExit(wanted, landing)
+    track:SetShown(not shown.alone)
+    exit:ClearAllPoints()
+    if shown.alone then
+        exit:SetPoint("CENTER")
+    else
+        exit:SetPoint("LEFT", track, "RIGHT", TripView.END / 2 + TripView.GAP, 0)
+    end
+    if not wanted then return exit:Hide() end
+    if not exit:IsShown() then
+        exit:Enable()
+        exit:SetHighlightTexture(EXIT.light, "ADD")
+        exit:UnlockHighlight()
+    end
+    if landing then exit:Disable() end
+    exit:Show()
 end
 
 local function Wanted(key)
@@ -384,21 +414,63 @@ local function Hide()
     end
 end
 
+-------------------------------------------------------------------------------
+--  The game's leave button
+-------------------------------------------------------------------------------
+-- The game's button, while it is as we know it: otherwise it stays, and ours does not stand in for it.
+local function Game()
+    local button = rawget(_G, "MainMenuBarVehicleLeaveButton")
+    if button and type(button.CanExitVehicle) == "function" then return button end
+end
+
+-- Whether there is a way out now: any flight, else as the game's button asks (a vehicle's own action bar has its own).
+local function Leaving()
+    if OnTaxi() then return true end
+    local button = Game()
+    return button and Core.Ask(button.CanExitVehicle, button) and true or false
+end
+
+local Changed -- (below)
+
+-- The game's button out of sight and without clicks while ours stands in for it. Never hidden by us: its OnHide
+-- has Edit Mode's manager lay out the action bars, which would run tainted. A fight that locks it: the next look.
+local function Stand()
+    local button = Game()
+    if button and not hooked then
+        hooked = true
+        hooksecurefunc(button, "Update", Changed)
+    end
+    local wanted = button and not ns.off and ns.options and ns.options.tripView ~= false and not Core.EditMode.active
+    if wanted and not lent then
+        if Core.Locked(button) then return end
+        lent = Core.Lend(button)
+        lent:SetAlpha(0)
+        lent:SetMouse(false)
+    elseif lent and not wanted then
+        lent:Return()
+        lent = nil
+    end
+end
+
 function TripView.Update()
+    Stand()
     local trip = Trips:Now()
     local rows = not trip and ns.DockWatch.Rows() or {}
     local drawTrip = trip and Wanted("tripView")
     local drawWait = #rows > 0 and Wanted("dockTimes")
-    if not drawTrip and not drawWait then return Hide() end
+    local leaving = Leaving() and Wanted("tripView")
+    if not drawTrip and not drawWait and not leaving then return Hide() end
     if not frame then Build() end
     Place()
-    if drawTrip then DrawTrip(trip) else DrawWait(rows) end
+    if drawTrip then DrawTrip(trip) elseif drawWait then DrawWait(rows) else DrawAlone() end
+    DrawExit(leaving, drawTrip and trip.landing)
     frame:Show()
     Moving(0)
 end
 
 function TripView.Hide()
     Hide()
+    Stand()
 end
 
 -- The looks, one after the other while the world is there: every second while shown, else seldom.
@@ -408,12 +480,15 @@ Tick = ns.Guard(function()
     TripView.Update()
     C_Timer.After(shown and 1 or TripView.LOOK, Tick) -- unguarded: Tick is the guard (ns.Guard)
 end)
+-- A trip began, ended or changed its end, or the game looked at its leave button again: drawn at once.
+Changed = ns.Guard(function()
+    if not ns.off then TripView.Update() end
+end)
 ns.On("PLAYER_ENTERING_WORLD", function()
+    Stand()
     if looking then return end
     looking = true
     C_Timer.After(1, Tick) -- unguarded: Tick is the guard (ns.Guard)
 end)
--- A trip began, ended or changed its end: drawn at once.
-Trips:OnChange(ns.Guard(function()
-    if not ns.off then TripView.Update() end
-end))
+Trips:OnChange(Changed)
+Core.EditMode.Watch(ns.Guard(Stand))
