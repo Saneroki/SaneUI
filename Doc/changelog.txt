@@ -16,6 +16,9 @@ The bigger changes of each version, newest first.
   the game's defaults, as a fresh install, each character its own.
   A profile holds everything: key bindings, Edit Mode layouts, all
   game settings, where windows stand, the addons switched on.
+  Accountwide and Speedleveling set our recommended graphics, 115
+  frames a second and quicker loading screens for you; what you
+  change afterwards stays yours.
 - Speed Leveling: nothing holds you up. Loot takes everything by
   default, the game no longer asks before equipping or destroying,
   the key runs you to the corpses around you and opens them, and

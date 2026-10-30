@@ -91,12 +91,23 @@ but for a window to try those with (`/sane window`).
   in its section *Expand window* (Social, tab *Appearance*), which can be *Use global type*: this one.
 - **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
   - Every character uses one of three standard profiles, or one you made. None is made for a character by itself.
-    - *Speedleveling*: Speed Leveling's automation on (its switch *Solo*, `Profiles.PRESET`). For now where every
-      new character starts.
-    - *Accountwide*: Sane UI's recommended settings, every change shared by all the characters on it.
+    - *Speedleveling*: Speed Leveling's automation on (its switch *Solo*), our recommended CVars and some more that
+      keep you moving (`Presets.lua`). For now where every new character starts.
+    - *Accountwide*: Sane UI's recommended settings and CVars (`Presets.lua`), every change shared by all the
+      characters on it.
     - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's
       settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
       (they stay in the profile it left).
+  - **What the two shared standard profiles set** (`Presets.lua`, Saneroki, 2026-10-30): the game's CVars as single
+    CVars of Sync's (`named`, ticked in the tab *CVars*), written last at the login. How far the world shows, its
+    grass, weather, shadows and water at their finest, 115 frames a second in front, behind and as a target, loading
+    screens that do not wait for what is not needed at once, the camera out as far as it goes. Speedleveling also
+    takes off the grey blur at death, the tutorials, the quest text word by word and the voice on errors, and takes
+    you down when you cast in the air; Accountwide names the game's own values for those, so that a character on it
+    is not left with what one on Speedleveling set. A CVar one of the two games lacks is passed over. Given once for
+    each `Presets.VERSION`, and only what the profile does not have: a player's change stays, and what they unticked
+    stays out until the version is raised. The game's own combat text is no CVar of the profiles: Nameplates switches
+    it off while its own shows and gives it back when it stops.
   - A profile is a named set of the settings of every module, where the windows stand, the bags' layout, and the game's
     own (its options, CVars, key bindings, Edit Mode layouts, chat windows, addons switched on: as far as the tab
     *Game settings* ticks them): the game's are set from it a moment after a character comes into the world, and read
@@ -506,6 +517,7 @@ but for a window to try those with (`/sane window`).
 | `SaneUI.toc` | The addon `SaneUI` |
 | `Core.lua` | Chat, events, errors, modules, `/sane` |
 | `Saved.lua` | The saved settings and the description of the switches |
+| `Presets.lua` | What the standard profiles set over the defaults: our recommended CVars (`Core.Presets`) |
 | `Profiles.lua` | Where every module's settings live: a profile (Accountwide at first) or the character's own; the profiles |
 | `Serial.lua` | Plain values as a line of text and back (`Core.Serial.Write`, `Read`): a profile exported and imported |
 | `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`, `Unconfirmed` (the line *! Unconfirmed Data !*; `UNCONFIRMED_MARK`, the red ! before each such thing's name), `TipLook`/`TipSection`/`LookOf` (a creature on a map, drawn by the Tooltips module like a unit), `Pool`, `Confirm`, `AskText`, `Font`, `Sound`, `Lend` |

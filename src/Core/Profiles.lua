@@ -6,10 +6,10 @@ local Core = SaneUI.Core
 --  Whose settings are in use, and where they live (Saneroki, 2026-10-17; the
 --  three profiles every account has, 2026-10-30). Each character uses a profile:
 --    Speedleveling        for now the one new characters start with: Sane UI's
---                         settings, the game's, and Speed Leveling's automation
---                         on (Profiles.PRESET)
---    Accountwide          Sane UI's recommended settings; every change goes to
---                         all the characters that use it
+--                         settings, the game's, Speed Leveling's automation on
+--                         and our recommended CVars (Presets.lua)
+--    Accountwide          Sane UI's recommended settings and CVars; every change
+--                         goes to all the characters that use it
 --    Character specific   no profile at all: each character keeps its own, from
 --                         a fresh install's defaults, and the game's settings
 --                         are left to the game, back at its defaults the moment
@@ -35,6 +35,7 @@ local Core = SaneUI.Core
 --      SaneUIDB.characters   [key] = { name, realm, class, profile }: every character seen; profile: a name,
 --                            or Character specific (Profiles.OWN); nil: Accountwide
 --      SaneUIDB.newProfile   the profile a character not seen yet starts with (nil: Speedleveling)
+--      SaneUIDB.presets      [name] = the Presets.VERSION a standard profile was given
 --      SaneUICharDB.settings [module] = this character's own settings (Character specific)
 --      SaneUICharDB.key      this character's key, to find its line before the game names it
 --
@@ -48,8 +49,7 @@ Profiles.ACCOUNTWIDE = "Accountwide"
 Profiles.SPEEDLEVELING = "Speedleveling"
 Profiles.OWN = "Character specific" -- no profile: the character's own settings, the game's left to the game
 Profiles.NEW = "new"       -- the line of the characters not seen yet (Character, SetCharacter)
--- What a standard profile sets over the defaults when it is made, and again at Defaults: [module] = { [switch] = value }.
-Profiles.PRESET = { [Profiles.SPEEDLEVELING] = { SpeedLeveling = { solo = true } } }
+Profiles.PRESET = Core.Presets.profiles -- what a standard profile sets over the defaults (Presets.lua)
 Profiles.MAX_NAME = 32     -- letters in a profile's name
 Profiles.EXPORT = "Sane UI profile" -- what an exported text says it is
 
@@ -273,16 +273,29 @@ local function Stamp(values, version)
     if type(values) == "table" and values._version == nil and type(version) == "number" then values._version = version end
 end
 
--- A standard profile that is not there yet: for an account that has settings already a copy of Accountwide's, so
--- that nothing it has is lost by using it; then what the profile sets.
-local function Standard(name)
-    if Saved(name) then return end
-    local profile = Copy(Saved(ACCOUNTWIDE)) or {}
-    for module, switches in pairs(Profiles.PRESET[name] or {}) do
-        local values = Table(profile, module)
-        for switch, value in pairs(switches) do values[switch] = value end
+-- What a preset holds and a profile does not have yet; what it has stays (the player's word over ours).
+local function Give(profile, preset)
+    for key, value in pairs(preset) do
+        if type(value) == "table" then
+            Give(Table(profile, key), value)
+        elseif profile[key] == nil then
+            profile[key] = value
+        end
     end
-    db.profiles[name] = profile
+end
+
+-- A standard profile: made if it is not there, for an account that has settings already as a copy of Accountwide's, so
+-- that nothing is lost by using it; then what its preset holds, once for each version of the presets. The game's settings
+-- in it are this game's from then on (Sync's from: a game's folder holds that game's).
+local function Standard(name)
+    if not Saved(name) then db.profiles[name] = Copy(Saved(ACCOUNTWIDE)) or {} end
+    local presets = Table(db, "presets")
+    if presets[name] == Core.Presets.VERSION then return end
+    local profile = db.profiles[name]
+    Give(profile, Profiles.PRESET[name] or {})
+    local sync = profile.Sync
+    if type(sync) == "table" and sync.from == nil then sync.from = Core.GAME end
+    presets[name] = Core.Presets.VERSION
 end
 
 local function Upgrade()
@@ -337,7 +350,8 @@ local function Mend()
         if type(name) ~= "string" or type(profile) ~= "table" then db.profiles[name] = nil end
     end
     Table(db.profiles, ACCOUNTWIDE)
-    Standard(SPEEDLEVELING)
+    Standard(SPEEDLEVELING) -- first: it copies Accountwide as that was before its own preset
+    Standard(ACCOUNTWIDE)
     db.accountwide, db.ownSince, char.since = nil, nil, nil -- the switch Accountwide of before
     if not Usable(db.newProfile) then db.newProfile = nil end
     if type(char.settings) ~= "table" then char.settings = nil end

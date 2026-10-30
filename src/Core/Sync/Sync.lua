@@ -101,6 +101,7 @@ local given   -- written into the game this session: from now on the parts may b
 local waiting -- a fight held the writing up: it follows when the fight is over
 local offered -- a /reload was offered for this writing
 local left    -- what the last capture read: the game's settings the character may be turning away from
+local leftNamed -- and the CVars kept by name then
 
 -------------------------------------------------------------------------------
 --  Single CVars kept by name (Settings/CVars.lua)
@@ -158,8 +159,8 @@ function Sync.Capture()
         end
     end
     options.taken, options.from = taken, Core.GAME
-    left = taken
     ReadNamed(options.named)
+    left, leftNamed = taken, Core.Copy(options.named)
 end
 
 -- Offers a /reload for what the game shows only after one: once per writing (a layout set later
@@ -198,17 +199,20 @@ end
 
 local settled -- the character is in the world, and its first writing came due (GiveSoon)
 
+local function ToDefault(name)
+    local default = Plain(Core.Ask(C_CVar.GetCVarDefault, name))
+    if type(default) == "string" then Sync.SetCVar(name, default) end
+end
+
 -- A character turned to Character specific: the CVars its profile held are the game's defaults again, as on a fresh
 -- install. Nothing is lost: they stay in the profile it left.
 local function ToDefaults()
     if not left then return end
     if InCombatLockdown() then return Core.AfterCombat("Sync: defaults", ToDefaults) end
     for _, data in pairs(left) do
-        for name in pairs(type(data) == "table" and type(data.cvars) == "table" and data.cvars or {}) do
-            local default = Plain(Core.Ask(C_CVar.GetCVarDefault, name))
-            if type(default) == "string" then Sync.SetCVar(name, default) end
-        end
+        for name in pairs(type(data) == "table" and type(data.cvars) == "table" and data.cvars or {}) do ToDefault(name) end
     end
+    for name in pairs(leftNamed) do ToDefault(name) end
     for _, part in ipairs(Sync.parts) do
         if part.Default then Sync.Safe("defaults of " .. part.id, part.Default) end
     end

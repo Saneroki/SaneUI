@@ -280,6 +280,7 @@ W.Load(root, "SaneUI", "Core/Kit", {})
 W.Load(root, "SaneUI", "Core/Serial", {})
 W.Load(root, "SaneUI", "Core/Motion", {})
 W.Load(root, "SaneUI", "Core/Saved", {})
+W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
 for _, file in ipairs({ "Steps", "Codec", "Data", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end

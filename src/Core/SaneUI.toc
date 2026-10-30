@@ -22,6 +22,7 @@ Serial.lua
 # which describes the general switch that chooses one
 Motion.lua
 Saved.lua
+Presets.lua
 Profiles.lua
 # What every window can use: places at the screen's edges to dock to, Esc, a watch on the mouse, a plate with
 # round corners, background and border, moving (by a title bar, or in Blizzard's Edit Mode, chosen there with its

@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 727 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: the recommended CVars in Accountwide and Speedleveling (Saneroki, 2026-10-30)
+Saneroki: the world's distance, grass, weather, shadows, water and 115 frames a second set by the profiles, nothing to
+type on a new install, and what loads quicker.
+- **`Presets.lua`** (new, in Core's TOC before `Profiles.lua`): `Core.Presets.profiles[name]`, `VERSION`. Both hold
+  farclip, horizonClip, horizonStart, groundEffectDensity, groundEffectDist, groundEffectFade, weatherDensity, shadowMode,
+  shadowTextureSize, SSAO, waterDetail, maxFPS, maxFPSBk, targetFPS and their switches, worldPreloadNonCritical,
+  worldPreloadHighResTextures, cameraDistanceMaxZoomFactor and screenshotQuality. Speedleveling adds ffxDeath 0,
+  showTutorials 0, instantQuestText 1, Sound_EnableErrorSpeech 0 and autoDismountFlying 1; Accountwide names the game's
+  values for those five, as the computer keeps several of them, not the character.
+- **`Profiles.lua`:** `Profiles.PRESET` is `Core.Presets.profiles`; `Standard` gives a profile its preset once per
+  version (`SaneUIDB.presets`), only what it lacks (`Give`), and sets Sync's `from` to this game when none is kept, or
+  a fresh Retail profile would write nothing. Speedleveling comes first: it copies Accountwide as that was before its
+  own preset.
+- **`Sync.lua`:** turning to Character specific also puts the CVars kept by name back at the game's defaults
+  (`leftNamed`): no part reads a CVar of the computer's.
+- The game's combat text stays with Nameplates, which switches it off while its own shows and gives it back; a CVar
+  of the profiles would fight that. Tests: `dev/tests/core.lua` 410 checks, `dev/tests/sync.lua` 129.
+
 ### Navigation: by zone the quests stand under their zone (Saneroki, 2026-10-30)
 Saneroki: sorted by zone it showed the zones but not the quests. The list followed the game's own log's folded headers
 (`isCollapsed`), and on the screen alone a window without fold marks could not open them again. `Entries` no longer

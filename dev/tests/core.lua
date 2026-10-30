@@ -1583,12 +1583,25 @@ do
     check(Profiles.Character(Profiles.NEW).profile == "Speedleveling", "as the line New Characters says")
     check(Profiles.Character("Player-70-00000002") == nil or Profiles.Character("Player-70-00000002").profile == "Accountwide",
         "a character seen before stays where it was")
+    local wide, fast = SaneUIDB.profiles.Accountwide.Sync, SaneUIDB.profiles.Speedleveling.Sync
+    check(wide.named.farclip == "10000" and wide.named.targetFPS == "115" and wide.named.worldPreloadNonCritical == "0"
+        and wide.from == Core.GAME and fast.from == Core.GAME, "both hold our recommended CVars, as this game's")
+    check(wide.named.ffxDeath == "1" and fast.named.ffxDeath == "0" and fast.named.farclip == "10000" and fast.solo == nil,
+        "where they differ Accountwide names the game's own value: a character on it is not left with Speedleveling's")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,
         "Character specific can be what new characters start with")
     check(Profiles.Reset() and SaneUIDB.profiles.Speedleveling.SpeedLeveling.solo == true, "Defaults: what the profile sets stays")
     NextSession({ version = 2, profiles = { Accountwide = { Demo = { shy = true } } }, accountwide = false, ownSince = 5 }, {})
     check(SaneUIDB.profiles.Speedleveling.Demo.shy == true and SaneUIDB.accountwide == nil and SaneUIDB.ownSince == nil,
         "an account with settings: Speedleveling starts as a copy of them, the old switch is gone")
+    NextSession({ version = 2, profiles = { Accountwide = { Sync = { named = { farclip = "5000" }, from = "other" } } } }, {})
+    local kept = SaneUIDB.profiles.Accountwide.Sync
+    check(kept.named.farclip == "5000" and kept.named.shadowMode == "4" and kept.from == "other",
+        "given to a profile with settings, the presets add only what it lacks: the player's word stays")
+    kept.named.shadowMode = nil
+    NextSession(SaneUIDB, {})
+    check(SaneUIDB.profiles.Accountwide.Sync.named.shadowMode == nil and SaneUIDB.presets.Accountwide == Core.Presets.VERSION,
+        "and only once: one the player unticked stays out, until a new version brings what is new")
     UnitGUID = guid
     NextSession(SaneUIDB, {})
     Profiles.Create("Raid")

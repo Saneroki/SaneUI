@@ -571,6 +571,29 @@ check(W.cvars.debugThing == "3", "and written like them")
 Config.CVars.Keep("debugThing", false)
 check(not Sync.Kept("debugThing") and options.named.debugThing == nil, "the CVar list unticks it through Sync")
 
+-- A standard profile's CVars (Presets.lua) -----------------------------------------------------------
+do
+    local preset = Core.Presets.profiles.Speedleveling.Sync.named
+    for name, value in pairs(preset) do
+        options.named[name] = value
+        if name ~= "instantQuestText" then W.cvarInfo[name] = { default = "x" } end
+    end
+    Sync.Give()
+    local written = true
+    for name, value in pairs(preset) do
+        if name ~= "instantQuestText" and W.cvars[name] ~= value then written = false end
+    end
+    check(written and W.cvars.instantQuestText == nil and Core.errors["Sync: setting CVars"] == nil,
+        "written at the first login, none of its parts read yet; one this game lacks is passed over, quietly")
+    W.cvars.farclip = "5000"
+    Sync.Capture()
+    W.cvars.farclip = "1"
+    Sync.Give()
+    check(options.named.farclip == "5000" and W.cvars.farclip == "5000" and options.named.instantQuestText == preset.instantQuestText,
+        "what the player sets afterwards is the profile's; the other game's stays for that game")
+    for name in pairs(preset) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
+end
+
 -- Profiles read and write the game's settings too ------------------------------------------------
 local Profiles = Core.Profiles
 W.cvars.nameplateSize = "3"
@@ -594,10 +617,13 @@ check(game.active == 3, "used, its layout is set again")
 
 -- Character specific: the game's settings back at its defaults, then left to the game --------------
 W.cvars.nameplateSize = "2"
+Sync.Keep("debugThing", true)
+W.cvars.debugThing = "3"
 Profiles.Use(Profiles.OWN)
 check(SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
     "the game's settings as they are go into the profile left, read while Sync still keeps them")
 check(W.cvars.nameplateSize == W.cvarInfo.nameplateSize.default, "and the game holds its defaults, as on a fresh install")
+check(W.cvars.debugThing == W.cvarInfo.debugThing.default, "those kept by name too, which no part reads")
 W.cvars.nameplateSize = "4"
 local sets = W.cvarSets
 Sync.Give()
