@@ -3,8 +3,28 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 184 (Loot), 94 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 99 (sheet), 324 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 123 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: all loot taken, equip and delete unasked, the key walks to corpses, a talk that is done closes (Saneroki, 2026-10-30)
+Saneroki: by default Speed Leveling sets Loot to take everything, and equipping or deleting never asks. The key walks to
+a corpse around you, not only one in front and close. After a quest is taken and handed in the key no longer talks
+again and stays on the goodbye screen. New file `Errands.lua`, new switches *Walk to corpses*, *Close the talk when it
+is done*, *Take all loot*, *Equip and delete without asking*, each on at first.
+- **Take all loot:** sets Loot's *Everything* on and *Always show upgrades* off, once (`lootLent`): what is changed on
+  Loot's page afterwards stays, the switch off puts the rest back. `LOOT_BIND` is answered.
+- **Loot:** *Everything* now takes what binds when picked up too (the game asks first); the kinds still leave it.
+- **Equip and delete without asking:** a hook on `StaticPopup_Show` answers `EQUIP_BIND`, `EQUIP_BIND_TRADEABLE`,
+  `EQUIP_BIND_REFUNDABLE` and the four `DELETE_*` questions by the dialog's own `OnAccept`. `DeleteCursorItem` is
+  restricted: where the game refuses, the item stays on the cursor, `deleteRefused` is kept and from then on the question
+  stands with `DELETE_ITEM_CONFIRM_STRING` typed in.
+- **Walk to corpses:** after a fight the interact key looks all around, 30 yards (`Key.REACH`), for `Key.LOOK` seconds, on
+  while it finds corpses, `Key.LOOKS` at most, out as a fight begins; meanwhile its NPCs and things take no press.
+  Click-to-Move is lent while its pick is a corpse or your target's corpse has loot (`CanLootUnit`, the state `corpse`).
+- **A talk that is done:** `Quests.Left` tells the key to leave an NPC alone (attribute `left`) after a quest done there
+  or a talk with nothing for the guide, until the pick moves on, the quest log changes or `Quests.LEFT` is over. A talk
+  with nothing is closed a frame later: the goodbye screen always, any other within `Quests.AFTER` of a quest done there.
+  Quests the guide does not know keep it open. `/sane key` has a line for corpses and the NPC left alone.
 
 ### Navigation: the quest log sorted by proximity, level, zone or type; pinned, its own place and look, the game's tracker hidden (Saneroki, 2026-10-29)
 Saneroki: ordered by proximity, no "complete" text at the right; left of the title quests/max quests and the sorting,

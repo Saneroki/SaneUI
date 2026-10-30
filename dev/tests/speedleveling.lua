@@ -98,6 +98,8 @@ C_Item.IsItemInRange = function(id) return reach[id] end
 C_Item.GetItemSpell = function(id) return "Use", 90000 + id end
 UnitName = function(unit) if units[unit] then return units[unit].name end return "Tester" end
 UnitGUID = function(unit) return units[unit] and units[unit].guid or nil end
+local spoils = {} -- [GUID] = the corpse has loot for you
+CanLootUnit = function(guid) return spoils[guid] == true, spoils[guid] == true end
 Enum.TooltipDataLineType = { QuestObjective = 8 }
 C_TooltipInfo = { GetUnit = function(unit)
     local quest = units[unit] and units[unit].quest
@@ -157,6 +159,8 @@ IsQuestLogSpecialItemInRange = function() return 1 end
 -- The game's settings the key lends: its interact key, and Click-to-Move (off, as most players have it).
 W.cvarInfo.softTargetInteract = { default = "2" }
 W.cvarInfo.autointeract = { default = "0" }
+W.cvarInfo.SoftTargetInteractArc = { default = "0" }
+W.cvarInfo.SoftTargetInteractRange = { default = "10" }
 W.cvars.autointeract = "0"
 
 -------------------------------------------------------------------------------
@@ -414,7 +418,7 @@ units.softinteract = { name = "Gryan Stoutmantle", guid = npc, neutral = true }
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "", npc)
 Key.Check()
 local seen = Core.Store(ns.name).keyCheck
-check(seen and #seen.lines == 4 and seen.lines[1]:find("a press does interact", 1, true)
+check(seen and #seen.lines == 5 and seen.lines[1]:find("a press does interact", 1, true)
     and seen.lines[2]:find("Gryan Stoutmantle, a Creature, no foe", 1, true) and Printed("In front of you"),
     "/sane key: what the key sees, said and kept: " .. tostring(seen and seen.lines[2]))
 units.softinteract = nil
@@ -474,6 +478,50 @@ W.Fire("PLAYER_TARGET_CHANGED")
 header:SetAttribute("state-mode", "friend")
 check(header:GetAttribute("use") == false and overrides.E == "INTERACTTARGET", "too far for the item: talk, which walks")
 check(W.cvars.autointeract == "1" and ns.options.foundCVars.autointeract.was == "0", "Click-to-Move lent, what it was kept")
+-- Your target's corpse, far from you, with loot: Click-to-Move lent, the key interacts, which walks and opens it.
+local carcass = "Creature-0-1-0-1-666-01"
+units.target = { name = "Young Wolf", foe = true, dead = true, guid = carcass }
+spoils[carcass] = true
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "corpse")
+check(header:GetAttribute("corpse") == true and overrides.E == "INTERACTTARGET" and W.cvars.autointeract == "1",
+    "your target's corpse with loot: walked to and opened")
+spoils[carcass] = nil
+W.Fire("LOOT_CLOSED")
+check(header:GetAttribute("corpse") == false and overrides.E == FIND and W.cvars.autointeract == "0",
+    "emptied: Find, Click-to-Move back")
+spoils[carcass] = true
+Core.Set(ns.name, "corpses", false)
+check(header:GetAttribute("corpse") == false and overrides.E == FIND, "Walk to corpses off: Find")
+Core.Set(ns.name, "corpses", true)
+spoils[carcass] = nil
+-- A fight over: the interact key looks all around for a moment, at its corpses only; on while it finds them, then back.
+units.target = nil
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "find")
+W.cvars.SoftTargetInteractArc, W.cvars.SoftTargetInteractRange = "0", "10"
+local behind = "Creature-0-1-0-1-777-01"
+units.softinteract = { name = "Gryan Stoutmantle", guid = behind }
+W.Fire("PLAYER_REGEN_ENABLED")
+check(W.cvars.SoftTargetInteractArc == "2" and W.cvars.SoftTargetInteractRange == "30", "after a fight: all around, further")
+check(header:GetAttribute("left") == true and header:GetAttribute("npc") == false and overrides.E == FIND,
+    "meanwhile an NPC it picks far away takes no press")
+units.softinteract = { name = "Young Wolf", foe = true, dead = true, guid = behind }
+W.Wait(Key.TICK)
+check(W.cvars.autointeract == "1", "a corpse it picks: Click-to-Move lent")
+W.Wait(Key.LOOK * 3)
+check(W.cvars.SoftTargetInteractArc == "2", "on while it finds corpses")
+units.softinteract = nil
+W.Wait(Key.LOOK + Key.TICK)
+check(W.cvars.SoftTargetInteractArc == "0" and W.cvars.SoftTargetInteractRange == "10" and W.cvars.autointeract == "0"
+    and header:GetAttribute("left") == false, "none left: as far as before, Click-to-Move back")
+W.Fire("PLAYER_REGEN_ENABLED")
+W.Fire("PLAYER_REGEN_DISABLED")
+check(W.cvars.SoftTargetInteractArc == "0", "a new fight: back at once")
+W.Wait(Key.LOOK + Key.TICK)
+units.target = { name = "Wounded Guard", guid = "Creature-0-1-0-1-555-01" }
+W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-mode", "friend")
 -- Within the item's reach now: looked at again a few times a second; the item, Click-to-Move given back.
 reach[7003] = true
 W.Wait(1)
@@ -575,6 +623,126 @@ gossip.chosenAvailable = nil
 W.Fire("GOSSIP_SHOW")
 check(gossip.chosenAvailable == nil, "Shift held: nothing done, the window as it is")
 IsShiftKeyDown = function() return false end
+
+-- A talk that is done: the quest taken, the key leaves the NPC alone; a talk that comes up anyway is closed.
+local closed = 0
+C_GossipInfo.CloseGossip = function() closed = closed + 1 end
+local giver = "Creature-0-1-0-1-888-01"
+units.npc, units.softinteract = { name = "Some Farmer", guid = giver }, { name = "Some Farmer", guid = giver }
+GetQuestID, AcceptQuest = function() return 40 end, function() end
+W.Wait(Key.LOOK + Key.TICK) -- what the fights above left: the interact key's look around is over
+header:SetAttribute("state-mode", "near")
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, giver)
+check(overrides.E == "INTERACTTARGET", "before the talk: talk")
+W.Fire("QUEST_DETAIL")
+check(header:GetAttribute("left") == true and header:GetAttribute("npc") == false and overrides.E == FIND,
+    "the quest taken: the key goes on, no talking again")
+gossip.available, gossip.active, gossip.options = {}, {}, { { gossipOptionID = 5 } }
+W.Fire("GOSSIP_SHOW")
+W.Wait(0.1)
+check(closed == 1, "the talk opening again after it: closed, whatever else the NPC offers")
+ns.Quests.Forget()
+check(header:GetAttribute("left") == false and overrides.E == "INTERACTTARGET", "forgotten: talk")
+W.Wait(Key.LOOK)
+W.Fire("GOSSIP_SHOW")
+W.Wait(0.1)
+check(closed == 1 and header:GetAttribute("left") == true, "a talk with options and nothing done: open, the key goes on")
+gossip.options = {}
+W.Fire("GOSSIP_SHOW")
+W.Wait(0.1)
+check(closed == 2, "the goodbye screen: closed")
+gossip.available = { { questID = 99 } }
+W.Fire("GOSSIP_SHOW")
+W.Wait(0.1)
+check(closed == 2, "a quest the guide does not know: yours to choose")
+gossip.available = {}
+Core.Set(ns.name, "leave", false)
+W.Fire("GOSSIP_SHOW")
+W.Wait(0.1)
+check(closed == 2, "Close the talk off: open")
+Core.Set(ns.name, "leave", true)
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", giver, "Creature-0-1-0-1-889-01")
+units.softinteract = { name = "Another Farmer", guid = "Creature-0-1-0-1-889-01" }
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", giver, "Creature-0-1-0-1-889-01")
+check(header:GetAttribute("left") == false, "another NPC: the first forgotten")
+units.npc, units.softinteract = nil, nil
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "Creature-0-1-0-1-889-01", nil)
+header:SetAttribute("state-mode", "find")
+GetQuestID, AcceptQuest = nil, nil
+gossip.chosenAvailable = nil
+
+-------------------------------------------------------------------------------
+--  What would hold you up: Loot's switches, the game's questions
+-------------------------------------------------------------------------------
+-- Take all loot: Loot's switches set once and given back; what you changed after that stays.
+local lootOptions = Core.Settings("Loot")
+if not Core.Described("Loot", "takeAll") then
+    Core.Options("Loot", { { key = "takeAll", default = false }, { key = "showUpgrades", default = true } }, {})
+    lootOptions = Core.Settings("Loot")
+end
+lootOptions.takeAll, lootOptions.showUpgrades = false, true
+ns.options.lootLent = {}
+ns.Errands.Update()
+check(lootOptions.takeAll == true and lootOptions.showUpgrades == false, "Take all loot: Everything on, upgrades not held back")
+lootOptions.showUpgrades = true
+ns.Errands.Update()
+check(lootOptions.showUpgrades == true, "what you change on Loot's page afterwards stays")
+Core.Set(ns.name, "lootAll", false)
+check(lootOptions.takeAll == false and lootOptions.showUpgrades == true and next(ns.options.lootLent) == nil,
+    "off: put back what you did not change")
+Core.Set(ns.name, "lootAll", true)
+check(lootOptions.takeAll == true, "on again: set")
+
+-- The game's questions, answered by what their own Yes does.
+local cursor, answered, hidden = true, {}, {}
+CursorHasItem = function() return cursor end
+local shown = {}
+local function Question(which)
+    StaticPopupDialogs[which] = { OnAccept = function(_, data) answered[#answered + 1] = which .. ":" .. tostring(data) end }
+end
+for _, which in ipairs({ "LOOT_BIND", "EQUIP_BIND", "EQUIP_BIND_TRADEABLE", "EQUIP_BIND_REFUNDABLE", "DELETE_ITEM",
+                         "DELETE_GOOD_ITEM", "OTHER_QUESTION" }) do
+    Question(which)
+end
+StaticPopupDialogs.DELETE_ITEM.OnAccept = function() answered[#answered + 1] = "deleted"; cursor = false end
+StaticPopup_FindVisible = function(which) return shown[which] end
+StaticPopup_Hide = function(which) hidden[#hidden + 1] = which; shown[which] = nil end
+local showPopup = StaticPopup_Show
+local function Ask(which, data)
+    local box = { text = "" }
+    function box:IsShown() return true end
+    function box:SetText(text) self.text = text end
+    shown[which] = { which = which, data = data, GetEditBox = function() return box end }
+    W.popups[#W.popups + 1] = shown[which]
+    showPopup(which, nil, nil, data)
+    return box
+end
+-- The module hooked the function as it started; the hook runs after the game's.
+Ask("EQUIP_BIND", 16)
+check(answered[1] == "EQUIP_BIND:16" and hidden[1] == "EQUIP_BIND", "equipping: answered, the question gone")
+Ask("LOOT_BIND", 3)
+check(answered[2] == "LOOT_BIND:3" and hidden[2] == "LOOT_BIND", "what binds when picked up: answered")
+Ask("OTHER_QUESTION", 1)
+check(#answered == 2 and #hidden == 2, "another question is the game's")
+Ask("DELETE_ITEM")
+W.Wait(1)
+check(answered[3] == "deleted" and ns.options.deleteRefused == false, "destroying: answered, the item gone")
+Core.Set(ns.name, "noAsk", false)
+Ask("EQUIP_BIND", 16)
+check(#answered == 3, "Equip and delete without asking off: the game asks")
+Core.Set(ns.name, "noAsk", true)
+-- The game refuses: the item stays on the cursor, the question stands with its word typed in, not tried again.
+DELETE_ITEM_CONFIRM_STRING = "DELETE"
+cursor = true
+local box = Ask("DELETE_GOOD_ITEM")
+W.Wait(1)
+check(ns.options.deleteRefused == true and box.text == "DELETE", "refused: the word typed in, kept for next time")
+local count = #answered
+box = Ask("DELETE_GOOD_ITEM")
+check(#answered == count and box.text == "DELETE", "not tried again: the word at once")
+ns.options.deleteRefused = false
+cursor = false
+shown = {}
 
 -------------------------------------------------------------------------------
 --  The game's settings, and standing down

@@ -25,10 +25,11 @@ local _, ns = ...
 --  The rules (the options Taken at once, every one off at first): Everything,
 --  else a kind (coins, currencies, quest items, trade goods, gear, consumables,
 --  junk). Over them the player's own word on an item (options.kept[id]: true
---  taken at once, false never). Never by a kind: a thing locked to a roll, or
---  one that binds when picked up (the game would ask), a quest's excepted.
---  Over everything the switch Always show upgrades: an upgrade is never taken
---  at once, it waits in the window to be seen.
+--  taken at once, false never). Never a thing locked to a roll. Never by a kind
+--  one that binds when picked up (the game asks first), a quest's excepted; by
+--  Everything it is, and the game asks. Over everything the switch Always show
+--  upgrades: an upgrade is never taken at once, it waits in the window to be
+--  seen.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -160,8 +161,8 @@ function Slots.Rule(line, options, own)
     if own ~= false and Item(line) and line.id then word = kept[line.id] end
     if word == false then return nil end
     if word == true then return "list" end
-    if Item(line) and line.bind == 1 and not Slots.Quest(line) then return nil end -- the game would ask first
     if options.takeAll then return "takeAll" end
+    if Item(line) and line.bind == 1 and not Slots.Quest(line) then return nil end -- the game would ask first
     for _, kind in ipairs(Slots.KINDS) do
         if options[kind.key] and kind.fits(line) then return kind.key end
     end

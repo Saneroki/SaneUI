@@ -30,6 +30,9 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   talk, hearth or find at each press; the macro of Find targets the first wanted name around you. Its lists: the
   guide's step, the quests' open objectives (kill, then the likeliest droppers of an item to loot), creatures the
   game marks for a quest, the NPCs to hand finished quests in to; the quest objects beside you by ID.
+- **Decision (Saneroki, 2026-10-30):** Speed Leveling sets Loot to take everything and answers the game's questions
+  on equipping and destroying, by default; the key walks to corpses around you; a talk that is done closes and the
+  key leaves that NPC alone. Selling junk and repairing are Inventory's (checkboxes in the bag).
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
   looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the

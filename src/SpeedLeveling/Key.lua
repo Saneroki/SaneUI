@@ -12,7 +12,12 @@ local _, ns = ...
 --    loot    a corpse with loot beside you (the game's own pick for its
 --            interact key, its "soft" target, dead; the switch Loot first):
 --            the game's Interact With Target, which opens its loot as a right
---            click does; what is taken is the game's loot window's to say
+--            click does; what is taken is the game's loot window's to say.
+--            Away from you the game's Click-to-Move runs you there first (the
+--            switch Walk to corpses): for a moment after a fight the interact
+--            key looks all around you and further (Key.REACH), so that it picks
+--            the corpses behind you too, and your target's corpse counts as
+--            well, however far
 --    fight   in a fight, your target a living foe: the button Fight, which
 --            marks it and attacks it
 --    talk    a living NPC right in front of you that is no foe, the one the
@@ -47,12 +52,13 @@ local _, ns = ...
 --  the condition help holds only for one your spells could help, which many
 --  quest givers are not (Saneroki, 2026-10-26: the key talked to none in
 --  Retail). Whether your friendly target is wanted, whether the NPC in front of
---  you is one to talk to (a creature, alive, no foe) and whether the thing in
---  front of you is a wanted one the module says out of a fight (the
---  attributes wanted, npc and object), and the macros are written out of a fight
---  only: anew the moment before each press (PreClick) and when the quests
---  change, without hearth and items as a fight begins. In a fight they all stay
---  as they were.
+--  you is one to talk to (a creature, alive, no foe), whether it is one you are
+--  through with (Quests.Left: no talking to it again), whether your target's
+--  corpse has loot and whether the thing in front of you is a wanted one the
+--  module says out of a fight (the attributes wanted, npc, left, corpse and
+--  object), and the macros are written out of a fight only: anew the moment
+--  before each press (PreClick) and when the quests change, without hearth and
+--  items as a fight begins. In a fight they all stay as they were.
 --
 --  The game runs only the first 255 characters of a button's macro, so the
 --  names go into a chain: Find holds the first names and its ending (the mark,
@@ -67,6 +73,10 @@ ns.Key = Key
 Key.ROOM = 255  -- characters of a button's macro text the game runs
 Key.LINKS = 4   -- buttons in the chain after Find
 Key.AIM = 0.3   -- seconds between looks at a target's reach while a step's item waits to be used on it
+Key.LOOK = 2    -- seconds after a fight, and after the last corpse it found, the interact key looks all around you
+Key.LOOKS = 30  -- seconds it does that at most after a fight, should a corpse be out of reach
+Key.TICK = 0.5  -- seconds between looks at the corpses meanwhile
+Key.REACH = { SoftTargetInteractArc = "2", SoftTargetInteractRange = "30" } -- all around you, as far as a spell reaches
 Key.HEADER, Key.FIND, Key.FIGHT = "SaneUISpeedLevelingKey", "SaneUISpeedLevelingFind", "SaneUISpeedLevelingFight"
 Key.USE = "SaneUISpeedLevelingUse"
 Key.LINK = "SaneUISLFind"  -- the chain's buttons: SaneUISLFind2, SaneUISLFind3, ...
@@ -85,7 +95,7 @@ local REST = "[@target,harm,nodead] foe; [@target,noharm,nodead] friend; [@targe
 -- or of what decides it: the action due on each of the key's keys.
 local ON_CHANGE = [[
     if name == "state-mode" or name == "wanted" or name == "object" or name == "talk" or name == "keys"
-        or name == "use" or name == "npc" then
+        or name == "use" or name == "npc" or name == "left" or name == "corpse" then
         self:RunAttribute("_bind")
     end
 ]]
@@ -98,7 +108,9 @@ local BIND = [[
         action = "fight"
     elseif self:GetAttribute("use") then
         action = "use"
-    elseif state == "near" or self:GetAttribute("npc") then
+    elseif state == "corpse" and self:GetAttribute("corpse") then
+        action = "interact"
+    elseif (state == "near" and not self:GetAttribute("left")) or self:GetAttribute("npc") then
         action = "interact"
     elseif self:GetAttribute("object") then
         action = "interact"
@@ -138,6 +150,7 @@ local soft        -- the GUID of what the interact key would use now, as the gam
 local using       -- the item the button Use uses on your target now, or nil
 local refused = { items = {} } -- the items the game refused on the target now (refused.guid: which target)
 local aiming      -- the ticker looking at a friendly target's reach, while a step's item waits for it
+local looking     -- while the interact key looks all around you: until when, and the last moment it may (stop, last)
 
 local function Same(a, b)
     return tostring(a) == tostring(b)
@@ -279,6 +292,22 @@ local function Talkable(guid)
     return Peaceful("softinteract") and true or false
 end
 
+-- Whether a unit is a corpse with loot for you, as the game says.
+local function Spoils(unit)
+    if not (Core.Ask(UnitExists, unit) and Core.Ask(UnitIsDead, unit)) then return false end
+    return Core.Ask(rawget(_G, "CanLootUnit"), Core.Ask(UnitGUID, unit)) == true
+end
+
+local function Walks()
+    return ns.options.loot and ns.options.corpses
+end
+
+-- Whether a corpse is there to walk to (the switch Walk to corpses): your target's, or the interact key's pick.
+local function Corpse()
+    if not Walks() then return false end
+    return Spoils("target") or (Core.Ask(UnitExists, "softinteract") and Core.Ask(UnitIsDead, "softinteract") and true or false)
+end
+
 local Aim
 
 -- While a step's item waits for a friendly target to come within reach, looked at again a few times a second.
@@ -292,7 +321,8 @@ local function Watch(on)
 end
 
 -- Out of a fight: the step's item for your target now (the button Use, the attribute use), and the game's
--- Click-to-Move lent while a living friendly NPC the key wants is your target (the switch Walk to the NPC found).
+-- Click-to-Move lent while a living friendly NPC the key wants is your target (the switch Walk to the NPC found) and
+-- while a corpse is there to walk to (the switch Walk to corpses).
 function Aim()
     if not header or ns.off then return Watch(false) end
     if InCombatLockdown() then return end
@@ -302,15 +332,48 @@ function Aim()
     Write(use, using and ("/use item:" .. using) or "")
     if (header:GetAttribute("use") and true or false) ~= (using ~= nil) then header:SetAttribute("use", using ~= nil) end
     local friendly = Friendly()
-    if ns.options.walk and ns.options.talk and friendly and header:GetAttribute("wanted") and not using then
-        Borrow(WALK, WALKING)
-    else
-        Return(WALK)
-    end
+    local npc = ns.options.walk and ns.options.talk and friendly and header:GetAttribute("wanted") and not using
+    if npc or Corpse() then Borrow(WALK, WALKING) else Return(WALK) end
     local waits = ns.options.useOn and friendly and not using and ns.Guide.UseOn()
     Watch(waits and waits[1] ~= nil or false)
 end
 Key.aimLater = ns.Guard(function() Aim() end)
+
+-- The interact key looks all around you and further, or as far as it did before.
+local function Reach(on)
+    for name, value in pairs(Key.REACH) do
+        if on then Borrow(name, value) else Return(name) end
+    end
+end
+
+local function StopLooking()
+    looking = nil
+    Reach(false)
+    Key.Refresh()
+end
+
+-- While the interact key looks around after a fight: on for as long as it finds corpses, then as far as it did before.
+local LookOn
+local function Look()
+    if not looking then return end
+    Key.Refresh()
+    local now = GetTime()
+    if Corpse() then looking.stop = math.min(now + Key.LOOK, looking.last) end
+    if now >= looking.stop or not header or ns.off then return StopLooking() end
+    LookOn()
+end
+LookOn = Core.Later(function() ns.Guarded(Look) end, Key.TICK)
+
+-- A fight is over: the corpses around you, for a moment (the switch Walk to corpses).
+local function Over()
+    if header and not ns.off and Walks() then
+        local now = GetTime()
+        looking = { stop = now + Key.LOOK, last = now + Key.LOOKS }
+        Reach(true)
+        LookOn()
+    end
+    Key.Refresh()
+end
 
 -- The game refused the item the button Use used on your target (a cast that failed, not one too far): not again on
 -- that target.
@@ -331,7 +394,10 @@ local function Fighting()
     WriteFind(Key.Find(true))
     if header:GetAttribute("use") then header:SetAttribute("use", false) end
     if header:GetAttribute("npc") then header:SetAttribute("npc", false) end
+    if header:GetAttribute("corpse") then header:SetAttribute("corpse", false) end
     using = nil
+    looking = nil
+    Reach(false)
     Return(WALK)
     Watch(false)
 end
@@ -340,15 +406,20 @@ local function Later(fn)
     return function() ns.Guarded(fn) end
 end
 
--- Out of a fight: whether your target is wanted, whether the interact key's thing is a wanted one, and the macros of
--- Find, as they are now.
+-- Out of a fight: whether your target is wanted, whether its corpse has loot, whether the interact key's thing is a
+-- wanted one or an NPC you are through with, and the macros of Find, as they are now. While the interact key looks all
+-- around you only its corpses count: what else it picks then may be far away.
 function Key.Refresh()
     if not header or ns.off then return end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: refresh", Key.refreshLater) end
-    header:SetAttribute("wanted", ns.Wanted.Unit("target"))
-    local thing = soft or Core.Ask(UnitGUID, "softinteract")
-    header:SetAttribute("npc", Talkable(thing))
-    header:SetAttribute("object", ns.options.objects and ns.Wanted.Object(thing) or false)
+    local thing, target = soft or Core.Ask(UnitGUID, "softinteract"), Core.Ask(UnitGUID, "target")
+    ns.Quests.Moved(thing, target)
+    header:SetAttribute("wanted", ns.Wanted.Unit("target") and not ns.Quests.Left(target, true))
+    header:SetAttribute("corpse", Walks() and Spoils("target") or false)
+    local left = looking ~= nil or ns.Quests.Left(thing, ns.Wanted.Unit("softinteract"))
+    header:SetAttribute("left", left)
+    header:SetAttribute("npc", not left and Talkable(thing))
+    header:SetAttribute("object", not looking and ns.options.objects and ns.Wanted.Object(thing) or false)
     WriteFind(Key.Find())
     Aim()
 end
@@ -375,6 +446,7 @@ function Key.Update()
     if not header or ns.off then return end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: settings", Key.updateLater) end
     if ns.options.loot or ns.options.objects or ns.options.talk then Lend() else PutBack() end
+    if not looking then Reach(false) end
     Write(fight, Attack())
     header:SetAttribute("talk", ns.options.talk and true or false)
     RegisterStateDriver(header, "mode", (ns.options.loot and LOOT or "") .. FIGHT .. (ns.options.talk and NEAR or "")
@@ -410,7 +482,8 @@ function Key.Start()
     ns.On("PLAYER_TARGET_CHANGED", Key.Refresh)
     ns.On("UPDATE_BINDINGS", Key.Keys)
     ns.On("PLAYER_REGEN_DISABLED", Fighting)
-    ns.On("PLAYER_REGEN_ENABLED", Key.Refresh)
+    ns.On("PLAYER_REGEN_ENABLED", Over)
+    ns.On("LOOT_CLOSED", Key.Refresh)
     ns.On("UNIT_SPELLCAST_FAILED", Refused)
     ns.On("PLAYER_SOFT_INTERACT_CHANGED", function(_, now)
         soft = Core.Plain(now)
@@ -449,6 +522,8 @@ function Key.Check()
             ns.TEXT.keyFront:format(Seen("softinteract"), tostring(header:GetAttribute("npc")),
                 tostring(header:GetAttribute("object"))),
             ns.TEXT.keyTarget:format(Seen("target"), tostring(header:GetAttribute("wanted")), tostring(using)),
+            ns.TEXT.keyCorpse:format(tostring(header:GetAttribute("corpse")), tostring(looking ~= nil),
+                tostring(header:GetAttribute("left"))),
             ns.TEXT.keyWalk:format(tostring(Core.Ask(C_CVar.GetCVar, WALK)), tostring(ns.options.foundCVars[WALK] ~= nil),
                 guide and ns.Guide.Following() and tostring(guide.name) or "not followed"),
         }
@@ -470,5 +545,6 @@ function Key.GiveBack()
     Write(use, "")
     for _, link in ipairs(links) do Write(link, "") end
     Watch(false)
+    looking = nil
     PutBack()
 end

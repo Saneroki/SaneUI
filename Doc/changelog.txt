@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Speed Leveling: nothing holds you up. Loot takes everything by
+  default, the game no longer asks before equipping or destroying,
+  the key runs you to the corpses around you and opens them, and
+  once a quest is taken or handed in it leaves the NPC alone and
+  closes the goodbye screen. Each has its switch.
 - Combat: your frame, your target's and your focus's in the look
   of the nameplates, green: level and raid marker on the left,
   then the name (players by their full name; none on your own),

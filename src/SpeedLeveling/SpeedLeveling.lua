@@ -29,7 +29,9 @@ local ADDON, ns = ...
 --                finished quests go to; the thing in front of you
 --    Items.lua   what the key uses: the hearth, one quest item
 --    Key.lua     the key: what one press does now, by the game's secure ways
---    Quests.lua  what a quest giver does for your guide
+--    Quests.lua  what a quest giver does for your guide, a talk that is done closed
+--    Errands.lua what would hold you up: all loot taken, the game's questions
+--                on equipping and destroying answered
 --    Steps.lua   the guide over the world
 --    Arrow.lua   the way to the guide's place, a part of its own
 --    Icons.lua   the items to use and the names to target, over the guide
@@ -48,7 +50,8 @@ ns.TEXT = {
     keyState = "Key: state %s, a press does %s; its keys %s.",
     keyFront = "In front of you: %s; one to talk to %s, a thing your quests want %s.",
     keyTarget = "Your target: %s; wanted %s, its item %s.",
-    keyWalk = "Click-to-Move %s (lent by the key: %s); the guide %s.",
+    keyCorpse = "Your target's corpse has loot %s; the interact key looks all around %s; the NPC in front left alone %s.",
+    keyWalk ="Click-to-Move %s (lent by the key: %s); the guide %s.",
     keyUnit = "%s, a %s, %s",
     keyNobody = "nothing",
     keyNoKey = "none (Esc > Options > Keybindings, under Sane UI)",
@@ -56,7 +59,9 @@ ns.TEXT = {
     objectsTip = "A thing of the world your quests or your guide want, in front of you, is picked up, opened or used, as a right click on it does: a quest's chest or plant, what an item to loot comes from, the board a quest is handed in to. The game's interact key finds it and is switched on for it.",
     loot = "Loot first",
     lootTip = "A corpse with loot beside you is opened before anything else, as a right click on it does; what is taken is up to the loot window. The game's interact key is switched on for it, and put back as it was when this, Talk to NPCs and Quest objects are off.",
-    skull = "Skull on what is found",
+    corpses = "Walk to corpses",
+    corpsesTip = "A corpse with loot away from you too: for a moment after a fight the game's interact key looks all around you, 30 yards far, and your target's corpse counts however far it is. While there is one the game's own Click-to-Move is switched on, so the key runs you to it and opens it; put back as it was after the last corpse, and in a fight. While it is on, a right click on the ground walks you there too.",
+    skull ="Skull on what is found",
     skullTip = "What the key finds or attacks gets a skull over its head. In a group it shows for everybody; in a raid only an assistant may mark.",
     talk = "Talk to NPCs",
     talkTip = "A friendly NPC in front of you is talked to at once (after a corpse to loot); a quest NPC the key found, at the next press. Off: the key goes on to what is next.",
@@ -80,6 +85,16 @@ ns.TEXT = {
     handinTip = "The quests the steps at hand hand in are handed in: the reward the guide names, else the only one. With several rewards to choose from and none named, the choice is yours.",
     gossip = "Choose the guide's talk",
     gossipTip = "Where a step names what to say to an NPC (a gossip option), it is chosen.",
+    leave = "Close the talk when it is done",
+    leaveTip = "After a quest is taken or handed in, the key leaves that NPC alone and goes on to what is next, and a talk that comes up with nothing for you closes by itself. A talk with quests your guide does not know stays open: those are yours to choose. The key talks to that NPC again once you moved on, the quest log changed, or half a minute is over.",
+
+    -- What would hold you up (Errands.lua).
+    errandsHeader = "On the way",
+    errandsHeaderTip = "What Speed Leveling does for you so that nothing holds you up.",
+    lootAll = "Take all loot",
+    lootAllTip = "Sets the module Loot to take everything at once: its Everything on, its Always show upgrades off, which would keep an upgrade waiting in its window. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts the rest back. Things locked to a group's roll are not taken.",
+    noAsk = "Equip and delete without asking",
+    noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
 
     -- The guide over the world (Guide.lua, Steps.lua, Guides.lua).
     guideHeader = "Guide",
@@ -185,6 +200,7 @@ ns.GIVEN_BACK = "the key is the game's own again, the guide hidden"
 
 local OPTIONS = {
     { key = "loot", default = true, text = ns.TEXT.loot, tip = ns.TEXT.lootTip },
+    { key = "corpses", default = true, text = ns.TEXT.corpses, tip = ns.TEXT.corpsesTip, parent = "loot" },
     { key = "talk", default = true, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
     { key = "walk", default = true, text = ns.TEXT.walk, tip = ns.TEXT.walkTip, parent = "talk" },
     { key = "objects", default = true, text = ns.TEXT.objects, tip = ns.TEXT.objectsTip },
@@ -197,6 +213,10 @@ local OPTIONS = {
       header = ns.TEXT.questsHeader, headerTip = ns.TEXT.questsHeaderTip },
     { key = "handin", default = true, text = ns.TEXT.handin, tip = ns.TEXT.handinTip },
     { key = "gossip", default = true, text = ns.TEXT.gossip, tip = ns.TEXT.gossipTip },
+    { key = "leave", default = true, text = ns.TEXT.leave, tip = ns.TEXT.leaveTip },
+    { key = "lootAll", default = true, text = ns.TEXT.lootAll, tip = ns.TEXT.lootAllTip,
+      header = ns.TEXT.errandsHeader, headerTip = ns.TEXT.errandsHeaderTip },
+    { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
     { key = "follow", default = "on", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
@@ -208,14 +228,19 @@ local OPTIONS = {
     { key = "guidesButton", text = ns.TEXT.guidesButton, tip = ns.TEXT.guidesButtonTip,
       button = function() ns.Guarded(ns.Guides.Open) end },
     { key = "foundCVars", default = {} }, -- the game's settings as they were before the key lent them (Key.lua)
+    { key = "lootLent", default = {} },   -- Loot's switches as they were before Take all loot set them (Errands.lua)
+    { key = "deleteRefused", default = false }, -- the game refused to destroy an item without its question (Errands.lua)
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
--- givers' switches are read as a quest giver talks.
+-- givers' switches and those of what is on the way are read when they are needed.
 local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
-local QUESTS = { take = true, handin = true, gossip = true }
+local QUESTS = { take = true, handin = true, gossip = true, leave = true, noAsk = true, lootLent = true,
+                 deleteRefused = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then
         ns.Guarded(ns.Steps.Update)
+    elseif key == "lootAll" then
+        ns.Guarded(ns.Errands.Update)
     elseif key == "guide" or key == "follow" then
         -- On, paused or off: what the key wants follows, the view is drawn anew, the satchel's switch told.
         if key == "follow" then ns.Guarded(ns.Guide.CheckSoon) end
@@ -227,12 +252,14 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     end
 end })
 
--- Standing down: no override binding of ours on your keys, the game's settings as they were, the guide hidden.
+-- Standing down: no override binding of ours on your keys, the game's settings as they were, the guide hidden, Loot's
+-- switches back.
 function ns.GiveBack()
     ns.Guide.Stop()
     ns.Steps.GiveBack()
     ns.Guides.GiveBack()
     ns.Key.GiveBack()
+    ns.Errands.Update()
 end
 
 function ns.OnLoad()
@@ -245,6 +272,7 @@ function ns.OnLogin()
     ns.Wanted.Start()
     ns.Key.Start()
     ns.Quests.Start()
+    ns.Errands.Start()
     -- A change of the guide: drawn anew; what the key wants follows.
     ns.Guide.Watch(ns.Steps.Update)
     ns.Guide.Watch(ns.Key.Refresh)

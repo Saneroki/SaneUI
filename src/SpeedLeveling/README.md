@@ -11,14 +11,16 @@ own. A right click on the guide's zone chooses the one to follow.
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
 1. **Loot:** a corpse with loot beside you is opened, as a right click does. What is taken is up to the game's loot
-   window, or Sane UI's Loot module where it is switched on (its rules may take some of it at once).
+   window, or Sane UI's Loot module where it is switched on (its rules may take some of it at once; *Take all loot*
+   sets it to everything). A corpse away from you the key runs you to first (*Walk to corpses*).
 2. **Fight in a fight:** your target is a living foe and you are in a fight: it gets a skull and is attacked.
 3. **Use the step's item on your target:** out of a fight, your target is the one a step's item is used on, as the
    step's own words say — a corpse ("use the dust on their corpses"), or the creature or NPC they name ("use the cage
    on a worg pup"): the item is used on it. A friendly NPC only once it is within the item's reach; never a creature
    the words say to weaken first, and not again on a target the game refused the item on.
 4. **Talk:** a friendly NPC stands right in front of you (the one the game's interact key would pick): you talk to
-   it, with one press. At a quest giver, your guide's quests are taken and handed in (below).
+   it, with one press. At a quest giver, your guide's quests are taken and handed in (below). Once that is done the
+   key leaves that NPC alone and goes on, and a talk that comes up with nothing for you closes by itself.
 5. **Pick up:** a thing of the world your quests or your guide want is in front of you (a quest's chest or plant, the
    crate an item to loot comes from, the board a quest is handed in to): it is picked up, opened or used.
 6. **Fight:** your target is a living foe that is wanted: it gets a skull and is attacked.
@@ -57,6 +59,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Loot first | on | A corpse with loot beside you is opened before anything is looked for. The game's interact key (`softTargetInteract`) is switched on for it |
+| Walk to corpses | on | For a moment after a fight the interact key looks all around you and 30 yards far, your target's corpse counts however far it is, and the game's Click-to-Move (`autointeract`) is lent while there is a corpse, so the key runs you to it and opens it; all put back after the last corpse, and in a fight. While it is lent, a right click on the ground walks you there too |
 | Talk to NPCs | on | An NPC right in front of you that is no foe (friendly or neutral) is talked to at once (after a corpse to loot); a quest NPC the key found or you targeted, at the next press. Off: the key looks on |
 | Walk to the NPC found | on | While a quest NPC the key found is your target, the game's Click-to-Move (`autointeract`) is lent, so the key runs you to it and talks; put back as it was when that NPC is no longer your target, and in a fight. While it is lent, a right click on the ground walks you there too |
 | Use items on what is found | on | Out of a fight, a step's item is used on your target when the step's words say it is for that one (a corpse, or the creature or NPC they name); before talking and fighting |
@@ -68,6 +71,9 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | *Quest givers:* Take the guide's quests | on | The quests the steps at hand take (and the step after them) are accepted as the quest giver offers them. Hold Shift while you talk to do it yourself |
 | Hand in the guide's quests | on | The quests the steps at hand hand in are handed in, with the reward the guide names, else the only one |
 | Choose the guide's talk | on | Where a step names a gossip option, it is chosen |
+| Close the talk when it is done | on | After a quest is taken or handed in the key leaves that NPC alone, and a talk that comes up with nothing for you closes by itself (*The key*). A talk with quests your guide does not know stays open |
+| *On the way:* Take all loot | on | Sets the module Loot to take everything at once (its *Everything* on, its *Always show upgrades* off) and answers the game's question on a thing that binds when picked up. Set once: what you change on Loot's page afterwards stays; this switch off puts the rest back. Things locked to a group's roll are not taken |
+| Equip and delete without asking | on | The game's questions before gear binds to you or loses its refund, and before an item is destroyed whatever its quality, are answered as their own Yes would. Destroying is a call the game keeps for a click of the player's: where it refuses, its question comes up with the word it wants typed in, and it is not tried again |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Gathering for the next zone | on | Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks (*Gathering for the next zone*) |
@@ -240,6 +246,12 @@ choice is made by those, in a fight too (`Key.lua`):
   Click-to-Move (`autointeract`)
   is lent, so *Interact With Target* runs you there before it talks; given back when that is over, and as a fight
   begins. The game offers no way for an addon to walk you to a place on the map.
+- **Corpses:** the interact key's pick is normally in front of you and close, so for a moment after a fight
+  (`Key.LOOK` seconds, on while it finds corpses, `Key.LOOKS` at most) it looks further and all around you
+  (`Key.REACH`: `SoftTargetInteractArc`, `SoftTargetInteractRange`). Click-to-Move is lent while its pick is a corpse
+  or your target's corpse has loot (`CanLootUnit`, the attribute `corpse`, read anew as a loot closes), so
+  *Interact With Target* runs you there and opens it. While it looks that far, the NPCs and things it picks count for
+  nothing (the attribute `left`, `npc` and `object` false): they may be far away. Given back as a fight begins.
 - **Find** (`SaneUISpeedLevelingFind`, the key's own binding in `Bindings.xml`) runs a macro: the hearth alone when it
   is due; else `/cleartarget`, then `/targetexact [noexists][dead] <name>` for each wanted name, the first first, a
   skull on the one found and the attack on a foe, with an item ready when none was found. The game runs only the first
@@ -248,7 +260,13 @@ choice is made by those, in a fight too (`Key.lua`):
   out of a fight only, anew the moment before each press.
 - **The quest givers** (`Quests.lua`): while you talk to an NPC, the quests the steps at hand take are accepted and
   those they hand in are handed in, by the game's own gossip and quest-frame functions; only the guide's quests, and
-  only with the switches on and Shift not held.
+  only with the switches on and Shift not held. An NPC you did a quest at, or whose talk had nothing for your guide,
+  is one you are through with (`Quests.Left`): the key leaves it alone (the attribute `left`) until the interact key
+  picks something else, the quest log changes after the quest has settled, or `Quests.LEFT` seconds are over; right
+  after a quest, an NPC your guide still names may be talked to once more, for a chain at the same NPC. A talk that
+  comes up with nothing to do is closed a frame later (`Bye`): at once where nothing can be chosen (the goodbye
+  screen), and within `Quests.AFTER` seconds of a quest done there whatever else the NPC offers, unless your guide
+  still names it. A completed quest or one on offer that the guide does not know keeps a talk open.
 - **Nothing else is automatic:** each press does one thing, the player's.
 - **`/sane key`** says in chat what the key sees now: its state and what a press does, the NPC or thing in front of
   you and your target as the game judges them (a foe or not, friendly, helpable), whether it is wanted, the item for
@@ -266,8 +284,9 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Gathering.lua` | Whether your Herbalism and Mining are enough for the next zone the guide goes to (Core's *Objects* and *Spawns*) |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
-| `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key, Click-to-Move) |
-| `Quests.lua` | What a quest giver does for your guide: takes and hands in its quests |
+| `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key and how far it looks, Click-to-Move) |
+| `Quests.lua` | What a quest giver does for your guide: takes and hands in its quests, closes a talk that is done, the NPC you are through with |
+| `Errands.lua` | What would hold you up: Loot's switches set for all loot, the game's questions on binding and destroying answered (a hook on `StaticPopup_Show`) |
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
 | `Icons.lua` | The icons over the guide: items to use and names to target, Sane UI's own secure buttons |

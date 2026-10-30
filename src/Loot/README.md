@@ -50,9 +50,10 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   the window opens, what the switches want is taken, a few things a frame so a big pile goes quickly without flooding
   the game: *Everything*, or kinds: *Coins*, *Currencies*, *Quest items* (things a quest wants, things that begin
   one), *Trade goods* (cloth, herbs, ore, leather, meat, reagents), *Gear* (armour and weapons), *Consumables* (food,
-  drink, potions, scrolls, bandages), *Junk* (the grey things). Never by a switch: a thing locked to a roll, or one
-  that binds when picked up (the game would ask). Your word on an item goes over the switches: the A (taken) or the
-  list *Your items* (taken, or never). When everything is taken at once the window does not open.
+  drink, potions, scrolls, bandages), *Junk* (the grey things). Never a thing locked to a roll, and only by
+  *Everything* one that binds when picked up (the game asks first). Your word on an item goes over the switches: the A
+  (taken) or the list *Your items* (taken, or never). When everything is taken at once the window does not open.
+  Speed Leveling's switch *Take all loot* sets *Everything* on and *Always show upgrades* off, once.
 - **The game's own Auto Loot** (Esc > Options > Controls) is off while Sane UI's loot window is on, so the switches
   decide; it is set back as it was when the window is switched off. Held Shift while looting still takes everything,
   as the game has it; the window then shows only what is left a moment later (bags full, a thing locked to a roll).
