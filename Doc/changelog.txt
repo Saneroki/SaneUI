@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Chat: a quiet start. The game's own chat stays out of sight, and each
+  character starts in none of the public channels: join one when you
+  want it, with /join or in the list on the chat's name. Loot, money,
+  experience, General, Trade, Local Defense and Services are not shown
+  until you tick them.
 - Speed Leveling: the guide knows by itself which steps you have
   done. Quests, objectives and levels count wherever a step
   stands, it no longer waits at a hearth or a vendor you are long

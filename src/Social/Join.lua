@@ -18,6 +18,18 @@ local _, ns = ...
 --  Only through the game's own /join and /leave (JoinPermanentChannel,
 --  LeaveChannelByName). Knows no frames: it works whether the window is open
 --  or not. The list on the chat's name shows the wishes (Menu.lua).
+--
+--  A character starts in none of the game's public channels (Saneroki,
+--  2026-10-30): they are for the player to join when needed. So each one, by
+--  the kind the game gives it, is left the first time the character is seen
+--  active in it, once per channel and character, also what the game joins late
+--  or only in a place (a city's Trade, a newcomer's chat). The game remembers
+--  for each character what it left. A channel so noted is never left again, nor
+--  is one the player joined: asked for by a person, a join comes through the
+--  game's own functions, which are watched; the game's own joins do not. A wish
+--  goes first. The notes are the character's own (char.public), whichever
+--  profile it uses, and are made only at its first load, with nothing saved for
+--  it yet: a character saved before stays in what it is in.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -31,8 +43,13 @@ local QUIET = 2 -- seconds after the game's word on its channels
 -- The kind of channel that is the game's own (Enum.PermanentChatChannelType).
 local GAME = Enum and Enum.PermanentChatChannelType and Enum.PermanentChatChannelType.Zone or 1
 
+-- The game's ways to join a channel when somebody asks; what it joins by itself comes from the server, past these.
+local JOINS = { "JoinPermanentChannel", "JoinTemporaryChannel", "JoinChannelByName" }
+
 local asked = {} -- [channel] = the zone a join was asked for in
 local owed       -- chat was locked down at the last look
+local ready      -- the first look came: from then on the game is done joining its own
+local public     -- this character's notes: [a channel's word, lower case] = true, left once or joined by the player; nil: leaves none
 
 -- The wishes of the settings in use.
 local function Wishes()
@@ -59,6 +76,39 @@ local function Zone()
     return Core.Ask(rawget(_G, "GetRealZoneText")) or "?"
 end
 
+-- Whether a channel the character is in is one of the game's: by the kind the game gives it; without
+-- that, by being on offer.
+local function Games(name, offered)
+    local chat = rawget(_G, "C_ChatInfo")
+    local info = Core.Ask(chat and chat.GetChannelInfoFromIdentifier, name)
+    local kind = type(info) == "table" and Plain(info.channelType) or nil
+    if kind ~= nil then return kind == GAME end
+    return offered ~= nil and offered[name:lower()] == true
+end
+
+-- Whether a channel is noted, by any word it goes by: a join may name it by its shortcut or by what the game shows
+-- ("Services", "Trade (Services)").
+local function Noted(number, name)
+    local Base = ns.Channels.Base
+    local _, full = Core.Ask(GetChannelName, number)
+    return public[ns.Channels.Own(number, name):lower()] or public[Base(name):lower()] or public[Base(full):lower()]
+end
+
+-- Each public channel the character is in and not noted yet: left, unless a wish speaks for it (never in it is Settle's
+-- own). One switched off here waits: the game has it on its list outside a city, and a leave then may not hold.
+local function LeaveOnce(offered)
+    local joined = { GetChannelList() } -- number, name, disabled; and so on
+    for index = 1, #joined, 3 do
+        local number, name = Plain(joined[index]), Plain(joined[index + 1])
+        if type(number) == "number" and type(name) == "string" and not Plain(joined[index + 2])
+            and not Noted(number, name) and Games(name, offered) then
+            local own = ns.Channels.Own(number, name)
+            public[own:lower()] = true
+            if Wishes()[own] == nil and Wishes()[ns.Channels.Base(name)] == nil then LeaveChannelByName(name) end
+        end
+    end
+end
+
 -- Brings the channels in line with the wishes.
 function Join.Settle()
     if ns.ChatLocked() then
@@ -67,6 +117,7 @@ function Join.Settle()
     end
     owed = false
     local _, offered = Offered()
+    if ready and public then LeaveOnce(offered) end
     local zone = Zone()
     for name, wish in pairs(Wishes()) do
         local number = type(name) == "string" and Plain(GetChannelName(name))
@@ -88,16 +139,6 @@ end
 
 function Join.Wished(name)
     return Wishes()[name]
-end
-
--- Whether a channel the character is in is one of the game's: by the kind the game gives it; without
--- that, by being on offer.
-local function Games(name, offered)
-    local chat = rawget(_G, "C_ChatInfo")
-    local info = Core.Ask(chat and chat.GetChannelInfoFromIdentifier, name)
-    local kind = type(info) == "table" and Plain(info.channelType) or nil
-    if kind ~= nil then return kind == GAME end
-    return offered ~= nil and offered[name:lower()] == true
 end
 
 -- The game's channels for the list on the chat's name: those the character is in, by their number;
@@ -126,10 +167,30 @@ function Join.List()
     return list
 end
 
+-- This character's notes: made if nothing is saved for it yet (Core.Character makes its row, so asked first).
+function Join.Notes()
+    local chars = Core.Store(ns.name).chars
+    local first = type(chars) ~= "table" or chars[Core.charKey] == nil
+    local char = Core.Character(ns.name)
+    if first then char.public = {} end
+    public = type(char.public) == "table" and char.public or nil
+end
+
+-- A join somebody asked for: that channel is the player's from now on, whether the game takes it or not (asked for
+-- in the wrong place, it counts for when the character gets there). Core's guard, not the module's: the channels go on
+-- when the window has stood down, and a join missed then would be left at the next load.
+local Asked = Core.Guard("Social: channels", function(name)
+    name = Plain(name)
+    if public and type(name) == "string" then public[ns.Channels.Base(name):lower()] = true end
+end)
+
 -- From the login on. The game's word on its channels counts only after the first look: until then
 -- the game is still joining its own.
 function Join.Watch()
-    local ready
+    Join.Notes()
+    for _, join in ipairs(JOINS) do
+        if rawget(_G, join) then hooksecurefunc(join, Asked) end
+    end
     local function Look()
         ready = true
         ns.Safe("channels", Join.Settle)

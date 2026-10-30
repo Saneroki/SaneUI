@@ -135,9 +135,18 @@ local function Match(id, want, have, add, remove)
     return changed
 end
 
+-- Those of a list that are in a set of lower-case names.
+local function Among(list, arranged)
+    local names = {}
+    for _, name in ipairs(list) do
+        if type(name) == "string" and arranged[name:lower()] then names[#names + 1] = name end
+    end
+    return names
+end
+
 -- Gives one window what was kept; true if anything differed. Each value is checked for its kind first: one
 -- of an older shape, or missing, leaves that setting as the game has it.
-local function WriteTab(id, want)
+local function WriteTab(id, want, arranged)
     local have, changed = Tab(id), false
     local function Put(differs, set, ...)
         if differs then set(id, ...) changed = true end
@@ -158,7 +167,7 @@ local function WriteTab(id, want)
     local dock = want.dock
     Put((dock == false or type(dock) == "number") and dock ~= have.dock, SetChatWindowDocked, dock or nil)
     if type(want.kinds) == "table" and Match(id, want.kinds, have.kinds, AddChatWindowMessages, RemoveChatWindowMessages) then changed = true end
-    if type(want.channels) == "table" and Match(id, want.channels, have.channels, AddChatWindowChannel, RemoveChatWindowChannel) then changed = true end
+    if type(want.channels) == "table" and Match(id, Among(want.channels, arranged), Among(have.channels, arranged), AddChatWindowChannel, RemoveChatWindowChannel) then changed = true end
     local spot, at = want.spot, have.spot
     if id > 1 and type(spot) == "table" and type(spot[1]) == "string" and Numbers(spot, 2, 5) then
         Put(spot[1] ~= at[1] or Apart(spot[2], at[2]) or Apart(spot[3], at[3]), SetChatWindowSavedPosition, spot[1], spot[2], spot[3])
@@ -178,6 +187,26 @@ local function Joined()
         if type(number) == "number" and type(name) == "string" then names[number], numbers[name:lower()] = name, number end
     end
     return names, numbers
+end
+
+-- The channels the windows' lists are matched for ([lower-case name] = true): those the kept windows name and this
+-- character is in, or joins in this writing (its own). A kept one it is not in stays out: what a character left is not
+-- for a window's list to bring back. One no kept window names stays as the game has it: a new character's General,
+-- which Social leaves a moment later, is no change to offer a /reload for.
+local function Arranged(tabs)
+    local _, here = Joined()
+    local own = Sync.Taken("ownChannels")
+    for _, name in ipairs(type(own) == "table" and own or {}) do
+        if type(name) == "string" then here[name:lower()] = true end
+    end
+    local arranged = {}
+    for id = 1, WINDOWS do
+        local tab = tabs[id]
+        for _, name in ipairs(type(tab) == "table" and type(tab.channels) == "table" and tab.channels or {}) do
+            if type(name) == "string" and here[name:lower()] then arranged[name:lower()] = true end
+        end
+    end
+    return arranged
 end
 
 -- The number of a channel's kind of chat ("CHANNEL5"); nil for any other kind.
@@ -309,9 +338,10 @@ Sync.Part("chatFrames", "elsewhere", {
         local changed = false
         wipe(waiting) -- from now on only these settings' channels wait, not those given before
         if type(data.tabs) == "table" then
+            local arranged = Arranged(data.tabs)
             for id = 1, WINDOWS do
                 local want = data.tabs[id]
-                if type(want) == "table" and WriteTab(id, want) then changed = true end
+                if type(want) == "table" and WriteTab(id, want, arranged) then changed = true end
             end
         end
         if type(data.colours) == "table" and WriteColours(data.colours) then changed = true end

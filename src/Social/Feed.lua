@@ -65,7 +65,7 @@ function Feed.View(id)
     end
 end
 
--- Whether a view shows the messages of a group (Log.lua: GUILD, CHANNEL:2, ...).
+-- Whether a view shows the messages of a group (Log.lua: GUILD, CHANNEL:Trade, ...).
 function Feed.Shows(view, group)
     return view ~= nil and type(view.shows) == "table" and view.shows[group] == true
 end

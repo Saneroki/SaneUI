@@ -37,6 +37,21 @@ function Channels.Base(name)
     return name and (name:match("^(.-)%s+%-%s") or name) or "?"
 end
 
+-- A channel's own word, the same on every character and in every zone, whatever its number here: the game's
+-- shortcut ("Services" of "Trade (Services) - City"), by which its chat windows know it too; else its name.
+function Channels.Own(number, name)
+    local chat = rawget(_G, "C_ChatInfo")
+    local shortcut = chat and Core.Ask(chat.GetChannelShortcut, number)
+    if type(shortcut) == "string" and shortcut ~= "" then return shortcut end
+    return Channels.Base(name)
+end
+
+-- What a channel's messages are shown or hidden with: "CHANNEL:Trade". Not its number: the game hands those out
+-- as channels are joined, so another channel may have it tomorrow.
+function Channels.Group(number, name)
+    return "CHANNEL:" .. Channels.Own(number, name)
+end
+
 -- A name in short: the first letter of each of its words. "Guild" is G, "Raid Warning" RW.
 -- A letter may be more than one byte (other languages). Made once per name: it comes with every message.
 local briefs = {} -- [name] = the same in short
@@ -53,7 +68,7 @@ function Channels.Brief(name)
     return brief
 end
 
--- Whether the window shows the messages of a group ("GUILD", "CHANNEL:2"); a tick in the list of what to show.
+-- Whether the window shows the messages of a group ("GUILD", "CHANNEL:Trade"); a tick in the list of what to show.
 -- A few groups have a switch of their own in the settings (ns.SHOWS): that says it, for both. Every
 -- other group's tick is the setting mute ([group] = true: not shown), kept with the rest.
 function Channels.Shown(group)
@@ -84,7 +99,7 @@ function Channels.Showable()
     local joined = { GetChannelList() }
     for index = 1, #joined, 3 do
         local id, name = joined[index], joined[index + 1]
-        list[#list + 1] = { group = "CHANNEL:" .. id, text = ("%d. %s"):format(id, Channels.Name(name)) }
+        list[#list + 1] = { group = Channels.Group(id, name), text = ("%d. %s"):format(id, Channels.Name(name)) }
     end
     return list
 end

@@ -146,7 +146,7 @@ local OPTIONS = {
     { key = "window", default = true, text = "Chat window", header = "Chat window",
       headerTip = "This window next to the game's chat, and what it keeps between sessions.",
       tip = "This window, in place of or next to the game's chat. Off: only the game's chat, as it was." },
-    { key = "showNative", default = true, text = "Show the game's chat too",
+    { key = "showNative", default = false, text = "Show the game's chat too",
       tip = "The game's own chat window stays on screen next to this one. Off: it is hidden while this window is open, but keeps every line." },
     { key = "history", default = true, text = "Save chat history",
       tip = "The last messages of each character come back in the window at its next login, faded out. Turn the mouse wheel over the window to read them." },
@@ -164,7 +164,10 @@ local OPTIONS = {
       tip = "Somebody joined or left a chat channel, also the hidden channels addons use, and you joined, left or changed one." },
     -- The ticks of the list on the chat's name for every other group ([group] = true: not shown):
     -- kept with the settings, so profiles and a character's own settings carry them; no control.
-    { key = "mute", default = {} },
+    -- Off at first (Saneroki, 2026-10-30): loot, money and experience, and the busy public channels by the game's own word
+    -- for them (Channels.Group; TradeLocal is Forever's Trade (Local), Services Trade (Services)).
+    { key = "mute", default = { REWARDS = true, ["CHANNEL:General"] = true, ["CHANNEL:Trade"] = true, ["CHANNEL:TradeLocal"] = true,
+                                ["CHANNEL:LocalDefense"] = true, ["CHANNEL:Services"] = true } },
 
     -- The full screen's windows (Board.lua): which stand there is the layouts' (the dropdown Windows in its title bar).
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
@@ -182,7 +185,7 @@ local OPTIONS = {
       tip = "What the bubbles and the line to write in stand on: a colour of your choice, or one of the game's own background textures." },
     { key = "bubbleColor", default = "26262B", color = true, text = "Bubble colour", tab = LOOK, parent = "bubbleBack", parentValue = "solid",
       tip = "The colour of the bubbles and the line to write in while the background is Solid colour. Click to pick it." },
-    { key = "shortNames", default = true, text = "Short names", tab = LOOK,
+    { key = "shortNames", default = false, text = "Short names", tab = LOOK,
       tip = "The chat above a message is named by its initials: G for Guild, P for Party, RW for Raid Warning. Off: its whole name." },
 
     { key = "animations", default = true, text = "All animations and fades", tab = LOOK, header = "Animations",

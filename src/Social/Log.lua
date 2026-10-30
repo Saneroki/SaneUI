@@ -15,7 +15,7 @@ local _, ns = ...
 --      tie     what the speaker is to you: "friend", "guild", "raid", "party" (left only; the first that holds)
 --      label   where: "Guild", "Trade", "To Thrall"
 --      short   the same in short: "G", "T" (not for "To Thrall")
---      group   what it is shown or hidden with: "GUILD", "CHANNEL:2", "PRINT" (Log.GROUPS)
+--      group   what it is shown or hidden with: "GUILD", "CHANNEL:Trade", "PRINT" (Log.GROUPS)
 --      r, g, b the game's colour for that kind of chat
 --      time    "21:07"
 --      at      when it came, on the game's clock (GetTime): what fading counts from
@@ -196,8 +196,8 @@ function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName,
     local channel = kind == "CHANNEL" and ns.Plain(channelIndex) or nil
     local entry = { text = text, time = date("%H:%M"), at = GetTime() }
     entry.r, entry.g, entry.b = Color(kind, channel)
-    -- A channel by its number: that is what the list of what to show has, whatever the game calls it where.
-    entry.group = channel and ("CHANNEL:" .. channel) or GROUP[kind] or kind
+    -- A channel by its own word (Channels.Group), as the list of what to show has it, whatever the zone or its number.
+    entry.group = channel and ns.Channels.Group(channel, ns.Plain(channelName)) or GROUP[kind] or kind
 
     if side == NOTE then
         entry.side = NOTE
@@ -264,7 +264,11 @@ local function Group(kind, event, text)
     local from = event and event:match("^CHAT_MSG_(.+)$")
     local channel = kind and kind:match("^CHANNEL(%d+)$")
     if from and from:find("^CHANNEL_") then return "CHANNEL_NOTICES" end
-    if channel then return from and ("CHANNEL:" .. channel) or "CHANNEL_NOTICES" end
+    if channel then
+        if not from then return "CHANNEL_NOTICES" end
+        channel = tonumber(channel)
+        return ns.Channels.Group(channel, select(2, Core.Ask(GetChannelName, channel)))
+    end
     kind = from or kind
     if not kind then return text and text:find("|Hchannel:", 1, true) and "CHANNEL_NOTICES" or "PRINT" end
     return GROUP[kind] or kind

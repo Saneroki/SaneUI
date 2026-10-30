@@ -123,7 +123,9 @@ the game's own chat channels on every character is the Social module's.)
   - Chat windows with `SetChatWindowName/Size/Color/Alpha/Shown/Locked/Docked/Uninteractable`,
     `Add/RemoveChatWindowMessages`, `Add/RemoveChatWindowChannel`, the places of the free ones (not the
     first's, which Edit Mode places) with `SetChatWindowSavedPosition/Dimensions`. The game's chat frames read
-    these when the interface loads (`UPDATE_CHAT_WINDOWS`), hence the reload. Colours with `ChangeChatColor`
+    these when the interface loads (`UPDATE_CHAT_WINDOWS`), hence the reload. A window's channels are matched only for
+    those the kept windows name and the character is in or joins in that writing, so what it left is not brought back
+    and a new character's public channels, which Social leaves, are no change. Colours with `ChangeChatColor`
     and `SetChatColorNameByClass`, which the frames take at once from the game's own events, in our call. The
     game keeps a channel's colour by the channel's number, which differs between characters: it is kept by
     the channel's name and given to this character's channel of that name, whatever its number here. One the

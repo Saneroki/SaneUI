@@ -163,7 +163,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **The ring around a class icon** says what the speaker is to you: yellow a friend, green a guild
   member, purple somebody of your raid, blue of your party (the first that holds). White: a stranger.
 - **Settings** (Esc > Options > AddOns > Sane UI > Social), in two tabs:
-  - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (on), *Save chat history* (on) with *Messages kept* (slider
+  - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (off), *Save chat history* (on) with *Messages kept* (slider
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
     use). The same four ticks are in the list on the chat's name. *Full screen*: *Messages kept per
@@ -184,7 +184,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     *Messages*: *Text size* (10 to 24, at first 14), *Bubble opacity* (100 % solid to 0 % text
     only, at first 50 %), *Bubble background* (*Solid colour*, or one of the game's own textures: *Marble*,
     *Rock*, *Slate*, *Iron*, *Night*; at first solid), *Bubble colour* (a swatch that opens the game's colour
-    picker, at first a dark grey `26262B`; greyed out while a texture is chosen), *Short names* (on). *Animations*:
+    picker, at first a dark grey `26262B`; greyed out while a texture is chosen), *Short names* (off). *Animations*:
 
     | Line | At first |
     | --- | --- |
@@ -205,6 +205,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   after a character comes into the world, when the game changes its channels, and at once when you choose.
   It works whether the window is open or not, and on every character (the settings of *Social* are account
   wide unless unticked in *Profiles > Game settings*).
+- **You start in no public channel.** On a character's first load Sane UI takes it out of every channel of the game
+  (General, Trade, Local Defense, Services, Looking For Group, Newcomer Chat, ...): each is left the first time the
+  character is seen in it, so also a city's when it first comes to one. That happens once per channel and character,
+  on every profile. Join one when you want it, with `/join Trade` or with *Always in it* above: it stays, on that
+  login and any other. A channel you made yourself is not touched.
+- **Not shown at first** in the list of what to show: *Loot, money and experience*, and General, Trade (Forever's Trade
+  (Local) too), Local Defense and Services, also after you join one: tick it there to read it. A tick belongs to the
+  channel, whatever number the game gives it.
 - **The bubbles and the line to write in** are plain fills with round corners: no border, no ornament.
   Every bubble, yours too, and the line are drawn the same way: the same fill (a color or one of the game's
   textures, as set), the same corners, as see-through. Only the text's color tells the kind of message.
@@ -238,8 +246,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   for the list of chats you can write in right now (say, yell, party, raid, instance, guild, officer,
   the channels you joined) and pick one. It stays chosen until you pick or type another (`/g`, `/2`).
   A whisper is not in the list: it needs a name (`/w name`, `/r`).
-- **The game's own chat stays on show next to this window** by default (setting *Show the game's chat too*).
-  Switched off, the game's chat (its windows, tabs and buttons) is out of sight while this window is open.
+- **The game's own chat is out of sight while this window is open** (its windows, tabs and buttons). The setting
+  *Show the game's chat too* keeps it on show next to this window.
   `/sane social` (or `/sane chat`, its word from before) switches between the two: our window, or the game's chat as it was. So does a key
   of your choice (Esc > Options > Keybindings, section *Sane UI*: *Show or hide the chat window*). The game's chat goes
   on collecting every line meanwhile, so nothing is missing when it comes back.
@@ -255,7 +263,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   | Emotes, achievements, the guild's message of the day | Centred, bubble | — (the text says whose; an achiever's name is a link) |
   | Every other line the game's chat shows: the system's (also your time played, a slash command's answer), pings, loot, money, experience, skill ups, reputation, battlegrounds, pet battles, a boss's emote, a channel's notices (joined, left), a friend coming online, AFK and DND answers, a line an addon printed | Centred, bubble | — (as the game's chat writes it) |
 
-  The list of what to show has them as *Pings*, *Loot, money and experience*, *Battlegrounds*, *Pet
+  The list of what to show has them as *Pings*, *Loot, money and experience* (hidden at first), *Battlegrounds*, *Pet
   battles*, *Channel joins and leaves* (all channels' notices, hidden at first), *System* (with Battle.net
   notices) and *Addons and the game's notes*. The combat log is not shown.
 
@@ -402,12 +410,19 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `ChatFrameUtil.ResolveChannelName`): a community's channel is called `Community:<club>:<stream>`
   inside and shows as the community's name.
 - **What is shown** (`Log.GROUPS`, `Channels.Shown(group)`): a message carries a group (`"GUILD"`,
-  `"CHANNEL:2"`, `"PRINT"`; a channel by its number, which is what the list has). `Log.GROUPS` is the one
+  `"CHANNEL:Trade"`, `"PRINT"`; a channel by its own word, `Channels.Group`: the game's shortcut,
+  `C_ChatInfo.GetChannelShortcut`, by which its chat windows know it too, else its name; not by its number, which
+  moves as channels are joined and left, nor its full name, which has the zone in it). `Log.GROUPS` is the one
   list of them, in the order the list of what to show offers them, each with the kinds of chat that
   belong to it (a leader's and a warning's lines belong to their chat, Battle.net whispers to
   whispers). The switched-off groups are kept in the setting `mute`, but for the four with a
   setting of their own (`ns.SHOWS`: `SYSTEM`, `MONSTER`, `PRINT`, `CHANNEL_NOTICES`): their tick in the list and
-  the switch in the settings are the same value (`Channels.Shown`, `Channels.Flip`, by `Core.Set`). The log keeps every
+  the switch in the settings are the same value (`Channels.Shown`, `Channels.Flip`, by `Core.Set`). `mute` is not empty
+  at first: `REWARDS` and the channels `General`, `Trade`, `TradeLocal` (Forever's Trade (Local)), `LocalDefense` and
+  `Services` (shown as Trade (Services)). It is the module's default, so both standard profiles and Character specific
+  have it, and it is kept whole: what you tick stays ticked. The game's chat windows keep their kinds of chat: they
+  write the lines the log reads (`Log.Line`), and the list decides what the window shows. So Sync, which keeps those
+  windows, has nothing to bring back. The log keeps every
   message; the window's list is the log without the switched-off groups, made anew when a tick
   changes. The channels listed are those the game says you are in (`GetChannelList`): only they bring
   messages.
@@ -549,6 +564,27 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   locked down (`C_ChatInfo.InChatMessagingLockdown`) it waits, and looks again at the next
   `ADDON_RESTRICTION_STATE_CHANGED`. It runs through `ns.Safe`, not `ns.Guarded`: an error there is noted and
   does not close the window. The menu's three choices per channel are submenus (`Menu.lua`).
+- **Out of the public channels, once** (`Join.lua`, `char.public`): a wish that never leaves again would throw out a
+  channel you join yourself, so this is no wish but a note per character (`Core.Character`), `[a channel's word in lower
+  case] = true`, made only at a first load: when no row is saved for the character yet (`Join.Notes`, which is why it asks
+  before `Core.Character` makes one). A second character on the same profile therefore starts empty and leaves its own
+  channels, and a `/reload` finds the notes it saved. A character saved before has no notes and leaves nothing. At each
+  look after the first (`LeaveOnce`, so the game has joined its own, and only then), every channel the character is in
+  whose kind is the game's is noted, and left unless it carries a wish: *always in it* stays, *never in it* is the wish's
+  own. That is by kind, not by a list of names: the game's table has channels of one game only (Forever's Trade (Local),
+  HardcoreDeaths), by zone (Local Defense), by city (Trade, Services), for newcomers (Newcomer Chat, Chromie Time) or
+  never joined by itself (Looking For Group). One the game lists as switched off (third value of `GetChannelList`) waits:
+  a leave may not hold there, and the game turns it on with a notice. Left once is enough: the game remembers per
+  character what it left. A join someone asks for is told apart from the game's own by where it runs: everything of the
+  game's that joins for a person (`/join`, its channels window, its dialogs) calls `JoinPermanentChannel`, and nothing of
+  its interface calls that by itself, while its own joins come from the server. So those three functions are hooked
+  (`JOINS`) and the name is noted, also for a channel never seen yet, in the word it was asked by; `Noted` looks a channel
+  up by all three of its words (`Services`, `Trade (Services)`, the full name). The hook has Core's guard, not the
+  module's: the channels go on when the window has stood down, and a join missed then would be left after the next load.
+- **Sync and these channels** (`Core/Sync/Chat.lua`): a public channel is never one of your own (`ownChannels` goes by the
+  same kind), so no character rejoins it. A kept window's list of channels is matched only for channels the kept windows
+  name and the character is in (`Arranged`, plus your own joined in that writing): `AddChatWindowChannel` is not called for a
+  channel it left, and a new character's General, gone a moment later, is no change to offer a `/reload` for.
 - **Moving, sizing, docking and the kept place** are Core's (`Core.Window.New` of the kind `screen`, docked
   at first in the lower left corner: `first.dock`; [src/Core/README.md](../Core/README.md)); the place is
   `SaneUIDB.modules.Social.place`.
@@ -764,6 +800,9 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-10-30 — Defaults (Saneroki): the game's chat out of sight, whole chat names; a character starts in no public
+  channel, each left once and never again, whatever you join later; loot, money, experience, General, Trade, Local
+  Defense and Services not shown at first. A tick now belongs to the channel, not its number.
 - 2026-10-30 — Full screen: the chat lies on its panel's see-through plate, no more under it; the list on the chat's
   name in columns, open until a click outside it or on its button (Saneroki).
 - 2026-10-25 — Retail: the tab *Group Finder* and its switch stand down (Retail's finder is its own), *Group finder*

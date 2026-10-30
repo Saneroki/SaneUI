@@ -6,6 +6,33 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Social: a quiet start, in no public channel (Saneroki, 2026-10-30)
+Saneroki: the game's chat off and short names off; at first in none of the public channels, to be activated when needed;
+loot, money, experience, General, Trade, Local Defense and Services turned off; on both profiles.
+- **`Social.lua`:** `showNative` and `shortNames` at first off. `mute` no longer empty at first: `REWARDS` and the channels
+  `General`, `Trade`, `TradeLocal` (Forever's Trade (Local), named beside Trade), `LocalDefense`, `Services`. All module
+  defaults, so both standard profiles and Character specific have them.
+- **`Channels.lua`, `Log.lua`, `Feed.lua`:** a channel's group is `CHANNEL:<word>` now, not `CHANNEL:<number>`: `Channels.Own`,
+  the game's shortcut (`C_ChatInfo.GetChannelShortcut`; Retail's and Forever's Trade (Services) is `Services`), else its
+  name. A number moves as channels are left and joined, so a tick by number went to whichever channel had it next. Saved
+  ticks and chat views of the old shape count for nothing (no players yet).
+- **`Join.lua`:** a character's public channels are left once: `Join.Notes` makes the notes `char.public` only when no row
+  is saved for the character yet, so a second character on a shared profile has its own and a `/reload` keeps them; `LeaveOnce`
+  (from the first look on, in `Settle`) leaves each channel of the game's kind (*Zone*) the first time it is seen active,
+  notes it, and spares one with a wish; one the game lists as switched off waits. A wish was no way to do it: *never in
+  it* would throw out what the player joins. `JoinPermanentChannel` and two more are hooked (Core's guard, it must hold after
+  the window stood down): nothing of the game's interface calls them by itself, its own joins come from the server, so
+  what is asked for is the player's and is never left, also a channel never seen yet (Looking For Group: the game's table
+  has it joined by nobody). The game's table was read for both games: by kind this covers Forever's Trade (Local) and
+  HardcoreDeaths, Newcomer Chat, Chromie Time and the rest with no list of names.
+- **`Core/Sync/Chat.lua`:** a kept window's channels are matched only for those the kept windows name and the character is in,
+  or joins in that writing (`Arranged`, `Among`): `AddChatWindowChannel` is not called for a channel it left, and a new
+  character's General, left a moment later, is no change to offer a `/reload` for. `ownChannels` needs no change: it goes
+  by the same kind. Nor do the windows' kinds of chat: the game's windows keep them and write the lines Social reads,
+  `mute` decides what shows.
+- **Tests:** `social.lua` (the defaults, every case above, a new character, a late or zone channel, a join by hand, a
+  `/reload`, a second character, a character saved before), `sync.lua` (nothing brought back, no reload offered).
+
 ### Speed Leveling: the guide works out by itself what is done (Saneroki, 2026-10-30)
 Saneroki: the guide should understand which steps are done already, even after a click back to a specific step, and
 complete them by itself.

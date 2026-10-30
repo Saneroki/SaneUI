@@ -67,6 +67,8 @@ C_ChatInfo = { InChatMessagingLockdown = function() return W.locked or false end
                GetChannelShortcutForChannelID = function(id) return CHANNEL_NAMES[id] end }
 -- In no channel at first; the game's channels below (Join) give them their own.
 GetChannelName = function() return 0 end
+local Joining -- what the stand-in's join does; the module hooks the one function below, at the login
+JoinPermanentChannel = function(...) if Joining then Joining(...) end end
 IsResting = function() return false end
 GetClassAtlas = function(class) return "classicon-" .. class end
 local function Color(r, g, b)
@@ -477,8 +479,15 @@ check(SaneUI.Social == ns and ns.addon == "SaneUI_Social", "the module is an add
 W.Fire("ADDON_LOADED", "SaneUI_Social")
 local Log, Layout = ns.Log, ns.Layout
 local options = Core.Store("Social").options
-check(options.showNative == true, "the game's own chat stays on show at first")
-options.showNative = false -- most of what follows is about our window standing in for it
+check(options.showNative == false, "the game's own chat is out of sight at first")
+check(options.shortNames == false, "a chat's whole name stands above a message at first")
+check(options.mute.REWARDS and options.mute["CHANNEL:General"] and options.mute["CHANNEL:Trade"] and options.mute["CHANNEL:TradeLocal"]
+    and options.mute["CHANNEL:LocalDefense"] and options.mute["CHANNEL:Services"] and options.mute.SAY == nil,
+    "loot, money and experience, General, Trade, Local Defense and Services are not shown at first; every other chat is")
+check(not ns.Channels.Shown("REWARDS") and not ns.Channels.Shown("CHANNEL:Trade") and not ns.Channels.Shown("CHANNEL:Services")
+    and ns.Channels.Shown("GUILD") and ns.Channels.Shown("CHANNEL:Raiders"), "so the window leaves those out, and a channel of the player's own is shown")
+options.mute = {} -- what follows shows every chat, and starts with the chats' names in short
+options.shortNames = true
 check(box == nil, "no window is made before the login")
 
 -- Log: what a chat event says -------------------------------------------------------------------
@@ -1311,11 +1320,11 @@ local brief = ns.Channels.Brief
 check(brief("Guild") == "G" and brief("Party") == "P" and brief("Raid Warning") == "RW" and brief("Trade") == "T" and brief("Ünter den Linden") == "ÜdL" and brief("-") == "-",
     "in short a name is the first letter of each of its words")
 entry = Log.Read("CHAT_MSG_CHANNEL", "wts", "Thrall", "", "2. Trade - City", "", "", 0, 2, "Trade - City", 0, 1, THRALL)
-check(entry.short == "T" and entry.group == "CHANNEL:2" and Log.Read("CHAT_MSG_RAID_WARNING", "run", "Thrall").short == "RW", "T for the trade channel, RW for a raid warning")
+check(entry.short == "T" and entry.group == "CHANNEL:Trade" and Log.Read("CHAT_MSG_RAID_WARNING", "run", "Thrall").short == "RW", "T for the trade channel, RW for a raid warning")
 check(Log.Read("CHAT_MSG_RAID_WARNING", "run", "Thrall").group == "RAID" and Log.Read("CHAT_MSG_WHISPER_INFORM", "psst", "Thrall").group == "WHISPER"
     and Log.Read("CHAT_MSG_WHISPER_INFORM", "psst", "Thrall").short == nil, "a raid warning belongs to the raid's chat; a whisper you sent keeps saying to whom")
 local names = control("Short names")
-check(names and names.setting:GetValue() == true and options.shortNames == true, "a fifth setting names the chats in short, on at first")
+check(names and names.setting:GetValue() == true and options.shortNames == true, "a fifth setting names the chats in short")
 names.setting:SetValue(false)
 check(meta(rows[1])._text == "|cffffffffSay|r  <" .. Log.list[1].time .. ">", "switched off, the whole name stands above a message")
 names.setting:SetValue(true)
@@ -1349,7 +1358,17 @@ check(#box.provider.list == shownBefore - said + 1, "one of another chat is")
 saying.fn(saying.data)
 check(saying.checked(saying.data) and Core.Store("Social").options.mute.SAY == nil and #box.provider.list == #Log.list, "ticked again, they are all back")
 local trade = menu[#menu - 1]
-check(trade.text == "2. Trade" and trade.data.group == "CHANNEL:2", "a channel is known by its number")
+check(trade.text == "2. Trade" and trade.data.group == "CHANNEL:Trade", "a channel is known by its own word, not its number")
+do -- The game's own word, whatever the number it has now and the name it shows
+    local function Said(number, name)
+        return Log.Read("CHAT_MSG_CHANNEL", "wts", "Thrall", "", number .. ". " .. name, "", "", 2, number, name, 0, 1, THRALL).group
+    end
+    C_ChatInfo.GetChannelShortcut = function(number) return ({ [4] = "Services", [5] = "" })[number] end
+    check(Said(4, "Trade (Services) - City") == "CHANNEL:Services", "Trade (Services) goes by its shortcut, as the setting names it")
+    check(Said(7, "Trade - City") == "CHANNEL:Trade" and Said(5, "General - Elwynn") == "CHANNEL:General",
+        "with no shortcut from the game, by its name without the zone, whatever its number")
+    C_ChatInfo.GetChannelShortcut = nil
+end
 trade.fn(trade.data)
 shownBefore = #box.provider.list
 W.Fire("CHAT_MSG_CHANNEL", "wts", "Thrall", "", "2. Trade - City", "", "", 2, 2, "Trade - City", 0, 1, THRALL)
@@ -1361,7 +1380,7 @@ check(box.provider.list[#box.provider.list - 1].text == "wts", "ticked again, th
 -- with its channel; a channel's join or leave with the notices.
 native:AddMessage("[2. Trade] Thrall: from a community", 0.5, 0.5, 1, ChatTypeInfo.CHANNEL2.id, 0, 0, "CHAT_MSG_COMMUNITIES_CHANNEL")
 native:AddMessage("[2. Trade] Thrall joined", 0.5, 0.5, 1, ChatTypeInfo.CHANNEL2.id, 0, 0, "CHAT_MSG_CHANNEL_JOIN")
-check(Log.list[#Log.list - 1].group == "CHANNEL:2" and Log.list[#Log.list].group == "CHANNEL_NOTICES",
+check(Log.list[#Log.list - 1].group == "CHANNEL:Trade" and Log.list[#Log.list].group == "CHANNEL_NOTICES",
     "a line of a channel's kind with its message event is that channel's; with a join's, a notice")
 trade.fn(trade.data)
 check(box.provider.list[#box.provider.list].text ~= "[2. Trade] Thrall: from a community", "so unticking the channel hides it too")
@@ -3131,7 +3150,7 @@ check(not window:IsShown() and #W.printed == 2, "and /sane chat, its word from b
 local joined, calls, zone = { General = 1, Trade = 2 }, {}, "Elwynn Forest"
 local offer = { "General", "LocalDefense", "LookingForGroup" } -- what the game offers here: no city's channels
 GetChannelName = function(channel) return joined[channel] or 0 end
-JoinPermanentChannel = function(channel) calls[#calls + 1] = "Join " .. channel; joined[channel] = 9 end
+Joining = function(channel) calls[#calls + 1] = "Join " .. channel; joined[channel] = 9 end
 LeaveChannelByName = function(channel) calls[#calls + 1] = "Leave " .. channel; joined[channel] = nil end
 GetRealZoneText = function() return zone end
 EnumerateServerChannels = function() return unpack(offer) end
@@ -3148,11 +3167,115 @@ local function Called(what)
     for _, call in ipairs(calls) do if call == what then return true end end
     return false
 end
+
+-- A first load: the public channels are left once, each the first time the character is seen in it. Whatever is
+-- joined afterwards stays, on that login, after a /reload and on any other.
+local char = Core.Character(ns.name)
+check(type(char.public) == "table" and next(char.public) == nil, "a character with nothing saved starts with empty notes")
+ns.Join.Wish("LookingForGroup", nil)
+check(#calls == 0, "before the first look nothing is left: the game is still joining its own")
+joined.Raiders = 3 -- a channel of the player's own: no public one
+W.Fire("PLAYER_ENTERING_WORLD", true, false)
+W.Wait(9)
+check(Called("Leave General") and Called("Leave Trade") and #calls == 2, "the first look leaves every public channel, not one of the player's own")
+check(joined.Raiders == 3 and char.public.general and char.public.trade and not char.public.raiders, "and notes those it left")
+ns.Join.Settle()
+check(#calls == 2, "looked at again, nothing more to do")
+
+JoinPermanentChannel("General", nil, 1, 1) -- the player's /join, an hour later on that login
+check(char.public.general and joined.General == 9, "the player joins one: that is the game's own join")
+calls = {}
+W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_JOINED")
+W.Wait(2.5)
+check(#calls == 0 and joined.General == 9, "and it stays, though the game tells of a channel joined")
+joined.Services, joined.TradeLocal = 5, 6 -- a city: the game joins these by itself, late
+W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_CHANGED")
+W.Wait(2.5)
+check(Called("Leave Services") and Called("Leave TradeLocal") and #calls == 2 and joined.General == 9,
+    "a channel the game joins late, or by zone, is left the first time it is seen, also one of only one of the games")
+
+-- Who joined what, by the game's other names for a channel and before it was ever seen
+local shortcuts = { [7] = "Services" }
+local shortcutWas = C_ChatInfo.GetChannelShortcut
+C_ChatInfo.GetChannelShortcut = function(number) return shortcuts[number] end
+char.public.services = nil
+joined["Trade (Services)"], calls = 7, {}
+JoinPermanentChannel("LocalDefense", nil, 1, 1) -- never seen yet, and joined by the player
+joined.LocalDefense = 8
+W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_JOINED")
+W.Wait(2.5)
+check(calls[1] == "Join LocalDefense" and joined.LocalDefense == 8, "a channel the player joins before the game ever put the character in it stays")
+check(Called("Leave Trade (Services)") and char.public.services, "a channel is noted by the game's own word for it, also where the game shows another")
+JoinPermanentChannel("Trade (Services)", nil, 1, 1)
+joined["Trade (Services)"], char.public.services, calls = 7, nil, {}
+W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_JOINED")
+W.Wait(2.5)
+check(#calls == 0 and joined["Trade (Services)"] == 7, "joined by the name the game shows, it counts the same")
+C_ChatInfo.GetChannelShortcut, joined["Trade (Services)"], char.public.services = shortcutWas, nil, true
+
+-- A channel that is switched off where the character is: not left yet, so that a leave that does not hold cannot use up its one time
+local listWas = GetChannelList
+GetChannelList = function() return 9, "Outside", true end
+ns.Join.Settle()
+check(not char.public.outside, "one the game lists as switched off here waits")
+GetChannelList = function() return 9, "Outside", false end
+joined.Outside, calls = 9, {}
+ns.Join.Settle()
+check(calls[1] == "Leave Outside" and char.public.outside, "and is left when the game switches it on")
+GetChannelList = listWas
+joined.Outside = nil
+
+-- A /reload: the notes are what the character saved, so nothing joined before it is left, and what still comes is
+ns.Join.Notes()
+check(Core.Character(ns.name).public == char.public and char.public.general, "after a /reload the notes are still there, not made anew")
+calls = {}
+W.Fire("PLAYER_ENTERING_WORLD", true, false)
+W.Wait(9)
+check(#calls == 0 and joined.General == 9 and joined.LocalDefense == 8, "so what the player joined stays")
+joined.WorldDefense = 10
+W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_CHANGED")
+W.Wait(2.5)
+check(calls[1] == "Leave WorldDefense", "and one the game joins only now is still left")
+
+-- A second character on the same profile: notes of its own, and it starts left too. A wish of the profile speaks first.
+local firstKey = Core.charKey
+Core.charKey, joined, calls = "Player-70-0000BEEF", { General = 1, LocalDefense = 2, Trade = 3 }, {}
+options.presence.Trade = true
+ns.Join.Notes()
+local second = Core.Character(ns.name)
+check(second ~= char and type(second.public) == "table" and next(second.public) == nil, "a second character has notes of its own, though the profile is there")
+ns.Join.Settle()
+check(Called("Leave General") and Called("Leave LocalDefense") and not Called("Leave Trade") and joined.Trade == 3,
+    "it leaves the public channels as well; one the profile wishes always in it stays")
+-- A wish kept by the channel's shortcut counts where the game lists the longer name
+options.presence.Services = true
+joined["Trade (Services)"], calls = 4, {}
+local shortcutOf = C_ChatInfo.GetChannelShortcut
+C_ChatInfo.GetChannelShortcut = function(number) return number == 4 and "Services" or nil end
+ns.Join.Settle()
+check(#calls == 0 and second.public.services, "a wish by the shortcut is a wish for the channel")
+C_ChatInfo.GetChannelShortcut, options.presence.Services, joined["Trade (Services)"] = shortcutOf, nil, nil
+options.presence.Trade = false
+joined.Trade, calls = 3, {}
+second.public.trade = nil
+ns.Join.Settle()
+check(#calls == 1 and calls[1] == "Leave Trade", "one wished never in it is left by the wish, once")
+options.presence.Trade = nil
+
+-- A character saved before these notes: nothing is left
+Core.charKey, joined, calls = "Player-70-0000CAFE", { General = 1 }, {}
+Core.Store(ns.name).chars[Core.charKey] = { history = {} }
+ns.Join.Notes()
+ns.Join.Settle()
+check(Core.Character(ns.name).public == nil and #calls == 0 and joined.General == 1, "a character with something saved already is no first load: it stays in what it is in")
+
+Core.charKey, joined, calls = firstKey, { General = 1, Trade = 2 }, {}
+ns.Join.Notes()
 check(type(options.presence) == "table" and next(options.presence) == nil and not control("General"),
     "at first the game decides for every channel; no switch for them on the page")
 W.Fire("PLAYER_ENTERING_WORLD", true, false)
 W.Wait(9)
-check(#calls == 0, "with no wish, the game's channels are left alone")
+check(#calls == 0, "with no wish, the game's channels stay as they are: each was left once, and is the character's own now")
 joined.Raiders = 3 -- a channel of the player's own: not the game's
 local names = {}
 for index, channel in ipairs(ns.Join.List()) do names[index] = channel.name end
@@ -3195,7 +3318,7 @@ check(Called("Join Trade") and Called("Join Services") and calls[5] and #calls =
 general[1].fn(general[1].data)
 check(options.presence.General == nil, "the game decides again")
 options.presence.General = false
-JoinPermanentChannel("General") -- the game put the character in it again
+joined.General = 9 -- the game put the character in it again
 W.locked, calls = true, {}
 W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_JOINED")
 W.Wait(2.5)
