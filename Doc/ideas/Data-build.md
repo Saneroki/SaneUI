@@ -264,8 +264,9 @@ holds the budget of values for all of them.
     no key is dropped.
   - Tests with a stub guild, among them: two members with the same first name are two senders, one member
     named with and without a realm is one, and a member with the player's first name is not the player.
-- [ ] **1f.2 Scans:** have, want, data, and the question at login, each naming its auction house; a
-  receiver takes only its own house's. Tests.
+- [x] **1f.2 Scans:** have, want, data, and the question at login, each naming its auction house; a
+  receiver takes only its own house's. Tests. *Built 2026-10-30: `src/Core/Data/Relay.lua`, with the switch and the price rule of
+  *Poisoning* 7; `Doc/guides/data.md`, *Scans shared*.*
 - [ ] **1f.3 Bundles.** Tests.
 - [ ] **1f.4 Trust.**
   - Shape, quarantine and the game's check.

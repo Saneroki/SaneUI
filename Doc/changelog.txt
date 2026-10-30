@@ -11,6 +11,9 @@ The bigger changes of each version, newest first.
   full price history grows from day one. A bar under the window
   shows the scan start, how far it is and when the next one comes.
   Press the bar to start a scan yourself.
+- Auction prices are shared by themselves: a full scan reaches
+  every Sane UI player in your guild and group, your own other
+  accounts too. General, Share data with my guild and group.
 - Tooltips use what the auction house lists right now and your
   last scan for what an item brings, what its materials bring
   disenchanted and what to do with it. With Disenchant, the advice

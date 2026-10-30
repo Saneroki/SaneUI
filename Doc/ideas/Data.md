@@ -1378,6 +1378,10 @@ game's fact, not the player's story.
 
 ### Scans
 
+*Built 2026-10-30 (`src/Core/Data/Relay.lua`; the guide, *Scans shared*), for the guild, the party and the raid alike. A member in
+two of them hears a transfer once, as a later copy changes nothing. Only what moved in a scan is sent, so a member who missed
+one catches up at its login's question; the whole scan stays with the one who scanned.*
+
 One prefix, `SaneUI`, for everything Sane UI sends. Every message starts with its kind and the protocol
 number; a kind or number we do not know is ignored.
 
@@ -1497,7 +1501,8 @@ message is treated as possibly hostile, whichever addon it seems to come from.
    counts always count.
 7. **Prices: own first, then the middle.** A shared scan fills in only where the player's own is older. Per
    item the median of the senders' prices; a price more than five times off the item's own history
-   (*proposal*) needs a second sender.
+   (*proposal*) needs a second sender. *Built 2026-10-30 but for the median: with one transfer per house in 15 minutes the newest
+   stands, and five times off is measured from the point it would replace.*
 8. **Strikes.** Three strikes (*proposal*) and a sender is ignored for a week and its waiting data dropped;
    kept by the sender's whole name, on this computer only.
 9. **Never into the master unchecked.** The harvest takes accepted data only, with how it was accepted (by
@@ -1517,7 +1522,7 @@ module's data, so no module has switches of its own for this.
 
 | Switch | Default | Does |
 | --- | --- | --- |
-| **Share data with my guild** | on | Sending and taking shared data. Off: the prefix is not even registered, so the game does not hand the messages to us at all; it costs nothing. |
+| **Share data with my guild and group** | on | Sending and taking shared data. *Built 2026-10-30, for the prices and the confirmed facts; the prefix stays registered, as the guild's records use it.* |
 | **Load client data on load** | on | The patch check reads the game's data during the loading screen. Off: the check runs after the loading screen, in the background, within the frame budget (*The patch check*). |
 | **Chat message for new data changes** | off | One line when accepted data changed the database (*Chat messages*). |
 | **Chat message for new auction house data** | off | One line when an accepted scan, own or shared, changed prices. |

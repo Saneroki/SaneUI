@@ -103,6 +103,8 @@ Data\Facts.lua
 Data\Prices.lua
 Data\Scan.lua
 Data\ScanBar.lua
+# What a scan found told to this computer's other accounts while they run, by addon messages (Data.Relay)
+Data\Relay.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)
 People.lua
 # What the game says about a unit for every view: its quest objective, a player's item level and talents (paced inspections)

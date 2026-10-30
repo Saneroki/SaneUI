@@ -143,6 +143,11 @@ local function Tell()
     return game
 end
 
+-- Whether this player shares with the guild and the group (the switch on the page General): sending and taking.
+function Data.Sharing()
+    return not (Core.general and Core.general.shareData == false)
+end
+
 function Data.Game()
     if not told then game, told = Tell(), true end
     return game

@@ -19,6 +19,8 @@ local Core = SaneUI.Core
 --      Prices.Account()        takes in what another account's file left in the global: the addon
 --                              SaneUI_AuctionDatabase is links to every account's file (Doc/guides/data.md, *Across
 --                              accounts*), read over this account's own points where they are newer
+--      Prices.Heard(house, at, text, sender)   what a guild or group member's scan found, told by Relay.lua: it fills in
+--                              only where this account's point is older, and a price five times off needs a second sender
 --
 --  item is an item's ID or its link. A link names its kind (gear by level and suffix, a pet by species); an ID, or a
 --  link of a kind no scan saw, the cheapest of its kinds.
@@ -36,6 +38,7 @@ local Plain, Ask = Core.Plain, Core.Ask
 local Prices = {}
 
 Prices.FRESH = 30  -- days a price counts without being seen again
+local TRUST = 5    -- how far off a member's price may stand from what is known before a second sender must say it too
 
 local DAY = 86400
 local HISTORIES = 64   -- items whose history stays taken apart, per house, then forgotten together
@@ -52,7 +55,8 @@ local mine, opened     -- the house of your side, once asked for; the one open n
 local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty,
                        --                      history = { [key] = points }, held }
 local keys = {}        -- [a house's part] = its key
-local database         -- [a house's key] = { index, days }: what all accounts hold together, where a tool made that
+local database         -- [a house's key] = { index, days, recent, kept }: what all accounts hold together, through the links
+local doubted = {}     -- [key] = { sender, low }: a shared price far from what is known, until a second sender says the same
 local kinds = {}       -- [item] = whether the auction house tells its kinds apart
 local listed = {}      -- [key] = the lowest price in the list on show
 local listeners = {}
@@ -179,9 +183,12 @@ local function Book(house)
     return book
 end
 
--- A scan's point of an item (Scan.lua).
+-- A scan's point of an item (Scan.lua). True when its price moved: what another running account has to be told.
 function Prices.Take(house, key, at, low, market, units, auctions, sellers)
-    Put(Book(house), key, POINT:format(at, low, market, units, auctions, sellers))
+    local book = Book(house)
+    local point = book.index[key]
+    Put(book, key, POINT:format(at, low, market, units, auctions, sellers))
+    return point == nil or tonumber(point:match("^%d+,(%d+)")) ~= low or tonumber(point:match("^%d+,%d+,(%d+)")) ~= market
 end
 
 -- The house's points written into its saved string.
@@ -380,6 +387,75 @@ local function Join(key, house)
     if newer then shared.kept = kept end
 end
 
+-- The part of a house this account knows; nil for another.
+local function Known(key)
+    if Current() == nil or type(part.houses) ~= "table" then return nil end
+    local house = part.houses[key]
+    return type(house) == "table" and keys[house] and house or nil
+end
+
+-- Whether two prices are within what a scan may move one by itself (Doc/ideas/Data.md, *Poisoning*).
+local function Near(one, other)
+    return one <= other * TRUST and other <= one * TRUST
+end
+
+-- A shared price where this account knows another: true when it may stand. Far off, it waits for a second sender.
+local function Believed(name, low, known, sender)
+    if not known or known == 0 or low == 0 or Near(low, known) then return true end
+    local first = doubted[name]
+    if first and first.sender ~= sender and Near(first.low, low) then
+        doubted[name] = nil
+        return true
+    end
+    doubted[name] = { sender = sender, low = low }
+    return false
+end
+
+-- What a member's scan found (Relay.lua): "key=low,market,units,auctions,sellers;..." of a house this account knows. It joins
+-- the newest points and, for a graph, that scan's line; where this account's point is as new, it is passed over. Into the
+-- saved file goes only the newest point, at the logout: never the scans or the days, which are this account's own.
+function Prices.Heard(key, at, text, sender)
+    local house = Known(key)
+    if not house then return false end
+    local book, lines, taken = Book(house), {}, 0
+    for name, low, market, units, auctions, sellers in text:gmatch("([%d:%-]+)=(%d+),(%d+),(%d+),(%d+),(%d+);") do
+        local known = book.index[name]
+        if (not known or tonumber(known:match("^%d+")) < at)
+            and Believed(name, tonumber(low), known and tonumber(known:match("^%d+,(%d+)")), sender) then
+            Put(book, name, POINT:format(at, low, market, units, auctions, sellers))
+            taken = taken + 1
+            lines[taken] = name .. "=" .. low .. "," .. market .. ";"
+        end
+    end
+    if taken == 0 then return false end
+    database = database or {}
+    local shared = database[key] or { index = "", days = {}, recent = {}, kept = 0 }
+    database[key] = shared
+    shared.recent[at] = (shared.recent[at] or "") .. table.concat(lines)
+    book.dirty = true
+    Prices.Changed()
+    return true
+end
+
+-- When this account last scanned a house it knows, 0 for never; nil for a house it does not.
+function Prices.Kept(key)
+    local house = Known(key)
+    return house and (tonumber(house.kept) or 0) or nil
+end
+
+-- This account's last scan of a house as Relay.lua tells it, whole, for a member who has none as new: its time and lines.
+function Prices.Lines(key, since)
+    local house = Known(key)
+    local kept = house and tonumber(house.kept)
+    if not kept or kept <= since then return nil end
+    local lines = {}
+    for name, point in pairs(Book(house).index) do
+        local at, rest = point:match("^(%d+),(.*)$")
+        if tonumber(at) >= kept then lines[#lines + 1] = name .. "=" .. rest .. ";" end
+    end
+    return kept, lines
+end
+
 -- Called after each link of the addon SaneUI_AuctionDatabase: that account's file has just run, and left its saved
 -- variable in the global. What it holds of this game version is joined, and the global cleared: this account's own file is
 -- read after these (the addon SaneUI_AuctionData says so), and must find nothing there.
@@ -404,6 +480,7 @@ end
 function Prices.Key(house)
     return keys[house]
 end
+
 
 function Data.Series(name)
     return name == "Prices" and Prices or nil

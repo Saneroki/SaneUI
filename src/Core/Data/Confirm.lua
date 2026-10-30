@@ -176,7 +176,7 @@ end
 -- Whether sharing waits now: a fight, a restriction of the game's, or inside an instance (the group's own chat there
 -- is kept for the fight).
 local function Held()
-    if Core.Restricted() then return true end
+    if Core.Restricted() or not Core.Data.Sharing() then return true end
     return Core.Ask(rawget(_G, "IsInInstance")) == true
 end
 
@@ -244,7 +244,7 @@ end
 
 -- A confirmation from somebody else: kept where this client has the entry, or that part of it, unverified.
 Wire.Listen("V", function(_, fields, channel)
-    if not (confirmed and HEARD[channel]) then return end
+    if not (confirmed and HEARD[channel] and Data.Sharing()) then return end
     local name, text = fields[1], fields[2]
     if type(name) ~= "string" or not Data.Set(name):Ready() or type(text) ~= "string" then return end
     local key = Key(name, text)
@@ -257,7 +257,7 @@ end)
 
 -- Rows learned by somebody else: each taken where it changes only what play teaches of the thing (Confirm.SHARED).
 Wire.ListenBlock("L", function(_, text, channel)
-    if not HEARD[channel] or type(text) ~= "string" then return end
+    if not (HEARD[channel] and Data.Sharing()) or type(text) ~= "string" then return end
     for _, item in ipairs(Codec.Cut(text, ROW)) do
         local fields = Codec.Cut(item, ENTRY)
         local name, row = fields[1], fields[3]

@@ -824,9 +824,31 @@ writer of its own files, and what the accounts share is the `AddOns` folder:
   account's own file (`## OptionalDeps` of `SaneUI_AuctionData`), and an account's own file is read twice, which does no harm.
   `database[house]` then holds `index`, `days` (the accounts' texts joined plainly, the last to scan at the end) and `recent`.
 - **When an account sees it:** the game writes a saved file only at a `/reload` or logout, and reads addon files only at a login or
-  `/reload`. So a scan on one account shows on another after a `/reload` or logout there, then a `/reload` or login here.
+  `/reload`, so through the links a scan shows on another account after a `/reload` or logout there, then a `/reload` or login
+  here. While they run, and in the same guild or group, it is there at once: an account is a member like any other (*Scans shared*).
 - **Every scan whole** stays on the disk in each account's `SaneUI_AuctionScans.lua`; a login reads none of it.
 - **Other players** have neither the links nor the addon, and Core does without. Sane Sync is the way to give it to them.
+
+### Scans shared *(Saneroki, 2026-10-30; Data-build 1f.2)*
+
+A full scan reaches every Sane UI member of the guild and the group by itself (`src/Core/Data/Relay.lua`, kind `A` on `Core.Wire`;
+the plan: `Doc/ideas/Data.md`, *Scans*). A running game reads no file, so this is also the only way to another running account.
+
+- **`have`:** a scan was kept: one message on the guild and on the raid or else the party: house, time. A member who scans within
+  `Relay.QUIET` (15 minutes) of a transfer of that house keeps it to itself; a newer offer stops an older one.
+- **`want`:** a member with nothing that new (its own scan, or one taken) answers on that channel after a random moment of up to
+  `Relay.WAIT` seconds; the others hear it and stay quiet, and take the blocks all the same.
+- **Blocks:** only then, on that channel, once per channel: what moved in that scan (`house\nat\nkey=low,market,units,auctions,sellers;...`),
+  at most `Relay.MOST` items, cut at `Relay.BYTES`. The wire's pace is one message a second, about 18 items a second, so a
+  first scan of 6,000 items takes about six minutes and later ones far less. With nobody asking, one message is all there is.
+- **`ask`:** `Relay.LISTEN` seconds after the login, unless a transfer was heard: who has a scan of this house newer than mine? The holder
+  offers its last scan whole (`Prices.Lines`); holders that hear the offer stay quiet. What came from others is not passed on.
+- **Taken in** (`Prices.Heard`): only from the guild, party and raid, never a whisper; strictly read; only where this account's point
+  is older; a price more than five times off the point it replaces needs a second sender (`doubted`). It moves the newest points
+  and a graph's line in memory, and at the logout `index`: never `days` or the whole scans, so nothing shared reaches the harvest.
+- **The switch** *Share data with my guild and group* (`Core.general.shareData`, `Data.Sharing()`, page General, on): off, neither
+  this nor the confirmed facts of `Confirm.lua` are sent or taken.
+- **Still to come (1f.4):** strikes, quarantine and *Forget shared data*.
 
 ### The harvest
 
@@ -1022,6 +1044,7 @@ lockdown, at most 300 waiting (urgent for 10 minutes, bulk for an hour). Taken i
 sender, more and it is not heard for ten minutes; at most 1,000 waiting in the inbox.*
 
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
+- **Auction scans** *(Saneroki, 2026-10-30)*: kind `A` (`have`, `want`, `ask`, each with house and time) and its blocks: *Scans shared*.
 - **What was confirmed and learned** *(Saneroki, 2026-10-23)*: kind `V` (set, key, the parts cut by commas, `*` the
   whole entry), one message per entry; learned rows as a block of kind `L` (`set\028key\028row`, the rows cut by
   \029, at most `Confirm.ROWS`). Sent to the guild and the raid or else the party, `Confirm.GAP` seconds apart, never

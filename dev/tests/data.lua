@@ -1998,6 +1998,165 @@ do
         Accounts({})
     end
 
+    -- A scan shared with the guild and the group (Relay.lua), through a wire that only writes down
+    do
+        local Prices, Relay, Wire = Data.Series("Prices"), Data.Relay, Core.Wire
+        local send, sendBlock, drop = Wire.Send, Wire.SendBlock, Wire.Drop
+        local sent, blocks, dropped, room = {}, {}, 0, true
+        Wire.Send = function(kind, fields, channel, target, hurry)
+            sent[#sent + 1] = { kind = kind, what = fields[1], house = fields[2], at = fields[3], channel = channel, target = target, hurry = hurry }
+            return true
+        end
+        Wire.SendBlock = function(kind, text, channel, target, tag)
+            if not room then return false end
+            blocks[#blocks + 1] = { kind = kind, text = text, channel = channel, target = target, tag = tag }
+            return true
+        end
+        Wire.Drop = function() dropped = dropped + 1 return 0 end
+        local inGuild = rawget(_G, "IsInGuild")
+        rawset(_G, "IsInGuild", function() return true end)
+        local house = "eu/1234/alliance"
+
+        -- The login's question, and the answer to one: the last scan, whole
+        Relay.Ask()
+        check(#sent == 1 and sent[1].what == "ask" and sent[1].house == house and sent[1].at == saved().kept and sent[1].channel == "GUILD",
+            "a minute after the login: who has a newer scan of this house than this account?")
+        sent = {}
+        Relay.Told("x", { "ask", house, "0" }, "GUILD")
+        W.Wait(3)
+        check(#sent == 1 and sent[1].what == "have" and sent[1].at == saved().kept, "a member asks who has nothing as new: this account offers its last scan")
+        Relay.Told("x", { "want", house, tostring(saved().kept) }, "GUILD")
+        check(#blocks >= 1 and blocks[1].text:find("^" .. house .. "\n" .. saved().kept .. "\n"), "and sends it, all of it: " .. tostring(blocks[1] and blocks[1].text:sub(1, 60)))
+        sent, blocks = {}, {}
+
+        -- A scan kept: one message, and only what moved, and only for who asks
+        rows = {}
+        for index = 1, 900 do rows[index] = Plain(index + 2000, 1, 1000 + index, "Mo") end
+        W.Wait(Scan.INTERVAL + Scan.TICK)
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        Read()
+        local at = saved().at
+        local offered = sent[#sent]
+        check(#sent == 1 and offered.kind == "A" and offered.what == "have" and offered.house == house and offered.at == at
+            and offered.channel == "GUILD" and offered.hurry, "a scan kept: one message on the guild: this house, this time")
+        W.Wait(Relay.WAIT + 1)
+        check(#blocks == 0, "nobody asks: nothing more goes, so a game alone sends one message")
+        Relay.Told("x", { "want", house, tostring(at - 1) }, "GUILD")
+        check(#blocks == 0, "a member asks for another scan: nothing")
+        Relay.Told("x", { "want", house, tostring(at) }, "WHISPER")
+        check(#blocks == 0, "never by whisper: the server stands for the sender only on the guild and the group")
+        Relay.BYTES = 2000
+        Relay.Told("x", { "want", house, tostring(at) }, "GUILD")
+        check(#blocks > 1 and blocks[1].channel == "GUILD" and blocks[1].target == nil and blocks[1].kind == "A" and blocks[1].tag == "prices",
+            "a member asks: on that channel, in blocks")
+        local all = ""
+        for _, block in ipairs(blocks) do
+            local h, t, lines = block.text:match("^([^\n]+)\n(%d+)\n(.*)$")
+            check(h == house and tonumber(t) == at and #lines <= Relay.BYTES, "each block says what house and when, and stays small")
+            all = all .. lines
+        end
+        local _, told = all:gsub(";", ";")
+        check(told == 900 and all:find("2001=1001,1001,1,1,1;", 1, true), "every item that moved, with its point")
+        local count = #blocks
+        Relay.Told("x", { "want", house, tostring(at) }, "GUILD")
+        check(#blocks == count, "a second member asks on that channel: it rides along")
+        Relay.Told("x", { "want", house, tostring(at) }, "PARTY")
+        check(#blocks == count * 2 and blocks[#blocks].channel == "PARTY", "one in the party only: the same once more there")
+
+        -- The next scan: only what moved; the queue full: tried again
+        rows[1] = Plain(2001, 1, 7777, "Mo")
+        blocks, sent = {}, {}
+        W.Wait(Scan.INTERVAL + Scan.TICK)
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        Read()
+        at = saved().at
+        check(dropped >= 1, "a new scan: what still waits of the last is dropped")
+        room = false
+        local queue = Wire.Waiting
+        Wire.Waiting = function() return 5 end
+        Relay.Told("x", { "want", house, tostring(at) }, "GUILD")
+        check(#blocks == 0, "no room in the queue: nothing lost")
+        room = true
+        Wire.Waiting = queue
+        W.Wait(Relay.RETRY + 1)
+        check(#blocks == 1 and blocks[1].text:find("2001=7777,7777,1,1,1;", 1, true) and not blocks[1].text:find("2002=", 1, true), "then it goes, and only what moved")
+
+        -- A member's scan heard: wanted once, by the first to answer
+        sent, blocks = {}, {}
+        local later = at + Relay.QUIET + 60
+        Relay.Told("x", { "have", "eu/1/horde", tostring(later) }, "GUILD")
+        Relay.Told("x", { "have", house, tostring(at + 60) }, "GUILD")
+        W.Wait(Relay.WAIT + 1)
+        check(#sent == 0, "a house this account does not know, or a scan no newer than it has: not wanted")
+        Relay.Told("x", { "have", house, tostring(later) }, "GUILD")
+        Relay.Told("x", { "have", house, tostring(later) }, "PARTY")
+        W.Wait(Relay.WAIT + 1)
+        check(#sent == 1 and sent[1].what == "want" and sent[1].channel == "GUILD" and sent[1].house == house and sent[1].at == later, "a newer scan: wanted, once, on its channel")
+        sent = {}
+        local after = later + Relay.QUIET + 60
+        Relay.Told("x", { "have", house, tostring(after) }, "GUILD")
+        Relay.Told("x", { "want", house, tostring(after) }, "GUILD")
+        W.Wait(Relay.WAIT + 1)
+        check(#sent == 0, "another member asks first: this one stays quiet, and takes it all the same")
+
+        -- Its blocks: fills in what is older, far-off prices need a second sender
+        local stamp, seen = Prices:Stamp(), 0
+        Prices:OnChange(function() seen = seen + 1 end)
+        local function Block(sender, when, lines, channel)
+            Relay.Block(sender, ("%s\n%d\n%s"):format(house, when, lines), channel or "GUILD")
+        end
+        Block("Two", later, "3003=44,55,6,7,8;3004=oops;bad line;3005=9,9,9,9,9;")
+        W.Wait(0)
+        local low, usual, units, _, _, heardAt = Prices:Last(3003)
+        check(low == 44 and usual == 55 and units == 6 and heardAt == later and Prices:Low(3005) == 9 and Prices:Low(3004) == nil and Prices:Stamp() ~= stamp and seen == 1,
+            "a member's block: its prices are the newest at once, the views told, what cannot be read passed over")
+        Block("Two", later + 1, "3003=1,1,1,1,1;", "WHISPER")
+        check(Prices:Last(3003) == 44, "a block by whisper is passed over")
+        Block("Two", later - 900, "3003=45,45,1,1,1;")
+        check(Prices:Last(3003) == 44, "an older scan's changes nothing: a shared price fills in only what is older")
+        Block("Two", later + 10, "3003=4400,4400,1,1,1;")
+        check(Prices:Last(3003) == 44, "more than five times off what is known: not from one sender")
+        Block("Two", later + 11, "3003=4400,4400,1,1,1;")
+        check(Prices:Last(3003) == 44, "nor from that sender again")
+        Block("Three", later + 12, "3003=4300,4300,1,1,1;")
+        check(Prices:Last(3003) == 4300, "a second sender says the same: it stands")
+        check(select(1, next(Prices:Range(3003, nil, later + 100))) ~= nil, "the graphs have it too")
+        Relay.Block("Two", ("%s\n%d\n%s"):format("eu/9/horde", later, "3006=1,1,1,1,1;"), "GUILD")
+        check(Prices:Last(3006) == nil, "a house this account does not know: passed over")
+        W.Fire("PLAYER_LOGOUT")
+        check(saved().index:find("=" .. (later + 12) .. ",4300,4300,1,1,1;", 1, true), "what was told stays for the next login")
+        check(not saved().days[math.floor((later + 12) / 86400)] or not saved().days[math.floor((later + 12) / 86400)]:find("3003=", 1, true), "but only as the newest point: the days are this account's own")
+        W.printed = {}
+        SlashCmdList.SANEUI("data")
+        check(printedMatch("auction prices told by your guild and group since the login: %d+,"), "/sane data says what they told")
+
+        -- A member logs in and asks: the one with a newer scan offers it, whole
+        sent, blocks = {}, {}
+        local kept = saved().kept
+        Relay.Told("x", { "ask", house, tostring(kept) }, "GUILD")
+        W.Wait(3)
+        check(#sent == 0, "nothing newer than the one who asks has: no answer")
+        local lines = select(2, Prices.Lines(house, kept - 1))
+        check(type(lines) == "table" and #lines >= 1, "this account's last scan as it is told")
+        Relay.Told("x", { "ask", house, "0" }, "GUILD")
+        W.Wait(3)
+        check(#sent == 0, "a transfer of that house this quarter of an hour: quiet")
+
+        -- The switch
+        Core.general.shareData = false
+        sent, blocks = {}, {}
+        Relay.Offer(house, after + Relay.QUIET * 2, { "1=1,1,1,1,1;" })
+        Relay.Told("x", { "have", house, tostring(after + Relay.QUIET * 4) }, "GUILD")
+        W.Wait(Relay.WAIT + 1)
+        Block("Four", after + Relay.QUIET * 4, "3003=4310,4310,1,1,1;")
+        check(#sent == 0 and Prices:Last(3003) == 4300, "Share data off: neither sends nor takes")
+        Core.general.shareData = true
+
+        Wire.Send, Wire.SendBlock, Wire.Drop = send, sendBlock, drop
+        rawset(_G, "IsInGuild", inGuild)
+        Relay.BYTES = 6000
+    end
+
     -- What all accounts hold together: read when a house is first asked about, over this account's where newer
     Accounts({ ["eu/1234/neutral"] = { index = "777=9,1,1,1,1,1;" } }, "retail")
     check(Prices:Low(777) == nil, "another game's file is not taken")

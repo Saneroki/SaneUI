@@ -231,12 +231,15 @@ local function Keep(scan, home, day, now)
             Steps.Check()
         end
     end
+    local moved = {} -- what the other running accounts have to be told: this scan's own lowest
     for key, entry in pairs(scan.found) do
         local low, market, line = Point(key, entry)
         lines[#lines + 1] = line
         if recent then recent[#recent + 1] = RECENT:format(key, low, market) end
         items = items + 1
-        Prices.Take(home, key, now, low, market, entry.units, entry.auctions, entry.sellers)
+        if Prices.Take(home, key, now, low, market, entry.units, entry.auctions, entry.sellers) then
+            moved[#moved + 1] = DAILY:format(key, low, market, entry.units, entry.auctions, entry.sellers)
+        end
         Steps.Check()
     end
     local whole = scan.whole and Whole(scan, now)
@@ -272,6 +275,7 @@ local function Keep(scan, home, day, now)
     end
     Remember(home)
     finished = true
+    if Data.Relay then Data.Relay.Offer(Prices.Key(home), now, moved) end
 end
 
 -- The job: every row, read in steps. Nothing is kept of a scan the game took away halfway.
