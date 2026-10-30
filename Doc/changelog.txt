@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The auction house scans itself: while it is open, every auction
+  is read and kept in your saved files, every 16 minutes, so a
+  full price history grows from day one. A bar under the window
+  shows the scan start, how far it is and when the next one comes.
+  Press the bar to start a scan yourself.
 - Distances are in meters and the time in 24 hours everywhere Sane
   UI writes them. Yards and 12 hours: General, Units, Imperial.
 - A new level is told in the middle of the screen: your health,

@@ -238,7 +238,9 @@ holds the budget of values for all of them.
 
 ## 1e The auction scan
 
-- [ ] **1e.1 `Scan.lua`,** with the Market pack.
+- [ ] **1e.1 `Scan.lua`,** with the Market pack. *Built 2026-10-30 in Core, as all data is (`src/Core/Data/Scan.lua`, its bar
+  `ScanBar.lua`): the request every 16 minutes while the house is open, any full scan read, the house told, the rows in
+  steps, today's points, tests. Still to come: the switch; a self-found character has no auction house to open.*
   - `ReplicateItems` when the auction house opens, at most once in 15 minutes.
   - The house told at `AUCTION_HOUSE_SHOW` (region, realm, side); a self-found character scans nothing.
   - The rows read in steps, into today's points of that house.

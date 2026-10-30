@@ -29,6 +29,26 @@ deleting junk tried again a little later, not given up for the session. A `/relo
 - **Tests:** `dev/tests/speedleveling.lua`, `bags.lua`, `tooltips.lua`, `lore.lua`.
 - **Docs:** `src/SpeedLeveling/README.md`, `src/Inventory/README.md`, `src/Lore/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`.
 
+### Core: the full auction scan, every 16 minutes while the house is open, with its bar (Saneroki, 2026-10-30)
+Saneroki: every time the auction house opens a full scan, all items recorded in the history database, at least in the WTF,
+from day one; a progress bar on the window for started, in progress, finished and the next scan; every 16 minutes while it
+is open; with the game in the background; the bar, pressed, starts a scan by hand. A game restart takes it in (new files
+in Core's TOC, a new saved variable).
+- **`src/Core/Data/Scan.lua` (new):** `Data.Scan`, `State`, `OnChange`. Asks by itself (no click), a moment after the window
+  opens and then every 16 minutes from the server's answer; 90 seconds with no answer is a refusal, asked again after 3
+  minutes. Any full scan is read, whoever asked for it. The rows in a priority job of the scheduler; gear and pets wait up
+  to 30 seconds for the game to know them; nothing is kept of a list taken away halfway.
+- **`SaneUIData_Market` (new saved variable):** per house (region, realm, side) one string per server day:
+  `key=low,market,units,auctions,sellers;`, the game's item key, prices per unit, the day's lowest, the median of the last
+  scan. Forever keeps every day, Retail a week until its data's plan is made.
+- **`src/Core/Data/ScanBar.lua` (new):** the bar under the game's window, beside its tabs: started, rows read, finished with
+  the time and the count, the time to the next scan; refused and cut short. Pressed, it starts a scan (`Scan.Start`); inside the
+  server's 15 minutes that comes back refused and the wait goes on. `/sane data` names each house.
+- **Idle logout:** not prevented; `Doc/ideas/Economy.md`, *How it runs*, says why.
+- **Interface lab:** the scene `auctionscan`; a flipbook's grid is taken (`dev/uilab/lab/anim.lua`).
+- **Tests:** `dev/tests/data.lua`, the scan start to end, the day's merge, refusals, gear and pets, a house of a wrong shape.
+- **Docs:** `Doc/guides/data.md` (*The full auction scan*), `Doc/ideas/Economy.md`, `Doc/ideas/Data.md`, `Doc/ideas/Data-build.md`.
+
 ### Navigation: an open quest's text under headings, its rewards as big icons, its gold (Saneroki, 2026-10-30)
 Saneroki: the quest text and rewards formatted nicely, the reward icons big, to mouse over them for their tooltip. A `/reload`
 takes it in.

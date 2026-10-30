@@ -793,6 +793,11 @@ laid over the sets and dropped once a set is as new, and the first watcher, wher
 
 ### Series
 
+*Built ahead for the prices (2026-10-30, `Doc/guides/data.md`, *The full auction scan*), simpler than below: one string per
+server day and house, so a scan rewrites only today's, older days are never touched and the saved file holds two values
+a day. `SaneUIData_Market` is Core's, as every saved variable of the data. `Data.Series`, the harvest of the scans and the
+roll-ups below are still to come.*
+
 - Per auction house (*Realms and regions*: region, realm, side): **today's points in a small table per
   item**, updated by every scan (own or shared); **at logout** today's point is added to
   the item's string for its month (one packed string per item and month). Measured: adding a point to one

@@ -36,7 +36,7 @@ Data.FORMAT = 1
 Data.reports = {} -- what else /sane data prints: fn() each, after the sets (Tally.lua: what play counted)
 Data.frozen = false -- the tests' switch: records handed out read-only, changes found by Data.Tampered()
 -- The saved variables of Core's data, SaneUIData_<name>, as Core's TOC declares them.
-Data.SAVED = { Characters = true, Guild = true, Learned = true }
+Data.SAVED = { Characters = true, Guild = true, Learned = true, Market = true }
 local WEAK = { __mode = "v" }
 local LIST, VERSION = "\030", "\028"
 

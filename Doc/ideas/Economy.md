@@ -207,6 +207,21 @@ From `Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua`:
    good one.
 6. The scan goes on with our window put away by *Classic*, as long as the auction house is open.
 
+*Built 2026-10-30 (Saneroki: "very important", a full history from day one): Core's `Data/Scan.lua` and, as long as the game's
+window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.md`, *The full auction scan*). Decisions:*
+
+- **Every 16 minutes** while the house stays open (Saneroki), counted from the server's answer. 15 are the server's; the one
+  more means a request is not lost to a clock a few seconds off. A refusal is asked again after 3 minutes.
+- **By hand (Saneroki):** the bar, pressed, starts a scan at once. The server keeps its 15 minutes: a press inside them is
+  refused like any request, and the wait goes on where it was.
+- **In the background:** nothing of it needs a click, so it runs with the game behind other windows, at whatever frame
+  rate the game keeps there: the frame budget per frame stays the same, the reading only takes longer.
+- **Idle logout: not prevented (2026-10-30).** The newest export has no call that resets the game's idle time. The one
+  handle near it, `CancelLogout` on `PLAYER_CAMPING`, only stops the 20 seconds of a logout outside a rest area, and most
+  auction houses stand in rest areas, where a logout has no such wait. Working around the game's idle logout would also
+  put accounts at risk under the game's rules, so Sane UI does not try. What was read stays safe: the game writes
+  the saved file at every logout, the idle one too.
+
 **What a row becomes** (*proposal*, for the database's scan):
 
 - **The key is the game's own item key** (`ItemKey` in the documentation: item ID, item level, suffix, pet
@@ -265,12 +280,15 @@ whatever Economy wishes kept below is one packed string per item, not a table pe
 Wished from the database for Economy's views, **not yet in `Data.md`:**
 
 - **The scan's state,** for the progress bar and *Next full scan in 9:41*: running (rows read of how
-  many), the next scan allowed at, the last one kept at, refused; and a callback when it changes.
+  many), the next scan allowed at, the last one kept at, refused; and a callback when it changes. *Built:
+  `Data.Scan.State`, `Data.Scan.OnChange`.*
 - **A stamp for series** like the sets' `Stamp()`, moving when a scan was kept, so views redraw without
   polling.
-- **One item key** for every price (*What a row becomes*).
+- **One item key** for every price (*What a row becomes*). *Built for the scan; Tooltips still keys by the item ID.*
 - **How a day's point is made from several scans** (the lowest of the day's lowest; the market price of
-  the day's last scan or their mean), so Economy's numbers mean the same day after day.
+  the day's last scan or their mean), so Economy's numbers mean the same day after day. *Decided, 2026-10-30: the
+  lowest of the day; market, units, auctions and sellers of the day's last scan that saw the item. Market is the
+  median of the units on offer.*
 - **The last scan, whole:** every auction as it stood (item, count, buyout, bid, owner, time left), replaced
   by each new scan. For the offers of an item step by step by price, who sells, *someone sells cheaper* on
   the player's auctions, and browsing the whole auction house when the player is not there. One packed
@@ -285,7 +303,7 @@ Wished from the database for Economy's views, **not yet in `Data.md`:**
   are more than an hour or so apart (too much else happened between). It is an experiment: it is checked
   against the player's own auctions, whose end the auction log knows for sure (sold, expired, cancelled),
   and shown only once it guesses those right.
-- Per item and day also **how many sellers** offered it.
+- Per item and day also **how many sellers** offered it. *Built: a count, where the game names the seller.*
 - *If the last scan whole proves too big:* keep it whole only for the items the player has a stake in (in
   the bags or bank of any character, on the player's auctions, in a saved search), and for every other item
   only the day's point. Then *someone sells cheaper* and the offers by price still work where they matter,

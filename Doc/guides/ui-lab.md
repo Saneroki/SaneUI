@@ -89,7 +89,9 @@ prints its log.
   on the screen alone, `LabRight()` moves it to the right half, `LabQuestLog` in the console), `unitframes` (Core and Combat from their TOCs: your frame with a
   cast and your breath as part of it, the game's cast functions standing in; `LabCast("Fireball")` casts, `LabCombat`
   in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
-  says another), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
+  says another), `auctionscan` (the game's auction house window from its own files and Core from its TOC: the full scan's bar
+  under it through its phases, the game's scan calls standing in; `LabScan.Answer()` in the console is the server's answer),
+  `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest

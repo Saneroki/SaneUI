@@ -91,6 +91,11 @@ return function(Lab)
     function Group:GetAnimationSpeedMultiplier() return S[self].speed or 1 end
     function Group:RemoveAnimations() S[self].anims = {} end
 
+    -- A flipbook's grid: taken, not played.
+    function Anim:SetFlipBookRows() end
+    function Anim:SetFlipBookColumns() end
+    function Anim:SetFlipBookFrames() end
+
     function Anim:SetDuration(d) S[self].duration = d or 0 end
     function Anim:GetDuration() return S[self].duration end
     function Anim:SetStartDelay(d) S[self].delay = d or 0 end

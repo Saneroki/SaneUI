@@ -774,7 +774,7 @@ Data.Saved("Nowhere", function() never = false end)
 check(never and Core.errors["data: saved Nowhere"], "a name that is no saved variable of the data: noted, and its reader is never called")
 W.printed = {}
 SlashCmdList.SANEUI("data")
-check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned 1 values%."),
+check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned 1 values, Market 0 values%."),
     "/sane data says what the saved parts hold")
 
 -------------------------------------------------------------------------------
@@ -1601,6 +1601,225 @@ do
     for _ = 1, 3 do W.Wait(1) end
     check(TakeTaxiNode == take, "the world there, but no module asked for the trips: the flight master is not hooked")
     check(Data.Trips() and TakeTaxiNode ~= take, "a module asks for them: hooked at once, the world being there")
+end
+
+-------------------------------------------------------------------------------
+--  The full scan of the auction house (Scan.lua, ScanBar.lua)
+-------------------------------------------------------------------------------
+do
+    local Scan = Data.Scan
+    local rows, asks, requested, known, rowCost = {}, 0, {}, {}, 0
+    local function Plain(item, count, buyout, owner) return { item = item, count = count, buyout = buyout, owner = owner } end
+    C_AuctionHouse = {
+        ReplicateItems = function() asks = asks + 1 end,
+        IsThrottledMessageSystemReady = function() return true end,
+        GetNumReplicateItems = function() return #rows end,
+        GetReplicateItemLink = function(index) return rows[index + 1] and rows[index + 1].link end,
+        GetReplicateItemInfo = function(index)
+            local row = rows[index + 1]
+            W.ms = W.ms + rowCost
+            if not row then return end
+            return "name", 1, row.count, 1, true, 1, "", 1, 1, row.buyout, 0, nil, nil, row.owner, nil, 0, row.item, true
+        end,
+    }
+    local items = C_Item
+    C_Item = setmetatable({
+        GetItemInfoInstant = function(item)
+            if item == 666 then return nil end
+            return item, "", "", "", 1, (item == 50 or item == 51) and 2 or item == 82800 and 17 or 7, 0
+        end,
+        GetDetailedItemLevelInfo = function(link)
+            local item = tonumber(link:match("item:(%d+)"))
+            return known[item] and 60 or nil
+        end,
+        RequestLoadItemDataByID = function(item) requested[#requested + 1] = item end,
+    }, { __index = items })
+    -- The bar's motion stands still: the test reads its words.
+    local function noop() end
+    W.methods.CreateAnimationGroup = function()
+        return setmetatable({ CreateAnimation = function() return setmetatable({}, { __index = function() return noop end }) end },
+            { __index = function() return noop end })
+    end
+    AuctionHouseFrame = CreateFrame("Frame", "AuctionHouseFrame", UIParent)
+    AuctionHouseFrame:Show()
+    GetCurrentRegionName = function() return "EU" end
+    GetRealmID = function() return 1234 end
+    local key = "eu/1234/alliance"
+    local state = Scan.State()
+    local saved = function() return SaneUIData_Market.forever.houses[key] end
+    local function Read()
+        for _ = 1, 200 do
+            Frame()
+            if state.phase ~= "reading" then return end
+        end
+    end
+    local function Today() return math.floor(GetServerTime() / 86400) end
+    -- The bar on the game's window, anchored to it, and its words.
+    local function Strip()
+        for _, widget in ipairs(W.frames) do
+            local strip = widget._kind == "FontString" and widget._parent and widget._parent._parent
+            if strip and strip._points[1] and strip._points[1][2] == AuctionHouseFrame then return strip, widget:GetText() end
+        end
+    end
+    local function Line(text, item)
+        return ("%s"):format(text):match("%f[%d]" .. item:gsub("%p", "%%%0") .. "=[^;]*;")
+    end
+
+    rows = { Plain(10, 5, 500, "Ann"), Plain(10, 5, 1500, "Bob"), Plain(10, 10, 2000, "Ann"), Plain(20, 1, 0, "Cid"),
+        Plain(666, 1, 100, "Dee"), Plain(30, 0, 100, "Eve") }
+    check(state.phase == "closed", "no auction house open: nothing runs")
+    W.Fire("AUCTION_HOUSE_SHOW")
+    check(state.phase == "waiting" and asks == 0, "the auction house opens: the window gets a moment for its own first searches")
+    check(select(2, Strip()):find("Next full scan in 0:00", 1, true), "the bar under the game's window says so")
+    W.Wait(Scan.SETTLE + Scan.TICK)
+    check(state.phase == "asking" and asks == 1, "then the full scan is asked for, with no click")
+    check(select(2, Strip()):find("Full scan started", 1, true), "the bar says it started")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(state.phase == "reading" and state.rows == 6, "the server answers: the rows are read")
+    check(select(2, Strip()) == "Full scan: 0 of 6 auctions", "the bar says how far it is")
+    local answered = GetServerTime()
+    check(state.next == answered + Scan.INTERVAL and saved().at == answered, "the next scan counts from the answer")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(asks == 1 and state.phase == "reading", "told again while it reads: nothing new")
+    Read()
+    check(state.phase == "waiting" and state.outcome == "kept" and state.total == 6 and state.items == 2,
+        "the scan is kept: the rows, the items in them")
+    check(select(2, Strip()):find("^Full scan finished at .*: 6 auctions%. Next in 1[56]:%d%d$"), "the bar says it finished, and when the next comes: " .. select(2, Strip()))
+    local day = Today()
+    local text = saved().days[day]
+    check(Line(text, "10") == "10=100,200,20,3,2;", "an item: the lowest, the median of its units, units, auctions, sellers: " .. text)
+    check(Line(text, "20") == "20=0,0,1,1,1;", "bid only: counted, no price")
+    check(not text:find("666=") and not text:find("30="), "an item the game does not know and a row of nothing are left out")
+    check(saved().scans[day] == 1 and SaneUIData_Market.forever.format == 1, "one scan that day, in the saved variable of this game version")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    Read()
+    check(saved().scans[day] == 1, "told again after it was kept: the same scan, read once")
+
+    -- Every 16 minutes while it stays open; the day's second scan
+    rows = { Plain(10, 2, 400, "Fay"), Plain(40, 1, 70, "Gus") }
+    W.Wait(Scan.INTERVAL - 3)
+    check(asks == 1 and state.phase == "waiting", "the 16 minutes are not up: no request")
+    W.Wait(4)
+    check(asks == 2 and state.phase == "asking", "16 minutes after the answer: the next scan, by itself")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    Read()
+    local same = Today() == day
+    text = saved().days[Today()]
+    if same then
+        check(Line(text, "10") == "10=100,200,2,1,1;", "a second scan that day: the day's lowest stays, the rest is the last scan's: " .. text)
+        check(Line(text, "20") == "20=0,0,1,1,1;", "an item only the first scan saw stays")
+        check(saved().scans[day] == 2, "two scans that day")
+    end
+    check(Line(text, "40") == "40=70,70,1,1,1;", "an item new in this scan")
+
+    -- The server refuses: it says nothing
+    rows = {}
+    W.Wait(Scan.INTERVAL)
+    check(asks == 3 and state.phase == "asking", "the next request")
+    local at = saved().at
+    W.Wait(Scan.ANSWER + 1)
+    check(state.phase == "waiting" and state.outcome == "refused" and saved().at == at, "no answer: refused, and no 15 minutes counted")
+    check(select(2, Strip()):find("The server gave no full scan", 1, true), "the bar says so")
+    W.Wait(Scan.RETRY + 1)
+    check(asks == 4, "and asked again soon")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(state.phase == "asking", "an answer with no rows yet is no answer")
+
+    -- Gear and pets by the game's item key; one the game comes to know, one it never does
+    known[50] = true
+    rows = { { item = 50, count = 1, buyout = 900, link = "|Hitem:50:0:0:0:0:0:-7:0:60|h[x]|h" }, -- suffix -7
+        { item = 51, count = 1, buyout = 800, link = "|Hitem:51:0:0:0:0:0:0:0:60|h[y]|h" },
+        { item = 52, count = 1, buyout = 700 },
+        { item = 82800, count = 1, buyout = 600, link = "|Hbattlepet:39:1:3:0:0:0:0|h[z]|h" } }
+    rows[3].item = 51
+    rows[3].link = nil
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(state.phase == "reading", "the rows are there now")
+    for _ = 1, 5 do Frame() end
+    check(requested[1] == 51 and #requested == 1, "gear the game does not know is asked of the server, once")
+    known[51] = true
+    rows[3].link = nil
+    W.clock = W.clock + Scan.ITEMS + 1
+    Read()
+    text = saved().days[Today()]
+    check(state.outcome == "kept" and saved().left == 1, "after the wait what is still not known is left out")
+    check(Line(text, "50:60:-7:0") == "50:60:-7:0=900,900,1,1,0;" and Line(text, "82800:0:0:39") == "82800:0:0:39=600,600,1,1,0;",
+        "gear by item, level and suffix, a pet by its species: " .. text)
+
+    -- A scan another addon asked for, and the auction house closed halfway
+    rows = {}
+    for index = 1, 300 do rows[index] = Plain(index + 100, 1, 10, "Hal") end
+    W.Wait(Scan.INTERVAL - 2)
+    local before = asks
+    W.clock = W.clock + 1
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(asks == before and state.phase == "reading", "any full scan is read, whoever asked for it")
+    local gone = saved().days[Today()]
+    rowCost = 1
+    Frame()
+    rowCost = 0
+    check(state.read > 0 and state.read < 300, "read in steps: no frame over its budget")
+    W.Fire("AUCTION_HOUSE_CLOSED")
+    check(state.phase == "closed" and not Strip():IsShown(), "the auction house closes, and the bar goes with it")
+    rows = {}
+    for _ = 1, 20 do Frame() end
+    check(saved().days[Today()] == gone and not Steps.Running("Full auction scan"), "the list gone halfway: nothing of it is kept")
+    local waited = asks
+    W.Wait(Scan.INTERVAL * 2)
+    check(asks == waited, "closed: no request and no look at the time")
+
+    -- Kept per game: a limit drops the oldest days
+    W.Fire("AUCTION_HOUSE_SHOW")
+    check(state.outcome == "kept" and state.phase == "waiting", "opened again: the last scan kept is told")
+    Scan.KEEP.forever = 2
+    saved().days[Today() - 5], saved().scans[Today() - 5] = "1=1,1,1,1,1;", 1
+    rows = { Plain(10, 1, 100, "Ivy") }
+    W.Wait(Scan.SETTLE + Scan.INTERVAL)
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    Read()
+    check(saved().days[Today() - 5] == nil and saved().scans[Today() - 5] == nil and saved().days[Today()], "a game with a limit keeps that many days")
+    Scan.KEEP.forever = nil
+
+    -- The bar pressed: a scan now
+    local bar = Strip()
+    local pressed, due = asks, state.next
+    bar._scripts.OnClick(bar)
+    check(asks == pressed + 1 and state.phase == "asking", "the bar pressed: a scan asked for at once, the 16 minutes not waited for")
+    bar._scripts.OnClick(bar)
+    check(asks == pressed + 1, "pressed again while it waits for the server: nothing more")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(state.phase == "asking", "the game tells of the last scan again: no answer to the press")
+    W.Wait(Scan.ANSWER + 1)
+    check(state.outcome == "refused" and state.next == due and asks == pressed + 1, "the server's 15 minutes not up: refused, and the wait goes on where it was")
+    bar._scripts.OnClick(bar)
+    rows[2] = Plain(10, 2, 80, "Jo")
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    check(state.phase == "reading" and state.next == GetServerTime() + Scan.INTERVAL, "the server answers a press: a scan like any other, the 16 minutes from here")
+    Read()
+    check(state.outcome == "kept" and state.total == 2, "and kept")
+    bar._scripts.OnClick(bar)
+    W.Wait(Scan.ANSWER + 1)
+    bar._scripts.OnEnter(bar)
+    bar._scripts.OnLeave(bar)
+
+    -- A house of a wrong shape goes to broken; the goblin towns' house has its own key
+    W.Fire("AUCTION_HOUSE_CLOSED")
+    SaneUIData_Market.forever.houses["eu/1234/neutral"] = { days = "no" }
+    local exists, faction = rawget(_G, "UnitExists"), rawget(_G, "UnitFactionGroup")
+    rawset(_G, "UnitExists", function(unit) return unit == "npc" end)
+    rawset(_G, "UnitFactionGroup", function() return "Neutral" end)
+    W.Fire("AUCTION_HOUSE_SHOW")
+    rawset(_G, "UnitExists", exists)
+    rawset(_G, "UnitFactionGroup", faction)
+    check(type(SaneUIData_Market.forever.houses["eu/1234/neutral"].days) == "table" and SaneUIData_Market.forever.broken[1].days == "no",
+        "the neutral house by the NPC; a part of a wrong shape set aside, never wiped")
+    W.Fire("AUCTION_HOUSE_CLOSED")
+    W.printed = {}
+    SlashCmdList.SANEUI("data")
+    check(printedMatch("auction house eu/1234/alliance: %d+ days"), "/sane data tells what the history holds")
+    C_Item, W.methods.CreateAnimationGroup = items, nil
+    rawset(_G, "C_AuctionHouse", nil)
+    rawset(_G, "AuctionHouseFrame", nil)
 end
 os.execute(("rm -rf '%s' '%s'"):format(folder, lore))
 
