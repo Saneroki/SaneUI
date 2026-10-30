@@ -10,7 +10,9 @@ local _, ns = ...
 --  "Level Mining to 65", with its count and bar, done when your skill is there
 --  and skipped by a click as any step. A step for a profession you have not learnt
 --  is passed by and not listed (Run.lua), so that the steps stay the same for a
---  character whatever it learns, and so does its place in the guide.
+--  character whatever it learns, and so does its place in the guide. The view keeps
+--  the guide's own numbers (step.shown, guide.total): ours bear the number of the
+--  step they go before.
 --
 --  What a zone asks comes from the game's own facts in Core's sets: Objects (each
 --  herb's and ore's skill) and Spawns (where they grow): the lowest skill that
@@ -169,10 +171,14 @@ function Gathering.Weave(guide)
     if not next(gates) then return end
     local woven, moved = {}, {} -- moved: [a step's old number] = its new one
     for index, step in ipairs(guide.steps) do
-        for _, ours in ipairs(gates[index] or {}) do woven[#woven + 1] = ours end
+        for _, ours in ipairs(gates[index] or {}) do
+            ours.shown = index
+            woven[#woven + 1] = ours
+        end
+        step.shown = index
         woven[#woven + 1] = step
         moved[index] = #woven
     end
-    guide.steps = woven
+    guide.steps, guide.total = woven, #guide.steps
     for label, index in pairs(guide.labels) do guide.labels[label] = moved[index] end
 end

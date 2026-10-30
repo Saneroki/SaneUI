@@ -16,8 +16,8 @@ deleting junk tried again a little later, not given up for the session. A `/relo
 - **`src/SpeedLeveling/Gathering.lua`:** `Gathering.Weave(guide)` puts a step per profession (`Gathering.PROFESSIONS`, 12)
   before the first step into a zone asking more than the guide's zones so far, where the guide spends `Gathering.STAY` steps
   (10, from the guides themselves: it leaves about two places a guide, and no errands). Labels follow. `Need` gives `any`,
-  the higher of herbs and ore, for the professions that use neither. Gone: `Short`, the line under the head (`Steps.lua`),
-  `Run.ZonesAhead`, `gatherShort`, `gatherSkill`.
+  the higher of herbs and ore, for the professions that use neither. The view keeps the guide's own numbers (`step.shown`,
+  `guide.total`). Gone: `Short`, the line under the head (`Steps.lua`), `Run.ZonesAhead`, `gatherShort`, `gatherSkill`.
 - **`src/SpeedLeveling/Run.lua`:** `Run.MapId`; a skill's line gives its count and bar; `NotYours(step)` (not learnt, or the
   switch off): passed by, not listed, not gone back to; a step of a profession proves nothing and does not hold back who is
   known to have come past it. Setting renamed *Professions before the next zone*, its key stays `gather`.

@@ -215,6 +215,8 @@ Herbalism and Alchemy by the herbs, the others by the higher of the two.
 
 The steps are woven in for every profession, also those the character lacks (`step.woven`; `Run.Listed` leaves those
 out), so the steps of a guide stay the same whatever is learnt, and so does your place in it, which is kept by number.
+The view keeps the guide's own numbers (`step.shown`, `guide.total`): a profession's step bears the number of the step
+it goes before.
 Without Core's data (Retail, for now) none are woven.
 
 ### The icons

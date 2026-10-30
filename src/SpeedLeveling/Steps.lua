@@ -235,10 +235,10 @@ end
 function RowMenu(row)
     local util = rawget(_G, "MenuUtil")
     if not (util and util.CreateContextMenu) then return end
-    local step = row.step
+    local step, shown = row.step, row.shown
     util.CreateContextMenu(row, ns.Guard(function(_, root)
-        root:CreateTitle(ns.TEXT.step:format(step))
-        root:CreateButton(ns.TEXT.goToStep:format(step), ns.Guard(function() ns.Guide.Go(step) end))
+        root:CreateTitle(ns.TEXT.step:format(shown))
+        root:CreateButton(ns.TEXT.goToStep:format(shown), ns.Guard(function() ns.Guide.Go(step) end))
         root:CreateButton(ns.TEXT.guides, ns.Guard(function() Menu(row) end))
     end))
 end
@@ -267,7 +267,7 @@ local function DrawCard(card, step, y, warn)
     card.number = step.number
     card.label:ClearAllPoints()
     card.label:SetPoint("TOPLEFT", card, "TOPLEFT", P, -P)
-    card.label:SetText(ns.TEXT.step:format(step.number) .. (step.done and (" " .. Steps.TICK) or ""))
+    card.label:SetText(ns.TEXT.step:format(step.shown) .. (step.done and (" " .. Steps.TICK) or ""))
     card.label:SetTextColor(unpack(SOFT))
     local cy = -P - card.label:GetStringHeight() - 2
     local used = { texts = 0, counts = 0, bars = 0, marks = 0 }
@@ -451,13 +451,13 @@ function Steps.Update()
         local line = picture.ahead[index]
         local row = rows[index] or Row()
         rows[index] = row
-        row.step = line.number
+        row.step, row.shown = line.number, line.shown
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
         row:SetWidth(Steps.WIDTH)
         row.number:ClearAllPoints()
         row.number:SetPoint("TOPRIGHT", row, "TOPLEFT", Steps.NUMBERS - 6, -1)
-        row.number:SetText(line.number)
+        row.number:SetText(line.shown)
         row.number:SetTextColor(Steps.GREY * 0.8, Steps.GREY * 0.8, Steps.GREY * 0.8)
         row.tick:ClearAllPoints()
         row.tick:SetPoint("TOPRIGHT", row.number, "TOPLEFT", -2, 1)

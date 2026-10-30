@@ -1137,6 +1137,8 @@ local shown = ns.Guide.Picture(20, 0)
 local line = shown.hand[1].lines[2]
 check(shown.hand[1].lines[1].text == "Level Herbalism to 115" and line.text == "Before Zone" and line.count
     and line.have == 92 and line.need == 115, "the step says what to do, with a count and a bar")
+check(shown.total == 5 and shown.hand[1].shown == 3 and shown.place == 3 and shown.hand[1].number == asked,
+    "the guide's own numbers stay: it bears the number of the step it goes before")
 for _, row in ipairs(shown.ahead) do
     check(row.text ~= "Level Tailoring to 125", "a profession not learnt is not listed")
 end
