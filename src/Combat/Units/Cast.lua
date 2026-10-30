@@ -2,21 +2,25 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Cast
---  Your cast as part of your frame, in place of the game's cast bar: while you
---  cast, one more bar in the frame's stack, inside its one outline (Bar.Fit),
---  under your powers and your pet's row: the spell's icon square at its left
---  end, its name right of it, the seconds left at its right end, where the
---  frame's other bars have their numbers. Filling as a cast goes on, emptying
---  as a channel does, in the game's own cast bar art, as a nameplate's cast
---  bar. An empowered cast (Retail's) fills on to the hold at its last stage,
+--  A unit's cast as part of its frame (yours, your target's, your focus's), in
+--  place of the game's cast bar: while it casts, one more bar in the frame's
+--  stack, inside its one outline (Bar.Fit), directly above the health bar: the
+--  spell's icon square at its left end, its name right of it, the seconds left
+--  at its right end, where the frame's other bars have their numbers. Filling
+--  as a cast goes on, emptying as a channel does, in the game's own cast bar
+--  art, as a nameplate's cast bar: its golden fill for a cast, its channel's
+--  for a channel, its grey where it cannot be interrupted (a bar of its own
+--  over the fill, seen by the game's answer, hidden or not: SetAlphaFromBoolean).
+--  An empowered cast (Retail's) fills on to the hold at its last stage,
 --  a thin line where each stage ends. Interrupted, the bar is full in the
 --  art's red and says so, and by whom where the game names them; done or
 --  interrupted, it stays Cast.HOLD seconds before it goes, so the outline
 --  does not jump between two casts. A cast that fails goes at once.
 --
 --  What the game says of the cast (UnitCastingInfo, UnitChannelInfo) is read
---  when it starts and changes (your UNIT_SPELLCAST_* events, on the bar
---  itself). The game may hide any of it from addons (secret values); the bar
+--  when it starts and changes (the unit's UNIT_SPELLCAST_* events, on the bar
+--  itself), and when another unit stands behind the same word (Cast.Anew: a new
+--  target). The game may hide any of it from addons (secret values); the bar
 --  takes them as they are, as a nameplate's: its fill runs from the cast's
 --  start to its end and is given the time now on its own OnUpdate, so the game
 --  draws the progress whether we may read it or not. The seconds left need
@@ -26,16 +30,17 @@ local _, ns = ...
 --  Units.lua: Core.Lend's SetDeaf): PlayerCastingBarFrame, and the overlay
 --  that stands in for it over the vehicle bar and the game's talents window.
 --  Hiding them would run their OnHide in our code, into the game's layout of
---  the bottom of the screen; so they never start.
+--  the bottom of the screen; so they never start. Your target's and focus's go
+--  out of sight with their frames.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
 local Cast = {}
 ns.UnitCast = Cast
 
--- The game's own cast bar art (its atlases): a cast, a channel, one that was interrupted.
+-- The game's own cast bar art (its atlases): a cast, a channel, one that cannot be interrupted, one that was.
 Cast.ART = { cast = "ui-castingbar-filling-standard", channel = "ui-castingbar-filling-channel",
-             broken = "ui-castingbar-interrupted" }
+             locked = "ui-castingbar-uninterruptable", broken = "ui-castingbar-interrupted" }
 Cast.HOLD = 0.5      -- seconds a cast stays after it was done or interrupted
 Cast.WAIT = 1        -- seconds past a reckoned end before a cast counts as done without the game's word
 Cast.GAP = 3         -- between the icon, the name and the seconds
@@ -43,13 +48,15 @@ Cast.SAMPLE = 0.6    -- how full the sample is in Edit Mode
 Cast.ICON = "Interface\\Icons\\INV_Misc_QuestionMark" -- the sample's
 Cast.INTERRUPTED = Core.Word("INTERRUPTED", "Interrupted")
 Cast.BY = Core.Word("SPELL_INTERRUPTED_BY", "Interrupted by %s")
--- Your cast's events; each reads the cast anew.
+-- The game's rule that may take a unit's cast bar away, by unit (a focus's goes by the target's, as the game's bar).
+Cast.RULES = { player = "ShouldShowPlayerCastBar", target = "ShouldShowTargetCastBar", focus = "ShouldShowTargetCastBar" }
+-- A unit's cast's events; each reads the cast anew.
 Cast.EVENTS = { "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_INTERRUPTED",
                 "UNIT_SPELLCAST_DELAYED", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_CHANNEL_UPDATE",
                 "UNIT_SPELLCAST_CHANNEL_STOP", "UNIT_SPELLCAST_EMPOWER_START", "UNIT_SPELLCAST_EMPOWER_UPDATE",
-                "UNIT_SPELLCAST_EMPOWER_STOP" }
+                "UNIT_SPELLCAST_EMPOWER_STOP", "UNIT_SPELLCAST_INTERRUPTIBLE", "UNIT_SPELLCAST_NOT_INTERRUPTIBLE" }
 -- What the game's cast bars hear (CastingBarMixin:SetUnit): those, and what they hear besides.
-Cast.GAME = { "UNIT_SPELLCAST_INTERRUPTIBLE", "UNIT_SPELLCAST_NOT_INTERRUPTIBLE", "PLAYER_ENTERING_WORLD" }
+Cast.GAME = { "PLAYER_ENTERING_WORLD" }
 for _, event in ipairs(Cast.EVENTS) do Cast.GAME[#Cast.GAME + 1] = event end
 
 -- A status bar's fill in a piece of the game's cast bar art (given to the bar, which crops it as it fills, as the
@@ -77,19 +84,42 @@ local function Art(texture, atlas)
     end
 end
 
+-- The grey over the fill by the game's answer, as it is: hidden, the game shows it or not.
+local function Shielded(bar, locked)
+    if Core.Secret(locked) then
+        if not pcall(bar.lock.SetAlphaFromBoolean, bar.lock, locked) then bar.lock:SetAlpha(0) end
+    else
+        bar.lock:SetAlpha(locked and 1 or 0)
+    end
+end
+
 -- The bar's art for the cast on it: a cast fills in the game's golden art; a channel empties (the channel's art
--- behind, the dark filling from its end).
+-- behind, the dark filling from its end); the grey over it the same way.
 local function Paint(bar)
     local cast = bar.cast
-    bar.fill:SetReverseFill(cast.channel)
-    bar.fill:SetMinMaxValues(cast.starts, cast.ends)
+    for _, layer in ipairs({ bar.fill, bar.lock }) do
+        layer:SetReverseFill(cast.channel)
+        layer:SetMinMaxValues(cast.starts, cast.ends)
+    end
     if cast.channel then
         Fills(bar.fill, nil)
         Art(bar.fill.background, Cast.ART.channel)
+        Fills(bar.lock, nil)
+        Art(bar.lock.background, Cast.ART.locked)
+        bar.lock.background:Show()
     else
         Fills(bar.fill, Cast.ART.cast)
         Art(bar.fill.background, nil)
+        Fills(bar.lock, Cast.ART.locked)
+        bar.lock.background:Hide()
     end
+    Shielded(bar, cast.locked)
+end
+
+-- The bar at a moment of the cast (milliseconds, as the game counts its start and end).
+local function Filled(bar, value)
+    bar.fill:SetValue(value)
+    bar.lock:SetValue(value)
 end
 
 -- The thin lines where the stages of an empowered cast end, each its share of the bar along it (none for another
@@ -108,7 +138,7 @@ local function Stages(bar)
             line:SetVertexColor(0, 0, 0, 1)
             bar.lines[index] = line
         end
-        sum = sum + (Core.Ask(rawget(_G, "GetUnitEmpowerStageDuration"), "player", index - 1) or 0)
+        sum = sum + (Core.Ask(rawget(_G, "GetUnitEmpowerStageDuration"), bar.unit, index - 1) or 0)
         line:ClearAllPoints()
         line:SetPoint("TOP", bar.fill, "TOPLEFT", width * sum / span, 0)
         line:SetPoint("BOTTOM", bar.fill, "BOTTOMLEFT", width * sum / span, 0)
@@ -129,7 +159,7 @@ end
 local function Done(bar)
     local cast = bar.cast
     cast.held = GetTime() + Cast.HOLD
-    bar.fill:SetValue(cast.ends)
+    Filled(bar, cast.ends)
     bar.timer:SetText("")
 end
 
@@ -142,7 +172,7 @@ local function Tick(bar)
         if now >= cast.held then Gone(bar) end
         return
     end
-    bar.fill:SetValue(now * 1000)
+    Filled(bar, now * 1000)
     local ends = cast.plainEnd or cast.reckoned
     if not ends then return bar.timer:SetText("") end
     local left = ends - now
@@ -155,29 +185,32 @@ local function Tick(bar)
 end
 local OnUpdate = ns.Guard(Tick)
 
--- Whether the game shows your cast at all here (a rule of some of its modes takes it away).
-local function Allowed()
+-- Whether the game shows this unit's cast at all here (a rule of some of its modes takes it away).
+local function Allowed(unit)
     local rules = rawget(_G, "GameRulesUtil")
-    return not (rules and Core.Ask(rules.ShouldShowPlayerCastBar) == false)
+    return not (rules and Core.Ask(rules[Cast.RULES[unit]]) == false)
 end
 
--- Your cast as the game says it now: { name, icon, starts, ends (milliseconds, hidden or not), channel, id (a cast's,
--- where it may be read), stages (an empowered cast's), plainEnd or reckoned (seconds) }; nil where you cast nothing.
-local function Read()
-    if not Allowed() then return nil end
+-- A unit's cast as the game says it now: { name, icon, starts, ends (milliseconds, hidden or not), channel, locked
+-- (hidden or not), id (a cast's, where it may be read), stages (an empowered cast's), plainEnd or reckoned (seconds) };
+-- nil where it casts nothing, or only crafts while it is not you (as the game's bars).
+local function Read(unit)
+    if not Allowed(unit) then return nil end
     local channel, empowered, stages = false, false, nil
-    local ok, name, _, icon, starts, ends, _, id, _, spell = pcall(UnitCastingInfo, "player")
+    local ok, name, _, icon, starts, ends, craft, id, locked, spell = pcall(UnitCastingInfo, unit)
     if not ok or type(name) == "nil" then -- looked at with type() only: a hidden name is never compared
         channel = true
-        ok, name, _, icon, starts, ends, _, _, spell, empowered, stages = pcall(UnitChannelInfo, "player")
+        ok, name, _, icon, starts, ends, craft, locked, spell, empowered, stages = pcall(UnitChannelInfo, unit)
         if not ok or type(name) == "nil" then return nil end
     end
     if type(starts) == "nil" or type(ends) == "nil" then return nil end
-    local cast = { name = name, icon = icon, starts = starts, ends = ends, channel = channel, id = Plain(id) }
-    if empowered == true and type(stages) == "number" and stages > 0 then
+    if unit ~= "player" and Plain(craft) == true then return nil end
+    local cast = { name = name, icon = icon, starts = starts, ends = ends, channel = channel, locked = locked, id = Plain(id) }
+    local count = Plain(stages)
+    if Plain(empowered) == true and type(count) == "number" and count > 0 then
         -- It fills as a cast does, on to the hold at its last stage (as the game's bar).
-        cast.channel, cast.stages = false, stages
-        local hold, plain = Core.Ask(rawget(_G, "GetUnitEmpowerHoldAtMaxTime"), "player"), Plain(ends)
+        cast.channel, cast.stages = false, count
+        local hold, plain = Core.Ask(rawget(_G, "GetUnitEmpowerHoldAtMaxTime"), unit), Plain(ends)
         if type(hold) == "number" and type(plain) == "number" then cast.ends = plain + hold end
     end
     local plainEnd = Plain(cast.ends)
@@ -207,6 +240,7 @@ end
 -- The cast on the bar was interrupted: a moment in red, saying so, then gone.
 local function Broken(bar, who)
     bar.cast.held, bar.cast.stages = GetTime() + Cast.HOLD, nil
+    bar.lock:SetAlpha(0)
     bar.fill:SetReverseFill(false)
     Fills(bar.fill, Cast.ART.broken)
     Art(bar.fill.background, nil)
@@ -220,11 +254,11 @@ local function Broken(bar, who)
     end
 end
 
--- Your cast on the bar as the game says it now (event: what told us). Over: done it stays a moment; failed it goes at
--- once; interrupted it stays red.
+-- The unit's cast on the bar as the game says it now (event: what told us). Over: done it stays a moment; failed it
+-- goes at once; interrupted it stays red.
 local function Update(bar, event)
     if not bar.wanted or bar.sample then return end
-    local cast = Read()
+    local cast = Read(bar.unit)
     if not cast then
         local old = bar.cast
         if not old or old.held then return end
@@ -262,8 +296,8 @@ local function Heard(bar, event, _, id, _, fourth, fifth)
 end
 local OnEvent = ns.Guard(Heard)
 
--- Your cast's bar in your frame's stack (hidden until it casts): as high as height, the icon as wide, the fill right
--- of it; the frame's masks for the stack's ends (Bar.Fit) over both, the left one over the icon.
+-- A unit's cast's bar in its frame's stack (hidden until it casts): as high as height, the icon as wide, the fill right
+-- of it, the grey over the fill; the frame's masks for the stack's ends (Bar.Fit) over them, the left one over the icon.
 function Cast.Make(face, height)
     local level = face.health:GetFrameLevel()
     local bar = CreateFrame("Frame", nil, face)
@@ -280,24 +314,40 @@ function Cast.Make(face, height)
     icon:AddMaskTexture(fill.ends[1])
     fill:SetPoint("TOPLEFT", icon, "TOPRIGHT")
     fill:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT")
+    local lock = CreateFrame("StatusBar", nil, bar)
+    lock:SetAllPoints(fill)
+    lock:SetFrameLevel(level + 1)
+    lock:SetStatusBarTexture(ns.UnitBar.FILL)
+    lock:SetMinMaxValues(0, 1)
+    lock:SetValue(0)
+    lock:SetAlpha(0)
+    local back = lock:CreateTexture(nil, "BACKGROUND")
+    back:SetTexture(ns.UnitBar.WHITE)
+    back:SetAllPoints(lock)
+    lock.background = back
+    for _, mask in ipairs(fill.ends) do
+        lock:GetStatusBarTexture():AddMaskTexture(mask)
+        back:AddMaskTexture(mask)
+    end
     local Text = ns.UnitText
     local text, timer = Text.Line(top, "LEFT"), Text.Line(top, "RIGHT")
     timer:SetPoint("RIGHT", bar, "RIGHT", 1 - Text.INSET, 0)
     text:SetPoint("LEFT", icon, "RIGHT", Cast.GAP, 0)
     text:SetPoint("RIGHT", timer, "LEFT", -Cast.GAP, 0)
-    bar.face, bar.tall, bar.ends, bar.fill = face, height, fill.ends, fill
+    bar.face, bar.unit, bar.tall, bar.ends, bar.fill, bar.lock = face, face.unit, height, fill.ends, fill, lock
     bar.top, bar.icon, bar.text, bar.timer, bar.lines = top, icon, text, timer, {}
-    for _, event in ipairs(Cast.EVENTS) do pcall(bar.RegisterUnitEvent, bar, event, "player") end
+    for _, event in ipairs(Cast.EVENTS) do pcall(bar.RegisterUnitEvent, bar, event, face.unit) end
     bar:RegisterEvent("PLAYER_ENTERING_WORLD") -- a cast seen again after a loading screen
     bar:SetScript("OnEvent", OnEvent)
     bar:SetScript("OnUpdate", OnUpdate)
     face.cast = bar
-    face.under[#face.under + 1] = bar
+    face.above[#face.above + 1] = bar
 end
 
 -- The sample in Edit Mode: where a cast shows, and how far the frame's outline goes then.
 local function Sample(bar)
     bar.sample, bar.on = true, true
+    bar.lock:SetAlpha(0)
     bar.fill:SetReverseFill(false)
     Fills(bar.fill, Cast.ART.cast)
     Art(bar.fill.background, nil)
@@ -308,7 +358,7 @@ local function Sample(bar)
     bar.timer:SetText("")
 end
 
--- The bar on, as your cast is now (in Edit Mode a sample), or off.
+-- The bar on, as the unit's cast is now (in Edit Mode a sample), or off.
 function Cast.Set(face, on)
     local bar = face.cast
     bar.wanted, bar.sample, bar.cast, bar.on = on, nil, nil, false
@@ -319,4 +369,9 @@ function Cast.Set(face, on)
         Update(bar)
     end
     ns.UnitBar.Fit(face)
+end
+
+-- Another unit behind the same word (a new target): its cast at once, the last one's gone without staying.
+function Cast.Anew(face)
+    if face.cast.wanted then Cast.Set(face, true) end
 end

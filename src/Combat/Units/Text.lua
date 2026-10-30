@@ -11,9 +11,9 @@ local _, ns = ...
 --    right    its health, short ("850", "1.2k", "1.32m"), and how much is
 --             left ("| 100%"); Dead or Offline instead where it is
 --  in each power bar under it, at its right, the power as the health is
---  written ("3.2k | 85%", in a smaller size); and in the row under them (your
+--  written ("3.2k | 85%", in a smaller size); in the row under them (your
 --  target's target, your focus's target, your pet) its unit's name alone, in
---  its middle.
+--  its middle; and in your pet's power under that, the power again.
 --
 --  The health's room is as wide as the most it can show ("1.32m | 100%"), so
 --  the name's does not change as health goes; while the game hides the most
@@ -122,7 +122,7 @@ function Text.Make(face)
     raid:SetPoint("LEFT", face.level, "RIGHT", Text.GAP, 0)
     raid:Hide()
     face.raid, face.top, face.room = raid, top, { left = 0, right = 0 }
-    for _, power in ipairs(face.powers) do
+    for _, power in ipairs({ face.powers[1], face.powers[2], face.rowPower }) do
         power.value = Line(Text.Over(power), "RIGHT", Text.SMALL)
         power.value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
     end
@@ -275,21 +275,28 @@ function Text.Health(face, unit)
     Side(face, "right", Text.INSET + room)
 end
 
--- Each power's words, as Bar.Powers read them (kinds): "3.2k | 85%"; none for an empty slot.
-function Text.Powers(face, unit, kinds)
-    for index, kind in ipairs(kinds) do
-        local text = face.powers[index].value
-        local now = kind.type and Raw(UnitPower, unit, kind.type)
-        local most = kind.type and Raw(UnitPowerMax, unit, kind.type)
-        local plainNow, plainMost = Plain(now), Plain(most)
-        if type(now) == "nil" or type(most) == "nil" or plainMost == 0 then
-            text:SetText("")
-        elseif type(plainNow) == "number" and type(plainMost) == "number" then
-            text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
-        else
-            Hidden(text, now, rawget(_G, "UnitPowerPercent"), unit, kind.type, false)
-        end
+-- A power's words on its bar: "3.2k | 85%"; none for an empty one.
+local function PowerWords(text, unit, kind)
+    local now = kind.type and Raw(UnitPower, unit, kind.type)
+    local most = kind.type and Raw(UnitPowerMax, unit, kind.type)
+    local plainNow, plainMost = Plain(now), Plain(most)
+    if type(now) == "nil" or type(most) == "nil" or plainMost == 0 then
+        text:SetText("")
+    elseif type(plainNow) == "number" and type(plainMost) == "number" then
+        text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
+    else
+        Hidden(text, now, rawget(_G, "UnitPowerPercent"), unit, kind.type, false)
     end
+end
+
+-- Each power's words, as Bar.Powers read them (kinds).
+function Text.Powers(face, unit, kinds)
+    for index, kind in ipairs(kinds) do PowerWords(face.powers[index].value, unit, kind) end
+end
+
+-- The row's power's words, as Bar.RowPower read it (kind; none on a row without).
+function Text.RowPower(face, unit, kind)
+    if kind then PowerWords(face.rowPower.value, unit, kind) end
 end
 
 -- Every piece for the unit; instead: a name in its place (a sample in Edit Mode).

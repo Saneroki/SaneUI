@@ -12,9 +12,10 @@ local _, ns = ...
 --  around it the auras that matter most (Auras.lua). Under each, as a cast bar
 --  under a nameplate, a row while its unit is there, with that unit's name
 --  alone: your target's target under your target's frame, your focus's target
---  under your focus's, your pet under yours. Under that on your own frame, while
---  they run, your cast and the game's timers; your breath over its health bar
---  (Cast.lua, Timers.lua).
+--  under your focus's; under yours your pet, its power under its row. Directly
+--  above each health bar its unit's cast while it casts (Cast.lua), over that
+--  on your own frame the game's timers on you, your breath over the health bar
+--  itself (Timers.lua).
 --
 --  Each frame and each row is the game's secure unit button
 --  (SecureUnitButtonTemplate): a click targets the unit, a right click opens
@@ -50,15 +51,17 @@ ns.Units = Units
 Units.WIDTH, Units.HEIGHT = 240, 26 -- a frame's width and its health bar's height at 100 % (Unit frame size scales it)
 Units.POWER = Units.HEIGHT / 2      -- a power bar's height under it
 Units.ROW = 18   -- a row's height under them
+Units.ROW_POWER = Units.ROW / 2 -- a row's power bar under it, half its height as a frame's is
 Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
--- right, your focus above it), and its row: the same of the unit under it, and its bar's colour (none: green). Your own
--- frame's bars: the game's frames that go deaf for them, each with its setting and what it no longer hears.
+-- right, your focus above it), and its row: the same of the unit under it, its bar's colour (none: green), and whether
+-- its power shows under it. Your own frame's bars: the game's frames that go deaf for them, each with its setting and
+-- what it no longer hears.
 Units.KINDS = {
     { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts", noName = true,
       place = "playerPlace", first = { point = "BOTTOM", x = -190, y = 230 },
-      row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade" },
+      row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade", power = true },
       bars = { { option = "unitCast", game = "PlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitCast", game = "OverlayPlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitBreath", game = "MirrorTimerContainer", away = "deaf", events = ns.UnitTimers.EVENTS } } },
@@ -66,7 +69,7 @@ Units.KINDS = {
       place = "targetPlace", first = { point = "BOTTOM", x = 190, y = 230 },
       row = { unit = "targettarget", option = "unitTargetTarget", colour = ns.UnitBar.CALM } },
     { unit = "focus", option = "unitFocus", game = "FocusFrame", away = "parent",
-      place = "focusPlace", first = { point = "BOTTOM", x = 190, y = 290 },
+      place = "focusPlace", first = { point = "BOTTOM", x = 190, y = 332 },
       row = { unit = "focustarget", option = "unitFocusTarget", colour = ns.UnitBar.CALM } },
 }
 -- Of your own frame (PlayerFrame), the parts out of sight: its picture, and its bars and texts.
@@ -101,6 +104,7 @@ local function Row(face)
     if face.rowSample then unit = "player" end
     if not face.rowSample and not Core.Ask(UnitExists, unit) then return end
     ns.UnitBar.Health(face.row, unit)
+    ns.UnitText.RowPower(face, unit, ns.UnitBar.RowPower(face, unit))
     ns.UnitText.Row(face, unit, face.rowSample and ns.TEXT.samples[face.rowUnit] or nil)
 end
 
@@ -192,13 +196,12 @@ local function Make(kind)
     face:SetPoint("TOPRIGHT", button, "TOPRIGHT")
     face:SetHeight(Units.HEIGHT)
     face.unit, face.noName = kind.unit, kind.noName
-    ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW })
+    ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW,
+                            rowPower = kind.row.power and Units.ROW_POWER or nil })
     ns.UnitText.Make(face)
     ns.UnitAuras.Make(face)
-    if kind.bars then
-        ns.UnitCast.Make(face, Units.ROW)
-        ns.UnitTimers.Make(face, Units.POWER)
-    end
+    ns.UnitCast.Make(face, Units.ROW)
+    if kind.bars then ns.UnitTimers.Make(face, Units.POWER) end
     for _, event in ipairs(Units.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
     face:SetScript("OnEvent", OnEvent)
     face:SetScript("OnSizeChanged", OnSizeChanged)
@@ -207,7 +210,7 @@ local function Make(kind)
     local row = Button(button, kind.row.unit)
     row:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, 0)
     row:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 0, 0)
-    row:SetHeight(Units.ROW)
+    row:SetHeight(Units.ROW + (kind.row.power and Units.ROW_POWER or 0))
     row:Hide()
     -- Its row looked at as it shows or goes, and as the frame shows: the game may hide the row while the frame is
     -- out of sight (its target gone), and a frame out of sight hears no OnHide.
@@ -264,15 +267,15 @@ local function Back(kind)
     for index = #(lends or {}), 1, -1 do ns.Safe("unit frames", lends[index].Return, lends[index]) end
 end
 
--- Your own frame's bars on, each as its setting says, and the game's deaf; or off and the game's hearing again.
+-- A frame's cast on as its setting says; on your own frame your timers too, and the game's bars deaf for each; or off
+-- and the game's hearing again.
 local function Bars(kind, wanted)
-    if not kind.bars then return end
-    for _, bar in ipairs(kind.bars) do
+    for _, bar in ipairs(kind.bars or {}) do
         if wanted and ns.options[bar.option] ~= false then Away(bar) else Back(bar) end
     end
     if not kind.button then return end
     ns.UnitCast.Set(kind.button.face, wanted and ns.options.unitCast ~= false)
-    ns.UnitTimers.Set(wanted and ns.options.unitBreath ~= false)
+    if kind.bars then ns.UnitTimers.Set(wanted and ns.options.unitBreath ~= false) end
 end
 
 -- A button shown by the game's unit watch, or, in Edit Mode, always (a sample where its unit is not there).
@@ -364,7 +367,12 @@ local function Changed(unit, rowOnly)
     for _, kind in ipairs(Units.KINDS) do
         local face = kind.button and kind.button.face
         if face and kind.unit == unit then
-            if rowOnly then Row(face) else Fill(face) end
+            if rowOnly then
+                Row(face)
+            else
+                Fill(face)
+                ns.UnitCast.Anew(face)
+            end
         end
     end
 end

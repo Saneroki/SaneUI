@@ -3,7 +3,8 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Auras
 --  Around a unit frame, as around a nameplate, the auras that matter most,
---  Auras.MOST of each kind at most:
+--  Auras.MOST of each kind at most (above: over what stands on the frame now,
+--  its cast: the containers stand on its roof, Bar.Fit):
 --    above, from the left    debuffs: on a foe the ones you put on it, on a
 --                            friend (and you) any, the game's most important
 --                            first (its unit frames' order: what you can
@@ -175,8 +176,8 @@ function Auras.Make(face)
     face.auras = {}
     for _, kind in ipairs(Auras.KINDS) do face.auras[kind.key] = Container(face, kind) end
     local auras = face.auras
-    if auras.debuffs then auras.debuffs:SetPoint("BOTTOMLEFT", face, "TOPLEFT", 0, Auras.GAP) end
-    if auras.buffs then auras.buffs:SetPoint("BOTTOMRIGHT", face, "TOPRIGHT", 0, Auras.GAP) end
+    if auras.debuffs then auras.debuffs:SetPoint("BOTTOMLEFT", face.roof, "BOTTOMLEFT", 0, Auras.GAP) end
+    if auras.buffs then auras.buffs:SetPoint("BOTTOMRIGHT", face.roof, "BOTTOMRIGHT", 0, Auras.GAP) end
     if auras.control then auras.control:SetPoint("TOPLEFT", face, "TOPRIGHT", Auras.GAP * 3, 0) end
     faces[#faces + 1] = face
     Auras.Listed(face)

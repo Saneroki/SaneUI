@@ -62,11 +62,13 @@ Decided (Saneroki, 2026-10-16):
   the target's frame while the target has a target, and the only text in its health bar is the name; the same for
   the focus's target and, under your own frame, your pet. All unit frames green, not in class colours; the names
   anchored left, after the level and raid marker; your own frame without a name.
-- **Your cast and breath part of your frame** (Saneroki, 2026-10-30; built): the game's cast bar hidden, and your
-  cast shown under your unit frame, as part of it, while it is active, in place of the game's bar. Your breath over
-  the health bar, 50 % transparent so the health shows underneath, in the bubble art of the game's own breath bar,
-  the game's bar hidden. The game's other timers on you (fatigue, feign death) stay bars under your frame, in the
-  game's art for each.
+- **Casts and timers part of the frames** (Saneroki, 2026-10-30; built): the cast bars of all unit frames directly
+  above the health bars, as part of them, while active, in place of the game's bars (yours, your target's, your
+  focus's). Your breath over your health bar, 50 % transparent so the health shows underneath, in the bubble art of
+  the game's own breath bar. Fatigue and feign death part of your frame too, above the health bar, so all three of
+  the game's timer bars are gone.
+- **Your pet in place of a target's target** (Saneroki, 2026-10-30; built): your frame has no target's target; in its
+  place your pet's health bar and resource bar, the game's pet frame hidden.
 - **Power bars and auras** (Saneroki, 2026-10-29; built): the class resource bar half the health bar's height,
   with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
@@ -202,7 +204,7 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
    focus's targets and the pet built 2026-10-29 as rows under the frames).
 3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header.
 4. **Buffs:** your own, at the top right as the game has them.
-5. **Cast bars** (yours built 2026-10-30, with your breath), **bosses**, **class resources**, **swing timers**, **threat.**
+5. **Cast bars** (yours, your target's and your focus's built 2026-10-30, with your timers), **bosses**, **class resources**, **swing timers**, **threat.**
 6. **Combat text** and **raid warnings.**
 7. ~~**Nameplates**~~: a module of their own since 2026-10-20 (`src/Nameplates/`), built there.
 

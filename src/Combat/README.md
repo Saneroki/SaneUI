@@ -15,9 +15,10 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 
 Your frame, your target's and your focus's are ours, in the look of a nameplate and green: the level and raid
 marker on the left, then the name (none on your own), the health and how much is left on the right. Under your
-target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours,
-your pet's. While you cast, that is part of your frame too; your breath lies over your health bar, in the game's
-bubbles, half see-through; both in place of the game's bars. The game's action bars are clean: only the buttons that hold something, each its icon alone.
+target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours your
+pet, with its health and its resource. Directly above each health bar its unit's cast while it casts. Your breath
+lies over your health bar, in the game's bubbles, half see-through, the game's other timers on you stand above your
+cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -91,22 +92,24 @@ bubbles, half see-through; both in place of the game's bars. The game's action b
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health, in the light yellow the nameplates give a neutral creature, and its
     name alone in the middle; the same under your focus's frame for your focus's target, and under your own frame
-    for your pet while you have one (green). The frame's outline goes
+    for your pet while you have one (green, its resource under it). The frame's outline goes
     round both, a thin dark line between them. Click a row to target its unit, right click for its menu.
-  - **Your cast and your breath:** part of your own frame while they run, in place of the game's. Your cast, in
-    the same outline, under your powers and your pet's row: the spell's icon and name, the seconds left at the right end, filling as it
-    goes on and emptying for a channel, red with who did it when you are interrupted; a moment after it ends it
-    goes, so the frame does not jump between two casts. Your breath lies over your health bar, in the game's
-    bubbles and half see-through, so your health shows underneath, *Breath* and the seconds left in the middle. The
-    game's other timers on you (fatigue in deep water, feign death) stay bars under your cast, in the game's art for
-    each: what it counts and the seconds left. The game's cast bar and its bars at the top of the screen stay away,
-    the cast bar over the vehicle bar and the game's talents window too.
+  - **Casts:** part of each frame while its unit casts (yours, your target's, your focus's), in the same outline,
+    directly above the health bar: the spell's icon and name, the seconds left at the right end, filling as it goes
+    on and emptying for a channel, grey where it cannot be interrupted, red with who did it when it is interrupted;
+    a moment after it ends it goes, so the frame does not jump between two casts. The auras above the frame move up
+    while it shows. Your pet's row has none: its button cannot move in a fight, and your power bar stands right above it.
+  - **Your breath and the game's other timers:** your breath lies over your health bar, in the game's bubbles and
+    half see-through, so your health shows underneath, *Breath* and the seconds left in the middle. Fatigue in deep
+    water and feign death stand above your cast, in the game's art for each: what it counts and the seconds left.
+    None of the game's own bars shows: not its cast bar (over the vehicle bar and the game's talents window too),
+    not its three timers at the top of the screen.
   - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
     tooltip; in a fight too. Your target's and focus's frames come and go with them.
   - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
     middle, your target right of it, your focus above your target. A frame or row whose unit is not there shows
     a sample there (your own, named *Target*, *Focus*, *Target's target*, *Focus's target* or *Pet*); the rows
-    move with their frames. Your frame shows a sample cast and breath too. The game's
+    move with their frames. Every frame shows a sample cast, yours a sample breath too. The game's
     own Edit Mode boxes *Cast Bar* and *Timer Bars* only show the game's bars there, which stay away in play.
   - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
     target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
@@ -254,20 +257,23 @@ bubbles, half see-through; both in place of the game's bars. The game's action b
     or goes (its `OnShow`, `OnHide`, and the frame's `OnShow`: a row hidden while its frame was out of sight hears
     no `OnHide`; `Rowed`). While it shows its unit is read every `Units.POLL` (0.2 s) on the row bar's `OnUpdate`
     (the game sends no events of a target's target), and at once on `UNIT_TARGET` and `UNIT_PET`.
-  - Your frame's `bars` (settings `unitCast`, `unitBreath`; `Bars` in `Units.lua`): what stands in for the game's bars
-    while they run, plain frames in `face.under`, the last of `Bar.Fit`'s stack (each with its height, `tall`, and
-    whether it shows, `on`), so they come and go in a fight without a secure button. `Cast.lua` (`ns.UnitCast`): a
+  - The casts and your frame's `bars` (settings `unitCast`, `unitBreath`; `Bars` in `Units.lua`): what stands in for
+    the game's bars while they run, plain frames in `face.above`, the part of `Bar.Fit`'s stack above the health bar,
+    nearest it first (each with its height, `tall`, and whether it shows, `on`), so they come and go in a fight without
+    a secure button. `Cast.lua` (`ns.UnitCast`): one per frame (`bar.unit`), a
     frame in the stack holding the icon and, right of it, a `Bar.Strip` as fill; the strip's end masks go over both
-    (`bar.ends`). It hears your `UNIT_SPELLCAST_*` events itself (`Cast.EVENTS`) and reads `UnitCastingInfo` and
+    (`bar.ends`). It hears its unit's `UNIT_SPELLCAST_*` events itself (`Cast.EVENTS`) and reads `UnitCastingInfo` and
     `UnitChannelInfo` anew at each; hidden values go to the bar as they are, as a nameplate's (`Cast.lua` there). A
     cast fills in the game's art, a channel empties (its art behind, the dark filling from its end). Interrupted
     (`UNIT_SPELLCAST_INTERRUPTED` of the cast's own number, `UNIT_SPELLCAST_CHANNEL_STOP` with who did it,
     `UNIT_SPELLCAST_EMPOWER_STOP` not completed): the broken art and `SPELL_INTERRUPTED_BY`. An empowered cast (Retail's)
     fills on to `GetUnitEmpowerHoldAtMaxTime`, a line at each stage's end (`GetUnitEmpowerStageDuration`). It respects
-    `GameRulesUtil.ShouldShowPlayerCastBar`. `Timers.lua` (`ns.UnitTimers`): your breath's strip over the health bar
+    the game's rules (`Cast.RULES`), shows nobody else's crafting, and greys a cast that cannot be interrupted with a
+    bar over the fill (`bar.lock`, under the same masks; a hidden answer by `SetAlphaFromBoolean`, as a nameplate's).
+    A new target or focus reads it at once (`Cast.Anew`, from `Changed`). `Timers.lua` (`ns.UnitTimers`): your breath's strip over the health bar
     (`face.breath`, in `face.over`: `Bar.Fit` rounds it as the health bar and shows it by its `on`; no background, a
     level over the health and under the frame's words, the fill's alpha `Timers.SHEER`, the bar's own words over
-    them), `Timers.MOST` strips at `Units.POWER` for the other timers, each in the game's atlas (`Timers.ART`, as
+    them), `Timers.MOST` strips at `Units.POWER` for the other timers in `face.above`, over the cast, each in the game's atlas (`Timers.ART`, as
     its `MirrorTimerAtlas`), filled by `MIRROR_TIMER_START`, `_STOP`, `_PAUSE` and `GetMirrorTimerInfo` (at the
     world's showing and whenever they are set up anew), following `GetMirrorTimerProgress` on its `OnUpdate`.
   - `Bar.lua` (`ns.UnitBar`): the nameplates' look rebuilt for a frame of one size: the fill and background
@@ -278,8 +284,10 @@ bubbles, half see-through; both in place of the game's bars. The game's action b
     line a pixel inside it, and the bars inside both (`rank.width` pixels in: 1 plain, 2 an elite or a rare, 4 a
     boss); only the glow reaches outwards. The bars are one stack a pixel apart (`Bar.Fit`): the health
     (`face.healthHeight`, the face's own height), each power shown (`face.powersShown` of `face.slots`, each
-    `Units.POWER` high, half the health's), the row under the power slots kept (where its button is), what hangs
-    in `face.under` while it shows; the first round at its top, the last at its bottom, the rest square (`End`'s modes). `Bar.Kinds` picks the powers: the
+    `Units.POWER` high, half the health's), the row under the power slots kept (where its button is) and your pet's
+    power under it (`face.rowPower`, `Units.ROW_POWER` high, `Bar.RowPower`, read with the row, gone for a pet
+    without one), and above the health what stands in `face.above` while it shows (the plates reach up by it;
+    `face.roof` its top, moved in a fight too: the auras stand on it, never moved themselves); the first round at its top, the last at its bottom, the rest square (`End`'s modes). `Bar.Kinds` picks the powers: the
     unit's own (`UnitPowerType`), or on a frame with two slots (`face.alternate`) mana (`Bar.MANA`) and under it the
     unit's own while that is not mana; `Bar.Powers` fills them (`UnitPower`/`UnitPowerMax` by type, hidden or not;
     an empty bar where the unit has none) and lays them out anew when their number changes. Every health bar
@@ -373,7 +381,7 @@ bubbles, half see-through; both in place of the game's bars. The game's action b
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the right click on an icon |
 | `Units/Lists.lua` | Your lists Always show and Never show, and their window (`/sane auras`) |
-| `Units/Cast.lua` | Your cast as part of your frame, in place of the game's cast bar |
+| `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
@@ -409,4 +417,8 @@ bubbles, half see-through; both in place of the game's bars. The game's action b
 - **2026-10-30:** your cast and your breath as part of your frame, under it while active, the game's own bars hidden
   (Saneroki).
 - **2026-10-30:** your breath over your health bar instead, 50 % transparent so the health shows underneath, in the
-  bubble art of the game's own breath bar (Saneroki); the other timers stay under the frame, in the game's art too.
+  bubble art of the game's own breath bar (Saneroki); the other timers in the game's art too.
+- **2026-10-30:** the cast bars of all unit frames directly above the health bars, fatigue and feign death above the
+  health bar too, so all three of the game's timer bars are gone; your pet's health and resource bar in place of a
+  target's target on your frame, the game's pet frame hidden (Saneroki). The auras move up over what stands on a frame;
+  your pet's row has no cast bar of its own: its secure button cannot move in a fight (board).

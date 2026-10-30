@@ -8,9 +8,10 @@ local _, ns = ...
 --  Your breath lies over your health bar, sheer, so your health shows through
 --  its bubbles (frame.over, Bar.Fit), what it is and the seconds left in the
 --  bar's middle, where your own frame has no name. Any other, while it runs, is
---  a bar in the frame's stack, under your cast, at a power bar's height: the
---  game's name for it on the left, the seconds left on the right, as the
---  powers are written. Breath may fill again once you are back up: the bar
+--  a bar in the frame's stack, above your health bar and your cast, at a power
+--  bar's height: the game's name for it on the left, the seconds left on the
+--  right, as the powers are written. So none of the game's three bars is left.
+--  Breath may fill again once you are back up: the bar
 --  follows the game (GetMirrorTimerProgress, on the bar's own OnUpdate while
 --  it shows) until the game says it stopped.
 --
@@ -118,7 +119,7 @@ local function Timer(level, size)
 end
 
 -- Your breath's bar over the health bar, nothing behind its fill; under the frame's words, its own over them. The
--- others' in your frame's stack, as high as height.
+-- others' in your frame's stack, above your cast, as high as height.
 function Timers.Make(owner, height)
     face = owner
     face.timers = {}
@@ -138,7 +139,7 @@ function Timers.Make(owner, height)
         bar.left:SetPoint("RIGHT", bar, "RIGHT", 1 - Text.INSET, 0)
         bar.tall = height
         face.timers[index] = bar
-        face.under[#face.under + 1] = bar
+        face.above[#face.above + 1] = bar
     end
 end
 

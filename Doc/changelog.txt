@@ -41,10 +41,12 @@ The bigger changes of each version, newest first.
   done. Quests, objectives and levels count wherever a step
   stands, it no longer waits at a hearth or a vendor you are long
   past, and going back to look at a step keeps your place.
-- Unit frames: your cast and your breath are part of your frame.
-  While you cast, a bar joins it under your power; your breath
-  lies over your health bar in the game's bubbles, half
-  see-through. Both in place of the game's own bars.
+- Unit frames: casts and timers are part of the frames. Your
+  cast, your target's and your focus's show directly above the
+  health bar. Your breath lies over your health bar in the game's
+  bubbles, half see-through; fatigue and feign death stand above
+  it. Your pet shows its health and its resource under your frame.
+  All in place of the game's own bars.
 - Navigation: the travel overlay sits a little higher and holds the
   button to leave a flight or a vehicle, in place of the game's.
 - Bags: Auto Sell and Auto Repair, two checkboxes at the foot of

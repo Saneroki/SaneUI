@@ -119,8 +119,8 @@ function Client.Install(W)
     PetFrame = W.NewWidget("Button", "PetFrame", PlayerFrame)
     PetFrame._mouse = true
     -- The game's cast bars and its timers' bars, hearing what its code registers. Your cast (W.cast, W.channel: name,
-    -- icon, starts, ends, id, spell; a channel's empowered, stages) and your timers (W.mirror[index]: as the game gives
-    -- them; W.mirrorLeft[timer]: milliseconds).
+    -- icon, starts, ends, id, spell, locked, craft; a channel's empowered, stages), another unit's (W.casts[unit]) and
+    -- your timers (W.mirror[index]: as the game gives them; W.mirrorLeft[timer]: milliseconds).
     for _, name in ipairs({ "PlayerCastingBarFrame", "OverlayPlayerCastingBarFrame" }) do
         _G[name] = W.NewWidget("StatusBar", name, UIParent)
         for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_INTERRUPTIBLE" }) do
@@ -132,15 +132,20 @@ function Client.Install(W)
     for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "MIRROR_TIMER_START", "MIRROR_TIMER_STOP", "MIRROR_TIMER_PAUSE" }) do
         MirrorTimerContainer:RegisterEvent(event)
     end
-    UnitCastingInfo = function()
-        local cast = W.cast
-        if cast then return cast.name, cast.name, cast.icon, cast.starts, cast.ends, false, cast.id, false, cast.spell end
+    W.casts = {}
+    UnitCastingInfo = function(unit)
+        local cast = W.casts[unit]
+        if unit == "player" then cast = W.cast end
+        if cast and not cast.channel then
+            return cast.name, cast.name, cast.icon, cast.starts, cast.ends, cast.craft or false, cast.id, cast.locked or false, cast.spell
+        end
     end
-    UnitChannelInfo = function()
-        local cast = W.channel
-        if cast then
-            return cast.name, cast.name, cast.icon, cast.starts, cast.ends, false, false, cast.spell, cast.empowered or false,
-                cast.stages or 0
+    UnitChannelInfo = function(unit)
+        local cast = W.casts[unit]
+        if unit == "player" then cast = W.channel end
+        if cast and (unit == "player" or cast.channel) then
+            return cast.name, cast.name, cast.icon, cast.starts, cast.ends, cast.craft or false, cast.locked or false, cast.spell,
+                cast.empowered or false, cast.stages or 0
         end
     end
     W.mirror, W.mirrorLeft = {}, {}

@@ -531,12 +531,14 @@ do
         "and the rows under the frames too, named for what they stand for")
     check(player.face.cast._shown and player.face.cast.sample and player.face.cast.text._text == ns.TEXT.samples.cast
         and player.face.breath._shown and player.face.breath.label._text == ns.TEXT.samples.breath
-        and not target.face.cast, "your cast and your breath as samples, on your own frame alone")
+        and focus.face.cast._shown and target.face.cast._shown and target.face.cast.text._text == ns.TEXT.samples.cast
+        and not target.face.breath, "every frame's cast as a sample, your breath on your own frame alone")
     check(not target.face.sample and target.face.name._text == "Kobold Miner", "a frame whose unit is there shows it")
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton],
         "after Edit Mode the unit watch shows it again, and its row")
-    check(not player.face.cast._shown and not player.face.cast.sample and not player.face.breath._shown,
+    check(not player.face.cast._shown and not player.face.cast.sample and not target.face.cast._shown
+        and not player.face.breath._shown,
         "and your cast and breath only while they run")
     focus.face.rowButton:Hide() -- the game's unit watch: your focus has no target
     player.face.rowButton:Hide() -- nor you a pet
@@ -560,10 +562,27 @@ do
     local pet = player.face.rowButton
     check(pet:GetAttribute("unit") == "pet" and watched[pet] and PetFrame._alpha == 0 and PetFrame._mouse == false
         and PetFrame._parent == PlayerFrame, "your pet's row under your frame, the game's pet frame out of sight")
-    units.pet = { name = "Wolf", health = 80, most = 100 }
+    units.pet = { name = "Wolf", health = 80, most = 100, powerType = 2, powerToken = "FOCUS", power = 50, powerMost = 100 }
     pet:Show()
     check(player.face.rowName._text == "Wolf" and player.face.row._value == 80 and player.face.row._barColor[2] == green[2],
         "your pet: its name and health, green")
+    do
+        local face, power = player.face, player.face.rowPower
+        local slots = face.slots * Units.POWER
+        check(pet._height == Units.ROW + Units.ROW_POWER and power._shown and power._value == 50 and power._max == 100
+            and power.value._text == "50 | 50%" and near(power._points[1][5], -(Units.HEIGHT + slots + Units.ROW + Core.Pixels(face, 1)))
+            and near(face.border[2]._points[1][5], -(slots + Units.ROW + Units.ROW_POWER)),
+            "your pet's resource under its health, inside the outline, its button over both")
+        units.pet.power = 20
+        face.row._scripts.OnUpdate(face.row, Units.POLL)
+        check(power._value == 20 and power.value._text == "20 | 20%", "read again while it shows")
+        units.pet.powerMost = 0
+        face.row._scripts.OnUpdate(face.row, Units.POLL)
+        check(not power._shown and near(face.border[2]._points[1][5], -(slots + Units.ROW)), "a pet without one: its health alone")
+        units.pet.powerMost = 100
+        face.row._scripts.OnUpdate(face.row, Units.POLL)
+        check(power._shown and not target.face.rowPower, "and only your pet has one")
+    end
     Core.Set(ns.name, "unitPet", false)
     check(not watched[pet] and not pet._shown and PetFrame._alpha == 1 and PetFrame._mouse == true
         and not player.face.rowShown, "Your pet off: no row, the game's pet frame back")
@@ -601,6 +620,7 @@ do
             W.Fire("UNIT_SPELLCAST_START", "player", id, 133)
         end
         local function Below() return -face.border[2]._points[1][5] end
+        local function Above() return face.border[1]._points[1][5] end
         local function Over()
             W.Wait(Cast.HOLD)
             Tick()
@@ -609,15 +629,16 @@ do
             and not Hears(PlayerCastingBarFrame, "PLAYER_ENTERING_WORLD") and not Hears(OverlayPlayerCastingBarFrame, "UNIT_SPELLCAST_STOP")
             and not Hears(MirrorTimerContainer, "MIRROR_TIMER_START") and Hears(MirrorTimerContainer, "MIRROR_TIMER_STOP"),
             "the game's cast bars and timers hear nothing start: they never show")
-        check(not bar._shown and not bar.on and near(Below(), Units.POWER), "no cast: nothing under your frame")
+        check(not bar._shown and not bar.on and near(Above(), 0) and near(Below(), Units.POWER), "no cast: nothing above your frame")
         Casting("cast-1")
         local ends = W.cast.ends
         check(bar._shown and bar.text._text == "Fireball" and bar.icon._texture == 135812 and bar.timer._text == "2.5"
             and bar.fill._min == W.cast.starts and bar.fill._max == ends and bar.fill._barTexture == Cast.ART.cast
             and bar.fill._reverse == false, "your cast: its icon, name and seconds left, filling in the game's art")
-        check(near(Below(), Units.POWER + Units.ROW) and near(bar._points[1][5], -(Units.HEIGHT + Units.POWER + pixel))
-            and near(bar._points[2][5], -(Units.HEIGHT + Units.POWER + Units.ROW) + pixel),
-            "as part of your frame: under your power, inside the frame's outline")
+        check(near(Above(), Units.ROW) and near(Below(), Units.POWER) and near(bar._points[1][5], Units.ROW - pixel)
+            and near(bar._points[2][5], 0) and near(face.health._points[1][5], -pixel),
+            "as part of your frame: directly above your health, a pixel apart, inside the frame's outline")
+        check(near(face.roof._points[1][5], Units.ROW), "the auras stand on it")
         W.Fire("UNIT_SPELLCAST_FAILED", "player", "cast-2", 116)
         W.Fire("UNIT_SPELLCAST_INTERRUPTED", "player", "cast-2", 116)
         check(bar.cast and not bar.cast.held and bar.text._text == "Fireball", "what else you tried while casting changes nothing")
@@ -628,7 +649,7 @@ do
         W.Fire("UNIT_SPELLCAST_STOP", "player", "cast-1", 133)
         check(bar._shown and bar.cast.held and bar.fill._value == ends and bar.timer._text == "", "done: full, for a moment")
         Over()
-        check(not bar._shown and not bar.on and near(Below(), Units.POWER), "then gone, the outline back")
+        check(not bar._shown and not bar.on and near(Above(), 0) and near(face.roof._points[1][5], 0), "then gone, the outline and the auras back")
         Casting("cast-3")
         W.cast = nil
         UnitNameFromGUID = function() return "Kobold Miner" end
@@ -690,16 +711,16 @@ do
         Casting("cast-6")
         W.Fire("MIRROR_TIMER_START", "EXHAUSTION", 30000, 60000, -1, 0, "Fatigue")
         check(second._shown and second.label._text == "Fatigue" and second._barTexture == ns.UnitTimers.ART.EXHAUSTION
-            and second._barColor[4] == 1 and first._shown and near(Below(), Units.POWER + Units.ROW + Units.POWER),
-            "any other timer under your cast, solid, in the game's art for it; your breath stays over your health")
+            and second._barColor[4] == 1 and first._shown and near(Above(), Units.ROW + Units.POWER)
+            and near(Below(), Units.POWER) and near(second._points[1][5], Units.ROW + Units.POWER - pixel),
+            "any other timer above your cast, solid, in the game's art for it; your breath stays over your health")
         W.Fire("MIRROR_TIMER_START", "FEIGNDEATH", 30000, 60000, -1, 0, "Feign Death")
         check(third._shown and third._barTexture == ns.UnitTimers.ART.FEIGNDEATH
-            and near(Below(), Units.POWER + Units.ROW + 2 * Units.POWER)
-            and near(second._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
-            "two at once, one under the other")
+            and near(Above(), Units.ROW + 2 * Units.POWER) and near(third._points[1][5], Units.ROW + 2 * Units.POWER - pixel),
+            "two at once, one over the other")
         W.Fire("MIRROR_TIMER_STOP", "EXHAUSTION")
-        check(not second._shown and third._shown and near(third._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
-            "one stopped: the other moves up")
+        check(not second._shown and third._shown and near(third._points[1][5], Units.ROW + Units.POWER - pixel),
+            "one stopped: the other moves down")
         W.Fire("MIRROR_TIMER_STOP", "FEIGNDEATH")
         W.Fire("MIRROR_TIMER_STOP", "BREATH")
         check(not first._shown, "your breath over: your health alone")
@@ -731,6 +752,63 @@ do
             "Your frame off: the game's cast bar and timers with the game's frame")
         Core.Set(ns.name, "unitPlayer", true)
         check(not Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START") and not ns.off, "on again, and nothing failed")
+    end
+
+    -- Your target's and focus's casts: the same bar, directly above their health.
+    do
+        local Cast, foe, bar = ns.UnitCast, target.face, target.face.cast
+        local mine = player.face.cast
+        local function Above() return foe.border[1]._points[1][5] end
+        local function Foe(cast)
+            cast.name, cast.icon, cast.starts, cast.ends = "Shadow Bolt", 136197, W.clock * 1000, (W.clock + 3) * 1000
+            cast.id, cast.spell = "foe-1", 686
+            W.casts.target = cast
+        end
+        local _, unit = bar:IsEventRegistered("UNIT_SPELLCAST_START")
+        local _, other = focus.face.cast:IsEventRegistered("UNIT_SPELLCAST_START")
+        check(unit == "target" and other == "focus" and not bar._shown and near(Above(), 0), "each frame hears its own unit's cast")
+        Foe({})
+        W.Fire("UNIT_SPELLCAST_START", "target", "foe-1", 686)
+        check(bar._shown and bar.text._text == "Shadow Bolt" and bar.timer._text == "3.0" and near(Above(), Units.ROW)
+            and bar.lock._alpha == 0 and not mine._shown, "your target's cast above its health, and not on your frame")
+        W.casts.target.locked = true
+        W.Fire("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", "target", "foe-1", 686)
+        check(bar.lock._alpha == 1 and bar.lock._barTexture == Cast.ART.locked and bar.text._text == "Shadow Bolt",
+            "one that cannot be interrupted: grey, in the game's art")
+        W.Wait(1)
+        bar._scripts.OnUpdate(bar, 0)
+        check(bar.lock._value == bar.fill._value and bar.lock._value == W.clock * 1000, "the grey goes along with the fill")
+        W.casts.target.locked = nil
+        W.Fire("UNIT_SPELLCAST_INTERRUPTIBLE", "target", "foe-1", 686)
+        check(bar.lock._alpha == 0, "and gold again when it can be")
+        W.casts.target = nil
+        W.Fire("PLAYER_TARGET_CHANGED")
+        check(not bar._shown and not bar.cast and near(Above(), 0), "another target: the last one's cast gone at once")
+        Foe({})
+        W.Fire("PLAYER_TARGET_CHANGED")
+        check(bar._shown and bar.cast, "and one under way seen at once")
+        W.casts.target = nil
+        W.Fire("UNIT_SPELLCAST_STOP", "target", "foe-1", 686)
+        check(bar._shown and bar.cast.held, "done: it stays a moment")
+        W.Wait(Cast.HOLD)
+        bar._scripts.OnUpdate(bar, 0)
+        Foe({ craft = true })
+        W.Fire("UNIT_SPELLCAST_START", "target", "foe-1", 686)
+        check(not bar._shown, "nobody else's crafting shows, as on the game's bars")
+        Foe({})
+        GameRulesUtil = { ShouldShowTargetCastBar = function() return false end }
+        W.Fire("UNIT_SPELLCAST_START", "target", "foe-1", 686)
+        check(not bar._shown, "where the game's rules take your target's cast bar away, ours too")
+        GameRulesUtil = nil
+        W.Fire("UNIT_SPELLCAST_START", "target", "foe-1", 686)
+        check(bar._shown, "and back without them")
+        Core.Set(ns.name, "unitCast", false)
+        check(not bar._shown and not bar.wanted, "Cast bars off: none here")
+        Core.Set(ns.name, "unitCast", true)
+        check(bar._shown, "on again, with the cast under way")
+        W.casts.target = nil
+        W.Fire("UNIT_SPELLCAST_FAILED", "target", "foe-1", 686)
+        check(not bar._shown and not ns.off, "and nothing failed")
     end
 
     Core.Set(ns.name, "unitSize", 150)
@@ -768,8 +846,8 @@ do
     local mine = player.face.auras
     check(mine.debuffs._groups.auto.filter == "HARMFUL|!CROWD_CONTROL" and mine.buffs._groups.auto.filter == "HELPFUL",
         "on you: any debuffs, any buffs")
-    check(debuffs._points[1][1] == "BOTTOMLEFT" and debuffs._points[1][3] == "TOPLEFT" and buffs._points[1][3] == "TOPRIGHT"
-        and control._points[1][3] == "TOPRIGHT" and control._points[1][1] == "TOPLEFT",
+    check(debuffs._points[1][1] == "BOTTOMLEFT" and debuffs._points[1][2] == target.face.roof and debuffs._points[1][3] == "BOTTOMLEFT"
+        and buffs._points[1][3] == "BOTTOMRIGHT" and control._points[1][3] == "TOPRIGHT" and control._points[1][1] == "TOPLEFT",
         "debuffs above from the left, buffs above from the right, crowd control right of the frame")
     check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
     -- A right click on an icon, out of a fight: the spell on a list.

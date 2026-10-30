@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 786 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Combat: cast bars on every frame, directly above the health bar; your timers above it; your pet's resource (Saneroki, 2026-10-30)
+Saneroki: fatigue and feign death part of the player frame too, above the health bar, so all three of the game's bars
+are gone; the cast bars of all unit frames directly above the health bars; the pet's health and resource bar in place of
+a target's target on the player frame, the game's pet frame hidden. `Bar.Fit` builds the stack up from the health bar
+(`frame.above`, nearest first; the plates reach up by it), `frame.roof` its top: moved in a fight, the aura containers
+stand on it and are never moved themselves. `Cast.lua` by unit (`bar.unit`, `Cast.RULES`, `Cast.Anew` for a new target or
+focus), the grey of a cast that cannot be interrupted as on a nameplate (`bar.lock`), nobody else's crafting; the setting
+*Cast bars* for all three. `frame.rowPower` under your pet's row (`Units.ROW_POWER`, `Bar.RowPower`, its button over both).
+Your focus's first place higher, for your target's cast and auras. Your pet's own cast is left out: its row's secure
+button cannot move in a fight and your power bar stands right above it (board); the game's own pet cast bar shows only
+while it is possessed. The lab's scene shows it all. A `/reload` takes it in.
+
 ### Combat: your breath over your health bar, in the game's bubbles (Saneroki, 2026-10-30)
 Saneroki: the breath bar over the health bar, 50 % transparent so the health shows underneath, in the bubble texture of
 the game's own breath bar, the game's bar hidden. `Timers.lua`: your breath's strip lies on the health bar (`face.breath`,
