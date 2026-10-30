@@ -55,7 +55,7 @@ full):
 - the game's minimap over ours for its live dots (`Hybrid.lua`): ground off, square, rotation ignored, while
   the view follows at one of its steps; its cluster out of sight without clicks; given back exactly;
 - the game's map kept closed and its keys (`Native.lua`); the switches *Show the game's minimap* / *map*,
-  *Classic windows*; *Follow again after*;
+  *Classic windows*; following again (since 2026-10-30 the one tick *Follow me*);
 - `Live.lua`: player, pin, group, quests, flights, vignettes, area POIs, explored, with the message `LIVE`.
 
 Later the same day (Saneroki's asks): zones light up under the mouse and open by a click; the map grows and
@@ -71,7 +71,7 @@ files are made by `dev/tools/map-meta` (roads, buildings, ground cover, places w
 masters), the zones' briefs are `dev/imagegen/maps/zones.toml`; the pilot lists are in
 `dev/imagegen/sets/maps-pilot/`.
 
-The Atlas, a module of its own (Saneroki, 2026-10-19): *Overlay* is gone (default Scrying; a saved Overlay falls
+The Atlas, a module of its own (Saneroki, 2026-10-19): *Overlay* is gone (default Scrying, since 2026-10-30 Atlas; a saved Overlay falls
 back to it). The painted map is the addon `SaneUI_Atlas` (`src/Atlas/`: TOC, `Atlas.lua`, README; load on
 demand). Its art and index are made by `dev/tools/atlas` into `assets/optimized/Atlas/` (`Art/<continent>/<level>/
 <row>_<col>.blp`, `Index.lua`), never into `src/`; `dev/build` builds the addon from both, only once
@@ -318,6 +318,12 @@ own first, `PinView.Act`; a double click within `Canvas.DOUBLE`, the map pin; el
 (`Minimap:PingLocation`, a wider step for the moment where needed); the group's pings are not heard (the game
 blocks an addon's callback for `MINIMAP_PING`), only the game's minimap draws them. The quest log's click moves the map (`Canvas.LookAt`), its `OnDoubleClick` pins. *Follow me*
 (`followMap`): the box on the bar, `Canvas.Following`, `Canvas.Center`, the tracker's `Again`.
+
+The first view and Follow me a tick (2026-10-30; the plan, *The first view*, *Follow me, one tick*): `ns.FIRST`,
+`ns.FirstView` and `ns.Several` in `Navigation.lua` (`Offer` sets the option's default to the view that can be drawn
+here; `TopBar.Arrange` and the option's `hidden` ask `ns.Several`). `followAgain` is gone, `followMap` is on at first
+and speaks for both views: `Again(now, u, walked)` in `Canvas.lua`, the full map's wait `Canvas.AGAIN` from
+`lastInput` (`Canvas.Show` and `Canvas.Fit` set it too). 754 checks.
 
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468

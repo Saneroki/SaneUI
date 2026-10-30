@@ -123,8 +123,8 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Atlas, a module of its own; Overlay gone (Saneroki, 2026-10-19):** the painted view's art is the addon
   `SaneUI_Atlas` (`src/Atlas/`), loaded on demand. Navigation finds it at login without loading it: installed and
   switched on, the map offers **Parchment, Scrying, Atlas**; not found, **Parchment and Scrying**. The view
-  *Overlay* is gone (its button, its choice, its code); the default view is Scrying, and a saved view that is not
-  offered (Overlay, or Atlas without its module) falls back to it. The code's keys: `sketches`, `terrain`, `atlas`.
+  *Overlay* is gone (its button, its choice, its code); the default view is Scrying (since 2026-10-30 Atlas, *The
+  first view*), and a saved view that is not offered (Overlay, or Atlas without its module) falls back to it. The code's keys: `sketches`, `terrain`, `atlas`.
 - **Life on the sea (Saneroki, 2026-10-19):** in the painted view the Maelstrom turns between the continents,
   and ships, giant turtles, sea dragons and squids roam the water, each a short looped animation, seen on the
   world map.
@@ -329,10 +329,22 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
   and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
-- **Follow me on the full map (Saneroki, 2026-10-23; built):** a checkbox left of the pin filter on the full map's
-  bar, off at first. Ticked, the full map pans by itself so the player is always in its middle: it opens on the
-  player, and dragged away (or moved to a quest) it comes back once the player walks on and the mouse has left it
-  alone for *Follow again after*. Off, the full map works as before: it stays where it is left.
+- **Follow me on the full map (Saneroki, 2026-10-23; built, 2026-10-30 below):** a checkbox left of the pin filter on
+  the full map's bar. Ticked, the full map pans by itself so the player is always in its middle: it opens on the
+  player. Off, it stays where it is left.
+- **Follow me, one tick (Saneroki, 2026-10-30; built):** "Follow again should not be a number. If on the fullscreen
+  the follow character is ticked on (which is the default) the map should automatically snap to having the player
+  center on the minimap as soon as I walk (wasd) if it is off the minimap will not center. The Fullscreen can have the
+  10s delay if the follow character is ticked on." *Follow again after* is gone; *Follow me* is on at first and speaks
+  for both views. Ticked, a minimap moved off the player snaps back the moment the player walks; not ticked, it stays
+  there until the middle button (one still on the player keeps following). The full map, dragged away, moved to a
+  quest or to a map chosen, comes back as the player walks once the mouse has left it alone for 10 seconds
+  (`Canvas.AGAIN`): a map read while standing is not taken away. In an instance the small view comes back ticked or
+  not: the game's minimap is the map there.
+- **The first view (Saneroki, 2026-10-30; built):** "The default map view should be atlas if available otherwise
+  scrying and in retail, since there is only one mode it is the default one and no "mode button" is showin on the
+  fullscreen." Atlas where it can be drawn, else Scrying, else Parchment (`ns.FirstView`). One view alone: no buttons
+  on the bar and no setting (`ns.Several`).
 - **Pings as on the game's minimap (Saneroki, 2026-10-23; built):** a click on our map pings the place to the party
   and raid through the game's own ping (`Minimap:PingLocation`, the one ping the game has: Forever's client loads no
   ping wheel), so members see it on their minimaps as if the game's minimap was clicked. The game pings only inside
@@ -1894,7 +1906,7 @@ Every set is Core's and read with Core at the login (since 2026-10-21); the conc
 
 - **Switches** (`Core.Options`, the page *Navigation*): *Minimap* and *Map* (the game's own shown, off),
   the view (Blizzard, Terrain, Overlay), the overlay's opacity (50 %), one switch per pin kind (the
-  filter), the small view's pin distance, follow again after (seconds), quests taken and handed in by
+  filter), the small view's pin distance, *Follow me*, quests taken and handed in by
   themselves (off), and the section *Expand window* (`Core.Edge.Options`).
 - **Kept for the account** (`Core.Store`): the window's place (Core's).
 - **Kept per character** (`Core.Character`): each view's last camera (map, centre, scale), the small view's

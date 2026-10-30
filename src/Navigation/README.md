@@ -46,11 +46,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Pings of your party and raid** (and your own) show where the game's own minimap lies over the map (around you:
   the small map while it follows you at one of the game's zoom steps, the square around you on the full map), drawn
   by the game, with its sound. Farther out the map shows none: the game does not let an addon hear its pings.
-- **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
-  has been off it for a while (*Follow again after*). The full map, which the mouse never leaves, stays where you
-  leave it, unless the box **Follow me** on its bar is ticked (left of *Pins*, off at first; also the setting
-  *Follow me*): then it opens on you and keeps you in its middle as you move; dragged away or moved to a quest, it
-  comes back to you as soon as you walk on (standing still, you can look around).
+- **Following you:** both views follow you at first. The box **Follow me** on the full map's bar (left of *Pins*, on
+  at first; also the setting *Follow me*) says whether the map comes back to you. Ticked, the minimap you dragged
+  away snaps back the moment you walk; the full map opens on you and keeps you in its middle, and dragged away, moved
+  to a quest or to a map chosen on its bar, it comes back as you walk once you left it alone for 10 seconds (standing
+  still, you can look around). Not ticked, the full map stays where you leave it, and the minimap stays where you
+  moved it until the middle mouse button brings it back; one still on you keeps following. In an instance the small
+  window shows the game's own minimap, ticked or not.
 - **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
   steps. Out of it, our map is back.
@@ -252,10 +254,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   timetable; the tram's from the game's own. A `/reload` in the air finds the flight again. *Your trip on screen*
   in the settings switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment*,
-  *Blended* or *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both
-  views and at every zoom (in the code `sketches`, `blend`, `terrain`, `atlas`). *Blended* is Parchment out to a
-  zone's level and Scrying close in, the maps fading out over the land in between. A view not offered (the module
-  switched off or failed, or *Overlay*, which is gone) falls back to Scrying.
+  *Blended*, *Scrying*, and *Atlas* while that module is switched on in the addon list; for both views and at every
+  zoom (in the code `sketches`, `blend`, `terrain`, `atlas`). The map starts as *Atlas* where it can be drawn, else as
+  *Scrying*. *Blended* is Parchment out to a zone's level and Scrying close in, the maps fading out over the land in
+  between. A view not offered (the module switched off or failed, or *Overlay*, which is gone) falls back to Scrying.
+  In Retail, until its data comes, Parchment is the one view: the map simply is that, with no view buttons on the bar
+  and no setting.
 - **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
   kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
   the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
@@ -473,7 +477,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
   Z, the isle itself on the isle), the dungeons and the floors of the one shown, the box *Follow me* (the game's
   `UICheckButtonTemplate`, its words between it and the pin filter; the setting `followMap`) and the pin filter
-  (checkboxes); it says what the map shows after each layout. The view buttons are `TopBar.VIEW_WIDTH` wide and the
+  (checkboxes); it says what the map shows after each layout. With one view alone (`ns.Several`) it has no view
+  buttons, the map selector right of the quest log's. The view buttons are `TopBar.VIEW_WIDTH` wide and the
   pin filter `TopBar.PINS_WIDTH`, so the whole bar fits a screen 1366 units wide (1080p at the game's scale).
 - **Clicks and pings** (`Canvas.lua`, `Ping.lua`, no frames of its own): every click on the map and on a pin comes to
   `Canvas` (a pin's press and release are the map's, `Canvas.Release(button, pin)`): Ctrl puts the map pin at once;
@@ -543,10 +548,16 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   `TimeManager_Toggle`, a plain show, the satchel closing out of its way; while `TimeManager_IsAlarmFiring`,
   `TimeManager_TurnOffAlarm`); *Stopwatch* (`Stopwatch_Toggle`). The clock's and the stopwatch's cells only once
   the game has loaded its clock (never loaded by our code: that would taint it).
-- **Following on the full map:** the tracker follows again where `Again` says: the small view once the mouse has
-  been off it for *Follow again after*; the full map only with *Follow me* ticked, as soon as the player moved since
-  the last look and no button is held (a quest moved to counts as a drag). Ticked, `Canvas.Center` puts the full camera on the player whenever the window fills the screen (but at
-  a map the game was asked for, `Window.OpenTo`) and when the box is ticked; unticked, it no longer follows.
+- **Following again:** the tracker follows again where `Again` says, never with a mouse button held. Where the game
+  tells no place of the player (an instance) the small view does at once, ticked or not, so the game's minimap is the
+  map there. Else only with *Follow me* ticked: the small view as soon as the player moved since the last look; the
+  full map also only `Canvas.AGAIN` (10) seconds after the mouse last did something to it (a quest moved to, a map
+  chosen on the bar or by the game count as that: `lastInput`). Ticked, `Canvas.Center` puts the full camera on the
+  player whenever the window fills the screen (but at a map the game was asked for, `Window.OpenTo`) and when the box
+  is ticked; unticked, the full map no longer follows, and a small view that follows goes on following.
+- **The first view:** the option's first default is `ns.FIRST` (Atlas), so a first load starts there; `Offer` then sets
+  the default to `ns.FirstView()` (Atlas where offered, else `ns.Fallback()`), so a reset, a profile read after login
+  and a saved view not offered come to a view that can be drawn. `ns.Several` tells whether there is a choice at all.
 - **Walk** (`Walk.lua`, no frames): Core's set *Walking* (read with Core at the login, as all its sets), made by
   `dev/tools/walk-data` from the game's terrain, buildings, doodads (fences, rocks, trees, piers, the game's invisible
   walls) and water: per terrain tile a block (base64, deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces
@@ -842,6 +853,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-30, Atlas first, Follow me a tick:** as Saneroki asked, the map starts as Atlas where it can be drawn, else
+  as Scrying, and in Retail its one view stands without buttons or a setting. *Follow again after* is gone: *Follow
+  me*, on at first, says whether the map comes back; ticked, the minimap snaps back the moment you walk, the full map
+  as you walk 10 seconds after you last touched it.
 - **2026-10-28, the finders every 15 yards:** as Saneroki asked, the finders switch every 15 yards at first, set by
   the slider *Switch finders every* (0 to 50 yards) on Navigation's options page, under *Herbs and ore*.
 - **2026-10-28, the finders by yards, Find Fish, and back after death:** as Saneroki asked, the finders take turns

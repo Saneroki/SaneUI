@@ -62,11 +62,11 @@ local _, ns = ...
 --
 --  The tracker asks where the player is: every frame while the view follows
 --  (three questions to the game and one SetPoint; the zone in the middle a few
---  times a second), else a few times a second; and after some time without the
---  mouse on the map (the setting Follow again after) the view follows again. The
---  full map, which is always under the mouse, follows again only while its box
---  Follow me is ticked (the setting followMap, TopBar.lua): as soon as the player
---  moves on, no mouse button held.
+--  times a second), else a few times a second. A view moved off the player follows
+--  again only while the box Follow me is ticked (the setting followMap, TopBar.lua)
+--  and no mouse button is held: the small view the moment the player walks; the full
+--  map, which is always under the mouse and there to be looked around, as the player
+--  walks once the mouse has left it alone for Canvas.AGAIN.
 --  Nothing else runs while nothing moves. Where the game tells no place of the
 --  player (an instance) the small view draws nothing of ours but the sea: the
 --  game's minimap, with its own ground, is the map there (Hybrid.lua).
@@ -86,6 +86,7 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
+Canvas.AGAIN = 10    -- seconds the mouse leaves the full map alone before it follows again (Again; the tip of Follow me)
 Canvas.DOUBLE = 0.3  -- a second click so many seconds after the first, near where it was, is a double click
 Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a double click
 Canvas.HOME = 400    -- yards across the view's shorter side a middle click comes back at where the game's minimap
@@ -421,13 +422,17 @@ end
 -------------------------------------------------------------------------------
 --  The player
 -------------------------------------------------------------------------------
--- Whether a view that does not follow the player follows again (walked: the player moved since the last look). The
--- full map with its box Follow me ticked: as soon as the player moves on, no mouse button held on it. Else once the
--- mouse has been off the map for the setting Follow again after (0: never).
-local function Again(now, walked)
-    if camera == ns.Window.full and ns.options.followMap then return walked and not pressed end
-    local after = ns.options.followAgain
-    return after > 0 and now - lastInput > after and not frame:IsMouseOver()
+-- Whether a view that does not follow the player follows again, never with a mouse button held on it (u: the
+-- player's place, nil where the game tells none; walked: it changed since the last look). Where the game tells none
+-- the small view does at once, ticked or not: the game's minimap is the map there. Else only with the box Follow me
+-- ticked: the small view as soon as the player walks, the full map as the player walks once the mouse has left it
+-- alone for Canvas.AGAIN.
+local function Again(now, u, walked)
+    if pressed then return false end
+    local small = camera == ns.Window.small
+    if small and u == nil then return true end
+    if not (ns.options.followMap and u and walked) then return false end
+    return small or now - lastInput > Canvas.AGAIN
 end
 
 local function Track()
@@ -455,7 +460,7 @@ local function Track()
             camera:Look(u, v)
             Canvas.Moved()
         end
-    elseif not camera.follow and Again(now, u ~= nil and walked) then
+    elseif not camera.follow and Again(now, u, walked) then
         -- The next look puts the player in the middle; in an instance (no place) the game's minimap comes back.
         camera.follow = true
         nextLook = 0
@@ -698,6 +703,7 @@ end
 function Canvas.Show(map)
     if ns.Dungeons.Show(map) then return true end
     if not laid or not camera:Fit(map) then return false end
+    lastInput = GetTime()
     Canvas.Layout()
     return true
 end
@@ -864,6 +870,7 @@ end
 -- A camera looks at a map (the game's map was asked for at it): the map whole in the view.
 function Canvas.Fit(viewCamera, map, width, height)
     viewCamera.width, viewCamera.height = width, height
+    lastInput = GetTime()
     if not viewCamera.map then
         local home = Coords.PlaneOf(map) or Coords.Continents()[1]
         if not home or not viewCamera:Show(home) then return false end

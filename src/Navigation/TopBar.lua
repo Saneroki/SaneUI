@@ -7,14 +7,14 @@ local _, ns = ...
 --      Quest Log         the quest log's window over the map in or out (kept; QuestLog.lua)
 --      the views         Parchment; Blended and Scrying while Core's terrain is there (not in Retail, until its
 --                        data comes); Atlas while its module is: how the map is drawn (the setting Map view;
---                        Navigation.lua, Offer)
+--                        Navigation.lua, Offer); no buttons where only one is offered (ns.Several)
 --      the map selector  the world (in Retail first the Cosmic map over it), a continent or a plane of its own
 --                        (Zephras Isle), then a zone of it (A to Z): the map shows it whole; each says what the
 --                        map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
---      Follow me         a checkbox left of the pin filter: the full map keeps you in its middle as you move
---                        (the setting followMap; Canvas.lua), off at first
+--      Follow me         a checkbox left of the pin filter: the map keeps you in its middle as you move and
+--                        comes back to you, small and full (the setting followMap; Canvas.lua), on at first
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
 --                        travel, towns, rares and treasures, gathering): a checkbox per kind of pin with its
 --                        icon large before its words (the setting Pins on the map), and at its right a slider
@@ -61,13 +61,13 @@ local function Name(map)
     return type(info) == "table" and info.name or ("#" .. tostring(map))
 end
 
--- The views' buttons, as the settings say: the view drawn lit, those offered in a row.
+-- The views' buttons, as the settings say: the view drawn lit, those offered in a row, none where only one is.
 function TopBar.Arrange()
     if not buttons then return end
     local previous = logButton
-    local drawn = ns.View()
+    local drawn, several = ns.View(), ns.Several()
     for _, key in ipairs(ns.VIEWS) do
-        local button, offered = buttons[key], ns.Offered(key)
+        local button, offered = buttons[key], several and ns.Offered(key)
         button:SetShown(offered)
         if offered then
             button:ClearAllPoints()

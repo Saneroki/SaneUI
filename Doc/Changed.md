@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 727 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: Atlas the first view, one view no buttons; Follow me a tick, the minimap back the moment you walk (Saneroki, 2026-10-30)
+Saneroki: "The default map view should be atlas if available otherwise scrying and in retail, since there is only one
+mode it is the default one and no "mode button" is showin on the fullscreen." "Follow again should not be a number. If
+on the fullscreen the follow character is ticked on (which is the default) the map should automatically snap to having
+the player center on the minimap as soon as I walk (wasd) if it is off the minimap will not center. The Fullscreen can
+have the 10s delay if the follow character is ticked on."
+- **`Navigation.lua`:** `ns.FIRST` "atlas", the option's first default; `ns.FirstView` (Atlas where offered, else the
+  fallback), which `Offer` makes the default, so a reset, a profile read after login and a saved view not offered come
+  to one that can be drawn. `ns.Several`: more than one view offered; with one the setting *Map view* is hidden.
+  `followAgain` and its words are gone, `followMap` on at first, its tip for both views.
+- **`TopBar.lua`:** `Arrange` shows no view buttons where only one view is offered, the map selector then right of the
+  quest log's button.
+- **`Canvas.lua`:** `Again(now, u, walked)`, never with a button held: with *Follow me* ticked the small view as soon as
+  the player walks, the mouse on it or not; the full map as the player walks, `Canvas.AGAIN` (10) seconds after
+  `lastInput`. Not ticked, a view moved away stays. Where the game tells no place (an instance) the small view comes
+  back at once, ticked or not: the game's minimap is the map there. `Canvas.Show` and `Canvas.Fit` set `lastInput`, so a
+  map chosen on the bar or by the game has the same wait.
+- `src/Navigation/README.md`, `Doc/ideas/Navigation.md`, `Doc/agent/navigation.md` updated.
+- Tests: `dev/tests/navigation.lua` 754 checks and 27 in Retail; the overlay's countdown check allows a second, as the
+  trip's check before it does.
 
 ### Loot: bare Link and Close, no line under a name, coins and quest items at once, nothing lost in the feed (Saneroki, 2026-10-30)
 Saneroki: "I don't think the Link and close button should have borders or backgrounds. Just have the off white text

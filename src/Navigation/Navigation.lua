@@ -69,10 +69,7 @@ ns.TEXT = {
     nodeYards = "Switch finders every",
     nodeYardsTip = "How far you move before the next finder comes on. With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish), they take turns, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: they do not switch.",
     followMap = "Follow me",
-    followMapTip = "The full map keeps you in its middle as you move. Dragged away, or moved to a quest, it comes back to you as soon as you walk on. Off: it stays where you leave it.",
-    followAgain = "Follow again after",
-    followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long (the full map with Follow me ticked: as soon as you walk on). 0: only when you zoom it with the mouse wheel close in.",
-    seconds = "seconds",
+    followMapTip = "The map keeps you in its middle as you move. Dragged away, the minimap snaps back to you the moment you walk; the full map opens on you and comes back as you walk once you left it alone for 10 seconds (also after a quest or a map chosen). Off: the full map stays where you leave it, and so does the minimap once you moved it, until the middle mouse button brings it back to you.",
     yards = "yards",
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
@@ -197,10 +194,10 @@ end
 
 -- The ways to draw the map, in the order of their buttons (shown as Parchment, Blended, Scrying, Atlas). Atlas only
 -- while the module Atlas is there (Painted.lua); Scrying and Blended only while Core's terrain is (Terrain.Possible:
--- not in Retail, until its data comes). A view not offered falls back to Scrying, the default, and where that is not
--- offered either to Parchment, the game's own map art (ns.Fallback).
+-- not in Retail, until its data comes). The map starts as Atlas where that can be drawn (ns.FirstView); a view not
+-- offered falls back to Scrying, and where that is not offered either to Parchment, the game's own map art (ns.Fallback).
 ns.VIEWS = { "sketches", "blend", "terrain", "atlas" }
-ns.FALLBACK = "terrain"
+ns.FIRST, ns.FALLBACK = "atlas", "terrain"
 local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "blend", ns.TEXT.views.blend },
                   { "terrain", ns.TEXT.views.terrain }, { "atlas", ns.TEXT.views.atlas } }
 
@@ -217,17 +214,16 @@ local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, un
 
 local OPTIONS = {
     -- Every view a choice while the settings are first read, so a saved Atlas is kept; at login only those
-    -- offered (Offer).
-    { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
-      choices = { CHOICES[1], CHOICES[2], CHOICES[3], CHOICES[4] } },
+    -- offered, and the view the map starts in here the default (Offer). One view alone: no setting (ns.Several).
+    { key = "view", default = ns.FIRST, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
+      choices = { CHOICES[1], CHOICES[2], CHOICES[3], CHOICES[4] }, hidden = function() return not ns.Several() end },
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
     { key = "pinSizes", default = {} },
-    -- The full map keeps the player in its middle; also the box beside the pin filter on its bar (TopBar.lua).
-    { key = "followMap", default = false, text = ns.TEXT.followMap, tip = ns.TEXT.followMapTip },
-    { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
-      tip = ns.TEXT.followAgainTip },
+    -- The views keep the player in their middle and come back to the player (Canvas.lua, Again); also the box beside
+    -- the pin filter on the full map's bar (TopBar.lua).
+    { key = "followMap", default = true, text = ns.TEXT.followMap, tip = ns.TEXT.followMapTip },
     { key = "tripView", default = true, text = ns.TEXT.tripView, tip = ns.TEXT.tripViewTip, hidden = NoTravel },
     { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip, hidden = NoTravel },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
@@ -314,6 +310,12 @@ function ns.Fallback()
     return "sketches"
 end
 
+-- The view the map starts in here: Atlas where it can be drawn, else the fallback.
+function ns.FirstView()
+    if ns.Offered(ns.FIRST) then return ns.FIRST end
+    return ns.Fallback()
+end
+
 -- The view the map is drawn in: the one chosen, if it is offered, else the fallback.
 function ns.View()
     local chosen = ns.options.view
@@ -321,22 +323,33 @@ function ns.View()
     return ns.Fallback()
 end
 
+-- Whether there is a choice of views: one alone (Retail's Parchment, until its data comes) simply is the map, with
+-- no buttons on the full map's bar and no setting.
+function ns.Several()
+    local count = 0
+    for _, key in ipairs(ns.VIEWS) do
+        if ns.Offered(key) then count = count + 1 end
+    end
+    return count > 1
+end
+
 -- Whether a switch is on the options page here (its hidden says not).
 local function Shows(option)
     return not (option.hidden and option.hidden())
 end
 
--- The views offered, in the settings' dropdown and on the full map's buttons; a saved view not offered (the
--- module Atlas switched off, or failed; Scrying without Core's terrain) becomes the fallback. The kinds of pin
--- that can show anything here in the setting's list (TopBar's filter asks ns.KindOffered itself), and the section
--- Herbs and ore only while one of its switches is there. At login, and when the Atlas failed.
+-- The views offered, in the settings' dropdown and on the full map's buttons; the default the view the map starts
+-- in here, and a saved view not offered (the module Atlas switched off, or failed; Scrying without Core's terrain)
+-- becomes it. The kinds of pin that can show anything here in the setting's list (TopBar's filter asks ns.KindOffered
+-- itself), and the section Herbs and ore only while one of its switches is there. At login, and when the Atlas failed.
 function ns.Offer()
-    local choices = OPTIONS[1].choices
-    wipe(choices)
+    local option = OPTIONS[1]
+    wipe(option.choices)
     for _, choice in ipairs(CHOICES) do
-        if ns.Offered(choice[1]) then choices[#choices + 1] = choice end
+        if ns.Offered(choice[1]) then option.choices[#option.choices + 1] = choice end
     end
-    if not ns.Offered(ns.options.view) then Core.Set(ns.name, "view", ns.Fallback()) end
+    option.default = ns.FirstView()
+    if not ns.Offered(ns.options.view) then Core.Set(ns.name, "view", option.default) end
     wipe(PIN_CHOICES)
     for _, kind in ipairs(ns.KINDS) do
         if ns.KindOffered(kind) then PIN_CHOICES[#PIN_CHOICES + 1] = { kind[1], ns.KindLabel(kind) } end

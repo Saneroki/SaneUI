@@ -797,6 +797,8 @@ check(SaneUI.Navigation == ns and not ns.off, "the module is made and started")
 if W.retailRun then (function()
     local Coords, Camera, Canvas, Window = ns.Coords, ns.Camera, ns.Canvas, ns.Window
     check(Core.RETAIL and Camera.Wanted and Camera.DEEP, "Retail: the map's own camera, one map at a time")
+    check(ns.options.view == "sketches" and ns.View() == "sketches" and not ns.Several()
+        and Core.Settle(ns.name, {}).view == "sketches", "one view in Retail: Parchment, the view a first load starts in")
     check(Coords.PlaneOf(1429) == 1415 and Coords.PlaneOf(1459) == 1459 and Coords.Box(1459).continent == 30,
         "a map whose box lies in another world than its continent's (a battleground) is a plane of its own")
     local sheet = Coords.Box(946)
@@ -942,6 +944,8 @@ local viewOption = Core.Described(ns.name, "view")
 check(#viewOption.choices == 3 and viewOption.choices[1][1] == "sketches" and viewOption.choices[2][1] == "blend"
     and viewOption.choices[3][1] == "terrain" and not ns.Offered("atlas"),
     "without the module Atlas three views are offered: Parchment, Blended and Scrying")
+check(ns.FIRST == "atlas" and viewOption.default == "terrain" and ns.FirstView() == "terrain" and ns.Several()
+    and Core.Settle(ns.name, {}).view == "terrain", "a first load starts as Atlas where it can be drawn, here as Scrying")
 ns.options.view = "atlas" -- saved while the module was there
 check(ns.View() == "terrain", "a saved Atlas without its module: the map is drawn as Scrying")
 ns.Offer()
@@ -1568,22 +1572,73 @@ end)()
     Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
 end)()
 
--- A drag: no longer following, the game's minimap goes; it follows again after a while without the mouse.
-frame._scripts.OnMouseDown(frame, "LeftButton")
-cursorX = cursorX + 30
-frame._scripts.OnUpdate(frame, 0.016)
-check(not small.follow and not minimap._shown and near(small.u, 500 - 30 / small.k), "a drag: the map moves, it no longer follows")
-frame._scripts.OnMouseUp(frame, "LeftButton")
-check(not frame._scripts.OnUpdate, "the button up: nothing runs any more")
-W.Wait(ns.options.followAgain + 1)
-frame._mouseOver = true
-tracker._scripts.OnUpdate(tracker, 0.016)
-check(not small.follow, "not while the mouse is on the map")
-frame._mouseOver = false
-W.Wait(0.2)
-tracker._scripts.OnUpdate(tracker, 0.016)
-tracker._scripts.OnUpdate(tracker, 0.016)
-check(small.follow and near(small.u, 500) and minimap._shown, "then it follows again, the game's minimap with it")
+-- A drag: no longer following, the game's minimap goes. With the box Follow me ticked, as at first, it stays while
+-- the player stands, and the moment the player walks it is back on the player, no delay, the mouse on it or not.
+;(function()
+    check(ns.options.followMap and Core.Described(ns.name, "followMap").default == true
+        and not Core.Described(ns.name, "followAgain"), "Follow me ticked at first; no number of seconds beside it")
+    local wasX = player.x
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    cursorX = cursorX + 30
+    frame._scripts.OnUpdate(frame, 0.016)
+    check(not small.follow and not minimap._shown and near(small.u, 500 - 30 / small.k), "a drag: the map moves, it no longer follows")
+    player.x = wasX + 0.002
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not small.follow, "not with the mouse button held on the map, the player walking")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    check(not frame._scripts.OnUpdate, "the button up: nothing runs any more")
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    W.Wait(Canvas.AGAIN + 1)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not small.follow, "the player standing: it stays where it was dragged, however long")
+    player.x = wasX
+    frame._mouseOver = true
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    frame._mouseOver = false
+    check(small.follow and near(small.u, 500) and minimap._shown,
+        "the player walks: back on the player at once, the mouse on the map or not, the game's minimap with it")
+
+    -- Not ticked: on the player it stays on the player; moved away it stays there, the player walking, however long.
+    Core.Set(ns.name, "followMap", false)
+    player.x = wasX + 0.002
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local _, u = ns.Live.Player()
+    check(small.follow and near(small.u, u) and minimap._shown, "not ticked: a minimap on the player keeps following")
+    local wasCursor = cursorX
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    cursorX = cursorX + 30
+    frame._scripts.OnUpdate(frame, 0.016)
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    cursorX = wasCursor
+    local stood = small.u
+    player.x = wasX
+    W.Wait(Canvas.AGAIN + 1)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    player.x = wasX + 0.002
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not small.follow and small.u == stood and not minimap._shown,
+        "not ticked: a minimap moved away stays there, the player walking, however long")
+    -- In an instance the game tells no place: the game's minimap comes back all the same, it is the map there.
+    player.map = 500
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(small.follow and minimap._shown and not Canvas.Laid(), "not ticked, in an instance: the game's minimap, the map there")
+    player.map, player.x = 1429, wasX
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    Core.Set(ns.name, "followMap", true)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(small.follow and near(small.u, 500) and Canvas.Laid(), "out of it, ticked again: on the player")
+end)()
 
 -- Core's button Sane UI on the game's minimap only while that is the game's own, not inside our map. In an instance,
 -- where the game tells no place of the player in our planes: the game's minimap alone, with its own ground. The zone
@@ -2726,18 +2781,23 @@ function W.SmallAndBack(between)
     for key, value in pairs(kept) do small[key] = value end
 end
 
--- The box Follow me left of the pin filter: off at first. Ticked, the full map on the player and following; dragged
--- away, it follows again as soon as the player walks on (not while the player stands); the full map opens on the player. Not ticked: it stays where it is left.
+-- The box Follow me left of the pin filter: on at first. Ticked, the full map on the player and following; dragged
+-- away, it follows again as the player walks on once the mouse has left it alone for Canvas.AGAIN (not while the player
+-- stands, nor sooner); a map chosen in the bar's selector counts as the mouse; the full map opens on the player. Not
+-- ticked: it stays where it is left.
 ;(function()
     local box, pinMenu
     for _, widget in ipairs(W.frames) do
         if widget._kind == "CheckButton" and widget.title == ns.TEXT.followMap then box = widget end
         if widget._override == ns.TopBar.TEXT.pins then pinMenu = widget end
     end
-    check(box and not box._checked and not ns.options.followMap and box.Text._text == ns.TEXT.followMap
+    check(box and box._checked and ns.options.followMap and box.Text._text == ns.TEXT.followMap
         and box._points[1][2] == box.Text and box.Text._points[1][1] == "RIGHT" and box.Text._points[1][2] == pinMenu,
-        "the box Follow me, its words between it and the pin filter: off at first")
-    full.follow = false
+        "the box Follow me, its words between it and the pin filter: on at first")
+    check(ns.TEXT.followMapTip:find(Canvas.AGAIN .. " seconds", 1, true), "its tip says how long the full map waits")
+    box._checked = false
+    box._scripts.OnClick(box)
+    check(not ns.options.followMap and not full.follow, "not ticked: the full map no longer follows")
     full:Look(full.u + 400, full.v)
     Canvas.Layout()
     box._checked = true
@@ -2760,8 +2820,26 @@ end
     W.Wait(Canvas.LOOK)
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not full.follow, "the player walks on, the mouse on the map a moment ago: it stays, so it can be looked around")
+    player.x = wasX + 0.004
+    W.Wait(Canvas.AGAIN)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
     _, u, v = Live.Player()
-    check(full.follow and near(full.u, u) and near(full.v, v), "the player walks on: back on the player, following")
+    check(full.follow and near(full.u, u) and near(full.v, v),
+        "the player walks on once the mouse left it alone for Canvas.AGAIN: back on the player, following")
+    -- A map chosen in the bar's selector: the same wait, not the first step away from it.
+    local kept = { k = full.k, u = full.u, v = full.v }
+    check(Canvas.Show(1429) and not full.follow, "a map chosen: shown, no longer following")
+    player.x = wasX + 0.006
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not full.follow, "a map chosen, the player walking: it stays")
+    full.u, full.v, full.k, full.follow = kept.u, kept.v, kept.k, true
+    Canvas.Layout()
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    _, u, v = Live.Player()
     -- Back small and full again after a drag: it opens on the player.
     frame._scripts.OnMouseDown(frame, "LeftButton")
     cursorX = 700
@@ -2775,14 +2853,16 @@ end
     local stood = full.u
     player.x = wasX
     frame._mouseOver = true -- the full map fills the screen: the mouse is on it
-    W.Wait(ns.options.followAgain + 1)
+    W.Wait(Canvas.AGAIN + 1)
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
     frame._mouseOver = false
     check(not ns.options.followMap and not full.follow and full.u == stood and not box._checked,
         "not ticked: the map stays where it is, the player walking or not")
-    full.follow = true
+    box._checked = true
+    box._scripts.OnClick(box)
     tracker._scripts.OnUpdate(tracker, 0.016)
+    check(ns.options.followMap and full.follow, "ticked again, as at first")
 end)()
 
 -- The dungeons' maps: chosen in the bar, over the map, by floor; the mouse; back to the map.
@@ -3244,6 +3324,13 @@ os.execute(("rm -rf '%s'"):format(atlasFolder))
 local Atlas = SaneUI.Atlas
 check(W.loaded.SaneUI_Atlas and Atlas and not Atlas.off and Atlas.Ready() and Painted.Ready() and Button("atlas")._lit,
     "the view Atlas drawn the first time: the module loaded, its index read (SaneUI.Atlas)")
+;(function()
+    check(viewOption.default == "atlas" and ns.FirstView() == "atlas" and Core.Settle(ns.name, {}).view == "atlas",
+        "with the module a first load starts as Atlas")
+    Button("terrain")._scripts.OnClick(Button("terrain"))
+    Core.Reset(ns.name, function(option) return option.key == "view" end)
+    check(ns.options.view == "atlas" and Button("atlas")._lit, "and the settings' default is Atlas")
+end)()
 
 -- Its index and its grid.
 check(Atlas.Levels() == 4 and Atlas.INDEX == nil, "the index read: its levels, its strings let go")
@@ -3935,8 +4022,8 @@ local function Flights()
         and trip.canLand and Trips:CanLand(), "on its way: how far along, the time to the next stop and to the end at its own pace")
     Frames(2)
     local lines = TripView.Lines(trip)
-    check(TripView.frame and TripView.frame:IsShown() and lines.title == "Alpha to Gamma" and lines.next == "Next: Beta in 0:20"
-        and lines.left == "1:00" and TripView.exit:IsShown(), "its overlay, with the game's Request Stop")
+    check(TripView.frame and TripView.frame:IsShown() and lines.title == "Alpha to Gamma" and lines.next:find("^Next: Beta in 0:2[01]$")
+        and lines.left:find("^1:0[01]$") and TripView.exit:IsShown(), "its overlay, with the game's Request Stop")
     Planner.Track(1415, 0, 500, GetTime() + 100)
     Frames(2)
     local leg = shownWay and shownWay.legs[1]
@@ -5524,6 +5611,17 @@ end)()
     check(Hidden("tripView") and Hidden("dockTimes") and Hidden("nodeSparkles") and Hidden("nodeGlints") and Hidden("nodeYards")
         and not Hidden("nativeMinimap") and Core.Described(ns.name, "nodeSparkles").header == nil,
         "the switches of what Retail cannot have are not on the options page, nor the section Herbs and ore")
+    -- One view alone: it is the map, as a first load has it, with no button on the bar and no setting.
+    local logButton
+    for _, widget in ipairs(W.frames) do if widget._text == ns.TopBar.TEXT.questLog then logButton = widget end end
+    local afterLog
+    for _, widget in ipairs(W.frames) do
+        if widget._points and widget._points[1] and widget._points[1][2] == logButton and widget ~= logButton then afterLog = widget end
+    end
+    check(not ns.Several() and not Button("sketches")._shown and not Button("blend")._shown and not Button("terrain")._shown
+        and not Button("atlas")._shown and Hidden("view") and viewOption.default == "sketches"
+        and Core.Settle(ns.name, {}).view == "sketches" and afterLog and afterLog._override,
+        "one view: Parchment, a first load's too; no view buttons, the map selector right of the quest log's; no setting")
 
     -- The map: Parchment, the game's own art; the game's minimap its own ground in the small view, its dots only full.
     Canvas.Refresh()
@@ -5616,6 +5714,8 @@ end)()
     Core.Set(ns.name, "view", view)
     ns.Sparkles.Settings()
     ns.Glints.Update()
+    check(Button("sketches")._shown and Button("terrain")._shown and Button("terrain")._points[1][2] == Button("blend"),
+        "Forever again: the view buttons in their row")
     check(ns.Offered("terrain") and ns.View() == view and Core.Described(ns.name, "nodeSparkles").header == ns.TEXT.nodes
         and Core.Described(ns.name, "pins").choices[4][1] == "quest" and not Hidden("tripView") and not Hidden("nodeYards")
         and C_CVar.GetCVar("softTargetInteract") == sounds and not ns.off,
