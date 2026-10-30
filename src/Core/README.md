@@ -92,11 +92,11 @@ but for a window to try those with (`/sane window`).
 - **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
   - Every character uses one of three standard profiles, or one you made. None is made for a character by itself.
     - *Speedleveling*: all of Speed Leveling's switches on, our recommended CVars and some more that keep you moving
-      (`Presets.lua`), and the key E. For now where every new character starts. The box *Speed Leveling* at the foot of
+      (`Presets.lua`), and the key E. The box *Speed Leveling* at the foot of
       the bags is this profile (`Profiles.SetLeveling`): ticked, the character uses it; unticked, the one it used before
       (`line.before`), *Accountwide* if it had no other.
     - *Accountwide*: Sane UI's recommended settings and CVars (`Presets.lua`), every change shared by all the
-      characters on it.
+      characters on it. Where every new character starts.
     - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's
       settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
       (they stay in the profile it left).
@@ -125,7 +125,7 @@ but for a window to try those with (`/sane window`).
     profiles, `/sane profile <name>` uses one.
   - *Characters:* every character seen on the account, each with its profile (for another character it counts
     at its next login) and *Forget* (its line and what Sane UI keeps for it: for a character deleted or moved).
-    The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with: *Speedleveling*
+    The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with: *Accountwide*
     at first.
   - Every change on any options page goes into the profile in use, for every character that uses it. Nothing
     is copied at a logout: the settings live in their profile, and only the game's are read into it.
@@ -151,7 +151,7 @@ but for a window to try those with (`/sane window`).
   | `SaneUIDB.modules.<Module>.chars[GUID]` | Its notes per character: `Core.Character(name)`, from `OnLogin` on |
   | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` and `Speedleveling` are always there |
   | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (a name, *Character specific* for none; nil: Accountwide) |
-  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Speedleveling) |
+  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Accountwide) |
   | `SaneUIDB.version` | The shape of these settings (`Profiles.VERSION`, 2) |
   | `SaneUIDB.errors` | What went wrong (`Core.errors`), for `/sane errors` |
   | `SaneUIDB.log` | The same, every time it happened: the error log (`Core.log`) |

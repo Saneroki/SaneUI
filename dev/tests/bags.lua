@@ -2048,6 +2048,8 @@ check(Cells.Shown(-1, 1), "back in WoW: Forever: the keyring again")
 
 -- The box Speed Leveling: the profile in use. Last here: the bags' categories come anew with a profile.
 function W.CheckLeveling()
+    Core.Profiles.Use("Speedleveling")
+    W.Wait(0)
     local leveling = ns.Vendor.boxes[4]
     check(leveling and leveling == Text("Speed Leveling"):GetParent() and leveling:GetChecked(), "Speed Leveling beside them, ticked on its profile")
     leveling:GetScript("OnClick")(leveling)

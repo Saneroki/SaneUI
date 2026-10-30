@@ -5,11 +5,11 @@ local Core = SaneUI.Core
 --  Sane UI - Core - Profiles
 --  Whose settings are in use, and where they live (Saneroki, 2026-10-17; the
 --  three profiles every account has, 2026-10-30). Each character uses a profile:
---    Speedleveling        for now the one new characters start with: Sane UI's
---                         settings, the game's, Speed Leveling's automation on
---                         and our recommended CVars (Presets.lua)
---    Accountwide          Sane UI's recommended settings and CVars; every change
---                         goes to all the characters that use it
+--    Speedleveling        Sane UI's settings, the game's, Speed Leveling's
+--                         automation on and our recommended CVars (Presets.lua)
+--    Accountwide          the one new characters start with: Sane UI's recommended
+--                         settings and CVars; every change goes to all the
+--                         characters that use it
 --    Character specific   no profile at all: each character keeps its own, from
 --                         a fresh install's defaults, and the game's settings
 --                         are left to the game, back at its defaults the moment
@@ -35,7 +35,7 @@ local Core = SaneUI.Core
 --      SaneUIDB.characters   [key] = { name, realm, class, profile, before }: every character seen; profile: a name,
 --                            or Character specific (Profiles.OWN); nil: Accountwide. before: the last one it used
 --                            that was not Speedleveling, for the box Speed Leveling in the bags (Profiles.SetLeveling)
---      SaneUIDB.newProfile   the profile a character not seen yet starts with (nil: Speedleveling)
+--      SaneUIDB.newProfile   the profile a character not seen yet starts with (nil: Accountwide)
 --      SaneUIDB.presets      [name] = the Presets.VERSION a standard profile was given
 --      SaneUICharDB.settings [module] = this character's own settings (Character specific)
 --      SaneUICharDB.key      this character's key, to find its line before the game names it
@@ -141,7 +141,7 @@ end
 
 -- The profile a character not seen yet starts with.
 local function ForNew()
-    return Usable(db.newProfile) and db.newProfile or SPEEDLEVELING
+    return Usable(db.newProfile) and db.newProfile or ACCOUNTWIDE
 end
 
 -- A character not seen before gets its line, with the profile for new characters. Returns whether it was new.

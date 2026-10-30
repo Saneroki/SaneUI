@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### New characters start on Accountwide (Saneroki, 2026-10-31)
+Saneroki: "So the default of SaneUI will be the account wide profile".
+- **`src/Core/Profiles.lua`:** `ForNew()` gives a character not seen yet *Accountwide*, no longer *Speedleveling*; the line *New Characters* on the page Profiles says so at first. `SaneUIDB.newProfile` still overrides it. Characters already seen keep their profile.
+- **`src/Core/Settings/Profiles.lua`, `src/Core/README.md`:** the words about where new characters start.
+- **`dev/tests/core.lua`:** the check of a new character's profile.
+
 ### Faction and neutral auction house weighed against each other (Saneroki, 2026-10-30)
 Saneroki: "Maybe we should also implement the same save history and add advice if I should buy sell on faction / neutral auctionhouse. Maybe sometimes the adivce is buy on faction ah and sell on neutral ah." Each house always kept its own prices, forecast and sales; what was new is reading two at once. A `/reload` takes it in.
 - **`src/Core/Data/Prices.lua`:** `Prices.Other()`, the house of the other kind; `Prices.Within(house, fn, ...)` reads everything as that house; `Part(key)` split from `Prices.House`; `OnSale` is both houses' together.

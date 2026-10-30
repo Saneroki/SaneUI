@@ -25,7 +25,7 @@ local Profiles = Core.Profiles
 
 local TEXT = {
     title = "Profiles",
-    intro = "Speedleveling: all the automation on, for now where new characters start. Accountwide: our recommended settings, every change shared by all the characters on it. Character specific: the game's defaults, as a fresh install, each character keeping its own.",
+    intro = "Speedleveling: all the automation on. Accountwide: our recommended settings, every change shared by all the characters on it, and where new characters start. Character specific: the game's defaults, as a fresh install, each character keeping its own.",
     tab = "Profiles",
     yours = "This character",
     profile = "Profile",

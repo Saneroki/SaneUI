@@ -141,6 +141,7 @@ end
 W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
 local Core = SaneUI.Core
+assert(Core.Profiles.Use("Speedleveling"), "the profile this module works on")
 local KNOWN = Core.Neighbours.KNOWN.guide
 
 -- The format's words, by ours: its command word for each of ours, its step mark for each of ours.

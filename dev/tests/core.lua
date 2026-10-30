@@ -1620,7 +1620,7 @@ UnitGUID = guid
 NextSession(SaneUIDB, {})
 Profiles.Use("Raid")
 
--- The profiles an account has at first, and new characters on Speedleveling
+-- The profiles an account has at first, and new characters on Accountwide
 do
     local account = { characters = { ["Player-70-00000002"] = { name = "Alt", realm = "Stub Realm", class = "WARRIOR" } } }
     UnitGUID = function() return "Player-70-00000099" end
@@ -1628,11 +1628,12 @@ do
     W.Fire("PLAYER_LOGIN")
     check(SaneUIDB.profiles.Speedleveling and SaneUIDB.profiles.Accountwide and SaneUIDB.profiles[Profiles.OWN] == nil,
         "Speedleveling and Accountwide are there; none is made for a character")
-    check(SaneUIDB.profiles.Speedleveling.SpeedLeveling.take == true and SaneUIDB.characters["Player-70-00000099"].profile == "Speedleveling"
-        and Profiles.InUse() == "Speedleveling", "a character not seen yet starts on Speedleveling, its automation on")
-    check(Profiles.Character(Profiles.NEW).profile == "Speedleveling", "as the line New Characters says")
+    check(SaneUIDB.profiles.Speedleveling.SpeedLeveling.take == true and SaneUIDB.characters["Player-70-00000099"].profile == "Accountwide"
+        and Profiles.InUse() == "Accountwide", "a character not seen yet starts on Accountwide; Speedleveling has its automation on")
+    check(Profiles.Character(Profiles.NEW).profile == "Accountwide", "as the line New Characters says")
     check(Profiles.Character("Player-70-00000002") == nil or Profiles.Character("Player-70-00000002").profile == "Accountwide",
         "a character seen before stays where it was")
+    Profiles.Use("Speedleveling")
     local wide, fast = SaneUIDB.profiles.Accountwide.Sync, SaneUIDB.profiles.Speedleveling.Sync
     check(wide.named.farclip == "10000" and wide.named.targetFPS == "115" and wide.named.worldPreloadNonCritical == "0"
         and wide.from == Core.GAME and fast.from == Core.GAME, "both hold our recommended CVars, as this game's")

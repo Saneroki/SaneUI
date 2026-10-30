@@ -240,6 +240,7 @@ local GUIDE = table.concat({
     L("friend", "Marshal McBride"), L("take", "40"), L("handin", "41,2"), L("foe", "Defias Thug"),
 }, "\n")
 W.Fire("PLAYER_LOGIN")
+assert(Core.Profiles.Use("Speedleveling"), "the profile this module works on")
 ns.Guide.AddAll(ns.Format.Parts(GUIDE), false)
 local Key, Wanted, Items, Quests = ns.Key, ns.Wanted, ns.Items, ns.Quests
 local header, find, fight = _G[Key.HEADER], _G[Key.FIND], _G[Key.FIGHT]
