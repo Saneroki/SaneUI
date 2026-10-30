@@ -815,8 +815,8 @@ game in the background, and it reads a full scan another addon asked for just th
   `key` is the game's `ItemKey`: the item's ID, or `item:level:suffix:species` for gear and pets. Prices are per unit in
   copper, 0 where nothing had a buyout: `low` the lowest of the day, `market` the median of the units on offer, the rest
   from the day's last scan that saw the item. `sellers` is a count, no name is kept. `scans[day]` says how many scans the
-  day holds, `index` each item's newest point (*Prices*), `at` when the server last answered, `kept`, `rows`, `items`, `left`
-  the last scan kept. `Scan.KEEP` limits the days per game: a week for Retail, whose house is far bigger and which keeps no
+  day holds, `index` each item's newest point (*Prices*), `rhythm`, `stretch`, `samples`, `watched`, `watchedAt` the forecast's
+  (*The forecast*), `at` when the server last answered, `kept`, `rows`, `items`, `left` the last scan kept. `Scan.KEEP` limits the days per game: a week for Retail, whose house is far bigger and which keeps no
   scan whole, until its data's plan is made; none for Forever.
 
 ```lua
@@ -832,6 +832,31 @@ Scan.Start()      -- a scan now (the bar, pressed); false while one runs
   Pressed, it starts a scan; a light and a tooltip say so.
 - **`/sane data`** names each house: its days, its whole scans and what they weigh, its last scan.
 
+### The forecast (`Data.Rhythm`, `Prices:Outlook`) *(Saneroki, 2026-10-30)*
+
+"Try to do their best to tell me when to sell or buy this item to make a profit ... when the AH predicts prices to be high vs low
+looking at the history and its natural trends, swings between time of day, weekday etc." One short line per item, `rhythm[key]` of a
+house (`src/Core/Data/Rhythm.lua`, Forever's: `Scan.RHYTHM`), so a tooltip gets its forecast from one string and opens no history.
+Own scans only: what members send stays out, as it can be taken out again.
+
+- **A sample** is an item's lowest price at the first scan of a stretch (three hours by the player's clock, `Rhythm.Stretch`): the
+  eight scans of a day that say something new, not the ninety that repeat each other. From the second day a sample counts at most
+  twice off the usual price.
+- **The usual price:** `fast` over about a day and a half, `slow` over about a week, geometric, so one wild listing moves them little.
+- **Swings:** per stretch of the day and per weekday, how the samples stood against the usual price, remembered for four and five weeks.
+  A swing counts from three days seen, against the middle of its row, so a rising price shows none, and only at twice what it may be off
+  by (`dev`, the item's own noise), and then less that: the best of many stretches is too high by chance alone. A price that only wobbles
+  so has no time to name.
+- **The trend:** `fast` against `slow`, from five days on, at most 5% a day, and held for three days ahead.
+- **What sold** (`Scan.Bought`, *Sold between two scans* in `Doc/ideas/Economy.md`): an auction of the last scan that is gone, the scans at
+  most `Scan.WATCH` (30 minutes) apart, except one of short time left (it may have run out), one whose seller has a new auction of the item
+  (taken back and posted anew), and one over the market price (a buyer takes the cheapest first). Units and money fade over a week in
+  the line, as the watched seconds do in the house (`Rhythm.Watched`), so a pause changes nothing. Under twelve hours watched: not told.
+- **Across accounts:** the line of the account that took the most samples, as two accounts in one house see the same auctions (`Join`).
+
+`Prices:Outlook` holds what it read per item for the hour, and until a scan is kept. Reckoning what that is worth (the cut, the post, a
+margin) is the view's: `src/Tooltips/Kinds/Gold.lua`.
+
 ### Prices (`Data.Series("Prices")`) *(Saneroki, 2026-10-30)*
 
 The one door to auction prices: every view reads here, none keeps its own (`src/Core/Data/Prices.lua`). The tooltips' Gold
@@ -843,6 +868,8 @@ Prices:Low(item)      -- the lowest price now, per unit, in copper; nil: none, o
 Prices:Last(item)     -- low, market, units, auctions, sellers, at: the newest point, however old; nil: none
 Prices:Range(item, from, to) -- how its price went: { { at, low, market }, ... }, oldest first, from server time from to to
                       -- (nil: from the first point, to now); one table used again: read it at once
+Prices:Outlook(item) -- what the scans tell of its price ahead and how it sells (*The forecast*); read it at once
+Prices:Under(item, price) -- how many are on offer at that price or less; nil while no scan or list of it was seen this session
 Prices:Stamp()        -- a number that moves with every change of a price
 Prices:OnChange(fn)   -- fn() on the next frame after prices changed
 ```

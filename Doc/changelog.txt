@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Tooltips tell when to buy and sell an item for a profit, more and
+  more as your auction scans build up: the most worth paying, when it
+  fetches most and what one brings then, how many cost less, when it
+  is cheapest, what sells. Learns time of day, weekday and trends per
+  item, with the house's cut and the post of at least 1s counted.
 - One party and raid frame: no matter the group, the same frame with
   more slots, up to forty, in the look of the nameplates, growing up
   and to the right. Set its sizes in Edit Mode, with a preview of

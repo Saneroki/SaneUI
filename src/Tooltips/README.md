@@ -160,7 +160,23 @@ only read.
   over it, *now* and that price at the right. A vendor's price alone (no auction price known) stands under
   the caption *Gold* too, with no advice. With Alt, small under the advice: *Lowest* and the price the
   numbers come from, then the cut and the deposit (taken as 15% of the vendor price for every 12 hours of
-  a 48-hour auction, an estimate), *back when it sells*.
+  a 48-hour auction, an estimate, and at the least 1s), *back when it sells*.
+
+  **When to buy and sell** (Saneroki, 2026-10-30): as the scans build up, the advice looks ahead. Core learns from each full
+  scan what an item usually costs, where that is heading, how it swings with the time of day (three-hour stretches, by your
+  clock) and the day of the week, and how much of it sells; a time is named only where it stands clear of the item's own noise.
+  From three days of an item's prices on:
+
+  | Where | What it says |
+  | --- | --- |
+  | On the auction house's list | *Buy if under 15s 40c*, *now 10s*: the most worth paying, so that a sale at its best time still brings 10% more after the cut and the post. Green while it costs less. Under it, in green, *Sell Fri 18:00-21:00 for 20s*, *+8s 80c each*, and small, *12 on offer under 15s 40c*. Too dear now: *Buy Tue 03:00-06:00 for 14s* if it will be cheap enough then |
+  | Anywhere else | *Sell Fri 18:00-21:00 for 20s*, *+1s 90c more*, in place of the advice to sell now, where a sale then brings 5% more than the best way now. *Sell Sat for 11s*: the day counts, not the hour |
+  | With Alt | *Usually 18s*, with *rising 2% a day* or *falling*; *Dearest ...* and *Cheapest ...*, each about what; *Sells 34 a day at about 17s*, or *No sales seen*; away from the list *Worth buying under ...*; *Too few scans for a forecast yet* before the three days |
+
+  **The post** counts in everything the auction house is weighed by: 60% of what a vendor pays, at the least 1s for an auction,
+  shared by as many as others put in one auction. A sale gives the deposit back and an auction that runs out keeps it (the game's
+  mail reckons so), so it counts in full, as one failed post for each sale: what is advised stays worth it even then. An
+  item nobody was seen buying, in half a day of watching or more, gets no advice to buy it to sell on.
   **The prices** are Core's (`Data.Series("Prices")`, `Doc/guides/data.md`, *Prices*): what the auction house
   lists right now while you look at it, else its last full scan. A price not seen for 30 days counts for
   nothing. The shown panels are read anew when prices change. The module keeps none of its own.
@@ -395,6 +411,12 @@ only read.
   cut (`Gold.Sale`), rounded; none while a material has no price. *Sell at* (`Gold.PostAt`): the lowest
   offer you saw less one copper (`UNDERCUT`), never under what makes a sale after the cut bring a vendor's
   price (`ceil(vendor / 0.95)`); with Alt, for a thing that is not bound.
+- **The forecast** (`Kinds/Gold.lua`, from `Prices:Outlook`, Core's `Data/Rhythm.lua`, `Doc/guides/data.md`, *The forecast*): `Work`
+  fills `post` (`Post`: `max(POST_LEAST / lot, vendor × DEPOSIT)`, lot being units / auctions of the last scan) and, from `TRUSTED` (3)
+  days on, `outlook` and `limit`: `(Sale(high - UNDERCUT) - post) / MARGIN` (`MARGIN` 1.10), none where `daily` is 0. The advice
+  *later* needs `highAt` after now and `LATER` (1.05) over the best way now. `Plan` writes the rows under *Buy if under*, `Forecast`
+  Alt's. `When` names a stretch (`STRETCH`, 3 hours) by `Core.ClockAt`, or the day alone with `allDay`. A tooltip's read costs a look at a
+  table: `Prices:Outlook` holds what it read per item for the hour, and until a scan is kept.
 - **The durability bar** (`Panel.lua`, a row with `inside`): a bar like a unit's health bar (`LiveBar`, 18
   high, flat and half see-through, under the panel's mask for round corners) with the word and the numbers
   written inside (`BarText`, left and right); its values are plain, so it is set like any bar.
@@ -601,7 +623,7 @@ only read.
 | `Figures.lua` | Which 3D model a thing has: a mount's or a pet's for its picture's place (the game's collections); gear, for your character beside the panel |
 | `Gathering.lua` | How likely gathering a herb or an ore raises your skill, in the section Professions, on the node and on what it gives, from Core's data (the sets Objects and Drops) and your skill |
 | `Kinds/Item.lua` | Items and recipes; their sections Quest and Professions |
-| `Kinds/Gold.lua` | An item's Gold section: how it binds, vendor, auction house, disenchanting (Core's set Disenchants), the price to post, the advice |
+| `Kinds/Gold.lua` | An item's Gold section: how it binds, vendor, auction house, disenchanting (Core's set Disenchants), the price to post, the advice, when to buy and sell |
 | `Kinds/Inventory.lua` | An item's Inventory section, with Alt: which of your characters have it, where and how many (Core's characters' data) |
 | `Kinds/Spell.lua` | Spells and pet abilities: the strip, the school |
 | `Kinds/Unit.lua` | Players and creatures |
@@ -619,6 +641,9 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-30 — The Gold section tells when to buy and sell for a profit, as the scans build up: the most worth paying, when an
+  item fetches most and what one brings then, how many cost less, when it is cheapest, with the house's cut and the post of at
+  least 1s counted (Saneroki).
 - 2026-10-30 — With Alt, the Gold section ends in a graph of how the item's price went: the lowest price and the market's
   over 24 hours, a week, two weeks, a month or all there is, from whichever of the account's auction file and the
   database is most current. Ctrl goes to the next range; on a chat link's tooltip the ranges are clicked (Saneroki).

@@ -304,7 +304,9 @@ Wished from the database for Economy's views, **not yet in `Data.md`:**
   the player's auctions, and browsing the whole auction house when the player is not there. One packed
   string per item, taken apart only when the item is looked at; owners as numbers into one list of names.
   Some 50,000 auctions at about 25 bytes is about 1.3 MB, replaced, not growing (to measure).
-- **Sold between two scans:** an auction seen in one scan and gone in the next before its time ran out was
+- **Sold between two scans:** *built, 2026-10-30 (`Scan.Bought`), for the tooltips' forecast: how many a day and about at what
+  price (`Doc/guides/data.md`, *The forecast*); scans at most 30 minutes apart, not an hour, and an auction over the market price does
+  not count either. Checking it against the auction log is still to do, once that log is built.* An auction seen in one scan and gone in the next before its time ran out was
   most likely sold (or cancelled). A snapshot has no auction IDs, so they are matched by item, owner, count
   and price, as many of each as there were (several equal stacks of one seller are counted, not paired by
   guess). That gives how much of an item sells per day, the one thing a single snapshot cannot tell.
@@ -337,6 +339,9 @@ Economy's own reckoning over the database's numbers (the logic is the module's, 
     guess.
 - **Lowest now:** the cheapest offer of the last scan, and how far it lies from the market value, as a
   share (*12 % under*).
+- **When to buy and sell:** *built, 2026-10-30, in the tooltips (Saneroki): `Prices:Outlook` gives what an item usually costs, its trend,
+  its dearest and cheapest time within a week, how much sells; `Kinds/Gold.lua` reckons the most worth paying after the cut, the post of at
+  least 1s and a margin. Economy's views read the same.*
 - **Sells per day:** units sold between scans, per day. Beside the units on offer it gives **days of
   stock**: how long the offers standing now would last at that pace.
 - **Price to post:** the lowest offer less an undercut (setting: one copper or a share), never so low that

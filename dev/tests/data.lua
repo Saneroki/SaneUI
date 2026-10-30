@@ -1898,6 +1898,20 @@ do
     end
     check(Line(text, "40") == "40=70,70,1,1,1;", "an item new in this scan")
     check(Prices:Low(10) == 200, "the newest point is the last scan's price, not the day's lowest")
+    -- What went between these two scans: Ann's two auctions; Bob's stood over the market price, so it was more likely taken back
+    local went = Data.Rhythm.Read(saved().rhythm["10"], GetServerTime(), 86400, GetServerTime())
+    check(went and went.daily == 15 and went.each == 2500 / 15, "what went since the last scan counts as sold: how many, for how much")
+    check(saved().watched and saved().samples >= 1 and saved().stretch, "and for how long the house was watched; a stretch's sample was taken")
+    check(Prices:Under(10, 200) == 2 and Prices:Under(10, 199) == 0 and Prices:Under(9999, 200) == nil,
+        "how many are on offer up to a price, by the last scan")
+    local gone = { market = 100, marks = { ["1,100"] = 2, ["2,100"] = 1, ["1,90"] = 1, ["1,500"] = 1, ["3,240"] = 1 },
+        who = { ["1,100"] = "Ann", ["2,100"] = "Bob", ["1,90"] = "Cid", ["3,240"] = "Dee" }, ending = { ["1,90"] = true } }
+    check(select(1, Scan.Bought(gone, nil)) == 7 and select(2, Scan.Bought(gone, nil)) == 540,
+        "gone with nothing left of the item: all of it but what could have run out, and what stood over the market")
+    check(select(1, Scan.Bought(gone, { marks = { ["1,100"] = 1, ["2,100"] = 1, ["3,240"] = 1 }, who = {} })) == 1,
+        "what still stands was not bought, as many of a kind as there are")
+    check(select(1, Scan.Bought(gone, { marks = { ["1,95"] = 1 }, who = { ["1,95"] = "Ann" } })) == 5,
+        "a seller who put the item up anew took the old auction back: not sold")
     check(saved().recent[saved().at]:find("10=200,200;", 1, true) and saved().recent[answered]:find("10=100,200;", 1, true),
         "each scan has its own lowest there, not the day's")
     check(Prices:Low(20) == nil and Prices:Last(20) == 0, "what the last scan did not see keeps its last point")
@@ -2397,6 +2411,81 @@ do
     rawset(_G, "C_AuctionHouse", nil)
     rawset(_G, "AuctionHouseFrame", nil)
 end
+-------------------------------------------------------------------------------
+--  How an item's price goes with the clock (Rhythm.lua): months of made-up scans, a stretch's sample at a time
+-------------------------------------------------------------------------------
+do
+    local Rhythm, DAY, HOURS = Data.Rhythm, 86400, 3
+    local clock = date("*t", 1790000000)
+    local start = 1790000000 - clock.hour * 3600 - clock.min * 60 - clock.sec -- a midnight by the player's clock
+    local function Hour(at) return date("*t", at).hour end
+    local function Walk(days, price)
+        local line
+        for step = 0, days * 24 / HOURS - 1 do
+            local at = start + step * HOURS * 3600 + 600
+            line = Rhythm.Seen(line, at, price(at, step))
+        end
+        return line, start + days * DAY + 1800
+    end
+    local rolled = 1
+    local function Noise(size) -- the same numbers on every run
+        rolled = (rolled * 75 + 74) % 65537
+        return 1 + (rolled / 65537 - 0.5) * size
+    end
+    local function Evening(at) return (Hour(at) >= 18 and Hour(at) < 21 and 2000 or 1000) * Noise(0.06) end
+
+    local line, now = Walk(28, function() return 1000 end)
+    local steady = Rhythm.Read(line, now)
+    check(steady.usual == 1000 and steady.high == 1000 and steady.low == 1000 and steady.drift == 0 and not steady.highAt and not steady.lowAt,
+        "a steady price: its usual price, no drift, no time to name: " .. line)
+    check(#line < 240, "a line stays short: " .. #line)
+    line, now = Walk(28, function() return 1000 * Noise(0.4) end)
+    local noisy = Rhythm.Read(line, now)
+    check(not noisy.highAt and noisy.drift == 0 and math.abs(noisy.usual - 1000) < 60,
+        "a price that only wobbles names no time, however many stretches there are to pick from")
+    line, now = Walk(28, Evening)
+    local evening = Rhythm.Read(line, now)
+    check(evening.highAt and Hour(evening.highAt) == 18 and evening.high > 1800 and evening.high < 2200 and not evening.allDay,
+        "high every evening: that stretch is named, about at its price: " .. tostring(evening.high))
+    check(evening.highAt > now - DAY and evening.highAt <= now + DAY, "the soonest such evening")
+    check(evening.low < 1100, "and the rest is the cheap part: " .. tostring(evening.low))
+    local early = Rhythm.Read(select(1, Walk(2, Evening)), start + 2 * DAY + 1800)
+    check(not early.highAt and early.high == early.usual, "two evenings are too few")
+    local saturdays
+    line, now = Walk(35, function(at) return (date("*t", at).wday == 7 and 1250 or 1000) * Noise(0.06) end)
+    saturdays = Rhythm.Read(line, now)
+    check(saturdays.highAt and date("*t", saturdays.highAt).wday == 7 and saturdays.high > 1100 and saturdays.allDay,
+        "high every Saturday: the day is named, as the time of day makes no difference")
+    line, now = Walk(14, function(_, step) return 1000 * (1 + 0.03 * step / 8) * Noise(0.04) end)
+    local rising = Rhythm.Read(line, now)
+    check(rising.drift > 0.01 and rising.high > rising.usual and rising.usual > 1200,
+        "a price going up: where it is heading, and it is expected higher, not at every hour alike: " .. tostring(rising.drift))
+    line, now = Walk(14, function(_, step) return 1000 * (1 - 0.03 * step / 8) * Noise(0.04) end)
+    local falling = Rhythm.Read(line, now)
+    check(falling.drift < -0.01 and falling.high <= falling.usual * 1.01, "going down: no better time ahead")
+    line, now = Walk(4, function(_, step) return step == 0 and 9000 or 1000 end)
+    check(Rhythm.Read(line, now).usual < 1300, "one wild first listing does not make the usual price")
+    line, now = Walk(14, function(_, step) return step == 60 and 1 or 1000 end)
+    check(Rhythm.Read(line, now).usual > 900, "nor does one listing at nothing later on")
+
+    check(Rhythm.Read("1,2,3", now) == nil and Rhythm.Read(nil, now) == nil, "a line of no shape reads as nothing")
+    check(Rhythm.Read(Rhythm.Seen("1,2,3", now, 500), now + 3600).usual == 500, "and starts anew")
+    check(Rhythm.Read(Rhythm.Sold(nil, now, 5, 100), now) == nil, "sales alone are no price")
+    local sold = Rhythm.Seen(Rhythm.Sold(nil, now, 10, 1000), now, 120)
+    check(Rhythm.Read(sold, now, 3600, now).daily == nil, "too short a watch tells nothing of selling")
+    check(Rhythm.Read(sold, now, 2 * DAY, now).daily == 5 and Rhythm.Read(sold, now, 2 * DAY, now).each == 100, "ten sold in two days: five a day, at what they went for")
+    local later = Rhythm.Read(sold, now + 7 * DAY, 2 * DAY, now)
+    check(math.abs(later.daily - 5) < 0.01, "sales and the watch fade alike, so a pause changes nothing")
+    local none = Rhythm.Read(Rhythm.Seen(nil, now, 120), now, 2 * DAY, now)
+    check(none.daily == 0 and none.each == nil, "watched and nothing sold: that is told too")
+    local house = {}
+    Rhythm.Watched(house, now, 600)
+    Rhythm.Watched(house, now, 600)
+    check(house.watched == 1200 and house.watchedAt == now, "the watch adds up")
+    check(Rhythm.Stretch(start + 3600) == Rhythm.Stretch(start + 2 * 3600) and Rhythm.Stretch(start + 3600) ~= Rhythm.Stretch(start + 4 * 3600),
+        "three hours are one stretch")
+end
+
 -------------------------------------------------------------------------------
 --  Counts and discoveries shared with the guild and the group (Bundle.lua), through a wire that only writes down
 -------------------------------------------------------------------------------

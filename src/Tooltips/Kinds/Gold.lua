@@ -18,18 +18,39 @@ local _, ns = ...
 --                                             and as many as disenchanting gives them
 --      Sell on the AH for 3s 09c
 --
---  The advice is the way that brings the most; the auction house, and
---  disenchanting if your character can, must bring 5% more than the way before
---  to be advised (BETTER), for the trouble. On an item the auction house lists to
---  you (you buy it), the advice is the most it is worth paying instead: what it
---  brings again at the auction house, from a vendor or disenchanted (green while
---  the lowest price now is under it, red over it).
+--  The advice is the way that brings the most; the auction house, after its
+--  post (Post), and disenchanting if your character can, must bring 5% more than
+--  the way before to be advised (BETTER), for the trouble. Where the scans show the
+--  price will be better soon, the advice is to sell then:
+--
+--      Sell Fri 18:00-21:00 for 3s 60c     +45c more
+--
+--  On an item the auction house lists to you (you buy it), the advice is the most
+--  it is worth paying instead: what it brings again at the auction house, from a
+--  vendor or disenchanted (green while the lowest price now is under it, red over
+--  it). Where the scans know the item, that is what it will fetch less the cut and
+--  the post, less a margin (MARGIN), with when to sell and how many cost less:
+--
+--      Buy if under 15s 40c                  now 10s
+--      Sell Fri 18:00-21:00 for 20s      +8s 80c each
+--      12 on offer under 15s 40c
+--
+--  or, too dear now, when it will be cheap enough:
+--
+--      Buy if under 15s 40c                  now 18s
+--      Buy Tue 03:00-06:00 for 14s
+--
+--  The forecast is Core's (Prices:Outlook, Core's Data/Rhythm.lua): from TRUSTED days of an
+--  item's prices on, a time only where the scans show one. An item seen not to sell
+--  gets no advice to buy it for that.
 --
 --  With Alt held: under Disenchant each material (how often, how many, what it
 --  brings); then the price to post it at (Sell at: the lowest offer less one
 --  copper, never so low that a sale brings less than a vendor pays); under the
 --  advice the price it comes from, the market, how many are on offer and when
---  that was seen, the cut and the deposit; last, how its price went (PriceGraph.lua).
+--  that was seen, the cut and the deposit, what the forecast stands on (what it
+--  usually costs, its dearest and cheapest time, how much of it sells); last, how
+--  its price went (PriceGraph.lua).
 --
 --  Disenchanting, from Core's data (the set Disenchants, Doc/guides/data.md):
 --  a weapon or an armour of uncommon quality and up, by its class, quality and
@@ -50,7 +71,11 @@ ns.Gold = Gold
 local CUT = 0.05      -- the auction house's cut of a sale
 local DEPOSIT = 0.60  -- a 48-hour auction's deposit, of what a vendor pays (15% for every 12 hours).
                       -- Given back when the item sells.
+local POST_LEAST = 100 -- 1s: the least an auction costs to put up, however cheap the item
 local BETTER = 1.05   -- how much more the auction house must bring than a vendor to be advised
+local MARGIN = 1.10   -- how much more a sale later must bring than the item costs: prices miss, and not all of it sells
+local LATER = 1.05    -- how much more a sale later must bring than a sale now to be worth the wait
+local TRUSTED = 3     -- days of an item's prices before anything is said of where they go
 local UNDERCUT = 1    -- copper under the lowest offer, for the price to post
 local WEAPON = Enum.ItemClass and Enum.ItemClass.Weapon or 2
 local ARMOR = Enum.ItemClass and Enum.ItemClass.Armor or 4
@@ -58,6 +83,7 @@ local DISENCHANTED = { [WEAPON] = true, [ARMOR] = true } -- the item classes dis
 local UNCOMMON = Enum.ItemQuality and Enum.ItemQuality.Uncommon or 2 -- and from which quality
 local HELD = 400      -- items whose row of disenchanting is kept, then forgotten together
 local DISENCHANT_SPELL = 13262 -- the game's spell: only with it is disenchanting a way for this character
+local STRETCH = 3 * 3600 -- how long the time a forecast names lasts (Core's Rhythm.lua)
 
 local COLOR = ns.COLOR
 local DETAIL, MONEY = COLOR.DETAIL, COLOR.TITLE -- the rows' words; what they bring
@@ -88,6 +114,15 @@ local function Sale(price)
     return math.floor(price - price * CUT)
 end
 Gold.Sale = Sale
+
+-- What putting one up costs: a 48-hour auction's deposit, never under POST_LEAST for the whole auction, which holds as many as
+-- others put in one. A sale gives the deposit back and an auction that runs out keeps it, so it counts in full, as one post
+-- that fails for every one that sells: what is advised stays worth it even then.
+local function Post(vendor, item)
+    local _, _, units, auctions = PRICES:Last(item)
+    local lot = units and auctions and auctions > 0 and math.max(1, math.floor(units / auctions)) or 1
+    return math.max(POST_LEAST / lot, (vendor or 0) * DEPOSIT)
+end
 
 -- Whether the auction house shows what it sells (its Buy views), not your own auctions or what you post.
 -- Where the client does not say (no such frame or views), its lists alone tell, as before.
@@ -171,27 +206,45 @@ local market = {}
 -- house. Fills market:
 --   vendor, ah      what each way brings for one (nil: not this way; vendor 0: no vendor buys it)
 --   current         the lowest price at the auction house now
+--   post            what putting one up costs
+--   outlook, limit  what the scans tell of its price ahead (from TRUSTED days on), and the most worth paying to sell it on
+--   more            for "later": how much more that brings than the best way now
 --   record, broken  its row of disenchanting, what that brings for one (nil: not this way, or no prices)
---   advice, worth   "ah", "vendor", "disenchant" or "buy"; for buy, the most it is worth paying
+--   advice, worth   "ah", "later", "vendor", "disenchant" or "buy"; for buy, the most it is worth paying
 local function Work(item, id, vendor, bound, tooltip)
     wipe(market)
     local unit = vendor or 0
     market.vendor = vendor
     if not bound then
         market.current = PRICES:Low(item)
-        if market.current then market.ah = Sale(market.current) end
+        if market.current then
+            market.ah = Sale(market.current)
+            market.post = Post(vendor, item)
+            local outlook = PRICES:Outlook(item)
+            market.few = outlook and outlook.days < TRUSTED
+            if outlook and not market.few then
+                market.outlook = outlook
+                if outlook.daily ~= 0 then market.limit = math.floor((Sale(outlook.high - UNDERCUT) - market.post) / MARGIN) end
+            end
+        end
     end
     market.record = id and DisenchantOf(id)
     market.broken = market.record and Disenchanted(market.record) or nil
     local own = market.broken and Ask(rawget(_G, "IsPlayerSpell"), DISENCHANT_SPELL) == true and market.broken or 0
     if Buying(tooltip) and market.current then
-        market.worth = math.floor(math.max(unit, market.current * (1 - CUT), own))
+        market.worth = math.floor(math.max(unit, market.limit or market.current * (1 - CUT), own))
         market.advice = market.worth > 0 and "buy" or nil
         return market
     end
     local best, value = unit > 0 and "vendor" or nil, unit
-    if market.ah and market.ah > value * BETTER then best, value = "ah", market.ah end
+    local sale = market.ah and market.ah - market.post
+    if sale and sale > value * BETTER then best, value = "ah", sale end
     if own > value * BETTER then best, value = "disenchant", own end
+    local outlook = market.outlook
+    if outlook and outlook.highAt and outlook.highAt > outlook.at then
+        local later = Sale(outlook.high) - market.post
+        if later > value * LATER then best, value, market.more = "later", later, later - value end
+    end
     market.advice = value > 0 and best or nil
     return market
 end
@@ -203,12 +256,33 @@ local function Row(label, value)
     return row
 end
 
+-- When a forecast names, as the player's clock says it: the day, and its stretch if the time of day counts. Held for the
+-- hour: a tooltip is read several times a second.
+local whens, whensHour = {}, nil
+local function When(outlook, at)
+    local now = outlook.at
+    local hour = math.floor(now / 3600)
+    if hour ~= whensHour then
+        wipe(whens)
+        whensHour = hour
+    end
+    local text = whens[at]
+    if text then return text end
+    text = date("%j", at) == date("%j", now) and TEXT.TODAY or date("%a", at)
+    if not outlook.allDay then text = TEXT.WHEN:format(text, Core.ClockAt(at), Core.ClockAt(at + STRETCH)) end
+    whens[at] = text
+    return text
+end
+
 -- The advice in one line: what to do (left, in its colour) and how much more (right).
 local function Advice(m)
     local left, right, color, rightColor
     local advice = m.advice
     if advice == "ah" then
         left, color = Read.Memo("goldAdvice", TEXT.SELL_AH, Money(m.current)), SELL
+    elseif advice == "later" then
+        left, color = Read.Memo("goldLater", TEXT.SELL_WHEN, When(m.outlook, m.outlook.highAt), Money(m.outlook.high)), SELL
+        right, rightColor = Read.Memo("goldMore", TEXT.MORE, Money(m.more)), SELL
     elseif advice == "vendor" then
         left, color = TEXT.SELL_VENDOR, VENDOR
         if m.ah and m.vendor > m.ah then right, rightColor = Read.Memo("goldMore", TEXT.MORE_AH, Money(m.vendor - m.ah)), DETAIL end
@@ -222,6 +296,23 @@ local function Advice(m)
     if not left then return end
     local row = Read.Text("row", left, color[1], color[2], color[3])
     if right then row.right, row.rr, row.rg, row.rb = right, rightColor[1], rightColor[2], rightColor[3] end
+end
+
+-- Under the advice to buy: when to sell and what one brings, and how many cost less; too dear now, when to buy instead.
+local function Plan(m, item)
+    local outlook, limit = m.outlook, m.limit
+    if m.advice ~= "buy" or not (outlook and limit) then return end
+    if m.current <= limit then
+        local price = Money(outlook.high)
+        local left = outlook.highAt and outlook.highAt > outlook.at and Read.Memo("goldPlan", TEXT.SELL_WHEN, When(outlook, outlook.highAt), price)
+            or Read.Memo("goldPlanFor", TEXT.SELL_FOR, price)
+        local row = Read.Text("row", left, SELL[1], SELL[2], SELL[3])
+        row.right, row.rr, row.rg, row.rb = Read.Memo("goldEach", TEXT.EACH, Money(Sale(outlook.high) - m.post - m.current)), SELL[1], SELL[2], SELL[3]
+        local units = PRICES:Under(item, limit)
+        if units and units > 0 then Read.Text("small", Read.Memo("goldUnder", TEXT.ON_OFFER, units, Money(limit)), SMALL[1], SMALL[2], SMALL[3]) end
+    elseif outlook.lowAt and outlook.lowAt > outlook.at and outlook.low <= limit then
+        Read.Text("row", Read.Memo("goldPlanBuy", TEXT.BUY_WHEN, When(outlook, outlook.lowAt), Money(outlook.low)), SELL[1], SELL[2], SELL[3])
+    end
 end
 
 -- With Alt held, under Disenchant: each material, how often, how many, and what one brings.
@@ -248,6 +339,26 @@ local function PostAt(m)
 end
 Gold.PostAt = PostAt
 
+-- With Alt held: what the forecast stands on, small: what the item usually costs and where that goes, its dearest and cheapest
+-- time, what sells of it.
+local function Forecast(m)
+    if m.few then return Read.Text("small", TEXT.FEW_SCANS, SMALL[1], SMALL[2], SMALL[3]) end
+    local outlook = m.outlook
+    if not outlook then return end
+    local percent = math.floor(math.abs(outlook.drift) * 100 + 0.5)
+    local text = percent < 1 and TEXT.USUAL or outlook.drift > 0 and TEXT.RISING or TEXT.FALLING
+    Read.Text("small", Read.Memo(text, text, Money(outlook.usual), percent), SMALL[1], SMALL[2], SMALL[3])
+    if outlook.highAt then Read.Text("small", Read.Memo("goldDear", TEXT.DEAREST, When(outlook, outlook.highAt), Money(outlook.high)), SMALL[1], SMALL[2], SMALL[3]) end
+    if outlook.lowAt then Read.Text("small", Read.Memo("goldCheap", TEXT.CHEAPEST, When(outlook, outlook.lowAt), Money(outlook.low)), SMALL[1], SMALL[2], SMALL[3]) end
+    if outlook.each then
+        local rate = outlook.daily >= 10 and "%.0f" or "%.1f"
+        Read.Text("small", Read.Memo("goldSells", TEXT.SELLS, rate:format(outlook.daily), Money(outlook.each)), SMALL[1], SMALL[2], SMALL[3])
+    elseif outlook.daily then
+        Read.Text("small", TEXT.NO_SALES, SMALL[1], SMALL[2], SMALL[3])
+    end
+    if m.limit and m.advice ~= "buy" then Read.Text("small", Read.Memo("goldWorth", TEXT.WORTH, Money(m.limit)), SMALL[1], SMALL[2], SMALL[3]) end
+end
+
 -- With Alt held: where the numbers come from, small: the price, the market and what is on offer, how long ago.
 local function Details(m, item)
     if not m.current then return end
@@ -262,7 +373,7 @@ local function Details(m, item)
             Read.Text("small", Read.Memo("goldUsual", TEXT.MARKET, Money(usual)), SMALL[1], SMALL[2], SMALL[3])
         end
     end
-    local fees = Read.Memo("goldFees", TEXT.FEES, Money(m.current * CUT), Money((m.vendor or 0) * DEPOSIT))
+    local fees = Read.Memo("goldFees", TEXT.FEES, Money(m.current * CUT), Money(math.max(POST_LEAST, (m.vendor or 0) * DEPOSIT)))
     Read.Text("small", fees, SMALL[1], SMALL[2], SMALL[3])
 end
 
@@ -312,8 +423,14 @@ function Gold.Section(ctx, id, line, bound, binding, looks)
     end
     local post = alt and PostAt(m)
     if post then Row(TEXT.SELL_AT, post) end
-    if not alone then Advice(m) end
-    if alt then Details(m, item) end
+    if not alone then
+        Advice(m)
+        Plan(m, item)
+    end
+    if alt then
+        Details(m, item)
+        Forecast(m)
+    end
     if alt and not bound and PRICES:Last(item) then ns.Graph.Row(item) end
 end
 

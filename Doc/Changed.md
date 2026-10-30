@@ -6,6 +6,29 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### When to buy and sell an item, from the auction history (Saneroki, 2026-10-30)
+Saneroki: "Can it now (when the ah history is scanned and building up) try to do their best to tell me when to sell or buy this item to
+make a profit. The 1s minimum post price and the ah cut should be calculated in ... looking at the history and its natural trends, swings
+between time of day, weekday etc." A game restart takes it in (a new file in Core's TOC).
+- **`src/Core/Data/Rhythm.lua` (new):** one short line per item in a house's `rhythm`: the usual price over a day and a half and a week
+  (geometric), the swing of each three-hour stretch and weekday, what sold fading over a week. `Rhythm.Read` gives the usual price, the
+  trend, the highest and lowest price within a week and when, how many sell a day. A swing counts only clear of the item's own noise, less
+  what it may be off by; an item watched too briefly names no time. Checked on made-up months: noise names no time, an evening or a
+  Saturday is found at about its price, a rise is not taken for a swing, one wild first listing does not make the usual price.
+- **`src/Core/Data/Scan.lua`:** a sample per stretch at its first scan (`Scan.RHYTHM`, Forever's). `Scan.Bought`: what went between two scans
+  at most 30 minutes apart, matched by count and buyout, as many of each; not an auction of short time left, of a seller with a new auction
+  of the item, or over the market price. `Prices.Offers` hands the scan's offers on.
+- **`src/Core/Data/Prices.lua`:** `Prices:Outlook(item)`, held per item for the hour and until a scan is kept, the line of the account
+  with the most samples; `Prices:Under(item, price)`, also from the game's lists of an item's offers; `Prices.UNITS`.
+- **`src/Tooltips/Kinds/Gold.lua`, `Texts.lua`:** `Post`: 60% of the vendor price, at least 1s an auction, shared by the size others post in,
+  counted in full in every weighing of the auction house (the game's mail gives a sold auction's deposit back; an expired one keeps it).
+  *Buy if under* is what a sale at the best time brings after the cut and the post, less 10%; under it when to sell and what one brings, how
+  many cost less, or when to buy. The new advice *Sell Fri 18:00-21:00 for 20s*. Alt: the usual price and trend, dearest and cheapest time,
+  what sells. An item seen not selling gets no advice to buy it to sell on.
+- **`dev/tests/data.lua`, `dev/tests/tooltips.lua`:** 27 and 44 checks more; **`dev/uilab/scenes/pricegraph.lua`:** three weeks of scans behind the
+  item, `LabBuying`, `LabSold`, `LabScans`.
+- **Docs:** `Doc/guides/data.md` (*The forecast*), `Doc/ideas/Economy.md`, `src/Tooltips/README.md`, `src/Core/README.md`, `Doc/agent/`, `Doc/guides/ui-lab.md`.
+
 ### Drop rates on the map's pins (Saneroki, 2026-10-30)
 Saneroki: "When you hover over rare enemies or other map pins that contain this information can we have in the map pins tooltips
 information of its drop rates?" A game restart takes it in, with the gathering work before it.

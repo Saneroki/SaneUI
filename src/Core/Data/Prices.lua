@@ -14,6 +14,10 @@ local Core = SaneUI.Core
 --      Prices:Range(item, from, to)
 --                              how its price went: { { at, low, market }, ... }, oldest first, from server time from to
 --                              server time to (nil: from the first point, to now). One table used again: read it at once
+--      Prices:Outlook(item)    what the scans tell of its price ahead and of how it sells, for a view to say when to buy and sell:
+--                              Rhythm.lua's table, nil before a scan took a sample of it. Read it at once, keep nothing of it
+--      Prices:Under(item, price)  how many are on offer at that price or less, by the last scan or the game's list of the item's
+--                              offers; nil while neither was seen in this session
 --      Prices:Stamp()          a number that moves with every change of a price, for a view to know its picture is old
 --      Prices:OnChange(fn)     fn() on the next frame after prices changed: a list of the game's, or a scan kept
 --      Prices.Account()        takes in what another account's file left in the global: the addon
@@ -36,6 +40,7 @@ local Core = SaneUI.Core
 --  own days it does not have; and last the item's newest point, which what the game lists right now moves on.
 -------------------------------------------------------------------------------
 local Data = Core.Data
+local Rhythm = Data.Rhythm
 local Plain, Ask = Core.Plain, Core.Ask
 local Prices = {}
 
@@ -43,6 +48,8 @@ Prices.FRESH = 30  -- days a price counts without being seen again
 Prices.DOUBTS = 200 -- far-off prices in one member's scan before it counts as false
 local TRUST = 5    -- how far off a member's price may stand from what is known before a second sender must say it too
 local PRICE_MOST, COUNT_MOST, ITEM_MOST = 1e11, 1e7, 2147483647 -- past these no number in a member's block is true
+Prices.UNITS = 65536 -- an offer as one number, price * UNITS + count: sorted with no table per offer
+local UNITS = Prices.UNITS
 
 local DAY = 86400
 local HISTORIES = 64   -- items whose history stays taken apart, per house, then forgotten together
@@ -57,7 +64,7 @@ local NONE = {}
 local part             -- this game version's part of SaneUIData_Market
 local mine, opened     -- the house of your side, once asked for; the one open now
 local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty,
-                       --                      history = { [key] = points }, held,
+                       --                      history = { [key] = points }, held, outlook = { [key] = what Rhythm read }, offers = { [key] = offers },
                        --                      shared = { [key] = sender }, under = { [key] = the point it stands over },
                        --                      told = { [at] = true: a scan's line of a member's } }
 local keys = {}        -- [a house's part] = its key
@@ -103,6 +110,7 @@ function Prices.House(unit)
     end
     if type(known.whole) ~= "table" then known.whole = {} end
     if type(known.recent) ~= "table" then known.recent = {} end
+    if type(known.rhythm) ~= "table" then known.rhythm = {} end
     keys[known] = key
     return known
 end
@@ -176,7 +184,7 @@ end
 local function Book(house)
     local book = books[house]
     if book then return book end
-    book = { index = {}, gear = {}, history = {}, held = 0, shared = {}, under = {}, told = {} }
+    book = { index = {}, gear = {}, history = {}, held = 0, outlook = {}, outlooks = 0, offers = {}, shared = {}, under = {}, told = {} }
     books[house] = book
     if type(house.index) == "string" then
         for key, point in house.index:gmatch(SAVED) do Put(book, key, point) end
@@ -235,7 +243,7 @@ end
 
 -- A scan was kept: the histories taken apart are old.
 function Prices.Changed()
-    for _, book in pairs(books) do book.history, book.held = {}, 0 end
+    for _, book in pairs(books) do book.history, book.held, book.outlook, book.outlooks = {}, 0, {}, 0 end
     Moved()
 end
 
@@ -298,6 +306,57 @@ function Prices:Low(item)
     local low, _, _, _, _, at = self:Last(item)
     if low and low > 0 and Now() - at <= Prices.FRESH * DAY then return low end
     return nil
+end
+
+-- The rhythm to read: of the account that took the most samples, as two accounts in one house see the same auctions.
+local function Watcher(house)
+    local shared = database and database[keys[house]]
+    if shared and shared.rhythm and shared.samples > (tonumber(house.samples) or 0) then return shared end
+    return house
+end
+
+-- The key of an item in the house read now, and its book.
+local function Asked(item)
+    local house = Current()
+    local book = house and item and Book(house)
+    if not book then return nil end
+    local _, key = Point(book, item)
+    return key, book, house
+end
+
+function Prices:Outlook(item)
+    local key, book, house = Asked(item)
+    if not key then return nil end
+    local source = Watcher(house)
+    local line = source.rhythm[key]
+    if not line then return nil end
+    local now = Now()
+    local hour = math.floor(now / 3600)
+    local held = book.outlook[key]
+    if not held or held.hour ~= hour then
+        held = Rhythm.Read(line, now, tonumber(source.watched), tonumber(source.watchedAt)) or {}
+        held.hour = hour
+        if book.outlooks >= HISTORIES then book.outlook, book.outlooks = {}, 0 end
+        book.outlook[key], book.outlooks = held, book.outlooks + 1
+    end
+    return held.days and held or nil
+end
+
+function Prices:Under(item, price)
+    local key, book = Asked(item)
+    local list = key and book.offers[key]
+    if not list then return nil end
+    local units = 0
+    for _, offer in ipairs(list) do
+        if math.floor(offer / UNITS) > price then break end
+        units = units + offer % UNITS
+    end
+    return units
+end
+
+-- What a scan found on offer (Scan.lua): { [key] = sorted offers }.
+function Prices.Offers(house, lists)
+    Book(house).offers = lists
 end
 
 function Prices:Stamp()
@@ -404,8 +463,12 @@ end
 local function Join(key, house)
     local shared = database[key]
     if not shared then
-        shared = { index = "", days = {}, recent = {}, kept = 0 }
+        shared = { index = "", days = {}, recent = {}, kept = 0, samples = 0 }
         database[key] = shared
+    end
+    local samples = tonumber(house.samples) or 0
+    if samples > shared.samples and type(house.rhythm) == "table" then
+        shared.rhythm, shared.samples, shared.watched, shared.watchedAt = house.rhythm, samples, house.watched, house.watchedAt
     end
     local kept = tonumber(house.kept) or 0
     local newer = kept >= shared.kept
@@ -503,7 +566,7 @@ function Prices.Heard(key, at, text, sender, channel)
     end
     if taken > 0 then
         database = database or {}
-        local shared = database[key] or { index = "", days = {}, recent = {}, kept = 0 }
+        local shared = database[key] or { index = "", days = {}, recent = {}, kept = 0, samples = 0 }
         database[key] = shared
         shared.recent[at] = (shared.recent[at] or "") .. table.concat(lines)
         book.told[at] = true
@@ -632,18 +695,32 @@ local function Browsed(results, anew)
     end
 end
 
+-- The offers the game listed of an item, for Prices:Under.
+local function Offered(key, list)
+    local house = Current()
+    if house then
+        table.sort(list)
+        Book(house).offers[key] = list
+    end
+end
+
 -- All the offers of a thing sold by the unit: the cheapest of them.
 local function Commodity(item)
     local auctions = rawget(_G, "C_AuctionHouse")
     item = Plain(item)
     local count = auctions and Ask(auctions.GetNumCommoditySearchResults, item)
     local lowest
+    local list = {}
     for index = 1, type(count) == "number" and count or 0 do
         local offer = Plain(Ask(auctions.GetCommoditySearchResultInfo, item, index))
         local price = type(offer) == "table" and Plain(offer.unitPrice)
-        if type(price) == "number" and price > 0 and (not lowest or price < lowest) then lowest = price end
+        if type(price) == "number" and price > 0 then
+            if not lowest or price < lowest then lowest = price end
+            list[#list + 1] = price * UNITS + math.min(tonumber(Plain(offer.quantity)) or 1, UNITS - 1)
+        end
     end
     if lowest then
+        Offered(tostring(item), list)
         listed[tostring(item)] = nil
         Listed(tostring(item), lowest, Plain(Ask(auctions.GetCommoditySearchResultsQuantity, item)))
     end
@@ -655,6 +732,7 @@ local function Offers(itemKey)
     local key = KeyOf(itemKey)
     local count = key and auctions and Ask(auctions.GetNumItemSearchResults, itemKey)
     local lowest
+    local list = {}
     for index = 1, type(count) == "number" and count or 0 do
         local offer = Plain(Ask(auctions.GetItemSearchResultInfo, itemKey, index))
         local buyout = type(offer) == "table" and Plain(offer.buyoutAmount)
@@ -662,9 +740,11 @@ local function Offers(itemKey)
         if type(buyout) == "number" and buyout > 0 and type(quantity) == "number" and quantity > 0 then
             local price = math.ceil(buyout / quantity)
             if not lowest or price < lowest then lowest = price end
+            list[#list + 1] = price * UNITS + math.min(quantity, UNITS - 1)
         end
     end
     if lowest then
+        Offered(key, list)
         listed[key] = nil
         Listed(key, lowest, Plain(Ask(auctions.GetItemSearchResultsQuantity, itemKey)))
     end

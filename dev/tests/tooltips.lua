@@ -285,7 +285,7 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
-for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Prices", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
+for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Rhythm", "Prices", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
 W.AddSets(folder .. "/Sets") -- the set files, at the end of Core's TOC
@@ -797,6 +797,98 @@ W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
 home.days[serverDay - 5], home.days[serverDay - 3], home.days[serverDay - 20] = nil, nil, nil
 Prices.Changed()
 W.Wait(0)
+-- When to buy and sell: what the scans learned of an item, with the house's cut and the post counted (Kinds/Gold.lua)
+do
+    local Rhythm, key = Core.Data.Rhythm, "19019"
+    local function Stretch(at) return math.floor(date("*t", at).hour / 3) end
+    local dear, cheap = Stretch(serverNow + 9 * 3600), Stretch(serverNow + 6 * 3600)
+    local function Scans(days, watched, sold)
+        local line
+        for step = days * 8, 1, -1 do
+            local at = serverNow - step * 3 * 3600
+            local part = Stretch(at)
+            line = Rhythm.Seen(line, at, part == dear and 2000 or part == cheap and 500 or 1000)
+        end
+        home.rhythm[key] = sold and Rhythm.Sold(line, serverNow, sold, sold * 1500) or line
+        home.watched, home.watchedAt = watched, serverNow
+        Prices.Changed()
+    end
+    local function Find(words)
+        for index = 1, count(panel) do
+            if tostring(row(panel, index).left):find(words) then return row(panel, index) end
+        end
+    end
+    local function Fill(price, units, auctions)
+        Prices.Take(home, key, serverNow, price, price, units or 10, auctions or 10, 1)
+        Prices.Changed()
+        tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
+    end
+    local buying = { getterName = "GetHyperlink", getterArgs = { "item:19019", nil, nil, true, n = 4 } }
+
+    Scans(21, 7 * 86400, 70)
+    tip.info = buying
+    Prices.Offers(home, { [key] = { 900 * Prices.UNITS + 3, 1000 * Prices.UNITS + 2, 99999 * Prices.UNITS + 1 } })
+    Fill(1000)
+    local outlook = Prices:Outlook(19019)
+    local worth = math.floor((math.floor((outlook.high - 1) * 0.95) - 100) / 1.1)
+    check(outlook.highAt and outlook.high > 1500 and worth > 1000, "(the scans learned that one stretch is dear)")
+    local advice = Find("^Buy if under")
+    check(advice and advice.left == "Buy if under " .. worth .. "c" and advice.right == "now 1000c" and advice.lg == COLOR.DONE[2],
+        "the most worth paying: what it fetches in its dear stretch, less the cut, the post and a margin, green while it costs less")
+    local plan = Find("^Sell ")
+    check(plan and plan.left:find(("%%d%%d:00%%-%%d%%d:00 for %dc$"):format(math.floor(outlook.high + 0.5))) and plan.lg == COLOR.DONE[2],
+        "under it, when to sell and for how much: " .. tostring(plan and plan.left))
+    check(plan.right == ("+%dc each"):format(math.floor(math.floor(outlook.high * 0.95) - 100 - 1000 + 0.5)), "and what one brings, all costs counted: " .. tostring(plan.right))
+    check(Find("^5 on offer under " .. worth .. "c"), "and how many cost less than that, by the last scan")
+    Fill(1800)
+    advice = Find("^Buy if under")
+    check(advice.lr == COLOR.RED[1] and not Find("^Sell ") and not Find("on offer under"), "too dear now: red, with no plan to sell")
+    local wait = Find("^Buy %a+ %d%d:00%-%d%d:00 for %d+c$")
+    check(wait and outlook.low < 800, "and when it will be cheap enough: " .. tostring(wait and wait.left))
+    tip.info = nil
+    Fill(1100)
+    advice = Find("^Sell ")
+    check(advice and advice.left:find("%d%d:00 for ") and advice.right:find("^%+%d+c more$") and advice.font == "row",
+        "yours to sell, and a dear stretch ahead: the advice is to sell then, and what that brings more: " .. tostring(advice and advice.left))
+    Fill(2000)
+    check(Find("^Sell on the AH for 2000c"), "at the top already: sell now")
+    tip.info = buying
+    W.alt = true
+    Fill(1000)
+    check(Find("^Usually %d+c") and Find("^Dearest ") and Find("^Cheapest ") and Find("^Sells 10 a day at about 1500c"),
+        "with Alt what the forecast stands on: what it usually costs, its dearest and cheapest time, what sells of it")
+    tip.info = nil
+    Fill(1000)
+    check(Find("^Worth buying under " .. worth .. "c"), "and, away from the auction house's lists, what it is worth buying at")
+    tip.info = buying
+    W.alt = false
+
+    Scans(21, 7 * 86400)
+    Fill(1000)
+    check(Find("^Buy if under").left == "Buy if under 950c" and not Find("^Sell "), "watched for days and nothing sold: not worth buying to sell on")
+    W.alt = true
+    Fill(1000)
+    check(Find("^No sales seen"), "and it says so")
+    W.alt = false
+
+    Scans(1, 86400, 5)
+    W.alt = true
+    Fill(1000)
+    check(Find("^Too few scans for a forecast yet") and Find("^Buy if under").left == "Buy if under 950c", "a day of scans is too little to say anything")
+    W.alt, tip.info = false, nil
+
+    -- The post, as much as others put in one auction: at the least 1s for an auction, at the least the deposit for one
+    home.rhythm[key] = nil
+    Fill(150, 1, 1)
+    check(Find("^Sell to a vendor"), "cheap, one by one: a sale at the auction house leaves less than a vendor pays, the post counted")
+    Fill(150, 200, 10)
+    check(Find("^Sell on the AH for 150c"), "the same price in lots of twenty: the post is shared, and the auction house brings more")
+
+    home.watched, home.watchedAt = nil, nil
+    Prices.Offers(home, {})
+    Prices.See(key)
+    Prices.Changed()
+end
 browse = { { itemKey = { itemID = 19019, itemLevel = 60 }, minPrice = 500 }, { itemKey = { itemID = 19019, itemLevel = 70 }, minPrice = 900 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 check(Prices:Low(19019) == 500, "an item listed in several rows (its kinds) has the lowest of them as its price")

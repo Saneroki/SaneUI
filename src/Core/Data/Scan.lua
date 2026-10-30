@@ -26,6 +26,8 @@ local Core = SaneUI.Core
 --      recent[at] = "key=low,market;...", each scan of today and yesterday (Scan.RECENT, Forever's), its own lowest:
 --                   what a graph of a day reads, as a scan kept whole is too much to open for a tooltip
 --      scans[day] = how many scans that day's string holds
+--      rhythm[key], stretch, samples, watched, watchedAt = how each item's price goes with the clock and how it sells,
+--                   one short line per item for a forecast (Rhythm.lua; Scan.RHYTHM, Forever's)
 --      index      = each item's newest point, for Prices.lua
 --      at         = when the server last answered; kept, rows, items, left = the last scan kept:
 --                   when, its auctions, its items, the rows left out (gear the game did not know in time)
@@ -56,18 +58,23 @@ Scan.ASKS = 20          -- items asked of the server in one round of that wait
 Scan.KEEP = { retail = 7 } -- days kept per game: Retail's house is far bigger and its data's plan is still to come
 Scan.WHOLE = { forever = true } -- the games whose scans are kept row by row, each one
 Scan.RECENT = { forever = true } -- the games whose scans of today and yesterday are kept as a line per item, for a day's graph
+Scan.RHYTHM = { forever = true } -- the games whose scans keep each item's rhythm, for a forecast
+Scan.WATCH = 30 * 60    -- the most seconds between two scans for what went between them to count as sold: no auction but one
+                        -- of short time left can run out in this while (the game's shortest band)
 Scan.BLOCK = 1024       -- rows packed at a time: a few milliseconds, within a frame's budget
 
 local JOB = "Full auction scan"
 local ROWS = 64         -- rows read between two looks at the frame's time
 local SAME = 14 * 60    -- the game tells again as item data comes in: this soon and as many rows, it is the same scan
-local UNITS = 65536     -- a row as one number, price * UNITS + count: sorted with no table per row
 local RAW = "%s,%d,%.0f,%.0f,%.0f,%.0f,%d,%d,%s,%s,%s" -- a row kept whole; whole numbers past what %d holds on every client
 local DAILY = "%s=%.0f,%.0f,%.0f,%d,%d;"               -- an item's line of a day
 local RECENT = "%s=%.0f,%.0f;"                         -- an item's line of one scan
 
 local SAY = { house = "auction house %s: %d days, %d whole scans (%.1f MB), last scan %s, %d auctions of %d items." }
-local Prices = Data.Series("Prices")
+local Prices, Rhythm = Data.Series("Prices"), Data.Rhythm
+local UNITS = Prices.UNITS
+local SHORT = Enum.AuctionHouseTimeLeftBand and Enum.AuctionHouseTimeLeftBand.Short or 0 -- the shortest time left the game tells
+local NONE = {}
 
 local state = { phase = "closed", read = 0, rows = 0, next = 0, span = 0 }
 local listeners = {}
@@ -76,6 +83,7 @@ local scans           -- this game version's part of SaneUIData_Scans, once its 
 local house           -- the part of the auction house that is open
 local open = false
 local openedAt, askedAt, finished = 0, 0, false
+local last            -- the last scan kept in this session, for what went since: { at, house, found }
 
 local function Now()
     return Core.Ask(rawget(_G, "GetServerTime")) or 0
@@ -101,10 +109,10 @@ end
 -------------------------------------------------------------------------------
 --  Reading the rows
 -------------------------------------------------------------------------------
-local function Count(scan, key, count, buyout, owner)
+local function Count(scan, key, count, buyout, owner, ending)
     local entry = scan.found[key]
     if not entry then
-        entry = { units = 0, auctions = 0, sellers = 0, owners = {}, prices = {}, rows = {} }
+        entry = { units = 0, auctions = 0, sellers = 0, owners = {}, prices = {}, rows = {}, marks = {}, who = {}, ending = {} }
         scan.found[key] = entry
     end
     entry.units, entry.auctions = entry.units + count, entry.auctions + 1
@@ -114,6 +122,12 @@ local function Count(scan, key, count, buyout, owner)
     -- A row with no buyout (bid only) counts for the auctions and units, not for the prices.
     if buyout > 0 then
         entry.prices[#entry.prices + 1] = math.ceil(buyout / count) * UNITS + math.min(count, UNITS - 1)
+        -- How the next scan knows it again. The seller's name is told apart: the game may not have it yet.
+        if scan.marks then
+            local mark = count .. "," .. buyout
+            entry.marks[mark], entry.who[mark] = (entry.marks[mark] or 0) + 1, owner
+            if ending then entry.ending[mark] = true end
+        end
     end
     return entry
 end
@@ -138,10 +152,11 @@ local function Row(scan, index)
         end
     end
     owner = ownerFull or owner
-    local entry = Count(scan, key, count, type(buyout) == "number" and buyout or 0, owner)
+    local left = auctions.GetReplicateItemTimeLeft(index)
+    local entry = Count(scan, key, count, type(buyout) == "number" and buyout or 0, owner, left == nil or left == SHORT)
     if scan.whole then
         entry.rows[#entry.rows + 1] = RAW:format(key, count, tonumber(buyout) or 0, tonumber(minBid) or 0, tonumber(increment) or 0,
-            tonumber(bid) or 0, auctions.GetReplicateItemTimeLeft(index) or 0, tonumber(status) or 0, owner or "",
+            tonumber(bid) or 0, left or 0, tonumber(status) or 0, owner or "",
             bidderFull or bidder or "", link and link:match("|H(.-)|h") or "")
     end
     return true
@@ -187,6 +202,7 @@ local function Point(key, entry)
             end
         end
     end
+    entry.market = market
     local earlier, lowest = entry.earlier, low
     if earlier and earlier > 0 and (low == 0 or earlier < low) then lowest = earlier end
     return low, market, DAILY:format(key, lowest, market, entry.units, entry.auctions, entry.sellers)
@@ -218,11 +234,50 @@ local function Whole(scan, now)
     return table.concat(blocks, "\n")
 end
 
+-- What an item's auctions show went between two scans (Doc/ideas/Economy.md, *Sold between two scans*): units and money. An
+-- auction gone before its time could run out was bought, unless its seller put the item up anew in the meantime (cancelled
+-- and posted again), or it stood over the market price, as a buyer takes the cheapest first and such an auction was
+-- more likely taken back. before and now: the item at the last scan and at this one (nil: none left).
+local function Bought(before, now)
+    local posted = {}
+    for mark, times in pairs(now and now.marks or NONE) do
+        if times > (before.marks[mark] or 0) and now.who[mark] then posted[now.who[mark]] = true end
+    end
+    local units, money = 0, 0
+    for mark, times in pairs(before.marks) do
+        local gone = times - (now and now.marks[mark] or 0)
+        local seller = before.who[mark]
+        if gone > 0 and not before.ending[mark] and not (seller and posted[seller]) then
+            local count, buyout = mark:match("^(%d+),(%d+)$")
+            count, buyout = tonumber(count), tonumber(buyout)
+            if buyout / count <= before.market then
+                units, money = units + gone * count, money + gone * buyout
+            end
+        end
+    end
+    return units, money
+end
+Scan.Bought = Bought
+
+-- What went since the last scan, into the items' rhythm, and that the house was watched that long.
+local function Sales(rhythm, home, found, now)
+    if not (last and last.house == home and now - last.at <= Scan.WATCH) then return end
+    for key, before in pairs(last.found) do
+        local units, money = Bought(before, found[key])
+        if units > 0 then rhythm[key] = Rhythm.Sold(rhythm[key], now, units, money) end
+        Steps.Check()
+    end
+    Rhythm.Watched(home, now, now - last.at)
+end
+
 -- Kept in one go at the end: the day's string made anew, what this scan saw in place of its lines, the
 -- items only an earlier scan of the day saw as they were; each item's newest point; the scan whole.
 local function Keep(scan, home, day, now)
     local lines, items = {}, 0
     local recent = Core.ForGame(Scan.RECENT) and {} or nil
+    local rhythm = scan.marks and home.rhythm or nil
+    local stretch = rhythm and Rhythm.Stretch(now)
+    local sample = rhythm and stretch ~= home.stretch
     local before = home.days[day]
     if type(before) == "string" then
         for line, key, low in before:gmatch("(([^=;]+)=(%d+),[^;]*;)") do
@@ -231,11 +286,13 @@ local function Keep(scan, home, day, now)
             Steps.Check()
         end
     end
-    local moved = {} -- what the other running accounts have to be told: this scan's own lowest
+    local moved, lists = {}, {} -- what the other running accounts have to be told: this scan's own lowest; what is on offer
     for key, entry in pairs(scan.found) do
         local low, market, line = Point(key, entry)
         lines[#lines + 1] = line
         if recent then recent[#recent + 1] = RECENT:format(key, low, market) end
+        if sample and low > 0 then rhythm[key] = Rhythm.Seen(rhythm[key], now, low) end
+        lists[key] = entry.prices
         items = items + 1
         if Prices.Take(home, key, now, low, market, entry.units, entry.auctions, entry.sellers) then
             moved[#moved + 1] = DAILY:format(key, low, market, entry.units, entry.auctions, entry.sellers)
@@ -244,6 +301,13 @@ local function Keep(scan, home, day, now)
     end
     local whole = scan.whole and Whole(scan, now)
     if scan.whole and not whole then Core.NoteError("data: auction scan", "a whole scan could not be packed") end
+    if rhythm then
+        Sales(rhythm, home, scan.found, now)
+        if sample then home.stretch, home.samples = stretch, (tonumber(home.samples) or 0) + 1 end
+        for _, entry in pairs(scan.found) do entry.rows, entry.owners = nil, nil end
+        last = { at = now, house = home, found = scan.found }
+    end
+    Prices.Offers(home, lists)
     Steps.Fresh() -- the steps that cannot be cut: alone in their frames
     home.days[day] = table.concat(lines)
     Steps.Spend()
@@ -281,7 +345,8 @@ end
 
 -- The job: every row, read in steps. Nothing is kept of a scan the game took away halfway.
 local function Read(home, day, now)
-    local scan = { found = {}, later = {}, wanted = {}, asked = {}, whole = Core.ForGame(Scan.WHOLE) and scans ~= nil }
+    local scan = { found = {}, later = {}, wanted = {}, asked = {}, whole = Core.ForGame(Scan.WHOLE) and scans ~= nil,
+        marks = Core.ForGame(Scan.RHYTHM) }
     local index = 0
     while index < state.rows do
         if not Row(scan, index) then return end
@@ -361,7 +426,7 @@ local function Opened()
 end
 
 local function Closed()
-    open = false
+    open, last = false, nil
     Prices.Open(nil)
     Phase("closed")
 end

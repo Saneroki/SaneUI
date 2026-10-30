@@ -106,6 +106,7 @@ Data\Loot.lua
 Data\Facts.lua
 # What a thing fetches at the auction house for every view (Data.Series("Prices")), the full scan while it is open, every
 # 16 minutes, kept in SaneUIData_Market, a file of its own (the addon SaneUI_AuctionData), and its bar on the game's window (Data.Scan)
+Data\Rhythm.lua
 Data\Prices.lua
 Data\Scan.lua
 Data\ScanBar.lua

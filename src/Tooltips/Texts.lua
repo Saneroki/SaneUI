@@ -46,6 +46,12 @@ ns.TEXT = {
     -- The price graph under the Gold section (PriceGraph.lua): its two lines, the key, a range with too little to draw
     GRAPH_LOW = "Lowest", GRAPH_MARKET = "Market", GRAPH_KEY = "Ctrl: next range",
     GRAPH_NONE = "No price seen in this range", GRAPH_ONE = "One price seen in this range",
+    -- The forecast in the Gold section (Kinds/Gold.lua): when to sell and buy and what that brings, with Alt what it stands on
+    SELL_WHEN = "Sell %s for %s", SELL_FOR = "Sell for %s", BUY_WHEN = "Buy %s for %s", EACH = "+%s each", MORE = "+%s more",
+    ON_OFFER = "%d on offer under %s", WORTH = "Worth buying under %s", WHEN = "%s %s-%s", TODAY = "Today",
+    USUAL = "Usually %s", RISING = "Usually %s  \194\183  rising %d%% a day", FALLING = "Usually %s  \194\183  falling %d%% a day",
+    DEAREST = "Dearest %s, about %s", CHEAPEST = "Cheapest %s, about %s",
+    SELLS = "Sells %s a day at about %s", NO_SALES = "No sales seen", FEW_SCANS = "Too few scans for a forecast yet",
     ALT_MORE = "Press ALT for +%d more",
     -- What came seldom from a node or a skinned creature (Gathering.lua): the thing, and how often
     RARE_DROP = "%s  %s", RARE_CHANCE = "%.1f%% (%d of %d)", RARE_COUNT = "%d of %d", RARE_LISTED = "%.1f%%",
