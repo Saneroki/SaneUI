@@ -671,7 +671,7 @@ with Copy() as copy:
         '["learned"] = { ["Folk"] = { [1] = "65100\\t20750\\tAma Brightwater\\tGuildmaster\\t1429\\03142.5\\03163.1", }, },',
         '["confirmed"] = { ["Folk"] = { [1] = "20750\\03165100\\031title", [2] = "20750\\03165100\\031name", }, },',
         '["maps"] = { [1430] = "1000\\0311000", },',
-        '["tally"] = { [65100] = { ["id"] = "00aa00bb00cc00dd", ["drops"] = { ["npc:70"] = "c\\031loot\\0310\\0314\\030d\\031loot\\0312001\\0310\\0313\\0313", },',
+        '["tally"] = { [65100] = { ["id"] = "00aa00bb00cc00dd", ["fresh"] = { ["npc:70"] = true, }, ["drops"] = { ["npc:70"] = "c\\031loot\\0310\\0314\\030d\\031loot\\0312001\\0310\\0313\\0313", ["object:1617"] = "c\\031gather\\0310\\0316\\030v\\031gather\\0312\\030d\\031gather\\031765\\0310\\0316\\0319", },',
         '  ["points"] = { ["npc:69"] = "1430\\03160.5\\03160.2\\0313", }, ["cells"] = { ["npc:70"] = "1430\\0314025\\0312", }, }, },',
         "},",
         "}",
@@ -686,6 +686,8 @@ with Copy() as copy:
     check("harvest: an entry whose every field of the play list the game told: confirmed whole",
           [(line["key"], line["confirmed"]) for line in lines if line.get("confirmed")], [(2, "2026-10-24")])
     again = plays.Ledger(ledger_file)
+    check("ledger: a node's gathers, what they gave and its visits", again.drops["forever"]["object:1617"]["65100"],
+          {"c": {"gather|0": 6}, "d": {"gather|765|0": [6, 9]}, "v": {"gather": 2}})
     check("ledger: the counts, places and cells added up, the block remembered",
           (again.drops["forever"]["npc:70"]["65100"], again.points["forever"]["npc:69"], again.cells["forever"]["npc:70"],
            list(again.taken["forever"]), again.maps["forever"]),

@@ -373,7 +373,7 @@ Sets\Auras.lua
 - What follows that line is the compiler's: a compile replaces it. `src/Core/SaneUI.toc` itself lists no
   set file.
 - **The data's saved variables** are Core's too, declared in its TOC: `## SavedVariables: SaneUIDB,
-  SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned` (*Saved variables*); `Data.SAVED` names them, and
+  SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned, SaneUIData_Shared` (*Saved variables*); `Data.SAVED` names them, and
   `dev/tests/lint` fails when the TOC lacks one. The auction data alone has a file of its own (*The full auction
   scan*): `SaneUI_AuctionData` declares it, and `Data.APART` names it.
 
@@ -691,22 +691,75 @@ master (*The harvest*).
 ```lua
 Tally.Loot("npc:69", "loot", 0)        -- one loot: how (loot, skin, pickpocket, gather, fish); quest 0 for everybody
 Tally.Drop("npc:69", "loot", 769, 0, 2) -- an item it gave, and how many
+Tally.Visit("object:1617", "gather")   -- a node come to: the gathers since are one visit's
 Tally.Point("npc:69", map, x, y)       -- seen from up close: merged into a place within Tally.MERGE yards, one visit
 Tally.Cell("npc:69", map, x, y)        -- looted here: a cell of the map
 ```
 
-- **Kept** in `SaneUIData_Learned[game].tally[build] = { id, drops, points, cells }`: one block per build (the build
+- **Kept** in `SaneUIData_Learned[game].tally[build] = { id, drops, points, cells, fresh }`: one block per build (the build
   period), each with a random id, a packed row per key; at most `Tally.BUILDS` blocks, the maps' sizes in yards beside
-  them (`maps`). No time finer than the build, no name, no trail.
+  them (`maps`). `fresh` holds the keys counted since the last bundle. No time finer than the build, no name, no trail.
+  A row's records: `c how quest n` (loots), `d how item quest times units` (an item), `v how n` (visits);
+  `Tally.Read` reads one strictly, `Tally.Counts(key)` adds up the kept builds.
 - **The loot watcher** (`Data/Loot.lua`): every loot window, by the game's own source of each slot
   (`GetLootSourceInfo`: the corpses or things it came from, several at once). Without it nothing is counted (a creature
   is never guessed from the target; `Loot.blind`). Each source once a way: a corpse opened again without a cast is the
   same window; right after a cast that gathers (Skinning, Herb Gathering, Mining, by their names in *Spells*) it is
   `skin`; after Pick Pocket `pickpocket`; a node or chest each time a cast opens it (`gather` for the herbs and ore of
-  *Objects*). Fishing counts for the zone (`zone:<map>`); a container in the bags not at all.
+  *Objects*). Fishing counts for the zone (`zone:<map>`); a container in the bags not at all. The cast's name comes from
+  *Spells*, else from the game (a cast of a new build).
+- **Gathering** *(Saneroki, 2026-10-30)*: skinning, mining and herbs first of all. One `gather` for each cast, one `v` the first
+  time a node is come to (by its GUID, `Loot.CORPSE`), so a vein of three gathers is three gathers and one visit. A slot the game
+  names no source for, in a window of one source, is that source's: a gem is not lost. A window it names no source for at
+  all counts only right after a gather cast whose target (`UNIT_SPELLCAST_SENT`) is a herb or ore of that name in *Objects*.
+  A rare drop is an item like any other; the reader tells which ones are (*Drop rates*).
 - **Quest items:** an item an objective of a quest in the log asks for (not done yet, its text naming the item)
   counts for those on that quest, and so does one more loot for each such quest: the chance while on it.
 - **Where:** a creature looted, its cell; a node or chest, its point; a creature or thing talked to, its point.
+
+### Drop rates (`Data.Drops`) *(Saneroki, 2026-10-30)*
+
+The one door for how often things come. The set *Drops* is what shipped; over it what this account counted (every build
+kept) and what members told (*Counts and discoveries shared*).
+
+```lua
+local Drops = Data.Drops()
+Drops:Of("object:1617")             -- what it gives, the likeliest first; list.loots[how], list.visits[how]
+Drops:Of("object:1617", "period")   -- this build period only
+Drops:Rare("object:1617")           -- only what comes at most Drops.RARE (10) percent of the time
+Drops:Chance("npc:69", 769)         -- chance in percent (nil while too few came), drops, loots
+Drops:From(2838)                    -- who gives an item, the likeliest first
+Drops:Knows("npc:69", "skin", 2318) -- whether the set lists it for that way
+```
+
+- **An entry:** `item`, `how`, `quest`, `drops`, `units`, `loots`, `chance`, `rate`, `yield` (units a time it came), `perVisit`,
+  `rare`, `shipped` (only the set says so). Read-only; answers are kept until something is counted.
+- **A chance needs `Drops.SURE` (3) drops;** until then a view says how many of how many: `Aquamarine 1 of 123`. Below
+  `Drops.ENOUGH` (50) loots the set's own chance stands, where it has one.
+- **Rare** is by how seldom it comes, not an item's colour.
+- **In the game:** `/sane data gathered` lists what was gathered and skinned, how often, in how many visits, and its rare
+  drops. Tooltips shows the rare drops on a herb or a vein, and on a rare item where it came from.
+
+### Discoveries (`Data.Found`) *(Saneroki, 2026-10-30)*
+
+Every accepted change to the data in one short list, and the chat line of them (`Data/Found.lua`). Modules print nothing about data.
+
+```lua
+Data.Discovered("Quests", 77, "new", { "name" })  -- Core's watchers, once a change was accepted
+Data.Found(fromDay)                               -- the list, newest first: { day, build, how, set, key, what, parts }
+Data.Discoveries.Prices(count)                    -- a scan moved so many prices: told, not kept
+```
+
+- **What it holds:** what `Data.Check` and the watchers learned (`new`, `changed`), an item no data listed for a gather, a skinning or
+  a fishing water (`drop`; a corpse's loot is not one, as any creature can drop a world's green), and what was taken from others
+  (`how = "shared"`). A field told a piece at a time (a creature's health at a level) is none by itself.
+- **Kept** in `SaneUIData_Learned[game].found`, a packed line each, `Found.DAYS` (90) days, at most `Found.MOST`: no time finer than
+  the day, nothing of who.
+- **Chat:** the switches *Chat message for new data changes* and *... for new auction house data* (page General, both off): the first
+  line at once, then at most one of a kind in `Found.GAP` seconds, never in a fight, summed up: `data: 3 new quests, 2 new drops
+  (1.60.1). [Details]`. `[Details]` (an addon link, `addon:SaneUI:data`, through `EventRegistry`'s `SetItemRef`) and `/sane data
+  found` print the newest.
+- **Not yet here:** an entry gone and a chance a build changed: the patch check and the harvest know those.
 
 ### The full auction scan (`Data.Scan`) *(Saneroki, 2026-10-30)*
 
@@ -861,6 +914,32 @@ the plan: `Doc/ideas/Data.md`, *Scans*). A running game reads no file, so this i
   this nor the confirmed facts of `Confirm.lua` are sent or taken.
 - **Still to come (1f.4):** the same for the shared facts of `Confirm.lua`, which keep no sender.
 
+### Counts and discoveries shared *(Saneroki, 2026-10-30; Data-build 1f.3)*
+
+`Data/Bundle.lua`: every `Bundle.EVERY` seconds (15 minutes) a member that counted something tells the guild and the raid or else the
+party, in one bundle: what it counted, and the rows it learned of *Quests*, *NPCs*, *Vendors* and *Spells* (`Bundle.SETS`) with the
+parts the game told. A member that counted nothing says nothing, so an account standing at the auction house costs no traffic.
+
+- **A bundle** is blocks of kind `B`: `id\031build\031at`, then lines cut by \029: `c\028key\028row` (a key's totals of this build) and
+  `f\028set\028key\028parts\028row`. What was counted since the last goes first; room left goes to the other keys in turn, so a
+  member who came online later catches up. Never in a fight, under a restriction or in an instance: `fresh` and `outgoing`
+  are in the saved files and wait.
+- **Counts:** kept per tally block (its random id) in `SaneUIData_Shared[game].counts`, this build's only as a block comes in; a
+  newer total replaces the older, so nothing counts twice and two characters of an account are one voice. They go into the views
+  only (`Drops.lua`), summed a way at a time: a member whose chance is far from everybody else's (`Drops.Z`, `Drops.LOOTS` loots both
+  sides) is left out, and with `Drops.VOICES` voices or more none makes up more than `Drops.SHARE`. Never into the harvest.
+- **Facts:** wait in `facts` until `Bundle.SENDERS` (3) different members sent the same row, the stamp aside; then the row is taken like
+  `Data.LearnRow` with the parts told, so the harvest stages only those. What the player saw here always wins. What came from others
+  is not passed on. *Items* stay on their own way (`Confirm.lua`), checked by the game.
+- **The player's other accounts** count as the player (`Prices.Mine`): each account's auction file names its characters (`mine`), and every
+  account reads every account's through the links (*Across accounts*). Their counts count whole and their facts are taken at once.
+  Without the links nobody is.
+- **Not trusted:** a line off its shape, more drops than loots, a total that shrinks or grows faster than `Bundle.PACE`, a block from
+  the future or two bundles within `Bundle.SOONEST` seconds is a strike (`Relay.Strike`, the same strikes as a scan's);
+  three and the sender is not heard for a week and what it sent is gone. *Forget shared data* (`Data.ForgetShared`, `/sane data forget`)
+  takes out all of it, a taken row at the next `/reload`.
+- **Limits:** `Bundle.KEYS` of one sender, `Bundle.ALL` in all, `Bundle.WAITING` facts waiting, `Bundle.BY` per sender, `Bundle.STALE` days.
+
 ### The harvest
 
 `dev/tools/data harvest` (`saneui data harvest`) reads the saved files: the game folders' own (`--wow`), or WTF
@@ -883,6 +962,7 @@ folders and `SaneUI.lua` files players sent (`--from`, each game version they ho
     `Play.NEAR` yards), new ones added; only once every point of ours was seen. Unchanged within a yard: confirmed.
   - **Areas:** cells counted `Play.CELLS` times or more, where our data has no area: a creature's (*Spawns*, else
     *CreatureSpawns*), a quest objective's (*QuestAreas*, `from = "play"`).
+- The ledger keeps visits beside the loots (`v`); they are not staged yet, the set *Drops* has no field for them.
 - Then `dev/tools/data import <staging> --apply`, and a release ships it.
 
 ### Loading
@@ -906,7 +986,8 @@ folders and `SaneUI.lua` files players sent (`--from`, each game version they ho
 
 The client's game version and build with the three answers it was told by, every set with its hash and
 build (or its state and why), how much each saved part holds, and the scheduler's jobs, each with the
-milliseconds it worked and its frames, and whether they wait now (a fight, a restriction).
+milliseconds it worked and its frames, and whether they wait now (a fight, a restriction). `/sane data gathered` lists what was
+gathered and skinned with its rare drops, `/sane data found` the newest discoveries, `/sane data forget` takes out what others sent.
 `/sane data show <set> <key>` prints an entry and what changed, by patch; the key is a number only in a set
 keyed by numbers (a text key may look like one). `/sane data` also tells the client anew (`Data.Retell`):
 its game version and build; the answers made from them are made again only when either changed.
@@ -962,7 +1043,7 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
 ## Saved variables *(1c; built so far: the data's saved variables, their parts, `format` and `broken`; `learned`)*
 
 - **In Core's saved file:** `SaneUIDB` and the data's own, `SaneUIData_<Name>` (`Data.SAVED`:
-  Characters, Guild, Learned; later the other series), are declared in Core's TOC, so the game writes
+  Characters, Guild, Learned, Shared; later the other series), are declared in Core's TOC, so the game writes
   them all into one file, `WTF/Account/<account>/SavedVariables/SaneUI.lua`.
 - **The auction data apart (`Data.APART`):** `SaneUIData_Market` and `SaneUIData_Scans` have files of their own (*The full auction
   scan*); `Data.Saved` hands over a part once its addon has loaded, after Core.
@@ -974,7 +1055,9 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
   shape, kept for the harvest); and what it holds: the characters, the guilds' records, `learned`
   (`SaneUIData_Learned`: `[set][key] = row`, a whole row in the set's format, *Learned*), with `confirmed`
   (`[set][key] = "day\031build\031parts"`, *Verified*), `outbox` (what waits to be shared: `"V\031set\031key\031part"`,
-  `"L\031set\031key"`, at most `Confirm.OUTBOX`) and `builds` (`[build] = patch`); `SaneUIData_Market`, the
+  `"L\031set\031key"`, at most `Confirm.OUTBOX`), `found` (the discoveries) and `builds` (`[build] = patch`);
+  `SaneUIData_Shared`, what members told, apart from the player's own and never read by the harvest: `counts`, `facts`, `taken`,
+  `outgoing` (*Counts and discoveries shared*); `SaneUIData_Market`, the
   scans and prices per auction house, `houses["eu/1234/horde"]` (*The full auction scan*); *(1c)* the drop counts.
 - **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and
   at most 100,000 values **for Core's saved file as a whole:** Lua 5.1 stops at 262,143 constants in one
@@ -1056,6 +1139,7 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
 
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
 - **Auction scans** *(Saneroki, 2026-10-30)*: kind `A` (`have`, `want`, `ask`, each with house and time) and its blocks: *Scans shared*.
+- **Counts and discoveries** *(Saneroki, 2026-10-30)*: blocks of kind `B`: *Counts and discoveries shared*.
 - **What was confirmed and learned** *(Saneroki, 2026-10-23)*: kind `V` (set, key, the parts cut by commas, `*` the
   whole entry), one message per entry; learned rows as a block of kind `L` (`set\028key\028row`, the rows cut by
   \029, at most `Confirm.ROWS`). Sent to the guild and the raid or else the party, `Confirm.GAP` seconds apart, never

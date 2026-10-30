@@ -36,7 +36,7 @@ Data.FORMAT = 1
 Data.reports = {} -- what else /sane data prints: fn() each, after the sets (Tally.lua: what play counted)
 Data.frozen = false -- the tests' switch: records handed out read-only, changes found by Data.Tampered()
 -- The saved variables of Core's data, SaneUIData_<name>, as Core's TOC declares them.
-Data.SAVED = { Characters = true, Guild = true, Learned = true }
+Data.SAVED = { Characters = true, Guild = true, Learned = true, Shared = true }
 -- The one with a file of its own, apart from the settings (Saneroki, 2026-10-30): [name] = the addon that declares it.
 -- The game keeps a file per addon, and reads that one's after Core's.
 Data.APART = { Market = "SaneUI_AuctionData", Scans = "SaneUI_AuctionScans" }
@@ -80,7 +80,7 @@ local TEXT = {
     noEntry = "%s has no %s.",
     notReady = "%s is %s; try again in a moment.",
     notThere = "%s is %s (%s).",
-    usage = "/sane data show <set> <key>, or /sane data forget for the auction prices your guild and group sent",
+    usage = "/sane data show <set> <key>, /sane data gathered, /sane data found, or /sane data forget for what your guild and group sent",
 }
 
 local sets = {}       -- [set name] = what Core knows of it (made by Add, or when something is said of it)
@@ -375,6 +375,13 @@ end
 function Data.Learned(name, key)
     local rows = learned and learned[name]
     return type(rows) == "table" and rows[key] or nil
+end
+
+-- A row taken from somebody else taken back (Bundle.lua, Forget shared data): gone from the saved file, so from the sets at
+-- the next /reload.
+function Data.Unlearn(name, key)
+    local rows = learned and learned[name]
+    if type(rows) == "table" then rows[key] = nil end
 end
 
 -- Core's saved variables read: what was learned before laid over the sets there (as a rule all of them: their files
@@ -854,9 +861,11 @@ Core.Command("data", TEXT.about, function(rest)
         return
     end
     if word == "forget" then
-        if Data.Relay then Data.Relay.ForgetAll() end
+        if Data.ForgetShared then Data.ForgetShared() end
         return
     end
+    if word == "gathered" then return Data.Drops():Say() end
+    if word == "found" then return Data.Discoveries.Say() end
     Data.Retell()
     local project = tostring(rawget(_G, "WOW_PROJECT_ID"))
     local client = Data.Game()

@@ -68,7 +68,7 @@ class Ledger:
         if data.get("format", FORMAT) != FORMAT:
             raise ValueError(f"{self.path}: a ledger of format {data.get('format')}")
         self.taken = data.get("taken", {})      # game -> block id -> {"build", "drops", "points", "cells"}: rows taken
-        self.drops = data.get("drops", {})      # game -> key -> build -> {"c": {"how|quest": n}, "d": {"how|item|quest": [times, units]}}
+        self.drops = data.get("drops", {})      # game -> key -> build -> {"c": {"how|quest": n}, "d": {"how|item|quest": [times, units]}, "v": {how: visits}}
         self.points = data.get("points", {})    # game -> key -> [[map, x, y, visits]]
         self.cells = data.get("cells", {})      # game -> key -> {"map|cell": n}
         self.maps = data.get("maps", {})        # game -> map -> [width, height] in yards
@@ -124,6 +124,8 @@ class Ledger:
                     out[("c", f"{record[1]}|{record[2]}")] = (record[3], 0)
                 elif record[0] == "d" and len(record) >= 6:
                     out[("d", f"{record[1]}|{record[2]}|{record[3]}")] = (record[4], record[5])
+                elif record[0] == "v" and len(record) >= 3:
+                    out[("v", str(record[1]))] = (record[2], 0)
             return out
         was = counted(old)
         for (kind, name), (a, b) in counted(now).items():
@@ -133,6 +135,9 @@ class Ledger:
                 continue
             if kind == "c":
                 period["c"][name] = period["c"].get(name, 0) + da
+            elif kind == "v":
+                visits = period.setdefault("v", {})
+                visits[name] = visits.get(name, 0) + da
             else:
                 times, units = period["d"].get(name, [0, 0])
                 period["d"][name] = [times + da, units + db]
@@ -195,8 +200,10 @@ class Ledger:
 # Staging ---------------------------------------------------------------------------------------------------
 
 def _merged(periods):
-    out = {"c": {}, "d": {}}
+    out = {"c": {}, "d": {}, "v": {}}
     for period in periods:
+        for name, n in period.get("v", {}).items():
+            out["v"][name] = out["v"].get(name, 0) + n
         for name, n in period["c"].items():
             out["c"][name] = out["c"].get(name, 0) + n
         for name, (times, units) in period["d"].items():

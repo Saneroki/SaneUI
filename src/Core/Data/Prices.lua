@@ -62,6 +62,7 @@ local books = {}       -- [a house's part] = { index = { [key] = point }, gear =
                        --                      told = { [at] = true: a scan's line of a member's } }
 local keys = {}        -- [a house's part] = its key
 local database         -- [a house's key] = { index, days, recent, kept }: what all accounts hold together, through the links
+local ours = {}        -- [a character's key] = true: the characters of this player's accounts, through the same links
 local doubted = {}     -- [key] = { sender, low, guild }: a shared price far from what is known, until a second sender says so
 local doubts = {}      -- [sender] = { at, far }: the far-off prices of that member's last scan
 local kinds = {}       -- [item] = whether the auction house tells its kinds apart
@@ -579,6 +580,7 @@ function Prices.Account()
     local saved = rawget(_G, "SaneUIData_Market")
     rawset(_G, "SaneUIData_Market", nil)
     local client = type(saved) == "table" and saved[Data.Game()]
+    for key in pairs(type(client) == "table" and type(client.mine) == "table" and client.mine or {}) do ours[key] = true end
     local houses = type(client) == "table" and client.houses
     if type(houses) ~= "table" then return end
     database = database or {}
@@ -590,6 +592,13 @@ end
 -- What the accounts hold together forgotten (the tests' way back).
 function Prices.Clear()
     database = nil
+    wipe(ours)
+end
+
+-- Whether a sender is a character of this player's other accounts: each account's auction file names its characters, and
+-- every account reads the others' (Prices.Account). Without those links, nobody is.
+function Prices.Mine(sender)
+    return ours[sender] == true
 end
 
 -- The key of a house's part.
@@ -677,3 +686,10 @@ Core.On("PLAYER_LOGOUT", function()
 end)
 
 Data.Saved("Market", function(saved) part = saved end)
+
+Core.On("PLAYER_LOGIN", function()
+    local key = Core.PlayerKey("player")
+    if not (part and key) then return end
+    if type(part.mine) ~= "table" then part.mine = {} end
+    part.mine[key] = true
+end)

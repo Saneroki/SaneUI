@@ -385,7 +385,10 @@ local function Item(id)
             differs = true
         end
     end
-    if differs and Data.Learn("Items", id, record) then Data.Share("Items", id) end
+    if differs and Data.Learn("Items", id, record) then
+        Data.Discovered("Items", id, base and "changed" or "new", PLAY)
+        Data.Share("Items", id)
+    end
 end
 Watchers.Item = Item
 

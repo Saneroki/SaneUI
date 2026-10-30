@@ -774,7 +774,7 @@ Data.Saved("Nowhere", function() never = false end)
 check(never and Core.errors["data: saved Nowhere"], "a name that is no saved variable of the data: noted, and its reader is never called")
 W.printed = {}
 SlashCmdList.SANEUI("data")
-check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned 1 values%."),
+check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned %d+ values, Shared %d+ values%."),
     "/sane data says what the saved parts hold")
 
 -------------------------------------------------------------------------------
@@ -1057,7 +1057,7 @@ do
     check(walks == 1 and #Map:On(1429) == 2 and spot and spot[1429][1][1] == 0.1, "two sets arriving together: read once")
     -- The objects' facts arrive: the map is read anew, and until that read is done the last one's points stay
     W.AddSets(MakeSets("Things", { ["Objects.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Objects", { game = "forever", hash = "0000000e", build = 65000, key = "int", fields = { "name", "kind" }, types = { "text", "text" }, patches = {} })\n'
-        .. 'if not S then return end\nS.rows[1617] = "65000\\t\\tPeacebloom\\therb"\nS.unverified = "1617"\n' }))
+        .. 'if not S then return end\nS.rows[1617] = "65000\\t\\tPeacebloom\\therb"\nS.unverified = "1617"\nS.index.byName = { Peacebloom = "1617" }\n' }))
     Frame()
     W.Wait(0) -- told: read anew, its walks still to come
     check(walks == 2 and Map:Spawns("object:1617") == spot, "while the map is read anew, the last read's points stay")
@@ -1460,7 +1460,10 @@ do
     IsFishingLoot = function() return fishing end
     local function Of(key)
         local out = {}
-        for _, record in ipairs(Tally.Of("drops", key) or {}) do out[table.concat(record, ",", 1, record[1] == "c" and 3 or 4)] = record[record[1] == "c" and 4 or 5] end
+        for _, record in ipairs(Tally.Of("drops", key) or {}) do
+            local size = record[1] == "d" and 4 or record[1] == "c" and 3 or 2
+            out[table.concat(record, ",", 1, size)] = record[size + 1]
+        end
         return out
     end
     local A, B, C, D = Npc(70):gsub("0046$", "000A"), Npc(70):gsub("0046$", "000B"), Npc(70):gsub("0046$", "000C"), Npc(70):gsub("0046$", "000D")
@@ -1528,6 +1531,145 @@ do
     local _, block = next(part.tally)
     check(type(block.id) == "string" and #block.id == 16 and part.maps[1430] == "1000\0311000"
         and type(block.drops["npc:70"]) == "string", "kept packed per build, with a random id and the maps' sizes")
+
+    -- Gathering: a vein of several gathers is one visit; a rare gem counts like any item, and stands out in the reader
+    do
+        local Drops, Found = Data.Drops(), Data.Discoveries
+        local spellName = C_Spell and C_Spell.GetSpellName
+        C_Spell = C_Spell or {}
+        C_Spell.GetSpellName = function(id) return ({ [2366] = "Herb Gathering", [1235230] = "Mining" })[id] end
+        W.AddSets(MakeSets("Yields", { ["Drops.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Drops", { game = "forever", hash = "00000033", build = 65000, key = "text", '
+            .. 'fields = { "loots", "levelMin", "levelMax", "items" }, types = { "int", "int", "int", "list tuple(item:int,how:text,drops:int,chance:number,quest:int)" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows["object:1731"] = "65000\\t\\t\\t\\t\\t2770\\031gather\\031\\03195"\n'
+            .. 'S.rows["object:7"] = "65000\\t\\t200\\t\\t\\t2775\\031gather\\03110\\0315\\0302776\\031\\031\\03112"\n' }))
+        for _ = 1, 3 do Frame() end
+        local vein = "GameObject-0-1-2-3-1731-00000002"
+        local function Mine(items)
+            W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast", 1235230)
+            slots = items
+            W.Fire("LOOT_OPENED", false, false)
+            W.Wait(5)
+        end
+        Mine({ { item = 2770, name = "Copper Ore", count = 2, sources = { vein, 2 } } })
+        Mine({ { item = 2770, name = "Copper Ore", sources = { vein, 1 } }, { item = 774, name = "Malachite", sources = { vein, 1 } } })
+        Mine({ { item = 2770, name = "Copper Ore", sources = { vein, 1 } }, { item = 818, name = "Tigerseye", sources = {} } })
+        local mined = Of("object:1731")
+        check(mined["c,gather,0"] == 3 and mined["v,gather"] == 1 and mined["d,gather,2770,0"] == 3,
+            "a vein mined three times, by a cast the set does not hold yet (the game's name for it): three gathers, one visit")
+        check(mined["d,gather,774,0"] == 1 and mined["d,gather,818,0"] == 1, "a gem counted with it, also from a slot the game names no source for")
+        check(#Drops:Of("object:1731") == 3 and Drops:Knows("object:1731", "gather", 2770) and not Drops:Knows("object:1731", "gather", 774)
+            and not Drops:Knows("object:1731", "skin", 2770) and Drops:Knows("object:7", "skin", 2776), "what the set lists, by way; a row with no way lists it for every way")
+
+        -- The game names no source at all: the gather cast's target, by its name in the set Objects; never without the cast
+        local source = GetLootSourceInfo
+        GetLootSourceInfo = function() end
+        slots = { { item = 765, name = "Silverleaf" } }
+        local before = Of("object:1617")["c,gather,0"]
+        W.Fire("UNIT_SPELLCAST_SENT", "player", "Peacebloom", "Cast", 2366)
+        W.Fire("LOOT_OPENED", false, false)
+        check(Of("object:1617")["c,gather,0"] == before, "aimed at it, but no gather cast went off: nothing counted")
+        W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast", 2366)
+        W.Fire("LOOT_OPENED", false, false)
+        check(Of("object:1617")["c,gather,0"] == before + 1, "the cast that opened it: that node gathered")
+        W.Wait(5)
+        W.Fire("UNIT_SPELLCAST_SENT", "player", "A Strange Rock", "Cast", 2366)
+        W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast", 2366)
+        W.Fire("LOOT_OPENED", false, false)
+        check(not Tally.Of("drops", "object:0"), "aimed at a name the set does not know: not guessed")
+        GetLootSourceInfo = nil
+        W.Wait(5)
+        local count = Of("object:1617")["c,gather,0"]
+        W.Fire("UNIT_SPELLCAST_SENT", "player", "Peacebloom", "Cast", 2366)
+        W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast", 2366)
+        W.Fire("LOOT_OPENED", false, false)
+        check(Of("object:1617")["c,gather,0"] == count + 1, "a client with no sources at all: the aimed cast still counts")
+        GetLootSourceInfo = source
+        W.Wait(5)
+
+        -- The reader: chances from Drops.SURE on, until then how many of how many; rare by how seldom it comes
+        for index = 1, 60 do
+            Tally.Loot("object:9", "gather", 0)
+            Tally.Drop("object:9", "gather", 2770, 0, 2)
+            if index <= 2 then Tally.Drop("object:9", "gather", 774, 0, 1) end
+            if index % 3 == 0 then Tally.Visit("object:9", "gather") end
+        end
+        local list = Drops:Of("object:9")
+        check(list[1].item == 2770 and list[1].chance == 100 and list[1].yield == 2 and list[1].perVisit == 6 and not list[1].rare
+            and list.loots.gather == 60 and list.visits.gather == 20, "what a node gives: the chance per gather, the yield, a visit's worth")
+        check(list[2].item == 774 and list[2].chance == nil and list[2].drops == 2 and list[2].loots == 60 and list[2].rare and #Drops:Rare("object:9") == 1,
+            "a rare gem seen twice: counted and marked rare, given no chance yet")
+        Tally.Loot("object:9", "gather", 0)
+        Tally.Drop("object:9", "gather", 774, 0, 1)
+        local chance, came, of = Drops:Chance("object:9", 774)
+        check(Drops:Of("object:9") ~= list and came == 3 and of == 61 and math.abs(chance - 300 / 61) < 0.001, "a third: its chance, the answer made anew")
+        check(not Drops:Chance("object:9", 99999), "an item it never gave: no chance")
+        local from = Drops:From(774)
+        check(#from == 2 and from[1].key == "object:1731" and from[2].key == "object:9" and from[2].how == "gather" and #Drops:From(99999) == 0,
+            "who gives an item, the likeliest first")
+        check(#Drops:Of("object:9", "period") == 2, "this build period alone")
+        local shipped = Drops:Of("object:7")
+        check(#shipped == 2 and shipped[1].item == 2776 and shipped[1].chance == 12 and shipped[1].shipped and shipped[2].chance == 5 and shipped[2].rare
+            and shipped[2].loots == 200, "what only the set lists: its chance, marked")
+        local firstHalf = Drops:Of("object:1731")
+        check(firstHalf[1].item == 2770 and firstHalf[1].chance == 95, "below enough loots the set's own chance stands over a few gathers")
+        W.printed = {}
+        SlashCmdList.SANEUI("data gathered")
+        check(printedMatch("object:9: 61 gathered in 20 visits%. Rare: item 774 4%.9%% %(3 of 61%)"), "/sane data gathered: how often, in how many visits, what came seldom")
+        W.printed = {}
+        SlashCmdList.SANEUI("data")
+        check(printedMatch("gathered and skinned, counted in play: %d+ kinds, %d+ rare drops"), "/sane data says so too")
+
+        -- Discoveries: a drop no data listed; a change Data.Check took; the chat line only when switched on
+        local function Listed(what, key)
+            for _, entry in ipairs(Data.Found()) do
+                if entry.what == what and entry.key == key then return entry end
+            end
+        end
+        local drop = Listed("drop", "object:1731")
+        check(drop and drop.set == "Drops" and drop.how == "watcher" and drop.day == math.floor(GetServerTime() / 86400) and drop.build == W.build
+            and (drop.parts[1] == "gather=774" or drop.parts[1] == "gather=818"), "an item no data listed for that way: a discovery, of the game not the player")
+        local drops = 0
+        for _, entry in ipairs(Data.Found()) do
+            if entry.key == "object:1731" and entry.parts[1] == "gather=2770" then drops = drops + 1 end
+        end
+        check(drops == 0, "what the data lists is none")
+        W.printed = {}
+        check(Data.Discovered("Quests", 801, "new", { "name" }) and #W.printed == 0 and Listed("new", 801).parts[1] == "name", "kept; no line while the switch is off")
+        Core.general.chatData = true
+        W.Wait(0)
+        check(Data.Discovered("Quests", 802, "new") and printedMatch("data: .*new quest") and printedMatch("%[Details%]"), "switched on: the first at once, summed up")
+        W.printed = {}
+        Data.Discovered("Vendors", 69, "changed", { "goods=1" })
+        check(#W.printed == 0, "the next waits")
+        W.Wait(Found.GAP + 1)
+        check(printedMatch("data: 1 changed vendor"), "then all that came meanwhile, in one line")
+        W.printed = {}
+        W.Wait(Found.GAP + 1)
+        check(#W.printed == 0, "with nothing new, no line")
+        W.combat = true
+        Data.Discovered("Quests", 803, "new")
+        check(#W.printed == 0, "never in a fight")
+        W.combat = false
+        W.Fire("PLAYER_REGEN_ENABLED")
+        check(printedMatch("data: 1 new quest"), "after it")
+        Core.general.chatData = nil
+        W.printed = {}
+        W.Wait(Found.GAP + 1)
+        Found.Prices(12)
+        check(#W.printed == 0, "the auction line has its own switch")
+        Core.general.chatPrices = true
+        Found.Prices(3)
+        check(printedMatch("auction prices: 15 moved"), "and tells what moved")
+        Core.general.chatPrices = nil
+        W.printed = {}
+        EventRegistry:TriggerEvent("SetItemRef", "addon:SaneUI:data", "[Details]", "LeftButton")
+        check(printedMatch("new Quests 803"), "[Details]: the newest discoveries")
+        W.printed = {}
+        SlashCmdList.SANEUI("data found")
+        check(printedMatch("changed Vendors") and #W.printed == Found.SHOWN or #W.printed == #Data.Found(), "/sane data found prints them too")
+        check(#Data.Found(math.floor(GetServerTime() / 86400) + 1) == 0, "from a day on")
+        C_Spell.GetSpellName = spellName
+    end
 
     -- Spawns: the point stood at confirmed, the whole once every point is
     here = { map = 1431, x = 0.105, y = 0.10 }
@@ -2253,6 +2395,215 @@ do
     rawset(_G, "C_EncodingUtil", encoding)
     rawset(_G, "C_AuctionHouse", nil)
     rawset(_G, "AuctionHouseFrame", nil)
+end
+-------------------------------------------------------------------------------
+--  Counts and discoveries shared with the guild and the group (Bundle.lua), through a wire that only writes down
+-------------------------------------------------------------------------------
+do
+    local Bundle, Drops, Relay, Tally, Wire, Prices = Data.Bundle, Data.Drops(), Data.Relay, Data.Tally, Core.Wire, Data.Series("Prices")
+    local sendBlock, blocks = Wire.SendBlock, {}
+    Wire.SendBlock = function(kind, text, channel, target, tag)
+        blocks[#blocks + 1] = { kind = kind, text = text, channel = channel, target = target, tag = tag }
+        return true
+    end
+    local inGuild, inside = rawget(_G, "IsInGuild"), rawget(_G, "IsInInstance")
+    rawset(_G, "IsInGuild", function() return true end)
+    rawset(_G, "IsInInstance", function() return false end)
+    local shared = SaneUIData_Shared.forever
+    local own, build = Tally.Id()
+    local ROW, ENTRY = "\029", "\028"
+    local a, b, c, d, e = ("a"):rep(16), ("b"):rep(16), ("c"):rep(16), ("d"):rep(16), ("e"):rep(16)
+    -- A member's block, heard at its time; Raw: whenever this clock stands.
+    local function Raw(sender, id, at, ...)
+        Bundle.Block(sender, table.concat({ table.concat({ id, build, at }, "\031"), ... }, ROW), "GUILD")
+    end
+    local function Told(sender, id, at, ...)
+        W.clock = W.clock + math.max(at - GetServerTime(), 0)
+        Raw(sender, id, at, ...)
+    end
+    local function Row(loots, times, units, item)
+        return ("c\031gather\0310\031%d"):format(loots) .. (times > 0 and ("\030d\031gather\031%d\0310\031%d\031%d"):format(item or 777, times, units or times) or "")
+    end
+    local function Line(key, row) return "c" .. ENTRY .. key .. ENTRY .. row end
+    local market = SaneUIData_Market.forever
+    local function Strikes(sender)
+        local entry = market.strikes[sender]
+        return entry and entry.count or 0
+    end
+    local now = GetServerTime()
+
+    -- Sending: what was counted, once; nothing with nothing new; never in a fight or an instance, nor with the switch off
+    Tally.Sent(Tally.All())
+    Bundle.Tick()
+    check(#blocks == 0, "an account that counted nothing says nothing")
+    Tally.Loot("object:500", "gather", 0)
+    Tally.Drop("object:500", "gather", 777, 0, 2)
+    Tally.Visit("object:500", "gather")
+    Core.general.shareData = false
+    Bundle.Tick()
+    check(#blocks == 0, "the switch off: nothing goes")
+    Core.general.shareData = nil
+    rawset(_G, "IsInInstance", function() return true end)
+    Bundle.Tick()
+    check(#blocks == 0, "inside an instance it waits")
+    rawset(_G, "IsInInstance", function() return false end)
+    Bundle.Tick()
+    local sent = blocks[1]
+    check(sent and sent.kind == "B" and sent.channel == "GUILD" and sent.tag == "bundle" and not sent.target
+        and sent.text:find("^" .. own .. "\031" .. build .. "\031%d+\029"), "a bundle: its block's id, build and time, on the guild's channel")
+    check(sent.text:find("c\028object:500\028", 1, true), "with the key's totals")
+    blocks = {}
+    Bundle.Tick()
+    check(#blocks == 0, "told once: nothing more until something is counted")
+    Tally.Loot("object:500", "gather", 0)
+    Tally.Loot("object:501", "gather", 0)
+    Bundle.Tick()
+    check(#blocks == 1 and blocks[1].text:find("object:501", 1, true), "what was counted since")
+    blocks = {}
+
+    -- A long row never holds the others back, and what stands still is told in turn, behind what is new
+    for index = 1, 40 do Tally.Loot("object:" .. (600 + index), "gather", 0) end
+    Tally.Sent(Tally.All())
+    Tally.Loot("object:601", "gather", 0)
+    local rows, chosen = Tally.Bundle(120, 100)
+    check(chosen["object:601"] and rows[1][1] == "object:601" and #rows > 1, "room left goes to the others in turn")
+    local later = Tally.Bundle(120, 100)
+    check(later[2] and later[2][1] ~= rows[2][1], "and the next time to the next ones")
+    Tally.Sent(chosen)
+
+    -- Taking: apart from the player's own, the newest total of a block replacing the last
+    Told("Two", a, now, Line("object:900", Row(10, 1)))
+    check(not Tally.Of("drops", "object:900") and Drops:Of("object:900")[1].loots == 10, "a member's counts in the views, apart from your own")
+    Tally.Loot("object:900", "gather", 0)
+    check(Drops:Of("object:900")[1].loots == 11, "added to your own")
+    Told("Two", a, now + Bundle.SOONEST, Line("object:900", Row(20, 2)))
+    local entry = Drops:Of("object:900")[1]
+    check(entry.loots == 21 and entry.drops == 2, "the same block's newer total replaces the older: nothing counted twice")
+    Told("Two Alt", a, now + Bundle.SOONEST + 1, Line("object:900", Row(21, 2)))
+    check(Drops:Of("object:900")[1].loots == 22, "two characters of an account are one voice")
+    check(Tally.Keys(777)["object:900"] and #Drops:From(777) >= 2, "who gives an item, members' counts too")
+    Told("Three", b, now, Line("object:901", Row(5, 1)))
+    check(Drops:Of("object:901", "period")[1].loots == 5, "this build's, by itself")
+    Bundle.Block("Four", table.concat({ table.concat({ c, build - 1, now }, "\031"), Line("object:902", Row(5, 1)) }, ROW), "GUILD")
+    Bundle.Block("Four", table.concat({ table.concat({ own, build, now }, "\031"), Line("object:902", Row(5, 1)) }, ROW), "GUILD")
+    Bundle.Block("Four", table.concat({ table.concat({ c, build, now }, "\031"), Line("object:902", Row(5, 1)) }, ROW), "WHISPER")
+    check(#Drops:Of("object:902") == 0, "another build's period, this account's own block, a whisper: not taken")
+    Core.general.shareData = false
+    Told("Five", c, now, Line("object:902", Row(5, 1)))
+    Core.general.shareData = nil
+    check(#Drops:Of("object:902") == 0, "the switch off: nothing taken")
+
+    -- Hostile members: a strike for each, three and they are not heard, and what they sent is gone
+    local function Hostile(what, ...)
+        local before = Strikes("Bad")
+        Raw("Bad", d, ...)
+        check(Strikes("Bad") == before + 1 or (before == 2 and Strikes("Bad") == 0), what)
+    end
+    Told("Bad", d, now, Line("object:903", Row(10, 1)))
+    check(Drops:Of("object:903")[1].loots == 10, "a fair start")
+    Hostile("two bundles too soon: a strike", now + 60, Line("object:903", Row(11, 1)))
+    Hostile("a time ahead of this clock: a strike", GetServerTime() + Bundle.AHEAD + Bundle.SOONEST, Line("object:903", Row(11, 1)))
+    check(Drops:Of("object:903")[1].loots == 10, "what came with them not taken")
+    W.clock = W.clock + 2 * Bundle.SOONEST
+    Hostile("more drops than loots: a strike", GetServerTime(), Line("object:903", Row(10, 11)))
+    check(Relay.Ignored("Bad") and #Drops:Of("object:903") == 0, "three strikes: not heard, and what it sent taken out")
+    Told("Bad", e, now + 9 * Bundle.SOONEST, Line("object:903", Row(10, 1)))
+    check(#Drops:Of("object:903") == 0, "nor taken afterwards")
+    local function Off(what, ...)
+        market.strikes.Worse = nil
+        Told("Worse", e, now + 12 * Bundle.SOONEST, ...)
+        check(Strikes("Worse") == 1, what)
+    end
+    Told("Worse", e, now + 10 * Bundle.SOONEST, Line("object:904", Row(100, 1)))
+    Off("a total that shrinks: a strike", Line("object:904", Row(50, 1)))
+    Off("a total that grows faster than anybody can loot: a strike", Line("object:904", Row(2000 + 100, 1)))
+    Off("a key of no known kind: a strike", Line("player:1", Row(1, 1)))
+    Off("a way of no known kind: a strike", Line("object:905", "c\031stolen\0310\0311"))
+    Off("a record cut short: a strike", Line("object:905", "d\031gather\031777"))
+    Off("a number that is none: a strike", Line("object:905", "c\031gather\0310\031nan"))
+    Off("a line of no known kind: a strike", "x" .. ENTRY .. "object:905")
+    market.strikes.Worse = nil
+    Bundle.Block("Worst", "no bundle at all", "GUILD")
+    check(Strikes("Worst") == 1, "no head: a strike")
+    market.strikes.Worst = nil
+
+    -- Summed robustly: a member far from everybody else left out, none over a quarter, the player's own accounts whole
+    local function Voices(key, ...)
+        for index, voice in ipairs({ ... }) do Told("Voice" .. index, (("%x"):format(index)):rep(16), now + index, Line(key, voice)) end
+    end
+    Voices("object:910", Row(100, 50), Row(100, 52), Row(100, 48), Row(100, 100))
+    entry = Drops:Of("object:910")[1]
+    check(entry.loots == 300 and entry.drops == 150, "a member's chance far from everybody else's, with enough loots to be sure: left out")
+    Voices("object:911", Row(100, 50), Row(100, 50), Row(100, 50), Row(9700, 4850))
+    entry = Drops:Of("object:911")[1]
+    check(entry.loots == 300 + 2500 and entry.drops == 150 + 1250, "with four voices none makes up more than a quarter")
+    SaneUIData_Market = { forever = { houses = {}, mine = { Voice4 = true } } }
+    Prices.Account()
+    check(Prices.Mine("Voice4") and not Prices.Mine("Voice3"), "this player's other accounts, from their auction files")
+    entry = Drops:Of("object:911")[1]
+    Tally.stamp = Tally.stamp + 1
+    entry = Drops:Of("object:911")[1]
+    check(entry.loots == 10000 and entry.drops == 5000, "their counts count whole, as your own do")
+    Tally.stamp = Tally.stamp + 1
+
+    -- Facts: a row learned here goes along; a member's waits for three, what the player saw wins, nothing is passed on
+    local Quests = Data.Set("Quests")
+    Data.Check("Quests", 950, { name = "New Road" })
+    Tally.Loot("object:500", "gather", 0)
+    blocks = {}
+    Bundle.Tick()
+    local fact = blocks[1] and blocks[1].text:find("f\028Quests\028950\028name\028", 1, true)
+    check(fact, "a quest learned here told in the bundle, with what the game told of it")
+    blocks = {}
+    Tally.Loot("object:500", "gather", 0)
+    Bundle.Tick()
+    check(not blocks[1].text:find("Quests", 1, true), "once")
+    blocks = {}
+    local function Fact(sender, key, at, row)
+        Told(sender, (sender:byte(1) % 16 == 0 and "1" or ("%x"):format(sender:byte(1) % 16)):rep(16), at,
+            table.concat({ "f", "Quests", key, "name", row or (build .. "\t20000\tA Rumour") }, ENTRY))
+    end
+    Fact("Ann", 960, now + 20 * Bundle.SOONEST)
+    check(not Quests:Get(960), "one sender: it waits, and no view has it")
+    Fact("Ann", 960, now + 21 * Bundle.SOONEST)
+    check(not Quests:Get(960), "the same sender again is no second")
+    Fact("Bob", 960, now + 20 * Bundle.SOONEST)
+    check(not Quests:Get(960), "two senders: it waits")
+    Fact("Cid", 960, now + 20 * Bundle.SOONEST, build .. "\t20001\tA Rumour")
+    check(Quests:Get(960) and Quests:Get(960).name == "A Rumour" and Data.Learned("Quests", 960), "three senders of the same (the day apart): taken")
+    local told = Data.ConfirmedParts("Quests", 960)
+    check(told[1] == "name" and Data.Found()[1].how == "shared" and Data.Found()[1].key == 960, "with what the game told of it, a discovery that came from others")
+    Tally.Loot("object:500", "gather", 0)
+    Bundle.Tick()
+    check(not blocks[1].text:find("960", 1, true), "what came from others is not passed on")
+    blocks = {}
+    Fact("Dan", 950, now + 20 * Bundle.SOONEST, build .. "\t20000\tNot That Road")
+    Fact("Eve", 950, now + 20 * Bundle.SOONEST, build .. "\t20000\tNot That Road")
+    Fact("Fay", 950, now + 20 * Bundle.SOONEST, build .. "\t20000\tNot That Road")
+    check(Quests:Get(950).name == "New Road", "what the player saw wins")
+    SaneUIData_Market = { forever = { houses = {}, mine = { Gil = true } } }
+    Prices.Account()
+    Fact("Gil", 961, now + 20 * Bundle.SOONEST)
+    check(Quests:Get(961) and Quests:Get(961).name == "A Rumour", "from this player's other account: taken at once")
+    Fact("Ivy", 962, now + 20 * Bundle.SOONEST, "no row")
+    check(Strikes("Ivy") == 1, "what is no row: a strike")
+    market.strikes.Ivy = nil
+    Fact("Jon", 963, now + 20 * Bundle.SOONEST, (build + 1) .. "\t20000\tFrom Ahead")
+    check(not next(shared.facts, nil) or not shared.facts["Quests\031963\031\tFrom Ahead"], "a fact of another build: not kept")
+
+    -- Forget shared data: all of it; your own stays
+    local mineStill = Drops:Of("object:500")[1]
+    SlashCmdList.SANEUI("data forget")
+    check(not next(shared.counts) and not next(shared.facts) and not next(shared.taken) and shared.keys == 0, "/sane data forget: all that others sent")
+    check(not Data.Learned("Quests", 960) and Data.Learned("Quests", 950) and Drops:Of("object:500")[1].loots == mineStill.loots, "and only that: your own stay")
+    W.printed = {}
+    SlashCmdList.SANEUI("data")
+    Tally.Read("", nil)
+    check(Tally.Read("") and not Tally.Read(7) and not Tally.Read("c\031gather\0310"), "a row read strictly")
+
+    Wire.SendBlock = sendBlock
+    rawset(_G, "IsInGuild", inGuild)
+    rawset(_G, "IsInInstance", inside)
 end
 os.execute(("rm -rf '%s' '%s'"):format(folder, lore))
 

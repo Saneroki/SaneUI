@@ -197,8 +197,8 @@ holds the budget of values for all of them.
 - [ ] **1d.1 Watchers, discoveries, chat messages.** *Begun (Saneroki, 2026-10-23): `Data/Watchers.lua` confirms
   creatures seen or talked to, things used, mailboxes and crossings, a boss's loot and casts, and learns the stats of
   the items the character has. Since 2026-10-24 (`Data/Check.lua`, `Data/Facts.lua`): NPCs' services and vendors'
-  goods compared field by field (`Data.Check`). Still open: `Found.lua`, trainers' lists, the switch and chat
-  message.*
+  goods compared field by field (`Data.Check`). Since 2026-10-30 `Data/Found.lua`: the discoveries, the switches and the chat
+  lines. Still open: trainers' lists.*
   - `Watch.lua` (marks only) and `Found.lua`.
   - The watchers for vendors, trainers, flight masters and services.
   - The switch *Chat message for new data changes*.
@@ -213,8 +213,8 @@ holds the budget of values for all of them.
 - [ ] **1d.3 Drops,** with the World pack (decision 24). *Built (Saneroki, 2026-10-24): every loot window counted per
   build period (`Data/Loot.lua`, `Data/Tally.lua`: corpses, skinning, pockets, nodes, fishing, quest items, cells and
   points), added up over every player's saved file by the harvest's ledger (`dev/data/play.py`), which stages chances
-  from enough loots, the test for a changed chance, narrowed points and areas; with tests. Still open: the spawn mix
-  of a place of several node types, yields per visit, and `Drops:Chance` for the views.*
+  from enough loots, the test for a changed chance, narrowed points and areas; with tests. Since 2026-10-30 (`Data/Drops.lua`): gathers
+  and visits per node, rare drops, `Data.Drops()` for the views. Still open: the spawn mix of a place of several node types.*
   - Loot counted, but only if `GetLootSourceInfo` is there.
   - Build periods, chances, the test for a changed chance, cells.
   - Gathering nodes (the plan, *Gathering nodes*): gathers and yields per node type and visit, places merged
@@ -267,9 +267,11 @@ holds the budget of values for all of them.
 - [x] **1f.2 Scans:** have, want, data, and the question at login, each naming its auction house; a
   receiver takes only its own house's. Tests. *Built 2026-10-30: `src/Core/Data/Relay.lua`, with the switch and the price rule of
   *Poisoning* 7; `Doc/guides/data.md`, *Scans shared*.*
-- [ ] **1f.3 Bundles.** Tests.
+- [x] **1f.3 Bundles.** Tests. *Built 2026-10-30: `src/Core/Data/Bundle.lua`, counts and discoveries; `Doc/guides/data.md`, *Counts and
+  discoveries shared*. Places, cells and a patch check's findings are not in it yet.*
 - [ ] **1f.4 Trust.** *Built 2026-10-30 for auction prices (`Prices.lua`, `Relay.lua`; `Doc/guides/data.md`, *Scans shared*): shape, the
-  far-off price's quarantine, strikes, *Forget shared prices*, tests with hostile members. Still to come: the same for shared facts.*
+  far-off price's quarantine, strikes, *Forget shared data*, tests with hostile members. The same for counts and facts since 2026-10-30
+  (`Bundle.lua`). Still to come: the same for what `Confirm.lua` shares, and the game's check of facts (board #241).*
   - Shape, quarantine and the game's check.
   - Three senders, counts and prices: three different keys (guide, *Players*).
   - Strikes, kept by key.

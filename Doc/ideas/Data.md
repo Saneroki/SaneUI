@@ -891,6 +891,9 @@ full history or its last few versions. Checks, writes, sharing and chat messages
 
 ### Discoveries
 
+*Built 2026-10-30 (`src/Core/Data/Found.lua`; the guide, *Discoveries*): the list, `Data.Found`, the two switches and the chat lines, as
+below. The patch check's own discoveries (an entry gone, a chance a build changed) come with it; the harvest finds the latter.*
+
 - A **discovery** is every accepted change to the player's data: a new entry, a changed field, an entry
   gone, a drop chance that changed with a build, new auction house prices. Each notes the set, key, build,
   day, what changed (from, to) and how it came: the patch check, the crawl, a watcher, a scan, or shared and
@@ -933,6 +936,11 @@ members loot 2,000 wolves and 1,000 of them had meat, the chance is 50 %.
 
 ### What is counted
 
+*Saneroki (2026-10-30): "how often rare drops from skinning, mining and herb gathering was found with nodes". Built: gathers, visits and
+each item per node type and skinned creature (`Loot.lua`, `Tally.lua`), `Data.Drops()` (`Drops.lua`) with `Rare`, `Chance`, `Of`, `From`
+(the guide, *Drop rates*), and the rare drops on the tooltips of nodes and items. A rare drop is no kind of its own: an item like any other,
+told by how seldom it comes (at most 10 %).*
+
 - **Loot of a creature** (`LOOT_OPENED`; the corpse's GUID names the creature): one *loot* for the creature,
   one *drop* for each item in it, with its count. Each corpse counts once (its GUID is remembered a while).
   The creature's level as seen (target, mouseover, nameplate): the lowest and highest.
@@ -945,9 +953,10 @@ members loot 2,000 wolves and 1,000 of them had meat, the chance is 50 %.
 - **Chance = drops ÷ loots,** per corpse looted, not per kill: kills cannot be counted (the combat log is
   closed to addons), and a corpse with nothing on it is never opened. Kills that were not looted say
   nothing and are not counted. A view says *per corpse looted*.
-- *To check first in the game:* `GetLootSourceInfo` (the corpse's GUID for each loot slot) is in neither the
-  client's code nor its API documentation in `references/`. Without it the corpse is not known for sure,
-  and nothing is counted: the creature is never guessed from the target.
+- `GetLootSourceInfo` (the corpse's GUID for each loot slot) is in neither the client's code nor its API
+  documentation, but it answers in play: Retail's saved files of 2026-10-30 hold corpses, herbs and quest objects
+  counted by it. Without it the corpse is not known for sure, and only a gather aimed at a node of that name counts: the
+  creature is never guessed from the target.
 - **Where, and for which quest:** each loot also notes its place and the creature's quests (*What every kill
   teaches*).
 
@@ -1005,6 +1014,9 @@ over time.
   takes part in the area only after a second loot there (a long chase is no spawn place).
 
 ### Gathering nodes
+
+*Built 2026-10-30: gathers and yields per node type, visits, `Drops:Of`. Still open: the spawn mix of a place, and staging visits (the
+ledger keeps them; the set Drops has no field yet).*
 
 Saneroki (2026-10-18): herbs, ore and other nodes have drop tables like creatures, and their places are
 learned without duplicates, so that over time the database knows where nodes stand, what grows where and
@@ -1407,6 +1419,13 @@ number; a kind or number we do not know is ignored.
 
 ### Bundles
 
+*Built 2026-10-30 (`src/Core/Data/Bundle.lua`; the guide, *Counts and discoveries shared*), for the guild, the party and the raid alike.
+Told apart from the plan below: a bundle holds the keys counted since the last, not all totals, with what room is left going to
+the others in turn; a member that counted nothing sends nothing; one account's characters are one voice, by the tally block's
+id, rather than one per character; members' counts of up to `Tally.BUILDS` builds stay per sender, not summed at a new build; at most
+20,000 keys in all, as Core's saved file must stay small. Still open: places and cells in the bundle, and a patch check's findings.
+The guild busy (*Limits*) is not looked at yet.*
+
 - **Gathered for 15 minutes, then shared** (Saneroki): each member collects its discoveries and counts for 15
   minutes and then sends them as one bundle (once in 15 minutes is plenty for most limits): a small one in
   a message or two, a big one in blocks like a scan.
@@ -1510,8 +1529,10 @@ message is treated as possibly hostile, whichever addon it seems to come from.
 10. **Undo.** A button *Forget shared data* (*The switches*) removes everything accepted from others and all
     that waits, and leaves the player's own data and the packs as they were.
 
-*Built for auction prices, 2026-10-30 (2, the quarantine of far-off prices, 7, 8, 9, 10; the guide, *Scans shared*). Shared facts
-(`Confirm.lua`) keep no sender, so 8 and 10 do not reach them yet.*
+*Built for auction prices, 2026-10-30 (2, the quarantine of far-off prices, 7, 8, 9, 10; the guide, *Scans shared*). Built for counts and
+facts the same day (2 for shape, 3, 5, 6, 8, 9, 10; the guide, *Counts and discoveries shared*): 4 still holds only for items, and the
+schema is checked only when a fact is taken. This player's other accounts count as the player (Saneroki's three accounts; `Prices.Mine`).
+What `Confirm.lua` shares keeps no sender, so 8 and 10 do not reach it yet.*
 
 **What remains:** one person with three characters in the guild could agree with itself about something the
 game cannot check (where an NPC stands). It cannot touch what the game checks; it is removed with one
@@ -1525,7 +1546,7 @@ module's data, so no module has switches of its own for this.
 
 | Switch | Default | Does |
 | --- | --- | --- |
-| **Share data with my guild and group** | on | Sending and taking shared data. *Built 2026-10-30, for the prices and the confirmed facts; the prefix stays registered, as the guild's records use it.* |
+| **Share data with my guild and group** | on | Sending and taking shared data. *Built 2026-10-30, for the prices, the confirmed facts, the counts and the discoveries; the prefix stays registered, as the guild's records use it.* |
 | **Load client data on load** | on | The patch check reads the game's data during the loading screen. Off: the check runs after the loading screen, in the background, within the frame budget (*The patch check*). |
 | **Chat message for new data changes** | off | One line when accepted data changed the database (*Chat messages*). |
 | **Chat message for new auction house data** | off | One line when an accepted scan, own or shared, changed prices. |

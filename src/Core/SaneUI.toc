@@ -4,7 +4,7 @@
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
-## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned
+## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned, SaneUIData_Shared
 ## SavedVariablesPerCharacter: SaneUICharDB
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## AddonCompartmentFunc: SaneUI_OnAddonCompartmentClick
@@ -92,6 +92,10 @@ Data\Confirm.lua
 Data\Check.lua
 # What play counts: loots and what they gave, places seen, per build period, for the harvest (Data.Tally)
 Data\Tally.lua
+# How often things come, for every view: the set Drops, this account's counts and the members' (Data.Drops)
+Data\Drops.lua
+# The discoveries, and the chat lines of them (Data.Found)
+Data\Found.lua
 # Core's watchers: creatures, things, mailboxes, crossings, a boss's loot and casts, the items' stats (Data.Watchers)
 Data\Watchers.lua
 # The quest watchers: offered, taken, worked on, handed in, compared with the set Quests (Data.QuestWatch)
@@ -107,6 +111,8 @@ Data\Scan.lua
 Data\ScanBar.lua
 # What a scan found told to this computer's other accounts while they run, by addon messages (Data.Relay)
 Data\Relay.lua
+# Counts and discoveries shared with the guild and the group, every 15 minutes (Data.Bundle)
+Data\Bundle.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)
 People.lua
 # What the game says about a unit for every view: its quest objective, a player's item level and talents (paced inspections)

@@ -6,6 +6,25 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Gathering counted, rare drops, discoveries, and both shared (Saneroki, 2026-10-30)
+Saneroki: implement the drop rates and gathering counts, "esp focusing on how often rare drops from skinning, mining and herb gathering was
+found with nodes", and the new discoveries. A game restart takes it in (new files and a new saved variable in Core's TOC).
+- **`src/Core/Data/Drops.lua` (new):** `Data.Drops()`, the one door for how often things come: the set Drops, this account's counts and
+  the members', with `Of`, `Rare`, `Chance`, `From`, `Knows`, `/sane data gathered`. A chance from three drops on, until then how many of how
+  many; rare is at most 10 % of a way.
+- **`Tally.lua`, `Loot.lua`:** a node's visits (`v` records); `Tally.Read`, strict; `Counts`, `Keys` (an index of who gives what), `Bundle`.
+  A slot with no source in a window of one source is that source's; a window with none counts after a gather cast aimed at a herb or
+  ore of that name in Objects; a gather cast the set Spells lacks is told by the game's name for it.
+- **`src/Core/Data/Found.lua` (new):** `Data.Discovered`, `Data.Found`, the switches *Chat message for new data changes* and *... for new
+  auction house data* (off), one line in 15 minutes, never in a fight, `[Details]`, `/sane data found`. `Check.lua`, `Watchers.lua`,
+  `Teleports.lua`, `Confirm.lua`, `Loot.lua`, `Scan.lua` and `Relay.lua` tell it.
+- **`src/Core/Data/Bundle.lua` (new), 1f.3:** every 15 minutes a member that counted something tells its totals and the rows it learned, in
+  blocks of kind `B`; kept apart in `SaneUIData_Shared`, per block id; a fact needs three senders, or one of the player's other accounts
+  (`Prices.Mine`, each account's auction file names its characters). Strikes as for scans. *Forget shared prices* is *Forget shared
+  data* (`Data.ForgetShared`).
+- **Tooltips:** rare drops on a herb or a vein, and where a rare item came from (`Gathering.lua`).
+- **The harvest:** the ledger keeps visits; `dev/tests/data.lua` 514 checks, with hostile members; `dev/tests/tooltips.lua` 535.
+
 ### One party and raid frame; barriers, lost health and dispels on every bar (Saneroki, 2026-10-30)
 Saneroki: no party frame at all, the same window for party and raid with more slots, in the nameplates' look, a tank's and healer's mana
 inside the bar, missing buffs floating over the name, max sizes and a preview in Edit Mode; no borders around the whole, 0px gaps, little
@@ -44,23 +63,6 @@ and should be a given. Step 1f.2 of the plan; a game restart takes it in (a new 
 - **The switch *Share data with my guild and group* (page General, on):** `Core.general.shareData`, `Data.Sharing()`; it also holds
   `Confirm.lua`'s sharing, sending and taking.
 - **Tests:** `dev/tests/data.lua`, `dev/tests/core.lua`.
-
-### Speed Leveling off hides the guide, the satchel's switch mirrors the bags' box; Retail's Newcomer Chat left (Saneroki, 2026-10-30)
-Saneroki: turning Speed Leveling off in the bags or the minimap's popup closes the guide, not only pauses it, and both
-buttons do the same; Retail's Newcomer Chat off and left on both profiles. A game restart takes it in, with the build's
-other work; `Presets.VERSION` 2 brings the wish to accounts that have settings.
-- **`src/SpeedLeveling/Guide.lua`:** `Guide.State()`: *Your guide*, and off outside the profile Speedleveling. The view, what
-  the guide wants and `Idle` go by it. `Moved` in `SpeedLeveling.lua`: a change of profile is followed also where the
-  setting is the same on both.
-- **`src/SpeedLeveling/SpeedLeveling.lua`:** the switch is the profile (`Profiles.SetLeveling`), as `Vendor.BOXES`' box: state on or
-  off, offered while the module rests, the same words as the box; its pause and its right-click menu are gone. Paused
-  stays on the options page.
-- **`src/Navigation/Satchel.lua`, `src/Core/Switches.lua`:** a switch's state *paused* gone.
-- **`src/Core/Presets.lua`, `src/Social/Social.lua`, `src/Social/Join.lua`:** in Retail both standard profiles hold the wish
-  never in it for *Newcomer Chat* (the game's name), so it is left on every character, also those saved before, and again
-  when the game puts one back. Default `mute` has `CHANNEL:NewcomerChat`. Forever has the channel switched off.
-- **Tests:** `dev/tests/speedguide.lua`, `core.lua`, `social.lua`, `navigation.lua`.
-- **Docs:** `src/SpeedLeveling/README.md`, `src/Navigation/README.md`, `src/Social/README.md`, `Doc/ideas/Leveling.md`.
 
 ### Auction data across accounts by links, no program running; every scan whole in a file of its own (Saneroki, 2026-10-30)
 Saneroki: three accounts, the third scanning in the background; the data detected and all of it on all three; a file link in
@@ -136,6 +138,23 @@ Saneroki: all local websites for development on the same framework, server and r
   pictures are made by `saneui makemapcompare` (showing them no longer builds). The lab's game stops after 15 minutes
   without a page, its saved settings kept, and starts again at the next call. `dev/tools/web-pages run --port N` (or
   `ui-lab serve --port N`) is a session's own copy, for a lab of its own.
+
+### Speed Leveling off hides the guide, the satchel's switch mirrors the bags' box; Retail's Newcomer Chat left (Saneroki, 2026-10-30)
+Saneroki: turning Speed Leveling off in the bags or the minimap's popup closes the guide, not only pauses it, and both
+buttons do the same; Retail's Newcomer Chat off and left on both profiles. A game restart takes it in, with the build's
+other work; `Presets.VERSION` 2 brings the wish to accounts that have settings.
+- **`src/SpeedLeveling/Guide.lua`:** `Guide.State()`: *Your guide*, and off outside the profile Speedleveling. The view, what
+  the guide wants and `Idle` go by it. `Moved` in `SpeedLeveling.lua`: a change of profile is followed also where the
+  setting is the same on both.
+- **`src/SpeedLeveling/SpeedLeveling.lua`:** the switch is the profile (`Profiles.SetLeveling`), as `Vendor.BOXES`' box: state on or
+  off, offered while the module rests, the same words as the box; its pause and its right-click menu are gone. Paused
+  stays on the options page.
+- **`src/Navigation/Satchel.lua`, `src/Core/Switches.lua`:** a switch's state *paused* gone.
+- **`src/Core/Presets.lua`, `src/Social/Social.lua`, `src/Social/Join.lua`:** in Retail both standard profiles hold the wish
+  never in it for *Newcomer Chat* (the game's name), so it is left on every character, also those saved before, and again
+  when the game puts one back. Default `mute` has `CHANNEL:NewcomerChat`. Forever has the channel switched off.
+- **Tests:** `dev/tests/speedguide.lua`, `core.lua`, `social.lua`, `navigation.lua`.
+- **Docs:** `src/SpeedLeveling/README.md`, `src/Navigation/README.md`, `src/Social/README.md`, `Doc/ideas/Leveling.md`.
 
 ### Speed Leveling: simple group rolls, professions as steps of the guide; junk tried again (Saneroki, 2026-10-30)
 Saneroki: roll Need on an upgrade, else Greed, nobody Passes, off Speedleveling nothing automatic, no talk between the

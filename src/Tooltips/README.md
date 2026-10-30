@@ -359,6 +359,8 @@ only read.
   `Tooltips.lua`), so Alt, the comparisons and a move on the screen are followed at once; it sets the
   stage's size, side and frame levels only when they change. Its alpha follows the panel's
   (`Panel.Strength`). Not for what you wear beside an item (a comparison), not with the option off.
+- **Rare drops** (`Gathering.lua`): under the skill, small, what comes seldom as Core's `Data.Drops()` counted it: on a herb or a vein its
+  rare drops (at most three), on a rare item where it came from, each with how often (`Star Ruby  7.5% (3 of 40)`, `1 of 40` while too few came).
 - **Gathering** (`Gathering.lua`, `Kinds/Object.lua`): Core's sets *Objects* (a node's name, kind, skill line,
   the skill it needs, and where it turns yellow and grey, `yellowAt` and `greyAt`; the index `byName`) and *Drops* (`object:<id>`, what it gives, `how = "gather"`;
   the index `byItem`). A thing in the world is found by its name (`Objects:Keys("byName", ...)`: the tooltip

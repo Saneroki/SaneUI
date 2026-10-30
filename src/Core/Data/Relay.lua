@@ -86,8 +86,10 @@ local function Strike(sender)
     if entry.count >= Relay.STRIKES then
         entry.count, entry.till = 0, Now() + Relay.IGNORED
         Prices.Forget(sender)
+        if Data.Bundle then Data.Bundle.Forget(sender) end
     end
 end
+Relay.Strike, Relay.Ignored, Relay.Channels = Strike, Ignored, Channels
 
 -- The lines cut into blocks, each saying what house and when.
 local function Blocks(given)
@@ -202,6 +204,7 @@ function Relay.Block(sender, text, channel)
     if count > 0 then
         taken[house] = math.max(taken[house] or 0, at)
         Relay.heard.items, Relay.heard.at = Relay.heard.items + count, at
+        Data.Discoveries.Prices(count)
     end
 end
 

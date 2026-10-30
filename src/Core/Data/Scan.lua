@@ -275,6 +275,7 @@ local function Keep(scan, home, day, now)
     end
     Remember(home)
     finished = true
+    Data.Discoveries.Prices(#moved)
     if Data.Relay then Data.Relay.Offer(Prices.Key(home), now, moved) end
 end
 

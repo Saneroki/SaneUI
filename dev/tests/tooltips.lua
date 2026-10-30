@@ -285,7 +285,7 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
-for _, file in ipairs({ "Steps", "Codec", "Data", "Prices", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
+for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Prices", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
 W.AddSets(folder .. "/Sets") -- the set files, at the end of Core's TOC
@@ -1821,6 +1821,25 @@ skillLines[186].rank, skillLines[186].modifier = 160, 0
 W.Fire("SKILL_LINES_CHANGED")
 tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Requires Mining 175" } })
 check(hex(panel, 3) == CHANCE[1], "below what it needs: red")
+-- What came seldom, as Core counted it: on the vein, and on the rare item, with how often
+do
+    local Tally, Drops = Core.Data.Tally, Core.Data.Drops()
+    local vein = "object:" .. Core.Data.Set("Objects"):Keys("byName", "Mithril Deposit")[1]
+    for index = 1, 40 do
+        Tally.Loot(vein, "gather", 0)
+        Tally.Drop(vein, "gather", 3858, 0, 2)
+        if index <= 3 then Tally.Drop(vein, "gather", 7910, 0, 1) end
+    end
+    Tally.Drop(vein, "gather", 12800, 0, 1)
+    W.items[7910], W.items[12800] = { name = "Star Ruby", quality = 2 }, { name = "Azerothian Diamond", quality = 2 }
+    tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Mining" } })
+    check(count(panel) == 5 and row(panel, 4).left == "Star Ruby  7.5% (3 of 40)" and row(panel, 4).font == "small"
+        and row(panel, 5).left == "Azerothian Diamond  1 of 40", "a vein: its rare drops, a percent once enough came, until then how many of how many")
+    tip:Fill({ type = TYPE.Item, id = 7910 }, { { "Star Ruby" } })
+    local seldom = find("Professions")
+    check(seldom and row(panel, seldom + 1).left == "Mithril Deposit  7.5% (3 of 40)", "the rare item: where it came from, how often")
+    check(#Drops:Rare(vein) == 2, "what the tooltips read is Core's")
+end
 W.items[10620] = { name = "Thorium Ore", quality = 1 }
 tip:Fill({ type = TYPE.Item, id = 10620 }, { { "Thorium Ore" } })
 local gathering = find("Professions")

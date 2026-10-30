@@ -166,6 +166,15 @@ function Data.Check(name, key, told)
         if not Data.Learn(name, key, record) then return false end
         for _, part in ipairs(agree) do Confirmations.Told(name, key, part) end
         for _, part in ipairs(changed) do Confirmations.Told(name, key, part) end
+        -- a field told a piece at a time (a creature's health at the level seen) is no discovery by itself
+        for _, part in ipairs(changed) do
+            local how = spec[part:match("^[%w_]+")]
+            if not (how and how.optional) then
+                Data.Discovered(name, key, current and "changed" or "new", changed)
+                break
+            end
+        end
+        if current == nil and #changed == 0 then Data.Discovered(name, key, "new", agree) end
         return true
     end
     if #agree == 0 then return false end

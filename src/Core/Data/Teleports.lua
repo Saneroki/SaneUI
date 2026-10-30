@@ -75,7 +75,7 @@ local function Learn(key, x, y, world)
     local record = {}
     for field, value in pairs(way) do record[field] = value end
     record.path = { { x = x, y = y, map = world } }
-    Data.Learn("Travel", key, record)
+    if Data.Learn("Travel", key, record) then Data.Discovered("Travel", key, "changed", { "path" }) end
 end
 
 -- A look after the cast: a leap since the last one is the teleport, its end learnt; else looked at again, until

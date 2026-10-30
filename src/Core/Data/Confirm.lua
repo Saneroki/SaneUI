@@ -179,6 +179,7 @@ local function Held()
     if Core.Restricted() or not Core.Data.Sharing() then return true end
     return Core.Ask(rawget(_G, "IsInInstance")) == true
 end
+Confirm.Held = Held
 
 -- The first of what waits, with what else waits of the same kind that goes along: a confirmation's other parts of the
 -- same entry, other learned rows.
@@ -264,7 +265,8 @@ Wire.ListenBlock("L", function(_, text, channel)
         local open = name and Confirm.SHARED[name]
         if open and row and fields[2] then
             local key = tonumber(fields[2]) or fields[2]
-            Data.LearnRow(name, key, row, function(record, current)
+            local before = Data.Set(name):Get(key)
+            local taken = Data.LearnRow(name, key, row, function(record, current)
                 if not current then return record.name ~= nil end
                 for field, value in pairs(record) do
                     if not open[field] and field ~= "since" and field ~= "day" and field ~= "patch"
@@ -276,6 +278,7 @@ Wire.ListenBlock("L", function(_, text, channel)
                 end
                 return true
             end)
+            if taken then Data.Discovered(name, key, before and "changed" or "new", nil, "shared") end
         end
     end
 end)

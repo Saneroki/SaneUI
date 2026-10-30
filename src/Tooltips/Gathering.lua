@@ -22,6 +22,10 @@ local _, ns = ...
 --  what nodes give: each node that gives it by its name, the easiest first;
 --  without Alt only that one, and how many more Alt shows.
 --
+--  Below that, small, what comes seldom, as Core's Drops counted it: on a herb or a vein its rare drops, on a
+--  rare item the nodes and creatures it came from, each with how often (a percent once enough came, until
+--  then how many of how many gathers).
+--
 --  A node is known by its name: the tooltip of a thing in the world gives no
 --  ID. The data has the names in English, so in another language there is no
 --  section. Your skill is the game's (C_SkillInfo), asked once and again when
@@ -29,7 +33,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Ask, Data = Core.Plain, Core.Ask, Core.Data
-local OBJECTS, DROPS = Data.Set("Objects"), Data.Set("Drops")
+local OBJECTS, DROPS, ITEMS = Data.Set("Objects"), Data.Set("Drops"), Data.Set("Items")
 local Read, TEXT, COLOR = ns.Reader, ns.TEXT, ns.COLOR
 local ASIDE = COLOR.ASIDE
 local Gathering = {}
@@ -43,6 +47,8 @@ local SKILLS = {
 }
 local GATHERED = { herb = true, ore = true } -- the kinds of object that are gathered with a skill
 local HELD = 400 -- names and items kept at most (each thing pointed at), then forgotten together
+local RARE = 3   -- rare drops on a tooltip at most
+local WAYS = { gather = true, skin = true } -- the ways of gathering Core's Drops tells apart
 
 -- The game's colours of difficulty, as its professions and quest log use them: the global the client
 -- has, else the quest log's table, else that table's numbers.
@@ -72,6 +78,7 @@ local skills = {} -- [skill line] = { rank, reach, most, name }, or false: not l
 local named = {}  -- [a thing's name] = its node's record, or false: none
 local given = {}  -- [item] = the nodes that give it, the easiest first, or false: none
 local bands = setmetatable({}, { __mode = "k" }) -- [a node's record] = where each colour begins, as a text
+local keys = setmetatable({}, { __mode = "k" })  -- [a node's record] = its key in Objects
 local namedCount, givenCount = 0, 0
 
 -- Your skill in a skill line: its rank, what it reaches with its bonus, its most, its name; nil when
@@ -164,6 +171,7 @@ function Gathering.Find(name)
             local record = OBJECTS:Get(key)
             if Gathered(record) then
                 known = record
+                keys[record] = key
                 break
             end
         end
@@ -213,6 +221,22 @@ local function Sources(item)
     return known or nil
 end
 
+-- An item's name: the data's, else the game's while it has it.
+local function ItemName(item)
+    local name = ITEMS:Ready() and ITEMS:Get(item, "name")
+    if name then return name end
+    local items = rawget(_G, "C_Item")
+    name = Plain(Ask(items and items.GetItemNameByID, item))
+    return type(name) == "string" and name or nil
+end
+
+-- One small line of what came seldom: the thing, and how often.
+local function Seldom(name, entry)
+    local often = entry.chance and TEXT.RARE_CHANCE:format(entry.chance, entry.drops, entry.loots)
+        or TEXT.RARE_COUNT:format(entry.drops, entry.loots)
+    Read.Text("small", TEXT.RARE_DROP:format(name, often), ASIDE[1], ASIDE[2], ASIDE[3]).indent = 20
+end
+
 -- One row: the skill's icon, words in the colour of your chance, at the right where each colour begins.
 -- One row: the skill's icon, words in the colour of your chance (chance: the game's own, where known), at
 -- the right where each colour begins.
@@ -234,18 +258,35 @@ function Gathering.Node(record, r, g, b)
     local yours = Yours(skill)
     row.label = yours and Read.Memo("gatherSkill", TEXT.SKILL, yours.rank, yours.most) or TEXT.NOT_LEARNED
     row.labelFont = "small"
+    local shown = 0
+    for _, entry in ipairs(keys[record] and Data.Drops():Rare("object:" .. keys[record]) or {}) do
+        local name = not entry.shipped and ItemName(entry.item)
+        if name and shown < RARE then
+            Seldom(name, entry)
+            shown = shown + 1
+        end
+    end
 end
 
 -- On what nodes give: each node by its name, the easiest first; without Alt only that one. In the section
 -- Professions, after the professions that use it.
 function Gathering.Item(ctx, item)
     local list = item and Sources(item)
-    if not list then return end
-    Read.Section(TEXT.PROFESSIONS)
-    local shown = IsAltKeyDown() and #list or 1
-    for index = 1, shown do Row(list[index], list[index].name) end
-    if shown < #list then
-        Read.Text("small", Read.Memo("gatherMore", TEXT.ALT_MORE, #list - shown), ASIDE[1], ASIDE[2], ASIDE[3]).indent = 20
+    if list then
+        Read.Section(TEXT.PROFESSIONS)
+        local shown = IsAltKeyDown() and #list or 1
+        for index = 1, shown do Row(list[index], list[index].name) end
+        if shown < #list then
+            Read.Text("small", Read.Memo("gatherMore", TEXT.ALT_MORE, #list - shown), ASIDE[1], ASIDE[2], ASIDE[3]).indent = 20
+        end
+    end
+    local shown = 0
+    for _, entry in ipairs(item and Data.Drops():From(item) or {}) do
+        if entry.rare and WAYS[entry.how] and not entry.shipped and shown < RARE then
+            Read.Section(TEXT.PROFESSIONS)
+            Seldom(Data.Drops():Name(entry.key), entry)
+            shown = shown + 1
+        end
     end
 end
 

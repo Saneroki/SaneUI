@@ -10,15 +10,19 @@ local Core = SaneUI.Core
 --      Tally.Loot("npc:69", "loot", 0)                   one corpse looted (how: loot, skin, pickpocket, gather, fish;
 --                                                        quest: counted for those on this quest, 0 for everybody)
 --      Tally.Drop("npc:69", "loot", 769, 0, 2)           an item it gave, and how many
+--      Tally.Visit("object:1617", "gather")              a node come to: its gathers since are one visit's
 --      Tally.Point("npc:69", map, x, y)                  seen from up close (talked to, gathered): merged by yards
 --      Tally.Cell("npc:69", map, x, y)                   looted here: a cell of the map (100 by 100)
 --      Tally.Here()                                      the player's map and place (percent), or nil
+--      Tally.Counts("object:1617")                       what the kept builds counted of a key (Drops.lua reads it)
+--      Tally.Bundle(room)                                rows to tell the guild and the group (Bundle.lua)
 --
 --  Kept in SaneUIData_Learned[game].tally[build] = { id = random, drops = {}, points = {}, cells = {} }, a packed row
 --  per key, one block per build (the build period), at most Tally.BUILDS: the harvest reads the blocks, and takes of
 --  each only what it did not take before (by the block's random id: the same saved file read twice counts once). The
 --  maps' sizes in yards beside them (maps[map]), so the harvest can measure. Nothing in it is about a player: no time
---  finer than the build, no name, no trail (a sighting is the thing's place, merged into the places seen before).
+--  finer than the build, no name, no trail (a sighting is the thing's place, merged into the places seen before). The
+--  keys counted since the last bundle stand in the block's fresh.
 -------------------------------------------------------------------------------
 local Data = Core.Data
 local Codec = Data.Codec
@@ -30,6 +34,7 @@ Tally.VISIT = 900      -- seconds within which a place seen again is the same vi
 Tally.BUILDS = 4       -- build periods kept; the oldest dropped first
 Tally.KEYS = 20000     -- keys of a kind in one build period at most
 Tally.RECORDS = { drops = 400, points = 60, cells = 500 } -- records of one key at most
+Tally.stamp = 0        -- grows with every count (Drops.lua's answers are made anew)
 
 local LIST, PART = "\030", "\031"
 local floor, sqrt = math.floor, math.sqrt
@@ -39,6 +44,9 @@ local block     -- the build's block
 local rows = { drops = {}, points = {}, cells = {} } -- [kind][key] = the key's records, taken apart (this build's)
 local counts = { drops = 0, points = 0, cells = 0 }  -- keys of each kind in the block
 local visited = {} -- [key .. "\031" .. record] = GetTime() of the last visit counted
+local turn         -- the key the last bundle's older rows ended at
+local index        -- [item] = { [key] = true }: who gives what; made when first asked for, kept up after that
+local HOWS = { loot = true, skin = true, pickpocket = true, gather = true, fish = true }
 
 local function Build()
     local _, number = Core.Ask(rawget(_G, "GetBuildInfo"))
@@ -63,6 +71,7 @@ local function Block()
         part.tally[build] = found
         Data.NoteBuild()
     end
+    if type(found.fresh) ~= "table" then found.fresh = {} end
     for _, kind in ipairs({ "drops", "points", "cells" }) do
         if type(found[kind]) ~= "table" then found[kind] = {} end
         local n = 0
@@ -114,6 +123,10 @@ local function Keep(kind, key, list)
         packed[index] = table.concat(fields, PART)
     end
     here[kind][key] = table.concat(packed, LIST)
+    if kind == "drops" then
+        here.fresh[key] = true
+        Tally.stamp = Tally.stamp + 1
+    end
 end
 
 local function Valid(key)
@@ -139,7 +152,7 @@ function Tally.Loot(key, how, quest)
     return true
 end
 
--- An item one loot of a key gave, and how many.
+-- An item one loot of a key gave, and how many. True, and true again when this build had not counted it there before.
 function Tally.Drop(key, how, item, quest, units)
     if not Valid(key) or type(how) ~= "string" or type(item) ~= "number" then return false end
     local list = Records("drops", key)
@@ -155,6 +168,25 @@ function Tally.Drop(key, how, item, quest, units)
     end
     if #list >= Tally.RECORDS.drops then return false end
     list[#list + 1] = { "d", how, item, quest, 1, units }
+    Keep("drops", key, list)
+    if index then Tally.Indexed(key, "d" .. PART .. how .. PART .. item .. PART) end
+    return true, true
+end
+
+-- One visit of a node: a vein gives several gathers before it is gone, and a route gains what one visit gives.
+function Tally.Visit(key, how)
+    if not Valid(key) or type(how) ~= "string" then return false end
+    local list = Records("drops", key)
+    if not list then return false end
+    for _, record in ipairs(list) do
+        if record[1] == "v" and record[2] == how then
+            record[3] = (tonumber(record[3]) or 0) + 1
+            Keep("drops", key, list)
+            return true
+        end
+    end
+    if #list >= Tally.RECORDS.drops then return false end
+    list[#list + 1] = { "v", how, 1 }
     Keep("drops", key, list)
     return true
 end
@@ -245,6 +277,139 @@ function Tally.Of(kind, key)
     if not rows[kind] then return nil end
     local list = Records(kind, key)
     return list and #list > 0 and list or nil
+end
+
+local function Whole(text)
+    return type(text) == "string" and #text < 10 and text:match("^%d+$") and tonumber(text) or nil
+end
+
+-- A row of counts read into counts = { loots = { ["how|quest"] = n }, items = { ["how|quest|item"] = { times, units } },
+-- visits = { [how] = n } }, made where none is given. Read strictly, as a member's comes off the wire: nil for a row
+-- this code could not have written, or with more of an item than it had loots.
+function Tally.Read(row, counts)
+    counts = counts or { loots = {}, items = {}, visits = {} }
+    if type(row) ~= "string" then return nil end
+    if row == "" then return counts end
+    local own = { loots = {}, items = {}, visits = {} }
+    for _, text in ipairs(Codec.Cut(row, LIST)) do
+        local record = Codec.Cut(text, PART)
+        local kind, how = record[1], record[2]
+        if not HOWS[how] then return nil end
+        if kind == "c" and #record == 4 then
+            local quest, times = Whole(record[3]), Whole(record[4])
+            if not (quest and times) then return nil end
+            own.loots[how .. "|" .. quest] = (own.loots[how .. "|" .. quest] or 0) + times
+        elseif kind == "d" and #record == 6 then
+            local item, quest, times, units = Whole(record[3]), Whole(record[4]), Whole(record[5]), Whole(record[6])
+            if not (item and quest and times and units) then return nil end
+            own.items[how .. "|" .. quest .. "|" .. item] = { times, units }
+        elseif kind == "v" and #record == 3 then
+            local times = Whole(record[3])
+            if not times then return nil end
+            own.visits[how] = (own.visits[how] or 0) + times
+        else
+            return nil
+        end
+    end
+    for name, given in pairs(own.items) do
+        if given[1] > (own.loots[name:match("^(.+)|%d+$")] or 0) then return nil end
+        local had = counts.items[name] or { 0, 0 }
+        counts.items[name] = { had[1] + given[1], had[2] + given[2] }
+    end
+    for way, times in pairs(own.loots) do counts.loots[way] = (counts.loots[way] or 0) + times end
+    for how, times in pairs(own.visits) do counts.visits[how] = (counts.visits[how] or 0) + times end
+    return counts
+end
+
+-- What the kept build periods counted of a key, added up; period: only this build's.
+function Tally.Counts(key, period)
+    local counts = { loots = {}, items = {}, visits = {} }
+    local here = Block()
+    for _, each in pairs(here and part.tally or {}) do
+        if (not period or each == here) and type(each) == "table" and type(each.drops) == "table" then
+            Tally.Read(each.drops[key], counts)
+        end
+    end
+    return counts
+end
+
+-- A row's items noted for its key (a member's rows too: Bundle.lua).
+function Tally.Indexed(key, row)
+    if not index then return end
+    for item in row:gmatch("d\031%a+\031(%d+)\031") do
+        item = tonumber(item)
+        index[item] = index[item] or {}
+        index[item][key] = true
+    end
+end
+
+-- The keys that gave an item, here or to a member: { [key] = true }. Read-only. The first time reads every row, once.
+function Tally.Keys(item)
+    if not index then
+        index = {}
+        local here = Block()
+        for _, each in pairs(here and part.tally or {}) do
+            for key, row in pairs(type(each) == "table" and type(each.drops) == "table" and each.drops or {}) do
+                if type(row) == "string" then Tally.Indexed(key, row) end
+            end
+        end
+        if Data.Bundle then Data.Bundle.Each(Tally.Indexed) end
+    end
+    return index[item] or {}
+end
+
+-- Every key counted in the kept build periods.
+function Tally.All()
+    local found = {}
+    local here = Block()
+    for _, each in pairs(here and part.tally or {}) do
+        for key in pairs(type(each) == "table" and type(each.drops) == "table" and each.drops or {}) do found[key] = true end
+    end
+    return found
+end
+
+-- This build's block's random id, and the build: who a bundle's counts are, so two characters of an account count once.
+function Tally.Id()
+    local here = Block()
+    return here and here.id, Build()
+end
+
+-- Rows for a bundle, { { key, row }, ... } of room bytes at most, none over longest: what was counted since the last, then
+-- with what room is left the others in turn, so that a member who came online later catches up. Nil when nothing was
+-- counted: an account that only stands at the auction house says nothing.
+function Tally.Bundle(room, longest)
+    local here = Block()
+    if not (here and next(here.fresh)) then return nil end
+    local list, size = {}, 0
+    local function Add(key)
+        local row = here.drops[key]
+        if type(row) ~= "string" or #row + #key > longest then return true end -- nothing, or too long to ever go: passed over
+        if size + #row + #key > room then return false end
+        list[#list + 1] = { key, row }
+        size = size + #row + #key
+        return true
+    end
+    local chosen = {}
+    for key in pairs(here.fresh) do
+        if not Add(key) then break end
+        chosen[key] = true
+    end
+    local spare = next(here.drops, turn)
+    while spare and size < room do
+        if not chosen[spare] then
+            if not Add(spare) then break end
+        end
+        turn = spare
+        spare = next(here.drops, turn)
+    end
+    if not spare then turn = nil end
+    return list, chosen
+end
+
+-- What went out is no longer fresh.
+function Tally.Sent(chosen)
+    local here = Block()
+    for key in pairs(here and chosen or {}) do here.fresh[key] = nil end
 end
 
 -- /sane data: what this build period counted so far, and whether the game names the source of a loot.

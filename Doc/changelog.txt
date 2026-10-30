@@ -18,10 +18,20 @@ The bigger changes of each version, newest first.
   full price history grows from day one. A bar under the window
   shows the scan start, how far it is and when the next one comes.
   Press the bar to start a scan yourself.
+- Gathering is counted: every herb, vein and skinned creature, how
+  often you gathered it and what it gave. Rare drops show on the
+  tooltip of the node and of the item, with how often they came.
+  /sane data gathered lists it all.
+- Discoveries: Sane UI keeps a list of what the game showed that
+  its data lacked, such as a new quest or a drop nobody listed.
+  /sane data found shows it, and General has two chat messages
+  for new data, both off at first.
+- Drop counts and discoveries are shared too, with your guild and
+  group, every 15 minutes, your own other accounts included.
 - Auction prices are shared by themselves: a full scan reaches
   every Sane UI player in your guild and group, your own other
   accounts too. General, Share data with my guild and group. Odd
-  prices wait for a second player, and Forget shared prices takes
+  prices wait for a second player, and Forget shared data takes
   out all that others sent.
 - Tooltips use what the auction house lists right now and your
   last scan for what an item brings, what its materials bring
@@ -89,13 +99,13 @@ The bigger changes of each version, newest first.
   another. Each has its switch, and a
   box Speed Leveling in the bags or in the minimap's satchel turns the profile on or off. A right click unlocks the guide and the
   arrow to drag them.
+- Speed Leveling: before the guide goes on to a harder zone, a step
+  of its own for each profession that is too low for it.
 - Bags: Make Room keeps one slot free. When the last one fills,
   your cheapest junk goes at your next key press; with no junk you
   get a warning on the screen.
 - Bags: a green arrow on the items that would be an upgrade, by
   what your class and specialization want.
-- Speed Leveling: before the guide goes on to a harder zone, a step
-  of its own for each profession that is too low for it.
 - Combat: your frame, your target's and your focus's in the look
   of the nameplates, green: level and raid marker on the left,
   then the name (players by their full name; none on your own),

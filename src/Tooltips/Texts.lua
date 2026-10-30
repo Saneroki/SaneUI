@@ -47,6 +47,8 @@ ns.TEXT = {
     GRAPH_LOW = "Lowest", GRAPH_MARKET = "Market", GRAPH_KEY = "Ctrl: next range",
     GRAPH_NONE = "No price seen in this range", GRAPH_ONE = "One price seen in this range",
     ALT_MORE = "Press ALT for +%d more",
+    -- What came seldom from a node or a skinned creature (Gathering.lua): the thing, and how often
+    RARE_DROP = "%s  %s", RARE_CHANCE = "%.1f%% (%d of %d)", RARE_COUNT = "%d of %d",
     EQUIPPED = "Equipped",
     DPS = "DPS", DMG = "dmg", SPD = "spd", HPS = "HPS", HEALING = "Healing", PER = "Per %s", SPEED = "Speed", CRIT = "Crit",
     -- A spell's table (Kinds/Spell.lua): what one cast does, its cooldown, how long it lasts, a cell with
