@@ -769,7 +769,8 @@ do
         check(unit == "target" and other == "focus" and not bar._shown and near(Above(), 0), "each frame hears its own unit's cast")
         Foe({})
         W.Fire("UNIT_SPELLCAST_START", "target", "foe-1", 686)
-        check(bar._shown and bar.text._text == "Shadow Bolt" and bar.timer._text == "3.0" and near(Above(), Units.ROW)
+        check(bar._shown and bar.text._text == "Shadow Bolt" and bar.timer._text == "3.0"
+            and near(Above(), Units.ROW - Core.Pixels(foe, 1)) -- an elite: its rank's line, a pixel more than the border, is in that
             and bar.lock._alpha == 0 and not mine._shown, "your target's cast above its health, and not on your frame")
         W.casts.target.locked = true
         W.Fire("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", "target", "foe-1", 686)
@@ -809,6 +810,63 @@ do
         W.casts.target = nil
         W.Fire("UNIT_SPELLCAST_FAILED", "target", "foe-1", 686)
         check(not bar._shown and not ns.off, "and nothing failed")
+    end
+
+    -- The health bar is the anchor: whatever comes or goes around it, on every frame, it stays exactly where it is.
+    do
+        local function Spot(face)
+            local parts = {}
+            for _, point in ipairs(face.health._points) do
+                for index = 1, 5 do
+                    if index ~= 2 then parts[#parts + 1] = tostring(point[index]) end
+                end
+            end
+            return table.concat(parts, " ")
+        end
+        local face, foe = player.face, target.face
+        local pixel = Core.Pixels(foe, 1)
+        for _, button in ipairs({ player, target, focus }) do
+            local point = button._points[1]
+            check(point[1] == "TOP" and point[3] == "BOTTOM", "every frame stands by its top: its button's height moves no health bar")
+        end
+        local kept = units.target.classification
+        for _, rank in ipairs({ "normal", "rare", "elite", "worldboss" }) do
+            units.target.classification = rank
+            W.Fire("UNIT_CLASSIFICATION_CHANGED", "target")
+            local spot = Spot(foe)
+            W.casts.target = { name = "Shadow Bolt", icon = 1, starts = W.clock * 1000, ends = (W.clock + 3) * 1000, id = "foe-2", spell = 686 }
+            W.Fire("UNIT_SPELLCAST_START", "target", "foe-2", 686)
+            check(foe.cast._shown and Spot(foe) == spot, rank .. ": a cast leaves the health bar where it is")
+            check(near(foe.cast._points[2][5] - foe.health._points[1][5], pixel), rank .. ": and rests on it, a pixel over it")
+            units.targettarget = { name = "Droopy", health = 600, most = 1000 }
+            foe.rowButton:Show()
+            check(foe.rowShown and Spot(foe) == spot, rank .. ": so does a row")
+            foe.rowButton:Hide()
+            units.targettarget = nil
+            W.casts.target = nil
+            W.Fire("UNIT_SPELLCAST_FAILED", "target", "foe-2", 686)
+            check(not foe.cast._shown and Spot(foe) == spot, rank .. ": and all of it going")
+        end
+        units.target.classification = kept
+        W.Fire("UNIT_CLASSIFICATION_CHANGED", "target")
+
+        local spot = Spot(face)
+        W.cast = { name = "Fireball", icon = 135812, starts = W.clock * 1000, ends = (W.clock + 2.5) * 1000, id = "cast-9", spell = 133 }
+        W.Fire("UNIT_SPELLCAST_START", "player", "cast-9", 133)
+        W.mirrorLeft.BREATH, W.mirrorLeft.EXHAUSTION = 30000, 30000
+        W.Fire("MIRROR_TIMER_START", "BREATH", 30000, 60000, -1, 0, "Breath")
+        W.Fire("MIRROR_TIMER_START", "EXHAUSTION", 30000, 60000, -1, 0, "Fatigue")
+        W.Fire("MIRROR_TIMER_START", "FEIGNDEATH", 30000, 60000, -1, 0, "Feign Death")
+        check(face.cast._shown and face.breath._shown and face.timers[2]._shown and Spot(face) == spot,
+            "on your own frame too: a cast, your breath and two timers")
+        units.pet = { name = "Wolf", health = 80, most = 100, powerType = 2, powerToken = "FOCUS", power = 50, powerMost = 100 }
+        face.rowButton:Show()
+        check(face.rowShown and face.rowPower._shown and Spot(face) == spot, "and your pet with its resource")
+        face.rowButton:Hide()
+        W.cast = nil
+        W.Fire("UNIT_SPELLCAST_FAILED", "player", "cast-9", 133)
+        for _, timer in ipairs({ "BREATH", "EXHAUSTION", "FEIGNDEATH" }) do W.Fire("MIRROR_TIMER_STOP", timer) end
+        check(not face.cast._shown and not face.breath._shown and Spot(face) == spot and not ns.off, "and all of it going")
     end
 
     Core.Set(ns.name, "unitSize", 150)

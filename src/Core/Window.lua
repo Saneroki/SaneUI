@@ -46,7 +46,8 @@ local Core = SaneUI.Core
 --          kind = "panel",              -- its kind (Window.KINDS): the options below it has unless given here
 --          store = ns.store,            -- the module's saved table; the place is kept in store.place
 --          key = "place",               -- another name for it, for a module's second window
---          first = { point = "LEFT", x = 40, y = 0, width = 380, height = 260 },  -- where it stands at first;
+--          first = { point = "LEFT", x = 40, y = 0, width = 380, height = 260 },  -- where it stands at first
+--                                       -- (relative = "BOTTOM": by that point of the screen, not by its own point);
 --                                       -- or dock = "BOTTOMLEFT": docked in that zone at first (a talk: CENTER)
 --          title = "Social",            -- its name, on its title bar and on its box in Edit Mode
 --          titleBar = true,             -- it has a title bar (without: only while it fills the screen)
@@ -437,7 +438,7 @@ function methods:Place()
             frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
         else
             local point = first.point or "CENTER"
-            frame:SetPoint(point, UIParent, point, first.x or 0, first.y or 0)
+            frame:SetPoint(point, UIParent, first.relative or point, first.x or 0, first.y or 0)
         end
     end
     self.zone, self.spotX, self.spotY = name, x, y

@@ -15,7 +15,9 @@ local _, ns = ...
 --  game's, so it comes and goes in a fight too), with the auras over all that
 --  (frame.roof: they stand on it, Auras.lua); what runs over the health bar
 --  lies on it, the same size (frame.over: your breath, Timers.lua). The
---  stack's first bar is round at its top, its last at its bottom. The frame's
+--  stack's first bar is round at its top, its last at its bottom. The health
+--  bar is the anchor: whatever comes or goes around it, it stays exactly where
+--  it is; only the outline reaches further up or down. The frame's
 --  face is as high as the health bar; the rest hangs under it and stands on
 --  it, inside the same outline; its button is as high as the health and the
 --  power slots it keeps, and the row's button under that. The frame is
@@ -246,16 +248,18 @@ function Bar.Fit(frame)
     local inset = pixel * frame.rank.width -- the border and the rank's line
     local slots, shown = frame.slots, math.min(frame.powersShown or 0, frame.slots)
     local rowTop = height + slots * powerHeight
-    -- The stack, top to bottom: { bar, its top and its height below the frame's top }.
-    local stack, above = {}, 0
+    -- The stack, top to bottom: { bar, its top and its height below the frame's top }. What stands above the health bar
+    -- rests on it, a pixel over it, wherever the rank's line has put its top.
+    local stack, rest = {}, inset - pixel
     for _, bar in ipairs(frame.above) do
         if bar.on then
-            above = above + bar.tall
-            table.insert(stack, 1, { bar, -above, bar.tall })
+            rest = rest - bar.tall
+            table.insert(stack, 1, { bar, rest, bar.tall })
         else
             bar:Hide()
         end
     end
+    local above = math.max(-rest, 0)
     stack[#stack + 1] = { frame.health, 0, height }
     for index = 1, shown do stack[#stack + 1] = { frame.powers[index], height + (index - 1) * powerHeight, powerHeight } end
     if frame.rowShown then stack[#stack + 1] = { frame.row, rowTop, rowHeight } end
@@ -276,14 +280,14 @@ function Bar.Fit(frame)
     frame.roof:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, above)
     for index, piece in ipairs(stack) do
         local bar, top, tall = piece[1], piece[2], piece[3]
-        local first, last = index == 1, index == #stack
+        local first, last, anchor = index == 1, index == #stack, bar == frame.health
         bar:ClearAllPoints()
-        bar:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -top - (first and inset or pixel))
+        bar:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -top - ((first or anchor) and inset or pixel))
         bar:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -inset, -top - tall + (last and inset or 0))
         local mode = first and last and "both" or first and "top" or last and "bottom" or "none"
         local round = math.max(math.min(radius - inset, tall - pixel - inset), 0.01)
         Ends(bar, mode, round, tall - pixel - inset)
-        if bar == frame.health then
+        if anchor then
             for _, over in ipairs(frame.over) do
                 Ends(over, mode, round, tall - pixel - inset)
                 over:SetShown(over.on == true)

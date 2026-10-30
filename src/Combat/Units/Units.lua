@@ -55,21 +55,22 @@ Units.ROW_POWER = Units.ROW / 2 -- a row's power bar under it, half its height a
 Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
--- right, your focus above it), and its row: the same of the unit under it, its bar's colour (none: green), and whether
+-- right, your focus above it; by the button's top: the health bar's, the same whatever height the button has), and its
+-- row: the same of the unit under it, its bar's colour (none: green), and whether
 -- its power shows under it. Your own frame's bars: the game's frames that go deaf for them, each with its setting and
 -- what it no longer hears.
 Units.KINDS = {
     { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts", noName = true,
-      place = "playerPlace", first = { point = "BOTTOM", x = -190, y = 230 },
+      place = "playerPlace", first = { point = "TOP", relative = "BOTTOM", x = -190, y = 269 },
       row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade", power = true },
       bars = { { option = "unitCast", game = "PlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitCast", game = "OverlayPlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitBreath", game = "MirrorTimerContainer", away = "deaf", events = ns.UnitTimers.EVENTS } } },
     { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent",
-      place = "targetPlace", first = { point = "BOTTOM", x = 190, y = 230 },
+      place = "targetPlace", first = { point = "TOP", relative = "BOTTOM", x = 190, y = 269 },
       row = { unit = "targettarget", option = "unitTargetTarget", colour = ns.UnitBar.CALM } },
     { unit = "focus", option = "unitFocus", game = "FocusFrame", away = "parent",
-      place = "focusPlace", first = { point = "BOTTOM", x = 190, y = 332 },
+      place = "focusPlace", first = { point = "TOP", relative = "BOTTOM", x = 190, y = 371 },
       row = { unit = "focustarget", option = "unitFocusTarget", colour = ns.UnitBar.CALM } },
 }
 -- Of your own frame (PlayerFrame), the parts out of sight: its picture, and its bars and texts.

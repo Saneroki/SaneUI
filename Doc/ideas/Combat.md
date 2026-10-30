@@ -67,6 +67,8 @@ Decided (Saneroki, 2026-10-16):
   focus's). Your breath over your health bar, 50 % transparent so the health shows underneath, in the bubble art of
   the game's own breath bar. Fatigue and feign death part of your frame too, above the health bar, so all three of
   the game's timer bars are gone.
+- **The health bar is the anchor** (Saneroki, 2026-10-30; built): no matter which bars are visible, the health bar
+  stays at the same spot on all unit frames; bars come and go around it.
 - **Your pet in place of a target's target** (Saneroki, 2026-10-30; built): your frame has no target's target; in its
   place your pet's health bar and resource bar, the game's pet frame hidden.
 - **Power bars and auras** (Saneroki, 2026-10-29; built): the class resource bar half the health bar's height,

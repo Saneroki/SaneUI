@@ -94,6 +94,8 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
     name alone in the middle; the same under your focus's frame for your focus's target, and under your own frame
     for your pet while you have one (green, its resource under it). The frame's outline goes
     round both, a thin dark line between them. Click a row to target its unit, right click for its menu.
+  - **The health bar stays put:** it is every frame's anchor. Whatever comes or goes around it, it stays exactly
+    where it is; only the frame's outline reaches further up or down.
   - **Casts:** part of each frame while its unit casts (yours, your target's, your focus's), in the same outline,
     directly above the health bar: the spell's icon and name, the seconds left at the right end, filling as it goes
     on and emptying for a channel, grey where it cannot be interrupted, red with who did it when it is interrupted;
@@ -282,7 +284,9 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
     six bands as halves round at their own corners, reaching down round the row while it shows, the row a pixel
     under the bar (the border's dark between). The frame keeps its width: the border lies on its edge, the rank's
     line a pixel inside it, and the bars inside both (`rank.width` pixels in: 1 plain, 2 an elite or a rare, 4 a
-    boss); only the glow reaches outwards. The bars are one stack a pixel apart (`Bar.Fit`): the health
+    boss); only the glow reaches outwards. The health bar is the anchor (Saneroki): its rectangle depends on the
+    frame's rank alone, never on what shows, and the frames stand by their tops (`first`'s `relative`, or a moved
+    frame's `TOPLEFT`), so the button's height moves nothing. The bars are one stack a pixel apart (`Bar.Fit`): the health
     (`face.healthHeight`, the face's own height), each power shown (`face.powersShown` of `face.slots`, each
     `Units.POWER` high, half the health's), the row under the power slots kept (where its button is) and your pet's
     power under it (`face.rowPower`, `Units.ROW_POWER` high, `Bar.RowPower`, read with the row, gone for a pet
@@ -422,3 +426,5 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
   health bar too, so all three of the game's timer bars are gone; your pet's health and resource bar in place of a
   target's target on your frame, the game's pet frame hidden (Saneroki). The auras move up over what stands on a frame;
   your pet's row has no cast bar of its own: its secure button cannot move in a fight (board).
+- **2026-10-30:** the health bar the rock solid anchor of every unit frame: whichever bars show or go, it stays at the
+  same spot (Saneroki).

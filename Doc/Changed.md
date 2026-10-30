@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Combat: the health bar is every unit frame's anchor (Saneroki, 2026-10-30)
+Saneroki: no matter which bars are visible the health bar is the rock solid anchor and does not move, on all unit frames.
+`Bar.Fit`: the health bar's rectangle no longer depends on what shows. Before, on a frame whose rank's line is wider than
+a pixel (elite, rare, boss) its top rose by 1 to 3 screen pixels while something stood above it; now what stands above
+rests on it, a pixel over it, and the outline rises that much less. The frames' first places by their tops
+(`first.relative`, new in `Core.Window`): a frame never moved hung by its bottom, so a change of its power slots moved its
+health bar. The check runs on every frame and rank with every bar on and off. A `/reload` takes it in.
+
 ### Combat: cast bars on every frame, directly above the health bar; your timers above it; your pet's resource (Saneroki, 2026-10-30)
 Saneroki: fatigue and feign death part of the player frame too, above the health bar, so all three of the game's bars
 are gone; the cast bars of all unit frames directly above the health bars; the pet's health and resource bar in place of
