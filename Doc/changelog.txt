@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Speed Leveling: the guide knows by itself which steps you have
+  done. Quests, objectives and levels count wherever a step
+  stands, it no longer waits at a hearth or a vendor you are long
+  past, and going back to look at a step keeps your place.
 - Unit frames: your cast and your breath are part of your frame.
   While you cast or hold your breath, a bar joins it under your
   power, in place of the game's cast bar and its bars at the top

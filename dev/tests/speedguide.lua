@@ -2,8 +2,10 @@
 -- for one character (its head, who a step and a line are for, each kind of command, step marks, what cannot be read,
 -- which games it is for), the import string of bought guides opened for the account (Unlock), the guide run (moving
 -- on past done steps, the steps at hand, skipping, going back and being held there, what the game tells as it
--- happens, places, tests that pass a step by, the next guide), the guides kept (packed, chosen), the picture over the
--- world (drawn, clicked, scrolled, hidden), the arrow, the icons (only what can be used; secure), and standing down.
+-- happens, places, tests that pass a step by, the next guide), what the game knows done by itself (at a guide picked
+-- partway, past steps it cannot judge, after a click back, your place kept), the guides kept (packed, chosen), the
+-- picture over the world (drawn, clicked, scrolled, hidden), the arrow, the icons (only what can be used; secure), and
+-- standing down.
 -- The guide format's own words come from Core (Core.Neighbours.KNOWN.guide): the test names none of its own.
 -- Usage, from the project folder:  lua5.1 dev/tests/speedguide.lua
 
@@ -553,6 +555,152 @@ while not Run.Through() and guard < 40 do Run.Skip(Run.At()) guard = guard + 1 e
 Guide.CheckSoon()
 W.Wait(1)
 check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part from the pack")
+
+-------------------------------------------------------------------------------
+--  What the game knows done: made-up steps
+-------------------------------------------------------------------------------
+;(function()
+    local function Follow(name, steps)
+        local text = { "#forever", "<< Horde", Mark("name", name), Mark("group", "Made Up") }
+        for _, lines in ipairs(steps) do
+            text[#text + 1] = "step"
+            for _, line in ipairs(lines) do text[#text + 1] = "    " .. line end
+        end
+        Guide.AddAll({ table.concat(text, "\n") })
+        local key = "Made Up\\" .. name .. " << Horde"
+        Guide.Choose(key)
+        check(Guide.Chosen() == key, "follows the made-up guide " .. name)
+        return key
+    end
+    local take, hand = function(q) return Line("take", tostring(q)) end, function(q) return Line("handin", tostring(q)) end
+    local hearth, shop, words = Line("hearth", "", "Hearth home"), Line("shop", ""), ">>Only words"
+
+    -- A guide picked partway: the game knows the first steps done, so it goes on by itself, past steps it cannot judge
+    -- (a hearth, a vendor, a thing to tick by hand) that a later done step shows are behind you.
+    quests.done[601], quests.on[602] = true, true
+    quests.objectives[602] = { { finished = true, numFulfilled = 3, numRequired = 3 } }
+    local key = Follow("Made Way", {
+        { take(601) },              -- 1  handed in
+        { hearth },                 -- 2  cannot be judged: lies behind 4
+        { shop },                   -- 3  so does this
+        { hand(601), take(602) },   -- 4
+        { "+Tick this by hand" },   -- 5  lies behind 6
+        { Line("goal", "602,1") },  -- 6  an objective finished
+        { Line("level", "9") },     -- 7  a level not reached: you stop here
+        { hearth },                 -- 8
+        { words },                  -- 9  nothing to do
+        { hand(603) },              -- 10
+        { take(604) },              -- 11
+        { hand(605) },              -- 12
+        { take(606) },              -- 13
+        { take(607) },              -- 14
+    })
+    check(Run.At() == 7 and Run.Place() == 7, "picked partway: on as far as the game knows, past what it cannot judge: " .. Run.At())
+    check(Run.Ticked(2) and Run.Ticked(3) and Run.Ticked(4) and Run.Ticked(5) and Run.Ticked(6),
+        "those behind you show as done, judged or not")
+    check(not Run.Ticked(7) and not Run.Ticked(8) and not Run.Ticked(9), "those ahead do not: nothing to do is not done")
+    quests.done[603] = true
+    check(Run.Ticked(10), "a step ahead the game knows is done shows as done before you get there")
+    local list = Guide.Picture(4).ahead
+    check(list[1].number == 8 and not list[1].done and list[3].number == 10 and list[3].done,
+        "the list's ticks are what the game knows, not where you are")
+    quests.done[603] = nil
+
+    -- The level comes: on to the hearth, which stays: nothing after it is known done yet. Your click still does it.
+    W.level = 9
+    check(Run.Check() and Run.At() == 8, "a level reached moves it on")
+    check(Run.Check() == false and Run.At() == 8, "a step that cannot be judged stays while nothing after it is known done")
+    Run.Saw("hearth")
+    check(Run.Check() and Run.At() == 10, "seen as it happens it is done, as ever")
+    Guide.Back()
+    Guide.Back()
+    check(Run.At() == 8 and Run.Place() == 10, "back to the hearth: your place stays")
+    quests.done[603] = true
+    Guide.Skip(8)
+    check(Run.At() == 11, "a click goes on, back to your place and past what got done meanwhile: " .. Run.At())
+    check(not Core.Character(ns.name).skipped[key][8], "it was seen done: the click marks nothing")
+    Run.Go(5)
+    Guide.Skip(5)
+    check(Run.At() == 11 and Core.Character(ns.name).skipped[key][5], "a thing only you can tick: your click ticks it, back to your place")
+
+    -- A step the game can judge as still to do is never passed by itself, whatever is done after it.
+    quests.done[605] = true
+    check(Run.Check() == false and Run.At() == 11 and Run.Ticked(12), "a quest still to take holds you; done ones after it just show")
+    Guide.Skip(11)
+    check(Run.At() == 13, "skipped by hand: past the done one too")
+
+    -- Back to a step the game knows is done: you can look at it, it stays done, the guide keeps your place.
+    Run.Go(4)
+    check(Run.At() == 4 and Run.Place() == 13, "gone back: the step shown, your place kept")
+    check(Run.Check() == false and Run.At() == 4, "it stays for you to look at, done as it is")
+    local picture = Guide.Picture(3)
+    check(picture.at == 4 and picture.place == 13 and picture.hand[#picture.hand].number == 4 and picture.hand[#picture.hand].done,
+        "the picture: that step, done; how far you are stays your place")
+    check(picture.ahead[1].number == 5 and picture.ahead[1].done and picture.ahead[3].done, "the steps after it still show as done")
+    check(Core.Character(ns.name).at[key] == 13, "your place is what is kept")
+    Steps.Update()
+    check(Shown(ns.TEXT.step:format(4) .. " " .. Steps.TICK), "the view: a tick by the step's number")
+    check(Shown(ns.TEXT.progress:format(13, 14, 93)), "the view: how far you are is your place")
+    Run.Use(Run.Guide())
+    check(Run.At() == 13 and Run.Place() == 13, "a /reload while looking back: at your place")
+    Run.Go(4)
+    Guide.Back()
+    check(Run.At() == 3 and Run.Place() == 13, "a right click goes further back, your place stays")
+    Run.Go(4)
+    Guide.Skip(4)
+    check(Run.At() == 13 and not Core.Character(ns.name).skipped[key][4], "a click goes on, back to your place, marking nothing")
+
+    -- Back to redo a step: something the game says is open, or one it cannot judge. Held until done, then your place.
+    quests.done[601] = nil
+    check(not Run.Ticked(1), "a step behind you the game says is open shows open")
+    Run.Go(1)
+    check(Run.At() == 1 and Run.Check() == false and Run.At() == 1, "gone back to redo it: it waits for you")
+    quests.on[601] = true
+    check(Run.Check() and Run.At() == 13 and Run.Place() == 13, "done: back to your place")
+    Run.Go(3)
+    check(Run.Check() == false and Run.At() == 3, "a step it cannot judge, gone back to, stays though a later one is done")
+    Run.Saw("shop")
+    check(Run.Check() and Run.At() == 13, "done as it happens: back to your place")
+
+    -- Going forward is another thing: that step becomes your place, and what you jumped over shows open.
+    Run.Go(14)
+    check(Run.At() == 14 and Run.Place() == 14 and not Run.Ticked(13), "a step after your place becomes your place")
+    Run.Go(2)
+    Run.Go(14)
+    check(Run.At() == 14 and Run.Place() == 14 and Run.Check() == false, "going to your place ends looking back")
+
+    -- What proves nothing: a level (it can be had ahead of the guide), a thing asked already, one that only goes along.
+    quests.done[610] = true
+    Follow("Made Level", { { hearth }, { Line("level", "3") }, { take(611) } })
+    check(Run.At() == 1, "a level reached is no proof you came this way")
+    Follow("Made Twice", { { take(610) }, { hearth }, { take(610) }, { hand(612) } })
+    check(Run.At() == 2, "a quest the guide asks again proves nothing about the step between")
+    Follow("Made Along", { { hearth }, { Mark("together", "next"), take(610) }, { hand(612) } })
+    check(Run.At() == 1, "a step that only goes along is no proof")
+    quests.done[612] = true
+    check(Run.Check() and Run.Through(), "a step of its own is, and that was the guide's last")
+
+    -- The cost: a check reads the step you are at and at most Run.PROOF more, however long the guide.
+    local function Asks(fn)
+        local count = 0
+        local done, have = C_QuestLog.IsQuestFlaggedCompleted, C_Item.GetItemCount
+        C_QuestLog.IsQuestFlaggedCompleted = function(q) count = count + 1 return done(q) end
+        C_Item.GetItemCount = function(id) count = count + 1 return have(id) end
+        fn()
+        C_QuestLog.IsQuestFlaggedCompleted, C_Item.GetItemCount = done, have
+        return count
+    end
+    local long = {}
+    for n = 1, 400 do long[n] = { take(700 + n) } end
+    Follow("Made Long", long)
+    check(Asks(Run.Check) <= 2, "a step still to do: only that step is asked")
+    long = {}
+    for n = 1, 400 do long[n] = { Line("carry", (9000 + n) .. ",1") } end
+    Follow("Made Carry", long)
+    local asks = Asks(Run.Check)
+    check(Run.At() == 1 and asks <= Run.PROOF + 2, "a step it cannot judge: the way ahead read so far and no further: " .. asks)
+    W.level = 5
+end)()
 
 -------------------------------------------------------------------------------
 --  Standing down

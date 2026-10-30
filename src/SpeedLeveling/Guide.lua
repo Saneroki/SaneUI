@@ -9,11 +9,12 @@ local _, ns = ...
 --  the view, the player's ways through it, and what its steps at hand want for
 --  the key (Wanted.lua, Key.lua) and for the quest givers (Quests.lua).
 --
---      Guide.Picture(count, shift)  nil (no guide), or { title, levels, at, total, hand = { step },
+--      Guide.Picture(count, shift)  nil (no guide), or { title, levels, at, place, total, hand = { step },
 --                         ahead = { line }, shift }: count steps listed from the one after those at hand, moved by
---                         shift (back for less than 0; picture.shift: as far as it went)
---                         step = { number, lines = { { text, done, have, need, count } } },
---                         line = { number, text, done } (done: before the step you are at)
+--                         shift (back for less than 0; picture.shift: as far as it went); at: the step shown, place:
+--                         your place in the guide (they differ while you look back)
+--                         step = { number, done, lines = { { text, done, have, need, count } } },
+--                         line = { number, text, done } (done: Run.Ticked, as the game knows it)
 --                         (text in our colours; count: a thing to do, its have and need when it has a number)
 --      Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
@@ -156,11 +157,11 @@ function Guide.Picture(count, shift)
     if not guide then return nil end
     local title, levels = Split(Paint(guide.title or guide.name))
     local at = ns.Run.At()
-    local picture = { title = title, levels = levels, at = math.min(at, #guide.steps), total = #guide.steps,
-                      hand = {}, ahead = {} }
+    local picture = { title = title, levels = levels, at = math.min(at, #guide.steps),
+                      place = math.min(ns.Run.Place(), #guide.steps), total = #guide.steps, hand = {}, ahead = {} }
     local last = at
     for _, index in ipairs(ns.Run.Hand()) do
-        picture.hand[#picture.hand + 1] = { number = index, lines = OurLines(index) }
+        picture.hand[#picture.hand + 1] = { number = index, done = ns.Run.Ticked(index), lines = OurLines(index) }
         last = math.max(last, index)
     end
     local index = math.max(1, last + 1 + (shift or 0))
@@ -169,7 +170,7 @@ function Guide.Picture(count, shift)
         if ns.Run.Listed(index) then
             local lines = OurLines(index)
             if lines[1] then
-                picture.ahead[#picture.ahead + 1] = { number = index, text = lines[1].text, done = index < at }
+                picture.ahead[#picture.ahead + 1] = { number = index, text = lines[1].text, done = ns.Run.Ticked(index) }
             end
         end
         index = index + 1

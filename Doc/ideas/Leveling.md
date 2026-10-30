@@ -50,6 +50,14 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   window: the zone, how far, the steps at hand, the next steps fading; a click skips, a right click goes back. Its
   steps come from a guide run by our own engine (`Format.lua`, `Lines.lua`, `Run.lua`): guides you paste as text, and
   the guides you bought, opened for your own account (`Unlock.lua`). Our own routes, once there, are a further source.
+- **Decision (Saneroki, 2026-10-30): the guide works out by itself what is done,** at login, at a guide picked or
+  loaded partway and after a click back, and completes those steps by itself. Built (`Run.lua`): what the game can judge
+  at any time (a quest's lines, a level, a spell, a skill) stops you while not done; what it tells only as it happens
+  (about one step in four of the guides read) waits for you, until a later step is known done by a quest line the guide
+  had not asked before: then it lies behind you. The ticks are what the game knows, wherever a step stands. A click
+  back looks: the step is held, your place stays kept, and you are back there once it is done or a click goes on.
+  Checked offline on 296 guides for a Horde character: played in order, no step still to do was passed (10,917 stops);
+  a guide picked partway reached the real place in 83% of 825 cases (19% before), 1.3 steps short on average (29.4).
 - **Built: the guide over the world** (`src/SpeedLeveling/README.md`): the view, the guides kept and their window,
   the engine that runs a guide, the import string of bought guides opened for the account (checked offline against
   the real paid guide: 191 guides, 15,129 steps for a Horde character, all read and run with no error).

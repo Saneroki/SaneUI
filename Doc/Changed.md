@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Speed Leveling: the guide works out by itself what is done (Saneroki, 2026-10-30)
+Saneroki: the guide should understand which steps are done already, even after a click back to a specific step, and
+complete them by itself.
+- **`Run.lua`, what the game knows:** `Known(index)` says of a step: finished, still to do, or the game cannot tell. A
+  quest's lines, a level, a spell and a skill it can judge at any time; the rest (a hearth, a flight, a vendor's or
+  trainer's window, a place, a thing to tick by hand, an item carried for no quest) it tells only as it happens. About
+  one step in four of the guides read is of that kind, and the guide stood at each of them. Now such a step is passed
+  once a step after it is known done by a quest line the guide had not asked before (`Proof`, `line.first`,
+  `FirstAsked`): you came that way. A step with something judged still to do is never passed by itself. No proof: a
+  level or a spell (they can be had ahead of the guide), a line asked a second time, a step that only goes along.
+- **`Run.lua`, going back:** a step before your place is shown and held and your place stays kept (`place`, `Run.Place`,
+  saved in the character's notes in place of the step looked at, so a `/reload` comes back to it). Once what was left
+  of it is done, or a click goes on, you are back at your place and on past what got done meanwhile. A held step now
+  stays until that, where it used to let go at the first check. A step after your place becomes your place. A click on
+  a step the game knows is done marks no skip.
+- **`Run.Ticked`, `Guide.lua`, `Steps.lua`:** a tick says what the game knows, not where you are: ahead of your place
+  once every thing to do is done, behind it unless the game says it is open. A tick by the number of a done step at
+  hand; how far you are in the head stays your place while you look back; Gathering looks ahead from your place.
+- **The cost:** a check reads the step you are at, and only while the game cannot judge it the way ahead to the first
+  step it can, `Run.PROOF` (40) at most; the list reads only what it shows. The whole guide is read when it is picked.
+- **Checked offline** on 296 guides for a Horde character: played in order, no step still to do was passed (10,917
+  stops; 48 before `line.first`, guides ask some quests twice); a guide picked partway reached the real place in 83% of
+  825 cases (19% before), 1.3 steps short on average (29.4 before).
+- **Tests:** `dev/tests/speedguide.lua`, made-up steps: a guide picked partway, ticks, what stays, what proves nothing,
+  going back and redoing, your place through a `/reload`, the cost on a guide of 400 steps.
 
 ### Lore: the words wait for you, a left click cycles them, a right click answers (Saneroki, 2026-10-30)
 Saneroki: reading speed 0, so the quest text never moves on by itself where Speed Leveling's auto accept and turn in

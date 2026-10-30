@@ -153,15 +153,16 @@ name for different characters stand apart, and the guide named next is the one f
     (*Mottled Boar slain* with *2/4* at the right and a thin bar under it, a hand-drawn tick once done), its other
     words smaller, *!* before a warning, *i* before the rest; what is done is faint;
   - the next steps greyed out, a line each with its number, fading as they go down; the wheel scrolls the list through
-    every step of the guide, the done ones above (the game's tick before each). When the guide moves on, the list
-    starts after the steps at hand again.
+    every step of the guide. The game's tick before a step says it is done as the game knows it, wherever the step
+    stands (*How a guide is run*). When the guide moves on, the list starts after the steps at hand again.
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
 - **No guide yet:** the view stays, its head and one line saying so (none there, none chosen, or none of them is for
   this character or game); a click on that line opens *Guides*.
 - **Paused** (*Your guide*): its head, and a line saying so; a click on it goes on. Off: nothing is shown.
-- **The mouse:** a click on a step at hand skips it, a right click goes back one step. The wheel over the list scrolls
-  it; a double click on a listed step goes to it; a right click on it opens its menu (*Go to step*, the guides);
+- **The mouse:** a click on a step at hand skips it (one the game knows is done, or one you went back to, only goes
+  on), a right click goes back one step, your place kept. The wheel over the list scrolls it; a double click on a
+  listed step goes to it; a right click on it opens its menu (*Go to step*, the guides);
   a right click on the zone chooses the guide to follow: the guides for this character by group, each group a menu of
   its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
@@ -237,7 +238,26 @@ through `Lines.lua`:
 - **The steps at hand:** the one you are at, and before it a step that stays until done (`#sticky`), and one that
   goes along with the next step or up to a named one (`#completewith`). You go on past each step done, and past one
   that only goes along.
-- **Back and Go** hold you at that step until you go on, or until something of it gets done.
+- **What the game knows** (Saneroki, 2026-10-30): the guide works out by itself what is done, at login, when a guide
+  is picked or loaded partway, at each change the game tells, and after a click back. A quest taken or handed in, an
+  objective, a quest's items, a level, a spell and a skill the game can judge at any time: while one is not done, the
+  step stops you, whatever is done after it. The rest (a hearth, a flight, a vendor's or trainer's window, a place,
+  a thing to tick by hand, an item carried for no quest) it tells only as it happens, so such a step waits for you,
+  until a step after it is known done by a quest line the guide had not asked before: you came that way, so the step
+  lies behind you. A level or a spell proves no such thing (they can be had ahead of the guide), nor does a line the
+  guide asks a second time, nor a step that only goes along. A click still does any step by hand.
+- **The ticks** are what the game knows, wherever a step stands: ahead of your place a step shows as done once every
+  thing to do of it is done (or you skipped it; one with nothing to do is not done, only easy); behind your place it
+  does unless the game says it is open (a quest you abandoned, a step you jumped over).
+- **Going back** (right click, *Go to step*, a double click on an earlier step) looks, and keeps your place: the step
+  is shown and held, the arrow and the key follow it, the head still says how far you are. Done as it is, it stays for
+  you to read; with something left, you can do it again. Once what was left is done, or a click goes on, you are back
+  at your place and on past whatever got done meanwhile; the click marks nothing on a step the game knows is done.
+  A `/reload` comes back to your place.
+- **Going to a step after your place** makes it your place; what you jumped over stays open.
+- **The cost:** a check reads the step you are at, and only while the game cannot judge it the way ahead, a step at a
+  time to the first one it can, at most `Run.PROOF` steps; the list asks only for the steps it shows. The whole guide
+  is read only when it is picked or loaded.
 - **Through:** on to the guide its head names next (`#next`), the first one kept that is for you.
 - What the game tells only as it happens (a hearth, a flight, a vendor's window, the spirit healer, a spell cast)
   counts for the steps at hand while it happens; a place is looked at once a second while a step waits for one.
@@ -305,7 +325,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Unlock.lua` | The import string of bought guides, opened for the account you play (`Unlock.Open`, over frames) |
 | `Format.lua` | A guide written as text read into our shape (`Format.Head`, `Format.Read`, `Format.For`, `Format.Plays`) |
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
-| `Run.lua` | A guide run for the character: the steps at hand, what is done, skip, back, go, the places, the quest givers' wants |
+| `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, skip, back, go, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
 | `Gathering.lua` | Whether your Herbalism and Mining are enough for the next zone the guide goes to (Core's *Objects* and *Spawns*) |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |

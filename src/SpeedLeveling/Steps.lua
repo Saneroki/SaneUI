@@ -16,14 +16,16 @@ local _, ns = ...
 --      "!" before a warning and an "i" before the rest;
 --    - the next steps greyed out, a line each with its number, fading as they
 --      go down; the wheel scrolls the list through every step of the guide,
---      the done ones above (a tick before each), a right click on one offers
---      to go to it.
+--      a tick before each step done as the game knows it (Run.Ticked), wherever
+--      it stands, a right click on one offers to go to it.
 --  Over its top the row of icons to use and to target (Icons.lua); the game's
 --  map pin goes with it (Pin.lua); the arrow is
 --  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
 --  anew with it.
---  A click on a step at hand skips it, a right click goes back one; the wheel
---  over the list scrolls it, a double click on a listed step goes to it, a
+--  A click on a step at hand skips it (one the game knows is done, or one you
+--  looked back at, only goes on, back to your place); a right click goes back
+--  one, your place kept; the wheel over the list scrolls it, a double click on a
+--  listed step goes to it, a
 --  right click on it opens its menu (Go to step, the guides); a right click on
 --  the zone opens the menu of the guides kept (choose the one to follow, Paste
 --  a guide). It stands where Edit Mode puts it (Core.Window), at first at the
@@ -272,7 +274,7 @@ local function DrawCard(card, step, y, warn)
     card.number = step.number
     card.label:ClearAllPoints()
     card.label:SetPoint("TOPLEFT", card, "TOPLEFT", P, -P)
-    card.label:SetText(ns.TEXT.step:format(step.number))
+    card.label:SetText(ns.TEXT.step:format(step.number) .. (step.done and (" " .. Steps.TICK) or ""))
     card.label:SetTextColor(unpack(SOFT))
     local cy = -P - card.label:GetStringHeight() - 2
     local used = { texts = 0, counts = 0, bars = 0, marks = 0 }
@@ -385,12 +387,12 @@ function Steps.Update()
     if picture and follow == "paused" then
         hint = ns.TEXT.paused
         picture = { title = picture.title, levels = picture.levels, total = picture.total, at = picture.at,
-                    hand = {}, ahead = {} }
+                    place = picture.place, hand = {}, ahead = {} }
     end
     if not picture and not hint then return Hide() end
     if not frame then Build() end
     frame:Show()
-    if not picture then picture = { title = ns.TEXT.guideView, total = 0, at = 0, hand = {}, ahead = {} } end
+    if not picture then picture = { title = ns.TEXT.guideView, total = 0, at = 0, place = 0, hand = {}, ahead = {} } end
     empty.resume = follow == "paused" and hint == ns.TEXT.paused
 
     -- The head: the zone, its levels, how far.
@@ -398,8 +400,8 @@ function Steps.Update()
     header:ClearAllPoints()
     header:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
     header:SetWidth(Steps.WIDTH)
-    progress:SetText(picture.total > 0 and ns.TEXT.progress:format(picture.at, picture.total,
-                     math.floor(picture.at / picture.total * 100 + 0.5)) or "")
+    progress:SetText(picture.total > 0 and ns.TEXT.progress:format(picture.place, picture.total,
+                     math.floor(picture.place / picture.total * 100 + 0.5)) or "")
     local room = Steps.WIDTH - progress:GetStringWidth() - 10
     levels:SetText(picture.levels or "")
     local levelsWidth = picture.levels and levels:GetStringWidth() + 6 or 0

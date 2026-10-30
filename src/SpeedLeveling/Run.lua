@@ -13,8 +13,24 @@ local _, ns = ...
 --  each of its things to do is done, or when one of its tests says it is not for
 --  now (on a quest, money, an item count, a zone, a level); one with nothing to
 --  do is done at once. You are moved on past each step done, and past one that
---  only goes along. A step you go back to (Back, Go) is held there until you go
---  on, or until something of it gets done.
+--  only goes along.
+--
+--  What the game knows (Saneroki, 2026-10-30: the guide works out by itself what
+--  is done): of each thing to do it can judge a quest's, a level's, a spell's or a
+--  skill's at any time; the rest it tells only while it is so or as it happens (a
+--  hearth, a place, a vendor's window, a thing to tick by hand), and not done says
+--  nothing about whether it was. So a step with something judged still to do stops
+--  you, always; a step the game cannot judge waits for you too, until a step after
+--  it is known done by a quest of its own: you came that way, so it lies behind you.
+--  Only the way ahead is looked at, a step at a time and Run.PROOF steps at most, so
+--  a quest event never reads the whole guide; the list asks only for what it shows
+--  (Run.Ticked: done is what the game says, wherever the step stands).
+--
+--  Going back (Saneroki, 2026-10-30): a step before your place (Back, Go) is shown
+--  and held, and your place stays kept: done steps still show as done, what was
+--  left of it you can do again, and once it is done, or a click goes on, you are
+--  back at your place, and on past whatever got done meanwhile. A step after your
+--  place (Go) becomes your place. A /reload comes back to your place.
 --
 --  What the game tells only as it happens (a hearth, a flight, a vendor's or
 --  trainer's window, the spirit healer, a spell cast, a home bound) counts for
@@ -25,7 +41,8 @@ local _, ns = ...
 --  each guide, the steps you skipped.
 --
 --      Run.Use(guide)        run that guide (Format's), from where you were in it; nil: none
---      Run.Guide(), Run.At(), Run.Hand(), Run.Lines(index), Run.Listed(index)
+--      Run.Guide(), Run.At(), Run.Place(), Run.Hand(), Run.Lines(index), Run.Listed(index)
+--      Run.Ticked(index)     whether a step shows as done
 --      Run.Skip(index), Run.Back(), Run.Go(index)
 --      Run.Check()           the game changed: moved on as far as done steps go; true when anything moved
 --      Run.Through()         the guide is at its end (on to the one it names next)
@@ -42,6 +59,7 @@ ns.Run = Run
 
 Run.LOOK = 1         -- seconds between looks at the player's place while a place is waited for
 Run.BEHIND = 60      -- how many steps back the ones that stay at hand are looked for
+Run.PROOF = 40       -- how many steps on the step that proves you came that way is looked for
 Run.HEARTHSTONE = 6948
 Run.HEARTH_SPELL = 8690 -- what the Hearthstone casts
 Run.RECALL = 556        -- the shaman's Astral Recall
@@ -53,8 +71,9 @@ local EMPTY = {}
 local guide   -- the guide run (Format's), or nil
 local mine    -- this character's notes: { guide = key, at = { [key] = index }, skipped = { [key] = { [index] = true } } }
 local at = 1
-local held     -- the step gone back to, while it waits for the player
-local heldDone -- whether it was done when it was gone back to
+local place    -- while a step before it is looked at: your place in the guide
+local held     -- the step gone to, while it waits for the player
+local heldDone -- whether it was done when it was gone to
 local seen = {} -- [step index] = { [what] = true }: what happened while it was at hand
 local ticker
 
@@ -364,6 +383,59 @@ end
 
 local function Finished(index) return Passed(index) or AllDone(index) end
 
+-- The things to do the game can judge at any time, besides a quest's own: not done, they are still to do.
+local LASTING = { level = true, learn = true, skill = true }
+
+-- Guides ask some things twice, to catch you up: each quest's line told the first step that asks the same (line.first),
+-- so a thing already asked before a step proves nothing about that step.
+local function FirstAsked()
+    local first = {}
+    for index, step in ipairs(guide.steps) do
+        for _, line in ipairs(step.lines) do
+            if line.quest and ns.Format.DOING[line.what] then
+                local key = line.what .. line.quest .. "/" .. (line.goal or 0)
+                first[key] = first[key] or index
+                line.first = first[key]
+            end
+        end
+    end
+end
+
+-- What the game knows of a step: true, it is finished (then how many of its things to do are done, and whether one of
+-- them is a quest's first asked after the step since); false, something it can judge is still to do; nil, it cannot
+-- tell: what is left it tells only as it happens.
+local function Known(index, since)
+    if Passed(index) then return true, 0, false end
+    local unsure, done, proof = false, 0, false
+    for _, line in ipairs(guide.steps[index].lines) do
+        if ns.Format.DOING[line.what] then
+            if Done(line, index) then
+                done, proof = done + 1, proof or (line.first or 0) > (since or index)
+            elseif line.quest or LASTING[line.what] then
+                return false
+            else
+                unsure = true
+            end
+        end
+    end
+    if unsure then return nil end
+    return true, done, proof
+end
+
+-- The step after this one that proves you came this way, if any: done by a quest of its own (a level or a spell can
+-- be had ahead of the guide, and a step only passed by says nothing), with nothing judged still to do before it.
+local function Proof(index)
+    for later = index + 1, math.min(index + Run.PROOF, #guide.steps) do
+        local step = guide.steps[later]
+        if not (step.together or step.stays) then
+            local known, _, proof = Known(later, index)
+            if known == false then return nil end
+            if proof then return later end
+        end
+    end
+    return nil
+end
+
 -- Whether an earlier step is still at hand with the one you are at.
 local function Along(index)
     local step = guide.steps[index]
@@ -377,19 +449,25 @@ end
 --  Moving through the guide
 -------------------------------------------------------------------------------
 local function Keep()
-    Notes().at[guide.key or guide.name] = at
+    Notes().at[guide.key or guide.name] = place or at
 end
 
 local function MoveOn()
     local from = at
+    if at == held then
+        -- A step gone to stays until you go on, or until what was left of it is done: then back to your place.
+        if heldDone or not Finished(at) then return false end
+        held = nil
+        at, place = place or at, nil
+    end
+    local behind = 0 -- the steps before this one lie behind a step known done
     while at <= #guide.steps do
         local step = guide.steps[at]
-        local finished = Finished(at)
-        if at == held then
-            if finished and heldDone then break end
-            held = nil
+        local known = at < behind or Known(at)
+        if not (known == true or step.together or step.stays) then
+            behind = known == nil and Proof(at) or nil
+            if not behind then break end
         end
-        if not (finished or step.together or step.stays) then break end
         at = at + 1
     end
     if at ~= from then Keep() end
@@ -407,6 +485,7 @@ end
 
 function Run.Guide() return guide end
 function Run.At() return at end
+function Run.Place() return place or at end
 
 function Run.Hand()
     local hand = {}
@@ -424,6 +503,15 @@ function Run.Listed(index)
     return step ~= nil and not step.aside and not step.hidden
 end
 
+-- Whether a step shows as done. Behind your place: unless the game says it is open (what it cannot tell, you came
+-- past). From your place on: only what it knows is done, or you skipped; a step with nothing to do is not done, only easy.
+function Run.Ticked(index)
+    if not (guide and guide.steps[index]) then return false end
+    local known, done = Known(index)
+    if index < (place or at) then return known ~= false end
+    return known == true and (done > 0 or Skipped()[index] == true)
+end
+
 function Run.Lines(index)
     local lines = {}
     local step = guide and guide.steps[index]
@@ -434,13 +522,14 @@ function Run.Lines(index)
     return lines
 end
 
--- The player skips a step at hand: it counts as done; the one you are at, you go on past it.
+-- The player skips a step at hand: it counts as done, unless the game says it is (then nothing is marked: a skip tells
+-- the steps that need it they are off); the one you are at, you go on past it, back to your place if you looked back.
 function Run.Skip(index)
     if not (guide and guide.steps[index]) then return end
-    Skipped()[index] = true
+    if not Finished(index) then Skipped()[index] = true end
     if index == at then
         held = nil
-        at = at + 1
+        if place then at, place = place, nil else at = at + 1 end
         MoveOn()
         Keep()
     end
@@ -448,7 +537,9 @@ end
 
 function Run.Go(index)
     if not guide then return end
+    local home = place or at
     at = math.max(1, math.min(index, #guide.steps))
+    place = at < home and home or nil
     Skipped()[at] = nil
     held, heldDone = at, Finished(at)
     Keep()
@@ -501,7 +592,7 @@ end
 function Run.ZonesAhead(most)
     local zones, have = {}, {}
     if not guide then return zones end
-    for index = math.max(at or 1, 1), #guide.steps do
+    for index = math.max(place or at or 1, 1), #guide.steps do
         for _, line in ipairs(guide.steps[index].lines) do
             local map = (line.what == "place" or line.what == "arrive") and line.map and MapId(line.map)
             if map and not have[map] then
@@ -545,12 +636,13 @@ function Run.Stop()
 end
 
 function Run.Use(read)
-    guide, held, at = read, nil, 1
+    guide, held, at, place = read, nil, 1, nil
     wipe(seen)
     if not guide then
         Notes().guide = nil
         return
     end
+    FirstAsked()
     local notes = Notes()
     notes.guide = guide.key or guide.name
     local kept = tonumber(notes.at[guide.key or guide.name])
