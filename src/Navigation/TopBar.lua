@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Navigation - TopBar
 --  The bar over the full map's top edge, left to right:
 --
---      Quest Log         the quest log's window over the map in or out (kept; QuestLog.lua)
+--      Quest Log         the quest log on or off, over the map and on the screen alone (kept; QuestLog.lua)
 --      the views         Parchment; Blended and Scrying while Core's terrain is there (not in Retail, until its
 --                        data comes); Atlas while its module is: how the map is drawn (the setting Map view;
 --                        Navigation.lua, Offer); no buttons where only one is offered (ns.Several)
@@ -41,7 +41,7 @@ TopBar.PINS_WIDTH = 110 -- the pin filter's dropdown: Pins
 TopBar.SIZER, TopBar.SIZE_LABEL, TopBar.CHECK, TopBar.ROW, TopBar.ICON = 120, 44, 40, 30, 24
 TopBar.TEXT = {
     questLog = Core.Word("QUEST_LOG", "Quest Log"),
-    questLogTip = "The quest log's window over the map, or the map alone. Its pin keeps it on the screen while the map is small too.",
+    questLogTip = "The quest log on or off: over the map, and on the screen while the map is small.",
     pins = "Pins",
     follow = ns.TEXT.followMap,
     followTip = ns.TEXT.followMapTip,
@@ -239,7 +239,7 @@ local function Dropdown(width, generator, text)
     return menu
 end
 
--- The quest log in or out, kept for the next time the map fills the screen.
+-- The quest log on or off, in both its looks, kept.
 local function Log()
     ns.store.questLog = not TopBar.LogShown()
     ns.Window.Lay()

@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - QuestLog
---  The quest log, a window of its own over the full map (in or out by the bar's
---  button, TopBar.lua). Our own
+--  The quest log, a window of its own over the full map and on the screen alone (on
+--  or off by the full map's bar's button, TopBar.lua). Our own
 --  list (the game's belongs to its map window, which stays closed), read from
 --  the game's quest log: each quest with its level, its objectives under it, no
 --  mark before it and no tick after it (Saneroki 2026-10-30). A + on the level says
@@ -24,6 +24,8 @@ local _, ns = ...
 --  A quest done keeps one objective: to be turned in, in the game's words ("Report back to ..."), never left out.
 --
 --      a header      over the full map a click folds it in or out, kept (Zone); on the screen alone none is folded
+--      an objective  how many, the game's sword (to kill) or sack (to loot or find) and its name: 4/7 <sack>: Nightstalker
+--                    (Saneroki 2026-10-30); words without a count as the game has them
 --      a quest       a click: its text unfolds under it, or folds away again (Saneroki 2026-10-30), a moment later,
 --                    once no second click came; the game's arrow leads to it, and the map moves to its objective,
 --                    where the map shows it (its question mark, or the middle of the area where its foes are), at
@@ -57,18 +59,18 @@ local _, ns = ...
 --  close to that edge, at the other side.
 --
 --  The window (one of Core's): moved by its title bar, docked at a screen edge,
---  sized by its corner's grip while the mouse is on it. Its title bar's pin (the
---  game's pin of its recent allies) keeps it on the screen while the map is small
---  too (kept, Saneroki 2026-10-20). Two looks, each with its own place and size,
---  kept (Saneroki 2026-10-29):
+--  sized by its corner's grip while the mouse is on it. No buttons on its low title
+--  bar: the button Quest Log on the full map's bar is its one switch, in both looks,
+--  kept (Saneroki 2026-10-30). Two looks, each with its own place and size, kept
+--  (Saneroki 2026-10-29):
 --      over the full map    its dark background, to be read over the map, which is not clicked through it;
---                           every objective, the done ones grey; the pin and the close button (out of both)
+--                           every objective, the done ones grey
 --      on the screen alone  at first in the screen's top left corner; no background, no border, no line under
---                           its title bar and none of its buttons, only the list and its words over the game;
+--                           its title bar, only the list and its words over the game;
 --                           closer to the screen's edge; clicked through but its title bar, its words and its
 --                           items; the objectives done left out, the
---                           headers without their fold marks; the game's quest tracker out of sight meanwhile
---                           (lent to a hidden frame, Core.Lend; back once it is not pinned)
+--                           headers without their fold marks
+--  In either the game's quest tracker is out of sight (lent to a hidden frame, Core.Lend; back once the log is off).
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -83,11 +85,13 @@ QuestLog.FIRST = { x = 12, y = -84 } -- its first place, from the screen's top l
 QuestLog.FIRST_SMALL = { x = 0, y = 0 } -- on the screen alone: the screen's top left corner
 QuestLog.SORTS = { "proximity", "level", "zone", "type" } -- a click on its title: the next of them, round
 QuestLog.RESORT = 2       -- sorted by proximity: the order looked at again every so many seconds while in sight
-QuestLog.BACK = 0.88      -- its background's opacity over the full map (pinned on the screen alone: none)
+QuestLog.BACK = 0.88      -- its background's opacity over the full map (on the screen alone: none)
 QuestLog.EDGE = 10        -- room inside its edges
 QuestLog.EDGE_SMALL = 4   -- on the screen alone: at the side it stands at (and its title)
+QuestLog.BAR = 22         -- its title bar, low: the first row stands right under its words
 QuestLog.HEADER, QuestLog.QUEST, QuestLog.OBJECTIVE = 24, 20, 16 -- the rows' heights
 QuestLog.ITEM = 24        -- a quest's item's button, and the height of a row with one
+QuestLog.ASK = 16         -- the picture in an objective's words: as high as its row
 QuestLog.OVER = 30        -- the items' frame level above the log's
 QuestLog.INDENT = 10      -- an objective's words from its quest's
 QuestLog.MARK = 16        -- a preview's mark at its row's start; its words after it
@@ -121,8 +125,6 @@ QuestLog.TEXT = {
     objectives = Core.Word("QUEST_OBJECTIVES", "Quest Objectives"),
     description = Core.Word("QUEST_DESCRIPTION", "Description"),
     previews = "Not in your log",
-    pin = "Pin",
-    pinTip = "Keeps the quest log on the screen while the map is small too, at a place of its own, without its background, in place of the game's quest tracker. Click again: only over the full map.",
     remove = "Take it out of the log",
     removeAll = "Take them all out of the log",
     offered = "You can take this quest.",
@@ -132,9 +134,7 @@ QuestLog.TEXT = {
     rewards = Core.Word("QUEST_REWARDS", "Rewards"),
     choices = Core.Word("REWARD_CHOICES", "You will be able to choose one of these rewards:"),
     experience = "%s experience",
-    killed = Core.Word("QUEST_MONSTERS_KILLED", "%s slain: %d/%d"),
-    items = Core.Word("QUEST_ITEMS_NEEDED", "%s: %d/%d"),
-    objects = Core.Word("QUEST_OBJECTS_FOUND", "%s: %d/%d"),
+    asked = "%s/%s%s: %s", -- how many done, of how many, its picture, what
 }
 QuestLog.REMOVE = "xmarksthespot" -- the game's red X (ObjectIconsAtlas) on a preview's row
 -- The game's tags of a quest meant for a group (Enum.QuestTag): Group (Forever's Elite), Raid, Dungeon, Heroic, Raid10, Raid25.
@@ -142,15 +142,17 @@ QuestLog.GROUP_TAGS = { [1] = true, [62] = true, [81] = true, [85] = true, [88] 
 QuestLog.RIM = "Interface\\Common\\WhiteIconFrame" -- the game's frame round a reward's icon, in its quality's colour
 QuestLog.PLATE = "Interface\\QuestFrame\\UI-QuestItemNameFrame" -- the game's plate behind a reward's name
 QuestLog.PLATE_PART = { 10 / 128, 118 / 128, 11 / 64, 53 / 64 } -- the plate itself in that picture
-QuestLog.PIN = "friendslist-recentallies-pin-yellow" -- the game's pin, lit while pinned
-QuestLog.PIN_OFF = "friends-icon-pinned-dis"         -- and grey while not
+-- What an objective asks, by the game's word for it and Core's: the game's mouse cursors, as the tooltips show them.
+QuestLog.SWORD, QuestLog.SACK = "Interface\\CURSOR\\Attack", "Interface\\CURSOR\\LootAll"
+QuestLog.ASKS = { monster = QuestLog.SWORD, player = QuestLog.SWORD, kill = QuestLog.SWORD,
+                  item = QuestLog.SACK, object = QuestLog.SACK, loot = QuestLog.SACK }
 
 local QUESTS, NPCS, OBJECTS = Core.Data.Set("Quests"), Core.Data.Set("NPCs"), Core.Data.Set("Objects")
 local previews = {} -- quests shown from the map's pins (Preview), newest first
 local givers = {}   -- [quest] = { map, x, y }: where the pin stood that showed it
 
 local panel, box, view, bar, measure
-local frame, handle, back, pinButton
+local frame, handle, back
 local full = false -- its look over the full map, else on the screen alone (Dress)
 local mirrored = false -- it stands on the screen's right half: its words at the right, the items at the left (Sided)
 local rows = {}    -- what the list shows: { kind = "header" | "quest" | "objective", ... }
@@ -158,7 +160,7 @@ local stale = true -- the log changed while out of sight
 local order = ""   -- the quests in the order shown (Proximity: drawn anew once it changes)
 local heading      -- the title bar's words now
 local ticker       -- sorted by proximity and in sight: the order looked at again (Tick)
-local away, lent   -- the hidden frame the game's quest tracker is lent to while ours is pinned (Tracker)
+local away, lent   -- the hidden frame the game's quest tracker is lent to while ours shows (Tracker)
 local chosen       -- the quest last clicked or shown, lit in the list
 local open = false -- its text shows under it
 local opened       -- that text's rows while they are listed (Read): the first, the last, how high they are together
@@ -290,6 +292,22 @@ local function ForGroup(quest, suggested)
     return type(tag) == "table" and (tag.isElite or QuestLog.GROUP_TAGS[tag.tagID]) and true or false
 end
 
+-- What an objective asks as the list writes it: how many, its picture, what: "4/7 <sack>: Nightstalker".
+local function Asked(kind, have, need, name)
+    local picture = QuestLog.ASKS[kind]
+    local mark = picture and (" |T%s:%d:%d|t"):format(picture, QuestLog.ASK, QuestLog.ASK) or ""
+    return QuestLog.TEXT.asked:format(have, need, mark, name)
+end
+
+-- The same from the game's words ("Nightstalker slain: 4/7", "4/10 Gold Dust"); words without a count stay as they are.
+local function Objective(objective)
+    local text = objective.text
+    local have, need = text:match("(%d+)%s*/%s*(%d+)")
+    local name = have and text:gsub("%d+%s*/%s*%d+", "", 1):gsub("^[%s:]+", ""):gsub("[%s:]+$", ""):gsub("%s+slain$", "")
+    if not name or name == "" then return text end
+    return Asked(objective.type, have, need, name)
+end
+
 -- A quest's row and its objectives under it: over the full map every one, the done ones grey; on the screen alone
 -- only those still to do. A quest done: its turn in last, an objective still to do in both.
 local function Add(entry)
@@ -304,7 +322,7 @@ local function Add(entry)
     local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, quest)
     for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
         if objective.text and objective.text ~= "" and (full or not objective.finished) then
-            rows[#rows + 1] = { kind = "objective", quest = quest, text = objective.text, done = objective.finished }
+            rows[#rows + 1] = { kind = "objective", quest = quest, text = Objective(objective), done = objective.finished }
         end
     end
     if complete then
@@ -871,18 +889,14 @@ local function Item(id)
     return "#" .. tostring(id)
 end
 
--- An objective of Core's data in the words of the game's log: what, none of how many done yet.
-local function Objective(objective)
+-- An objective of Core's data as the list writes the log's: none of how many done yet.
+local function Listed(objective)
     local count, what = objective.count or 1, objective.what
-    if objective.kind == "kill" then
-        local name = what and NPCS:Get(what, "name") or objective.text
-        if name then return QuestLog.TEXT.killed:format(name, 0, count) end
-    elseif objective.kind == "loot" and what then
-        return QuestLog.TEXT.items:format(Item(what), 0, count)
-    elseif objective.kind == "object" then
-        local name = what and OBJECTS:Get(what, "name") or objective.text
-        if name then return QuestLog.TEXT.objects:format(name, 0, count) end
-    end
+    local name
+    if objective.kind == "kill" then name = what and NPCS:Get(what, "name") or objective.text
+    elseif objective.kind == "loot" and what then name = Item(what)
+    elseif objective.kind == "object" then name = what and OBJECTS:Get(what, "name") or objective.text end
+    if name then return Asked(objective.kind, 0, count, name) end
     return objective.text
 end
 
@@ -922,7 +936,7 @@ local function Given(parts, experience, money, things, choices)
 end
 
 -- Rewards of Core's data as cells, known from the items themselves.
-local function Listed(things, entries)
+local function Cells(things, entries)
     for _, entry in ipairs(entries or {}) do
         things[#things + 1] = { item = entry.item, count = entry.count, name = Item(entry.item),
                                 picture = Core.Ask(C_Item.GetItemIconByID, entry.item),
@@ -947,13 +961,13 @@ local function Preview(quest)
     Words(parts, table.concat(facts, "\n"))
     local objectives = {}
     for _, objective in ipairs(record.objectives or {}) do
-        local words = Objective(objective)
+        local words = Listed(objective)
         if words and words ~= "" then objectives[#objectives + 1] = "- " .. words end
     end
     Section(parts, QuestLog.TEXT.objectives, table.concat(objectives, "\n"))
     local things, choices = {}, {}
-    Listed(things, record.rewardItems)
-    Listed(choices, record.rewardChoices)
+    Cells(things, record.rewardItems)
+    Cells(choices, record.rewardChoices)
     Given(parts, record.rewardXP, record.rewardMoney, things, choices)
     return parts
 end
@@ -1184,30 +1198,11 @@ end)
 -------------------------------------------------------------------------------
 --  The panel
 -------------------------------------------------------------------------------
--- Pinned to the screen (store.questLogPinned): shown while the map is small too.
-function QuestLog.Pinned()
-    return ns.store.questLogPinned and true or false
-end
-
--- The pin as it is: lit while pinned, grey while not.
-local function PinLook()
-    local picture = pinButton and pinButton.picture
-    if not picture then return end
-    local on = QuestLog.Pinned()
-    picture:SetAtlas(on and QuestLog.PIN or QuestLog.PIN_OFF)
-    picture:SetDesaturated(not on)
-end
-
-local function Pin()
-    ns.store.questLogPinned = not QuestLog.Pinned() or nil
-    QuestLog.Lay(full)
-end
-
--- The game's quest tracker out of sight while ours is pinned: lent to a hidden frame of ours (Core.Lend; its own
--- code goes on, unseen, its place among the game's frames kept), given back once ours is not, or stands down.
+-- The game's quest tracker out of sight while ours shows: lent to a hidden frame of ours (Core.Lend; its own
+-- code goes on, unseen, its place among the game's frames kept), given back once ours is off, or stands down.
 local function Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
-    local hide = QuestLog.Pinned() and frame and frame:IsShown() and not ns.off
+    local hide = frame and frame:IsShown() and not ns.off
     if hide and tracker and not lent then
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
@@ -1220,14 +1215,6 @@ local function Tracker()
         lent = nil
         was:Return()
     end
-end
-
--- Its close button: out of the full map and off the screen.
-local function Close()
-    ns.store.questLog = false
-    ns.store.questLogPinned = nil
-    QuestLog.Lay(full)
-    ns.Safe("bar", ns.TopBar.Update)
 end
 
 -- The side the window stands at: the screen edge it is docked to, else the half of the screen its middle is in.
@@ -1279,10 +1266,10 @@ end
 -- The list and its title at the side it stands at (Margin), its words from there inwards.
 local function Room()
     local left, right = Margin("LEFT"), Margin("RIGHT")
-    box:SetPoint("TOPLEFT", left, -4)
+    box:SetPoint("TOPLEFT", left, 0)
     box:SetPoint("BOTTOMRIGHT", -right, QuestLog.EDGE)
-    panel.empty:SetPoint("TOPLEFT", left, -4)
-    panel.empty:SetPoint("TOPRIGHT", -right, -4)
+    panel.empty:SetPoint("TOPLEFT", left, 0)
+    panel.empty:SetPoint("TOPRIGHT", -right, 0)
     panel.empty:SetJustifyH(mirrored and "RIGHT" or "LEFT")
     handle:TitleAt(mirrored and "RIGHT" or "LEFT", not full and QuestLog.EDGE_SMALL or nil)
 end
@@ -1356,15 +1343,13 @@ function QuestLog.Build()
     frame:Hide()
     handle = Core.Window.New(frame, {
         store = ns.store, key = KEY[true], title = QuestLog.TEXT.title, titleBar = true, barLine = false,
+        barHeight = QuestLog.BAR,
         dock = true, dragDocked = true, sizable = true, grip = "hover",
         minWidth = QuestLog.LEAST, minHeight = QuestLog.LEAST, first = FIRST[true],
-        buttons = { { atlas = QuestLog.PIN_OFF, tip = QuestLog.TEXT.pin, text = QuestLog.TEXT.pinTip,
-                      click = function() ns.Guarded(Pin) end } },
-        close = function() ns.Guarded(Close) end,
         titleClick = function() ns.Guarded(Resorted) end,
         titleTip = { SortedTip, NextTip },
         barClick = function() ns.Guarded(QuestLog.Fold, not QuestLog.Folded()) end,
-        bare = function() return not full end, -- on the screen alone: no pin, no close button
+        bare = function() return true end, -- no buttons: the full map's bar has its switch
         usable = function() return not InCombatLockdown() end, -- its items cannot follow it in a fight
         lifted = function() ns.Guarded(Lifted) end,
         docked = function() ns.Guarded(Sided) end,
@@ -1410,8 +1395,6 @@ function QuestLog.Build()
     panel:SetScript("OnSizeChanged", ns.Guard(Sized))
     handle:Place() -- where it was left; at its first place and size if it never was moved
     Body()
-    pinButton = handle.own and handle.own[1]
-    PinLook()
     return frame
 end
 
@@ -1455,7 +1438,7 @@ function Resort()
 end
 
 -- Its look (Saneroki 2026-10-29): over the full map (on) its background, above the map's layer, the map not
--- clicked through it, its pin and close button, every objective; on the screen alone, in the game's minimap's
+-- clicked through it, every objective; on the screen alone, in the game's minimap's
 -- layer, none of these: clicked through but its title bar and its rows' words. Each look at its own place, kept.
 local function Dress(on)
     on = on and true or false
@@ -1467,16 +1450,13 @@ local function Dress(on)
     handle:Refresh()
 end
 
--- Shown or not, as the map is (on: it fills the screen and stands there) and the log is chosen: over the full map
--- while the bar's button has it in, on the screen alone while pinned (Dress: its look in each).
+-- Shown or not, as the full map's bar's button has it, in the look of the map as it is (on: it fills the screen and
+-- stands there; Dress).
 function QuestLog.Lay(on)
     if not frame then return end
     Dress(on)
-    local shown = (full and ns.TopBar.LogShown()) or QuestLog.Pinned()
-    frame:SetAlpha(1)
-    tray:SetAlpha(1)
+    local shown = ns.TopBar.LogShown()
     if shown and not frame:IsShown() then frame:Show() elseif not shown and frame:IsShown() then frame:Hide() end
-    PinLook()
     Tracker()
     if shown and stale then QuestLog.Refresh() end
     if not shown then
@@ -1484,20 +1464,6 @@ function QuestLog.Lay(on)
         Tick(false)
     end
     seat()
-end
-
--- On the window's way to the full screen and back (share: how far it has come towards the full screen, 0 to 1):
--- a log not pinned comes in and goes out with the map; a pinned one stays as it is until the map stands.
-function QuestLog.Fade(share, coming)
-    if not frame or QuestLog.Pinned() or not ns.TopBar.LogShown() then return end
-    if not frame:IsShown() and coming then
-        Dress(true)
-        frame:Show()
-        if stale then QuestLog.Refresh() end
-        seat()
-    end
-    frame:SetAlpha(share)
-    tray:SetAlpha(share)
 end
 
 function QuestLog.Shown()

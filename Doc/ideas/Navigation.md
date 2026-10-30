@@ -383,7 +383,7 @@ When the window fills the screen:
     place of its own (the screen's top left corner at first), without the pin and the close button, clicked
     through, the objectives done and the fold marks (+) left out. A done quest's *Report back to ...* is an
     objective still to do: never left out.
-  - **The game's quest tracker hidden** while the quest log is pinned.
+  - **The game's quest tracker hidden** while the quest log shows.
 - **The quest log leaner, its items (Saneroki, 2026-10-30; built):**
   - **No question marks, no ticks, not the word Quest Log:** he knows what it is. The rows closer to the screen's edge.
   - **A double click on a quest puts the map pin on it,** so the route in Forever leads there; **a click expands the
@@ -395,6 +395,9 @@ When the window fills the screen:
   - **Quests from the map's exclamation marks are ghosts:** the red exclamation mark and the red X tell him they are not in
     his log and just an extra, the title and the rest normal; quick to take out again.
   - **Group and epic quests show a + on the level number,** to say they are meant for a group.
+  - **No close and no pin button (Saneroki, 2026-10-30):** he uses the full screen to pin the log, which closes it on the
+    normal screen: the button *Quest Log* on its bar is the one switch for both. **No empty line** under its title.
+  - **The number and the icon first in an objective:** `- 4/7 <bag icon>: Nightstalker`, the sword to kill, the bag to loot.
   - **A click on the title row beside its words minimizes the log:** he can hide the quests when he wants to.
   - **By zone the quests stand under the zone's name:** how the game's own log has its headers folded does not count.
   - **The items to use on quests** anchored to the log's right side; **on the screen's right half mirrored:** the

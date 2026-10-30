@@ -3,7 +3,7 @@
 -- reward from, one that teaches a spell, one for a group, the items the game's own from the data master, and two ghosts
 -- from a giver's exclamation mark on the map on top, one for a group. In the console, LabQuestLog is
 -- the module's log: LabQuestLog.Text(1102) unfolds another quest, LabQuestLog.Text(nil) folds it; LabOnScreen() shows its
--- look on the screen alone, pinned, LabOnScreen(true) back over the full map; LabRight() moves it to the right half.
+-- look on the screen alone, LabOnScreen(true) back over the full map; LabRight() moves it to the right half.
 Lab.TOC("src/Core/SaneUI.toc")
 local Core = SaneUI.Core
 local ns = Lab.Addon("SaneUI_Navigation")
@@ -23,7 +23,9 @@ ns.Live = { Quests = function() return {} end }
 local QUESTS = {
     [1101] = {
         title = "The Fargodeep Mine", level = 7, zone = "Elwynn Forest", watched = true,
-        objectives = { { text = "Gold Dust collected: 4/10" }, { text = "Kobold Tunnelers slain: 7/7", finished = true } },
+        objectives = { { text = "Gold Dust: 4/10", type = "item" },
+                       { text = "Kobold Tunneler slain: 3/7", type = "monster" },
+                       { text = "Candle Thief slain: 2/2", type = "monster", finished = true } },
         asks = "Bring 10 pieces of Gold Dust to Remy \"Two Times\" in Goldshire.",
         story = "Hey there, friend! You look like you can handle yourself, and I need someone with a strong arm.\n\n"
             .. "The kobolds in the Fargodeep Mine have been hoarding gold dust, and a fellow in my trade hears things. "
@@ -42,7 +44,7 @@ local QUESTS = {
     },
     [1103] = {
         title = "A Long Way Down", level = 14, zone = "Westfall", group = 3,
-        objectives = { { text = "Harvest Golems destroyed: 2/8" } },
+        objectives = { { text = "Harvest Golem slain: 2/8", type = "monster" }, { text = "Speak to Salma", type = "event" } },
         asks = "Destroy 8 Harvest Golems.", story = "They march at night.", xp = 1250, money = 0,
     },
 }
@@ -133,7 +135,6 @@ Lab.OnLogin(function()
     QuestLog.Preview({ 2001, 2002 }, 1429, 0.4, 0.4)
     QuestLog.Text(1101)
     LabOnScreen = function(back)
-        ns.store.questLogPinned = not back or nil
         QuestLog.Lay(back)
         QuestLog.Text(1101)
     end

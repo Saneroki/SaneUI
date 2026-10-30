@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 786 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Combat: cast bars on every frame, directly above the health bar; your timers above it; your pet's resource (Saneroki, 2026-10-30)
@@ -101,6 +101,23 @@ in Core's TOC, a new saved variable).
 - **Interface lab:** the scene `auctionscan`; a flipbook's grid is taken (`dev/uilab/lab/anim.lua`).
 - **Tests:** `dev/tests/data.lua`, the scan start to end, the day's merge, refusals, gear and pets, a house of a wrong shape.
 - **Docs:** `Doc/guides/data.md` (*The full auction scan*), `Doc/ideas/Economy.md`, `Doc/ideas/Data.md`, `Doc/ideas/Data-build.md`.
+
+### Navigation: the quest log's one switch, its title closer, objectives with their count and picture first (Saneroki, 2026-10-30)
+Saneroki: no X to close the window: the full screen pins the quest log and closes it on the normal screen, so no close and no
+pin button; the extra empty line between the title and the first quests gone; the icons for kill (sword) and loot (bag) and
+the number in front of the objectives, like `- 4/7 <bag icon>: Nightstalker`. A `/reload` takes it in.
+- **One switch:** `store.questLog`, the button *Quest Log* on the full map's bar, for both looks: `QuestLog.Lay` shows the log
+  as it says, over the full map and on the screen alone. `QuestLog.Pinned`, `store.questLogPinned`, `Pin`, `PinLook`, `Close`,
+  `QuestLog.PIN`, `PIN_OFF` and the fade on the map's way (`QuestLog.Fade`, `Window.lua`'s `Moving`) are gone: it stays as it
+  is until the map stands. The game's quest tracker is lent away while the log shows, in either look.
+- **Core's windows:** the option `barHeight` (`src/Core/Window.lua`); the log's `QuestLog.BAR`, 22, its list right under it.
+- **Objectives:** `Objective` reads the count and the name out of the game's words and `Asked` writes them,
+  `4/7 |T...|t: Nightstalker`, `QuestLog.ASKS` the game's mouse cursors by the game's `type` and Core's `kind`, as the tooltips
+  and the nameplates have them. Words without a count stay as they are. A preview's objectives the same (`Listed`).
+- **Interface lab:** the objectives in the scene `questlog` as the game writes them, with their `type`. The lab's reader leaves
+  a paletted BLP with alpha empty, so the cursors stay blank there (board).
+- **Tests:** `dev/tests/navigation.lua`, no buttons, the bar's height, the one switch, each kind of objective.
+- **Docs:** `src/Navigation/README.md`, `Doc/agent/navigation.md`, `Doc/ideas/Navigation.md`.
 
 ### Navigation: ghosts in their normal colours, a + on the level of a group quest (Saneroki, 2026-10-30)
 Saneroki: the red X and the red exclamation mark are enough to mark a quest not in the log, its title and the rest normal;

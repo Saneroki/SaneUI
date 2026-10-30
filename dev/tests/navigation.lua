@@ -2357,6 +2357,25 @@ do
 end
 check(rows[2].text._text == "[6+] Wolves Across the Border", "a quest with its level, a + for one meant for a group")
 ;(function()
+    -- An objective: how many, the game's sword or sack, what; words without a count as they are.
+    local objectives = C_QuestLog.GetQuestObjectives
+    local function Line(text, kind)
+        C_QuestLog.GetQuestObjectives = function() return { { text = text, type = kind, finished = false } } end
+        QuestLog.Refresh()
+        return logBox:Draw()[3].text._text
+    end
+    local sword, sack = "|T" .. QuestLog.SWORD .. ":16:16|t", "|T" .. QuestLog.SACK .. ":16:16|t"
+    check(Line("Nightstalker slain: 4/7", "monster") == "- 4/7 " .. sword .. ": Nightstalker", "a kill: its count, the sword, who")
+    check(Line("4/7 Nightstalker slain", "monster") == "- 4/7 " .. sword .. ": Nightstalker", "with the count written first too")
+    check(Line("Gold Dust: 4/10", "item") == "- 4/10 " .. sack .. ": Gold Dust", "a thing to loot: the sack")
+    check(Line("Sealed Crate: 0/1", "object") == "- 0/1 " .. sack .. ": Sealed Crate", "a thing to find too")
+    check(Line("Honor gained: 3/5", "reputation") == "- 3/5: Honor gained", "another kind: its count, no picture")
+    check(Line("Speak to Salma", "event") == "- Speak to Salma", "no count: as the game has it")
+    C_QuestLog.GetQuestObjectives = objectives
+    QuestLog.Refresh()
+    rows = logBox:Draw()
+end)()
+;(function()
     -- What makes a +: the game's tag of a group, its elite (Forever's own), a group it suggests; any other tag none.
     local tag, elite, info, list = C_QuestLog.GetQuestTagInfo, C_QuestLog.IsEliteQuest, C_QuestLog.GetInfo, logBox:Draw()
     local function Level()
@@ -2876,7 +2895,10 @@ do
         local get = Quests.Get
         Quests.Get = function(self, id, field)
             local record = get(self, id, field)
-            if id == 101 and not field then record.rewardItems = { { item = 905, count = 2 } } end
+            if id == 101 and not field then
+                record.rewardItems = { { item = 905, count = 2 } }
+                record.objectives = { { kind = "kill", text = "Bears", count = 3 } }
+            end
             return record
         end
         QuestLog.Refresh()
@@ -2886,6 +2908,11 @@ do
         end
         check(cell and cell.thing.item == 905 and cell.name._text == "#905" and cell.count._text == 2,
             "a preview's rewards as big icons too, by what the data knows")
+        local asks
+        for _, element in ipairs(logBox:Draw()) do
+            if element.row.kind == "text" and element.text._text:find("Bears", 1, true) then asks = element.text._text end
+        end
+        check(asks == "- 0/3 |T" .. QuestLog.SWORD .. ":16:16|t: Bears", "its objectives written as the log's")
         local tips, tip = {}, GameTooltip.SetItemByID
         GameTooltip.SetItemByID = function(_, item) tips[1] = item end
         cell._scripts.OnEnter(cell)
@@ -3211,16 +3238,13 @@ end)()
     sort._scripts.OnClick(sort)
     check(ns.QuestLog.Sort() == "proximity", "and round again: by proximity")
     box._width = 300
-    local pin = log.own and log.own[1]
-    check(pin and pin.picture._atlas == ns.QuestLog.PIN_OFF and not ns.QuestLog.Pinned(), "its title bar's pin, grey: not pinned")
-    check(ObjectiveTrackerFrame._parent == UIParent, "not pinned: the game's quest tracker where it was")
-    pin._scripts.OnClick(pin)
-    check(ns.QuestLog.Pinned() and pin.picture._atlas == ns.QuestLog.PIN, "a click pins it: lit")
+    check(not log.buttons._shown and log.bar._height == ns.QuestLog.BAR and log.top == ns.QuestLog.BAR,
+        "no pin and no close button on its title bar, which is low: the first row right under its words")
     check(ObjectiveTrackerFrame._parent ~= UIParent and not ObjectiveTrackerFrame._parent._shown,
-        "pinned: the game's quest tracker out of sight, lent to a hidden frame")
+        "the game's quest tracker out of sight, lent to a hidden frame")
     W.SmallAndBack(function()
         check(log.frame._shown and log.frame._strata == "LOW" and log.bar and not log.skin,
-            "the map small: pinned, it stays on the screen, without a background or a border")
+            "the map small: it stays on the screen, without a background or a border")
         local transparent = true
         for _, widget in ipairs(W.frames) do
             if widget._parent == log.frame and widget._kind == "Texture" and widget._shown then transparent = false end
@@ -3251,13 +3275,19 @@ end)()
             "its headers without their fold marks; a click folds none")
         ns.store.questLogSort = "proximity"
     end)
-    check(log.frame._shown and log.frame._strata == "DIALOG" and log.buttons._shown and log.frame._mouse and box._wheel
-        and log.options.key == "questLogPlace", "and comes back with it, at its place over the full map, with its buttons")
+    check(log.frame._shown and log.frame._strata == "DIALOG" and not log.buttons._shown and log.frame._mouse and box._wheel
+        and log.options.key == "questLogPlace", "and comes back with it, at its place over the full map")
     rows = box:Draw()
     check(#rows == 5 and rows[2].row.done and rows[1]._hit[2] == 0, "every objective again, its rows whole")
     check(not log.titleInset, "its title as every title's again")
-    pin._scripts.OnClick(pin)
-    check(not ns.QuestLog.Pinned() and ObjectiveTrackerFrame._parent == UIParent, "unpinned: the game's quest tracker back")
+    -- The full map's bar's button is its one switch, for both looks.
+    local switch
+    for _, widget in ipairs(W.frames) do if widget._text == ns.TopBar.TEXT.questLog then switch = widget end end
+    switch._scripts.OnClick(switch)
+    check(not log.frame._shown and ObjectiveTrackerFrame._parent == UIParent, "the bar's button: off, the game's quest tracker back")
+    W.SmallAndBack(function() check(not log.frame._shown, "and off on the screen alone too") end)
+    switch._scripts.OnClick(switch)
+    check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "on again: there again")
     -- A click on the title bar beside its words folds the list away, and opens it again.
     do
         local line, panel, back = log.bar, box._parent, nil
@@ -3282,9 +3312,6 @@ end)()
         check(not ns.QuestLog.Folded() and not ns.store.questLogFolded and panel._shown and log.frame._mouse,
             "and again: back as it was")
     end
-    W.SmallAndBack(function()
-        check(not log.frame._shown, "unpinned: it goes with the full map")
-    end)
     box._width = nil
 end)()
 

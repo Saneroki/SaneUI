@@ -64,8 +64,9 @@ local Core = SaneUI.Core
 --          titleClick = function() end, -- without search: what a click on its title does (a drag moves it still)
 --          titleTip = { title, text },  -- its title's tip (each words, or a function asked at each showing)
 --          barClick = function() end,   -- what a click on its title bar beside its title does (a drag moves it still)
---          bare = function() end,       -- its title bar without its buttons right now? (the quest log on the
---                                       -- screen alone has none)
+--          bare = function() end,       -- its title bar without its buttons right now? (the quest log has none)
+--          barHeight = 22,              -- its title bar's height, for a window that wants its words closer to what
+--                                       -- it holds (Window.BAR)
 --          help = function() end,       -- the question mark on its full screen: a tour of what it shows
 --          dragDocked = true,           -- its title bar moves it docked at a screen edge too (not in Edit Mode)
 --          escape = "close",            -- Esc closes it, small or full, as the game's panels close (close, else
@@ -698,6 +699,11 @@ local function Title(window)
     bar.find:SetWidth(Window.TEXT_INSET * 2 + (search and Window.GLASS + 4 or 0) + math.max(bar.title:GetStringWidth() or 0, 40))
 end
 
+-- How high its title bar is.
+local function BarHeight(window)
+    return window.options.barHeight or Window.BAR
+end
+
 -- The title bar, made when it is first shown: across the window's top, Window.BAR high, above what the
 -- window holds, a thin bronze line under it. At its left the search's magnifier (with search) and the
 -- window's title: a click there opens the search box (the game's), which then lies over the whole bar but
@@ -709,7 +715,7 @@ local function Bar(window)
     local bar = CreateFrame("Frame", nil, frame)
     bar:SetPoint("TOPLEFT")
     bar:SetPoint("TOPRIGHT")
-    bar:SetHeight(Window.BAR)
+    bar:SetHeight(BarHeight(window))
     bar:SetFrameLevel(frame:GetFrameLevel() + Window.BAR_LEVEL)
     local line = bar:CreateTexture(nil, "ARTWORK")
     line:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.5)
@@ -820,7 +826,7 @@ end
 
 -- How far below the window's top what it holds starts: under the title bar while it is there.
 local function Inside(window, bar)
-    local top = bar and Window.BAR or 0
+    local top = bar and BarHeight(window) or 0
     if top == window.top then return end
     window.top = top
     window.inside:ClearAllPoints()
@@ -836,7 +842,7 @@ local function TitleSide(window, buttons)
     title:ClearAllPoints()
     if window.titleSide == "RIGHT" then
         local stop = buttons:IsShown() and buttons.first
-        find:SetHeight(Window.BAR)
+        find:SetHeight(BarHeight(window))
         if stop then find:SetPoint("RIGHT", stop, "LEFT") else find:SetPoint("RIGHT") end
         title:SetPoint("RIGHT", -inset, 0)
     else

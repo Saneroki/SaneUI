@@ -15,8 +15,8 @@ painted as one map, three times closer. The game's own minimap lies over it for 
 That is WoW: Forever's map; in Retail the map is the game's own map tree, one map at a time, as the game's own map
 shows it: a click into a map, a right click out to the one over it, the wheel within it.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
-party), always over the map; the full map has the quest log as a window of its own over it, which its pin keeps
-on the screen while the map is small too, and the maps of the dungeons and raids. The plan is in
+party), always over the map; the quest log, a window of its own over the full map and on the screen while the map
+is small, and the maps of the dungeons and raids. The plan is in
 `Doc/ideas/Navigation.md`.
 
 ## How to use
@@ -149,19 +149,20 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the right button. They never touch the map pin.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
-- **The quest log**, a window over the full map (*Quest Log* on the bar puts it in or out; drag its title bar to
-  move it, dock it at a screen edge, size it by its corner): the pin on its title bar keeps it on the screen while
-  the map is small too, in place of the game's quest tracker (out of sight meanwhile), at a place and size of its
-  own (at first the screen's top left corner), there without a background, a border, a line under its title or
-  its buttons, only the list over the game, clicked through but its title bar and its words; its close button
-  takes it out of both. Its title bar says how many quests you have of how many you may, and how they are sorted:
+- **The quest log**, a window over the full map and on the screen while the map is small (**the button *Quest Log* on
+  the full map's bar turns it on or off, in both**; no pin, no close button; drag its title bar to move it, dock it at
+  a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker (out of
+  sight meanwhile), at a place and size of its own (at first the screen's top left corner), without a background, a
+  border or a line under its title, only the list over the game, clicked through but its title bar and its words.
+  Its title bar says how many quests you have of how many you may, and how they are sorted:
   *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
   Elite, Group, Dungeon and the like; the rest Normal; a quest always shows under its zone, however the game's own log
   has its headers; over the full map a click on a zone folds it, kept); a click on those words sorts them the next way, kept. **A click
   on the title bar beside them hides the list,** so that only the title bar stays, and shows it again, kept. Your quests
   with their level, a **+** on it for one meant for a group (`[60+]`, as the game's own log writes it), no mark before them
   and no tick after them, their
-  objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
+  objectives under them, each with how many first, the game's sword (to kill) or sack (to loot or find) and what:
+  *- 4/7 (sack): Nightstalker*; over the full map all of them, the done ones grey; on the screen alone only those still
   to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
   left). **A click on a quest unfolds its story, its objectives and its rewards under it,** one quest's at a time, each
@@ -442,11 +443,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
   on it), in two looks (`Dress`), each with its place and size (`window:Use`): over the full map
   (`store.questLogPlace`) in the layer `DIALOG` with its dark background, the mouse taken, every objective; and
-  pinned (`store.questLogPinned`, its title bar's pin) on the screen alone (`store.questLogSmallPlace`, at first
-  the screen's top left corner) in the layer `LOW` without one (no skin, `barLine = false`, its buttons away by
-  Core's `bare`), the frame without the mouse and each row's hit rect only its words (`Reach`), the mouse wheel
-  the game's while the list fits, the objectives done left out, no fold marks; the game's `ObjectiveTrackerFrame`
-  lent to a hidden frame (`Core.Lend`) while pinned. Sorted (`store.questLogSort`, by Core's `titleClick` on its
+  on the screen alone (`store.questLogSmallPlace`, at first
+  the screen's top left corner) in the layer `LOW` without one (no skin, `barLine = false`), the frame without the mouse
+  and each row's hit rect only its words (`Reach`), the mouse wheel
+  the game's while the list fits, the objectives done left out, no fold marks. One switch for both, `store.questLog`
+  (TopBar's button); no buttons on its low title bar (Core's `bare`, `barHeight`). The game's `ObjectiveTrackerFrame`
+  lent to a hidden frame (`Core.Lend`) while it shows. An objective's words made anew from the game's
+  (`Objective`, `Asked`, `QuestLog.ASKS`). Sorted (`store.questLogSort`, by Core's `titleClick` on its
   title, `titleTip` its tip; the title `%d/%d <sorting>`): by `GetDistanceSqToQuest` (looked at again
   every `QuestLog.RESORT` seconds by a ticker while shown, drawn anew only once the order changed), by level, the
   game's own with its headers, or under `GetQuestTagInfo`'s tag. A `WowScrollBoxList` of rows read from
@@ -1052,6 +1055,9 @@ Tests: `dev/tests/navigation.lua`.
   The button *Sane UI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
   right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
   the pins on what the game tells, and lays nothing out on the window's way.
+- **2026-10-30, one switch:** no pin and no close button on the quest log: the button *Quest Log* on the full map's bar turns it on
+  or off in both its looks; its title bar lower, its first row right under its words; objectives with their count and the
+  game's sword or sack first.
 - **2026-10-30, ghosts:** a quest's story comes first in its text; the quests of a giver's exclamation mark stand in the log
   as ghosts, a red exclamation mark and a red X saying so, their titles normal, out by that X, the right button or the X
   over them all. A + on the level of a quest meant for a group (`ForGroup`, `Title`).

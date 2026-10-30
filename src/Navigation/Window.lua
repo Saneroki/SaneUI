@@ -108,8 +108,8 @@ function Window.Lay()
 end
 
 -- On its way to the full screen (full) or back, the window to be width x height: the map goes with it,
--- into the other view's camera; the quest log fades in and out with it (but pinned), the bar and a dungeon's
--- map wait until it stands. Resting, it comes into sight first. With the full map's box Follow me ticked, it
+-- into the other view's camera; the quest log, the bar and a dungeon's map wait until it stands. Resting, it comes
+-- into sight first. With the full map's box Follow me ticked, it
 -- opens on the player (but at a map the game was asked for).
 local function Filled(on, width, height)
     if resting then Rest(false) end
@@ -124,10 +124,6 @@ local function Filled(on, width, height)
 end
 
 local function Moving(share)
-    if going ~= nil then
-        local t = math.min(math.max(share, 0), 1)
-        ns.QuestLog.Fade(going and t or 1 - t, going)
-    end
     ns.Canvas.Step(share)
 end
 

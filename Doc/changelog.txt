@@ -159,12 +159,14 @@ The bigger changes of each version, newest first.
   its tooltip. A click on an exclamation mark on the map adds its
   quests on top, a red ! and a red X saying they are not in your log:
   that X or a right click takes them out. A + on a quest's level says
-  it is meant for a group. Quest
+  it is meant for a group, and objectives start with how many and a
+  sword or a sack: 4/7, sack, Nightstalker. Quest
   items stand beside their quests, on the right half of the screen
   it mirrors.
-  Pinned, it takes the place of the game's quest tracker: in its
-  own spot (top left at first), clicked through, showing only what
-  is still to do.
+  The button Quest Log on the full map turns it on or off. On, it
+  also takes the place of the game's quest tracker on the normal
+  screen: in its own spot (top left at first), clicked through,
+  showing only what is still to do.
 - Retail: Sane UI works in the main game too, beside WoW: Forever.
   Everything that both games have works in both; what only Forever
   has (its painted Atlas, its data of the world, Combat's own
