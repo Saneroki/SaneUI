@@ -798,6 +798,29 @@ check(Up(SASH) == nil, "what the game says you cannot use: none")
 unusable[5000] = nil
 items[SASH].needs, W.level = 10, 5
 check(Up(SASH) == nil, "not yet of its level: none")
+items[SASH].needs, W.level = nil, 20
+-- With the character's weights the stats decide: a lower item level with the right stats goes over a higher one.
+do
+    local Core, stats = SaneUI.Core, {}
+    local get = C_Item.GetItemStats
+    C_Item.GetItemStats = function(link) return stats[link] end
+    Core.WeighWith(function() return { ITEM_MOD_STRENGTH_SHORT = 1, ITEM_MOD_INTELLECT_SHORT = 0.1 } end)
+    stats[HELM], stats[OLD_HELM] = { ITEM_MOD_INTELLECT_SHORT = 30 }, { ITEM_MOD_STRENGTH_SHORT = 10 }
+    worn[INVSLOT_HEAD] = OLD_HELM
+    check(Up(HELM) == nil, "weights: a higher item level of the wrong stats is no upgrade")
+    worn[INVSLOT_HEAD] = HELM
+    check(Up(OLD_HELM) == "better", "weights: a lower item level of the right stats is")
+    check(select(2, Core.Upgrade(OLD_HELM)) == 7, "and what it gains")
+    worn[INVSLOT_HEAD] = nil
+    check(select(2, Core.Upgrade(HELM)) == 3, "nothing worn there: all it is worth")
+    stats[HELM], stats[OLD_HELM] = {}, {}
+    worn[INVSLOT_HEAD] = OLD_HELM
+    Core.WeighWith(function() return { ITEM_MOD_STRENGTH_SHORT = 1.5 } end)
+    check(Up(HELM) == "better", "no stats on either: the item level decides")
+    worn[INVSLOT_HEAD] = nil
+    Core.WeighWith(nil)
+    C_Item.GetItemStats = get
+end
 W.level = 20
 check(Up(CLOTH) == nil and Up(TUSK) == nil, "no gear: none")
 

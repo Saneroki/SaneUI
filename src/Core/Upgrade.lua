@@ -6,21 +6,27 @@ local Core = SaneUI.Core
 --  green arrow on it, and Loot's switch Always show upgrades; 2026-10-30: the
 --  arrow on the items in the bags too, Speed Leveling's rewards): gear the
 --  character can wear now, by the game's own word (C_PlayerInfo.CanUseItem)
---  and its level, and in its place either nothing is worn, or what is worn has
---  a lower item level (of two places of a kind, rings and trinkets, the weaker
---  one). Never armour of a lighter kind than the one worn there (cloth over
---  mail), nor an off hand while a two-handed weapon is held. Shirts, tabards
---  and bags are no gear here.
+--  and its level, and in its place either nothing is worn, or what is worn is
+--  worth less (of two places of a kind, rings and trinkets, the weaker one).
+--  Worth: its stats by the character's weights (Core.WeighWith: Inventory's, by
+--  class and specialization; a two-handed weapon against both hands), else
+--  its item level. Never armour of a lighter kind than the one worn there
+--  (cloth over mail), nor an off hand while a two-handed weapon is held.
+--  Shirts, tabards and bags are no gear here.
 --
---      Core.Upgrade(link, id)   "empty" (nothing worn there) or "better" (a higher item level), the item levels it
---                               brings and the place it goes (of two the empty or the weaker one); nil: no upgrade.
---                               id: the item's, read from the link without it
+--      Core.Upgrade(link, id)   "empty" (nothing worn there) or "better", what it brings (its worth or what it gains
+--                               on what is worn) and the place it goes (of two the empty or the weaker one); nil: no
+--                               upgrade. id: the item's, read from the link without it
+--      Core.WeighWith(fn)       fn() gives the character's weights: { [the game's stat key] = worth, ranged = worth
+--                               of a ranged weapon's damage per second }, nil for none
 -------------------------------------------------------------------------------
 local Plain = Core.Plain
 
 local ARMOR = 4                                 -- the game's item class of armour (Enum.ItemClass)
 local CLOTH, PLATE = 1, 4                       -- its kinds by weight, cloth to plate (Enum.ItemArmorSubclass)
 local TWO_HANDS = { INVTYPE_2HWEAPON = true }
+local RANGED = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THROWN = true }
+local DPS = "ITEM_MOD_DAMAGE_PER_SECOND_SHORT"
 
 -- Where each kind of gear is worn: the game's places (INVSLOT_*); "ranged" is the ranged place where the game has
 -- one, else the main hand (Retail).
@@ -47,7 +53,32 @@ local function Place(name)
     return rawget(_G, name)
 end
 
--- What the game says of an item: where it is worn, its item level, the level it asks, its class and kind.
+local weigh         -- what gives the character's weights
+local weights       -- those the scores were made with
+local scores = {}   -- [link] = its stats by them
+
+function Core.WeighWith(fn) weigh = fn end
+
+-- An item's stats by the character's weights; nil with no weights, or while the game does not say.
+local function Score(link, where)
+    local now = weigh and Core.Ask(weigh) or nil
+    if now ~= weights then weights, scores = now, {} end
+    if not now then return nil end
+    if scores[link] then return scores[link] end
+    local get = rawget(_G, "C_Item") and C_Item.GetItemStats or rawget(_G, "GetItemStats")
+    local stats = Core.Ask(get, link)
+    if type(stats) ~= "table" then return nil end
+    local score = 0
+    for stat, amount in pairs(stats) do
+        local worth = now[stat]
+        if stat == DPS and RANGED[where] then worth = now.ranged end
+        if worth and type(amount) == "number" then score = score + worth * amount end
+    end
+    scores[link] = score
+    return score
+end
+
+-- What the game says of an item: where it is worn, its item level, the level it asks, its class and kind, its score.
 local function Facts(item)
     local info = rawget(_G, "C_Item") and C_Item.GetItemInfo or rawget(_G, "GetItemInfo")
     if type(info) ~= "function" or not item then return nil end
@@ -56,7 +87,12 @@ local function Facts(item)
     local detailed = rawget(_G, "C_Item") and C_Item.GetDetailedItemLevelInfo
     local scaled = detailed and Plain(Core.Ask(detailed, item))
     return { where = Plain(where), level = type(scaled) == "number" and scaled > 0 and scaled or Plain(level) or 0,
-             needs = Plain(needs) or 0, class = Plain(class), kind = Plain(kind) }
+             needs = Plain(needs) or 0, class = Plain(class), kind = Plain(kind), score = Score(item, Plain(where)) }
+end
+
+-- What one is worth: its score, else its item level.
+local function Value(facts)
+    return facts.score and facts.score > 0 and facts.score or facts.level
 end
 
 -- Whether the character can wear it now: the game's word on the item, and the level it asks.
@@ -88,11 +124,20 @@ function Core.Upgrade(link, id)
             if held and TWO_HANDS[held.where] then return nil end -- both hands hold one weapon
         end
         local worn = Facts(Core.Ask(GetInventoryItemLink, "player", place))
-        if not worn then return "empty", facts.level, place end
-        if not weakest or worn.level < weakest.level then weakest, at = worn, place end
+        if not worn then return "empty", Value(facts), place end
+        if not weakest or Value(worn) < Value(weakest) then weakest, at = worn, place end
     end
     local mine, theirs = Weight(facts), Weight(weakest)
     if mine and theirs and mine < theirs then return nil end -- lighter armour than worn
+    local ours, held = facts.score, weakest.score
+    if ours and held and (ours > 0 or held > 0) then
+        if TWO_HANDS[facts.where] then
+            local off = Facts(Core.Ask(GetInventoryItemLink, "player", Place("INVSLOT_OFFHAND")))
+            held = held + (off and off.score or 0)
+        end
+        if ours > held then return "better", ours - held, at end
+        return nil
+    end
     if facts.level > weakest.level then return "better", facts.level - weakest.level, at end
     return nil
 end

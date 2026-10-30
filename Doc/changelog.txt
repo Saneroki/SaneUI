@@ -15,8 +15,10 @@ The bigger changes of each version, newest first.
   once a quest is taken or handed in it leaves the NPC alone and
   closes the goodbye screen. Quest rewards are chosen for you: the
   biggest upgrade, else what is worth the most, and upgrades you
-  loot are put on. Each has its switch.
-- Bags: a green arrow on the items that would be an upgrade.
+  loot are put on. Group rolls are settled between your own
+  characters. Each has its switch; Solo in the bags rests it all.
+- Bags: a green arrow on the items that would be an upgrade, by
+  what your class and specialization want.
 - Combat: your frame, your target's and your focus's in the look
   of the nameplates, green: level and raid marker on the left,
   then the name (players by their full name; none on your own),

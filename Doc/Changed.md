@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 156 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 173 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Social: the list of chats in columns, open until you close it (Saneroki, 2026-10-30)
@@ -71,6 +71,23 @@ new settings `autoSell` and `autoRepair`, on at first, also on the page Inventor
   order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
   does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
 
+### Inventory: stat weights decide upgrades; Speed Leveling: Solo, group rolls agreed between your characters (Saneroki, 2026-10-30)
+Saneroki: Always show upgrades off after all, Speed Leveling puts upgrades on. Stat weights for all classes, part of the
+Inventory module, so that an upgrade is one for the class played. A third box in the bag foot, Solo, that switches Speed
+Leveling on or off for playing with others. Group rolls handled, on both of his characters, so that the right one gets it.
+- **Take all loot** sets *Always show upgrades* off again; `Lend` now goes switch by switch, so a switch set before stays set.
+- **`src/Inventory/Weights.lua`** (new): a line per class and specialization of each game (`Weights.FOREVER`, `Weights.RETAIL`),
+  the stat a character builds on at 1, so two classes' gains compare; `early` for a character without a specialization.
+  `Weights.Start` gives `Weights.Now` to `Core.WeighWith`.
+- **`Core.Upgrade`**: worth is an item's stats by those weights (`GetItemStats`; the rings' weaker by it too, a two-handed weapon
+  against both hands, a ranged weapon's dps by `ranged`), its item level where there are none or neither item has any.
+- **Solo** (`solo`, on at first; a box in the foot, `Vendor.BOXES`, with `module`: another module's switch, no box without it):
+  off, the module rests with `ns.off` set, the key's bindings and driver gone, the guide hidden, Loot's switches back; on again
+  `Key.Wake` and the rest return. The run keeps its place, the guide catches up.
+- **Roll on group loot** (`Rolls.lua`, `rolls`, on at first): each Sane UI says what the thing brings over `Core.Wire` (kind `SLR`,
+  by item ID), the one it brings the most Needs, the others Greed, a tie by GUID; no word from anybody: Need on an upgrade.
+  `CONFIRM_LOOT_ROLL` answered for rolls made here.
+
 ### Speed Leveling: Equip upgrades (Saneroki, 2026-10-30)
 Saneroki: a checkbox, on by default, that puts upgrades on as they are looted. `Errands.lua`: on `BAG_UPDATE_DELAYED` and
 `PLAYER_REGEN_ENABLED`, out of a fight, the first item the game flags as new (`C_NewItems.IsNewItem`) that `Core.Upgrade` calls
@@ -78,7 +95,7 @@ an upgrade goes on by `C_Item.EquipItemByName` in the place it names (`Core.Upgr
 empty or the weaker one), one at a time so that the next is measured against it. What you took off yourself is not new and
 stays off; an item tried is not tried again (`tried`), the game may refuse it. The chat says what went on.
 
-### Speed Leveling: quest rewards chosen, two guide quests at one NPC; Always show upgrades stays; Bags: the green arrow on upgrades (Saneroki, 2026-10-30)
+### Speed Leveling: quest rewards chosen, two guide quests at one NPC; Bags: the green arrow on upgrades (Saneroki, 2026-10-30)
 Saneroki: Always show upgrades stays on with Take all loot, he wants to see an upgrade; the green arrow always on the icon
 in the bag view; an NPC with two of the guide's quests gives both, quests not in the guide are ignored; and the reward
 chosen on turning in, the best upgrade, else the highest vendor or auction house value, on by default.

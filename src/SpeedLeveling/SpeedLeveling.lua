@@ -33,6 +33,7 @@ local ADDON, ns = ...
 --    Quests.lua  what a quest giver does for your guide, a talk that is done closed
 --    Errands.lua what would hold you up: all loot taken, the game's questions
 --                on equipping and destroying answered, new upgrades put on
+--    Rolls.lua   group rolls decided with the other Sane UI of your group
 --    Steps.lua   the guide over the world
 --    Arrow.lua   the way to the guide's place, a part of its own
 --    Icons.lua   the items to use and the names to target, over the guide
@@ -43,6 +44,8 @@ ns.title = "Speed Leveling"
 Core.NewModule(ADDON, "SpeedLeveling", ns)
 
 ns.TEXT = {
+    solo = "Solo",
+    soloTip = "On: all of Speed Leveling works, the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again: your key does nothing, the guide is hidden and what it changed in Loot is put back. For playing with others. Your own two characters together count as solo. Also a box at the foot of the bags.",
     binding = "Loot, talk, pick up, attack, find and mark, use",
     hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under Sane UI: Loot, talk, pick up, attack, find and mark, use.",
     -- /sane key: what the key sees now (Key.Check).
@@ -95,11 +98,13 @@ ns.TEXT = {
     errandsHeader = "On the way",
     errandsHeaderTip = "What Speed Leveling does for you so that nothing holds you up.",
     lootAll = "Take all loot",
-    lootAllTip = "Sets the module Loot to take everything at once: its Everything on. Its Always show upgrades stays as you have it, so an upgrade still waits in the loot window for you to see. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts it back. Things locked to a group's roll are not taken.",
+    lootAllTip = "Sets the module Loot to take everything at once: its Everything on, its Always show upgrades off, as Equip upgrades puts those on. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts back the rest. Things locked to a group's roll are not taken.",
+    rolls = "Roll on group loot",
+    rollsTip = "When your group rolls for a thing, the Sane UI of each of your characters says what it would bring, and the one it brings the most Needs it; the others Greed. With nobody to agree with, Need on an upgrade, else Greed. In a fight it waits for the end of the fight, as long as the roll's clock allows.",
     noAsk = "Equip and delete without asking",
     noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
     equipUpgrades = "Equip upgrades",
-    equipUpgradesTip = "Gear that comes into your bags, looted or a quest's reward, and is an upgrade is put on at once, or after a fight: anything you can wear for a place with nothing in it, else one of a higher item level. Upgrades go by item level alone, not by stats. What you took off yourself stays off. The chat says what was put on.",
+    equipUpgradesTip = "Gear that comes into your bags, looted or a quest's reward, and is an upgrade is put on at once, or after a fight: anything you can wear for a place with nothing in it, else one worth more to you: its stats as your class and specialization want them (the module Inventory's weights), else its item level. What you took off yourself stays off. The chat says what was put on.",
     equipped = "Equipped %s.",
 
     -- The guide over the world (Guide.lua, Steps.lua, Guides.lua).
@@ -205,6 +210,7 @@ ns.TEXT = {
 ns.GIVEN_BACK = "the key is the game's own again, the guide hidden"
 
 local OPTIONS = {
+    { key = "solo", default = true, text = ns.TEXT.solo, tip = ns.TEXT.soloTip },
     { key = "loot", default = true, text = ns.TEXT.loot, tip = ns.TEXT.lootTip },
     { key = "corpses", default = true, text = ns.TEXT.corpses, tip = ns.TEXT.corpsesTip, parent = "loot" },
     { key = "talk", default = true, text = ns.TEXT.talk, tip = ns.TEXT.talkTip },
@@ -225,6 +231,7 @@ local OPTIONS = {
       header = ns.TEXT.errandsHeader, headerTip = ns.TEXT.errandsHeaderTip },
     { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
     { key = "equipUpgrades", default = true, text = ns.TEXT.equipUpgrades, tip = ns.TEXT.equipUpgradesTip },
+    { key = "rolls", default = true, text = ns.TEXT.rolls, tip = ns.TEXT.rollsTip },
     { key = "follow", default = "on", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
@@ -243,9 +250,33 @@ local OPTIONS = {
 -- givers' switches and those of what is on the way are read when they are needed.
 local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
 local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, equipUpgrades = true,
-                 lootLent = true, deleteRefused = true }
-Core.Options(ns.name, OPTIONS, { changed = function(key)
-    if VIEW[key] then
+                 rolls = true, lootLent = true, deleteRefused = true }
+-- Solo off: all of the module rests until it is ticked again, as a module stood down but for good reason: ns.off is
+-- what every part of it asks. The guide's run goes on knowing where it is, so that it catches up after.
+local resting = false
+local function Rest(on)
+    if on == resting or (ns.off and not resting) then return end
+    resting = on
+    if on then
+        ns.off = true
+        ns.Steps.GiveBack()
+        ns.Guides.GiveBack()
+        ns.Key.GiveBack()
+        ns.Errands.Update()
+    else
+        ns.off = nil
+        ns.Key.Wake()
+        ns.Errands.Update()
+        ns.Guide.CheckSoon()
+        ns.Steps.Update()
+    end
+    Core.SwitchChanged()
+end
+
+Core.Options(ns.name, OPTIONS, { changed = function(key, now)
+    if key == "solo" then
+        Rest(now == false)
+    elseif VIEW[key] then
         ns.Guarded(ns.Steps.Update)
     elseif key == "lootAll" then
         ns.Guarded(ns.Errands.Update)
@@ -281,10 +312,12 @@ function ns.OnLogin()
     ns.Key.Start()
     ns.Quests.Start()
     ns.Errands.Start()
+    ns.Rolls.Start()
     -- A change of the guide: drawn anew; what the key wants follows.
     ns.Guide.Watch(ns.Steps.Update)
     ns.Guide.Watch(ns.Key.Refresh)
     ns.Steps.Update()
+    if ns.options.solo == false then Rest(true) end
 end
 
 Core.Command("guides", ns.TEXT.command, function() ns.Guarded(ns.Guides.Open) end)

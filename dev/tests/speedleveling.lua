@@ -832,6 +832,90 @@ do
     Core.Upgrade, C_Container, C_NewItems, C_Item.EquipItemByName = upgrade, container, new, nil
 end
 
+-- Group rolls: each Sane UI says what the thing brings, the one it brings the most Needs it.
+do
+    local upgrade, send = Core.Upgrade, Core.Wire.Send
+    local rolled, said, gains, left = {}, {}, {}, {}
+    local link, other = "item:500:x", "Player-1-00000002"
+    Core.Upgrade = function(_, item) return gains[item] and "better" or nil, gains[item] end
+    Core.Wire.Send = function(kind, fields, channel) said[#said + 1] = { kind = kind, fields = fields, channel = channel } end
+    UnitGUID = (function(old)
+        return function(unit) if unit == "player" then return "Player-1-00000005" end return old(unit) end
+    end)(UnitGUID)
+    C_Item.GetItemInfo = function() return "Thing" end
+    GetLootRollItemLink = function() return link end
+    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, true, true end
+    GetLootRollTimeLeft = function(id) return left[id] or 0 end
+    RollOnLoot = function(id, choice) rolled[id] = choice end
+    IsInGroup, IsInRaid = function(kind) return kind == nil end, function() return false end
+    gains[500], left[1] = 8, 60000
+    W.Fire("START_LOOT_ROLL", 1, 60000)
+    check(said[1] and said[1].kind == ns.Rolls.KIND and said[1].fields[1] == 500 and said[1].fields[2] == 8
+        and said[1].channel == "PARTY", "a roll: what it brings said to the group")
+    check(rolled[1] == nil, "not decided before the others had their say")
+    ns.Rolls.Heard("x", { "500", "3", other })
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[1] == 1, "it brings yours the most: Need")
+    left[2] = 60000
+    W.Fire("START_LOOT_ROLL", 2, 60000)
+    ns.Rolls.Heard("x", { "500", "12", other })
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[2] == 2, "it brings the other one more: Greed")
+    left[3] = 60000
+    W.Fire("START_LOOT_ROLL", 3, 60000)
+    ns.Rolls.Heard("x", { "500", "8", other })
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[3] == 2, "as much: the lower GUID gets it, every side comes to the same")
+    gains[500], left[4] = nil, 60000
+    W.Fire("START_LOOT_ROLL", 4, 60000)
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[4] == 2, "no upgrade: Greed")
+    gains[500], left[5] = 4, 60000
+    W.Fire("START_LOOT_ROLL", 5, 60000)
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[5] == 1, "nobody else says a word: Need on an upgrade")
+    -- In a fight it waits; as the clock runs out it is decided all the same.
+    left[6] = 60000
+    W.combat = true
+    W.Fire("START_LOOT_ROLL", 6, 60000)
+    W.Wait(ns.Rolls.WAIT * 2)
+    check(rolled[6] == nil, "in a fight: not yet")
+    left[6] = ns.Rolls.LAST
+    W.Wait(ns.Rolls.TICK * 2)
+    check(rolled[6] == 1, "the clock running out: decided")
+    W.combat = false
+    -- The game's question on a thing that binds, for a roll made here only.
+    local confirmed, hiddenRoll = {}, 0
+    ConfirmLootRoll = function(id, choice) confirmed[id] = choice end
+    StaticPopup_Hide = function() hiddenRoll = hiddenRoll + 1 end
+    W.Fire("CONFIRM_LOOT_ROLL", 5, 1, "")
+    W.Fire("CONFIRM_LOOT_ROLL", 77, 1, "")
+    W.Wait(0.1)
+    check(confirmed[5] == 1 and confirmed[77] == nil and hiddenRoll == 1, "the question answered for our rolls alone")
+    Core.Set(ns.name, "rolls", false)
+    left[7] = 60000
+    W.Fire("START_LOOT_ROLL", 7, 60000)
+    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
+    check(rolled[7] == nil, "Roll on group loot off: yours")
+    Core.Set(ns.name, "rolls", true)
+    Core.Upgrade, Core.Wire.Send, C_Item.GetItemInfo = upgrade, send, nil
+    GetLootRollItemLink, GetLootRollItemInfo, GetLootRollTimeLeft, RollOnLoot = nil, nil, nil, nil
+    IsInGroup, IsInRaid, ConfirmLootRoll, StaticPopup_Hide = nil, nil, nil, nil
+end
+
+-- Solo off: all of the module rests, and comes back as it was.
+do
+    W.Wait(Key.LOOK + Key.TICK)
+    header:SetAttribute("state-mode", "loot")
+    check(overrides.E == "INTERACTTARGET", "before the rest: the key's action on its key")
+    Core.Set(ns.name, "solo", false)
+    check(ns.off and next(overrides) == nil and drivers[header].mode == nil, "Solo off: no action on the key, the driver stopped")
+    Core.Set(ns.name, "solo", true)
+    check(not ns.off and drivers[header].mode ~= nil, "Solo on: the module back")
+    check(next(overrides) ~= nil, "the key's action back on its key")
+    header:SetAttribute("state-mode", "find")
+end
+
 -- Shift seen once in a talk: the rest of it is yours, let go or not, until the talk is over.
 do
     local Quests, did = ns.Quests, {}
@@ -912,15 +996,21 @@ end
 lootOptions.takeAll, lootOptions.showUpgrades = false, true
 ns.options.lootLent = {}
 ns.Errands.Update()
-check(lootOptions.takeAll == true and lootOptions.showUpgrades == true, "Take all loot: Everything on, upgrades still shown")
+check(lootOptions.takeAll == true and lootOptions.showUpgrades == false, "Take all loot: Everything on, upgrades not held back")
 lootOptions.takeAll = false
 ns.Errands.Update()
 check(lootOptions.takeAll == false, "what you change on Loot's page afterwards stays")
 lootOptions.takeAll = true
 Core.Set(ns.name, "lootAll", false)
-check(lootOptions.takeAll == false and next(ns.options.lootLent) == nil, "off: put back")
+check(lootOptions.takeAll == false and lootOptions.showUpgrades == true and next(ns.options.lootLent) == nil, "off: put back")
+ns.options.lootLent = { takeAll = { was = false, set = true } }
+lootOptions.takeAll = true
 Core.Set(ns.name, "lootAll", true)
-check(lootOptions.takeAll == true, "on again: set")
+check(lootOptions.showUpgrades == false, "one switch set before, the other still is")
+Core.Set(ns.name, "solo", false)
+check(lootOptions.takeAll == false and lootOptions.showUpgrades == true, "Solo off: Loot's switches back")
+Core.Set(ns.name, "solo", true)
+check(lootOptions.takeAll == true and lootOptions.showUpgrades == false, "Solo on: set again")
 
 -- The game's questions, answered by what their own Yes does.
 local cursor, answered, hidden = true, {}, {}

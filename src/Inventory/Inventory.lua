@@ -153,6 +153,8 @@ ns.TEXT = {
     bagsAutoSellTip = "At a vendor your junk is sold as the window opens, what you marked as junk too. Hold Shift to leave it to you.",
     bagsAutoRepair = "Auto Repair",
     bagsAutoRepairTip = "At a vendor who repairs, your gear is mended as the window opens, after the junk is sold, with your own gold if you have enough. Hold Shift to leave it to you.",
+    bagsSolo = "Solo",
+    bagsSoloTip = "Speed Leveling's automation on: the key, the guide, the quest givers, the loot, the upgrades and the group rolls. Off: all of it rests until you tick it again, for playing with others. Your own two characters together count as solo.",
     -- The bags' dropdown View (Bags/Bags.lua)
     bagsLook = "Display",
     bagsShowPinned = "Show Pinned Items",
@@ -217,5 +219,6 @@ function ns.OnLogin()
     ns.Recent.Start()
     ns.Bank.Start()
     ns.Vendor.Start()
+    ns.Weights.Start()
     ns.Keys.Start()
 end

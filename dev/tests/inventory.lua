@@ -1025,4 +1025,30 @@ check(ns.off and not frame:IsShown() and not handle.edge.full and bags.shown == 
 check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrame1:GetParent() == UIParent,
     "and the bag keys and the game's bag windows are the game's again")
 
+-- The weights: every line of both games reads, by the game's stat keys; the stat a character builds on is 1.
+do
+    local Weights = ns.Weights
+    local lines = 0
+    for game, classes in pairs({ forever = Weights.FOREVER, retail = Weights.RETAIL }) do
+        for class, specs in pairs(classes) do
+            check(specs.early, class .. " has a line for a character without a specialization")
+            for spec in pairs(specs) do
+                check(Weights.For(game, class, spec), game .. " " .. class .. " " .. spec)
+                lines = lines + 1
+            end
+        end
+    end
+    check(lines >= 70, "a line for every specialization: " .. lines)
+    local arms = Weights.For("forever", "WARRIOR", "arms")
+    check(arms.ITEM_MOD_STRENGTH_SHORT == 1 and arms.ITEM_MOD_DAMAGE_PER_SECOND_SHORT == 7 and arms.ITEM_MOD_ATTACK_POWER_SHORT == 0.5,
+        "a warrior: 2 Attack Power to Strength, 14 to a point of damage per second")
+    local feral = Weights.For("retail", "DRUID", "feral")
+    check(feral.ITEM_MOD_AGILITY_SHORT == 1 and feral.ITEM_MOD_HASTE_RATING_SHORT == Weights.LADDER[1]
+        and feral.ITEM_MOD_MASTERY_RATING_SHORT == Weights.LADDER[4] and feral.ITEM_MOD_DAMAGE_PER_SECOND_SHORT, "Retail: the main stat, then the ladder")
+    check(Weights.For("retail", "PRIEST", "shadow").ITEM_MOD_DAMAGE_PER_SECOND_SHORT == nil, "a caster's weapon damage counts for nothing")
+    check(Weights.For("forever", "WARRIOR", "no such") == arms or Weights.For("forever", "WARRIOR", "no such").ITEM_MOD_STRENGTH_SHORT == 1,
+        "a specialization without a line: its class's first")
+    check(Weights.For("forever", "NOBODY", "arms") == nil, "a class without lines: none")
+end
+
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

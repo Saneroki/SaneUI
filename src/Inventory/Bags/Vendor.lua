@@ -9,7 +9,9 @@ local _, ns = ...
 --  not. The junk goes first, so its money goes to the repair: what the bar's
 --  Sell All Junk Items sells (Foot.Sell), unasked. Then all the gear, with the
 --  character's own money and only if that is enough. Shift held as the window
---  opens leaves both to the player.
+--  opens leaves both to the player. Beside them Solo, Speed Leveling's own
+--  switch (the same day: all of that module on or resting); no box where that
+--  module is off.
 --
 --      Vendor.Build(foot, gold)   the boxes in the foot, left of gold (Foot.Build)
 --      Vendor.Refresh()           the ticks and widths as the settings have them
@@ -27,7 +29,8 @@ Vendor.APART = 12               -- between the two, and from the gold
 Vendor.TICK = 2                 -- the tick's pencil
 Vendor.TICK_WAY = { { -4, 0 }, { -1, -3 }, { 5, 4 } } -- the tick's line from the box's middle
 Vendor.BOXES = { { key = "autoRepair", word = "bagsAutoRepair", tip = "bagsAutoRepairTip" },
-                 { key = "autoSell", word = "bagsAutoSell", tip = "bagsAutoSellTip" } } -- from the gold leftwards
+                 { key = "autoSell", word = "bagsAutoSell", tip = "bagsAutoSellTip" },
+                 { key = "solo", word = "bagsSolo", tip = "bagsSoloTip", module = "SpeedLeveling" } } -- from the gold leftwards
 
 local boxes = {}
 
@@ -58,15 +61,22 @@ end
 
 function Vendor.Start()
     ns.On("MERCHANT_SHOW", Core.Later(function() ns.Guarded(Arrived) end))
+    Core.OnSwitches(ns.Guard(Vendor.Refresh))
 end
 
 -------------------------------------------------------------------------------
 --  The boxes
 -------------------------------------------------------------------------------
+-- Where a box's setting is: this module's, or the one it names.
+local function On(box)
+    local options = box.module and Core.Settings(box.module) or ns.options
+    return options[box.key] ~= false
+end
+
 local function Clicked(box)
-    local on = ns.options[box.key] == false
+    local on = not On(box)
     Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
-    Core.Set(ns.name, box.key, on)
+    Core.Set(box.module or ns.name, box.key, on)
 end
 
 local function Entered(box)
@@ -101,7 +111,7 @@ end
 local function Box(foot, spec, font)
     local box = CreateFrame("CheckButton", nil, foot)
     box:SetHeight(Vendor.BOX)
-    box.key, box.word, box.tip = spec.key, spec.word, spec.tip
+    box.key, box.word, box.tip, box.module = spec.key, spec.word, spec.tip, spec.module
     local square = CreateFrame("Frame", nil, box)
     square:SetSize(Vendor.BOX, Vendor.BOX)
     square:SetPoint("LEFT")
@@ -119,7 +129,7 @@ end
 
 function Vendor.Refresh()
     for _, box in ipairs(boxes) do
-        local on = ns.options[box.key] ~= false
+        local on = On(box)
         box:SetChecked(on)
         box.tick:SetShown(on)
         box:SetWidth(Vendor.BOX + Vendor.WORD_GAP + (box.text:GetStringWidth() or 0))
@@ -129,11 +139,13 @@ end
 function Vendor.Build(foot, gold)
     local font = ns.Bags.Fonts().count
     local before = gold
-    for index, spec in ipairs(Vendor.BOXES) do
-        local box = Box(foot, spec, font)
-        box:SetPoint("RIGHT", before, "LEFT", -Vendor.APART, 0)
-        boxes[index] = box
-        before = box
+    for _, spec in ipairs(Vendor.BOXES) do
+        if not spec.module or Core.Described(spec.module, spec.key) then
+            local box = Box(foot, spec, font)
+            box:SetPoint("RIGHT", before, "LEFT", -Vendor.APART, 0)
+            boxes[#boxes + 1] = box
+            before = box
+        end
     end
     Vendor.boxes = boxes
     Vendor.Refresh()

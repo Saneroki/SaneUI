@@ -53,7 +53,8 @@ rises over the world. When it fails, the game's own loot window, its Auto Loot a
   drink, potions, scrolls, bandages), *Junk* (the grey things). Never a thing locked to a roll, and only by
   *Everything* one that binds when picked up (the game asks first). Your word on an item goes over the switches: the A
   (taken) or the list *Your items* (taken, or never). When everything is taken at once the window does not open.
-  Speed Leveling's switch *Take all loot* sets *Everything* on, once; *Always show upgrades* stays as you have it.
+  Speed Leveling's switch *Take all loot* sets *Everything* on and *Always show upgrades* off, once, as its *Equip
+  upgrades* puts those on.
 - **The game's own Auto Loot** (Esc > Options > Controls) is off while Sane UI's loot window is on, so the switches
   decide; it is set back as it was when the window is switched off. Held Shift while looting still takes everything,
   as the game has it; the window then shows only what is left a moment later (bags full, a thing locked to a roll).

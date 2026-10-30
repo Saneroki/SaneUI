@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Speed Leveling - Rewards
 --  Which reward to take where a quest offers a choice (Saneroki, 2026-10-30;
 --  the switch Choose quest rewards): the biggest upgrade for your gear
---  (Core.Upgrade: the most item levels it brings), else the reward your guide's
+--  (Core.Upgrade: what it gains by your weights), else the reward your guide's
 --  step names, else the one worth the most: what a vendor pays for all of it,
 --  or what the auction house brings after its cut where the thing can go there
 --  (it does not bind when picked up, and you saw a price for it: the module
@@ -41,7 +41,7 @@ local function Worth(link, id, count)
 end
 
 function Rewards.Best(named, choices)
-    local biggest, gain, richest, most = nil, 0, nil, 0
+    local biggest, largest, richest, most = nil, 0, nil, 0
     for index = 1, choices do
         local link = Plain(Core.Ask(rawget(_G, "GetQuestItemLink"), "choice", index))
         if type(link) == "string" then
@@ -49,8 +49,8 @@ function Rewards.Best(named, choices)
             local id = tonumber(link:match("item:(%d+)"))
             local worth = Worth(link, id, Plain(count))
             if worth == nil then return false end
-            local _, levels = Core.Upgrade(link, id)
-            if levels and levels > gain then biggest, gain = index, levels end
+            local _, gain = Core.Upgrade(link, id)
+            if gain and gain > largest then biggest, largest = index, gain end
             if worth > most then richest, most = index, worth end
         end
     end

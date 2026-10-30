@@ -602,6 +602,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     each, one every `Foot.STEP` seconds while the vendor is there, out of a fight and with the cursor empty, the
     item checked to be still in its slot; `Core.Print` says how many were sold for how much and how many could
     not be; `C_Bank.AutoDepositItemsIntoBank` where `DoesBankTypeSupportAutoDeposit`).
+  - **Solo** (`Bags/Vendor.lua`, Saneroki, 2026-10-30): a third checkbox beside Auto Sell and Auto Repair, Speed Leveling's
+    own switch (`module` in `Vendor.BOXES`: read with `Core.Settings`, set with `Core.Set`, its tick following through
+    `Core.OnSwitches`): all of that module on, or resting while you play with others. No box while that module is off.
   - **Auto Sell and Auto Repair** (`Bags/Vendor.lua`, Saneroki, 2026-10-30): two checkboxes in the foot, left of the
     gold (the settings `autoSell` and `autoRepair`, on at first, also on the page Inventory): a pencil box
     (`Journal.Box`), a tick of two pencil strokes (Kalam has no such letter), the word beside it. A frame after
@@ -635,6 +638,18 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   board's windows go and the window with them, each step by itself (`ns.Safe`). A `/reload` starts the module afresh.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
   and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags); each also as Retail (`W.Play("retail")`: the level line, the stats, the windows that stand down, the icons, our bar, the bags without a keyring).
+
+## Stat weights
+`Weights.lua` (Saneroki, 2026-10-30) says what each stat is worth to a character, so that an upgrade is one for the class
+and specialization played. Core's `Core.Upgrade` asks for them (`Core.WeighWith`), so the arrow in the bags, Loot,
+Speed Leveling's rewards, Equip upgrades and its group rolls all judge the same way; with Inventory off, item levels
+decide. One line per specialization, the numbers a leveling character goes by, the stat it builds on at 1 so that two
+classes' gains can be held against each other; `early` for a character without a specialization yet.
+- **Forever** (`Weights.FOREVER`): pairs of a stat and its worth, by the game's rules where they say (a warrior's Strength is
+  2 Attack Power, 14 Attack Power 1 damage per second, so `str 1 ap .5 dps 7`).
+- **Retail** (`Weights.RETAIL`): the main stat, then the secondaries best first down `Weights.LADDER`; Stamina and a
+  physical fighter's weapon damage the same for all.
+- `dps` is a melee weapon's or staff's damage per second, `ranged` a bow's, gun's, thrown weapon's or wand's.
 
 ## Files
 

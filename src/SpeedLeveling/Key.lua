@@ -537,6 +537,7 @@ end
 function Key.GiveBack()
     if not header then return PutBack() end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: give back", Key.GiveBack) end
+    if not ns.off then return end -- woken up in the same fight (Solo)
     UnregisterStateDriver(header, "mode")
     header:SetAttribute("_onattributechanged", nil)
     ClearOverrideBindings(header)
@@ -548,3 +549,14 @@ function Key.GiveBack()
     looking = nil
     PutBack()
 end
+
+-- After a rest (the switch Solo): the header hears again, the settings lent, the action due put on the key's keys anew.
+function Key.Wake()
+    if not header then return end
+    if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: wake", Key.wakeLater) end
+    header:SetAttribute("_onattributechanged", ON_CHANGE)
+    header:SetAttribute("keys", 0)
+    Key.Update()
+    header:SetAttribute("keys", keys and #keys or 0)
+end
+Key.wakeLater = Later(Key.Wake)

@@ -304,6 +304,9 @@ local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Inventory", "SaneUI_Inventory")
 W.Fire("ADDON_LOADED", "SaneUI_Inventory")
+-- Speed Leveling, as far as the box Solo in the foot needs it: its switch.
+Core.Options("SpeedLeveling", { { key = "solo", default = true, text = "Solo" } },
+    { changed = function() Core.SwitchChanged() end })
 -- Only the bags on the full screen: the other parts are tried elsewhere.
 ns.store.board = { chosen = 1, tabs = { { name = "Default", tree = { key = "bags" } } } }
 W.Fire("PLAYER_LOGIN")
@@ -1576,6 +1579,15 @@ local autoSell, autoRepair = shop.sell, shop.repair
 check(autoSell:GetChecked() and autoRepair:GetChecked() and autoSell.tick:IsShown() and autoRepair.tick:IsShown(),
     "Auto Sell and Auto Repair: in the foot, ticked at first")
 check(ns.Vendor.boxes[1] == autoRepair and ns.Vendor.boxes[2] == autoSell, "both left of the gold")
+local solo = ns.Vendor.boxes[3]
+check(solo and solo == Text("Solo"):GetParent() and solo:GetChecked(), "Solo beside them, ticked at first")
+solo:GetScript("OnClick")(solo)
+check(Core.Settings("SpeedLeveling").solo == false, "a click: that module's own switch")
+W.Wait(0)
+check(not solo:GetChecked() and not solo.tick:IsShown() and ns.options.solo == nil, "its tick follows; nothing of it kept here")
+Core.Set("SpeedLeveling", "solo", true)
+W.Wait(0)
+check(solo:GetChecked(), "changed on that module's page: the box follows")
 check(autoSell:GetWidth() > ns.Vendor.BOX, "a box as wide as its word")
 autoSell:GetScript("OnClick")(autoSell)
 autoRepair:GetScript("OnClick")(autoRepair)
