@@ -1151,7 +1151,7 @@ do
 
     check(Core.StatWord("Strength") == "Str" and Core.StatWord("critical strike") == "Crit" and Core.StatWord("Crit Chance") == "Crit"
         and Core.StatWord("Crit Damage") == "Crit dmg" and Core.StatWord("Armor") == "Arm" and Core.StatWord("Fire Resistance") == "Fire Res"
-        and Core.StatWord("Block Value") == "BVal" and Core.StatWord("Bonus Armor") == "BArm" and Core.StatWord("Spell Damage") == "SDmg"
+        and Core.StatWord("Block Value") == "BVal" and Core.StatWord("Bonus Armor") == "Bonus Arm" and Core.StatWord("Spell Damage") == "SDmg"
         and Core.StatWord("Attack Speed") == "ASpd" and Core.StatWord("Armor Penetration") == "APen",
         "the stats' short words, in any case")
     check(Core.StatWord("Spellbook") == "Spellbook" and Core.StatWord(nil) == nil, "a word that is no stat stays as it came")

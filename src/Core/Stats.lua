@@ -24,7 +24,7 @@ local LIST = {
     { "Spi", "SPELL_STAT5_NAME", "ITEM_MOD_SPIRIT_SHORT", "Spirit" },
     { "HP", "HEALTH", "ITEM_MOD_HEALTH_SHORT", "Health" },
     { "Arm", "RESISTANCE0_NAME", "STAT_ARMOR", "Armor" },
-    { "BArm", "ITEM_MOD_EXTRA_ARMOR_SHORT", "STAT_BONUS_ARMOR", "Bonus Armor" },
+    { "Bonus Arm", "ITEM_MOD_EXTRA_ARMOR_SHORT", "STAT_BONUS_ARMOR", "Bonus Armor" },
     { "Def", "ITEM_MOD_DEFENSE_SKILL_RATING_SHORT", "DEFENSE", "Defense" },
     { "BVal", "ITEM_MOD_BLOCK_VALUE_SHORT", "Block Value" },
     { "Resil", "ITEM_MOD_RESILIENCE_RATING_SHORT", "STAT_RESILIENCE", "Resilience", "PvP Resilience" },

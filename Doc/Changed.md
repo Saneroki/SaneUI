@@ -18,8 +18,8 @@ the game's elements and show them numbered. Nothing in the addon changes yet: th
 ### Core: meters and 24 hours, the setting Units; the toast's time in minutes, no switch; the overlay level with it (Saneroki, 2026-10-30)
 Saneroki: the travel widget at the same height as the level-up screen; the time with minutes as well; the off switch
 removed, "just default and not clutter the ui"; the entire addon everywhere in Metric, meters and hh:mm in 24 hours like
-23:59, recalculated correctly, on by default in Core, all yards and times metric or imperial by the setting; BVal, BArm,
-SDmg, Res, ASpd, APen. A game restart takes it in (a new file in Core's TOC).
+23:59, recalculated correctly, on by default in Core, all yards and times metric or imperial by the setting; BVal,
+SDmg, Res, ASpd, APen, and Bonus Arm (not BArm, which reads too close to Block and BVal). A game restart takes it in (a new file in Core's TOC).
 - **`src/Core/Units.lua` (new):** `Core.Metric`, `Distance`, `DistanceNumber`, `DistanceText`, `Clock`, `ClockAt`, `GameClock`. The
   setting *Units* (page General, `Core.general.units`): Metric at first, or Imperial. 0.9144 m to the yard, whole meters.
   All of Sane UI keeps yards; only what a player reads comes through here. An option `distance = true` is a slider of
@@ -34,7 +34,7 @@ SDmg, Res, ASpd, APen. A game restart takes it in (a new file in Core's TOC).
 - **The travel overlay:** `Core.TOAST_TOP` (`Kit.lua`, 190 below the screen's top, where the game's toast stands) holds both it
   and the toast: the words over its line level with the toast's top (`TripView.ABOVE`). `TripView.UP` and its placing anew
   by the screen's height are gone: anchored to the screen's top it needs neither.
-- **Stats' words:** BVal (Block Value), BArm (Bonus Armor), SDmg (Spell Damage), ASpd (Attack Speed), APen (Armor Penetration),
+- **Stats' words:** BVal (Block Value), SDmg (Spell Damage), ASpd (Attack Speed), APen (Armor Penetration),
   each school's *Res*, All Res.
 - Tests: `dev/tests/core.lua` the units both ways; `navigation.lua`, `tooltips.lua`, `inventory.lua` by the new words.
 
