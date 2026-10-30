@@ -30,6 +30,7 @@ ns.TEXT = {
     -- In the Gold section: what the materials of disenchanting it bring at the auction house; with Alt each
     -- material (its chance, how many, what it brings), and the price to post it at (Kinds/Gold.lua)
     DISENCHANT = "Disenchant", MATERIAL = "%s%%  %s %s", SELL_AT = "Sell at", NO_PRICES = "no prices seen",
+    DISENCHANT_IT = "Disenchant it for %s",
     -- A unit's target, health, power and buffs (Kinds/Unit.lua); how long a buff still runs (Kinds/Aura.lua);
     -- the game's lines of no kind of their own (Read.Named); the numbers Alt shows (Read.lua)
     STATUS = "Status", DURATION = "Duration", DETAILS = "Details", IDS = "IDs",
@@ -41,6 +42,7 @@ ns.TEXT = {
     SELL_AH = "Sell on the AH for %s", MORE_AH = "+%s over the AH",
     SELL_VENDOR = "Sell to a vendor", BUY_UNDER = "Buy if under %s", NOW = "now %s",
     PRICES = "Lowest %s", FEES = "Cut %s  \194\183  deposit %s, back when it sells",
+    SEEN = "%d on offer  \194\183  seen %s", SEEN_AT = "Seen %s", DAYS_AGO = "%d days ago", MARKET = "Market %s",
     ALT_MORE = "Press ALT for +%d more",
     EQUIPPED = "Equipped",
     DPS = "DPS", DMG = "dmg", SPD = "spd", HPS = "HPS", HEALING = "Healing", PER = "Per %s", SPEED = "Speed", CRIT = "Crit",

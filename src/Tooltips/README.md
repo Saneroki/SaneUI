@@ -118,7 +118,7 @@ only read.
   of Alt redraws the panels that are shown. On an item Alt shows more too: every quest that needs it
   (without Alt, three of those not in your log), every node that gives it (*Professions*), which of your
   characters have it (*Inventory*), in the Gold section each material of disenchanting it and the price to
-  post it at (*Sell at*), under the advice where its numbers come from (the lowest price you saw; the cut
+  post it at (*Sell at*), under the advice where its numbers come from (the lowest price, how many are on offer and when that was seen, the market price; the cut
   and the deposit), and over a piece of gear your character wearing it beside the panel.
 - **A link clicked in chat** (an item, a spell, a quest): its tooltip opens in the middle of the screen and
   stays. Click it to close it (Esc does too); it has no X. It can still be dragged, and Shift over it
@@ -138,12 +138,12 @@ only read.
   | Row | What it is |
   |---|---|
   | *Vendor* | What a vendor pays for one; on every item (from the game's item data, `GetItemInfo`, also where the tooltip has no price line), *Can't be sold* where no vendor buys it |
-  | *AH profit* | What a sale of one at the auction house brings: the lowest price you last saw for it there, less the house's cut (5%). Not for a thing that is bound |
+  | *AH profit* | What a sale of one at the auction house brings: the lowest price there now, less the house's cut (5%). Not for a thing that is bound |
   | *Disenchant* | What disenchanting it brings, on a weapon or an armour of uncommon quality and up: every material it gives, as often and as many as disenchanting gives it (Core's data, by the item's class, quality and item level), each at the lowest price you saw for it less the house's cut. *no prices seen* while a material has no price yet. With Alt, under it, each material: how often, how many, what one brings (*80%  1-2 Strange Dust*) |
   | *Sell at* | With Alt, where the item can go to the auction house: the price to post one at, one copper under the lowest offer you saw, never so low that a sale (after the cut) brings less than a vendor pays |
 
   Last, **the advice** in one line: the way that brings the most (the auction house must bring 5% more
-  than a vendor, for the trouble). *Sell on the AH for 3s 09c* (green; the lowest price you saw); *Sell to
+  than a vendor, for the trouble). *Disenchant it for 1s 40c* (green; only for a character with the spell, and it too must bring 5% more than the way before); *Sell on the AH for 3s 09c* (green; the lowest price now); *Sell to
   a vendor* (at the right how much more than the auction house, *+12c over the AH*, where a vendor pays
   more). On an item the auction house lists to you (you buy it: the game filled the tooltip by the item's
   key, `GetItemKey`, or by its link without the vendor's price, `GetHyperlink` with `hideVendorPrice`, which
@@ -154,9 +154,9 @@ only read.
   the caption *Gold* too, with no advice. With Alt, small under the advice: *Lowest* and the price the
   numbers come from, then the cut and the deposit (taken as 15% of the vendor price for every 12 hours of
   a 48-hour auction, an estimate), *back when it sells*.
-  **The prices** are the module's own: whenever the game lists auctions to you (browsing the auction
-  house), the lowest buyout of each thing is noted and kept in the saved settings (`Auction.lua`); a price
-  not seen again for 30 days is forgotten at the login. Nothing is asked of the server.
+  **The prices** are Core's (`Data.Series("Prices")`, `Doc/guides/data.md`, *Prices*): what the auction house
+  lists right now while you look at it, else its last full scan. A price not seen for 30 days counts for
+  nothing. The shown panels are read anew when prices change. The module keeps none of its own.
 - **Quests** (`Quests.lua`): what you must kill the game says in the tooltip's own quest lines. Which
   creature drops a quest item, who gives which quest and who takes it back, the game does not say; Sane UI's
   database has it (Core's data framework, `Doc/guides/data.md`), in two data packs that load soon after the
@@ -372,7 +372,7 @@ only read.
   levels, and the materials with their chance per disenchant, in percent, and how many, from and to). An
   item's row is found by its class (`GetItemInfoInstant`: weapons and armour), quality (uncommon and up) and
   item level (`GetItemInfo`'s fourth answer) through the index `byQuality`; kept per item until the data
-  changes (at most 400 items). Its value: Σ chance × the average count × the lowest price you saw less the
+  changes (at most 400 items). Its value: Σ chance × the average count × the lowest price now less the
   cut (`Gold.Sale`), rounded; none while a material has no price. *Sell at* (`Gold.PostAt`): the lowest
   offer you saw less one copper (`UNDERCUT`), never under what makes a sale after the cut bring a vendor's
   price (`ceil(vendor / 0.95)`); with Alt, for a thing that is not bound.
@@ -520,16 +520,13 @@ only read.
   everything of the panel's own (its sections, Alt's details) `Others` in `Read.lua` puts all other addons'
   lines into one section of their own, *Addons* (`TEXT.ADDONS`), small and quiet, an empty line among them a
   gap; without Alt they are not shown. Every kind gets it the same way: no reader handles other addons' lines.
-- **Core's data** (`Doc/guides/data.md`): the module keeps no data of its own but the auction prices it
-  notes (`Auction.lua`; the series *Prices* is to take them over). `Quests.lua` reads the sets *Quests* and
+- **Core's data** (`Doc/guides/data.md`): the module keeps no data of its own; the auction
+  prices are Core's too (`Data.Series("Prices")`, `OnChange` redraws). `Quests.lua` reads the sets *Quests* and
   *Drops* (`Prepare` at the login, `OnStamp` redraws the shown panels), `Gathering.lua` the sets *Objects* and
   *Drops* (the same way), `Kinds/Gold.lua` the set *Disenchants* (the same way), `Kinds/Inventory.lua` reads
   `Data.Count`, `Data.Character` and `Data.Characters` (`Data.OnCharacters` redraws). Nil from Core means not
   known: the part is left out.
 - **Not there yet:**
-  - Auction house prices from Sane UI's own price database, the biggest part of an item's panel: the
-    Economy module (being written) keeps the auction house's prices and their history from what the game
-    shows, and the Gold section is to take them from there instead of the last price you saw.
   - A recipe's reagents with icons and counts (they stay the game's one line), drop tables of ore, herbs
     and skins, spell coefficients: each needs Core's data first. Disenchanting epic items, and uncommon and
     rare ones of item level 61 and up: Core's data leaves them out until their materials are certain.
@@ -593,7 +590,6 @@ only read.
 | `Kinds/Quest.lua` | Quests |
 | `Kinds/Object.lua` | Things in the world: their name and lines; a herb's or an ore's Gathering |
 | `Inspect.lua` | Another player's item level and talents: Core's (`Core.Inspect`), its arrivals redraw the panel |
-| `Auction.lua` | The lowest auction price of each thing, noted as you browse the auction house, kept |
 | `Quests.lua` | The quest lists of a creature, an NPC or an item, from Core's quest data (the sets Quests and Drops) and your quest log, kept until the log or the data changes; whether you may take a quest; a quest's name and level as a row |
 | `Numbers.lua` | Numbers that follow from what the game says: a spell's damage per second, per mana and crit; a swing; experience per kill |
 | `Live.lua` | A unit's health, power, target and buffs, and a buff's time, while the panel is shown |

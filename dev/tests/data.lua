@@ -774,7 +774,7 @@ Data.Saved("Nowhere", function() never = false end)
 check(never and Core.errors["data: saved Nowhere"], "a name that is no saved variable of the data: noted, and its reader is never called")
 W.printed = {}
 SlashCmdList.SANEUI("data")
-check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned 1 values, Market 0 values%."),
+check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned 1 values%."),
     "/sane data says what the saved parts hold")
 
 -------------------------------------------------------------------------------
@@ -1608,6 +1608,12 @@ end
 -------------------------------------------------------------------------------
 do
     local Scan = Data.Scan
+    -- The file of its own: its part is there once its addon has loaded, after Core
+    check(rawget(_G, "SaneUIData_Market") == nil, "the auction data is no part of Core's saved file")
+    W.Fire("AUCTION_HOUSE_SHOW")
+    check(Scan.State().phase == "closed", "without its addon (switched off) nothing is scanned")
+    W.Fire("ADDON_LOADED", "SaneUI_AuctionData")
+    check(SaneUIData_Market.forever.format == 1, "its addon loaded: the part of this game version, as any saved variable of the data")
     local rows, asks, requested, known, rowCost = {}, 0, {}, {}, 0
     local function Plain(item, count, buyout, owner) return { item = item, count = count, buyout = buyout, owner = owner } end
     C_AuctionHouse = {
@@ -1615,13 +1621,18 @@ do
         IsThrottledMessageSystemReady = function() return true end,
         GetNumReplicateItems = function() return #rows end,
         GetReplicateItemLink = function(index) return rows[index + 1] and rows[index + 1].link end,
+        GetReplicateItemTimeLeft = function() return 2 end,
         GetReplicateItemInfo = function(index)
             local row = rows[index + 1]
             W.ms = W.ms + rowCost
             if not row then return end
-            return "name", 1, row.count, 1, true, 1, "", 1, 1, row.buyout, 0, nil, nil, row.owner, nil, 0, row.item, true
+            return "name", 1, row.count, 1, true, 1, "", row.minBid or 1, 1, row.buyout, 0, nil, nil, row.owner, nil, 0, row.item, true
         end,
     }
+    -- Packed so that a test can read it: rows on one line, a block's rows cut by tabs.
+    local encoding = rawget(_G, "C_EncodingUtil")
+    C_EncodingUtil = { CompressString = function(text) return text end,
+        EncodeBase64 = function(text) return (text:gsub("\n", "\t")) end }
     local items = C_Item
     C_Item = setmetatable({
         GetItemInfoInstant = function(item)
@@ -1691,6 +1702,16 @@ do
     check(Line(text, "20") == "20=0,0,1,1,1;", "bid only: counted, no price")
     check(not text:find("666=") and not text:find("30="), "an item the game does not know and a row of nothing are left out")
     check(saved().scans[day] == 1 and SaneUIData_Market.forever.format == 1, "one scan that day, in the saved variable of this game version")
+    local whole = saved().whole[answered]
+    local build = whole and whole:match("^(%d+)\n")
+    check(build and whole:find("10,5,500,1,1,0,2,0,Ann,,", 1, true) and whole:find("20,1,0,1,1,0,2,0,Cid,,", 1, true) and not whole:find("666,", 1, true),
+        "Forever keeps the scan whole: every row of it, with its build, a seller's name beside it: " .. tostring(whole))
+    local Prices = Data.Series("Prices")
+    local low, market, units, auctions, sellers, at = Prices:Last(10)
+    check(low == 100 and market == 200 and units == 20 and auctions == 3 and sellers == 2 and at == answered and Prices:Low(10) == 100,
+        "every view reads the scan's point of an item, by its ID")
+    check(Prices:Low(20) == nil and Prices:Last(20) == 0 and Prices:Low(9999) == nil, "bid only is no price; what no scan saw has none")
+    check(saved().index:find("10=" .. answered .. ",100,200,20,3,2;", 1, true), "the newest points stand in the saved file")
     W.Fire("REPLICATE_ITEM_LIST_UPDATE")
     Read()
     check(saved().scans[day] == 1, "told again after it was kept: the same scan, read once")
@@ -1711,6 +1732,11 @@ do
         check(saved().scans[day] == 2, "two scans that day")
     end
     check(Line(text, "40") == "40=70,70,1,1,1;", "an item new in this scan")
+    check(Prices:Low(10) == 200, "the newest point is the last scan's price, not the day's lowest")
+    check(Prices:Low(20) == nil and Prices:Last(20) == 0, "what the last scan did not see keeps its last point")
+    local scans = 0
+    for _ in pairs(saved().whole) do scans = scans + 1 end
+    check(scans == 2, "both scans of the day kept whole, each by itself")
 
     -- The server refuses: it says nothing
     rows = {}
@@ -1745,6 +1771,37 @@ do
     check(state.outcome == "kept" and saved().left == 1, "after the wait what is still not known is left out")
     check(Line(text, "50:60:-7:0") == "50:60:-7:0=900,900,1,1,0;" and Line(text, "82800:0:0:39") == "82800:0:0:39=600,600,1,1,0;",
         "gear by item, level and suffix, a pet by its species: " .. text)
+    check(saved().whole[saved().at]:find("item:50:0:0:0:0:0:-7:0:60", 1, true), "a row of gear whole with its item string")
+    check(Prices:Low(50) == 900 and Prices:Low("|Hitem:50:0:0:0:0:0:-7:0:60|h[x]|h") == 900 and Prices:Low("|Hbattlepet:39:1:3:0:0:0:0|h[z]|h") == 600,
+        "gear and pets read by their ID and by a link")
+
+    -- What the game lists right now is the newest of all
+    local told = 0
+    Prices:OnChange(function() told = told + 1 end)
+    local browse = { { itemKey = { itemID = 10 }, minPrice = 150, totalQuantity = 7 }, { itemKey = { itemID = 50, itemLevel = 60, itemSuffix = -7 }, minPrice = 950 },
+        { itemKey = { itemID = 50, itemLevel = 60, itemSuffix = -7 }, minPrice = 870 } }
+    C_AuctionHouse.GetBrowseResults = function() return browse end
+    W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+    W.Wait(0)
+    check(Prices:Low(10) == 150 and select(3, Prices:Last(10)) == 7 and select(2, Prices:Last(10)) == 200, "a list of the game's: its lowest price and what is on offer now, the market stays the scan's")
+    check(Prices:Low(50) == 870 and told == 1, "the lowest of a list's rows of one kind; the views told once")
+    W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_ADDED", { { itemKey = { itemID = 50, itemLevel = 60, itemSuffix = -7 }, minPrice = 990 }, { itemKey = { itemID = 40 }, minPrice = 65 } })
+    check(Prices:Low(50) == 870 and Prices:Low(40) == 65, "more rows of the same list: also the lowest")
+    C_AuctionHouse.GetNumCommoditySearchResults = function() return 2 end
+    C_AuctionHouse.GetCommoditySearchResultInfo = function(_, index) return { unitPrice = index == 1 and 55 or 90 } end
+    C_AuctionHouse.GetCommoditySearchResultsQuantity = function() return 44 end
+    W.Fire("COMMODITY_SEARCH_RESULTS_UPDATED", 40)
+    check(Prices:Low(40) == 55 and select(3, Prices:Last(40)) == 44, "the offers of a thing sold by the unit")
+    local kind = { itemID = 10 }
+    C_AuctionHouse.GetNumItemSearchResults = function() return 2 end
+    C_AuctionHouse.GetItemSearchResultInfo = function(_, index) return { buyoutAmount = index == 1 and 1000 or 900, quantity = index == 1 and 10 or 20 } end
+    C_AuctionHouse.GetItemSearchResultsQuantity = function() return 30 end
+    W.Fire("ITEM_SEARCH_RESULTS_UPDATED", kind)
+    check(Prices:Low(10) == 45 and select(3, Prices:Last(10)) == 30, "the offers of an item, per unit")
+    local point = saved().index
+    W.Fire("PLAYER_LOGOUT")
+    check(saved().index ~= point and saved().index:find("40=%d+,55,70,44,1,1;"), "what the game listed is written at the logout: " .. saved().index)
+    check(whole ~= nil and saved().whole[answered] == whole, "and never into the scans, which stay as the server gave them")
 
     -- A scan another addon asked for, and the auction house closed halfway
     rows = {}
@@ -1755,6 +1812,8 @@ do
     W.Fire("REPLICATE_ITEM_LIST_UPDATE")
     check(asks == before and state.phase == "reading", "any full scan is read, whoever asked for it")
     local gone = saved().days[Today()]
+    local wholes = 0
+    for _ in pairs(saved().whole) do wholes = wholes + 1 end
     rowCost = 1
     Frame()
     rowCost = 0
@@ -1763,7 +1822,9 @@ do
     check(state.phase == "closed" and not Strip():IsShown(), "the auction house closes, and the bar goes with it")
     rows = {}
     for _ = 1, 20 do Frame() end
-    check(saved().days[Today()] == gone and not Steps.Running("Full auction scan"), "the list gone halfway: nothing of it is kept")
+    local after = 0
+    for _ in pairs(saved().whole) do after = after + 1 end
+    check(saved().days[Today()] == gone and after == wholes and not Steps.Running("Full auction scan"), "the list gone halfway: nothing of it is kept")
     local waited = asks
     W.Wait(Scan.INTERVAL * 2)
     check(asks == waited, "closed: no request and no look at the time")
@@ -1802,6 +1863,24 @@ do
     bar._scripts.OnEnter(bar)
     bar._scripts.OnLeave(bar)
 
+    -- Retail keeps no scan whole; a price grows old
+    Scan.WHOLE.forever = nil
+    rows = { Plain(10, 1, 400, "Kim"), Plain(10, 1, 500, "Lee") }
+    W.Wait(Scan.INTERVAL + Scan.TICK)
+    W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+    Read()
+    check(state.outcome == "kept" and saved().whole[saved().at] == nil and saved().days[Today()]:find("10=", 1, true),
+        "a game that keeps no scan whole: the day's points, the newest prices")
+    Scan.WHOLE.forever = true
+    local fresh = Prices.FRESH
+    Prices.FRESH = 0
+    W.clock = W.clock + 1
+    check(Prices:Low(10) == nil and Prices:Last(10) == 400, "a price not seen again for its days is no price any more, its point stays")
+    Prices.FRESH = fresh
+    W.printed = {}
+    SlashCmdList.SANEUI("data")
+    check(printedMatch("auction house eu/1234/alliance: %d+ days, %d+ whole scans %(%d+%.%d MB%)"), "/sane data says what the whole scans weigh")
+
     -- A house of a wrong shape goes to broken; the goblin towns' house has its own key
     W.Fire("AUCTION_HOUSE_CLOSED")
     SaneUIData_Market.forever.houses["eu/1234/neutral"] = { days = "no" }
@@ -1813,11 +1892,14 @@ do
     rawset(_G, "UnitFactionGroup", faction)
     check(type(SaneUIData_Market.forever.houses["eu/1234/neutral"].days) == "table" and SaneUIData_Market.forever.broken[1].days == "no",
         "the neutral house by the NPC; a part of a wrong shape set aside, never wiped")
+    check(Prices:Low(10) == nil, "while a house is open only its own prices count, never another's")
     W.Fire("AUCTION_HOUSE_CLOSED")
+    check(Prices:Low(10) == 400, "closed: your side's again")
     W.printed = {}
     SlashCmdList.SANEUI("data")
     check(printedMatch("auction house eu/1234/alliance: %d+ days"), "/sane data tells what the history holds")
     C_Item, W.methods.CreateAnimationGroup = items, nil
+    rawset(_G, "C_EncodingUtil", encoding)
     rawset(_G, "C_AuctionHouse", nil)
     rawset(_G, "AuctionHouseFrame", nil)
 end

@@ -4,7 +4,7 @@
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
-## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned, SaneUIData_Market
+## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned
 ## SavedVariablesPerCharacter: SaneUICharDB
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## AddonCompartmentFunc: SaneUI_OnAddonCompartmentClick
@@ -98,7 +98,9 @@ Data\Quests.lua
 Data\Loot.lua
 # Creatures, their services, vendors' goods, spells and the tooltips' items, compared with the sets (Data.Facts)
 Data\Facts.lua
-# The full scan of the auction house while it is open, every 16 minutes, kept in SaneUIData_Market, and its bar on the game's window (Data.Scan)
+# What a thing fetches at the auction house for every view (Data.Series("Prices")), the full scan while it is open, every
+# 16 minutes, kept in SaneUIData_Market, a file of its own (the addon SaneUI_AuctionData), and its bar on the game's window (Data.Scan)
+Data\Prices.lua
 Data\Scan.lua
 Data\ScanBar.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)

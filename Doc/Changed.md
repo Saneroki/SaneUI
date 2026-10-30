@@ -31,7 +31,7 @@ Saneroki: all local websites for development on the same framework, server and r
   without a page, its saved settings kept, and starts again at the next call. `dev/tools/web-pages run --port N` (or
   `ui-lab serve --port N`) is a session's own copy, for a lab of its own.
 
-### Speed Leveling: simple group rolls, professions as steps of the guide; junk tried again; rewards' tooltips (Saneroki, 2026-10-30)
+### Speed Leveling: simple group rolls, professions as steps of the guide; junk tried again (Saneroki, 2026-10-30)
 Saneroki: roll Need on an upgrade, else Greed, nobody Passes, off Speedleveling nothing automatic, no talk between the
 accounts; gathering for the next zone as a normal step of the guide at the right time, one per profession, crafts too;
 deleting junk tried again a little later, not given up for the session. A `/reload` takes it in.
@@ -49,10 +49,26 @@ deleting junk tried again a little later, not given up for the session. A `/relo
 - **`src/Inventory/Bags/Room.lua`:** refused, or something in your hand: tried again `Room.AGAIN` (5) seconds later, no warning;
   the warning is for no junk alone.
 - **`src/Inventory/Asks.lua`:** `deleteRefused` gone: a refused item no longer stops all later ones.
-- **`src/Lore/Quiet.lua`, `src/Tooltips/Tooltips.lua`:** the rewards' tooltips show without Shift: `Core.tipsWanted` while the
-  mouse is on a part of the talk.
-- **Tests:** `dev/tests/speedleveling.lua`, `bags.lua`, `tooltips.lua`, `lore.lua`.
-- **Docs:** `src/SpeedLeveling/README.md`, `src/Inventory/README.md`, `src/Lore/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`.
+- **Tests:** `dev/tests/speedleveling.lua`, `bags.lua`.
+- **Docs:** `src/SpeedLeveling/README.md`, `src/Inventory/README.md`, `Doc/ideas/Leveling.md`.
+
+### Auction data: every scan kept whole in a file of its own; one door to prices, live, for every view (Saneroki, 2026-10-30)
+Saneroki: Forever keeps a full history of all scans, every datapoint, filtered when it goes into the database; all tooltips,
+their disenchanting and what-to-do calculations use the AH's realtime data and the database, not their own; the AH data is a
+file for itself, not part of the settings. A game restart takes it in (a new addon, new files in Core's and Tooltips' TOCs).
+- **`src/AuctionData/` (new addon `SaneUI_AuctionData`, *Data: Auction House*):** no code, only `SaneUIData_Market`, so the game
+  keeps it in `SavedVariables/SaneUI_AuctionData.lua`. `Data.APART` hands its part over once it has loaded. Scans made with the
+  build before stay behind in Core's file.
+- **`src/Core/Data/Scan.lua`:** Forever keeps every row of every scan: `whole[at]`, packed a block of 1,024 rows at a time, zlib
+  and Base64. Whole numbers past 2^31 written with `%.0f`.
+- **`src/Core/Data/Prices.lua` (new):** `Data.Series("Prices")`: `Low`, `Last`, `OnChange`. What the game lists right now
+  (browsing, an item's offers), else the last scan, per house. Each item's newest point stands in `index`.
+- **Tooltips:** `Auction.lua` and the module's saved prices are gone. `Kinds/Gold.lua` reads Core's prices, by the item's link
+  where a scan saw that kind; the shown panels are read anew when prices change. The advice weighs disenchanting for a character
+  with the spell (*Disenchant it for 1s 40c*), also what it is worth paying. With Alt: on offer, when seen, the market.
+- **Speed Leveling:** `Rewards.lua` reads Core's prices, not Tooltips' store.
+- **Tests:** `dev/tests/data.lua`, `tooltips.lua`, `speedleveling.lua`.
+- **Docs:** `Doc/guides/data.md` (*The full auction scan*, *Prices*), `Doc/ideas/Economy.md`, `Doc/ideas/Data.md`, `Doc/ideas/Data-build.md`, the READMEs.
 
 ### Core: the full auction scan, every 16 minutes while the house is open, with its bar (Saneroki, 2026-10-30)
 Saneroki: every time the auction house opens a full scan, all items recorded in the history database, at least in the WTF,

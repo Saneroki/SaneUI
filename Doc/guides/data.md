@@ -374,7 +374,8 @@ Sets\Auras.lua
   set file.
 - **The data's saved variables** are Core's too, declared in its TOC: `## SavedVariables: SaneUIDB,
   SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned` (*Saved variables*); `Data.SAVED` names them, and
-  `dev/tests/lint` fails when the TOC lacks one.
+  `dev/tests/lint` fails when the TOC lacks one. The auction data alone has a file of its own (*The full auction
+  scan*): `SaneUI_AuctionData` declares it, and `Data.APART` names it.
 
 ### A set's file
 
@@ -724,9 +725,24 @@ game in the background, and it reads a full scan another addon asked for just th
   nothing runs in a fight. Gear and pets need the item known for their key: those rows wait up to `Scan.ITEMS` seconds
   while the items are asked of the server, `Scan.ASKS` a round; what is still unknown then is left out (`left`).
 - **Kept** only when the scan was read to its end; a list the game took away halfway leaves nothing.
+- **The file:** the auction data is a file of its own, apart from the settings (Saneroki, 2026-10-30): the addon
+  `SaneUI_AuctionData` (`src/AuctionData/`, *Data: Auction House*) holds no code, only the saved variable
+  `SaneUIData_Market`, so the game writes it to `WTF/Account/<account>/SavedVariables/SaneUI_AuctionData.lua`. It is
+  read in the loading screen, like any saved file, so a login and a `/reload` take longer as it grows. Switched off, Sane
+  UI neither scans nor shows prices.
+- **Every scan whole (Forever, `Scan.WHOLE`):** `whole[at]`, one string per scan, by the time the server answered:
+  `<build>\n<block>\n<block>...`. A block is `Scan.BLOCK` rows packed by the game (zlib, then Base64), each block by itself so
+  that packing stays within a frame's budget; the rows stand grouped by item, cut by `\n`:
+
+  ```text
+  key,count,buyout,minBid,increment,bid,timeLeft,status,seller,bidder,link
+  ```
+
+  `buyout` is for the whole row, `link` the game's item string (gear only). This is the raw history: what goes on into the
+  database is filtered there. The sellers' and bidders' names are local and never go on. About 40 bytes a row, so a house
+  of 50,000 auctions costs about 2 MB a scan (measured on made-up rows shaped like the game's).
 - **The history:** `SaneUIData_Market[game].houses["eu/1234/horde"]`, the house by region, realm and side (the side of the
-  NPC that opened it, `neutral` where it has none). One string per server day, `days[day]`, so a house costs two values a
-  day in the saved file however many items it has:
+  NPC that opened it, `neutral` where it has none). Beside the whole scans one string per server day, `days[day]`:
 
   ```text
   key=low,market,units,auctions,sellers;...
@@ -735,8 +751,9 @@ game in the background, and it reads a full scan another addon asked for just th
   `key` is the game's `ItemKey`: the item's ID, or `item:level:suffix:species` for gear and pets. Prices are per unit in
   copper, 0 where nothing had a buyout: `low` the lowest of the day, `market` the median of the units on offer, the rest
   from the day's last scan that saw the item. `sellers` is a count, no name is kept. `scans[day]` says how many scans the
-  day holds, `at` when the server last answered, `kept`, `rows`, `items`, `left` the last scan kept. `Scan.KEEP` limits the
-  days per game: a week for Retail, whose house is far bigger, until its data's plan is made; none for Forever.
+  day holds, `index` each item's newest point (*Prices*), `at` when the server last answered, `kept`, `rows`, `items`, `left`
+  the last scan kept. `Scan.KEEP` limits the days per game: a week for Retail, whose house is far bigger and which keeps no
+  scan whole, until its data's plan is made; none for Forever.
 
 ```lua
 local Scan = SaneUI.Core.Data.Scan
@@ -749,7 +766,29 @@ Scan.Start()      -- a scan now (the bar, pressed); false while one runs
 - **The bar** (`src/Core/Data/ScanBar.lua`) is a view of `State`: ours, under the bottom right corner of the game's window,
   anchored to it, made when the window is first there. It fills as the rows are read, then runs down to the next scan.
   Pressed, it starts a scan; a light and a tooltip say so.
-- **`/sane data`** names each house: its days and its last scan.
+- **`/sane data`** names each house: its days, its whole scans and what they weigh, its last scan.
+
+### Prices (`Data.Series("Prices")`) *(Saneroki, 2026-10-30)*
+
+The one door to auction prices: every view reads here, none keeps its own (`src/Core/Data/Prices.lua`). The tooltips' Gold
+section, disenchanting's materials, the advice and Speed Leveling's rewards all read it.
+
+```lua
+local Prices = SaneUI.Core.Data.Series("Prices")
+Prices:Low(item)      -- the lowest price now, per unit, in copper; nil: none, or none for Prices.FRESH (30) days
+Prices:Last(item)     -- low, market, units, auctions, sellers, at: the newest point, however old; nil: none
+Prices:OnChange(fn)   -- fn() on the next frame after prices changed
+```
+
+- **`item`** is an ID or a link. A link names its kind (gear by level and suffix, a pet by species); an ID, or a link of a kind
+  no scan saw, the cheapest of its kinds.
+- **Newest first:** what the game lists right now (browsing, the offers of an item: `AUCTION_HOUSE_BROWSE_RESULTS_*`,
+  `COMMODITY_SEARCH_RESULTS_UPDATED`, `ITEM_SEARCH_RESULTS_UPDATED`) replaces the point's price and what is on offer, its market
+  stays the scan's; each new scan replaces the points of what it saw. Live sightings go into `index` at the logout, never into
+  the scans.
+- **Per house:** while one is open its own, else the one of your side; a price of one house is never read for another.
+- **`index`** is `key=at,low,market,units,auctions,sellers;...`, taken apart when a house is first asked about.
+- **The database** holds no auction data yet: what the harvest makes of the scans comes in behind this same door.
 
 ### The harvest
 
@@ -851,9 +890,11 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
 
 ## Saved variables *(1c; built so far: the data's saved variables, their parts, `format` and `broken`; `learned`)*
 
-- **All in Core's saved file:** `SaneUIDB` and the data's own, `SaneUIData_<Name>` (`Data.SAVED`:
-  Characters, Guild, Learned, Market; later the other series), are declared in Core's TOC, so the game writes
+- **In Core's saved file:** `SaneUIDB` and the data's own, `SaneUIData_<Name>` (`Data.SAVED`:
+  Characters, Guild, Learned; later the other series), are declared in Core's TOC, so the game writes
   them all into one file, `WTF/Account/<account>/SavedVariables/SaneUI.lua`.
+- **The auction data apart (`Data.APART`):** `SaneUIData_Market` has a file of its own (*The full auction scan*); `Data.Saved`
+  hands over its part once `SaneUI_AuctionData` has loaded, after Core.
 - **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Characters["forever-beta"]`. Core
   uses only its client's key; the others (a copied `WTF`) are left as they are.
 - **Core's** (`SaneUIDB.data[game]`) *(1c)*: `format` (1); `checked` (`[set] = build`, the patch check);
@@ -863,7 +904,7 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
   (`SaneUIData_Learned`: `[set][key] = row`, a whole row in the set's format, *Learned*), with `confirmed`
   (`[set][key] = "day\031build\031parts"`, *Verified*), `outbox` (what waits to be shared: `"V\031set\031key\031part"`,
   `"L\031set\031key"`, at most `Confirm.OUTBOX`) and `builds` (`[build] = patch`); `SaneUIData_Market`, the
-  prices per auction house, `houses["eu/1234/horde"]` (*The full auction scan*); *(1c)* the drop counts.
+  scans and prices per auction house, `houses["eu/1234/horde"]` (*The full auction scan*); *(1c)* the drop counts.
 - **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and
   at most 100,000 values **for Core's saved file as a whole:** Lua 5.1 stops at 262,143 constants in one
   function, the game reads the file as one, and a file over it loads as nothing (every saved variable in

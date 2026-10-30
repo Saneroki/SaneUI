@@ -216,6 +216,10 @@ window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.m
   refused like any request, and the wait goes on where it was.
 - **In the background:** nothing of it needs a click, so it runs with the game behind other windows, at whatever frame
   rate the game keeps there: the frame budget per frame stays the same, the reading only takes longer.
+- **Every scan kept (Saneroki):** Forever's file keeps every row of every scan, whole; what goes on into the database is
+  filtered there. The scans and prices are a file of their own, apart from the settings (`SaneUI_AuctionData`).
+- **One door for prices (Saneroki):** tooltips, disenchanting, the advice and rewards read `Data.Series("Prices")`: what the
+  house lists right now, else its last scan. The advice now weighs disenchanting too, for a character with the spell.
 - **Idle logout: not prevented (2026-10-30).** The newest export has no call that resets the game's idle time. The one
   handle near it, `CancelLogout` on `PLAYER_CAMPING`, only stops the 20 seconds of a logout outside a rest area, and most
   auction houses stand in rest areas, where a logout has no such wait. Working around the game's idle logout would also
@@ -289,8 +293,8 @@ Wished from the database for Economy's views, **not yet in `Data.md`:**
   the day's last scan or their mean), so Economy's numbers mean the same day after day. *Decided, 2026-10-30: the
   lowest of the day; market, units, auctions and sellers of the day's last scan that saw the item. Market is the
   median of the units on offer.*
-- **The last scan, whole:** every auction as it stood (item, count, buyout, bid, owner, time left), replaced
-  by each new scan. For the offers of an item step by step by price, who sells, *someone sells cheaper* on
+- **The last scan, whole:** *built in full for Forever, every scan and not only the last (`whole[at]`).* Every auction as it
+  stood (item, count, buyout, bid, owner, time left), replaced by each new scan. For the offers of an item step by step by price, who sells, *someone sells cheaper* on
   the player's auctions, and browsing the whole auction house when the player is not there. One packed
   string per item, taken apart only when the item is looked at; owners as numbers into one list of names.
   Some 50,000 auctions at about 25 bytes is about 1.3 MB, replaced, not growing (to measure).

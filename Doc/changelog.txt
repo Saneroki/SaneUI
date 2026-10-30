@@ -11,6 +11,10 @@ The bigger changes of each version, newest first.
   full price history grows from day one. A bar under the window
   shows the scan start, how far it is and when the next one comes.
   Press the bar to start a scan yourself.
+- Tooltips use what the auction house lists right now and your
+  last scan for what an item brings, what its materials bring
+  disenchanted and what to do with it. With Disenchant, the advice
+  weighs that too. The auction history has a file of its own.
 - Distances are in meters and the time in 24 hours everywhere Sane
   UI writes them. Yards and 12 hours: General, Units, Imperial.
 - A new level is told in the middle of the screen: your health,

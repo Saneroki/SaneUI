@@ -788,11 +788,15 @@ do
     wanted.handin[41], picked = true, nil
     W.Fire("QUEST_COMPLETE")
     check(picked == 2, "none named: the one a vendor pays the most for")
-    Core.Store("Tooltips").prices = { [2] = 9000, [3] = 1000 }
+    local Prices = Core.Data.Series("Prices")
+    W.Fire("ADDON_LOADED", "SaneUI_AuctionData")
+    Prices.See("2", 9000)
+    Prices.See("3", 1000)
     picked = nil
     W.Fire("QUEST_COMPLETE")
     check(picked == 3, "or the auction house, for what can go there; what binds when picked up cannot")
-    Core.Store("Tooltips").prices = nil
+    Prices.See("2")
+    Prices.See("3")
     items[links[2]], picked = nil, nil
     W.Fire("QUEST_COMPLETE")
     check(picked == nil, "the game does not know one yet: not yet")

@@ -793,10 +793,10 @@ laid over the sets and dropped once a set is as new, and the first watcher, wher
 
 ### Series
 
-*Built ahead for the prices (2026-10-30, `Doc/guides/data.md`, *The full auction scan*), simpler than below: one string per
-server day and house, so a scan rewrites only today's, older days are never touched and the saved file holds two values
-a day. `SaneUIData_Market` is Core's, as every saved variable of the data. `Data.Series`, the harvest of the scans and the
-roll-ups below are still to come.*
+*Built ahead for the prices (2026-10-30, `Doc/guides/data.md`, *The full auction scan* and *Prices*), simpler than below: one
+string per server day and house, one per whole scan (Forever) and each item's newest point. `SaneUIData_Market` has a file of
+its own, the addon `SaneUI_AuctionData` (Saneroki). `Data.Series("Prices")` reads `Low` and `Last`; `Range`, the harvest of the
+scans and the roll-ups below are still to come. Nothing old is dropped from Forever's file.*
 
 - Per auction house (*Realms and regions*: region, realm, side): **today's points in a small table per
   item**, updated by every scan (own or shared); **at logout** today's point is added to
@@ -1722,7 +1722,7 @@ The API stays the same (`Data.Set`, `Data.Map`, ...).
 | `Core/Settings/Data/CVarLabels.lua` (25 KB, made by `dev/tools/cvar-labels`) | Set *CVarLabels*, pack Game; the tool writes staging |
 | `Abilities/Data/` (trainer per class, quest spells, weapon skills, skill lines) | Pack Spells; the faction and race filters of `Data/Trainer.lua` stay in Abilities, as code over the sets |
 | `Tooltips/Data/Quests.lua` (546 KB: `ns.QuestFacts`, records per quest, NPC and item) | Pack Quests: a quest's levels, races and classes become fields of *Quests*, its rule (`+`, `/`, `!`) becomes `requires`; the NPC and item records become indexes, made by the compiler |
-| Tooltips' `prices` and `seen` in `SaneUIDB` and their gathering (`Tooltips/Auction.lua`) | Series *Prices*, pack Market, gathered by the database; Tooltips only reads |
+| Tooltips' `prices` and `seen` in `SaneUIDB` and their gathering | Done 2026-10-30: `Data.Series("Prices")`, gathered by Core; Tooltips only reads |
 | Economy's scan and price history (planned in `Doc/ideas/Economy.md`) | The database's (`Scan.lua`, series *Prices*); Economy only shows |
 | Navigation's data (planned) | Sets World, Spawns from the start |
 

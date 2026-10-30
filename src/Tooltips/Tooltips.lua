@@ -70,7 +70,7 @@ local adopted = {} -- [tooltip] = true: hooked; false: not one we can draw
 local SHOWN_PLAIN = { "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1",
     "ItemRefShoppingTooltip2", "GameNoHeaderTooltip", "GameSmallHeaderTooltip", "BuffFrameTooltip", "AuraButtonTooltip" }
 -- What each of the module's other files leaves in its table: all there, or the module is not whole.
-local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "Quests", "Auction", "Figures", "Gold",
+local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "Quests", "Figures", "Gold",
     "Inventory", "KINDS", "Pools", "Panel", "Host" }
 
 -- Whether the player sees the tooltip: it is visible, and placed somewhere. Other addons read what
@@ -94,12 +94,11 @@ local function Holds(choice)
     return held ~= nil and Plain(held()) == true
 end
 
--- Whether tooltips may be seen now: always, while the chosen key is held (the option show), or
--- while a view asks for them (Core.tipsWanted: a quest's rewards in Lore's talk).
+-- Whether tooltips may be seen now: always, or while the chosen key is held (the option show).
 -- A tooltip that may not is there all the same, filled and placed by the game, its panel drawn;
 -- only it and its panel are see-through, until the key is pressed (Gate).
 function ns.Allowed()
-    return Core.tipsWanted == true or Holds(ns.options and ns.options.show or "shift")
+    return Holds(ns.options and ns.options.show or "shift")
 end
 
 -- What a tooltip can hold that a panel cannot show: another tooltip inside it, bars, frames
@@ -443,7 +442,6 @@ end
 
 function ns.OnLoad()
     ns.options = Core.Settings(ns.name) -- the switches above, as Core keeps them (an older shape: Upgrade)
-    ns.store = Core.Store(ns.name)      -- the auction house's prices (Auction.lua)
 end
 
 function ns.OnLogin()
@@ -487,8 +485,6 @@ function ns.OnLogin()
     processor.AddTooltipPostCall(processor.AllTypes, function(tooltip, data)
         Guarded(OnFilled, tooltip, data)
     end)
-    -- The auction house's prices, noted as you browse it (Auction.lua)
-    ns.Auction.Start(ns.store)
     -- Core's data the panels show: the shown ones are read anew when it comes or changes. What a
     -- creature's quest section says is kept until your quests, your level or the quest data change
     -- (Quests.lua; the data asked for now); an item's Inventory follows your characters' bags.

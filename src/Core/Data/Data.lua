@@ -25,9 +25,9 @@ local Core = SaneUI.Core
 --  version cannot be told. A failure is said once, and the modules fall back.
 --
 --  What Core keeps in the game of the data is in saved variables of Core's TOC, SaneUIData_<Name> (Data.SAVED;
---  Characters is one). Core's own readers ask for one with Data.Saved(name, fn) and get its part of this
---  client's game version. What Core learns in play (Data.Learn) is kept in SaneUIData_Learned and read over
---  the sets while it is newer than they are.
+--  Characters is one), the auction house's in a file of its own (Data.APART). Core's own readers ask for one with
+--  Data.Saved(name, fn) and get its part of this client's game version. What Core learns in play (Data.Learn) is kept
+--  in SaneUIData_Learned and read over the sets while it is newer than they are.
 -------------------------------------------------------------------------------
 local Data = Core.Data -- made by Codec.lua
 local Codec, Steps = Data.Codec, Core.Steps
@@ -36,7 +36,10 @@ Data.FORMAT = 1
 Data.reports = {} -- what else /sane data prints: fn() each, after the sets (Tally.lua: what play counted)
 Data.frozen = false -- the tests' switch: records handed out read-only, changes found by Data.Tampered()
 -- The saved variables of Core's data, SaneUIData_<name>, as Core's TOC declares them.
-Data.SAVED = { Characters = true, Guild = true, Learned = true, Market = true }
+Data.SAVED = { Characters = true, Guild = true, Learned = true }
+-- The one with a file of its own, apart from the settings (Saneroki, 2026-10-30): [name] = the addon that declares it.
+-- The game keeps a file per addon, and reads that one's after Core's.
+Data.APART = { Market = "SaneUI_AuctionData" }
 local WEAK = { __mode = "v" }
 local LIST, VERSION = "\030", "\028"
 
@@ -237,7 +240,7 @@ end
 -- SaneUIData_<name>[game] (format checked), once Core's saved variables are read; at once when they are. A
 -- name that is no saved variable of the data (Data.SAVED) is noted, and fn is never called.
 function Data.Saved(name, fn)
-    if not Data.SAVED[name] then
+    if not (Data.SAVED[name] or Data.APART[name]) then
         Say("data: saved " .. tostring(name), TEXT.noSaved:format("SaneUIData_" .. tostring(name)))
         return
     end
@@ -248,7 +251,7 @@ function Data.Saved(name, fn)
     local list = keepers[name] or {}
     keepers[name] = list
     list[#list + 1] = fn
-    if arrived then Keep(name) end
+    if arrived and not Data.APART[name] then Keep(name) end
 end
 
 -------------------------------------------------------------------------------
@@ -758,9 +761,14 @@ end
 -- Core's files have run, the set files at their end, and its saved variables are read: the readers of those
 -- are handed their parts, and a set asked for from now on that is not there is missing.
 Core.On("ADDON_LOADED", function(name)
+    for saved, addon in pairs(Data.APART) do
+        if addon == name then Core.Safe("data: " .. saved, Keep, saved) end
+    end
     if name ~= ADDON or arrived then return end
     arrived = true
-    for saved in pairs(keepers) do Core.Safe("data: " .. saved, Keep, saved) end
+    for saved in pairs(keepers) do
+        if not Data.APART[saved] then Core.Safe("data: " .. saved, Keep, saved) end
+    end
 end)
 
 local function Show(value)

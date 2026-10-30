@@ -4,6 +4,7 @@
 Lab.Blizzard("Blizzard_FrameXMLUtil")
 Lab.Blizzard("Blizzard_AuctionHouseUI")
 Lab.TOC("src/Core/SaneUI.toc")
+Lab.TOC("src/AuctionData/SaneUI_AuctionData.toc")
 
 LabScan = { rows = 48012 }
 C_WowTokenPublic = setmetatable({}, { __index = function() return function() end end })

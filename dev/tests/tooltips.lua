@@ -58,7 +58,7 @@ W.items[19019] = { name = "Thunderfury", quality = 4 }
 W.spells[133] = { name = "Fireball" }
 for _, id in ipairs({ 5, 75, 2383, 1243 }) do W.spells[id] = { name = "A spell" } end
 C_Item.GetItemQualityByID = function(id) return W.items[id] and W.items[id].quality end
--- The auction house's list as you browse it (Auction.lua), and the clock it dates prices by
+-- The auction house's list as you browse it (Core's Prices.lua), and the clock
 browse = {}
 C_AuctionHouse = { GetBrowseResults = function() return browse end }
 time = function() return 100 * 86400 end
@@ -285,7 +285,7 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
-for _, file in ipairs({ "Steps", "Codec", "Data", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
+for _, file in ipairs({ "Steps", "Codec", "Data", "Prices", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
 W.AddSets(folder .. "/Sets") -- the set files, at the end of Core's TOC
@@ -294,6 +294,7 @@ local Data = Core.Data
 -- Saved by an earlier version (the first shape of the settings): by hand, no choice; the mouse switch of version 2.
 SaneUIDB = { modules = { Tooltips = { options = { show = "never", cursor = true } } } }
 W.Fire("ADDON_LOADED", "SaneUI")
+W.Fire("ADDON_LOADED", "SaneUI_AuctionData")
 -- The scheduler's frames (Steps.lua): reading the characters
 local function Steps(frames)
     local steps = Core.Steps.frame
@@ -303,7 +304,7 @@ local function Steps(frames)
     end
     W.Wait(0) -- the next frame: Core tells a set's listeners then
 end
-local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Quests", "Gathering", "Auction", "Figures" }
+local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Quests", "Gathering", "Figures" }
 for _, name in ipairs({ "Kinds/Gold", "Kinds/Inventory", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest",
     "Kinds/Object", "Pools", "Panel", "Host" }) do
     files[#files + 1] = name
@@ -338,21 +339,14 @@ ItemRefTooltip = pinned
 pinned.CloseButton = W.NewWidget("Button", nil, pinned)
 pinned:EnableMouse(true)
 pinned.CloseButton:EnableMouse(true)
--- Prices seen at the auction house a month ago and more (and one without a day, one that is no number) are
--- forgotten at the login
-ns.store.prices, ns.store.seen = { [1] = 5, [2] = 6, [3] = 7, [4] = "lots" }, { [1] = 100 - 31, [2] = 100 - 30, [4] = 100 }
 W.Fire("PLAYER_LOGIN")
+local Prices = Core.Data.Series("Prices")
 check(#postCalls == 1 and postCalls[1].kind == "ALL", "one listener for every kind of tooltip data")
 check(Data.Set("Quests"):Ready() and Data.Set("Drops"):Ready() and Data.Set("Disenchants"):Ready(),
     "at the login Core's data the module reads is there (Quests, Drops, Disenchants)")
 check(Data.Count(4500) == nil, "and Core reads the characters' data in steps; until they are done, nothing is counted")
 check(tip._scripts.OnTooltipCleared and tip._scripts.OnShow and ns.Panel.All()[tip] == nil,
     "the tooltips that also show hints are hooked at login; their panels are only made when first needed")
-check(ns.store.prices[1] == nil and ns.store.prices[2] == 6 and ns.store.prices[3] == nil and ns.store.seen[1] == nil,
-    "an auction price not seen for more than 30 days is forgotten at the login: the saved prices do not only grow")
-ns.store.prices[5] = "dear" -- written in by hand
-check(ns.store.prices[4] == nil and ns.Auction.Price(5) == nil, "a saved price that is no number (a hand edit) is never a price")
-ns.store.prices[5] = nil
 
 -- Sentences of the game with gaps
 check(("Durability 61 / 120"):match(ns.PATTERN.DURABILITY) == "61" and ("(53.8 damage per second)"):match(ns.PATTERN.DPS) == "53.8"
@@ -697,7 +691,7 @@ check(count(panel) == 4 and row(panel, 4).left == "Vendor" and row(panel, 4).rig
 browse = { { itemKey = { itemID = 19019 }, minPrice = 98765 }, { itemKey = { itemID = 4 }, minPrice = 0 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
-check(ns.store.prices[19019] == 98765 and count(panel) == 6 and row(panel, 2).kind == "caption" and row(panel, 2).left == "Gold"
+check(Prices:Low(19019) == 98765 and count(panel) == 6 and row(panel, 2).kind == "caption" and row(panel, 2).left == "Gold"
     and row(panel, 4).left == "Vendor" and row(panel, 5).left == "AH profit" and row(panel, 5).right == "93826c",
     "browsing the auction house, its lowest price is noted and kept in the saved settings; the Gold section says what a sale "
     .. "there brings, after the house's cut of 5%")
@@ -726,22 +720,22 @@ W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
 check(row(panel, 6).left == "Sell at" and row(panel, 6).right == "98764c" and row(panel, 7).left == "Sell on the AH for 98765c",
     "with Alt, the price to post it at, before the advice: one copper under the lowest offer")
-check(row(panel, 8).left == "Lowest 98765c" and row(panel, 9).left:find("Cut 4938c", 1, true) == 1,
-    "and small under the advice: the price it comes from, the house's cut and the deposit")
+check(row(panel, 8).left == "Lowest 98765c" and row(panel, 9).left:find("Seen %d", 1) == 1 and row(panel, 10).left:find("Cut 4938c", 1, true) == 1,
+    "and small under the advice: the price it comes from, when it was seen, the house's cut and the deposit: " .. tostring(row(panel, 9).left))
 check(ns.Gold.PostAt({ current = 90, vendor = 100 }) == 106 and ns.Gold.PostAt({ current = 500, vendor = 0 }) == 499
     and ns.Gold.PostAt({ vendor = 100 }) == nil,
     "never so low that a sale, after the cut, brings less than a vendor pays; nothing without an offer seen")
 W.alt = false
 browse = { { itemKey = { itemID = 19019, itemLevel = 60 }, minPrice = 500 }, { itemKey = { itemID = 19019, itemLevel = 70 }, minPrice = 900 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
-check(ns.store.prices[19019] == 500, "an item listed in several rows (its kinds) has the lowest of them as its price")
+check(Prices:Low(19019) == 500, "an item listed in several rows (its kinds) has the lowest of them as its price")
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_ADDED", { { itemKey = { itemID = 19019 }, minPrice = 700 } })
-check(ns.store.prices[19019] == 500, "also when more rows of the same list come")
-ns.store.prices[19019] = 98765
+check(Prices:Low(19019) == 500, "also when more rows of the same list come")
+Prices.See("19019", 98765)
 hatchet[2].data.bonding = 6
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
 check(count(panel) == 4 and row(panel, 4).left == "Vendor", "a thing that is bound when picked up has no auction price")
-ns.store.prices[19019] = nil
+Prices.See("19019")
 C_Item.GetItemInfoInstant = function(id) if id == 2589 then return id, "Trade Goods", "Cloth", "", 1, 7, 5 end end
 W.items[2589] = { name = "Linen Cloth", quality = 1 }
 W.spells[3908] = { name = "Tailoring" }
@@ -1450,7 +1444,8 @@ local disenchant
 for index = 1, count(panel) do if row(panel, index).left == "Disenchant" then disenchant = index end end
 check(disenchant and row(panel, disenchant).right == "no prices seen" and row(panel, disenchant - 1).left == "Vendor",
     "an uncommon weapon: under Gold, after the vendor's price, Disenchant; without the materials' prices seen, it says so")
-ns.store.prices[10938], ns.store.prices[10940] = 100, 40
+Prices.See("10938", 100)
+Prices.See("10940", 40)
 tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
 check(row(panel, disenchant).right == "125c",
     "with them: as often and as many as disenchanting gives each, at its lowest price after the cut (80% of 1.5 x 95, 20% of 1.5 x 38)")
@@ -1460,6 +1455,18 @@ check(row(panel, disenchant + 1).left == "80%  1-2 Lesser Magic Essence" and row
     and row(panel, disenchant + 2).left == "20%  1-2 Strange Dust" and row(panel, disenchant + 2).font == "small",
     "with Alt each material under it: how often, how many, and what one brings")
 W.alt = false
+tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+local last = count(panel)
+check(row(panel, last).left ~= "Disenchant it for 125c", "a character without the spell gets no advice to disenchant")
+rawset(_G, "IsPlayerSpell", function(id) return id == 13262 end)
+tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+check(row(panel, count(panel)).left == "Disenchant it for 125c", "with it, what disenchanting brings counts in the advice, at the prices now")
+Prices.See("10938", 10)
+Prices.See("10940", 4)
+tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+check(row(panel, count(panel)).left ~= "Disenchant it for 125c" and row(panel, disenchant).right == "12c",
+    "the materials' prices fall, and the numbers with them: the advice is what the auction house lists now")
+rawset(_G, "IsPlayerSpell", nil)
 W.items[7001].quality = 1
 tip:Fill({ type = TYPE.Item, id = 7002 }, { { "Plain Blade" } })
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" } })
@@ -1467,7 +1474,8 @@ local plain = false
 for index = 1, count(panel) do if row(panel, index).left == "Disenchant" then plain = true end end
 check(not plain, "an item no row of disenchanting takes (another class, another level): no such row")
 C_Item.GetItemInfoInstant, C_Item.GetItemInfo = instantBefore, nil
-ns.store.prices[10938], ns.store.prices[10940] = nil, nil
+Prices.See("10938")
+Prices.See("10940")
 
 -- Your characters' things (Core's characters' data, read in steps since the login) --------------------
 local saved = SaneUIData_Characters
@@ -2156,12 +2164,6 @@ check(panel:GetAlpha() == 1 and tip:GetAlpha() == 0, "Shift pressed: its panel i
 W.shift = false
 W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
 check(panel:GetAlpha() == 0, "let go: unseen again")
-Core.tipsWanted = true
-spell("2.5 sec cooldown")
-check(panel:GetAlpha() == 1, "a view that asks for them (a quest's rewards) sees them without the key")
-Core.tipsWanted = false
-spell("2 sec cooldown")
-check(panel:GetAlpha() == 0, "and only while it asks")
 tip.insertedFrames = { true } -- a frame inside: the panel cannot show it, the tooltip is the game's
 spell("3 sec cooldown")
 check(not panel:IsShown() and tip:GetAlpha() == 0, "a tooltip left to the game is unseen the same way")

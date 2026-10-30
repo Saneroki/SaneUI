@@ -1,0 +1,14 @@
+## Interface: 16001, 120105
+## Title: Data: Auction House
+## Notes: Your auction house history and current prices, as Sane UI's full scans find them, in a file of their own apart from your settings. Switched off, Sane UI neither scans the auction house nor shows its prices.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## SavedVariables: SaneUIData_Market
+## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## X-License: MIT
+
+# No code: this addon is the file. Core does the work (Doc/guides/data.md, *The full auction scan*)
+AuctionData.lua

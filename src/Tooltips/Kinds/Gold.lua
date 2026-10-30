@@ -18,28 +18,31 @@ local _, ns = ...
 --                                             and as many as disenchanting gives them
 --      Sell on the AH for 3s 09c
 --
---  The advice is the way that brings the most; the auction house must bring 5%
---  more than a vendor to be advised (BETTER), for the trouble. On an item the
---  auction house lists to you (you buy it), the advice is the most it is worth
---  paying instead: what it brings again at the auction house or from a vendor
---  (green while the lowest price now is under it, red over it).
+--  The advice is the way that brings the most; the auction house, and
+--  disenchanting if your character can, must bring 5% more than the way before
+--  to be advised (BETTER), for the trouble. On an item the auction house lists to
+--  you (you buy it), the advice is the most it is worth paying instead: what it
+--  brings again at the auction house, from a vendor or disenchanted (green while
+--  the lowest price now is under it, red over it).
 --
 --  With Alt held: under Disenchant each material (how often, how many, what it
 --  brings); then the price to post it at (Sell at: the lowest offer less one
 --  copper, never so low that a sale brings less than a vendor pays); under the
---  advice the price it comes from, the cut and the deposit.
+--  advice the price it comes from, the market, how many are on offer and when
+--  that was seen, the cut and the deposit.
 --
 --  Disenchanting, from Core's data (the set Disenchants, Doc/guides/data.md):
 --  a weapon or an armour of uncommon quality and up, by its class, quality and
 --  item level. A material without a price seen makes no value: the row says so.
 --
---  The prices are the ones you last saw yourself at the auction house
---  (Auction.lua). Without one, the section is the vendor's row, under its
---  caption all the same.
+--  The prices are Core's (Data.Series("Prices")): what the auction house lists
+--  right now while you look at it, else its last full scan. The panels are read
+--  anew when they change. Without one, the section is the vendor's row, under
+--  its caption all the same.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Ask, Data = Core.Plain, Core.Ask, Core.Data
-local DISENCHANTS = Data.Set("Disenchants")
+local DISENCHANTS, PRICES = Data.Set("Disenchants"), Data.Series("Prices")
 local Read, TEXT = ns.Reader, ns.TEXT
 local Gold = {}
 ns.Gold = Gold
@@ -54,6 +57,7 @@ local ARMOR = Enum.ItemClass and Enum.ItemClass.Armor or 4
 local DISENCHANTED = { [WEAPON] = true, [ARMOR] = true } -- the item classes disenchanting takes
 local UNCOMMON = Enum.ItemQuality and Enum.ItemQuality.Uncommon or 2 -- and from which quality
 local HELD = 400      -- items whose row of disenchanting is kept, then forgotten together
+local DISENCHANT_SPELL = 13262 -- the game's spell: only with it is disenchanting a way for this character
 
 local COLOR = ns.COLOR
 local DETAIL, MONEY = COLOR.DETAIL, COLOR.TITLE -- the rows' words; what they bring
@@ -113,60 +117,6 @@ local function Buying(tooltip)
     return listed and BuyView() or false
 end
 
--- What is known of the item at the auction house, for one read
-local market = {}
-
--- Works out the section from what is known, for one of the item. vendor: what a vendor pays for
--- one (0: it buys none), or nil; bound: it cannot be sold at the auction house. Fills market:
---   vendor, ah      what each way brings for one (nil: not this way; vendor 0: no vendor buys it)
---   current         the lowest price you last saw at the auction house
---   advice, worth   "ah", "vendor" or "buy"; for buy, the most it is worth paying
-local function Work(id, vendor, bound, tooltip)
-    wipe(market)
-    local unit = vendor or 0
-    market.vendor = vendor
-    if not bound then
-        market.current = ns.Auction.Price(id)
-        if market.current then market.ah = Sale(market.current) end
-    end
-    if Buying(tooltip) and market.current then
-        market.worth = math.floor(math.max(unit, market.current * (1 - CUT)))
-        market.advice = market.worth > 0 and "buy" or nil
-        return market
-    end
-    local best, value = unit > 0 and "vendor" or nil, unit
-    if market.ah and market.ah > value * BETTER then best, value = "ah", market.ah end
-    market.advice = value > 0 and best or nil
-    return market
-end
-Gold.Work = Work
-
-local function Row(label, value)
-    local row = Read.Text("sub", label, DETAIL[1], DETAIL[2], DETAIL[3])
-    row.right, row.rr, row.rg, row.rb = Money(value), MONEY[1], MONEY[2], MONEY[3]
-    if value == 0 and label == TEXT.VENDOR then row.right, row.rr, row.rg, row.rb = TEXT.NO_VENDOR, DETAIL[1], DETAIL[2], DETAIL[3] end
-    return row
-end
-
--- The advice in one line: what to do (left, in its colour) and how much more (right).
-local function Advice(m)
-    local left, right, color, rightColor
-    local advice = m.advice
-    if advice == "ah" then
-        left, color = Read.Memo("goldAdvice", TEXT.SELL_AH, Money(m.current)), SELL
-    elseif advice == "vendor" then
-        left, color = TEXT.SELL_VENDOR, VENDOR
-        if m.ah and m.vendor > m.ah then right, rightColor = Read.Memo("goldMore", TEXT.MORE_AH, Money(m.vendor - m.ah)), DETAIL end
-    elseif advice == "buy" then
-        local good = m.current < m.worth
-        left, color = Read.Memo("goldAdvice", TEXT.BUY_UNDER, Money(m.worth)), good and SELL or NO
-        right, rightColor = Read.Memo("goldNow", TEXT.NOW, Money(m.current)), good and SELL or NO
-    end
-    if not left then return end
-    local row = Read.Text("row", left, color[1], color[2], color[3])
-    if right then row.right, row.rr, row.rg, row.rb = right, rightColor[1], rightColor[2], rightColor[3] end
-end
-
 -- Disenchanting -----------------------------------------------------------------------------------
 local disenchants, heldCount = {}, 0 -- [item] = its record of Disenchants, or false: none
 
@@ -201,16 +151,77 @@ local function DisenchantOf(id)
     return known or nil
 end
 
--- What disenchanting brings: every material as often and as many as it comes, at its lowest price after
--- the cut. Nil when a material has no price seen.
+-- What disenchanting brings: every material as often and as many as it comes, at its lowest price now after
+-- the cut. Nil when a material has no price.
 local function Disenchanted(record)
     local value = 0
     for _, material in ipairs(record.gives or {}) do
-        local price = ns.Auction.Price(material.item)
+        local price = PRICES:Low(material.item)
         if not price then return nil end
         value = value + (material.chance or 0) / 100 * ((material.min or 1) + (material.max or 1)) / 2 * Sale(price)
     end
     return math.floor(value + 0.5)
+end
+
+-- What is known of the item at the auction house, for one read
+local market = {}
+
+-- Works out the section from what is known, for one of the item. item: its link, or its ID; id: its ID;
+-- vendor: what a vendor pays for one (0: it buys none), or nil; bound: it cannot be sold at the auction
+-- house. Fills market:
+--   vendor, ah      what each way brings for one (nil: not this way; vendor 0: no vendor buys it)
+--   current         the lowest price at the auction house now
+--   record, broken  its row of disenchanting, what that brings for one (nil: not this way, or no prices)
+--   advice, worth   "ah", "vendor", "disenchant" or "buy"; for buy, the most it is worth paying
+local function Work(item, id, vendor, bound, tooltip)
+    wipe(market)
+    local unit = vendor or 0
+    market.vendor = vendor
+    if not bound then
+        market.current = PRICES:Low(item)
+        if market.current then market.ah = Sale(market.current) end
+    end
+    market.record = id and DisenchantOf(id)
+    market.broken = market.record and Disenchanted(market.record) or nil
+    local own = market.broken and Ask(rawget(_G, "IsPlayerSpell"), DISENCHANT_SPELL) == true and market.broken or 0
+    if Buying(tooltip) and market.current then
+        market.worth = math.floor(math.max(unit, market.current * (1 - CUT), own))
+        market.advice = market.worth > 0 and "buy" or nil
+        return market
+    end
+    local best, value = unit > 0 and "vendor" or nil, unit
+    if market.ah and market.ah > value * BETTER then best, value = "ah", market.ah end
+    if own > value * BETTER then best, value = "disenchant", own end
+    market.advice = value > 0 and best or nil
+    return market
+end
+
+local function Row(label, value)
+    local row = Read.Text("sub", label, DETAIL[1], DETAIL[2], DETAIL[3])
+    row.right, row.rr, row.rg, row.rb = Money(value), MONEY[1], MONEY[2], MONEY[3]
+    if value == 0 and label == TEXT.VENDOR then row.right, row.rr, row.rg, row.rb = TEXT.NO_VENDOR, DETAIL[1], DETAIL[2], DETAIL[3] end
+    return row
+end
+
+-- The advice in one line: what to do (left, in its colour) and how much more (right).
+local function Advice(m)
+    local left, right, color, rightColor
+    local advice = m.advice
+    if advice == "ah" then
+        left, color = Read.Memo("goldAdvice", TEXT.SELL_AH, Money(m.current)), SELL
+    elseif advice == "vendor" then
+        left, color = TEXT.SELL_VENDOR, VENDOR
+        if m.ah and m.vendor > m.ah then right, rightColor = Read.Memo("goldMore", TEXT.MORE_AH, Money(m.vendor - m.ah)), DETAIL end
+    elseif advice == "disenchant" then
+        left, color = Read.Memo("goldAdvice", TEXT.DISENCHANT_IT, Money(m.broken)), SELL
+    elseif advice == "buy" then
+        local good = m.current < m.worth
+        left, color = Read.Memo("goldAdvice", TEXT.BUY_UNDER, Money(m.worth)), good and SELL or NO
+        right, rightColor = Read.Memo("goldNow", TEXT.NOW, Money(m.current)), good and SELL or NO
+    end
+    if not left then return end
+    local row = Read.Text("row", left, color[1], color[2], color[3])
+    if right then row.right, row.rr, row.rg, row.rb = right, rightColor[1], rightColor[2], rightColor[3] end
 end
 
 -- With Alt held, under Disenchant: each material, how often, how many, and what one brings.
@@ -223,7 +234,7 @@ local function Materials(record)
         local chance = Read.Memo("materialChance" .. index, "%g", math.floor((material.chance or 0) * 10 + 0.5) / 10)
         local row = Read.Text("small", Read.Memo("material" .. index, TEXT.MATERIAL, chance, count, name or "?"), SMALL[1], SMALL[2], SMALL[3])
         row.indent = 20
-        local price = ns.Auction.Price(material.item)
+        local price = PRICES:Low(material.item)
         if price then row.right, row.rr, row.rg, row.rb = Money(Sale(price)), SMALL[1], SMALL[2], SMALL[3] end
     end
 end
@@ -237,10 +248,20 @@ local function PostAt(m)
 end
 Gold.PostAt = PostAt
 
--- With Alt held: where the numbers come from, small.
-local function Details(m)
+-- With Alt held: where the numbers come from, small: the price, the market and what is on offer, how long ago.
+local function Details(m, item)
     if not m.current then return end
     Read.Text("small", Read.Memo("goldPrices", TEXT.PRICES, Money(m.current)), SMALL[1], SMALL[2], SMALL[3])
+    local _, usual, units, _, _, at = PRICES:Last(item)
+    if at then
+        local days = math.floor(((Ask(rawget(_G, "GetServerTime")) or at) - at) / 86400)
+        local when = days < 1 and Core.ClockAt(at) or Read.Memo("goldDays", TEXT.DAYS_AGO, days)
+        local seen = units and units > 0 and Read.Memo("goldSeen", TEXT.SEEN, units, when) or Read.Memo("goldSeen", TEXT.SEEN_AT, when)
+        Read.Text("small", seen, SMALL[1], SMALL[2], SMALL[3])
+        if usual and usual > 0 then
+            Read.Text("small", Read.Memo("goldUsual", TEXT.MARKET, Money(usual)), SMALL[1], SMALL[2], SMALL[3])
+        end
+    end
     local fees = Read.Memo("goldFees", TEXT.FEES, Money(m.current * CUT), Money((m.vendor or 0) * DEPOSIT))
     Read.Text("small", fees, SMALL[1], SMALL[2], SMALL[3])
 end
@@ -268,20 +289,21 @@ end
 -- for all of it); id: the item; bound: it cannot be sold at the auction house; binding and looks: the
 -- first row's words (Terms).
 function Gold.Section(ctx, id, line, bound, binding, looks)
-    local m = Work(id, Gold.VendorEach(id, line), bound, ctx.tooltip)
+    local link = ctx.data and Plain(ctx.data.hyperlink)
+    local item = type(link) == "string" and link or id
+    local m = Work(item, id, Gold.VendorEach(id, line), bound, ctx.tooltip)
     if not (m.vendor or m.ah or m.advice or binding or looks) then return end
     -- A vendor's price alone has no advice: there is no choice to make.
-    local alone = not (m.ah or m.advice == "buy")
+    local alone = not (m.ah or m.advice == "buy" or m.advice == "disenchant")
     local alt = IsAltKeyDown()
     Read.Section(TEXT.GOLD)
     Gold.Terms(binding, looks)
     if m.vendor then Row(TEXT.VENDOR, m.vendor) end -- every item, also one no vendor buys
     if m.ah then Row(TEXT.AH_PROFIT, m.ah) end
-    local disenchant = id and DisenchantOf(id)
+    local disenchant = m.record
     if disenchant then
-        local value = Disenchanted(disenchant)
-        if value then
-            Row(TEXT.DISENCHANT, value)
+        if m.broken then
+            Row(TEXT.DISENCHANT, m.broken)
         else
             local row = Read.Text("sub", TEXT.DISENCHANT, DETAIL[1], DETAIL[2], DETAIL[3])
             row.right, row.rr, row.rg, row.rb = TEXT.NO_PRICES, SMALL[1], SMALL[2], SMALL[3]
@@ -291,12 +313,13 @@ function Gold.Section(ctx, id, line, bound, binding, looks)
     local post = alt and PostAt(m)
     if post then Row(TEXT.SELL_AT, post) end
     if not alone then Advice(m) end
-    if alt then Details(m) end
+    if alt then Details(m, item) end
 end
 
 -- What disenchanting gives is asked for once the loading screen is gone; the shown panels are drawn anew
--- when it comes or changes (arrived).
+-- when it comes or changes, and when the auction house's prices do (arrived).
 function Gold.Start(arrived)
+    if arrived then PRICES:OnChange(arrived) end
     DISENCHANTS:OnStamp(function()
         wipe(disenchants)
         heldCount = 0

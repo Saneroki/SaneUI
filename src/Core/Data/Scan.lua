@@ -4,24 +4,31 @@ local Core = SaneUI.Core
 --  Sane UI - Core - Data - Scan
 --  The full scan of the auction house (Doc/ideas/Economy.md, *The full scan*). While the auction house is
 --  open the whole house is asked for by itself, at once and then every Scan.INTERVAL seconds, and what it
---  lists goes into the history in the saved variable SaneUIData_Market, which the game writes into its WTF
---  folder at every logout and /reload. The game's request needs no click, so all of it runs with the
+--  lists goes into the history in the saved variable SaneUIData_Market, in a file of its own apart from the
+--  settings (the addon SaneUI_AuctionData), which the game writes into its WTF folder at every logout and /reload.
+--  The game's request needs no click, so all of it runs with the
 --  game in the background, as long as the auction house stays open. The server allows one scan in 15
 --  minutes and says nothing when it refuses, so the time is noted at its answer, never at the request. A
 --  scan another addon asked for is read the same: the game tells every addon.
 --
---  The history, per auction house (part.houses["eu/1234/horde"]), one string per server day, so a saved file
---  holds a few values a day however many items a house has (Doc/guides/data.md, *Saved variables*):
+--  The history, per auction house (part.houses["eu/1234/horde"]), as few values as a saved file can hold it
+--  (Doc/guides/data.md, *Saved variables*):
 --
+--      whole[at]  = every row of the scan the server answered at that time, as the game gave it (Scan.WHOLE,
+--                   Forever's; what goes on into the database is filtered there): "<build>\n<block>\n<block>...",
+--                   a block being Scan.BLOCK rows packed by the game (zlib, Base64), a row
+--                   "key,count,buyout,minBid,increment,bid,timeLeft,status,seller,bidder,link" (link: gear's,
+--                   the game's item string). The sellers' and bidders' names are the only ones kept: local,
+--                   never for the database (Doc/guides/data.md, *The full auction scan*).
 --      days[day]  = "key=low,market,units,auctions,sellers;..."
 --      scans[day] = how many scans that day's string holds
+--      index      = each item's newest point, for Prices.lua
 --      at         = when the server last answered; kept, rows, items, left = the last scan kept:
 --                   when, its auctions, its items, the rows left out (gear the game did not know in time)
 --
 --  key is the game's own ItemKey: the item's ID, or "item:level:suffix:species" for gear and pets. Prices
 --  are per unit in copper: low is the lowest of the day, market the median of the units on offer, and
---  everything but low comes from the last scan of the day that saw the item. 0: no buyout. Names stay out:
---  sellers is a count.
+--  everything but low comes from the last scan of the day that saw the item. 0: no buyout.
 --
 --      Core.Data.Scan.State()      what a view shows: { phase, outcome, read, rows, next, span, kept, total, items }
 --                                  phase: closed, waiting, asking or reading; outcome: how the last try ended,
@@ -43,14 +50,18 @@ Scan.TICK = 0.5         -- seconds between two looks, only while the house is op
 Scan.ITEMS = 30         -- seconds gear and pets may wait for the game to know them
 Scan.ASKS = 20          -- items asked of the server in one round of that wait
 Scan.KEEP = { retail = 7 } -- days kept per game: Retail's house is far bigger and its data's plan is still to come
+Scan.WHOLE = { forever = true } -- the games whose scans are kept row by row, each one
+Scan.BLOCK = 1024       -- rows packed at a time: a few milliseconds, within a frame's budget
 
 local JOB = "Full auction scan"
 local ROWS = 64         -- rows read between two looks at the frame's time
 local SAME = 14 * 60    -- the game tells again as item data comes in: this soon and as many rows, it is the same scan
 local UNITS = 65536     -- a row as one number, price * UNITS + count: sorted with no table per row
-local GEAR = { [2] = true, [4] = true, [17] = true } -- the game's item classes (Enum.ItemClass): weapons, armour, pets
+local RAW = "%s,%d,%.0f,%.0f,%.0f,%.0f,%d,%d,%s,%s,%s" -- a row kept whole; whole numbers past what %d holds on every client
+local DAILY = "%s=%.0f,%.0f,%.0f,%d,%d;"               -- an item's line of a day
 
-local SAY = { house = "auction house %s: %d days, last scan %s, %d auctions of %d items." }
+local SAY = { house = "auction house %s: %d days, %d whole scans (%.1f MB), last scan %s, %d auctions of %d items." }
+local Prices = Data.Series("Prices")
 
 local state = { phase = "closed", read = 0, rows = 0, next = 0, span = 0 }
 local listeners = {}
@@ -76,30 +87,6 @@ local function Wait(now, seconds)
     state.next, state.span = now + seconds, seconds
 end
 
--- The auction house open now, by region, realm and side: the side of the NPC that opened it, neutral for
--- one of the goblin towns' (Doc/ideas/Data.md, *Realms and regions*).
-local function HouseKey()
-    local unit = Core.Ask(rawget(_G, "UnitExists"), "npc") and "npc" or "player"
-    local side = Core.Ask(rawget(_G, "UnitFactionGroup"), unit)
-    return ("%s/%s/%s"):format(tostring(Core.Ask(rawget(_G, "GetCurrentRegionName")) or "?"):lower(),
-        tostring(Core.Ask(rawget(_G, "GetRealmID")) or 0), type(side) == "string" and side:lower() or "neutral")
-end
-
--- A house's part; one of a wrong shape goes to broken, never wiped.
-local function House(key)
-    if type(part.houses) ~= "table" then part.houses = {} end
-    local known = part.houses[key]
-    if type(known) ~= "table" or type(known.days) ~= "table" or type(known.scans) ~= "table" then
-        if known ~= nil then
-            part.broken = type(part.broken) == "table" and part.broken or {}
-            part.broken[#part.broken + 1] = known
-        end
-        known = { days = {}, scans = {} }
-        part.houses[key] = known
-    end
-    return known
-end
-
 local function Remember(known)
     state.kept, state.total, state.items = known.kept, known.rows, known.items
 end
@@ -107,33 +94,10 @@ end
 -------------------------------------------------------------------------------
 --  Reading the rows
 -------------------------------------------------------------------------------
--- The key of a row of gear or a pet, from its link; nil while the game does not know the item yet.
-local function GearKey(index, item)
-    local link = C_AuctionHouse.GetReplicateItemLink(index)
-    if type(link) ~= "string" then return nil end
-    local species = link:match("battlepet:(%d+)")
-    if species then return ("%d:0:0:%s"):format(item, species) end
-    local level = C_Item.GetDetailedItemLevelInfo(link)
-    if type(level) ~= "number" then return nil end
-    local suffix = link:match("item:%-?%d*:%-?%d*:%-?%d*:%-?%d*:%-?%d*:%-?%d*:(%-?%d*)")
-    return ("%d:%d:%d:0"):format(item, level, tonumber(suffix) or 0)
-end
-
--- Plain, gear, or false for an item the game does not know at all (left out), asked of the game once a scan.
-local function Kind(scan, item)
-    local kind = scan.kinds[item]
-    if kind == nil then
-        local _, _, _, _, _, class = C_Item.GetItemInfoInstant(item)
-        kind = class ~= nil and (GEAR[class] and "gear" or "plain")
-        scan.kinds[item] = kind
-    end
-    return kind
-end
-
 local function Count(scan, key, count, buyout, owner)
     local entry = scan.found[key]
     if not entry then
-        entry = { units = 0, auctions = 0, sellers = 0, owners = {}, prices = {} }
+        entry = { units = 0, auctions = 0, sellers = 0, owners = {}, prices = {}, rows = {} }
         scan.found[key] = entry
     end
     entry.units, entry.auctions = entry.units + count, entry.auctions + 1
@@ -144,24 +108,35 @@ local function Count(scan, key, count, buyout, owner)
     if buyout > 0 then
         entry.prices[#entry.prices + 1] = math.ceil(buyout / count) * UNITS + math.min(count, UNITS - 1)
     end
+    return entry
 end
 
 -- One row into the scan; false when the list is gone (the auction house closed).
 local function Row(scan, index)
-    local _, _, count, _, _, _, _, _, _, buyout, _, _, _, owner, _, _, item = C_AuctionHouse.GetReplicateItemInfo(index)
+    local auctions = C_AuctionHouse
+    local _, _, count, _, _, _, _, minBid, increment, buyout, bid, bidder, bidderFull, owner, ownerFull, status, item =
+        auctions.GetReplicateItemInfo(index)
     if type(item) ~= "number" then return false end
     if type(count) ~= "number" or count <= 0 then return true end
-    local kind, key = Kind(scan, item), item
-    if not kind then return true end
-    if kind == "gear" then
-        key = GearKey(index, item)
+    local gear = Prices.Gear(item)
+    if gear == nil then return true end
+    local key, link = tostring(item), nil
+    if gear then
+        link = auctions.GetReplicateItemLink(index)
+        key = type(link) == "string" and Prices.LinkKey(link, item) or nil
         if not key then
             scan.later[#scan.later + 1] = index
             if not scan.asked[item] then scan.wanted[item] = true end
             return true
         end
     end
-    Count(scan, tostring(key), count, type(buyout) == "number" and buyout or 0, owner)
+    owner = ownerFull or owner
+    local entry = Count(scan, key, count, type(buyout) == "number" and buyout or 0, owner)
+    if scan.whole then
+        entry.rows[#entry.rows + 1] = RAW:format(key, count, tonumber(buyout) or 0, tonumber(minBid) or 0, tonumber(increment) or 0,
+            tonumber(bid) or 0, auctions.GetReplicateItemTimeLeft(index) or 0, tonumber(status) or 0, owner or "",
+            bidderFull or bidder or "", link and link:match("|H(.-)|h") or "")
+    end
     return true
 end
 
@@ -188,8 +163,8 @@ local function Later(scan)
     return true
 end
 
--- An item's line of the day's string.
-local function Line(key, entry)
+-- This scan's lowest and market price of an item, and its line of the day's string.
+local function Point(key, entry)
     local prices, low, market = entry.prices, 0, 0
     if #prices > 0 then
         table.sort(prices)
@@ -205,13 +180,39 @@ local function Line(key, entry)
             end
         end
     end
-    local earlier = entry.earlier
-    if earlier and earlier > 0 and (low == 0 or earlier < low) then low = earlier end
-    return ("%s=%d,%d,%d,%d,%d;"):format(key, low, market, entry.units, entry.auctions, entry.sellers)
+    local earlier, lowest = entry.earlier, low
+    if earlier and earlier > 0 and (low == 0 or earlier < low) then lowest = earlier end
+    return low, market, DAILY:format(key, lowest, market, entry.units, entry.auctions, entry.sellers)
+end
+
+-- Every row of the scan, packed a block at a time, grouped by item: nil where the game cannot pack.
+local function Whole(scan, now)
+    local util = rawget(_G, "C_EncodingUtil")
+    if not (util and util.CompressString and util.EncodeBase64) then return nil end
+    local method = Enum and Enum.CompressionMethod and Enum.CompressionMethod.Zlib or 1
+    local _, build = Core.Ask(rawget(_G, "GetBuildInfo"))
+    local blocks, rows, count = { tostring(build or 0) }, {}, 0
+    local function Pack()
+        local packed = Core.Ask(util.CompressString, table.concat(rows, "\n", 1, count), method)
+        local text = packed and Core.Ask(util.EncodeBase64, packed)
+        if not text then return false end
+        blocks[#blocks + 1], count = text, 0
+        Steps.Check()
+        return true
+    end
+    for _, entry in pairs(scan.found) do
+        for _, row in ipairs(entry.rows) do
+            count = count + 1
+            rows[count] = row
+            if count == Scan.BLOCK and not Pack() then return nil end
+        end
+    end
+    if count > 0 and not Pack() then return nil end
+    return table.concat(blocks, "\n")
 end
 
 -- Kept in one go at the end: the day's string made anew, what this scan saw in place of its lines, the
--- items only an earlier scan of the day saw as they were.
+-- items only an earlier scan of the day saw as they were; each item's newest point; the scan whole.
 local function Keep(scan, home, day, now)
     local lines, items = {}, 0
     local before = home.days[day]
@@ -223,12 +224,21 @@ local function Keep(scan, home, day, now)
         end
     end
     for key, entry in pairs(scan.found) do
-        lines[#lines + 1] = Line(key, entry)
+        local low, market, line = Point(key, entry)
+        lines[#lines + 1] = line
         items = items + 1
+        Prices.Take(home, key, now, low, market, entry.units, entry.auctions, entry.sellers)
         Steps.Check()
     end
-    Steps.Fresh() -- the one step that cannot be cut: alone in its frame
+    local whole = scan.whole and Whole(scan, now)
+    if scan.whole and not whole then Core.NoteError("data: auction scan", "a whole scan could not be packed") end
+    Steps.Fresh() -- the steps that cannot be cut: alone in their frames
     home.days[day] = table.concat(lines)
+    Steps.Spend()
+    Steps.Fresh()
+    Prices.Save(home)
+    if whole then home.whole[now] = whole end
+    Prices.Changed()
     Steps.Spend()
     home.scans[day] = (tonumber(home.scans[day]) or 0) + 1
     home.kept, home.rows, home.items, home.left = now, state.rows, items, #scan.later
@@ -244,7 +254,7 @@ end
 
 -- The job: every row, read in steps. Nothing is kept of a scan the game took away halfway.
 local function Read(home, day, now)
-    local scan = { found = {}, kinds = {}, later = {}, wanted = {}, asked = {} }
+    local scan = { found = {}, later = {}, wanted = {}, asked = {}, whole = Core.ForGame(Scan.WHOLE) }
     local index = 0
     while index < state.rows do
         if not Row(scan, index) then return end
@@ -308,7 +318,10 @@ local function Opened()
     local auctions = rawget(_G, "C_AuctionHouse")
     if open or not part or not (auctions and auctions.ReplicateItems) then return end
     local now = Now()
-    open, openedAt, house = true, now, House(HouseKey())
+    house = Prices.House(Core.Ask(rawget(_G, "UnitExists"), "npc") and "npc" or "player")
+    if not house then return end
+    open, openedAt = true, now
+    Prices.Open(house)
     Remember(house)
     state.outcome = house.kept and "kept" or nil
     state.next, state.span = math.max((tonumber(house.at) or 0) + Scan.INTERVAL, now), Scan.INTERVAL
@@ -318,6 +331,7 @@ end
 
 local function Closed()
     open = false
+    Prices.Open(nil)
     Phase("closed")
 end
 
@@ -347,10 +361,15 @@ end
 -- /sane data: what the history holds, per auction house.
 Data.reports[#Data.reports + 1] = function()
     if not (part and type(part.houses) == "table") then return end
-    for key in pairs(part.houses) do
-        local known, days = House(key), 0
-        for _ in pairs(known.days) do days = days + 1 end
-        local when = known.kept and date("%Y-%m-%d ", known.kept) .. Core.ClockAt(known.kept) or "none"
-        Core.Print(SAY.house:format(key, days, when, known.rows or 0, known.items or 0))
+    for key, known in pairs(part.houses) do
+        local days, wholes, bytes = 0, 0, 0
+        for _ in pairs(type(known) == "table" and type(known.days) == "table" and known.days or {}) do days = days + 1 end
+        for _, text in pairs(type(known) == "table" and type(known.whole) == "table" and known.whole or {}) do
+            wholes, bytes = wholes + 1, bytes + #text
+        end
+        local kept = type(known) == "table" and known.kept
+        local when = kept and date("%Y-%m-%d ", kept) .. Core.ClockAt(kept) or "none"
+        Core.Print(SAY.house:format(key, days, wholes, bytes / 1048576, when,
+            type(known) == "table" and known.rows or 0, type(known) == "table" and known.items or 0))
     end
 end
