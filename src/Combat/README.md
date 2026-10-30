@@ -16,7 +16,8 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 Your frame, your target's and your focus's are ours, in the look of a nameplate and green: the level and raid
 marker on the left, then the name (none on your own), the health and how much is left on the right. Under your
 target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours,
-your pet's. The game's action bars are clean: only the buttons that hold something, each its icon alone.
+your pet's. While you cast or the game counts down your breath, that is part of your frame too, in place of the
+game's bars. The game's action bars are clean: only the buttons that hold something, each its icon alone.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -92,16 +93,23 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     name alone in the middle; the same under your focus's frame for your focus's target, and under your own frame
     for your pet while you have one (green). The frame's outline goes
     round both, a thin dark line between them. Click a row to target its unit, right click for its menu.
+  - **Your cast and your breath:** part of your own frame while they run, in the same outline, under your powers
+    and your pet's row. Your cast: the spell's icon and name, the seconds left at the right end, filling as it
+    goes on and emptying for a channel, red with who did it when you are interrupted; a moment after it ends it
+    goes, so the frame does not jump between two casts. Under it your breath, and the game's other timers on you
+    (fatigue in deep water, feign death): what it counts and the seconds left. The game's cast bar and its bars at
+    the top of the screen stay away, the cast bar over the vehicle bar and the game's talents window too.
   - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
     tooltip; in a fight too. Your target's and focus's frames come and go with them.
   - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
     middle, your target right of it, your focus above your target. A frame or row whose unit is not there shows
     a sample there (your own, named *Target*, *Focus*, *Target's target*, *Focus's target* or *Pet*); the rows
-    move with their frames.
+    move with their frames. Your frame shows a sample cast and breath too, to see how far it reaches then. The game's
+    own Edit Mode boxes *Cast Bar* and *Timer Bars* only show the game's bars there, which stay away in play.
   - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
     target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
-    pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems, cast bar and a
-    class's resource bar stay where it was, moved in Edit Mode by the game's box *Player Frame*.
+    pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems and a class's
+    resource bar stay where it was, moved in Edit Mode by the game's box *Player Frame*.
 - **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
   decoration or background: no frame, end caps or dividers on the bars, no frame or slot on a button. The main
   bar's page number and its arrows stay, to see and change which bar shows. Only the buttons that hold something show, each its square icon alone; the mouse over one, a press and
@@ -109,8 +117,8 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   every button shows, an empty one as a dark square to drop on. The reservations of Abilities still show on
   their empty buttons.
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
-  frame*, *Your pet*, *Your target's frame*, *Your target's target*, *Your focus's frame*, *Your focus's target*,
-  each frame off for the game's own, *Unit frame size*, *Auras on the frames*); the
+  frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
+  focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Auras on the frames*); the
   section *Action bars* (*Clean action bars*, off for the game's look); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
@@ -244,6 +252,19 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     or goes (its `OnShow`, `OnHide`, and the frame's `OnShow`: a row hidden while its frame was out of sight hears
     no `OnHide`; `Rowed`). While it shows its unit is read every `Units.POLL` (0.2 s) on the row bar's `OnUpdate`
     (the game sends no events of a target's target), and at once on `UNIT_TARGET` and `UNIT_PET`.
+  - Your frame's `bars` (settings `unitCast`, `unitBreath`; `Bars` in `Units.lua`): what stands in for the game's bars
+    while they run, plain frames in `face.under`, the last of `Bar.Fit`'s stack (each with its height, `tall`, and
+    whether it shows, `on`), so they come and go in a fight without a secure button. `Cast.lua` (`ns.UnitCast`): a
+    frame in the stack holding the icon and, right of it, a `Bar.Strip` as fill; the strip's end masks go over both
+    (`bar.ends`). It hears your `UNIT_SPELLCAST_*` events itself (`Cast.EVENTS`) and reads `UnitCastingInfo` and
+    `UnitChannelInfo` anew at each; hidden values go to the bar as they are, as a nameplate's (`Cast.lua` there). A
+    cast fills in the game's art, a channel empties (its art behind, the dark filling from its end). Interrupted
+    (`UNIT_SPELLCAST_INTERRUPTED` of the cast's own number, `UNIT_SPELLCAST_CHANNEL_STOP` with who did it,
+    `UNIT_SPELLCAST_EMPOWER_STOP` not completed): the broken art and `SPELL_INTERRUPTED_BY`. An empowered cast (Retail's)
+    fills on to `GetUnitEmpowerHoldAtMaxTime`, a line at each stage's end (`GetUnitEmpowerStageDuration`). It respects
+    `GameRulesUtil.ShouldShowPlayerCastBar`. `Timers.lua` (`ns.UnitTimers`): `Timers.MOST` strips at `Units.POWER`,
+    filled by `MIRROR_TIMER_START`, `_STOP`, `_PAUSE` and `GetMirrorTimerInfo` (at the world's showing and whenever
+    they are set up anew), each following `GetMirrorTimerProgress` on its `OnUpdate`.
   - `Bar.lua` (`ns.UnitBar`): the nameplates' look rebuilt for a frame of one size: the fill and background
     masked by Core's caps (`Shape.CAP_LEFT`, `CAP_RIGHT`, a quarter of the height) or, while the row shows, by
     corner masks at the top alone (`Shape.CORNER`), the row's at its bottom; the border, rank line and the glow's
@@ -252,8 +273,8 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     line a pixel inside it, and the bars inside both (`rank.width` pixels in: 1 plain, 2 an elite or a rare, 4 a
     boss); only the glow reaches outwards. The bars are one stack a pixel apart (`Bar.Fit`): the health
     (`face.healthHeight`, the face's own height), each power shown (`face.powersShown` of `face.slots`, each
-    `Units.POWER` high, half the health's), the row under the power slots kept (where its button is); the first
-    round at its top, the last at its bottom, the rest square (`End`'s modes). `Bar.Kinds` picks the powers: the
+    `Units.POWER` high, half the health's), the row under the power slots kept (where its button is), what hangs
+    in `face.under` while it shows; the first round at its top, the last at its bottom, the rest square (`End`'s modes). `Bar.Kinds` picks the powers: the
     unit's own (`UnitPowerType`), or on a frame with two slots (`face.alternate`) mana (`Bar.MANA`) and under it the
     unit's own while that is not mana; `Bar.Powers` fills them (`UnitPower`/`UnitPowerMax` by type, hidden or not;
     an empty bar where the unit has none) and lays them out anew when their number changes. Every health bar
@@ -290,8 +311,12 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
     icon, name, number and the game's close button, the rule under them. `/sane auras` (`Core.Command`).
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
-    children `TotemFrame`, the attached cast bar and the class bars stay the game's; `PetFrame` (which the game's
-    layout re-parents) alpha 0 and its mouse off while the pet's row is on.
+    children `TotemFrame` and the class bars stay the game's; `PetFrame` (which the game's layout re-parents) alpha 0
+    and its mouse off while the pet's row is on. `PlayerCastingBarFrame`, `OverlayPlayerCastingBarFrame` and
+    `MirrorTimerContainer` go deaf (`SetDeaf`: `Cast.GAME`, `Timers.EVENTS`) while ours stand in, each event noted with
+    its unit and registered again as it was: they are not hidden or moved, because the cast bar is a managed frame
+    (its `OnHide` would run the bottom layout in our taint, the game sets its alpha and parent anew itself). The overlay
+    deaf, the game's own talents window shows its spinner where its cast would stand.
 - **The action bars** (`ActionBars.lua`): the bars of `Bars.BARS` (main, the extra bars, stance, pet, possess)
   keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`; the
   main bar's `ActionBarPageNumber` and its arrows stay) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
@@ -343,6 +368,8 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the right click on an icon |
 | `Units/Lists.lua` | Your lists Always show and Never show, and their window (`/sane auras`) |
+| `Units/Cast.lua` | Your cast as part of your frame, in place of the game's cast bar |
+| `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
 
@@ -374,3 +401,5 @@ your pet's. The game's action bars are clean: only the buttons that hold somethi
   window to add them).
 - **2026-10-29:** the target's and focus's target rows in the nameplates' light yellow of a neutral creature, the
   rows' names centred (Saneroki).
+- **2026-10-30:** your cast and your breath as part of your frame, under it while active, the game's own bars hidden
+  (Saneroki).

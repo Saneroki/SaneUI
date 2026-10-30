@@ -62,6 +62,9 @@ Decided (Saneroki, 2026-10-16):
   the target's frame while the target has a target, and the only text in its health bar is the name; the same for
   the focus's target and, under your own frame, your pet. All unit frames green, not in class colours; the names
   anchored left, after the level and raid marker; your own frame without a name.
+- **Your cast and breath part of your frame** (Saneroki, 2026-10-30; built): the game's cast bar hidden, and your
+  cast and breath shown under your unit frame, as part of it, while they are active, in place of the game's bars. The
+  game's other timers on you (fatigue, feign death) go with the breath: they are one bar of the game's.
 - **Power bars and auras** (Saneroki, 2026-10-29; built): the class resource bar half the health bar's height,
   with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
@@ -79,7 +82,7 @@ Decided (Saneroki, 2026-10-16):
 | **Raid** | Up to forty, in groups, and the raid's tools (marks, ready check, leader) | `CompactRaidFrameContainer`, `CompactRaidFrameManager` (`Blizzard_CompactRaidFrames`); `ReadyCheckFrame` |
 | **Buffs** | Your own buffs and debuffs, your weapon enchants; the buffs shown on every other part | `BuffFrame`, `DebuffFrame`, `DeadlyDebuffFrame` (`Blizzard_BuffFrame`) |
 | **Nameplates** (the module *Nameplates* since 2026-10-20) | The plates over the heads of creatures and players | `NamePlateDriverFrame` and its plates (`Blizzard_NamePlates`) |
-| **Cast bars** | Your casting, your target's and focus's, a nameplate's | `PlayerCastingBarFrame`, `TargetFrameSpellBar`, `FocusFrameSpellBar`, `PetCastingBarFrame` |
+| **Cast bars** | Your casting (built 2026-10-30, as part of your frame), your target's and focus's, a nameplate's | `PlayerCastingBarFrame`, `TargetFrameSpellBar`, `FocusFrameSpellBar`, `PetCastingBarFrame` |
 | **Bosses** | The boss frames of an encounter | `BossTargetFrameContainer` (`Boss1..5TargetFrame`); this client has no arena frames |
 | **Class resources** | What a class counts beside its power: combo points, totems, ... | `ComboFrame` (on the target frame), `TotemFrame`; this client has no runes, shards or holy power bars |
 | **Swing timers** | The time to your next melee swing and shot | `SwingTimerMainHandFrame`, `SwingTimerOffHandFrame`, `SwingTimerRangedFrame` (`Blizzard_SwingTimer`, this client's own) |
@@ -197,7 +200,7 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
    focus's targets and the pet built 2026-10-29 as rows under the frames).
 3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header.
 4. **Buffs:** your own, at the top right as the game has them.
-5. **Cast bars**, **bosses**, **class resources**, **swing timers**, **threat.**
+5. **Cast bars** (yours built 2026-10-30, with your breath), **bosses**, **class resources**, **swing timers**, **threat.**
 6. **Combat text** and **raid warnings.**
 7. ~~**Nameplates**~~: a module of their own since 2026-10-20 (`src/Nameplates/`), built there.
 

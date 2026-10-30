@@ -1452,6 +1452,17 @@ lent:Return()
 local point = borrowed:GetPoint(1)
 check(not lent:Lent() and borrowed:GetParent() == home and point == "TOPLEFT" and borrowed:GetAlpha() == 0.5,
     "and given back as it was, its alpha as before the first change")
+local hearing = W.NewWidget("Frame")
+hearing:RegisterEvent("SOME_EVENT")
+hearing:RegisterUnitEvent("UNIT_EVENT", "player", "pet")
+local deafened = Core.Lend(hearing)
+deafened:SetDeaf({ "SOME_EVENT", "UNIT_EVENT", "OTHER_EVENT" })
+check(deafened:Lent() and not hearing:IsEventRegistered("SOME_EVENT") and not hearing:IsEventRegistered("UNIT_EVENT"),
+    "Core.Lend: a frame of the game's deaf to its events for a while")
+deafened:Return()
+local heardBack, firstUnit, secondUnit = hearing:IsEventRegistered("UNIT_EVENT")
+check(hearing:IsEventRegistered("SOME_EVENT") and heardBack and firstUnit == "player" and secondUnit == "pet"
+    and not hearing:IsEventRegistered("OTHER_EVENT"), "and hearing again what it heard, for the same units, nothing more")
 lent:SetParent(seat)
 local other = W.NewWidget("Frame")
 borrowed:SetParent(other)

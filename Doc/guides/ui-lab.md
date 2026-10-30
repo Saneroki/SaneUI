@@ -84,7 +84,9 @@ prints its log.
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
   here one in `assets/generated/ui-lab/backdrops/`, local), `satchel` (Navigation's satchel, `Satchel.lua` and
   `Strays.lua`: its button on a small map's stand-in and its page, with a pretend addon's button and the game's
-  addon compartment; `LabSatchel` in the console), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
+  addon compartment; `LabSatchel` in the console), `unitframes` (Core and Combat from their TOCs: your frame with a
+  cast and your breath as part of it, the game's cast functions standing in; `LabCast("Fireball")` casts, `LabCombat`
+  in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest
@@ -164,8 +166,10 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
   hold) is a magenta box.
 - No 3D: a model frame is a dashed box.
 - Not the game's renderer: the page draws with the browser. Texts use the font files' widths without kerning.
-  Masks, blend modes and texture coordinates follow the game's rules, but sub-pixel edges can differ. Judge the
-  final look in the game.
+  Masks, blend modes and texture coordinates follow the game's rules, but sub-pixel edges can differ, a status bar's
+  atlas is taken for a file, and what lies beyond a mask's rectangle is hidden, where the game's `CLAMPTOWHITE` shows
+  it (so a bar rounded by corner masks does not show: the scene `unitframes` goes without them). Judge the final look
+  in the game.
 - The pieces repeat by drawing one texture per tile with their texture coordinates, so the art can go into the
   game in power-of-two textures, `SetTexCoord` taking the part in use (`Doc/guides/images.md`).
 - Next: Core's own windows (`Window`, `Board`, `Views`) built in scenes of their own, and the modules from their

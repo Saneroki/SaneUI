@@ -285,8 +285,13 @@ function methods:RegisterUnitEvent(event, ...)
     self._units = self._units or {}
     self._units[event] = { ... }
 end
-function methods:UnregisterEvent(event) self._events[event] = nil end
-function methods:IsEventRegistered(event) return self._events[event] == true end
+function methods:UnregisterEvent(event)
+    self._events[event] = nil
+    if self._units then self._units[event] = nil end
+end
+function methods:IsEventRegistered(event)
+    return self._events[event] == true, unpack(self._units and self._units[event] or {})
+end
 function methods:Show()
     local was = self._shown
     self._shown = true

@@ -74,6 +74,15 @@ local function Line(host, justify, size)
     text:SetTextColor(1, 1, 1)
     return text
 end
+Text.Line = Line
+
+-- A frame of its own on a bar, over it, for its words: they show and go with it.
+function Text.Over(bar)
+    local over = CreateFrame("Frame", nil, bar)
+    over:SetAllPoints(bar)
+    over:SetFrameLevel(bar:GetFrameLevel() + 3)
+    return over
+end
 
 -- A text's whole width as drawn; nil where it answers hidden, or absurd (the game not set up yet).
 local function Drawn(text)
@@ -113,18 +122,11 @@ function Text.Make(face)
     raid:SetPoint("LEFT", face.level, "RIGHT", Text.GAP, 0)
     raid:Hide()
     face.raid, face.top, face.room = raid, top, { left = 0, right = 0 }
-    -- Each power's words and the row's name, on a frame of their own on their bar: they show and go with it.
-    local function Over(bar)
-        local over = CreateFrame("Frame", nil, bar)
-        over:SetAllPoints(bar)
-        over:SetFrameLevel(bar:GetFrameLevel() + 3)
-        return over
-    end
     for _, power in ipairs(face.powers) do
-        power.value = Line(Over(power), "RIGHT", Text.SMALL)
+        power.value = Line(Text.Over(power), "RIGHT", Text.SMALL)
         power.value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
     end
-    face.rowName = Line(Over(face.row), "CENTER")
+    face.rowName = Line(Text.Over(face.row), "CENTER")
     face.rowName:SetPoint("LEFT", face.row, "LEFT", Text.INSET - 1, 0)
     face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
 end

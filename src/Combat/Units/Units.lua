@@ -12,7 +12,8 @@ local _, ns = ...
 --  around it the auras that matter most (Auras.lua). Under each, as a cast bar
 --  under a nameplate, a row while its unit is there, with that unit's name
 --  alone: your target's target under your target's frame, your focus's target
---  under your focus's, your pet under yours.
+--  under your focus's, your pet under yours. Under that on your own frame, while
+--  they run, your cast and your breath (Cast.lua, Timers.lua).
 --
 --  Each frame and each row is the game's secure unit button
 --  (SecureUnitButtonTemplate): a click targets the unit, a right click opens
@@ -32,9 +33,10 @@ local _, ns = ...
 --  them (their auras, cast bars and their own target's frames, Forever's combo
 --  points: on its nameplate there); of your own frame only its picture, bars
 --  and texts (their alpha) and its clicks, so what hangs on it stays the
---  game's: the totems, the cast bar and a class's resource bar. The game's pet
---  frame, which its layout puts back under its own parent, by its alpha and
---  its clicks too.
+--  game's: the totems and a class's resource bar. The game's pet frame, which
+--  its layout puts back under its own parent, by its alpha and its clicks too.
+--  The game's cast bars and timers hear nothing while ours stand in for them
+--  (Core.Lend's SetDeaf): the game shows and lays those out itself.
 --
 --  Secure frames are made, shown, moved, sized and given back out of a fight
 --  only: what is asked for in one waits for its end (Core.AfterCombat). Off
@@ -50,11 +52,15 @@ Units.ROW = 18   -- a row's height under them
 Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
--- right, your focus above it), and its row: the same of the unit under it, and its bar's colour (none: green).
+-- right, your focus above it), and its row: the same of the unit under it, and its bar's colour (none: green). Your own
+-- frame's bars: the game's frames that go deaf for them, each with its setting and what it no longer hears.
 Units.KINDS = {
     { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts", noName = true,
       place = "playerPlace", first = { point = "BOTTOM", x = -190, y = 230 },
-      row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade" } },
+      row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade" },
+      bars = { { option = "unitCast", game = "PlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
+               { option = "unitCast", game = "OverlayPlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
+               { option = "unitBreath", game = "MirrorTimerContainer", away = "deaf", events = ns.UnitTimers.EVENTS } } },
     { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent",
       place = "targetPlace", first = { point = "BOTTOM", x = 190, y = 230 },
       row = { unit = "targettarget", option = "unitTargetTarget", colour = ns.UnitBar.CALM } },
@@ -188,6 +194,10 @@ local function Make(kind)
     ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW })
     ns.UnitText.Make(face)
     ns.UnitAuras.Make(face)
+    if kind.bars then
+        ns.UnitCast.Make(face, Units.ROW)
+        ns.UnitTimers.Make(face, Units.POWER)
+    end
     for _, event in ipairs(Units.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
     face:SetScript("OnEvent", OnEvent)
     face:SetScript("OnSizeChanged", OnSizeChanged)
@@ -222,7 +232,8 @@ local function Make(kind)
 end
 
 -- The game's frame out of sight (kind.away): "parts" your own frame's picture, bars and texts and its clicks;
--- "parent" your target's or focus's whole, in our hidden frame; "fade" the pet's by its alpha and its clicks.
+-- "parent" your target's or focus's whole, in our hidden frame; "fade" the pet's by its alpha and its clicks; "deaf"
+-- a bar of the game's by the events it no longer hears.
 local function Away(kind)
     local game = kind.game and rawget(_G, kind.game)
     if kind.lends or type(game) ~= "table" then return end
@@ -233,6 +244,7 @@ local function Away(kind)
         kind.lends[#kind.lends + 1] = lend
     end
     if kind.away == "parent" then return Lend(game, "SetParent", box) end
+    if kind.away == "deaf" then return Lend(game, "SetDeaf", kind.events) end
     if kind.away == "parts" then
         for _, key in ipairs(Units.PLAYER_PARTS) do
             local part = rawget(game, key)
@@ -249,6 +261,17 @@ local function Back(kind)
     local lends = kind.lends
     kind.lends = nil
     for index = #(lends or {}), 1, -1 do ns.Safe("unit frames", lends[index].Return, lends[index]) end
+end
+
+-- Your own frame's bars on, each as its setting says, and the game's deaf; or off and the game's hearing again.
+local function Bars(kind, wanted)
+    if not kind.bars then return end
+    for _, bar in ipairs(kind.bars) do
+        if wanted and ns.options[bar.option] ~= false then Away(bar) else Back(bar) end
+    end
+    if not kind.button then return end
+    ns.UnitCast.Set(kind.button.face, wanted and ns.options.unitCast ~= false)
+    ns.UnitTimers.Set(wanted and ns.options.unitBreath ~= false)
 end
 
 -- A button shown by the game's unit watch, or, in Edit Mode, always (a sample where its unit is not there).
@@ -288,6 +311,7 @@ local function Kind(kind)
         Unwatch(row.button)
         Unwatch(kind.button)
         Back(row)
+        Bars(kind, false)
         return Back(kind)
     end
     if not kind.button then Make(kind) end
@@ -306,6 +330,7 @@ local function Kind(kind)
         Unwatch(row.button)
         Back(row)
     end
+    Bars(kind, true)
     Rowed(button.face)
     Fit(button.face)
     Fill(button.face)
@@ -344,6 +369,7 @@ local function Changed(unit, rowOnly)
 end
 
 function Units.Start()
+    ns.UnitTimers.Start()
     ns.On("PLAYER_TARGET_CHANGED", function() Changed("target") end)
     ns.On("PLAYER_FOCUS_CHANGED", function() Changed("focus") end)
     ns.On("UNIT_TARGET", function(unit) Changed(unit, true) end)
@@ -385,6 +411,7 @@ function Units.GiveBack()
             end)
         end
         ns.Safe("unit frames", Back, kind.row)
+        ns.Safe("unit frames", Bars, kind, false)
         ns.Safe("unit frames", Back, kind)
         if button then ns.Safe("unit frames", ns.UnitAuras.Set, button.face, nil) end
     end

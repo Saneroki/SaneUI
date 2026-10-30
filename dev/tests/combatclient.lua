@@ -11,6 +11,8 @@ function Client.Install(W)
     function methods:SetMinMaxValues(low, high) self._min, self._max = low, high end
     function methods:SetValue(value) self._value = value end
     function methods:SetStatusBarColor(r, g, b) self._barColor = { r, g, b } end
+    function methods:SetStatusBarTexture(texture) self._barTexture = texture end
+    function methods:SetReverseFill(on) self._reverse = on end
     function methods:GetStatusBarTexture()
         self._fill = self._fill or W.NewWidget("Texture", nil, self)
         return self._fill
@@ -114,6 +116,38 @@ function Client.Install(W)
     FocusFrame = W.NewWidget("Button", "FocusFrame", UIParent)
     PetFrame = W.NewWidget("Button", "PetFrame", PlayerFrame)
     PetFrame._mouse = true
+    -- The game's cast bars and its timers' bars, hearing what its code registers. Your cast (W.cast, W.channel: name,
+    -- icon, starts, ends, id, spell; a channel's empowered, stages) and your timers (W.mirror[index]: as the game gives
+    -- them; W.mirrorLeft[timer]: milliseconds).
+    for _, name in ipairs({ "PlayerCastingBarFrame", "OverlayPlayerCastingBarFrame" }) do
+        _G[name] = W.NewWidget("StatusBar", name, UIParent)
+        for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_INTERRUPTIBLE" }) do
+            _G[name]:RegisterUnitEvent(event, "player")
+        end
+        _G[name]:RegisterEvent("PLAYER_ENTERING_WORLD")
+    end
+    MirrorTimerContainer = W.NewWidget("Frame", "MirrorTimerContainer", UIParent)
+    for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "MIRROR_TIMER_START", "MIRROR_TIMER_STOP", "MIRROR_TIMER_PAUSE" }) do
+        MirrorTimerContainer:RegisterEvent(event)
+    end
+    UnitCastingInfo = function()
+        local cast = W.cast
+        if cast then return cast.name, cast.name, cast.icon, cast.starts, cast.ends, false, cast.id, false, cast.spell end
+    end
+    UnitChannelInfo = function()
+        local cast = W.channel
+        if cast then
+            return cast.name, cast.name, cast.icon, cast.starts, cast.ends, false, false, cast.spell, cast.empowered or false,
+                cast.stages or 0
+        end
+    end
+    W.mirror, W.mirrorLeft = {}, {}
+    GetMirrorTimerInfo = function(index)
+        local timer = W.mirror[index]
+        if timer then return unpack(timer) end
+        return "UNKNOWN", 0, 0, 0, 0, ""
+    end
+    GetMirrorTimerProgress = function(timer) return W.mirrorLeft[timer] end
     -- The game's main action bar: its art, a divider, two buttons, the first holding an action, the second empty.
     local function GameButton(slot)
         local button = W.NewWidget("CheckButton", nil, UIParent)

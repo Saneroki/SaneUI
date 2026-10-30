@@ -529,10 +529,15 @@ do
     check(focus.face.rowShown and focus.face.rowName._text == ns.TEXT.samples.focustarget
         and player.face.rowShown and player.face.rowName._text == ns.TEXT.samples.pet,
         "and the rows under the frames too, named for what they stand for")
+    check(player.face.cast._shown and player.face.cast.sample and player.face.cast.text._text == ns.TEXT.samples.cast
+        and player.face.timers[1]._shown and player.face.timers[1].label._text == ns.TEXT.samples.breath
+        and not target.face.cast, "your cast and your breath as samples, on your own frame alone")
     check(not target.face.sample and target.face.name._text == "Kobold Miner", "a frame whose unit is there shows it")
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton],
         "after Edit Mode the unit watch shows it again, and its row")
+    check(not player.face.cast._shown and not player.face.cast.sample and not player.face.timers[1]._shown,
+        "and your cast and breath only while they run")
     focus.face.rowButton:Hide() -- the game's unit watch: your focus has no target
     player.face.rowButton:Hide() -- nor you a pet
     -- Edit Mode put the full screen back to its place (as every window of Core's): full again for what follows.
@@ -584,6 +589,136 @@ do
     units.player.power, units.player.powerMost, units.player.mana, units.player.manaMost = 30, 100, nil, nil
     ns.Units.Apply()
     check(player._height == Units.HEIGHT + Units.POWER and face.powers[1].value._text == "30 | 30%", "a warrior again: one bar")
+
+    -- Your cast and the game's timers on you as part of your frame, in place of the game's bars.
+    do
+        local Cast, bar, timers = ns.UnitCast, face.cast, face.timers
+        local pixel = Core.Pixels(face, 1)
+        local function Hears(frame, event) return (frame:IsEventRegistered(event)) end
+        local function Tick() bar._scripts.OnUpdate(bar, 0) end
+        local function Casting(id)
+            W.cast = { name = "Fireball", icon = 135812, starts = W.clock * 1000, ends = (W.clock + 2.5) * 1000, id = id, spell = 133 }
+            W.Fire("UNIT_SPELLCAST_START", "player", id, 133)
+        end
+        local function Below() return -face.border[2]._points[1][5] end
+        local function Over()
+            W.Wait(Cast.HOLD)
+            Tick()
+        end
+        check(not Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START") and not Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_INTERRUPTIBLE")
+            and not Hears(PlayerCastingBarFrame, "PLAYER_ENTERING_WORLD") and not Hears(OverlayPlayerCastingBarFrame, "UNIT_SPELLCAST_STOP")
+            and not Hears(MirrorTimerContainer, "MIRROR_TIMER_START") and Hears(MirrorTimerContainer, "MIRROR_TIMER_STOP"),
+            "the game's cast bars and timers hear nothing start: they never show")
+        check(not bar._shown and not bar.on and near(Below(), Units.POWER), "no cast: nothing under your frame")
+        Casting("cast-1")
+        local ends = W.cast.ends
+        check(bar._shown and bar.text._text == "Fireball" and bar.icon._texture == 135812 and bar.timer._text == "2.5"
+            and bar.fill._min == W.cast.starts and bar.fill._max == ends and bar.fill._barTexture == Cast.ART.cast
+            and bar.fill._reverse == false, "your cast: its icon, name and seconds left, filling in the game's art")
+        check(near(Below(), Units.POWER + Units.ROW) and near(bar._points[1][5], -(Units.HEIGHT + Units.POWER + pixel))
+            and near(bar._points[2][5], -(Units.HEIGHT + Units.POWER + Units.ROW) + pixel),
+            "as part of your frame: under your power, inside the frame's outline")
+        W.Fire("UNIT_SPELLCAST_FAILED", "player", "cast-2", 116)
+        W.Fire("UNIT_SPELLCAST_INTERRUPTED", "player", "cast-2", 116)
+        check(bar.cast and not bar.cast.held and bar.text._text == "Fireball", "what else you tried while casting changes nothing")
+        W.Wait(1)
+        Tick()
+        check(bar.timer._text == "1.5" and bar.fill._value == W.clock * 1000, "the seconds go down, the bar fills")
+        W.cast = nil
+        W.Fire("UNIT_SPELLCAST_STOP", "player", "cast-1", 133)
+        check(bar._shown and bar.cast.held and bar.fill._value == ends and bar.timer._text == "", "done: full, for a moment")
+        Over()
+        check(not bar._shown and not bar.on and near(Below(), Units.POWER), "then gone, the outline back")
+        Casting("cast-3")
+        W.cast = nil
+        UnitNameFromGUID = function() return "Kobold Miner" end
+        W.Fire("UNIT_SPELLCAST_INTERRUPTED", "player", "cast-3", 133, "Creature-1")
+        W.Fire("UNIT_SPELLCAST_STOP", "player", "cast-3", 133)
+        check(bar.fill._barTexture == Cast.ART.broken and bar.fill._value == 1 and bar.text._text == Cast.BY:format("Kobold Miner"),
+            "interrupted: red, by whom, whatever the game says after it")
+        Over()
+        check(not bar._shown, "and gone")
+        Casting("cast-4")
+        W.cast = nil
+        W.Fire("UNIT_SPELLCAST_FAILED", "player", "cast-4", 133)
+        check(not bar._shown, "failed: gone at once")
+        W.channel = { name = "Drain Life", icon = 136169, starts = W.clock * 1000, ends = (W.clock + 5) * 1000, spell = 689 }
+        W.Fire("UNIT_SPELLCAST_CHANNEL_START", "player", "x", 689)
+        check(bar._shown and bar.fill._reverse == true and bar.fill.background._atlas == Cast.ART.channel and bar.text._text == "Drain Life",
+            "a channel empties, in its own art")
+        W.channel = nil
+        W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "x", 689, "Creature-1")
+        check(bar.fill._barTexture == Cast.ART.broken, "a channel someone stopped: red")
+        Over()
+        GetUnitEmpowerStageDuration = function() return 500 end
+        GetUnitEmpowerHoldAtMaxTime = function() return 1000 end
+        local began = W.clock * 1000
+        W.channel = { name = "Fire Breath", icon = 1, starts = began, ends = began + 3000, spell = 2, empowered = true, stages = 2 }
+        bar.fill._width = 200
+        W.Fire("UNIT_SPELLCAST_EMPOWER_START", "player", "x", 2)
+        check(bar.fill._reverse == false and bar.fill._max == began + 4000 and bar.lines[1]._shown and bar.lines[2]._shown
+            and near(bar.lines[1]._points[1][4], 25) and near(bar.lines[2]._points[1][4], 50),
+            "an empowered cast fills on to its hold, a line where each stage ends")
+        W.channel = nil
+        W.Fire("UNIT_SPELLCAST_EMPOWER_STOP", "player", "x", 2, false, "Creature-1")
+        check(bar.fill._barTexture == Cast.ART.broken and not bar.lines[1]._shown, "stopped before it was done: red")
+        Over()
+        GameRulesUtil = { ShouldShowPlayerCastBar = function() return false end }
+        Casting("cast-5")
+        check(not bar._shown, "where the game's rules take your cast bar away, ours too")
+        GameRulesUtil, W.cast = nil, nil
+
+        local first, second = timers[1], timers[2]
+        W.mirrorLeft.BREATH = 60000
+        W.Fire("MIRROR_TIMER_START", "BREATH", 60000, 60000, -1, 0, "Breath")
+        check(first._shown and first.label._text == "Breath" and first.left._text == "60" and first._max == 60
+            and first._barColor[3] == ns.UnitTimers.COLOURS.BREATH[3] and near(Below(), 2 * Units.POWER),
+            "your breath: under your power, what it is and the seconds left")
+        W.mirrorLeft.BREATH = 41500
+        first._scripts.OnUpdate(first, 0)
+        check(first._value == 41.5 and first.left._text == "42", "going down as the game says")
+        W.Fire("MIRROR_TIMER_PAUSE", "BREATH", 1)
+        W.mirrorLeft.BREATH = 20000
+        first._scripts.OnUpdate(first, 0)
+        check(first._value == 41.5, "held while the game holds it")
+        Casting("cast-6")
+        W.Fire("MIRROR_TIMER_START", "EXHAUSTION", 30000, 60000, -1, 0, "Fatigue")
+        check(second._shown and second.label._text == "Fatigue" and near(Below(), Units.POWER + Units.ROW + 2 * Units.POWER)
+            and near(first._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
+            "two at once, under your cast, one under the other")
+        W.Fire("MIRROR_TIMER_STOP", "BREATH")
+        check(not first._shown and second._shown and near(second._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
+            "one stopped: the other moves up")
+        W.Fire("MIRROR_TIMER_STOP", "EXHAUSTION")
+        W.mirror[1] = { "BREATH", 30000, 60000, -1, 0, "Breath" }
+        W.Fire("PLAYER_ENTERING_WORLD")
+        check(first._shown and first.left._text == "30", "after a loading screen the game is asked again")
+        W.mirror[1] = nil
+        W.Fire("MIRROR_TIMER_STOP", "BREATH")
+
+        Core.Set(ns.name, "unitCast", false)
+        local heard, unit = PlayerCastingBarFrame:IsEventRegistered("UNIT_SPELLCAST_START")
+        check(heard and unit == "player" and Hears(OverlayPlayerCastingBarFrame, "UNIT_SPELLCAST_STOP")
+            and Hears(PlayerCastingBarFrame, "PLAYER_ENTERING_WORLD") and not bar._shown
+            and not Hears(MirrorTimerContainer, "MIRROR_TIMER_START"),
+            "Your cast bar off: the game's hears again, for you alone; your breath stays ours")
+        Core.Set(ns.name, "unitCast", true)
+        check(bar._shown and bar.cast and not Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START"), "on again, with the cast under way")
+        Core.Set(ns.name, "unitBreath", false)
+        check(Hears(MirrorTimerContainer, "MIRROR_TIMER_START") and Hears(MirrorTimerContainer, "PLAYER_ENTERING_WORLD"),
+            "Your breath bar off: the game's hears again")
+        W.Fire("MIRROR_TIMER_START", "BREATH", 60000, 60000, -1, 0, "Breath")
+        check(not first._shown, "and ours stays away")
+        Core.Set(ns.name, "unitBreath", true)
+        W.cast = nil
+        W.Fire("UNIT_SPELLCAST_STOP", "player", "cast-6", 133)
+        Over()
+        Core.Set(ns.name, "unitPlayer", false)
+        check(Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START") and Hears(MirrorTimerContainer, "MIRROR_TIMER_START"),
+            "Your frame off: the game's cast bar and timers with the game's frame")
+        Core.Set(ns.name, "unitPlayer", true)
+        check(not Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START") and not ns.off, "on again, and nothing failed")
+    end
 
     Core.Set(ns.name, "unitSize", 150)
     check(player._scale == 1.5 and target._scale == 1.5 and PlayerFrame._mouse == false, "Unit frame size: all three larger")
@@ -761,8 +896,9 @@ check(ns.off and not Core.Lent(planner) and not frame:IsShown(),
     "standing down, all is given back and the window goes, though a step of it failed")
 check(W.overrides[owner] == nil, "and the game's keys open the game's windows again")
 check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not watched[unitButtons.target]
-    and PlayerFrame._mouse == true and PlayerFrame.PlayerFrameContent._alpha == 1 and FocusFrame._parent == UIParent,
-    "our unit frames gone, the game's back")
+    and PlayerFrame._mouse == true and PlayerFrame.PlayerFrameContent._alpha == 1 and FocusFrame._parent == UIParent
+    and PlayerCastingBarFrame:IsEventRegistered("UNIT_SPELLCAST_START") and MirrorTimerContainer:IsEventRegistered("MIRROR_TIMER_START"),
+    "our unit frames gone, the game's back, its cast bar and timers hearing again")
 check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1,
     "the action bars as the game has them")
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")

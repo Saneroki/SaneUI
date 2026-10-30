@@ -9,7 +9,10 @@ local _, ns = ...
 --  frame that has two slots: mana always, and the power of a druid's form
 --  under it), and, while it shows, a row of its own (your target's target,
 --  your focus's target, your pet), as a cast bar hangs under a nameplate's
---  bar. The stack's first bar is round at its top, its last at its bottom. The
+--  bar, and under that what runs only for a while (frame.under: your cast,
+--  your breath: Cast.lua, Timers.lua; never a button of the game's, so it
+--  comes and goes in a fight too). The stack's first bar is round at its top,
+--  its last at its bottom. The
 --  frame's face is as high as the health bar; the rest hangs under it, inside
 --  the same outline; its button is as high as the health and the power slots
 --  it keeps, and the row's button under that. The frame is
@@ -142,6 +145,7 @@ local function Health(host, level)
     background:SetTexture(Bar.WHITE)
     background:SetVertexColor(unpack(Bar.BACKGROUND))
     background:SetAllPoints(health)
+    health.background = background
     health.ends = {}
     for index = 1, 2 do
         local mask = health:CreateMaskTexture()
@@ -151,6 +155,7 @@ local function Health(host, level)
     end
     return health
 end
+Bar.Strip = Health -- a bar of the stack, for what hangs in it (frame.under)
 
 -- One end's mask over a bar for what that end should be: "both" round at its top and bottom (a cap a quarter of the
 -- height wide), "top" or "bottom" round at that corner alone (a corner mask of that radius), "none" square.
@@ -213,13 +218,14 @@ function Bar.Make(frame, sizes)
     end
     frame.row = Health(frame, level + 3)
     frame.row:Hide()
+    frame.under = {} -- bars of the stack under all that, each with its height (tall) and whether it shows now (on)
     frame.rank = Bar.PLAIN
 end
 
 -- Laid out for the frame's sizes, the unit's rank, its powers and the row, all inside the frame's edge: the border on
 -- it, the rank's line a pixel inside it, the bars inside both, one under the other a pixel apart: the health, each
--- power shown, the row while it shows (under the power slots the frame keeps, where its button is); the glow beyond
--- the edge; every round a quarter of the health bar's height.
+-- power shown, the row while it shows (under the power slots the frame keeps, where its button is), what hangs under
+-- them while it shows; the glow beyond the edge; every round a quarter of the health bar's height.
 function Bar.Fit(frame)
     local height, powerHeight, rowHeight = frame.healthHeight, frame.powerHeight, frame.rowHeight
     local pixel = Core.Pixels(frame, 1)
@@ -227,14 +233,23 @@ function Bar.Fit(frame)
     local inset = pixel * frame.rank.width -- the border and the rank's line
     local slots, shown = frame.slots, math.min(frame.powersShown or 0, frame.slots)
     local rowTop = height + slots * powerHeight
-    local below = frame.rowShown and (rowTop - height + rowHeight) or shown * powerHeight
-    Around(frame.border, frame, 0, height, below, radius)
-    Around(frame.rankLine, frame, -pixel, height, below, radius)
-    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, below, radius) end
     -- The stack, top to bottom: { bar, its top and its height below the frame's top }.
     local stack = { { frame.health, 0, height } }
     for index = 1, shown do stack[#stack + 1] = { frame.powers[index], height + (index - 1) * powerHeight, powerHeight } end
     if frame.rowShown then stack[#stack + 1] = { frame.row, rowTop, rowHeight } end
+    local bottom = frame.rowShown and (rowTop + rowHeight) or (height + shown * powerHeight)
+    for _, bar in ipairs(frame.under) do
+        if bar.on then
+            stack[#stack + 1] = { bar, bottom, bar.tall }
+            bottom = bottom + bar.tall
+        else
+            bar:Hide()
+        end
+    end
+    local below = bottom - height
+    Around(frame.border, frame, 0, height, below, radius)
+    Around(frame.rankLine, frame, -pixel, height, below, radius)
+    for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, below, radius) end
     for index, piece in ipairs(stack) do
         local bar, top, tall = piece[1], piece[2], piece[3]
         local first, last = index == 1, index == #stack

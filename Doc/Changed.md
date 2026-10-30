@@ -64,6 +64,27 @@ be on even on accountwide." "But I do want to know what I loot."
 - The roll cards are paper with no line under the name and no Link or Close: unchanged.
 - Tests: `dev/tests/loot.lua` 219 checks.
 
+### Combat: your cast and your breath as part of your frame (Saneroki, 2026-10-30)
+Saneroki: the game's cast bar hidden, the cast and breath under the player frame like the class resource bars, part of
+the frame while active.
+- **`Units/Cast.lua`** (new): your cast in your frame's stack, inside its outline, under your powers and your pet's
+  row: icon, name, seconds left at the right end; fills, a channel empties, in the game's art; interrupted red with
+  who did it (only for the cast's own number: the game also tells of what you tried meanwhile); stays `Cast.HOLD` so
+  the outline does not jump between casts. An empowered cast (Retail's) fills on to its hold, with a line at each stage.
+- **`Units/Timers.lua`** (new): breath, fatigue and feign death, three strips at a power bar's height under the cast;
+  breath blue, the rest orange.
+- **`Units/Bar.lua`:** `frame.under`, bars that hang in the stack while on (`bar.on`, `bar.tall`), `Bar.Strip`; the
+  outline's depth now comes from the stack. **`Units/Text.lua`:** `Text.Line`, `Text.Over` open.
+- **`Core.Lend`:** `SetDeaf(events)`, each event noted with its units and registered again as it was.
+  `PlayerCastingBarFrame`, `OverlayPlayerCastingBarFrame` and `MirrorTimerContainer` go deaf while ours stand in: never
+  hidden by us (the cast bar's OnHide lays out the bottom of the screen, which would run tainted) nor moved (the game
+  sets its alpha and parent anew). The overlay's cast no longer shows over the vehicle bar; the game's talents window
+  shows its spinner instead.
+- **Settings:** *Your cast bar*, *Your breath bar*; each off gives the game's own back, *Your frame* off both. Edit Mode
+  shows a sample of each on your frame.
+- Lab scene `unitframes`. Tests: `dev/tests/combat.lua`, `dev/tests/core.lua` (`SetDeaf`); `wowstub.lua`'s
+  `IsEventRegistered` gives its units.
+
 ### Navigation: the travel overlay higher, the way out in it (Saneroki, 2026-10-30)
 Saneroki: the travel widget a little higher, with the exit vehicle icon, the game's own hidden.
 - **`TripView.lua`:** `TripView.UP` 0.72 (was 2/3): the labels end just under the game's error messages. The way out

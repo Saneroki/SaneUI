@@ -249,6 +249,7 @@ end
 --      lent:SetParent(parent)   lent:SetPoints(fn)  (fn(frame) sets its anchors)
 --      lent:SetLayer(strata, level)   lent:SetAlpha(alpha)   lent:SetScale(scale)
 --      lent:SetMouse(on)   lent:SetShown(on)
+--      lent:SetDeaf(events)  -- it no longer hears those events (a bar the game shows and lays out itself)
 --      lent:Lent()     -- whether anything is changed now
 --      lent:Return()   -- each thing back, each on its own (one that fails does not keep the
 --                      -- others); the parent only if it is still the one we gave (the game may have
@@ -326,6 +327,22 @@ function lends:SetShown(on)
     return true
 end
 
+-- Deaf to those events (those it hears now, noted with their units): the game's own code never runs and nothing of
+-- it is written, so a frame the game shows and lays out itself stays out of sight, in a fight too.
+function lends:SetDeaf(events)
+    if not Free(self) then return false end
+    local heard = {}
+    for _, event in ipairs(events) do
+        local on, unit, other = self.frame:IsEventRegistered(event)
+        if on then
+            heard[#heard + 1] = { event, unit, other }
+            self.frame:UnregisterEvent(event)
+        end
+    end
+    Note(self, "heard", heard)
+    return true
+end
+
 function lends:Lent()
     return #self.order > 0
 end
@@ -343,6 +360,15 @@ local PUT = {
     scale = function(self, scale) self.frame:SetScale(scale) end,
     mouse = function(self, on) self.frame:EnableMouse(on) end,
     shown = function(self, on) self.frame:SetShown(on) end,
+    heard = function(self, heard)
+        for _, note in ipairs(heard) do
+            if note[2] then
+                self.frame:RegisterUnitEvent(note[1], note[2], note[3])
+            else
+                self.frame:RegisterEvent(note[1])
+            end
+        end
+    end,
 }
 
 -- Puts back in the reverse order of the changes: the parent first given is the last taken back.
