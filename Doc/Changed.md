@@ -6,6 +6,29 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 771 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: simple group rolls, professions as steps of the guide; junk tried again; rewards' tooltips (Saneroki, 2026-10-30)
+Saneroki: roll Need on an upgrade, else Greed, nobody Passes, off Speedleveling nothing automatic, no talk between the
+accounts; gathering for the next zone as a normal step of the guide at the right time, one per profession, crafts too;
+deleting junk tried again a little later, not given up for the session. A `/reload` takes it in.
+- **`src/SpeedLeveling/Rolls.lua`:** no more Core's `Wire`, nothing said or heard: `Core.Upgrade` and `canNeed` say Need, else
+  Greed, then Transmog, Disenchant, Need; a roll that offers nothing is left alone. No waiting for a fight's end; only for
+  the game's description of the item, to `Rolls.LAST`. Gone: `KIND`, `WAIT`, `KEEP`, `Heard`, `Say`, `Beaten`.
+- **`src/SpeedLeveling/Gathering.lua`:** `Gathering.Weave(guide)` puts a step per profession (`Gathering.PROFESSIONS`, 12)
+  before the first step into a zone asking more than the guide's zones so far, where the guide spends `Gathering.STAY` steps
+  (10, from the guides themselves: it leaves about two places a guide, and no errands). Labels follow. `Need` gives `any`,
+  the higher of herbs and ore, for the professions that use neither. Gone: `Short`, the line under the head (`Steps.lua`),
+  `Run.ZonesAhead`, `gatherShort`, `gatherSkill`.
+- **`src/SpeedLeveling/Run.lua`:** `Run.MapId`; a skill's line gives its count and bar; `NotYours(step)` (not learnt, or the
+  switch off): passed by, not listed, not gone back to; a step of a profession proves nothing and does not hold back who is
+  known to have come past it. Setting renamed *Professions before the next zone*, its key stays `gather`.
+- **`src/Inventory/Bags/Room.lua`:** refused, or something in your hand: tried again `Room.AGAIN` (5) seconds later, no warning;
+  the warning is for no junk alone.
+- **`src/Inventory/Asks.lua`:** `deleteRefused` gone: a refused item no longer stops all later ones.
+- **`src/Lore/Quiet.lua`, `src/Tooltips/Tooltips.lua`:** the rewards' tooltips show without Shift: `Core.tipsWanted` while the
+  mouse is on a part of the talk.
+- **Tests:** `dev/tests/speedleveling.lua`, `bags.lua`, `tooltips.lua`, `lore.lua`.
+- **Docs:** `src/SpeedLeveling/README.md`, `src/Inventory/README.md`, `src/Lore/README.md`, `src/Core/README.md`, `Doc/ideas/Leveling.md`.
+
 ### Navigation: an open quest's text under headings, its rewards as big icons, its gold (Saneroki, 2026-10-30)
 Saneroki: the quest text and rewards formatted nicely, the reward icons big, to mouse over them for their tooltip. A `/reload`
 takes it in.

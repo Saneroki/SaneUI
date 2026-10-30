@@ -101,7 +101,7 @@ ns.TEXT = {
     cinematics = "Skip cinematics",
     cinematicsTip = "Cinematics and the game's movies are skipped as they start, those the game lets you skip yourself.",
     rolls = "Roll on group loot",
-    rollsTip = "When your group rolls for a thing, the Sane UI of each of your characters says what it would bring, and the one it brings the most Needs it; the others Greed. One of them always rolls, so nothing is left lying. With nobody to agree with, Need on an upgrade, else Greed. In a fight it waits for the end of the fight, as long as the roll's clock allows.",
+    rollsTip = "When your group rolls for a thing: Need if it is an upgrade to you, else Greed. Nobody Passes. Off: nothing is rolled for you.",
     equipUpgrades = "Equip upgrades",
     equipUpgradesTip = "Gear that comes into your bags, looted or a quest's reward, and is an upgrade is put on at once, or after a fight: anything you can wear for a place with nothing in it, else one worth more to you: its stats as your class and specialization want them (the module Inventory's weights), else its item level. What you took off yourself stays off. The chat says what was put on.",
     equipped = "Equipped %s.",
@@ -119,10 +119,10 @@ ns.TEXT = {
     switchTip = "Click: pause the guide, or go on with it. Right click: on, paused or off.",
     showGuide = "Show the guide",
     showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
-    gather = "Gathering for the next zone",
-    gatherTip = "Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks: the skill that gathers at least half of the herbs or the ore growing there (from Sane UI's data of the world; WoW: Forever).",
-    gatherShort = "%s next: %s. Gather here a while first.",
-    gatherSkill = "%s %d of %d",
+    gather = "Professions before the next zone",
+    gatherTip = "Before the guide goes on to a harder zone, a step of its own for each profession you have that is too low for it: gathering, crafting and secondary skills alike. Mining and Herbalism go by what gathers at least half of the ore or herbs there, the crafts by what they work with (from Sane UI's data of the world; WoW: Forever). A click on the step skips it.",
+    raiseSkill = "Level %s to %d",
+    skillBefore = "Before %s",
     showArrow = "Show the arrow",
     showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
     mapPin = "Map pin on the guide's place",
@@ -251,7 +251,7 @@ local OPTIONS = {
 }
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches and those of what is on the way are read when they are needed.
-local VIEW = { showGuide = true, showArrow = true, mapPin = true, icons = true, ahead = true, gather = true }
+local VIEW = { showGuide = true, showArrow = true, mapPin = true, icons = true, ahead = true }
 local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, equipUpgrades = true,
                  rolls = true, cinematics = true, lootLent = true }
 -- Nothing of the module is wanted in the settings in use: it rests until a switch is on again, as a module stood down
@@ -292,6 +292,8 @@ Core.Options(ns.name, OPTIONS, { moved = function() ns.Guarded(ns.Key.First) end
         ns.Guarded(ns.Steps.Update)
     elseif key == "lootAll" then
         ns.Guarded(ns.Errands.Update)
+    elseif key == "gather" then
+        ns.Guarded(ns.Guide.CheckSoon) -- the steps of the professions come or go: the guide moves on, the view with it
     elseif key == "guide" or key == "follow" then
         -- On, paused or off: what the key wants follows, the view is drawn anew, the satchel's switch told.
         if key == "follow" then ns.Guarded(ns.Guide.CheckSoon) end

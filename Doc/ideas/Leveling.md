@@ -42,6 +42,9 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   off, the profile used before. Every switch off by default and on in Speedleveling alone; the ones to stay on elsewhere he
   will name. The key E only in Speedleveling. Equip and delete without asking is Inventory's, on everywhere. One of his
   characters always rolls. Make Room a box in the bags: one slot kept free, a warning when no junk can go.
+- **Decision (Saneroki, 2026-10-30, the third round):** group rolls simple: each character Needs an upgrade and Greeds the
+  rest, nobody Passes, no talk between them; on no other profile is anything rolled. Junk is tried again a little later
+  where the game refuses, never given up. Gathering for the next zone became steps of the guide, one for every profession.
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
   looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the
@@ -79,9 +82,10 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   made apart from the code and put into the game; no guide's text in the repository); a right click on the guide's
   zone lists the guides for the character by group; the guide on, paused or off, also from the minimap's satchel
   (Core's quick switches, `Core.Offer`). Built.
-- **Decision (Saneroki, 2026-10-29): gathering for the next zone.** Before the guide goes on to a harder zone, a
-  warning while your Herbalism or Mining is lower than that zone asks, worked out from Core's herbs, ore and their
-  spawns (half of a zone's spawns gathered). Built. Skinning is not looked at yet.
+- **Decision (Saneroki, 2026-10-29, as steps 2026-10-30): professions before the next zone.** Before the guide goes on
+  to a harder zone, a normal step of the guide for each profession you have that is lower than that zone asks, gathering,
+  crafting and secondary alike, worked out from Core's herbs, ore and their spawns (half of a zone's spawns gathered); the
+  crafts go by what they work with. Built.
 - **Not yet:** the routes and their planner (below).
 
 - **The map pin on the guide's place (Saneroki, 2026-10-30; built):** as a step becomes active the game's map pin goes on

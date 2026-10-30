@@ -7,9 +7,6 @@ local _, ns = ...
 --  font for it), from the top:
 --    - the guide's zone, its levels after it, and at the right how far you are
 --      ("12/84 · 14%"), a thin rule under them;
---    - while your Herbalism or Mining is lower than the next zone the guide
---      goes to asks (Gathering.lua, the switch Gathering for the next zone), a
---      line saying so in the warning colour;
 --    - each step at hand on a faint dark shade: "Step 12" small, its first
 --      words large (what to do), its things to do (a count and a thin bar under
 --      those that have one; a tick on those done), its other words smaller, a
@@ -62,7 +59,6 @@ local SOFT = { 0.8, 0.8, 0.8 }
 
 local frame, window, header, rule, ruleShadow, title, levels, progress
 local empty           -- the line shown while no guide is followed: a click opens the guides
-local gather          -- the line saying your gathering is short for the next zone
 local cards, rows = {}, {}
 local fonts = {}
 local offset = 0      -- the list scrolled from its start after the steps at hand (back for less than 0)
@@ -181,9 +177,6 @@ local function Build()
         if self.resume then Core.Set(ns.name, "follow", "on") else ns.Guides.Open() end
     end))
     empty:Hide()
-    gather = Text(frame, "note")
-    gather:SetWidth(Steps.WIDTH)
-    gather:Hide()
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
                                       first = { point = "TOPRIGHT", x = -70, y = -200 },
                                       -- moved in Edit Mode: the icons over it follow
@@ -430,7 +423,6 @@ function Steps.Update()
         empty:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
         empty:SetSize(Steps.WIDTH, empty.text:GetStringHeight() + 2)
         empty:Show()
-        gather:Hide()
         for _, card in ipairs(cards) do card:Hide() end
         for _, row in ipairs(rows) do row:Hide() end
         frame:SetHeight(math.max(1, -y + empty.text:GetStringHeight() + 2))
@@ -441,23 +433,6 @@ function Steps.Update()
     end
     empty:Hide()
     local warn = ns.Guide.WarnHex()
-
-    -- Your gathering short for the next zone the guide goes to.
-    local short = ns.Gathering.Short()
-    if short then
-        local skills = {}
-        for _, entry in ipairs(short.short) do
-            skills[#skills + 1] = ns.TEXT.gatherSkill:format(entry.skill, entry.have, entry.need)
-        end
-        local words = ns.TEXT.gatherShort:format(short.name, table.concat(skills, ", "))
-        gather:SetText(warn and ("|c" .. warn .. words .. "|r") or words)
-        gather:ClearAllPoints()
-        gather:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
-        gather:Show()
-        y = y - gather:GetStringHeight() - Steps.GAP
-    else
-        gather:Hide()
-    end
 
     -- The steps at hand.
     for index, step in ipairs(picture.hand) do

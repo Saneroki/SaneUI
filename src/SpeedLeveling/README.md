@@ -83,7 +83,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Equip upgrades | on | Gear that comes into your bags, looted or a quest's reward, and is an upgrade (`Core.Upgrade`: anything you can wear for a place with nothing in it, else one worth more by your class's and specialization's weights, Inventory's `Weights.lua`, else a higher item level) is put on, one at a time, out of a fight; the chat says what. Only what the game flags as new (`C_NewItems`), so what you took off yourself stays off, and an item the game refused is not tried again |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
-| Gathering for the next zone | on | Under the guide's head, a warning while your Herbalism or Mining is lower than the next zone the guide goes to asks (*Gathering for the next zone*) |
+| Professions before the next zone | on | Before the guide goes on to a harder zone, a step of its own for each profession you have that is too low for it (*Professions before the next zone*, below). |
 | Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
@@ -194,15 +194,28 @@ Set once for each place: a pin you put yourself, or took away, stays until the g
 pin takes its place. Once the guide has no place to go to, or is paused, off or resting, the pin goes if it still stands
 where the guide put it; a pin of yours stays. A place the game takes no pin on (a dungeon, a whole continent) has none.
 
-### Gathering for the next zone
-`Gathering.lua` (Saneroki, 2026-10-29): before the guide takes you on to a harder zone, whether your Herbalism and
-Mining keep up with it. The next zone is the first one the steps ahead go to (`Run.ZonesAhead`; a town or cave
-counts as its zone) where herbs or ore grow. What it asks is worked out from the game's own facts in Core's sets:
-each herb's and ore's skill (*Objects*) and where they grow (*Spawns*): per zone and kind, the lowest skill that
-gathers at least half of its spawns (`Gathering.SHARE`; Durotar 1 and 1, the Barrens 50 and 65, Stranglethorn Vale
-170 and 125, Felwood 260 and 230). Where a skill you have is lower, a line under the head says so in the warning
-colour: *Wetlands next: Herbalism 92 of 100. Gather here a while first.* A skill not learnt says nothing; neither does
-a zone you are ready for. Without Core's data (Retail, for now) there is no line.
+### Professions before the next zone
+`Gathering.lua` (Saneroki, 2026-10-29; as steps of the guide 2026-10-30): before the guide takes you on to a harder zone,
+your professions keep up with it, each in a step of its own, a normal step of the guide: *Level Mining to 65*, *Before
+the Barrens*, your skill's count and bar under it. A profession not learnt has no step; one high enough is passed by;
+a click skips it as any step, and the switch off takes them all away.
+
+As a guide is taken up (`Run.Use`, `Gathering.Weave`) it is walked once: before the first step into a zone that asks
+more than the guide's zones so far, the steps go in (before a step that goes along with it, too). A zone counts only
+where the guide spends `Gathering.STAY` steps (10), so an errand or a flight through asks nothing; a point on the way is
+no visit; a town or cave counts as its zone. You are not asked for a zone you already stand in, and whoever is known to
+have come past the step (a quest further on is done) is moved past it: a profession's step never stops the guide working
+out by itself where you are.
+
+What a zone asks is worked out from the game's own facts in Core's sets: each herb's and ore's skill (*Objects*) and
+where they grow (*Spawns*): per zone and kind, the lowest skill that gathers at least half of its spawns
+(`Gathering.SHARE`; Durotar 1 and 1, the Barrens 50 and 65, Stranglethorn Vale 170 and 125, Felwood 260 and 230). Each
+profession goes by what it works with (`Gathering.PROFESSIONS`): Mining, Blacksmithing and Engineering by the ore,
+Herbalism and Alchemy by the herbs, the others by the higher of the two.
+
+The steps are woven in for every profession, also those the character lacks (`step.woven`; `Run.Listed` leaves those
+out), so the steps of a guide stay the same whatever is learnt, and so does your place in it, which is kept by number.
+Without Core's data (Retail, for now) none are woven.
 
 ### The icons
 Over the guide's top, a row of icons only (`Icons.lua`): first the items the steps want used (the Hearthstone while a
@@ -311,7 +324,7 @@ choice is made by those, in a fight too (`Key.lua`):
   comes up with nothing to do is closed a frame later (`Bye`): at once where nothing can be chosen (the goodbye
   screen), and once within `Quests.AFTER` seconds of a quest done there whatever else the NPC offers, a quest the guide
   does not know included. Only the guide's quests are ever taken.
-- **Group rolls** (`Rolls.lua`, the switch *Roll on group loot*): as a roll starts each Sane UI says what the thing would bring its character (`Core.Upgrade`'s gain, 0 for none or where the game lets it not Need) to the party, raid or instance group, Core's `Wire`, kind `SLR`, by the item's ID (a roll's number is not shared between clients). Decided `Rolls.WAIT` seconds out of a fight: the one it brings the most Needs, the others Greed, else Pass; as much: the lower GUID, so all come to the same; no word: Need on an upgrade. `Wire` sends and takes in nothing in a fight, so a roll waits for its end while its clock has more than `Rolls.LAST` left. Weights hold a stat a character builds on at 1, so gains of two classes can be held against each other.
+- **Group rolls** (`Rolls.lua`, the switch *Roll on group loot*): each character on its own, nothing said between them: Need on what is an upgrade to it (`Core.Upgrade`) where the game lets it, else Greed. Nobody Passes: without Greed it takes Transmog or Disenchant, then Need, and a roll that offers nothing is left alone. It rolls as soon as the game has described the item, at the latest with `Rolls.LAST` left on the clock, in a fight too. The game's question on a thing that binds is answered for the rolls made here, none other. Switch off, and on every profile but Speedleveling: nothing is rolled, the game's rolls are yours.
 - **Nothing else is automatic:** each press does one thing, the player's.
 - **Moving the guide and the arrow:** a right click on the zone, or on the arrow, has *Unlock to drag*: `window:Unlock`, the box Edit Mode shows, outside it; dragged, the place is kept as in Edit Mode; a right click on the box, or the same line, locks it again.
 - **`/sane key`** says in chat what the key sees now: its state and what a press does, the NPC or thing in front of
@@ -327,14 +340,14 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
 | `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, skip, back, go, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
-| `Gathering.lua` | Whether your Herbalism and Mining are enough for the next zone the guide goes to (Core's *Objects* and *Spawns*) |
+| `Gathering.lua` | The steps of your professions woven into the guide, before each harder zone (Core's *Objects* and *Spawns*) |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
 | `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key and how far it looks, Click-to-Move) |
 | `Rewards.lua` | Which reward to take where a quest offers a choice (`Rewards.Best`) |
 | `Quests.lua` | What a quest giver does for your guide: takes and hands in its quests, closes a talk that is done, the NPC you are through with |
 | `Errands.lua` | What would hold you up: Loot's switches set for all loot, the game's questions on binding and destroying answered (a hook on `StaticPopup_Show`), new upgrades put on |
-| `Rolls.lua` | Group rolls agreed between the Sane UI of your characters (Core's `Wire`), `RollOnLoot`, the game's question on a roll answered |
+| `Rolls.lua` | Group rolls: Need on an upgrade, else Greed, `RollOnLoot`, the game's question on a roll answered |
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
 | `Pin.lua` | The game's map pin on the guide's place |

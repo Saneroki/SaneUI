@@ -104,6 +104,7 @@ end
 
 -- While a part of the talk shows a tooltip (its OnEnter, before the tooltip is filled; its OnLeave).
 function Quiet.Tips(on)
+    Core.tipsWanted = on -- seen without the key the module Tooltips waits for: they are why you look at the rewards
     if on and not lend then return end
     Keep(TIPS, on)
 end

@@ -2,111 +2,60 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Rolls
---  Group rolls decided for you (Saneroki, 2026-10-30, who plays two characters
---  at once, Sane UI on both; the switch Roll on group loot). As a roll starts,
---  each Sane UI of the group says what the thing would bring its character
---  (Core.Upgrade: what it gains, 0 for none or where the game lets it not Need)
---  over Core's addon messages. Then the one it brings the most Needs it and the
---  others Greed, where the game lets them, else Pass. Nobody it brings anything:
---  all Greed. No word from anybody: Need on an upgrade.
---  One of you always rolls, so that nothing is left lying (Saneroki, the same
---  day): the first in line (the most gain, of two the same the lower GUID)
---  takes what the game lets it, Need last; a character that can roll nothing at
---  all says so (a gain under 0), and the next one is first.
+--  Group rolls decided for you (the switch Roll on group loot, in the profile
+--  Speedleveling; Saneroki, 2026-10-30): each character on its own Needs what
+--  is an upgrade to it (Core.Upgrade), where the game lets it, and Greeds the
+--  rest. Nobody Passes: without Greed it takes what the game offers, Need last.
+--  Switch off: nothing is rolled, the rolls stay yours. The game's question on a
+--  thing that binds is answered for the rolls made here.
 --
---  Core's messages wait for the end of a fight on both sides, so a roll started
---  in one waits too, as long as its clock allows (Rolls.LAST); the rest of the
---  time it is decided Rolls.WAIT seconds after the last fight. The game's
---  question on a thing that binds is answered for the rolls made here.
---
---      Rolls.Start()                listens, from the login on
---      Rolls.Heard(sender, fields)  another Sane UI's word: its item, what it brings, its GUID
+--      Rolls.Start()   listens, from the login on
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
 local Rolls = {}
 ns.Rolls = Rolls
 
-Rolls.KIND = "SLR"   -- the addon messages of this
-Rolls.WAIT = 2       -- seconds out of a fight before a roll is decided with what was heard
-Rolls.LAST = 10000   -- milliseconds left on a roll's clock at which it is decided, fight or no fight
-Rolls.TICK = 0.5     -- seconds between looks at the open rolls
-Rolls.KEEP = 90      -- seconds a word heard stays good: about as long as a roll lasts
+Rolls.LAST = 10000   -- milliseconds left on a roll's clock at which it is rolled, the item described or not
+Rolls.TICK = 0.5     -- seconds between looks at a roll whose item the game has not described yet
 
-local PASS, NEED, GREED, DISENCHANT, TRANSMOG = 0, 1, 2, 3, 4
-local EMPTY = {}
+local NEED, GREED, DISENCHANT, TRANSMOG = 1, 2, 3, 4
 
-local open = {}      -- [rollID] = { item, gain, need, greed, said, quiet (out of a fight since) }
-local heard = {}     -- [item] = { { gain, who, when } }
+local open = {}      -- [rollID] = { link, item, need, greed, disenchant, transmog }: waiting for the item's description
 local mine = {}      -- [rollID] = true: rolled here, the game's question is ours to answer
 local Look
 
--- What you can roll that claims no upgrade, the best first; Need last, for a thing that would go to nobody otherwise.
+-- What you roll on what is no upgrade, the best first; Need last, for a thing that offers nothing else.
 local function Any(roll)
     if roll.greed then return GREED end
     if roll.transmog then return TRANSMOG end
     if roll.disenchant then return DISENCHANT end
-    return roll.need and NEED or PASS
+    return roll.need and NEED or nil
 end
 
-local function Channel()
-    local instance = rawget(_G, "LE_PARTY_CATEGORY_INSTANCE") or 2
-    if Core.Ask(rawget(_G, "IsInGroup"), instance) then return "INSTANCE_CHAT" end
-    if Core.Ask(rawget(_G, "IsInRaid")) then return "RAID" end
-    if Core.Ask(rawget(_G, "IsInGroup")) then return "PARTY" end
-    return nil
-end
-
--- What the thing would bring you is said, once the game knows it (late: the clock is running out, as it is).
-local function Say(roll, late)
-    local info = rawget(_G, "C_Item") and C_Item.GetItemInfo or rawget(_G, "GetItemInfo")
-    if roll.need and not late and not Core.Ask(info, roll.link) then return end
-    local gain
-    if roll.need then gain = select(2, Core.Upgrade(roll.link, roll.item)) end
-    gain = Any(roll) == PASS and -1 or gain or 0
-    roll.gain, roll.said = gain, GetTime()
-    local channel = Channel()
-    if channel then
-        Core.Wire.Send(Rolls.KIND, { roll.item, gain, Core.Ask(UnitGUID, "player") or "" }, channel, nil, true)
-    end
-end
-
--- Whether another Sane UI's character gets more of it than yours (of two the same, the lower GUID).
-local function Beaten(roll)
-    local me, now = Core.Ask(UnitGUID, "player") or "", GetTime()
-    for _, word in ipairs(heard[roll.item] or EMPTY) do
-        if now - word.when <= Rolls.KEEP and (word.gain > roll.gain or (word.gain == roll.gain and word.who < me)) then
-            return true
-        end
-    end
-    return false
+-- Whether the game can say yet what the item is.
+local function Described(roll)
+    return Core.Ask(rawget(_G, "C_Item") and C_Item.GetItemInfo or rawget(_G, "GetItemInfo"), roll.link) ~= nil
 end
 
 local function Decide(rollID, roll)
     open[rollID] = nil
-    local first = not Beaten(roll)
-    heard[roll.item] = nil
+    local choice = roll.need and Core.Upgrade(roll.link, roll.item) and NEED or Any(roll)
+    if not choice then return end
     mine[rollID] = true
-    local choice = roll.greed and GREED or PASS
-    if first then choice = roll.gain > 0 and roll.need and NEED or Any(roll) end
     Core.Ask(rawget(_G, "RollOnLoot"), rollID, choice)
 end
 
 local function Tick()
-    local now, any = GetTime(), false
-    local fighting = InCombatLockdown()
+    local any = false
     for rollID, roll in pairs(open) do
         local left = Plain(Core.Ask(rawget(_G, "GetLootRollTimeLeft"), rollID))
-        if ns.off or type(left) ~= "number" or left <= 0 then
+        if ns.off or not ns.options.rolls or type(left) ~= "number" or left <= 0 then
             open[rollID] = nil
+        elseif Described(roll) or left <= Rolls.LAST then
+            Decide(rollID, roll)
         else
-            if not roll.said then Say(roll, left <= Rolls.LAST) end
-            roll.quiet = not fighting and (roll.quiet or now) or nil
-            if roll.said and (left <= Rolls.LAST or (roll.quiet and now - roll.quiet >= Rolls.WAIT)) then
-                Decide(rollID, roll)
-            else
-                any = true
-            end
+            any = true
         end
     end
     if any then Look() end
@@ -121,15 +70,8 @@ local function Started(rollID)
     if not ok or type(link) ~= "string" then return end
     open[rollID] = { link = link, item = tonumber(link:match("item:(%d+)")), need = Plain(canNeed) and true or false,
                      greed = Plain(canGreed) and true or false, disenchant = Plain(canDisenchant) and true or false,
-                     transmog = Plain(canTransmog) and true or false, gain = 0 }
+                     transmog = Plain(canTransmog) and true or false }
     Tick()
-end
-
-function Rolls.Heard(_, fields)
-    local item, gain, who = tonumber(fields[1]), tonumber(fields[2]), fields[3]
-    if not item or not gain or type(who) ~= "string" then return end
-    heard[item] = heard[item] or {}
-    table.insert(heard[item], { gain = gain, who = who, when = GetTime() })
 end
 
 -- The game asks whether a thing may bind: yes, for a roll made here. Its dialog goes a frame later: the game shows it
@@ -145,7 +87,6 @@ local function Asked(rollID, choice)
 end
 
 function Rolls.Start()
-    Core.Wire.Listen(Rolls.KIND, ns.Guard(Rolls.Heard))
     ns.On("START_LOOT_ROLL", Started)
     ns.On("CONFIRM_LOOT_ROLL", Asked)
     ns.On("CONFIRM_DISENCHANT_ROLL", Asked)

@@ -191,7 +191,7 @@ local OPTIONS = {
     { key = "autoRepair", default = true, text = ns.TEXT.bagsAutoRepair, tip = ns.TEXT.bagsAutoRepairTip },
     { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
     { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
-    { key = "deleteRefused", default = false }, -- the game refused to destroy an item without its question (Asks.lua)
+    { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
     { key = "pinnedOne", default = true, text = ns.TEXT.bagsPinnedOne, tip = ns.TEXT.bagsPinnedOneTip },
     { key = "showRecent", default = true, text = ns.TEXT.bagsShowRecent, tip = ns.TEXT.bagsShowRecentTip },
     { key = "recentOne", default = false, text = ns.TEXT.bagsRecentOne, tip = ns.TEXT.bagsRecentOneTip },

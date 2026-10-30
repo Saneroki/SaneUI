@@ -8,8 +8,10 @@ local _, ns = ...
 --  (Contents.Junk: the game's grey items and your marks, nothing that can still
 --  be refunded), and the chat says what went. The game destroys an item only on
 --  a press of the player's, so it goes at your next key press out of a fight: a
---  frame hears the keyboard while something waits, and hands every key on. No
---  junk, or the game refused: a warning on the screen, once in Room.WARN.
+--  frame hears the keyboard while something waits, and hands every key on. Where
+--  the game refuses, or your hand is full, it is tried again Room.AGAIN seconds
+--  later: nothing is wrong, destroying is just held up now and then. No junk: a
+--  warning on the screen, once in Room.WARN.
 --
 --      Room.Start()   listens to the bags, from the login on
 -------------------------------------------------------------------------------
@@ -20,13 +22,15 @@ ns.Room = Room
 Room.KEEP = 1    -- slots kept free
 Room.WARN = 60   -- seconds between two warnings that nothing can go
 Room.CHECK = 0.3 -- seconds after destroying before the cursor shows whether the game let it
+Room.AGAIN = 5   -- seconds before trying again after the game refused
 
 local LOOT = "Loot"  -- the module with the switch
 local catcher        -- hears the next key
 local warned         -- when the last warning was given
 local going          -- the link of what was just destroyed
-local refused        -- the game kept it this session: not tried again
+local waitUntil      -- the game refused: no try before this time
 local junk = {}      -- the records of junk (Contents.Junk), used again
+local Look
 
 local function On()
     local loot = Core.Settings(LOOT)
@@ -66,24 +70,26 @@ local function Listen(on)
     if catcher then catcher:SetShown(on) end
 end
 
--- A moment after: gone, or the game left it on the cursor, and it goes back into the bags.
+local tryAgain = Core.Later(function() ns.Guarded(Look) end, Room.AGAIN)
+
+-- A moment after: gone, or the game left it on the cursor: back into the bags, and tried again a little later.
 local Checked = Core.Later(function()
     ns.Guarded(function()
         local link = going
         going = nil
         if not link then return end
         if not Core.Ask(rawget(_G, "CursorHasItem")) then return ns.Print(ns.TEXT.bagsRoomGone:format(link)) end
-        refused = true
+        waitUntil = GetTime() + Room.AGAIN
         Core.Ask(rawget(_G, "ClearCursor"))
-        Warn(ns.TEXT.bagsRoomNone)
+        tryAgain()
     end)
 end, Room.CHECK)
 
 -- A key was pressed, and the game takes that for the player's word.
 local function Pressed()
     Listen(false)
-    if not On() or refused or InCombatLockdown() or Free() >= Room.KEEP then return end
-    if Core.Ask(rawget(_G, "CursorHasItem")) then return end
+    if not On() or InCombatLockdown() or Free() >= Room.KEEP then return end
+    if Core.Ask(rawget(_G, "CursorHasItem")) then return tryAgain() end -- something in your hand: a little later
     local record = Cheapest()
     if not record then return end
     C_Container.PickupContainerItem(record.bag, record.slot)
@@ -102,13 +108,17 @@ local function Catcher()
 end
 
 -- The bags as they are now: room enough, something to go at the next key, or nothing that could.
-local function Look()
+function Look()
     if not On() or Free() >= Room.KEEP then
         warned = nil
         return Listen(false)
     end
     if InCombatLockdown() then return Listen(false) end
-    if refused or not Cheapest() then
+    if waitUntil and GetTime() < waitUntil then
+        Listen(false)
+        return tryAgain()
+    end
+    if not Cheapest() then
         Listen(false)
         return Warn(ns.TEXT.bagsRoomNone)
     end

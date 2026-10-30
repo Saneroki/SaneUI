@@ -13,7 +13,8 @@ local _, ns = ...
 --  each of its things to do is done, or when one of its tests says it is not for
 --  now (on a quest, money, an item count, a zone, a level); one with nothing to
 --  do is done at once. You are moved on past each step done, and past one that
---  only goes along.
+--  only goes along. A guide comes with the steps of your professions woven in
+--  (Gathering.lua).
 --
 --  What the game knows (Saneroki, 2026-10-30: the guide works out by itself what
 --  is done): of each thing to do it can judge a quest's, a level's, a spell's or a
@@ -49,7 +50,7 @@ local _, ns = ...
 --      Run.Saw(what), Run.Watch(changed), Run.Stop()
 --      Run.Way(place)        how far from a place, in yards, and which way; Run.Distance
 --      Run.Target()          where the arrow points: the place line and its step
---      Run.ZonesAhead(most)  the zones the steps go to from the step you are at onward, each once, in order
+--      Run.MapId(map)        a place's map as the game's number, from its number or its zone's name
 --      Run.ObjectiveKind(quest, goal), Run.Targets(), Run.Uses(), Run.UseOn(), Run.Quests(), Run.Words(line)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -120,6 +121,7 @@ local function MapId(map)
     end
     return mapIds and mapIds[tostring(map):lower()] or nil
 end
+Run.MapId = MapId
 
 -- A map's width and height in yards, from the game's world places of three of its corners.
 local function Size(map)
@@ -229,7 +231,7 @@ local DONE = {
         if rank < 0 then return false end
         if line.sign == "<" then return rank < line.level end
         if line.sign == ">" then return rank > line.level end
-        return rank >= line.level
+        return rank >= line.level, rank, line.level
     end,
     bind = function(line, index)
         if seen[index] and seen[index].bind then return true end
@@ -361,11 +363,16 @@ local TESTS = {
     stat = function() return false end, -- gear stats: left to the player (never passes the step by on its own)
 }
 
--- Whether a step is passed by: skipped, one its tests rule out, or one that needs a step the player skipped.
+-- Whether a step of a profession (Gathering.lua) is nothing to you: not learnt, or the switch off.
+local function NotYours(step)
+    return step.woven ~= nil and (not ns.options.gather or Lines.Skill(step.woven) < 0)
+end
+
+-- Whether a step is passed by: skipped, not yours, one its tests rule out, or one that needs a step the player skipped.
 local function Passed(index)
     local step = guide.steps[index]
     local skipped = Skipped()
-    if skipped[index] then return true end
+    if skipped[index] or NotYours(step) then return true end
     if step.needs and guide.labels[step.needs] and skipped[guide.labels[step.needs]] then return true end
     for _, test in ipairs(step.unless or EMPTY) do
         if TESTS[test.what] and TESTS[test.what](test) then return true end
@@ -427,7 +434,7 @@ end
 local function Proof(index)
     for later = index + 1, math.min(index + Run.PROOF, #guide.steps) do
         local step = guide.steps[later]
-        if not (step.together or step.stays) then
+        if not (step.together or step.stays or step.woven) then
             local known, _, proof = Known(later, index)
             if known == false then return nil end
             if proof then return later end
@@ -465,7 +472,8 @@ local function MoveOn()
         local step = guide.steps[at]
         local known = at < behind or Known(at)
         if not (known == true or step.together or step.stays) then
-            behind = known == nil and Proof(at) or nil
+            -- A profession's step asks nothing of who came past it already.
+            behind = (known == nil or step.woven) and Proof(at) or nil
             if not behind then break end
         end
         at = at + 1
@@ -497,10 +505,10 @@ function Run.Hand()
     return hand
 end
 
--- Whether a step is one the list shows (not a step that only goes along, nor a hidden one).
+-- Whether a step is one the list shows (not a step that only goes along, a hidden one, or one not yours).
 function Run.Listed(index)
     local step = guide and guide.steps[index]
-    return step ~= nil and not step.aside and not step.hidden
+    return step ~= nil and not step.aside and not step.hidden and not NotYours(step)
 end
 
 -- Whether a step shows as done. Behind your place: unless the game says it is open (what it cannot tell, you came
@@ -548,7 +556,9 @@ end
 function Run.Back()
     if not guide then return end
     local index = at - 1
-    while index > 1 and (guide.steps[index].together or guide.steps[index].stays) do index = index - 1 end
+    while index > 1 and (guide.steps[index].together or guide.steps[index].stays or NotYours(guide.steps[index])) do
+        index = index - 1
+    end
     if index >= 1 then Run.Go(index) end
 end
 
@@ -585,24 +595,6 @@ function Run.Target()
         end
     end
     return nil
-end
-
--- The zones the guide's steps go to from the step you are at onward, each once, in order: their maps' numbers (a
--- place given by its zone's name, by that zone's), most of them at most (Gathering.lua).
-function Run.ZonesAhead(most)
-    local zones, have = {}, {}
-    if not guide then return zones end
-    for index = math.max(place or at or 1, 1), #guide.steps do
-        for _, line in ipairs(guide.steps[index].lines) do
-            local map = (line.what == "place" or line.what == "arrive") and line.map and MapId(line.map)
-            if map and not have[map] then
-                have[map] = true
-                zones[#zones + 1] = map
-                if #zones >= most then return zones end
-            end
-        end
-    end
-    return zones
 end
 
 local function Waiting()
@@ -642,6 +634,7 @@ function Run.Use(read)
         Notes().guide = nil
         return
     end
+    ns.Gathering.Weave(guide)
     FirstAsked()
     local notes = Notes()
     notes.guide = guide.key or guide.name

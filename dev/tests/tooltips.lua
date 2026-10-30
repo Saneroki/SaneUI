@@ -2156,6 +2156,12 @@ check(panel:GetAlpha() == 1 and tip:GetAlpha() == 0, "Shift pressed: its panel i
 W.shift = false
 W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
 check(panel:GetAlpha() == 0, "let go: unseen again")
+Core.tipsWanted = true
+spell("2.5 sec cooldown")
+check(panel:GetAlpha() == 1, "a view that asks for them (a quest's rewards) sees them without the key")
+Core.tipsWanted = false
+spell("2 sec cooldown")
+check(panel:GetAlpha() == 0, "and only while it asks")
 tip.insertedFrames = { true } -- a frame inside: the panel cannot show it, the tooltip is the game's
 spell("3 sec cooldown")
 check(not panel:IsShown() and tip:GetAlpha() == 0, "a tooltip left to the game is unseen the same way")

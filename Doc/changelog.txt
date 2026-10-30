@@ -57,8 +57,8 @@ The bigger changes of each version, newest first.
   once a quest is taken or handed in it leaves the NPC alone and
   closes the goodbye screen. Quest rewards are chosen for you: the
   biggest upgrade, else what is worth the most, and upgrades you
-  loot are put on. Group rolls are settled between your own
-  characters. Cinematics are skipped. Its key is E unless you pick
+  loot are put on. On group rolls you Need your upgrades and Greed
+  the rest. Cinematics are skipped. Its key is E unless you pick
   another. Each has its switch, and a
   box Speed Leveling in the bags turns the profile on or off. A right click unlocks the guide and the
   arrow to drag them.
@@ -67,6 +67,8 @@ The bigger changes of each version, newest first.
   get a warning on the screen.
 - Bags: a green arrow on the items that would be an upgrade, by
   what your class and specialization want.
+- Speed Leveling: before the guide goes on to a harder zone, a step
+  of its own for each profession that is too low for it.
 - Combat: your frame, your target's and your focus's in the look
   of the nameplates, green: level and raid marker on the left,
   then the name (players by their full name; none on your own),

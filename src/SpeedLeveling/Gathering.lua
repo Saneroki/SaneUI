@@ -2,19 +2,24 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Gathering
---  Whether your gathering keeps up with where the guide takes you (Saneroki,
---  2026-10-29: Herbalism and Mining high enough before the guide goes on to a
---  harder zone). The next zone the guide's steps go to is the first one ahead
---  where herbs or ore grow; for each of those two skills you have, the skill
---  that zone asks is worked out from the game's own facts in Core's sets:
---  Objects (each herb's and ore's skill) and Spawns (where they grow), the
---  lowest skill that gathers Gathering.SHARE of that zone's spawns of that
---  kind. Where yours is lower, the guide's view says so, under its head.
---  Without Core's data (Retail, for now) it says nothing.
+--  Your professions keep up with where the guide takes you (Saneroki, 2026-10-29;
+--  as steps of the guide 2026-10-30). The guide is walked as it is taken up. Before
+--  the first step into a zone that asks more than the guide's zones so far, and
+--  where it stays a while (Gathering.STAY steps: an errand there asks nothing), a
+--  step of its own for each profession, woven into the guide (Gathering.Weave):
+--  "Level Mining to 65", with its count and bar, done when your skill is there
+--  and skipped by a click as any step. A step for a profession you have not learnt
+--  is passed by and not listed (Run.lua), so that the steps stay the same for a
+--  character whatever it learns, and so does its place in the guide.
 --
---      Gathering.Need(zone)   { herb = skill, ore = skill } a zone (its map's number) asks; nil where nothing grows
---      Gathering.Short()      nil, or { map, name, short = { { skill, have, need } } }: the next zone ahead with
---                             herbs or ore, and each of your gathering skills that is lower than it asks
+--  What a zone asks comes from the game's own facts in Core's sets: Objects (each
+--  herb's and ore's skill) and Spawns (where they grow): the lowest skill that
+--  gathers Gathering.SHARE of that zone's spawns of that kind. Each profession goes
+--  by what it works with, the others by the higher of the two; a zone where nothing
+--  grows asks nothing. Without Core's data (Retail, for now) no step is woven.
+--
+--      Gathering.Need(zone)    { herb, ore, any } a zone (its map's number) asks; nil where nothing grows
+--      Gathering.Weave(guide)  the steps of the professions put into a guide just read
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -22,12 +27,17 @@ local Gathering = {}
 ns.Gathering = Gathering
 
 Gathering.SHARE = 0.5   -- the share of a zone's herbs or ore a skill should gather to be enough for it
-Gathering.AHEAD = 12    -- zones ahead looked at, at most
+Gathering.STAY = 10     -- the steps a guide spends in a zone for that zone to count
 Gathering.KINDS = { "herb", "ore" }
+-- Every profession, in the game's words and the order of its steps, and what of a zone it goes by.
+Gathering.PROFESSIONS = {
+    { "Mining", "ore" }, { "Herbalism", "herb" }, { "Skinning", "any" }, { "Blacksmithing", "ore" },
+    { "Engineering", "ore" }, { "Alchemy", "herb" }, { "Leatherworking", "any" }, { "Tailoring", "any" },
+    { "Enchanting", "any" }, { "Cooking", "any" }, { "First Aid", "any" }, { "Fishing", "any" },
+}
 
-local OBJECTS, SPAWNS, SKILLS = Core.Data.Set("Objects"), Core.Data.Set("Spawns"), Core.Data.Set("SkillLines")
-local needs -- [zone] = { herb = skill, ore = skill }, once Core's data gave any
-local names = {} -- [kind] = the skill's name in the game's words (SkillLines)
+local OBJECTS, SPAWNS = Core.Data.Set("Objects"), Core.Data.Set("Spawns")
+local needs -- [zone] = { herb = skill, ore = skill, any = the higher }, once Core's data gave any
 local ZONE -- the game's map type of a zone
 
 -- A map's zone: the map itself where it is one, else the zone it lies in (a town, a cave); the map where none is.
@@ -55,10 +65,6 @@ local function Needs()
             local level = OBJECTS:Get(key, "skillLevel")
             local points = SPAWNS:Get("object:" .. tostring(key), "points")
             if type(level) == "number" and type(points) == "table" then
-                if not names[kind] then
-                    local skill = OBJECTS:Get(key, "skill")
-                    names[kind] = skill and SKILLS:Get(skill, "name") or nil
-                end
                 for _, point in pairs(points) do
                     if type(point) == "table" and type(point.map) == "number" then
                         local zone = counts[point.map] or {}
@@ -85,6 +91,7 @@ local function Needs()
                 reached = reached + spawns[level]
                 if reached >= spawns.total * Gathering.SHARE then
                     needs[zone][kind] = level
+                    needs[zone].any = math.max(needs[zone].any or 0, level)
                     break
                 end
             end
@@ -104,25 +111,68 @@ local function Name(zone)
     return type(info) == "table" and Plain(info.name) or tostring(zone)
 end
 
-function Gathering.Short()
-    if not ns.options.gather or not Needs() then return nil end
-    local maps = rawget(_G, "C_Map")
-    local here = ZoneOf(maps and Core.Ask(maps.GetBestMapForUnit, "player"))
-    for _, map in ipairs(ns.Run.ZonesAhead(Gathering.AHEAD)) do
-        local zone = ZoneOf(map)
-        local need = zone ~= here and Gathering.Need(zone)
-        if need then
-            -- The first zone ahead where anything grows decides: enough for it, nothing is said.
-            local short = {}
-            for _, kind in ipairs(Gathering.KINDS) do
-                local name = names[kind]
-                local have = name and need[kind] and ns.Lines.Skill(name) or -1
-                if have >= 0 and have < need[kind] then
-                    short[#short + 1] = { skill = name, have = have, need = need[kind] }
-                end
+-- A step of the guide for one profession.
+local function Step(skill, level, zone)
+    return { woven = skill, unless = { { what = "inZone", maps = { zone }, away = false } },
+             lines = { { what = "note", words = ns.TEXT.raiseSkill:format(skill, level) },
+                       { what = "skill", skill = skill, level = level, words = ns.TEXT.skillBefore:format(Name(zone)) } } }
+end
+
+-- The zones a guide goes to, step by step, each once a step (the points on the way do not count), and the steps it
+-- spends in each.
+local function Zones(guide)
+    local visits, stays = {}, {}
+    for index, step in ipairs(guide.steps) do
+        local here = {}
+        for _, line in ipairs(step.lines) do
+            local zone = (line.what == "place" or line.what == "arrive") and line.map and not line.way
+                and ZoneOf(ns.Run.MapId(line.map))
+            if zone and not here[zone] then
+                here[zone] = true
+                here[#here + 1] = zone
+                stays[zone] = (stays[zone] or 0) + 1
             end
-            return short[1] and { map = zone, name = Name(zone), short = short } or nil
+        end
+        visits[index] = here
+    end
+    return visits, stays
+end
+
+-- A zone's steps for what it asks more of than any zone so far (highest); nil for none.
+local function Asked(zone, highest)
+    local need, steps = Gathering.Need(zone), {}
+    if not need then return nil end
+    for _, profession in ipairs(Gathering.PROFESSIONS) do
+        local level = need[profession[2]]
+        if level and level > (highest[profession[2]] or 0) then steps[#steps + 1] = Step(profession[1], level, zone) end
+    end
+    for kind, level in pairs(need) do highest[kind] = math.max(highest[kind] or 0, level) end
+    return steps[1] and steps or nil
+end
+
+function Gathering.Weave(guide)
+    if not Needs() then return end
+    local visits, stays = Zones(guide)
+    local highest, gates = {}, {} -- gates: [the step they go before] = { steps }
+    for index, here in ipairs(visits) do
+        for _, zone in ipairs(here) do
+            local steps = stays[zone] >= Gathering.STAY and Asked(zone, highest)
+            if steps then
+                -- A step that goes along with the next stays with it: ours go before both.
+                local at = index
+                while at > 1 and guide.steps[at - 1].together do at = at - 1 end
+                gates[at] = gates[at] or {}
+                for _, step in ipairs(steps) do table.insert(gates[at], step) end
+            end
         end
     end
-    return nil
+    if not next(gates) then return end
+    local woven, moved = {}, {} -- moved: [a step's old number] = its new one
+    for index, step in ipairs(guide.steps) do
+        for _, ours in ipairs(gates[index] or {}) do woven[#woven + 1] = ours end
+        woven[#woven + 1] = step
+        moved[index] = #woven
+    end
+    guide.steps = woven
+    for label, index in pairs(guide.labels) do guide.labels[label] = moved[index] end
 end

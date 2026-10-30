@@ -2090,21 +2090,20 @@ function W.CheckAsks()
     check(#answered == 1 and #hidden == 1, "another question is the game's")
     Ask("DELETE_ITEM")
     W.Wait(1)
-    check(answered[2] == "deleted" and ns.options.deleteRefused == false, "destroying: answered, the item gone")
+    check(answered[2] == "deleted", "destroying: answered, the item gone")
     Core.Set(ns.name, "noAsk", false)
     Ask("EQUIP_BIND", 16)
     check(#answered == 2, "off: the game asks")
     Core.Set(ns.name, "noAsk", true)
-    -- The game refuses: the item stays on the cursor, the question stands with its word typed in, not tried again.
+    -- The game refuses: the item stays on the cursor, the question stands with its word typed in; the next one is tried.
     DELETE_ITEM_CONFIRM_STRING = "DELETE"
     onCursor = true
     local box = Ask("DELETE_GOOD_ITEM")
     W.Wait(1)
-    check(ns.options.deleteRefused == true and box.text == "DELETE", "refused: the word typed in, kept for next time")
+    check(box.text == "DELETE", "refused: the word typed in")
     local count = #answered
-    box = Ask("DELETE_GOOD_ITEM")
-    check(#answered == count and box.text == "DELETE", "not tried again: the word at once")
-    ns.options.deleteRefused = false
+    Ask("DELETE_GOOD_ITEM")
+    check(#answered == count + 1, "the next one is tried again")
     CursorHasItem, StaticPopup_FindVisible, StaticPopup_Hide = cursorWas, nil, nil
 end
 W.CheckAsks()
@@ -2163,9 +2162,20 @@ function W.CheckRoom()
     ClearCursor = function() onCursor = false end
     Bagged()
     Press()
-    check(#gone == 1 and not onCursor and W.errors[#W.errors]:find("no junk"), "refused by the game: back in the bags, a warning")
+    local warnings = #W.errors
+    check(#gone == 1 and not onCursor and #W.errors == warnings, "refused by the game: back in the bags, no warning")
     Bagged()
-    check(not ns.Room.catcher:IsShown(), "and not tried again")
+    check(not ns.Room.catcher:IsShown(), "not at the very next key")
+    refuse = false
+    W.Wait(ns.Room.AGAIN)
+    check(ns.Room.catcher:IsShown(), "a little later it waits for your key again")
+    onCursor = true
+    Press()
+    check(#gone == 1, "something in your hand: not now")
+    onCursor = false
+    W.Wait(ns.Room.AGAIN)
+    Press()
+    check(gone[2] == "1:3", "and it goes")
     C_Container.GetContainerNumFreeSlots, Contents.Junk, Bags.Carried, Bags.Store = numFree, junkOf, carriedOf, store
     C_Container.PickupContainerItem, CursorHasItem, ClearCursor, DeleteCursorItem = pick, cursorWas, cleared, nil
 end

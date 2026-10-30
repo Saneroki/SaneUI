@@ -6,8 +6,8 @@ local _, ns = ...
 --  profile): the game's questions before gear binds to you or ends a refund, and
 --  before an item is destroyed, answered as its own Yes would. Destroying is held
 --  back by the game for a click of the player's: where it refuses, its question
---  comes up as ever with the word it wants typed in, and is not tried again
---  (options.deleteRefused).
+--  stands as ever with the word it wants typed in, and the next item is tried
+--  again.
 --
 --      Asks.Start()   listens for the game's questions, from the login on
 -------------------------------------------------------------------------------
@@ -37,7 +37,6 @@ local CheckDeleted = Core.Later(function()
         local find = rawget(_G, "StaticPopup_FindVisible")
         local dialog = which and find and Core.Ask(find, which)
         if not dialog or not Core.Ask(rawget(_G, "CursorHasItem")) then return end
-        ns.options.deleteRefused = true
         TypeWord(dialog)
     end)
 end, Asks.CHECK)
@@ -53,7 +52,6 @@ local function Answer(which)
         Core.Ask(info.OnAccept, dialog, dialog.data, dialog.data2)
         return Core.Ask(rawget(_G, "StaticPopup_Hide"), which)
     end
-    if ns.options.deleteRefused then return TypeWord(dialog) end
     -- The game's question hides itself once the item is off the cursor.
     deleting = which
     Core.Ask(info.OnAccept, dialog, dialog.data, dialog.data2)

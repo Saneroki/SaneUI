@@ -94,11 +94,12 @@ local function Holds(choice)
     return held ~= nil and Plain(held()) == true
 end
 
--- Whether tooltips may be seen now: always, or while the chosen key is held (the option show).
+-- Whether tooltips may be seen now: always, while the chosen key is held (the option show), or
+-- while a view asks for them (Core.tipsWanted: a quest's rewards in Lore's talk).
 -- A tooltip that may not is there all the same, filled and placed by the game, its panel drawn;
 -- only it and its panel are see-through, until the key is pressed (Gate).
 function ns.Allowed()
-    return Holds(ns.options and ns.options.show or "shift")
+    return Core.tipsWanted == true or Holds(ns.options and ns.options.show or "shift")
 end
 
 -- What a tooltip can hold that a panel cannot show: another tooltip inside it, bars, frames

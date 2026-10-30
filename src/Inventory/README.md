@@ -647,8 +647,9 @@ login has no last line, until the game has said your time.
     loot* (`module` in `Vendor.BOXES`: read with `Core.Settings`, set with `Core.Set`). One slot stays free: when the last
     one fills, the junk worth the least (`Contents.Junk`, all of its stack) goes, and the chat says so. The game destroys an
     item only on a press of the player's (`DeleteCursorItem`, `HasRestrictions`), so it goes at the next key press out of a
-    fight: a frame hears the keyboard (`SetPropagateKeyboardInput`) only while something waits, and hands every key on. No
-    junk, or the game kept it: a warning in `UIErrorsFrame`, once a minute (`Room.WARN`), and no further try that session.
+    fight: a frame hears the keyboard (`SetPropagateKeyboardInput`) only while something waits, and hands every key on. The
+    game refuses now and then: the item goes back into the bags and it is tried again `Room.AGAIN` seconds later. No junk:
+    a warning in `UIErrorsFrame`, once a minute (`Room.WARN`).
   - **Auto Sell and Auto Repair** (`Bags/Vendor.lua`, Saneroki, 2026-10-30): two checkboxes in the foot, left of the
     gold (the settings `autoSell` and `autoRepair`, on at first, also on the page Inventory): a pencil box
     (`Journal.Box`), a tick of two pencil strokes (Kalam has no such letter), the word beside it. A frame after
@@ -701,7 +702,7 @@ the travel overlay's. Its look:
 ## Stat weights
 `Asks.lua` (Saneroki, 2026-10-30): *Equip and delete without asking*, on in every profile: the game's questions before gear
 binds or ends a refund and before an item is destroyed answered as their own Yes would; where the game keeps destroying
-for a click, its question comes up with the word typed in, and is not tried again (`options.deleteRefused`).
+for a click, its question stands with the word typed in, and the next item is tried again.
 
 `Weights.lua` (Saneroki, 2026-10-30) says what each stat is worth to a character, so that an upgrade is one for the class
 and specialization played. Core's `Core.Upgrade` asks for them (`Core.WeighWith`), so the arrow in the bags, Loot,

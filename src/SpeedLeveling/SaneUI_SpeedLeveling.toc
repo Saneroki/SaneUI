@@ -19,7 +19,7 @@ Lines.lua
 Run.lua
 # The guide shown and followed; what its steps at hand want for the key and the quest givers
 Guide.lua
-# Whether your Herbalism and Mining are enough for the next zone the guide goes to (Core's herbs, ore and spawns)
+# The steps of your professions woven into the guide, before each harder zone (Core's herbs, ore and spawns)
 Gathering.lua
 # What the key looks for around you, by name: your guide's steps, your quests' objectives, the NPCs to hand in to;
 # the thing of the world in front of you

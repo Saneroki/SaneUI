@@ -852,105 +852,78 @@ do
     Core.Upgrade, C_Container, C_NewItems, C_Item.EquipItemByName = upgrade, container, new, nil
 end
 
--- Group rolls: each Sane UI says what the thing brings, the one it brings the most Needs it.
+-- Group rolls: each character on its own: Need on an upgrade, else Greed, and nobody Passes.
 do
-    local upgrade, send = Core.Upgrade, Core.Wire.Send
-    local rolled, said, gains, left = {}, {}, {}, {}
-    local link, other = "item:500:x", "Player-1-00000002"
+    local upgrade = Core.Upgrade
+    local rolled, gains, left, described = {}, {}, {}, true
     Core.Upgrade = function(_, item) return gains[item] and "better" or nil, gains[item] end
-    Core.Wire.Send = function(kind, fields, channel) said[#said + 1] = { kind = kind, fields = fields, channel = channel } end
-    UnitGUID = (function(old)
-        return function(unit) if unit == "player" then return "Player-1-00000005" end return old(unit) end
-    end)(UnitGUID)
-    C_Item.GetItemInfo = function() return "Thing" end
-    GetLootRollItemLink = function() return link end
+    C_Item.GetItemInfo = function() return described and "Thing" or nil end
+    GetLootRollItemLink = function() return "item:500:x" end
     GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, true, true end
     GetLootRollTimeLeft = function(id) return left[id] or 0 end
     RollOnLoot = function(id, choice) rolled[id] = choice end
-    IsInGroup, IsInRaid = function(kind) return kind == nil end, function() return false end
-    gains[500], left[1] = 8, 60000
-    W.Fire("START_LOOT_ROLL", 1, 60000)
-    check(said[1] and said[1].kind == ns.Rolls.KIND and said[1].fields[1] == 500 and said[1].fields[2] == 8
-        and said[1].channel == "PARTY", "a roll: what it brings said to the group")
-    check(rolled[1] == nil, "not decided before the others had their say")
-    ns.Rolls.Heard("x", { "500", "3", other })
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[1] == 1, "it brings yours the most: Need")
-    left[2] = 60000
-    W.Fire("START_LOOT_ROLL", 2, 60000)
-    ns.Rolls.Heard("x", { "500", "12", other })
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[2] == 2, "it brings the other one more: Greed")
-    left[3] = 60000
-    W.Fire("START_LOOT_ROLL", 3, 60000)
-    ns.Rolls.Heard("x", { "500", "8", other })
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[3] == 2, "as much: the lower GUID gets it, every side comes to the same")
-    gains[500], left[4] = nil, 60000
-    W.Fire("START_LOOT_ROLL", 4, 60000)
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[4] == 2, "no upgrade: Greed")
-    gains[500], left[5] = 4, 60000
-    W.Fire("START_LOOT_ROLL", 5, 60000)
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[5] == 1, "nobody else says a word: Need on an upgrade")
-    -- In a fight it waits; as the clock runs out it is decided all the same.
-    left[6] = 60000
+    local function Roll(id)
+        left[id] = left[id] or 60000
+        W.Fire("START_LOOT_ROLL", id, 60000)
+    end
+    gains[500] = 8
+    Roll(1)
+    check(rolled[1] == 1, "an upgrade: Need, at once")
+    gains[500] = nil
+    Roll(2)
+    check(rolled[2] == 2, "no upgrade: Greed")
     W.combat = true
-    W.Fire("START_LOOT_ROLL", 6, 60000)
-    W.Wait(ns.Rolls.WAIT * 2)
-    check(rolled[6] == nil, "in a fight: not yet")
-    left[6] = ns.Rolls.LAST
-    W.Wait(ns.Rolls.TICK * 2)
-    check(rolled[6] == 1, "the clock running out: decided")
+    gains[500] = 8
+    Roll(3)
+    check(rolled[3] == 1, "in a fight just the same")
     W.combat = false
-    -- One of you always rolls: all you can but Need first, Need last rather than leaving it.
+    -- An item the game has not described yet waits for it, as long as the clock allows.
+    described = false
+    Roll(4)
+    check(rolled[4] == nil, "not described yet: not yet")
+    described = true
+    W.Wait(ns.Rolls.TICK * 2)
+    check(rolled[4] == 1, "described: rolled")
+    described = false
+    Roll(5)
+    left[5] = ns.Rolls.LAST
+    W.Wait(ns.Rolls.TICK * 2)
+    check(rolled[5] == 1, "the clock running out: rolled as it is")
+    described = true
+    -- Never Pass: what the game offers instead of Greed, Need last, and nothing where it offers nothing.
     local info = GetLootRollItemInfo
+    gains[500] = nil
     GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, true, false end
-    gains[500], left[21] = nil, 60000
-    W.Fire("START_LOOT_ROLL", 21, 60000)
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[21] == 1, "no upgrade, and the game lets you only Need: Need, so that it is rolled")
-    left[22] = 60000
-    W.Fire("START_LOOT_ROLL", 22, 60000)
-    ns.Rolls.Heard("x", { "500", "3", other })
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[22] == 0, "with another one first: Pass")
+    Roll(6)
+    check(rolled[6] == 1, "no upgrade, and the game lets you only Need: Need")
     GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, false, false, false, nil, nil, nil, nil, true end
-    left[23] = 60000
-    W.Fire("START_LOOT_ROLL", 23, 60000)
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[23] == 4, "what the game lets you instead of Greed")
+    Roll(7)
+    check(rolled[7] == 4, "what the game lets you instead of Greed")
     GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, false, false end
-    left[24] = 60000
-    W.Fire("START_LOOT_ROLL", 24, 60000)
-    check(said[#said].fields[2] == -1, "nothing you can roll: said, so that another one is first")
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[24] == 0, "and Pass")
-    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, true, false end
-    left[25] = 60000
-    W.Fire("START_LOOT_ROLL", 25, 60000)
-    ns.Rolls.Heard("x", { "500", "-1", other })
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[25] == 1, "the other one can roll nothing: yours to roll, whatever its GUID")
+    Roll(8)
+    check(rolled[8] == nil, "nothing you can roll: no Pass, the roll is left alone")
+    GetLootRollItemInfo = info
+    gains[500] = 8
+    GetLootRollItemInfo = function() return 1, "Thing", 1, 2, false, false, true end
+    Roll(9)
+    check(rolled[9] == 2, "an upgrade you may not Need: Greed")
     GetLootRollItemInfo = info
     -- The game's question on a thing that binds, for a roll made here only.
     local confirmed, hiddenRoll = {}, 0
     ConfirmLootRoll = function(id, choice) confirmed[id] = choice end
     StaticPopup_Hide = function() hiddenRoll = hiddenRoll + 1 end
-    W.Fire("CONFIRM_LOOT_ROLL", 5, 1, "")
+    W.Fire("CONFIRM_LOOT_ROLL", 1, 1, "")
     W.Fire("CONFIRM_LOOT_ROLL", 77, 1, "")
     W.Wait(0.1)
-    check(confirmed[5] == 1 and confirmed[77] == nil and hiddenRoll == 1, "the question answered for our rolls alone")
+    check(confirmed[1] == 1 and confirmed[77] == nil and hiddenRoll == 1, "the question answered for our rolls alone")
     Core.Set(ns.name, "rolls", false)
-    left[7] = 60000
-    W.Fire("START_LOOT_ROLL", 7, 60000)
-    W.Wait(ns.Rolls.WAIT + ns.Rolls.TICK * 2)
-    check(rolled[7] == nil, "Roll on group loot off: yours")
+    Roll(10)
+    W.Wait(ns.Rolls.TICK * 2)
+    check(rolled[10] == nil, "Roll on group loot off: yours")
     Core.Set(ns.name, "rolls", true)
-    Core.Upgrade, Core.Wire.Send, C_Item.GetItemInfo = upgrade, send, nil
+    Core.Upgrade, C_Item.GetItemInfo = upgrade, nil
     GetLootRollItemLink, GetLootRollItemInfo, GetLootRollTimeLeft, RollOnLoot = nil, nil, nil, nil
-    IsInGroup, IsInRaid, ConfirmLootRoll, StaticPopup_Hide = nil, nil, nil, nil
+    ConfirmLootRoll, StaticPopup_Hide = nil, nil
 end
 
 -- Skip cinematics: a cinematic stopped as it starts, a scene only where the game lets you leave it, a movie finished.
@@ -1132,38 +1105,71 @@ Core.Set(ns.name, "loot", true)
 check(W.cvars.softTargetInteract == "3", "on again: the interact key on")
 
 -------------------------------------------------------------------------------
---  Gathering for the next zone
+--  Professions before the next zone
 -------------------------------------------------------------------------------
--- The guide goes from here (1411) to the next zone (1413): there half the herbs need 115, the ore 125. Herbalism
--- 92 is short; Mining not learnt says nothing.
-local skills = { { name = "Herbalism", rank = 92 } }
+-- The guide goes from here (1411) to the next zone (1413), where half the herbs need 115, the ore 125, and back to a
+-- zone that asks less. Herbalism 92 and Blacksmithing 130 are yours, Mining is not learnt.
+ns.Gathering.STAY = 2
+local skills = { { name = "Herbalism", rank = 92 }, { name = "Blacksmithing", rank = 130 } }
 C_SkillInfo = { GetNumSkillLines = function() return #skills end, GetSkillLineInfo = function(index) return skills[index] end }
 local trip = table.concat({ "#forever", "#" .. "name Trip", "#" .. "group G", "step", L("place", "1411,50,50"),
-    L("take", "60"), "step", L("place", "1413,40,40"), L("take", "61") }, "\n")
+    L("take", "60"), "step", L("place", "1411,51,51"), L("take", "61"), "step", L("place", "1413,40,40"), L("take", "62"),
+    "step", L("place", "1413,41,41"), L("take", "63"), "step", L("place", "1411,52,52"), L("take", "64") }, "\n")
 ns.Guide.AddAll(ns.Format.Parts(trip), false)
 ns.Guide.Choose("G\\Trip")
 local need = ns.Gathering.Need(1413)
-check(need and need.herb == 115 and need.ore == 125 and ns.Gathering.Need(1411).herb == 1,
-    "a zone's asks: the skill that gathers half its herbs, its ore")
-local short = ns.Gathering.Short()
-check(short and short.map == 1413 and #short.short == 1 and short.short[1].skill == "Herbalism"
-    and short.short[1].have == 92 and short.short[1].need == 115, "the next zone ahead: Herbalism short, Mining not learnt")
-ns.Steps.Update()
-local said
-for _, widget in ipairs(W.frames) do
-    if widget._shown and type(widget._text) == "string" and widget._text:find("Herbalism 92 of 115", 1, true) then said = widget end
+check(need and need.herb == 115 and need.ore == 125 and need.any == 125 and ns.Gathering.Need(1411).herb == 1,
+    "a zone's asks: the skill that gathers half its herbs, its ore, the higher of the two")
+local function Woven(number) return ns.Run.Guide().steps[number].woven end
+local asked -- the step of Herbalism for the harder zone
+for number, step in ipairs(ns.Run.Guide().steps) do
+    if step.woven == "Herbalism" and step.lines[2].level == 115 then asked = number end
 end
-check(said ~= nil, "the view says so under its head")
+check(asked and Woven(asked - 1) == "Mining" and Woven(asked + 1) == "Skinning",
+    "before the first step into the harder zone: each profession a step of its own, in order")
+local total = #ns.Run.Guide().steps
+ns.Run.Go(asked - 2)
+ns.Run.Skip(ns.Run.At())
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() == asked, "Mining not learnt is passed by: the first one that is yours stops you")
+local shown = ns.Guide.Picture(20, 0)
+local line = shown.hand[1].lines[2]
+check(shown.hand[1].lines[1].text == "Level Herbalism to 115" and line.text == "Before Zone" and line.count
+    and line.have == 92 and line.need == 115, "the step says what to do, with a count and a bar")
+for _, row in ipairs(shown.ahead) do
+    check(row.text ~= "Level Tailoring to 125", "a profession not learnt is not listed")
+end
 skills[1].rank = 120
-check(ns.Gathering.Short() == nil, "enough for it: nothing said")
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() > asked and not Woven(ns.Run.At()), "the skill reached: on, past what is enough already")
 skills[1].rank = 92
+ns.Run.Go(asked)
+ns.Run.Skip(asked)
+W.Wait(1)
+check(not Woven(ns.Run.At()), "a click skips it as any step")
+ns.Run.Go(asked)
 Core.Set(ns.name, "gather", false)
-check(ns.Gathering.Short() == nil and not said._shown, "Gathering for the next zone off: nothing said")
+W.Wait(1)
+check(not ns.Run.Listed(asked) and not Woven(ns.Run.At()), "Professions before the next zone off: not one of them stops you or is listed")
 Core.Set(ns.name, "gather", true)
+W.Wait(1)
+skills[#skills + 1] = { name = "Mining", rank = 1 }
+check(ns.Run.Listed(asked - 1) and #ns.Run.Guide().steps == total, "learnt later: its step is there, the guide's numbers stay")
+skills[#skills] = nil
 here.map = 1413
-check(ns.Gathering.Short() == nil, "there already, nothing further ahead: nothing said")
+ns.Run.Go(asked)
+ns.Run.Check()
+check(ns.Run.At() == asked, "gone to, it stays until you go on")
+ns.Run.Skip(asked)
 here.map = 1411
+ns.Gathering.STAY = 10
+ns.Guide.Choose("G\\Trip")
+check(#ns.Run.Guide().steps == 5, "a zone the guide only passes through asks nothing")
+ns.Gathering.STAY = 2
 ns.Guide.Choose("G\\Test")
+ns.Gathering.STAY = 10
 
 check(not ns.off and #SaneUI.Core.log == 0, "no error stood the module down along the way: "
     .. tostring(SaneUI.Core.log[1] and SaneUI.Core.log[1].text))
