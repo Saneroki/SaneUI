@@ -86,7 +86,7 @@ prints its log.
   `Strays.lua`: its button on a small map's stand-in and its page, with a pretend addon's button and the game's
   addon compartment; `LabSatchel` in the console), `unitframes` (Core and Combat from their TOCs: your frame with a
   cast and your breath as part of it, the game's cast functions standing in; `LabCast("Fireball")` casts, `LabCombat`
-  in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 1, 3)`
+  in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
   says another), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the

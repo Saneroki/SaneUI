@@ -200,12 +200,16 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 ### A new level
 
 At a new level the middle of the screen says it, for a few seconds, in place of the game's toast and its lines in the
-chat: the level, the stats it brought and how long you played on the level before.
+chat: the level, what it brought (your health and mana, your stats, a talent point) and how long you played on the
+level before.
 
 ```
 Level 22!
+HP +18
+Mana +20
 Str +2
 Stam +1
+Talent +1
 Leveled 7h
 ```
 
@@ -680,8 +684,9 @@ until the game has said your time.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
   and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags); each also as Retail (`W.Play("retail")`: the level line, the stats, the windows that stand down, the icons, our bar, the bags without a keyring).
 
-`LevelUp.lua` (Saneroki, 2026-10-30) tells a new level in the middle of the screen. The stats come with
-`PLAYER_LEVEL_UP`, in Core's short words (`Core.StatWord`; Retail's event has no Spirit); the time from `TIME_PLAYED_MSG`,
+`LevelUp.lua` (Saneroki, 2026-10-30) tells a new level in the middle of the screen. What it brought comes with
+`PLAYER_LEVEL_UP`, a line only for what grew, in Core's short words (`Core.StatWord`; Retail's event has no Spirit); the
+game's second number is told as mana, as its chat did; the time from `TIME_PLAYED_MSG`,
 asked once five seconds after the login with the chat windows deaf to that one answer (`Core.Lend`, `SetDeaf`), so
 `/played` stays as it was; `GetTime()` counts on from there and the level's start is the level-up itself.
 The chat windows write their level-up lines at `PLAYER_LEVEL_UP` themselves (no `CHAT_MSG_`, no filter), Retail's at

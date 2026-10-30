@@ -1187,14 +1187,16 @@ do
     W.Wait(100)
     W.chatHeard = nil -- what it heard of the levels of the tests above, before it was made deaf
     W.Fire("PLAYER_LEVEL_UP", 22, 18, 20, 1, 0, 2, 0, 1, 0, 0)
-    check(Said() == "Level 22!/Str |cff6fe06f+2|r/Stam |cff6fe06f+1|r/Leveled 7h", "the level, what it brought, how long it took (" .. Said() .. ")")
+    check(Said() == "Level 22!/HP |cff6fe06f+18|r/Mana |cff6fe06f+20|r/Str |cff6fe06f+2|r/Stam |cff6fe06f+1|r/Talent |cff6fe06f+1|r/Leveled 7h",
+        "the level, what it brought, how long it took (" .. Said() .. ")")
     check(view._shown and not (W.chatHeard or {}).PLAYER_LEVEL_UP, "in the middle of the screen, nothing in the chat")
     W.Wait(LevelUp.FADE_IN + LevelUp.HOLD + LevelUp.FADE_OUT + 0.1)
     check(not view._shown, "and it goes by itself")
 
-    W.Fire("PLAYER_LEVEL_UP", 23, 18, 20, 1, 0, 0, 0, 0, 0)
-    check(Said() == "Level 23!/Leveled 6s", "no stats in Retail's shorter event; the next level's time counts from this one (" .. Said() .. ")")
-    W.Fire("PLAYER_LEVEL_UP", 24, 18, 20, 1, 0, 0, 0, 0, 0, 3)
+    W.Fire("PLAYER_LEVEL_UP", 23, 18, 0, 0, 0, 0, 0, 0, 0)
+    check(Said() == "Level 23!/HP |cff6fe06f+18|r/Leveled 6s",
+        "a line only for what grew, in Retail's shorter event too; the next level's time counts from this one (" .. Said() .. ")")
+    W.Fire("PLAYER_LEVEL_UP", 24, 0, 0, 0, 0, 0, 0, 0, 0, 3)
     check(Said() == "Level 24!/Spi |cff6fe06f+3|r/Leveled 0s", "a level on top of the last: the toast anew")
     W.Wait(LevelUp.FADE_IN + LevelUp.HOLD - 1)
     check(view._shown, "with its own time, the last one's end keeps away")

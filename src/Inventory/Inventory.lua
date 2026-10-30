@@ -167,6 +167,7 @@ ns.TEXT = {
     levelToastTip = "At a new level: the level, the stats it brought and how long you played on the level before, in the middle of the screen, in place of the game's toast and its lines in the chat. Off: the game's own.",
     levelTitle = "Level %d!",
     levelStat = "%s |cff6fe06f+%d|r",
+    levelTalent = "Talent",
     levelTook = "Leveled %s",
     -- The bags' dropdown View (Bags/Bags.lua)
     bagsLook = "Display",

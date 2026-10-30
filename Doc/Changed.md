@@ -8,8 +8,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 
 ### Inventory: a new level in the middle of the screen; Core: the stats written short everywhere (Saneroki, 2026-10-30)
 Saneroki: hide the level-up lines in the chat; the toast in the middle of the screen with the stat changes and how long
-you played on that level (*Level 22! / Str +2 / Stam +1 / Leveled 7h*); in the entire game all stats shortened. A game
-restart takes it in (new files in Core's and Inventory's TOCs, Core's new font).
+you played on that level (*Level 22! / Str +2 / Stam +1 / Leveled 7h*), then health, mana and talent points in it too, as
+the chat told them (*HP +18*, *Mana +20*, *Talent +1*, a line only for what grew); in the entire game all stats
+shortened. A game restart takes it in (new files in Core's and Inventory's TOCs, Core's new font).
 - **`src/Core/Stats.lua` (new):** `Core.StatWord`, `Core.StatLine`, the one place of the short words: Str, Agi, Stam, Int, Spi,
   HP, Arm, Def, Block val, Crit, Crit dmg, Hit, AP, RAP, Haste, Exp, ArP, SP, Spell dmg, Heal, SPen, MP5, HP5, Mast, Vers,
   Resil, Avoid, Move, DPS, iLvl, and for each school its res, dmg and pen. Sentences stay as they are.

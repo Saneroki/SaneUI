@@ -1,6 +1,7 @@
--- Level up: a new level in the middle of the screen, the stats it brought and how long the level before took
+-- Level up: a new level in the middle of the screen, what it brought and how long the level before took
 -- Core and the module Inventory from their TOCs, as in the scene inventory. It stays up here (LevelUp.HOLD); the module's
--- table is LabLevelUp in the console: LabLevel(23, 1, 3) says another level, with so much Strength and Stamina.
+-- table is LabLevelUp in the console: LabLevel(23, 18, 0, 0, 0, 1, 0, 3) says another level, with the game's event's
+-- numbers after the level: health, mana, talent points, a blank, then Strength, Agility, Stamina, Intellect, Spirit.
 Lab.Blizzard("Blizzard_FrameXMLUtil")
 Lab.BlizzardFiles("Blizzard_UIPanels_Game", "Camelot/PaperDollFrameConstants.lua", "Camelot/PaperDollFrame.lua",
     "Vanilla/PaperDollFrameStats.lua", "Cata/PaperDollFrameStats.lua", "Camelot/PaperDollFrameStats.lua")
@@ -25,15 +26,11 @@ local picture = world:CreateTexture(nil, "BACKGROUND")
 picture:SetAllPoints(world)
 picture:SetTexture("assets/generated/ui-lab/backdrops/elwynn-forest")
 
-function LabLevel(level, strength, stamina)
-    local Core, TEXT = SaneUI.Core, ns.TEXT
-    local lines = {}
-    if strength then lines[#lines + 1] = TEXT.levelStat:format(Core.StatWord("Strength"), strength) end
-    if stamina then lines[#lines + 1] = TEXT.levelStat:format(Core.StatWord("Stamina"), stamina) end
-    ns.LevelUp.Show(level, lines, ns.LevelUp.Took(7 * 3600))
+function LabLevel(level, ...)
+    ns.LevelUp.Show(level, ns.LevelUp.Lines(...), ns.LevelUp.Took(7 * 3600))
 end
 
 Lab.OnLogin(function()
     ns.LevelUp.HOLD = 3600
-    LabLevel(22, 2, 1)
+    LabLevel(22, 18, 20, 1, 0, 2, 0, 1, 0, 0)
 end)

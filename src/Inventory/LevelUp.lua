@@ -6,14 +6,18 @@ local _, ns = ...
 --  toast and its lines in the chat (Saneroki, 2026-10-30):
 --
 --      Level 22!
+--      HP +18
+--      Mana +20
 --      Str +2
 --      Stam +1
+--      Talent +1
 --      Leveled 7h
 --
---  The stats come with the game's PLAYER_LEVEL_UP, in Core's short words. The
---  time is the game's: it tells your time on this level at TIME_PLAYED_MSG,
---  asked once after the login; from there GetTime() counts on. It is asked
---  with the chat windows deaf to that one answer, so /played stays as it was.
+--  What it brought comes with the game's PLAYER_LEVEL_UP, in Core's short
+--  words; a line only for what grew. The time is the game's: it tells your
+--  time on this level at TIME_PLAYED_MSG, asked once after the login; from
+--  there GetTime() counts on. It is asked with the chat windows deaf to that
+--  one answer, so /played stays as it was.
 --
 --  The chat: its windows write those lines when they hear PLAYER_LEVEL_UP
 --  themselves, and Social's window takes what they write. So they no longer
@@ -49,7 +53,7 @@ local FONT = "Interface\\AddOns\\SaneUI\\Fonts\\Expressway.ttf"
 local GOLD = { 1, 0.82, 0 }
 local WHITE = { 1, 1, 1 }
 local GREY = { 0.72, 0.72, 0.72 }
--- The stats in the order the game's event gives them, and in the order they are told.
+-- The stats in the order the game's event gives them.
 local STATS = { { "SPELL_STAT1_NAME", "Strength" }, { "SPELL_STAT2_NAME", "Agility" }, { "SPELL_STAT3_NAME", "Stamina" },
                 { "SPELL_STAT4_NAME", "Intellect" }, { "SPELL_STAT5_NAME", "Spirit" } }
 -- Retail writes its line at the second, WoW: Forever at the first.
@@ -211,7 +215,8 @@ local function Row(index)
     return row
 end
 
--- level: the new one; lines: the stats' lines; took: how long the last one took, nil when the game has not said.
+-- level: the new one; lines: what it brought (LevelUp.Lines); took: how long the last one took, nil when the game has
+-- not said.
 function LevelUp.Show(level, lines, took)
     if not view then Build() end
     title:SetText(ns.TEXT.levelTitle:format(level))
@@ -245,17 +250,28 @@ function LevelUp.Show(level, lines, took)
     end))
 end
 
-local function Leveled(level, _, _, _, _, ...)
+local function Gain(lines, word, amount)
+    amount = Core.Plain(amount)
+    if type(amount) == "number" and amount > 0 then lines[#lines + 1] = ns.TEXT.levelStat:format(word, amount) end
+end
+
+-- What a level brought, as lines: the event's values after the level, in the order the chat told them but for the
+-- talent points, which close the list. The game says "mana" for its second number, as this does.
+function LevelUp.Lines(health, power, talents, _, ...)
+    local lines = {}
+    Gain(lines, Core.StatWord(Core.Word("HEALTH", "Health")), health)
+    Gain(lines, Core.Word("MANA", "Mana"), power)
+    for index, stat in ipairs(STATS) do
+        Gain(lines, Core.StatWord(Core.Word(stat[1], stat[2])), (select(index, ...)))
+    end
+    Gain(lines, ns.TEXT.levelTalent, talents)
+    return lines
+end
+
+local function Leveled(level, ...)
     level = Core.Plain(level)
     if Wanted() and type(level) == "number" then
-        local lines = {}
-        for index, stat in ipairs(STATS) do
-            local gain = Core.Plain((select(index, ...)))
-            if type(gain) == "number" and gain > 0 then
-                lines[#lines + 1] = ns.TEXT.levelStat:format(Core.StatWord(Core.Word(stat[1], stat[2])), gain)
-            end
-        end
-        LevelUp.Show(level, lines, thisLevel and LevelUp.Took(thisLevel + GetTime() - told) or nil)
+        LevelUp.Show(level, LevelUp.Lines(...), thisLevel and LevelUp.Took(thisLevel + GetTime() - told) or nil)
     end
     if thisLevel then thisLevel, told = 0, GetTime() end -- the time on the new level starts now
 end
