@@ -78,7 +78,7 @@ ns.TEXT = {
 
     -- The quest givers (Quests.lua).
     questsHeader = "Quest givers",
-    questsHeaderTip = "What talking to a quest giver does for your guide. Hold Shift while you talk to do it yourself.",
+    questsHeaderTip = "What talking to a quest giver does for your guide. Hold Shift during a talk and the rest of it is yours, nothing more is done for you with that NPC.",
     take = "Take the guide's quests",
     takeTip = "The quests the steps at hand of your guide take (and those of the step after them) are accepted as the quest giver offers them.",
     handin = "Hand in the guide's quests",

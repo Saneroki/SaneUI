@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 124 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 123 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 124 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 133 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Inventory: the doll's slots empty of painted drawings, our own drawings in empty slots (Saneroki, 2026-10-30)
@@ -18,6 +18,14 @@ icons stand in the empty slots.
   line, as the card was held by the game (`assets/interface/categories/tabard.png`).
 - The lab's scene `inventory` gives the doll its slots (`C_PaperDollInfo.GetInventorySlotInfo`). Tests: `dev/tests/sheet.lua`
   124 checks (a drawing for every slot, shown empty, gone with an item, back without it).
+
+### Speed Leveling: Shift makes a whole talk yours (Saneroki, 2026-10-30)
+Saneroki: holding Shift while talking to an NPC should stop the automatic accepting, going on and choosing a reward.
+Shift was only asked at each step, so letting go to read took the quest just opened. Now Shift seen at any step of a talk
+holds the rest of it, by the NPC's GUID (`held` in `Quests.lua`), until `Quests.OVER` seconds after a window closed with
+no NPC left: the game closes the gossip window for a quest's, which is the same talk. The tip of *Quest givers* says so.
+- Tests: `dev/tests/speedleveling.lua` 133 checks (let go in a talk, the gossip window gone for a quest's, a goodbye screen
+  left open, Shift first seen at a later step, the next talk and another NPC done for you again).
 
 ### Bags: Auto Sell and Auto Repair, two checkboxes in the foot (Saneroki, 2026-10-30)
 Saneroki: both belong to the bags, not to Speed Leveling, as a checkbox in the bag at first. New file `Bags/Vendor.lua`,

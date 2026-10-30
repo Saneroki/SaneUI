@@ -8,9 +8,12 @@ local _, ns = ...
 --  step after them too, which a quest giver often offers at once), those they
 --  hand in are handed in, with the reward the step names, else the only one (a
 --  choice of several is yours), and the talk option a step names is chosen.
---  Only the guide's quests (Guide.Quests); with Shift held, nothing: the game's
---  windows as they are. The switches Take the guide's quests, Hand in the
---  guide's quests, Choose the guide's talk.
+--  Only the guide's quests (Guide.Quests). The switches Take the guide's quests,
+--  Hand in the guide's quests, Choose the guide's talk.
+--
+--  Shift (Saneroki, 2026-10-30) makes a talk yours: seen at any step of it,
+--  nothing more is accepted, handed in, chosen or closed for you with that NPC,
+--  held or let go, until the talk is over: you may let go to read what you opened.
 --
 --  The game's own ways (its quest and gossip windows' functions): its gossip
 --  window's quests and options (C_GossipInfo), the older greeting of a quest
@@ -38,13 +41,21 @@ ns.Quests = Quests
 Quests.AFTER = 5   -- seconds after a quest done at an NPC in which a talk that opens again is closed
 Quests.SETTLE = 2  -- seconds the quest log goes on changing after that quest
 Quests.LEFT = 30   -- seconds the key leaves an NPC alone, at most
+Quests.OVER = 0.5  -- seconds after a window closed before the talk counts as over
 
 local EMPTY = {}
 local left = {}    -- the NPC you are through with: guid, when, did (when a quest was done there), looked (a talk found nothing)
+local held         -- whose talk is yours: Shift was seen in it (true: a quest that came without an NPC)
+
+local function Talking()
+    return Core.Ask(UnitGUID, "npc")
+end
 
 -- What the guide wants of quest givers now; nil when nothing may be done for you.
 local function Wants()
-    if ns.off or Core.Ask(rawget(_G, "IsShiftKeyDown")) then return nil end
+    local who = Talking() or true
+    if Core.Ask(rawget(_G, "IsShiftKeyDown")) then held = who end
+    if ns.off or held == who then return nil end
     return ns.Guide.Quests()
 end
 
@@ -53,9 +64,12 @@ local function Call(name, ...)
     if type(fn) == "function" then return Core.Ask(fn, ...) end
 end
 
-local function Talking()
-    return Core.Ask(UnitGUID, "npc")
-end
+-- A window closed: Shift's hold ends with the talk, not with the gossip window that made way for a quest.
+local Closed = Core.Later(function()
+    ns.Guarded(function()
+        if not Talking() then held = nil end
+    end)
+end, Quests.OVER)
 
 function Quests.Forget()
     left.guid = nil
@@ -213,4 +227,6 @@ function Quests.Start()
     ns.On("QUEST_PROGRESS", Progress)
     ns.On("QUEST_COMPLETE", Rewards)
     ns.On("QUEST_LOG_UPDATE", LogChanged)
+    ns.On("GOSSIP_CLOSED", Closed)
+    ns.On("QUEST_FINISHED", Closed)
 end

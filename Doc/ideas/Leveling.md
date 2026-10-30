@@ -51,7 +51,7 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   targets and items as clean icons only over the guide's top, our own secure buttons. Built.
 - **Decision (Saneroki, 2026-10-25), the rebuild:** Speed Leveling made independent of any other addon and able to
   import and open the paid guides itself (`Unlock.lua`); the key's order loot → talk → pick up → fight → find to
-  match the game's own interact button; quest givers take and hand in the guide's quests (`Quests.lua`); what is
+  match the game's own interact button; quest givers take and hand in the guide's quests (`Quests.lua`; Shift seen in a talk makes the rest of it the player's); what is
   found ordered nearest first by the zone you are in (the set *Spawns*); a quest Core lacks found by the game's own
   objective words; Find's macro chained for the 255-character limit. Built.
 - **Built (Saneroki, 2026-10-25, board #163):** the key walks you to the NPC found (the game's Click-to-Move, lent

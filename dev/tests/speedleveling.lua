@@ -668,6 +668,72 @@ check(header:GetAttribute("left") == false, "another NPC: the first forgotten")
 units.npc, units.softinteract = nil, nil
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "Creature-0-1-0-1-889-01", nil)
 header:SetAttribute("state-mode", "find")
+
+-- Shift seen once in a talk: the rest of it is yours, let go or not, until the talk is over.
+do
+    local Quests, did = ns.Quests, {}
+    local function Held(on) IsShiftKeyDown = function() return on end end
+    local function Over()
+        units.npc = nil
+        W.Fire("QUEST_FINISHED")
+        W.Wait(Quests.OVER)
+        units.npc = { name = "Some Farmer", guid = giver }
+    end
+    AcceptQuest = function() did[#did + 1] = "taken" end
+    CompleteQuest = function() did[#did + 1] = "completed" end
+    GetQuestReward = function(choice) did[#did + 1] = "reward " .. choice end
+    IsQuestCompletable, GetNumQuestChoices = function() return true end, function() return 1 end
+    units.npc = { name = "Some Farmer", guid = giver }
+    gossip.chosenAvailable, gossip.available = nil, { { questID = 40 } }
+    Held(true)
+    W.Fire("GOSSIP_SHOW")
+    Held(false)
+    check(gossip.chosenAvailable == nil, "Shift held as the talk begins: nothing done")
+    W.Fire("GOSSIP_SHOW")
+    check(gossip.chosenAvailable == nil, "let go: the talk stays yours")
+    W.Fire("QUEST_DETAIL")
+    check(#did == 0, "the quest you opened to read is not taken")
+    W.Fire("GOSSIP_CLOSED")
+    W.Wait(Quests.OVER)
+    GetQuestID = function() return 41 end
+    W.Fire("QUEST_PROGRESS")
+    W.Fire("QUEST_COMPLETE")
+    check(#did == 0, "the gossip window gone for a quest's: the same talk, nothing handed in, no reward chosen")
+    gossip.available, gossip.options = {}, {}
+    local before = closed
+    W.Fire("GOSSIP_SHOW")
+    W.Wait(0.1)
+    check(closed == before, "nor is a goodbye screen closed")
+    Over()
+    GetQuestID = function() return 40 end
+    W.Fire("QUEST_DETAIL")
+    check(did[1] == "taken", "the talk over: the next one is done for you again")
+    ns.Quests.Forget()
+    Held(true)
+    W.Fire("QUEST_DETAIL")
+    Held(false)
+    units.npc = { name = "Another Farmer", guid = "Creature-0-1-0-1-889-01" }
+    W.Fire("QUEST_DETAIL")
+    check(#did == 2, "another NPC is another talk")
+    ns.Quests.Forget()
+    Over()
+    did = {}
+    Held(true)
+    GetQuestID = function() return 41 end
+    W.Fire("QUEST_PROGRESS")
+    check(#did == 0, "Shift first seen at a later step: not on to the rewards")
+    Held(false)
+    W.Fire("QUEST_COMPLETE")
+    check(#did == 0, "and no reward chosen")
+    Over()
+    W.Fire("QUEST_PROGRESS")
+    W.Fire("QUEST_COMPLETE")
+    check(did[1] == "completed" and did[2] == "reward 1", "without Shift: on to the rewards, the only one chosen")
+    ns.Quests.Forget()
+    Over()
+    units.npc = nil
+    AcceptQuest, CompleteQuest, GetQuestReward, IsQuestCompletable, GetNumQuestChoices = nil, nil, nil, nil, nil
+end
 GetQuestID, AcceptQuest = nil, nil
 gossip.chosenAvailable = nil
 

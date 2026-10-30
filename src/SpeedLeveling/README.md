@@ -68,7 +68,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Your guide's targets | on | What the steps at hand of your guide name to kill or talk to comes first |
 | Hearthstone | on | When the guide's step says to hearth, the key hearths once nothing is to be looted, talked to, picked up or fought |
 | Quest items | on | When the key finds nothing wanted around you, it uses one item: the guide's step's first, then a quest item of your quest log; the first in your bags that is ready |
-| *Quest givers:* Take the guide's quests | on | The quests the steps at hand take (and the step after them) are accepted as the quest giver offers them. Hold Shift while you talk to do it yourself |
+| *Quest givers:* Take the guide's quests | on | The quests the steps at hand take (and the step after them) are accepted as the quest giver offers them. Hold Shift during a talk and the rest of it is yours |
 | Hand in the guide's quests | on | The quests the steps at hand hand in are handed in, with the reward the guide names, else the only one |
 | Choose the guide's talk | on | Where a step names a gossip option, it is chosen |
 | Close the talk when it is done | on | After a quest is taken or handed in the key leaves that NPC alone, and a talk that comes up with nothing for you closes by itself (*The key*). A talk with quests your guide does not know stays open |
@@ -260,7 +260,10 @@ choice is made by those, in a fight too (`Key.lua`):
   out of a fight only, anew the moment before each press.
 - **The quest givers** (`Quests.lua`): while you talk to an NPC, the quests the steps at hand take are accepted and
   those they hand in are handed in, by the game's own gossip and quest-frame functions; only the guide's quests, and
-  only with the switches on and Shift not held. An NPC you did a quest at, or whose talk had nothing for your guide,
+  only with the switches on. Shift seen at any step of a talk makes the rest of it yours, held or let go (`held`, by
+  the NPC's GUID): nothing more is accepted, handed in, chosen or closed until the talk is over, `Quests.OVER` seconds
+  after a window closed with no NPC left (the game closes the gossip window for a quest's, which is the same talk). An
+  NPC you did a quest at, or whose talk had nothing for your guide,
   is one you are through with (`Quests.Left`): the key leaves it alone (the attribute `left`) until the interact key
   picks something else, the quest log changes after the quest has settled, or `Quests.LEFT` seconds are over; right
   after a quest, an NPC your guide still names may be talked to once more, for a chain at the same NPC. A talk that
