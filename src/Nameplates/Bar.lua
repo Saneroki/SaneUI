@@ -39,9 +39,8 @@ local _, ns = ...
 --                 rank's line: you have the unit's aggro (Text.lua says), or
 --                 it is a player who may attack you
 --  and on the bar what Core's health marks show (dress.marks, Core's
---  HealthMarks.lua): the barrier, the lost maximum health (the bar ends
---  earlier, Bar.Outline), and around it all the ring of what can be dispelled,
---  its icon over the bar's right end.
+--  HealthMarks.lua): the barrier and the lost maximum health (the bar ends
+--  earlier, Bar.Outline); the dispel type icon above the bar's right end.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -66,7 +65,6 @@ Bar.GLOW = { 1, 0.08, 0.05 }
 -- replace: so they stand on a frame of their own (dress.glow), under the outline's, and only that frame's alpha
 -- switches the glow.
 Bar.HALO = 6
-Bar.RING = 2 -- how many screen pixels the ring of what can be dispelled shows beyond the outline
 function Bar.Fade(band)
     local share = 1 - (band - 1) / Bar.HALO
     return share * share
@@ -254,9 +252,8 @@ function Bar.Make(dress)
     dress.power = power
     dress.rank = Bar.PLAIN
     dress.marks = Core.HealthMarks.New(dress, health, {
-        masks = dress.caps, ring = function(parent) return Plate(parent, 0) end,
-        fit = function() Bar.Outline(dress) end })
-    dress.marks:Place(dress, "TOPRIGHT", 0, 2)
+        masks = dress.caps, fit = function() Bar.Outline(dress) end })
+    dress.marks:Place("BOTTOMRIGHT", dress, "TOPRIGHT", 0, 2)
     Bar.Border(dress, nil)
 end
 
@@ -306,7 +303,6 @@ function Bar.Outline(dress)
     Around(dress.rankLine, dress, pixel * reach, tall, below, radius)
     for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below, radius) end
     local marks = dress.marks
-    for _, ring in ipairs(marks.rings) do Around(ring, dress, pixel * (reach + Bar.RING), tall, below, radius) end
     -- The bar a pixel inside the outline; down to the row under it while one shows, square there, so nothing of the
     -- outline shows between them. The combo points' row round at its bottom only while the cast bar is not under it.
     -- Where the unit lost maximum health the bar ends earlier and the rest is the marks'.

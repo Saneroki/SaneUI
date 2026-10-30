@@ -141,9 +141,12 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 
 - **Your party and raid:** one frame of ours for both, in place of the game's party and raid frames (*Party and raid
   frames*, off: the game's). It fills from its bottom left corner: you and your party going up, five to a column, then a
-  column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it, not in
-  Edit Mode either: only the unit frames show. Each unit: the raid marker and name on the left with as much room as there is, how
-  much health is left on the right ("85%"; nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always); a
+  column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it in play: only the
+  unit frames show; in Edit Mode it has the box every window has. Each unit, from the left: the type icon of a dispellable debuff (the
+  game's, a green drop for poison and so on), the ready check while one runs and its result for a while after, the raid marker, each
+  moving aside for what comes before it, then the name with as much room as there is; how much health is left on the right ("85%";
+  nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
+  one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
   tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
   tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each of your class's buffs it
   is missing (*Your missing buffs*: any priest's Fortitude counts, the
@@ -151,16 +154,21 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   as the game hides auras then). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
-- **Its sizes and preview:** in Edit Mode, click a unit of the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
-  and a field *Preview units*: type a number and that many made-up units show, with random health, mana, raid markers,
-  missing buffs, barriers, lost health and dispels; they stay the same while you slide the sizes. A unit is as wide as the max
-  width allows for the columns in use, never wider than the max unit width, and 28 high or as the max height allows. Sizes
-  change out of a fight: in one, a member who joins shows at the size in use. Move the frame by dragging its units.
+- **The group's tools:** your own slot among the frames is a button, not a unit frame (the cog and *Party* or *Raid*). It opens a small
+  panel, in a fight too, in place of the game's raid manager at the screen's edge, which is gone: *Ready Check*, *Role Check*, *Countdown*,
+  *Make Everyone Assistant*, the raid markers on your target and on the ground (click one to set or take it off, the last clears them
+  all), *Group menu* (the game's menu of you: converting to a raid or party, difficulty, and more), *Leave Group*. Who may use what is the
+  game's rule. Esc or its close button closes it. *Restrict pings* and the game's filters for its own raid frames are not in it.
+- **Its sizes and preview:** in Edit Mode, click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
+  and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
+  markers, ready checks, aggro, the dead and offline, missing buffs, barriers, lost health and dispels; they stay the same while you
+  slide the sizes. A unit is as wide as the max width allows for the columns in use, never wider than the max unit width, and 28 high or
+  as the max height allows. Sizes change out of a fight: in one, a member who joins shows at the size in use.
 - **Barriers, lost health, dispels:** on your unit frames and your party and raid frames (*Barriers*, *Lost maximum health*,
   *Dispellable debuffs*, each its own switch; the same three on the page Nameplates for the plates). A barrier is the game's shield
   art on the bar: after the health while it fits, pushed against the bar's right end when it does not, always as long as it is.
   Lost maximum health: the health bar ends earlier, the rest is the game's hatching. What you or your group can take off a unit (on a
-  foe, a buff you can remove): a ring around the frame in its kind's colour, and the aura's icon on the bar.
+  foe, a buff you can remove): the game's icon of its type, at the left of the line, before the level and raid marker, which move aside.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -383,15 +391,25 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   stand-in client, for every test that loads the module),
   `dev/tests/book.lua` (the spellbook), `dev/tests/talents.lua` (the talents).
 
-- **Party and raid (`Units/Group.lua`):** the window (`Core.Window`, key `groupPlace`, `plainBox`: nothing drawn in Edit Mode) is
-  `groupWidth` by `groupHeight`, anchored by its bottom left corner (`window:GrowFromBottom`). In it `live` (a secure frame, shown by
+- **Party and raid (`Units/Group.lua`):** the window (`Core.Window`, key `groupPlace`) is `groupWidth` by `groupHeight`, anchored by its bottom left corner (`window:GrowFromBottom`). In it `live` (a secure frame, shown by
   the state driver `Group.SHOWN`) and `preview`. Eight `SecureGroupHeaderTemplate`s, `groupFilter` 1 to 8, `point` BOTTOM, chained
   BOTTOMLEFT to the last one's BOTTOMRIGHT with `minWidth` 0.1, so an empty group takes no room, in a fight too; they are told
   `template` `SecureUnitButtonTemplate` and make their buttons themselves (a `startingIndex` of -4, then 1: `header[1]`..`[5]`), built
   when you are first in a group, out of a fight. `Group.Size(columns, rows, width, height, unit)` is the sum for a unit's size,
   `Group.Filled()` what the group fills. `GROUP_ROSTER_UPDATE` lays out again after a fight. Preview: `Face.Make(preview, true)`
-  plain frames, `Roll` once per count. The game's `PartyFrame` (which holds `CompactPartyFrame`) and `CompactRaidFrameContainer`
-  stand in a hidden frame (`Core.Lend`); `CompactRaidFrameManager` stays.
+  plain frames, `Roll` once per count. The game's `PartyFrame` (which holds `CompactPartyFrame`), `CompactRaidFrameContainer` and
+  `CompactRaidFrameManager` stand in a hidden frame (`Core.Lend`). A ready check's result stays `Face.READY_HOLD` seconds (the game's
+  `CUF_READY_CHECK_DECAY_TIME`) after `READY_CHECK_FINISHED`; who has not answered is not ready, as the game has it.
+- **The line's left side (`Units/Text.lua`):** a line of anchors: `marks.lead`, `level`, on group frames `ready`, `raid`, `name`. Empty pieces
+  are as wide as nothing. The dispel icon's container takes the size of what it holds (the game's `OnLayoutComplete`, its numbers hidden in a
+  fight), so what follows it moves by itself where addons cannot tell whether it shows. `name` hangs between `raid` and the health's room.
+- **The group's tools (`Units/GroupTools.lua`):** nearly all a raid manager does is `HasRestrictions`, off limits to addon code (markers,
+  `DoReadyCheck`, `DoCountdown`, `SetEveryoneIsAssistant`, converting), so nothing of that is called: `SecureActionButtonTemplate`s of the types
+  `raidtarget`, `worldmarker`, `togglemenu` (unit `player`) and `click`, whose `clickbutton` is the game's own button in
+  `CompactRaidFrameManager.displayFrame` (`readyCheckButton`, `rolePollButton`, `countdownButton`, `everyoneIsAssistButton`). With secure buttons
+  the panel is protected, so its opener and close button are `SecureHandlerClickTemplate`s, which work in a fight. The opener lies over the
+  button whose face has your unit (`face.mine`), moved after the fight if the group changes in one. Threat may be hidden in a fight
+  (`ShouldUnitThreatStateBeSecret`): addon code cannot turn a hidden number into a colour (a curve's `Evaluate` takes no secrets from addons), so the border stays black then.
 - **One unit (`Units/GroupFace.lua`):** its parts are the unit frames' (`UnitBar.Plate`, `Around`, `Strip`, `End`, `Ends`, `Power`;
   `UnitText.MakeLine`, `Raid`, `Mark`, `Name`, `Health`, `Sample`), without the glow's plates: forty frames stay light. `Face.Unit` follows
   the button's `unit` attribute (`OnAttributeChanged`, in a fight too) and registers that unit's events. `face.compact` and `face.bare`
@@ -435,6 +453,7 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
 | `Units/GroupBuffs.lua` | Which of your own buffs a member of your party or raid is missing |
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
+| `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, sizes, Edit Mode's settings and preview |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
 
@@ -480,3 +499,6 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   column a group, forty at most, units edge to edge with no gap and nothing around them; the mana of tanks and healers inside the
   bar; your missing buffs; max sizes and a preview of any number of made-up units in Edit Mode. Barriers, lost maximum health and
   dispels on every health bar (Core's `HealthMarks.lua`).
+- **2026-10-30:** the game's raid manager gone, your own slot a button to the group's tools in its place; the dispel type's icon instead of a
+  ring and the aura's icon, the raid marker moving aside for it; ready checks left of the raid marker; the dead red and the offline grey, their
+  bars full; a solid red border on aggro; the box back in Edit Mode only (Saneroki).

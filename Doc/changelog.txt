@@ -11,6 +11,8 @@ The bigger changes of each version, newest first.
   and to the right. Set its sizes in Edit Mode, with a preview of
   any number of made-up units. Shows a tank's or healer's mana and,
   over the name, which of your buffs someone is missing.
+  Your own slot opens the group's tools (ready check, raid markers
+  and more) in place of the raid manager at the edge of the screen.
 - Barriers, lost maximum health and dispellable debuffs now show on
   nameplates, unit frames, and the party and raid frame.
 - The auction house scans itself: while it is open, every auction

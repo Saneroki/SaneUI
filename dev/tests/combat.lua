@@ -174,6 +174,7 @@ end
 -------------------------------------------------------------------------------
 do
     local Group, Face, Buffs = ns.Group, ns.GroupFace, ns.GroupBuffs
+    local deadOf, onlineOf = UnitIsDeadOrGhost, UnitIsConnected -- back as they were at the end: the tests after these use them
     local Marks = Core.HealthMarks
     check(Group.GAP == 0, "units stand edge to edge, no gap between them")
     -- Sizes: within the limits, the unit's own limit first.
@@ -189,6 +190,7 @@ do
     -- Alone: the window is there, no header, the game's frames away and given back whole.
     PartyFrame = W.NewWidget("Frame", "PartyFrame", UIParent)
     CompactRaidFrameContainer = W.NewWidget("Frame", "CompactRaidFrameContainer", UIParent)
+    CompactRaidFrameManager = W.NewWidget("Frame", "CompactRaidFrameManager", UIParent)
     Core.Set(ns.name, "group", false)
     Core.Set(ns.name, "group", true)
     check(PartyFrame._parent ~= UIParent and CompactRaidFrameContainer._parent ~= UIParent,
@@ -231,6 +233,36 @@ do
         "its buttons answer as your other frames do, at the size the limits give")
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
+    -- Your own slot: no unit frame but the tools' button, and the game's manager out of sight.
+    check(first.face.mine and not second.face.mine and first.face.name._text == ns.TEXT.groupParty and first.face.ready._shown
+        and first.face.value._text == "", "your own slot shows the cog and the word, no health")
+    check(CompactRaidFrameManager._parent ~= UIParent, "the game's raid manager at the screen's edge is out of sight")
+    local tools
+    for _, widget in ipairs(W.frames) do
+        if widget._template == "SecureHandlerClickTemplate" and widget._refs then tools = widget end
+    end
+    check(tools and tools._shown and tools._parent == live and tools._points[1][2] == first
+        and tools:GetAttribute("_onclick"):find("panel:Show", 1, true), "its button lies on your slot and opens the panel by the game's secure means")
+    local panel = tools._refs.panel
+    check(panel and panel._template == "SecureFrameTemplate" and panel._strata == "DIALOG", "the panel is a protected frame over all")
+    local kinds = {}
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == panel and widget:GetAttribute("type") then
+            local kind = widget:GetAttribute("type")
+            kinds[kind] = (kinds[kind] or 0) + 1
+        end
+    end
+    check(kinds.raidtarget == 9 and kinds.worldmarker == 9 and kinds.togglemenu == 1 and kinds.click == 4,
+        "markers and clear for your target and the ground, the game's menu, and four of the game's own buttons clicked")
+    tools:ClearAllPoints()
+    W.members[1] = { "party1", "player", "party2" }
+    headers[1]:SetAttribute("yOffset", Group.GAP)
+    Group.Apply()
+    check(first.face.unit == "party1" and not first.face.mine and second.face.mine and tools._points[1][2] == second
+        and first.face.ready._shown == false, "the group changed: your slot is another button, the button goes with it")
+    W.members[1] = { "player", "party1", "party2" }
+    headers[1]:SetAttribute("yOffset", Group.GAP)
+    Group.Apply()
 
     -- The power line, inside the bar: no taller for it.
     Face.Fill(second.face)
@@ -245,6 +277,43 @@ do
 
     -- A click or @mouseover: nothing of ours takes the mouse from the button.
     check(not second.face._mouse and not second.face.health._mouse, "the face takes no mouse")
+
+    -- The dead, the offline, aggro and a ready check.
+    local on = second.face:GetScript("OnEvent")
+    local fill = second.face.health
+    local green = fill._barColor[1]
+    UnitIsDeadOrGhost = function(unit) return unit == "party1" end
+    on(second.face, "UNIT_HEALTH", "party1")
+    check(fill._value == 1 and fill._max == 1 and fill._barColor[1] == Face.DEAD[1] and second.face.value._text == "Dead",
+        "the dead: the bar full and red")
+    UnitIsDeadOrGhost = function() return false end
+    UnitIsConnected = function(unit) return unit ~= "party1" end
+    on(second.face, "UNIT_CONNECTION", "party1")
+    check(fill._value == 1 and fill._barColor[1] == Face.OFFLINE[1] and second.face.value._text == "Offline",
+        "the offline: the bar full and grey")
+    UnitIsConnected = function() return true end
+    on(second.face, "UNIT_CONNECTION", "party1")
+    check(fill._value == 500 and fill._barColor[1] == green, "back: green, its health")
+    W.threat.party1 = 3
+    on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
+    check(second.face.border[1]._vertex[1] == 1 and second.face.border[1]._vertex[2] == 0 and second.face.border[1]._vertex[4] == 1,
+        "aggro: a solid red border")
+    W.threat.party1 = 1
+    on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
+    check(second.face.border[1]._vertex[1] == 0, "without it: black")
+    W.ready.party1 = "waiting"
+    W.Fire("READY_CHECK", "player", 30)
+    check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == Face.ICON,
+        "a ready check: its picture left of the raid marker, which steps aside")
+    check(second.face.raid._points[1][2] == second.face.ready and first.face.ready._atlas == Face.COG, "your own slot keeps its cog")
+    W.Fire("READY_CHECK_FINISHED")
+    check(second.face.ready._shown and second.face.ready._atlas == Face.READY.notready, "it ended: who did not answer is not ready")
+    W.ready.party1 = nil
+    Face.Fill(second.face)
+    check(second.face.ready._shown, "and the result stays a while")
+    W.Wait(Face.READY_HOLD + 1)
+    check(not second.face.ready._shown and second.face.ready._width == Core.HealthMarks.NONE and first.face.ready._shown,
+        "then it goes, and takes no room")
 
     -- Your buffs: a family counts from anyone, and a fight leaves them as they were.
     local auras = {}
@@ -319,27 +388,27 @@ do
     for _, one in ipairs(Core.Window.All()) do
         if one.options.key == "groupPlace" then window = one end
     end
-    check(window and window.box and not drawn[window.box], "nothing is drawn around the frame")
-    local host = window.options.plainBox
-    check(window.box._points[1][2] == host and host._width == 960 and host._height == 140,
-        "what takes the clicks is as large as the units shown")
-    local faces = {}
+    check(window and window.box and drawn[window.box], "in Edit Mode it has the box every window has")
+    local host, faces = nil, {}
     for _, widget in ipairs(W.frames) do
-        if widget._parent == host then faces[#faces + 1] = widget end
+        if widget.marks and widget._parent._parent == window.frame then
+            host = widget._parent
+            faces[#faces + 1] = widget
+        end
     end
     check(#faces == 40, "forty units for forty")
     local last = faces[40]
     check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
         "the last at the top of the eighth column, touching its neighbours")
-    local name = faces[1].name._text
+    local name = faces[2].name._text
+    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].ready._atlas == Face.COG, "the first is your own slot")
     Core.Set(ns.name, "groupWidth", 800)
-    check(faces[1].name._text == name and faces[1]._width == 100, "a size changed: the same units, narrower")
+    check(faces[2].name._text == name and faces[2]._width == 100, "a size changed: the same units, narrower")
     Core.Set(ns.name, "groupWidth", 960)
     Core.Set(ns.name, "groupPreview", 7)
-    check(host._width == 300 and host._height == 140 and faces[7]._shown and not faces[8]._shown, "seven: two columns")
+    check(faces[7]._shown and not faces[8]._shown and faces[6]._points[1][4] == 150, "seven: two columns")
     Core.Selection.Select(window)
-    check(window.settingRows and #window.settingRows.shows == #Group.SETTINGS and not drawn[window.box],
-        "its settings in Edit Mode's dialog, and chosen it stays without a box")
+    check(window.settingRows and #window.settingRows.shows == #Group.SETTINGS, "its settings in Edit Mode's dialog")
     window.options.set("groupPreview", 12)
     check(ns.options.groupPreview == 12, "what the dialog sets is the module's")
     Core.Selection.Clear()
@@ -351,9 +420,11 @@ do
     local marks = Face.Make(UIParent, true).marks
     marks:Sample({ barrier = 0.25, lost = 0.2, dispel = "Curse" })
     check(marks.barrier._value == 0.25 and marks:Reach(100) == 20, "a sample's barrier and lost part")
-    check(marks.parts and marks.parts._shown and #marks.rings == 1, "a sample's ring")
+    check(marks.icon._shown and marks.icon._atlas == "RaidFrame-Icon-DebuffCurse" and marks.lead._width == marks.options.size,
+        "a sample's dispel: the type's icon, the line stepping aside for it")
     marks:Sample({})
-    check(marks.barrier._value == 0 and marks:Reach(100) == 0 and not marks.parts._shown, "and none of it")
+    check(marks.barrier._value == 0 and marks:Reach(100) == 0 and not marks.icon._shown
+        and marks.lead._width == Marks.NONE, "and none of it")
     local face = headers[1][1].face
     GetUnitTotalModifiedMaxHealthPercent = function() return 0.3 end
     local calc = W.calculator
@@ -377,6 +448,7 @@ do
     headers[1]:SetAttribute("yOffset", Group.GAP) -- the header gives its buttons no units any more
     Group.Apply()
     NineSliceUtil = nil
+    UnitIsDeadOrGhost, UnitIsConnected = deadOf, onlineOf
     -- What Edit Mode showed, the game's unit watch would hide again.
     for _, kind in ipairs(ns.Units.KINDS) do
         kind.button:Hide()
@@ -655,8 +727,7 @@ do
     face._width, face._height = Units.WIDTH, Units.HEIGHT -- the stand-in places nothing: as large as its button
     Text.Layout(face)
     check(face.level._points[1][1] == "LEFT" and face.value._points[1][1] == "RIGHT" and face.name._points[1][1] == "LEFT"
-        and face.name._points[1][4] == face.room.left + Text.GAP
-        and near(face.name._width, Units.WIDTH - face.room.left - face.room.right - 2 * Text.GAP),
+        and face.name._points[1][2] == face.raid and near(face.name._points[2][4], -(face.room.right + Text.GAP)),
         "the level on the left, the name after it from the left up to the health, the health on the right")
     check(PlayerFrame.PlayerFrameContainer._alpha == 0 and PlayerFrame.PlayerFrameContent._alpha == 0
         and PlayerFrame._mouse == false and PlayerFrame._parent == UIParent,
@@ -735,7 +806,7 @@ do
     units.target.dead = false
     units.target.raid = nil
     W.Fire("RAID_TARGET_UPDATE")
-    check(not foe.raid._shown and foe.room.left == Text.INSET + foe.levelRoom, "its marker taken off: none, and no room kept")
+    check(not foe.raid._shown and foe.raid._width == Core.HealthMarks.NONE, "its marker taken off: none, and no room kept")
 
     -- Edit Mode: a frame whose unit is not there shows a sample, to be placed; after it, the unit watch again.
     EventRegistry:TriggerEvent("EditMode.Enter")

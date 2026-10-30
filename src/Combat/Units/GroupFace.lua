@@ -4,19 +4,25 @@ local _, ns = ...
 --  Sane UI - Combat - Units - GroupFace
 --  What one member of your party or raid looks like: a nameplate's bar, a bit
 --  shorter and taller, one height whatever it shows:
---    left    the raid marker, then the name, with as much room as the frame
---            has (Saneroki, 2026-10-30: little space at the ends and between
---            the pieces, Face.INSET, Face.GAP)
+--    left    a line of anchors (Text.lua), each piece stepping aside for what
+--            comes before it: the type icon of a dispellable debuff (Core's
+--            HealthMarks.lua), the ready check while one runs, and its result
+--            for a while after it (Face.READY_HOLD), the raid marker, then the
+--            name, with as much room as the frame has (Saneroki, 2026-10-30:
+--            little space at the ends and between the pieces, Face.INSET,
+--            Face.GAP)
 --    right   how much health is left ("85%"); nothing on a frame too narrow for
 --            that as well (Face.BARE), so the name gets it; Dead or Offline always
---    over it an icon for each of your buffs the unit is missing (GroupBuffs.lua),
---            the dispel icon on the first: they float over the name, which goes
---            on behind them and takes no room from it
+--    over it an icon for each of your buffs the unit is missing (GroupBuffs.lua):
+--            they float over the name, which goes on behind them
 --    bottom  the mana of a tank or healer, a line inside the bar as on a
 --            nameplate, so the frame is no taller for it
---  and on it Core's health marks (the barrier, the lost maximum health, the ring
---  of what can be dispelled: along the bar's edge, inside it, as these frames
---  stand edge to edge). Green for everyone, as every unit frame.
+--  and on it Core's barrier and lost maximum health. Green for everyone, as every
+--  unit frame; a dead unit's bar full and red, an offline one's full and grey.
+--  Its border is black, solid red while the unit has an enemy's aggro.
+--
+--  Your own slot holds no unit frame (you have your own): it shows the cog and
+--  the word Party or Raid, and the tools' button lies on it (GroupTools.lua).
 --
 --  The same face stands on a secure unit button of the game's group headers
 --  (Face.Unit: it follows the button's unit), hearing that unit's events, and
@@ -31,59 +37,37 @@ local _, ns = ...
 local Core = SaneUI.Core
 local Plain = Core.Plain
 local Bar, Text = ns.UnitBar, ns.UnitText
+local NONE = Core.HealthMarks.NONE
 local Face = {}
 ns.GroupFace = Face
 
 Face.LINE = 1 / 5    -- the power line's height, a share of the bar's
 Face.INSET, Face.GAP = 3, 2 -- the words from the bar's ends, and between two pieces
 Face.BARE = 80       -- narrower than this: no health at all, the name has it all
-Face.ICON = 14       -- an icon beside the name, square
-Face.ICON_GAP = 1    -- between them
+Face.ICON = 14       -- an icon on the line, square
+Face.ICON_GAP = 1    -- between two of your buffs' icons
 Face.FAR = 0.45      -- how solid a unit out of your reach is
-Face.RING = 2        -- how many screen pixels thick the ring of what can be dispelled is
+Face.AGGRO = 2       -- the first of the game's threat kinds that is having aggro
+Face.AGGRO_BORDER = { 1, 0, 0, 1 }  -- solid, saturated
+Face.DEAD = { 0.8, 0, 0 }
+Face.OFFLINE = { 0.5, 0.5, 0.5 }
+Face.COG = "questlog-icon-setting"  -- the game's cog, as Core's windows have it
 Face.HEALERS = { PRIEST = true, DRUID = true, SHAMAN = true, PALADIN = true, MONK = true, EVOKER = true }
 Face.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
-                "UNIT_NAME_UPDATE", "UNIT_CONNECTION", "UNIT_FLAGS", "UNIT_IN_RANGE_UPDATE", "UNIT_AURA" }
+                "UNIT_NAME_UPDATE", "UNIT_CONNECTION", "UNIT_FLAGS", "UNIT_IN_RANGE_UPDATE", "UNIT_AURA",
+                "UNIT_THREAT_SITUATION_UPDATE", "UNIT_THREAT_LIST_UPDATE" }
+-- The game's pictures of a ready check, by what GetReadyCheckStatus says; how long its result stays after it ended.
+Face.READY = { ready = rawget(_G, "READY_CHECK_READY_TEXTURE_RAID") or "UI-LFG-ReadyMark-Raid",
+               notready = rawget(_G, "READY_CHECK_NOT_READY_TEXTURE_RAID") or "UI-LFG-DeclineMark-Raid",
+               waiting = rawget(_G, "READY_CHECK_WAITING_TEXTURE_RAID") or "UI-LFG-PendingMark-Raid" }
+Face.READY_HOLD = rawget(_G, "CUF_READY_CHECK_DECAY_TIME") or 11
 
--- The icons over the name: from the health leftwards, the dispel icon on the first.
+-- The icons over the name: from the health leftwards.
 local function Roomed(face, right)
     local start = right + Face.GAP
     for index, icon in ipairs(face.icons) do
         icon:ClearAllPoints()
         icon:SetPoint("RIGHT", face.floating, "RIGHT", -(start + (index - 1) * (Face.ICON + Face.ICON_GAP)), 0)
-    end
-    face.marks:Place(face.floating, "RIGHT", -start, -Face.ICON / 2)
-end
-
--- The ring of what can be dispelled: four strips along the bar's edge, rounded by the bar's own ends, coloured as one.
-local Strips = {}
-Strips.__index = Strips
-function Strips:SetVertexColor(r, g, b, a)
-    for _, strip in ipairs(self) do strip:SetVertexColor(r, g, b, a) end
-end
-
-local function Ring(host, health)
-    local ring = setmetatable({}, Strips)
-    for index = 1, 4 do
-        local strip = host:CreateTexture(nil, "OVERLAY")
-        strip:SetTexture(Bar.WHITE)
-        for _, mask in ipairs(health.ends) do strip:AddMaskTexture(mask) end
-        ring[index] = strip
-    end
-    return ring
-end
-
--- The strips inside the face's border, a pixel in on every side.
-local function LayRing(ring, face, pixel)
-    local thick = pixel * Face.RING
-    for index, sides in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" },
-                                 { "TOPLEFT", "BOTTOMLEFT" }, { "TOPRIGHT", "BOTTOMRIGHT" } }) do
-        local strip = ring[index]
-        strip:ClearAllPoints()
-        for _, side in ipairs(sides) do
-            strip:SetPoint(side, face, side, side:find("LEFT") and pixel or -pixel, side:find("TOP") and -pixel or pixel)
-        end
-        if index <= 2 then strip:SetHeight(thick) else strip:SetWidth(thick) end
     end
 end
 
@@ -96,7 +80,6 @@ function Face.Fit(face)
     local radius = height * Bar.CAP
     local marks, health = face.marks, face.health
     Bar.Around(face.border, face, 0, height, 0, 0, radius)
-    for _, ring in ipairs(marks.rings) do LayRing(ring, face, pixel) end
     local inner = width - 2 * pixel
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", face, "TOPLEFT", pixel, -pixel)
@@ -110,7 +93,7 @@ function Face.Fit(face)
     local turned = bare ~= face.bare
     face.bare = bare
     Text.Layout(face)
-    if turned and face.unit then Text.Health(face, face.unit) end
+    if turned and face.unit and not face.mine then Text.Health(face, face.unit) end
 end
 local OnSizeChanged = ns.Guard(Face.Fit)
 
@@ -136,15 +119,21 @@ function Face.Make(parent, sample)
     for _, mask in ipairs(health.ends) do power:GetStatusBarTexture():AddMaskTexture(mask) end
     power:Hide()
     face.power = power
+    face.marks = Core.HealthMarks.New(face, health, {
+        masks = health.ends, size = Face.ICON, sample = sample, above = level + 8, fit = function() Face.Fit(face) end })
     Text.MakeLine(face, Face.INSET, Face.GAP)
     face.compact = true
+    -- The ready check after the dispel icon, the raid marker after it.
+    local ready = face.top:CreateTexture(nil, "OVERLAY")
+    ready:SetSize(NONE, Face.ICON)
+    ready:SetPoint("LEFT", face.level, "RIGHT", 0, 0)
+    ready:Hide()
+    face.ready, face.before = ready, ready
+    Text.Mark(face, nil)
     -- Over the words: what floats on them.
     face.floating = CreateFrame("Frame", nil, face)
     face.floating:SetAllPoints(face)
     face.floating:SetFrameLevel(level + 7)
-    face.marks = Core.HealthMarks.New(face, health, {
-        masks = health.ends, size = Face.ICON, sample = sample, inside = true, above = level + 8,
-        ring = function(host) return Ring(host, health) end, fit = function() Face.Fit(face) end })
     face.icons, face.missing, face.roomed = {}, {}, Roomed
     face:SetScript("OnSizeChanged", OnSizeChanged)
     return face
@@ -157,7 +146,7 @@ local function Icons(face, list, count)
         if not icon then
             icon = face.floating:CreateTexture(nil, "OVERLAY")
             icon:SetSize(Face.ICON, Face.ICON)
-            icon:SetTexCoord(unpack(Core.HealthMarks.CROP))
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
             face.icons[index] = icon
         end
         icon:SetTexture(list[index])
@@ -212,14 +201,94 @@ local function Range(face, unit)
     end
 end
 
+-- The border: red while the unit has an enemy's aggro. A fight may hide that from addons: black then.
+local function Border(face, aggro)
+    local colour = aggro and Face.AGGRO_BORDER or Bar.BORDER
+    face.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+end
+
+local function Aggro(face, unit)
+    local status = Core.Ask(UnitThreatSituation, unit)
+    Border(face, type(status) == "number" and status >= Face.AGGRO)
+end
+
+local function Colour(face, colour)
+    if face.colour == colour then return end
+    face.colour = colour
+    face.health:SetStatusBarColor(colour[1], colour[2], colour[3])
+end
+
+-- The bar: its health in green, or full, red for the dead and grey for who is offline.
+local function Health(face, unit)
+    local offline = Core.Ask(UnitIsConnected, unit) == false
+    local gone = offline or Core.Ask(UnitIsDeadOrGhost, unit) == true
+    Colour(face, offline and Face.OFFLINE or gone and Face.DEAD or Bar.GREEN)
+    if gone then
+        face.health:SetMinMaxValues(0, 1)
+        face.health:SetValue(1)
+    else
+        Bar.Health(face.health, unit)
+    end
+end
+
+-- That ready check's picture on the line, or none: as wide as nothing then.
+local function ReadyIcon(face, status)
+    local atlas = status and Face.READY[status]
+    face.readyStatus = atlas and status or nil
+    if atlas then face.ready:SetAtlas(atlas) end
+    face.ready:SetShown(atlas ~= nil)
+    face.ready:SetWidth(atlas and Face.ICON or NONE)
+end
+
+-- The ready check as the game says it now; while its result stays (Face.holding), that.
+function Face.Ready(face)
+    if Face.holding or face.mine or not face.unit then return end
+    ReadyIcon(face, Core.Ask(GetReadyCheckStatus, face.unit))
+end
+
+-- It ended: who has not answered is not ready, as the game has it.
+function Face.ReadyEnded(face)
+    if face.readyStatus == "waiting" then ReadyIcon(face, "notready") end
+end
+
+function Face.ReadyGone(face)
+    if not face.mine then ReadyIcon(face, nil) end
+end
+
+-- Your own slot: the cog and the word, no unit; the tools' button lies on it.
+local function Mine(face, word)
+    face.health:SetMinMaxValues(0, 1)
+    face.health:SetValue(0)
+    face.power:Hide()
+    face:SetAlpha(1)
+    Border(face, false)
+    Text.Mark(face, nil)
+    face.ready:SetAtlas(Face.COG)
+    face.ready:SetShown(true)
+    face.ready:SetWidth(Face.ICON)
+    face.readyStatus = nil
+    face.name:SetText(word)
+    Text.Sample(face, 1, 1, "")
+    Icons(face, face.missing, 0)
+end
+
 -- Everything for the face's unit, as the game says it now.
 function Face.Fill(face)
     local unit = face.unit
     if ns.off or not unit or not Core.Ask(UnitExists, unit) then return end
-    Bar.Health(face.health, unit)
+    local was = face.mine
+    face.mine = Core.Ask(UnitIsUnit, unit, "player") == true
+    if face.mine then
+        face.marks:Set(nil)
+        return Mine(face, Core.Ask(IsInRaid) and ns.TEXT.groupRaid or ns.TEXT.groupParty)
+    end
+    if was then ReadyIcon(face, nil) end
+    Health(face, unit)
     face.marks:Set(unit)
     Power(face, unit)
     Range(face, unit)
+    Aggro(face, unit)
+    Face.Ready(face)
     Text.Raid(face, unit)
     Text.Name(face, unit)
     Text.Health(face, unit)
@@ -228,9 +297,9 @@ end
 
 local function Heard(face, event)
     local unit = face.unit
-    if ns.off or not unit then return end
+    if ns.off or not unit or face.mine then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-        Bar.Health(face.health, unit)
+        Health(face, unit)
         Text.Health(face, unit)
         face.marks:Heard(unit)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" or event == "UNIT_MAX_HEALTH_MODIFIERS_CHANGED" then
@@ -239,6 +308,8 @@ local function Heard(face, event)
         Power(face, unit)
     elseif event == "UNIT_IN_RANGE_UPDATE" then
         Range(face, unit)
+    elseif event == "UNIT_THREAT_SITUATION_UPDATE" or event == "UNIT_THREAT_LIST_UPDATE" then
+        Aggro(face, unit)
     elseif event == "UNIT_AURA" then
         if ns.GroupBuffs.Any() and not Core.Restricted() then Buffs(face, unit) end
     elseif event == "UNIT_NAME_UPDATE" then
@@ -253,7 +324,7 @@ local OnEvent = ns.Guard(Heard)
 function Face.Unit(face, unit)
     if face.unit == unit then return end
     face:UnregisterAllEvents()
-    face.unit = unit
+    face.unit, face.mine = unit, false
     if not unit then return face.marks:Set(nil) end
     for _, event in ipairs(Face.EVENTS) do pcall(face.RegisterUnitEvent, face, event, unit) end
     for _, event in ipairs(Core.HealthMarks.EVENTS) do pcall(face.RegisterUnitEvent, face, event, unit) end
@@ -261,17 +332,22 @@ function Face.Unit(face, unit)
     Face.Fill(face)
 end
 
--- Made-up values instead of a unit (the preview): sample = { name, health (a share), most, mana (a share, or nil),
--- mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), word (Dead, Offline) }.
+-- Made-up values instead of a unit (the preview): sample = { you, name, health (a share), most, mana (a share, or nil),
+-- mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's answer),
+-- aggro, word (Dead, Offline), colour }.
 function Face.Sample(face, sample)
-    face.health:SetMinMaxValues(0, 1)
-    face.health:SetValue(sample.health)
     face.marks:Sample(sample)
+    if sample.you then return Mine(face, ns.TEXT.groupRaid) end
+    Colour(face, sample.colour or Bar.GREEN)
+    face.health:SetMinMaxValues(0, 1)
+    face.health:SetValue(sample.colour and 1 or sample.health)
     face.power:SetShown(sample.mana ~= nil)
     if sample.mana then
         face.power:SetStatusBarColor(0, 0.55, 1)
         face.power:SetValue(sample.mana)
     end
+    Border(face, sample.aggro)
+    ReadyIcon(face, sample.ready)
     Text.Mark(face, sample.mark)
     face.name:SetText(sample.name)
     Text.Sample(face, math.floor(sample.most * sample.health), sample.most, sample.word)

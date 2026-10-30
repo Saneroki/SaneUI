@@ -36,6 +36,19 @@ found with nodes", and the new discoveries. A game restart takes it in (new file
 - **Tooltips:** rare drops on a herb or a vein, and where a rare item came from (`Gathering.lua`).
 - **The harvest:** the ledger keeps visits; `dev/tests/data.lua` 514 checks, with hostile members; `dev/tests/tooltips.lua` 535.
 
+### The group's tools on your own slot; dispel type icons; ready checks, aggro, the dead and offline (Saneroki, 2026-10-30)
+Saneroki: the edge raid manager gone, your slot a settings button holding its stuff; a border in Edit Mode, just not in play; offline grey and
+dead red, health bar full; the dispel type's icon instead of ring, border and aura icon, in front of the raid icon, which moves aside; ready
+checks left of the raid markers with their result before they go; a solid red border on aggro. A game restart takes it in (a new file in Combat's TOC).
+- **`src/Combat/Units/GroupTools.lua` (new):** the button on your slot and its panel, all by the game's secure means, as its marks, ready check
+  and countdown are `HasRestrictions`: secure action buttons `raidtarget`, `worldmarker`, `togglemenu`, `click` on the game's own manager's buttons;
+  opened by a secure handler, so in a fight too. `CompactRaidFrameManager` joins `Group.GAME`.
+- **`src/Core/HealthMarks.lua`:** the ring and the aura's icon gone; the container's one frame shows a dispel type texture in the game's Icon style.
+  `marks.lead`: the container takes the size of what it holds, so what is anchored to it moves aside by itself in a fight.
+- **`src/Combat/Units/Text.lua`:** the line's left side a line of anchors (dispel icon, level, ready check, raid marker, name). **`GroupFace.lua`:**
+  `Health` (dead and offline), `Aggro`, `ReadyIcon`, `Mine`. **`src/Core/Window.lua`:** `plainBox` gone again.
+- **Tests:** `dev/tests/combat.lua`, `combatclient.lua`.
+
 ### One party and raid frame; barriers, lost health and dispels on every bar (Saneroki, 2026-10-30)
 Saneroki: no party frame at all, the same window for party and raid with more slots, in the nameplates' look, a tank's and healer's mana
 inside the bar, missing buffs floating over the name, max sizes and a preview in Edit Mode; no borders around the whole, 0px gaps, little

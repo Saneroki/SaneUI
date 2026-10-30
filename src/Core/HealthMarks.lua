@@ -13,8 +13,8 @@ local Core = SaneUI.Core
 --                   that much earlier (Marks:Reach, the owner's Fit), and the
 --                   rest of its length shows the game's hatching for it
 --    dispellable    what you or your group can take off the unit (on a foe, a
---                   buff that can be taken from it): a coloured ring around the
---                   whole frame in the colour of its kind, and the aura's icon
+--                   buff that can be taken from it): the game's icon of its
+--                   type (a green drop for poison ...), never the spell's
 --
 --  Barrier: in a fight the game hides health and absorbs from addons, so
 --  nothing here is ever computed. A calculator of the game's says how much of
@@ -26,27 +26,26 @@ local Core = SaneUI.Core
 --  as long as it should be, wherever it stands.
 --
 --  Dispellable: one aura container of the game's (CustomAuraContainerTemplate)
---  filled by the game, in a fight too. Its one icon carries the ring as its
---  dispel type textures, which the game colours and shows itself. The icon's
---  frame stands under the outline, so the ring lies behind the black border and
---  is seen beyond it, even around a green bar and a poison's green; the picture
---  stands in a frame of its own above the bars. Frames that stand edge to edge
---  (options.inside) have the ring in that frame too, along the bar's own edge,
---  as a neighbour would cover it outside. No mouse on any of it: the unit's
---  button under it keeps clicks and @mouseover.
+--  filled by the game, in a fight too. Its one frame shows nothing but a dispel
+--  type texture in the game's Icon style, which the game sets and shows itself.
+--  In a fight addons cannot tell whether it is there, but the container takes
+--  the size of what it shows: empty it has no width, so whatever is anchored to
+--  its right (marks.lead) stands at its place without it and steps aside for it
+--  by itself. No mouse on any of it: the unit's button under it keeps clicks and
+--  @mouseover.
 --
 --      local marks = Core.HealthMarks.New(host, health, {
 --          masks = { ... },          -- the masks that round the bar's ends
---          ring = function(parent) ... return plate end,   -- a round plate on parent, the owner's
---          fit = function() ... end, -- lay it all out: the bar (by marks:Reach), each of marks.rings, marks:Fit
+--          fit = function() ... end, -- lay it all out: the bar (by marks:Reach), marks:Fit
 --          size = 14,                -- the icon, square
---          inside = true,            -- the ring lies over the bars, not behind the outline (frames edge to edge)
 --          above = level,            -- the icon's frame level, where it should stand over more than the bars
 --          sample = true,            -- never for a live unit: no container
 --      })
 --      marks:Set(unit)               -- all of it for the unit; nil: none
 --      marks:Heard(unit, event)      -- one of Marks.EVENTS, or the unit's health changed
 --      marks:Switch(barrier, lost, dispel)
+--      marks:Place(point, relative, relativePoint, x, y)   -- where the icon stands
+--      marks.lead                    -- what to anchor to its right
 --      marks:Sample({ barrier = share, lost = share, dispel = "Magic" })  -- made up, without a unit
 -------------------------------------------------------------------------------
 local Plain = Core.Plain
@@ -60,18 +59,13 @@ Marks.GROUND = { 0.16, 0.05, 0.05 } -- under the hatching
 Marks.WHITE = "Interface\\Buttons\\WHITE8X8"
 Marks.MOST_LOST = 0.9   -- the share of the bar the lost part takes at most: some health always shows
 Marks.SIZE = 14         -- the icon, square
-Marks.CROP = { 0.08, 0.92, 0.08, 0.92 }
+Marks.NONE = 0.01       -- as wide as nothing: a frame that stands in a line of anchors
 Marks.FRIEND = "HARMFUL|RAID_PLAYER_DISPELLABLE"
 Marks.FOE = "HELPFUL|RAID_PLAYER_DISPELLABLE"
 Marks.GROUP = "dispel" -- the container's one aura group
--- Each kind's colour, for a sample: the game's own for a live aura.
-Marks.KINDS = {
-    Magic = { 0.2, 0.6, 1 }, Curse = { 0.6, 0, 1 }, Disease = { 0.6, 0.4, 0 }, Poison = { 0, 0.6, 0 },
-}
-Marks.SAMPLE_ICONS = {
-    Magic = "Interface\\Icons\\Spell_Holy_DispelMagic", Curse = "Interface\\Icons\\Spell_Shadow_CurseOfSargeras",
-    Disease = "Interface\\Icons\\Spell_Shadow_AbominationExplosion", Poison = "Interface\\Icons\\Spell_Nature_CorrosiveBreath",
-}
+-- A kind's icon, for a sample: the game sets it itself on a live aura.
+Marks.ICONS = { Magic = "RaidFrame-Icon-DebuffMagic", Curse = "RaidFrame-Icon-DebuffCurse",
+                Disease = "RaidFrame-Icon-DebuffDisease", Poison = "RaidFrame-Icon-DebuffPoison" }
 
 local methods = {}
 
@@ -136,38 +130,18 @@ local function Lost(host, health, level)
     return lost, mask
 end
 
--- One icon, drawn into the frame the container makes: its picture above the bars, the ring (the owner's plate) on the
--- frame itself, under the outline; the game colours and shows both by the aura's kind.
+-- The frame the container makes for its aura: above the words, the type's icon alone, set and shown by the game.
 local function Dress(marks, frame)
     local size = marks.options.size or Marks.SIZE
     frame:SetSize(size, size)
     pcall(frame.EnableMouse, frame, false)
-    frame:SetFrameLevel(marks.under)
-    local top = CreateFrame("Frame", nil, frame)
-    top:SetAllPoints(frame)
-    top:SetFrameLevel(marks.above)
-    local edge = top:CreateTexture(nil, "BACKGROUND")
-    edge:SetAllPoints(top)
-    edge:SetTexture(Marks.WHITE)
-    local icon = top:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("TOPLEFT", top, "TOPLEFT", 1, -1)
-    icon:SetPoint("BOTTOMRIGHT", top, "BOTTOMRIGHT", -1, 1)
-    icon:SetTexCoord(unpack(Marks.CROP))
-    local cooldown = CreateFrame("Cooldown", nil, top, "CooldownFrameTemplate")
-    cooldown:SetAllPoints(icon)
-    cooldown:SetReverse(true)
-    cooldown:SetSwipeColor(0, 0, 0, 0.5)
-    frame:SetIcon(icon)
-    frame:SetDurationCooldown(cooldown)
+    frame:SetFrameLevel(marks.above)
+    local icon = frame:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints(frame)
     local styles = rawget(_G, "Enum") and Enum.CustomAuraButtonDispelTypeTextureStyle
-    local ring = marks.options.ring(marks.options.inside and top or frame)
     if styles then
-        local style = { style = styles.PreserveAsset, showWhenHarmful = true, showWhenHelpful = true }
-        pcall(frame.AddDispelTypeTexture, frame, edge, style)
-        for _, half in ipairs(ring) do pcall(frame.AddDispelTypeTexture, frame, half, style) end
+        pcall(frame.AddDispelTypeTexture, frame, icon, { style = styles.Icon, showWhenHarmful = true, showWhenHelpful = true })
     end
-    marks.rings[#marks.rings + 1] = ring
-    if marks.ready then marks.options.fit() end -- else the owner lays it out as it is made
 end
 
 -- The container of the marks: one icon at most. nil where this client has none.
@@ -178,9 +152,9 @@ local function Container(marks)
         Marks.missing = true -- asked once: the next frames do without
         return nil
     end
-    container:SetFlowLayoutAnchorPoint("BOTTOMRIGHT")
+    container:SetFlowLayoutAnchorPoint("BOTTOMLEFT")
     local flow = rawget(_G, "AnchorUtil") and AnchorUtil.FlowDirection
-    if flow then container:SetFlowLayoutGrowthDirection(flow.Left, flow.Up) end
+    if flow then container:SetFlowLayoutGrowthDirection(flow.Right, flow.Up) end
     local dressed = Core.Guard("health marks", function(frame) Dress(marks, frame) end)
     local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
     container:AddAuraGroup(Marks.GROUP, Marks.FRIEND, {
@@ -189,11 +163,24 @@ local function Container(marks)
     return container
 end
 
+-- What stands where the container would, for a sample or a client without one: as wide as nothing until it shows.
+local function Stand(marks)
+    local size = marks.options.size or Marks.SIZE
+    local stand = CreateFrame("Frame", nil, marks.host)
+    stand:SetSize(Marks.NONE, size)
+    stand:SetFrameLevel(marks.above)
+    local icon = stand:CreateTexture(nil, "ARTWORK")
+    icon:SetPoint("LEFT", stand, "LEFT")
+    icon:SetSize(size, size)
+    icon:Hide()
+    marks.icon = icon
+    return stand
+end
+
 function Marks.New(host, health, options)
     local level = Plain(health:GetFrameLevel()) or 1
-    local marks = setmetatable({ host = host, health = health, options = options, width = 0, share = 0, rings = {},
-                                 barrierOn = true, lostOn = true, dispelOn = true,
-                                 under = (Plain(host:GetFrameLevel()) or 1) + 1, above = options.above or level + 4 },
+    local marks = setmetatable({ host = host, health = health, options = options, width = 0, share = 0,
+                                 barrierOn = true, lostOn = true, dispelOn = true, above = options.above or level + 4 },
                                { __index = methods })
     local fill = health:GetStatusBarTexture()
     local barrier = Strip(health, options.masks)
@@ -206,7 +193,7 @@ function Marks.New(host, health, options)
     marks.barrier, marks.over = barrier, over
     marks.lost, marks.lostEnd = Lost(host, health, level)
     if not options.sample then marks.container = Container(marks) end
-    marks.ready = true
+    marks.lead = marks.container or Stand(marks)
     return marks
 end
 
@@ -299,47 +286,10 @@ function methods:Switch(barrier, lost, dispel)
     self.barrierOn, self.lostOn, self.dispelOn = barrier ~= false, lost ~= false, dispel ~= false
 end
 
--- Where the icon stands: its bottom right corner there.
-function methods:Place(relative, relativePoint, x, y)
-    self.spot = { relative, relativePoint, x, y }
-    for _, frame in ipairs({ self.container or false, self.parts and self.parts.top or false }) do
-        if frame then
-            frame:ClearAllPoints()
-            frame:SetPoint("BOTTOMRIGHT", relative, relativePoint, x, y)
-        end
-    end
-end
-
--- The icon's size, for its owner's sums.
-function methods:IconSize()
-    return self.options.size or Marks.SIZE
-end
-
--- The ring and the icon of a sample: frames of their own, made when first shown.
-local function SampleParts(marks)
-    local parts = marks.parts
-    if parts then return parts end
-    parts = CreateFrame("Frame", nil, marks.host)
-    parts:SetFrameLevel(marks.under)
-    parts:SetAllPoints(marks.host)
-    local top = CreateFrame("Frame", nil, parts)
-    local size = marks.options.size or Marks.SIZE
-    top:SetSize(size, size)
-    top:SetFrameLevel(marks.above)
-    local edge = top:CreateTexture(nil, "BACKGROUND")
-    edge:SetAllPoints(top)
-    edge:SetTexture(Marks.WHITE)
-    local icon = top:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("TOPLEFT", top, "TOPLEFT", 1, -1)
-    icon:SetPoint("BOTTOMRIGHT", top, "BOTTOMRIGHT", -1, 1)
-    icon:SetTexCoord(unpack(Marks.CROP))
-    parts.top, parts.edge, parts.icon = top, edge, icon
-    marks.parts = parts
-    parts.ring = marks.options.ring(marks.options.inside and top or parts)
-    marks.rings[#marks.rings + 1] = parts.ring
-    marks.options.fit()
-    if marks.spot then marks:Place(unpack(marks.spot)) end
-    return parts
+-- Where the icon stands.
+function methods:Place(point, relative, relativePoint, x, y)
+    self.lead:ClearAllPoints()
+    self.lead:SetPoint(point, relative, relativePoint, x, y)
 end
 
 -- Made-up marks, for a look at them without a unit: shares of the bar, and a kind of aura.
@@ -350,14 +300,8 @@ function methods:Sample(sample)
     self.over:SetMinMaxValues(0, 1)
     self.over:SetValue(0)
     self.over:SetAlpha(0)
-    local colour = sample.dispel and Marks.KINDS[sample.dispel]
-    if not colour then
-        if self.parts then self.parts:Hide() end
-        return
-    end
-    local parts = SampleParts(self)
-    parts:Show()
-    parts.edge:SetVertexColor(colour[1], colour[2], colour[3], 1)
-    parts.icon:SetTexture(Marks.SAMPLE_ICONS[sample.dispel])
-    parts.ring:SetVertexColor(colour[1], colour[2], colour[3], 1)
+    local atlas = sample.dispel and Marks.ICONS[sample.dispel]
+    if atlas then self.icon:SetAtlas(atlas) end
+    self.icon:SetShown(atlas ~= nil)
+    self.lead:SetWidth(atlas and (self.options.size or Marks.SIZE) or Marks.NONE)
 end

@@ -3,11 +3,12 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Text
 --  The line inside a unit frame's bar, in a nameplate's font and colours:
---    left     the unit's level, in the game's colour for how hard it is to
---             you (a skull where it is too high to tell), and right of it the
---             raid marker while there is one; then the name: a player's first
---             name and surname (Core.FullName), as long as the room up to the
---             health allows (cut short beyond it); none on your own frame
+--    left     the type icon of a dispellable aura while there is one (Core's
+--             HealthMarks.lua), the unit's level, in the game's colour for how
+--             hard it is to you (a skull where it is too high to tell), the raid
+--             marker while there is one; then the name: a player's first name
+--             and surname (Core.FullName), as long as the room up to the health
+--             allows (cut short beyond it); none on your own frame
 --    right    its health, short ("850", "1.2k", "1.32m"), and how much is
 --             left ("| 100%"); Dead or Offline instead where it is
 --  in each power bar under it, at its right, the power as the health is
@@ -22,6 +23,11 @@ local _, ns = ...
 --  nothing where it is too narrow for even that (face.bare), so the name has
 --  all the room; Dead and Offline it says all the same. It also keeps its words
 --  closer to the bar's ends and to each other (Text.MakeLine's inset and gap).
+--
+--  The left side is a line of anchors, each piece after the last, so that each
+--  steps aside for what comes before it, in a fight too, where addons cannot
+--  tell whether the dispel icon shows: the container is as wide as what it holds.
+--  A raid marker that is not there is as wide as nothing.
 --  Hidden health is written by the game's own abbreviation, in the same steps,
 --  and the percentage by its curve (secret values: shown, never computed).
 -------------------------------------------------------------------------------
@@ -121,15 +127,16 @@ function Text.MakeLine(face, inset, gap)
     top:SetAllPoints(face)
     top:SetFrameLevel(face.health:GetFrameLevel() + 3)
     face.level, face.name, face.value = Line(top, "LEFT"), Line(top, "LEFT"), Line(top, "RIGHT")
-    face.level:SetPoint("LEFT", top, "LEFT", inset, 0)
+    face.marks:Place("LEFT", top, "LEFT", inset, 0)
+    face.level:SetPoint("LEFT", face.marks.lead, "RIGHT", 0, 0)
     face.value:SetPoint("RIGHT", top, "RIGHT", -inset, 0)
     local raid = top:CreateTexture(nil, "OVERLAY")
     raid:SetTexture(Text.MARKS)
     local size = math.floor(Text.SIZE * Text.ICON + 0.5)
-    raid:SetSize(size, size)
-    raid:SetPoint("LEFT", face.level, "RIGHT", gap, 0)
+    raid:SetSize(Core.HealthMarks.NONE, size)
     raid:Hide()
-    face.raid, face.top, face.room = raid, top, { left = 0, right = 0 }
+    face.raid, face.top, face.room, face.markSize = raid, top, { right = 0 }, size
+    Text.Mark(face, nil)
 end
 
 function Text.Make(face)
@@ -143,28 +150,19 @@ function Text.Make(face)
     face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
 end
 
--- The name's room: from the left side's end to the health's.
+-- The name's room: from the raid marker's right to the health's left.
 function Text.Layout(face)
-    local room = face.room
-    local gap = face.gap
-    local width = (Plain(face:GetWidth()) or 0) - room.left - room.right - 2 * gap
+    local right, gap = face.room.right, face.gap
     face.name:ClearAllPoints()
-    face.name:SetPoint("LEFT", face.top, "LEFT", room.left + gap, 0)
-    face.name:SetWidth(math.max(width, 1))
-    if face.roomed then face.roomed(face, room.right) end
+    face.name:SetPoint("LEFT", face.raid, "RIGHT", gap, 0)
+    face.name:SetPoint("RIGHT", face.top, "RIGHT", -(right + gap), 0)
+    if face.roomed then face.roomed(face, right) end
 end
 
 local function Side(face, key, width)
     if face.room[key] == width then return end
     face.room[key] = width
     Text.Layout(face)
-end
-
--- The left side: the level, and the raid marker after it while there is one.
-local function Left(face)
-    local width = face.inset + (face.levelRoom or 0)
-    if face.raid:IsShown() then width = width + face.gap + face.raid:GetWidth() end
-    Side(face, "left", width)
 end
 
 -- The game's colour for a level as it is to you: by difficulty for a unit you can attack, the game's colour for
@@ -190,18 +188,18 @@ function Text.Level(face, unit)
         text:SetTextColor(1, 1, 1)
     end
     text:SetText(shown or "")
-    local width = shown and Drawn(text)
-    face.levelRoom = shown and (width and math.ceil(width) + Text.SLACK or Text.Width(shown)) or 0
-    Left(face)
 end
 
 -- The raid marker of that number (nil: none): it may be hidden; the texture takes it as it is, and only whether there
 -- is one is looked at.
 function Text.Mark(face, index)
     local on = type(index) ~= "nil"
-    if on then face.raid:SetSpriteSheetCell(index, ROWS, COLUMNS) end
-    face.raid:SetShown(on)
-    Left(face)
+    local raid = face.raid
+    if on then raid:SetSpriteSheetCell(index, ROWS, COLUMNS) end
+    raid:SetShown(on)
+    raid:SetWidth(on and face.markSize or Core.HealthMarks.NONE)
+    raid:ClearAllPoints()
+    raid:SetPoint("LEFT", face.before or face.level, "RIGHT", on and face.gap or 0, 0)
 end
 
 function Text.Raid(face, unit)

@@ -50,8 +50,6 @@ local Core = SaneUI.Core
 --                                       -- (relative = "BOTTOM": by that point of the screen, not by its own point);
 --                                       -- or dock = "BOTTOMLEFT": docked in that zone at first (a talk: CENTER)
 --          title = "Social",            -- its name, on its title bar and on its box in Edit Mode
---          plainBox = frame,            -- in Edit Mode nothing is drawn around it: an unseen box over that frame of
---                                       -- it takes the clicks and drags (what it holds shows for itself)
 --          titleBar = true,             -- it has a title bar (without: only while it fills the screen)
 --          buttons = { { atlas = "common-icon-undo", tip = "Start again", click = function(button) end } },
 --                                       -- the module's own buttons in the title bar, left of Core's (or texture;
@@ -600,14 +598,13 @@ local function Box(window)
     local frame, options = window.frame, window.options
     local nineSlice = rawget(_G, "NineSliceUtil")
     local box = CreateFrame("Frame", nil, frame)
-    local plain = options.plainBox
-    box:SetAllPoints(plain or frame)
+    box:SetAllPoints()
     box:SetFrameLevel(frame:GetFrameLevel() + Window.BOX_LEVEL)
-    if nineSlice and not plain then Core.Safe("Edit Mode", nineSlice.ApplyLayout, box, SELECTION, HIGHLIGHT) end
+    if nineSlice then Core.Safe("Edit Mode", nineSlice.ApplyLayout, box, SELECTION, HIGHLIGHT) end
     local hover = CreateFrame("Frame", nil, box)
     hover:SetAllPoints()
     hover:SetAlpha(HOVER)
-    if nineSlice and not plain then Core.Safe("Edit Mode", nineSlice.ApplyLayout, hover, SELECTION, HIGHLIGHT) end
+    if nineSlice then Core.Safe("Edit Mode", nineSlice.ApplyLayout, hover, SELECTION, HIGHLIGHT) end
     for name in pairs(SELECTION) do
         local piece = rawget(hover, name)
         if piece then piece:SetBlendMode("ADD") end
@@ -620,7 +617,7 @@ local function Box(window)
     box.title = title
     box:SetScript("OnEnter", Core.Guard("window", function()
         hover:Show()
-        title:SetShown(not plain)
+        title:Show()
     end))
     box:SetScript("OnLeave", Core.Guard("window", function()
         hover:Hide()
@@ -914,9 +911,7 @@ end
 -- Chosen in Edit Mode (Selection.lua): its box in Edit Mode's look for that, or as every other one.
 function methods:Selected(on)
     local box, nineSlice = self.box, rawget(_G, "NineSliceUtil")
-    if box and nineSlice and not self.options.plainBox then
-        Core.Safe("Edit Mode", nineSlice.ApplyLayout, box, SELECTION, on and SELECTED or HIGHLIGHT)
-    end
+    if box and nineSlice then Core.Safe("Edit Mode", nineSlice.ApplyLayout, box, SELECTION, on and SELECTED or HIGHLIGHT) end
 end
 
 -- Its name anew: on its title bar, and on its box in Edit Mode.

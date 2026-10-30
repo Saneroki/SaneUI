@@ -195,11 +195,6 @@ local function Button(parent, unit)
     return button
 end
 
--- The dispel icon on the health bar, left of the health's words (Text.Layout says how wide those are).
-function Units.IconBeside(face, right)
-    face.marks:Place(face.top, "RIGHT", -(right + ns.UnitText.GAP), -face.marks:IconSize() / 2)
-end
-
 -- A frame: the game's secure unit button, our face on it (as high as the health bar, the rest hanging under it), a
 -- window of Core's to place it; its row's button under it.
 local function Make(kind)
@@ -219,7 +214,6 @@ local function Make(kind)
     if kind.bars then ns.UnitTimers.Make(face, Units.POWER) end
     for _, event in ipairs(Units.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
     for _, event in ipairs(Core.HealthMarks.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
-    face.roomed = Units.IconBeside
     face:SetScript("OnEvent", OnEvent)
     face:SetScript("OnSizeChanged", OnSizeChanged)
     button.face = face

@@ -116,7 +116,7 @@ fails, every plate is the game's own again.
 
 - **Barriers, lost health, dispels:** a barrier in the game's shield art on the bar, after the health or pushed against its right end;
   maximum health lost for a while: the fill ends earlier and the rest is hatched; what you or your group can take off a friend, or a buff
-  you can remove from a foe: a ring around the plate in its kind's colour and the aura's icon above the bar's right end. Switches
+  you can remove from a foe: the game's icon of its type above the bar's right end. Switches
   *Barriers*, *Lost maximum health*, *Dispellable auras*. The module's own part is small: `dress.marks` in `Bar.lua`, `Plate.lua`'s events.
 
 ## Technical details

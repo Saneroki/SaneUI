@@ -121,6 +121,16 @@ function Client.Install(W)
     CreateUnitHealPredictionCalculator = function() return W.calculator end
     UnitGetDetailedHealPrediction = function() end
     W.drivers, W.members = {}, {}
+    SecureHandlerSetFrameRef = function(frame, label, ref)
+        frame._refs = frame._refs or {}
+        frame._refs[label] = ref
+    end
+    W.ready = {} -- what the game says of each unit in a ready check
+    GetReadyCheckStatus = function(unit) return W.ready[unit] end
+    W.threat = {}
+    UnitThreatSituation = function(unit) return W.threat[unit] end
+    UnitIsUnit = function(a, b) return a == b end
+    UnitIsGroupLeader, UnitIsGroupAssistant = function() return true end, function() return false end
     IsInGroup, IsInRaid = function() return false end, function() return false end
     GetNumGroupMembers = function() return 0 end
     RegisterStateDriver = function(frame, state, values) W.drivers[frame] = { state = state, values = values } end

@@ -79,7 +79,7 @@ prints its log.
   ```
 
   The scenes: `groupframes` (Core and Combat from their TOCs: Edit Mode open with the party and raid frame chosen and forty made-up
-  units; `LabPreview(10)`, `LabSize(600, 140, 120)` in the console; the game's secure headers are not in the lab), `loot` (Core and Loot from their TOCs: the loot window over the world with a thing of every quality,
+  units; `LabPreview(10)`, `LabSize(600, 140, 120)`, `LabChoose()` for its dialog in the console; the game's secure headers are not in the lab), `loot` (Core and Loot from their TOCs: the loot window over the world with a thing of every quality,
   a quest's item and coins; the game's loot functions stand in for a corpse, a click takes a thing, `LabLoot.Open()`
   in the console opens it again), `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, and a minimap's stand-in with the
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
@@ -94,7 +94,8 @@ prints its log.
   under it through its phases, the game's scan calls standing in; `LabScan.Answer()` in the console is the server's answer),
   `pricegraph` (Core, its auction data and Tooltips from their TOCs: an item's tooltip with Alt held, its price graph in the Gold
   section on made-up scans; `LabRange("24h")`, `LabTap()` for Ctrl, `LabAlt(false)`, `LabPinned()` for a chat link's tooltip, whose
-  buttons take the mouse; the panel's ground is white, as the lab does not load its art),
+  buttons take the mouse; when to buy and sell it: `LabBuying(2900)` as a row of the house's list, `LabBuying()` as yours,
+  `LabSold(false)`, `LabScans(1)`; the panel's ground is white, as the lab does not load its art),
   `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the

@@ -1,7 +1,7 @@
--- Party and raid frames: Core and the module Combat from their TOCs, Edit Mode open with the frame chosen and its preview of made-up units
+-- Party and raid frames: Core and the module Combat from their TOCs, Edit Mode open with the frame's preview of made-up units
 -- The game's secure group headers are not in the lab, so this is Edit Mode's preview, the same faces as the live ones.
 -- The module's table is LabCombat in the console: LabPreview(40) shows that many, LabSize(600, 160, 120) sets the max
--- width, max height and max unit width.
+-- width, max height and max unit width, LabChoose() opens its dialog as a click on it does.
 for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "PlayerCastingBarFrame",
                         "OverlayPlayerCastingBarFrame", "MirrorTimerContainer", "PartyFrame", "CompactRaidFrameContainer" }) do
     CreateFrame("Frame", name, UIParent)
@@ -24,6 +24,7 @@ IsInGroup, IsInRaid = function() return false end, function() return false end -
 RegisterUnitWatch = function(frame) frame:Show() end
 UnregisterUnitWatch = function() end
 RegisterStateDriver, UnregisterStateDriver = function() end, function() end
+SecureHandlerSetFrameRef = function() end
 ClearOverrideBindings, SetOverrideBinding, GetBindingKey = function() end, function() end, function() end
 
 Lab.TOC("src/Core/SaneUI.toc")
@@ -39,12 +40,13 @@ function LabSize(width, height, unit)
     SaneUI.Core.Set("Combat", "groupHeight", height)
     SaneUI.Core.Set("Combat", "groupUnitWidth", unit)
 end
+-- The frame chosen, as a click on its box in Edit Mode: the dialog with its settings.
+function LabChoose()
+    for _, window in ipairs(SaneUI.Core.Window.All()) do
+        if window.options.key == "groupPlace" then SaneUI.Core.Selection.Select(window) end
+    end
+end
 Lab.OnLogin(function()
     EventRegistry:TriggerEvent("EditMode.Enter")
     LabPreview(40)
-    C_Timer.After(0.2, function()
-        for _, window in ipairs(SaneUI.Core.Window.All()) do
-            if window.options.key == "groupPlace" then SaneUI.Core.Selection.Select(window) end
-        end
-    end)
 end)

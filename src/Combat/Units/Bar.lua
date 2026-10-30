@@ -49,8 +49,8 @@ local _, ns = ...
 --                 unit's aggro (your own frame: anything's), or it is a player
 --                 who may attack you
 --  and on the health bar what Core's health marks show (frame.marks, Core's
---  HealthMarks.lua): the barrier, the lost maximum health (the health bar ends
---  earlier, Bar.Fit), and around it all the ring of what can be dispelled.
+--  HealthMarks.lua): the barrier and the lost maximum health (the health bar
+--  ends earlier, Bar.Fit); the dispel type icon stands in the line (Text.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -65,7 +65,6 @@ Bar.BACKGROUND = { 0.07, 0.07, 0.09, 1 } -- where health is missing: solid, so n
 Bar.BORDER = { 0, 0, 0, 0.9 }
 Bar.GLOW = { 1, 0.08, 0.05 }
 Bar.HALO = 6 -- the glow's bands, a screen pixel each, solid inside and fading out
-Bar.RING = 2 -- how many screen pixels the ring of what can be dispelled shows beyond the frame's edge
 -- Every bar's health in the game's green for it (its compact frames' health, set by the client); plain green where
 -- it has none.
 Bar.GREEN = { 0, 1, 0 }
@@ -242,8 +241,7 @@ function Bar.Make(frame, sizes)
     frame.roof:SetHeight(1)
     frame.rank = Bar.PLAIN
     frame.marks = Core.HealthMarks.New(frame, frame.health, {
-        masks = frame.health.ends, ring = function(parent) return Plate(parent, 0) end,
-        fit = function() Bar.Fit(frame) end })
+        masks = frame.health.ends, fit = function() Bar.Fit(frame) end })
 end
 
 -- Laid out for the frame's sizes, the unit's rank, its powers and the row, all inside the frame's edge: the border on
@@ -286,7 +284,6 @@ function Bar.Fit(frame)
     Around(frame.rankLine, frame, -pixel, height, above, below, radius)
     for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, above, below, radius) end
     local marks = frame.marks
-    for _, ring in ipairs(marks.rings) do Around(ring, frame, pixel * Bar.RING, height, above, below, radius) end
     local inner = (Plain(frame:GetWidth()) or 0) - 2 * inset
     local reach = marks:Reach(inner)
     frame.roof:ClearAllPoints()

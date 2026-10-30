@@ -8,11 +8,10 @@ local _, ns = ...
 --  then a column to the right for each group of a raid, up to forty.
 --
 --  The window (Core.Window, placed in Edit Mode) is as large as the most you
---  allow, but nothing is drawn around it, in Edit Mode either (Saneroki,
---  2026-10-30: "no borders around the entire frame, just show the unit frames").
---  There the preview's units are what you see, click and drag. A click on one
---  gives its settings, in Core's dialog: its max width and height, a unit's max
---  width, and how many made-up units to preview. A unit is as wide as those
+--  allow. Nothing is drawn around it in play, only the units; in Edit Mode it has
+--  the box every window has there. A click on that gives its settings, in Core's
+--  dialog: its max width and height, a unit's max width, and how many made-up
+--  units to preview. A unit is as wide as those
 --  allow for the columns the group fills, Group.HEIGHT high or less: so a
 --  party's frames are wide and a raid of forty's narrow (Group.Size). Sizes
 --  change out of a fight only; a fight keeps them, and members who join in one
@@ -26,18 +25,19 @@ local _, ns = ...
 --  (out of a fight); each carries our face (GroupFace.lua), which follows the unit
 --  its header gives it, so clicks, the game's menu, the tooltip and @mouseover
 --  are as on your other frames. The game's state driver shows them while you
---  are in a group; alone you have your own frame.
+--  are in a group; alone you have your own frame. Your own slot among them is no
+--  unit frame but the button of the group's tools (GroupTools.lua).
 --
 --  In Edit Mode the live frames rest and the preview shows: plain frames of the
 --  same look (GroupFace.lua) laid out by the same sizes, with random health,
---  mana, roles, raid markers, missing buffs, barriers, lost health and dispels.
+--  mana, raid markers, missing buffs, barriers, lost health, dispels, ready
+--  checks, aggro, the dead and the offline, and your own slot first.
 --  They are rolled when their number changes, not as sizes change, so what you
 --  look at holds still while you slide.
 --
---  The game's party frame and raid container stand in a hidden frame of ours
---  while ours shows (Core.Lend), with their parents given back exactly. The raid
---  manager at the screen's left edge stays: it is the game's tool for marks and
---  ready checks. Off, or standing down, the game's are back.
+--  The game's party frame, raid container and the raid manager at the screen's
+--  edge stand in a hidden frame of ours while ours shows (Core.Lend), with their
+--  parents given back exactly. Off, or standing down, the game's are back.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Face = ns.GroupFace
@@ -48,7 +48,7 @@ Group.GROUPS, Group.PER_GROUP = 8, 5
 Group.GAP = 0           -- between two units: they stand edge to edge (Saneroki, 2026-10-30: "0px gaps")
 Group.HEIGHT = 28       -- a unit's height at most
 Group.LEAST_WIDTH, Group.LEAST_HEIGHT = 40, 14
-Group.GAME = { "PartyFrame", "CompactRaidFrameContainer" } -- the game's frames ours stand in for
+Group.GAME = { "PartyFrame", "CompactRaidFrameContainer", "CompactRaidFrameManager" } -- the game's frames ours stand in for
 Group.SHOWN = "[group] show; hide"                         -- when the live frames show
 -- What can be chosen in Edit Mode (each also an option of the module, Combat.lua).
 Group.SETTINGS = {
@@ -61,6 +61,7 @@ Group.SETTINGS = {
 local holder, window, live, preview, box -- the window, the live frames' parent, the preview's parent, the game's hidden frame
 local headers, samples, faces, lends = {}, {}, {}, nil -- the headers; the rolled previews; their faces; what is lent
 local built = false -- the headers have their buttons
+local holdCount = 0 -- ready checks ended: only the last one's result is taken away
 
 -- How large a unit is for that many columns and rows, within the limits.
 function Group.Size(columns, rows, width, height, unit)
@@ -138,6 +139,18 @@ local function Headers()
     end
 end
 
+-- The tools' button on your own slot. Out of a fight.
+local function Mine()
+    local slot
+    for _, header in ipairs(headers) do
+        for child = 1, Group.PER_GROUP do
+            local button = header[child]
+            if button and button.face and button.face.mine then slot = button end
+        end
+    end
+    ns.GroupTools.Over(slot)
+end
+
 -- Every live face, each with its fn.
 local function EachFace(fn, ...)
     for _, header in ipairs(headers) do
@@ -161,7 +174,7 @@ local function Layout()
     end
 end
 
--- One made-up unit: most are well, a few are not.
+-- One made-up unit (you: your own slot): most are well, a few are not.
 local NAMES = ns.TEXT.groupSamples
 local function Pick(list)
     return list[math.random(#list)]
@@ -169,7 +182,8 @@ end
 local function Chance(share)
     return math.random() < share
 end
-local function Roll(icons)
+local function Roll(icons, you)
+    if you then return { you = true, icons = {} } end
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
     if Chance(0.35) then sample.mana = 0.1 + math.random() * 0.9 end -- a tank or a healer
@@ -177,14 +191,17 @@ local function Roll(icons)
     if Chance(0.2) then sample.barrier = math.min(0.1 + math.random() * 0.3, 1 - sample.health) end
     if Chance(0.15) then sample.lost = 0.1 + math.random() * 0.3 end
     if Chance(0.15) then sample.dispel = Pick({ "Magic", "Curse", "Disease", "Poison" }) end
+    if Chance(0.2) then sample.ready = Pick({ "ready", "notready", "waiting" }) end
+    if Chance(0.1) then sample.aggro = true end
     for _, icon in ipairs(icons) do
         if Chance(0.25) then sample.icons[#sample.icons + 1] = icon end
     end
-    if Chance(0.05) then
-        sample.health, sample.word, sample.mana, sample.barrier, sample.lost, sample.dispel = 0, ns.UnitText.DEAD, nil, nil, nil, nil
+    local dead, offline = Chance(0.06), Chance(0.05)
+    if dead or offline then
+        sample.word = dead and ns.UnitText.DEAD or ns.UnitText.OFFLINE
+        sample.colour = dead and Face.DEAD or Face.OFFLINE
+        sample.mana, sample.barrier, sample.lost, sample.dispel, sample.aggro = nil, nil, nil, nil, nil
         sample.icons = {}
-    elseif Chance(0.04) then
-        sample.word = ns.UnitText.OFFLINE
     end
     return sample
 end
@@ -194,23 +211,17 @@ local function Rolled(count)
     if #samples ~= count then
         local icons = ns.GroupBuffs.Icons()
         wipe(samples)
-        for index = 1, count do samples[index] = Roll(icons) end
+        for index = 1, count do samples[index] = Roll(icons, index == 1) end
     end
     return samples
 end
 
--- The preview as the settings say; each unit in its place, as the headers would put it. What takes the clicks and
--- drags in Edit Mode is as large as they are; with none, the whole window, so it can still be chosen.
+-- The preview as the settings say; each unit in its place, as the headers would put it.
 local function Preview()
     local count = math.min(tonumber(ns.options.groupPreview) or 0, Group.GROUPS * Group.PER_GROUP)
     local width, height, unit = Limits()
     local rows, columns = math.min(count, Group.PER_GROUP), math.ceil(count / Group.PER_GROUP)
     local wide, high = Group.Size(columns, rows, width, height, unit)
-    if count > 0 then
-        preview:SetSize(columns * (wide + Group.GAP) - Group.GAP, rows * (high + Group.GAP) - Group.GAP)
-    else
-        preview:SetSize(width, height)
-    end
     for index, sample in ipairs(Rolled(count)) do
         local face = faces[index]
         if not face then
@@ -243,8 +254,7 @@ local function Build()
     live:SetAllPoints(holder)
     live:Hide()
     preview = CreateFrame("Frame", nil, holder)
-    preview:SetPoint("BOTTOMLEFT", holder, "BOTTOMLEFT")
-    preview:SetSize(width, height)
+    preview:SetAllPoints(holder)
     preview:Hide()
     local settings = {}
     for index, setting in ipairs(Group.SETTINGS) do
@@ -253,7 +263,6 @@ local function Build()
     end
     window = Core.Window.New(holder, {
         store = ns.store, key = "groupPlace", title = ns.TEXT.group, first = Group.FIRST, settings = settings,
-        plainBox = preview,
         get = function(key) return ns.options[key] end,
         set = function(key, value) Core.Set(ns.name, key, value) end })
     window:Place()
@@ -285,6 +294,7 @@ local function Rest()
     if not live then return end
     UnregisterStateDriver(live, "visibility")
     live:Hide()
+    ns.GroupTools.Hide()
 end
 
 -- As the settings and your group say. Out of a fight.
@@ -306,8 +316,11 @@ local function Apply()
     preview:Hide()
     if not Core.Ask(IsInGroup) then return Rest() end
     Headers()
+    ns.GroupTools.Build(live)
     Layout()
     EachFace(Face.Fill)
+    Mine()
+    ns.GroupTools.Refresh()
     RegisterStateDriver(live, "visibility", Group.SHOWN)
 end
 
@@ -320,12 +333,38 @@ local Again = Core.Later(function()
     if not ns.off then EachFace(Face.Fill) end
 end)
 
+-- A ready check began or someone answered: each face as the game says. It ended: the result stays a while.
+local function ReadyCheck()
+    if ns.off then return end
+    holdCount = holdCount + 1
+    Face.holding = false
+    EachFace(Face.Ready)
+end
+
+local function ReadyEnded()
+    if ns.off then return end
+    EachFace(Face.Ready)
+    EachFace(Face.ReadyEnded)
+    Face.holding = true
+    holdCount = holdCount + 1
+    local held = holdCount
+    C_Timer.After(Face.READY_HOLD, ns.Guard(function()
+        if held ~= holdCount then return end
+        Face.holding = false
+        EachFace(Face.ReadyGone)
+    end))
+end
+
 function Group.Start()
     ns.GroupBuffs.Learn()
     ns.On("GROUP_ROSTER_UPDATE", Core.Later(Group.Apply))
     ns.On("PLAYER_ROLES_ASSIGNED", Again)
     ns.On("RAID_TARGET_UPDATE", Again)
     ns.On("PLAYER_REGEN_ENABLED", Again)
+    ns.On("READY_CHECK", ReadyCheck)
+    ns.On("READY_CHECK_CONFIRM", ReadyCheck)
+    ns.On("READY_CHECK_FINISHED", ReadyEnded)
+    ns.On("PARTY_LEADER_CHANGED", Core.Later(function() ns.Guarded(ns.GroupTools.Refresh) end))
     ns.On("SPELLS_CHANGED", Core.Later(function()
         ns.GroupBuffs.Learn()
         Again()
