@@ -243,10 +243,11 @@ check(profilesPage.name == "Profiles" and general.name == "General" and appearan
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
     "under it first Sane UI's own pages: Profiles, General, Appearance")
 local resetRow = general.items[4]
-check(#general.items == 8 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
+check(#general.items == 9 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
     and resetRow and resetRow.button == "Reset window positions", "General: the switches of no module, and a button that puts every window back")
 check(general.items[5].header == "Units" and general.items[6].setting.name == "Units", "and how Sane UI writes distances and the time")
-check(general.items[7].header == "Data" and general.items[8].setting.name == "Share data with my guild and group", "and what it swaps with other players")
+check(general.items[7].header == "Data" and general.items[8].setting.name == "Share data with my guild and group" and general.items[9].button == "Forget shared prices",
+    "and what it swaps with other players, and a button that forgets what they sent")
 
 -- Units: Metric at first; the game's yards recalculated, its words in a sentence too; the setting turns all of it.
 do

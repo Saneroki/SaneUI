@@ -80,7 +80,7 @@ local TEXT = {
     noEntry = "%s has no %s.",
     notReady = "%s is %s; try again in a moment.",
     notThere = "%s is %s (%s).",
-    usage = "/sane data show <set> <key>",
+    usage = "/sane data show <set> <key>, or /sane data forget for the auction prices your guild and group sent",
 }
 
 local sets = {}       -- [set name] = what Core knows of it (made by Add, or when something is said of it)
@@ -851,6 +851,10 @@ Core.Command("data", TEXT.about, function(rest)
     local word, name, key = (rest or ""):match("^(%S*)%s*(%S*)%s*(.-)$")
     if word == "show" then
         if name == "" or key == "" then Core.Print(TEXT.usage) else ShowEntry(name, key) end
+        return
+    end
+    if word == "forget" then
+        if Data.Relay then Data.Relay.ForgetAll() end
         return
     end
     Data.Retell()

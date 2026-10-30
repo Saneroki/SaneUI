@@ -13,7 +13,9 @@ The bigger changes of each version, newest first.
   Press the bar to start a scan yourself.
 - Auction prices are shared by themselves: a full scan reaches
   every Sane UI player in your guild and group, your own other
-  accounts too. General, Share data with my guild and group.
+  accounts too. General, Share data with my guild and group. Odd
+  prices wait for a second player, and Forget shared prices takes
+  out all that others sent.
 - Tooltips use what the auction house lists right now and your
   last scan for what an item brings, what its materials bring
   disenchanted and what to do with it. With Disenchant, the advice

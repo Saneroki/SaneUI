@@ -19,8 +19,10 @@ local Core = SaneUI.Core
 --      Prices.Account()        takes in what another account's file left in the global: the addon
 --                              SaneUI_AuctionDatabase is links to every account's file (Doc/guides/data.md, *Across
 --                              accounts*), read over this account's own points where they are newer
---      Prices.Heard(house, at, text, sender)   what a guild or group member's scan found, told by Relay.lua: it fills in
---                              only where this account's point is older, and a price five times off needs a second sender
+--      Prices.Heard(house, at, text, sender, channel)   what a guild or group member's scan found, told by Relay.lua: kept apart
+--                              as that sender's, it fills in only where this account's point is older, and a price five
+--                              times off waits for a second sender
+--      Prices.Forget(sender)   what members sent taken out again: one sender's, or none named: everybody's
 --
 --  item is an item's ID or its link. A link names its kind (gear by level and suffix, a pet by species); an ID, or a
 --  link of a kind no scan saw, the cheapest of its kinds.
@@ -38,7 +40,9 @@ local Plain, Ask = Core.Plain, Core.Ask
 local Prices = {}
 
 Prices.FRESH = 30  -- days a price counts without being seen again
+Prices.DOUBTS = 200 -- far-off prices in one member's scan before it counts as false
 local TRUST = 5    -- how far off a member's price may stand from what is known before a second sender must say it too
+local PRICE_MOST, COUNT_MOST, ITEM_MOST = 1e11, 1e7, 2147483647 -- past these no number in a member's block is true
 
 local DAY = 86400
 local HISTORIES = 64   -- items whose history stays taken apart, per house, then forgotten together
@@ -53,10 +57,13 @@ local NONE = {}
 local part             -- this game version's part of SaneUIData_Market
 local mine, opened     -- the house of your side, once asked for; the one open now
 local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty,
-                       --                      history = { [key] = points }, held }
+                       --                      history = { [key] = points }, held,
+                       --                      shared = { [key] = sender }, under = { [key] = the point it stands over },
+                       --                      told = { [at] = true: a scan's line of a member's } }
 local keys = {}        -- [a house's part] = its key
 local database         -- [a house's key] = { index, days, recent, kept }: what all accounts hold together, through the links
-local doubted = {}     -- [key] = { sender, low }: a shared price far from what is known, until a second sender says the same
+local doubted = {}     -- [key] = { sender, low, guild }: a shared price far from what is known, until a second sender says so
+local doubts = {}      -- [sender] = { at, far }: the far-off prices of that member's last scan
 local kinds = {}       -- [item] = whether the auction house tells its kinds apart
 local listed = {}      -- [key] = the lowest price in the list on show
 local listeners = {}
@@ -168,7 +175,7 @@ end
 local function Book(house)
     local book = books[house]
     if book then return book end
-    book = { index = {}, gear = {}, history = {}, held = 0 }
+    book = { index = {}, gear = {}, history = {}, held = 0, shared = {}, under = {}, told = {} }
     books[house] = book
     if type(house.index) == "string" then
         for key, point in house.index:gmatch(SAVED) do Put(book, key, point) end
@@ -180,6 +187,19 @@ local function Book(house)
             if not own or tonumber(point:match("^%d+")) > tonumber(own:match("^%d+")) then Put(book, key, point) end
         end
     end
+    -- What members sent, apart in the saved file as here
+    for sender, text in pairs(type(house.heard) == "table" and house.heard or NONE) do
+        if type(text) == "string" then
+            for key, point in text:gmatch(SAVED) do
+                local own = book.index[key]
+                if not own or tonumber(point:match("^%d+")) > tonumber(own:match("^%d+")) then
+                    if not book.shared[key] then book.under[key] = own end
+                    book.shared[key] = sender
+                    Put(book, key, point)
+                end
+            end
+        end
+    end
     return book
 end
 
@@ -187,18 +207,29 @@ end
 function Prices.Take(house, key, at, low, market, units, auctions, sellers)
     local book = Book(house)
     local point = book.index[key]
+    book.shared[key], book.under[key] = nil, nil
     Put(book, key, POINT:format(at, low, market, units, auctions, sellers))
     return point == nil or tonumber(point:match("^%d+,(%d+)")) ~= low or tonumber(point:match("^%d+,%d+,(%d+)")) ~= market
 end
 
 -- The house's points written into its saved string.
 function Prices.Save(house)
-    local book, lines, count = Book(house), {}, 0
+    local book, lines, count, heard = Book(house), {}, 0, {}
     for key, point in pairs(book.index) do
-        count = count + 1
-        lines[count] = key .. "=" .. point .. ";"
+        local sender = book.shared[key]
+        if sender then
+            local list = heard[sender] or {}
+            heard[sender] = list
+            list[#list + 1] = key .. "=" .. point .. ";"
+            point = book.under[key]
+        end
+        if point then
+            count = count + 1
+            lines[count] = key .. "=" .. point .. ";"
+        end
     end
-    house.index, book.dirty = table.concat(lines), false
+    for sender, list in pairs(heard) do heard[sender] = table.concat(list) end
+    house.index, house.heard, book.dirty = table.concat(lines), next(heard) and heard or nil, false
 end
 
 -- A scan was kept: the histories taken apart are old.
@@ -218,6 +249,7 @@ function Prices.See(key, low, units)
     local house = Current()
     if not house then return end
     local book = Book(house)
+    book.shared[key], book.under[key] = nil, nil
     if low == nil then
         book.index[key] = nil
     else
@@ -399,42 +431,126 @@ local function Near(one, other)
     return one <= other * TRUST and other <= one * TRUST
 end
 
--- A shared price where this account knows another: true when it may stand. Far off, it waits for a second sender.
-local function Believed(name, low, known, sender)
+-- A shared price where this account knows another: true when it may stand. Far off, it waits apart for a second sender, and
+-- one of the two must be of the guild: a group can hold strangers.
+local function Believed(name, low, known, sender, channel)
     if not known or known == 0 or low == 0 or Near(low, known) then return true end
     local first = doubted[name]
-    if first and first.sender ~= sender and Near(first.low, low) then
+    if first and first.sender ~= sender and Near(first.low, low) and (first.guild or channel == "GUILD") then
         doubted[name] = nil
         return true
     end
-    doubted[name] = { sender = sender, low = low }
+    doubted[name] = { sender = sender, low = low, guild = channel == "GUILD" }
     return false
 end
 
--- What a member's scan found (Relay.lua): "key=low,market,units,auctions,sellers;..." of a house this account knows. It joins
--- the newest points and, for a graph, that scan's line; where this account's point is as new, it is passed over. Into the
--- saved file goes only the newest point, at the logout: never the scans or the days, which are this account's own.
-function Prices.Heard(key, at, text, sender)
+-- A block's lines by their strict shape: { { name, low, market, units, auctions, sellers }, ... }, or nil where one byte of the
+-- text is anything else: then none of it is taken.
+local function Lines(text)
+    local list, read = {}, 0
+    for line, name, low, market, units, auctions, sellers in text:gmatch("(([^=;]+)=(%d+),(%d+),(%d+),(%d+),(%d+);)") do
+        low, market, units, auctions, sellers = tonumber(low), tonumber(market), tonumber(units), tonumber(auctions), tonumber(sellers)
+        if not (name:find("^%d+$") or name:find("^%d+:%d+:%-?%d+:%d+$")) or tonumber(name:match("^%d+")) > ITEM_MOST
+            or low > PRICE_MOST or market > PRICE_MOST or units > COUNT_MOST or auctions > COUNT_MOST or sellers > COUNT_MOST then
+            return nil
+        end
+        read = read + #line
+        list[#list + 1] = { name, low, market, units, auctions, sellers }
+    end
+    if read ~= #text then return nil end
+    return list
+end
+
+-- Far-off prices of one scan of one sender: beyond a few, a scan is not honest. True when it went beyond.
+local function TooFar(sender, at, far)
+    local count = doubts[sender]
+    if not count or count.at ~= at then
+        count = { at = at, far = 0 }
+        doubts[sender] = count
+    end
+    count.far = count.far + far
+    return count.far > Prices.DOUBTS
+end
+
+-- What a member's scan found (Relay.lua): "key=low,market,units,auctions,sellers;..." of a house this account knows, kept apart
+-- as that sender's, over what this account has only where that is older. How many stood, and a word where the sender earned
+-- a strike: shape, or far. A point stands in the newest prices and, for a graph, that scan's line; the days, the whole scans
+-- and this account's own points never hold it, so it can be taken out again, and nothing shared reaches the harvest.
+function Prices.Heard(key, at, text, sender, channel)
     local house = Known(key)
-    if not house then return false end
-    local book, lines, taken = Book(house), {}, 0
-    for name, low, market, units, auctions, sellers in text:gmatch("([%d:%-]+)=(%d+),(%d+),(%d+),(%d+),(%d+);") do
+    if not house then return 0 end
+    local read = Lines(text)
+    if not read then return 0, "shape" end
+    local book, lines, taken, far = Book(house), {}, 0, 0
+    local stale = Now() - Prices.FRESH * DAY
+    for _, line in ipairs(read) do
+        local name, low = line[1], line[2]
         local known = book.index[name]
-        if (not known or tonumber(known:match("^%d+")) < at)
-            and Believed(name, tonumber(low), known and tonumber(known:match("^%d+,(%d+)")), sender) then
-            Put(book, name, POINT:format(at, low, market, units, auctions, sellers))
-            taken = taken + 1
-            lines[taken] = name .. "=" .. low .. "," .. market .. ";"
+        local knownAt = known and tonumber(known:match("^%d+"))
+        if (not knownAt or knownAt < at) and Prices.Gear(tonumber(name:match("^%d+"))) ~= nil then -- the game knows the item
+            local current = knownAt and knownAt >= stale and tonumber(known:match("^%d+,(%d+)")) or nil
+            if Believed(name, low, current, sender, channel) then
+                if not book.shared[name] then book.under[name] = known end
+                book.shared[name] = sender
+                Put(book, name, POINT:format(at, low, line[3], line[4], line[5], line[6]))
+                taken = taken + 1
+                lines[taken] = name .. "=" .. low .. "," .. line[3] .. ";"
+            else
+                far = far + 1
+            end
         end
     end
-    if taken == 0 then return false end
-    database = database or {}
-    local shared = database[key] or { index = "", days = {}, recent = {}, kept = 0 }
-    database[key] = shared
-    shared.recent[at] = (shared.recent[at] or "") .. table.concat(lines)
-    book.dirty = true
+    if taken > 0 then
+        database = database or {}
+        local shared = database[key] or { index = "", days = {}, recent = {}, kept = 0 }
+        database[key] = shared
+        shared.recent[at] = (shared.recent[at] or "") .. table.concat(lines)
+        book.told[at] = true
+        book.dirty = true
+        Prices.Changed()
+    end
+    return taken, TooFar(sender, at, far) and "far" or nil
+end
+
+-- What members sent taken out again, and what waits of it: one sender's, or none named: everybody's. This account's own points
+-- stand as they were.
+function Prices.Forget(sender)
+    for name, first in pairs(doubted) do
+        if not sender or first.sender == sender then doubted[name] = nil end
+    end
+    for house, book in pairs(books) do
+        local changed = false
+        for key, who in pairs(book.shared) do
+            if not sender or who == sender then
+                book.index[key], book.shared[key], book.under[key], changed = book.under[key], nil, nil, true
+            end
+        end
+        if changed then
+            local shared = database and database[keys[house]]
+            for at in pairs(book.told) do
+                if shared then shared.recent[at] = nil end
+            end
+            book.told = {}
+            Prices.Save(house)
+        end
+    end
+    -- The houses not asked about in this session
+    for _, house in pairs(part and type(part.houses) == "table" and part.houses or NONE) do
+        if type(house) == "table" and type(house.heard) == "table" then
+            if sender then house.heard[sender] = nil else house.heard = nil end
+        end
+    end
     Prices.Changed()
-    return true
+end
+
+-- What members' prices stand now and wait, for /sane data.
+function Prices.Shared()
+    local standing, waiting = 0, 0
+    for _, book in pairs(books) do
+        for _ in pairs(book.shared) do standing = standing + 1 end
+    end
+    for _ in pairs(doubted) do waiting = waiting + 1 end
+    return standing, waiting
 end
 
 -- When this account last scanned a house it knows, 0 for never; nil for a house it does not.

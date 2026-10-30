@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Shared auction prices: strict reading, kept apart, strikes, Forget shared prices (Saneroki, 2026-10-30)
+Saneroki: the plan's safety layer for shared prices now, the safety review and hardening later. A game restart takes it in.
+- **`src/Core/Data/Prices.lua`:** a block is read whole by its strict shape or not at all; what members sent stands over this account's
+  own points but apart (`book.shared`, `book.under`, saved `heard[sender]`), never in `index`, `days` or the whole scans; a far-off price
+  needs a second sender, one of the guild's. `Prices.Forget(sender)`, `Prices.Shared`.
+- **`src/Core/Data/Relay.lua`:** strikes for a block off its shape, a scan from the future, two scans sooner than the server allows, a
+  scan full of far-off prices; three and the sender is not heard for a week, and what it sent is taken out. Saved in `strikes`.
+- **Forget shared prices:** a button on the page General, `/sane data forget`.
+- **Tests:** `dev/tests/data.lua`, with hostile members.
+
 ### Auction scans shared with the guild and the group, by themselves (Saneroki, 2026-10-30)
 Saneroki: new prices on the other running accounts at once, then: the automatic sync between party and guild members was planned,
 and should be a given. Step 1f.2 of the plan; a game restart takes it in (a new file in Core's TOC).

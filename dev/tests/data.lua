@@ -2100,35 +2100,102 @@ do
         check(#sent == 0, "another member asks first: this one stays quiet, and takes it all the same")
 
         -- Its blocks: fills in what is older, far-off prices need a second sender
+        W.clock = W.clock + (later - GetServerTime()) + 60
         local stamp, seen = Prices:Stamp(), 0
         Prices:OnChange(function() seen = seen + 1 end)
-        local function Block(sender, when, lines, channel)
-            Relay.Block(sender, ("%s\n%d\n%s"):format(house, when, lines), channel or "GUILD")
+        local function Block(sender, when, lines, channel, where)
+            Relay.Block(sender, ("%s\n%d\n%s"):format(where or house, when, lines), channel or "GUILD")
         end
-        Block("Two", later, "3003=44,55,6,7,8;3004=oops;bad line;3005=9,9,9,9,9;")
+        Block("Two", later, "3003=44,55,6,7,8;3005=9,9,9,9,9;")
         W.Wait(0)
         local low, usual, units, _, _, heardAt = Prices:Last(3003)
-        check(low == 44 and usual == 55 and units == 6 and heardAt == later and Prices:Low(3005) == 9 and Prices:Low(3004) == nil and Prices:Stamp() ~= stamp and seen == 1,
-            "a member's block: its prices are the newest at once, the views told, what cannot be read passed over")
-        Block("Two", later + 1, "3003=1,1,1,1,1;", "WHISPER")
+        check(low == 44 and usual == 55 and units == 6 and heardAt == later and Prices:Low(3005) == 9 and Prices:Stamp() ~= stamp and seen == 1,
+            "a member's block: its prices are the newest at once, the views told")
+        Block("Two", later, "3003=45,45,1,1,1;", "WHISPER")
         check(Prices:Last(3003) == 44, "a block by whisper is passed over")
-        Block("Two", later - 900, "3003=45,45,1,1,1;")
+        Block("Five", later - 900, "3003=45,45,1,1,1;")
         check(Prices:Last(3003) == 44, "an older scan's changes nothing: a shared price fills in only what is older")
-        Block("Two", later + 10, "3003=4400,4400,1,1,1;")
-        check(Prices:Last(3003) == 44, "more than five times off what is known: not from one sender")
-        Block("Two", later + 11, "3003=4400,4400,1,1,1;")
-        check(Prices:Last(3003) == 44, "nor from that sender again")
-        Block("Three", later + 12, "3003=4300,4300,1,1,1;")
-        check(Prices:Last(3003) == 4300, "a second sender says the same: it stands")
         check(select(1, next(Prices:Range(3003, nil, later + 100))) ~= nil, "the graphs have it too")
-        Relay.Block("Two", ("%s\n%d\n%s"):format("eu/9/horde", later, "3006=1,1,1,1,1;"), "GUILD")
+        Block("Five", later, "3006=1,1,1,1,1;", "GUILD", "eu/9/horde")
         check(Prices:Last(3006) == nil, "a house this account does not know: passed over")
+
+        -- Kept apart: this account's own stands under it, and comes back
+        local ownLow = Prices:Last(2002)
+        Block("Six", later, "2002=" .. ownLow + 1 .. ",9,9,9,9;")
+        check(Prices:Last(2002) == ownLow + 1, "a member's price stands over this account's older one")
         W.Fire("PLAYER_LOGOUT")
-        check(saved().index:find("=" .. (later + 12) .. ",4300,4300,1,1,1;", 1, true), "what was told stays for the next login")
-        check(not saved().days[math.floor((later + 12) / 86400)] or not saved().days[math.floor((later + 12) / 86400)]:find("3003=", 1, true), "but only as the newest point: the days are this account's own")
+        check(saved().heard.Six:find("2002=" .. later .. ",", 1, true) and saved().heard.Two:find("3003=" .. later .. ",44,55,6,7,8;", 1, true), "what was told stays for the next login, apart, by sender")
+        check(not saved().index:find("3003=", 1, true) and saved().index:find("2002=%d+," .. ownLow .. ","), "and this account's own points are not touched by it")
+        check(not (saved().days[math.floor(later / 86400)] or ""):find("3003=", 1, true), "nor its days")
+
+        -- Far off: waits apart, for a second sender; a group's alone is not enough
+        W.clock = W.clock + Relay.SOONEST * 3
+        Block("Two", later + Relay.SOONEST, "3003=4400,4400,1,1,1;")
+        check(Prices:Last(3003) == 44, "more than five times off what is known: not from one sender")
+        Block("Two", later + Relay.SOONEST, "3003=4400,4400,1,1,1;")
+        check(Prices:Last(3003) == 44, "nor from that sender again")
+        Block("Seven", later + Relay.SOONEST + 1, "3003=4300,4300,1,1,1;", "PARTY")
+        check(Prices:Last(3003) == 4300, "a second sender says the same: it stands")
+        Block("Two", later + Relay.SOONEST * 2, "3005=9000,9000,1,1,1;", "PARTY")
+        Block("Seven", later + Relay.SOONEST * 2, "3005=9100,9100,1,1,1;", "PARTY")
+        check(Prices:Last(3005) == 9, "two senders of a group alone are not enough: it can hold strangers")
+        check(select(2, Prices.Shared()) >= 1, "what waits is counted")
+
+        -- Hostile members: every block read whole, or none of it; three strikes and they are not heard
+        local function Mallory(name, strikes)
+            return SaneUIData_Market.forever.strikes[name] and SaneUIData_Market.forever.strikes[name].count == strikes
+        end
+        local now = GetServerTime()
+        Block("Mallory", now, "3100=5,5,5,5,5;")
+        check(Prices:Last(3100) == 5, "a member like any other, until")
+        Block("Mallory", now, "3101=6,6,6,6,6;3102=oops;")
+        check(Prices:Last(3101) == nil and Mallory("Mallory", 1), "a block off its shape: none of it taken, and a strike")
+        Relay.Block("Mallory", "nothing of the shape", "GUILD")
+        check(Mallory("Mallory", 2), "no block at all: a strike")
+        Block("Mallory", now + Relay.AHEAD + 60, "3103=7,7,7,7,7;")
+        check(Prices:Last(3103) == nil and Prices:Last(3100) == nil, "a scan from the future: the third strike: everything it sent taken out again")
+        check(SaneUIData_Market.forever.strikes.Mallory.till > now, "and it is not heard for a week")
+        Block("Mallory", now, "3104=8,8,8,8,8;")
+        check(Prices:Last(3104) == nil, "not heard")
+        sent = {}
+        Relay.Told("Mallory", { "have", house, tostring(now + Relay.QUIET * 8) }, "GUILD")
+        W.Wait(Relay.WAIT + 1)
+        check(#sent == 0, "nor are its offers")
+        Block("Eve", now, "3105=8,8,8,8,8;")
+        Block("Eve", now + 600, "3106=8,8,8,8,8;")
+        check(Prices:Last(3106) == nil and SaneUIData_Market.forever.strikes.Eve.count == 1, "two scans sooner than the server allows: a strike")
+        Block("Bob", now, "3107=8,8,8,8,8;99999999999999999999=1,1,1,1,1;")
+        check(Prices:Last(3107) == nil and SaneUIData_Market.forever.strikes.Bob.count == 1, "an item number no item can have: a strike")
+        Block("Ann", now, "666=8,8,8,8,8;3110=8,8,8,8,8;")
+        check(Prices:Last(666) == nil and Prices:Last(3110) == 8 and SaneUIData_Market.forever.strikes.Ann == nil, "an item the game does not know: left out, no strike")
+        Block("Rob", now, "3108=999999999999,1,1,1,1;")
+        check(Prices:Last(3108) == nil and SaneUIData_Market.forever.strikes.Rob.count == 1, "a price past all the gold there is: a strike")
+        Block("Old", now - Relay.OLD - 60, "3109=1,1,1,1,1;")
+        check(Prices:Last(3109) == nil and SaneUIData_Market.forever.strikes.Old == nil, "a scan too old: passed over, no strike")
+        local many, doubts = {}, Prices.DOUBTS
+        Prices.DOUBTS = 3
+        for index = 1, 5 do many[index] = ("%d=999999,999999,1,1,1;"):format(2010 + index) end
+        Block("Liar", now, table.concat(many))
+        check(SaneUIData_Market.forever.strikes.Liar.count == 1, "a scan full of far-off prices: a strike")
+        Prices.DOUBTS = doubts
+        Prices.See("2002", ownLow)
+
+        -- Forgotten: what members sent gone, this account's own back, the file too
         W.printed = {}
         SlashCmdList.SANEUI("data")
         check(printedMatch("auction prices told by your guild and group since the login: %d+,"), "/sane data says what they told")
+        check(printedMatch("members' auction prices: %d+ standing, %d+ waiting for a second sender, 1 senders not heard"), "and what stands, waits and is not heard")
+        Block("Six", now, "2003=" .. Prices:Last(2003) + 1 .. ",9,9,9,9;")
+        check(select(1, Prices.Shared()) > 0, "something stands")
+        local before = Prices:Last(2003) - 1
+        SlashCmdList.SANEUI("data forget")
+        check(printedMatch("forgot the auction prices your guild and group sent"), "/sane data forget says so")
+        check(select(1, Prices.Shared()) == 0 and select(2, Prices.Shared()) == 0, "nothing of members' stands or waits")
+        check(Prices:Last(3003) == nil and Prices:Last(3005) == nil and Prices:Last(2003) == before and Prices:Last(2001) == 7777, "their prices gone, this account's own back as they were")
+        W.Fire("PLAYER_LOGOUT")
+        check(saved().heard == nil and not saved().index:find("3003=", 1, true) and saved().index:find("2003=", 1, true), "out of the saved file too")
+        check(not next(Prices:Range(3003, nil, later + 100)), "and out of the graphs")
+        check(SaneUIData_Market.forever.strikes.Mallory.till > now, "the strikes stay")
 
         -- A member logs in and asks: the one with a newer scan offers it, whole
         sent, blocks = {}, {}
@@ -2148,8 +2215,8 @@ do
         Relay.Offer(house, after + Relay.QUIET * 2, { "1=1,1,1,1,1;" })
         Relay.Told("x", { "have", house, tostring(after + Relay.QUIET * 4) }, "GUILD")
         W.Wait(Relay.WAIT + 1)
-        Block("Four", after + Relay.QUIET * 4, "3003=4310,4310,1,1,1;")
-        check(#sent == 0 and Prices:Last(3003) == 4300, "Share data off: neither sends nor takes")
+        Block("Four", GetServerTime(), "3200=4310,4310,1,1,1;")
+        check(#sent == 0 and Prices:Last(3200) == nil, "Share data off: neither sends nor takes")
         Core.general.shareData = true
 
         Wire.Send, Wire.SendBlock, Wire.Drop = send, sendBlock, drop

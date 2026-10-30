@@ -15,6 +15,11 @@ local Core = SaneUI.Core
 --  raid: never a whisper, where the server would not stand for the sender. A received text is read, never run, and
 --  fills in only where this account's point is older (Prices.Heard). What came from others is not passed on. The
 --  switch Share data with my guild and group turns all of it off, sending and taking.
+--
+--  No message is trusted (Doc/ideas/Data.md, *Poisoning*). A block off its shape, a scan from the future, two scans sooner
+--  than the server allows, or a scan full of far-off prices earns a strike; Relay.STRIKES of them and the sender is not
+--  heard for Relay.IGNORED seconds, and what it sent is taken out again. Strikes are kept on this computer only, by the
+--  sender's whole name. Relay.ForgetAll (a button on the page General, /sane data forget) takes out what all members sent.
 -------------------------------------------------------------------------------
 local Data, Wire = Core.Data, Core.Wire
 local Prices = Data.Series("Prices")
@@ -27,12 +32,19 @@ Relay.BYTES = 6000    -- bytes of a block before it is packed: well under the wi
 Relay.WAIT = 3        -- seconds at most a member waits before it answers, so that not all answer at once
 Relay.RETRY = 5       -- seconds before a block the queue had no room for is tried again
 Relay.LISTEN = 60     -- seconds after the login before asking: a transfer under way rides along
+Relay.STRIKES = 3     -- strikes before a sender is not heard
+Relay.IGNORED = 7 * 86400 -- seconds it is not heard then
+Relay.AHEAD = 300     -- seconds a scan's time may lie ahead of this clock
+Relay.OLD = 2 * 86400 -- seconds after which a scan is too old to take
+Relay.SOONEST = 14 * 60 -- seconds: the server allows no two scans of a player sooner
 
 local KIND, TAG = "A", "prices"
 local offer             -- this account's scan on offer: { house, at, lines, channels, turn, sent, blocks }
 local transfers = {}    -- [house] = the newest scan a member offered or sent
 local taken = {}        -- [house] = the newest scan taken from a member
 local asking = {}       -- [house] = the scan this account is about to want
+local sent = {}         -- [sender] = the time of its last scan heard
+local strikes           -- [sender] = { count, till }, in the saved file: this computer's alone
 Relay.heard = { items = 0 } -- what members told: for /sane data
 
 local function Channels()
@@ -50,6 +62,31 @@ end
 local function Stop()
     Wire.Drop(KIND, TAG)
     offer = nil
+end
+
+local function Now()
+    return Core.Ask(rawget(_G, "GetServerTime")) or 0
+end
+
+-- Whether a sender is not heard now.
+local function Ignored(sender)
+    local entry = strikes and strikes[sender]
+    return type(entry) == "table" and (tonumber(entry.till) or 0) > Now()
+end
+
+-- A strike. At the last, the sender is not heard for a while and what it sent is taken out again.
+local function Strike(sender)
+    if not (strikes and sender) then return end
+    local entry = strikes[sender]
+    if type(entry) ~= "table" then
+        entry = {}
+        strikes[sender] = entry
+    end
+    entry.count = (tonumber(entry.count) or 0) + 1
+    if entry.count >= Relay.STRIKES then
+        entry.count, entry.till = 0, Now() + Relay.IGNORED
+        Prices.Forget(sender)
+    end
 end
 
 -- The lines cut into blocks, each saying what house and when.
@@ -134,8 +171,8 @@ local function Asked(house, since)
     end, 1 + math.random())()
 end
 
-function Relay.Told(_, fields, channel)
-    if channel == "WHISPER" or not Data.Sharing() then return end
+function Relay.Told(sender, fields, channel)
+    if channel == "WHISPER" or not Data.Sharing() or Ignored(sender) then return end
     local what, house, at = fields[1], fields[2], tonumber(fields[3])
     if not (house and at) then return end
     if what == "have" then
@@ -150,16 +187,29 @@ end
 
 -- A block whole: "house\nat\nlines".
 function Relay.Block(sender, text, channel)
-    if channel == "WHISPER" or not Data.Sharing() then return end
+    if channel == "WHISPER" or not Data.Sharing() or Ignored(sender) then return end
     local house, at, lines = text:match("^([^\n]+)\n(%d+)\n(.*)$")
-    if not house then return end
+    if not house then return Strike(sender) end
     at = tonumber(at)
+    local now = Now()
+    if at > now + Relay.AHEAD then return Strike(sender) end
+    if at < now - Relay.OLD then return end
+    if sent[sender] and sent[sender] ~= at and math.abs(sent[sender] - at) < Relay.SOONEST then return Strike(sender) end
+    sent[sender] = at
     transfers[house] = math.max(transfers[house] or 0, at)
-    if Prices.Heard(house, at, lines, sender) then
+    local count, problem = Prices.Heard(house, at, lines, sender, channel)
+    if problem then return Strike(sender) end
+    if count > 0 then
         taken[house] = math.max(taken[house] or 0, at)
-        local _, count = lines:gsub(";", ";")
         Relay.heard.items, Relay.heard.at = Relay.heard.items + count, at
     end
+end
+
+-- What all members sent taken out again; this account's own prices stand as they were.
+function Relay.ForgetAll()
+    Prices.Forget()
+    Relay.heard = { items = 0 }
+    Core.Print(Relay.TEXT.forgotten)
 end
 
 -- A minute after the login: who has a newer scan of the house of this player's side?
@@ -178,8 +228,23 @@ Wire.Listen(KIND, Relay.Told)
 Wire.ListenBlock(KIND, Relay.Block)
 Core.On("PLAYER_LOGIN", Core.Later(Ask, Relay.LISTEN))
 
--- /sane data: what members told since the login.
-local SAY = { heard = "auction prices told by your guild and group since the login: %d, the last from a scan at %s." }
+Data.Saved("Market", function(saved)
+    if type(saved.strikes) ~= "table" then saved.strikes = {} end
+    strikes = saved.strikes
+end)
+
+-- /sane data: what members told since the login, what stands of it, what waits, and who is not heard.
+Relay.TEXT = {
+    heard = "auction prices told by your guild and group since the login: %d, the last from a scan at %s.",
+    shared = "members' auction prices: %d standing, %d waiting for a second sender, %d senders not heard.",
+    forgotten = "Sane UI forgot the auction prices your guild and group sent. Your own stand as they were.",
+}
 Data.reports[#Data.reports + 1] = function()
-    if Relay.heard.at then Core.Print(SAY.heard:format(Relay.heard.items, Core.ClockAt(Relay.heard.at))) end
+    if Relay.heard.at then Core.Print(Relay.TEXT.heard:format(Relay.heard.items, Core.ClockAt(Relay.heard.at))) end
+    local standing, waiting = Prices.Shared()
+    local ignored = 0
+    for sender in pairs(strikes or {}) do
+        if Ignored(sender) then ignored = ignored + 1 end
+    end
+    if standing + waiting + ignored > 0 then Core.Print(Relay.TEXT.shared:format(standing, waiting, ignored)) end
 end

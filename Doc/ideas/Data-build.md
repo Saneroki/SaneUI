@@ -268,7 +268,8 @@ holds the budget of values for all of them.
   receiver takes only its own house's. Tests. *Built 2026-10-30: `src/Core/Data/Relay.lua`, with the switch and the price rule of
   *Poisoning* 7; `Doc/guides/data.md`, *Scans shared*.*
 - [ ] **1f.3 Bundles.** Tests.
-- [ ] **1f.4 Trust.**
+- [ ] **1f.4 Trust.** *Built 2026-10-30 for auction prices (`Prices.lua`, `Relay.lua`; `Doc/guides/data.md`, *Scans shared*): shape, the
+  far-off price's quarantine, strikes, *Forget shared prices*, tests with hostile members. Still to come: the same for shared facts.*
   - Shape, quarantine and the game's check.
   - Three senders, counts and prices: three different keys (guide, *Players*).
   - Strikes, kept by key.

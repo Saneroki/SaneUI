@@ -843,12 +843,23 @@ the plan: `Doc/ideas/Data.md`, *Scans*). A running game reads no file, so this i
   first scan of 6,000 items takes about six minutes and later ones far less. With nobody asking, one message is all there is.
 - **`ask`:** `Relay.LISTEN` seconds after the login, unless a transfer was heard: who has a scan of this house newer than mine? The holder
   offers its last scan whole (`Prices.Lines`); holders that hear the offer stay quiet. What came from others is not passed on.
-- **Taken in** (`Prices.Heard`): only from the guild, party and raid, never a whisper; strictly read; only where this account's point
-  is older; a price more than five times off the point it replaces needs a second sender (`doubted`). It moves the newest points
-  and a graph's line in memory, and at the logout `index`: never `days` or the whole scans, so nothing shared reaches the harvest.
+- **Taken in** (`Prices.Heard`): only from the guild, party and raid, never a whisper; every byte of a block by its strict shape, or
+  none of it; numbers within what the game can hold; an item the game does not know left out; only where this account's point is
+  older. A price more than five times off a point of the last `Prices.FRESH` days waits apart (`doubted`) for a second sender, one of
+  the two of the guild, as a group can hold strangers.
+- **Kept apart:** a member's points stand over this account's in `book.index`, `book.shared` says whose, `book.under` holds what they
+  stand over. In the saved file they are `heard[sender] = "key=at,low,market,units,auctions,sellers;..."`, never `index`, `days` or
+  the whole scans, so they can be taken out again and nothing shared reaches the harvest. A scan of this account's, or what the game
+  lists, replaces them.
+- **Strikes** (`strikes[sender] = { count, till }`, on this computer only, by the whole name): a block off its shape; a scan's time more
+  than `Relay.AHEAD` ahead; two scans of a sender closer than `Relay.SOONEST`, which the server cannot have allowed; more than
+  `Prices.DOUBTS` far-off prices in one scan. At `Relay.STRIKES` the sender is not heard for `Relay.IGNORED` (a week), and what it sent is
+  taken out again (`Prices.Forget(sender)`). A scan older than `Relay.OLD` is passed over, with no strike.
+- **Forget shared prices:** a button on the page General, `/sane data forget` (`Relay.ForgetAll`): everything members sent, and what
+  waits, taken out; this account's own points back as they were; strikes stay. `/sane data` says what stands and waits and who is not heard.
 - **The switch** *Share data with my guild and group* (`Core.general.shareData`, `Data.Sharing()`, page General, on): off, neither
   this nor the confirmed facts of `Confirm.lua` are sent or taken.
-- **Still to come (1f.4):** strikes, quarantine and *Forget shared data*.
+- **Still to come (1f.4):** the same for the shared facts of `Confirm.lua`, which keep no sender.
 
 ### The harvest
 

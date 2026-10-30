@@ -281,6 +281,8 @@ Core.Options(Core.name, {
     { key = "shareData", default = true, text = "Share data with my guild and group", header = "Data",
       headerTip = "What Sane UI swaps with other players.",
       tip = "Sane UI players in your guild and group swap general game knowledge (auction prices, new quests, changes after a patch), so everybody's is up to date. Nothing about you or your characters is sent, and it does not slow the game. Off: Sane UI neither sends nor takes any of it." },
+    { key = "forgetShared", text = "Forget shared prices", tip = "Takes out every auction price your guild and group sent, and what still waits. Your own prices stay as they were. Also /sane data forget.",
+      button = function() if Core.Data and Core.Data.Relay then Core.Data.Relay.ForgetAll() end end },
     { key = "animations", default = true, text = "Animations", page = "Appearance",
       header = "Windows", headerTip = "How Sane UI's windows move.",
       tip = "Sane UI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },

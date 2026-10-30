@@ -1510,6 +1510,9 @@ message is treated as possibly hostile, whichever addon it seems to come from.
 10. **Undo.** A button *Forget shared data* (*The switches*) removes everything accepted from others and all
     that waits, and leaves the player's own data and the packs as they were.
 
+*Built for auction prices, 2026-10-30 (2, the quarantine of far-off prices, 7, 8, 9, 10; the guide, *Scans shared*). Shared facts
+(`Confirm.lua`) keep no sender, so 8 and 10 do not reach them yet.*
+
 **What remains:** one person with three characters in the guild could agree with itself about something the
 game cannot check (where an NPC stands). It cannot touch what the game checks; it is removed with one
 button; the player's own observation overrides it; it never reaches the master unchecked; and the guild can
