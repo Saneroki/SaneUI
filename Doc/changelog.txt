@@ -14,7 +14,8 @@ The bigger changes of each version, newest first.
   the key runs you to the corpses around you and opens them, and
   once a quest is taken or handed in it leaves the NPC alone and
   closes the goodbye screen. Quest rewards are chosen for you: the
-  biggest upgrade, else what is worth the most. Each has its switch.
+  biggest upgrade, else what is worth the most, and upgrades you
+  loot are put on. Each has its switch.
 - Bags: a green arrow on the items that would be an upgrade.
 - Combat: your frame, your target's and your focus's in the look
   of the nameplates, green: level and raid marker on the left,

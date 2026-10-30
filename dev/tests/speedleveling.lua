@@ -793,6 +793,45 @@ do
     ns.Quests.Forget()
 end
 
+-- Equip upgrades: what just came into the bags and is an upgrade goes on, one at a time; nothing else.
+do
+    local upgrade, container, new = Core.Upgrade, rawget(_G, "C_Container"), rawget(_G, "C_NewItems")
+    local held = { "item:1:a", "item:2:b", "item:3:c" }
+    local fresh, gains, equipped = { true, false, true }, { ["item:1:a"] = 16, ["item:2:b"] = 5 }, {}
+    C_Container = setmetatable({
+        GetContainerNumSlots = function(bag) return bag == 0 and #held or 0 end,
+        GetContainerItemLink = function(_, slot) return held[slot] end,
+    }, { __index = container })
+    C_NewItems = { IsNewItem = function(_, slot) return fresh[slot] end }
+    Core.Upgrade = function(link) if gains[link] then return "better", 3, gains[link] end end
+    C_Item.EquipItemByName = function(link, place)
+        equipped[#equipped + 1] = link .. ">" .. tostring(place)
+        gains[link] = nil
+    end
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(ns.Errands.EQUIP)
+    check(equipped[1] == "item:1:a>16", "a new upgrade put on, in the place it goes")
+    W.Wait(ns.Errands.EQUIP * 3)
+    check(#equipped == 1, "not what is no upgrade, nor an upgrade you took off yourself (not new)")
+    fresh[2], gains["item:1:a"] = true, 16
+    W.combat = true
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(ns.Errands.EQUIP)
+    check(#equipped == 1, "in a fight: not yet")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    W.Wait(ns.Errands.EQUIP)
+    check(equipped[2] == "item:2:b>5", "after it; one the game refused is not tried again")
+    W.Wait(Key.LOOK + Key.TICK)
+    Core.Set(ns.name, "equipUpgrades", false)
+    gains["item:3:c"] = 7
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(ns.Errands.EQUIP)
+    check(#equipped == 2, "Equip upgrades off: left in the bags")
+    Core.Set(ns.name, "equipUpgrades", true)
+    Core.Upgrade, C_Container, C_NewItems, C_Item.EquipItemByName = upgrade, container, new, nil
+end
+
 -- Shift seen once in a talk: the rest of it is yours, let go or not, until the talk is over.
 do
     local Quests, did = ns.Quests, {}

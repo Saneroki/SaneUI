@@ -18,12 +18,17 @@ local _, ns = ...
 --                     click of the player's: where it refuses, its question
 --                     comes up as ever with the word it wants typed in, and is
 --                     not tried again (options.deleteRefused).
+--    Equip upgrades   gear that just came into your bags and is an upgrade
+--                     (Core.Upgrade; the game's own flag of a new item, so what
+--                     you took off yourself stays off) is put on, one at a time
+--                     so that the next is measured against it, out of a fight.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Errands = {}
 ns.Errands = Errands
 
 Errands.CHECK = 0.3   -- seconds after an item was destroyed before the cursor shows whether the game let it
+Errands.EQUIP = 0.3   -- seconds after the bags changed, or a piece went on, before the next new upgrade is put on
 
 local LOOT = "Loot"   -- the module whose switches Take all loot sets
 local LENT = { takeAll = true }
@@ -35,6 +40,7 @@ local ASKS = {
 }
 
 local deleting        -- the question an item was just destroyed for
+local tried = {}      -- the upgrades put on or tried (links): one the game refuses is not tried again
 
 -------------------------------------------------------------------------------
 --  Take all loot
@@ -102,7 +108,43 @@ local function Answer(which)
     CheckDeleted()
 end
 
+-------------------------------------------------------------------------------
+--  Equip upgrades
+-------------------------------------------------------------------------------
+-- The first new item in your bags that is an upgrade, and the place it goes.
+local function NewUpgrade()
+    local bags, new = rawget(_G, "C_Container"), rawget(_G, "C_NewItems")
+    if not (bags and new) then return nil end
+    for bag = 0, rawget(_G, "NUM_BAG_SLOTS") or 4 do
+        for slot = 1, Core.Ask(bags.GetContainerNumSlots, bag) or 0 do
+            if Core.Ask(new.IsNewItem, bag, slot) then
+                local link = Core.Ask(bags.GetContainerItemLink, bag, slot)
+                if type(link) == "string" and not tried[link] then
+                    local kind, _, place = Core.Upgrade(link)
+                    if kind then return link, place end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local PutOnSoon
+local function PutOn()
+    if ns.off or not ns.options.equipUpgrades or InCombatLockdown() then return end
+    if Core.Ask(rawget(_G, "CursorHasItem")) or Core.Ask(rawget(_G, "UnitIsDeadOrGhost"), "player") then return end
+    local link, place = NewUpgrade()
+    if not link then return end
+    tried[link] = true
+    Core.Ask(rawget(_G, "C_Item") and C_Item.EquipItemByName or rawget(_G, "EquipItemByName"), link, place)
+    ns.Print(ns.TEXT.equipped:format(link))
+    PutOnSoon()
+end
+PutOnSoon = Core.Later(function() ns.Guarded(PutOn) end, Errands.EQUIP)
+
 function Errands.Start()
     Errands.Update()
     if rawget(_G, "StaticPopup_Show") then hooksecurefunc("StaticPopup_Show", ns.Guard(Answer)) end
+    ns.On("BAG_UPDATE_DELAYED", PutOnSoon)
+    ns.On("PLAYER_REGEN_ENABLED", PutOnSoon)
 end

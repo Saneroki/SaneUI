@@ -34,7 +34,8 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   on equipping and destroying, by default; the key walks to corpses around you; a talk that is done closes and the
   key leaves that NPC alone. Selling junk and repairing are Inventory's (checkboxes in the bag). Same day: Always show
   upgrades stays (he wants to see an upgrade, the rest is taken); only the guide's quests are taken, all of them at one
-  NPC; the reward chosen: the biggest upgrade, else the guide's, else the highest vendor or auction house value.
+  NPC; the reward chosen: the biggest upgrade, else the guide's, else the highest vendor or auction house value; new
+  upgrades put on (Speed Leveling's switch, not Inventory's: a thing for leveling, by item level alone).
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
   looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the

@@ -32,7 +32,7 @@ local ADDON, ns = ...
 --    Rewards.lua which reward to take where a quest offers a choice
 --    Quests.lua  what a quest giver does for your guide, a talk that is done closed
 --    Errands.lua what would hold you up: all loot taken, the game's questions
---                on equipping and destroying answered
+--                on equipping and destroying answered, new upgrades put on
 --    Steps.lua   the guide over the world
 --    Arrow.lua   the way to the guide's place, a part of its own
 --    Icons.lua   the items to use and the names to target, over the guide
@@ -98,6 +98,9 @@ ns.TEXT = {
     lootAllTip = "Sets the module Loot to take everything at once: its Everything on. Its Always show upgrades stays as you have it, so an upgrade still waits in the loot window for you to see. The game's question on a thing that binds when picked up is answered too. What you change on Loot's page afterwards stays; this switch off puts it back. Things locked to a group's roll are not taken.",
     noAsk = "Equip and delete without asking",
     noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
+    equipUpgrades = "Equip upgrades",
+    equipUpgradesTip = "Gear that comes into your bags, looted or a quest's reward, and is an upgrade is put on at once, or after a fight: anything you can wear for a place with nothing in it, else one of a higher item level. Upgrades go by item level alone, not by stats. What you took off yourself stays off. The chat says what was put on.",
+    equipped = "Equipped %s.",
 
     -- The guide over the world (Guide.lua, Steps.lua, Guides.lua).
     guideHeader = "Guide",
@@ -221,6 +224,7 @@ local OPTIONS = {
     { key = "lootAll", default = true, text = ns.TEXT.lootAll, tip = ns.TEXT.lootAllTip,
       header = ns.TEXT.errandsHeader, headerTip = ns.TEXT.errandsHeaderTip },
     { key = "noAsk", default = true, text = ns.TEXT.noAsk, tip = ns.TEXT.noAskTip },
+    { key = "equipUpgrades", default = true, text = ns.TEXT.equipUpgrades, tip = ns.TEXT.equipUpgradesTip },
     { key = "follow", default = "on", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
@@ -238,8 +242,8 @@ local OPTIONS = {
 -- The switches of the guide over the world: drawn anew; the guide's targets also change what the key wants; the quest
 -- givers' switches and those of what is on the way are read when they are needed.
 local VIEW = { showGuide = true, showArrow = true, icons = true, ahead = true, gather = true }
-local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, lootLent = true,
-                 deleteRefused = true }
+local QUESTS = { take = true, handin = true, rewards = true, gossip = true, leave = true, noAsk = true, equipUpgrades = true,
+                 lootLent = true, deleteRefused = true }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if VIEW[key] then
         ns.Guarded(ns.Steps.Update)

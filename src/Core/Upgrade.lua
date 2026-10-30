@@ -12,8 +12,9 @@ local Core = SaneUI.Core
 --  mail), nor an off hand while a two-handed weapon is held. Shirts, tabards
 --  and bags are no gear here.
 --
---      Core.Upgrade(link, id)   "empty" (nothing worn there) or "better" (a higher item level), and the item levels
---                               it brings; nil: no upgrade. id: the item's, read from the link without it
+--      Core.Upgrade(link, id)   "empty" (nothing worn there) or "better" (a higher item level), the item levels it
+--                               brings and the place it goes (of two the empty or the weaker one); nil: no upgrade.
+--                               id: the item's, read from the link without it
 -------------------------------------------------------------------------------
 local Plain = Core.Plain
 
@@ -78,7 +79,7 @@ function Core.Upgrade(link, id)
     local facts = Facts(link)
     local places = facts and PLACES[facts.where]
     if not places or not Wearable(id or tonumber(link:match("item:(%d+)")), facts) then return nil end
-    local weakest
+    local weakest, at
     for _, name in ipairs(places) do
         local place = Place(name)
         if not place then return nil end
@@ -87,11 +88,11 @@ function Core.Upgrade(link, id)
             if held and TWO_HANDS[held.where] then return nil end -- both hands hold one weapon
         end
         local worn = Facts(Core.Ask(GetInventoryItemLink, "player", place))
-        if not worn then return "empty", facts.level end
-        if not weakest or worn.level < weakest.level then weakest = worn end
+        if not worn then return "empty", facts.level, place end
+        if not weakest or worn.level < weakest.level then weakest, at = worn, place end
     end
     local mine, theirs = Weight(facts), Weight(weakest)
     if mine and theirs and mine < theirs then return nil end -- lighter armour than worn
-    if facts.level > weakest.level then return "better", facts.level - weakest.level end
+    if facts.level > weakest.level then return "better", facts.level - weakest.level, at end
     return nil
 end

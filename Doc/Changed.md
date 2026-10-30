@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 151 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 156 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Inventory: the doll's jewellery together at the top right (Saneroki, 2026-10-30)
@@ -49,6 +49,13 @@ new settings `autoSell` and `autoRepair`, on at first, also on the page Inventor
 - Tests: `dev/tests/bags.lua` 349 checks (the boxes and their ticks, the vendor before the bags' window was built, the
   order of junk and repair, the event twice, Shift, each switch off, too little money, nothing to repair, a vendor who
   does not repair or left, standing down); `CreateLine` in `dev/tests/wowstub.lua`.
+
+### Speed Leveling: Equip upgrades (Saneroki, 2026-10-30)
+Saneroki: a checkbox, on by default, that puts upgrades on as they are looted. `Errands.lua`: on `BAG_UPDATE_DELAYED` and
+`PLAYER_REGEN_ENABLED`, out of a fight, the first item the game flags as new (`C_NewItems.IsNewItem`) that `Core.Upgrade` calls
+an upgrade goes on by `C_Item.EquipItemByName` in the place it names (`Core.Upgrade` now gives it as a third answer: of two, the
+empty or the weaker one), one at a time so that the next is measured against it. What you took off yourself is not new and
+stays off; an item tried is not tried again (`tried`), the game may refuse it. The chat says what went on.
 
 ### Speed Leveling: quest rewards chosen, two guide quests at one NPC; Always show upgrades stays; Bags: the green arrow on upgrades (Saneroki, 2026-10-30)
 Saneroki: Always show upgrades stays on with Take all loot, he wants to see an upgrade; the green arrow always on the icon
