@@ -271,13 +271,21 @@ end
 --  The history
 -------------------------------------------------------------------------------
 -- The low and market price a saved string of "key=low,market...;" lines has for key; nil where it has no line of it.
+-- Several accounts' strings of a day stand joined in one, so a key can come more than once: the lowest price of them, and
+-- the market price of the last that has one.
 local function Entry(text, key)
     if type(text) ~= "string" then return nil end
-    local _, stop = text:find(";" .. key .. "=", 1, true)
-    if not stop and text:sub(1, #key + 1) == key .. "=" then stop = #key + 1 end
-    if not stop then return nil end
-    local low, market = text:match(LOW_MARKET, stop + 1)
-    return tonumber(low), tonumber(market)
+    local word, low, market = ";" .. key .. "=", nil, nil
+    local _, stop = text:find(word, 1, true)
+    if text:sub(1, #key + 1) == key .. "=" then stop = #key + 1 end
+    while stop do
+        local price, usual = text:match(LOW_MARKET, stop + 1)
+        price, usual = tonumber(price), tonumber(usual)
+        if price and (not low or (price > 0 and (low == 0 or price < low))) then low = price end
+        if usual and (not market or usual > 0) then market = usual end
+        _, stop = text:find(word, stop, true)
+    end
+    return low, market
 end
 
 local function Earlier(a, b)

@@ -1924,6 +1924,12 @@ do
         Prices.Changed()
         check(Prices4242() == "300/350 900/950 100/200 700/750 640/690 600/650 610/660 554/0",
             "whichever is more current: the database's days where it has them, this account's where not, the scans of both: " .. Prices4242())
+        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;9=9,9,9,9,9;4242=250,0,1,1,1;" } } })
+        Prices.Changed()
+        check(Prices4242():find("^250/350 "), "two accounts' strings of a day joined: the lowest price of them, the last market price there is")
+        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "9=9,9,9,9,9;4242=0,0,1,1,1;4242=250,260,1,1,1;4242=280,270,1,1,1;" } } })
+        Prices.Changed()
+        check(Prices4242():find("^250/270 "), "a price of 0 (no buyout) is passed over, in the string or at its head")
         Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;" } } })
         Prices.Changed()
         check(Prices4242():find("300/350 900/950 800/850", 1, true), "a database made before it held scans")
