@@ -74,7 +74,7 @@ Saneroki: roles for tanks and heals as a + or a shield in the top left corner, n
 overlay like the buffs, anchored left and big so they are easy to see. A `/reload` takes it in.
 - **`src/Combat/Units/GroupFace.lua`:** `face.role`, the game's plain role marks (`roleicon-tiny-*`) in the top left corner, in front of the bar and behind the words (the assigned role, or
   a raid's main tank); `face.rez`, `RaidFrame-Icon-Rez`, by `INCOMING_RESURRECT_CHANGED`; `face.floating` holds the dispel icon, the ready check
-  and the resurrection, each after the last, as high as the frame less `Face.BIG_OFF`; your own slot the word Group or Raid and a row of full icons (role, raid marker, resurrection, in a fight, `face.cog`). Also in the preview.
+  and the resurrection, each after the last, as high as the frame less `Face.BIG_OFF`; your own slot a frame like all the others, its name the word Party or Raid, no health in words, `face.cog` at its far right with the tools' button on just that. Also in the preview.
 - **`src/Combat/Units/Text.lua`, `Bar.lua`, `src/Core/HealthMarks.lua`, `src/Nameplates/Bar.lua`:** the raid marker no longer follows the dispel icon;
   `marks:Resize`; the dispel icon 22 on unit frames, 20 on plates. **Tests:** `dev/tests/combat.lua`.
 

@@ -136,7 +136,6 @@ function Client.Install(W)
     W.threat = {}
     UnitThreatSituation = function(unit) return W.threat[unit] end
     UnitIsUnit = function(a, b) return a == b end
-    UnitAffectingCombat = function() return false end
     UnitIsGroupLeader, UnitIsGroupAssistant = function() return true end, function() return false end
     IsInGroup, IsInRaid = function() return false end, function() return false end
     GetNumGroupMembers = function() return 0 end

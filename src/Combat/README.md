@@ -156,8 +156,9 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   as the game hides auras then). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
-- **The group's tools:** your own slot among the frames is a button, not a unit frame: the word *Group* or *Raid* in place of a name, and
-  at its right a row of full icons of your role, your raid marker, a resurrection on its way, being in a fight, and the cog. It opens a small
+- **The group's tools:** your own slot among the frames is a frame like all the others, with its health, marks, buffs and everything else.
+  Two things differ: its name is the word *Party* or *Raid*, and a cog always stands at its far right, where another frame has its health in
+  words (your slot never shows those). The cog opens a small
   panel, in a fight too, in place of the game's raid manager at the screen's edge, which is gone: *Ready Check*, *Role Check*, *Countdown*,
   *Make Everyone Assistant*, the raid markers on your target and on the ground (click one to set or take it off, the last clears them
   all), *Group menu* (the game's menu of you: converting to a raid or party, difficulty, and more), *Leave Group*. Who may use what is the
@@ -411,8 +412,8 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   `DoReadyCheck`, `DoCountdown`, `SetEveryoneIsAssistant`, converting), so nothing of that is called: `SecureActionButtonTemplate`s of the types
   `raidtarget`, `worldmarker`, `togglemenu` (unit `player`) and `click`, whose `clickbutton` is the game's own button in
   `CompactRaidFrameManager.displayFrame` (`readyCheckButton`, `rolePollButton`, `countdownButton`, `everyoneIsAssistButton`). With secure buttons
-  the panel is protected, so its opener and close button are `SecureHandlerClickTemplate`s, which work in a fight. The opener lies over the
-  button whose face has your unit (`face.mine`), moved after the fight if the group changes in one. Threat may be hidden in a fight
+  the panel is protected, so its opener and close button are `SecureHandlerClickTemplate`s, which work in a fight. The opener lies on the cog
+  of the button whose face has your unit (`face.mine`), moved after the fight if the group changes in one. Threat may be hidden in a fight
   (`ShouldUnitThreatStateBeSecret`): addon code cannot turn a hidden number into a colour (a curve's `Evaluate` takes no secrets from addons), so the border stays black then.
 - **One unit (`Units/GroupFace.lua`):** its parts are the unit frames' (`UnitBar.Plate`, `Around`, `Strip`, `End`, `Ends`, `Power`;
   `UnitText.MakeLine`, `Raid`, `Mark`, `Name`, `Health`, `Sample`), without the glow's plates: forty frames stay light. `Face.Unit` follows
@@ -503,6 +504,7 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   column a group, forty at most, units edge to edge with no gap and nothing around them; the mana of tanks and healers inside the
   bar; your missing buffs; max sizes and a preview of any number of made-up units in Edit Mode. Barriers, lost maximum health and
   dispels on every health bar (Core's `HealthMarks.lua`).
+- **2026-10-30:** your own slot a frame like all the others, its name the word Party or Raid, a cog on it for the group's tools (Saneroki).
 - **2026-10-30:** tiny role marks for tanks and healers in the top left corner, no golden circle; the ready check, dispel and incoming resurrection icons big, floating
   over the left of the frame, the raid marker and the name staying where they are behind them (Saneroki).
 - **2026-10-30:** the game's raid manager gone, your own slot a button to the group's tools in its place; the dispel type's icon instead of a

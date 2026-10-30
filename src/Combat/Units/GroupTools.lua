@@ -3,9 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - GroupTools
 --  The tools of a party or raid, in place of the game's raid manager at the
---  screen's edge (it stays out of sight, Group.lua): your own slot among the
---  group's frames is a button (Saneroki, 2026-10-30) that opens a small panel
---  over it: ready check, role check, countdown, everyone is assistant, the
+--  screen's edge (it stays out of sight, Group.lua): the cog on your own slot
+--  among the group's frames (Saneroki, 2026-10-30) opens a small panel over it,
+--  the rest of the slot answering as any other's: ready check, role check, countdown, everyone is assistant, the
 --  raid markers on your target and on the ground, the game's menu of you (it
 --  has converting to a raid or a party, difficulty and more), leaving.
 --
@@ -17,10 +17,11 @@ local _, ns = ...
 --  buttons know who may use them. Leaving is free to addons.
 --
 --  Secure buttons make the panel a protected frame, which addon code may not
---  show or hide in a fight: so the button on your slot and the panel's close
+--  show or hide in a fight: so the button on the cog and the panel's close
 --  button are secure handlers that do it (SecureHandlerClickTemplate), and it
 --  opens and closes in a fight too. Esc closes it out of a fight. The button
---  stands over the slot your unit has (Tools.Over), moved out of a fight only.
+--  stands over the cog of the slot your unit has (Tools.Over), moved out of a
+--  fight only.
 --  What is enabled for you is looked at out of a fight, as you open it.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -32,13 +33,14 @@ Tools.ROW, Tools.WORD = 26, 56 -- a row's height; how wide the word before a row
 Tools.GAP = 6                  -- between two rows
 Tools.MARK = 24                -- a mark's button, square
 Tools.MARKS = 8
+Tools.COG = 20                 -- the button on the cog, square: a little larger, to hit it easily
 Tools.ICONS = "Interface\\TargetingFrame\\UI-RaidTargetingIcons"
 Tools.CLEAR = "Interface\\Buttons\\UI-GroupLoot-Pass-Up"
 -- The game's raid manager's own buttons ours click, by their keys in its display frame.
 Tools.CLICKS = { { word = "groupReady", game = "readyCheckButton" }, { word = "groupRole", game = "rolePollButton" },
                  { word = "groupCountdown", game = "countdownButton" } }
 
-local button, panel -- the button on your slot, and the panel
+local button, panel -- the button on your slot's cog, and the panel
 local parts = {}    -- the panel's buttons that are not for everyone: { button, who }
 
 -- A game's button of its raid manager, or nil.
@@ -132,7 +134,7 @@ function Tools.Refresh()
     local raid = Core.Ask(IsInRaid) == true
     local leader = Core.Ask(UnitIsGroupLeader, "player") == true
     local assist = Core.Ask(UnitIsGroupAssistant, "player") == true
-    panel.title:SetText(raid and ns.TEXT.groupRaid or ns.TEXT.groupGroup)
+    panel.title:SetText(raid and ns.TEXT.groupRaid or ns.TEXT.groupParty)
     if InCombatLockdown() then return end
     for _, part in ipairs(parts) do
         local who = part[2]
@@ -197,12 +199,14 @@ function Tools.Build(parent)
     end)
 end
 
--- The button over that frame (your slot), or out of sight without one. Out of a fight.
-function Tools.Over(slot)
+-- The button on the cog of that frame (your slot), the cog's middle that far from its right edge; or out of sight
+-- without one. Out of a fight.
+function Tools.Over(slot, middle)
     if not button then return end
     button:ClearAllPoints()
     if slot then
-        button:SetAllPoints(slot)
+        button:SetSize(Tools.COG, Tools.COG)
+        button:SetPoint("CENTER", slot, "RIGHT", -middle, 0)
         button:SetFrameLevel((Core.Plain(slot:GetFrameLevel()) or 1) + 12)
     end
     button:SetShown(slot ~= nil)

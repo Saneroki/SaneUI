@@ -200,12 +200,6 @@ function Text.Mark(face, index)
     raid:SetPoint("LEFT", face.level, "RIGHT", on and face.gap or 0, 0)
 end
 
--- That raid marker's picture on any texture.
-function Text.MarkOn(texture, index)
-    texture:SetTexture(Text.MARKS)
-    texture:SetSpriteSheetCell(index, ROWS, COLUMNS)
-end
-
 function Text.Raid(face, unit)
     Text.Mark(face, Raw(GetRaidTargetIndex, unit))
 end
@@ -283,8 +277,16 @@ local function Written(face, now, most)
     return ("%s | %d%%"):format(Text.Short(now), Text.Percent(now, most))
 end
 
--- Health on the right, its room as wide as the most it can show; Dead or Offline where the unit is so.
+-- No words on the right: something else stands there, that wide.
+local function Unwritten(face)
+    face.value:SetText("")
+    Side(face, "right", face.inset + face.noHealth)
+end
+
+-- Health on the right, its room as wide as the most it can show; Dead or Offline where the unit is so. None on a
+-- face that takes the room for something else (face.noHealth).
 function Text.Health(face, unit)
+    if face.noHealth then return Unwritten(face) end
     local text = face.value
     local word = nil
     if Core.Ask(UnitIsPlayer, unit) and Core.Ask(UnitIsConnected, unit) == false then
@@ -311,6 +313,7 @@ end
 
 -- Made-up health in the same words (a sample): now of most, or a word instead.
 function Text.Sample(face, now, most, word)
+    if face.noHealth then return Unwritten(face) end
     local room = Widest(face, most)
     if word then room = math.max(room, Text.Width(word)) end
     face.value:SetText(word or Written(face, now, most))

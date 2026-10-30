@@ -234,16 +234,19 @@ do
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
     -- Your own slot: no unit frame but the tools' button, and the game's manager out of sight.
-    check(first.face.mine and not second.face.mine and first.face.name._text == "Group" and first.face.cog._shown
-        and first.face.cog._points[1][1] == "RIGHT" and not first.face.ready._shown and first.face.value._text == "",
-        "your own slot shows the word Group and the cog in place of the health")
+    check(first.face.mine and not second.face.mine and first.face.name._text == "Party" and first.face.cog._shown
+        and first.face.value._text == "" and first.face.health._value == 850 and not second.face.cog._shown,
+        "your own slot: its name is the word Party, the cog instead of the health's words, and otherwise a frame like any other")
+    check(first.face.cog._points[1][1] == "RIGHT" and first.face.cog._points[1][4] == -Face.INSET, "the cog at the far right")
     check(CompactRaidFrameManager._parent ~= UIParent, "the game's raid manager at the screen's edge is out of sight")
     local tools
     for _, widget in ipairs(W.frames) do
         if widget._template == "SecureHandlerClickTemplate" and widget._refs then tools = widget end
     end
-    check(tools and tools._shown and tools._parent == live and tools._points[1][2] == first
-        and tools:GetAttribute("_onclick"):find("panel:Show", 1, true), "its button lies on your slot and opens the panel by the game's secure means")
+    check(tools and tools._shown and tools._parent == live and tools._points[1][2] == first and tools._width == ns.GroupTools.COG
+        and tools._points[1][4] == -(Face.INSET + Face.ICON / 2)
+        and tools:GetAttribute("_onclick"):find("panel:Show", 1, true), "the button lies on the cog alone and opens the panel by the game's secure means")
+    check(first:GetAttribute("*type1") == "target" and first:GetAttribute("*type2") == "togglemenu", "the rest of the slot answers as any other's")
     local panel = tools._refs.panel
     check(panel and panel._template == "SecureFrameTemplate" and panel._strata == "DIALOG", "the panel is a protected frame over all")
     local kinds = {}
@@ -294,19 +297,16 @@ do
     GetRaidTargetIndex = function(unit) return unit == "player" and 3 or nil end
     UnitGroupRolesAssigned = function(unit) return unit == "player" and "HEALER" or "NONE" end
     Face.Fill(first.face)
-    local row = first.face.row
-    check(row.mark._shown and row.mark._cell == 3 and row.role._shown and row.role._atlas == Face.ROLES.HEALER
-        and row.role._width == Face.ICON and row.mark._width == first.face.cog._width and not first.face.role._shown
-        and not first.face.raid._shown, "your slot: your role and raid marker, as large as the cog")
-    check(row.mark._points[1][2] == first.face.cog and row.role._points[1][2] == row.mark, "next to each other, from the cog leftwards")
-    local fighting, incoming = false, false
-    UnitAffectingCombat = function() return fighting end
+    check(first.face.raid._shown and first.face.raid._cell == 3 and first.face.role._shown
+        and first.face.role._atlas == Face.ROLES.HEALER, "your slot: your raid marker and role, as on any frame")
+    local incoming = true
     UnitHasIncomingResurrection = function() return incoming end
-    fighting, incoming = true, true
     first.face:GetScript("OnEvent")(first.face, "INCOMING_RESURRECT_CHANGED", "player")
-    check(row.combat._shown and row.rez._shown and row.combat._points[1][2] == first.face.cog and row.rez._points[1][2] == row.combat
-        and row.mark._points[1][2] == row.rez, "in a fight, with a resurrection on its way: those too, in the row")
-    fighting, incoming = false, false
+    check(first.face.rez._shown, "a resurrection on its way too")
+    incoming = false
+    first.face:GetScript("OnEvent")(first.face, "INCOMING_RESURRECT_CHANGED", "player")
+    first.face:GetScript("OnEvent")(first.face, "UNIT_NAME_UPDATE", "player")
+    check(first.face.name._text == "Party" and not first.face.rez._shown, "its name stays the word")
     UnitHasIncomingResurrection = nil
     IsInRaid = function() return true end
     Face.Fill(first.face)
@@ -361,7 +361,7 @@ do
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == second.face.big
         and second.face.ready._parent == second.face.floating, "a ready check: its picture, big, floating over the name")
     check(second.face.ready._points[1][2] == second.face.marks.lead and second.face.rez._points[1][2] == second.face.ready
-        and second.face.raid._points[1][2] == second.face.level and first.face.cog._shown and not first.face.ready._shown,
+        and second.face.raid._points[1][2] == second.face.level and first.face.cog._shown,
         "from the left dispel, ready check, resurrection; the raid marker stays where it is; your own slot keeps its cog")
     W.Fire("READY_CHECK_FINISHED")
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.notready, "it ended: who did not answer is not ready")
@@ -458,8 +458,7 @@ do
     check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
         "the last at the top of the eighth column, touching its neighbours")
     local name = faces[2].name._text
-    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].cog._shown and faces[1].row.role._shown and faces[1].row.mark._shown
-        and faces[1].row.rez._shown and faces[1].row.combat._shown, "the first is your own slot, with its whole row")
+    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].cog._shown and not faces[2].cog._shown, "the first is your own slot")
     local rolled = 0
     for _, face in ipairs(faces) do
         if face.role._shown then rolled = rolled + 1 end

@@ -382,9 +382,9 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   A tank's or healer's mana inside the bar, the frame no taller for it. Icons for your missing buffs float on top: "the name and other
   elements can continue behind the buff icons". "No gaps at all between unit frames. 0px gaps", and no border around the whole in play:
   "There can be a border in edit mode. Just not in normal gameplay." "Offline are grey and dead are [red] healthbar full." Who has aggro: "100%
-  solid saturated red border instead of the current black". Your own slot is a button, not a unit frame, to the group's tools in place of the
-  game's raid manager: the word Group or Raid, and at its right full icons next to each other, as large as the cog: your role, raid marker,
-  incoming resurrection, being in a fight, the cog.
+  solid saturated red border instead of the current black". Your own slot is a normal slot like all the others: "The only difference on my own
+  slot is that it always shows the cogwheel on it and the name on that slot is Raid / party", the cog "on the far right side", never the % health.
+  The cog opens the group's tools in place of the game's raid manager.
 - **Barriers, lost health, dispels on every bar (Saneroki, 2026-10-30):** on nameplates, unit frames and group frames alike: the game's
   shield art for a barrier, the game's hatching for maximum health lost, and for what can be dispelled the game's icon of its type, "Like
   the green drop for poison", never a ring, a border or the spell's icon.

@@ -25,8 +25,9 @@ local _, ns = ...
 --  (out of a fight); each carries our face (GroupFace.lua), which follows the unit
 --  its header gives it, so clicks, the game's menu, the tooltip and @mouseover
 --  are as on your other frames. The game's state driver shows them while you
---  are in a group; alone you have your own frame. Your own slot among them is no
---  unit frame but the button of the group's tools (GroupTools.lua).
+--  are in a group; alone you have your own frame. Your own slot among them is
+--  one of them, with the group's word for a name and a cog that opens the
+--  group's tools (GroupTools.lua).
 --
 --  In Edit Mode the live frames rest and the preview shows: plain frames of the
 --  same look (GroupFace.lua) laid out by the same sizes, with random health,
@@ -140,7 +141,7 @@ local function Headers()
     end
 end
 
--- The tools' button on your own slot. Out of a fight.
+-- The tools' button on your own slot's cog. Out of a fight.
 local function Mine()
     local slot
     for _, header in ipairs(headers) do
@@ -149,7 +150,7 @@ local function Mine()
             if button and button.face and button.face.mine then slot = button end
         end
     end
-    ns.GroupTools.Over(slot)
+    ns.GroupTools.Over(slot, Face.INSET + Face.ICON / 2)
 end
 
 -- Every live face, each with its fn.
@@ -175,7 +176,7 @@ local function Layout()
     end
 end
 
--- One made-up unit (you: your own slot): most are well, a few are not.
+-- One made-up unit: most are well, a few are not.
 local NAMES = ns.TEXT.groupSamples
 local function Pick(list)
     return list[math.random(#list)]
@@ -183,10 +184,7 @@ end
 local function Chance(share)
     return math.random() < share
 end
-local function Roll(icons, you)
-    if you then
-        return { you = true, icons = {}, role = Pick({ "TANK", "HEALER" }), mark = math.random(1, 8), rez = true, combat = true }
-    end
+local function Roll(icons)
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
     if Chance(0.35) then -- a tank or a healer
@@ -218,7 +216,8 @@ local function Rolled(count)
     if #samples ~= count then
         local icons = ns.GroupBuffs.Icons()
         wipe(samples)
-        for index = 1, count do samples[index] = Roll(icons, index == 1) end
+        for index = 1, count do samples[index] = Roll(icons) end
+        if samples[1] then samples[1].you = true end
     end
     return samples
 end
@@ -368,7 +367,6 @@ function Group.Start()
     ns.On("GROUP_ROSTER_UPDATE", Core.Later(Group.Apply))
     ns.On("PLAYER_ROLES_ASSIGNED", Again)
     ns.On("RAID_TARGET_UPDATE", Again)
-    ns.On("PLAYER_REGEN_DISABLED", Again)
     ns.On("PLAYER_REGEN_ENABLED", Again)
     ns.On("READY_CHECK", ReadyCheck)
     ns.On("READY_CHECK_CONFIRM", ReadyCheck)
