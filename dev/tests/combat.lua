@@ -234,8 +234,9 @@ do
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
     -- Your own slot: no unit frame but the tools' button, and the game's manager out of sight.
-    check(first.face.mine and not second.face.mine and first.face.name._text == ns.TEXT.groupParty and first.face.ready._shown
-        and first.face.value._text == "", "your own slot shows the cog and the word, no health")
+    check(first.face.mine and not second.face.mine and first.face.name._text == ns.TEXT.groupParty and first.face.cog._shown
+        and not first.face.ready._shown and first.face.raid._width == Face.ICON and first.face.value._text == "",
+        "your own slot shows the cog and the word, no health")
     check(CompactRaidFrameManager._parent ~= UIParent, "the game's raid manager at the screen's edge is out of sight")
     local tools
     for _, widget in ipairs(W.frames) do
@@ -259,7 +260,7 @@ do
     headers[1]:SetAttribute("yOffset", Group.GAP)
     Group.Apply()
     check(first.face.unit == "party1" and not first.face.mine and second.face.mine and tools._points[1][2] == second
-        and first.face.ready._shown == false, "the group changed: your slot is another button, the button goes with it")
+        and not first.face.cog._shown and second.face.cog._shown, "the group changed: your slot is another button, the button goes with it")
     W.members[1] = { "player", "party1", "party2" }
     headers[1]:SetAttribute("yOffset", Group.GAP)
     Group.Apply()
@@ -268,18 +269,43 @@ do
     Face.Fill(second.face)
     check(second.face.power._shown and second.face.power._value == 40, "no role set: a class that heals shows its mana")
     check(not third.face.power._shown, "no role set: a warrior shows none")
+    check(not second.face.role._shown and not third.face.role._shown, "no role set: no role's icon, whatever its class")
     UnitGroupRolesAssigned = function(unit) return unit == "party2" and "TANK" or "DAMAGER" end
     Face.Fill(second.face)
     Face.Fill(third.face)
     check(third.face.power._shown and third.face.power._value == 10 and not second.face.power._shown,
         "by role: a tank's own power where it has no mana, a damage dealer none")
+    check(third.face.role._shown and third.face.role._atlas == Face.ROLES.TANK and not second.face.role._shown,
+        "a tank's tiny icon, a damage dealer none")
+    check(third.face.role._points[1][1] == "TOPLEFT" and third.face.role._parent == third.face.floating,
+        "in the frame's top left corner, over the words")
+    UnitGroupRolesAssigned = function(unit) return unit == "party1" and "HEALER" or "NONE" end
+    Face.Fill(second.face)
+    Face.Fill(third.face)
+    check(second.face.role._atlas == Face.ROLES.HEALER and second.face.role._shown and not third.face.role._shown, "a healer's too")
     UnitGroupRolesAssigned = function() return "NONE" end
+    Face.Fill(second.face)
+    Face.Fill(third.face)
 
     -- A click or @mouseover: nothing of ours takes the mouse from the button.
     check(not second.face._mouse and not second.face.health._mouse, "the face takes no mouse")
 
-    -- The dead, the offline, aggro and a ready check.
+    -- The dead, the offline, aggro, a resurrection and a ready check.
     local on = second.face:GetScript("OnEvent")
+    local incoming
+    UnitHasIncomingResurrection = function(unit) return unit == incoming end
+    check(not second.face.rez._shown and second.face.rez._width == Core.HealthMarks.NONE, "no resurrection: no icon, and no room for it")
+    incoming = "party1"
+    on(second.face, "INCOMING_RESURRECT_CHANGED", "party1")
+    second.face._width, second.face._height = 150, 28
+    Face.Fit(second.face)
+    on(second.face, "INCOMING_RESURRECT_CHANGED", "party1")
+    check(second.face.big == 24 and second.face.rez._shown and second.face.rez._width == 24 and second.face.rez._height == 24
+        and second.face.rez._atlas == Face.REZ and second.face.rez._parent == second.face.floating,
+        "one on its way: the game's icon, big, floating over the name")
+    incoming = nil
+    on(second.face, "INCOMING_RESURRECT_CHANGED", "party1")
+    check(not second.face.rez._shown and second.face.rez._width == Core.HealthMarks.NONE, "it came or stopped: gone")
     local fill = second.face.health
     local green = fill._barColor[1]
     UnitIsDeadOrGhost = function(unit) return unit == "party1" end
@@ -303,16 +329,18 @@ do
     check(second.face.border[1]._vertex[1] == 0, "without it: black")
     W.ready.party1 = "waiting"
     W.Fire("READY_CHECK", "player", 30)
-    check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == Face.ICON,
-        "a ready check: its picture left of the raid marker, which steps aside")
-    check(second.face.raid._points[1][2] == second.face.ready and first.face.ready._atlas == Face.COG, "your own slot keeps its cog")
+    check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == second.face.big
+        and second.face.ready._parent == second.face.floating, "a ready check: its picture, big, floating over the name")
+    check(second.face.ready._points[1][2] == second.face.marks.lead and second.face.rez._points[1][2] == second.face.ready
+        and second.face.raid._points[1][2] == second.face.level and first.face.cog._shown and not first.face.ready._shown,
+        "from the left dispel, ready check, resurrection; the raid marker stays where it is; your own slot keeps its cog")
     W.Fire("READY_CHECK_FINISHED")
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.notready, "it ended: who did not answer is not ready")
     W.ready.party1 = nil
     Face.Fill(second.face)
     check(second.face.ready._shown, "and the result stays a while")
     W.Wait(Face.READY_HOLD + 1)
-    check(not second.face.ready._shown and second.face.ready._width == Core.HealthMarks.NONE and first.face.ready._shown,
+    check(not second.face.ready._shown and second.face.ready._width == Core.HealthMarks.NONE and first.face.cog._shown,
         "then it goes, and takes no room")
 
     -- Your buffs: a family counts from anyone, and a fight leaves them as they were.
@@ -401,7 +429,13 @@ do
     check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
         "the last at the top of the eighth column, touching its neighbours")
     local name = faces[2].name._text
-    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].ready._atlas == Face.COG, "the first is your own slot")
+    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].cog._shown and not faces[1].role._shown,
+        "the first is your own slot")
+    local rolled = 0
+    for _, face in ipairs(faces) do
+        if face.role._shown then rolled = rolled + 1 end
+    end
+    check(rolled > 0, "made-up tanks and healers show their role")
     Core.Set(ns.name, "groupWidth", 800)
     check(faces[2].name._text == name and faces[2]._width == 100, "a size changed: the same units, narrower")
     Core.Set(ns.name, "groupWidth", 960)
@@ -421,7 +455,7 @@ do
     marks:Sample({ barrier = 0.25, lost = 0.2, dispel = "Curse" })
     check(marks.barrier._value == 0.25 and marks:Reach(100) == 20, "a sample's barrier and lost part")
     check(marks.icon._shown and marks.icon._atlas == "RaidFrame-Icon-DebuffCurse" and marks.lead._width == marks.options.size,
-        "a sample's dispel: the type's icon, the line stepping aside for it")
+        "a sample's dispel: the type's icon, what follows it stepping aside")
     marks:Sample({})
     check(marks.barrier._value == 0 and marks:Reach(100) == 0 and not marks.icon._shown
         and marks.lead._width == Marks.NONE, "and none of it")

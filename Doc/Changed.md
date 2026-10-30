@@ -59,6 +59,15 @@ found with nodes", and the new discoveries. A game restart takes it in (new file
 - **Tooltips:** rare drops on a herb or a vein, and where a rare item came from (`Gathering.lua`).
 - **The harvest:** the ledger keeps visits; `dev/tests/data.lua` 514 checks, with hostile members; `dev/tests/tooltips.lua` 535.
 
+### Role icons and incoming resurrections on the group frames (Saneroki, 2026-10-30)
+Saneroki: roles for tanks and heals as a + or a shield in the top left corner, no golden circle; ready check, dispel and incoming resurrection icons as an
+overlay like the buffs, anchored left and big so they are easy to see. A `/reload` takes it in.
+- **`src/Combat/Units/GroupFace.lua`:** `face.role`, the game's plain role marks (`roleicon-tiny-*`) in the top left corner, over the words (the assigned role, or
+  a raid's main tank); `face.rez`, `RaidFrame-Icon-Rez`, by `INCOMING_RESURRECT_CHANGED`; `face.floating` holds the dispel icon, the ready check
+  and the resurrection, each after the last, as high as the frame less `Face.BIG_OFF`; your slot's cog `face.cog`. Also in the preview.
+- **`src/Combat/Units/Text.lua`, `Bar.lua`, `src/Core/HealthMarks.lua`, `src/Nameplates/Bar.lua`:** the raid marker no longer follows the dispel icon;
+  `marks:Resize`; the dispel icon 22 on unit frames, 20 on plates. **Tests:** `dev/tests/combat.lua`.
+
 ### The group's tools on your own slot; dispel type icons; ready checks, aggro, the dead and offline (Saneroki, 2026-10-30)
 Saneroki: the edge raid manager gone, your slot a settings button holding its stuff; a border in Edit Mode, just not in play; offline grey and
 dead red, health bar full; the dispel type's icon instead of ring, border and aura icon, in front of the raid icon, which moves aside; ready

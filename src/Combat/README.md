@@ -142,9 +142,11 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 - **Your party and raid:** one frame of ours for both, in place of the game's party and raid frames (*Party and raid
   frames*, off: the game's). It fills from its bottom left corner: you and your party going up, five to a column, then a
   column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it in play: only the
-  unit frames show; in Edit Mode it has the box every window has. Each unit, from the left: the type icon of a dispellable debuff (the
-  game's, a green drop for poison and so on), the ready check while one runs and its result for a while after, the raid marker, each
-  moving aside for what comes before it, then the name with as much room as there is; how much health is left on the right ("85%";
+  unit frames show; in Edit Mode it has the box every window has. Each unit: the raid marker and the name on the left with as much room as
+  there is; a tiny mark of a tank's or healer's role in the top left corner, a shield or a plus without a ring (by the role the game was
+  told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the type icon of a
+  dispellable debuff (the game's, a green drop for poison and so on), the ready check while one runs and its result for a while after, the
+  game's icon of a resurrection on its way, each moving aside for the one before it; how much health is left on the right ("85%";
   nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
   one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
   tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
@@ -168,7 +170,7 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   *Dispellable debuffs*, each its own switch; the same three on the page Nameplates for the plates). A barrier is the game's shield
   art on the bar: after the health while it fits, pushed against the bar's right end when it does not, always as long as it is.
   Lost maximum health: the health bar ends earlier, the rest is the game's hatching. What you or your group can take off a unit (on a
-  foe, a buff you can remove): the game's icon of its type, at the left of the line, before the level and raid marker, which move aside.
+  foe, a buff you can remove): the game's icon of its type, big, floating over the left of the health bar (on a nameplate, above its right end).
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -400,9 +402,10 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   plain frames, `Roll` once per count. The game's `PartyFrame` (which holds `CompactPartyFrame`), `CompactRaidFrameContainer` and
   `CompactRaidFrameManager` stand in a hidden frame (`Core.Lend`). A ready check's result stays `Face.READY_HOLD` seconds (the game's
   `CUF_READY_CHECK_DECAY_TIME`) after `READY_CHECK_FINISHED`; who has not answered is not ready, as the game has it.
-- **The line's left side (`Units/Text.lua`):** a line of anchors: `marks.lead`, `level`, on group frames `ready`, `raid`, `name`. Empty pieces
-  are as wide as nothing. The dispel icon's container takes the size of what it holds (the game's `OnLayoutComplete`, its numbers hidden in a
-  fight), so what follows it moves by itself where addons cannot tell whether it shows. `name` hangs between `raid` and the health's room.
+- **What floats on the left (`Units/GroupFace.lua`):** `face.floating`, over the words: `marks.lead`, `ready`, `rez`, each anchored to the last's
+  right, an empty one as wide as nothing. The dispel icon's container takes the size of what it holds (the game's `OnLayoutComplete`, its numbers
+  hidden in a fight), so what follows it moves by itself where addons cannot tell whether it shows. They are the frame's height less
+  `Face.BIG_OFF`. On the line under them `level`, `raid` and `name` hang on each other; `name` ends at the health's room.
 - **The group's tools (`Units/GroupTools.lua`):** nearly all a raid manager does is `HasRestrictions`, off limits to addon code (markers,
   `DoReadyCheck`, `DoCountdown`, `SetEveryoneIsAssistant`, converting), so nothing of that is called: `SecureActionButtonTemplate`s of the types
   `raidtarget`, `worldmarker`, `togglemenu` (unit `player`) and `click`, whose `clickbutton` is the game's own button in
@@ -499,6 +502,8 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   column a group, forty at most, units edge to edge with no gap and nothing around them; the mana of tanks and healers inside the
   bar; your missing buffs; max sizes and a preview of any number of made-up units in Edit Mode. Barriers, lost maximum health and
   dispels on every health bar (Core's `HealthMarks.lua`).
+- **2026-10-30:** tiny role marks for tanks and healers in the top left corner, no golden circle; the ready check, dispel and incoming resurrection icons big, floating
+  over the left of the frame, the raid marker and the name staying where they are behind them (Saneroki).
 - **2026-10-30:** the game's raid manager gone, your own slot a button to the group's tools in its place; the dispel type's icon instead of a
   ring and the aura's icon, the raid marker moving aside for it; ready checks left of the raid marker; the dead red and the offline grey, their
   bars full; a solid red border on aggro; the box back in Edit Mode only (Saneroki).

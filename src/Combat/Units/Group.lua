@@ -30,8 +30,9 @@ local _, ns = ...
 --
 --  In Edit Mode the live frames rest and the preview shows: plain frames of the
 --  same look (GroupFace.lua) laid out by the same sizes, with random health,
---  mana, raid markers, missing buffs, barriers, lost health, dispels, ready
---  checks, aggro, the dead and the offline, and your own slot first.
+--  mana, roles, raid markers, missing buffs, barriers, lost health, dispels,
+--  ready checks, aggro, the dead and the offline, a resurrection on its way, and
+--  your own slot first.
 --  They are rolled when their number changes, not as sizes change, so what you
 --  look at holds still while you slide.
 --
@@ -186,7 +187,10 @@ local function Roll(icons, you)
     if you then return { you = true, icons = {} } end
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
-    if Chance(0.35) then sample.mana = 0.1 + math.random() * 0.9 end -- a tank or a healer
+    if Chance(0.35) then -- a tank or a healer
+        sample.mana = 0.1 + math.random() * 0.9
+        sample.role = Pick({ "TANK", "HEALER" })
+    end
     if Chance(0.2) then sample.mark = math.random(1, 8) end
     if Chance(0.2) then sample.barrier = math.min(0.1 + math.random() * 0.3, 1 - sample.health) end
     if Chance(0.15) then sample.lost = 0.1 + math.random() * 0.3 end
@@ -202,6 +206,7 @@ local function Roll(icons, you)
         sample.colour = dead and Face.DEAD or Face.OFFLINE
         sample.mana, sample.barrier, sample.lost, sample.dispel, sample.aggro = nil, nil, nil, nil, nil
         sample.icons = {}
+        sample.rez = dead and Chance(0.5)
     end
     return sample
 end

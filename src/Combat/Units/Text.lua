@@ -3,12 +3,11 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Text
 --  The line inside a unit frame's bar, in a nameplate's font and colours:
---    left     the type icon of a dispellable aura while there is one (Core's
---             HealthMarks.lua), the unit's level, in the game's colour for how
---             hard it is to you (a skull where it is too high to tell), the raid
---             marker while there is one; then the name: a player's first name
---             and surname (Core.FullName), as long as the room up to the health
---             allows (cut short beyond it); none on your own frame
+--    left     the unit's level, in the game's colour for how hard it is to
+--             you (a skull where it is too high to tell), the raid marker while
+--             there is one; then the name: a player's first name and surname
+--             (Core.FullName), as long as the room up to the health allows (cut
+--             short beyond it); none on your own frame
 --    right    its health, short ("850", "1.2k", "1.32m"), and how much is
 --             left ("| 100%"); Dead or Offline instead where it is
 --  in each power bar under it, at its right, the power as the health is
@@ -24,10 +23,9 @@ local _, ns = ...
 --  all the room; Dead and Offline it says all the same. It also keeps its words
 --  closer to the bar's ends and to each other (Text.MakeLine's inset and gap).
 --
---  The left side is a line of anchors, each piece after the last, so that each
---  steps aside for what comes before it, in a fight too, where addons cannot
---  tell whether the dispel icon shows: the container is as wide as what it holds.
---  A raid marker that is not there is as wide as nothing.
+--  The left side is a line of anchors, each piece after the last; a raid marker
+--  that is not there is as wide as nothing. Over all of it, at its left, floats
+--  the type icon of a dispellable aura (Core's HealthMarks.lua).
 --  Hidden health is written by the game's own abbreviation, in the same steps,
 --  and the percentage by its curve (secret values: shown, never computed).
 -------------------------------------------------------------------------------
@@ -128,7 +126,7 @@ function Text.MakeLine(face, inset, gap)
     top:SetFrameLevel(face.health:GetFrameLevel() + 3)
     face.level, face.name, face.value = Line(top, "LEFT"), Line(top, "LEFT"), Line(top, "RIGHT")
     face.marks:Place("LEFT", top, "LEFT", inset, 0)
-    face.level:SetPoint("LEFT", face.marks.lead, "RIGHT", 0, 0)
+    face.level:SetPoint("LEFT", top, "LEFT", inset, 0)
     face.value:SetPoint("RIGHT", top, "RIGHT", -inset, 0)
     local raid = top:CreateTexture(nil, "OVERLAY")
     raid:SetTexture(Text.MARKS)
@@ -199,7 +197,7 @@ function Text.Mark(face, index)
     raid:SetShown(on)
     raid:SetWidth(on and face.markSize or Core.HealthMarks.NONE)
     raid:ClearAllPoints()
-    raid:SetPoint("LEFT", face.before or face.level, "RIGHT", on and face.gap or 0, 0)
+    raid:SetPoint("LEFT", face.level, "RIGHT", on and face.gap or 0, 0)
 end
 
 function Text.Raid(face, unit)

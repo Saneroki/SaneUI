@@ -28,11 +28,10 @@ local Core = SaneUI.Core
 --  Dispellable: one aura container of the game's (CustomAuraContainerTemplate)
 --  filled by the game, in a fight too. Its one frame shows nothing but a dispel
 --  type texture in the game's Icon style, which the game sets and shows itself.
---  In a fight addons cannot tell whether it is there, but the container takes
---  the size of what it shows: empty it has no width, so whatever is anchored to
---  its right (marks.lead) stands at its place without it and steps aside for it
---  by itself. No mouse on any of it: the unit's button under it keeps clicks and
---  @mouseover.
+--  It floats over the words. In a fight addons cannot tell whether it is there,
+--  but the container takes the size of what it shows: empty it has no width, so
+--  whatever is anchored to its right (marks.lead) steps aside for it by itself.
+--  No mouse on any of it: the unit's button under it keeps clicks and @mouseover.
 --
 --      local marks = Core.HealthMarks.New(host, health, {
 --          masks = { ... },          -- the masks that round the bar's ends
@@ -45,6 +44,7 @@ local Core = SaneUI.Core
 --      marks:Heard(unit, event)      -- one of Marks.EVENTS, or the unit's health changed
 --      marks:Switch(barrier, lost, dispel)
 --      marks:Place(point, relative, relativePoint, x, y)   -- where the icon stands
+--      marks:Resize(size)            -- the icon's size anew
 --      marks.lead                    -- what to anchor to its right
 --      marks:Sample({ barrier = share, lost = share, dispel = "Magic" })  -- made up, without a unit
 -------------------------------------------------------------------------------
@@ -136,6 +136,7 @@ local function Dress(marks, frame)
     frame:SetSize(size, size)
     pcall(frame.EnableMouse, frame, false)
     frame:SetFrameLevel(marks.above)
+    marks.frames[#marks.frames + 1] = frame
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints(frame)
     local styles = rawget(_G, "Enum") and Enum.CustomAuraButtonDispelTypeTextureStyle
@@ -179,7 +180,7 @@ end
 
 function Marks.New(host, health, options)
     local level = Plain(health:GetFrameLevel()) or 1
-    local marks = setmetatable({ host = host, health = health, options = options, width = 0, share = 0,
+    local marks = setmetatable({ host = host, health = health, options = options, width = 0, share = 0, frames = {},
                                  barrierOn = true, lostOn = true, dispelOn = true, above = options.above or level + 4 },
                                { __index = methods })
     local fill = health:GetStatusBarTexture()
@@ -290,6 +291,16 @@ end
 function methods:Place(point, relative, relativePoint, x, y)
     self.lead:ClearAllPoints()
     self.lead:SetPoint(point, relative, relativePoint, x, y)
+end
+
+-- The icon's size anew; the game lays its frame out with the next auras it reads.
+function methods:Resize(size)
+    self.options.size = size
+    for _, frame in ipairs(self.frames) do frame:SetSize(size, size) end
+    if not self.icon then return end
+    self.icon:SetSize(size, size)
+    self.lead:SetHeight(size)
+    if self.icon:IsShown() then self.lead:SetWidth(size) end
 end
 
 -- Made-up marks, for a look at them without a unit: shares of the bar, and a kind of aura.

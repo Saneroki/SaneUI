@@ -65,6 +65,7 @@ Bar.GLOW = { 1, 0.08, 0.05 }
 -- replace: so they stand on a frame of their own (dress.glow), under the outline's, and only that frame's alpha
 -- switches the glow.
 Bar.HALO = 6
+Bar.DISPEL = 20 -- the dispel type's icon above the bar, square
 function Bar.Fade(band)
     local share = 1 - (band - 1) / Bar.HALO
     return share * share
@@ -252,7 +253,7 @@ function Bar.Make(dress)
     dress.power = power
     dress.rank = Bar.PLAIN
     dress.marks = Core.HealthMarks.New(dress, health, {
-        masks = dress.caps, fit = function() Bar.Outline(dress) end })
+        masks = dress.caps, size = Bar.DISPEL, fit = function() Bar.Outline(dress) end })
     dress.marks:Place("BOTTOMRIGHT", dress, "TOPRIGHT", 0, 2)
     Bar.Border(dress, nil)
 end
