@@ -28,7 +28,7 @@ function Client.Install(W)
         end
         self._text = form:format(...)
     end
-    function methods:SetAlphaFromBoolean(value) self._alpha = { from = value } end
+    function methods:SetAlphaFromBoolean(value, yes, no) self._alpha = { from = value, yes = yes, no = no } end
     function methods:GetStringWidth() return type(self._text) == "string" and #self._text * 6 or 0 end
     methods.GetUnboundedStringWidth = methods.GetStringWidth
     function methods:SetFont(file, height, flags) self._font = { file, height, flags } return true end
@@ -110,6 +110,40 @@ function Client.Install(W)
     local watched = {}
     RegisterUnitWatch = function(frame) watched[frame] = true end
     UnregisterUnitWatch = function(frame) watched[frame] = nil end
+    -- The game's state driver (what a frame's visibility hangs on: W.drivers[frame]), and its secure group headers: a
+    -- header makes its buttons when told to start below its first, and gives them the units a test says (W.members
+    -- [group] = { unit, ... }) whenever it is told anything.
+    -- The game's heal prediction: what a test puts on W.calculator is what it says of any unit.
+    W.calculator = { amount = 0, clamped = false, total = 0 }
+    function W.calculator:GetDamageAbsorbs() return self.amount, self.clamped end
+    function W.calculator:GetTotalDamageAbsorbs() return self.total end
+    function W.calculator:SetDamageAbsorbClampMode(mode) self.mode = mode end
+    CreateUnitHealPredictionCalculator = function() return W.calculator end
+    UnitGetDetailedHealPrediction = function() end
+    W.drivers, W.members = {}, {}
+    IsInGroup, IsInRaid = function() return false end, function() return false end
+    GetNumGroupMembers = function() return 0 end
+    RegisterStateDriver = function(frame, state, values) W.drivers[frame] = { state = state, values = values } end
+    UnregisterStateDriver = function(frame) W.drivers[frame] = nil end
+    W.templates.SecureGroupHeaderTemplate = function(header)
+        function header:SetAttribute(name, value)
+            W.methods.SetAttribute(self, name, value)
+            if name == "startingIndex" and value < 1 then
+                for child = 1, 1 - value do
+                    self[child] = self[child] or CreateFrame("Button", nil, self, self:GetAttribute("template"))
+                end
+            end
+            local list = W.members[tonumber(self:GetAttribute("groupFilter"))] or {}
+            for child = 1, 5 do
+                local button = self[child]
+                if button then
+                    button:SetAttribute("unit", list[child])
+                    local hook = button:GetScript("OnAttributeChanged")
+                    if hook then hook(button, "unit", list[child]) end
+                end
+            end
+        end
+    end
     PlayerFrame = W.NewWidget("Button", "PlayerFrame", UIParent)
     PlayerFrame.PlayerFrameContainer = W.NewWidget("Frame", nil, PlayerFrame)
     PlayerFrame.PlayerFrameContent = W.NewWidget("Frame", nil, PlayerFrame)

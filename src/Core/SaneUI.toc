@@ -47,6 +47,8 @@ Views.lua
 Selection.lua
 Holder.lua
 Seat.lua
+# What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled
+HealthMarks.lua
 # A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs
 Board.lua
 Expand.lua

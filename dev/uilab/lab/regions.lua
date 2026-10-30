@@ -99,6 +99,13 @@ return function(Lab)
         s.color = { r or 1, g or 1, b or 1, a or 1 }
         Lab.Touch()
     end
+    -- One cell of a picture cut into rows and columns, counted from the top left, as the game's.
+    function TB:SetSpriteSheetCell(cell, rows, columns)
+        local row = math.floor((cell - 1) / columns)
+        local column = (cell - 1) % columns
+        self:SetTexCoord(column / columns, (column + 1) / columns, row / rows, (row + 1) / rows)
+    end
+
     function TB:SetTexCoord(...)
         local n = select("#", ...)
         local s = S[self]

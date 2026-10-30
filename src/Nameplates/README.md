@@ -114,6 +114,11 @@ fails, every plate is the game's own again.
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
+- **Barriers, lost health, dispels:** a barrier in the game's shield art on the bar, after the health or pushed against its right end;
+  maximum health lost for a while: the fill ends earlier and the rest is hatched; what you or your group can take off a friend, or a buff
+  you can remove from a foe: a ring around the plate in its kind's colour and the aura's icon above the bar's right end. Switches
+  *Barriers*, *Lost maximum health*, *Dispellable auras*. The module's own part is small: `dress.marks` in `Bar.lua`, `Plate.lua`'s events.
+
 ## Technical details
 - **Our dress** (`Plate.lua`): one frame of ours per plate the game hands out (`C_NamePlate.GetNamePlateForUnit`
   at `NAME_PLATE_UNIT_ADDED`; none for a forbidden plate or your own), a child of the plate (its place, scale and
@@ -382,6 +387,8 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-10-30:** barriers, lost maximum health and dispellable auras on the plates (Saneroki), each its own switch
+  (Core's `HealthMarks.lua`).
 - **2026-10-20:** made a module of its own (Saneroki: nameplates are not Combat's): the game's plates with a
   round-cornered health bar, combo points inside your target's, the name, your debuffs and three buffs of a foe,
   the rare's mark and the raid marker.

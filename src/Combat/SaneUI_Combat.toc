@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Combat
-## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them, your cast and breath part of your frame; the game's action bars clean, only the buttons that hold something. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
+## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them, your cast and breath part of your frame; one frame for your party and raid, up to forty, sized in Edit Mode; the game's action bars clean, only the buttons that hold something. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -64,5 +64,9 @@ Units\Cast.lua
 Units\Timers.lua
 # The frames and their rows (their targets, your pet): the game's secure unit buttons, placed in Edit Mode
 Units\Units.lua
+# Your party and raid: which of your buffs a member is missing, one member's frame, and the one window for them all
+Units\GroupBuffs.lua
+Units\GroupFace.lua
+Units\Group.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua

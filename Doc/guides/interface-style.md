@@ -373,6 +373,17 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
 - **Rows under them, like a nameplate's cast bar:** the target's target appears under the target's frame while
   there is one, inside its outline, its name the only text in its health bar, centred; its bar in the light yellow
   of a nameplate's neutral creature, not green; so too the focus's target, and your pet under your frame (green).
+- **Party and raid, one frame (Saneroki, 2026-10-30):** no party frame at all: "no matter if I am in a party or a raid the
+  window should look the same, just with more slots." Unit frames like the nameplates, a bit shorter and taller. Up from the bottom
+  left, five to a column, a column to the right for each group, forty at most. Left the raid marker and name, right the health's share
+  alone: "We don't need current health values on the unit frames. % is enough and once the frames get to short we can remove the %
+  health altogether to maximize the text space". Little space at the bar's ends and between pieces, for as much of the name as possible.
+  A tank's or healer's mana inside the bar, the frame no taller for it. Icons for your missing buffs float on top: "the name and other
+  elements can continue behind the buff icons". "No gaps at all between unit frames. 0px gaps", and "no borders around the entire frame.
+  Just show the unit frames", in Edit Mode too: the units themselves are what you see and drag there.
+- **Barriers, lost health, dispels on every bar (Saneroki, 2026-10-30):** on nameplates, unit frames and group frames alike: the game's
+  shield art for a barrier, the game's hatching for maximum health lost, a ring in the kind's colour for what can be dispelled: behind
+  the border, reaching beyond it, where a bar stands free; along the bar's edge where frames touch.
 - **Clean action bars:** no border, decoration or background, not on the bars (frame, end caps, dividers) nor on a
   button (frame, slot); only the filled slots, each its square icon alone, cut free of the edge its picture is drawn
   with. What answers the mouse and keys is a flat wash over the icon. The main bar's page number and its arrows

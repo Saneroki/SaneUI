@@ -117,6 +117,7 @@ local function Fill(face)
     if not face.sample and not Core.Ask(UnitExists, unit) then return end
     ns.UnitBar.Paint(face, unit)
     ns.UnitBar.Health(face.health, unit)
+    face.marks:Set(unit)
     ns.UnitText.Powers(face, unit, ns.UnitBar.Powers(face, unit))
     ns.UnitText.Set(face, unit, face.sample and ns.TEXT.samples[face.unit] or nil)
     Threat(face)
@@ -130,6 +131,9 @@ local function Heard(face, event)
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.UnitBar.Health(face.health, unit)
         ns.UnitText.Health(face, unit)
+        face.marks:Heard(unit)
+    elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" or event == "UNIT_MAX_HEALTH_MODIFIERS_CHANGED" then
+        face.marks:Heard(unit, event)
     elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
         ns.UnitText.Powers(face, unit, ns.UnitBar.Powers(face, unit))
     elseif event == "UNIT_NAME_UPDATE" then
@@ -174,16 +178,26 @@ local function Entered(button)
 end
 local OnEnter = ns.Guard(Entered)
 
--- A secure unit button for a unit: a click targets it, a right click opens the game's menu of it.
-local function Button(parent, unit)
-    local button = CreateFrame("Button", nil, parent, "SecureUnitButtonTemplate")
-    button:SetAttribute("unit", unit)
+-- A secure unit button answering as the game's frames do: a click targets its unit, a right click opens the game's
+-- menu of it, the tooltip while the mouse is on it. The game takes it for the unit under the mouse (@mouseover).
+function Units.Clicks(button)
     button:SetAttribute("*type1", "target")
     button:SetAttribute("*type2", "togglemenu")
     button:RegisterForClicks("AnyUp")
     button:SetScript("OnEnter", OnEnter)
     button:SetScript("OnLeave", GameTooltip_Hide)
+end
+
+local function Button(parent, unit)
+    local button = CreateFrame("Button", nil, parent, "SecureUnitButtonTemplate")
+    button:SetAttribute("unit", unit)
+    Units.Clicks(button)
     return button
+end
+
+-- The dispel icon on the health bar, left of the health's words (Text.Layout says how wide those are).
+function Units.IconBeside(face, right)
+    face.marks:Place(face.top, "RIGHT", -(right + ns.UnitText.GAP), -face.marks:IconSize() / 2)
 end
 
 -- A frame: the game's secure unit button, our face on it (as high as the health bar, the rest hanging under it), a
@@ -204,6 +218,8 @@ local function Make(kind)
     ns.UnitCast.Make(face, Units.ROW)
     if kind.bars then ns.UnitTimers.Make(face, Units.POWER) end
     for _, event in ipairs(Units.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
+    for _, event in ipairs(Core.HealthMarks.EVENTS) do pcall(face.RegisterUnitEvent, face, event, kind.unit) end
+    face.roomed = Units.IconBeside
     face:SetScript("OnEvent", OnEvent)
     face:SetScript("OnSizeChanged", OnSizeChanged)
     button.face = face
@@ -323,6 +339,7 @@ local function Kind(kind)
     local button = kind.button
     button:SetScale((tonumber(ns.options.unitSize) or 100) / 100)
     local face = button.face
+    Units.Marks(face)
     face.alternate = Alternate(kind)
     face.slots = face.alternate and 2 or 1
     button:SetHeight(Units.HEIGHT + face.slots * Units.POWER)
@@ -339,6 +356,12 @@ local function Kind(kind)
     Rowed(button.face)
     Fit(button.face)
     Fill(button.face)
+end
+
+-- Core's marks on a face as the settings say.
+function Units.Marks(face)
+    local options = ns.options
+    face.marks:Switch(options.unitBarrier, options.unitLost, options.unitDispel)
 end
 
 local function Apply()
@@ -423,6 +446,9 @@ function Units.GiveBack()
         ns.Safe("unit frames", Back, kind.row)
         ns.Safe("unit frames", Bars, kind, false)
         ns.Safe("unit frames", Back, kind)
-        if button then ns.Safe("unit frames", ns.UnitAuras.Set, button.face, nil) end
+        if button then
+            ns.Safe("unit frames", ns.UnitAuras.Set, button.face, nil)
+            ns.Safe("unit frames", button.face.marks.Set, button.face.marks, nil)
+        end
     end
 end

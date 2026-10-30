@@ -20,6 +20,10 @@ pet, with its health and its resource. Directly above each health bar its unit's
 lies over your health bar, in the game's bubbles, half see-through, the game's other timers on you stand above your
 cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone.
 
+Your party and your raid are one frame of ours, in place of the game's two: unit frames edge to edge, up to forty, in the
+nameplates' look, sized to fit the limits you set in Edit Mode. On every health bar of ours, these and the unit frames, you see
+barriers, maximum health lost for a while, and what can be dispelled (Core's health marks, on the nameplates too).
+
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
 - **The full screen:** push the mouse against the bottom edge of the screen anywhere in its middle half
@@ -134,6 +138,29 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
   and the settings are the unit frames, the action bars and *Quest marks on nameplates*. Those work as in Forever
   (Retail's names have no surname: a player's name alone). Combat's own keys still stand in the game's key
   bindings (the game reads `Bindings.xml` in both games) and do nothing there.
+
+- **Your party and raid:** one frame of ours for both, in place of the game's party and raid frames (*Party and raid
+  frames*, off: the game's). It fills from its bottom left corner: you and your party going up, five to a column, then a
+  column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it, not in
+  Edit Mode either: only the unit frames show. Each unit: the raid marker and name on the left with as much room as there is, how
+  much health is left on the right ("85%"; nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always); a
+  tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
+  tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each of your class's buffs it
+  is missing (*Your missing buffs*: any priest's Fortitude counts, the
+  group versions too; of a paladin's blessings only your own; a shout only in your own party; in a fight they stay as they were,
+  as the game hides auras then). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
+  hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
+  Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
+- **Its sizes and preview:** in Edit Mode, click a unit of the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
+  and a field *Preview units*: type a number and that many made-up units show, with random health, mana, raid markers,
+  missing buffs, barriers, lost health and dispels; they stay the same while you slide the sizes. A unit is as wide as the max
+  width allows for the columns in use, never wider than the max unit width, and 28 high or as the max height allows. Sizes
+  change out of a fight: in one, a member who joins shows at the size in use. Move the frame by dragging its units.
+- **Barriers, lost health, dispels:** on your unit frames and your party and raid frames (*Barriers*, *Lost maximum health*,
+  *Dispellable debuffs*, each its own switch; the same three on the page Nameplates for the plates). A barrier is the game's shield
+  art on the bar: after the health while it fits, pushed against the bar's right end when it does not, always as long as it is.
+  Lost maximum health: the health bar ends earlier, the rest is the game's hatching. What you or your group can take off a unit (on a
+  foe, a buff you can remove): a ring around the frame in its kind's colour, and the aura's icon on the bar.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -356,6 +383,24 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
   stand-in client, for every test that loads the module),
   `dev/tests/book.lua` (the spellbook), `dev/tests/talents.lua` (the talents).
 
+- **Party and raid (`Units/Group.lua`):** the window (`Core.Window`, key `groupPlace`, `plainBox`: nothing drawn in Edit Mode) is
+  `groupWidth` by `groupHeight`, anchored by its bottom left corner (`window:GrowFromBottom`). In it `live` (a secure frame, shown by
+  the state driver `Group.SHOWN`) and `preview`. Eight `SecureGroupHeaderTemplate`s, `groupFilter` 1 to 8, `point` BOTTOM, chained
+  BOTTOMLEFT to the last one's BOTTOMRIGHT with `minWidth` 0.1, so an empty group takes no room, in a fight too; they are told
+  `template` `SecureUnitButtonTemplate` and make their buttons themselves (a `startingIndex` of -4, then 1: `header[1]`..`[5]`), built
+  when you are first in a group, out of a fight. `Group.Size(columns, rows, width, height, unit)` is the sum for a unit's size,
+  `Group.Filled()` what the group fills. `GROUP_ROSTER_UPDATE` lays out again after a fight. Preview: `Face.Make(preview, true)`
+  plain frames, `Roll` once per count. The game's `PartyFrame` (which holds `CompactPartyFrame`) and `CompactRaidFrameContainer`
+  stand in a hidden frame (`Core.Lend`); `CompactRaidFrameManager` stays.
+- **One unit (`Units/GroupFace.lua`):** its parts are the unit frames' (`UnitBar.Plate`, `Around`, `Strip`, `End`, `Ends`, `Power`;
+  `UnitText.MakeLine`, `Raid`, `Mark`, `Name`, `Health`, `Sample`), without the glow's plates: forty frames stay light. `Face.Unit` follows
+  the button's `unit` attribute (`OnAttributeChanged`, in a fight too) and registers that unit's events. `face.compact` and `face.bare`
+  are told to `UnitText.Health`; `MakeLine` takes its tighter inset and gap; `face.floating`, a frame over the words, holds the icons, and
+  `face.roomed` places them and the dispel icon after each layout.
+- **Your buffs (`Units/GroupBuffs.lua`):** `Buffs.CLASSES`, families of names (English clients), found as yours by `C_Spell.GetSpellInfo`
+  of a name. `Buffs.Missing` reads `C_UnitAuras.GetAuraDataBySpellName`, out of a fight only (`Core.Restricted`): `nil` there, and
+  everyone is read again at `PLAYER_REGEN_ENABLED`.
+
 ## Files
 
 | File | What it holds |
@@ -388,6 +433,9 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
+| `Units/GroupBuffs.lua` | Which of your own buffs a member of your party or raid is missing |
+| `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
+| `Units/Group.lua` | The one window for party and raid: the game's secure group headers, sizes, Edit Mode's settings and preview |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
 
 ## History
@@ -428,3 +476,7 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
   your pet's row has no cast bar of its own: its secure button cannot move in a fight (board).
 - **2026-10-30:** the health bar the rock solid anchor of every unit frame: whichever bars show or go, it stays at the
   same spot (Saneroki).
+- **2026-10-30:** one frame for party and raid in place of the game's two (Saneroki): nameplates' look, up from the bottom left, a
+  column a group, forty at most, units edge to edge with no gap and nothing around them; the mana of tanks and healers inside the
+  bar; your missing buffs; max sizes and a preview of any number of made-up units in Edit Mode. Barriers, lost maximum health and
+  dispels on every health bar (Core's `HealthMarks.lua`).

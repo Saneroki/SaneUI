@@ -18,6 +18,10 @@ local _, ns = ...
 --  The health's room is as wide as the most it can show ("1.32m | 100%"), so
 --  the name's does not change as health goes; while the game hides the most
 --  health (a creature's, in a fight), as wide as the last plain one, or a guess.
+--  A group's frame shows how much is left alone ("85%": face.compact), and
+--  nothing where it is too narrow for even that (face.bare), so the name has
+--  all the room; Dead and Offline it says all the same. It also keeps its words
+--  closer to the bar's ends and to each other (Text.MakeLine's inset and gap).
 --  Hidden health is written by the game's own abbreviation, in the same steps,
 --  and the percentage by its curve (secret values: shown, never computed).
 -------------------------------------------------------------------------------
@@ -108,20 +112,28 @@ function Text.Width(plain)
     return math.ceil(width) + Text.SLACK
 end
 
-function Text.Make(face)
+-- The line itself: the level, the raid marker, the name and the health, on a frame over the health bar; inset from the
+-- bar's ends and gap between two pieces where it wants other than every frame's.
+function Text.MakeLine(face, inset, gap)
+    inset, gap = inset or Text.INSET, gap or Text.GAP
+    face.inset, face.gap = inset, gap
     local top = CreateFrame("Frame", nil, face)
     top:SetAllPoints(face)
     top:SetFrameLevel(face.health:GetFrameLevel() + 3)
     face.level, face.name, face.value = Line(top, "LEFT"), Line(top, "LEFT"), Line(top, "RIGHT")
-    face.level:SetPoint("LEFT", top, "LEFT", Text.INSET, 0)
-    face.value:SetPoint("RIGHT", top, "RIGHT", -Text.INSET, 0)
+    face.level:SetPoint("LEFT", top, "LEFT", inset, 0)
+    face.value:SetPoint("RIGHT", top, "RIGHT", -inset, 0)
     local raid = top:CreateTexture(nil, "OVERLAY")
     raid:SetTexture(Text.MARKS)
     local size = math.floor(Text.SIZE * Text.ICON + 0.5)
     raid:SetSize(size, size)
-    raid:SetPoint("LEFT", face.level, "RIGHT", Text.GAP, 0)
+    raid:SetPoint("LEFT", face.level, "RIGHT", gap, 0)
     raid:Hide()
     face.raid, face.top, face.room = raid, top, { left = 0, right = 0 }
+end
+
+function Text.Make(face)
+    Text.MakeLine(face)
     for _, power in ipairs({ face.powers[1], face.powers[2], face.rowPower }) do
         power.value = Line(Text.Over(power), "RIGHT", Text.SMALL)
         power.value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
@@ -134,10 +146,12 @@ end
 -- The name's room: from the left side's end to the health's.
 function Text.Layout(face)
     local room = face.room
-    local width = (Plain(face:GetWidth()) or 0) - room.left - room.right - 2 * Text.GAP
+    local gap = face.gap
+    local width = (Plain(face:GetWidth()) or 0) - room.left - room.right - 2 * gap
     face.name:ClearAllPoints()
-    face.name:SetPoint("LEFT", face.top, "LEFT", room.left + Text.GAP, 0)
+    face.name:SetPoint("LEFT", face.top, "LEFT", room.left + gap, 0)
     face.name:SetWidth(math.max(width, 1))
+    if face.roomed then face.roomed(face, room.right) end
 end
 
 local function Side(face, key, width)
@@ -148,8 +162,8 @@ end
 
 -- The left side: the level, and the raid marker after it while there is one.
 local function Left(face)
-    local width = Text.INSET + (face.levelRoom or 0)
-    if face.raid:IsShown() then width = width + Text.GAP + face.raid:GetWidth() end
+    local width = face.inset + (face.levelRoom or 0)
+    if face.raid:IsShown() then width = width + face.gap + face.raid:GetWidth() end
     Side(face, "left", width)
 end
 
@@ -181,13 +195,17 @@ function Text.Level(face, unit)
     Left(face)
 end
 
--- The raid marker: its number may be hidden; the texture takes it as it is, and only whether there is one is looked at.
-function Text.Raid(face, unit)
-    local index = Raw(GetRaidTargetIndex, unit)
+-- The raid marker of that number (nil: none): it may be hidden; the texture takes it as it is, and only whether there
+-- is one is looked at.
+function Text.Mark(face, index)
     local on = type(index) ~= "nil"
     if on then face.raid:SetSpriteSheetCell(index, ROWS, COLUMNS) end
     face.raid:SetShown(on)
     Left(face)
+end
+
+function Text.Raid(face, unit)
+    Text.Mark(face, Raw(GetRaidTargetIndex, unit))
 end
 
 -- A unit's name: a player's first name and surname; another unit's as the game gives it, hidden or not.
@@ -233,13 +251,14 @@ end
 
 local steps
 -- A hidden value as the game formats it: its abbreviation in our steps, and the share the game gives by its curve to
--- a hundred (share: the game's function for it, and what it takes before the curve).
-local function Hidden(text, now, share, ...)
+-- a hundred (share: the game's function for it, and what it takes before the curve); the share alone where compact.
+local function Hidden(text, compact, now, share, ...)
     local curves = rawget(_G, "CurveConstants")
     local count = select("#", ...)
     local args = { ... }
     args[count + 1] = curves and curves.ScaleTo100
     share = args[count + 1] and Raw(share, unpack(args, 1, count + 1))
+    if compact and type(share) ~= "nil" and pcall(text.SetFormattedText, text, "%d%%", share) then return end
     steps = steps or { breakpointData = Text.STEPS }
     local ok, short = pcall(AbbreviateNumbers, now, steps)
     if not ok then ok, short = pcall(AbbreviateNumbers, now) end
@@ -247,6 +266,19 @@ local function Hidden(text, now, share, ...)
     if type(share) == "nil" or not pcall(text.SetFormattedText, text, "%s | %d%%", short, share) then
         text:SetText(short)
     end
+end
+
+-- The widest the health can be written with that most, on this face.
+local function Widest(face, most)
+    if face.bare then return 0 end
+    return Text.Width(face.compact and "100%" or Text.Short(most) .. " | 100%")
+end
+
+-- Plain health in its words.
+local function Written(face, now, most)
+    if face.bare then return "" end
+    if face.compact then return ("%d%%"):format(Text.Percent(now, most)) end
+    return ("%s | %d%%"):format(Text.Short(now), Text.Percent(now, most))
 end
 
 -- Health on the right, its room as wide as the most it can show; Dead or Offline where the unit is so.
@@ -260,19 +292,27 @@ function Text.Health(face, unit)
     end
     local now, most = Raw(UnitHealth, unit), Raw(UnitHealthMax, unit)
     local plainNow, plainMost = Plain(now), Plain(most)
-    if type(plainMost) == "number" then face.valueRoom = Text.Width(Text.Short(plainMost) .. " | 100%") end
-    local room = face.valueRoom or Text.Width(Text.SAMPLE)
+    if type(plainMost) == "number" then face.valueRoom = Widest(face, plainMost) end
+    local room = face.bare and 0 or face.valueRoom or Text.Width(face.compact and "100%" or Text.SAMPLE)
     if word then
         text:SetText(word)
         room = math.max(room, Text.Width(word))
-    elseif type(now) == "nil" or type(most) == "nil" then
+    elseif face.bare or type(now) == "nil" or type(most) == "nil" then
         text:SetText("")
     elseif type(plainNow) == "number" and type(plainMost) == "number" then
-        text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
+        text:SetText(Written(face, plainNow, plainMost))
     else
-        Hidden(text, now, rawget(_G, "UnitHealthPercent"), unit, true)
+        Hidden(text, face.compact, now, rawget(_G, "UnitHealthPercent"), unit, true)
     end
-    Side(face, "right", Text.INSET + room)
+    Side(face, "right", face.inset + room)
+end
+
+-- Made-up health in the same words (a sample): now of most, or a word instead.
+function Text.Sample(face, now, most, word)
+    local room = Widest(face, most)
+    if word then room = math.max(room, Text.Width(word)) end
+    face.value:SetText(word or Written(face, now, most))
+    Side(face, "right", face.inset + room)
 end
 
 -- A power's words on its bar: "3.2k | 85%"; none for an empty one.
@@ -285,7 +325,7 @@ local function PowerWords(text, unit, kind)
     elseif type(plainNow) == "number" and type(plainMost) == "number" then
         text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
     else
-        Hidden(text, now, rawget(_G, "UnitPowerPercent"), unit, kind.type, false)
+        Hidden(text, false, now, rawget(_G, "UnitPowerPercent"), unit, kind.type, false)
     end
 end
 

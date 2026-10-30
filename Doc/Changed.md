@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### One party and raid frame; barriers, lost health and dispels on every bar (Saneroki, 2026-10-30)
+Saneroki: no party frame at all, the same window for party and raid with more slots, in the nameplates' look, a tank's and healer's mana
+inside the bar, missing buffs floating over the name, max sizes and a preview in Edit Mode; no borders around the whole, 0px gaps, little
+space inside, the health's share alone and none on narrow frames; and barriers, reduced max health and dispels on all bars. A game restart
+takes it in (new files in Core's and Combat's TOCs).
+- **`src/Core/HealthMarks.lua` (new):** what every health bar shows besides the health: a barrier from the game's heal prediction
+  calculator (two status bars, hidden numbers never computed), the lost part from `GetUnitTotalModifiedMaxHealthPercent`, one aura
+  container for the ring and icon of what can be dispelled, `RAID_PLAYER_DISPELLABLE`. On Combat's `Units/Bar.lua`, Nameplates' `Bar.lua`
+  and `Plate.lua`, and the group frames; three switches on each module's page.
+- **`src/Combat/Units/Group.lua`, `GroupFace.lua`, `GroupBuffs.lua` (new):** the one window, eight secure group headers, the game's party
+  frame and raid container lent away, `Group.Size`; a member's face, live or made up; your buffs by family. `Bar.lua` and `Text.lua`
+  give their parts out (`Plate`, `Around`, `End`, `Power`, `MakeLine`, `Mark`, `Sample`, `face.compact`, `face.bare`, `face.roomed`);
+  `Units.Clicks` is the unit button's answers.
+- **`src/Core/Selection.lua`, `Window.lua`:** a window's settings as rows in Edit Mode's dialog (`options.settings`, `get`, `set`: the game's
+  slider, or a field); `options.plainBox`, nothing drawn in Edit Mode; `window:GrowFromBottom`.
+- **Tests:** `dev/tests/combat.lua`, `combatclient.lua`, `nameplates.lua`. **The lab:** the scene `groupframes`, `Texture:SetSpriteSheetCell`.
+
 ### Shared auction prices: strict reading, kept apart, strikes, Forget shared prices (Saneroki, 2026-10-30)
 Saneroki: the plan's safety layer for shared prices now, the safety review and hardening later. A game restart takes it in.
 - **`src/Core/Data/Prices.lua`:** a block is read whole by its strict shape or not at all; what members sent stands over this account's

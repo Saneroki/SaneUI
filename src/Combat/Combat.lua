@@ -21,7 +21,8 @@ local ADDON, ns = ...
 --  creature's nameplate, a mark while it belongs to an objective still to do
 --  (QuestMarks.lua). Our own frames for you, your target and your focus in a
 --  nameplate's look, in place of the game's (Units/); the game's action bars
---  clean, their buttons' icons alone (ActionBars.lua). Each part falls back to the game's own when it fails
+--  clean, their buttons' icons alone (ActionBars.lua). One frame of ours for your party and raid in place of the
+--  game's two (Units/Group.lua). Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
 --  Our spellbook and talents are made after WoW: Forever's, so in Retail
@@ -74,6 +75,24 @@ ns.TEXT = {
     listsPut = "%s: %s.",
     listsUnknown = "The game does not know that spell here by its name: type its number, or right click its icon on a unit frame.",
     listsRule = "The game lets the lists act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
+    unitBarrier = "Barriers",
+    unitBarrierTip = "What absorbs damage on a unit, in the game's shield art on its health bar: after the health while it fits, against the bar's right end when it does not. On your unit frames and your party and raid frames.",
+    unitLost = "Lost maximum health",
+    unitLostTip = "Maximum health taken away for a while: the health bar ends earlier and the rest of its length is hatched. On your unit frames and your party and raid frames.",
+    unitDispel = "Dispellable debuffs",
+    unitDispelTip = "What you or your group can take off a unit (on a foe, a buff you can remove): a ring around the frame in its kind's colour, and the aura's icon on the health bar. On your unit frames and your party and raid frames.",
+    group = "Party and raid frames",
+    groupTip = "One frame for your party and your raid in place of the game's: you and your party going up from its bottom left corner, then a column to the right for each raid group, up to forty, sized to fit. The raid marker and the name on the left, how much health is left on the right, or nothing there on a frame too narrow for it; a tank's or a healer's mana as a line inside the bar. A click targets, a right click opens the game's menu, and hover macros work on them. Click it in Edit Mode for its sizes and a preview. Off: the game's own.",
+    groupBuffs = "Your missing buffs",
+    groupBuffsTip = "On the party and raid frames, an icon for each buff of your class a unit is missing: yours or the same from anyone (a paladin's blessings: only yours). In a fight the game hides auras from addons, so they stay as they were until it ends.",
+    groupWidth = "Max width",
+    groupHeight = "Max height",
+    groupUnitWidth = "Max unit width",
+    groupPreview = "Preview units",
+    groupSamples = {
+        first = { "Aldren", "Brisa", "Caelum", "Dorin", "Elsbeth", "Fenrick", "Gwyn", "Halden", "Ilsa", "Joren", "Kestra", "Lorcan" },
+        last = { "Ashford", "Brightwater", "Crowley", "Dunmere", "Everhart", "Fallowfield", "Greymoor", "Hollow" },
+    },
     samples = { player = "You", target = Core.Word("TARGET", "Target"), focus = Core.Word("FOCUS", "Focus"),
                 targettarget = "Target's target", focustarget = "Focus's target", pet = Core.Word("PET", "Pet"),
                 cast = "Cast bar", breath = Core.Word("BREATH_LABEL", "Breath") },
@@ -104,7 +123,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = (ns.Serves()
     and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit frames and action bars are back"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames and action bars are back"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -118,8 +137,18 @@ local OPTIONS = {
     { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip },
     { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip },
     { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip },
+    { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip },
+    { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip },
+    { key = "unitDispel", default = true, text = ns.TEXT.unitDispel, tip = ns.TEXT.unitDispelTip },
     { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
     { key = "auraBlack", default = {} }, -- those never shown
+    { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip, header = ns.TEXT.group },
+    { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip },
+    -- Chosen in Edit Mode's dialog (Units/Group.lua).
+    { key = "groupWidth", default = 960, min = 100, max = 2000 },
+    { key = "groupHeight", default = 140, min = 30, max = 800 },
+    { key = "groupUnitWidth", default = 150, min = 40, max = 400 },
+    { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
 }
@@ -134,6 +163,9 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "keys" then ns.Guarded(ns.Keys.Bind) end
     if key == "questMarks" then ns.Guarded(ns.QuestMarks.Update) end
     if key:match("^unit") then ns.Guarded(ns.Units.Apply) end
+    if key:match("^group") or key == "unitBarrier" or key == "unitLost" or key == "unitDispel" then
+        ns.Guarded(ns.Group.Apply)
+    end
     if key == "cleanBars" then ns.Guarded(ns.ActionBars.Apply) end
 end })
 
@@ -146,6 +178,7 @@ function ns.GiveBack()
     ns.Safe("window", ns.Window.Hide)
     ns.Safe("quest marks", ns.QuestMarks.Hide)
     ns.Safe("unit frames", ns.Units.GiveBack)
+    ns.Safe("group frames", ns.Group.GiveBack)
     ns.Safe("aura lists", ns.AuraLists.Hide)
     ns.Safe("action bars", ns.ActionBars.GiveBack)
 end
@@ -162,5 +195,6 @@ function ns.OnLogin()
     ns.Keys.Start()
     ns.QuestMarks.Start()
     ns.Units.Start()
+    ns.Group.Start()
     ns.ActionBars.Start()
 end

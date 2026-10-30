@@ -161,12 +161,227 @@ if RETAIL then
         "the quest marks beside nameplates, as in Forever")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit frames and action bars are back",
+        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames and action bars are back",
         "standing down: the quest marks go, and what is told says so")
     check(PlayerFrame._mouse == true and TargetFrame._parent == UIParent and MainActionBar.BorderArt._alpha == 1,
         "and the game's unit frames and action bars are its own again")
     io.write(("Combat in Retail: all %d checks passed.\n"):format(passed))
     return
+end
+
+-------------------------------------------------------------------------------
+--  Your party and raid
+-------------------------------------------------------------------------------
+do
+    local Group, Face, Buffs = ns.Group, ns.GroupFace, ns.GroupBuffs
+    local Marks = Core.HealthMarks
+    check(Group.GAP == 0, "units stand edge to edge, no gap between them")
+    -- Sizes: within the limits, the unit's own limit first.
+    local wide, high = Group.Size(1, 5, 960, 140, 150)
+    check(wide == 150 and high == 28, "a party: as wide as a unit may be")
+    wide, high = Group.Size(8, 5, 960, 140, 150)
+    check(wide == 120 and high == 28, "forty in eight columns share the max width")
+    wide, high = Group.Size(8, 5, 480, 70, 150)
+    check(wide == 60 and high == 14, "smaller limits, smaller units")
+    wide, high = Group.Size(8, 5, 100, 30, 150)
+    check(wide == Group.LEAST_WIDTH and high == Group.LEAST_HEIGHT, "never smaller than can be read")
+
+    -- Alone: the window is there, no header, the game's frames away and given back whole.
+    PartyFrame = W.NewWidget("Frame", "PartyFrame", UIParent)
+    CompactRaidFrameContainer = W.NewWidget("Frame", "CompactRaidFrameContainer", UIParent)
+    Core.Set(ns.name, "group", false)
+    Core.Set(ns.name, "group", true)
+    check(PartyFrame._parent ~= UIParent and CompactRaidFrameContainer._parent ~= UIParent,
+        "the game's party and raid frames stand out of sight")
+    Core.Set(ns.name, "group", false)
+    check(PartyFrame._parent == UIParent and CompactRaidFrameContainer._parent == UIParent, "off: back where they were")
+    Core.Set(ns.name, "group", true)
+
+    -- A party: going up from the bottom left, the units its header gives them.
+    local grouped, raid, members = true, false, 3
+    IsInGroup, IsInRaid = function() return grouped end, function() return raid end
+    GetNumGroupMembers = function() return members end
+    W.members[1] = { "player", "party1", "party2" }
+    units.party1 = { name = "Tess", surname = "Brook", player = true, class = "PRIEST", health = 500, most = 1000,
+                     power = 40, powerMost = 100, mana = 40, manaMost = 100 }
+    units.party2 = { name = "Rolf", surname = "Stone", player = true, class = "WARRIOR", health = 900, most = 1000,
+                     power = 10, powerMost = 100 }
+    UnitInRange = function() return true, true end
+    UnitGroupRolesAssigned = function() return "NONE" end
+    Group.Apply()
+    local live
+    for frame in pairs(W.drivers) do
+        if W.drivers[frame].values == Group.SHOWN then live = frame end
+    end
+    check(live and W.drivers[live].state == "visibility", "the live frames show while you are in a group, by the game's state driver")
+    local headers = {}
+    for _, widget in ipairs(W.frames) do
+        if widget._template == "SecureGroupHeaderTemplate" then headers[#headers + 1] = widget end
+    end
+    check(#headers == Group.GROUPS and headers[1]:GetAttribute("showParty") and headers[1]:GetAttribute("showRaid")
+        and headers[1]:GetAttribute("showPlayer") and headers[3]:GetAttribute("groupFilter") == "3"
+        and headers[1]:GetAttribute("point") == "BOTTOM" and headers[1]:GetAttribute("startingIndex") == 1,
+        "a header for each raid group, its units going up, the player in the party's")
+    local point = headers[2]._points[1]
+    check(point[1] == "BOTTOMLEFT" and point[2] == headers[1] and point[3] == "BOTTOMRIGHT" and point[4] == 0,
+        "each group a column to the right of the last, touching it")
+    local first, second, third = headers[1][1], headers[1][2], headers[1][3]
+    check(first._template == "SecureUnitButtonTemplate" and first:GetAttribute("*type2") == "togglemenu"
+        and first:GetScript("OnEnter") and first._width == 150 and first._height == 28,
+        "its buttons answer as your other frames do, at the size the limits give")
+    check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
+        and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
+
+    -- The power line, inside the bar: no taller for it.
+    Face.Fill(second.face)
+    check(second.face.power._shown and second.face.power._value == 40, "no role set: a class that heals shows its mana")
+    check(not third.face.power._shown, "no role set: a warrior shows none")
+    UnitGroupRolesAssigned = function(unit) return unit == "party2" and "TANK" or "DAMAGER" end
+    Face.Fill(second.face)
+    Face.Fill(third.face)
+    check(third.face.power._shown and third.face.power._value == 10 and not second.face.power._shown,
+        "by role: a tank's own power where it has no mana, a damage dealer none")
+    UnitGroupRolesAssigned = function() return "NONE" end
+
+    -- A click or @mouseover: nothing of ours takes the mouse from the button.
+    check(not second.face._mouse and not second.face.health._mouse, "the face takes no mouse")
+
+    -- Your buffs: a family counts from anyone, and a fight leaves them as they were.
+    local auras = {}
+    C_UnitAuras.GetAuraDataBySpellName = function(unit, name) return auras[unit] and auras[unit][name] end
+    C_Spell = C_Spell or {}
+    local spellInfo = C_Spell.GetSpellInfo
+    C_Spell.GetSpellInfo = function(name) if name == "Power Word: Fortitude" then return { iconID = 135987 } end end
+    local class = UnitClass
+    UnitClass = function(unit) if unit == "player" then return "Priest", "PRIEST" end return class(unit) end
+    Buffs.Learn()
+    check(Buffs.Any() and Buffs.Icons()[1] == 135987, "what you know of your class's buffs")
+    local list = {}
+    check(Buffs.Missing("party1", list) == 1 and list[1] == 135987, "a member without it is missing it")
+    auras.party1 = { ["Prayer of Fortitude"] = {} }
+    check(Buffs.Missing("party1", list) == 0, "the group's version counts")
+    auras.party1 = nil
+    Face.Fill(second.face)
+    local roomBefore = second.face.name._width
+    Face.Fill(second.face)
+    check(second.face.icons[1]._shown and second.face.icons[1]._texture == 135987 and second.face.name._width == roomBefore
+        and second.face.icons[1]._parent == second.face.floating, "the icon floats over the name, which keeps its room")
+    auras.party1 = { ["Power Word: Fortitude"] = {} }
+    local fighting = InCombatLockdown
+    InCombatLockdown = function() return true end
+    check(Buffs.Missing("party1", list) == nil, "in a fight auras are hidden: nothing is told")
+    second.face:GetScript("OnEvent")(second.face, "UNIT_AURA", "party1")
+    check(second.face.icons[1]._shown, "and the icon stays as it was")
+    InCombatLockdown = fighting
+    second.face:GetScript("OnEvent")(second.face, "UNIT_AURA", "party1")
+    check(not second.face.icons[1]._shown, "after it, it is read again")
+    UnitClass, C_Spell.GetSpellInfo = class, spellInfo
+    Buffs.Learn()
+
+    -- A raid of forty: eight columns; a frame too narrow for its health gives that room to the name.
+    raid, members = true, 40
+    GetRaidRosterInfo = function(index) return "x", 0, math.ceil(index / 5) end
+    check(select(1, Group.Filled()) == 8 and select(2, Group.Filled()) == 5, "a raid fills a column a group")
+    GetRaidRosterInfo = function(index) return "x", 0, index <= 3 and 1 or 4 end
+    members = 7
+    check(select(1, Group.Filled()) == 2 and select(2, Group.Filled()) == 4, "only the groups in use count")
+    members = 40
+    GetRaidRosterInfo = function(index) return "x", 0, math.ceil(index / 5) end
+    -- A face takes its button's size by its anchors, and hears of it by OnSizeChanged.
+    local function Sized(button)
+        button.face._width, button.face._height = button._width, button._height
+        button.face:GetScript("OnSizeChanged")(button.face)
+    end
+    Group.Apply()
+    Sized(second)
+    check(second._width == 120 and not second.face.bare and second.face.value._text == "50%", "at forty the units are narrow")
+    Core.Set(ns.name, "groupWidth", 480)
+    Sized(second)
+    check(second._width == 60 and second.face.bare and second.face.value._text == "", "too narrow: no health at all")
+    check(second.face.room.right == Face.INSET, "and its room is the name's")
+    UnitIsConnected = function(unit) return unit ~= "party1" end
+    second.face:GetScript("OnEvent")(second.face, "UNIT_CONNECTION", "party1")
+    check(second.face.value._text == "Offline", "Offline is said all the same")
+    UnitIsConnected = function() return true end
+    Core.Set(ns.name, "groupWidth", 960)
+    raid, members = false, 3
+    Group.Apply()
+    Sized(second)
+    check(second._width == 150 and not second.face.bare and second.face.value._text == "50%", "back in a party they are wide again")
+
+    -- Edit Mode: the preview, no box around it, its settings in the dialog.
+    local drawn = {}
+    NineSliceUtil = { ApplyLayout = function(container) drawn[container] = true end }
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(W.drivers[live] == nil and not live._shown, "the live frames rest in Edit Mode")
+    Core.Set(ns.name, "groupPreview", 40)
+    local window
+    for _, one in ipairs(Core.Window.All()) do
+        if one.options.key == "groupPlace" then window = one end
+    end
+    check(window and window.box and not drawn[window.box], "nothing is drawn around the frame")
+    local host = window.options.plainBox
+    check(window.box._points[1][2] == host and host._width == 960 and host._height == 140,
+        "what takes the clicks is as large as the units shown")
+    local faces = {}
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == host then faces[#faces + 1] = widget end
+    end
+    check(#faces == 40, "forty units for forty")
+    local last = faces[40]
+    check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
+        "the last at the top of the eighth column, touching its neighbours")
+    local name = faces[1].name._text
+    Core.Set(ns.name, "groupWidth", 800)
+    check(faces[1].name._text == name and faces[1]._width == 100, "a size changed: the same units, narrower")
+    Core.Set(ns.name, "groupWidth", 960)
+    Core.Set(ns.name, "groupPreview", 7)
+    check(host._width == 300 and host._height == 140 and faces[7]._shown and not faces[8]._shown, "seven: two columns")
+    Core.Selection.Select(window)
+    check(window.settingRows and #window.settingRows.shows == #Group.SETTINGS and not drawn[window.box],
+        "its settings in Edit Mode's dialog, and chosen it stays without a box")
+    window.options.set("groupPreview", 12)
+    check(ns.options.groupPreview == 12, "what the dialog sets is the module's")
+    Core.Selection.Clear()
+    Core.Set(ns.name, "groupPreview", 5)
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(W.drivers[live] and W.drivers[live].values == Group.SHOWN and not host._shown, "after Edit Mode: the live frames again")
+
+    -- Core's marks, on a sample and on a unit whose numbers the game hides.
+    local marks = Face.Make(UIParent, true).marks
+    marks:Sample({ barrier = 0.25, lost = 0.2, dispel = "Curse" })
+    check(marks.barrier._value == 0.25 and marks:Reach(100) == 20, "a sample's barrier and lost part")
+    check(marks.parts and marks.parts._shown and #marks.rings == 1, "a sample's ring")
+    marks:Sample({})
+    check(marks.barrier._value == 0 and marks:Reach(100) == 0 and not marks.parts._shown, "and none of it")
+    local face = headers[1][1].face
+    GetUnitTotalModifiedMaxHealthPercent = function() return 0.3 end
+    local calc = W.calculator
+    calc.amount, calc.clamped, calc.total = 100, false, 100
+    face.marks:Set("party1")
+    check(face.marks:Reach(100) == 30, "maximum health lost: the bar ends that much earlier")
+    check(face.marks.barrier._value == 100 and face.marks.barrier._max == 1000 and face.marks.over._alpha == 0,
+        "a barrier that fits: after the health, on the bar's scale")
+    calc.amount, calc.clamped, calc.total = 200, true, 450
+    face.marks:Heard("party1")
+    check(face.marks.barrier._value == 200 and face.marks.over._value == 450 and face.marks.over._alpha == 1,
+        "one that does not: what fits, and all of it against the bar's right end")
+    GetUnitTotalModifiedMaxHealthPercent = nil
+    face.marks:Set(nil)
+    check(face.marks:Reach(100) == 0 and face.marks.barrier._value == 0, "no unit, no marks")
+    local filter = face.marks.container and face.marks.container._groups[Marks.GROUP]
+    check(filter and filter.options.maxFrameCount == 1, "one dispellable aura at most, in a container of the game's")
+    Face.Fill(face)
+    grouped, raid, members = false, false, 1
+    W.members[1] = nil
+    headers[1]:SetAttribute("yOffset", Group.GAP) -- the header gives its buttons no units any more
+    Group.Apply()
+    NineSliceUtil = nil
+    -- What Edit Mode showed, the game's unit watch would hide again.
+    for _, kind in ipairs(ns.Units.KINDS) do
+        kind.button:Hide()
+        kind.row.button:Hide()
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -1050,6 +1265,8 @@ check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not w
     "our unit frames gone, the game's back, its cast bar and timers hearing again")
 check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1,
     "the action bars as the game has them")
+check(PartyFrame._parent == UIParent and CompactRaidFrameContainer._parent == UIParent,
+    "and the game's party and raid frames are its own again")
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 check(not questMark._shown, "a plate the game shows after it gets no quest mark")

@@ -38,6 +38,10 @@ local _, ns = ...
 --    the glow     red, solid at the bar's edge and fading out beyond the
 --                 rank's line: you have the unit's aggro (Text.lua says), or
 --                 it is a player who may attack you
+--  and on the bar what Core's health marks show (dress.marks, Core's
+--  HealthMarks.lua): the barrier, the lost maximum health (the bar ends
+--  earlier, Bar.Outline), and around it all the ring of what can be dispelled,
+--  its icon over the bar's right end.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -62,6 +66,7 @@ Bar.GLOW = { 1, 0.08, 0.05 }
 -- replace: so they stand on a frame of their own (dress.glow), under the outline's, and only that frame's alpha
 -- switches the glow.
 Bar.HALO = 6
+Bar.RING = 2 -- how many screen pixels the ring of what can be dispelled shows beyond the outline
 function Bar.Fade(band)
     local share = 1 - (band - 1) / Bar.HALO
     return share * share
@@ -244,9 +249,14 @@ function Bar.Make(dress)
     power:SetValue(0)
     -- No background: where the unit's power is spent, the bar is seen through the line.
     for _, mask in ipairs(dress.caps) do power:GetStatusBarTexture():AddMaskTexture(mask) end
+    power:SetFrameLevel(level + 5) -- over the barrier, which lies on the bar
     power:Hide()
     dress.power = power
     dress.rank = Bar.PLAIN
+    dress.marks = Core.HealthMarks.New(dress, health, {
+        masks = dress.caps, ring = function(parent) return Plate(parent, 0) end,
+        fit = function() Bar.Outline(dress) end })
+    dress.marks:Place(dress, "TOPRIGHT", 0, 2)
     Bar.Border(dress, nil)
 end
 
@@ -295,15 +305,22 @@ function Bar.Outline(dress)
     local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
     Around(dress.rankLine, dress, pixel * reach, tall, below, radius)
     for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below, radius) end
+    local marks = dress.marks
+    for _, ring in ipairs(marks.rings) do Around(ring, dress, pixel * (reach + Bar.RING), tall, below, radius) end
     -- The bar a pixel inside the outline; down to the row under it while one shows, square there, so nothing of the
     -- outline shows between them. The combo points' row round at its bottom only while the cast bar is not under it.
+    -- Where the unit lost maximum health the bar ends earlier and the rest is the marks'.
     local under = below ~= dress
     local health = dress.health
+    local inner = (Plain(dress:GetWidth()) or 0) - 2 * pixel
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", dress, "TOPLEFT", pixel, -pixel)
-    health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, under and 0 or pixel)
+    health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel - marks:Reach(inner), under and 0 or pixel)
     local mode = under and "top" or "both"
-    Bar.Ends(dress.caps, health, mode, mode, math.max(radius - pixel, 0.01), height - (under and 1 or 2) * pixel)
+    local round, high = math.max(radius - pixel, 0.01), height - (under and 1 or 2) * pixel
+    Bar.Ends(dress.caps, health, mode, mode, round, high)
+    Bar.End(marks.lostEnd, marks.lost, "RIGHT", mode, round, high)
+    marks:Fit(inner)
     if strip then ns.Resource.Shape(dress, cast == nil) end
     dress.outlined = below
 end
@@ -425,6 +442,7 @@ function Bar.Clear(dress)
     dress.power:Hide()
     dress.danger = false
     Bar.Glow(dress, false)
+    dress.marks:Set(nil)
 end
 
 -- The border: grey on your target, orange on your focus ("target", "focus"); on a player you know, the colour of how

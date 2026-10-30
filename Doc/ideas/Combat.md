@@ -204,7 +204,8 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
    nameplates' look (no portrait, no buffs yet).
 2. **Pet, target's target, focus:** the same frame, smaller (the focus built with step 1; the target's and
    focus's targets and the pet built 2026-10-29 as rows under the frames).
-3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header.
+3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header. Built 2026-10-30 as one frame for both
+   (`Units/Group.lua`, Saneroki: no party frame at all), a header per raid group. Decided: party in the raid's look; no click casting yet.
 4. **Buffs:** your own, at the top right as the game has them.
 5. **Cast bars** (yours, your target's and your focus's built 2026-10-30, with your timers), **bosses**, **class resources**, **swing timers**, **threat.**
 6. **Combat text** and **raid warnings.**

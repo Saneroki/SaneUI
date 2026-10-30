@@ -51,6 +51,7 @@ Plate.WIDEST, Plate.PLAIN = 1000, 120
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
                  "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER", "UNIT_COMBAT" }
+for _, event in ipairs(Core.HealthMarks.EVENTS) do Plate.EVENTS[#Plate.EVENTS + 1] = event end
 -- Critters by the game's creature type (UnitCreatureType's ID, the same in both games): Critter, Non-combat Pet
 -- (a companion), Wild Pet.
 Plate.CRITTERS = { [8] = true, [12] = true, [14] = true }
@@ -81,6 +82,9 @@ local function Fill(dress)
     local unit = dress.unit
     ns.Bar.Paint(dress, unit)
     ns.Bar.Health(dress, unit)
+    local options = ns.options or {}
+    dress.marks:Switch(options.barrier, options.lost, options.dispel)
+    dress.marks:Set(unit)
     ns.Bar.Power(dress, unit)
     ns.Bar.Border(dress, Lit(dress, PlateOf("target"), PlateOf("focus")), dress.out)
     ns.Text.Set(dress, unit)
@@ -184,6 +188,9 @@ local function Heard(dress, event, _, ...)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         ns.Bar.Health(dress, unit)
         ns.Text.Health(dress, unit)
+        dress.marks:Heard(unit)
+    elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" or event == "UNIT_MAX_HEALTH_MODIFIERS_CHANGED" then
+        dress.marks:Heard(unit, event)
     elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
         ns.Bar.Power(dress, unit)
     elseif event == "UNIT_THREAT_LIST_UPDATE" then
@@ -198,6 +205,7 @@ local function Heard(dress, event, _, ...)
         ns.Bar.Paint(dress, unit)
         ns.Text.Level(dress, unit)
         ns.Auras.Set(dress, unit)
+        dress.marks:Dispel(unit)
         Wear(dress)
     end
 end

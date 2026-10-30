@@ -228,6 +228,8 @@ W.templates.CustomAuraContainerTemplate = function(widget)
         end
     end
     function widget:SetAuraGroupMaxFrameCount(key, most) self._groups[key].most = most end
+    function widget:SetAuraGroupFilterString(key, filter) self._groups[key].filter = filter end
+    function widget:UpdateAllAuras() self._updates = (self._updates or 0) + 1 end
     function widget:SetUnit(unit) self._unit = unit end
     function widget:SetFlowLayoutAnchorPoint(point) self._corner = point end
     function widget:SetFlowLayoutGrowthDirection(across, up) self._growth = { across, up } end
@@ -302,6 +304,14 @@ check(dress._points[1][1] == "CENTER" and dress._points[1][2] == row and dress._
 check(dress.health._value == wolf and dress.health._max == units.nameplate1.most, "hidden health goes to the bar as the game gives it")
 check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
 check(dress.name._text == "Young Wolf", "its name inside the bar")
+check(dress.marks and dress.marks.lostEnd and dress.marks.container._groups.dispel.filter == Core.HealthMarks.FOE,
+    "Core's marks on the bar: on a foe, what can be taken from it")
+check(dress.marks.barrier._parent == dress.health and dress.marks:Reach(100) == 0, "no barrier and nothing lost: nothing shows")
+GetUnitTotalModifiedMaxHealthPercent = function() return 0.25 end
+dress:GetScript("OnEvent")(dress, "UNIT_MAX_HEALTH_MODIFIERS_CHANGED", "nameplate1")
+check(dress.marks:Reach(100) == 25 and dress.health._points[2][4] < -20, "maximum health lost: the bar ends that much earlier")
+GetUnitTotalModifiedMaxHealthPercent = function() return 0 end
+dress:GetScript("OnEvent")(dress, "UNIT_MAX_HEALTH_MODIFIERS_CHANGED", "nameplate1")
 check(dress.level._text == "22" and dress.level._color[2] == 1, "its level, in the game's colour for it")
 check(dress.name._font[1] == "Fonts\\FRIZQT__.TTF" and dress.name._font[2] == 14 * Text.SMALLER and dress.name._font[3] == "OUTLINE"
     and dress.value._font[2] == 14 * Text.SMALLER and Text.size == math.floor(14 * Text.SMALLER * Text.ICON + 0.5),

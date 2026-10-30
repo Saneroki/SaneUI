@@ -48,6 +48,9 @@ local _, ns = ...
 --    the glow     red, solid at the edge and fading outwards: you have the
 --                 unit's aggro (your own frame: anything's), or it is a player
 --                 who may attack you
+--  and on the health bar what Core's health marks show (frame.marks, Core's
+--  HealthMarks.lua): the barrier, the lost maximum health (the health bar ends
+--  earlier, Bar.Fit), and around it all the ring of what can be dispelled.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -62,6 +65,7 @@ Bar.BACKGROUND = { 0.07, 0.07, 0.09, 1 } -- where health is missing: solid, so n
 Bar.BORDER = { 0, 0, 0, 0.9 }
 Bar.GLOW = { 1, 0.08, 0.05 }
 Bar.HALO = 6 -- the glow's bands, a screen pixel each, solid inside and fading out
+Bar.RING = 2 -- how many screen pixels the ring of what can be dispelled shows beyond the frame's edge
 -- Every bar's health in the game's green for it (its compact frames' health, set by the client); plain green where
 -- it has none.
 Bar.GREEN = { 0, 1, 0 }
@@ -118,6 +122,7 @@ local function Plate(host, sublevel)
     end
     return plate
 end
+Bar.Plate = Plate -- for what is made of the same pieces (the group's frames)
 
 -- A plate reaching that far beyond the frame on every side (inside it where reach is less than 0), up to above over
 -- its top and down to below under its bottom (what stands on it and hangs under it now), its corners round by radius
@@ -138,6 +143,7 @@ local function Around(plate, frame, reach, height, above, below, radius)
         for _, mask in ipairs(piece.corners) do mask:SetSize(round, round) end
     end
 end
+Bar.Around = Around
 
 -- A status bar of health on host, its background behind it, and a mask at each end over both (sized by End).
 local function Health(host, level)
@@ -189,6 +195,7 @@ local function Ends(bar, mode, radius, height)
     End(bar.ends[1], bar, "LEFT", mode, radius, height)
     End(bar.ends[2], bar, "RIGHT", mode, radius, height)
 end
+Bar.End, Bar.Ends = End, Ends
 
 -- The bar's pieces on the frame, each layer on a frame of its own one level above the last: the glow, then the
 -- rank's line and the border, then the bars (the texts above it all). sizes: how high the health bar, a power bar and
@@ -234,6 +241,9 @@ function Bar.Make(frame, sizes)
     frame.roof = CreateFrame("Frame", nil, frame) -- the stack's top: moved in a fight too, so what stands on it is not
     frame.roof:SetHeight(1)
     frame.rank = Bar.PLAIN
+    frame.marks = Core.HealthMarks.New(frame, frame.health, {
+        masks = frame.health.ends, ring = function(parent) return Plate(parent, 0) end,
+        fit = function() Bar.Fit(frame) end })
 end
 
 -- Laid out for the frame's sizes, the unit's rank, its powers and the row, all inside the frame's edge: the border on
@@ -275,6 +285,10 @@ function Bar.Fit(frame)
     Around(frame.border, frame, 0, height, above, below, radius)
     Around(frame.rankLine, frame, -pixel, height, above, below, radius)
     for band, plate in ipairs(frame.halo) do Around(plate, frame, pixel * band, height, above, below, radius) end
+    local marks = frame.marks
+    for _, ring in ipairs(marks.rings) do Around(ring, frame, pixel * Bar.RING, height, above, below, radius) end
+    local inner = (Plain(frame:GetWidth()) or 0) - 2 * inset
+    local reach = marks:Reach(inner)
     frame.roof:ClearAllPoints()
     frame.roof:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, above)
     frame.roof:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, above)
@@ -283,11 +297,12 @@ function Bar.Fit(frame)
         local first, last, anchor = index == 1, index == #stack, bar == frame.health
         bar:ClearAllPoints()
         bar:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -top - ((first or anchor) and inset or pixel))
-        bar:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -inset, -top - tall + (last and inset or 0))
+        bar:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -inset - (anchor and reach or 0), -top - tall + (last and inset or 0))
         local mode = first and last and "both" or first and "top" or last and "bottom" or "none"
         local round = math.max(math.min(radius - inset, tall - pixel - inset), 0.01)
         Ends(bar, mode, round, tall - pixel - inset)
         if anchor then
+            End(marks.lostEnd, marks.lost, "RIGHT", mode, round, tall - pixel - inset)
             for _, over in ipairs(frame.over) do
                 Ends(over, mode, round, tall - pixel - inset)
                 over:SetShown(over.on == true)
@@ -297,6 +312,7 @@ function Bar.Fit(frame)
     end
     for index = shown + 1, #frame.powers do frame.powers[index]:Hide() end
     if not frame.rowShown then frame.row:Hide() end
+    marks:Fit(inner)
 end
 
 -- A unit's rank by the line behind the border ("boss", "elite", "rare"), or nil.
@@ -374,6 +390,8 @@ local function Power(bar, unit, kind)
     bar:SetValue(0)
     return false
 end
+
+Bar.Power = Power
 
 -- The powers a frame shows, by its slots: the unit's own; on a frame with two (frame.alternate), mana first and under
 -- it the unit's own while that is not mana (a druid's form). Each { type = the game's number, token = its name }; a

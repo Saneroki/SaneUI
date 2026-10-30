@@ -29,6 +29,7 @@ CreateFrame = function(kind, ...)
 end
 RegisterUnitWatch = function(frame) frame:Show() end
 UnregisterUnitWatch = function() end
+RegisterStateDriver, UnregisterStateDriver = function() end, function() end
 ClearOverrideBindings, SetOverrideBinding, GetBindingKey = function() end, function() end, function() end
 
 local cast -- { name, icon, starts, ends }

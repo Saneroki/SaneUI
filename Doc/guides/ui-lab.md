@@ -78,7 +78,8 @@ prints its log.
   Lab.Say("GUILD", "Mirabel Ashgrove", "Hello")   -- a chat line from the server now
   ```
 
-  The scenes: `loot` (Core and Loot from their TOCs: the loot window over the world with a thing of every quality,
+  The scenes: `groupframes` (Core and Combat from their TOCs: Edit Mode open with the party and raid frame chosen and forty made-up
+  units; `LabPreview(10)`, `LabSize(600, 140, 120)` in the console; the game's secure headers are not in the lab), `loot` (Core and Loot from their TOCs: the loot window over the world with a thing of every quality,
   a quest's item and coins; the game's loot functions stand in for a corpse, a click takes a thing, `LabLoot.Open()`
   in the console opens it again), `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, and a minimap's stand-in with the
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,

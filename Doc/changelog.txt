@@ -6,6 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- One party and raid frame: no matter the group, the same frame with
+  more slots, up to forty, in the look of the nameplates, growing up
+  and to the right. Set its sizes in Edit Mode, with a preview of
+  any number of made-up units. Shows a tank's or healer's mana and,
+  over the name, which of your buffs someone is missing.
+- Barriers, lost maximum health and dispellable debuffs now show on
+  nameplates, unit frames, and the party and raid frame.
 - The auction house scans itself: while it is open, every auction
   is read and kept in your saved files, every 16 minutes, so a
   full price history grows from day one. A bar under the window
