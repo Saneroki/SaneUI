@@ -362,13 +362,15 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
 
 ## Built (2026-10-30): the quest log's items, mirrored, a click for the pin
 
-- **A click on a quest** (`Look`): the map pin (`PinView.Drop`), the arrow and the map; the row has no `OnDoubleClick`.
+- **A click on a quest** (`Look`): the arrow, the map and its text in or out (`QuestLog.Text`, with `Rewards` by the
+  quest's ID); a double click the map pin (`DoubleClicked`, `Pin`, `PinView.Drop`).
+- **Folded** (`QuestLog.Fold`, `store.questLogFolded`, `Body`; Core's `barClick`): only the title bar.
 - **Rows:** no mark on a quest (a preview keeps its giver's), no tick; `Margin`: pinned closer to the screen's edge.
 - **Mirrored** (`mirrored`, `Sided` from Core's `docked`; Core's `window:TitleAt`): on the screen's right half.
 - **Items** (`Special`, `Seat`, `Tray`): secure buttons on a tray on `UIParent`, never on the log: a protected frame's
   parent is protected, and the log comes and goes with the map in a fight. Out of a fight only (`Core.AfterCombat`);
   over the full map hidden in a fight by the game's state driver; out of sight while carried (Core's `lifted`).
-- **Tests:** `dev/tests/navigation.lua` 707 checks, `dev/tests/window.lua` 430.
+- **Tests:** `dev/tests/navigation.lua` 714 checks, `dev/tests/window.lua` 440.
 
 ## What is not there yet
 

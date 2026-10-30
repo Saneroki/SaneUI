@@ -1198,6 +1198,27 @@ end)()
     lookedWindow:TitleAt("LEFT")
     check(find._points[1][1] == "TOPLEFT" and #find._points == 2 and title._points[1][1] == "LEFT"
         and title._points[1][4] == Window.TEXT_INSET, "and back at its left, where every title stands")
+    local beside = 0
+    local barred = CreateFrame("Frame", nil, UIParent)
+    local barredWindow = Window.New(barred, { store = {}, titleBar = true, first = { point = "CENTER", x = 0, y = 0 },
+        barClick = function() beside = beside + 1 end })
+    barredWindow:Place()
+    local line = barredWindow.bar
+    line._mouseOver = true
+    line._scripts.OnMouseDown(line, "LeftButton")
+    line._scripts.OnMouseUp(line, "LeftButton")
+    check(beside == 1, "a click on the bar beside its title: the module's")
+    line._scripts.OnMouseUp(line, "RightButton")
+    line._mouseOver = false
+    line._scripts.OnMouseUp(line, "LeftButton")
+    check(beside == 1, "not with the other button, nor let go off the bar")
+    line._mouseOver = true
+    line._scripts.OnMouseDown(line, "LeftButton")
+    line._scripts.OnDragStart(line)
+    line._scripts.OnDragStop(line)
+    line._scripts.OnMouseUp(line, "LeftButton")
+    check(beside == 1, "a press that was a drag is no click")
+    check(not lookedWindow.bar._scripts.OnMouseUp, "without it the bar has no click")
     local lifted = 0
     lookedWindow.options.lifted = function() lifted = lifted + 1 end
     lookedWindow.bar._scripts.OnDragStart(lookedWindow.bar)

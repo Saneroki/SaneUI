@@ -11,8 +11,9 @@ local _, ns = ...
 --  it is in sight.
 --
 --  Its title bar says how many quests the log holds of how many it may, and how
---  they are sorted, no more; a click there sorts them the next way, kept (Saneroki
---  2026-10-29):
+--  they are sorted, no more; a click on those words sorts them the next way, kept
+--  (Saneroki 2026-10-29), a click on the title bar beside them folds the list away
+--  and opens it again, kept (Saneroki 2026-10-30):
 --      Proximity     the nearest first, as the game measures the way to each (first; looked at again every
 --                    QuestLog.RESORT seconds while in sight, drawn anew once the order changed)
 --      Level         the lowest first
@@ -21,22 +22,22 @@ local _, ns = ...
 --  A quest done keeps one objective: to be turned in, in the game's words ("Report back to ..."), never left out.
 --
 --      a header      a click folds it in or out, as the game's own log keeps it (Zone)
---      a quest       a click: the game's map pin at its objective, so the golden line leads there (Saneroki
---                    2026-10-30), the game's arrow leads to it, and the map moves there, where the map shows it
---                    (its question mark, or the middle of the area where its foes are), at the zoom it has, as
---                    a drag would move it (Canvas.LookAt). Shift
+--      a quest       a click: its text below the list, or away again (Saneroki 2026-10-30), the game's arrow
+--                    leads to it, and the map moves to its objective, where the map shows it (its question mark,
+--                    or the middle of the area where its foes are), at the zoom it has, as a drag would move it
+--                    (Canvas.LookAt). A double click: the game's map pin there, so the golden line leads there. Shift
 --                    and a click: watched or not (the game's objective tracker); the chat link's modifier: its
 --                    link into the chat; the right button: a menu (its text below the list, the map at its
 --                    objective with its zone whole, watch, share, abandon after a question). The mouse over
 --                    it: its area on the map (Areas.lua). The item it wants used, as the game's tracker shows
 --                    one, stands at the far end of its row (The quests' items)
---      below         a quest's text, chosen from its menu (or by a click on its pin on the map): its
---                    objectives' words and its story, and its buttons; its X closes it
+--      below         a quest's text, by a click on it, from its menu or by a click on its pin on the map: its
+--                    objectives' words, its rewards and its story, and its buttons; its X closes it
 --      previews      quests of Core's data a click on their giver's pin showed (QuestLog.Preview): on top,
 --                    under Not in your log, grey, each with its giver's mark and the game's red X that takes
 --                    it out again; what the data knows of it below (why it is not for you yet, its level, who
---                    gives and takes it, what it asks first, its objectives, its rewards); a click puts the
---                    game's map pin at its giver and moves the map there. Kept until the next /reload
+--                    gives and takes it, what it asks first, its objectives, its rewards); a click moves the
+--                    map to its giver, a double click puts the game's map pin there. Kept until the next /reload
 --
 --  It reads from the screen's edge inwards (Saneroki 2026-10-30): on the screen's left half its words at the
 --  left and the items at the right; on the right half (or docked at its right edge) mirrored, its title and words
@@ -90,6 +91,8 @@ QuestLog.TEXT = {
               type = Core.Word("TYPE", "Type") },
     sorted = "Sorted by %s",
     sortNext = "A click sorts them by %s.",
+    fold = "A click beside these words hides the list.",
+    unfold = "A click beside these words shows the list.",
     normal = "Normal", -- the type of a quest the game gives no tag
     ready = Core.Word("QUEST_WATCH_QUEST_READY", "Ready for turn-in"),
     empty = "No quests. Quests you accept are listed here.",
@@ -112,6 +115,7 @@ QuestLog.TEXT = {
     givenBy = "Given by: %s",
     takenBy = "Turned in to: %s",
     rewards = Core.Word("QUEST_REWARDS", "Rewards"),
+    choices = Core.Word("REWARD_CHOICES", "You will be able to choose one of these rewards:"),
     experience = "%d experience",
     killed = Core.Word("QUEST_MONSTERS_KILLED", "%s slain: %d/%d"),
     items = Core.Word("QUEST_ITEMS_NEEDED", "%s: %d/%d"),
@@ -366,6 +370,7 @@ end
 function QuestLog.Text(quest)
     if quest then chosen = quest end
     open = quest ~= nil
+    if quest then QuestLog.Fold(false) end
     QuestLog.Refresh()
 end
 
@@ -378,16 +383,20 @@ local function Lead(quest)
     end
 end
 
--- A click on a quest in the list (Saneroki 2026-10-30): the game's map pin at its objective (a preview's: at its
--- giver), so the golden line leads there; the arrow leads to it, lit in the list, and the map there in the middle,
--- at the zoom it has. Where the game takes no pin it says so (PinView.Drop).
+-- A click on a quest in the list: the arrow leads to it, lit in the list, the map at its objective (a preview's: at
+-- its giver) in the middle, at the zoom it has, and its text below the list, or away again (Saneroki 2026-10-30).
 local function Look(quest)
     Lead(quest)
-    chosen = quest
+    local map, x, y = Place(quest)
+    if map then ns.Canvas.LookAt(map, x, y) end
+    QuestLog.Text(not (open and chosen == quest) and quest or nil)
+end
+
+-- A double click on it (the game's button tells the second click as one of its own, after the first's OnClick):
+-- the game's map pin there, so the golden line leads there.
+local function Pin(quest)
     local map, x, y = Place(quest)
     ns.PinView.Drop({ map = map, x = x, y = y })
-    if map then ns.Canvas.LookAt(map, x, y) end
-    QuestLog.Refresh()
 end
 
 -- A click on its pin on the map: the arrow leads to it, its text below the list.
@@ -465,6 +474,15 @@ local function Clicked(element, mouse)
     Look(quest)
 end
 
+-- The second click of a double click: on a quest, plain and with the left button, the map pin; else a click as the
+-- first was (a header folds back, a quest watched is watched no more).
+local function DoubleClicked(element, mouse)
+    local row = element.row
+    local plain = mouse == "LeftButton" and not IsShiftKeyDown() and not IsModifiedClick("CHATLINK")
+    if plain and row and row.quest and (row.kind == "quest" or row.kind == "preview") then return Pin(row.quest) end
+    Clicked(element, mouse)
+end
+
 local function Entered(element)
     Hover()
     local row = element.row
@@ -527,6 +545,7 @@ local function Draw(element, row)
         element.remove:SetScript("OnLeave", GameTooltip_Hide)
         element:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         element:SetScript("OnClick", ns.Guard(Clicked))
+        element:SetScript("OnDoubleClick", ns.Guard(DoubleClicked))
         element:SetScript("OnEnter", ns.Guard(Entered))
         element:SetScript("OnLeave", ns.Guard(Left))
     end
@@ -633,6 +652,11 @@ local function Objective(objective)
     return objective.text
 end
 
+-- A part of a quest's text: its title in gold, its lines under it; none without lines.
+local function Section(parts, title, lines)
+    if #lines > 0 then parts[#parts + 1] = "|cffffd100" .. title .. "|r\n" .. table.concat(lines, "\n") end
+end
+
 -- What Core's data knows of a quest not in the log, as the log's words: why it is not for this character yet, its
 -- level, who gives and takes it, what it asks first, its objectives and its rewards.
 local function Preview(quest)
@@ -653,9 +677,7 @@ local function Preview(quest)
         local words = Objective(objective)
         if words and words ~= "" then objectives[#objectives + 1] = "- " .. words end
     end
-    if #objectives > 0 then
-        parts[#parts + 1] = "|cffffd100" .. QuestLog.TEXT.objectives .. "|r\n" .. table.concat(objectives, "\n")
-    end
+    Section(parts, QuestLog.TEXT.objectives, objectives)
     local rewards = {}
     if record.rewardXP and record.rewardXP > 0 then rewards[#rewards + 1] = QuestLog.TEXT.experience:format(record.rewardXP) end
     local coins = rawget(_G, "GetCoinTextureString")
@@ -665,10 +687,34 @@ local function Preview(quest)
             rewards[#rewards + 1] = Item(entry.item) .. ((entry.count or 1) > 1 and (" x" .. entry.count) or "")
         end
     end
-    if #rewards > 0 then
-        parts[#parts + 1] = "|cffffd100" .. QuestLog.TEXT.rewards .. "|r\n" .. table.concat(rewards, "\n")
-    end
+    Section(parts, QuestLog.TEXT.rewards, rewards)
     return table.concat(parts, "\n\n")
+end
+
+-- The things a quest in the log gives, in the game's words: its picture, its name, how many. An item the game does
+-- not know yet is left out, until the log is read again.
+local function Things(lines, quest, count, info)
+    for index = 1, Core.Ask(rawget(_G, count), quest) or 0 do
+        local name, picture, many = Core.Ask(rawget(_G, info), index, quest)
+        if name then
+            local shown = picture and ("|T%s:16:16|t %s"):format(tostring(picture), name) or name
+            lines[#lines + 1] = (many or 1) > 1 and (shown .. " x" .. many) or shown
+        end
+    end
+end
+
+-- What the game says a quest in the log gives: by the quest's ID, no quest chosen in the game's own log for it.
+local function Rewards(parts, quest)
+    local rewards, choices = {}, {}
+    local experience = Core.Ask(rawget(_G, "GetQuestLogRewardXP"), quest)
+    if experience and experience > 0 then rewards[1] = QuestLog.TEXT.experience:format(experience) end
+    local money = Core.Ask(rawget(_G, "GetQuestLogRewardMoney"), quest)
+    local coins = rawget(_G, "GetCoinTextureString")
+    if money and money > 0 and coins then rewards[#rewards + 1] = coins(money) end
+    Things(rewards, quest, "GetNumQuestLogRewards", "GetQuestLogRewardInfo")
+    Things(choices, quest, "GetNumQuestLogChoices", "GetQuestLogChoiceInfo")
+    Section(parts, QuestLog.TEXT.rewards, rewards)
+    Section(parts, QuestLog.TEXT.choices, choices)
 end
 
 -- The list's room from a side of the window ("LEFT", "RIGHT"): QuestLog.EDGE; on the screen alone less at the side
@@ -717,7 +763,8 @@ function QuestLog.Details()
     if rawget(_G, "GetQuestLogQuestText") then description, objectives = GetQuestLogQuestText(index) end
     local title = Core.Ask(C_QuestLog.GetTitleForQuestID, chosen) or ""
     local parts = { "|cffffd100" .. title .. "|r" }
-    if objectives and objectives ~= "" then parts[#parts + 1] = objectives end
+    if objectives and objectives ~= "" then Section(parts, QuestLog.TEXT.objectives, { objectives }) end
+    Rewards(parts, chosen)
     if description and description ~= "" then
         parts[#parts + 1] = "|cffffd100" .. QuestLog.TEXT.description .. "|r"
         parts[#parts + 1] = description
@@ -739,6 +786,7 @@ function QuestLog.Preview(quests, map, x, y)
         givers[quest] = map and x and { map, x, y } or nil
     end
     chosen, open = quests[1], true
+    QuestLog.Fold(false)
     if not ns.TopBar.LogShown() then
         ns.store.questLog = true
         QuestLog.Lay(full)
@@ -828,7 +876,7 @@ local function Seat()
     if InCombatLockdown() then return Core.AfterCombat(WAIT, Seat) end
     local used, top, bottom = 0, box:GetTop(), box:GetBottom()
     local half = QuestLog.ITEM / 2
-    if frame:IsShown() and top and box.ForEachFrame then
+    if frame:IsShown() and panel:IsShown() and top and box.ForEachFrame then
         local edge = mirrored and box:GetLeft() or box:GetRight()
         box:ForEachFrame(function(element)
             local row, middle = element.row, select(2, element:GetCenter())
@@ -934,7 +982,7 @@ end
 -- room, at the window's side (Side), in the room of its edge (QuestLog.EDGE); on the screen alone at the other, the
 -- list stands too close to that one (Room). There a list that fits leaves the mouse wheel to the game (its camera).
 local function Scroller()
-    local long = box.HasScrollableExtent and box:HasScrollableExtent() and true or false
+    local long = not QuestLog.Folded() and box.HasScrollableExtent and box:HasScrollableExtent() and true or false
     box:EnableMouseWheel(full or long)
     local shown = frame:IsMouseOver() and long
     if shown then
@@ -999,9 +1047,33 @@ local function Resorted()
     QuestLog.Refresh()
 end
 
--- The title's tip: how the quests are sorted, and how a click sorts them.
+-- Folded (store.questLogFolded): only its title bar stays, nothing else of it takes the mouse.
+function QuestLog.Folded()
+    return ns.store.questLogFolded and true or false
+end
+
+-- What it shows under its title bar, and its background: as it is folded and in which look (Dress).
+local function Body()
+    local whole = not QuestLog.Folded()
+    panel:SetShown(whole)
+    back:SetShown(full and whole)
+    frame:EnableMouse(full and whole)
+end
+
+-- Folded (on) or not, kept, drawn anew.
+function QuestLog.Fold(on)
+    if (on and true or false) == QuestLog.Folded() then return end
+    ns.store.questLogFolded = on or nil
+    Body()
+    QuestLog.Refresh()
+end
+
+-- The title's tip: how the quests are sorted, what a click does, there and beside it.
 local function SortedTip() return QuestLog.TEXT.sorted:format(QuestLog.TEXT.sorts[QuestLog.Sort()]:lower()) end
-local function NextTip() return QuestLog.TEXT.sortNext:format(QuestLog.TEXT.sorts[Next()]:lower()) end
+local function NextTip()
+    return QuestLog.TEXT.sortNext:format(QuestLog.TEXT.sorts[Next()]:lower()) .. " "
+        .. (QuestLog.Folded() and QuestLog.TEXT.unfold or QuestLog.TEXT.fold)
+end
 
 -- Its first place in each look, from the screen's top left (Dress).
 local FIRST = {
@@ -1025,6 +1097,7 @@ function QuestLog.Build()
         close = function() ns.Guarded(Close) end,
         titleClick = function() ns.Guarded(Resorted) end,
         titleTip = { SortedTip, NextTip },
+        barClick = function() ns.Guarded(QuestLog.Fold, not QuestLog.Folded()) end,
         bare = function() return not full end, -- on the screen alone: no pin, no close button
         usable = function() return not InCombatLockdown() end, -- its items cannot follow it in a fight
         lifted = function() ns.Guarded(Lifted) end,
@@ -1111,6 +1184,7 @@ function QuestLog.Build()
     end
     panel:SetScript("OnSizeChanged", ns.Guard(Sized))
     handle:Place() -- where it was left; at its first place and size if it never was moved
+    Body()
     pinButton = handle.own and handle.own[1]
     PinLook()
     return frame
@@ -1147,7 +1221,7 @@ function QuestLog.Refresh()
     QuestLog.Details()
     Scroller()
     seat()
-    Tick(QuestLog.Sort() == "proximity")
+    Tick(QuestLog.Sort() == "proximity" and not QuestLog.Folded())
 end
 
 -- The player walked on: drawn anew once the nearest quests come in another order.
@@ -1163,9 +1237,8 @@ local function Dress(on)
     on = on and true or false
     if on ~= full then stale = true end
     full = on
-    back:SetShown(on)
+    Body()
     frame:SetFrameStrata(on and "DIALOG" or "LOW") -- the full map stands in the layer HIGH (Core's Edge)
-    frame:EnableMouse(on)
     handle:Use(KEY[on], FIRST[on])
     handle:Refresh()
 end

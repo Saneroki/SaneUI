@@ -63,6 +63,7 @@ local Core = SaneUI.Core
 --          search = function(text) end, -- what is typed into its search box, at every change ("": none)
 --          titleClick = function() end, -- without search: what a click on its title does (a drag moves it still)
 --          titleTip = { title, text },  -- its title's tip (each words, or a function asked at each showing)
+--          barClick = function() end,   -- what a click on its title bar beside its title does (a drag moves it still)
 --          bare = function() end,       -- its title bar without its buttons right now? (the quest log on the
 --                                       -- screen alone has none)
 --          help = function() end,       -- the question mark on its full screen: a tour of what it shows
@@ -735,12 +736,19 @@ local function Bar(window)
         usable = function() return window:Draggable() end,
         started = function()
             window.moving = true
+            bar.dragged = true
             if options.lifted then Core.Safe("window", options.lifted) end
             -- Outside Edit Mode a drag docks only where a screen edge is not (the middle), or not at all.
             if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil, options.insets) end
         end,
         stopped = function() Moved(window) end,
     })
+    if options.barClick then
+        bar:SetScript("OnMouseDown", Core.Guard("window", function() bar.dragged = false end))
+        bar:SetScript("OnMouseUp", Core.Guard("window", function(_, mouse)
+            if mouse == "LeftButton" and not bar.dragged and bar:IsMouseOver() then Core.Safe("window", options.barClick) end
+        end))
+    end
     find:RegisterForDrag("LeftButton")
     find:SetScript("OnDragStart", Core.Guard("window", function()
         find.dragged = true

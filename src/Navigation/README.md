@@ -154,14 +154,16 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   its buttons, only the list over the game, clicked through but its title bar and its words; its close button
   takes it out of both. Its title bar says how many quests you have of how many you may, and how they are sorted:
   *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
-  Elite, Group, Dungeon and the like; the rest Normal); a click there sorts them the next way, kept. Your quests
+  Elite, Group, Dungeon and the like; the rest Normal); a click on those words sorts them the next way, kept. **A click
+  on the title bar beside them hides the list,** so that only the title bar stays, and shows it again, kept. Your quests
   with their level, no mark before them and no tick after them, their
   objectives under them: over the full map all of them, the done ones grey; on the screen alone only those still
   to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
   than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
-  left). **A click on a quest puts the game's map pin on its objective, so the golden line leads you there,** leads
-  the arrow to the quest and moves the map there (its question mark on the map, or the middle of the area where its
-  foes are), at the zoom it has. Shift and a click tracks it. **The item a quest wants used** (the one the game's
+  left). **A click on a quest shows its objectives, its rewards and its story below the list,** or takes them away
+  again, leads the arrow to it and moves the map to its objective (its question mark on the map, or the middle of the
+  area where its foes are), at the zoom it has. **A double click puts the game's map pin there, so the golden line
+  leads you there.** Shift and a click tracks it. **The item a quest wants used** (the one the game's
   tracker shows) stands at the far end of its row: a click uses it, in a fight too. In a fight the items stay where
   they stood and follow once it is over; over the full map none shows in a fight, as the map may close then.
   **On the screen's right half the log mirrors itself:** its title and words right aligned, the items at the left.
@@ -171,8 +173,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the map shows its text too. A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out,
   each with its giver's mark (the yellow exclamation mark, grey for a quest too low, the red question mark for one
   for later) and a red X that takes it out again; below what the data knows of it: why it is not for you yet,
-  its level, who gives and takes it, its objectives and rewards. A click on one puts the map pin at its giver and
-  moves the map there.
+  its level, who gives and takes it, its objectives and rewards. A click on one moves the map to its giver, a double
+  click puts the map pin there.
   They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
@@ -199,7 +201,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
   terrain, the open sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on
   the continents. The painted map does not cover the isle yet: *Atlas* shows the terrain there.
-- **Routes:** put the game's map pin (a double click, Ctrl and a click, or a click on a quest in the quest log; Speed Leveling's guide puts it on its places by itself) and a golden line leads you there from where you stand,
+- **Routes:** put the game's map pin (a double click, on a quest in the quest log too, or Ctrl and a click; Speed Leveling's guide puts it on its places by itself) and a golden line leads you there from where you stand,
   pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
   into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
   city in a mountain, a building's storeys), and by the flights your character has found where that is quicker:
@@ -441,8 +443,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   built again on `QUEST_LOG_UPDATE` once a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
   has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
   screen's half its middle is in; on the screen alone the other side, `Margin`); a click: the quest super-tracked,
-  the map pin at `Where` (the game's quest on a map, `GetQuestsOnMap`; a preview's giver) through `PinView.Drop`, and
-  the map there through `Canvas.LookAt`, its zoom kept. On the screen's right half (`Sided`, from Core's `docked`
+  the map at `Where` (the game's quest on a map, `GetQuestsOnMap`; a preview's giver) through `Canvas.LookAt`, its zoom
+  kept, and its text in or out (`QuestLog.Text`); the button's `OnDoubleClick` (the game sends the second click there,
+  after the first's `OnClick`): the map pin there through `PinView.Drop`. Folded (`store.questLogFolded`, by Core's
+  `barClick` beside the title; `QuestLog.Fold`, `Body`): the panel and the background away, the frame without the
+  mouse, no ticker, no items; a quest's text asked for opens it again. On the screen's right half (`Sided`, from Core's `docked`
   wherever it was put) every row is laid out from the right (`Draw`'s near and far), the title by `window:TitleAt`.
   **The quests' items** (`GetQuestLogSpecialItemInfo`, as the game's tracker; `Special`): `SecureActionButtonTemplate`
   buttons of type `item` on a tray of their own on `UIParent` (the game protects a secure button's parent, and the
@@ -450,7 +455,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   frame after a refresh, a scroll or a move; out of a fight only: `Core.AfterCombat`). While the log is over the full
   map the tray is hidden in a fight by the game's state driver; it is out of sight while the log is carried (Core's
   `lifted`), and the log is not moved in a fight (`usable`).
-  A quest's text from `GetQuestLogQuestText`
+  A quest's text from `GetQuestLogQuestText`, its rewards by the quest's ID (`GetQuestLogRewardXP`,
+  `GetQuestLogRewardMoney`, `GetNumQuestLogRewards`, `GetQuestLogRewardInfo`, `GetNumQuestLogChoices`,
+  `GetQuestLogChoiceInfo`: no quest chosen for them), read only while the text shows,
   with its buttons, shown only once asked for (`open`: the menu's *Quest Details*, a click on its pin); abandon
   after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map (their
   details window is opened by the game's panel manager, which our call would leave tainted).
@@ -1018,7 +1025,8 @@ Tests: `dev/tests/navigation.lua`.
 - **2026-10-30, the quest log leaner, its items, a click for the pin:** no question mark before a quest, no tick
   after it, its title only the count and the sorting, rows closer to the screen's edge (pinned too its list and
   title); the items of quests at the far end of their rows, secure buttons on a tray of their own; mirrored on the
-  screen's right half; a click on a quest puts the game's map pin there (was a double click), so the route leads there.
+  screen's right half. Same day: a click on a quest shows its objectives, rewards and story or takes them away, a
+  double click puts the map pin there; a click on the title bar beside its words hides the list.
 - **2026-10-29, the quest log sorted, two looks:** its title bar says the quests of how many and the sorting
   (Proximity first, Level, Zone, Type), a click there sorts the next way; no *Complete* at a quest's right, a done
   quest's turn in kept as an objective; pinned on the screen alone at a place of its own (the screen's top left

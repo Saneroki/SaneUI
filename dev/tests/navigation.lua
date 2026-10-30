@@ -2277,7 +2277,8 @@ do
     local sortButton = QuestLog.handle.bar.find
     GameTooltip._lines = nil
     sortButton._scripts.OnEnter(sortButton)
-    check(GameTooltip._text == "Sorted by proximity" and GameTooltip._lines and GameTooltip._lines[1] == "A click sorts them by level.",
+    check(GameTooltip._text == "Sorted by proximity" and GameTooltip._lines
+        and GameTooltip._lines[1] == "A click sorts them by level. A click beside these words hides the list.",
         "its title's tip: how they are sorted, how a click sorts them")
     sortButton._scripts.OnLeave(sortButton)
     questDistance[7] = 50
@@ -2320,12 +2321,13 @@ do
     local u, v = Coords.MapToPlane(1429, 0.4, 0.4, Coords.PlaneOf(1429))
     waypoint = nil
     rows[2]._scripts.OnClick(rows[2], "LeftButton")
-    check(focused == 7 and full.map == Coords.PlaneOf(1429) and near(full.u, u) and near(full.v, v)
+    check(focused == 7 and not waypoint and full.map == Coords.PlaneOf(1429) and near(full.u, u) and near(full.v, v)
         and full.k == was.k and not full.follow,
-        "a click: the game's arrow leads to it, the map moves to its objective at the zoom it has")
+        "a click: the game's arrow leads to it, the map moves to its objective at the zoom it has; no map pin")
+    rows[2]._scripts.OnDoubleClick(rows[2], "LeftButton")
     check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4),
-        "and the game's map pin on its objective, for the route to lead there")
-    check(not rows[2]._scripts.OnDoubleClick, "no double click of its own: it would only say the same again")
+        "a double click: the game's map pin on its objective")
+    QuestLog.Text(nil)
     waypoint = saved
     full:Show(was.map, was.u, was.v, was.k)
     full.follow = was.follow
@@ -2432,7 +2434,35 @@ do
     end
     local said = Story()
     local details = said and said._parent._parent._parent
-    check(not (details and details._shown), "a click shows no text below the list")
+    check(not (details and details._shown), "no text below the list at first")
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    said = Story()
+    details = said and said._parent._parent._parent
+    check(details and details._shown and said._text:find("Quest Objectives", 1, true), "a click: its text below the list")
+    rows = logBox:Draw()
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    check(not details._shown, "a click again: away")
+    rows = logBox:Draw()
+    -- Its rewards, as the game has them, in its text.
+    GetQuestLogRewardXP = function() return 450 end
+    GetQuestLogRewardMoney = function() return 1250 end
+    GetCoinTextureString = function(money) return money .. " coins" end
+    GetNumQuestLogRewards = function() return 1 end
+    GetQuestLogRewardInfo = function(_, quest) return quest == 7 and "Wolf Cloak" or nil, 133, 2 end
+    GetNumQuestLogChoices = function() return 2 end
+    GetQuestLogChoiceInfo = function(index) if index == 1 then return "Boots", 134, 1 end return nil end
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    local words = Story()._text
+    check(words:find("Rewards", 1, true) and words:find("450 experience", 1, true) and words:find("1250 coins", 1, true)
+        and words:find("|T133:16:16|t Wolf Cloak x2", 1, true) and words:find(QuestLog.TEXT.choices, 1, true)
+        and words:find("|T134:16:16|t Boots", 1, true) and not words:find("Boots x", 1, true),
+        "its rewards in its text: experience, coin, its things, what to choose from; a thing not known yet left out")
+    check(words:find("Quest Objectives", 1, true) < words:find("Rewards", 1, true)
+        and words:find("Rewards", 1, true) < words:find("The story of quest", 1, true), "objectives, rewards, then its story")
+    GetQuestLogRewardXP, GetQuestLogRewardMoney, GetCoinTextureString = nil, nil, nil
+    GetNumQuestLogRewards, GetQuestLogRewardInfo, GetNumQuestLogChoices, GetQuestLogChoiceInfo = nil, nil, nil, nil
+    QuestLog.Text(nil)
+    rows = logBox:Draw()
     rows[2]._scripts.OnClick(rows[2], "RightButton")
     local items = {}
     for _, item in ipairs(W.menus[#W.menus]) do if item.text then items[item.text] = item end end
@@ -2858,6 +2888,30 @@ end)()
     check(not log.titleInset, "its title as every title's again")
     pin._scripts.OnClick(pin)
     check(not ns.QuestLog.Pinned() and ObjectiveTrackerFrame._parent == UIParent, "unpinned: the game's quest tracker back")
+    -- A click on the title bar beside its words folds the list away, and opens it again.
+    do
+        local line, panel, back = log.bar, box._parent, nil
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == log.frame and widget._kind == "Texture" and widget._shown and widget._layer == nil then back = back or widget end
+        end
+        local function Click()
+            line._mouseOver = true
+            line._scripts.OnMouseDown(line, "LeftButton")
+            line._scripts.OnMouseUp(line, "LeftButton")
+            line._mouseOver = false
+        end
+        Click()
+        check(ns.QuestLog.Folded() and ns.store.questLogFolded and not panel._shown and not log.frame._mouse and log.bar._shown,
+            "beside the words: only its title bar stays, nothing else takes the mouse; kept")
+        check(log.options.title == "|cffffffff2/25|r Proximity", "its title goes on telling")
+        ns.QuestLog.Text(7)
+        check(not ns.QuestLog.Folded() and panel._shown and log.frame._mouse, "a quest's text asked for: open again")
+        ns.QuestLog.Text(nil)
+        Click()
+        Click()
+        check(not ns.QuestLog.Folded() and not ns.store.questLogFolded and panel._shown and log.frame._mouse,
+            "and again: back as it was")
+    end
     W.SmallAndBack(function()
         check(not log.frame._shown, "unpinned: it goes with the full map")
     end)

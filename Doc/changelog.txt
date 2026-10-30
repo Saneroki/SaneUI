@@ -97,9 +97,11 @@ The bigger changes of each version, newest first.
 - Speed Leveling: the map pin goes on each place your guide sends
   you to, so the golden line on the map leads you there.
 - Quest log: sorted by proximity, nearest first; click its title
-  to sort by level, zone or type. A click on a quest puts the map
-  pin on it, so the golden line leads you there. Quest items stand
-  beside their quests, on the right half of the screen it mirrors.
+  to sort by level, zone or type, click beside it to hide the list.
+  A click on a quest shows its objectives and rewards, a double click
+  puts the map pin on it, so the golden line leads you there. Quest
+  items stand beside their quests, on the right half of the screen
+  it mirrors.
   Pinned, it takes the place of the game's quest tracker: in its
   own spot (top left at first), clicked through, showing only what
   is still to do.

@@ -3,8 +3,22 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 430 (windows), 269 (data in the game), 707 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 178 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 714 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 178 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the quest log's click and minimize (Saneroki, 2026-10-30)
+Saneroki, on the click of the same day: a double click for the marker is fine after all; a click could toggle the quest's
+information with its rewards and objective; a click on the title row but not on its words minimizes the log.
+- **Clicks** (`QuestLog.lua`): `Look` toggles the quest's text (`QuestLog.Text`), arrow and map as before; the row's
+  `OnDoubleClick` is back and puts the map pin (`DoubleClicked`, `Pin`). Previews the same.
+- **Its text:** titled objectives, then `Rewards` (experience, coin, things, what to choose from), then the story. The
+  game's calls take the quest's ID, so no quest is chosen in the game's own log for them, and they run only while the
+  text shows. A thing the game does not know yet is left out until the log is read again.
+- **Folded:** `QuestLog.Fold`, kept in `store.questLogFolded`, for both looks; `Body` takes the panel and background
+  away and the mouse off the frame. No ticker, no items meanwhile. A quest's text asked for (a pin on the map, its
+  giver's preview) opens it again. The title's tip says so.
+- **Core's window:** the option `barClick`, a click on the title bar beside the title; a press that was a drag is none.
+- Tests: `dev/tests/navigation.lua` 714 checks, `dev/tests/window.lua` 440.
 
 ### Speed Leveling: the map pin on the guide's place (Saneroki, 2026-10-30)
 Saneroki: yes, the guide should put the map pin on a task as it becomes active, so that the route leads there.
