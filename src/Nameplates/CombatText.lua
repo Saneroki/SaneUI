@@ -18,10 +18,11 @@ local _, ns = ...
 --  feet, where the camera keeps it (CombatText.SELF; Saneroki, 2026-10-23).
 --  Your damage taken has a minus.
 --
---  Numbers in Sane UI's own font, Kalam Bold, outlined. What did no harm is a
---  pencil drawing in white, an immunity's in bright red (dev/tools/combat-art:
---  miss, dodge, parry, block, evade, immune; Art/combat-<name>.blp), larger than the numbers so it reads at a glance;
---  what has none (resist, absorb, reflect, interrupt) is the game's word.
+--  Numbers in Sane UI's own font, Kalam Bold, outlined. What did no harm is
+--  the game's word; with *Drawings for what did no harm* on a pencil drawing
+--  in white, an immunity's in bright red (dev/tools/combat-art: miss, dodge,
+--  parry, block, evade, immune; Art/combat-<name>.blp), larger than the numbers so it reads at a glance;
+--  what has none (resist, absorb, reflect, interrupt) stays the word.
 --
 --  A number is a small frame of ours with one text and one picture, from a
 --  pool, on its host (a dress, so it follows the plate's place, size and
@@ -33,9 +34,12 @@ local _, ns = ...
 --  Sizes as the game's own combat feedback has them: a critical hit or heal
 --  half again as large, a glancing blow smaller. Three colours: physical
 --  damage (auto attacks) white, spell damage red, heals green. In a
---  fight the game may hide the event from addons (secret values): a hidden
---  amount is written as it is, in the game's abbreviation, and a hidden kind
---  as a plain white number.
+--  fight the game may hide the event from addons (secret values), and an
+--  addon may not compare what is hidden, only write it into a text: a hidden
+--  amount is written as it is, in the game's abbreviation; a hidden school
+--  picks its colour inside the text (Hued); a hidden kind is a plain number,
+--  in its school's colour over a foe, where it is damage, and white
+--  elsewhere, where it may be a heal.
 --
 --  The game's own combat text is switched off by its CVars while ours shows
 --  (CombatText.CVARS, *Instead of the game's*): its numbers over units while
@@ -91,6 +95,7 @@ CombatText.WHITE = { 1, 1, 1 }
 CombatText.SPELL = { 1, 0.1, 0.1 }
 CombatText.HEAL = { 0.1, 1, 0.1 }
 CombatText.PHYSICAL = 1 -- the physical school's bit (the game's SCHOOL_MASK_PHYSICAL)
+CombatText.SHADE = "2550e-" -- a hidden school's green and blue, with the school as the exponent (Hued)
 -- What a hit of nothing says (UNIT_COMBAT's flags).
 CombatText.NOTHING = { ABSORB = true, BLOCK = true, RESIST = true }
 
@@ -133,9 +138,17 @@ end
 -- The colour of damage of a school (its bits): white for physical alone or where it cannot be told, red for any
 -- spell school.
 local function School(mask)
-    mask = Plain(mask)
     if type(mask) ~= "number" or mask == 0 or mask == CombatText.PHYSICAL then return CombatText.WHITE end
     return CombatText.SPELL
+end
+
+-- A text in the colour of a school the game hides. A hidden number cannot be compared or looked up, only written into
+-- a text, but such a text is read as a number again: as the exponent of 2550 the physical school (1) makes 255 and
+-- every spell school (2 and up) 25 or less, in hex the green and blue of white or of red. No school told (0) comes out
+-- the palest pink: that one has too many digits and is cut to two.
+function CombatText.Hued(form, value, school)
+    local shade = ("%02x"):format(CombatText.SHADE .. school)
+    return ("|cffff%.2s%.2s" .. form .. "|r"):format(shade, shade, value)
 end
 
 local function Release(number)
@@ -226,10 +239,21 @@ function CombatText.Show(host, form, value, color, size, critical)
     Play(number, critical)
 end
 
--- What did no harm, over a host: its drawing, or the game's word where there is none, its file is missing or the
--- drawings are switched off (*Drawings for what did no harm*).
+-- Damage over a host, in its school's colour; a hidden school's goes into the text, white where the game refuses that.
+local function Damage(host, form, value, school, size, critical)
+    if not Core.Secret(school) then
+        CombatText.Show(host, form, value, School(school), size, critical)
+        return
+    end
+    local ok, text = pcall(CombatText.Hued, form, value, school)
+    if ok then form, value = "%s", text end
+    CombatText.Show(host, form, value, CombatText.WHITE, size, critical)
+end
+
+-- What did no harm, over a host: the game's word, or with the drawings switched on (*Drawings for what did no harm*)
+-- its drawing, where it has one and the file is there.
 function CombatText.Nothing(host, kind)
-    local name = (ns.options or {}).combatPictures ~= false and CombatText.PICTURES[kind] or nil
+    local name = (ns.options or {}).combatPictures and CombatText.PICTURES[kind] or nil
     if not name then
         CombatText.Show(host, "%s", Word(kind), CombatText.WHITE, CombatText.SMALL)
         return
@@ -254,8 +278,9 @@ local function Took(host, mine, kind, flags, amount, school)
     local options = ns.options or {}
     kind, flags = Plain(kind), Plain(flags)
     local plain = Plain(amount)
-    if kind == nil then -- the game hides what it was: its amount as it is
-        CombatText.Show(host, "%s", Amount(amount), CombatText.WHITE, 1)
+    if kind == nil then -- the game hides what it was: its amount as it is, damage only over a foe
+        local foe = host.unit and Core.Ask(UnitCanAttack, "player", host.unit) == true
+        Damage(host, "%s", Amount(amount), foe and school or CombatText.PHYSICAL, 1)
     elseif kind == "WOUND" then
         if plain == 0 then
             CombatText.Nothing(host, CombatText.NOTHING[flags] and flags or "MISS")
@@ -265,7 +290,7 @@ local function Took(host, mine, kind, flags, amount, school)
         local size = critical and CombatText.CRIT or flags == "GLANCING" and CombatText.SMALL or 1
         local form = mine and "-%s" or "%s"
         if flags == "BLOCK_REDUCED" then form = Core.Word("COMBAT_TEXT_BLOCK_REDUCED", "%s (blocked)") end
-        CombatText.Show(host, form, Amount(amount), School(school), size, critical)
+        Damage(host, form, Amount(amount), school, size, critical)
     elseif kind == "HEAL" then
         if options.combatHeals == false then return end
         local critical = flags == "CRITICAL"

@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: what did no harm in words by default; a hidden school's colour in the text (Saneroki, 2026-10-30)
+Saneroki: a setting for whether a parry, dodge, immune, block and so on is an icon or text, by default text in both
+Accountwide and Speedleveling; at least in Retail auto attacks and spell attacks both white, spells should be red.
+- **Words by default:** `combatPictures` (*Drawings for what did no harm*) is off by default, and only `true` shows a
+  drawing (`CombatText.Nothing` read "on unless false"). Neither shared profile sets it, so both have the word, as
+  Character specific has. Its tip and *Over nameplates*' tip say so.
+- **Why all white:** nothing but physical damage was to be white, yet `School` and `Took` made every value the game
+  hides white, and the only other way to white is a school of 0 or 1. The newest export marks no value of `UNIT_COMBAT`
+  as hidden, in either game, and its documentation is the same in both, so which of them Retail hides is inferred: a
+  spell school has no other way to white, while on 2026-10-23 Forever's numbers had each school's own colour.
+- **A hidden school's colour:** an addon may not compare a hidden value or look it up, and curves and number formatters
+  refuse it from addons; `format` and `..` are open. So `CombatText.Hued` writes the school as an exponent
+  (`CombatText.SHADE`): 255 for physical, 25 or less for a spell school, in hex the green and blue of white or of a red,
+  the colour then inside the text (with its minus or its blocked form). Where the game refuses, white as before. The
+  same for both games, no branch by game.
+- **A hidden kind:** by its school over a foe, where it is damage; white over a friend or your character, where it may be
+  a heal.
+- Tests: `dev/tests/nameplates.lua` 291 checks (the word by default, a hidden school in every mask, a critical hit, a
+  partly blocked blow and a blow on you with one, a hidden kind over a foe, a friend and you).
+
 ### Inventory: the alts made like the bags, an item size, narrow windows, the bags' strip (Saneroki, 2026-10-30)
 Saneroki: the list of alts a dropdown to save a column; the collapsing of categories and the bag/category column like the
 bags'; the alts window given the bags' functions and settings where it makes sense; a slider in both windows that scales

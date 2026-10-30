@@ -68,13 +68,13 @@ ns.TEXT = {
     sizeTip = "How large nameplates are within 10 yards.",
     combatHeader = "Combat text",
     combatText = "Over nameplates",
-    combatTextTip = "What a creature or player takes rises over its nameplate and fades: auto attacks and physical damage in white, spell damage in red, heals in green, critical hits larger; a miss, dodge, parry, block, evade or immunity as a drawing. The game says what a unit took, not from whom: in a group it is everybody's damage.",
+    combatTextTip = "What a creature or player takes rises over its nameplate and fades: auto attacks and physical damage in white, spell damage in red, heals in green, critical hits larger; a miss, dodge, parry, block, evade or immunity in words. The game says what a unit took, not from whom: in a group it is everybody's damage.",
     combatSelf = "Over your character",
     combatSelfTip = "The same for what you take, rising from about your character's feet: damage with a minus.",
     combatHeals = "Heals",
     combatHealsTip = "Heals in green with a plus.",
     combatPictures = "Drawings for what did no harm",
-    combatPicturesTip = "A miss, dodge, parry, block, evade or immunity as a pencil drawing. Off: as the game's word (\"Miss\", \"Dodge\", ...).",
+    combatPicturesTip = "A miss, dodge, parry, block, evade or immunity as a pencil drawing instead of the game's word (\"Miss\", \"Dodge\", ...).",
     combatGame = "Instead of the game's",
     combatGameTip = "The game's own combat text is switched off while ours shows: its numbers over units, and its scrolling text about you (with it its notes on entering a fight, low health, reputation and honor). Off: both show.",
 }
@@ -100,7 +100,7 @@ local OPTIONS = {
     { key = "combatText", default = true, text = ns.TEXT.combatText, tip = ns.TEXT.combatTextTip, header = ns.TEXT.combatHeader },
     { key = "combatSelf", default = true, text = ns.TEXT.combatSelf, tip = ns.TEXT.combatSelfTip },
     { key = "combatHeals", default = true, text = ns.TEXT.combatHeals, tip = ns.TEXT.combatHealsTip },
-    { key = "combatPictures", default = true, text = ns.TEXT.combatPictures, tip = ns.TEXT.combatPicturesTip },
+    { key = "combatPictures", default = false, text = ns.TEXT.combatPictures, tip = ns.TEXT.combatPicturesTip },
     { key = "combatGame", default = true, text = ns.TEXT.combatGame, tip = ns.TEXT.combatGameTip },
     { key = "combatFoundCVars", default = {} }, -- the game's combat text CVars as they were before ours (CombatText.lua)
 }

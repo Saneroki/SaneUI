@@ -191,9 +191,7 @@ colour.
   shading, centred in a square with a little room round it, thickened a little so it reads at 16 to 18 units.
   Made large enough for its largest use (256 x 256), its smaller mipmaps thickened for their size, so one texture
   serves a row and a slot. In an empty slot, a category's drawing is faded to a grey, three quarters of the slot
-  (0.3; Saneroki, 2026-10-23: bigger and darker than first). An empty slot of the bags' strip says what goes there the
-  same way, a little larger and stronger (Saneroki, 2026-10-30: a pouch for a bag, the mortar for the reagent bag, a
-  key for a keyring without keys).
+  (0.3; Saneroki, 2026-10-23: bigger and darker than first).
 - **The words of the bags, the bank and the alts** are 1.2 times their first size (Saneroki, 2026-10-23: to be
   read); the heads, lines and the sidebar grow with them.
 - **The podium** (the guild's race): steps drawn as an artist's pencil sketch of real blocks in perspective (each

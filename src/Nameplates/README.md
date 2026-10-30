@@ -97,10 +97,11 @@ fails, every plate is the game's own again.
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
   (Kalam Bold, outlined): auto attacks and physical damage in white, spell damage in red, a critical hit larger with a short
-  swell, a glancing blow smaller, heals in green with a "+". A miss, dodge, parry, block, evade or immunity is a
-  pencil drawing instead of a word, in white (an arrow flying over a target; a fighter bending far back
+  swell, a glancing blow smaller, heals in green with a "+". What did no harm is the game's word in white ("Miss", "Parry",
+  ...); with *Drawings for what did no harm* on (off by default) a miss, dodge, parry, block, evade or immunity is a
+  pencil drawing instead, in white (an arrow flying over a target; a fighter bending far back
   under an arrow; crossed swords with sparks; a shield with an arrow breaking on it; a fighter in a wide stance, his
-  head swung aside from an arrow flying up past it) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt is the game's word, and every one of them with *Drawings for what did no harm* off. Hits at once stand
+  head swung aside from an arrow flying up past it) and an immunity in bright red (a bubble with an "i"); a resist, absorb, reflect or interrupt stays the word. Hits at once stand
   side by side. The game says what a unit took, not from whom, so in a group it is everybody's damage on it.
 - **Over your character:** the same for what you take, rising from about your character's feet, below the middle of
   the screen, where your character stands (your character has no plate in this client): damage with a "-". While ours shows, the
@@ -330,12 +331,17 @@ fails, every plate is the game's own again.
   `CombatText.TIME` and fades over its last `CombatText.FADE`, a critical one swells to `CombatText.SWELL` and back;
   `OnFinished` (guarded) returns it to the pool, as does the dress taken off (`CombatText.Clear`). Lanes
   `CombatText.LANES` in turn, at most `CombatText.MOST` a host (the oldest goes). What did no harm
-  (`CombatText.PICTURES`: MISS, DODGE, PARRY and DEFLECT, BLOCK, EVADE, IMMUNE; a WOUND of 0 is a miss, or a block
-  by its flags) is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (30) square, white or tinted by `CombatText.TINTS`
-  (`SetVertexColor`: the immunity bright red); the word from
-  `CombatFeedbackText` where it has none or `SetTexture` finds no file. Colours, three only: physical white (school mask 1, or none told), any spell school red
+  (a WOUND of 0 is a miss, or a block by its flags) is the word from `CombatFeedbackText`; with the setting `combatPictures`
+  on (off by default, set by neither shared profile) and for `CombatText.PICTURES` (MISS, DODGE, PARRY and DEFLECT, BLOCK, EVADE, IMMUNE)
+  it is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (30) square, white or tinted by `CombatText.TINTS`
+  (`SetVertexColor`: the immunity bright red), the word again where `SetTexture` finds no file. Colours, three only: physical white (school mask 1, or none told), any spell school red
   (`CombatText.SPELL`), heals green (both the game's combat text colours); over you with a "-". Amounts in the game's abbreviation (`AbbreviateNumbers` with `Text.STEPS`), written with
-  `SetFormattedText`; a hidden kind or amount (secret values) is written as it is, white, nothing compared. The
+  `SetFormattedText`. What the game hides (secret values) is never compared, only written into a text, the one thing
+  open to addons (`format`, `..`), and a curve or number formatter refuses it from them. A hidden amount is written as it is. A hidden
+  school picks its colour inside the text (`CombatText.Hued`): written as the exponent in `CombatText.SHADE` it reads as
+  255 for the physical school, 25 or less for a spell school, in hex the green and blue of `|cffffffff` or of a red; where the game
+  refuses that, white. A hidden kind is a plain number: by its school over a foe (`UnitCanAttack`), where it is damage, white
+  over a friend or your character, where it may be a heal, and neither drawing nor word can show. The
   game's CVars (`CombatText.CVARS`): `floatingCombatTextCombatDamage_v2` and `...CombatHealing_v2` at 0 while *Over
   nameplates* and *Instead of the game's* are on, `enableFloatingCombatText` at 0 while *Over your character* and
   *Instead of the game's* are on; else (and standing down) at their defaults; never in a fight (then at

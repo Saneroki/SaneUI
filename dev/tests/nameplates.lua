@@ -1083,6 +1083,15 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
     CombatText.Update() -- as at a login: ours set (a logout above, if any, put the game's back)
     check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "0"
         and CVar("enableFloatingCombatText") == "0", "the game's own combat text off while ours shows")
+    check(ns.options.combatPictures == false, "what did no harm: no drawings by default, in both profiles (none sets them)")
+    W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
+    local parry = dress.numbers[1]
+    check(parry.text:IsShown() and not parry.picture:IsShown() and parry.text._text == "parry"
+        and parry.text._color[2] == 1, "a parry by default: the game's word, white")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 0, 1)
+    check(dress.numbers[2].text._text == "Miss" and not dress.numbers[2].picture:IsShown(), "a hit of nothing by default: the word too")
+    CombatText.Clear(dress)
+    Core.Set(ns.name, "combatPictures", true) -- the drawings, from here on
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "CRITICAL", 1234, 4)
     local hit = dress.numbers and dress.numbers[1]
     check(hit and hit._parent == dress and hit.text._text[1].abbreviated == 1234 and hit.text._font[2] == CombatText.HEIGHT * CombatText.CRIT,
@@ -1193,6 +1202,67 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
     Core.Set(ns.name, "combatGame", false)
     check(CVar("floatingCombatTextCombatDamage_v2") == "0", "after that, switched off: left alone")
     Core.Set(ns.name, "combatGame", true)
+    Core.Set(ns.name, "combatPictures", false)
+
+    -- A school the game hides, as the game has it: written into a text it stays hidden, and nothing else works on it.
+    local hidden = {}
+    local function Hidden(value) return setmetatable({ secret = true, value = value }, hidden) end
+    local function Open(value)
+        if type(value) == "table" and value.secret then return value.value, true end
+        return value, false
+    end
+    hidden.__concat = function(a, b) return Hidden(Open(a) .. Open(b)) end
+    hidden.__lt = function() error("a hidden value compared") end
+    hidden.__eq = hidden.__lt
+    local format, abbreviate = string.format, AbbreviateNumbers
+    string.format = function(form, ...)
+        local values, told = { ... }, false
+        for index = 1, select("#", ...) do
+            local value, secret = Open(values[index])
+            values[index], told = value, told or secret
+        end
+        local text = format(form, unpack(values, 1, select("#", ...)))
+        return told and Hidden(text) or text
+    end
+    AbbreviateNumbers = function(value) return value end
+    local function Written(host) return host.numbers[#host.numbers].text._text[1].value end
+    CombatText.Clear(dress)
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", Hidden("1.2k"), Hidden(1))
+    check(Written(dress) == "|cffffffff1.2k|r", "a hidden school, physical: white")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 900, Hidden(8))
+    check(Written(dress) == "|cffff0000900|r" and dress.numbers[#dress.numbers].text._color[2] == 1,
+        "a hidden school, a spell (nature): red, in the text")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "CRITICAL", 900, Hidden(4))
+    check(dress.numbers[#dress.numbers].text._font[2] == CombatText.HEIGHT * CombatText.CRIT, "a hidden school loses nothing of a critical hit")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "BLOCK_REDUCED", 900, Hidden(4))
+    check(Written(dress) == "|cffff0000" .. Core.Word("COMBAT_TEXT_BLOCK_REDUCED", "%s (blocked)"):format("900") .. "|r",
+        "a blow partly blocked: its form inside the colour")
+    local reds = true
+    for mask = 2, 127 do
+        local red = CombatText.Hued("%s", "9", Hidden(mask)).value
+        reds = reds and red:find("^|cffff[01]%x[01]%x9|r$") ~= nil
+    end
+    check(reds and CombatText.Hued("%s", "9", Hidden(1)).value == "|cffffffff9|r", "every spell school red, physical alone white")
+    check(CombatText.Hued("%s", "9", Hidden(0)).value:find("^|cffff%x%x%x%x9|r$") ~= nil, "no school told: still a whole colour, not a broken one")
+    W.Fire("UNIT_COMBAT", "nameplate1", Hidden("WOUND"), Hidden(""), Hidden("7"), Hidden(32))
+    check(Written(dress) == "|cffff00007|r", "the kind hidden too, over a foe: damage, by its school")
+    local kept = units.nameplate1
+    units.nameplate1 = { friend = true }
+    CombatText.Clear(dress)
+    W.Fire("UNIT_COMBAT", "nameplate1", Hidden("HEAL"), Hidden(""), Hidden("7"), Hidden(32))
+    check(dress.numbers[1].text._text[1].value == "7" and dress.numbers[1].text._color[2] == 1, "over a friend it may be a heal: white")
+    units.nameplate1 = kept
+    W.Fire("UNIT_COMBAT", "player", Hidden("HEAL"), Hidden(""), Hidden("7"), Hidden(32))
+    local yours
+    for _, frame in ipairs(W.frames) do
+        if frame.numbers and frame ~= dress and frame.numbers[1] then yours = frame end
+    end
+    check(Written(yours) == "7" and yours.numbers[#yours.numbers].text._color[2] == 1, "over your character too")
+    W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, Hidden(32))
+    check(Written(yours) == "|cffff0000-42|r", "a hidden spell on you: red, with its minus")
+    string.format, AbbreviateNumbers = format, abbreviate
+    CombatText.Clear(dress)
+    CombatText.Clear(yours)
 end)()
 
 -------------------------------------------------------------------------------
