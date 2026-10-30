@@ -10,9 +10,11 @@ function Client.Install(W)
     local methods = W.methods
     function methods:SetMinMaxValues(low, high) self._min, self._max = low, high end
     function methods:SetValue(value) self._value = value end
-    function methods:SetStatusBarColor(r, g, b) self._barColor = { r, g, b } end
+    function methods:SetStatusBarColor(r, g, b, a) self._barColor = { r, g, b, a } end
     function methods:SetStatusBarTexture(texture) self._barTexture = texture end
     function methods:SetReverseFill(on) self._reverse = on end
+    function methods:SetFrameLevel(level) self._level = level end
+    function methods:GetFrameLevel() return self._level or 1 end
     function methods:GetStatusBarTexture()
         self._fill = self._fill or W.NewWidget("Texture", nil, self)
         return self._fill

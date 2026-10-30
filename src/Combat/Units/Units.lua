@@ -13,7 +13,8 @@ local _, ns = ...
 --  under a nameplate, a row while its unit is there, with that unit's name
 --  alone: your target's target under your target's frame, your focus's target
 --  under your focus's, your pet under yours. Under that on your own frame, while
---  they run, your cast and your breath (Cast.lua, Timers.lua).
+--  they run, your cast and the game's timers; your breath over its health bar
+--  (Cast.lua, Timers.lua).
 --
 --  Each frame and each row is the game's secure unit button
 --  (SecureUnitButtonTemplate): a click targets the unit, a right click opens

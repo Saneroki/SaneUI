@@ -16,8 +16,8 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 Your frame, your target's and your focus's are ours, in the look of a nameplate and green: the level and raid
 marker on the left, then the name (none on your own), the health and how much is left on the right. Under your
 target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours,
-your pet's. While you cast or the game counts down your breath, that is part of your frame too, in place of the
-game's bars. The game's action bars are clean: only the buttons that hold something, each its icon alone.
+your pet's. While you cast, that is part of your frame too; your breath lies over your health bar, in the game's
+bubbles, half see-through; both in place of the game's bars. The game's action bars are clean: only the buttons that hold something, each its icon alone.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -93,18 +93,20 @@ game's bars. The game's action bars are clean: only the buttons that hold someth
     name alone in the middle; the same under your focus's frame for your focus's target, and under your own frame
     for your pet while you have one (green). The frame's outline goes
     round both, a thin dark line between them. Click a row to target its unit, right click for its menu.
-  - **Your cast and your breath:** part of your own frame while they run, in the same outline, under your powers
-    and your pet's row. Your cast: the spell's icon and name, the seconds left at the right end, filling as it
+  - **Your cast and your breath:** part of your own frame while they run, in place of the game's. Your cast, in
+    the same outline, under your powers and your pet's row: the spell's icon and name, the seconds left at the right end, filling as it
     goes on and emptying for a channel, red with who did it when you are interrupted; a moment after it ends it
-    goes, so the frame does not jump between two casts. Under it your breath, and the game's other timers on you
-    (fatigue in deep water, feign death): what it counts and the seconds left. The game's cast bar and its bars at
-    the top of the screen stay away, the cast bar over the vehicle bar and the game's talents window too.
+    goes, so the frame does not jump between two casts. Your breath lies over your health bar, in the game's
+    bubbles and half see-through, so your health shows underneath, *Breath* and the seconds left in the middle. The
+    game's other timers on you (fatigue in deep water, feign death) stay bars under your cast, in the game's art for
+    each: what it counts and the seconds left. The game's cast bar and its bars at the top of the screen stay away,
+    the cast bar over the vehicle bar and the game's talents window too.
   - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
     tooltip; in a fight too. Your target's and focus's frames come and go with them.
   - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
     middle, your target right of it, your focus above your target. A frame or row whose unit is not there shows
     a sample there (your own, named *Target*, *Focus*, *Target's target*, *Focus's target* or *Pet*); the rows
-    move with their frames. Your frame shows a sample cast and breath too, to see how far it reaches then. The game's
+    move with their frames. Your frame shows a sample cast and breath too. The game's
     own Edit Mode boxes *Cast Bar* and *Timer Bars* only show the game's bars there, which stay away in play.
   - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
     target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
@@ -262,9 +264,12 @@ game's bars. The game's action bars are clean: only the buttons that hold someth
     (`UNIT_SPELLCAST_INTERRUPTED` of the cast's own number, `UNIT_SPELLCAST_CHANNEL_STOP` with who did it,
     `UNIT_SPELLCAST_EMPOWER_STOP` not completed): the broken art and `SPELL_INTERRUPTED_BY`. An empowered cast (Retail's)
     fills on to `GetUnitEmpowerHoldAtMaxTime`, a line at each stage's end (`GetUnitEmpowerStageDuration`). It respects
-    `GameRulesUtil.ShouldShowPlayerCastBar`. `Timers.lua` (`ns.UnitTimers`): `Timers.MOST` strips at `Units.POWER`,
-    filled by `MIRROR_TIMER_START`, `_STOP`, `_PAUSE` and `GetMirrorTimerInfo` (at the world's showing and whenever
-    they are set up anew), each following `GetMirrorTimerProgress` on its `OnUpdate`.
+    `GameRulesUtil.ShouldShowPlayerCastBar`. `Timers.lua` (`ns.UnitTimers`): your breath's strip over the health bar
+    (`face.breath`, in `face.over`: `Bar.Fit` rounds it as the health bar and shows it by its `on`; no background, a
+    level over the health and under the frame's words, the fill's alpha `Timers.SHEER`, the bar's own words over
+    them), `Timers.MOST` strips at `Units.POWER` for the other timers, each in the game's atlas (`Timers.ART`, as
+    its `MirrorTimerAtlas`), filled by `MIRROR_TIMER_START`, `_STOP`, `_PAUSE` and `GetMirrorTimerInfo` (at the
+    world's showing and whenever they are set up anew), following `GetMirrorTimerProgress` on its `OnUpdate`.
   - `Bar.lua` (`ns.UnitBar`): the nameplates' look rebuilt for a frame of one size: the fill and background
     masked by Core's caps (`Shape.CAP_LEFT`, `CAP_RIGHT`, a quarter of the height) or, while the row shows, by
     corner masks at the top alone (`Shape.CORNER`), the row's at its bottom; the border, rank line and the glow's
@@ -403,3 +408,5 @@ game's bars. The game's action bars are clean: only the buttons that hold someth
   rows' names centred (Saneroki).
 - **2026-10-30:** your cast and your breath as part of your frame, under it while active, the game's own bars hidden
   (Saneroki).
+- **2026-10-30:** your breath over your health bar instead, 50 % transparent so the health shows underneath, in the
+  bubble art of the game's own breath bar (Saneroki); the other timers stay under the frame, in the game's art too.

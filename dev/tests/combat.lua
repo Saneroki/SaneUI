@@ -530,13 +530,13 @@ do
         and player.face.rowShown and player.face.rowName._text == ns.TEXT.samples.pet,
         "and the rows under the frames too, named for what they stand for")
     check(player.face.cast._shown and player.face.cast.sample and player.face.cast.text._text == ns.TEXT.samples.cast
-        and player.face.timers[1]._shown and player.face.timers[1].label._text == ns.TEXT.samples.breath
+        and player.face.breath._shown and player.face.breath.label._text == ns.TEXT.samples.breath
         and not target.face.cast, "your cast and your breath as samples, on your own frame alone")
     check(not target.face.sample and target.face.name._text == "Kobold Miner", "a frame whose unit is there shows it")
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton],
         "after Edit Mode the unit watch shows it again, and its row")
-    check(not player.face.cast._shown and not player.face.cast.sample and not player.face.timers[1]._shown,
+    check(not player.face.cast._shown and not player.face.cast.sample and not player.face.breath._shown,
         "and your cast and breath only while they run")
     focus.face.rowButton:Hide() -- the game's unit watch: your focus has no target
     player.face.rowButton:Hide() -- nor you a pet
@@ -668,12 +668,18 @@ do
         check(not bar._shown, "where the game's rules take your cast bar away, ours too")
         GameRulesUtil, W.cast = nil, nil
 
-        local first, second = timers[1], timers[2]
+        local first, second, third, health = face.breath, timers[1], timers[2], face.health
+        check(first._level == health._level + 1 and first._level < face.top._level and not first.background._shown,
+            "your breath lies between your health and the frame's words, nothing behind its fill")
         W.mirrorLeft.BREATH = 60000
+        local height = Below()
         W.Fire("MIRROR_TIMER_START", "BREATH", 60000, 60000, -1, 0, "Breath")
         check(first._shown and first.label._text == "Breath" and first.left._text == "60" and first._max == 60
-            and first._barColor[3] == ns.UnitTimers.COLOURS.BREATH[3] and near(Below(), 2 * Units.POWER),
-            "your breath: under your power, what it is and the seconds left")
+            and first._barTexture == ns.UnitTimers.ART.BREATH and first._barColor[4] == ns.UnitTimers.SHEER
+            and near(Below(), height),
+            "your breath: over your health, in the game's bubbles, sheer, what it is and the seconds left; the frame no higher")
+        check(first._points[1][2] == health and first.ends[1]._texture == health.ends[1]._texture
+            and first.ends[2]._texture == health.ends[2]._texture, "and as big and as round as the health bar")
         W.mirrorLeft.BREATH = 41500
         first._scripts.OnUpdate(first, 0)
         check(first._value == 41.5 and first.left._text == "42", "going down as the game says")
@@ -683,13 +689,20 @@ do
         check(first._value == 41.5, "held while the game holds it")
         Casting("cast-6")
         W.Fire("MIRROR_TIMER_START", "EXHAUSTION", 30000, 60000, -1, 0, "Fatigue")
-        check(second._shown and second.label._text == "Fatigue" and near(Below(), Units.POWER + Units.ROW + 2 * Units.POWER)
-            and near(first._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
-            "two at once, under your cast, one under the other")
-        W.Fire("MIRROR_TIMER_STOP", "BREATH")
-        check(not first._shown and second._shown and near(second._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
-            "one stopped: the other moves up")
+        check(second._shown and second.label._text == "Fatigue" and second._barTexture == ns.UnitTimers.ART.EXHAUSTION
+            and second._barColor[4] == 1 and first._shown and near(Below(), Units.POWER + Units.ROW + Units.POWER),
+            "any other timer under your cast, solid, in the game's art for it; your breath stays over your health")
+        W.Fire("MIRROR_TIMER_START", "FEIGNDEATH", 30000, 60000, -1, 0, "Feign Death")
+        check(third._shown and third._barTexture == ns.UnitTimers.ART.FEIGNDEATH
+            and near(Below(), Units.POWER + Units.ROW + 2 * Units.POWER)
+            and near(second._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
+            "two at once, one under the other")
         W.Fire("MIRROR_TIMER_STOP", "EXHAUSTION")
+        check(not second._shown and third._shown and near(third._points[1][5], -(Units.HEIGHT + Units.POWER + Units.ROW + pixel)),
+            "one stopped: the other moves up")
+        W.Fire("MIRROR_TIMER_STOP", "FEIGNDEATH")
+        W.Fire("MIRROR_TIMER_STOP", "BREATH")
+        check(not first._shown, "your breath over: your health alone")
         W.mirror[1] = { "BREATH", 30000, 60000, -1, 0, "Breath" }
         W.Fire("PLAYER_ENTERING_WORLD")
         check(first._shown and first.left._text == "30", "after a loading screen the game is asked again")

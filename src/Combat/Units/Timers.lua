@@ -4,12 +4,15 @@ local _, ns = ...
 --  Sane UI - Combat - Units - Timers
 --  What the game counts down on you (its mirror timers: your breath under
 --  water, fatigue far out at sea, feign death), as part of your frame, in place
---  of its bars at the top of the screen: while one runs, a bar in the frame's
---  stack (Bar.Fit), under your cast, at a power bar's height: the game's name
---  for it on the left, the seconds left on the right, as the powers are
---  written. Breath may fill again once you are back up: the bar follows the
---  game (GetMirrorTimerProgress, on the bar's own OnUpdate while it shows)
---  until the game says it stopped.
+--  of its bars at the top of the screen, each in the game's own art for it.
+--  Your breath lies over your health bar, sheer, so your health shows through
+--  its bubbles (frame.over, Bar.Fit), what it is and the seconds left in the
+--  bar's middle, where your own frame has no name. Any other, while it runs, is
+--  a bar in the frame's stack, under your cast, at a power bar's height: the
+--  game's name for it on the left, the seconds left on the right, as the
+--  powers are written. Breath may fill again once you are back up: the bar
+--  follows the game (GetMirrorTimerProgress, on the bar's own OnUpdate while
+--  it shows) until the game says it stopped.
 --
 --  The game's own bars hear no timer start while this is on (Timers.EVENTS,
 --  Units.lua: Core.Lend's SetDeaf); one that runs already ends as it would.
@@ -19,16 +22,19 @@ local Timers = {}
 ns.UnitTimers = Timers
 
 Timers.MOST = 3 -- as many as the game keeps at once
-Timers.COLOURS = { BREATH = { 0, 0.5, 1 } }
-Timers.PLAIN = { 1, 0.7, 0 } -- every other timer's
+-- The game's art for each timer (its atlases, as its own timers take them): your breath's the bubbles.
+Timers.ART = { BREATH = "ui-castingbar-filling-applyingcrafting", EXHAUSTION = "ui-castingbar-filling-standard",
+               DEATH = "ui-castingbar-filling-standard", FEIGNDEATH = "ui-castingbar-filling-channel" }
+Timers.SHEER = 0.5 -- how solid your breath is over your health
 Timers.SAMPLE = { value = 42000, most = 60000 } -- what the sample shows in Edit Mode (milliseconds)
 Timers.EVENTS = { "MIRROR_TIMER_START", "PLAYER_ENTERING_WORLD" } -- how the game's bars learn of a timer
 
 local face   -- your frame
 local wanted -- whether this is on
 
--- The bar of a timer, or with timer nil the first that is free.
+-- The bar of a timer: your breath's over the health bar; any other's in the stack, or with timer nil the first free.
 local function Find(timer)
+    if timer == "BREATH" then return face.breath end
     for _, bar in ipairs(face.timers) do
         if bar.timer == timer then return bar end
     end
@@ -60,8 +66,8 @@ local function Run(timer, value, most, paused, label)
     local bar = Find(timer) or Find(nil)
     if not bar then return end
     bar.timer, bar.paused, bar.seconds = timer, Paused(paused), nil
-    local colour = Timers.COLOURS[timer] or Timers.PLAIN
-    bar:SetStatusBarColor(colour[1], colour[2], colour[3])
+    bar:SetStatusBarTexture(Timers.ART[timer] or Timers.ART.EXHAUSTION)
+    bar:SetStatusBarColor(1, 1, 1, bar.sheer or 1)
     bar:SetMinMaxValues(0, most / 1000)
     Write(bar, value)
     bar.label:SetText(label or "")
@@ -100,29 +106,47 @@ local function Held(timer, paused)
     if bar then bar.paused = Paused(paused) end
 end
 
--- The bars in your frame's stack, hidden until a timer runs, as high as height.
+-- A timer's bar, hidden until it runs, with its two words at that size.
+local function Timer(level, size)
+    local Text = ns.UnitText
+    local bar = ns.UnitBar.Strip(face, level)
+    bar:Hide()
+    local over = Text.Over(bar)
+    bar.label, bar.left = Text.Line(over, "LEFT", size), Text.Line(over, "RIGHT", size)
+    bar:SetScript("OnUpdate", OnUpdate)
+    return bar
+end
+
+-- Your breath's bar over the health bar, nothing behind its fill; under the frame's words, its own over them. The
+-- others' in your frame's stack, as high as height.
 function Timers.Make(owner, height)
     face = owner
     face.timers = {}
     local Text = ns.UnitText
+    local level = face.health:GetFrameLevel()
+    local breath = Timer(level + 1, Text.SIZE)
+    breath.background:Hide()
+    breath:SetAllPoints(face.health)
+    breath.sheer = Timers.SHEER
+    breath.label:SetPoint("RIGHT", breath, "CENTER", -Text.GAP / 2, 0)
+    breath.left:SetPoint("LEFT", breath, "CENTER", Text.GAP / 2, 0)
+    face.breath = breath
+    face.over[#face.over + 1] = breath
     for index = 1, Timers.MOST do
-        local bar = ns.UnitBar.Strip(face, face.health:GetFrameLevel())
-        bar:Hide()
-        local over = Text.Over(bar)
-        bar.label, bar.left = Text.Line(over, "LEFT", Text.SMALL), Text.Line(over, "RIGHT", Text.SMALL)
+        local bar = Timer(level, Text.SMALL)
         bar.label:SetPoint("LEFT", bar, "LEFT", Text.INSET - 1, 0)
         bar.left:SetPoint("RIGHT", bar, "RIGHT", 1 - Text.INSET, 0)
         bar.tall = height
-        bar:SetScript("OnUpdate", OnUpdate)
         face.timers[index] = bar
         face.under[#face.under + 1] = bar
     end
 end
 
--- The bars on, as the game's timers are now (in Edit Mode a sample, to show how far the frame's outline goes), or off.
+-- The bars on, as the game's timers are now (in Edit Mode a sample of your breath), or off.
 function Timers.Set(on)
     wanted = on
     if not face then return end
+    face.breath.timer, face.breath.on = nil, false
     for _, bar in ipairs(face.timers) do bar.timer, bar.on = nil, false end
     if on and Core.EditMode.active then
         Run("BREATH", Timers.SAMPLE.value, Timers.SAMPLE.most, true, ns.TEXT.samples.breath)

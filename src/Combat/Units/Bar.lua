@@ -10,10 +10,11 @@ local _, ns = ...
 --  under it), and, while it shows, a row of its own (your target's target,
 --  your focus's target, your pet), as a cast bar hangs under a nameplate's
 --  bar, and under that what runs only for a while (frame.under: your cast,
---  your breath: Cast.lua, Timers.lua; never a button of the game's, so it
---  comes and goes in a fight too). The stack's first bar is round at its top,
---  its last at its bottom. The
---  frame's face is as high as the health bar; the rest hangs under it, inside
+--  the game's timers: Cast.lua, Timers.lua; never a button of the game's, so
+--  it comes and goes in a fight too); what runs over the health bar lies on
+--  it, the same size (frame.over: your breath, Timers.lua). The stack's first
+--  bar is round at its top, its last at its bottom. The frame's face is as
+--  high as the health bar; the rest hangs under it, inside
 --  the same outline; its button is as high as the health and the power slots
 --  it keeps, and the row's button under that. The frame is
 --  always as wide as it is: nothing it shows changes its size, and its border
@@ -219,13 +220,15 @@ function Bar.Make(frame, sizes)
     frame.row = Health(frame, level + 3)
     frame.row:Hide()
     frame.under = {} -- bars of the stack under all that, each with its height (tall) and whether it shows now (on)
+    frame.over = {}  -- bars over the health bar, each anchored to it, with whether it shows now (on)
     frame.rank = Bar.PLAIN
 end
 
 -- Laid out for the frame's sizes, the unit's rank, its powers and the row, all inside the frame's edge: the border on
 -- it, the rank's line a pixel inside it, the bars inside both, one under the other a pixel apart: the health, each
 -- power shown, the row while it shows (under the power slots the frame keeps, where its button is), what hangs under
--- them while it shows; the glow beyond the edge; every round a quarter of the health bar's height.
+-- them while it shows; what lies over the health bar round as it is; the glow beyond the edge; every round a quarter
+-- of the health bar's height.
 function Bar.Fit(frame)
     local height, powerHeight, rowHeight = frame.healthHeight, frame.powerHeight, frame.rowHeight
     local pixel = Core.Pixels(frame, 1)
@@ -259,6 +262,12 @@ function Bar.Fit(frame)
         local mode = first and last and "both" or first and "top" or last and "bottom" or "none"
         local round = math.max(math.min(radius - inset, tall - pixel - inset), 0.01)
         Ends(bar, mode, round, tall - pixel - inset)
+        if first then
+            for _, over in ipairs(frame.over) do
+                Ends(over, mode, round, tall - pixel - inset)
+                over:SetShown(over.on == true)
+            end
+        end
         bar:Show()
     end
     for index = shown + 1, #frame.powers do frame.powers[index]:Hide() end

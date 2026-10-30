@@ -63,8 +63,10 @@ Decided (Saneroki, 2026-10-16):
   the focus's target and, under your own frame, your pet. All unit frames green, not in class colours; the names
   anchored left, after the level and raid marker; your own frame without a name.
 - **Your cast and breath part of your frame** (Saneroki, 2026-10-30; built): the game's cast bar hidden, and your
-  cast and breath shown under your unit frame, as part of it, while they are active, in place of the game's bars. The
-  game's other timers on you (fatigue, feign death) go with the breath: they are one bar of the game's.
+  cast shown under your unit frame, as part of it, while it is active, in place of the game's bar. Your breath over
+  the health bar, 50 % transparent so the health shows underneath, in the bubble art of the game's own breath bar,
+  the game's bar hidden. The game's other timers on you (fatigue, feign death) stay bars under your frame, in the
+  game's art for each.
 - **Power bars and auras** (Saneroki, 2026-10-29; built): the class resource bar half the health bar's height,
   with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;

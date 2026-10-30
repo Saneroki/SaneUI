@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 771 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Combat: your breath over your health bar, in the game's bubbles (Saneroki, 2026-10-30)
+Saneroki: the breath bar over the health bar, 50 % transparent so the health shows underneath, in the bubble texture of
+the game's own breath bar, the game's bar hidden. `Timers.lua`: your breath's strip lies on the health bar (`face.breath`,
+new `frame.over` in `Bar.Fit`: the health bar's ends, shown by its `on`), `Timers.SHEER` 0.5, *Breath* and the seconds in
+its middle (your own frame has no name there). Every timer in the game's atlas for it (`Timers.ART`, as the game's
+`MirrorTimerAtlas`), no colours of our own; fatigue and feign death stay under the frame. The game's bars stay deaf as
+before: its timers start only by `MIRROR_TIMER_START` and at the world's showing. A `/reload` takes it in.
+
 ### One server for every tool page: one port, running by default (Saneroki, 2026-10-30)
 Saneroki: all local websites for development on the same framework, server and runner, on the same port, always running.
 - **`dev/tools/web-pages` is the server:** 127.0.0.1 port 8768, the pages under their names (`/board/`, `/lab/`, `/art/`,
