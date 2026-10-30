@@ -4,8 +4,8 @@
 The game keeps a saved file per WoW account, and the one it shares between accounts is closed to addons, so an addon
 cannot reach another account's scans. What every account of a game folder does share is its AddOns folder. So this
 tool reads each account's SaneUI_AuctionData.lua, which keeps every scan whole, and writes what they hold together,
-filtered to the daily points and the newest prices, into the addon SaneUI_AuctionDatabase in the AddOns folder. It only
-reads the WTF folder. The game reads the addon at a login or a /reload.
+filtered to the daily points, the newest prices and the last days' scans as a line per item, into the addon
+SaneUI_AuctionDatabase in the AddOns folder. It only reads the WTF folder. The game reads the addon at a login or a /reload.
 
   dev/tools/auction-database make        for every game folder, once
   dev/tools/auction-database run         for ever: anew whenever an account's file changed (what the service runs)
@@ -35,6 +35,7 @@ RETAIL = Path(os.environ.get("WOW_RETAIL", FOREVER.parent / "_retail_"))
 ADDON = "SaneUI_AuctionDatabase"
 LOOK = 5     # seconds between two looks at the files
 SETTLE = 3   # seconds a file must have rested: the game may still be writing it
+DAY = 86400
 
 OPENS = re.compile(r'^(?:\[(?:"([^"]*)"|(\d+))\]|(\w+)) = \{$')
 VALUE = re.compile(r'^\[(?:"([^"]*)"|(\d+))\] = (.*?),?$')
@@ -42,7 +43,7 @@ POINT = re.compile(r"([^=;]+)=(\d+),([^;]*);")
 
 
 def read_houses(path, game):
-    """{house: {index, days, kept}} of a game version in an account's saved file, read line by line, as the game writes
+    """{house: {index, days, recent, kept}} of a game version in an account's saved file, read line by line, as the game writes
     it, so that the whole scans (most of the file) are passed over."""
     houses, stack = {}, []
     with open(path, encoding="utf-8", errors="replace") as lines:
@@ -63,10 +64,10 @@ def read_houses(path, game):
             value = VALUE.match(line)
             if not value:
                 continue
-            house = houses.setdefault(stack[3], {"index": "", "days": {}, "kept": 0})
+            house = houses.setdefault(stack[3], {"index": "", "days": {}, "recent": {}, "kept": 0})
             name, number, text = value.group(1), value.group(2), value.group(3)
-            if len(stack) == 5 and stack[4] == "days" and number and text.startswith('"'):
-                house["days"][int(number)] = text[1:-1]
+            if len(stack) == 5 and stack[4] in ("days", "recent") and number and text.startswith('"'):
+                house[stack[4]][int(number)] = text[1:-1]
             elif len(stack) == 4 and name == "index" and text.startswith('"'):
                 house["index"] = text[1:-1]
             elif len(stack) == 4 and name == "kept" and text.isdigit():
@@ -75,16 +76,18 @@ def read_houses(path, game):
 
 
 def merged(accounts):
-    """What the accounts hold together, {house: {"index": {key: point}, "days": {day: {key: [low, rest]}}}}: each item's
-    newest point; per day the lowest price of any account, the rest from the account that scanned last."""
+    """What the accounts hold together, {house: {"index": {key: point}, "days": {day: {key: [low, rest]}}, "recent": {at:
+    text}}}: each item's newest point; per day the lowest price of any account, the rest from the account that scanned last;
+    every account's scans of the newest scan's day and the day before, as each file keeps them for a graph of a day."""
     together = {}
     by_house = {}
     for houses in accounts:
         for name, house in houses.items():
             by_house.setdefault(name, []).append(house)
     for name, houses in by_house.items():
-        index, days = {}, {}
+        index, days, recent = {}, {}, {}
         for house in sorted(houses, key=lambda each: each["kept"]):
+            recent.update(house["recent"])
             for key, at, rest in POINT.findall(house["index"]):
                 if key not in index or int(at) >= int(index[key].split(",", 1)[0]):
                     index[key] = f"{at},{rest}"
@@ -95,7 +98,8 @@ def merged(accounts):
                     if known and known[0] and (low == 0 or known[0] < low):
                         low = known[0]
                     points[key] = [low, rest]
-        together[name] = {"index": index, "days": days}
+        first = max(recent, default=0) // DAY - 1
+        together[name] = {"index": index, "days": days, "recent": {at: text for at, text in recent.items() if at // DAY >= first}}
     return together
 
 
@@ -111,6 +115,8 @@ def lua_file(game, together):
             points = house["days"][day]
             text = "".join(f"{key}={points[key][0]},{points[key][1]};" for key in sorted(points))
             out.append(f'            [{day}] = "{text}",')
+        out += ["        },", "        recent = {"]
+        out += [f'            [{at}] = "{house["recent"][at]}",' for at in sorted(house["recent"])]
         out += ["        },", "    },"]
     out += ["})", ""]
     return "\n".join(out)

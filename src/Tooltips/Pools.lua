@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Tooltips - Pools
---  The parts a panel is drawn with (Panel.lua): texts, thin lines and small
---  pictures. Each kind is a pool of the panel's own (Core.Pool): a
+--  The parts a panel is drawn with (Panel.lua): texts, thin lines, small
+--  pictures and the strokes of a graph. Each kind is a pool of the panel's own (Core.Pool): a
 --  list of the parts made so far, and how many of them the draw has taken
 --  (taken). A draw begins with every pool given back (Reset) and takes what it
 --  needs again. And how large a text is (Width, Place).
@@ -37,8 +37,8 @@ local PICTURE = {
     available = "Interface\\GossipFrame\\AvailableQuestIcon", -- a quest to take: the yellow !
     active = "Interface\\GossipFrame\\ActiveQuestIcon",       -- a quest in the log: the ?
 }
-local POOLS = { "texts", "lines", "icons" }
-local NewText, NewLine, NewIcon -- below: how each kind of part is made
+local POOLS = { "texts", "lines", "icons", "strokes" }
+local NewText, NewLine, NewIcon, NewStroke -- below: how each kind of part is made
 
 local spoilt = false -- a size of this draw was hidden
 local style = 0      -- counts the changes of the fonts' files and sizes (Restyle)
@@ -48,6 +48,7 @@ function Pools.Prepare(panel)
     panel.texts = Core.Pool(function() return NewText(panel) end)
     panel.lines = Core.Pool(function() return NewLine(panel) end)
     panel.icons = Core.Pool(function() return NewIcon(panel) end)
+    panel.strokes = Core.Pool(function() return NewStroke(panel) end)
     panel.liveTexts, panel.liveBars = {}, {} -- [use] = its own text or bar (LiveText, LiveBar)
 end
 
@@ -193,6 +194,20 @@ function Pools.Rule(panel, x, y, width, hairline)
     local line = Pools.Line(panel, note[1], note[2], note[3], 1)
     line:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -y)
     line:SetSize(width, hairline)
+end
+
+function NewStroke(panel)
+    return panel:CreateLine(nil, "ARTWORK", nil, 1)
+end
+
+-- A line from one place on the panel to another, at any angle (x from its left, y down from its top).
+function Pools.Stroke(panel, x1, y1, x2, y2, thickness, r, g, b)
+    local stroke = panel.strokes:Take()
+    stroke:SetStartPoint("TOPLEFT", panel, x1, -y1)
+    stroke:SetEndPoint("TOPLEFT", panel, x2, -y2)
+    stroke:SetThickness(thickness)
+    stroke:SetColorTexture(r, g, b, 1)
+    stroke:Show()
 end
 
 function NewIcon(panel)

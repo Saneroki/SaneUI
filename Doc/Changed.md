@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Tooltips: how an item's price went, in the Gold section; `Prices:Range` (Saneroki, 2026-10-30)
+Saneroki: with Alt held, a graph of the price's development at the auction house, inside the Gold section of our tooltips, with
+buttons for 24h, 1w, 2w, 1m and all; it respects and reads the actual auction data, the database or the WTF folder, whichever is
+more current. `src/Tooltips/PriceGraph.lua` (new): a row of kind `graph` at the section's end, drawn after the rows have their
+places (columns too), the lowest price in gold and the market's in grey at their true places on the time line, the range's highest
+and lowest price, where it begins. A tooltip goes when the mouse leaves what it stands for, so no button on it can be reached: a tap
+of Ctrl goes to the next range (`MODIFIER_STATE_CHANGED`, so it needs no restricted call, works in a fight and takes no key from a
+binding), and only a tooltip that takes the mouse, the chat link's, has real buttons. The range is the option *Price graph's range*.
+`Prices:Range(item, from, to)` and `Prices:Stamp()` in `Core/Data/Prices.lua`: what is most current for each stretch of time, a day's
+scans, this account's and the database's, then the database's day, then this account's own, last the item's newest point, which
+what the game lists right now moves on. `Point` also gives the key, so a link's kind of gear has its own history. `recent[at]`
+beside `whole` in `Core/Data/Scan.lua` (`Scan.RECENT`, Forever's): each scan of today and yesterday as `key=low,market;`, as a day's
+string has one point a day and a whole scan is too much to open for a tooltip. `dev/tools/auction-database` carries it, so a
+graph of a day works on an account that did not scan. `Pools.Stroke`, a pool of `Line`s. Tests: Tooltips, data, auctions. A scene
+for the lab (`pricegraph`). The game needs a restart (a new file in Tooltips' TOC).
+
 ### Combat: the health bar is every unit frame's anchor (Saneroki, 2026-10-30)
 Saneroki: no matter which bars are visible the health bar is the rock solid anchor and does not move, on all unit frames.
 `Bar.Fit`: the health bar's rectangle no longer depends on what shows. Before, on a frame whose rank's line is wider than

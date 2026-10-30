@@ -55,6 +55,9 @@ Core.Options(ns.name, {
     { key = "icons", default = true, text = "Show the icon of items and spells" },
     { key = "models", default = true, text = "3D model in tooltips",
       tip = "Where a tooltip's thing has a 3D model, it stands in the picture's place: a creature or player, moving; a mount or a pet; a piece of gear, worn by your own character. Switched off, or where the game cannot load the model, it is the picture: the portrait or the item's icon." },
+    { key = "priceRange", default = "1w", text = "Price graph's range",
+      choices = { { "24h", "24 hours" }, { "1w", "1 week" }, { "2w", "2 weeks" }, { "1m", "1 month" }, { "All", "All" } },
+      tip = "Hold Alt over an item: the Gold section shows how its price went at the auction house, over this long. Tap Ctrl while the graph is on show for the next range." },
     { key = "textSize", header = "Look", headerTip = "How large and how solid tooltips are.", default = 14, min = 10, max = 20, step = 1, text = "Text size",
       tip = "How large a tooltip's name and lines are written. The smaller texts follow." },
     { key = "opacity", default = 97, min = 30, max = 100, step = 1, text = "Opacity",
@@ -71,7 +74,7 @@ local SHOWN_PLAIN = { "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "Shop
     "ItemRefShoppingTooltip2", "GameNoHeaderTooltip", "GameSmallHeaderTooltip", "BuffFrameTooltip", "AuraButtonTooltip" }
 -- What each of the module's other files leaves in its table: all there, or the module is not whole.
 local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "Quests", "Figures", "Gold",
-    "Inventory", "KINDS", "Pools", "Panel", "Host" }
+    "Inventory", "KINDS", "Pools", "Panel", "Graph", "Host" }
 
 -- Whether the player sees the tooltip: it is visible, and placed somewhere. Other addons read what
 -- the game says of a thing with tooltips of their own that nobody sees: owned, but placed nowhere
@@ -496,6 +499,7 @@ function ns.OnLogin()
     ns.Quests.Start(Redraw)
     ns.Gathering.Start(Redraw)
     ns.Gold.Start(Redraw)
+    ns.Graph.Start(Redraw)
     Core.Data.OnCharacters(Redraw)
     -- A player's item level has come (Inspect.lua): their panel is read anew.
     ns.Inspect.Start(function(guid)
@@ -505,13 +509,14 @@ function ns.OnLogin()
         end
     end)
     -- A key pressed or let go: the shown tooltips are seen or not (the option show); with Alt, the
-    -- shown panels are read anew, with or without their technical details.
-    Core.On("MODIFIER_STATE_CHANGED", function(key)
+    -- shown panels are read anew, with or without their technical details; Ctrl moves a price graph on.
+    Core.On("MODIFIER_STATE_CHANGED", function(key, down)
         local alt = key == "LALT" or key == "RALT"
         for tooltip, panel in pairs(ns.Panel.All()) do
             if alt and panel:IsShown() and not panel.pending then Guarded(Draw, tooltip, panel.data) end
         end
         Guarded(Gate)
+        Guarded(ns.Graph.Key, key, down)
     end)
     -- The tooltips that also show lines somebody wrote in (a button's hint) are hooked at once
     -- (their panels are made when they are first shown); any other tooltip when the game first

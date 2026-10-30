@@ -10,7 +10,7 @@ opacity can be set, and a switch anchors tooltips to the mouse cursor. An item's
 quests that need it, the professions that use it, which of your characters have it (each by first name and
 surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
 what to do with it for gold, what its materials bring if you disenchant it, and with Alt the price to post
-it at. Every section has its name in the middle of its divider (*INFO*, *QUEST*, *GOLD*, ...), the name in
+it at and a graph of how its price went. Every section has its name in the middle of its divider (*INFO*, *QUEST*, *GOLD*, ...), the name in
 grey, its rules the same grey; a thing's own lines (its numbers, what it
 does, its description, its durability) are one section, *Info*; a spell's numbers are a table of four
 columns and two rows. A tiny grey line in the middle at the bottom says that Alt shows more: the technical details, which of your characters
@@ -141,6 +141,13 @@ only read.
   | *AH profit* | What a sale of one at the auction house brings: the lowest price there now, less the house's cut (5%). Not for a thing that is bound |
   | *Disenchant* | What disenchanting it brings, on a weapon or an armour of uncommon quality and up: every material it gives, as often and as many as disenchanting gives it (Core's data, by the item's class, quality and item level), each at the lowest price you saw for it less the house's cut. *no prices seen* while a material has no price yet. With Alt, under it, each material: how often, how many, what one brings (*80%  1-2 Strange Dust*) |
   | *Sell at* | With Alt, where the item can go to the auction house: the price to post one at, one copper under the lowest offer you saw, never so low that a sale (after the cut) brings less than a vendor pays |
+
+  **With Alt, a graph** ends the section (`PriceGraph.lua`), on what can be sold at the auction house: how its price went
+  there, the lowest price in gold, the market's in grey, between the highest and the lowest price of the range. Buttons
+  over it choose the range: *24h*, *1w*, *2w*, *1m*, *All*. A tooltip goes when the mouse leaves what it stands for, so
+  **tap Ctrl** for the next range, a key that does nothing in the game by itself and so also works in a fight; the buttons
+  light up as you go. Only the tooltip of a chat link stays, and there they are clicked as well. The range is kept, and
+  stands in the settings as *Price graph's range*. Over the last two days each scan is a point, before that each day.
 
   Last, **the advice** in one line: the way that brings the most (the auction house must bring 5% more
   than a vendor, for the trouble). *Disenchant it for 1s 40c* (green; only for a character with the spell, and it too must bring 5% more than the way before); *Sell on the AH for 3s 09c* (green; the lowest price now); *Sell to
@@ -367,6 +374,16 @@ only read.
   `EASY_` and `TRIVIAL_DIFFICULTY_COLOR`; where the client lacks them, `QuestDifficultyColors`), the icons
   the professions' (`Trade_Herbalism`, `Trade_Mining`). On a node's tooltip the game's line that names the
   skill (*Herbalism*, *Requires Mining 175*) is left out. The packs are asked for at the login (`Prepare`).
+- **The price graph** (`PriceGraph.lua`, its row asked for by `Kinds/Gold.lua`, its room by `Panel.lua`): a row of kind
+  `graph` holds only the item, the range and `Prices:Stamp()`, so a read of the tooltip costs a look at `Prices:Last`, and the
+  panel is drawn anew only when the range or a price changed. The points come from `Prices:Range` when it is drawn (a house's
+  history taken apart once per item, kept for 64 items until the next scan). Marks at most one per 3 units of the width: the
+  lowest price and the last market price that fall there, each at its true place on the time line. Strokes are a pool of
+  `Line`s (`Pools.Stroke`), laid after the rows have their final places, in columns too. Keys: a tooltip goes when the
+  mouse leaves what it stands for, so `Graph.Key` hears `MODIFIER_STATE_CHANGED`: Ctrl pressed, with a graph in sight and
+  the tooltip allowed. No keyboard frame: the game restricts the call that hands keys on, and a key of its own would run
+  into bindings. A tooltip that takes the mouse (the chat link's) gets real buttons over the words (`Hit`), whose click stays
+  theirs, so it does not close it; no other panel has any, so a tooltip never catches the mouse.
 - **Disenchanting and the price to post** (`Kinds/Gold.lua`): Core's set *Disenchants* (pack *Data: Items*,
   asked for at the login; keyed by the game's rows of disenchanting: the items' class, quality and item
   levels, and the materials with their chance per disenchant, in percent, and how many, from and to). An
@@ -593,12 +610,16 @@ only read.
 | `Quests.lua` | The quest lists of a creature, an NPC or an item, from Core's quest data (the sets Quests and Drops) and your quest log, kept until the log or the data changes; whether you may take a quest; a quest's name and level as a row |
 | `Numbers.lua` | Numbers that follow from what the game says: a spell's damage per second, per mana and crit; a swing; experience per kill |
 | `Live.lua` | A unit's health, power, target and buffs, and a buff's time, while the panel is shown |
-| `Pools.lua` | The parts a panel is drawn with (texts, lines, small icons, bars), used again; a text's size |
+| `Pools.lua` | The parts a panel is drawn with (texts, lines, small icons, bars, a graph's strokes), used again; a text's size |
 | `Panel.lua` | The panel: its parts, the layout, the 3D model in the picture's place, your character beside it (the stage) |
+| `PriceGraph.lua` | How an item's price went, at the end of its Gold section while Alt is held: the ranges as buttons, the two lines, Ctrl for the next range |
 | `Host.lua` | Where each panel stands (by its tooltip's corner, beside another panel, comparisons at slots of their own); the game's tooltip out of sight meanwhile, its mouse area the panel's, all set back after |
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-30 — With Alt, the Gold section ends in a graph of how the item's price went: the lowest price and the market's
+  over 24 hours, a week, two weeks, a month or all there is, from whichever of the account's auction file and the
+  database is most current. Ctrl goes to the next range; on a chat link's tooltip the ranges are clicked (Saneroki).
 - 2026-10-25 — Retail: a player's class line has the specialization without talent points (*Guardian Druid*); a
   creature has no experience row there (Retail's rule differs); quests, gathering and disenchanting from the
   database stand down while Retail has no data.

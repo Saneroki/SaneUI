@@ -29,7 +29,7 @@ local _, ns = ...
 --  brings); then the price to post it at (Sell at: the lowest offer less one
 --  copper, never so low that a sale brings less than a vendor pays); under the
 --  advice the price it comes from, the market, how many are on offer and when
---  that was seen, the cut and the deposit.
+--  that was seen, the cut and the deposit; last, how its price went (PriceGraph.lua).
 --
 --  Disenchanting, from Core's data (the set Disenchants, Doc/guides/data.md):
 --  a weapon or an armour of uncommon quality and up, by its class, quality and
@@ -314,6 +314,7 @@ function Gold.Section(ctx, id, line, bound, binding, looks)
     if post then Row(TEXT.SELL_AT, post) end
     if not alone then Advice(m) end
     if alt then Details(m, item) end
+    if alt and not bound and PRICES:Last(item) then ns.Graph.Row(item) end
 end
 
 -- What disenchanting gives is asked for once the loading screen is gone; the shown panels are drawn anew

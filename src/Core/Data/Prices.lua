@@ -11,6 +11,10 @@ local Core = SaneUI.Core
 --      local Prices = SaneUI.Core.Data.Series("Prices")
 --      Prices:Low(item)        the lowest price now, per unit, in copper; nil: none, or none for Prices.FRESH days
 --      Prices:Last(item)       low, market, units, auctions, sellers, at: the newest point, however old; nil: none
+--      Prices:Range(item, from, to)
+--                              how its price went: { { at, low, market }, ... }, oldest first, from server time from to
+--                              server time to (nil: from the first point, to now). One table used again: read it at once
+--      Prices:Stamp()          a number that moves with every change of a price, for a view to know its picture is old
 --      Prices:OnChange(fn)     fn() on the next frame after prices changed: a list of the game's, or a scan kept
 --      Prices.Database(game, houses)   what all accounts hold together, from the addon SaneUI_AuctionDatabase, which a tool
 --                              on this computer makes: read over this account's own where it is newer
@@ -21,6 +25,10 @@ local Core = SaneUI.Core
 --  Each house's newest points stand in its saved string index, "key=at,low,market,units,auctions,sellers;...",
 --  key being the game's own ItemKey: the item's ID, or "item:level:suffix:species" for gear and pets. It is taken
 --  apart when a house is first asked about, written back with each scan and at the logout.
+--
+--  A range reads what is most current for each stretch of time, whichever holds it (History): the scans of today and
+--  yesterday (recent), a point a scan; the database's days, which took this account's in with all the others'; this account's
+--  own days it does not have; and last the item's newest point, which what the game lists right now moves on.
 -------------------------------------------------------------------------------
 local Data = Core.Data
 local Plain, Ask = Core.Plain, Core.Ask
@@ -29,21 +37,26 @@ local Prices = {}
 Prices.FRESH = 30  -- days a price counts without being seen again
 
 local DAY = 86400
+local HISTORIES = 64   -- items whose history stays taken apart, per house, then forgotten together
 local CAGE = 82800 -- the one item every caged pet is listed as
 local GEAR = { [2] = true, [4] = true, [17] = true } -- the game's item classes (Enum.ItemClass): weapons, armour, pets
 local POINT = "%.0f,%.0f,%.0f,%.0f,%d,%d"            -- whole numbers, past what %d holds on every client
 local SAVED = "([^=;]+)=(%d+,%d+,%d+,%d+,%d+,%d+);"
 local FIELDS = "^(%d+),(%d+),(%d+),(%d+),(%d+),(%d+)$"
+local LOW_MARKET = "^(%d+),(%d+)"                    -- how a line of a day or a scan begins
 local NONE = {}
 
 local part             -- this game version's part of SaneUIData_Market
 local mine, opened     -- the house of your side, once asked for; the one open now
-local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty }
+local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty,
+                       --                      history = { [key] = points }, held }
 local keys = {}        -- [a house's part] = its key
 local database         -- [a house's key] = { index, days }: what all accounts hold together, where a tool made that
 local kinds = {}       -- [item] = whether the auction house tells its kinds apart
 local listed = {}      -- [key] = the lowest price in the list on show
 local listeners = {}
+local stamp = 0        -- moves with every change of a price
+local range, newest = {}, {} -- what Prices:Range hands out, used again
 
 local function Now()
     return Ask(rawget(_G, "GetServerTime")) or 0
@@ -76,6 +89,7 @@ function Prices.House(unit)
         part.houses[key] = known
     end
     if type(known.whole) ~= "table" then known.whole = {} end
+    if type(known.recent) ~= "table" then known.recent = {} end
     keys[known] = key
     return known
 end
@@ -86,10 +100,15 @@ local function Current()
     return mine
 end
 
+local function Moved()
+    stamp = stamp + 1
+    TellSoon()
+end
+
 -- The house prices are read from while one is open (the auction house's own, by Scan.lua); nil: closed.
 function Prices.Open(house)
     opened = house
-    TellSoon()
+    Moved()
 end
 
 -- Whether the auction house tells the item's kinds apart: true for gear and pets, false for all else, nil for
@@ -144,7 +163,7 @@ end
 local function Book(house)
     local book = books[house]
     if book then return book end
-    book = { index = {}, gear = {} }
+    book = { index = {}, gear = {}, history = {}, held = 0 }
     books[house] = book
     if type(house.index) == "string" then
         for key, point in house.index:gmatch(SAVED) do Put(book, key, point) end
@@ -174,8 +193,10 @@ function Prices.Save(house)
     house.index, book.dirty = table.concat(lines), false
 end
 
+-- A scan was kept: the histories taken apart are old.
 function Prices.Changed()
-    TellSoon()
+    for _, book in pairs(books) do book.history, book.held = {}, 0 end
+    Moved()
 end
 
 local function Fields(point)
@@ -200,29 +221,29 @@ function Prices.See(key, low, units)
         Put(book, key, POINT:format(Now(), low, market or 0, units or was or 0, auctions or 0, sellers or 0))
     end
     book.dirty = true
-    TellSoon()
+    Moved()
 end
 
--- The point of an item: its link's kind where a scan saw that, else plain, else the cheapest of its kinds.
+-- The point of an item and its key: its link's kind where a scan saw that, else plain, else the cheapest of its kinds.
 local function Point(book, item)
     local id = item
     if type(item) == "string" then
         id = tonumber(item:match("item:(%d+)")) or (item:find("battlepet:", 1, true) and CAGE) or nil
         if id and book.gear[id] then
             local key = Prices.LinkKey(item, id)
-            if key and book.index[key] then return book.index[key] end
+            if key and book.index[key] then return book.index[key], key end
         end
     end
     if type(id) ~= "number" then return nil end
     local plain = book.index[tostring(id)]
-    if plain then return plain end
-    local best, lowest
+    if plain then return plain, tostring(id) end
+    local best, bestKey, lowest
     for _, key in ipairs(book.gear[id] or NONE) do
         local point = book.index[key]
         local low = point and tonumber(point:match("^%d+,(%d+)"))
-        if low and low > 0 and (not lowest or low < lowest) then best, lowest = point, low end
+        if low and low > 0 and (not lowest or low < lowest) then best, bestKey, lowest = point, key, low end
     end
-    return best
+    return best, bestKey
 end
 
 function Prices:Last(item)
@@ -238,8 +259,95 @@ function Prices:Low(item)
     return nil
 end
 
+function Prices:Stamp()
+    return stamp
+end
+
 function Prices:OnChange(fn)
     listeners[#listeners + 1] = fn
+end
+
+-------------------------------------------------------------------------------
+--  The history
+-------------------------------------------------------------------------------
+-- The low and market price a saved string of "key=low,market...;" lines has for key; nil where it has no line of it.
+local function Entry(text, key)
+    if type(text) ~= "string" then return nil end
+    local _, stop = text:find(";" .. key .. "=", 1, true)
+    if not stop and text:sub(1, #key + 1) == key .. "=" then stop = #key + 1 end
+    if not stop then return nil end
+    local low, market = text:match(LOW_MARKET, stop + 1)
+    return tonumber(low), tonumber(market)
+end
+
+local function Earlier(a, b)
+    return a.at < b.at
+end
+
+-- Every point kept of a key, oldest first, taken apart once: a scan's under the time it came, a day's in the middle of that
+-- day. What stands for a day is the most current that holds it: its scans, this account's and the database's; else the
+-- database's line, which took this account's in with all the others'; else this account's own. Held until a scan is kept:
+-- what the game lists meanwhile moves only the newest point (Range).
+local function History(house, book, key)
+    local points = book.history[key]
+    if points then return points end
+    points = {}
+    local count, days = 0, {}
+    local shared = database and database[keys[house]]
+    shared = type(shared) == "table" and shared or NONE
+    local function Scans(list)
+        for at, text in pairs(type(list) == "table" and list or NONE) do
+            local low, market = Entry(text, key)
+            if low then
+                count = count + 1
+                points[count] = { at = at, low = low, market = market }
+                days[math.floor(at / DAY)] = true
+            end
+        end
+    end
+    local function Days(list)
+        for day, text in pairs(type(list) == "table" and list or NONE) do
+            local low, market = Entry(text, key)
+            if low and not days[day] then
+                count = count + 1
+                points[count] = { at = (day + 0.5) * DAY, low = low, market = market }
+                days[day] = true
+            end
+        end
+    end
+    Scans(house.recent)
+    Scans(shared.recent)
+    Days(shared.days)
+    Days(house.days)
+    table.sort(points, Earlier)
+    if book.held >= HISTORIES then book.history, book.held = {}, 0 end
+    book.history[key], book.held = points, book.held + 1
+    return points
+end
+
+function Prices:Range(item, from, to)
+    wipe(range)
+    local house = Current()
+    local book = house and item and Book(house)
+    local point, key
+    if book then point, key = Point(book, item) end
+    if not key then return range end
+    to = to or Now()
+    local count, last = 0, 0
+    for _, each in ipairs(History(house, book, key)) do
+        if each.at > to then break end
+        if not from or each.at >= from then
+            count = count + 1
+            range[count] = each
+        end
+        last = each.at
+    end
+    local low, market, _, _, _, at = Fields(point)
+    if at > last and at <= to and (not from or at >= from) then
+        newest.at, newest.low, newest.market = at, low, market
+        range[count + 1] = newest
+    end
+    return range
 end
 
 -- Called by the file of the addon SaneUI_AuctionDatabase as the game reads it; another game's is not taken.

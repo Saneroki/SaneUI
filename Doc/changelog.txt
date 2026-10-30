@@ -15,6 +15,10 @@ The bigger changes of each version, newest first.
   last scan for what an item brings, what its materials bring
   disenchanted and what to do with it. With Disenchant, the advice
   weighs that too. The auction history has a file of its own.
+- Hold Alt over an item: its Gold section shows how the price went
+  at the auction house, over 24 hours, a week, two weeks, a month or
+  everything seen so far. Tap Ctrl for the next range. It reads your
+  scans and your other accounts', whichever are the most current.
 - Distances are in meters and the time in 24 hours everywhere Sane
   UI writes them. Yards and 12 hours: General, Units, Imperial.
 - A new level is told in the middle of the screen: your health,

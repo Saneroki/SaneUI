@@ -1712,6 +1712,8 @@ do
         "every view reads the scan's point of an item, by its ID")
     check(Prices:Low(20) == nil and Prices:Last(20) == 0 and Prices:Low(9999) == nil, "bid only is no price; what no scan saw has none")
     check(saved().index:find("10=" .. answered .. ",100,200,20,3,2;", 1, true), "the newest points stand in the saved file")
+    check(saved().recent[answered]:find("10=100,200;", 1, true) and not saved().recent[answered]:find("666=", 1, true),
+        "the scan as a line per item beside it, for a graph of a day")
     W.Fire("REPLICATE_ITEM_LIST_UPDATE")
     Read()
     check(saved().scans[day] == 1, "told again after it was kept: the same scan, read once")
@@ -1733,6 +1735,8 @@ do
     end
     check(Line(text, "40") == "40=70,70,1,1,1;", "an item new in this scan")
     check(Prices:Low(10) == 200, "the newest point is the last scan's price, not the day's lowest")
+    check(saved().recent[saved().at]:find("10=200,200;", 1, true) and saved().recent[answered]:find("10=100,200;", 1, true),
+        "each scan has its own lowest there, not the day's")
     check(Prices:Low(20) == nil and Prices:Last(20) == 0, "what the last scan did not see keeps its last point")
     local scans = 0
     for _ in pairs(saved().whole) do scans = scans + 1 end
@@ -1834,11 +1838,14 @@ do
     check(state.outcome == "kept" and state.phase == "waiting", "opened again: the last scan kept is told")
     Scan.KEEP.forever = 2
     saved().days[Today() - 5], saved().scans[Today() - 5] = "1=1,1,1,1,1;", 1
+    saved().recent[(Today() - 2) * 86400], saved().recent[(Today() - 1) * 86400] = "1=1,1;", "1=2,2;"
     rows = { Plain(10, 1, 100, "Ivy") }
     W.Wait(Scan.SETTLE + Scan.INTERVAL)
     W.Fire("REPLICATE_ITEM_LIST_UPDATE")
     Read()
     check(saved().days[Today() - 5] == nil and saved().scans[Today() - 5] == nil and saved().days[Today()], "a game with a limit keeps that many days")
+    check(saved().recent[(Today() - 2) * 86400] == nil and saved().recent[(Today() - 1) * 86400] and saved().recent[saved().at],
+        "a scan as a line per item stays today and yesterday; the scans kept whole stay for good")
     Scan.KEEP.forever = nil
 
     -- The bar pressed: a scan now
@@ -1864,14 +1871,15 @@ do
     bar._scripts.OnLeave(bar)
 
     -- Retail keeps no scan whole; a price grows old
-    Scan.WHOLE.forever = nil
+    Scan.WHOLE.forever, Scan.RECENT.forever = nil, nil
     rows = { Plain(10, 1, 400, "Kim"), Plain(10, 1, 500, "Lee") }
     W.Wait(Scan.INTERVAL + Scan.TICK)
     W.Fire("REPLICATE_ITEM_LIST_UPDATE")
     Read()
     check(state.outcome == "kept" and saved().whole[saved().at] == nil and saved().days[Today()]:find("10=", 1, true),
         "a game that keeps no scan whole: the day's points, the newest prices")
-    Scan.WHOLE.forever = true
+    check(saved().recent[saved().at] == nil, "and no line per item of a scan")
+    Scan.WHOLE.forever, Scan.RECENT.forever = true, true
     local fresh = Prices.FRESH
     Prices.FRESH = 0
     W.clock = W.clock + 1
@@ -1880,6 +1888,66 @@ do
     W.printed = {}
     SlashCmdList.SANEUI("data")
     check(printedMatch("auction house eu/1234/alliance: %d+ days, %d+ whole scans %(%d+%.%d MB%)"), "/sane data says what the whole scans weigh")
+
+    -- How a price went: what is most current for each stretch of time, whichever holds it
+    do
+        local home, now, today = saved(), GetServerTime(), Today()
+        local function Prices4242(from, to)
+            local list = {}
+            for index, point in ipairs(Prices:Range(4242, from, to)) do list[index] = point.low .. "/" .. point.market end
+            return table.concat(list, " ")
+        end
+        check(Prices4242() == "", "a thing no scan saw has no history")
+        home.days[today - 9] = "1=1,1,1,1,1;4242=900,950,1,1,1;"
+        home.days[today - 8] = "4242=800,850,1,1,1;2=2,2,2,2,2;"
+        home.days[today - 7] = "44242=7,7,7,7,7;142420=8,8,8,8,8;"
+        home.days[today - 6] = "4242=700,750,1,1,1;"
+        home.days[math.floor((now - 3600) / 86400)] = "4242=1,1,1,1,1;"
+        home.recent[now - 7200], home.recent[now - 3600] = "4242=640,690;", "1=1,1;4242=600,650;"
+        Prices.See("4242", 555)
+        check(Prices4242() == "900/950 800/850 700/750 640/690 600/650 555/0",
+            "a day before the scans at hand a point a day, a day with scans a point a scan, whatever the game lists now last: " .. Prices4242())
+        check(Prices4242(now - 86400) == "640/690 600/650 555/0", "from a time on")
+        check(Prices4242(nil, now - 1800) == "900/950 800/850 700/750 640/690 600/650", "up to a time")
+        check(Prices:Range(4242)[1].at == (today - 9 + 0.5) * 86400, "a day's point stands in the middle of the day")
+        check(Prices:Range(4242)[6].at == now, "the newest point at the time it was seen")
+        local stamp = Prices:Stamp()
+        Prices.See("4242", 554)
+        check(Prices:Stamp() ~= stamp and Prices4242():find("554/0", 1, true), "what the game lists moves the stamp and the newest point")
+        home.days[today - 6] = "4242=1,1,1,1,1;"
+        check(Prices4242():find("700/750", 1, true), "the rest is held")
+        home.days[today - 6] = "4242=700,750,1,1,1;"
+
+        -- The database has what the file does not; where both have a day it took this account's in with the others'
+        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;", [today - 8] = "2=2,2,2,2,2;4242=100,200,1,1,1;" },
+            recent = { [now - 1800] = "4242=610,660;" } } })
+        Prices.Changed()
+        check(Prices4242() == "300/350 900/950 100/200 700/750 640/690 600/650 610/660 554/0",
+            "whichever is more current: the database's days where it has them, this account's where not, the scans of both: " .. Prices4242())
+        Prices.Database("forever", { ["eu/1234/alliance"] = { days = { [today - 12] = "4242=300,350,1,1,1;" } } })
+        Prices.Changed()
+        check(Prices4242():find("300/350 900/950 800/850", 1, true), "a database made before it held scans")
+        Prices.Database("forever", {})
+        Prices.Changed()
+        check(Prices4242():find("^900/950"), "a house the database does not have")
+
+        -- A piece of gear: the kind its link names; its ID, the cheapest of them
+        Prices.See("50:60:-7:0", 870)
+        Prices.See("50:60:-9:0", 800)
+        home.days[today - 9] = home.days[today - 9] .. "50:60:-7:0=880,881,1,1,1;50:60:-9:0=810,811,1,1,1;"
+        Prices.Changed()
+        local link = Prices:Range("|Hitem:50:0:0:0:0:0:-7:0:60|h[x]|h")
+        check(link[1].low == 880 and link[#link].low == 870, "a link: the history of its kind")
+        local cheapest = Prices:Range(50)
+        check(cheapest[1].low == 810 and cheapest[2].low == 800, "an ID: of the cheapest of its kinds")
+        home.days[today - 9], home.days[today - 8], home.days[today - 7], home.days[today - 6] = nil, nil, nil, nil
+        home.days[math.floor((now - 3600) / 86400)] = nil
+        home.recent[now - 7200], home.recent[now - 3600] = nil, nil
+        Prices.See("4242")
+        Prices.See("50:60:-7:0")
+        Prices.See("50:60:-9:0")
+        Prices.Changed()
+    end
 
     -- What all accounts hold together: read when a house is first asked about, over this account's where newer
     Prices.Database("retail", { ["eu/1234/neutral"] = { index = "777=9,1,1,1,1,1;" } })

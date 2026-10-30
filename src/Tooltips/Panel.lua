@@ -633,6 +633,8 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
                 marks = 2 * (Width(panel.after[index]) + CAPTION_GAP)
             end
             wanted = math.max(wanted, Width(caption) + marks + (row.bare and 0 or 2 * (CAPTION_GAP + CAPTION_RULE)))
+        elseif kind == "graph" then
+            wanted = math.max(wanted, ns.Graph.WIDE)
         end
     end
     return wanted, tag
@@ -857,6 +859,10 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
         elseif kind == "auras" then
             live.aurasTop, live.aurasWidth, live.aurasLeft = y, inner, ox + SIDE
             y = y + AURA + ROW_GAP
+        elseif kind == "graph" then
+            -- Only its place: drawn once the rows have theirs for good (Panel.Draw)
+            panel.graphRow, panel.graphX, panel.graphY = row, ox + SIDE, y
+            y = y + ns.Graph.Height() + ROW_GAP
         end
     end
     if block.top then
@@ -934,6 +940,7 @@ function Panel.Draw(panel)
     -- hangs on is placed by something hidden. Host.lua places it again after the draw.
     panel:ClearAllPoints()
     panel.corner = nil
+    panel.graphRow = nil
     Pools.Reset(panel)
     Sizes()
     local neutral = COLOR.NEUTRAL
@@ -971,6 +978,7 @@ function Panel.Draw(panel)
         y = lowest
         panel:SetWidth(width * columns)
     end
+    ns.Graph.Draw(panel, width - 2 * SIDE, hairline)
     y = math.max(y, iconBottom + ROW_GAP)
     local height = y + SIDE - ROW_GAP
     panel:SetHeight(height)

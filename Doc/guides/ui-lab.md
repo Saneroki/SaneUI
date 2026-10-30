@@ -91,6 +91,9 @@ prints its log.
   in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
   says another), `auctionscan` (the game's auction house window from its own files and Core from its TOC: the full scan's bar
   under it through its phases, the game's scan calls standing in; `LabScan.Answer()` in the console is the server's answer),
+  `pricegraph` (Core, its auction data and Tooltips from their TOCs: an item's tooltip with Alt held, its price graph in the Gold
+  section on made-up scans; `LabRange("24h")`, `LabTap()` for Ctrl, `LabAlt(false)`, `LabPinned()` for a chat link's tooltip, whose
+  buttons take the mouse; the panel's ground is white, as the lab does not load its art),
   `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the

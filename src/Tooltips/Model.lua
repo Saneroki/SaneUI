@@ -26,6 +26,8 @@ local _, ns = ...
 --               bare: no rules (a note at the bottom: Unconfirmed Data, Hold ALT for more);
 --               mark: a red ! at each side of the words (Unconfirmed Data: Core.UNCONFIRMED)
 --    "auras"    the unit's buffs and debuffs (Live.lua)
+--    "graph"    how an item's price went (PriceGraph.lua): graph: the item; range: which range;
+--               stamp: Prices:Stamp(), so a price that moved draws it anew
 --  Every row: space (a little room above it: the game's empty line inside a
 --  section), bar colour br, bg, bb. A panel's only dividers are its sections'
 --  captions.
@@ -107,7 +109,8 @@ end
 --  The two copies
 -------------------------------------------------------------------------------
 local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb", "space", "label", "labelFont", "icon",
-    "iconRight", "indent", "caps", "prose", "live", "inside", "value", "max", "flush", "mark", "bare", "br", "bg", "bb" }
+    "iconRight", "indent", "caps", "prose", "live", "inside", "value", "max", "flush", "mark", "bare", "br", "bg", "bb",
+    "graph", "range", "stamp" }
 local HEAD = { "tag", "compared", "accent", "ar", "ag", "ab", "icon", "portrait", "badge", "badgeR", "badgeG", "badgeB",
     "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers",
     "model", "modelKind", "modelZoom", "modelTurn", "dress" }

@@ -741,6 +741,10 @@ game in the background, and it reads a full scan another addon asked for just th
   `buyout` is for the whole row, `link` the game's item string (gear only). This is the raw history: what goes on into the
   database is filtered there. The sellers' and bidders' names are local and never go on. About 40 bytes a row, so a house
   of 50,000 auctions costs about 2 MB a scan (measured on made-up rows shaped like the game's).
+- **A scan as lines (Forever, `Scan.RECENT`):** `recent[at]`, the scans of today and yesterday, `key=low,market;...`, the scan's
+  own lowest. A graph of a day reads them: a day's string has one point a day, and a whole scan is too much to open for a
+  tooltip. About 20 bytes an item, so the last two days of 6,000 items at 96 scans a day cost at most 25 MB; dropped by whole
+  days, unlike `whole` and `days`, which stay.
 - **The history:** `SaneUIData_Market[game].houses["eu/1234/horde"]`, the house by region, realm and side (the side of the
   NPC that opened it, `neutral` where it has none). Beside the whole scans one string per server day, `days[day]`:
 
@@ -777,6 +781,9 @@ section, disenchanting's materials, the advice and Speed Leveling's rewards all 
 local Prices = SaneUI.Core.Data.Series("Prices")
 Prices:Low(item)      -- the lowest price now, per unit, in copper; nil: none, or none for Prices.FRESH (30) days
 Prices:Last(item)     -- low, market, units, auctions, sellers, at: the newest point, however old; nil: none
+Prices:Range(item, from, to) -- how its price went: { { at, low, market }, ... }, oldest first, from server time from to to
+                      -- (nil: from the first point, to now); one table used again: read it at once
+Prices:Stamp()        -- a number that moves with every change of a price
 Prices:OnChange(fn)   -- fn() on the next frame after prices changed
 ```
 
@@ -788,6 +795,11 @@ Prices:OnChange(fn)   -- fn() on the next frame after prices changed
   the scans.
 - **Per house:** while one is open its own, else the one of your side; a price of one house is never read for another.
 - **`index`** is `key=at,low,market,units,auctions,sellers;...`, taken apart when a house is first asked about.
+- **The history (`Range`), whichever is more current (Saneroki, 2026-10-30):** each stretch of time from what is most current
+  for it: a day's scans, this account's and the database's, a point a scan; else the database's line of the day, which took this
+  account's in with all the others'; else this account's own; and last the item's newest point, which what the game lists right
+  now moves on. A scan's point stands at its time, a day's in the middle of that day. An item's history is taken apart once and
+  held until a scan is kept (64 items a house), so what the game lists moves only the newest point.
 - **The database** holds no auction data yet: what the harvest makes of the scans comes in behind this same door. What all
   accounts hold together comes in here already (*Across accounts*).
 
@@ -799,8 +811,9 @@ account's file. What the accounts of a game folder share is its `AddOns` folder:
 
 - **`dev/tools/auction-database`** (`saneui auctiondatabase make`; `saneui start auctiondatabase` for the user service, which
   looks every 5 seconds) reads every account's `SaneUI_AuctionData.lua`, passing over the whole scans, and writes the addon
-  `SaneUI_AuctionDatabase` into the game's `AddOns` folder: per house each item's newest point and the daily points, a day's
-  lowest of any account and the rest from the account that scanned last. It only reads the `WTF` folder. Made on this computer
+  `SaneUI_AuctionDatabase` into the game's `AddOns` folder: per house each item's newest point, the daily points, a day's
+  lowest of any account and the rest from the account that scanned last, and every account's `recent` of the newest scan's day
+  and the day before, so a graph of a day works on an account that did not scan. It only reads the `WTF` folder. Made on this computer
   (`## X-SaneUI-Made`), so it is in neither the repository nor a build; `dev/build` leaves it alone.
 - **In the game:** its one file calls `Prices.Database(game, houses)`; a house's points are read over the account's own where
   newer, when the house is first asked about. Its daily points are the filtered history; each account's own file keeps every

@@ -21,6 +21,8 @@ local Core = SaneUI.Core
 --                   the game's item string). The sellers' and bidders' names are the only ones kept: local,
 --                   never for the database (Doc/guides/data.md, *The full auction scan*).
 --      days[day]  = "key=low,market,units,auctions,sellers;..."
+--      recent[at] = "key=low,market;...", each scan of today and yesterday (Scan.RECENT, Forever's), its own lowest:
+--                   what a graph of a day reads, as a scan kept whole is too much to open for a tooltip
 --      scans[day] = how many scans that day's string holds
 --      index      = each item's newest point, for Prices.lua
 --      at         = when the server last answered; kept, rows, items, left = the last scan kept:
@@ -51,6 +53,7 @@ Scan.ITEMS = 30         -- seconds gear and pets may wait for the game to know t
 Scan.ASKS = 20          -- items asked of the server in one round of that wait
 Scan.KEEP = { retail = 7 } -- days kept per game: Retail's house is far bigger and its data's plan is still to come
 Scan.WHOLE = { forever = true } -- the games whose scans are kept row by row, each one
+Scan.RECENT = { forever = true } -- the games whose scans of today and yesterday are kept as a line per item, for a day's graph
 Scan.BLOCK = 1024       -- rows packed at a time: a few milliseconds, within a frame's budget
 
 local JOB = "Full auction scan"
@@ -59,6 +62,7 @@ local SAME = 14 * 60    -- the game tells again as item data comes in: this soon
 local UNITS = 65536     -- a row as one number, price * UNITS + count: sorted with no table per row
 local RAW = "%s,%d,%.0f,%.0f,%.0f,%.0f,%d,%d,%s,%s,%s" -- a row kept whole; whole numbers past what %d holds on every client
 local DAILY = "%s=%.0f,%.0f,%.0f,%d,%d;"               -- an item's line of a day
+local RECENT = "%s=%.0f,%.0f;"                         -- an item's line of one scan
 
 local SAY = { house = "auction house %s: %d days, %d whole scans (%.1f MB), last scan %s, %d auctions of %d items." }
 local Prices = Data.Series("Prices")
@@ -215,6 +219,7 @@ end
 -- items only an earlier scan of the day saw as they were; each item's newest point; the scan whole.
 local function Keep(scan, home, day, now)
     local lines, items = {}, 0
+    local recent = Core.ForGame(Scan.RECENT) and {} or nil
     local before = home.days[day]
     if type(before) == "string" then
         for line, key, low in before:gmatch("(([^=;]+)=(%d+),[^;]*;)") do
@@ -226,6 +231,7 @@ local function Keep(scan, home, day, now)
     for key, entry in pairs(scan.found) do
         local low, market, line = Point(key, entry)
         lines[#lines + 1] = line
+        if recent then recent[#recent + 1] = RECENT:format(key, low, market) end
         items = items + 1
         Prices.Take(home, key, now, low, market, entry.units, entry.auctions, entry.sellers)
         Steps.Check()
@@ -236,6 +242,14 @@ local function Keep(scan, home, day, now)
     home.days[day] = table.concat(lines)
     Steps.Spend()
     Steps.Fresh()
+    if recent then
+        home.recent[now] = table.concat(recent)
+        for old in pairs(home.recent) do
+            if math.floor(old / 86400) < day - 1 then home.recent[old] = nil end
+        end
+        Steps.Spend()
+        Steps.Fresh()
+    end
     Prices.Save(home)
     if whole then home.whole[now] = whole end
     Prices.Changed()

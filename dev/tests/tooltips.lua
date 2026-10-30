@@ -306,7 +306,7 @@ local function Steps(frames)
 end
 local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Quests", "Gathering", "Figures" }
 for _, name in ipairs({ "Kinds/Gold", "Kinds/Inventory", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest",
-    "Kinds/Object", "Pools", "Panel", "Host" }) do
+    "Kinds/Object", "Pools", "Panel", "PriceGraph", "Host" }) do
     files[#files + 1] = name
 end
 for _, file in ipairs(files) do
@@ -725,7 +725,78 @@ check(row(panel, 8).left == "Lowest 98765c" and row(panel, 9).left:find("Seen %d
 check(ns.Gold.PostAt({ current = 90, vendor = 100 }) == 106 and ns.Gold.PostAt({ current = 500, vendor = 0 }) == 499
     and ns.Gold.PostAt({ vendor = 100 }) == nil,
     "never so low that a sale, after the cut, brings less than a vendor pays; nothing without an offer seen")
+-- How its price went (PriceGraph.lua): with Alt, at the end of the section
+local function graphRow(on)
+    for index = 1, on.model.shown.n do
+        if on.model.shown.rows[index].kind == "graph" then return on.model.shown.rows[index], index end
+    end
+end
+local function shownText(on, words)
+    for index = 1, on.texts.taken do
+        if on.texts[index]:IsShown() and on.texts[index]._text == words then return true end
+    end
+    return false
+end
+local graph, graphAt = graphRow(panel)
+check(graph and graphAt == 11 and graph.range == "1w" and options.priceRange == "1w", "with Alt the graph ends the Gold section, a week at first")
+check(panel:GetWidth() >= ns.Graph.WIDE and panel.strokes.taken == 0 and shownText(panel, "One price seen in this range"),
+    "room for it; one price draws no line, and says so")
+local home, serverNow = Prices.House("player"), GetServerTime()
+local serverDay = math.floor(serverNow / 86400)
+home.days[serverDay - 5], home.days[serverDay - 3] = "19019=90000,95000,1,1,1;", "19019=120000,130000,1,1,1;"
+home.days[serverDay - 20] = "19019=50000,60000,1,1,1;"
+Prices.Changed()
+W.Wait(0)
+check(graphRow(panel).stamp == Prices:Stamp() and panel.strokes.taken == 3,
+    "a scan kept: the shown graph is drawn anew: two strokes of the lowest price, one of the market's (what the game lists has none)")
+for index = 1, panel.strokes.taken do
+    local stroke = panel.strokes[index]
+    check(stroke:IsShown(), "(a line is shown)")
+end
+check(shownText(panel, "130000c") and shownText(panel, "90000c") and shownText(panel, "Lowest") and shownText(panel, "Market")
+    and shownText(panel, "Ctrl: next range"), "the highest and lowest price of the range, what the lines are, and the key")
+for _, word in ipairs({ "24h", "1w", "2w", "1m", "All" }) do check(shownText(panel, word), "a button: " .. word) end
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 0)
+check(options.priceRange == "1w", "Ctrl let go changes nothing")
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1)
+check(options.priceRange == "2w" and graphRow(panel).range == "2w", "Ctrl goes on to the next range, at once, and it is kept")
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 0)
+W.Fire("MODIFIER_STATE_CHANGED", "RCTRL", 1)
+W.Fire("MODIFIER_STATE_CHANGED", "RCTRL", 0)
+check(options.priceRange == "1m" and panel.strokes.taken == 5, "the other Ctrl too; a longer range reaches further back")
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1)
+check(options.priceRange == "All" and panel.strokes.taken == 5, "All: from the first price kept")
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1)
+check(options.priceRange == "24h" and panel.strokes.taken == 0 and shownText(panel, "One price seen in this range"), "after All the first again")
+Core.Set("Tooltips", "priceRange", "1w")
+W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
+check(options.priceRange == "1w", "(another key changes nothing)")
+check(panel.hits == nil, "the mouse cannot get to a tooltip that goes when it leaves: nothing there takes a click")
+pinned:SetOwner(UIParent, "ANCHOR_PRESERVE")
+pinned:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
+local stays = ns.Panel.All()[pinned]
+check(stays.hits and stays.hits[5]:IsShown() and #stays.hits == 5, "the chat link's tooltip stays: its buttons take the mouse")
+stays.hits[3]._scripts.OnClick(stays.hits[3])
+check(options.priceRange == "2w" and graphRow(stays).range == "2w" and graphRow(panel).range == "2w", "a click on one: every graph on show follows")
+Core.Set("Tooltips", "priceRange", "1w")
+W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+pinned:Hide()
 W.alt = false
+W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+check(graphRow(panel) == nil and panel.graphRow == nil and panel.strokes.taken == 0, "Alt let go, the graph is gone")
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1)
+check(options.priceRange == "1w", "and Ctrl does nothing to it")
+options.show = "shift"
+W.alt = true
+W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1)
+check(options.priceRange == "1w", "nor while tooltips may not be seen")
+options.show = "always"
+W.alt = false
+W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+home.days[serverDay - 5], home.days[serverDay - 3], home.days[serverDay - 20] = nil, nil, nil
+Prices.Changed()
+W.Wait(0)
 browse = { { itemKey = { itemID = 19019, itemLevel = 60 }, minPrice = 500 }, { itemKey = { itemID = 19019, itemLevel = 70 }, minPrice = 900 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 check(Prices:Low(19019) == 500, "an item listed in several rows (its kinds) has the lowest of them as its price")

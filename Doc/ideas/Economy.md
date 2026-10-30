@@ -220,6 +220,9 @@ window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.m
   filtered there. The scans and prices are a file of their own, apart from the settings (`SaneUI_AuctionData`).
 - **One door for prices (Saneroki):** tooltips, disenchanting, the advice and rewards read `Data.Series("Prices")`: what the
   house lists right now, else its last scan. The advice now weighs disenchanting too, for a character with the spell.
+- **The price's history (Saneroki, 2026-10-30):** `Prices:Range`, from whichever of the account's file and the database is more
+  current; a scan's own line kept for today and yesterday beside `whole`, so a graph of a day need not open a whole scan. The
+  first view is Tooltips' graph with Alt, in the Gold section (`src/Tooltips/PriceGraph.lua`).
 - **Across accounts (Saneroki):** each account's file keeps all; `dev/tools/auction-database` makes the addon
   `SaneUI_AuctionDatabase` in the game's `AddOns` folder from them, daily points and newest prices, so every account of the
   game folder reads them (`Doc/guides/data.md`, *Across accounts*).
@@ -261,7 +264,7 @@ missing (`Doc/ideas/Data.md`, *Realms and regions*). Economy only reads:
 ```lua
 local Prices = SaneUI.Core.Data.Series("Prices")   -- this realm's (and faction's) auction prices
 Prices:Last(item)
-Prices:Range(item, fromDay, toDay)
+Prices:Range(item, from, to)   -- by server time, so a day has a point a scan; built, Doc/guides/data.md, *Prices*
 ```
 
 What Economy shows from the database:

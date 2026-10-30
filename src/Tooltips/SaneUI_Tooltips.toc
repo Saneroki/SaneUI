@@ -43,5 +43,7 @@ Kinds\Object.lua
 Pools.lua
 # The panel that is drawn over the game's tooltip
 Panel.lua
+# How a thing's price went at the auction house, drawn in its Gold section while Alt is held
+PriceGraph.lua
 # Where each panel stands, and the game's tooltip kept out of sight meanwhile, then restored
 Host.lua
