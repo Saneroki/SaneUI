@@ -1881,6 +1881,10 @@ do
     SlashCmdList.SANEUI("data")
     check(printedMatch("auction house eu/1234/alliance: %d+ days, %d+ whole scans %(%d+%.%d MB%)"), "/sane data says what the whole scans weigh")
 
+    -- What all accounts hold together: read when a house is first asked about, over this account's where newer
+    Prices.Database("retail", { ["eu/1234/neutral"] = { index = "777=9,1,1,1,1,1;" } })
+    Prices.Database("forever", { ["eu/1234/neutral"] = { index = "10=" .. GetServerTime() .. ",333,1,1,1,1;777=" .. GetServerTime() .. ",222,2,3,4,5;" } })
+
     -- A house of a wrong shape goes to broken; the goblin towns' house has its own key
     W.Fire("AUCTION_HOUSE_CLOSED")
     SaneUIData_Market.forever.houses["eu/1234/neutral"] = { days = "no" }
@@ -1892,7 +1896,10 @@ do
     rawset(_G, "UnitFactionGroup", faction)
     check(type(SaneUIData_Market.forever.houses["eu/1234/neutral"].days) == "table" and SaneUIData_Market.forever.broken[1].days == "no",
         "the neutral house by the NPC; a part of a wrong shape set aside, never wiped")
-    check(Prices:Low(10) == nil, "while a house is open only its own prices count, never another's")
+    check(Prices:Low(777) == 222 and select(3, Prices:Last(777)) == 3, "another account's scan is read by this one, its house's")
+    check(Prices:Low(10) == 333, "while a house is open only its own prices count, never another's")
+    Prices.See("10", 150)
+    check(Prices:Low(10) == 150, "what the game lists right now goes over it")
     W.Fire("AUCTION_HOUSE_CLOSED")
     check(Prices:Low(10) == 400, "closed: your side's again")
     W.printed = {}

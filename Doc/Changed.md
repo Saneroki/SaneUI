@@ -72,6 +72,17 @@ deleting junk tried again a little later, not given up for the session. A `/relo
 - **Tests:** `dev/tests/speedleveling.lua`, `bags.lua`.
 - **Docs:** `src/SpeedLeveling/README.md`, `src/Inventory/README.md`, `Doc/ideas/Leveling.md`.
 
+### Auction data across accounts: the daily points of every account in an addon they share (Saneroki, 2026-10-30)
+Saneroki: a full scan on one account visible and updated on account 2 as well; WTF keeps all, the database filtered to daily. A
+restart of the game takes in the new addon once; after that a `/reload`.
+- **`dev/tools/auction-database` (new, `saneui auctiondatabase`, `saneui start auctiondatabase`):** reads every account's
+  `SaneUI_AuctionData.lua`, passing over the whole scans, and writes the addon `SaneUI_AuctionDatabase` into the game's `AddOns`
+  folder of Forever and Retail: each item's newest point and the daily points. Only reads `WTF`. Made here, never in a build.
+- **`src/Core/Data/Prices.lua`:** `Prices.Database(game, houses)`: read over the account's own points where newer.
+- **`dev/build`:** leaves an addon made on this computer alone (`## X-SaneUI-Made`).
+- **Why not the game's own:** `## SavedVariablesMachine` is closed to addons; `Doc/guides/data.md`, *Across accounts*.
+- **Tests:** `dev/tests/auctions.py` (new), `dev/tests/data.lua`.
+
 ### Auction data: every scan kept whole in a file of its own; one door to prices, live, for every view (Saneroki, 2026-10-30)
 Saneroki: Forever keeps a full history of all scans, every datapoint, filtered when it goes into the database; all tooltips,
 their disenchanting and what-to-do calculations use the AH's realtime data and the database, not their own; the AH data is a

@@ -220,6 +220,9 @@ window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.m
   filtered there. The scans and prices are a file of their own, apart from the settings (`SaneUI_AuctionData`).
 - **One door for prices (Saneroki):** tooltips, disenchanting, the advice and rewards read `Data.Series("Prices")`: what the
   house lists right now, else its last scan. The advice now weighs disenchanting too, for a character with the spell.
+- **Across accounts (Saneroki):** each account's file keeps all; `dev/tools/auction-database` makes the addon
+  `SaneUI_AuctionDatabase` in the game's `AddOns` folder from them, daily points and newest prices, so every account of the
+  game folder reads them (`Doc/guides/data.md`, *Across accounts*).
 - **Idle logout: not prevented (2026-10-30).** The newest export has no call that resets the game's idle time. The one
   handle near it, `CancelLogout` on `PLAYER_CAMPING`, only stops the 20 seconds of a logout outside a rest area, and most
   auction houses stand in rest areas, where a logout has no such wait. Working around the game's idle logout would also

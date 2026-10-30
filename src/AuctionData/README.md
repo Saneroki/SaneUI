@@ -18,6 +18,8 @@ take longer as it grows.
   `SaneUIData_Market` and holds nothing else.
 - Core's `Data.APART` names it: `Data.Saved("Market", fn)` hands over the part once this addon has loaded.
 - What the file holds and how the scans fill it: [Doc/guides/data.md](../../Doc/guides/data.md), *The full auction scan*.
+- The file is per WoW account. What all accounts hold together, daily, is another addon, made on the computer from these
+  files: *Across accounts* in the same guide.
 
 ## History
 

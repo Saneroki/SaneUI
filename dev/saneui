@@ -90,6 +90,7 @@ GROUPS = {
     },
     "Data": {
         "data": (["dev/tools/data"], "Core's data framework: check, compile, import, harvest", 'check · import · harvest'),
+        "auctiondatabase": (["dev/tools/auction-database"], "every account's auction data together, for every account", None),
         "readgamedata": (["dev/tools/game-data"], "the game's facts from its client tables", None),
         "readmapdata": (["dev/tools/map-data"], "the facts of Navigation's map", None),
         "readtraveldata": (["dev/tools/travel-data"], "flights, boats, zeppelins, the tram and lifts", None),
@@ -124,6 +125,7 @@ BACKGROUND = {
     "gpurunner": {"start": ["start"], "pause": ["pause"], "resume": ["resume"], "stop": ["stop"], "status": ["status"]},
     "comfyui": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
     "webpages": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
+    "auctiondatabase": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
 }
 LINK = Path.home() / "bin" / "saneui"
 GAME = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"

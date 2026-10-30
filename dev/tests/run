@@ -31,6 +31,7 @@
 #   atlas.py        the Atlas painting's words, its check against the game's water, the seams, the screen
 #   map_layers.py   the maps' three levels: frames, the buildings' indoor maps placed, the words, the checks
 #   gpu_runner.py   the GPU runner: its jobs in order, the claims, what counts as the card wanted elsewhere
+#   auctions.py     dev/tools/auction-database: every account's auction data together, the addon made from it
 #   saneui.py       dev/saneui: every command's script is there, its names, the greeting card, the completion
 #   board.py        the task board: cards made, moved, edited, deleted; Backlog.md; a ranked list read in
 #   webpages.py     the tools' pages: one server on one port, folders and tools by their place
@@ -75,6 +76,7 @@ python3 -I dev/tests/uilab.py
 python3 -I dev/tests/atlas.py
 python3 -I dev/tests/map_layers.py
 python3 -I dev/tests/gpu_runner.py
+python3 -I dev/tests/auctions.py
 python3 -I dev/tests/saneui.py
 python3 -I dev/tests/board.py
 python3 -I dev/tests/webpages.py

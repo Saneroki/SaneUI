@@ -124,12 +124,12 @@ to_game() { rsync -a --delete "${@:2}" "$build/$1/" "$addons/$1/"; }
 
 # stale <folder>: the Sane UI addons in it that this build does not make (a module renamed or removed; the
 # data packs SaneUI_Data_* of before, now part of Core). A guide pack of Speed Leveling's (its TOC says
-# X-SaneUI-Guides) is made on this computer, not by the build: not stale.
+# X-SaneUI-Guides) and the auction database (X-SaneUI-Made) are made on this computer, not by the build: not stale.
 stale() {
     local dir
     for dir in "$1"/SaneUI "$1"/SaneUI_*; do
         if [ -d "$dir" ] && [ -z "${source[$(basename "$dir")]:-}" ] \
-            && ! grep -qs '^## X-SaneUI-Guides:' "$dir/$(basename "$dir").toc"; then echo "$dir"; fi
+            && ! grep -qsE '^## X-SaneUI-(Guides|Made):' "$dir/$(basename "$dir").toc"; then echo "$dir"; fi
     done
 }
 

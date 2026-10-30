@@ -12,6 +12,8 @@ local Core = SaneUI.Core
 --      Prices:Low(item)        the lowest price now, per unit, in copper; nil: none, or none for Prices.FRESH days
 --      Prices:Last(item)       low, market, units, auctions, sellers, at: the newest point, however old; nil: none
 --      Prices:OnChange(fn)     fn() on the next frame after prices changed: a list of the game's, or a scan kept
+--      Prices.Database(game, houses)   what all accounts hold together, from the addon SaneUI_AuctionDatabase, which a tool
+--                              on this computer makes: read over this account's own where it is newer
 --
 --  item is an item's ID or its link. A link names its kind (gear by level and suffix, a pet by species); an ID, or a
 --  link of a kind no scan saw, the cheapest of its kinds.
@@ -37,6 +39,8 @@ local NONE = {}
 local part             -- this game version's part of SaneUIData_Market
 local mine, opened     -- the house of your side, once asked for; the one open now
 local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty }
+local keys = {}        -- [a house's part] = its key
+local database         -- [a house's key] = { index, days }: what all accounts hold together, where a tool made that
 local kinds = {}       -- [item] = whether the auction house tells its kinds apart
 local listed = {}      -- [key] = the lowest price in the list on show
 local listeners = {}
@@ -72,6 +76,7 @@ function Prices.House(unit)
         part.houses[key] = known
     end
     if type(known.whole) ~= "table" then known.whole = {} end
+    keys[known] = key
     return known
 end
 
@@ -143,6 +148,13 @@ local function Book(house)
     books[house] = book
     if type(house.index) == "string" then
         for key, point in house.index:gmatch(SAVED) do Put(book, key, point) end
+    end
+    local shared = database and database[keys[house]]
+    if type(shared) == "table" and type(shared.index) == "string" then
+        for key, point in shared.index:gmatch(SAVED) do
+            local own = book.index[key]
+            if not own or tonumber(point:match("^%d+")) > tonumber(own:match("^%d+")) then Put(book, key, point) end
+        end
     end
     return book
 end
@@ -228,6 +240,11 @@ end
 
 function Prices:OnChange(fn)
     listeners[#listeners + 1] = fn
+end
+
+-- Called by the file of the addon SaneUI_AuctionDatabase as the game reads it; another game's is not taken.
+function Prices.Database(game, houses)
+    if game == Data.Game() and type(houses) == "table" then database = houses end
 end
 
 function Data.Series(name)

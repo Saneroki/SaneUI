@@ -796,7 +796,8 @@ laid over the sets and dropped once a set is as new, and the first watcher, wher
 *Built ahead for the prices (2026-10-30, `Doc/guides/data.md`, *The full auction scan* and *Prices*), simpler than below: one
 string per server day and house, one per whole scan (Forever) and each item's newest point. `SaneUIData_Market` has a file of
 its own, the addon `SaneUI_AuctionData` (Saneroki). `Data.Series("Prices")` reads `Low` and `Last`; `Range`, the harvest of the
-scans and the roll-ups below are still to come. Nothing old is dropped from Forever's file.*
+scans and the roll-ups below are still to come. Nothing old is dropped from Forever's file. The first filtering is built: daily
+points of all accounts in a local addon (*Across accounts* in the guide); the harvest into the master comes after it.*
 
 - Per auction house (*Realms and regions*: region, realm, side): **today's points in a small table per
   item**, updated by every scan (own or shared); **at logout** today's point is added to

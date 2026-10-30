@@ -788,7 +788,27 @@ Prices:OnChange(fn)   -- fn() on the next frame after prices changed
   the scans.
 - **Per house:** while one is open its own, else the one of your side; a price of one house is never read for another.
 - **`index`** is `key=at,low,market,units,auctions,sellers;...`, taken apart when a house is first asked about.
-- **The database** holds no auction data yet: what the harvest makes of the scans comes in behind this same door.
+- **The database** holds no auction data yet: what the harvest makes of the scans comes in behind this same door. What all
+  accounts hold together comes in here already (*Across accounts*).
+
+### Across accounts *(Saneroki, 2026-10-30)*
+
+A scan on one WoW account shows on the others of that game folder. The game keeps saved files per account, and its
+machine-wide kind (`## SavedVariablesMachine`, `WTF/SavedVariables/`) is closed to addons, so an addon cannot reach another
+account's file. What the accounts of a game folder share is its `AddOns` folder:
+
+- **`dev/tools/auction-database`** (`saneui auctiondatabase make`; `saneui start auctiondatabase` for the user service, which
+  looks every 5 seconds) reads every account's `SaneUI_AuctionData.lua`, passing over the whole scans, and writes the addon
+  `SaneUI_AuctionDatabase` into the game's `AddOns` folder: per house each item's newest point and the daily points, a day's
+  lowest of any account and the rest from the account that scanned last. It only reads the `WTF` folder. Made on this computer
+  (`## X-SaneUI-Made`), so it is in neither the repository nor a build; `dev/build` leaves it alone.
+- **In the game:** its one file calls `Prices.Database(game, houses)`; a house's points are read over the account's own where
+  newer, when the house is first asked about. Its daily points are the filtered history; each account's own file keeps every
+  scan whole.
+- **When an account sees it:** the game writes a saved file at a `/reload` or logout, and reads addon files at a login or
+  `/reload`. So a scan on one account shows on another after a `/reload` or logout there, a few seconds, then a `/reload` or
+  login here. Never at once: a running client cannot be told. Only the addon's first appearance takes a restart of the game.
+- **Other players** have neither the tool nor the addon, and Core does without. Sane Sync is the way to give it to them.
 
 ### The harvest
 

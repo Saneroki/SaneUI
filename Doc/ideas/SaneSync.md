@@ -56,6 +56,8 @@ An addon cannot reach the network or other programs. The app and the addon talk 
 
 - **Never into saved variables while the game runs:** the game writes its own copy over them at logout.
 - So data is one session late both ways. For updates, backups and prices that is fine.
+- *First of this built, for the developer's computer (2026-10-30): `dev/tools/auction-database`, every account's auction data
+  into one addon file (`Doc/guides/data.md`, *Across accounts*). The app is how other players get it.*
 
 ## Finding the game
 
