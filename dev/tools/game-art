@@ -612,7 +612,7 @@ def overview(sections, items, columns=5, rows=7, cell=(320, 250)):
 def find(word):
     numbers = json.loads(NUMBERS.read_text()) if NUMBERS.is_file() else {}
     for key, number in sorted(numbers.items(), key=lambda kv: kv[1]):
-        if word.lower() in key:
+        if word.lower() in key.lower():
             print(f"#{number}  {key}")
 
 
