@@ -193,6 +193,11 @@ of the gold, on at first and on the settings page too: at a vendor the junk goes
 character's own money (`src/Inventory/README.md`, *Auto Sell and Auto Repair*). They first stood in Speed Leveling's
 errands; they belong to the bags.
 
+**Built (2026-10-30), Saneroki asked:** the drawings painted into the doll's slots taken out, the shield and the
+ammo's too (`dev/tools/journal-art`, `blank_slots`); an empty slot shows our own pencil drawing of what goes there
+instead (`Slots.DRAWINGS`, the bags' `Art/Categories`; the ammo a quiver, the shirt the shirt, a tabard drawing of
+its own), faded to half.
+
 **Built (2026-10-23), Saneroki asked:** the doll's model shows again (the clipping frame round it hid it whole; the
 doll's picture is drawn over its legs below the hero's column instead). Then, as Saneroki explained it: a bag or a
 quiver lying in the bags is an item like any other and always empty (the game puts no full bag into another); only

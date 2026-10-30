@@ -3,8 +3,21 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 99 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 123 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 614 (Social), 110 (Sync), 426 (windows), 269 (data in the game), 690 (Navigation), 150 (Inventory), 124 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 185 (Loot), 123 and 104 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Inventory: the doll's slots empty of painted drawings, our own drawings in empty slots (Saneroki, 2026-10-30)
+Saneroki: the sketches painted into the doll's gear slots go, the shield too, and our own rendered simplified gear
+icons stand in the empty slots.
+- **The picture:** `dev/tools/journal-art` (`blank_slots`) lays paper of each slot's own tone over the inside of its
+  pencil box, the box's lines kept: the rows' insides found from their lines (the arc leaves them a little crooked),
+  the weapons' and the ammo's measured, the shield's point mended where it lay over its box's line. `doll.blp` anew.
+- **The slots:** a texture on each button, `Slots.DRAWINGS`, the bags' pencil drawings (`Art/Categories`) over the
+  whole item square at half strength (`Slots.DRAWN`); hidden while something is worn there. The shirt is `armor`, the
+  ammo a quiver (`special`), the off hand the shield (`offhand`); the tabard a new drawing, made by code in the set's
+  line, as the card was held by the game (`assets/interface/categories/tabard.png`).
+- The lab's scene `inventory` gives the doll its slots (`C_PaperDollInfo.GetInventorySlotInfo`). Tests: `dev/tests/sheet.lua`
+  124 checks (a drawing for every slot, shown empty, gone with an item, back without it).
 
 ### Bags: Auto Sell and Auto Repair, two checkboxes in the foot (Saneroki, 2026-10-30)
 Saneroki: both belong to the bags, not to Speed Leveling, as a checkbox in the bag at first. New file `Bags/Vendor.lua`,

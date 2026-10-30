@@ -4,8 +4,9 @@ from the chosen pencil drawings.
 
 The drawings are made with an image model (dev/imagegen/sets/bags/categories.txt, its chosen seeds noted there);
 the chosen one of each row is kept as assets/interface/categories/<key>.png, by its key: a view's (all, one, each),
-a built-in category's or group's (src/Inventory/Bags/Categories.lua), "add" (Add Category) and "own" (a category
-of the player's own without an icon of its own). Each becomes a pencil drawing on the page in the game: its lines
+a built-in category's or group's (src/Inventory/Bags/Categories.lua), "add" (Add Category), "own" (a category of
+the player's own without an icon of its own) and "tabard" (the doll's empty tabard slot, Sheet/Slots.lua, which
+shows these drawings too). Each becomes a pencil drawing on the page in the game: its lines
 and their grain in the journal's graphite (the darker a pixel, the more graphite), centred in a square with a
 little room round it; a BLP2 of SIDE x SIDE (dev/tools/art's writer) in
 assets/optimized/Inventory/Art/Categories/<key>.blp, which dev/build puts into SaneUI_Inventory/Art/.

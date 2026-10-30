@@ -14,6 +14,9 @@ CreateFrame = function(kind, ...)
     return create(kind, ...)
 end
 GetShapeshiftFormID = GetShapeshiftFormID or function() return nil end
+-- The doll's slots: the lab knows the slots by the game's older names
+C_PaperDollInfo.GetInventorySlotInfo = GetInventorySlotInfo
+C_PaperDollInfo.IsRangedSlotShown = function() return true end
 Lab.TOC("src/Core/SaneUI.toc")
 local ns = Lab.TOC("src/Inventory/SaneUI_Inventory.toc")
 LabInventory = ns

@@ -21,10 +21,12 @@ The character window (doll.png) is made here for the game:
   2. its two slot columns bent along the arc (compose.py, doll_bent);
   3. the strips' painted writing covered with paper (compose.py, clean): code writes the items' words there;
   4. the two top slots (head, hands) made as small as the others (Saneroki, 2026-10-23): their large boxes covered
-     with paper, a box of the first row's in their middle, the large box's sketch drawn small inside it (TOP);
+     with paper, a box of the first row's in their middle (TOP);
   5. the hero's column (the model's place) covered with the page's own paper, its frame, wedges and stony ground
      gone (Saneroki, 2026-10-23): the model stands on the page (MIDDLE);
-  6. cut to the window (compose.py, DOLL_BOX).
+  6. cut to the window (compose.py, DOLL_BOX);
+  7. every slot's painted drawing taken out, the shield and the ammo's too (Saneroki, 2026-10-30), its box's pencil
+     kept: the game draws our own drawings there while a slot is empty (blank_slots).
 
 Kalam (assets/fonts/Kalam) goes into Core's Fonts/.
 
@@ -58,6 +60,17 @@ RIVETS = [(305, 94), (712, 94)]  # the frame's rivets by the top slots, kept (la
 RIVET = 14
 PAGE = (360, 160, 392, 700)  # the page's paper between the left slots and the hero's column: its tone (layout pixels of #3)
 COVER = 9                    # the paper laid over a large box reaches so far past it (its pencil border)
+# The slots' insides on the doll, in its picture's pixels (twice the layout's): the weapons' and the ammo's, each four
+# corners or more; the rows' are found from their lines (inside()), REACH either side of the slot's edge, leaning at
+# most LEAN. The shield's point lay over its box's line: the line next to it laid there again (SHIELD_TIP: from, to).
+WEAPON_INSIDE = [((272, 1490), (292, 1476), (450, 1467), (452, 1642), (272, 1642)),
+                 ((573, 1474), (765, 1474), (765, 1644), (573, 1644)),
+                 ((892, 1469), (1060, 1480), (1062, 1645), (892, 1645))]
+AMMO_INSIDE = ((1096, 1541), (1179, 1541), (1179, 1616), (1096, 1616))
+SHIELD_TIP = ((590, 1636, 634, 1662), (650, 1636))
+REACH, LEAN = 22, 22
+BLANK_ROOM = 3               # the paper stops so far inside the box's line
+BLANK_ROUND = 8              # how round its corners are (a blur's radius)
 
 _loader = importlib.machinery.SourceFileLoader("art", str(ROOT / "dev/tools/art"))
 _spec = importlib.util.spec_from_loader("art", _loader)
@@ -118,15 +131,12 @@ def leather(rgb):
 def small_tops(c, compose, shift):
     """The two top slots made as small as a row's (TOP): each large box covered with paper of the page around it
     (paper.py's grain, brought to that paper's tone and contrast, feathered in, the leather over it kept); then
-    pencil multiplied onto that paper: the border of the first row's box, and inside it the large box's sketch drawn
-    small (the strap's leather in it left out)."""
+    pencil multiplied onto that paper: the border of the first row's box, its inside blank."""
     zz = compose.zz
     row = compose.DOLL["left"][0][0]
     row = (row[0] - shift[0], row[1], row[2] - shift[0], row[3])
     border = np.asarray(c.crop(zz(row[0] - 4, row[1] - 4, row[2] + 4, row[3] + 4)).convert("RGB"), dtype=np.float32)
     for i, (large, small) in enumerate(zip(LARGE, TOP)):
-        inner = (large[0] + SKETCH + 4, large[1] + SKETCH + 4, large[2] - SKETCH - 4, large[3] - SKETCH - 4)
-        sketch = np.asarray(c.crop(zz(*inner)).convert("RGB"), dtype=np.float32)
         # the paper: the page's next to the box (a band right or left of it, inside the frame)
         x0, y0, x1, y1 = zz(large[0] - COVER, large[1] - COVER, large[2] + COVER, large[3] + COVER)
         side = (x1 + 2, y0 + 30, x1 + 14, y1) if i == 0 else (x0 - 14, y0 + 30, x0 - 2, y1)
@@ -149,21 +159,12 @@ def small_tops(c, compose, shift):
         mask = ImageChops.multiply(mask, edge.filter(ImageFilter.GaussianBlur(3))).filter(ImageFilter.GaussianBlur(1))
         m = np.asarray(mask, dtype=np.float32)[..., None] / 255
         here[..., :3] = here[..., :3] * (1 - m) + fill * m
-        # pencil multiplied on: the row's box border (its inside left blank), the large sketch drawn small inside
+        # pencil multiplied on: the row's box border, its inside left blank
         sx0, sy0, sx1, sy1 = zz(small[0] - 4, small[1] - 4, small[2] + 4, small[3] + 4)
         ink = border / np.percentile(border.reshape(-1, 3), 85, axis=0)
         ink = np.where(ink.mean(axis=-1, keepdims=True) < 0.9, ink, 1)        # the box's lines, not its paper
         cut = round(compose.z(4 + SKETCH * 64 // 90))
         ink[cut:-cut, cut:-cut] = 1
-        ix0, iy0 = sx0 - x0 + cut, sy0 - y0 + cut
-        iw, ih = ink.shape[1] - 2 * cut, ink.shape[0] - 2 * cut
-        drawn = sketch / np.percentile(sketch.reshape(-1, 3), 85, axis=0)
-        strap = Image.fromarray((leather(sketch) * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(15))
-        drawn[np.asarray(strap) > 0] = 1
-        drawn = np.where(drawn.mean(axis=-1, keepdims=True) < 0.82, drawn, 1)   # the strokes, not the grain
-        drawn = np.asarray(Image.fromarray((np.clip(drawn, 0, 1) * 255).astype(np.uint8)).resize((iw, ih), Image.LANCZOS),
-                           dtype=np.float32) / 255
-        ink[cut:-cut, cut:-cut] = drawn
         part = here[sy0 - y0:sy1 - y0, sx0 - x0:sx1 - x0]
         solid = ~leather(part[..., :3])
         part[..., :3] = np.where(solid[..., None], part[..., :3] * np.clip(ink, 0, 1), part[..., :3])
@@ -194,6 +195,90 @@ def paper_over(c, compose, box, seed, keep_boxes=()):
     m = np.asarray(mask, dtype=np.float32)[..., None] / 255
     here[..., :3] = here[..., :3] * (1 - m) + fill * m
     c.paste(Image.fromarray(here.clip(0, 255).astype(np.uint8)), (x0, y0))
+
+
+def straight(dark, tries, along, down, inward):
+    """Where the innermost long straight pencil line stands: (at the start of the span along, at its end), of tries
+    (pixels); it runs down the picture (down) or across it. What is drawn in a slot is no straight line: it leaves
+    most of any line light."""
+    steps = np.linspace(0, 1, 48)
+    ys = np.rint(along[0] + (along[1] - along[0]) * steps).astype(int)
+    score = {}
+    for a in tries:
+        for b in tries:
+            if abs(a - b) <= LEAN:
+                xs = np.rint(a + (b - a) * steps).astype(int)
+                score[(a, b)] = np.percentile(dark[ys, xs] if down else dark[xs, ys], 35)
+    best = max(score.values())
+    return max((key for key, value in score.items() if value >= best / 2), key=lambda key: (key[0] + key[1]) * inward)
+
+
+def inside(dark, rect):
+    """The four corners of the inside of a row's pencil box (rect: the slot; the arc leaves the boxes a little
+    crooked), found from the lines of its sides, past their rounded corners."""
+    l, t, r, b = rect
+    my, mx = round((b - t) * 0.14), round((r - l) * 0.14)
+    upright = (t + my, b - my)
+    level = (l + mx, r - mx)
+    left = straight(dark, range(l - REACH, l + REACH), upright, True, 1)
+    right = straight(dark, range(r - REACH, r + REACH), upright, True, -1)
+    top = straight(dark, range(t - REACH, t + REACH), level, False, 1)
+    bottom = straight(dark, range(b - REACH, b + REACH), level, False, -1)
+
+    def corner(side, line):
+        x = side[0]
+        for _ in range(2):
+            y = line[0] + (line[1] - line[0]) * (x - level[0]) / (level[1] - level[0])
+            x = side[0] + (side[1] - side[0]) * (y - upright[0]) / (upright[1] - upright[0])
+        return round(x), round(y)
+
+    return corner(left, top), corner(right, top), corner(right, bottom), corner(left, bottom)
+
+
+def blank(picture, corners, seed, compose, tone=None):
+    """What is painted in a slot taken out: over the inside of its pencil box (corners, their edges rounded), paper
+    of the tone next to the box's line (tone: of this one instead), paper.py's grain, feathered in. Its tone."""
+    xs, ys = zip(*corners)
+    x0, y0, x1, y1 = min(xs) - 24, min(ys) - 24, max(xs) + 24, max(ys) + 24
+    shape = Image.new("L", (x1 - x0, y1 - y0), 0)
+    ImageDraw.Draw(shape).polygon([(x - x0, y - y0) for x, y in corners], fill=255)
+    shape = shape.filter(ImageFilter.GaussianBlur(BLANK_ROUND)).point(lambda v: 255 if v > 127 else 0)
+    core = shape.filter(ImageFilter.MinFilter(2 * BLANK_ROOM + 1))
+    here = np.asarray(picture.crop((x0, y0, x1, y1)), dtype=np.float32).copy()
+    if tone is None:
+        band = (np.asarray(core) > 0) & (np.asarray(core.filter(ImageFilter.MinFilter(17))) == 0)
+        near = here[band][:, :3]
+        near = near[near.mean(axis=1) >= np.median(near.mean(axis=1))]        # the paper, not what is drawn on it
+        tone = near.mean(axis=0), near.std(axis=0)
+    grain = np.asarray(compose.paper.page(x1 - x0, y1 - y0, seed, edge=0, stained=False).convert("RGB"), dtype=np.float32)
+    g = grain.reshape(-1, 3)
+    fill = (grain - g.mean(axis=0)) / (g.std(axis=0) + 1e-6) * tone[1] + tone[0]
+    m = np.asarray(core.filter(ImageFilter.GaussianBlur(1.5)), dtype=np.float32)[..., None] / 255
+    here[..., :3] = here[..., :3] * (1 - m) + fill * m
+    picture.paste(Image.fromarray(here.clip(0, 255).astype(np.uint8)), (x0, y0))
+    return tone
+
+
+def blank_slots(picture, slots, compose):
+    """Every slot's painted drawing taken out of the doll (Saneroki, 2026-10-30), the shield and the ammo's too: the
+    game draws our own there while a slot is empty (Sheet/Slots.lua). slots: in the layout's pixels, the picture's
+    are twice those."""
+    lum = picture.convert("L")
+    dark = np.clip(np.asarray(lum.filter(ImageFilter.GaussianBlur(25)), dtype=np.float32) - np.asarray(lum, dtype=np.float32), 0, None)
+    rows = [(f"top{i}", rect) for i, rect in enumerate(slots["top"])]
+    for name in ("left", "right"):
+        rows += [(f"{name}{i}", rect) for i, (rect, _) in enumerate(slots[name])]
+    for name, rect in rows:
+        blank(picture, inside(dark, [v * 2 for v in rect]), f"blank-{name}", compose)
+    tone = None
+    for i, corners in enumerate(WEAPON_INSIDE):
+        tone = blank(picture, corners, f"blank-weapon{i}", compose)
+    blank(picture, AMMO_INSIDE, "blank-ammo", compose, tone)
+    box, at = SHIELD_TIP
+    patch = picture.crop(box)
+    feather = Image.new("L", patch.size, 0)
+    feather.paste(255, (8, 0, patch.width - 8, patch.height))
+    picture.paste(patch, at, feather.filter(ImageFilter.GaussianBlur(3)))
 
 
 def doll():
@@ -234,8 +319,9 @@ def doll():
         slots["weapons"].append(([v - o for v, o in zip(sl, (x0, y0, x0, y0))],
                                  [round(v - o) for v, o in zip(paper, (x0, y0, x0, y0))]))
     slots["ammo"] = [v - o for v, o in zip(compose.DOLL["ammo"], (x0, y0, x0, y0))]
-    box = compose.zz(*compose.DOLL_BOX)
-    return c.crop(box), slots
+    picture = c.crop(compose.zz(*compose.DOLL_BOX))
+    blank_slots(picture, slots, compose)
+    return picture, slots
 
 
 def icon_mask():

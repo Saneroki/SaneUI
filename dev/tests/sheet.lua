@@ -388,6 +388,23 @@ Stand()
 local panel = Board.Panel("character")
 local head = Slots.Button(1)
 check(panel and panel:IsShown() and head and head:IsVisible(), "the character sheet on the full screen, the paper doll shown")
+-- An empty slot: our own drawing of what goes there; a worn item: its icon alone.
+for _, column in pairs(Slots.COLUMNS) do
+    for _, name in ipairs(column) do
+        check(Slots.DRAWINGS[name], "a drawing for the slot " .. name)
+    end
+end
+check(Slots.DRAWINGS.AmmoSlot and Slots.DRAWINGS.SecondaryHandSlot == "offhand", "the ammo has a drawing, the off hand the shield")
+local neck = Slots.Button(2)
+check(neck.drawing:IsShown() and neck.drawing:GetAlpha() == Slots.DRAWN, "an empty slot shows its drawing, faded")
+check(neck.drawing:GetTexture() == ns.Categories.ART .. "neck", "the drawing of what goes there")
+check(not head.drawing:IsShown(), "a slot with an item shows no drawing")
+worn[2] = { texture = "chain", count = 1, quality = 2, id = 1002, link = "|Hitem:1002|h[Chain]|h" }
+Slots.Update(2)
+check(not neck.drawing:IsShown(), "the item put on: the drawing gone")
+worn[2] = nil
+Slots.Update(2)
+check(neck.drawing:IsShown(), "the item taken off: the drawing back")
 
 -------------------------------------------------------------------------------
 --  The windows on the board

@@ -9,7 +9,8 @@ local _, ns = ...
 --  character that uses ammo. Each is an item button (the game's ItemButton)
 --  without the game's frame: the item's icon (no border, its corners rounded
 --  as the bags' icons) and count, a red tint while it is broken or cannot be
---  used, grey while it is locked; empty, the doll's own sketch in the slot.
+--  used, grey while it is locked; empty, our own pencil drawing of what goes
+--  there (Saneroki, 2026-10-30: the bags' drawings, Art/Categories, faded).
 --  Beside each (but the two at the top) its paper strip says the item's stats,
 --  centred (Slots.Stats: its DPS, its armor, its primary stats, then the rest,
 --  by the game's words); empty, nothing.
@@ -32,12 +33,22 @@ Slots.BOTTOM = 30               -- the weapons above the left pane's bottom
 Slots.AMMO = 27                 -- the ammo slot: smaller, right of the ranged slot
 Slots.AMMO_GAP = 19
 Slots.RED = { 0.9, 0, 0 }       -- broken or unusable, as the game tints it
+Slots.DRAWN = 0.5               -- how much of an empty slot's drawing shows
 
 -- The slots by the game's names, in their columns.
 Slots.COLUMNS = {
     left = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot", "WristSlot" },
     right = { "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot" },
     bottom = { "MainHandSlot", "SecondaryHandSlot", "RangedSlot" },
+}
+
+-- What an empty slot shows, by the slots' names: a drawing's key (Bags/Categories.lua, Categories.ART).
+Slots.DRAWINGS = {
+    HeadSlot = "head", NeckSlot = "neck", ShoulderSlot = "shoulder", BackSlot = "back", ChestSlot = "chest",
+    ShirtSlot = "armor", TabardSlot = "tabard", WristSlot = "wrist", HandsSlot = "hands", WaistSlot = "waist",
+    LegsSlot = "legs", FeetSlot = "feet", Finger0Slot = "finger", Finger1Slot = "finger", Trinket0Slot = "trinket",
+    Trinket1Slot = "trinket", MainHandSlot = "weapons", SecondaryHandSlot = "offhand", RangedSlot = "ranged",
+    AmmoSlot = "special",
 }
 
 local buttons = {} -- [inventory slot ID] = our button
@@ -109,6 +120,10 @@ local function Make(parent, name, size)
     end
     ns.Cells.Mask(button, ns.Cells.ROUNDED, type(icon) == "table" and icon or nil,
         button.GetHighlightTexture and button:GetHighlightTexture() or nil)
+    button.drawing = button:CreateTexture(nil, "ARTWORK")
+    button.drawing:SetAllPoints()
+    button.drawing:SetTexture(ns.Categories.ART .. Slots.DRAWINGS[name])
+    button.drawing:SetAlpha(Slots.DRAWN)
     button:RegisterForDrag("LeftButton")
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     button:SetScript("OnEnter", function(self) ns.Safe("character", Enter, self) end)
@@ -217,6 +232,7 @@ end
 local function Draw(button)
     local id = button:GetID()
     local texture = Core.Ask(GetInventoryItemTexture, "player", id)
+    button.drawing:SetShown(not texture)
     if texture then
         Game("SetItemButtonTexture", button, texture)
         Game("SetItemButtonCount", button, Core.Ask(GetInventoryItemCount, "player", id))
@@ -226,7 +242,7 @@ local function Draw(button)
         Game("SetItemButtonTextureVertexColor", button, r, g, b)
         Game("SetItemButtonNormalTextureVertexColor", button, r, g, b)
     else
-        -- empty: the doll's own sketch in its slot shows
+        -- empty: our drawing of what goes there shows
         Game("SetItemButtonTexture", button, nil)
         Game("SetItemButtonCount", button, 0)
         Game("SetItemButtonTextureVertexColor", button, 1, 1, 1)

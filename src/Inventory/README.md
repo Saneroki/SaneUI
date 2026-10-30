@@ -232,7 +232,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo` (Retail has neither slot: the game knows
     no `RangedSlot` or `AmmoSlot`, so no button is made and the doll's painted slots stay empty). Drawn as
     `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while
-    broken or unusable, grey while locked; empty: no picture, the doll's sketch shows). Its strip (`Doll.Strip`):
+    broken or unusable, grey while locked; empty: our own pencil drawing of what goes there, `Slots.DRAWINGS`, the
+    bags' `Art/Categories` drawings faded to `Slots.DRAWN`, the doll's painted drawings taken out by
+    `dev/tools/journal-art`). Its strip (`Doll.Strip`):
     the item's stats, centred both ways, one to a line while they fit (`Slots.Stats`: `GetItemStats` by the game's
     words, `Slots.FIRST` first: DPS as `STAT_DPS_SHORT`, armor, the primary stats; the rest by their size);
     empty, nothing. The icon without the template's quality border (`IconBorder` hidden), its corners rounded by

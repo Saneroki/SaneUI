@@ -6,6 +6,8 @@
 #   all-1 one-3 each-1 pinned-1 recent-4 armory-2 head-2 neck-2 shoulder-3 back-2 chest-2 wrist-4 hands-2 waist-1
 #   legs-2 feet-1 finger-1 trinket-2 weapons-1 offhand-2 ranged-3 armor-2 sets-2 prep-2 potions-1 enhance-1 camp-2
 #   consumables-1 trade-3 professions-2 reagent-1 misc-3 quest-3 special-1 junk-3 add-2 own-3 containers-1
+# The doll's empty slots show these too (Sheet/Slots.lua). tabard is drawn by code in this line for now, not picked
+# from a render; its row is here for when one is made.
 workflow: qwen21-turbo-t2i
 set: aspect_ratio=1:1 (Square), megapixels=0.6
 count: 4
@@ -33,6 +35,7 @@ weapons: one straight sword standing upright, its point up.
 offhand: one heater shield seen from the front.
 ranged: one curved hunting bow with an arrow nocked.
 armor: one simple shirt with short sleeves seen from the front.
+tabard: one long sleeveless tabard seen from the front, a small plain shield on its breast.
 sets: one wooden clothes hanger holding a tunic.
 prep: one old lantern with a handle on top and a candle flame inside.
 potions: one round-bellied potion flask with a cork.

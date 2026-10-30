@@ -363,7 +363,10 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,
     hanging out over the leather border;
   - the main hand, off hand and ranged slots below, the smaller ammo slot beside them, with their stat strips
-    under them.
+    under them;
+  - nothing painted in the slots, no shield either: an empty slot shows our own pencil drawing of what goes there,
+    the bags' drawings at half strength, filling the item's square (Saneroki, 2026-10-30;
+    `dev/tools/journal-art` takes the painted ones out).
 
   The harness's character view is this picture itself, with code putting the live content in (*The harness*).
 - **Character stats** (Saneroki, 2026-10-23): a page, not a long narrow list. Each of the game's stat categories
