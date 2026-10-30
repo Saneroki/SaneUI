@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 119 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Lore: the words wait for you, a left click cycles them, a right click answers (Saneroki, 2026-10-30)
+Saneroki: reading speed 0, so the quest text never moves on by itself where Speed Leveling's auto accept and turn in
+are not doing the quest; a left click cycles through the text; a right click accepts, or closes the window on the
+goodbye screen.
+- **`Lore.lua`:** *Reading speed* at first 0, its slider from 0 (was 230, from 100); *Words go on by themselves* stays on,
+  so raising the speed alone brings them back as they were. Tips anew.
+- **`Talk.lua`:** `Onward` sets no timer at 0. `Talk.Cycle` (left click): the next paragraph, after the last the first;
+  it never answers (before, a click on the last paragraph accepted). `Talk.Reply` (right click, was back a paragraph,
+  `Talk.Back` gone): `Default`'s answer on any paragraph; nothing with several answers, a reward to choose or a quest
+  that costs money. `Talk.SETTLE` 0.4 s after a talk shows and after each answer, so a double click on the NPC or on
+  the answer before gives nothing unread. `Talk.Click` tells them apart; Space and Esc as they were.
+- **`Quest.lua`, `Box.lua`:** the quest under the words is a button too, its clicks the talk's (before, they fell through
+  to the world), and its rewards' lines take the right button. On a reward to choose at the hand-in the right button
+  does nothing, even with another chosen; `OnDoubleClick` looks at the button, as the game fires it for the right one
+  too. An answer's line keeps the left button alone.
+- **Speed Leveling** unchanged: its `Quests.lua` calls the game at `QUEST_DETAIL`, `QUEST_PROGRESS` and `QUEST_COMPLETE`,
+  through no frame of the game's or ours, so nothing here holds it up.
+- Tests: `dev/tests/lore.lua` 125 checks (the clicks on every screen, speed 0 and a raised speed, `src/SpeedLeveling/Quests.lua`
+  itself beside the talk, its switches on and off).
+
 ### Navigation: Atlas the first view, one view no buttons; Follow me a tick, the minimap back the moment you walk (Saneroki, 2026-10-30)
 Saneroki: "The default map view should be atlas if available otherwise scrying and in retail, since there is only one
 mode it is the default one and no "mode button" is showin on the fullscreen." "Follow again should not be a number. If

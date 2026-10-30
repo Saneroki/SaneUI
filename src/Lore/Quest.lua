@@ -17,7 +17,8 @@ local _, ns = ...
 --  (red), or that the slot is empty. The tooltip is there too, with the game's
 --  comparison, in sight over the faded interface (Quiet.Tips). A click on a
 --  reward to choose chooses it (its shade darker, a gold line at its left); a
---  double click hands the quest in with it.
+--  double click hands the quest in with it; the right button on it does nothing.
+--  Anywhere else here a click is the talk's, as on the words (Talk.Click).
 --
 --      Quest.Draw(talk)   the talk's quest under the box, or nothing for a talk without one
 -------------------------------------------------------------------------------
@@ -158,12 +159,12 @@ local function Row()
     row.change:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -6, 5)
     row.change:SetJustifyH("RIGHT")
     row.change:SetWordWrap(false)
-    row:RegisterForClicks("LeftButtonUp")
-    row:SetScript("OnClick", ns.Guard(function(self)
-        if self.entry and self.entry.kind == "choice" then ns.Talk.Choose(self.entry.index) end
-    end))
-    row:SetScript("OnDoubleClick", ns.Guard(function(self)
-        if self.entry and self.entry.kind == "choice" then ns.Talk.Choose(self.entry.index, true) end
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row:SetScript("OnClick", ns.Guard(function(self, button) ns.Talk.Click(button, self.entry) end))
+    row:SetScript("OnDoubleClick", ns.Guard(function(self, button)
+        if button == "LeftButton" and self.entry and self.entry.kind == "choice" then
+            ns.Talk.Choose(self.entry.index, true)
+        end
     end))
     row:SetScript("OnEnter", ns.Guard(Enter))
     row:SetScript("OnLeave", ns.Guard(Leave))
@@ -205,8 +206,10 @@ end
 --  The quest
 -------------------------------------------------------------------------------
 local function Build()
-    frame = CreateFrame("Frame", nil, ns.Look.Root())
+    frame = CreateFrame("Button", nil, ns.Look.Root())
     frame:SetWidth(ns.Box.WIDTH)
+    frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    frame:SetScript("OnClick", ns.Guard(function(_, button) ns.Talk.Click(button) end))
     shade = ns.Look.Shade(frame)
     title = ns.Look.Text(frame, "name")
     title:SetPoint("TOPLEFT", frame, "TOPLEFT", Quest.PAD, -Quest.PAD)

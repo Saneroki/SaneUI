@@ -14,11 +14,15 @@ local _, ns = ...
 --      (greyed out while not done), Goodbye;
 --    - a quest handed in (QUEST_COMPLETE): its rewards, the one chosen; Complete
 --      Quest (Choose a reward first, while there is a choice), Goodbye.
---  The words a paragraph at a time, where the game's text breaks. Continue (Space,
---  a click on the words) shows the next one; on the last it gives the answer
---  that needs no choosing (Talk.Continue). A right click on the words goes back.
+--  The words a paragraph at a time, where the game's text breaks (Saneroki,
+--  2026-10-30: they wait for you, you go on). A left click in the talk shows the
+--  next one and after the last the first again; it never answers (Talk.Cycle). A
+--  right click gives the answer that needs no choosing, on whichever paragraph,
+--  and nothing where the choice is yours: several answers, a reward to choose, a
+--  quest that costs money (Talk.Reply). Space shows the next one and on the last
+--  gives that same answer (Talk.Continue).
 --  With Words go on by themselves, a paragraph gives way to the next once it is
---  read, at the reading speed set; the last one waits.
+--  read, at the reading speed set (0, as at first: never); the last one waits.
 --  Left to the game's own: a talk while Talks as a scene is off, one begun in a
 --  fight, gossip with a window of its own (the game's custom gossip frames), an
 --  only option the game takes by itself, an offer the game turns into a popup
@@ -28,7 +32,9 @@ local _, ns = ...
 --
 --      Talk.Start()       its events; the game's windows held
 --      Talk.Continue()    the next paragraph, or the answer that needs no choosing
---      Talk.Back()        the paragraph before
+--      Talk.Cycle()       the next paragraph, after the last the first
+--      Talk.Reply()       the answer that needs no choosing, on any paragraph
+--      Talk.Click(button, entry)  a click in the talk; entry: the reward clicked
 --      Talk.Answer(a)     an answer given
 --      Talk.Choose(index, handIn)  a reward chosen (and handed in with it)
 --      Talk.Switched(), Talk.Quieted(), Talk.Redraw()  a setting changed
@@ -42,6 +48,8 @@ Talk.WAIT = 0.3        -- a talk ended by the game: ours goes after so long, unl
                        -- gossip turning into a quest, a quest handed in and the NPC's gossip again)
 Talk.READ_MIN = 2.5    -- seconds at least a paragraph is shown before it goes on by itself
 Talk.READ_PAUSE = 0.8  -- and so much longer than reading it takes
+Talk.SETTLE = 0.4      -- seconds a talk new or just answered takes no right click: the second click of a double
+                       -- click (on the NPC, on the answer before) gives nothing that was not read
 
 local FAMILY = { gossip = "gossip", greeting = "quest", detail = "quest", progress = "quest", complete = "quest" }
 local INTERACTIONS = { [3] = true, [4] = true } -- the game's interaction types of a talk (gossip, quest giver)
@@ -246,10 +254,11 @@ local function Draw()
 end
 
 local function Onward()
-    if not talk or not ns.options.onward or talk.at >= #talk.paragraphs then return end
+    local speed = ns.options.speed or 0
+    if not talk or not ns.options.onward or speed <= 0 or talk.at >= #talk.paragraphs then return end
     local words = 0
     for _ in talk.paragraphs[talk.at]:gmatch("%S+") do words = words + 1 end
-    local seconds = math.max(Talk.READ_MIN, words / (ns.options.speed or 230) * 60 + Talk.READ_PAUSE)
+    local seconds = math.max(Talk.READ_MIN, words / speed * 60 + Talk.READ_PAUSE)
     local mine, at = count, talk.at
     C_Timer.After(seconds, ns.Guard(function()
         if talk and mine == count and talk.at == at then Talk.Next() end
@@ -261,6 +270,7 @@ local function EscClose() Leave() end
 local function Show(talked)
     count = count + 1
     talked.at = 1
+    talked.ready = GetTime() + Talk.SETTLE
     talk = talked
     ns.Look.Show()
     ns.Quiet.On()
@@ -297,14 +307,15 @@ function Talk.Next()
     Onward()
 end
 
-function Talk.Back()
-    if not talk or talk.at <= 1 then return end
-    talk.at = talk.at - 1
+function Talk.Cycle()
+    if not talk or #talk.paragraphs < 2 then return end
+    talk.at = talk.at % #talk.paragraphs + 1
     ns.Box.Words(talk)
+    Onward()
 end
 
--- What Continue gives on the last paragraph: the answer marked so, or in a gossip and a greeting the one
--- answer there is (Goodbye when there is none); nothing where there is a choice to make.
+-- What Continue gives on the last paragraph, and a right click on any: the answer marked so, or in a gossip and a
+-- greeting the one answer there is (Goodbye when there is none); nothing where there is a choice to make.
 local function Default()
     local only, given, goodbye = nil, 0, nil
     for _, answer in ipairs(talk.answers) do
@@ -323,6 +334,25 @@ function Talk.Continue()
     if talk.at < #talk.paragraphs then return Talk.Next() end
     local answer = Default()
     if answer then Talk.Answer(answer) end
+end
+
+function Talk.Reply()
+    if not talk or GetTime() < talk.ready then return end
+    talk.ready = GetTime() + Talk.SETTLE
+    local answer = Default()
+    if answer then Talk.Answer(answer) end
+end
+
+-- On a reward to choose from at the hand-in the left button chooses it and the right gives nothing: a right click
+-- never takes a reward it stands on, not even the one chosen before.
+function Talk.Click(button, entry)
+    if talk and talk.kind == "complete" and entry and entry.kind == "choice" then
+        if button == "LeftButton" then Talk.Choose(entry.index) end
+    elseif button == "RightButton" then
+        Talk.Reply()
+    else
+        Talk.Cycle()
+    end
 end
 
 function Talk.Answer(answer)

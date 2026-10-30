@@ -3,9 +3,11 @@
 -- it (gossip turning into a quest, a greeting, an offer, progress, a hand-in) with its paragraphs and answers in our
 -- order, Continue and what it does on the last paragraph, the words going on by themselves, the rewards read for you
 -- (what each item is, whether you can use it, what it sells for, what it changes against what you wear, an empty
--- slot, a choice to make, a quest that costs money), the interface faded out and back with the game's questions,
--- error lines and the rewards' tooltips kept in sight, Space bound only while a talk shows, and the settings.
--- The look and the face can only be judged in the game.
+-- slot, a choice to make, a quest that costs money), the clicks (the left going round the words and never answering,
+-- the right giving what needs no choosing and never a reward), the words waiting at reading speed 0, Speed Leveling's
+-- quest givers (its own file) doing their quests beside the talk, the interface faded out and back with the game's
+-- questions, error lines and the rewards' tooltips kept in sight, Space bound only while a talk shows, and the
+-- settings. The look and the face can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/lore.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -29,6 +31,7 @@ function methods:GetFrameStrata() return self._strata or "MEDIUM" end
 function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:SetUnit(unit) self._unit = unit end
 function methods:SetAnimation(animation) self._animation = animation end
+function methods:RegisterForClicks(...) self._clicks = table.concat({ ... }, " ") end
 
 bit = { band = function(a, b) return (a % (2 * b) >= b) and b or 0 end }
 ChatTypeInfo = { MONSTER_EMOTE = { r = 1, g = 0.5, b = 0.25 } }
@@ -106,6 +109,7 @@ GetQuestReward = function(choice) Said("reward " .. choice) end
 CloseQuest = function() Said("close quest") end
 StaticPopup_Show = function(which) Said("popup " .. which) end
 UnitExists = function() return true end
+UnitGUID = function() return "Creature-0-1-2-3-4-5" end
 local names = { npc = "Marshal Dughan", questnpc = "Marshal Dughan" }
 UnitName = function(unit) return names[unit] or "Tester" end
 
@@ -164,6 +168,8 @@ local ns = W.LoadAddon(root, "Lore", "SaneUI_Lore")
 W.Fire("ADDON_LOADED", "SaneUI_Lore")
 W.Fire("PLAYER_LOGIN")
 check(ns.options.talk == true and ns.options.quiet == true and ns.options.space == true, "the switches are on at first")
+check(ns.options.speed == 0 and ns.options.onward == true, "at first the reading speed is 0, the switch under it stays on")
+check(SaneUI.Core.Described(ns.name, "speed").min == 0, "and 0 is on its slider")
 
 -- The game's windows are held out of sight, their layer noted.
 local holder = GossipFrame:GetParent()
@@ -236,8 +242,15 @@ check(words._text:find("|cff") and words._text:find("The roads are dangerous."),
 said = {}
 ns.Talk.Continue()
 check(#said == 0, "on the last paragraph with several answers Continue waits for a click")
-ns.Talk.Back()
-check(words._text == "Hello there.", "a right click goes back a paragraph")
+
+-- A left click on the words: the next paragraph, after the last the first again.
+local box = ns.Box.Frame()
+local function Click(frame, button) frame._scripts.OnClick(frame, button) end
+Click(box, "LeftButton")
+check(words._text == "Hello there.", "a left click after the last paragraph shows the first again")
+Click(box, "LeftButton")
+check(words._text:find("The roads are dangerous."), "and then the next one")
+check(#said == 0, "a left click answers nothing")
 
 -- A click on the offered quest selects it with the game's own call.
 for _, frame in ipairs(W.frames) do
@@ -317,15 +330,33 @@ check(QuestFrame:GetParent() == holder and GossipFrame:GetParent() == holder, "t
 --  A greeting, and its paragraphs going on by themselves
 -------------------------------------------------------------------------------
 quest.text = "Welcome, traveller.\n\nThe library needs help."
+local after, endless = C_Timer.After, false
+C_Timer.After = function(seconds, fn)
+    endless = endless or not (seconds < math.huge)
+    return after(seconds, fn)
+end
 QuestFrame:Show()
 W.Fire("QUEST_GREETING")
+C_Timer.After = after
+check(not endless, "at reading speed 0 no timer of endless length is asked of the game")
 local shown
 for _, frame in ipairs(W.frames) do
     if frame._text == "Welcome, traveller." then shown = frame end
 end
 check(shown ~= nil, "a greeting's words")
+W.Wait(600)
+check(shown._text == "Welcome, traveller.", "at reading speed 0 a paragraph never goes on by itself")
+QuestFrame:Hide()
+W.Fire("QUEST_FINISHED")
+W.Wait(1)
+Frames(1)
+check(SaneUI.Core.Set(ns.name, "speed", 230) == 230, "the reading speed raised")
+QuestFrame:Show()
+W.Fire("QUEST_GREETING")
+check(shown._text == "Welcome, traveller.", "the first paragraph again")
 W.Wait(5)
-check(shown._text == "The library needs help.", "a paragraph goes on by itself once read")
+check(shown._text == "The library needs help.", "at a raised speed a paragraph goes on by itself once read")
+check(SaneUI.Core.Set(ns.name, "speed", 0) == 0, "and back to 0")
 said = {}
 ns.Talk.Continue()
 check(said[1] == "greeting offered 1", "Continue takes the one answer there is")
@@ -354,7 +385,9 @@ check(said[1] == "reward 3", "once chosen, Continue hands it in with that reward
 -- A double click on a choice hands it in at once.
 said = {}
 for _, frame in ipairs(W.frames) do
-    if frame.entry and frame.entry.name == "Ranger's Vest" and frame:IsShown() then frame._scripts.OnDoubleClick(frame) end
+    if frame.entry and frame.entry.name == "Ranger's Vest" and frame:IsShown() then
+        frame._scripts.OnDoubleClick(frame, "LeftButton")
+    end
 end
 check(said[1] == "reward 1", "a double click hands in with that reward")
 
@@ -372,6 +405,152 @@ check(pay.text._text == ns.TEXT.pay:format("2500c"), "its answer says the price"
 pay._scripts.OnClick(pay)
 check(said[1] == "reward 1", "and pays when clicked")
 quest.money = 0
+
+-------------------------------------------------------------------------------
+--  The clicks: the left goes round the words, the right gives what needs no choosing
+-------------------------------------------------------------------------------
+local function Reward(name)
+    for _, frame in ipairs(W.frames) do
+        if frame.entry and frame.entry.name == name and frame:IsShown() then return frame end
+    end
+end
+local under = row:GetParent()
+check(box._clicks == "LeftButtonUp RightButtonUp" and under._clicks == box._clicks and row._clicks == box._clicks,
+      "the words, the quest under them and its rewards take both buttons")
+for _, frame in ipairs(W.frames) do
+    if frame.answer then check(frame._clicks == nil, "an answer takes the left button alone, as the game's default") end
+end
+
+-- A hand-in with a choice to make: no right click takes a reward, wherever it lands.
+W.Fire("QUEST_COMPLETE")
+W.Wait(1)
+said = {}
+local vestRow = Reward("Ranger's Vest")
+Click(box, "RightButton")
+W.Wait(1)
+Click(under, "RightButton")
+W.Wait(1)
+Click(vestRow, "RightButton")
+W.Wait(1)
+vestRow._scripts.OnDoubleClick(vestRow, "RightButton")
+check(#said == 0, "with a reward to choose no right click hands anything in")
+check(not vestRow.mark:IsShown(), "nor chooses one")
+Click(box, "LeftButton")
+check(#said == 0, "a left click on the words hands nothing in")
+Click(vestRow, "LeftButton")
+check(vestRow.mark:IsShown() and #said == 0, "a left click on a reward chooses it, and only that")
+W.Wait(1)
+Click(Reward("Band of Thorns"), "RightButton")
+Click(vestRow, "RightButton")
+check(#said == 0, "a right click on a reward takes none, not even the one chosen")
+Click(box, "RightButton")
+check(said[1] == "reward 1", "beside the rewards it hands in with the one you chose")
+
+-- A quest that costs money is paid by its answer alone.
+quest.money = 2500
+W.Fire("QUEST_COMPLETE")
+W.Wait(1)
+ns.Talk.Choose(1)
+said = {}
+Click(box, "RightButton")
+check(#said == 0, "a right click does not pay for a quest")
+quest.money = 0
+
+-- The one reward there is: no choice. A talk just shown waits: the second click of a double click on the NPC.
+local three = quest.choices
+quest.choices = { three[1] }
+W.Fire("QUEST_COMPLETE")
+said = {}
+Click(box, "RightButton")
+check(#said == 0, "a talk just shown takes no right click")
+W.Wait(ns.Talk.SETTLE)
+Click(box, "RightButton")
+check(said[1] == "reward 1", "a moment later the one reward there is is taken")
+quest.choices = three
+
+-- An offer of three paragraphs: left clicks go round wherever they land, and accept nothing.
+quest.text = "One.\n\nTwo.\n\nThree."
+W.Fire("QUEST_DETAIL", 0)
+W.Wait(1)
+said = {}
+for _ = 1, 7 do Click(box, "LeftButton") end
+check(words._text == "Two." and #said == 0, "left clicks go round the words and accept nothing")
+Click(under, "LeftButton")
+check(words._text == "Three.", "a left click on the quest under the words too")
+Click(Reward("Ranger's Vest"), "LeftButton")
+check(words._text == "One." and #said == 0, "and on a reward while there is nothing to choose")
+
+-- A right click accepts, from the first paragraph on; the second of a double click gives nothing more.
+Click(box, "RightButton")
+Click(box, "RightButton")
+check(#said == 1 and said[1] == "accept", "a right click accepts, once")
+W.Wait(1)
+said = {}
+Click(under, "RightButton")
+check(said[1] == "accept", "under the words too")
+W.Wait(1)
+said = {}
+Click(Reward("Ranger's Vest"), "RightButton")
+check(said[1] == "accept", "and on the rewards offered, which are not chosen so")
+
+-- A quest of the PvP asks first, as the game's Accept button does.
+QuestFlagsPVP = function() return true end
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(said[1] == "popup CONFIRM_ACCEPT_PVP_QUEST", "a PvP quest asks first")
+QuestFlagsPVP = nil
+
+-- A quest in progress: on to its rewards when done, else Goodbye.
+quest.progress = "Have you got them?"
+W.Fire("QUEST_PROGRESS")
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(said[1] == "complete", "a right click hands in a quest in progress that is done")
+quest.completable = false
+W.Fire("QUEST_PROGRESS")
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(said[1] == "close quest", "not done, it says goodbye")
+quest.completable = true
+QuestFrame:Hide()
+W.Fire("QUEST_FINISHED")
+W.Wait(1)
+Frames(1)
+
+-- A gossip: several answers wait for a click, the one answer is taken, the goodbye screen closes.
+local options = gossip.options
+gossip.text = "Well met."
+gossip.available, gossip.active = {}, {}
+gossip.options = { { name = "Hello.", orderIndex = 1 }, { name = "Bye.", orderIndex = 2 } }
+GossipFrame:Show()
+W.Fire("GOSSIP_SHOW")
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(#said == 0, "with several answers a right click waits")
+gossip.options = { { name = "Hello.", orderIndex = 1 } }
+W.Fire("GOSSIP_SHOW")
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(said[1] == "option 1", "the one answer there is is taken")
+gossip.options = {}
+W.Fire("GOSSIP_SHOW")
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(said[1] == "close gossip", "on the goodbye screen a right click closes the talk")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED")
+W.Wait(1)
+Frames(1)
+gossip.options = options
+
+QuestFrame:Show()
+W.Fire("QUEST_COMPLETE")
 
 -------------------------------------------------------------------------------
 --  A fight ends the talk; a talk in a fight is the game's own
@@ -488,6 +667,47 @@ W.Fire("QUEST_FINISHED")
 W.Wait(1)
 Frames(1)
 W.Play("forever")
+
+-------------------------------------------------------------------------------
+--  Speed Leveling's quest givers beside the talk (its own file): the game's calls at the game's events
+-------------------------------------------------------------------------------
+local wants = { take = { [77] = true }, handin = { [77] = 2 }, gossip = {} }
+local leveling = { On = SaneUI.Core.On, Guarded = function(fn, ...) return fn(...) end,
+                   options = { take = true, handin = true, rewards = false, gossip = false, leave = false },
+                   Key = { Refresh = function() end }, Guide = { Quests = function() return wants end } }
+assert(loadfile(root .. "/src/SpeedLeveling/Quests.lua"))("SaneUI_SpeedLeveling", leveling)
+leveling.Quests.Start()
+local function Asked(what)
+    for _, line in ipairs(said) do if line == what then return true end end
+    return false
+end
+
+quest.text = "A long tale.\n\nWith a second paragraph."
+said = {}
+QuestFrame:Show()
+W.Fire("QUEST_DETAIL", 0)
+check(talkRoot:IsShown() and Asked("accept"), "Take the guide's quests: accepted at once, the words waiting or not, no click")
+said = {}
+W.Fire("QUEST_PROGRESS")
+check(Asked("complete"), "Hand in the guide's quests: on from its progress")
+said = {}
+W.Fire("QUEST_COMPLETE")
+check(Asked("reward 2"), "and handed in with the reward the guide names")
+
+-- The switches off: the talk is yours, and it waits for you.
+leveling.options.take, leveling.options.handin = false, false
+said = {}
+W.Fire("QUEST_DETAIL", 0)
+W.Wait(600)
+check(not Asked("accept") and words._text == "A long tale.", "nothing taken, the words wait")
+Click(box, "RightButton")
+check(Asked("accept"), "until a right click accepts")
+leveling.off = true
+QuestFrame:Hide()
+W.Fire("QUEST_FINISHED")
+W.Wait(1)
+Frames(1)
+
 GossipFrame:Show()
 gossip.options = { { name = "Hello.", orderIndex = 1 }, { name = "Bye.", orderIndex = 2 } }
 W.Fire("GOSSIP_SHOW")

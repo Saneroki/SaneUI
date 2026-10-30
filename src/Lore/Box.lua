@@ -8,9 +8,9 @@ local _, ns = ...
 --  no face, a board or a book, shows the game's quest book), talking while a
 --  paragraph is new; beside it the name in the game's gold, the paragraph under
 --  it in white, and at the bottom right which paragraph of how many. A soft
---  shade lies behind the whole. A click goes on (Talk.Continue), a right click
---  goes back a paragraph. The quest under the words (Quest.lua) lifts the box:
---  the two stand on one column whose foot stays put.
+--  shade lies behind the whole. Clicks are the talk's (Talk.Click). The quest
+--  under the words (Quest.lua) lifts the box: the two stand on one column whose
+--  foot stays put.
 --
 --      Box.Frame()        the box (the answers stand beside it)
 --      Box.Draw(talk)     the talk's name and paragraph at hand
@@ -38,9 +38,7 @@ local function Build()
     frame = CreateFrame("Button", nil, root)
     frame:SetWidth(Box.WIDTH)
     frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    frame:SetScript("OnClick", ns.Guard(function(_, button)
-        if button == "RightButton" then ns.Talk.Back() else ns.Talk.Continue() end
-    end))
+    frame:SetScript("OnClick", ns.Guard(function(_, button) ns.Talk.Click(button) end))
     shade = ns.Look.Shade(frame)
 
     face = CreateFrame("PlayerModel", nil, frame)

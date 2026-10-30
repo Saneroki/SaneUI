@@ -41,10 +41,12 @@ The game's windows stay where they are and come back at once whenever ours steps
 
 - **A paragraph at a time:** the NPC's text is split where the game's own text breaks (`$B`, a new line);
   each paragraph appears whole, with no typing out letter by letter.
-- **Going on:** *Continue* (or a click on the words) shows the next paragraph. With *Paragraphs go on by
-  themselves*, the next one follows after the time the paragraph takes to read at the player's reading
-  speed, counted in words per minute; while Lore speaks the text (`Doc/ideas/Lore.md`), the voice sets the
-  pace instead.
+- **Going on** (Saneroki, 2026-10-30): the words wait for the player. A left click cycles through the paragraphs,
+  after the last the first again, and never answers. A right click accepts the quest, or closes the window on the
+  goodbye screen: the answer that needs no choosing, never a reward. Space goes on, and on the last paragraph gives
+  that same answer. With *Words go on by themselves* and a reading speed above 0, the next one follows after the
+  time the paragraph takes to read at that speed, counted in words per minute; at 0, as at first, never. While Lore
+  speaks the text (`Doc/ideas/Lore.md`), the voice sets the pace instead.
 - **Text in `<...>`** is what the NPC does, not says: shown in the game's emote colour
   (`ChatTypeInfo.MONSTER_EMOTE`), and the face does not talk for it.
 - **The voice is Lore's:** Dialogue shows text only; where a voice pack has the line, Lore plays it,
@@ -202,12 +204,17 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 | Shade behind the words (0: the words alone over the world) | 30 % |
 | Size | 100 % |
 | Words go on by themselves | on |
-| Reading speed (words a minute) | 230 |
+| Reading speed (words a minute; 0: never by themselves) | 0 |
 | Space goes on | on |
 
 - **Moving the talk:** in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`): still to come.
 
 ## Decided
+
+Saneroki, 2026-10-30:
+
+- **Reading speed 0 at first:** the quest text moves on by itself only where Speed Leveling's *Take the guide's
+  quests* and *Hand in the guide's quests* do the quest; else it waits. Left click cycles, right click answers.
 
 Saneroki, 2026-10-16:
 

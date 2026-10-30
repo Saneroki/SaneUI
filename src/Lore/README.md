@@ -10,8 +10,8 @@ paragraph at a time. What you can answer stands in a column beside them; a quest
 them. While you talk the rest of the interface fades out; the rewards' tooltips, the game's questions and its error
 lines stay in sight. Each reward says, without its tooltip, what it is (Leather · Chest, Plate · Legs, a weapon's
 kind, a ring by its slot), whether you can use it, what a vendor pays for it and what it changes against what you
-wear (item level, stats). Space goes on. A fight ends the talk; the game's own windows are back whenever Lore steps
-aside or fails.
+wear (item level, stats). The words wait for you: a left click turns them, a right click accepts or says goodbye,
+Space goes on. A fight ends the talk; the game's own windows are back whenever Lore steps aside or fails.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Lore* under *Sane UI* in the game's addon list (the game needs a
@@ -26,12 +26,21 @@ aside or fails.
     its kind; a quest far below your level is dimmed;
   - **a quest**, under the words: its title, its objectives and the group it is for when it is offered, what it
     asks for while in progress, its rewards when offered and handed in.
-- **Going on:** *Space* or a click on the words shows the next paragraph; a right click on the words goes back
-  one. With *Words go on by themselves* (on), a paragraph gives way to the next once it is read at your reading
-  speed; the last one waits for you. On the last paragraph Space gives the answer that needs no choosing: it
-  accepts the quest offered, hands in a quest in progress that is done, hands in a quest with its reward chosen
-  (or with one or none to choose), takes the one answer there is, or says *Goodbye* when there is none. Where
-  there is a real choice, Space waits for a click.
+- **Going on:** the words wait for you.
+  - **A left click** on the words, or on the quest under them, shows the next paragraph, after the last the first
+    again. It only turns the words: it never answers.
+  - **A right click** there gives the answer that needs no choosing, on whichever paragraph: it accepts the quest
+    offered, hands in a quest in progress that is done, hands in a quest with its reward chosen (or with one or none
+    to choose), takes the one answer there is, or says *Goodbye* when nothing is left to answer.
+  - **Space** shows the next paragraph, and on the last gives that same answer.
+  - **Where the choice is yours,** both wait for you: several answers to pick from, a reward to choose, a quest that
+    costs money. A right click on a reward to choose or on an answer does nothing, and neither does one in the first
+    moment of a screen or right after an answer, so a double click on the NPC gives nothing you have not seen.
+  - **By themselves:** at a *Reading speed* above 0, with *Words go on by themselves* on, a paragraph gives way to
+    the next once it is read at that speed; the last one waits for you. At 0, as at first, the words never go on by
+    themselves.
+  - **Speed Leveling** takes and hands in the guide's quests as ever (its *Take the guide's quests*, *Hand in the
+    guide's quests*): the words waiting do not hold it up.
 - **The rewards** (offered and handed in): the ones to choose from first (*Choose one*), then what you get besides,
   then experience, money, honor and a title in one line. A reward's line:
   - its icon with how many, its name in its quality's colour;
@@ -46,11 +55,11 @@ aside or fails.
     (the tooltip has them all). For rings and trinkets against the weaker of your two. *Your slot is empty* where
     you wear nothing there.
   - The mouse on it shows its tooltip with the game's comparison, in sight over the faded interface.
-  - **Choosing:** a click on a reward to choose chooses it (its shade darker, a gold line at its left); the hand-in
+  - **Choosing:** a left click on a reward to choose chooses it (its shade darker, a gold line at its left); the hand-in
     answer then reads *Complete Quest* (before that *Choose a reward first*). A double click hands the quest in
     with that reward at once.
   - **A quest that costs money** to hand in says the price in its answer (*Complete Quest, paying 1g*), and is
-    handed in only by a click on it, never by Space.
+    handed in only by a click on it, never by Space or a right click.
 - **Ending:** *Goodbye*, *Decline*, Esc, walking away (the game ends the talk), or a fight. When the talk turns into
   another window (a vendor, a trainer, a flight map), that window opens and the talk goes.
 - **In a fight:** the talk ends when the fight begins and the interface is back at once. A talk begun in a fight
@@ -66,7 +75,7 @@ aside or fails.
   | *Shade behind the words* (0: the words alone over the world) | 30 % |
   | *Size* | 100 % |
   | *Words go on by themselves* | on |
-  | *Reading speed* (words a minute) | 230 |
+  | *Reading speed* (words a minute; 0: the words never go on by themselves) | 0 |
   | *Space goes on* | on |
 
 ## Technical details
@@ -111,6 +120,16 @@ aside or fails.
 - **Space** (`Keys.lua`): `SetOverrideBindingClick` on a button of ours (`SaneUILoreContinue`) while the talk shows,
   `ClearOverrideBindings` when it ends; never in a fight (the talk ends before the lock).
 - **Esc** ends the talk through Core's one stand-in in `UISpecialFrames` (`Core.Escape`).
+- **The clicks** (`Talk.Click`): the box, the quest's frame and its rewards' lines take both mouse buttons; an answer's
+  line keeps a button's default, the left alone. `Talk.Cycle` only moves `talk.at`. `Talk.Reply` gives what `Default`
+  finds, as Space does on the last paragraph; `Default` finds nothing on a reward not chosen (the hand-in answer is
+  disabled) or a quest that costs money (that answer is no default). `talk.ready` holds a right click back
+  `Talk.SETTLE` seconds after a talk shows and after each answer. On a reward to choose at the hand-in the right button
+  does nothing, even with another chosen, and `OnDoubleClick`, which the game also fires for the right button, looks
+  at the button before it hands in.
+- **Speed Leveling's quest givers** (`src/SpeedLeveling/Quests.lua`) touch none of this: at `QUEST_DETAIL`,
+  `QUEST_PROGRESS` and `QUEST_COMPLETE` they call `AcceptQuest`, `CompleteQuest` and `GetQuestReward` themselves, not
+  through the game's frames or ours. The talk shows for that moment and goes with the game's `QUEST_FINISHED`.
 - **The look** (`Look.lua`, `Box.lua`, `Answers.lua`, `Quest.lua`): as the guide over the world
   ([interface-style.md](../../Doc/guides/interface-style.md), *The talk over the world*): Expressway with a thin
   dark outline, the game's gold for names and headings, soft dark shades whose sides fade out
@@ -123,9 +142,10 @@ aside or fails.
   one into sight at once, so the talk goes on there).
 - **Data:** Lore gathers nothing (CLAUDE.md, *Backend and views*).
 - **Tests:** `dev/tests/lore.lua` (the stand-in client): the windows held and given back, the talks and their
-  answers' order, Continue, the words going on, the rewards read (kinds, slots, value, changes, an empty slot, a
-  bow's slot), a choice, a quest that costs money, a fight, a talk left to the game, a vendor's window, the settings,
-  Retail, standing down.
+  answers' order, Continue, the words waiting at speed 0 and going on at a raised one, the clicks (the left going
+  round, the right on every screen, no reward taken and nothing paid by it, a double click), Speed Leveling's own
+  `Quests.lua` beside the talk, the rewards read (kinds, slots, value, changes, an empty slot, a bow's slot), a choice,
+  a quest that costs money, a fight, a talk left to the game, a vendor's window, the settings, Retail, standing down.
 
 ## Files
 | File | What it does |
@@ -152,3 +172,6 @@ aside or fails.
 - 2026-10-28: the module made, with talks as a scene (Saneroki asked: the talk see-through, the interface hidden
   while talking with its tooltips there, the rewards saying what they are, whether you can use them, what they sell
   for and what they change).
+- 2026-10-30: the words wait for you (Saneroki asked: reading speed 0 at first, so the quest text never moves on by
+  itself; a left click cycles through it; a right click accepts, or closes the window on the goodbye screen; Speed
+  Leveling's taking and handing in go on as before).
