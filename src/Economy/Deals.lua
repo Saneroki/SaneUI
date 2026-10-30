@@ -10,14 +10,21 @@ local _, ns = ...
 --  brings after the cut and the post, less a margin), and seen selling. How many
 --  is capped by what sells in a week: what would stay unsold brings nothing.
 --
---      { key, id, low, limit, gain, most, high, highAt, allDay, at, daily, total }
+--      { key, id, low, limit, gain, most, high, highAt, allDay, at, daily, total, side }
+--
+--  or that costs much less here than it fetches in the house of the other kind, your
+--  side's or a neutral one, each reckoned by that house's own cut and deposit (Core's
+--  Prices:Route): the better of the two ways. side then names that house.
 --
 --  To sell: what any of your characters holds, that a sale now brings more for
 --  than a vendor pays, after the cut and the post, where the price is not soon to
 --  be clearly better and the item was not seen unsold. Only what is in the bags
 --  of the character you play can be posted; the rest says who has it.
 --
---      { key, id, item, price, gain, total, count, here, bag, slot, vendor, there }
+--      { key, id, item, price, gain, total, count, here, bag, slot, vendor, there, side }
+--
+--  Where the other house pays clearly more, the line says to take it there: side
+--  names that house, price is its price, and nothing is posted from here.
 --
 --      Deals.Buys(), Deals.Sells()   the lists, best first
 --      Deals.Refresh()               makes them anew, in steps, while the page is up
@@ -63,32 +70,63 @@ local function Keep(list)
     return list
 end
 
--- A line to buy, or nil for an item that is no deal. Most items end at the first look, at no cost.
-function Deals.Buy(key)
-    local low = PRICES:Last(key)
-    local usual = low and low > 0 and PRICES:Usual(key)
-    if not usual or low > usual * CHEAP then return nil end
+local function Most(key, limit, daily)
+    return math.max(1, math.min(PRICES:Under(key, limit) or 1, math.ceil(daily * WEEK)))
+end
+
+-- To buy here and sell here.
+local function Here(key, id, low, vendor)
     local outlook = PRICES:Outlook(key)
     if not outlook or not outlook.daily or outlook.daily <= 0 then return nil end
-    local id = tonumber(key:match("^%d+"))
-    local post = PRICES:Post((Facts(id)), key)
+    local post = PRICES:Post(vendor, key)
     local limit = PRICES:Limit(outlook, post)
     if not limit or low > limit then return nil end
     local gain = PRICES:Sale(outlook.high) - post - low
-    local most = math.max(1, math.min(PRICES:Under(key, limit) or 1, math.ceil(outlook.daily * WEEK)))
+    local most = Most(key, limit, outlook.daily)
     return { key = key, id = id, low = low, limit = limit, gain = gain, most = most, high = outlook.high,
         highAt = outlook.highAt, allDay = outlook.allDay, at = outlook.at, daily = outlook.daily, total = gain * most }
 end
 
+-- To buy here and sell in the house of the other kind.
+local function Away(key, id, low, vendor)
+    local route = PRICES:Route(key, vendor)
+    if not (route and route.sale and route.daily and route.daily > 0) then return nil end
+    local limit = PRICES:Trip(route)
+    if low > limit then return nil end
+    local gain = route.sale - low
+    local most = Most(key, limit, route.daily)
+    return { key = key, id = id, low = low, limit = limit, gain = gain, most = most, high = route.high, side = route.side,
+        daily = route.daily, total = gain * most }
+end
+
+-- A line to buy, or nil for an item that is no deal. Most items end at the first look, at no cost.
+function Deals.Buy(key)
+    local low = PRICES:Last(key)
+    if not low or low <= 0 then return nil end
+    local usual, theirs = PRICES:Usual(key), PRICES:RouteUsual(key)
+    local cheap, far = usual and low <= usual * CHEAP, theirs and low * PRICES.TRIP <= theirs
+    if not (cheap or far) then return nil end
+    local id = tonumber(key:match("^%d+"))
+    local vendor = Facts(id)
+    local here, away = cheap and Here(key, id, low, vendor), far and Away(key, id, low, vendor)
+    if here and away then return away.total > here.total and away or here end
+    return here or away or nil
+end
+
 -- A line to sell, or nil for what is better kept or sold another way. what: { key, id, item, count, here, bag, slot, there }.
 function Deals.Sell(what)
-    local low = PRICES:Low(what.item)
-    if not low then return nil end
     local vendor = Facts(what.id)
-    local post = PRICES:Post(vendor, what.item)
-    local price = PRICES:PostAt(low, vendor, what.item)
-    local sale = PRICES:Sale(price) - post
-    if sale <= vendor * PRICES.BETTER then return nil end
+    local low = PRICES:Low(what.item)
+    local post = low and PRICES:Post(vendor, what.item)
+    local price = low and PRICES:PostAt(low, vendor, what.item)
+    local sale = low and PRICES:Sale(price) - post or 0
+    local route = PRICES:Route(what.item, vendor)
+    if route and route.sale and route.sale > math.max(sale, vendor) * PRICES.AWAY then
+        what.price, what.vendor, what.side = route.high, vendor, route.side
+        what.gain, what.total = route.sale - vendor, (route.sale - vendor) * what.count
+        return what
+    end
+    if not low or sale <= vendor * PRICES.BETTER then return nil end
     local outlook = PRICES:Outlook(what.item)
     if outlook and outlook.days >= PRICES.TRUSTED and (outlook.daily == 0 or PRICES:Later(outlook, sale, post)) then return nil end
     what.price, what.vendor, what.gain, what.total = price, vendor, sale - vendor, (sale - vendor) * what.count

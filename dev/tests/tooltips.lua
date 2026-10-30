@@ -890,6 +890,54 @@ do
     Fill(150, 200, 10)
     check(Find("^Sell on the AH for 150c"), "the same price in lots of twenty: the post is shared, and the auction house brings more")
 
+    -- The neutral house: buy here and sell there, sell there, buy there; each by its fees
+    local side = UnitFactionGroup
+    UnitFactionGroup = function(unit) if unit == "npc" then return "Neutral" end return side(unit) end
+    local neutral = Prices.House("npc")
+    UnitFactionGroup = side
+    local function There(usual, low)
+        local line
+        for step = 21 * 8, 1, -1 do line = Rhythm.Seen(line, serverNow - step * 3 * 3600, usual) end
+        neutral.rhythm[key] = Rhythm.Sold(line, serverNow, 70, 70 * usual)
+        neutral.watched, neutral.watchedAt = 7 * 86400, serverNow
+        Prices.Take(neutral, key, serverNow, low, usual, 10, 10, 1)
+    end
+    local function Steady(usual, sold)
+        local line
+        for step = 21 * 8, 1, -1 do line = Rhythm.Seen(line, serverNow - step * 3 * 3600, usual) end
+        home.rhythm[key] = sold and Rhythm.Sold(line, serverNow, sold * 7, sold * 7 * usual) or line
+        home.watched, home.watchedAt = 7 * 86400, serverNow
+    end
+    Steady(1000, 10)
+    There(5000, 4800)
+    Prices.Offers(home, { [key] = { 1000 * Prices.UNITS + 3 } })
+    Fill(1000)
+    local route = Prices:Route(19019, 81)
+    check(route and route.sale == math.floor(4999 * 0.85) - 100, "(a sale there, by its fees: its cut of 15%, a post of 1s)")
+    local away = Find("^Sell at the neutral AH for 5000c")
+    check(away and away.right:find("^%+%d+c more$") and away.lg == COLOR.DONE[2], "yours to sell, and the neutral house pays clearly more: the advice is to take it there")
+    tip.info = buying
+    Fill(1000)
+    local most = math.floor(route.sale / 1.25)
+    advice = Find("^Buy if under")
+    check(advice and advice.left == "Buy if under " .. most .. "c" and advice.lg == COLOR.DONE[2], "on the house's list: worth what it brings there, a quarter left on top")
+    plan = Find("^Sell at the neutral AH for 5000c")
+    check(plan and plan.right == ("+%dc each"):format(route.sale - 1000), "and where to sell it, and what one brings after all of it")
+    check(Find("^3 on offer under"), "and how many cost less")
+    Steady(5000, 10)
+    There(5000, 1000)
+    W.alt = true
+    Fill(4000)
+    check(Find("^Buy at the neutral AH for 1000c"), "too dear here, and far cheaper there: buy it there")
+    check(Find("^At the neutral AH: 1000c, usually 5000c"), "with Alt what the other house asks")
+    W.alt, tip.info = false, nil
+    Steady(1000, 10)
+    There(1050, 1000)
+    Fill(1000)
+    check(not Find("neutral AH"), "about the same there, after its fees: no trip")
+    neutral.rhythm[key], neutral.watched, neutral.watchedAt = nil, nil, nil
+    Prices.Take(neutral, key, serverNow, 0, 0, 0, 0, 0)
+
     home.watched, home.watchedAt = nil, nil
     Prices.Offers(home, {})
     Prices.See(key)

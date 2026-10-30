@@ -192,9 +192,10 @@ local market = {}
 --   current         the lowest price at the auction house now
 --   post            what putting one up costs
 --   outlook, limit  what the scans tell of its price ahead (from TRUSTED days on), and the most worth paying to sell it on
---   more            for "later": how much more that brings than the best way now
+--   more            for "later" and "there": how much more that brings than the best way now
+--   route, trip     what the house of the other kind says of it (Prices:Route), and whether the limit is that of a sale there
 --   record, broken  its row of disenchanting, what that brings for one (nil: not this way, or no prices)
---   advice, worth   "ah", "later", "vendor", "disenchant" or "buy"; for buy, the most it is worth paying
+--   advice, worth   "ah", "later", "there", "vendor", "disenchant" or "buy"; for buy, the most it is worth paying
 local function Work(item, id, vendor, bound, tooltip)
     wipe(market)
     local unit = vendor or 0
@@ -211,6 +212,9 @@ local function Work(item, id, vendor, bound, tooltip)
                 market.limit = PRICES:Limit(outlook, market.post)
             end
         end
+        market.route = PRICES:Route(item, vendor)
+        local trip = PRICES:Trip(market.route)
+        if trip and trip > (market.limit or 0) then market.limit, market.trip = trip, true end
     end
     market.record = id and DisenchantOf(id)
     market.broken = market.record and Disenchanted(market.record) or nil
@@ -228,6 +232,8 @@ local function Work(item, id, vendor, bound, tooltip)
     local outlook = market.outlook
     local later = outlook and outlook.highAt and outlook.highAt > outlook.at and PRICES:Later(outlook, value, market.post)
     if later then best, value, market.more = "later", later, later - value end
+    local there = market.route and market.route.sale
+    if there and there > value * PRICES.AWAY then best, value, market.more = "there", there, there - value end
     market.advice = value > 0 and best or nil
     return market
 end
@@ -257,6 +263,11 @@ local function When(outlook, at)
     return text
 end
 
+-- The house of the other kind, in words.
+local function Where(route)
+    return route.side == "neutral" and TEXT.NEUTRAL_AH or TEXT.FACTION_AH
+end
+
 -- The advice in one line: what to do (left, in its colour) and how much more (right).
 local function Advice(m)
     local left, right, color, rightColor
@@ -265,6 +276,9 @@ local function Advice(m)
         left, color = Read.Memo("goldAdvice", TEXT.SELL_AH, Money(m.current)), SELL
     elseif advice == "later" then
         left, color = Read.Memo("goldLater", TEXT.SELL_WHEN, When(m.outlook, m.outlook.highAt), Money(m.outlook.high)), SELL
+        right, rightColor = Read.Memo("goldMore", TEXT.MORE, Money(m.more)), SELL
+    elseif advice == "there" then
+        left, color = Read.Memo("goldThere", TEXT.SELL_THERE, Where(m.route), Money(m.route.high)), SELL
         right, rightColor = Read.Memo("goldMore", TEXT.MORE, Money(m.more)), SELL
     elseif advice == "vendor" then
         left, color = TEXT.SELL_VENDOR, VENDOR
@@ -284,6 +298,18 @@ end
 -- Under the advice to buy: when to sell and what one brings, and how many cost less; too dear now, when to buy instead.
 local function Plan(m, item)
     local outlook, limit = m.outlook, m.limit
+    local route = m.route
+    if m.advice == "buy" and m.trip and m.current <= limit then
+        local row = Read.Text("row", Read.Memo("goldPlanThere", TEXT.SELL_THERE, Where(route), Money(route.high)), SELL[1], SELL[2], SELL[3])
+        row.right, row.rr, row.rg, row.rb = Read.Memo("goldEach", TEXT.EACH, Money(route.sale - m.current)), SELL[1], SELL[2], SELL[3]
+        local units = PRICES:Under(item, limit)
+        if units and units > 0 then Read.Text("small", Read.Memo("goldUnder", TEXT.ON_OFFER, units, Money(limit)), SMALL[1], SMALL[2], SMALL[3]) end
+        return
+    end
+    -- Too dear here, and worth the trip to buy it there
+    if m.advice == "buy" and route and route.low > 0 and limit and route.low <= limit and route.low * PRICES.TRIP <= m.current then
+        return Read.Text("row", Read.Memo("goldPlanBuy", TEXT.BUY_THERE, Where(route), Money(route.low)), SELL[1], SELL[2], SELL[3])
+    end
     if m.advice ~= "buy" or not (outlook and limit) then return end
     if m.current <= limit then
         local price = Money(outlook.high)
@@ -338,6 +364,15 @@ local function Forecast(m)
         Read.Text("small", TEXT.NO_SALES, SMALL[1], SMALL[2], SMALL[3])
     end
     if m.limit and m.advice ~= "buy" then Read.Text("small", Read.Memo("goldWorth", TEXT.WORTH, Money(m.limit)), SMALL[1], SMALL[2], SMALL[3]) end
+end
+
+-- With Alt held: what the house of the other kind asks.
+local function Elsewhere(m)
+    local route = m.route
+    if not route or route.low <= 0 then return end
+    local text = route.usual and Read.Memo("goldElsewhere", TEXT.THERE_USUAL, Where(route), Money(route.low), Money(route.usual))
+        or Read.Memo("goldElsewhereLow", TEXT.THERE, Where(route), Money(route.low))
+    Read.Text("small", text, SMALL[1], SMALL[2], SMALL[3])
 end
 
 -- With Alt held: where the numbers come from, small: the price, the market and what is on offer, how long ago.
@@ -411,6 +446,7 @@ function Gold.Section(ctx, id, line, bound, binding, looks)
     if alt then
         Details(m, item)
         Forecast(m)
+        Elsewhere(m)
     end
     if alt and not bound and PRICES:Last(item) then ns.Graph.Row(item) end
 end

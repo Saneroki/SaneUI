@@ -27,6 +27,13 @@ local Core = SaneUI.Core
 --                                    time brings, less a margin. Nil for an item seen not selling, or known too shortly
 --      Prices:Later(outlook, value, post)  what a sale at the price to expect brings where that is worth the wait over value,
 --                                    what the best way brings now; nil where it is not
+--      Prices:Route(item, vendor)    what the house of the other kind says of it, each number by that house's own cut and deposit, for
+--                                    weighing a trip there: { side, low, at, usual, high, daily, sale }, one table used again: read it at
+--                                    once. nil: no such house, or it has not seen the item. side: "neutral" or "faction"; low: its lowest
+--                                    price, when last seen (at); usual, high, daily, sale: nil while there is nothing to go by
+--                                    (known too shortly, seen not selling, or last seen too long ago); sale: what a sale there brings
+--      Prices:RouteUsual(key)        what the item usually costs in that house, a look at its line alone
+--      Prices:Trip(route)            the most worth paying to sell it on there: nil where that house has nothing to go by
 -------------------------------------------------------------------------------
 local Plain, Ask = Core.Plain, Core.Ask
 local Prices = Core.Data.Series("Prices")
@@ -40,6 +47,11 @@ local LATER = 1.05     -- how much more a sale later must bring than a sale now 
 local TRUSTED = 3      -- days of an item's prices before anything is said of where they go
 Prices.TRUSTED = TRUSTED
 Prices.BETTER = 1.05   -- how much more the auction house must bring than a vendor to be advised
+Prices.AWAY = 1.10     -- how much more a sale in the other house must bring than the best way here to be worth the trip
+local TRIP = 1.25      -- how much more a sale in the other house must bring than the item costs: the way, and its prices are older
+Prices.TRIP = TRIP
+local STALE = 3 * 86400 -- seconds after which what the other house listed is no ground for a trip
+local NEUTRAL = "neutral"
 
 local function Side()
     local key = Prices.Key(Prices.Read())
@@ -87,6 +99,39 @@ function Prices:Later(outlook, value, post)
     if not outlook or outlook.days < TRUSTED then return nil end
     local later = self:Sale(outlook.high) - post
     return later > value * LATER and later or nil
+end
+
+local route = {}
+
+-- Inside the other house (Prices.Within): all that is reckoned here is by its fees.
+local function There(self, item, vendor)
+    local low, _, _, _, _, at = self:Last(item)
+    if not low then return nil end
+    wipe(route)
+    route.side, route.low, route.at = Side() == NEUTRAL and NEUTRAL or "faction", low, at
+    local outlook = self:Outlook(item)
+    local now = Ask(rawget(_G, "GetServerTime")) or 0
+    if outlook and outlook.days >= TRUSTED and outlook.daily ~= 0 and now - at <= STALE then
+        route.usual, route.high, route.daily = outlook.usual, outlook.high, outlook.daily
+        route.sale = self:Sale(outlook.high - 1) - self:Post(vendor, item)
+    end
+    return route
+end
+
+function Prices:Route(item, vendor)
+    local other = Prices.Other()
+    if not other then return nil end
+    return (Prices.Within(other, There, self, item, vendor))
+end
+
+function Prices:RouteUsual(key)
+    local other = Prices.Other()
+    if not other then return nil end
+    return (Prices.Within(other, self.Usual, self, key))
+end
+
+function Prices:Trip(there)
+    return there and there.sale and math.floor(there.sale / TRIP) or nil
 end
 
 function Prices:Limit(outlook, post)

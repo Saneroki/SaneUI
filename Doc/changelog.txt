@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The advice and the tab Deals weigh your faction's auction house
+  against a neutral one, each with its own cut and deposit: buy in
+  one and sell in the other where the trip pays.
 - A new tab Deals on the auction house window, open first: what to
   buy right now and what of yours to sell, on any character, each
   a click away, and how much gold you have on sale in the corner.

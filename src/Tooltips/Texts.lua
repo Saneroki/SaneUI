@@ -52,6 +52,9 @@ ns.TEXT = {
     USUAL = "Usually %s", RISING = "Usually %s  \194\183  rising %d%% a day", FALLING = "Usually %s  \194\183  falling %d%% a day",
     DEAREST = "Dearest %s, about %s", CHEAPEST = "Cheapest %s, about %s",
     SELLS = "Sells %s a day at about %s", NO_SALES = "No sales seen", FEW_SCANS = "Too few scans for a forecast yet",
+    -- What the auction house of the other kind says of it: the words for each, and what to do there
+    NEUTRAL_AH = "the neutral AH", FACTION_AH = "your faction's AH", SELL_THERE = "Sell at %s for %s", BUY_THERE = "Buy at %s for %s",
+    THERE = "At %s: %s", THERE_USUAL = "At %s: %s, usually %s",
     ALT_MORE = "Press ALT for +%d more",
     -- What came seldom from a node or a skinned creature (Gathering.lua): the thing, and how often
     RARE_DROP = "%s  %s", RARE_CHANCE = "%.1f%% (%d of %d)", RARE_COUNT = "%d of %d", RARE_LISTED = "%.1f%%",

@@ -50,6 +50,10 @@ local function When(line)
     return TEXT.when:format(text, Core.ClockAt(at), Core.ClockAt(at + HOUR))
 end
 
+local function Away(side)
+    return side == "neutral" and TEXT.neutral or TEXT.faction
+end
+
 local function NameOf(id)
     local name = Core.Plain(Ask(C_Item.GetItemNameByID, id))
     if not name and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(id) end
@@ -141,7 +145,13 @@ local function DrawBuy(row, line)
     row.name:SetTextColor(Color(line.id))
     row.gain:SetText(TEXT.each:format(Money(line.gain)))
     local when = When(line)
-    row.note:SetText(when and TEXT.buyLine:format(Money(line.low), when, Money(line.high)) or TEXT.buyLineNow:format(Money(line.low), Money(line.high)))
+    if line.side then
+        row.note:SetText(TEXT.buyAway:format(Money(line.low), Away(line.side), Money(line.high)))
+    elseif when then
+        row.note:SetText(TEXT.buyLine:format(Money(line.low), when, Money(line.high)))
+    else
+        row.note:SetText(TEXT.buyLineNow:format(Money(line.low), Money(line.high)))
+    end
     BuyButton(row, line)
 end
 
@@ -149,15 +159,16 @@ local function DrawSell(row, line)
     row.name:SetText(line.count > 1 and ("%s x%d"):format(NameOf(line.id), line.count) or NameOf(line.id))
     row.name:SetTextColor(Color(line.id))
     row.gain:SetText(TEXT.total:format(Money(line.total)))
-    local parts = { TEXT.sellLine:format(Money(line.price)) }
+    local parts = { line.side and TEXT.takeAway:format(Away(line.side), Money(line.price)) or TEXT.sellLine:format(Money(line.price)) }
     if line.here > 0 and #line.there > 0 then parts[2] = TEXT.sellHere:format(line.here) end
     for _, place in ipairs(line.there) do
         if #parts < 3 then parts[#parts + 1] = TEXT.sellThere:format(place.name, place.count) end
     end
     row.note:SetText(table.concat(parts, "  \194\183  "))
+    local posts = line.here > 0 and not line.side
     row.action:SetText(TEXT.post)
-    row.action:SetEnabled(line.here > 0)
-    row.action:SetShown(line.here > 0)
+    row.action:SetEnabled(posts)
+    row.action:SetShown(posts)
 end
 
 local function Draw(row, line, kind)
@@ -224,7 +235,7 @@ local function Fill()
     local keys = {}
     for index = 1, math.min(SIGHT, #buys) do keys[#keys + 1] = buys[index].key end
     for index = 1, math.min(SIGHT, #sells) do
-        if sells[index].here > 0 then keys[#keys + 1] = sells[index].key end
+        if sells[index].here > 0 and not sells[index].side then keys[#keys + 1] = sells[index].key end
     end
     ns.Live.Want(keys)
 end

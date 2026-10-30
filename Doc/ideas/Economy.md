@@ -344,6 +344,7 @@ Economy's own reckoning over the database's numbers (the logic is the module's, 
   least 1s and a margin. Economy's views read the same.*
 - **Sells per day:** units sold between scans, per day. Beside the units on offer it gives **days of
   stock**: how long the offers standing now would last at that pace.
+- **Faction and neutral house:** *built, 2026-10-30 (Saneroki): "Maybe sometimes the adivce is buy on faction ah and sell on neutral ah." `Prices:Route`, each house by its own fees, in the tooltips and on the tab Deals.*
 - **Fees:** *settled, 2026-10-30: Core's `Data/Fees.lua`, `Doc/guides/data.md`, *Fees*: the client's own rates, not an estimate. A thing that
   does not stack is priced in whole silver.*
 - **Price to post:** the lowest offer less an undercut (setting: one copper or a share), never so low that

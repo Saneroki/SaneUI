@@ -2438,6 +2438,48 @@ do
     check(Prices:Limit({ days = 2, high = 1000, daily = 5 }, 10) == nil and Prices:Limit({ days = 9, high = 1000, daily = 0 }, 10) == nil,
         "nothing is worth paying for what is known too shortly, or seen not selling")
     check(Prices:Limit({ days = 9, high = 1101, daily = 5 }, 45) == 909, "else a sale at its best, less cut, post and a tenth")
+
+    -- The two houses a character can reach, each by its own fees
+    local Rhythm = Data.Rhythm
+    local faction = Prices.House("player")
+    local side = rawget(_G, "UnitFactionGroup")
+    rawset(_G, "UnitFactionGroup", function(unit) if unit == "npc" then return "Neutral" end return side(unit) end)
+    local neutral = Prices.House("npc")
+    rawset(_G, "UnitFactionGroup", side)
+    local now = GetServerTime()
+    local function Known(house, key, usual, low, seen)
+        local line
+        for step = 21 * 8, 1, -1 do line = Rhythm.Seen(line, now - step * 3 * 3600, usual) end
+        house.rhythm[key] = Rhythm.Sold(line, now, 70, 70 * usual)
+        house.watched, house.watchedAt = 7 * 86400, now
+        Prices.Take(house, key, seen or now, low, usual, 10, 10, 1)
+    end
+    Known(faction, "7001", 1000, 1000)
+    Known(neutral, "7001", 2000, 1800)
+    Prices.Changed()
+    check(Prices.Other() == neutral, "from your side's house: the neutral one")
+    check(Prices.Within(neutral, Prices.Other) == faction, "and back")
+    check(Prices.Within(neutral, Prices.Cut, Prices) == 0.15 and Prices:Cut() == 0.05, "inside it, its fees; outside again, yours")
+    check(select(2, pcall(Prices.Within, neutral, error, "oops")) == "oops" and Prices:Cut() == 0.05, "an error inside changes nothing after it")
+    local route = Prices:Route(7001, 100)
+    check(route and route.side == "neutral" and route.low == 1800 and route.usual == 2000 and route.daily == 10, "what the neutral house says of an item")
+    local deposit = math.max(100, math.floor(100 * 0.25 * 4))
+    check(route.sale == math.floor(1999 * 0.85) - deposit, "a sale there is reckoned by its cut of 15% and its deposit, five times yours: " .. tostring(route.sale))
+    check(Prices:Trip(route) == math.floor(route.sale / 1.25), "the most worth paying to take it there leaves a quarter on top")
+    check(Prices:RouteUsual("7001") == 2000, "what it usually costs there, at a look")
+    check(Prices.Within(neutral, Prices.Route, Prices, 7001, 100).side == "faction", "seen from the neutral house, yours is the other")
+    check(Prices.Within(neutral, Prices.Route, Prices, 7001, 100).sale == math.floor(999 * 0.95) - 100, "by your house's fees")
+    Known(neutral, "7002", 2000, 1800, now - 4 * 86400)
+    Prices.Changed()
+    check(Prices:Route(7002, 100).low == 1800 and Prices:Route(7002, 100).sale == nil, "seen too long ago: its price is told, but it is no ground for a trip")
+    check(Prices:Route(424242, 100) == nil, "an item it never saw")
+    faction.onSale, faction.onSaleCount, neutral.onSale, neutral.onSaleCount = 500, 2, 300, 1
+    check(select(1, Prices:OnSale()) == 800 and select(2, Prices:OnSale()) == 3, "what you have on sale is both houses' together")
+    faction.onSale, faction.onSaleCount, neutral.onSale, neutral.onSaleCount = nil, nil, nil, nil
+    Prices.Take(faction, "7001", now, 0, 0, 0, 0, 0)
+    Prices.Take(neutral, "7001", now, 0, 0, 0, 0, 0)
+    SaneUIData_Market.forever.houses[Prices.Key(neutral)] = nil
+    Prices.Changed()
     GetCVar = cvar
 end
 

@@ -175,6 +175,38 @@ vendors[1001] = 2000
 check(Deals.Sell({ key = "1000", id = 1000, item = 1000, count = 1, here = 1, there = {} }) == nil, "far under its usual price: better kept")
 check(Deals.Sell({ key = "9", id = 9, item = 9, count = 1, here = 1, there = {} }) == nil, "no price: nothing to say")
 
+-- The neutral house: cheap here, dear there, by its own fees
+local side = UnitFactionGroup
+UnitFactionGroup = function(unit) if unit == "npc" then return "Neutral" end return side(unit) end
+local neutral = Prices.House("npc")
+UnitFactionGroup = side
+local function There(key, usual, low)
+    local kept = house
+    house = neutral
+    Known(key, usual, 10)
+    house = kept
+    Prices.Take(neutral, key, now, low, usual, 10, 10, 1)
+end
+neutral.watched, neutral.watchedAt = 7 * DAY, now
+Known("2600", 1000, 10)  Listed("2600", 1000)           -- at its usual price here, far dearer there
+There("2600", 5000, 4800)
+Known("2601", 1000, 10)  Listed("2601", 1000)           -- a little dearer there: not worth the way
+There("2601", 1300, 1200)
+vendors[2600], vendors[2601] = 10, 10
+Prices.Changed()
+local away = Deals.Buy("2600")
+check(away and away.side == "neutral" and away.limit == math.floor((math.floor(4999 * 0.85) - 100 / 1) / 1.25), "not cheap here, but far dearer in the neutral house: a deal there, by its fees: " .. tostring(away and away.limit))
+check(away.gain == math.floor(4999 * 0.85) - 100 - 1000 and away.high == 5000, "what one brings after its cut, the post, and what it cost")
+check(Deals.Buy("2601") == nil, "a little dearer there: after its cut no deal")
+local both = Deals.Buy("2589")
+check(both and both.side == nil, "cheap here and with nothing there: a deal here")
+local taken = Deals.Sell({ key = "2600", id = 2600, item = 2600, count = 3, here = 3, bag = 0, slot = 4, there = {} })
+check(taken and taken.side == "neutral" and taken.price == 5000 and taken.total == (math.floor(4999 * 0.85) - 100 - 10) * 3, "yours to sell, and the other house pays clearly more: the line says to take it there")
+check(Deals.Sell({ key = "2601", id = 2601, item = 2601, count = 3, here = 3, bag = 0, slot = 4, there = {} }).side == nil, "a little more there: sold here")
+Listed("2600", 0)
+Listed("2601", 0)
+Prices.Changed()
+
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------

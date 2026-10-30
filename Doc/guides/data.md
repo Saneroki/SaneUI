@@ -853,6 +853,8 @@ What the auction house takes, and what that leaves, the one place it is reckoned
   sale at the price to expect, where that brings 5% more than the best way now. `Prices:PostAt` is one step under a price, never so low
   that a sale brings less than a vendor pays.
 
+- **Two houses** (Saneroki, 2026-10-30): a character can reach its side's house and a neutral one, and each keeps its own history, forecast and sales: a house is part of a price's key from the first scan. `Prices.Other()` is the house of the other kind, `Prices.Within(house, fn, ...)` reads everything as if that house were open, so all of the above reckons by its fees, and `Prices:Route(item, vendor)` says what a sale there brings. A trip must leave a quarter on top of what the item costs (`Prices:Trip`), a sale there 10% over the best way here (`Prices.AWAY`); a neutral sale needs a price some 12% higher just to match one at a faction's house, and more than that for the deposit. What was last seen there over three days ago is told, but it is no ground for a trip.
+
 ### The forecast (`Data.Rhythm`, `Prices:Outlook`) *(Saneroki, 2026-10-30)*
 
 "Try to do their best to tell me when to sell or buy this item to make a profit ... when the AH predicts prices to be high vs low
@@ -892,7 +894,9 @@ Prices:Outlook(item) -- what the scans tell of its price ahead and how it sells 
 Prices:Under(item, price) -- how many are on offer at that price or less; nil while no scan or list of it was seen this session
 Prices:Usual(key)     -- what an item usually costs, a look at its forecast's line alone
 Prices:Scanned()      -- the keys of the house's last scan, for a view that looks through them
-Prices:OnSale()       -- money, auctions, at: what this player's characters had on sale at the last scan, on every linked account
+Prices:OnSale()       -- money, auctions, at: what this player's characters had on sale at the last scans of both houses, on every linked account
+Prices.Other()        -- the house of the other kind a character can reach; nil: nobody of yours has seen it
+Prices.Within(house, fn, ...) -- fn(...) with everything here reading that house; it must not wait for a frame in there
 Prices:Stamp()        -- a number that moves with every change of a price
 Prices:OnChange(fn)   -- fn() on the next frame after prices changed
 ```

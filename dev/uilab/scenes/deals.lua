@@ -98,6 +98,19 @@ local function Fill()
     end
     house.watched, house.watchedAt, house.kept = 7 * DAY, now, now
     house.onSale, house.onSaleCount = 1284500, 37
+    -- The neutral house, with one thing far dearer there and one of the bags' as well
+    local side = UnitFactionGroup
+    UnitFactionGroup = function(unit) if unit == "npc" then return "Neutral" end return side(unit) end
+    local neutral = Prices.House("npc")
+    UnitFactionGroup = side
+    for _, thing in ipairs({ { 3576, 9000 }, { 2840, 5200 } }) do
+        local line
+        for step = 21 * 8, 1, -1 do line = Rhythm.Seen(line, now - step * 3 * 3600, thing[2]) end
+        local key = tostring(thing[1])
+        neutral.rhythm[key] = Rhythm.Sold(line, now, 70, 70 * thing[2])
+        Prices.Take(neutral, key, now, thing[2], thing[2], 40, 8, 3)
+    end
+    neutral.watched, neutral.watchedAt, neutral.kept, neutral.samples = 7 * DAY, now, now, 100
     Prices.Changed()
 end
 

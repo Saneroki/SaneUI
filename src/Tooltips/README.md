@@ -170,7 +170,8 @@ only read.
   | --- | --- |
   | On the auction house's list | *Buy if under 15s 40c*, *now 10s*: the most worth paying, so that a sale at its best time still brings 10% more after the cut and the post. Green while it costs less. Under it, in green, *Sell Fri 18:00-21:00 for 20s*, *+8s 80c each*, and small, *12 on offer under 15s 40c*. Too dear now: *Buy Tue 03:00-06:00 for 14s* if it will be cheap enough then |
   | Anywhere else | *Sell Fri 18:00-21:00 for 20s*, *+1s 90c more*, in place of the advice to sell now, where a sale then brings 5% more than the best way now. *Sell Sat for 11s*: the day counts, not the hour |
-  | With Alt | *Usually 18s*, with *rising 2% a day* or *falling*; *Dearest ...* and *Cheapest ...*, each about what; *Sells 34 a day at about 17s*, or *No sales seen*; away from the list *Worth buying under ...*; *Too few scans for a forecast yet* before the three days |
+  | The other house | Your side's house and a neutral one each keep their own prices, and each is weighed by its own cut and deposit. *Sell at the neutral AH for 20s*, *+3s more*, in place of the advice to sell here, where a sale there brings 10% more than the best way here. On the house's list *Buy if under* is what it brings there if that is more, with *Sell at the neutral AH for 20s*, *+8s each*; too dear here and far cheaper there, *Buy at the neutral AH for 5s*. What was last seen there over three days ago is no ground for a trip |
+  | With Alt | *Usually 18s*, with *rising 2% a day* or *falling*; *Dearest ...* and *Cheapest ...*, each about what; *Sells 34 a day at about 17s*, or *No sales seen*; away from the list *Worth buying under ...*; *At the neutral AH: 12s, usually 14s*; *Too few scans for a forecast yet* before the three days |
 
   **The post** counts in everything the auction house is weighed by: the deposit (Core's *Fees*, `Doc/guides/data.md`), at the least 1s
   for an auction, shared by as many as others put in one auction. A sale gives the deposit back and an auction that runs out keeps it (the
@@ -640,6 +641,7 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-30 — The advice weighs your side's house against a neutral one, each by its own fees: buy in one, sell in the other (Saneroki).
 - 2026-10-30 — Forever's real fees (Core's *Fees*): 15% at a neutral house, the deposit by the duration you chose, prices of what does
   not stack in whole silver. Money is written 1g1s1c, with the game's coin icons (Saneroki).
 - 2026-10-30 — The Gold section tells when to buy and sell for a profit, as the scans build up: the most worth paying, when an

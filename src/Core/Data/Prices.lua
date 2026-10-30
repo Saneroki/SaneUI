@@ -20,8 +20,13 @@ local Core = SaneUI.Core
 --                              offers; nil while neither was seen in this session
 --      Prices:Usual(key)       what an item usually costs, a look at its rhythm's line alone; nil: no line
 --      Prices:Scanned()        the keys of the house's last scan, a new table: { key, ... }, for a view that looks through them
---      Prices:OnSale()         money, auctions, at: what this player's characters had on sale at the house's last full scan, all
---                              accounts' that link their files (Doc/guides/data.md, *Across accounts*); nil before such a scan
+--      Prices:OnSale()         money, auctions, at: what this player's characters had on sale at the last full scan of this house
+--                              and of the other kind (Prices.Other), all accounts' that link their files (Doc/guides/data.md,
+--                              *Across accounts*); nil before such a scan
+--      Prices.Other()          the house of the other kind a character of yours can reach: the neutral one from your side's, your
+--                              side's from the neutral one. Nil: nobody of yours has seen it
+--      Prices.Within(house, fn, ...)  fn(...) with everything of Prices reading that house, for what weighs two houses against each
+--                              other; it must not wait for a frame in there
 --      Prices:Stamp()          a number that moves with every change of a price, for a view to know its picture is old
 --      Prices:OnChange(fn)     fn() on the next frame after prices changed: a list of the game's, or a scan kept
 --      Prices.Account()        takes in what another account's file left in the global: the addon
@@ -80,6 +85,7 @@ local kinds = {}       -- [item] = whether the auction house tells its kinds apa
 local listed = {}      -- [key] = the lowest price in the list on show
 local listeners = {}
 local stamp = 0        -- moves with every change of a price
+local reading          -- the house read for a moment instead (Prices.Within)
 local range, newest = {}, {} -- what Prices:Range hands out, used again
 
 local function Now()
@@ -93,15 +99,8 @@ end)
 -------------------------------------------------------------------------------
 --  Houses and keys
 -------------------------------------------------------------------------------
--- The part of the house of unit's side, by region, realm and side (Doc/ideas/Data.md, *Realms and regions*): the
--- player's, or the NPC's that opened one, neutral where it has none (the goblin towns'). One of a wrong shape goes
--- to broken, never wiped. Nil before Core's saved variables are read, or while the player's side is not told yet.
-function Prices.House(unit)
-    if not part then return nil end
-    local side = Ask(rawget(_G, "UnitFactionGroup"), unit)
-    if unit == "player" and type(side) ~= "string" then return nil end
-    local key = ("%s/%s/%s"):format(tostring(Ask(rawget(_G, "GetCurrentRegionName")) or "?"):lower(),
-        tostring(Ask(rawget(_G, "GetRealmID")) or 0), type(side) == "string" and side:lower() or "neutral")
+-- A house's part by its key, made where there is none yet. One of a wrong shape goes to broken, never wiped.
+local function Part(key)
     if type(part.houses) ~= "table" then part.houses = {} end
     local known = part.houses[key]
     if type(known) ~= "table" or type(known.days) ~= "table" or type(known.scans) ~= "table" then
@@ -119,10 +118,44 @@ function Prices.House(unit)
     return known
 end
 
+-- The part of the house of unit's side, by region, realm and side (Doc/ideas/Data.md, *Realms and regions*): the
+-- player's, or the NPC's that opened one, neutral where it has none (the goblin towns'). Nil before Core's saved
+-- variables are read, or while the player's side is not told yet.
+function Prices.House(unit)
+    if not part then return nil end
+    local side = Ask(rawget(_G, "UnitFactionGroup"), unit)
+    if unit == "player" and type(side) ~= "string" then return nil end
+    return Part(("%s/%s/%s"):format(tostring(Ask(rawget(_G, "GetCurrentRegionName")) or "?"):lower(),
+        tostring(Ask(rawget(_G, "GetRealmID")) or 0), type(side) == "string" and side:lower() or "neutral"))
+end
+
 local function Current()
+    if reading then return reading end
     if opened then return opened end
     mine = mine or Prices.House("player")
     return mine
+end
+
+function Prices.Other()
+    local house = Current()
+    local key = house and keys[house]
+    if not key then return nil end
+    if key:find("/neutral$") then
+        mine = mine or Prices.House("player")
+        return mine ~= house and mine or nil
+    end
+    local neutral = key:gsub("/[^/]+$", "/neutral")
+    local seen = (database and database[neutral]) or (type(part.houses) == "table" and part.houses[neutral])
+    return seen and Part(neutral) or nil
+end
+
+function Prices.Within(house, fn, ...)
+    local was = reading
+    reading = house
+    local ok, one, other = pcall(fn, ...)
+    reading = was
+    if not ok then error(one, 0) end
+    return one, other
 end
 
 local function Moved()
@@ -397,8 +430,14 @@ end
 function Prices:OnSale()
     local house = Current()
     local newest = house and Newest(house)
-    if not newest or not newest.onSale then return nil end
-    return newest.onSale, newest.onSaleCount, newest.kept
+    local other = house and Prices.Other()
+    local second = other and Newest(other)
+    if not (newest and newest.onSale) and not (second and second.onSale) then return nil end
+    local money, auctions = 0, 0
+    for _, each in ipairs({ newest, second }) do
+        money, auctions = money + (each.onSale or 0), auctions + (each.onSaleCount or 0)
+    end
+    return money, auctions, newest.kept
 end
 
 function Prices:Stamp()
