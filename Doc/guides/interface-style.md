@@ -376,14 +376,15 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
 - **Party and raid, one frame (Saneroki, 2026-10-30):** no party frame at all: "no matter if I am in a party or a raid the
   window should look the same, just with more slots." Unit frames like the nameplates, a bit shorter and taller. Up from the bottom
   left, five to a column, a column to the right for each group, forty at most. Left the raid marker and the name, with a tiny mark for tanks and
-  healers in the top left corner, "a + or a shield like line", no golden circle; over them, big so it is easy to see, anchored left and floating like the buffs, the dispel
+  healers in the top left corner, "a + or a shield like line", no golden circle, in front of the health bar and behind the name and raid icon; over them, big so it is easy to see, anchored left and floating like the buffs, the dispel
   type's icon, the ready check and an incoming resurrection ("make them overlay"); right the health's share alone: "We don't need current health values on the unit frames. % is enough and once the frames get to short we can remove the %
   health altogether to maximize the text space". Little space at the bar's ends and between pieces, for as much of the name as possible.
   A tank's or healer's mana inside the bar, the frame no taller for it. Icons for your missing buffs float on top: "the name and other
   elements can continue behind the buff icons". "No gaps at all between unit frames. 0px gaps", and no border around the whole in play:
   "There can be a border in edit mode. Just not in normal gameplay." "Offline are grey and dead are [red] healthbar full." Who has aggro: "100%
   solid saturated red border instead of the current black". Your own slot is a button, not a unit frame, to the group's tools in place of the
-  game's raid manager.
+  game's raid manager: the word Group or Raid, and at its right full icons next to each other, as large as the cog: your role, raid marker,
+  incoming resurrection, being in a fight, the cog.
 - **Barriers, lost health, dispels on every bar (Saneroki, 2026-10-30):** on nameplates, unit frames and group frames alike: the game's
   shield art for a barrier, the game's hatching for maximum health lost, and for what can be dispelled the game's icon of its type, "Like
   the green drop for poison", never a ring, a border or the spell's icon.

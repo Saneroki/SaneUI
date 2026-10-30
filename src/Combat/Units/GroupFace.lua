@@ -8,7 +8,9 @@ local _, ns = ...
 --            (Saneroki, 2026-10-30: little space at the ends and between the
 --            pieces, Face.INSET, Face.GAP)
 --    corner  a tiny mark of a tank's or healer's role in the frame's top left
---            corner, over the name: a shield or a plus, no golden circle
+--            corner, a shield or a plus, no golden circle, centred over where
+--            the raid marker stands: in front of the bar, behind the name and
+--            the raid marker
 --    right   how much health is left ("85%"); nothing on a frame too narrow for
 --            that as well (Face.BARE), so the name gets it; Dead or Offline always
 --    over it an icon for each of your buffs the unit is missing (GroupBuffs.lua),
@@ -25,8 +27,10 @@ local _, ns = ...
 --  unit frame; a dead unit's bar full and red, an offline one's full and grey.
 --  Its border is black, solid red while the unit has an enemy's aggro.
 --
---  Your own slot holds no unit frame (you have your own): it shows the cog and
---  the word Party or Raid, and the tools' button lies on it (GroupTools.lua).
+--  Your own slot holds no unit frame (you have your own): the word Group or
+--  Raid in place of a name, and in a row at its right full icons of your role,
+--  your raid marker, a resurrection on its way, being in a fight, and the cog.
+--  The tools' button lies on it (GroupTools.lua).
 --
 --  The same face stands on a secure unit button of the game's group headers
 --  (Face.Unit: it follows the button's unit), hearing that unit's events, and
@@ -48,7 +52,7 @@ ns.GroupFace = Face
 Face.LINE = 1 / 5    -- the power line's height, a share of the bar's
 Face.INSET, Face.GAP = 3, 2 -- the words from the bar's ends, and between two pieces
 Face.BARE = 80       -- narrower than this: no health at all, the name has it all
-Face.ICON = 14       -- one of your buffs' icons, and the cog, square
+Face.ICON = 14       -- one of your buffs' icons, and the cog on your own slot, square
 Face.ICON_GAP = 1    -- between two of your buffs' icons
 Face.BIG_OFF = 4     -- the big icons are that much lower than the frame
 Face.ROLE = 10       -- the role's mark, square
@@ -59,6 +63,7 @@ Face.DEAD = { 0.8, 0, 0 }
 Face.OFFLINE = { 0.5, 0.5, 0.5 }
 Face.COG = "questlog-icon-setting"  -- the game's cog, as Core's windows have it
 Face.REZ = "RaidFrame-Icon-Rez"     -- the game's raid frames' icon of an incoming resurrection
+Face.COMBAT = "UI-HUD-UnitFrame-Player-CombatIcon" -- the game's own frame's mark of being in a fight
 Face.ROLES = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer" } -- the game's plain marks, without a ring
 Face.HEALERS = { PRIEST = true, DRUID = true, SHAMAN = true, PALADIN = true, MONK = true, EVOKER = true }
 Face.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
@@ -159,17 +164,17 @@ function Face.Make(parent, sample)
     rez:SetAtlas(Face.REZ)
     rez:Hide()
     face.ready, face.rez = ready, rez
-    -- Your own slot's cog, where a raid marker would stand.
+    -- Your own slot's cog, where the health would stand.
     local cog = face.top:CreateTexture(nil, "OVERLAY")
     cog:SetSize(Face.ICON, Face.ICON)
-    cog:SetPoint("LEFT", face.raid, "LEFT")
+    cog:SetPoint("RIGHT", face.top, "RIGHT", -Face.INSET, 0)
     cog:SetAtlas(Face.COG)
     cog:Hide()
     face.cog = cog
-    -- The role's mark in the corner, over the words, under what floats big.
-    local role = face.floating:CreateTexture(nil, "ARTWORK")
+    -- The role's mark in the corner, centred on the raid marker's place: on the frame of the words, under them.
+    local role = face.top:CreateTexture(nil, "BACKGROUND")
     role:SetSize(Face.ROLE, Face.ROLE)
-    role:SetPoint("TOPLEFT", face, "TOPLEFT", Face.GAP, -Face.GAP)
+    role:SetPoint("TOPLEFT", face, "TOPLEFT", Face.INSET + Face.GAP + (face.markSize - Face.ROLE) / 2, -Face.GAP)
     role:Hide()
     face.role = role
     face.icons, face.missing, face.roomed = {}, {}, Roomed
@@ -315,8 +320,52 @@ local function Rez(face, unit)
     RezIcon(face, Core.Ask(rawget(_G, "UnitHasIncomingResurrection"), unit) == true)
 end
 
--- Your own slot: the cog and the word, no unit; the tools' button lies on it.
-local function Mine(face, word)
+-- Your own slot's row: the icons that are not the cog, made when first needed, in the order they stand from the cog.
+local SLOT = { "combat", "rez", "mark", "role" }
+
+local function Row(face)
+    local row = {}
+    for _, key in ipairs(SLOT) do
+        row[key] = face.top:CreateTexture(nil, "OVERLAY")
+        row[key]:SetSize(Face.ICON, Face.ICON)
+        row[key]:Hide()
+    end
+    row.rez:SetAtlas(Face.REZ)
+    row.combat:SetAtlas(Face.COMBAT)
+    face.row = row
+    return row
+end
+
+-- The row as you are: each icon that shows next to the last, from the cog leftwards. what: role, mark, rez, combat.
+local function Lay(face, what)
+    local row = face.row or Row(face)
+    local atlas = Face.ROLES[what.role]
+    if atlas then row.role:SetAtlas(atlas) end
+    row.role:SetShown(atlas ~= nil)
+    local marked = type(what.mark) ~= "nil"
+    if marked then Text.MarkOn(row.mark, what.mark) end
+    row.mark:SetShown(marked)
+    row.rez:SetShown(what.rez == true)
+    row.combat:SetShown(what.combat == true)
+    local last = face.cog
+    for _, key in ipairs(SLOT) do
+        local icon = row[key]
+        if icon:IsShown() then
+            icon:ClearAllPoints()
+            icon:SetPoint("RIGHT", last, "LEFT", -Face.ICON_GAP, 0)
+            last = icon
+        end
+    end
+end
+
+-- A unit's frame again: nothing of your own slot's on it.
+local function NotMine(face)
+    face.cog:Hide()
+    for _, icon in pairs(face.row or {}) do icon:Hide() end
+end
+
+-- Your own slot: the word for your group and the row; the tools' button lies on it.
+local function Mine(face, word, what)
     face.health:SetMinMaxValues(0, 1)
     face.health:SetValue(0)
     face.power:Hide()
@@ -326,8 +375,8 @@ local function Mine(face, word)
     RoleIcon(face, nil)
     RezIcon(face, false)
     ReadyIcon(face, nil)
-    face.raid:SetWidth(Face.ICON) -- the cog's room
     face.cog:Show()
+    Lay(face, what)
     face.name:SetText(word)
     Text.Sample(face, 1, 1, "")
     Icons(face, face.missing, 0)
@@ -340,9 +389,12 @@ function Face.Fill(face)
     face.mine = Core.Ask(UnitIsUnit, unit, "player") == true
     if face.mine then
         face.marks:Set(nil)
-        return Mine(face, Core.Ask(IsInRaid) and ns.TEXT.groupRaid or ns.TEXT.groupParty)
+        local word = Core.Ask(IsInRaid) and ns.TEXT.groupRaid or ns.TEXT.groupGroup
+        return Mine(face, word, { role = RoleOf(unit), mark = Bar.Raw(GetRaidTargetIndex, unit),
+                                  rez = Core.Ask(rawget(_G, "UnitHasIncomingResurrection"), unit) == true,
+                                  combat = Core.Ask(UnitAffectingCombat, "player") == true })
     end
-    face.cog:Hide()
+    NotMine(face)
     Health(face, unit)
     face.marks:Set(unit)
     Power(face, unit)
@@ -359,7 +411,11 @@ end
 
 local function Heard(face, event)
     local unit = face.unit
-    if ns.off or not unit or face.mine then return end
+    if ns.off or not unit then return end
+    if face.mine then
+        if event == "INCOMING_RESURRECT_CHANGED" then Face.Fill(face) end
+        return
+    end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         Health(face, unit)
         Text.Health(face, unit)
@@ -396,13 +452,15 @@ function Face.Unit(face, unit)
     Face.Fill(face)
 end
 
--- Made-up values instead of a unit (the preview): sample = { you, name, health (a share), most, mana (a share, or nil),
+-- Made-up values instead of a unit (the preview): sample = { you, raid, name, health (a share), most, mana (a share, or nil),
 -- role, mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's
 -- answer), rez, aggro, word (Dead, Offline), colour }.
 function Face.Sample(face, sample)
     face.marks:Sample(sample)
-    if sample.you then return Mine(face, ns.TEXT.groupRaid) end
-    face.cog:Hide()
+    if sample.you then
+        return Mine(face, sample.raid and ns.TEXT.groupRaid or ns.TEXT.groupGroup, sample)
+    end
+    NotMine(face)
     Colour(face, sample.colour or Bar.GREEN)
     face.health:SetMinMaxValues(0, 1)
     face.health:SetValue(sample.colour and 1 or sample.health)

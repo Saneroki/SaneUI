@@ -234,9 +234,9 @@ do
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
     -- Your own slot: no unit frame but the tools' button, and the game's manager out of sight.
-    check(first.face.mine and not second.face.mine and first.face.name._text == ns.TEXT.groupParty and first.face.cog._shown
-        and not first.face.ready._shown and first.face.raid._width == Face.ICON and first.face.value._text == "",
-        "your own slot shows the cog and the word, no health")
+    check(first.face.mine and not second.face.mine and first.face.name._text == "Group" and first.face.cog._shown
+        and first.face.cog._points[1][1] == "RIGHT" and not first.face.ready._shown and first.face.value._text == "",
+        "your own slot shows the word Group and the cog in place of the health")
     check(CompactRaidFrameManager._parent ~= UIParent, "the game's raid manager at the screen's edge is out of sight")
     local tools
     for _, widget in ipairs(W.frames) do
@@ -277,8 +277,10 @@ do
         "by role: a tank's own power where it has no mana, a damage dealer none")
     check(third.face.role._shown and third.face.role._atlas == Face.ROLES.TANK and not second.face.role._shown,
         "a tank's tiny icon, a damage dealer none")
-    check(third.face.role._points[1][1] == "TOPLEFT" and third.face.role._parent == third.face.floating,
-        "in the frame's top left corner, over the words")
+    check(third.face.role._points[1][1] == "TOPLEFT" and third.face.role._parent == third.face.top
+        and third.face.role._layer == "BACKGROUND", "in the frame's top left corner, in front of the bar, behind the words")
+    check(third.face.role._points[1][4] + Face.ROLE / 2 == Face.INSET + Face.GAP + third.face.markSize / 2,
+        "centred on where the raid marker stands")
     UnitGroupRolesAssigned = function(unit) return unit == "party1" and "HEALER" or "NONE" end
     Face.Fill(second.face)
     Face.Fill(third.face)
@@ -286,6 +288,33 @@ do
     UnitGroupRolesAssigned = function() return "NONE" end
     Face.Fill(second.face)
     Face.Fill(third.face)
+
+    -- Your own slot shows your own role and raid marker, and the word changes with your group.
+    local markOf = GetRaidTargetIndex
+    GetRaidTargetIndex = function(unit) return unit == "player" and 3 or nil end
+    UnitGroupRolesAssigned = function(unit) return unit == "player" and "HEALER" or "NONE" end
+    Face.Fill(first.face)
+    local row = first.face.row
+    check(row.mark._shown and row.mark._cell == 3 and row.role._shown and row.role._atlas == Face.ROLES.HEALER
+        and row.role._width == Face.ICON and row.mark._width == first.face.cog._width and not first.face.role._shown
+        and not first.face.raid._shown, "your slot: your role and raid marker, as large as the cog")
+    check(row.mark._points[1][2] == first.face.cog and row.role._points[1][2] == row.mark, "next to each other, from the cog leftwards")
+    local fighting, incoming = false, false
+    UnitAffectingCombat = function() return fighting end
+    UnitHasIncomingResurrection = function() return incoming end
+    fighting, incoming = true, true
+    first.face:GetScript("OnEvent")(first.face, "INCOMING_RESURRECT_CHANGED", "player")
+    check(row.combat._shown and row.rez._shown and row.combat._points[1][2] == first.face.cog and row.rez._points[1][2] == row.combat
+        and row.mark._points[1][2] == row.rez, "in a fight, with a resurrection on its way: those too, in the row")
+    fighting, incoming = false, false
+    UnitHasIncomingResurrection = nil
+    IsInRaid = function() return true end
+    Face.Fill(first.face)
+    check(first.face.name._text == ns.TEXT.groupRaid, "in a raid it says Raid")
+    IsInRaid = function() return raid end
+    GetRaidTargetIndex = markOf
+    UnitGroupRolesAssigned = function() return "NONE" end
+    Face.Fill(first.face)
 
     -- A click or @mouseover: nothing of ours takes the mouse from the button.
     check(not second.face._mouse and not second.face.health._mouse, "the face takes no mouse")
@@ -429,8 +458,8 @@ do
     check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
         "the last at the top of the eighth column, touching its neighbours")
     local name = faces[2].name._text
-    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].cog._shown and not faces[1].role._shown,
-        "the first is your own slot")
+    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].cog._shown and faces[1].row.role._shown and faces[1].row.mark._shown
+        and faces[1].row.rez._shown and faces[1].row.combat._shown, "the first is your own slot, with its whole row")
     local rolled = 0
     for _, face in ipairs(faces) do
         if face.role._shown then rolled = rolled + 1 end

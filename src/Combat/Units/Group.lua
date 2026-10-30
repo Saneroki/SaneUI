@@ -184,7 +184,9 @@ local function Chance(share)
     return math.random() < share
 end
 local function Roll(icons, you)
-    if you then return { you = true, icons = {} } end
+    if you then
+        return { you = true, icons = {}, role = Pick({ "TANK", "HEALER" }), mark = math.random(1, 8), rez = true, combat = true }
+    end
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
     if Chance(0.35) then -- a tank or a healer
@@ -228,6 +230,7 @@ local function Preview()
     local rows, columns = math.min(count, Group.PER_GROUP), math.ceil(count / Group.PER_GROUP)
     local wide, high = Group.Size(columns, rows, width, height, unit)
     for index, sample in ipairs(Rolled(count)) do
+        sample.raid = count > Group.PER_GROUP
         local face = faces[index]
         if not face then
             face = Face.Make(preview, true)
@@ -365,6 +368,7 @@ function Group.Start()
     ns.On("GROUP_ROSTER_UPDATE", Core.Later(Group.Apply))
     ns.On("PLAYER_ROLES_ASSIGNED", Again)
     ns.On("RAID_TARGET_UPDATE", Again)
+    ns.On("PLAYER_REGEN_DISABLED", Again)
     ns.On("PLAYER_REGEN_ENABLED", Again)
     ns.On("READY_CHECK", ReadyCheck)
     ns.On("READY_CHECK_CONFIRM", ReadyCheck)

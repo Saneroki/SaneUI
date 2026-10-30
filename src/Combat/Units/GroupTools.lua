@@ -132,7 +132,7 @@ function Tools.Refresh()
     local raid = Core.Ask(IsInRaid) == true
     local leader = Core.Ask(UnitIsGroupLeader, "player") == true
     local assist = Core.Ask(UnitIsGroupAssistant, "player") == true
-    panel.title:SetText(raid and ns.TEXT.groupRaid or ns.TEXT.groupParty)
+    panel.title:SetText(raid and ns.TEXT.groupRaid or ns.TEXT.groupGroup)
     if InCombatLockdown() then return end
     for _, part in ipairs(parts) do
         local who = part[2]

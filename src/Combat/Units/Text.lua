@@ -200,6 +200,12 @@ function Text.Mark(face, index)
     raid:SetPoint("LEFT", face.level, "RIGHT", on and face.gap or 0, 0)
 end
 
+-- That raid marker's picture on any texture.
+function Text.MarkOn(texture, index)
+    texture:SetTexture(Text.MARKS)
+    texture:SetSpriteSheetCell(index, ROWS, COLUMNS)
+end
+
 function Text.Raid(face, unit)
     Text.Mark(face, Raw(GetRaidTargetIndex, unit))
 end

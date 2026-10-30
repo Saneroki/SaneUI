@@ -143,8 +143,8 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   frames*, off: the game's). It fills from its bottom left corner: you and your party going up, five to a column, then a
   column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it in play: only the
   unit frames show; in Edit Mode it has the box every window has. Each unit: the raid marker and the name on the left with as much room as
-  there is; a tiny mark of a tank's or healer's role in the top left corner, a shield or a plus without a ring (by the role the game was
-  told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the type icon of a
+  there is; a tiny mark of a tank's or healer's role in the top left corner, a shield or a plus without a ring, centred on the raid marker's place, in front of the bar and
+  behind the name and raid marker (by the role the game was told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the type icon of a
   dispellable debuff (the game's, a green drop for poison and so on), the ready check while one runs and its result for a while after, the
   game's icon of a resurrection on its way, each moving aside for the one before it; how much health is left on the right ("85%";
   nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
@@ -156,7 +156,8 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   as the game hides auras then). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
-- **The group's tools:** your own slot among the frames is a button, not a unit frame (the cog and *Party* or *Raid*). It opens a small
+- **The group's tools:** your own slot among the frames is a button, not a unit frame: the word *Group* or *Raid* in place of a name, and
+  at its right a row of full icons of your role, your raid marker, a resurrection on its way, being in a fight, and the cog. It opens a small
   panel, in a fight too, in place of the game's raid manager at the screen's edge, which is gone: *Ready Check*, *Role Check*, *Countdown*,
   *Make Everyone Assistant*, the raid markers on your target and on the ground (click one to set or take it off, the last clears them
   all), *Group menu* (the game's menu of you: converting to a raid or party, difficulty, and more), *Leave Group*. Who may use what is the
