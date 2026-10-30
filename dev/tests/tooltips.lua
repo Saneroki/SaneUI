@@ -285,7 +285,7 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
-for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Rhythm", "Prices", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
+for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Rhythm", "Prices", "Fees", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
 W.AddSets(folder .. "/Sets") -- the set files, at the end of Core's TOC
@@ -718,13 +718,19 @@ check(row(panel, 6).left == "Sell on the AH for 98765c", "the same item by its l
 tip.info = nil
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
-check(row(panel, 6).left == "Sell at" and row(panel, 6).right == "98764c" and row(panel, 7).left == "Sell on the AH for 98765c",
-    "with Alt, the price to post it at, before the advice: one copper under the lowest offer")
+check(row(panel, 6).left == "Sell at" and row(panel, 6).right == "98700c" and row(panel, 7).left == "Sell on the AH for 98765c",
+    "with Alt, the price to post it at, before the advice: under the lowest offer, in whole silver, as it does not stack")
 check(row(panel, 8).left == "Lowest 98765c" and row(panel, 9).left:find("Seen %d", 1) == 1 and row(panel, 10).left:find("Cut 4938c", 1, true) == 1,
     "and small under the advice: the price it comes from, when it was seen, the house's cut and the deposit: " .. tostring(row(panel, 9).left))
-check(ns.Gold.PostAt({ current = 90, vendor = 100 }) == 106 and ns.Gold.PostAt({ current = 500, vendor = 0 }) == 499
+local itemInfo = C_Item.GetItemInfo
+C_Item.GetItemInfo = function(id) if id == 2589 then return "Linen Cloth", nil, nil, nil, nil, nil, nil, 20 end end
+check(ns.Gold.PostAt({ current = 90, vendor = 100, item = 2589 }) == 106 and ns.Gold.PostAt({ current = 500, vendor = 0, item = 2589 }) == 499
     and ns.Gold.PostAt({ vendor = 100 }) == nil,
-    "never so low that a sale, after the cut, brings less than a vendor pays; nothing without an offer seen")
+    "what stacks goes down by a copper, never so low that a sale, after the cut, brings less than a vendor pays; nothing without an offer seen")
+check(ns.Gold.PostAt({ current = 500, vendor = 0, item = 19019 }) == 400 and ns.Gold.PostAt({ current = 90, vendor = 100, item = 19019 }) == 200
+    and ns.Gold.PostAt({ current = 100, vendor = 0, item = 19019 }) == 100,
+    "what does not stack moves by whole silver, and 1s is the least there is")
+C_Item.GetItemInfo = itemInfo
 -- How its price went (PriceGraph.lua): with Alt, at the end of the section
 local function graphRow(on)
     for index = 1, on.model.shown.n do

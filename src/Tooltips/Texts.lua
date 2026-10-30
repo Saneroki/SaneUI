@@ -41,7 +41,7 @@ ns.TEXT = {
     AH_PROFIT = "AH profit", NO_VENDOR = "Can't be sold",
     SELL_AH = "Sell on the AH for %s", MORE_AH = "+%s over the AH",
     SELL_VENDOR = "Sell to a vendor", BUY_UNDER = "Buy if under %s", NOW = "now %s",
-    PRICES = "Lowest %s", FEES = "Cut %s  \194\183  deposit %s, back when it sells",
+    PRICES = "Lowest %s", FEES = "Cut %s  \194\183  post %s",
     SEEN = "%d on offer  \194\183  seen %s", SEEN_AT = "Seen %s", DAYS_AGO = "%d days ago", MARKET = "Market %s",
     -- The price graph under the Gold section (PriceGraph.lua): its two lines, the key, a range with too little to draw
     GRAPH_LOW = "Lowest", GRAPH_MARKET = "Market", GRAPH_KEY = "Ctrl: next range",

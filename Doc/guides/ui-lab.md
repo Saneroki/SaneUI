@@ -92,6 +92,8 @@ prints its log.
   in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
   says another), `auctionscan` (the game's auction house window from its own files and Core from its TOC: the full scan's bar
   under it through its phases, the game's scan calls standing in; `LabScan.Answer()` in the console is the server's answer),
+  `deals` (the game's auction house window from its own files, Core, its auction data and Economy from their TOCs: the tab Deals on
+  made-up prices, the game's search answers coming by themselves; `LabEmpty()`, `LabScan()`),
   `pricegraph` (Core, its auction data and Tooltips from their TOCs: an item's tooltip with Alt held, its price graph in the Gold
   section on made-up scans; `LabRange("24h")`, `LabTap()` for Ctrl, `LabAlt(false)`, `LabPinned()` for a chat link's tooltip, whose
   buttons take the mouse; when to buy and sell it: `LabBuying(2900)` as a row of the house's list, `LabBuying()` as yours,

@@ -108,6 +108,7 @@ Data\Facts.lua
 # 16 minutes, kept in SaneUIData_Market, a file of its own (the addon SaneUI_AuctionData), and its bar on the game's window (Data.Scan)
 Data\Rhythm.lua
 Data\Prices.lua
+Data\Fees.lua
 Data\Scan.lua
 Data\ScanBar.lua
 # What a scan found told to this computer's other accounts while they run, by addon messages (Data.Relay)

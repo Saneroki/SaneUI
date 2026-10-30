@@ -28,6 +28,7 @@ local Core = SaneUI.Core
 --      scans[day] = how many scans that day's string holds
 --      rhythm[key], stretch, samples, watched, watchedAt = how each item's price goes with the clock and how it sells,
 --                   one short line per item for a forecast (Rhythm.lua; Scan.RHYTHM, Forever's)
+--      onSale, onSaleCount = the buyouts of this player's characters' auctions in the last scan, and how many
 --      index      = each item's newest point, for Prices.lua
 --      at         = when the server last answered; kept, rows, items, left = the last scan kept:
 --                   when, its auctions, its items, the rows left out (gear the game did not know in time)
@@ -122,6 +123,14 @@ local function Count(scan, key, count, buyout, owner, ending)
     -- A row with no buyout (bid only) counts for the auctions and units, not for the prices.
     if buyout > 0 then
         entry.prices[#entry.prices + 1] = math.ceil(buyout / count) * UNITS + math.min(count, UNITS - 1)
+        if owner then
+            local mine = scan.mine[owner]
+            if mine == nil then
+                mine = Prices.Mine(Core.PlayerKeyOf(owner))
+                scan.mine[owner] = mine
+            end
+            if mine then scan.onSale, scan.onSaleCount = scan.onSale + buyout, scan.onSaleCount + 1 end
+        end
         -- How the next scan knows it again. The seller's name is told apart: the game may not have it yet.
         if scan.marks then
             local mark = count .. "," .. buyout
@@ -331,6 +340,7 @@ local function Keep(scan, home, day, now)
     Steps.Spend()
     home.scans[day] = (tonumber(home.scans[day]) or 0) + 1
     home.kept, home.rows, home.items, home.left = now, state.rows, items, #scan.later
+    home.onSale, home.onSaleCount = scan.onSale, scan.onSaleCount
     local keep = Core.ForGame(Scan.KEEP)
     if keep then
         for old in pairs(home.days) do
@@ -346,7 +356,7 @@ end
 -- The job: every row, read in steps. Nothing is kept of a scan the game took away halfway.
 local function Read(home, day, now)
     local scan = { found = {}, later = {}, wanted = {}, asked = {}, whole = Core.ForGame(Scan.WHOLE) and scans ~= nil,
-        marks = Core.ForGame(Scan.RHYTHM) }
+        marks = Core.ForGame(Scan.RHYTHM), mine = {}, onSale = 0, onSaleCount = 0 }
     local index = 0
     while index < state.rows do
         if not Row(scan, index) then return end

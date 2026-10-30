@@ -344,6 +344,8 @@ Economy's own reckoning over the database's numbers (the logic is the module's, 
   least 1s and a margin. Economy's views read the same.*
 - **Sells per day:** units sold between scans, per day. Beside the units on offer it gives **days of
   stock**: how long the offers standing now would last at that pace.
+- **Fees:** *settled, 2026-10-30: Core's `Data/Fees.lua`, `Doc/guides/data.md`, *Fees*: the client's own rates, not an estimate. A thing that
+  does not stack is priced in whole silver.*
 - **Price to post:** the lowest offer less an undercut (setting: one copper or a share), never so low that
   the player gets less than a vendor pays: buyout × (1 − the house's cut) ≥ the vendor's price. The cut is
   read from the game's sale mails (`GetInboxInvoiceInfo`: buyout and consignment), as the client names no
@@ -359,6 +361,10 @@ Tooltips reads the same series for its prices (`Doc/ideas/Data.md`, *What moves 
 moves into the series *Prices*).
 
 ## The auction house window
+
+*Built first, 2026-10-30 (Saneroki): the tab Deals on the game's own window, open first: what to buy and what to sell right now in two
+columns, a purchase and a post a click away, the gold on sale in the corner (`src/Economy/`). The module Economy so far is this tab; the
+windows of our own below are still to come, and the rules of* Rules for the code *hold for it.*
 
 Views as tabs in the small window, side by side in full screen. The first three carry Blizzard's own tab
 names (`AUCTION_HOUSE_BUY_TAB`, `AUCTION_HOUSE_SELL_TAB`, `AUCTION_HOUSE_AUCTIONS_SUB_TAB`). *Proposal*:

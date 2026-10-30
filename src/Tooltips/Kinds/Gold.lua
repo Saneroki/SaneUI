@@ -19,7 +19,7 @@ local _, ns = ...
 --      Sell on the AH for 3s 09c
 --
 --  The advice is the way that brings the most; the auction house, after its
---  post (Post), and disenchanting if your character can, must bring 5% more than
+--  post, and disenchanting if your character can, must bring 5% more than
 --  the way before to be advised (BETTER), for the trouble. Where the scans show the
 --  price will be better soon, the advice is to sell then:
 --
@@ -29,7 +29,7 @@ local _, ns = ...
 --  it is worth paying instead: what it brings again at the auction house, from a
 --  vendor or disenchanted (green while the lowest price now is under it, red over
 --  it). Where the scans know the item, that is what it will fetch less the cut and
---  the post, less a margin (MARGIN), with when to sell and how many cost less:
+--  the post, less a margin (Core's Prices:Limit), with when to sell and how many cost less:
 --
 --      Buy if under 15s 40c                  now 10s
 --      Sell Fri 18:00-21:00 for 20s      +8s 80c each
@@ -40,17 +40,19 @@ local _, ns = ...
 --      Buy if under 15s 40c                  now 18s
 --      Buy Tue 03:00-06:00 for 14s
 --
---  The forecast is Core's (Prices:Outlook, Core's Data/Rhythm.lua): from TRUSTED days of an
+--  The forecast is Core's (Prices:Outlook, Core's Data/Rhythm.lua): from three days of an
 --  item's prices on, a time only where the scans show one. An item seen not to sell
 --  gets no advice to buy it for that.
 --
 --  With Alt held: under Disenchant each material (how often, how many, what it
---  brings); then the price to post it at (Sell at: the lowest offer less one
---  copper, never so low that a sale brings less than a vendor pays); under the
+--  brings); then the price to post it at (Sell at: the lowest offer less a
+--  step, never so low that a sale brings less than a vendor pays); under the
 --  advice the price it comes from, the market, how many are on offer and when
 --  that was seen, the cut and the deposit, what the forecast stands on (what it
 --  usually costs, its dearest and cheapest time, how much of it sells); last, how
 --  its price went (PriceGraph.lua).
+--
+--  What the house takes, and how a post and a price to post are reckoned, is Core's (Data/Fees.lua).
 --
 --  Disenchanting, from Core's data (the set Disenchants, Doc/guides/data.md):
 --  a weapon or an armour of uncommon quality and up, by its class, quality and
@@ -68,15 +70,6 @@ local Read, TEXT = ns.Reader, ns.TEXT
 local Gold = {}
 ns.Gold = Gold
 
-local CUT = 0.05      -- the auction house's cut of a sale
-local DEPOSIT = 0.60  -- a 48-hour auction's deposit, of what a vendor pays (15% for every 12 hours).
-                      -- Given back when the item sells.
-local POST_LEAST = 100 -- 1s: the least an auction costs to put up, however cheap the item
-local BETTER = 1.05   -- how much more the auction house must bring than a vendor to be advised
-local MARGIN = 1.10   -- how much more a sale later must bring than the item costs: prices miss, and not all of it sells
-local LATER = 1.05    -- how much more a sale later must bring than a sale now to be worth the wait
-local TRUSTED = 3     -- days of an item's prices before anything is said of where they go
-local UNDERCUT = 1    -- copper under the lowest offer, for the price to post
 local WEAPON = Enum.ItemClass and Enum.ItemClass.Weapon or 2
 local ARMOR = Enum.ItemClass and Enum.ItemClass.Armor or 4
 local DISENCHANTED = { [WEAPON] = true, [ARMOR] = true } -- the item classes disenchanting takes
@@ -109,20 +102,11 @@ local function Money(copper)
 end
 Gold.Money = Money
 
--- What a sale of one at the auction house brings: its price, after the cut.
+-- What a sale of one at the auction house brings: its price, after the cut (Core's Data/Fees.lua).
 local function Sale(price)
-    return math.floor(price - price * CUT)
+    return PRICES:Sale(price)
 end
 Gold.Sale = Sale
-
--- What putting one up costs: a 48-hour auction's deposit, never under POST_LEAST for the whole auction, which holds as many as
--- others put in one. A sale gives the deposit back and an auction that runs out keeps it, so it counts in full, as one post
--- that fails for every one that sells: what is advised stays worth it even then.
-local function Post(vendor, item)
-    local _, _, units, auctions = PRICES:Last(item)
-    local lot = units and auctions and auctions > 0 and math.max(1, math.floor(units / auctions)) or 1
-    return math.max(POST_LEAST / lot, (vendor or 0) * DEPOSIT)
-end
 
 -- Whether the auction house shows what it sells (its Buy views), not your own auctions or what you post.
 -- Where the client does not say (no such frame or views), its lists alone tell, as before.
@@ -214,17 +198,17 @@ local market = {}
 local function Work(item, id, vendor, bound, tooltip)
     wipe(market)
     local unit = vendor or 0
-    market.vendor = vendor
+    market.vendor, market.item = vendor, item
     if not bound then
         market.current = PRICES:Low(item)
         if market.current then
             market.ah = Sale(market.current)
-            market.post = Post(vendor, item)
+            market.post = PRICES:Post(vendor, item)
             local outlook = PRICES:Outlook(item)
-            market.few = outlook and outlook.days < TRUSTED
+            market.few = outlook and outlook.days < PRICES.TRUSTED
             if outlook and not market.few then
                 market.outlook = outlook
-                if outlook.daily ~= 0 then market.limit = math.floor((Sale(outlook.high - UNDERCUT) - market.post) / MARGIN) end
+                market.limit = PRICES:Limit(outlook, market.post)
             end
         end
     end
@@ -232,19 +216,18 @@ local function Work(item, id, vendor, bound, tooltip)
     market.broken = market.record and Disenchanted(market.record) or nil
     local own = market.broken and Ask(rawget(_G, "IsPlayerSpell"), DISENCHANT_SPELL) == true and market.broken or 0
     if Buying(tooltip) and market.current then
-        market.worth = math.floor(math.max(unit, market.limit or market.current * (1 - CUT), own))
+        market.worth = math.floor(math.max(unit, market.limit or Sale(market.current), own))
         market.advice = market.worth > 0 and "buy" or nil
         return market
     end
     local best, value = unit > 0 and "vendor" or nil, unit
     local sale = market.ah and market.ah - market.post
-    if sale and sale > value * BETTER then best, value = "ah", sale end
-    if own > value * BETTER then best, value = "disenchant", own end
+    local better = PRICES.BETTER
+    if sale and sale > value * better then best, value = "ah", sale end
+    if own > value * better then best, value = "disenchant", own end
     local outlook = market.outlook
-    if outlook and outlook.highAt and outlook.highAt > outlook.at then
-        local later = Sale(outlook.high) - market.post
-        if later > value * LATER then best, value, market.more = "later", later, later - value end
-    end
+    local later = outlook and outlook.highAt and outlook.highAt > outlook.at and PRICES:Later(outlook, value, market.post)
+    if later then best, value, market.more = "later", later, later - value end
     market.advice = value > 0 and best or nil
     return market
 end
@@ -330,12 +313,10 @@ local function Materials(record)
     end
 end
 
--- The price to post one at, at the auction house: the lowest offer less an undercut, never so low that a
--- sale brings less than a vendor pays. Nil without an offer seen.
+-- The price to post one at, at the auction house: Core's, from the lowest offer. Nil without an offer seen.
 local function PostAt(m)
     if not m.current then return nil end
-    local floor = (m.vendor or 0) > 0 and math.ceil(m.vendor / (1 - CUT)) or 1
-    return math.max(m.current - UNDERCUT, floor)
+    return PRICES:PostAt(m.current, m.vendor, m.item)
 end
 Gold.PostAt = PostAt
 
@@ -373,7 +354,7 @@ local function Details(m, item)
             Read.Text("small", Read.Memo("goldUsual", TEXT.MARKET, Money(usual)), SMALL[1], SMALL[2], SMALL[3])
         end
     end
-    local fees = Read.Memo("goldFees", TEXT.FEES, Money(m.current * CUT), Money(math.max(POST_LEAST, (m.vendor or 0) * DEPOSIT)))
+    local fees = Read.Memo("goldFees", TEXT.FEES, Money(m.current * PRICES:Cut()), Money(PRICES:Deposit(m.vendor, 1)))
     Read.Text("small", fees, SMALL[1], SMALL[2], SMALL[3])
 end
 

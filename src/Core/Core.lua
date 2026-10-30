@@ -171,11 +171,20 @@ function Core.PlayerKeyOf(text)
     return Key(name, realm)
 end
 
--- An amount of money as the game writes it, with its coin icons; nil if it cannot.
+-- An amount of money, the one way Sane UI writes it: 1g1s1c, the letters being the game's coin icons, at the size of the words
+-- around them, with no spaces (Saneroki, 2026-10-30). A coin there is none of is left out. Where the game has not its coins' words,
+-- what it writes itself; nil if it cannot.
 function Core.Coins(copper)
-    local currency = C_CurrencyInfo
-    if type(copper) ~= "number" or not (currency and currency.GetCoinTextureString) then return nil end
-    return (Core.Ask(currency.GetCoinTextureString, copper))
+    if type(copper) ~= "number" then return nil end
+    local gold, silver, bronze = rawget(_G, "GOLD_AMOUNT_TEXTURE"), rawget(_G, "SILVER_AMOUNT_TEXTURE"), rawget(_G, "COPPER_AMOUNT_TEXTURE")
+    if not (gold and silver and bronze) then
+        local currency = C_CurrencyInfo
+        return currency and currency.GetCoinTextureString and (Core.Ask(currency.GetCoinTextureString, copper)) or nil
+    end
+    copper = math.max(0, math.floor(copper))
+    local golds, silvers, coppers = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
+    return (golds > 0 and gold:format(golds, 0, 0) or "") .. (silvers > 0 and silver:format(silvers, 0, 0) or "")
+        .. ((coppers > 0 or copper == 0) and bronze:format(coppers, 0, 0) or "")
 end
 
 -- A region's anchors, to put back later with Core.Repoint (a frame of the game's that we move

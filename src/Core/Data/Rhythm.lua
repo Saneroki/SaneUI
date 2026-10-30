@@ -29,6 +29,7 @@ local Core = SaneUI.Core
 --      Rhythm.Sold(line, at, units, money)     the line with what sold since the last scan
 --      Rhythm.Watched(house, at, seconds)      the house's scans watched that long: what selling is told against
 --      Rhythm.Stretch(at)                      which stretch of which day at is: a new one takes a new sample
+--      Rhythm.Usual(line)                      what the item usually costs, without reading the rest of the line
 --      Rhythm.Read(line, now, watched, watchedAt)
 --          { at, days, usual, drift, high, highAt, low, lowAt, allDay, daily, each }, nil for no line of this shape:
 --          at       when this was read
@@ -143,6 +144,10 @@ function Rhythm.Watched(house, at, seconds)
     local since = tonumber(house.watchedAt) or 0
     local fade = since > 0 and math.exp((since - at) / SOLD_SPAN) or 0
     house.watched, house.watchedAt = (tonumber(house.watched) or 0) * fade + seconds, at
+end
+
+function Rhythm.Usual(line)
+    return type(line) == "string" and tonumber(line:match("^[^,]*,[^,]*,[^,]*,[^,]*,([^,]*),")) or nil
 end
 
 function Rhythm.Stretch(at)

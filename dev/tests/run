@@ -15,6 +15,8 @@
 #   talents.lua     the Combat module's own talents: the game's shared talent frame, its class layer, changes
 #   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
 #   loot.lua        the Loot module: its window and rules, the master looter's menu, full bags, roll cards, the feed
+#   economy.lua     the Economy module: what to buy and sell right now, the server asked item by item, a purchase and a post
+#                   from a click only, the tab on the game's window, the gold on sale
 #   speedleveling.lua  the Speed Leveling key: what is wanted around you, Find's macro chain, the key's action in each
 #                      state, the hearth and quest items, the quest givers, the game's settings
 #   speedguide.lua  Speed Leveling's guide: a guide read from text and run by our own engine, bought guides opened for
@@ -63,6 +65,7 @@ lua5.1 dev/tests/book.lua
 lua5.1 dev/tests/talents.lua
 lua5.1 dev/tests/nameplates.lua
 lua5.1 dev/tests/loot.lua
+lua5.1 dev/tests/economy.lua
 lua5.1 dev/tests/speedleveling.lua
 lua5.1 dev/tests/speedguide.lua
 lua5.1 dev/tests/lore.lua

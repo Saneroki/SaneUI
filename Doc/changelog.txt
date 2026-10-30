@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A new tab Deals on the auction house window, open first: what to
+  buy right now and what of yours to sell, on any character, each
+  a click away, and how much gold you have on sale in the corner.
+- Money is written 1g1s1c everywhere, with the game's coin icons.
 - Tooltips tell when to buy and sell an item for a profit, more and
   more as your auction scans build up: the most worth paying, when it
   fetches most and what one brings then, how many cost less, when it

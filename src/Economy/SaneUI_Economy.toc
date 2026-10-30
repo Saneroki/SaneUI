@@ -1,0 +1,21 @@
+## Interface: 16001, 120105
+## Title: Economy
+## Notes: A tab Deals on the game's auction house window, open first: what is cheap right now and worth buying to sell on, and what of yours, on any character, is worth selling right now, each a click away; and how much gold you have on sale, in the window's corner. From the prices your full scans gather.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## X-License: MIT
+
+# The module's own table, its words, sizes and settings. First: the other files will add to that table.
+Economy.lua
+# What is worth buying and what worth selling right now: plain lists over Core's prices and the characters' data
+Deals.lua
+# What the server says of the items in sight, asked one at a time: a purchase goes by that, never by a scan
+Live.lua
+# A purchase and a post, each from a click of the player
+Trade.lua
+# The tab on the game's window, its two columns, the gold on sale in the corner
+Tab.lua

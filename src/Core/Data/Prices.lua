@@ -18,6 +18,10 @@ local Core = SaneUI.Core
 --                              Rhythm.lua's table, nil before a scan took a sample of it. Read it at once, keep nothing of it
 --      Prices:Under(item, price)  how many are on offer at that price or less, by the last scan or the game's list of the item's
 --                              offers; nil while neither was seen in this session
+--      Prices:Usual(key)       what an item usually costs, a look at its rhythm's line alone; nil: no line
+--      Prices:Scanned()        the keys of the house's last scan, a new table: { key, ... }, for a view that looks through them
+--      Prices:OnSale()         money, auctions, at: what this player's characters had on sale at the house's last full scan, all
+--                              accounts' that link their files (Doc/guides/data.md, *Across accounts*); nil before such a scan
 --      Prices:Stamp()          a number that moves with every change of a price, for a view to know its picture is old
 --      Prices:OnChange(fn)     fn() on the next frame after prices changed: a list of the game's, or a scan kept
 --      Prices.Account()        takes in what another account's file left in the global: the addon
@@ -28,7 +32,7 @@ local Core = SaneUI.Core
 --                              times off waits for a second sender
 --      Prices.Forget(sender)   what members sent taken out again: one sender's, or none named: everybody's
 --
---  item is an item's ID or its link. A link names its kind (gear by level and suffix, a pet by species); an ID, or a
+--  item is an item's ID, its link or its key. A link names its kind (gear by level and suffix, a pet by species); an ID, or a
 --  link of a kind no scan saw, the cheapest of its kinds.
 --
 --  Each house's newest points stand in its saved string index, "key=at,low,market,units,auctions,sellers;...",
@@ -166,6 +170,8 @@ local function KeyOf(itemKey)
     return ("%d:%d:%d:%d"):format(item, Plain(itemKey.itemLevel) or 0, Plain(itemKey.itemSuffix) or 0, Plain(itemKey.battlePetSpeciesID) or 0)
 end
 
+Prices.KeyOf = KeyOf
+
 -------------------------------------------------------------------------------
 --  The points
 -------------------------------------------------------------------------------
@@ -277,6 +283,7 @@ end
 local function Point(book, item)
     local id = item
     if type(item) == "string" then
+        if book.index[item] then return book.index[item], item end
         id = tonumber(item:match("item:(%d+)")) or (item:find("battlepet:", 1, true) and CAGE) or nil
         if id and book.gear[id] then
             local key = Prices.LinkKey(item, id)
@@ -357,6 +364,41 @@ end
 -- What a scan found on offer (Scan.lua): { [key] = sorted offers }.
 function Prices.Offers(house, lists)
     Book(house).offers = lists
+end
+
+function Prices:Usual(key)
+    local house = Current()
+    if not house then return nil end
+    return Rhythm.Usual(Watcher(house).rhythm[key])
+end
+
+-- Which of the account's and the database's last scan is newer: the part that holds it.
+local function Newest(house)
+    local shared = database and database[keys[house]]
+    if shared and shared.kept > (tonumber(house.kept) or 0) then return shared end
+    return house
+end
+
+function Prices:Scanned()
+    local list, count = {}, 0
+    local house = Current()
+    if not house then return list end
+    local last = tonumber(Newest(house).kept) or 0
+    for key, point in pairs(Book(house).index) do
+        local at = tonumber(point:match("^%d+"))
+        if at and at >= last then
+            count = count + 1
+            list[count] = key
+        end
+    end
+    return list
+end
+
+function Prices:OnSale()
+    local house = Current()
+    local newest = house and Newest(house)
+    if not newest or not newest.onSale then return nil end
+    return newest.onSale, newest.onSaleCount, newest.kept
 end
 
 function Prices:Stamp()
@@ -480,7 +522,7 @@ local function Join(key, house)
         end
     end
     for at, text in pairs(type(house.recent) == "table" and house.recent or NONE) do shared.recent[at] = text end
-    if newer then shared.kept = kept end
+    if newer then shared.kept, shared.onSale, shared.onSaleCount = kept, house.onSale, house.onSaleCount end
 end
 
 -- The part of a house this account knows; nil for another.
@@ -658,10 +700,15 @@ function Prices.Clear()
     wipe(ours)
 end
 
--- Whether a sender is a character of this player's other accounts: each account's auction file names its characters, and
--- every account reads the others' (Prices.Account). Without those links, nobody is.
+-- Whether a sender is a character of this player's: each account's auction file names its characters, and every account reads
+-- the others' (Prices.Account). Without those links, this account's alone.
 function Prices.Mine(sender)
-    return ours[sender] == true
+    return ours[sender] == true or (part ~= nil and type(part.mine) == "table" and part.mine[sender] == true)
+end
+
+-- The house prices are read from now: the one open, else the one of your side.
+function Prices.Read()
+    return Current()
 end
 
 -- The key of a house's part.

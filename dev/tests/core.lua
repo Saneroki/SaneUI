@@ -1539,6 +1539,12 @@ check(Core.Ask(function(a) return a, "hidden", 3 end, 1) == 1 and select(2, Core
 issecretvalue = nil
 check(Core.Ask(nil) == nil and Core.Ask(function() error("gone") end) == nil, "a function that is not there, or fails, answers nil")
 check(Core.Coins("lots") == nil, "money that is no number is not written")
+GOLD_AMOUNT_TEXTURE, SILVER_AMOUNT_TEXTURE, COPPER_AMOUNT_TEXTURE = "%d[g:%d:%d]", "%d[s:%d:%d]", "%d[c:%d:%d]"
+check(Core.Coins(10101) == "1[g:0:0]1[s:0:0]1[c:0:0]", "money is 1g1s1c, the letters the game's coin icons at the words' size, with no spaces")
+check(Core.Coins(10001) == "1[g:0:0]1[c:0:0]" and Core.Coins(500) == "5[s:0:0]" and Core.Coins(7) == "7[c:0:0]", "a coin there is none of is left out")
+check(Core.Coins(0) == "0[c:0:0]" and Core.Coins(3599999) == "359[g:0:0]99[s:0:0]99[c:0:0]", "nothing is 0c; gold goes on growing")
+check(Core.Coins(150.7) == "1[s:0:0]50[c:0:0]" and Core.Coins(-5) == "0[c:0:0]", "whole coppers only, never less than nothing")
+GOLD_AMOUNT_TEXTURE, SILVER_AMOUNT_TEXTURE, COPPER_AMOUNT_TEXTURE = nil, nil, nil
 
 -- Anchors kept and put back
 local box = W.NewWidget("Frame", "SaneUITestBox")

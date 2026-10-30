@@ -61,7 +61,7 @@ end
 -- Money in the game's coins (gold, silver, copper with their pictures), a number with the game's separators.
 function Look.Coins(copper)
     local coins = (C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString) or rawget(_G, "GetCoinTextureString")
-    return Core.Ask(coins, copper) or tostring(copper)
+    return Core.Coins(copper) or Core.Ask(coins, copper) or tostring(copper)
 end
 
 function Look.Number(amount)

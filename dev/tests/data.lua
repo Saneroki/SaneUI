@@ -2412,6 +2412,36 @@ do
     rawset(_G, "AuctionHouseFrame", nil)
 end
 -------------------------------------------------------------------------------
+--  What the auction house takes (Fees.lua): the numbers of the game's own table, tried on what was charged in play
+-------------------------------------------------------------------------------
+do
+    local Prices = Data.Series("Prices")
+    local chosen = 2
+    local cvar = rawget(_G, "GetCVar")
+    GetCVar = function(name) if name == "auctionHouseDurationDropdown" then return tostring(chosen) end return cvar and cvar(name) end
+    check(Prices:Cut() == 0.05 and Prices:Sale(1000) == 950, "a faction's house keeps 5% of a sale")
+    check(Prices:Deposit(672, 1) == 134, "8 hours, a thing of 672c at a vendor: 134c, what the game took for one")
+    check(Prices:Deposit(15, 2) == 100 and Prices:Deposit(13, 8) == 100 and Prices:Deposit(0, 1) == 100,
+        "under 1s the auction costs 1s all the same, for a stack too")
+    chosen = 1
+    check(Prices:Deposit(10000, 1) == 500, "2 hours: 5% of the vendor price")
+    chosen = 3
+    check(Prices:Deposit(10000, 1) == 6000, "24 hours: 60%")
+    chosen = nil
+    check(Prices:Deposit(10000, 1) == 2000, "no duration chosen yet: 8 hours")
+    chosen = 2
+    local read = Prices.Key
+    Prices.Key = function() return "eu/1234/neutral" end
+    check(Prices:Cut() == 0.15 and Prices:Sale(1000) == 850 and Prices:Deposit(10000, 1) == 10000,
+        "a neutral house keeps 15%, and its deposit is five times as much")
+    Prices.Key = read
+    check(Prices:Limit({ days = 2, high = 1000, daily = 5 }, 10) == nil and Prices:Limit({ days = 9, high = 1000, daily = 0 }, 10) == nil,
+        "nothing is worth paying for what is known too shortly, or seen not selling")
+    check(Prices:Limit({ days = 9, high = 1101, daily = 5 }, 45) == 909, "else a sale at its best, less cut, post and a tenth")
+    GetCVar = cvar
+end
+
+-------------------------------------------------------------------------------
 --  How an item's price goes with the clock (Rhythm.lua): months of made-up scans, a stretch's sample at a time
 -------------------------------------------------------------------------------
 do

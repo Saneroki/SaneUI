@@ -816,7 +816,7 @@ game in the background, and it reads a full scan another addon asked for just th
   copper, 0 where nothing had a buyout: `low` the lowest of the day, `market` the median of the units on offer, the rest
   from the day's last scan that saw the item. `sellers` is a count, no name is kept. `scans[day]` says how many scans the
   day holds, `index` each item's newest point (*Prices*), `rhythm`, `stretch`, `samples`, `watched`, `watchedAt` the forecast's
-  (*The forecast*), `at` when the server last answered, `kept`, `rows`, `items`, `left` the last scan kept. `Scan.KEEP` limits the days per game: a week for Retail, whose house is far bigger and which keeps no
+  (*The forecast*), `onSale`, `onSaleCount` the buyouts of the player's characters' auctions in the last scan, `at` when the server last answered, `kept`, `rows`, `items`, `left` the last scan kept. `Scan.KEEP` limits the days per game: a week for Retail, whose house is far bigger and which keeps no
   scan whole, until its data's plan is made; none for Forever.
 
 ```lua
@@ -831,6 +831,27 @@ Scan.Start()      -- a scan now (the bar, pressed); false while one runs
   anchored to it, made when the window is first there. It fills as the rows are read, then runs down to the next scan.
   Pressed, it starts a scan; a light and a tooltip say so.
 - **`/sane data`** names each house: its days, its whole scans and what they weigh, its last scan.
+
+### Fees (`src/Core/Data/Fees.lua`, on `Prices`) *(Saneroki, 2026-10-30)*
+
+What the auction house takes, and what that leaves, the one place it is reckoned. The numbers are the game's own: the client's table
+`AuctionHouse` (`DepositRate`, `ConsignmentRate`) and its words for the durations (`AUCTION_DURATION_ONE`, ...), all of Forever's newest build:
+
+| | Cut of a sale | Deposit, of the vendor price of all that is put up |
+| --- | --- | --- |
+| A faction's house | 5% | 2 hours 5%, 8 hours 20%, 24 hours 60% |
+| A neutral house | 15% | 25%, 100%, 300% |
+
+- **The deposit** the window shows is `floor(vendor * count * rate) * length`, what the server takes `floor(vendor * count * rate * length)`
+  (`length` 1, 4, 12); the two can differ by a few copper. `Prices:Deposit` is the second. The duration is the game's setting
+  `auctionHouseDurationDropdown`, what was last chosen in its Sell tab. Retail has 12, 24 and 48 hours, at 3, 6, 12 times the rate.
+- **At least 1s an auction**, however small the deposit shown, and once for a stack of any size. This is no number of the client's and nobody
+  of the game has said so; it stands on what players were charged. Whether a sale gives back the 1s or only the deposit shown is not settled, so
+  `Prices:Post` counts it in full.
+- **Prices move in copper only for what stacks:** the price of a thing that does not stack is always whole silver, 1s at the least (`Prices:Step`).
+- **`Prices:Limit`** is the most worth paying to sell an item on: a sale at its best time, less the cut, the post and a tenth (`MARGIN`). **`Prices:Later`** is a
+  sale at the price to expect, where that brings 5% more than the best way now. `Prices:PostAt` is one step under a price, never so low
+  that a sale brings less than a vendor pays.
 
 ### The forecast (`Data.Rhythm`, `Prices:Outlook`) *(Saneroki, 2026-10-30)*
 
@@ -854,8 +875,7 @@ Own scans only: what members send stays out, as it can be taken out again.
   the line, as the watched seconds do in the house (`Rhythm.Watched`), so a pause changes nothing. Under twelve hours watched: not told.
 - **Across accounts:** the line of the account that took the most samples, as two accounts in one house see the same auctions (`Join`).
 
-`Prices:Outlook` holds what it read per item for the hour, and until a scan is kept. Reckoning what that is worth (the cut, the post, a
-margin) is the view's: `src/Tooltips/Kinds/Gold.lua`.
+`Prices:Outlook` holds what it read per item for the hour, and until a scan is kept. What that is worth after the cut and the post is *Fees*.
 
 ### Prices (`Data.Series("Prices")`) *(Saneroki, 2026-10-30)*
 
@@ -870,6 +890,9 @@ Prices:Range(item, from, to) -- how its price went: { { at, low, market }, ... }
                       -- (nil: from the first point, to now); one table used again: read it at once
 Prices:Outlook(item) -- what the scans tell of its price ahead and how it sells (*The forecast*); read it at once
 Prices:Under(item, price) -- how many are on offer at that price or less; nil while no scan or list of it was seen this session
+Prices:Usual(key)     -- what an item usually costs, a look at its forecast's line alone
+Prices:Scanned()      -- the keys of the house's last scan, for a view that looks through them
+Prices:OnSale()       -- money, auctions, at: what this player's characters had on sale at the last scan, on every linked account
 Prices:Stamp()        -- a number that moves with every change of a price
 Prices:OnChange(fn)   -- fn() on the next frame after prices changed
 ```

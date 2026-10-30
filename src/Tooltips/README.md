@@ -138,9 +138,9 @@ only read.
   | Row | What it is |
   |---|---|
   | *Vendor* | What a vendor pays for one; on every item (from the game's item data, `GetItemInfo`, also where the tooltip has no price line), *Can't be sold* where no vendor buys it |
-  | *AH profit* | What a sale of one at the auction house brings: the lowest price there now, less the house's cut (5%). Not for a thing that is bound |
+  | *AH profit* | What a sale of one at the auction house brings: the lowest price there now, less the house's cut (5%, 15% at a neutral house). Not for a thing that is bound |
   | *Disenchant* | What disenchanting it brings, on a weapon or an armour of uncommon quality and up: every material it gives, as often and as many as disenchanting gives it (Core's data, by the item's class, quality and item level), each at the lowest price you saw for it less the house's cut. *no prices seen* while a material has no price yet. With Alt, under it, each material: how often, how many, what one brings (*80%  1-2 Strange Dust*) |
-  | *Sell at* | With Alt, where the item can go to the auction house: the price to post one at, one copper under the lowest offer you saw, never so low that a sale (after the cut) brings less than a vendor pays |
+  | *Sell at* | With Alt, where the item can go to the auction house: the price to post one at, just under the lowest offer you saw (a copper for what stacks, 1s for what does not, whose prices are whole silver), never so low that a sale (after the cut) brings less than a vendor pays |
 
   **With Alt, a graph** ends the section (`PriceGraph.lua`), on what can be sold at the auction house: how its price went
   there, the lowest price in gold, the market's in grey, between the highest and the lowest price of the range. Buttons
@@ -159,8 +159,7 @@ only read.
   the auction house (less the cut) or from a vendor; green while the lowest price now is under it, red
   over it, *now* and that price at the right. A vendor's price alone (no auction price known) stands under
   the caption *Gold* too, with no advice. With Alt, small under the advice: *Lowest* and the price the
-  numbers come from, then the cut and the deposit (taken as 15% of the vendor price for every 12 hours of
-  a 48-hour auction, an estimate, and at the least 1s), *back when it sells*.
+  numbers come from, then the cut and the post: the deposit for the duration you last chose in the game's Sell tab, at the least 1s.
 
   **When to buy and sell** (Saneroki, 2026-10-30): as the scans build up, the advice looks ahead. Core learns from each full
   scan what an item usually costs, where that is heading, how it swings with the time of day (three-hour stretches, by your
@@ -173,9 +172,9 @@ only read.
   | Anywhere else | *Sell Fri 18:00-21:00 for 20s*, *+1s 90c more*, in place of the advice to sell now, where a sale then brings 5% more than the best way now. *Sell Sat for 11s*: the day counts, not the hour |
   | With Alt | *Usually 18s*, with *rising 2% a day* or *falling*; *Dearest ...* and *Cheapest ...*, each about what; *Sells 34 a day at about 17s*, or *No sales seen*; away from the list *Worth buying under ...*; *Too few scans for a forecast yet* before the three days |
 
-  **The post** counts in everything the auction house is weighed by: 60% of what a vendor pays, at the least 1s for an auction,
-  shared by as many as others put in one auction. A sale gives the deposit back and an auction that runs out keeps it (the game's
-  mail reckons so), so it counts in full, as one failed post for each sale: what is advised stays worth it even then. An
+  **The post** counts in everything the auction house is weighed by: the deposit (Core's *Fees*, `Doc/guides/data.md`), at the least 1s
+  for an auction, shared by as many as others put in one auction. A sale gives the deposit back and an auction that runs out keeps it (the
+  game's mail reckons so), so it counts in full, as one failed post for each sale: what is advised stays worth it even then. An
   item nobody was seen buying, in half a day of watching or more, gets no advice to buy it to sell on.
   **The prices** are Core's (`Data.Series("Prices")`, `Doc/guides/data.md`, *Prices*): what the auction house
   lists right now while you look at it, else its last full scan. A price not seen for 30 days counts for
@@ -409,12 +408,12 @@ only read.
   item level (`GetItemInfo`'s fourth answer) through the index `byQuality`; kept per item until the data
   changes (at most 400 items). Its value: Σ chance × the average count × the lowest price now less the
   cut (`Gold.Sale`), rounded; none while a material has no price. *Sell at* (`Gold.PostAt`): the lowest
-  offer you saw less one copper (`UNDERCUT`), never under what makes a sale after the cut bring a vendor's
+  offer you saw less a step (Core's `Prices:PostAt`, `Prices:Step`), never under what makes a sale after the cut bring a vendor's
   price (`ceil(vendor / 0.95)`); with Alt, for a thing that is not bound.
 - **The forecast** (`Kinds/Gold.lua`, from `Prices:Outlook`, Core's `Data/Rhythm.lua`, `Doc/guides/data.md`, *The forecast*): `Work`
-  fills `post` (`Post`: `max(POST_LEAST / lot, vendor × DEPOSIT)`, lot being units / auctions of the last scan) and, from `TRUSTED` (3)
-  days on, `outlook` and `limit`: `(Sale(high - UNDERCUT) - post) / MARGIN` (`MARGIN` 1.10), none where `daily` is 0. The advice
-  *later* needs `highAt` after now and `LATER` (1.05) over the best way now. `Plan` writes the rows under *Buy if under*, `Forecast`
+  fills `post` (`Prices:Post`) and, from `Prices.TRUSTED` (3) days on, `outlook` and `limit` (`Prices:Limit`), none where `daily` is 0: the
+  numbers are Core's (`Data/Fees.lua`), so Economy's tab says the same. The advice *later* needs `highAt` after now and `Prices:Later`
+  (5% over the best way now). `Plan` writes the rows under *Buy if under*, `Forecast`
   Alt's. `When` names a stretch (`STRETCH`, 3 hours) by `Core.ClockAt`, or the day alone with `allDay`. A tooltip's read costs a look at a
   table: `Prices:Outlook` holds what it read per item for the hour, and until a scan is kept.
 - **The durability bar** (`Panel.lua`, a row with `inside`): a bar like a unit's health bar (`LiveBar`, 18
@@ -641,6 +640,8 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-30 — Forever's real fees (Core's *Fees*): 15% at a neutral house, the deposit by the duration you chose, prices of what does
+  not stack in whole silver. Money is written 1g1s1c, with the game's coin icons (Saneroki).
 - 2026-10-30 — The Gold section tells when to buy and sell for a profit, as the scans build up: the most worth paying, when an
   item fetches most and what one brings then, how many cost less, when it is cheapest, with the house's cut and the post of at
   least 1s counted (Saneroki).
