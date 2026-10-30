@@ -419,7 +419,7 @@ local function Switch(page, name, option)
         local slider = Settings.CreateSliderOptions(option.min or 0, option.max, option.step or 1)
         if MinimalSliderWithSteppersMixin then
             slider:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
-                return Panel.Format(value, option.step, option.unit)
+                return Panel.Said(option, value)
             end)
         end
         return Add(page, Settings.CreateSliderInitializer(setting, slider, option.tip))

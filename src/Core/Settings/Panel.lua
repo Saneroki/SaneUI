@@ -291,6 +291,12 @@ function Panel.Format(value, step, unit)
     return unit and (text .. " " .. unit) or text
 end
 
+-- What a slider says of its value: a distance as the setting Units has it (kept in yards), else the number and its unit.
+function Panel.Said(option, value)
+    if option.distance then return Core.Distance(value) end
+    return Panel.Format(value, option.step, option.unit)
+end
+
 -- A number on its step from option.min (a slider's own value is a float near it); two decimals at
 -- most for steps below 1.
 function Panel.Step(option, value)
@@ -328,7 +334,7 @@ function Panel.Slider(parent, text, tip, option, get, set, enabled)
     local step, low = option.step or 1, option.min or 0
     local right = MinimalSliderWithSteppersMixin and MinimalSliderWithSteppersMixin.Label.Right
     slider:Init(get(), low, option.max, (option.max - low) / step,
-        right and { [right] = function(value) return Panel.Format(value, step, option.unit) end } or nil)
+        right and { [right] = function(value) return Panel.Said(option, value) end } or nil)
     slider.label, slider.get, slider.set = text, get, set
     -- Moved by hand: the value on its step (a slider's own is a float near it). Shown anew (Refresh)
     -- the slider tells of its value too; that is the one there already and is not set again.

@@ -24,9 +24,9 @@ local LIST = {
     { "Spi", "SPELL_STAT5_NAME", "ITEM_MOD_SPIRIT_SHORT", "Spirit" },
     { "HP", "HEALTH", "ITEM_MOD_HEALTH_SHORT", "Health" },
     { "Arm", "RESISTANCE0_NAME", "STAT_ARMOR", "Armor" },
-    { "Bonus Arm", "ITEM_MOD_EXTRA_ARMOR_SHORT", "STAT_BONUS_ARMOR", "Bonus Armor" },
+    { "BArm", "ITEM_MOD_EXTRA_ARMOR_SHORT", "STAT_BONUS_ARMOR", "Bonus Armor" },
     { "Def", "ITEM_MOD_DEFENSE_SKILL_RATING_SHORT", "DEFENSE", "Defense" },
-    { "Block val", "ITEM_MOD_BLOCK_VALUE_SHORT", "Block Value" },
+    { "BVal", "ITEM_MOD_BLOCK_VALUE_SHORT", "Block Value" },
     { "Resil", "ITEM_MOD_RESILIENCE_RATING_SHORT", "STAT_RESILIENCE", "Resilience", "PvP Resilience" },
     { "Crit", "ITEM_MOD_CRIT_RATING_SHORT", "STAT_CRITICAL_STRIKE", "MELEE_CRIT_CHANCE", "RANGED_CRIT_CHANCE",
       "SPELL_CRIT_CHANCE", "Critical Strike", "Crit Chance" },
@@ -35,14 +35,14 @@ local LIST = {
     { "AP", "ITEM_MOD_ATTACK_POWER_SHORT", "STAT_ATTACK_POWER", "Attack Power", "Melee Attack Power" },
     { "RAP", "ITEM_MOD_RANGED_ATTACK_POWER_SHORT", "Ranged Attack Power" },
     { "Feral AP", "ITEM_MOD_FERAL_ATTACK_POWER_SHORT", "Attack Power In Forms" },
-    { "Att spd", "STAT_ATTACK_SPEED", "Attack Speed" },
+    { "ASpd", "STAT_ATTACK_SPEED", "Attack Speed" },
     { "Exp", "ITEM_MOD_EXPERTISE_RATING_SHORT", "STAT_EXPERTISE", "Expertise" },
-    { "ArP", "ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT", "STAT_ARMOR_PENETRATION", "Armor Piercing", "Armor Penetration" },
+    { "APen", "ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT", "STAT_ARMOR_PENETRATION", "Armor Piercing", "Armor Penetration" },
     { "SP", "ITEM_MOD_SPELL_POWER_SHORT", "STAT_SPELLPOWER", "Spell Power" },
-    { "Spell dmg", "ITEM_MOD_SPELL_DAMAGE_DONE_SHORT", "STAT_SPELLDAMAGE", "Spell Damage", "Bonus Damage" },
+    { "SDmg", "ITEM_MOD_SPELL_DAMAGE_DONE_SHORT", "STAT_SPELLDAMAGE", "Spell Damage", "Bonus Damage" },
     { "Heal", "ITEM_MOD_SPELL_HEALING_DONE_SHORT", "STAT_SPELLHEALING", "Healing", "Bonus Healing" },
     { "SPen", "ITEM_MOD_SPELL_PENETRATION_SHORT", "STAT_SPELL_PENETRATION", "Spell Piercing", "Spell Penetration" },
-    { "All res", "ITEM_MOD_SPELL_RESISTANCE_ALL_SCHOOLS_SHORT", "Spell Resistance" },
+    { "All Res", "ITEM_MOD_SPELL_RESISTANCE_ALL_SCHOOLS_SHORT", "Spell Resistance" },
     { "MP5", "ITEM_MOD_MANA_REGENERATION_SHORT", "ITEM_MOD_POWER_REGEN0_SHORT", "MANA_REGEN", "Mana Regen", "Mana Per 5 Sec." },
     { "HP5", "ITEM_MOD_HEALTH_REGEN_SHORT", "ITEM_MOD_HEALTH_REGENERATION_SHORT", "Health Regen", "Health Per 5 Sec." },
     { "Mast", "ITEM_MOD_MASTERY_RATING_SHORT", "STAT_MASTERY", "Mastery" },
@@ -53,7 +53,7 @@ local LIST = {
     { "iLvl", "STAT_AVERAGE_ITEM_LEVEL", "Item Level" },
 }
 for _, school in ipairs({ "Holy", "Fire", "Nature", "Frost", "Shadow", "Arcane" }) do
-    LIST[#LIST + 1] = { school .. " res", school .. " Resistance" }
+    LIST[#LIST + 1] = { school .. " Res", school .. " Resistance" }
     LIST[#LIST + 1] = { school .. " dmg", school .. " Damage" }
     LIST[#LIST + 1] = { school .. " pen", school .. " Piercing", school .. " Penetration" }
 end

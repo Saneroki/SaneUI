@@ -5,7 +5,7 @@ local _, ns = ...
 --  The herbs and ore the minimap found (Found.lua) marked on the screen however
 --  far they are: the picture of what each gives, round in a ring of stitched
 --  leather that runs out into a point the way to it (up: ahead, right: to your
---  right, down: behind you), and how many yards away it is under it. One
+--  right, down: behind you), and how far away it is under it. One
 --  you can see stands where it is on the screen; one outside the view stands at
 --  the screen's left or right edge, on the side you would turn to. The setting
 --  Far herbs and ore on the screen.
@@ -120,7 +120,7 @@ local function Mark(index)
     Found.Round(icon, frame:CreateMaskTexture())
     local ring = frame:CreateTexture(nil, "OVERLAY")
     ring:SetTexture(Glints.RING)
-    -- The yards: the number alone, under the ring, outlined so it reads on any ground.
+    -- How far: the number alone, as the setting Units has it, under the ring, outlined so it reads on any ground.
     local text = frame:CreateFontString(nil, "OVERLAY")
     text:SetFontObject(Core.Font(FONT, "GameFontHighlight", Glints.TEXT, "OUTLINE") or "GameFontHighlight")
     mark = { frame = frame, icon = icon, ring = ring, text = text }
@@ -144,7 +144,7 @@ local function Draw(mark, candidate, x, y, size)
     local low = math.max(Found.OUTER, -math.cos(candidate.way) * Glints.TIP) * whole
     mark.text:ClearAllPoints()
     mark.text:SetPoint("TOP", mark.frame, "CENTER", 0, -low - 1)
-    mark.text:SetFormattedText("%d", math.floor(candidate.yards + 0.5))
+    mark.text:SetFormattedText("%d", Core.DistanceNumber(candidate.yards))
     mark.frame:Show()
 end
 

@@ -277,6 +277,7 @@ GetMoney = function() return 12345 end
 -- and where they live (Profiles), Fuzzy for a text without its codes, the data framework, and the inspections.
 W.Load(root, "SaneUI", "Core/Core", {})
 W.Load(root, "SaneUI", "Core/Kit", {})
+W.Load(root, "SaneUI", "Core/Units", {})
 W.Load(root, "SaneUI", "Core/Stats", {})
 W.Load(root, "SaneUI", "Core/Serial", {})
 W.Load(root, "SaneUI", "Core/Motion", {})
@@ -458,7 +459,7 @@ local function spell(cooldown)
         { "Hurls a fiery ball that causes 16 to 25 Fire damage.", nil, GOLD, nil, LINE.SpellDescription } })
 end
 spell()
-check(drawn == 1 and count(panel) == 6 and cells(row(panel, 4)) == "Dmg 21, Mana 30 (30%), Cast 1.5 sec, Range 35 yd",
+check(drawn == 1 and count(panel) == 6 and cells(row(panel, 4)) == "Dmg 21, Mana 30 (30%), Cast 1.5 sec, Range 32 m",
     "a spell that hurts: a table, its first row what one cast does on average, its cost (also as a share of all your mana), "
     .. "its cast, its range")
 check(shape(panel) == "text text INFO strip strip +text",
@@ -1571,6 +1572,12 @@ INVSLOT_AMMO, GetInventoryItemID = nil, function() return nil end
 -- A buff -------------------------------------------------------------------------------------
 auras.player = { HELPFUL = { { isHelpful = true, dispelName = "Magic", duration = 1800, expirationTime = W.clock + 1000, sourceUnit = "mouseover", auraInstanceID = 7 } } }
 tip.info = { getterName = "GetUnitBuff", getterArgs = { "player", 1 } }
+do
+    local shown = {}
+    tip:Fill({ type = TYPE.Spell, id = 133 }, { { "Whirlwind" }, { "Hits enemies within 8 yards.", nil, GOLD, nil, LINE.SpellDescription } })
+    for index = 1, count(panel) do shown[row(panel, index).left or ""] = true end
+    check(shown["Hits enemies within 7 m."], "a description's yards as the setting Units says")
+end
 local fortitude = { { "Power Word: Fortitude" }, { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription }, { "17 minutes remaining" } }
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, fortitude)
 check(row(panel, 1).caps and row(panel, 2).left == "Buff  \194\183  Magic" and head(panel).ab == 1 and head(panel).icon == 1000 + 1243, "a buff: what it is under its name, in blue")

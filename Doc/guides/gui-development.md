@@ -132,6 +132,9 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 - **Stats are written short** (Saneroki, 2026-10-30): every view that names a stat takes the word from `Core.StatWord`, a
   line of a number and a stat from `Core.StatLine` (`src/Core/Stats.lua`): Str, Stam, Crit. A new stat's word goes there,
   never into a module.
+- **Distances and the time of day follow the setting Units** (Saneroki, 2026-10-30; Metric at first): the code keeps yards,
+  what a player reads comes from `Core.Distance`, `Core.DistanceText`, `Core.Clock` and `Core.ClockAt`
+  (`src/Core/Units.lua`), never a written `"%d yd"` or `date("%H:%M")`. A slider of yards: `distance = true`.
 - **Sane UI's own windows:** text on paper is Kalam in pencil grey with the paper's grain, text on leather is
   pressed into the leather, both made in code ([interface-style.md](interface-style.md), *Text*). The font
   is Sane UI's own font file, behind a font object of our own; for a language Kalam lacks, that object

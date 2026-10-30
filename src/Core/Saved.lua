@@ -174,7 +174,8 @@ end
 -- one it is under, is off. A list of keys (in tabs): greyed out while any of them is off. inline = true (in tabs): a number drawn on the line of its parent switch.
 -- parentValue = "solid": under one of a few instead, greyed out while that one is not set to it.
 -- color = true (in tabs): a colour, six hex digits as default ("26262B"), chosen with the game's picker.
--- unit = "seconds", "%": written after a number's value.
+-- unit = "seconds", "%": written after a number's value. distance = true: a slider's value is yards, shown as the
+-- setting Units says (Core.Distance).
 -- page = "Appearance" (Core's own switches only): on that page of Sane UI's instead of General.
 -- validate = function(value) return ok end: a value it refuses gets the default (at the load, Core.Set).
 -- reload = true: the game shows a change only after a /reload, which is offered.
@@ -274,12 +275,17 @@ Core.Options(Core.name, {
       headerTip = "Where Sane UI's windows stand.",
       tip = "Puts every window of Sane UI back at its first place and size. Whether a window was left in full screen, or the game's own window chosen instead, stays as it is. Also /sane window reset all.",
       button = function() if Core.Window and Core.Window.ResetAll then Core.Window.ResetAll() end end },
+    { key = "units", default = "metric", text = "Units", header = "Units", headerTip = "How Sane UI writes distances and the time of day.",
+      choices = { { "metric", "Metric" }, { "imperial", "Imperial" } },
+      tip = "Metric: distances in meters and the time in 24 hours (27 m, 23:59). Imperial: yards and 12 hours (30 yd, 11:59 PM). Everywhere Sane UI writes them, and on the game's own clock. The tips on the options pages follow at the next /reload." },
     { key = "animations", default = true, text = "Animations", page = "Appearance",
       header = "Windows", headerTip = "How Sane UI's windows move.",
       tip = "Sane UI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },
     { key = "motion", default = Core.Motion.DEFAULT, text = "Animation type", choices = Core.Motion.Choices(), page = "Appearance", parent = "animations",
       tip = "How Sane UI's windows move when they fill the screen from a screen edge and go back, and when they open while the mouse rests on them. Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. A window can have its own, in its section Expand window (Social: tab Appearance)." },
-})
+}, function(key)
+    if key == "units" then Core.GameClock() end
+end)
 
 -- Modules that were called otherwise once: [old name] = new name.
 local RENAMED = { Chat = "Social", Spellbook = "Abilities" }

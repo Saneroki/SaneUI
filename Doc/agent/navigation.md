@@ -128,7 +128,7 @@ its next departure once a ride on the realm taught its times (`Ships:Next`), els
 (under `UIWidgetTopCenterContainerFrame`, a guarded 1-2 s chain). Ship periods: Travel's `wait` from batch 6.
 
 Trips (2026-10-20, 21): `TripView.lua` (settings `tripView`, `dockTimes`) is the travel overlay high up the
-screen (`TripView.UP`): Core's `Data.Trips` (flight, ship, tram) or the wait at a dock or the tram's station (`DockWatch.Rows()`,
+screen (level with a toast: `Core.TOAST_TOP`, `TripView.ABOVE`): Core's `Data.Trips` (flight, ship, tram) or the wait at a dock or the tram's station (`DockWatch.Rows()`,
 no frames): a fine golden line of Route.lua's art (Line widgets, the glint template), eased every frame (OnUpdate
 only while shown), the vehicle's icon at its tip, stop marks (`TaxiNode_Neutral`), the way out of every flight and vehicle
 in the game's leave button art, its `MainMenuBarVehicleLeaveButton` lent (alpha, mouse; never `Hide`: its OnHide runs

@@ -210,12 +210,11 @@ Mana +20
 Str +2
 Stam +1
 Talent +1
-Leveled 7h
+Leveled 7h 12m
 ```
 
-Over the world, also while Lore fades the interface out for a talk. *Level-up Toast* on the page Inventory switches
-it off: the game tells a new level again. The first level after a login may have no last line for the first seconds,
-until the game has said your time.
+Over the world, also while Lore fades the interface out for a talk; no setting. A level in the first seconds after a
+login has no last line, until the game has said your time.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOMRIGHT` at first,
@@ -695,7 +694,8 @@ the world's entry and each `PLAYER_XP_UPDATE`: the game adds the events again wh
 shows. The game's toast is `EventToastManagerFrame`, a toast of `Enum.EventToastEventType.LevelUp` in it; it must run on,
 since its animations end it and bring the next toast, and they stop on a hidden frame, and its alpha would be its fade's
 during those. So at `DisplayToast` (hooked) it is lent under a frame of ours at alpha 0, and back at the next toast or
-at the end of them: every other toast shows as ever. `ns.GiveBack` and the switch give both back. Its look:
+at the end of them: every other toast shows as ever. `ns.GiveBack` gives both back. Its height is `Core.TOAST_TOP`, as
+the travel overlay's. Its look:
 `Doc/guides/interface-style.md`, *A new level over the world*.
 
 ## Stat weights

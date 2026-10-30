@@ -2,7 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - TripView
---  The overlay of a trip, centred high up the screen (TripView.UP): a fine golden
+--  The overlay of a trip, centred high up the screen at a toast's height
+--  (Core.TOAST_TOP, the words over its line level with it): a fine golden
 --  line in the art of the map's route (Route.lua: the game's dependency bar, its
 --  glint pulsing along), the vehicle's icon riding at its tip.
 --
@@ -31,7 +32,7 @@ local Core = SaneUI.Core
 local TripView = {}
 ns.TripView = TripView
 
-TripView.UP = 0.72       -- the overlay's middle, this share of the screen up from its bottom (just under the game's error messages)
+TripView.ABOVE = 30      -- from the line up to the top of the words over it
 TripView.WIDTH = 320     -- the line's length
 TripView.THICK = 4       -- its thickness; its dark edge EDGE
 TripView.EDGE = 7
@@ -72,7 +73,6 @@ local lent, hooked        -- the game's leave button lent to us; hooked: its upd
 local ends, marks, others = {}, {}, {}
 local shown = nil         -- what is drawn: { trip } or { row, rows }, with the line's share as drawn
 local looking = false
-local placed              -- the screen's height the overlay was placed for
 
 -- A stop's name: the game's (a flight point), else its dock's area and zone, else the way's kind.
 local function Name(stop, kind)
@@ -169,6 +169,7 @@ local function Build()
     TripView.frame = frame
     frame:SetFrameStrata("LOW")
     frame:SetSize(TripView.WIDTH, TripView.END)
+    frame:SetPoint("CENTER", UIParent, "TOP", 0, -(Core.TOAST_TOP + TripView.ABOVE))
     frame:EnableMouse(false)
     track = CreateFrame("Frame", nil, frame)
     track:SetSize(TripView.WIDTH, TripView.EDGE)
@@ -217,15 +218,6 @@ local function Build()
     exit:Hide()
     frame:SetScript("OnUpdate", ns.Guard(function(_, elapsed) Moving(elapsed) end))
     frame:Hide()
-end
-
--- High up the screen, placed again when the screen's height changed.
-local function Place()
-    local height = UIParent:GetHeight()
-    if height == placed then return end
-    placed = height
-    frame:ClearAllPoints()
-    frame:SetPoint("CENTER", UIParent, "BOTTOM", 0, height * TripView.UP)
 end
 
 -------------------------------------------------------------------------------
@@ -461,7 +453,6 @@ function TripView.Update()
     local leaving = Leaving() and Wanted("tripView")
     if not drawTrip and not drawWait and not leaving then return Hide() end
     if not frame then Build() end
-    Place()
     if drawTrip then DrawTrip(trip) elseif drawWait then DrawWait(rows) else DrawAlone() end
     DrawExit(leaving, drawTrip and trip.landing)
     frame:Show()

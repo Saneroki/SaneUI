@@ -145,13 +145,9 @@ end
 local function Lines()
     local list = {}
     local function Add(label, value) if value then list[#list + 1] = { label, value } end end
-    local here, realm = Game("GameTime_GetLocalTime"), Game("GameTime_GetGameTime")
-    Add(Satchel.TEXT.localTime, here and here(true) or date("%H:%M"))
-    if realm then
-        Add(Satchel.TEXT.realmTime, realm(true))
-    elseif Game("GetGameTime") then
-        Add(Satchel.TEXT.realmTime, ("%02d:%02d"):format(GetGameTime()))
-    end
+    Add(Satchel.TEXT.localTime, Core.ClockAt())
+    local hour, minute = Core.Ask(Game("GetGameTime"))
+    if hour and minute then Add(Satchel.TEXT.realmTime, Core.Clock(hour, minute)) end
     local rate = Core.Plain(Core.Ask(Game("GetFramerate")))
     if type(rate) == "number" then Add(Satchel.TEXT.framerate, Satchel.TEXT.fps:format(math.floor(rate + 0.5))) end
     local stats = Game("GetNetStats")

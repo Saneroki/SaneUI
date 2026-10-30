@@ -63,14 +63,13 @@ ns.TEXT = {
     dockTimesTip = "At the dock of a boat or a zeppelin and at a station of the tram, high up the screen: where the next to come goes, a golden line that fills as it nears, when it arrives (board now) and when it leaves; the others there below. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
     nodes = "Herbs and ore",
     nodeSparkles = "Sparkles on herbs and ore",
-    nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
+    nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to " .. Core.Distance(20) .. "; switched off, those settings are as they were.",
     nodeGlints = "Far herbs and ore on the screen",
-    nodeGlintsTip = "Each herb and ore the minimap found farther away shows on the screen in its direction: the picture of what it gives in a ring of stitched leather that runs out into a point the way to it (up: ahead, down: behind you), and how many yards away it is under it; one outside your view at the screen's edge, on the side you would turn to. Placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, and while you turn the camera with the left mouse button they wait until you ride on or turn with the right one.",
+    nodeGlintsTip = "Each herb and ore the minimap found farther away shows on the screen in its direction: the picture of what it gives in a ring of stitched leather that runs out into a point the way to it (up: ahead, down: behind you), and how far away it is under it; one outside your view at the screen's edge, on the side you would turn to. Placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, and while you turn the camera with the left mouse button they wait until you ride on or turn with the right one.",
     nodeYards = "Switch finders every",
     nodeYardsTip = "How far you move before the next finder comes on. With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish), they take turns, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: they do not switch.",
     followMap = "Follow me",
     followMapTip = "The map keeps you in its middle as you move. Dragged away, the minimap snaps back to you the moment you walk; the full map opens on you and comes back as you walk once you left it alone for 10 seconds (also after a quest or a map chosen). Off: the full map stays where you leave it, and so does the minimap once you moved it, until the middle mouse button brings it back to you.",
-    yards = "yards",
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
@@ -209,7 +208,7 @@ local SPARKLES = { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSpar
                    header = ns.TEXT.nodes, hidden = function() return not ns.Nodes.Known() end }
 local GLINTS = { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, tip = ns.TEXT.nodeGlintsTip,
                  hidden = function() return not (ns.Nodes.Known() and ns.Found.Works()) end }
-local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, unit = ns.TEXT.yards,
+local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, distance = true,
                 text = ns.TEXT.nodeYards, tip = ns.TEXT.nodeYardsTip, hidden = function() return ns.Nodes.TOGETHER end }
 
 local OPTIONS = {

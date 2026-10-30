@@ -119,7 +119,7 @@ local function Turn()
         picture:Show()
         backing:Show()
         local time = Time(yards)
-        local text = ns.TEXT.yards:format(math.floor(yards + 0.5))
+        local text = Core.Distance(yards)
         far:SetText(time and (text .. "  \194\183  " .. time) or text)
     else
         ring:Hide()

@@ -63,7 +63,7 @@ ns.TEXT = {
     loot = "Loot first",
     lootTip = "A corpse with loot beside you is opened before anything else, as a right click on it does; what is taken is up to the loot window. The game's interact key is switched on for it, and put back as it was when this, Talk to NPCs and Quest objects are off.",
     corpses = "Walk to corpses",
-    corpsesTip = "A corpse with loot away from you too: for a moment after a fight the game's interact key looks all around you, 30 yards far, and your target's corpse counts however far it is. While there is one the game's own Click-to-Move is switched on, so the key runs you to it and opens it; put back as it was after the last corpse, and in a fight. While it is on, a right click on the ground walks you there too.",
+    corpsesTip = "A corpse with loot away from you too: for a moment after a fight the game's interact key looks all around you, " .. Core.Distance(30) .. " far, and your target's corpse counts however far it is. While there is one the game's own Click-to-Move is switched on, so the key runs you to it and opens it; put back as it was after the last corpse, and in a fight. While it is on, a right click on the ground walks you there too.",
     skull ="Skull on what is found",
     skullTip = "What the key finds or attacks gets a skull over its head. In a group it shows for everybody; in a raid only an assistant may mark.",
     talk = "Talk to NPCs",
@@ -201,7 +201,6 @@ ns.TEXT = {
     tame = "Tame the beast",
     -- The arrow and the icons (Arrow.lua, Icons.lua).
     arrowView = "Guide's arrow",
-    yards = "%d yd",
     seconds = "%d s",
     minutes = "%d:%02d",
     goToStep = "Go to step %d",

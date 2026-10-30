@@ -1150,7 +1150,9 @@ do
     local LEVEL = Enum.EventToastEventType.LevelUp
 
     check(Core.StatWord("Strength") == "Str" and Core.StatWord("critical strike") == "Crit" and Core.StatWord("Crit Chance") == "Crit"
-        and Core.StatWord("Crit Damage") == "Crit dmg" and Core.StatWord("Armor") == "Arm" and Core.StatWord("Fire Resistance") == "Fire res",
+        and Core.StatWord("Crit Damage") == "Crit dmg" and Core.StatWord("Armor") == "Arm" and Core.StatWord("Fire Resistance") == "Fire Res"
+        and Core.StatWord("Block Value") == "BVal" and Core.StatWord("Bonus Armor") == "BArm" and Core.StatWord("Spell Damage") == "SDmg"
+        and Core.StatWord("Attack Speed") == "ASpd" and Core.StatWord("Armor Penetration") == "APen",
         "the stats' short words, in any case")
     check(Core.StatWord("Spellbook") == "Spellbook" and Core.StatWord(nil) == nil, "a word that is no stat stays as it came")
     check(Core.StatLine("+8 Stamina") == "+8 Stam" and Core.StatLine("62 Armor") == "62 Arm" and Core.StatLine("-2 Agility") == "-2 Agi"
@@ -1159,7 +1161,8 @@ do
     check(Core.StatLine("Increases Stamina by 26.") == "Increases Stamina by 26." and Core.StatLine("12 Goblins") == "12 Goblins"
         and Core.StatLine("Equip: +20 Attack Power.") == "Equip: +20 Attack Power.", "a sentence stays as it is")
 
-    check(LevelUp.Took(40) == "40s" and LevelUp.Took(35 * 60 + 20) == "35m" and LevelUp.Took(7 * 3600 + 600) == "7h",
+    check(LevelUp.Took(40) == "40s" and LevelUp.Took(35 * 60 + 20) == "35m" and LevelUp.Took(7 * 3600 + 12 * 60 + 5) == "7h 12m"
+        and LevelUp.Took(3600) == "1h 0m",
         "how long a level took, as short as the toast has it")
 
     W.Fire("PLAYER_ENTERING_WORLD")
@@ -1174,20 +1177,20 @@ do
     local asked = timeAsked
     check(asked == 1, "the time is asked once after the login")
     check(ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "no answer: the chat hears /played again all the same")
-    LevelUp.Apply()
+    LevelUp.Ask()
     check(timeAsked == asked + 1 and not ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG"), "asked with the chat deaf to that one answer")
-    LevelUp.Apply()
+    LevelUp.Ask()
     check(timeAsked == asked + 1, "and not again while it is on its way")
     W.Fire("TIME_PLAYED_MSG", 90000, 7 * 3600 - 100)
     W.Wait(0.1)
     check(ChatFrame1:IsEventRegistered("TIME_PLAYED_MSG") and not (W.chatHeard or {}).TIME_PLAYED_MSG, "the answer went by, the chat hears /played again")
-    LevelUp.Apply()
+    LevelUp.Ask()
     check(timeAsked == asked + 1, "the game has said: not asked again")
 
     W.Wait(100)
     W.chatHeard = nil -- what it heard of the levels of the tests above, before it was made deaf
     W.Fire("PLAYER_LEVEL_UP", 22, 18, 20, 1, 0, 2, 0, 1, 0, 0)
-    check(Said() == "Level 22!/HP |cff6fe06f+18|r/Mana |cff6fe06f+20|r/Str |cff6fe06f+2|r/Stam |cff6fe06f+1|r/Talent |cff6fe06f+1|r/Leveled 7h",
+    check(Said() == "Level 22!/HP |cff6fe06f+18|r/Mana |cff6fe06f+20|r/Str |cff6fe06f+2|r/Stam |cff6fe06f+1|r/Talent |cff6fe06f+1|r/Leveled 7h 0m",
         "the level, what it brought, how long it took (" .. Said() .. ")")
     check(view._shown and not (W.chatHeard or {}).PLAYER_LEVEL_UP, "in the middle of the screen, nothing in the chat")
     W.Wait(LevelUp.FADE_IN + LevelUp.HOLD + LevelUp.FADE_OUT + 0.1)
@@ -1212,16 +1215,6 @@ do
     Toast(nil)
     check(game:GetParent() == parent, "no toast left: it stands where it stood")
 
-    ns.options.levelToast = false
-    LevelUp.Apply()
-    check(ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP") and ChatFrame1:IsEventRegistered("PLAYER_LEVEL_CHANGED"), "switched off: the chat hears a level again")
-    Toast(LEVEL)
-    check(game:GetParent() == parent, "and the game's toast is left alone")
-    W.Fire("PLAYER_LEVEL_UP", 25, 18, 20, 1, 0, 2, 0, 0, 0, 0)
-    check(not view._shown, "and ours says nothing")
-    ns.options.levelToast = true
-    LevelUp.Apply()
-    check(not ChatFrame1:IsEventRegistered("PLAYER_LEVEL_UP"), "switched on again: not")
     Toast(LEVEL)
 end
 

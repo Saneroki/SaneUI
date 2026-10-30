@@ -3964,8 +3964,9 @@ local function Rides()
     DockWatch.Update()
     local overlay = ns.TripView.frame
     local point = overlay and overlay._points[1]
-    check(overlay and overlay:IsShown() and point and point[1] == "CENTER" and point[3] == "BOTTOM" and near(point[5], 648),
-        "waiting at its dock: the overlay, high up the screen")
+    check(overlay and overlay:IsShown() and point and point[1] == "CENTER" and point[3] == "TOP"
+        and near(point[5], -(SaneUI.Core.TOAST_TOP + ns.TripView.ABOVE)),
+        "waiting at its dock: the overlay, high up the screen, level with a toast")
     UIParent:SetSize(width, height)
     Core.Set(ns.name, "dockTimes", false)
     check(not overlay:IsShown(), "not while its setting is off")
@@ -5290,8 +5291,8 @@ end)()
     check(#marks == 3, "the three beyond the close sparkles' reach marked, the near one left to them")
     local by = {}
     for _, mark in ipairs(marks) do by[Parts(mark).text] = mark end
-    local ahead, right, behind = by["60"], by["89"], by["51"]
-    check(ahead and right and behind and marks[1] == behind, "each with its yards, the nearest first")
+    local ahead, right, behind = by["55"], by["82"], by["47"]
+    check(ahead and right and behind and marks[1] == behind, "each with how far it is, in meters, the nearest first")
     local at, turn = ahead._points[1], Parts(ahead).turn
     check(at[2] == holder and math.abs(at[4]) < 1e-6 and at[5] > 0 and at[5] < 450 and Parts(ahead).icon
         and math.abs(turn) < 1e-6, "one straight ahead: its herb's picture in the screen's middle, its ring pointing up")

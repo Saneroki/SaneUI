@@ -264,13 +264,13 @@ local rebuild = Core.Later(Range.Rebuild)
 local function Tell()
     if Plain(UnitExists("target")) ~= true then return ns.Print("Range: no target.") end
     local least, most, reach = Range.Check("target")
-    ns.Print(("Range: between %s and %s yards; your attacks %s."):format(least or "?", most or "?",
+    ns.Print(("Range: between %s and %s; your attacks %s."):format(least and Core.Distance(least) or "?", most and Core.Distance(most) or "?",
         reach == true and "reach it" or reach == false and "do not reach it" or "cannot tell"))
     for _, entry in ipairs(attacks) do
         local data = Core.Ask(C_Spell.GetSpellInfo, entry.spell)
         local answer = Core.Ask(C_Spell.IsSpellInRange, entry.spell, "target")
-        ns.Print(("  %s (%s to %s yards): %s"):format(type(data) == "table" and Plain(data.name) or entry.spell,
-            entry.least or 0, entry[1], tostring(answer)))
+        ns.Print(("  %s (%s to %s): %s"):format(type(data) == "table" and Plain(data.name) or entry.spell,
+            Core.Distance(entry.least or 0), Core.Distance(entry[1]), tostring(answer)))
     end
 end
 Core.Command("range", "what the nameplates know of your target's distance and your attacks' reach", ns.Guard(Tell))

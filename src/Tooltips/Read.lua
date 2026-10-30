@@ -142,9 +142,11 @@ function Read.IsProse(line)
     return line.right == "" and Family(line.lr, line.lg, line.lb) == "gold" and Words(line.left) >= PROSE_WORDS
 end
 
--- For ctx.each: a description's numbers are drawn in the panel's colour (Panel.lua).
+-- For ctx.each: a description's numbers are drawn in the panel's colour (Panel.lua), the yards it names as the setting
+-- Units says.
 function Read.Prose(row, line)
     if Read.IsProse(line) then row.prose = true end
+    row.left = Core.DistanceText(row.left)
 end
 
 -- A creature's number: the sixth part of its GUID, Creature-0-1-2-3-<NPC>-4. Nil for a player,

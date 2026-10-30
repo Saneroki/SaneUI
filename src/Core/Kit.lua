@@ -25,6 +25,10 @@ local Core = SaneUI.Core
 --      local lent = Core.Lend(frame)        -- a frame of the game's, changed for a while (below)
 -------------------------------------------------------------------------------
 
+-- How far below the screen's top what tells something over the world stands: where the game's own toast stands. The
+-- toast of a new level (Inventory) and the travel overlay (Navigation) keep this height.
+Core.TOAST_TOP = 190
+
 -- A word of the game's own (the name of one of its strings, in the player's language), or ours where
 -- this client has none.
 function Core.Word(name, fallback)

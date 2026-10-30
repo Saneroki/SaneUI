@@ -6,6 +6,29 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 754 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: meters and 24 hours, the setting Units; the toast's time in minutes, no switch; the overlay level with it (Saneroki, 2026-10-30)
+Saneroki: the travel widget at the same height as the level-up screen; the time with minutes as well; the off switch
+removed, "just default and not clutter the ui"; the entire addon everywhere in Metric, meters and hh:mm in 24 hours like
+23:59, recalculated correctly, on by default in Core, all yards and times metric or imperial by the setting; BVal, BArm,
+SDmg, Res, ASpd, APen. A game restart takes it in (a new file in Core's TOC).
+- **`src/Core/Units.lua` (new):** `Core.Metric`, `Distance`, `DistanceNumber`, `DistanceText`, `Clock`, `ClockAt`, `GameClock`. The
+  setting *Units* (page General, `Core.general.units`): Metric at first, or Imperial. 0.9144 m to the yard, whole meters.
+  All of Sane UI keeps yards; only what a player reads comes through here. An option `distance = true` is a slider of
+  yards shown so (`Panel.Said`).
+- **Distances:** a spell's range and the yards in a spell's, buff's or item's text in the tooltips, the guide's arrow, the far
+  herbs' and ore's rings (the number alone, in their unit), *Switch finders every*, `/sane range`, the options' tips of
+  Speed Leveling, Nameplates and Navigation. NPCs' words and quest texts stay as the game wrote them.
+- **The time:** the chat's and the conversations' times, the local and the realm's time in the satchel (no longer the game's
+  `GameTime_` functions), the game's own clock (`timeMgrUseMilitaryTime`). Durations (*1:25*) are no clock.
+- **The toast:** *Leveled 7h 12m* (`LevelUp.Took`). Its switch gone: `LevelUp.Apply` and the option too; an old saved value is
+  taken out by itself. `LevelUp.Ask` public for the tests.
+- **The travel overlay:** `Core.TOAST_TOP` (`Kit.lua`, 190 below the screen's top, where the game's toast stands) holds both it
+  and the toast: the words over its line level with the toast's top (`TripView.ABOVE`). `TripView.UP` and its placing anew
+  by the screen's height are gone: anchored to the screen's top it needs neither.
+- **Stats' words:** BVal (Block Value), BArm (Bonus Armor), SDmg (Spell Damage), ASpd (Attack Speed), APen (Armor Penetration),
+  each school's *Res*, All Res.
+- Tests: `dev/tests/core.lua` the units both ways; `navigation.lua`, `tooltips.lua`, `inventory.lua` by the new words.
+
 ### Inventory: a new level in the middle of the screen; Core: the stats written short everywhere (Saneroki, 2026-10-30)
 Saneroki: hide the level-up lines in the chat; the toast in the middle of the screen with the stat changes and how long
 you played on that level (*Level 22! / Str +2 / Stam +1 / Leveled 7h*), then health, mana and talent points in it too, as

@@ -194,6 +194,8 @@ CPU matters more than memory: everything an addon does happens between two frame
 - Keep own texts in one place per module, not scattered through the code, so they can be translated.
 - Build sentences with `format` and whole patterns, not by gluing words: word order differs by language.
 - Texts for the player are short, plain and without jargon.
+- Distances and the time of day go through `Core.Distance` and `Core.Clock` (setting *Units*, Metric at first), stats through
+  `Core.StatWord`: the game's yards and long words stay in the code, never in what a player reads.
 
 ## 10. Errors and resilience
 

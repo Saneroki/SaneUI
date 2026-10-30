@@ -243,8 +243,37 @@ check(profilesPage.name == "Profiles" and general.name == "General" and appearan
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
     "under it first Sane UI's own pages: Profiles, General, Appearance")
 local resetRow = general.items[4]
-check(#general.items == 4 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
+check(#general.items == 6 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
     and resetRow and resetRow.button == "Reset window positions", "General: the switches of no module, and a button that puts every window back")
+check(general.items[5].header == "Units" and general.items[6].setting.name == "Units", "and how Sane UI writes distances and the time")
+
+-- Units: Metric at first; the game's yards recalculated, its words in a sentence too; the setting turns all of it.
+do
+    local cvar
+    local set = SetCVar
+    SetCVar = function(name, value) cvar = { name, value } end
+    check(Core.Metric() and Core.general.units == "metric", "Units: Metric at first")
+    check(Core.Distance(30) == "27 m" and Core.Distance(100) == "91 m" and Core.Distance(0) == "0 m" and Core.DistanceNumber(40) == 37,
+        "meters: 0.9144 to the yard, rounded")
+    check(Core.DistanceText("Hits enemies within 8 yards.") == "Hits enemies within 7 m." and Core.DistanceText("35 yd") == "32 m"
+        and Core.DistanceText("8-25 yd range") == "7-23 m range" and Core.DistanceText("8 to 25 yards") == "7 to 23 m"
+        and Core.DistanceText("in a 10-yard radius") == "in a 9 m radius" and Core.DistanceText("1 yard") == "1 m", "the yards a text names")
+    check(Core.DistanceText("Increases Stamina by 26.") == "Increases Stamina by 26." and Core.DistanceText("Yardley has 5 yaks") == "Yardley has 5 yaks"
+        and Core.DistanceText(nil) == nil, "and nothing else in it")
+    check(Core.Clock(23, 59) == "23:59" and Core.Clock(7, 5) == "07:05" and Core.ClockAt(0):match("^%d%d:%d%d$") and Core.ClockAt():match("^%d%d:%d%d$"),
+        "the time in 24 hours")
+    Core.GameClock()
+    check(cvar and cvar[1] == "timeMgrUseMilitaryTime" and cvar[2] == "1", "the game's own clock too")
+    Core.Set(Core.name, "units", "imperial")
+    check(not Core.Metric() and Core.Distance(30) == "30 yd" and Core.DistanceNumber(40) == 40 and Core.DistanceText("within 8 yards") == "within 8 yards",
+        "Imperial: yards as the game has them")
+    check(Core.Clock(23, 59) == "11:59 PM" and Core.Clock(0, 5) == "12:05 AM" and Core.Clock(12, 0) == "12:00 PM" and Core.Clock(9, 30) == "9:30 AM"
+        and Core.ClockAt(0):match("^%d+:%d%d [AP]M$"), "and 12 hours")
+    check(cvar[2] == "0", "the game's own clock follows the setting")
+    Core.Set(Core.name, "units", "metric")
+    check(cvar[2] == "1" and Core.Distance(30) == "27 m", "and back")
+    SetCVar = set
+end
 local resetAll, resets = Core.Window.ResetAll, 0
 Core.Window.ResetAll = function() resets = resets + 1 end
 resetRow.click()

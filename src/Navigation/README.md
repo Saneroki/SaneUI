@@ -1082,6 +1082,8 @@ Tests: `dev/tests/navigation.lua`.
   *Possible ore*; new are *Found herbs* and *Found ore* (`Found.lua`): what the game's minimap shows now, each in
   its own picture, the switches doubling as Find Herbs and Find Minerals, which take turns while you move, without a
   sound (`Nodes.lua`); and sparkles on the herb or ore your interact key would gather (`Sparkles.lua`).
+- **2026-10-30, at a toast's height:** at Saneroki's ask the overlay stands level with the toast of a new level: the words
+  over its line at `Core.TOAST_TOP` below the screen's top, wherever the screen's height (was a share of it).
 - **2026-10-30, the way out:** at Saneroki's ask the overlay stands a little higher (`TripView.UP` 0.72, just under
   the game's error messages) and holds the way out of every flight and vehicle (what the game's own button asks,
   `CanExitVehicle`), alone in a vehicle. The game's `MainMenuBarVehicleLeaveButton` is lent (`Core.Lend`: alpha 0, no

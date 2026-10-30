@@ -21,9 +21,9 @@ local _, ns = ...
 --
 --  The chat: its windows write those lines when they hear PLAYER_LEVEL_UP
 --  themselves, and Social's window takes what they write. So they no longer
---  hear it (Core.Lend, the frames left as they are; given back at GiveBack or
---  with the switch). The game adds that event to a window again whenever the
---  player changes what the window shows, so it is checked at each XP gain.
+--  hear it (Core.Lend, the frames left as they are; given back at GiveBack).
+--  The game adds that event to a window again whenever the player changes what
+--  the window shows, so it is checked at each XP gain.
 --
 --  The game's toast (EventToastManagerFrame) must run its course: its own
 --  animations end it and bring the next one, and those stop on a hidden frame.
@@ -34,7 +34,6 @@ local Core = SaneUI.Core
 local LevelUp = {}
 ns.LevelUp = LevelUp
 
-LevelUp.TOP = 190       -- how far below the screen's top it stands: where the game's toast stands
 LevelUp.WIDTH = 240     -- its shade, without the edges that fade out
 LevelUp.EDGE = 90
 LevelUp.PAD = 12
@@ -69,16 +68,12 @@ local game              -- the game's toast
 local lent, under       -- its lend while ours stands in for it, and the frame it stands under
 local turn = 0          -- the toast shown last: a new level while one shows keeps the old one's end from it
 
-local function Wanted()
-    return not ns.off and ns.options.levelToast
-end
-
 -------------------------------------------------------------------------------
 --  How long you played on the level
 -------------------------------------------------------------------------------
--- How long a time is, as short as the toast has it: 7h, 35m, 40s.
+-- How long a time is, as short as the toast has it: 7h 12m, 35m, 40s.
 function LevelUp.Took(seconds)
-    if seconds >= 3600 then return ("%dh"):format(math.floor(seconds / 3600 + 0.5)) end
+    if seconds >= 3600 then return ("%dh %dm"):format(math.floor(seconds / 3600), math.floor(seconds % 3600 / 60)) end
     if seconds >= 60 then return ("%dm"):format(math.floor(seconds / 60)) end
     return ("%ds"):format(math.floor(seconds))
 end
@@ -98,9 +93,9 @@ local function Told(_, level)
     if waiting then HearLater() end
 end
 
-local function Ask()
+function LevelUp.Ask()
     local request = rawget(_G, "RequestTimePlayed")
-    if not request or not Wanted() or thisLevel or waiting then return end
+    if not request or ns.off or thisLevel or waiting then return end
     waiting = {}
     for _, name in ipairs(rawget(_G, "CHAT_FRAMES") or {}) do
         local frame = rawget(_G, name)
@@ -117,7 +112,7 @@ end
 --  The game's lines in the chat
 -------------------------------------------------------------------------------
 local function Deafen()
-    if not Wanted() then return end
+    if ns.off then return end
     for _, name in ipairs(rawget(_G, "CHAT_FRAMES") or {}) do
         local frame = rawget(_G, name)
         if frame and (frame:IsEventRegistered(LINES[1]) or frame:IsEventRegistered(LINES[2])) then
@@ -149,7 +144,7 @@ local function Toasted()
     local shown = game.currentDisplayingToast
     local info = shown and shown.toastInfo
     local kinds = Enum and Enum.EventToastEventType
-    if info and kinds and Wanted() and Core.Plain(info.eventType) == kinds.LevelUp then
+    if info and kinds and not ns.off and Core.Plain(info.eventType) == kinds.LevelUp then
         if lent then return end
         if not under then
             under = CreateFrame("Frame", nil, UIParent)
@@ -182,7 +177,7 @@ end
 local function Build()
     view = CreateFrame("Frame", nil, UIParent)
     view:SetFrameStrata("HIGH")
-    view:SetPoint("TOP", UIParent, "TOP", 0, -LevelUp.TOP)
+    view:SetPoint("TOP", UIParent, "TOP", 0, -Core.TOAST_TOP)
     view:SetWidth(LevelUp.WIDTH)
     -- In sight while Lore fades the interface out for a talk: a quest handed in is where most levels come.
     if view.SetIgnoreParentAlpha then view:SetIgnoreParentAlpha(true) end
@@ -270,7 +265,7 @@ end
 
 local function Leveled(level, ...)
     level = Core.Plain(level)
-    if Wanted() and type(level) == "number" then
+    if not ns.off and type(level) == "number" then
         LevelUp.Show(level, LevelUp.Lines(...), thisLevel and LevelUp.Took(thisLevel + GetTime() - told) or nil)
     end
     if thisLevel then thisLevel, told = 0, GetTime() end -- the time on the new level starts now
@@ -279,17 +274,6 @@ end
 -------------------------------------------------------------------------------
 --  The module
 -------------------------------------------------------------------------------
--- The switch changed: the chat's lines follow it, and the time is asked for if it never was.
-function LevelUp.Apply()
-    if Wanted() then
-        Deafen()
-        Ask()
-    else
-        Undeafen()
-        Release()
-    end
-end
-
 function LevelUp.GiveBack()
     Hear()
     Undeafen()
@@ -305,5 +289,5 @@ function LevelUp.Start()
     ns.On("PLAYER_ENTERING_WORLD", Deafen)
     game = rawget(_G, "EventToastManagerFrame")
     if game then hooksecurefunc(game, "DisplayToast", ns.Guard(Toasted)) end
-    C_Timer.After(LevelUp.ASK_AFTER, ns.Guard(Ask))
+    C_Timer.After(LevelUp.ASK_AFTER, ns.Guard(LevelUp.Ask))
 end

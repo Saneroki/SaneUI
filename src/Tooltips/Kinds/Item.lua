@@ -210,9 +210,10 @@ local function Section(line, _, fresh)
     return TEXT.INFO
 end
 
--- Its stats as players write them ("+8 Stam"), a comparison's changes too ("+2.2 DPS").
+-- Its stats as players write them ("+8 Stam"), a comparison's changes too ("+2.2 DPS"); the yards its effects name as the
+-- setting Units says.
 local function Stat(row)
-    row.left = Core.StatLine(row.left)
+    row.left = Core.DistanceText(Core.StatLine(row.left))
 end
 
 local function Item(ctx)

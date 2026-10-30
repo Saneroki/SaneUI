@@ -27,7 +27,7 @@ picture:SetAllPoints(world)
 picture:SetTexture("assets/generated/ui-lab/backdrops/elwynn-forest")
 
 function LabLevel(level, ...)
-    ns.LevelUp.Show(level, ns.LevelUp.Lines(...), ns.LevelUp.Took(7 * 3600))
+    ns.LevelUp.Show(level, ns.LevelUp.Lines(...), ns.LevelUp.Took(7 * 3600 + 12 * 60))
 end
 
 Lab.OnLogin(function()

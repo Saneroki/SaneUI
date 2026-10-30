@@ -123,7 +123,7 @@ end
 -- When a conversation's last message came, at its row: the time today, the date before.
 local function When(stamp)
     if not stamp or stamp <= 0 then return "" end
-    if Day(stamp) == Day(time()) then return date("%H:%M", stamp) end
+    if Day(stamp) == Day(time()) then return Core.ClockAt(stamp) end
     local at, short = date("*t", stamp), rawget(_G, "FormatShortDate")
     return short and short(at.day, at.month) or ("%d/%d"):format(at.month, at.day)
 end

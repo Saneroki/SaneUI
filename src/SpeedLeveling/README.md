@@ -178,7 +178,7 @@ shown while the guide is and has a place to go to:
   getting there is all. The step's first thing not yet done decides by its command, else the first name its words
   colour.
 - **Under it, words at a glance:** what to do there (the step's first words, names in colour), then how far (*177 yd*)
-  and the time to get there at the pace you have been closing in (*177 yd · 0:25*; none while you stand or walk away).
+  and the time to get there at the pace you have been closing in (*162 m · 0:25*, as the setting *Units* says; none while you stand or walk away).
   Within the place's reach the ring and the yards go, the words stay.
 - **Where it points:** the first place of the steps at hand not yet passed, the step you are at first (a point on the
   way, or a place to get to, is passed once you were within its reach; `Run.Target`).

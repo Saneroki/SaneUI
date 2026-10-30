@@ -162,9 +162,6 @@ ns.TEXT = {
     noAsk = "Equip and delete without asking",
     noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
     -- A new level, in the middle of the screen (LevelUp.lua)
-    levelHeader = "Level Up",
-    levelToast = "Level-up Toast",
-    levelToastTip = "At a new level: the level, the stats it brought and how long you played on the level before, in the middle of the screen, in place of the game's toast and its lines in the chat. Off: the game's own.",
     levelTitle = "Level %d!",
     levelStat = "%s |cff6fe06f+%d|r",
     levelTalent = "Talent",
@@ -207,7 +204,6 @@ local OPTIONS = {
     { key = "setName", default = false, text = ns.TEXT.bagsSetName, tip = ns.TEXT.bagsSetNameTip },
     { key = "coin", default = false, text = ns.TEXT.bagsCoin, tip = ns.TEXT.bagsCoinTip },
     { key = "grey", default = false, text = ns.TEXT.bagsGrey, tip = ns.TEXT.bagsGreyTip },
-    { key = "levelToast", default = true, text = ns.TEXT.levelToast, tip = ns.TEXT.levelToastTip, header = ns.TEXT.levelHeader },
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, 1)
@@ -219,7 +215,6 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if Core.Edge.KEYS[key] then return end
     if key == "autoSell" or key == "autoRepair" then return ns.Guarded(ns.Vendor.Refresh) end
     if key == "bags" then return ns.Guarded(ns.Bags.Reload) end
-    if key == "levelToast" then return ns.Guarded(ns.LevelUp.Apply) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
     if ns.Alts then ns.Guarded(ns.Alts.Changed) end
 end })

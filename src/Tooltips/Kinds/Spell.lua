@@ -107,6 +107,7 @@ local function Fact(text)
         local found = text:match(fact.pattern)
         if found then
             local value = fact.shown or fact.unit and Read.Memo(MEMO[fact.key], fact.unit, found) or found
+            if fact.key == "range" then value = SaneUI.Core.DistanceText(value) end
             return fact.key, value, fact.caption
         end
     end

@@ -16,6 +16,8 @@ Core.lua
 # Small helpers for every module: the game's words, colours, pixels, tooltips, pools, dialogs, fonts,
 # sounds, and frames of the game's lent for a while
 Kit.lua
+# Distances and the time of day as the setting Units says: meters and 24 hours, or yards and 12 hours
+Units.lua
 # Plain values as a line of text and back (a profile to share)
 Serial.lua
 # The kinds of motion a window's size can have (Glide, Swing, Even, Instant): before Saved.lua,

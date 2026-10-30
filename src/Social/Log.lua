@@ -194,7 +194,7 @@ function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName,
     local kind = event:sub(10) -- after "CHAT_MSG_"
     local name = Short(sender)
     local channel = kind == "CHANNEL" and ns.Plain(channelIndex) or nil
-    local entry = { text = text, time = date("%H:%M"), at = GetTime() }
+    local entry = { text = text, time = Core.ClockAt(), at = GetTime() }
     entry.r, entry.g, entry.b = Color(kind, channel)
     -- A channel by its own word (Channels.Group), as the list of what to show has it, whatever the zone or its number.
     entry.group = channel and ns.Channels.Group(channel, ns.Plain(channelName)) or GROUP[kind] or kind
@@ -357,7 +357,7 @@ function Log.Line(window, text, r, g, b, id, event)
     if id and read[id] then return end
     if not Fresh(window, text) then return end
     local kind = id and kinds[id]
-    Log.Add({ side = NOTE, group = Group(kind, event, text), text = Untimed(text), time = date("%H:%M"), at = GetTime(),
+    Log.Add({ side = NOTE, group = Group(kind, event, text), text = Untimed(text), time = Core.ClockAt(), at = GetTime(),
               r = ns.Plain(r) or 1, g = ns.Plain(g) or 1, b = ns.Plain(b) or 1 })
 end
 
@@ -374,7 +374,7 @@ function Log.Motd(text)
         last.group = "GUILD"
         return
     end
-    Log.Add({ side = NOTE, group = "GUILD", text = text, time = date("%H:%M"), at = now, r = r, g = g, b = b })
+    Log.Add({ side = NOTE, group = "GUILD", text = text, time = Core.ClockAt(), at = now, r = r, g = g, b = b })
 end
 
 -------------------------------------------------------------------------------
