@@ -54,8 +54,7 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
     below (red) the one worn, then up to four stats that go up (green) and down (red), as the game works them out
     (the tooltip has them all). For rings and trinkets against the weaker of your two. *Your slot is empty* where
     you wear nothing there.
-  - The mouse on it shows its tooltip with the game's comparison, in sight over the faded interface, without the key
-    the module Tooltips waits for (`Core.tipsWanted`).
+  - The mouse on it shows its tooltip with the game's comparison, in sight over the faded interface.
   - **Choosing:** a left click on a reward to choose chooses it (its shade darker, a gold line at its left); the hand-in
     answer then reads *Complete Quest* (before that *Choose a reward first*). A double click hands the quest in
     with that reward at once.

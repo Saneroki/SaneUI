@@ -307,9 +307,8 @@ check(row.change._text:find("iLvl 20") and row.change._text:find("%(%+4%)") and 
       and row.change._text:find("%-2 Agi"), "and what it changes (" .. tostring(row.change._text) .. ")")
 row._scripts.OnEnter(row)
 check(GameTooltip._ignoreAlpha == true and GameTooltip._owner == row, "its tooltip is in sight over the faded interface")
-check(SaneUI.Core.tipsWanted == true, "whatever key the module Tooltips waits for")
 row._scripts.OnLeave(row)
-check(GameTooltip._ignoreAlpha == false and not SaneUI.Core.tipsWanted, "and not once the mouse left it")
+check(GameTooltip._ignoreAlpha == false, "and not once the mouse left it")
 
 -- Continue on the last paragraph accepts.
 said = {}

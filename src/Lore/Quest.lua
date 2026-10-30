@@ -15,8 +15,7 @@ local _, ns = ...
 --  vendor pays for all of it, and under that what it changes against what you
 --  wear: its item level and the one worn, the stats that go up (green) and down
 --  (red), or that the slot is empty. The tooltip is there too, with the game's
---  comparison, in sight over the faded interface and without any key held
---  (Quiet.Tips). A click on a
+--  comparison, in sight over the faded interface (Quiet.Tips). A click on a
 --  reward to choose chooses it (its shade darker, a gold line at its left); a
 --  double click hands the quest in with it; the right button on it does nothing.
 --  Anywhere else here a click is the talk's, as on the words (Talk.Click).
