@@ -30,6 +30,7 @@
 {"key":3160,"since":70245,"src":["game"],"name":"Agility","icon":134872,"school":1,"source":"elixir","duration":3600000}
 {"key":3164,"since":70245,"src":["game"],"name":"Strength","icon":134837,"school":1,"source":"elixir","duration":3600000}
 {"key":3166,"since":70245,"src":["game"],"name":"Lesser Intellect","icon":134717,"school":1,"source":"elixir","duration":3600000}
+{"key":3166,"since":70707,"day":"2026-10-31","src":["game"],"duration":1800000}
 {"key":3169,"since":70245,"src":["game"],"name":"Invulnerability","icon":135896,"school":1,"source":"potion","kind":"magic","duration":6000}
 {"key":3219,"since":70245,"src":["game"],"name":"Minor Troll's Blood Elixir","icon":134858,"school":1,"source":"elixir","duration":3600000}
 {"key":3220,"since":70245,"src":["game"],"name":"Armor","icon":134844,"school":1,"source":"elixir","duration":3600000}
@@ -178,7 +179,7 @@
 {"key":13278,"since":70245,"src":["game"],"name":"Gnomish Death Ray","icon":136197,"school":1,"source":"item","duration":4000}
 {"key":13327,"since":70245,"src":["game"],"name":"Reckless Charge","icon":136010,"school":1,"source":"item","kind":"magic","duration":30000}
 {"key":13424,"since":70245,"src":["game"],"name":"Faerie Fire","icon":136033,"school":8,"source":"item","kind":"magic","duration":30000}
-{"key":13494,"since":0,"src":[7],"name":"Haste","icon":136047,"school":1,"source":"item","duration":30000}
+{"key":13494,"since":0,"src":[7,"game"],"name":"Haste","icon":136047,"school":1,"source":"item","duration":30000}
 {"key":13744,"since":0,"src":[7],"name":"Blazing Emblem","icon":135806,"school":4,"source":"item","duration":15000}
 {"key":13808,"since":70245,"src":["game"],"name":"M73 Frag Grenade","icon":135826,"school":4,"source":"item","duration":3000}
 {"key":14253,"since":0,"src":[7],"name":"Abolish Poison","icon":136068,"school":8,"source":"item","kind":"magic","duration":8000}
@@ -204,7 +205,7 @@
 {"key":16627,"since":70245,"src":["game"],"name":"Capture Felhound Spirit","description":"Captures the spirit of a Felhound to be used in the creation of a warlockian orb.","icon":136163,"school":32,"source":"item","duration":9000}
 {"key":16628,"since":70245,"src":["game"],"name":"Capture Infernal Spirit","description":"Captures the spirit of an Infernal to be used in the creation of a warlockian orb.","icon":136163,"school":32,"source":"item","duration":9000}
 {"key":16629,"since":70245,"src":["game"],"name":"Attuned Dampener","icon":135972,"school":64,"source":"item","castTime":2000,"duration":30000}
-{"key":16739,"since":0,"src":[7],"name":"Orb of Deception","description":"Transforms caster to look like a member of the opposing faction.","icon":136121,"school":1,"source":"item","duration":300000}
+{"key":16739,"since":0,"src":[7,"game"],"name":"Orb of Deception","description":"Transforms caster to look like a member of the opposing faction.","icon":136121,"school":1,"source":"item","duration":300000}
 {"key":17038,"since":70245,"src":["game"],"name":"Winterfall Firewater","icon":134872,"school":1,"source":"elixir","kind":"magic","duration":1200000}
 {"key":17179,"since":70245,"src":["game"],"name":"Boon of Life","description":"Use on Ras Frostwhisper, the lich, to make him mortal.","icon":135903,"school":1,"source":"item","duration":20000}
 {"key":17275,"since":70245,"src":["game"],"name":"Heart of the Scale","icon":135817,"school":4,"source":"item","duration":300000}
@@ -460,7 +461,7 @@
 {"key":434851,"since":70245,"src":["game"],"name":"Minor Evocation","icon":136075,"school":1,"source":"item","duration":4000}
 {"key":435218,"since":70245,"src":["game"],"name":"Offering to the Wind Spirit","description":"Make an Offering to the Wind Spirit and show your faith.","icon":133291,"school":1,"source":"item","castTime":2000,"duration":30000}
 {"key":435563,"since":70245,"src":["game"],"name":"Comprehension","icon":135933,"school":1,"source":"item","castTime":3000,"duration":3600000}
-{"key":435968,"since":0,"src":[7],"name":"Ez-Thro Radiation Bomb","icon":132100,"school":4,"source":"item","kind":"magic","castTime":1500,"duration":10000}
+{"key":435968,"since":0,"src":[7,"game"],"name":"Ez-Thro Radiation Bomb","icon":132100,"school":4,"source":"item","kind":"magic","castTime":1500,"duration":10000}
 {"key":436432,"since":70245,"src":["game"],"name":"Trail Snack","description":"Eat a handful and make up for lost time on the trail!","icon":136075,"school":1,"source":"item","duration":12000}
 {"key":438273,"since":70245,"src":["game"],"name":"PvP Trinket","description":"Removes all movement impairing effects and all effects which cause loss of control of your character.","icon":135894,"school":1,"source":"item","duration":100}
 {"key":439155,"since":70245,"src":["game"],"name":"Sigil of Innovation","icon":254884,"school":64,"source":"item","kind":"magic","castTime":3000,"duration":1800000}
@@ -479,7 +480,7 @@
 {"key":460940,"since":70245,"src":["game"],"name":"Might of Stormwind","description":"Increases hitpoints by 300. 15% haste to melee attacks. 10 mana regen every 5 seconds.","icon":135763,"school":1,"source":"item","duration":3600000}
 {"key":461318,"since":70245,"src":["game"],"name":"Gift of Gob","description":"Turns target party member into a friend.","icon":236685,"school":1,"source":"item","duration":3600000}
 {"key":461324,"since":70245,"src":["game"],"name":"Sleep","description":"Drink the Dreamjuice to enter a state of waking sleep, allowing you to see hidden enemies. Only usable in Thorium Point.","icon":132123,"school":1,"source":"item","duration":600000}
-{"key":461632,"since":0,"src":[7],"name":"Stratholme Holy Water","icon":236211,"school":1,"source":"item","duration":30000}
+{"key":461632,"since":0,"src":[7,"game"],"name":"Stratholme Holy Water","icon":236211,"school":1,"source":"item","duration":30000}
 {"key":463864,"since":70245,"src":["game"],"name":"Sigil of Flowing Waters","icon":254883,"school":16,"source":"item","kind":"magic","duration":3600000}
 {"key":468767,"since":70245,"src":["game"],"name":"Drink","icon":132805,"school":1,"source":"food","duration":30000}
 {"key":469647,"since":70245,"src":["game"],"name":"Consecrated Weapon","description":"Apply the Blood of the Lightbringer to consecrate your weapon.","icon":236262,"school":1,"source":"item","castTime":3000,"duration":3600000}
@@ -573,6 +574,7 @@
 {"key":1249926,"since":70245,"src":["game"],"name":"Well Fed","description":"A tasty drink has made you Well Fed, increasing your Spirit.","icon":133943,"school":1,"source":"food","duration":900000}
 {"key":1249927,"since":70245,"src":["game"],"name":"Well Fed","description":"A tasty drink has made you Well Fed, increasing your Healing Power.","icon":133943,"school":1,"source":"food","duration":900000}
 {"key":1250889,"since":70245,"src":["game"],"name":"Draught of Predatory Senses","icon":967555,"school":1,"source":"elixir","duration":1800000}
+{"key":1250889,"since":70707,"day":"2026-10-31","src":["game"],"name":"Potion of Predatory Senses","duration":90000}
 {"key":1250918,"since":70245,"src":["game"],"name":"Elixir of Cunning","icon":134794,"school":1,"source":"elixir","duration":1800000}
 {"key":1250920,"since":70245,"src":["game"],"name":"Elixir of the Phalanx","icon":967529,"school":1,"source":"elixir","duration":1800000}
 {"key":1250922,"since":70245,"src":["game"],"name":"Minor Cleric's Elixir","icon":967524,"school":1,"source":"elixir","duration":1800000}
@@ -640,10 +642,15 @@
 {"key":1271266,"since":70245,"src":["game"],"name":"Stealth Field","icon":133862,"school":1,"source":"item","castTime":1000,"duration":60000}
 {"key":1271280,"since":70245,"src":["game"],"name":"Stealthman Tracker","icon":136243,"school":1,"source":"item","duration":60000}
 {"key":1277794,"since":70245,"src":["game"],"name":"Tame Beast","description":"Begins taming a Rockhide Boar to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1277794,"since":70707,"day":"2026-10-31","src":["game"],"description":"Begins taming a Rockhide Boar to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}
 {"key":1278028,"since":70245,"src":["game"],"name":"Tame Beast","description":"Begins taming a Gray Forest Wolf to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1278028,"since":70707,"day":"2026-10-31","src":["game"],"description":"Begins taming a Gray Forest Wolf to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}
 {"key":1278029,"since":70245,"src":["game"],"name":"Tame Beast","description":"Begins taming a Young Forest Bear to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1278029,"since":70707,"day":"2026-10-31","src":["game"],"description":"Begins taming a Young Forest Bear to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}
 {"key":1280003,"since":70245,"src":["game"],"name":"Tame Crawler","description":"Begins taming a Windsong Crawler to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1280003,"since":70707,"day":"2026-10-31","src":["game"],"description":"Begins taming a Windsong Crawler to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}
 {"key":1280046,"since":70245,"src":["game"],"name":"Tame Galestrider","description":"Begins taming an Ornery Galestrider to be your companion for 10 minutes. If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1280046,"since":70707,"day":"2026-10-31","src":["game"],"description":"Begins taming an Ornery Galestrider to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}
 {"key":1280481,"since":70245,"src":["game"],"name":"Fox-Catching Net","icon":132149,"school":1,"source":"item","castTime":500,"duration":10000}
 {"key":1286814,"since":70245,"src":["game"],"name":"Hoof-Shaped Foot Pedal","icon":1534178,"school":1,"source":"item","castTime":1000,"duration":1200000}
 {"key":1287571,"since":70245,"src":["game"],"name":"Monkey Business","icon":133980,"school":1,"source":"item","duration":15000}
@@ -686,7 +693,7 @@
 {"key":1297774,"since":70245,"src":["game"],"name":"Magical Awareness","description":"Suffuse yourself with magical energy, allowing the detection and acquisition of Motes of Unstable Magic from certain spellcasters and powerful enemies.","icon":4638533,"school":1,"source":"item","duration":7200000}
 {"key":1299351,"since":70245,"src":["game"],"name":"Water Walking","icon":132539,"school":1,"source":"item","duration":300000}
 {"key":1299440,"since":70245,"src":["game"],"name":"Demonbane","icon":133442,"school":32,"source":"item","duration":6000}
-{"key":1300752,"since":0,"src":[7],"name":"Heart of the Mountain","icon":134084,"school":1,"source":"item","kind":"magic","duration":20000}
+{"key":1300752,"since":0,"src":[7,"game"],"name":"Heart of the Mountain","icon":134084,"school":1,"source":"item","kind":"magic","duration":20000}
 {"key":1301167,"since":70245,"src":["game"],"name":"Transformative Cocoon","icon":237431,"school":1,"source":"item","duration":5000}
 {"key":1301168,"since":70245,"src":["game"],"name":"Transformative Cocoon","icon":237431,"school":1,"source":"item","duration":8000}
 {"key":1301683,"since":70245,"src":["game"],"name":"Harvester Override Signalcaster","icon":132996,"school":1,"source":"item","castTime":3000,"duration":180000}
@@ -718,6 +725,16 @@
 {"key":1320579,"since":0,"src":[7],"name":"Desert Winds","icon":796638,"school":8,"source":"item","kind":"magic","duration":10000}
 {"key":1321323,"since":0,"src":[7],"name":"Shiny Silver Coin","icon":237282,"school":1,"source":"item","duration":1800000}
 {"key":1322587,"since":70245,"src":["game"],"name":"Yay","description":"Cheesecake makes you happy.","icon":237359,"school":1,"source":"food","duration":1200000}
-{"key":1325147,"since":0,"src":[7],"name":"Adventurer's Tent","icon":4624631,"school":1,"source":"item","duration":900000}
+{"key":1325147,"since":0,"src":[7,"game"],"name":"Adventurer's Tent","icon":4624631,"school":1,"source":"item","duration":900000}
 {"key":1326056,"since":0,"src":[7],"name":"Blackthorne's Ward","icon":1769069,"school":8,"source":"item","kind":"magic","duration":1800000}
-{"key":1326475,"since":0,"src":[7],"name":"Flash Bundle","icon":133581,"school":4,"source":"item","castTime":3000,"duration":8000}
+{"key":1326475,"since":0,"src":[7,"game"],"name":"Flash Bundle","icon":133581,"school":4,"source":"item","castTime":3000,"duration":8000}
+{"key":1327736,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Intellect","icon":135754,"school":1,"source":"elixir","duration":3600000}
+{"key":1327737,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Power","icon":236310,"school":1,"source":"elixir","duration":3600000}
+{"key":1327738,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Healing","icon":136041,"school":1,"source":"elixir","duration":3600000}
+{"key":1327751,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Rapidity","icon":132306,"school":1,"source":"elixir","duration":3600000}
+{"key":1327753,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Opportunity","icon":132212,"school":1,"source":"elixir","duration":3600000}
+{"key":1327754,"since":70707,"day":"2026-10-31","src":["game"],"name":"Scroll of Endless Fortitude","icon":136112,"school":1,"source":"item","duration":3600000}
+{"key":1328032,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Mana","icon":237551,"school":1,"source":"elixir","duration":3600000}
+{"key":1328118,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Growth","icon":134721,"school":1,"source":"elixir","duration":600000}
+{"key":1328119,"since":70707,"day":"2026-10-31","src":["game"],"name":"Scroll of Endless Speed","icon":132219,"school":1,"source":"item","duration":30000}
+{"key":1328127,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Experience","icon":134803,"school":1,"source":"elixir","duration":3600000}

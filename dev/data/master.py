@@ -489,5 +489,8 @@ def write(master, set_name, game, lines):
     for number, (start, path) in enumerate(files):
         end = files[number + 1][0] if number + 1 < len(files) else None
         mine = [line for line in ordered if (start is None or line.key >= start) and (end is None or line.key < end)]
+        if game != LIVE and not ordered:  # another game version with nothing left of its own has no file
+            path.unlink(missing_ok=True)
+            continue
         path.write_text("".join(line_text(schema, line) + "\n" for line in mine), encoding="utf-8")
     master.lines[(set_name, game)] = ordered

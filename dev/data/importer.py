@@ -398,7 +398,25 @@ def run(master, staged, take=False):
             master.lines[(set_name, game)] = sorted((line for entry in entries.values() for line in entry.lines),
                                                     key=masters.Line.order)
             report.changed.add((set_name, game))
+    _catch_up(master, report)
     return report
+
+
+def _catch_up(master, report):
+    """Live may have come to say what another game version's lines say: those stand on live's view, so they keep
+    only what they still change (*Another game version's files*), as `_tidy` does within one game version."""
+    for set_name, game in sorted(report.changed):
+        for other in master.games:
+            if other == game or masters.base_of(other) != game or (set_name, other) not in master.lines:
+                continue
+            before = [(line.key, dict(line.fields)) for line in master.lines[(set_name, other)]]
+            entries = _entries(master, set_name, other)
+            for entry in entries.values():
+                _tidy(entry)
+            lines = sorted((line for entry in entries.values() for line in entry.lines), key=masters.Line.order)
+            if [(line.key, line.fields) for line in lines] != before:
+                master.lines[(set_name, other)] = lines
+                report.changed.add((set_name, other))
 
 
 def apply(master, report):

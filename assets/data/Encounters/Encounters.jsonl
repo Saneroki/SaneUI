@@ -194,6 +194,7 @@
 {"key":2766,"since":70245,"src":["game"],"name":"Twilight Lord Kelris","instance":48,"order":5000,"difficulty":201}
 {"key":2767,"since":70245,"src":["game"],"name":"Aku'mai","instance":48,"order":6000,"difficulty":201}
 {"key":2768,"since":70245,"src":["game"],"name":"Grubbis","instance":90,"order":0,"difficulty":201}
+{"key":2768,"since":70707,"day":"2026-10-31","src":["game"],"difficulty":1}
 {"key":2769,"since":70245,"src":["game"],"name":"Viscous Fallout","instance":90,"order":1000,"difficulty":201}
 {"key":2770,"since":70245,"src":["game"],"name":"Electrocutioner 6000","instance":90,"order":2000,"difficulty":201}
 {"key":2771,"since":70245,"src":["game"],"name":"Crowd Pummeler 9-60","instance":90,"order":3000,"difficulty":201}
@@ -309,11 +310,13 @@
 {"key":3301,"since":70245,"src":["game"],"name":"Mana Elemental","instance":2959,"order":3000}
 {"key":3302,"since":70245,"src":["game"],"name":"Unstable Sentinel","instance":2959,"order":4000}
 {"key":3303,"since":70245,"src":["game"],"name":"Shade of the Archmage","instance":2959,"order":5000}
+{"key":3303,"since":70707,"day":"2026-10-31","src":["game"],"order":9000}
 {"key":3310,"since":70245,"src":["game"],"name":"Lyn the Ignored","instance":2959,"order":6000}
 {"key":3311,"since":70245,"src":["game"],"name":"Atrexis the Grave Knight","instance":2959,"order":7000}
 {"key":3312,"since":70245,"src":["game"],"name":"Mana Wraith","instance":2959,"order":8000}
 {"key":3353,"since":70245,"src":["game"],"name":"Witherfang","instance":2999,"order":0}
 {"key":3354,"since":70245,"src":["game"],"name":"Rath'mael","instance":2999,"order":1000}
+{"key":3354,"since":70707,"day":"2026-10-31","src":["game"],"order":5000}
 {"key":3355,"since":70245,"src":["game"],"name":"The Butcher","instance":2999,"order":500}
 {"key":3357,"since":70245,"src":["game"],"name":"The Abandoned","instance":2999,"order":250}
 {"key":3408,"since":70245,"src":["game"],"name":"Lordaeron Captain","instance":2999,"order":2000}

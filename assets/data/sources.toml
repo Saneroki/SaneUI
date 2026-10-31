@@ -107,3 +107,24 @@ kind = "batch"
 game = "forever"
 build = 70245
 about = "The original game's creature kinds (patch 1.12), only where every record of it agrees and the creature's name is the same in Forever's: for the creatures the batches before gave no kind. Unverified: a creature seen in play confirms it."
+
+[17]
+kind = "batch"
+game = "forever"
+about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-10-31, a newer reading of what batch 5 read: the same fields on the same terms, and where the newer reading says otherwise than the older one did, it corrects what the master took from the older (never a fact of the game, of its servers or of a person). Unverified: the game's word or our own sightings replace it entry by entry."
+
+[18]
+kind = "batch"
+game = "forever"
+build = 70707
+about = "What vendors sell and what it costs, 2026-10-31. A good's price is Forever's own (the client's item table, with its hotfixes; vendors' windows showed the same for 776 of 798 goods), or what the window showed where it differs; a cost in another currency and goods not yet known as the windows showed them. Rare goods no window showed have no price: they may cost a currency. Unverified: the vendor's window confirms the goods in play."
+
+[19]
+kind = "batch"
+game = "forever"
+about = "What players' records of Forever itself show, 2026-10-31, only what the master lacked: the experience of 680 quests as captured in play; the names of quests the client has and the master did not; what bosses were seen to drop, without chances. Unverified: the game's word or our own sightings replace it entry by entry."
+
+[20]
+kind = "batch"
+game = "forever"
+about = "What Forever's beta and live servers told players' games, and what was recorded in play, up to 2026-10-28, as our tool picked it. The servers' answers: quests' names, levels, chains, objectives with their counts and texts, money, items, spells and reputation; creatures' titles, ranks, kinds and families; these correct what imports said. Experience: as turn-ins paid, else worked out from Forever's client (its table at the server's difficulty, times the server's multiplier). Recorded in play, filling only what the master lacks: creatures' levels, health and the spells they were seen to cast (their facts from Forever's client), services, vendors' goods, stocks and costs, flights' times, what creatures, nodes and chests gave in more than one window (no chances), and weapons' damage as the game's tooltip shows it. Unverified: the game's word or our own sightings replace it entry by entry."

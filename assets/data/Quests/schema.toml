@@ -76,7 +76,7 @@ rewardChoices  = { type = "list", of = "tuple", parts = [
 ] }                                          # one of them to choose
 rewardFactions = { type = "list", of = "tuple", parts = [
     { name = "faction", type = "int" },
-    { name = "amount", type = "int" },
+    { name = "amount", type = "number" },  # a reputation that spills over to other factions can be a fraction
 ] }
 rewardSpell    = { type = "int" }
 tags           = { type = "list", of = "enum", values = ["elite", "group", "dungeon", "raid", "class", "daily", "repeatable", "pvp"] }

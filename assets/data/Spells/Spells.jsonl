@@ -49,6 +49,7 @@
 {"key":403,"since":70245,"src":["game"],"name":"Lightning Bolt","rank":"Rank 1","icon":136048,"cost":[{"power":0,"amount":15}],"castTime":1500,"maxRange":30.0}
 {"key":408,"since":70245,"src":["game"],"name":"Kidney Shot","rank":"Rank 1","description":"Finishing move that stuns the target.  Lasts longer per combo point:\r\n   1 point  : 1 second\r\n   2 points: 2 seconds\r\n   3 points: 3 seconds\r\n   4 points: 4 seconds\r\n   5 points: 5 seconds","icon":132298,"cost":[{"power":3,"amount":25},{"power":4,"amount":1}],"cooldown":20000,"maxRange":5.0}
 {"key":421,"since":70245,"src":["game"],"name":"Chain Lightning","rank":"Rank 1","icon":136015,"cost":[{"power":0,"amount":225}],"castTime":2000,"cooldown":6000,"maxRange":30.0}
+{"key":421,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":145}]}
 {"key":453,"since":70245,"src":["game"],"name":"Mind Soothe","rank":"Rank 1","icon":135933,"cost":[{"power":0,"amount":50}],"maxRange":40.0}
 {"key":458,"since":70245,"src":["game"],"name":"Brown Horse","description":"Summons and dismisses a rideable brown horse.","icon":132261,"castTime":3000}
 {"key":459,"since":70245,"src":["game"],"name":"Gray Wolf","description":"Summons and dismisses a rideable gray wolf.","icon":132266,"castTime":3000}
@@ -161,6 +162,7 @@
 {"key":915,"since":70245,"src":["game"],"name":"Lightning Bolt","rank":"Rank 4","icon":136048,"cost":[{"power":0,"amount":60}],"castTime":2500,"maxRange":30.0}
 {"key":921,"since":70245,"src":["game"],"name":"Pick Pocket","description":"Pick the target's pocket.","icon":133644,"maxRange":5.0}
 {"key":930,"since":70245,"src":["game"],"name":"Chain Lightning","rank":"Rank 2","icon":136015,"cost":[{"power":0,"amount":305}],"castTime":2000,"cooldown":6000,"maxRange":30.0}
+{"key":930,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":200}]}
 {"key":939,"since":70245,"src":["game"],"name":"Healing Wave","rank":"Rank 5","icon":136052,"cost":[{"power":0,"amount":200}],"castTime":3000,"maxRange":40.0}
 {"key":943,"since":70245,"src":["game"],"name":"Lightning Bolt","rank":"Rank 5","icon":136048,"cost":[{"power":0,"amount":85}],"castTime":2500,"maxRange":30.0}
 {"key":945,"since":70245,"src":["game"],"name":"Lightning Shield","rank":"Rank 4","icon":136051,"cost":[{"power":0,"amount":180}]}
@@ -313,6 +315,7 @@
 {"key":2165,"since":70245,"src":["game"],"name":"Medium Armor Kit","icon":136235,"castTime":5125}
 {"key":2166,"since":70245,"src":["game"],"name":"Toughened Leather Armor","icon":136235,"castTime":12500}
 {"key":2167,"since":70245,"src":["game"],"name":"Dark Leather Boots","icon":136235,"castTime":8000}
+{"key":2167,"since":70707,"day":"2026-10-31","src":["game"],"name":"Gray Leather Boots"}
 {"key":2168,"since":70245,"src":["game"],"name":"Dark Leather Cloak","icon":136235,"castTime":12500}
 {"key":2169,"since":70245,"src":["game"],"name":"Dark Leather Tunic","icon":136235,"castTime":12500}
 {"key":2259,"since":70245,"src":["game"],"name":"Alchemy","rank":"Apprentice","description":"Allows an alchemist to brew basic potions up to a maximum potential skill of 75.  Requires Herbs found with the Herbalism skill.","icon":136240}
@@ -418,6 +421,7 @@
 {"key":2837,"since":70245,"src":["game"],"name":"Deadly Poison II","rank":"Rank 2","icon":132290,"castTime":3000}
 {"key":2842,"since":70245,"src":["game"],"name":"Poisons","description":"You can create and mix poisons, with both found and storebought ingredients.","icon":136242}
 {"key":2860,"since":70245,"src":["game"],"name":"Chain Lightning","rank":"Rank 3","icon":136015,"cost":[{"power":0,"amount":390}],"castTime":2000,"cooldown":6000,"maxRange":30.0}
+{"key":2860,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":250}]}
 {"key":2870,"since":70245,"src":["game"],"name":"Cure Disease","icon":136083,"maxRange":30.0}
 {"key":2878,"since":70245,"src":["game"],"name":"Turn Undead","rank":"Rank 1","icon":135983,"cost":[{"power":0,"amount":35}],"castTime":1500,"cooldown":30000,"maxRange":20.0}
 {"key":2881,"since":70245,"src":["game"],"name":"Light Leather","icon":136235,"castTime":5125}
@@ -427,6 +431,7 @@
 {"key":2941,"since":70245,"src":["game"],"name":"Immolate","rank":"Rank 4","icon":135817,"cost":[{"power":0,"amount":155}],"castTime":2000,"maxRange":30.0}
 {"key":2943,"since":70245,"src":["game"],"name":"Touch of Weakness","rank":"Rank 1","icon":136143,"maxRange":100.0}
 {"key":2944,"since":70245,"src":["game"],"name":"Devouring Plague","rank":"Rank 1","icon":252997,"cost":[{"power":0,"amount":215}],"cooldown":60000,"maxRange":30.0}
+{"key":2944,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":24000}
 {"key":2947,"since":70245,"src":["game"],"name":"Fire Shield","rank":"Rank 1","icon":135806,"cost":[{"power":0,"amount":60}],"maxRange":30.0}
 {"key":2948,"since":70245,"src":["game"],"name":"Scorch","rank":"Rank 1","icon":135827,"cost":[{"power":0,"amount":50}],"castTime":1500,"maxRange":30.0}
 {"key":2963,"since":70245,"src":["game"],"name":"Bolt of Linen Cloth","icon":136235,"castTime":3000}
@@ -1528,6 +1533,7 @@
 {"key":10600,"since":70245,"src":["game"],"name":"Nature Resistance Totem","rank":"Rank 2","icon":136061,"cost":[{"power":0,"amount":120}]}
 {"key":10601,"since":70245,"src":["game"],"name":"Nature Resistance Totem","rank":"Rank 3","icon":136061,"cost":[{"power":0,"amount":180}]}
 {"key":10605,"since":70245,"src":["game"],"name":"Chain Lightning","rank":"Rank 4","icon":136015,"cost":[{"power":0,"amount":485}],"castTime":2000,"cooldown":6000,"maxRange":30.0}
+{"key":10605,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":315}]}
 {"key":10613,"since":70245,"src":["game"],"name":"Windfury Totem","rank":"Rank 2","icon":136114,"cost":[{"power":0,"amount":175}]}
 {"key":10614,"since":70245,"src":["game"],"name":"Windfury Totem","rank":"Rank 3","icon":136114,"cost":[{"power":0,"amount":250}]}
 {"key":10619,"since":70245,"src":["game"],"name":"Dragonscale Gauntlets","icon":136235,"castTime":60000}
@@ -1643,12 +1649,15 @@
 {"key":10965,"since":70245,"src":["game"],"name":"Greater Heal","rank":"Rank 4","icon":135913,"cost":[{"power":0,"amount":655}],"castTime":3000,"maxRange":40.0}
 {"key":10969,"since":70245,"src":["game"],"name":"Blue Mechanostrider","description":"Summons and dismisses a rideable mechanical tallstrider.","icon":132247,"castTime":3000}
 {"key":11069,"since":70245,"src":["game"],"name":"Improved Fireball","icon":135812}
+{"key":11069,"since":70707,"day":"2026-10-31","src":["game"],"name":"Accelerant"}
 {"key":11070,"since":70245,"src":["game"],"name":"Improved Frostbolt","icon":135846}
 {"key":11071,"since":70245,"src":["game"],"name":"Frostbite","icon":135842}
 {"key":11078,"since":70245,"src":["game"],"name":"Wake of Fire","icon":135819}
+{"key":11078,"since":70707,"day":"2026-10-31","src":["game"],"name":"Improved Fire Blast"}
 {"key":11083,"since":70245,"src":["game"],"name":"Burning Soul","icon":135805}
 {"key":11094,"since":70245,"src":["game"],"name":"Improved Fire Ward","icon":135806}
 {"key":11095,"since":70245,"src":["game"],"name":"Improved Scorch","icon":135831}
+{"key":11095,"since":70707,"day":"2026-10-31","src":["game"],"icon":135827}
 {"key":11100,"since":70245,"src":["game"],"name":"Flame Throwing","icon":135815}
 {"key":11103,"since":70245,"src":["game"],"name":"Impact","icon":135821}
 {"key":11108,"since":70245,"src":["game"],"name":"Improved Flamestrike","icon":135826}
@@ -2078,8 +2087,10 @@
 {"key":13794,"since":70245,"src":["game"],"name":"Enchant Cloak - Resistance","description":"Permanently enchant a cloak to give 3 to all resistances.","icon":135913,"castTime":5000}
 {"key":13795,"since":70245,"src":["game"],"name":"Immolation Trap","rank":"Rank 1","icon":135813,"cost":[{"power":0,"amount":50}],"cooldown":30000}
 {"key":13797,"since":70245,"src":["game"],"name":"Immolation Trap Effect","rank":"Rank 1","icon":135813,"maxRange":10.0}
+{"key":13797,"since":70707,"day":"2026-10-31","src":["game"],"name":"Immolation Trap"}
 {"key":13809,"since":70245,"src":["game"],"name":"Frost Trap","icon":135840,"cost":[{"power":0,"amount":60}],"cooldown":30000}
 {"key":13812,"since":70245,"src":["game"],"name":"Explosive Trap Effect","rank":"Rank 1","icon":135826}
+{"key":13812,"since":70707,"day":"2026-10-31","src":["game"],"name":"Explosive Trap"}
 {"key":13813,"since":70245,"src":["game"],"name":"Explosive Trap","rank":"Rank 1","icon":135826,"cost":[{"power":0,"amount":275}],"cooldown":30000}
 {"key":13815,"since":70245,"src":["game"],"name":"Enchant Gloves - Agility","description":"Permanently enchant gloves to grant +7 Agility.","icon":135913,"castTime":5000}
 {"key":13817,"since":70245,"src":["game"],"name":"Enchant Shield - Stamina","description":"Permanently enchant a shield to give +7 Stamina.","icon":135913,"castTime":5000}
@@ -2175,9 +2186,13 @@
 {"key":14295,"since":70245,"src":["game"],"name":"Volley","rank":"Rank 3","icon":132222,"cost":[{"power":0,"amount":490}],"maxRange":35.0}
 {"key":14296,"since":70245,"src":["game"],"name":"Black Arrow","rank":"Rank 2","icon":132323,"minRange":8.0,"maxRange":35.0}
 {"key":14298,"since":70245,"src":["game"],"name":"Immolation Trap Effect","rank":"Rank 2","icon":135813,"maxRange":10.0}
+{"key":14298,"since":70707,"day":"2026-10-31","src":["game"],"name":"Immolation Trap"}
 {"key":14299,"since":70245,"src":["game"],"name":"Immolation Trap Effect","rank":"Rank 3","icon":135813,"maxRange":10.0}
+{"key":14299,"since":70707,"day":"2026-10-31","src":["game"],"name":"Immolation Trap"}
 {"key":14300,"since":70245,"src":["game"],"name":"Immolation Trap Effect","rank":"Rank 4","icon":135813,"maxRange":10.0}
+{"key":14300,"since":70707,"day":"2026-10-31","src":["game"],"name":"Immolation Trap"}
 {"key":14301,"since":70245,"src":["game"],"name":"Immolation Trap Effect","rank":"Rank 5","icon":135813,"maxRange":10.0}
+{"key":14301,"since":70707,"day":"2026-10-31","src":["game"],"name":"Immolation Trap"}
 {"key":14302,"since":70245,"src":["game"],"name":"Immolation Trap","rank":"Rank 2","icon":135813,"cost":[{"power":0,"amount":90}],"cooldown":30000}
 {"key":14303,"since":70245,"src":["game"],"name":"Immolation Trap","rank":"Rank 3","icon":135813,"cost":[{"power":0,"amount":135}],"cooldown":30000}
 {"key":14304,"since":70245,"src":["game"],"name":"Immolation Trap","rank":"Rank 4","icon":135813,"cost":[{"power":0,"amount":190}],"cooldown":30000}
@@ -2185,7 +2200,9 @@
 {"key":14310,"since":70245,"src":["game"],"name":"Freezing Trap","rank":"Rank 2","icon":135834,"cost":[{"power":0,"amount":75}],"cooldown":30000}
 {"key":14311,"since":70245,"src":["game"],"name":"Freezing Trap","rank":"Rank 3","icon":135834,"cost":[{"power":0,"amount":100}],"cooldown":30000}
 {"key":14314,"since":70245,"src":["game"],"name":"Explosive Trap Effect","rank":"Rank 2","icon":135826}
+{"key":14314,"since":70707,"day":"2026-10-31","src":["game"],"name":"Explosive Trap"}
 {"key":14315,"since":70245,"src":["game"],"name":"Explosive Trap Effect","rank":"Rank 3","icon":135826}
+{"key":14315,"since":70707,"day":"2026-10-31","src":["game"],"name":"Explosive Trap"}
 {"key":14316,"since":70245,"src":["game"],"name":"Explosive Trap","rank":"Rank 2","icon":135826,"cost":[{"power":0,"amount":395}],"cooldown":30000}
 {"key":14317,"since":70245,"src":["game"],"name":"Explosive Trap","rank":"Rank 3","icon":135826,"cost":[{"power":0,"amount":520}],"cooldown":30000}
 {"key":14318,"since":70245,"src":["game"],"name":"Aspect of the Hawk","rank":"Rank 2","icon":136076,"cost":[{"power":0,"amount":35}]}
@@ -2264,6 +2281,7 @@
 {"key":15274,"since":70245,"src":["game"],"name":"Improved Fade","icon":135994}
 {"key":15275,"since":70245,"src":["game"],"name":"Improved Shadow Word: Pain","icon":136207}
 {"key":15286,"since":70245,"src":["game"],"name":"Vampiric Embrace","icon":136230,"cost":[{"power":0,"amount":40}],"cooldown":60000,"maxRange":30.0}
+{"key":15286,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":30000}
 {"key":15292,"since":70245,"src":["game"],"name":"Dark Iron Pulverizer","icon":136192,"castTime":45000}
 {"key":15293,"since":70245,"src":["game"],"name":"Dark Iron Mail","icon":136192,"castTime":45000}
 {"key":15294,"since":70245,"src":["game"],"name":"Dark Iron Sunderer","icon":136192,"castTime":45000}
@@ -2323,11 +2341,12 @@
 {"key":16083,"since":70245,"src":["game"],"name":"White Stallion","description":"Summons and dismisses a rideable white stallion.  This is a very fast mount.","icon":132261,"castTime":3000}
 {"key":16084,"since":70245,"src":["game"],"name":"Mottled Red Raptor","description":"Summons and dismisses a rideable Raptor.  This is a very fast mount.","icon":132253,"castTime":3000}
 {"key":16086,"since":70245,"src":["game"],"name":"Improved Fire Nova","icon":135824}
+{"key":16086,"since":70707,"day":"2026-10-31","src":["game"],"name":"Trial by Fire"}
 {"key":16089,"since":70245,"src":["game"],"name":"Elemental Fury","icon":135830}
 {"key":16120,"since":70245,"src":["game"],"name":"Call of Thunder","icon":136014}
 {"key":16153,"since":70245,"src":["game"],"name":"Smelt Thorium","description":"Allows the miner to smelt a chunk of thorium ore into a thorium bar.  Smelting thorium requires a forge.","icon":136235,"castTime":3000}
 {"key":16164,"since":70245,"src":["game"],"name":"Elemental Focus","icon":136170}
-{"key":16166,"since":0,"src":[7],"name":"Elemental Mastery","icon":136115,"cooldown":180000}
+{"key":16166,"since":0,"src":[7,"game"],"name":"Elemental Mastery","icon":136115,"cooldown":180000}
 {"key":16173,"since":70245,"src":["game"],"name":"Totemic Focus","icon":136057}
 {"key":16176,"since":70245,"src":["game"],"name":"Ancestral Healing","icon":136109}
 {"key":16178,"since":70245,"src":["game"],"name":"Purification","icon":135865}
@@ -2529,7 +2548,9 @@
 {"key":17322,"since":70245,"src":["game"],"name":"Shadow Reach","icon":136130}
 {"key":17329,"since":70245,"src":["game"],"name":"Nature's Grasp","rank":"Rank 6","icon":136063,"cost":[{"power":0,"amount":125}],"cooldown":60000}
 {"key":17354,"since":70245,"src":["game"],"name":"Mana Tide Totem","rank":"Rank 2","icon":135861,"cost":[{"power":0,"amount":30}],"cooldown":300000}
+{"key":17354,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":20}]}
 {"key":17359,"since":70245,"src":["game"],"name":"Mana Tide Totem","rank":"Rank 3","icon":135861,"cost":[{"power":0,"amount":60}],"cooldown":300000}
+{"key":17359,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":30}]}
 {"key":17364,"since":70245,"src":["game"],"name":"Stormstrike","icon":132314,"cost":[{"power":0,"amount":125}],"cooldown":8000,"maxRange":5.0}
 {"key":17401,"since":70245,"src":["game"],"name":"Hurricane","rank":"Rank 2","icon":136018,"cost":[{"power":0,"amount":1180}],"maxRange":30.0}
 {"key":17402,"since":70245,"src":["game"],"name":"Hurricane","rank":"Rank 3","icon":136018,"cost":[{"power":0,"amount":1495}],"maxRange":30.0}
@@ -2723,6 +2744,7 @@
 {"key":18551,"since":70245,"src":["game"],"name":"Mental Strength","icon":136031}
 {"key":18560,"since":70245,"src":["game"],"name":"Mooncloth","icon":132149,"castTime":60000,"cooldown":342000000}
 {"key":18562,"since":70245,"src":["game"],"name":"Swiftmend","description":"Instantly heals a target with an active Rejuvenation or Regrowth effect for an amount equal to the full duration of the periodic effect of one of those spells.","icon":134914,"cooldown":15000,"maxRange":40.0}
+{"key":18562,"since":70707,"day":"2026-10-31","src":["game"],"description":"Instantly heals a target with your active Rejuvenation or Regrowth effect for an amount equal to the full duration of the periodic effect of the consumed spell."}
 {"key":18629,"since":70245,"src":["game"],"name":"Runecloth Bandage","icon":136192,"castTime":3000}
 {"key":18630,"since":70245,"src":["game"],"name":"Heavy Runecloth Bandage","icon":136192,"castTime":3000}
 {"key":18647,"since":70245,"src":["game"],"name":"Banish","rank":"Rank 2","icon":136135,"cost":[{"power":0,"amount":200}],"castTime":1500,"maxRange":30.0}
@@ -2860,10 +2882,15 @@
 {"key":19274,"since":70245,"src":["game"],"name":"Feedback","rank":"Rank 4","icon":136189,"cost":[{"power":0,"amount":190}],"cooldown":180000}
 {"key":19275,"since":70245,"src":["game"],"name":"Feedback","rank":"Rank 5","icon":136189,"cost":[{"power":0,"amount":230}],"cooldown":180000}
 {"key":19276,"since":70245,"src":["game"],"name":"Devouring Plague","rank":"Rank 2","icon":252997,"cost":[{"power":0,"amount":350}],"cooldown":60000,"maxRange":30.0}
+{"key":19276,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":24000}
 {"key":19277,"since":70245,"src":["game"],"name":"Devouring Plague","rank":"Rank 3","icon":252997,"cost":[{"power":0,"amount":495}],"cooldown":60000,"maxRange":30.0}
+{"key":19277,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":24000}
 {"key":19278,"since":70245,"src":["game"],"name":"Devouring Plague","rank":"Rank 4","icon":252997,"cost":[{"power":0,"amount":645}],"cooldown":60000,"maxRange":30.0}
+{"key":19278,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":24000}
 {"key":19279,"since":70245,"src":["game"],"name":"Devouring Plague","rank":"Rank 5","icon":252997,"cost":[{"power":0,"amount":810}],"cooldown":60000,"maxRange":30.0}
+{"key":19279,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":24000}
 {"key":19280,"since":70245,"src":["game"],"name":"Devouring Plague","rank":"Rank 6","icon":252997,"cost":[{"power":0,"amount":985}],"cooldown":60000,"maxRange":30.0}
+{"key":19280,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":24000}
 {"key":19281,"since":70245,"src":["game"],"name":"Hex of Weakness","rank":"Rank 2","icon":136157,"cost":[{"power":0,"amount":55}],"maxRange":30.0}
 {"key":19282,"since":70245,"src":["game"],"name":"Hex of Weakness","rank":"Rank 3","icon":136157,"cost":[{"power":0,"amount":90}],"maxRange":30.0}
 {"key":19283,"since":70245,"src":["game"],"name":"Hex of Weakness","rank":"Rank 4","icon":136157,"cost":[{"power":0,"amount":130}],"maxRange":30.0}
@@ -3118,8 +3145,10 @@
 {"key":20502,"since":70245,"src":["game"],"name":"Improved Execute","icon":135358}
 {"key":20504,"since":70245,"src":["game"],"name":"Improved Intercept","icon":132307}
 {"key":20549,"since":70245,"src":["game"],"name":"War Stomp","rank":"Racial","icon":132368,"castTime":500,"cooldown":120000}
+{"key":20549,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":90000}
 {"key":20550,"since":70245,"src":["game"],"name":"Endurance","rank":"Racial Passive","icon":136112}
 {"key":20552,"since":70245,"src":["game"],"name":"Cultivation","rank":"Racial","description":"Cultivate a nearby herb, growing a duplicate you can harvest without requiring Herbalism skill. Each herb may only be cultivated once.","icon":133938}
+{"key":20552,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":900000}
 {"key":20554,"since":70245,"src":["game"],"name":"Berserking","rank":"Racial","icon":135727,"cooldown":180000}
 {"key":20555,"since":70245,"src":["game"],"name":"Regeneration","rank":"Racial Passive","icon":136077}
 {"key":20557,"since":70245,"src":["game"],"name":"Beast Slaying","rank":"Racial Passive","icon":134357}
@@ -3129,6 +3158,8 @@
 {"key":20572,"since":70245,"src":["game"],"name":"Blood Fury","rank":"Racial","icon":135726,"cooldown":120000}
 {"key":20573,"since":70245,"src":["game"],"name":"Hardiness","rank":"Racial Passive","icon":133125}
 {"key":20574,"since":70245,"src":["game"],"name":"Axe Specialization","rank":"Racial Passive","icon":132393}
+{"key":20575,"since":70707,"day":"2026-10-31","src":["game"],"name":"Command","rank":"Racial Passive"}
+{"key":20576,"since":70707,"day":"2026-10-31","src":["game"],"name":"Command","rank":"Racial Passive"}
 {"key":20577,"since":70245,"src":["game"],"name":"Cannibalize","rank":"Racial","icon":132278,"cooldown":120000,"maxRange":5.0}
 {"key":20580,"since":70245,"src":["game"],"name":"Shadowmeld","rank":"Racial","description":"Activate to slip into the shadows, reducing the chance for enemies to detect your presence. Lasts until cancelled or upon moving. Using this ability in combat discourages enemies from attacking you, but increases the cooldown to 2 min.","icon":132089,"cooldown":10000}
 {"key":20582,"since":70245,"src":["game"],"name":"Quickness","rank":"Racial Passive","icon":132279}
@@ -3138,6 +3169,7 @@
 {"key":20593,"since":70245,"src":["game"],"name":"Engineering Specialization","rank":"Racial Passive","icon":134063}
 {"key":20594,"since":70245,"src":["game"],"name":"Stoneform","rank":"Racial","icon":136225,"cooldown":180000}
 {"key":20597,"since":70245,"src":["game"],"name":"Sword Specialization","rank":"Racial Passive","icon":132223}
+{"key":20597,"since":70707,"day":"2026-10-31","src":["game"],"name":"Ruthless","icon":132292}
 {"key":20598,"since":70245,"src":["game"],"name":"The Human Spirit","rank":"Racial Passive","icon":132874}
 {"key":20600,"since":70245,"src":["game"],"name":"Perception","rank":"Racial","icon":136090,"cooldown":180000}
 {"key":20608,"since":70245,"src":["game"],"name":"Reincarnation","rank":"Passive","icon":136080,"cooldown":3600000}
@@ -3199,8 +3231,11 @@
 {"key":20923,"since":70245,"src":["game"],"name":"Consecration","rank":"Rank 4","icon":135926,"cost":[{"power":0,"amount":435}],"cooldown":8000}
 {"key":20924,"since":70245,"src":["game"],"name":"Consecration","rank":"Rank 5","icon":135926,"cost":[{"power":0,"amount":565}],"cooldown":8000}
 {"key":20925,"since":70245,"src":["game"],"name":"Holy Shield","rank":"Rank 1","icon":135880,"cost":[{"power":0,"amount":150}],"cooldown":10000}
+{"key":20925,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":100}]}
 {"key":20927,"since":70245,"src":["game"],"name":"Holy Shield","rank":"Rank 2","icon":135880,"cost":[{"power":0,"amount":195}],"cooldown":10000}
+{"key":20927,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":150}]}
 {"key":20928,"since":70245,"src":["game"],"name":"Holy Shield","rank":"Rank 3","icon":135880,"cost":[{"power":0,"amount":240}],"cooldown":10000}
+{"key":20928,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":195}]}
 {"key":20929,"since":70245,"src":["game"],"name":"Holy Shock","rank":"Rank 3","icon":135972,"cost":[{"power":0,"amount":275}],"cooldown":10000,"maxRange":20.0}
 {"key":20930,"since":70245,"src":["game"],"name":"Holy Shock","rank":"Rank 4","icon":135972,"cost":[{"power":0,"amount":325}],"cooldown":10000,"maxRange":20.0}
 {"key":21009,"since":70245,"src":["game"],"name":"Quickness Passive","rank":"Racial Passive","icon":132089}
@@ -3217,6 +3252,7 @@
 {"key":21552,"since":70245,"src":["game"],"name":"Mortal Strike","rank":"Rank 3","icon":132355,"cost":[{"power":1,"amount":300}],"cooldown":6000,"maxRange":5.0}
 {"key":21553,"since":70245,"src":["game"],"name":"Mortal Strike","rank":"Rank 4","icon":132355,"cost":[{"power":1,"amount":300}],"cooldown":6000,"maxRange":5.0}
 {"key":21562,"since":70245,"src":["game"],"name":"Prayer of Fortitude","rank":"Rank 1","icon":135941,"cost":[{"power":0,"amount":2600}],"maxRange":40.0}
+{"key":21563,"since":70707,"day":"2026-10-31","src":["game"],"name":"Command","rank":"Racial Passive","icon":132366}
 {"key":21564,"since":70245,"src":["game"],"name":"Prayer of Fortitude","rank":"Rank 2","icon":135941,"cost":[{"power":0,"amount":3400}],"maxRange":40.0}
 {"key":21849,"since":70245,"src":["game"],"name":"Gift of the Wild","rank":"Rank 1","icon":136078,"cost":[{"power":0,"amount":900}],"maxRange":40.0}
 {"key":21850,"since":70245,"src":["game"],"name":"Gift of the Wild","rank":"Rank 2","icon":136078,"cost":[{"power":0,"amount":1200}],"maxRange":40.0}
@@ -3230,6 +3266,7 @@
 {"key":22430,"since":70245,"src":["game"],"name":"Refined Scale of Onyxia","description":"Transmutes a Scale of Onyxia into a Refined Scale of Onyxia.","icon":134459,"castTime":25000,"cooldown":7200000}
 {"key":22480,"since":70245,"src":["game"],"name":"Tender Wolf Steak","icon":136192,"castTime":3000}
 {"key":22568,"since":70245,"src":["game"],"name":"Ferocious Bite","rank":"Rank 1","icon":132127,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
+{"key":22568,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 2"}
 {"key":22704,"since":70245,"src":["game"],"name":"Field Repair Bot 74A","icon":136235,"castTime":60000}
 {"key":22711,"since":70245,"src":["game"],"name":"Shadowskin Gloves","icon":136235,"castTime":45000}
 {"key":22717,"since":70245,"src":["game"],"name":"Black War Steed","description":"Summons and dismisses a rideable Black War Steed.  This is a very fast mount.","icon":132251,"castTime":3000}
@@ -3257,8 +3294,11 @@
 {"key":22813,"since":70245,"src":["game"],"name":"Gordok Ogre Suit","icon":132149,"castTime":60000}
 {"key":22815,"since":70245,"src":["game"],"name":"Gordok Ogre Suit","icon":136235,"castTime":60000}
 {"key":22827,"since":70245,"src":["game"],"name":"Ferocious Bite","rank":"Rank 2","icon":132127,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
+{"key":22827,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 3"}
 {"key":22828,"since":70245,"src":["game"],"name":"Ferocious Bite","rank":"Rank 3","icon":132127,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
+{"key":22828,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 4"}
 {"key":22829,"since":70245,"src":["game"],"name":"Ferocious Bite","rank":"Rank 4","icon":132127,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
+{"key":22829,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 5"}
 {"key":22842,"since":70245,"src":["game"],"name":"Frenzied Regeneration","icon":132091,"cooldown":180000}
 {"key":22845,"since":70245,"src":["game"],"name":"Frenzied Regeneration","icon":132091}
 {"key":22866,"since":70245,"src":["game"],"name":"Belt of the Archmage","icon":132149,"castTime":60000}
@@ -3709,6 +3749,7 @@
 {"key":29206,"since":70245,"src":["game"],"name":"Healing Way","rank":"Rank 1","icon":136044}
 {"key":29228,"since":70245,"src":["game"],"name":"Flame Shock","rank":"Rank 6","icon":135813,"cost":[{"power":0,"amount":410}],"cooldown":6000,"maxRange":20.0}
 {"key":29438,"since":70245,"src":["game"],"name":"Elemental Precision","icon":135989}
+{"key":29438,"since":70707,"day":"2026-10-31","src":["game"],"name":"Precision"}
 {"key":29441,"since":70245,"src":["game"],"name":"Magic Absorption","icon":136011}
 {"key":29442,"since":70245,"src":["game"],"name":"Magic Absorption","icon":136011}
 {"key":29787,"since":70245,"src":["game"],"name":"Focused Rage","icon":132345}
@@ -3725,6 +3766,7 @@
 {"key":30919,"since":70245,"src":["game"],"name":"Weapon Expertise","icon":135882}
 {"key":31016,"since":70245,"src":["game"],"name":"Eviscerate","rank":"Rank 9","icon":132292,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
 {"key":31018,"since":70245,"src":["game"],"name":"Ferocious Bite","rank":"Rank 5","icon":132127,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
+{"key":31018,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 6"}
 {"key":33388,"since":70245,"src":["game"],"name":"Apprentice Riding","rank":"Apprentice","icon":136103}
 {"key":33391,"since":70245,"src":["game"],"name":"Journeyman Riding","rank":"Journeyman","icon":136103}
 {"key":36936,"since":70245,"src":["game"],"name":"Totemic Recall","icon":310733}
@@ -3739,7 +3781,7 @@
 {"key":66844,"since":70245,"src":["game"],"name":"Call of the Spirits","description":"Simultaneously places up to 4 totems specified in the Totem Bar. Can call different totems than Call of the Elements or Call of the Ancestors.","icon":310732,"castTime":3000}
 {"key":104047,"since":70245,"src":["game"],"name":"Lunar Lantern","description":"Right Click to summon and dismiss your Lunar Lantern.","icon":236704}
 {"key":104049,"since":70245,"src":["game"],"name":"Festival Lantern","description":"Right Click to summon and dismiss your Festival Lantern.","icon":134971}
-{"key":142880,"since":0,"src":[7],"name":"Blossoming Ancient","description":"Right Click to summon and dismiss your Blossoming Ancient.  This pet changes with the seasons.","icon":874857}
+{"key":142880,"since":0,"src":[7,"game"],"name":"Blossoming Ancient","description":"Right Click to summon and dismiss your Blossoming Ancient.  This pet changes with the seasons.","icon":874857}
 {"key":370637,"since":70245,"src":["game"],"name":"Summon Skeletal Steed","description":"Summons and dismisses a skeletal steed.  This steed is obedient to the summoner and can be used as a mount within Naxxramas.  Any hostile action towards the rider forces the steed to run away in fear.","icon":132264}
 {"key":381598,"since":70245,"src":["game"],"name":"Summon Skeletal Steed","description":"Summons and dismisses a skeletal steed.  This steed is obedient to the summoner and can be used as a mount within Naxxramas.  Any hostile action towards the rider forces the steed to run away in fear.","icon":132264}
 {"key":398603,"since":70245,"src":["game"],"name":"Runecarving","description":"Affix powerful runes to your armor.","icon":134422}
@@ -3757,9 +3799,11 @@
 {"key":400104,"since":70245,"src":["game"],"name":"Engrave Pants - Shadowstep","icon":134596,"castTime":3000}
 {"key":400105,"since":70245,"src":["game"],"name":"Engrave Gloves - Shadowstrike","icon":133816,"castTime":3000}
 {"key":400574,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 1","icon":135735,"castTime":2500,"maxRange":30.0}
+{"key":400574,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500}
 {"key":400588,"since":70245,"src":["game"],"name":"Missile Barrage","icon":236221}
 {"key":400624,"since":70245,"src":["game"],"name":"Heating Up","icon":135809}
 {"key":400640,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 2","icon":135844,"cost":[{"power":0,"amount":55}],"maxRange":30.0}
+{"key":400640,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":400647,"since":70245,"src":["game"],"name":"Fingers of Frost","icon":236227}
 {"key":401488,"since":70245,"src":["game"],"name":"Engrave Pants - Cutty's Rune","icon":134596}
 {"key":401502,"since":70245,"src":["game"],"name":"Frostfire Bolt","rank":"Rank 1","icon":236217,"cost":[{"power":0,"amount":205}],"castTime":3000,"maxRange":35.0}
@@ -3782,6 +3826,7 @@
 {"key":401977,"since":70245,"src":["game"],"name":"Shadowfiend","icon":136199,"cooldown":300000,"maxRange":30.0}
 {"key":402000,"since":70245,"src":["game"],"name":"Soul Warding","icon":135948}
 {"key":402174,"since":70245,"src":["game"],"name":"Penance","rank":"Rank 1","icon":237545,"cost":[{"power":0,"amount":100}],"cooldown":12000,"maxRange":36.0}
+{"key":402174,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":150}]}
 {"key":402848,"since":70245,"src":["game"],"name":"Engrave Pants - Prayer of Mending","icon":133818,"castTime":3000}
 {"key":402849,"since":70245,"src":["game"],"name":"Engrave Gloves - Shadow Word: Death","icon":133816,"castTime":3000}
 {"key":402850,"since":70245,"src":["game"],"name":"Engrave Cloak - Soul Warding","icon":133773,"castTime":3000}
@@ -3816,14 +3861,21 @@
 {"key":407632,"since":70245,"src":["game"],"name":"Hammer of the Righteous","icon":236253,"cooldown":6000,"maxRange":5.0}
 {"key":407995,"since":70245,"src":["game"],"name":"Primal Bite","rank":"Rank 1","icon":132278,"cost":[{"power":1,"amount":200}],"cooldown":6000,"maxRange":5.0}
 {"key":408120,"since":70245,"src":["game"],"name":"Wild Growth","rank":"Rank 1","icon":236153,"cost":[{"power":0,"amount":550}],"cooldown":6000,"maxRange":40.0}
+{"key":408120,"since":70707,"day":"2026-10-31","src":["game"],"castTime":3000}
 {"key":408248,"since":70245,"src":["game"],"name":"Eclipse","icon":236151}
 {"key":408341,"since":70245,"src":["game"],"name":"Fire Nova","rank":"Rank 1","icon":135824,"cost":[{"power":0,"amount":95}],"cooldown":10000,"maxRange":30.0}
+{"key":408341,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":65}]}
 {"key":408342,"since":70245,"src":["game"],"name":"Fire Nova","rank":"Rank 2","icon":135824,"cost":[{"power":0,"amount":170}],"cooldown":10000,"maxRange":30.0}
+{"key":408342,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":120}]}
 {"key":408343,"since":70245,"src":["game"],"name":"Fire Nova","rank":"Rank 3","icon":135824,"cost":[{"power":0,"amount":280}],"cooldown":10000,"maxRange":30.0}
+{"key":408343,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":210}]}
 {"key":408344,"since":70245,"src":["game"],"name":"Fire Nova","rank":"Rank 4","icon":135824,"cost":[{"power":0,"amount":395}],"cooldown":10000,"maxRange":30.0}
+{"key":408344,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":290}]}
 {"key":408345,"since":70245,"src":["game"],"name":"Fire Nova","rank":"Rank 5","icon":135824,"cost":[{"power":0,"amount":520}],"cooldown":10000,"maxRange":30.0}
+{"key":408345,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":375}]}
 {"key":408438,"since":70245,"src":["game"],"name":"Lightning Overload","icon":136050}
 {"key":408490,"since":70245,"src":["game"],"name":"Lava Burst","rank":"Rank 1","icon":237582,"cost":[{"power":0,"amount":165}],"castTime":2500,"cooldown":10000,"maxRange":30.0}
+{"key":408490,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":135}]}
 {"key":408498,"since":70245,"src":["game"],"name":"Maelstrom Weapon","icon":237584}
 {"key":408510,"since":70245,"src":["game"],"name":"Water Shield","icon":132315,"cooldown":15000}
 {"key":408521,"since":70245,"src":["game"],"name":"Riptide","rank":"Rank 1","icon":252995,"cost":[{"power":0,"amount":245}],"cooldown":6000,"maxRange":40.0}
@@ -3877,6 +3929,7 @@
 {"key":412758,"since":70245,"src":["game"],"name":"Incinerate","rank":"Rank 1","icon":135789,"cost":[{"power":0,"amount":205}],"castTime":2500,"maxRange":30.0}
 {"key":412783,"since":70245,"src":["game"],"name":"Metamorphosis : Demon Charge","icon":134419}
 {"key":414644,"since":70245,"src":["game"],"name":"Lacerate","rank":"Rank 1","icon":132131,"cost":[{"power":1,"amount":150}],"maxRange":5.0}
+{"key":414644,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 3"}
 {"key":414673,"since":70245,"src":["game"],"name":"Gift of the Earthmother","icon":136094}
 {"key":415076,"since":70245,"src":["game"],"name":"Exorcist","icon":135956}
 {"key":415140,"since":70245,"src":["game"],"name":"Mental Dexterity","icon":136055}
@@ -4079,6 +4132,7 @@
 {"key":437032,"since":70245,"src":["game"],"name":"Soul Harvest","icon":132851}
 {"key":437138,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 1","icon":132132,"castTime":10000,"maxRange":30.0}
 {"key":437169,"since":70245,"src":["game"],"name":"Portal of Summoning","description":"Begins a ritual that creates a summoning portal.  The summoning portal can be used by 2 party or raid members to summon a targeted party or raid member.  The ritual portal requires the caster and 2 additional party or raid members to complete.  In order to participate, all players must be out of combat and right-click the portal and not move until the ritual is complete.","icon":134423,"cooldown":120000,"maxRange":30.0}
+{"key":437169,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":3600000}
 {"key":438040,"since":70245,"src":["game"],"name":"Redirect","icon":135425,"cooldown":10000,"maxRange":5.0}
 {"key":439085,"since":70245,"src":["game"],"name":"Crimson Silk Robe","icon":132149,"castTime":60000}
 {"key":439086,"since":70245,"src":["game"],"name":"Black Mageweave Vest","icon":132149,"castTime":60000}
@@ -4225,7 +4279,7 @@
 {"key":463869,"since":70245,"src":["game"],"name":"Conductive Shield Coating","description":"Creates Conductive Shield Coating.","icon":135913,"castTime":5000}
 {"key":463871,"since":70245,"src":["game"],"name":"Enchant Shield - Law of Nature","description":"Permanently enchant a Shield to add up to 30 damage to spells and up to 55 points of healing to healing spells.","icon":135913,"castTime":5000}
 {"key":463972,"since":70245,"src":["game"],"name":"Bottomless Bag","icon":132149,"castTime":60000}
-{"key":464808,"since":0,"src":[7],"name":"Gill'el","icon":5834819}
+{"key":464808,"since":0,"src":[7,"game"],"name":"Gill'el","icon":5834819}
 {"key":468761,"since":70245,"src":["game"],"name":"Engrave Ring - Healing Specialization","icon":133373,"castTime":3000}
 {"key":468763,"since":70245,"src":["game"],"name":"Engrave Ring - Meditation Specialization","icon":133373,"castTime":3000}
 {"key":468766,"since":70245,"src":["game"],"name":"Conjure Water","rank":"Rank 8","icon":132830,"cost":[{"power":0,"amount":845}],"castTime":3000}
@@ -4379,6 +4433,7 @@
 {"key":1223082,"since":70245,"src":["game"],"name":"Nature's Majesty","icon":135138}
 {"key":1223083,"since":70245,"src":["game"],"name":"Nature's Splendor","icon":136061}
 {"key":1223242,"since":70245,"src":["game"],"name":"Predatory Instincts","icon":132138}
+{"key":1223242,"since":70707,"day":"2026-10-31","src":["game"],"name":"Natural Instinct"}
 {"key":1223246,"since":70245,"src":["game"],"name":"Rend and Tear","icon":236164}
 {"key":1223755,"since":70245,"src":["game"],"name":"Focused Fire","icon":135539}
 {"key":1223760,"since":70245,"src":["game"],"name":"Glacial Vest","icon":132149,"castTime":60000}
@@ -4505,7 +4560,9 @@
 {"key":1235244,"since":70245,"src":["game"],"name":"Engineering","icon":136243,"castTime":2000,"maxRange":5.0}
 {"key":1235316,"since":70245,"src":["game"],"name":"Demonic Aegis","icon":136185}
 {"key":1235826,"since":70245,"src":["game"],"name":"Lacerate","rank":"Rank 2","icon":132131,"cost":[{"power":1,"amount":150}],"maxRange":5.0}
+{"key":1235826,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 4"}
 {"key":1235827,"since":70245,"src":["game"],"name":"Lacerate","rank":"Rank 3","icon":132131,"cost":[{"power":1,"amount":150}],"maxRange":5.0}
+{"key":1235827,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Rank 5"}
 {"key":1237268,"since":70245,"src":["game"],"name":"Holy Conduit","icon":237539}
 {"key":1237312,"since":70245,"src":["game"],"name":"Frostfire Bolt","rank":"Rank 2","icon":236217,"cost":[{"power":0,"amount":285}],"castTime":3000,"maxRange":35.0}
 {"key":1237313,"since":70245,"src":["game"],"name":"Frostfire Bolt","rank":"Rank 3","icon":236217,"cost":[{"power":0,"amount":370}],"castTime":3000,"maxRange":35.0}
@@ -4519,21 +4576,35 @@
 {"key":1238073,"since":70245,"src":["game"],"name":"Primal Bite","rank":"Rank 4","icon":132278,"cost":[{"power":1,"amount":200}],"cooldown":6000,"maxRange":5.0}
 {"key":1238122,"since":70245,"src":["game"],"name":"Feral Charge","icon":132183,"cost":[{"power":1,"amount":50}],"cooldown":15000,"minRange":8.0,"maxRange":25.0}
 {"key":1238214,"since":70245,"src":["game"],"name":"Wild Growth","rank":"Rank 2","icon":236153,"cost":[{"power":0,"amount":755}],"cooldown":6000,"maxRange":40.0}
+{"key":1238214,"since":70707,"day":"2026-10-31","src":["game"],"castTime":3000}
 {"key":1238215,"since":70245,"src":["game"],"name":"Wild Growth","rank":"Rank 3","icon":236153,"cost":[{"power":0,"amount":1050}],"cooldown":6000,"maxRange":40.0}
+{"key":1238215,"since":70707,"day":"2026-10-31","src":["game"],"castTime":3000}
 {"key":1238299,"since":70245,"src":["game"],"name":"Lava Burst","rank":"Rank 2","icon":237582,"cost":[{"power":0,"amount":230}],"castTime":2500,"cooldown":10000,"maxRange":30.0}
+{"key":1238299,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":165}]}
 {"key":1238300,"since":70245,"src":["game"],"name":"Lava Burst","rank":"Rank 3","icon":237582,"cost":[{"power":0,"amount":265}],"castTime":2500,"cooldown":10000,"maxRange":30.0}
+{"key":1238300,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":230}]}
 {"key":1239242,"since":70245,"src":["game"],"name":"Riptide","rank":"Rank 2","icon":252995,"cost":[{"power":0,"amount":300}],"cooldown":6000,"maxRange":40.0}
 {"key":1239243,"since":70245,"src":["game"],"name":"Riptide","rank":"Rank 3","icon":252995,"cost":[{"power":0,"amount":385}],"cooldown":6000,"maxRange":40.0}
+{"key":1239570,"since":70707,"day":"2026-10-31","src":["game"],"name":"Holy Shield","rank":"Rank 4","icon":135880}
 {"key":1239696,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 2","icon":135735,"castTime":2500,"maxRange":30.0}
+{"key":1239696,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500}
 {"key":1239697,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 3","icon":135735,"castTime":2500,"maxRange":30.0}
+{"key":1239697,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500}
 {"key":1239699,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 4","icon":135735,"castTime":2500,"maxRange":30.0}
+{"key":1239699,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500}
 {"key":1239700,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 5","icon":135735,"castTime":2500,"maxRange":30.0}
+{"key":1239700,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500}
 {"key":1240044,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 3","icon":135844,"cost":[{"power":0,"amount":70}],"maxRange":30.0}
+{"key":1240044,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1240045,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 4","icon":135844,"cost":[{"power":0,"amount":105}],"maxRange":30.0}
+{"key":1240045,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1240046,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 5","icon":135844,"cost":[{"power":0,"amount":120}],"maxRange":30.0}
+{"key":1240046,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1240047,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 6","icon":135844,"cost":[{"power":0,"amount":160}],"maxRange":30.0}
+{"key":1240047,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1240193,"since":70245,"src":["game"],"name":"Slam","rank":"Rank 1","icon":132340,"cost":[{"power":1,"amount":150}],"castTime":1500,"cooldown":18000,"maxRange":5.0}
 {"key":1240720,"since":70245,"src":["game"],"name":"Penance","rank":"Rank 2","icon":237545,"cost":[{"power":0,"amount":185}],"cooldown":12000,"maxRange":36.0}
+{"key":1240720,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":220}]}
 {"key":1240721,"since":70245,"src":["game"],"name":"Penance","rank":"Rank 3","icon":237545,"cost":[{"power":0,"amount":270}],"cooldown":12000,"maxRange":36.0}
 {"key":1240770,"since":70245,"src":["game"],"name":"Binding Heal","rank":"Rank 2","icon":135883,"cost":[{"power":0,"amount":185}],"castTime":1500,"maxRange":40.0}
 {"key":1240771,"since":70245,"src":["game"],"name":"Binding Heal","rank":"Rank 3","icon":135883,"cost":[{"power":0,"amount":215}],"castTime":1500,"maxRange":40.0}
@@ -4679,10 +4750,10 @@
 {"key":1249966,"since":70245,"src":["game"],"name":"Calcified Smoothie","icon":136192,"castTime":3000}
 {"key":1249967,"since":70245,"src":["game"],"name":"Spicy Smoothie","icon":136192,"castTime":3000}
 {"key":1249968,"since":70245,"src":["game"],"name":"Wicked Smoothie","icon":136192,"castTime":3000}
-{"key":1250013,"since":0,"src":[7],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
-{"key":1250014,"since":0,"src":[7],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
-{"key":1250015,"since":0,"src":[7],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
-{"key":1250016,"since":0,"src":[7],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
+{"key":1250013,"since":0,"src":[7,"game"],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
+{"key":1250014,"since":0,"src":[7,"game"],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
+{"key":1250015,"since":0,"src":[7,"game"],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
+{"key":1250016,"since":0,"src":[7,"game"],"name":"Summon Lashling","description":"Right Click to summon and dismiss a lashling.","icon":132311,"cooldown":1500}
 {"key":1250142,"since":70245,"src":["game"],"name":"Savory Stag Sliders","icon":136192,"castTime":3000}
 {"key":1250143,"since":70245,"src":["game"],"name":"Soaring Pamplona","icon":136192,"castTime":3000}
 {"key":1250144,"since":70245,"src":["game"],"name":"Bat Hachee","icon":136192,"castTime":3000}
@@ -4702,6 +4773,7 @@
 {"key":1250158,"since":70245,"src":["game"],"name":"Clam Linguine","icon":136192,"castTime":3000}
 {"key":1250775,"since":70245,"src":["game"],"name":"Revealing Draught","icon":136235,"castTime":3000}
 {"key":1250776,"since":70245,"src":["game"],"name":"Draught of Predatory Senses","icon":136235,"castTime":3000}
+{"key":1250776,"since":70707,"day":"2026-10-31","src":["game"],"name":"Potion of Predatory Senses"}
 {"key":1250777,"since":70245,"src":["game"],"name":"Elixir of Cunning","icon":136235,"castTime":3000}
 {"key":1250778,"since":70245,"src":["game"],"name":"Elixir of the Phalanx","icon":136235,"castTime":3000}
 {"key":1250779,"since":70245,"src":["game"],"name":"Minor Cleric's Elixir","icon":136235,"castTime":3000}
@@ -4910,6 +4982,7 @@
 {"key":1254979,"since":70245,"src":["game"],"name":"Heavy Scorpid Boots","icon":136235,"castTime":12500}
 {"key":1254980,"since":70245,"src":["game"],"name":"Charged Scorpid Bracers","icon":136235,"castTime":12500}
 {"key":1254981,"since":70245,"src":["game"],"name":"Supple Scorpid Shoulder","icon":136235,"castTime":12500}
+{"key":1254981,"since":70707,"day":"2026-10-31","src":["game"],"name":"Supple Scorpid Shoulders"}
 {"key":1254982,"since":70245,"src":["game"],"name":"Mender's Mail Belt","icon":136235,"castTime":12500}
 {"key":1254983,"since":70245,"src":["game"],"name":"Skirmisher's Mail Belt","icon":136235,"castTime":12500}
 {"key":1254984,"since":70245,"src":["game"],"name":"Skycaller's Mail Belt","icon":136235,"castTime":12500}
@@ -4919,6 +4992,7 @@
 {"key":1254988,"since":70245,"src":["game"],"name":"Skycaller's Mail Gauntlets","icon":136235,"castTime":12500}
 {"key":1254989,"since":70245,"src":["game"],"name":"Stalker's Mail Gauntlets","icon":136235,"castTime":12500}
 {"key":1254990,"since":70245,"src":["game"],"name":"Charged Scorpid Shoulder","icon":136235,"castTime":12500}
+{"key":1254990,"since":70707,"day":"2026-10-31","src":["game"],"name":"Charged Scorpid Shoulders"}
 {"key":1254991,"since":70245,"src":["game"],"name":"Supple Scorpid Bracers","icon":136235,"castTime":12500}
 {"key":1254992,"since":70245,"src":["game"],"name":"Charged Scorpid Helm","icon":136235,"castTime":12500}
 {"key":1254993,"since":70245,"src":["game"],"name":"Supple Scorpid Leggings","icon":136235,"castTime":12500}
@@ -4933,9 +5007,13 @@
 {"key":1255002,"since":70245,"src":["game"],"name":"Skycaller's Mail Bracers","icon":136235,"castTime":12500}
 {"key":1255003,"since":70245,"src":["game"],"name":"Stalker's Mail Bracers","icon":136235,"castTime":12500}
 {"key":1255004,"since":70245,"src":["game"],"name":"Mender's Mail Shoulder","icon":136235,"castTime":12500}
+{"key":1255004,"since":70707,"day":"2026-10-31","src":["game"],"name":"Mender's Mail Shoulders"}
 {"key":1255005,"since":70245,"src":["game"],"name":"Skirmisher's Mail Shoulder","icon":136235,"castTime":12500}
+{"key":1255005,"since":70707,"day":"2026-10-31","src":["game"],"name":"Skirmisher's Mail Shoulders"}
 {"key":1255006,"since":70245,"src":["game"],"name":"Skycaller's Mail Shoulder","icon":136235,"castTime":12500}
+{"key":1255006,"since":70707,"day":"2026-10-31","src":["game"],"name":"Skycaller's Mail Shoulders"}
 {"key":1255007,"since":70245,"src":["game"],"name":"Stalker's Mail Shoulder","icon":136235,"castTime":12500}
+{"key":1255007,"since":70707,"day":"2026-10-31","src":["game"],"name":"Stalker's Mail Shoulders"}
 {"key":1255008,"since":70245,"src":["game"],"name":"Mender's Mail Boots","icon":136235,"castTime":12500}
 {"key":1255009,"since":70245,"src":["game"],"name":"Skirmisher's Mail Boots","icon":136235,"castTime":12500}
 {"key":1255010,"since":70245,"src":["game"],"name":"Skycaller's Mail Boots","icon":136235,"castTime":12500}
@@ -4952,9 +5030,11 @@
 {"key":1255021,"since":70245,"src":["game"],"name":"Blue Suede Belt","icon":136235,"castTime":12500}
 {"key":1255022,"since":70245,"src":["game"],"name":"Tooled Leather Bracers","icon":136235,"castTime":12500}
 {"key":1255023,"since":70245,"src":["game"],"name":"Wicked Leather Shoulder","icon":136235,"castTime":12500}
+{"key":1255023,"since":70707,"day":"2026-10-31","src":["game"],"name":"Wicked Leather Shoulders"}
 {"key":1255024,"since":70245,"src":["game"],"name":"Blue Suede Armor","icon":136235,"castTime":12500}
 {"key":1255025,"since":70245,"src":["game"],"name":"Tooled Leather Crown","icon":136235,"castTime":12500}
 {"key":1255026,"since":70245,"src":["game"],"name":"Blue Suede Shoulder","icon":136235,"castTime":12500}
+{"key":1255026,"since":70707,"day":"2026-10-31","src":["game"],"name":"Blue Suede Shoulders"}
 {"key":1255027,"since":70245,"src":["game"],"name":"Tooled Leather Gauntlets","icon":136235,"castTime":12500}
 {"key":1255028,"since":70245,"src":["game"],"name":"Wicked Leather Boots","icon":136235,"castTime":12500}
 {"key":1255029,"since":70245,"src":["game"],"name":"Blue Suede Pants","icon":136235,"castTime":12500}
@@ -4984,10 +5064,15 @@
 {"key":1255053,"since":70245,"src":["game"],"name":"Skulker's Leather Bracers","icon":136235,"castTime":12500}
 {"key":1255054,"since":70245,"src":["game"],"name":"Prowler's Leather Bracers","icon":136235,"castTime":12500}
 {"key":1255055,"since":70245,"src":["game"],"name":"Mender's Leather Shoulder","icon":136235,"castTime":12500}
+{"key":1255055,"since":70707,"day":"2026-10-31","src":["game"],"name":"Mender's Leather Shoulders"}
 {"key":1255056,"since":70245,"src":["game"],"name":"Skycaller's Leather Shoulder","icon":136235,"castTime":12500}
+{"key":1255056,"since":70707,"day":"2026-10-31","src":["game"],"name":"Skycaller's Leather Shoulders"}
 {"key":1255057,"since":70245,"src":["game"],"name":"Warden's Leather Shoulder","icon":136235,"castTime":12500}
+{"key":1255057,"since":70707,"day":"2026-10-31","src":["game"],"name":"Warden's Leather Shoulders"}
 {"key":1255058,"since":70245,"src":["game"],"name":"Skulker's Leather Shoulder","icon":136235,"castTime":12500}
+{"key":1255058,"since":70707,"day":"2026-10-31","src":["game"],"name":"Skulker's Leather Shoulders"}
 {"key":1255059,"since":70245,"src":["game"],"name":"Prowler's Leather Shoulder","icon":136235,"castTime":12500}
+{"key":1255059,"since":70707,"day":"2026-10-31","src":["game"],"name":"Prowler's Leather Shoulders"}
 {"key":1255060,"since":70245,"src":["game"],"name":"Mender's Leather Shoes","icon":136235,"castTime":12500}
 {"key":1255061,"since":70245,"src":["game"],"name":"Skycaller's Leather Shoes","icon":136235,"castTime":12500}
 {"key":1255062,"since":70245,"src":["game"],"name":"Warden's Leather Shoes","icon":136235,"castTime":12500}
@@ -5212,12 +5297,15 @@
 {"key":1259348,"since":70245,"src":["game"],"name":"Leather Tourniquet","description":"Creates a Leather Tourniquet.","icon":136192,"castTime":3000}
 {"key":1259349,"since":70245,"src":["game"],"name":"Surgical Tourniquet","description":"Creates a Surgical Tourniquet.","icon":136192,"castTime":3000}
 {"key":1259416,"since":70245,"src":["game"],"name":"Walk on Air","rank":"Racial","icon":132845,"cooldown":120000}
+{"key":1259416,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":90000}
 {"key":1259686,"since":70245,"src":["game"],"name":"Skysight","rank":"Racial","icon":1029587,"castTime":500,"cooldown":120000}
 {"key":1259705,"since":70245,"src":["game"],"name":"Read Ley Line","rank":"Racial","icon":236219,"castTime":2000,"cooldown":120000}
+{"key":1259705,"since":70707,"day":"2026-10-31","src":["game"],"name":"Read Leyline","castTime":500}
 {"key":1259707,"since":70245,"src":["game"],"name":"Elemental Insight","rank":"Racial Passive","icon":4630367}
 {"key":1259710,"since":70245,"src":["game"],"name":"Wind Blessed","rank":"Racial Passive","icon":463565}
 {"key":1259718,"since":70245,"src":["game"],"name":"Will to Survive","rank":"Racial","description":"Instantly removes all Stun effects.","icon":136129,"cooldown":180000}
 {"key":1259719,"since":70245,"src":["game"],"name":"Mace Specialization","rank":"Racial Passive","icon":133042}
+{"key":1259719,"since":70707,"day":"2026-10-31","src":["game"],"name":"Artisan's Precision","icon":133046}
 {"key":1259721,"since":70245,"src":["game"],"name":"Big Game Hunter","rank":"Racial Passive","icon":135614}
 {"key":1259799,"since":70245,"src":["game"],"name":"Elune's Light","rank":"Racial","icon":136057,"cooldown":180000}
 {"key":1259802,"since":70245,"src":["game"],"name":"Expansive Mind","rank":"Racial Passive","icon":132864}
@@ -5267,10 +5355,15 @@
 {"key":1263425,"since":70245,"src":["game"],"name":"Faction Banner","rank":"Tier 1","description":"Craft a Faction Banner.","icon":132484,"castTime":10000}
 {"key":1264456,"since":70245,"src":["game"],"name":"Thunderstomp","rank":"Rank 4","icon":132189,"maxRange":100.0}
 {"key":1264478,"since":70245,"src":["game"],"name":"Sonic Blast","rank":"Rank 1","icon":252188,"cost":[{"power":2,"amount":80}],"cooldown":30000,"maxRange":5.0}
+{"key":1264478,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":60000}
 {"key":1264479,"since":70245,"src":["game"],"name":"Sonic Blast","rank":"Rank 2","icon":252188,"cost":[{"power":2,"amount":80}],"cooldown":30000,"maxRange":5.0}
+{"key":1264479,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":60000}
 {"key":1264480,"since":70245,"src":["game"],"name":"Sonic Blast","rank":"Rank 3","icon":252188,"cost":[{"power":2,"amount":80}],"cooldown":30000,"maxRange":5.0}
+{"key":1264480,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":60000}
 {"key":1264481,"since":70245,"src":["game"],"name":"Sonic Blast","rank":"Rank 4","icon":252188,"cost":[{"power":2,"amount":80}],"cooldown":30000,"maxRange":5.0}
+{"key":1264481,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":60000}
 {"key":1264482,"since":70245,"src":["game"],"name":"Sonic Blast","rank":"Rank 5","icon":252188,"cost":[{"power":2,"amount":80}],"cooldown":30000,"maxRange":5.0}
+{"key":1264482,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":60000}
 {"key":1264727,"since":70245,"src":["game"],"name":"Swipe","rank":"Rank 1","icon":134296,"maxRange":100.0}
 {"key":1264729,"since":70245,"src":["game"],"name":"Swipe","rank":"Rank 2","icon":134296,"maxRange":100.0}
 {"key":1264730,"since":70245,"src":["game"],"name":"Swipe","rank":"Rank 3","icon":134296,"maxRange":100.0}
@@ -5498,6 +5591,7 @@
 {"key":1295805,"since":70245,"src":["game"],"name":"Briny Seafood Stew","icon":136192,"castTime":3000}
 {"key":1295834,"since":70245,"src":["game"],"name":"Plain Ol' Paletusk","icon":136192,"castTime":3000}
 {"key":1296017,"since":70245,"src":["game"],"name":"Comprehend Scroll","description":"Decipher an untranslated scroll.","icon":8188276,"maxRange":5.0}
+{"key":1296017,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Comprehension"}
 {"key":1296534,"since":70245,"src":["game"],"name":"Summon Forsaken Charger","rank":"Summon","description":"Summons a Forsaken Charger, which serves as a mount.","icon":132226,"cost":[{"power":0,"amount":150}],"castTime":3000}
 {"key":1297120,"since":70245,"src":["game"],"name":"Venomspew Gloves","icon":136235,"castTime":3000}
 {"key":1297121,"since":70245,"src":["game"],"name":"Venomspew Cord","icon":136235,"castTime":3000}
@@ -5525,7 +5619,7 @@
 {"key":1297143,"since":70245,"src":["game"],"name":"Clutchlord's Stompers","icon":136235,"castTime":3000}
 {"key":1297608,"since":70245,"src":["game"],"name":"Summon Excitable Slime","description":"Right Click to summon and dismiss your slimeling.","icon":132108}
 {"key":1297659,"since":70245,"src":["game"],"name":"Teleport: Dalaran","description":"Teleports the caster to Dalaran.","icon":1536440,"cost":[{"power":0,"amount":120}],"castTime":10000}
-{"key":1297823,"since":0,"src":[7],"name":"Pinky","description":"Right click to summon and dismiss this companion.","icon":7889090}
+{"key":1297823,"since":0,"src":[7,"game"],"name":"Pinky","description":"Right click to summon and dismiss this companion.","icon":7889090}
 {"key":1298450,"since":70245,"src":["game"],"name":"White Kodo","description":"Summons and dismisses a rideable white kodo.","icon":132243,"castTime":3000}
 {"key":1298496,"since":70245,"src":["game"],"name":"Black Skeletal Horse","description":"Summons and dismisses a rideable skeletal horse.","icon":132264,"castTime":3000}
 {"key":1299026,"since":70245,"src":["game"],"name":"Shatter Curse","rank":"Racial","icon":136082,"cooldown":180000}
@@ -5608,6 +5702,7 @@
 {"key":1302161,"since":70245,"src":["game"],"name":"Harvester Override Signalcaster","icon":136235,"castTime":12500}
 {"key":1302196,"since":70245,"src":["game"],"name":"Summon Prairie Wolf Pup","description":"Right Click to summon and dismiss your prairie wolf pup.","icon":132203,"cooldown":1500}
 {"key":1302508,"since":70245,"src":["game"],"name":"Study","description":"Perform spell research, resulting in a bundle of scrolls. Requires a suitable library.","icon":133740,"castTime":6000,"cooldown":3600000}
+{"key":1302508,"since":70707,"day":"2026-10-31","src":["game"],"rank":"Comprehension"}
 {"key":1302598,"since":70245,"src":["game"],"name":"Rough Copper Chain Boots","icon":136192,"castTime":5125}
 {"key":1302604,"since":70245,"src":["game"],"name":"Light Leather Reagent Bag","icon":132149,"castTime":5125}
 {"key":1302650,"since":70245,"src":["game"],"name":"Summon Spectral Bear Cub","description":"Right Click to summon and dismiss your spectral bear cub.","icon":294471,"cooldown":1500}
@@ -5686,10 +5781,14 @@
 {"key":1309546,"since":70245,"src":["game"],"name":"Summon Undercity Cockroach","description":"Right Click to summon and dismiss your cockroach.","icon":294474,"cooldown":1500}
 {"key":1309547,"since":70245,"src":["game"],"name":"Summon Jungle Boa","description":"Right Click to summon and dismiss your snake.","icon":136040,"cooldown":1500}
 {"key":1309595,"since":70245,"src":["game"],"name":"Shadow Word: Death","rank":"Rank 1","icon":136149,"cost":[{"power":0,"amount":175}],"cooldown":15000,"maxRange":30.0}
+{"key":1309595,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":18000}
 {"key":1309631,"since":70245,"src":["game"],"name":"Living Spirit","icon":136037}
 {"key":1309633,"since":70245,"src":["game"],"name":"Shadow Word: Death","rank":"Rank 2","icon":136149,"cost":[{"power":0,"amount":205}],"cooldown":15000,"maxRange":30.0}
+{"key":1309633,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":18000}
 {"key":1309635,"since":70245,"src":["game"],"name":"Shadow Word: Death","rank":"Rank 3","icon":136149,"cost":[{"power":0,"amount":250}],"cooldown":15000,"maxRange":30.0}
+{"key":1309635,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":18000}
 {"key":1309636,"since":70245,"src":["game"],"name":"Shadow Word: Death","rank":"Rank 4","icon":136149,"cost":[{"power":0,"amount":340}],"cooldown":15000,"maxRange":30.0}
+{"key":1309636,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":18000}
 {"key":1309730,"since":70245,"src":["game"],"name":"Summon Brown Ground Squirrel","description":"Right Click to summon and dismiss your ground squirrel.","icon":132161,"cooldown":1500}
 {"key":1309736,"since":70245,"src":["game"],"name":"Summon Red Ground Squirrel","description":"Right Click to summon and dismiss your ground squirrel.","icon":132161,"cooldown":1500}
 {"key":1309752,"since":70245,"src":["game"],"name":"Summon Brown Rabbit","description":"Right Click to summon and dismiss your rabbit.","icon":132765,"cooldown":1500}
@@ -5724,15 +5823,19 @@
 {"key":1310721,"since":70245,"src":["game"],"name":"Thousand Cuts","icon":132302}
 {"key":1310728,"since":70245,"src":["game"],"name":"Quietus","icon":132297}
 {"key":1310735,"since":70245,"src":["game"],"name":"Twist of Light","icon":135878}
+{"key":1310735,"since":70707,"day":"2026-10-31","src":["game"],"name":"Unsealed Wrath"}
 {"key":1310785,"since":70245,"src":["game"],"name":"Sniper Shot","rank":"Rank 2","icon":1412205,"cost":[{"power":0,"amount":365}],"castTime":4000,"cooldown":15000,"minRange":8.0,"maxRange":45.0}
 {"key":1310786,"since":70245,"src":["game"],"name":"Sniper Shot","rank":"Rank 3","icon":1412205,"cost":[{"power":0,"amount":365}],"castTime":4000,"cooldown":15000,"minRange":8.0,"maxRange":45.0}
 {"key":1310897,"since":70245,"src":["game"],"name":"Voice of Truth","icon":134229,"cooldown":180000}
 {"key":1310899,"since":70245,"src":["game"],"name":"Reverence","icon":135895}
 {"key":1310904,"since":70245,"src":["game"],"name":"Divine Precision","icon":135918}
+{"key":1310904,"since":70707,"day":"2026-10-31","src":["game"],"icon":135933}
 {"key":1310905,"since":70245,"src":["game"],"name":"Consecrated Ground","icon":135926}
 {"key":1310911,"since":70245,"src":["game"],"name":"Light's Vigil","rank":"Rank 1","icon":236256,"cost":[{"power":0,"amount":730}],"castTime":1500,"cooldown":6000,"maxRange":20.0}
+{"key":1310911,"since":70707,"day":"2026-10-31","src":["game"],"maxRange":40.0}
 {"key":1310949,"since":70245,"src":["game"],"name":"Malevolence","icon":136158}
 {"key":1310994,"since":70245,"src":["game"],"name":"Swift Judgement","icon":236258,"cooldown":60000}
+{"key":1310994,"since":70707,"day":"2026-10-31","src":["game"],"description":"Unleash the energy of a Seal spell upon an enemy. Does not consume the Seal. Refer to individual Seals for Judgement effect. Does not share a cooldown with your Judgement ability.","maxRange":10.0}
 {"key":1311015,"since":70245,"src":["game"],"name":"Templar's Bulwark","icon":236264,"cost":[{"power":0,"amount":110}],"cooldown":300000}
 {"key":1311034,"since":70245,"src":["game"],"name":"Iron Creed","icon":135925}
 {"key":1311074,"since":70245,"src":["game"],"name":"Sanctified Judgement","icon":236255}
@@ -5740,7 +5843,9 @@
 {"key":1311085,"since":70245,"src":["game"],"name":"Instrument of Law","icon":135897}
 {"key":1311087,"since":70245,"src":["game"],"name":"Sacred Arbiter","icon":135278}
 {"key":1311590,"since":70245,"src":["game"],"name":"Light's Vigil","rank":"Rank 2","icon":236256,"cost":[{"power":0,"amount":1000}],"castTime":1500,"cooldown":6000,"maxRange":20.0}
+{"key":1311590,"since":70707,"day":"2026-10-31","src":["game"],"maxRange":40.0}
 {"key":1311595,"since":70245,"src":["game"],"name":"Light's Vigil","rank":"Rank 3","icon":236256,"cost":[{"power":0,"amount":1340}],"castTime":1500,"cooldown":6000,"maxRange":20.0}
+{"key":1311595,"since":70707,"day":"2026-10-31","src":["game"],"maxRange":40.0}
 {"key":1311606,"since":70245,"src":["game"],"name":"Holy Shock","rank":"Rank 1","icon":135972,"cost":[{"power":0,"amount":160}],"cooldown":10000,"maxRange":20.0}
 {"key":1311649,"since":70245,"src":["game"],"name":"Seal of Fury","rank":"Rank 1","icon":135957,"cost":[{"power":0,"amount":40}]}
 {"key":1311656,"since":70245,"src":["game"],"name":"Seal of Fury","rank":"Rank 2","icon":135957,"cost":[{"power":0,"amount":60}]}
@@ -5748,6 +5853,7 @@
 {"key":1311677,"since":70245,"src":["game"],"name":"Curse of the Elements","rank":"Rank 3","icon":615099,"cost":[{"power":0,"amount":150}],"maxRange":30.0}
 {"key":1311680,"since":70245,"src":["game"],"name":"Curse of the Elements","rank":"Rank 4","icon":615099,"cost":[{"power":0,"amount":200}],"maxRange":30.0}
 {"key":1312002,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 1","icon":135844,"cost":[{"power":0,"amount":45}],"maxRange":30.0}
+{"key":1312002,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1312880,"since":70245,"src":["game"],"name":"Summon Baby Crocolisk","description":"Right Click to summon and dismiss your baby crocolisk.","icon":656555,"cooldown":1500}
 {"key":1314103,"since":70245,"src":["game"],"name":"Improved Seal of Fury","icon":135960}
 {"key":1314120,"since":70245,"src":["game"],"name":"Summon Condor Hatchling","description":"Right Click to summon and dismiss your condor hatchling.","icon":656555,"cooldown":1500}
@@ -5756,6 +5862,7 @@
 {"key":1316697,"since":70245,"src":["game"],"name":"Wrack","rank":"Rank 1","icon":460687,"cost":[{"power":0,"amount":200}],"maxRange":30.0}
 {"key":1316778,"since":70245,"src":["game"],"name":"Summon Minimule","description":"Right Click to summon and dismiss your Minimule.","icon":134010,"cooldown":1500}
 {"key":1316995,"since":70245,"src":["game"],"name":"Penance","rank":"Rank 4","icon":237545,"cost":[{"power":0,"amount":355}],"cooldown":12000,"maxRange":36.0}
+{"key":1316995,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":385}]}
 {"key":1317006,"since":70245,"src":["game"],"name":"Litany of Light","icon":134943}
 {"key":1317256,"since":70245,"src":["game"],"name":"Unknown","description":"To be added in a future update.","icon":134400}
 {"key":1317257,"since":70245,"src":["game"],"name":"Strider Kick","rank":"Rank 1","icon":132198,"cooldown":8000,"maxRange":5.0}
@@ -5784,21 +5891,36 @@
 {"key":1319313,"since":70245,"src":["game"],"name":"Plated Armorfish","icon":136192,"castTime":3000}
 {"key":1320758,"since":70245,"src":["game"],"name":"Summon Spawn of Grubthor","description":"Right Click to summon and dismiss Spawn of Grubthor.","icon":134895,"cooldown":1500}
 {"key":1321200,"since":70245,"src":["game"],"name":"Verdant Sea Turtle","description":"Summons and dismisses a rideable sea turtle.","icon":136235,"castTime":3000}
+{"key":1321200,"since":70707,"day":"2026-10-31","src":["game"],"icon":8517112}
 {"key":1321221,"since":70245,"src":["game"],"name":"Crimson Rooster","description":"Summons and dismisses a rideable rooster.","icon":8426877,"castTime":3000}
 {"key":1321233,"since":70245,"src":["game"],"name":"Spectral Wolf Pack","description":"Summons and dismisses a rideable [PH] spectral wolf pack.","icon":8408196,"castTime":3000}
+{"key":1321233,"since":70707,"day":"2026-10-31","src":["game"],"description":"Summons and dismisses a rideable spectral wolf pack. Up to two nearby party members may join in the pack when mounting."}
 {"key":1322605,"since":70245,"src":["game"],"name":"Shifting Power","icon":538514,"cooldown":16000}
+{"key":1322605,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1322670,"since":70245,"src":["game"],"name":"Improved Shifting Power","icon":236172}
-{"key":1323963,"since":0,"src":[7],"name":"Furious Precision","icon":236309}
-{"key":1323964,"since":0,"src":[7],"name":"Lingering Rage","icon":132356}
-{"key":1323967,"since":0,"src":[7],"name":"Gore Drinker","icon":135727}
-{"key":1325256,"since":0,"src":[7],"name":"Mana Tide Totem","rank":"Rank 4","icon":135861,"cost":[{"power":0,"amount":60}],"cooldown":300000}
+{"key":1323963,"since":0,"src":[7,"game"],"name":"Furious Precision","icon":236309}
+{"key":1323964,"since":0,"src":[7,"game"],"name":"Lingering Rage","icon":132356}
+{"key":1323967,"since":0,"src":[7,"game"],"name":"Gore Drinker","icon":135727}
+{"key":1325256,"since":0,"src":[7,"game"],"name":"Mana Tide Totem","rank":"Rank 4","icon":135861,"cost":[{"power":0,"amount":60}],"cooldown":300000}
 {"key":1325499,"since":0,"src":[7],"name":"Revoke","description":"Remove target party or raid member's Salvation or Mass Salvation.","icon":135944,"maxRange":40.0}
-{"key":1326047,"since":0,"src":[7],"name":"Lava Burst","rank":"Rank 4","icon":237582,"cost":[{"power":0,"amount":265}],"castTime":2500,"cooldown":10000,"maxRange":30.0}
+{"key":1326047,"since":0,"src":[7,"game"],"name":"Lava Burst","rank":"Rank 4","icon":237582,"cost":[{"power":0,"amount":265}],"castTime":2500,"cooldown":10000,"maxRange":30.0}
 {"key":1326053,"since":0,"src":[7],"name":"Frost Blast","rank":"Rank 1","icon":135989,"cost":[{"power":0,"amount":40}],"castTime":1500,"maxRange":30.0}
 {"key":1326054,"since":0,"src":[7],"name":"Frost Blast","rank":"Rank 2","icon":135989,"cost":[{"power":0,"amount":65}],"castTime":1500,"maxRange":30.0}
 {"key":1326055,"since":0,"src":[7],"name":"Frost Blast","rank":"Rank 3","icon":135989,"cost":[{"power":0,"amount":90}],"castTime":1500,"maxRange":30.0}
-{"key":1326079,"since":0,"src":[7],"name":"Arcane Wrath","rank":"Rank 1","icon":236222,"cost":[{"power":0,"amount":140}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
-{"key":1326080,"since":0,"src":[7],"name":"Arcane Wrath","rank":"Rank 2","icon":236222,"cost":[{"power":0,"amount":220}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
-{"key":1326081,"since":0,"src":[7],"name":"Arcane Wrath","rank":"Rank 3","icon":236222,"cost":[{"power":0,"amount":305}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
-{"key":1326082,"since":0,"src":[7],"name":"Arcane Wrath","rank":"Rank 4","icon":236222,"cost":[{"power":0,"amount":395}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
-{"key":1326159,"since":0,"src":[7],"name":"Dark Inspiration","icon":463284}
+{"key":1326079,"since":0,"src":[7,"game"],"name":"Arcane Wrath","rank":"Rank 1","icon":236222,"cost":[{"power":0,"amount":140}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
+{"key":1326080,"since":0,"src":[7,"game"],"name":"Arcane Wrath","rank":"Rank 2","icon":236222,"cost":[{"power":0,"amount":220}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
+{"key":1326081,"since":0,"src":[7,"game"],"name":"Arcane Wrath","rank":"Rank 3","icon":236222,"cost":[{"power":0,"amount":305}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
+{"key":1326082,"since":0,"src":[7,"game"],"name":"Arcane Wrath","rank":"Rank 4","icon":236222,"cost":[{"power":0,"amount":395}],"castTime":3500,"cooldown":6000,"maxRange":30.0}
+{"key":1326159,"since":0,"src":[7,"game"],"name":"Dark Inspiration","icon":463284}
+{"key":1328370,"since":70707,"day":"2026-10-31","src":["game"],"name":"Turn Evil","icon":135983}
+{"key":1328544,"since":70707,"day":"2026-10-31","src":["game"],"name":"Shieldsworn","icon":135911}
+{"key":1328546,"since":70707,"day":"2026-10-31","src":["game"],"name":"Stoicism","icon":135978}
+{"key":1328548,"since":70707,"day":"2026-10-31","src":["game"],"name":"Oath of Light","icon":135909,"maxRange":40.0}
+{"key":1328550,"since":70707,"day":"2026-10-31","src":["game"],"name":"Boundless Light","icon":236261}
+{"key":1328569,"since":70707,"day":"2026-10-31","src":["game"],"name":"Holy Binding","icon":135883}
+{"key":1328613,"since":70707,"day":"2026-10-31","src":["game"],"name":"Predatory Discipline","description":"Your Ferocious Bite ability no longer converts extra Energy into damage, but still deals extra damage based on your excess Energy.","icon":1033484}
+{"key":1328616,"since":70707,"day":"2026-10-31","src":["game"],"name":"Lacerate","rank":"Rank 2","icon":132131,"cost":[{"power":1,"amount":150}],"maxRange":5.0}
+{"key":1328617,"since":70707,"day":"2026-10-31","src":["game"],"name":"Lacerate","rank":"Rank 1","icon":132131,"cost":[{"power":1,"amount":150}],"maxRange":5.0}
+{"key":1328618,"since":70707,"day":"2026-10-31","src":["game"],"name":"Ferocious Bite","rank":"Rank 1","icon":132127,"cost":[{"power":3,"amount":35},{"power":4,"amount":1}],"maxRange":5.0}
+{"key":1328621,"since":70707,"day":"2026-10-31","src":["game"],"name":"Bloom","icon":134206}
+{"key":1328948,"since":70707,"day":"2026-10-31","src":["game"],"name":"Enchant Boots - Speed","icon":135913,"castTime":5000}

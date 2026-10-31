@@ -97,7 +97,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "travel.jsonl"
 MASTER = ROOT / "assets" / "data" / "Travel" / "Travel.jsonl"
-BUILD = 70245
+BUILD = 70707
 STRAIGHT = 2.0  # yards
 FLOAT = 5.0  # yards over or under the sea's level (0) a boat's way keeps to
 SAME = 20.0  # yards between two stops of one dock

@@ -105,7 +105,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "walking.jsonl"
 TRAVEL = ROOT / "assets" / "data" / "Travel" / "Travel.jsonl"  # the master's set Travel: its lifts
-BUILD = 70245          # the client build the game files are of (the set Tiles' build)
+BUILD = 70707          # the client build the game files are of (the set Tiles' build)
 
 GRID = 64              # tiles along each side of a continent
 TILE = 1600 / 3        # a tile's side in yards

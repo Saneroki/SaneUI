@@ -4,6 +4,7 @@
 # tools know (Doc/guides/data.md, *builds.toml*).
 [forever]
 70245 = { patch = "1.60.1" }
+70707 = { patch = "1.60.1", day = "2026-10-31" }
 
 [forever-ptr]
 

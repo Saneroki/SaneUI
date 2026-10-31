@@ -211,7 +211,7 @@ def set_file(master, schema, game):
         newest = versions[-1]
         if not newest.gone and not trusted(master, versions, base_view.get(key)):
             unverified.append(key)
-        if len(versions) > 1:
+        if len(versions) > 1 and schema.history:
             history.append(f"H{lua_key(key)} = {lua_string(VERSION.join(row(schema, v) for v in versions[:-1]))}")
     indexes = {}
     for name, index in schema.index.items():

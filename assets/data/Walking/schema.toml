@@ -1,6 +1,7 @@
 set = "Walking"
 key = "int"              # a terrain tile, keyed as in the set Tiles: continent * 4096 + row * 64 + column
 learn = false
+history = false          # the game reads a tile's newest version alone; the older stay in the master
 about = "Where players can walk, for Navigation's routes: per terrain tile its floors as rectangles with their openings, and its gates into the next tiles with what the walks between them cost, packed by our tools (Doc/ideas/Navigation.md, *The walking data*, *The coarse layer*)."
 
 [fields]

@@ -77,6 +77,17 @@ Then `saneui fixpatch` starts Claude Code in the project on the newest brief (`-
 paste into another session). `--again` writes a patch's folder anew from the newest two exports without
 exporting. A game's first export has nothing before it: its notes come with its next patch.
 
+**The game's facts** are the other half of a patch: `readpatch` reads the interface, not the master's items, spells and
+world. For a new build of Forever, with its client tables as CSV (hotfixes laid on) and its terrain files at hand:
+
+1. Its line in `assets/data/builds.toml`, then `dev/tools/game-data forever <build> <tables> <hotfixes> <day>` and
+   `dev/tools/data import dev/data/staging/game-forever.jsonl`: read the report, then `--apply`.
+2. `BUILD` in `dev/tools/map-data`, `travel-data`, `walk-data` and `walk-gates`, then the first two as `dev/tools/data`
+   takes them in (`travel-data` with the batches' `--lifts`, `--portals` and `--teleports`).
+3. The walking data only if the world moved (compare the terrain, the object files, the buildings and the models).
+   `dev/tools/walk-data --maps <map> --processes 3`, one map at a time: a whole run holds more memory than a Claude
+   session may. Each map's staging is taken in with `--apply --take`, then `dev/tools/walk-gates`.
+
 The settings (`~/.config/saneui/blizzard.json`): `exports` (the exports' folder), `install` (the game's World
 of Warcraft folder; the same default as `dev/build`), `extract` (the command that exports a product's build
 there), `reports` (where the patches' folders and the lookup go; without it `dev/blizzard/reports/`, not

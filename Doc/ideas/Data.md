@@ -2088,3 +2088,10 @@ open ones on 2026-10-17).
     unknown making. They stay, marked unverified (*Verified and unverified*), so the Tooltips module keeps its
     quest and drop lines, and give way entry by entry as the game's own data (1d.3, 1d.4) or a batch that
     passes replaces them. This is the one exception; no other batch is taken in this way.
+29. **A round of what has become public (Saneroki, 2026-10-31).** After a new build, and whenever newer facts have been
+    published, one round: the game's newest build and its hotfixes first, which outrank everything else; then each
+    source as a batch of its own, unverified. A newer reading of a source corrects what the master took from its older
+    reading, where the master still says what the older said and the entry stands on imports alone. What Forever's
+    servers answered corrects imports too, but never the game's lines, the sniffs or a fix. What play recorded only
+    fills what the master lacks, and a thing seen once is no fact. Chances and counts of other people's play stay
+    out. Batches 17 to 20 are the first such round; `Doc/guides/blizzard-updates.md` has the game's steps.

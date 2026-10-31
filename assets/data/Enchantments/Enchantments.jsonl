@@ -371,6 +371,7 @@
 {"key":845,"since":70245,"src":["game"],"name":"Herbalism +2"}
 {"key":846,"since":70245,"src":["game"],"name":"Fishing +2"}
 {"key":847,"since":70245,"src":["game"],"name":"All Stats +2"}
+{"key":847,"since":70707,"day":"2026-10-31","src":["game"],"name":"All Stats +1"}
 {"key":849,"since":70245,"src":["game"],"name":"Agility +3"}
 {"key":850,"since":70245,"src":["game"],"name":"Stamina +6"}
 {"key":851,"since":70245,"src":["game"],"name":"Spirit +5"}
@@ -2130,3 +2131,4 @@
 {"key":8718,"since":70245,"src":["game"],"name":"Precision"}
 {"key":8720,"since":70245,"src":["game"],"name":"+2% Crit"}
 {"key":8721,"since":70245,"src":["game"],"name":"Recovery"}
+{"key":8737,"since":70707,"day":"2026-10-31","src":["game"],"name":"Speed Increase"}

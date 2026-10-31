@@ -378,6 +378,9 @@ check("import beta: fits", after.errors, [])
 report, after, files = taken({"set": "Gear", "game": "forever-beta", "key": 101, "src": 2, "fields": {"quality": 5}}, take=True)
 check("import beta --take: a correction over live's base is the beta's own line",
       (of(files, "Gear/Gear.forever-beta.jsonl", 101), after.errors), ([{"key": 101, "since": 0, "src": [2], "quality": 5}], []))
+report, after, files = taken({**GAME_LINE, "key": 100, "build": 65100, "day": "2026-09-30", "fields": {"quality": 2}})
+check("import: live comes to say what the beta's line says: the line goes",
+      (of(files, "Gear/Gear.forever-beta.jsonl", 100), len(of(files, "Gear/Gear.forever-beta.jsonl", 103)), after.errors), ([], 1, []))
 
 # show, diff and stats ------------------------------------------------------------------------------------
 import views  # noqa: E402
@@ -416,6 +419,16 @@ import compile as compiler  # noqa: E402
 
 def files_of(folder):
     return {str(path.relative_to(folder)): path.read_bytes() for path in sorted(folder.rglob("*")) if path.is_file()}
+
+
+# A set without history: the game's file carries the newest versions alone, the master keeps them all
+sample_gear = sample.schemas["Gear"]
+check("compile: older versions go into the file", "H[100]" in compiler.set_file(sample, sample_gear, "forever")[0], True)
+sample_gear.history = False
+check("compile: history = false leaves them out", ("H[100]" in compiler.set_file(sample, sample_gear, "forever")[0],
+                                                   "R[100]" in compiler.set_file(sample, sample_gear, "forever")[0]), (False, True))
+sample_gear.history = True
+caught("a schema's history", lambda c: c.replace("Gear/schema.toml", 'learn = ', 'history = "yes"\nlearn = '), "'history' is true or false")
 
 
 def lua_rows(path):

@@ -140,6 +140,7 @@ about = "What our tool read of every quest, 2026-10-20."
 set = "Items"
 key = "int"              # Blizzard's ID; "text" for a set keyed by a name (CVarLabels)
 learn = true             # the game may teach it in play (Learned, step 1c)
+history = false          # optional: the set files carry only the newest versions (a big set no view asks the past of)
 about = "Every item players can have: what the game says about it, with its history."
 
 [fields]
@@ -273,6 +274,10 @@ written against the beta's view (live's newest version of each entry, with the b
 An entry live does not have starts with a full first line there. Its `since` values are the beta's builds:
 the check refuses a line whose build belongs to another game version, or whose batch source says another
 `game`.
+
+Such a line says what the other game version shows *otherwise*. When live comes to say the same, the import keeps
+only what the line still changes and drops one that changes nothing any more (`_catch_up`), and a game version with
+no line left in a set has no file there.
 
 ## Staging and the import
 
