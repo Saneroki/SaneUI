@@ -13,7 +13,7 @@ learn form-page names → `Engine.Reconcile` → module `REFRESH`.
 | `Data/Trainer.lua` | Class registration; reads families + conditions into `D.spells` (faction/race filtered); next-rank links for `D.Learned`; spell texts |
 | `Data/Classes/*.lua` | Hand-edited. Families: one string per spell, ranks in order as `spell:level:copper` (bare `spell` = rank not sold, e.g. start/quest). Conditions by spell ID: `talent`, `after`, `alone` (no rank-before requirement), `side`, `raceIDs`; each holds for its rank and later ranks until overridden |
 | `Data/QuestSpells.lua`, `WeaponSkills.lua`, `SkillLines.lua` | Race-specific rewards; weapon skills; English tab fallback and talent-tree lines |
-| `Engine.lua` | Reserve/clear/reconcile slots; defer real actions for combat or busy cursor |
+| `Engine.lua` | Reserve/clear/reconcile slots; defer real actions for combat or busy cursor; buttons follow a new rank (`RaiseRanks`) |
 | `Presets.lua` | Class-shared saved bar layouts; save/load/delete ask in the game's dialogs (`Core.AskText`, `Core.Confirm`) |
 | `Ghosts.lua` | Noninteractive grey overlays on real empty action buttons |
 
@@ -26,6 +26,15 @@ intent. Secret `HasAction` returns the sentinel `"unknown"`; reconciliation must
 Empty slots can be reserved during combat, but real action mutations require no combat and empty
 cursor. Engine has 1 s grace after own changes, and tracks automatic pushes for 60 s using the
 exact `SPELL_PUSHED_TO_ACTIONBAR` slot; never remove the player's other copy of that spell.
+
+**New ranks (Forever, option `ranks`, 2026-10-31):** the game leaves the old rank in a slot. `ScanBook` compares
+`S.known` with the last read (`NoteNewRanks`): a rank that went up goes into `S.outranked[old ID] = name`.
+`RaiseRanks`, first step of `Reconcile`, so behind `E.Blocked`, walks slots 1-180 except 121-144 (on no bar of ours)
+and puts `S.known[name]` on slots holding exactly that old ID. Only the rank that was highest moves: older
+ranks on a button are the player's downranking and stay; never widen this to "any lower rank". Macros stay.
+Upward only by rank number; no rank line = any change counts (professions). `lifted[new ID]` lets `UndoPushes`
+take off the game's own copy within the push window; the game does push ranks. Quiet: no chat line. A refused
+pick-up stays noted for the next update. First read compares with nothing, so login never moves a button.
 
 Eight managed bar offsets: `0,60,48,24,36,144,156,168`; 12 buttons each. Bar 1 form rows add
 `72,84,96,108`; read current button `.action` for paging. Other bars' buttons are found by the slot
@@ -73,7 +82,7 @@ A module-level stand-down (Core's door guard) runs `ns.GiveBack`, each step in `
 `RunUpdate`, the login timers and the book/drag `OnUpdate`s are `ns.Guard`ed, `Ghosts.Refresh` is a no-op once `off`.
 Watcher runs 10 frames after layout, then every 0.2 s only while visible.
 
-Options: `showHidden/home/compact/window/ghosts/announce/book`, initially true. `book` takes effect
+Options: `showHidden/home/compact/window/ghosts/announce/ranks/book`, initially true. `book` takes effect
 after reload. `ns.options` = `Core.Settings(ns.name)`; menu lines, the page checkbox and `/sane ab pages`
 write through `Core.Set` (the module's `changed` fires `REFRESH`; no second refresh); a switch's words
 via `Core.Described`. Every word shown is in `ns.TEXT` (`Abilities.lua`), the game's via `Core.Word`.

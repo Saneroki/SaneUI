@@ -31,6 +31,7 @@ S.QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 S.known = {}     -- [spell name] = spell ID of the rank you can cast now
 S.has = {}       -- [spell name] = true when you have a rank of it, passive spells too
 S.knownTab = {}  -- [spell name] = the spellbook tab a rank you have sits in
+S.outranked = {} -- [spell ID] = its name in S.known: a rank a new one replaced, until its buttons moved up (Engine.lua)
 S.stats = {}     -- what the list was built from, for /sane ab debug
 
 local unlearned = {} -- every spell and rank still to learn, sorted by name and rank (S.All)
@@ -224,6 +225,25 @@ S.TrainerClosed = RestoreFilter
 local probed = {}  -- [spell ID] = tab, or false: what the game's skill-line table said (FindTab)
 local lineCount = 0
 
+-- The number in a rank line ("Rank 3"); nil for a spell without one.
+local function RankNumber(id)
+    local sub = C_Spell.GetSpellSubtext(id)
+    return sub and tonumber(sub:match("%d+"))
+end
+
+-- This read of the spellbook against the last one: a spell with a new rank to cast outranks the one
+-- before. The first read has nothing to compare with, and a rank only goes up: one given back with a
+-- talent moves no button down. Without rank lines (a profession's Apprentice, Journeyman) the change counts.
+local function NoteNewRanks(before, after)
+    for name, id in pairs(after) do
+        local old = before[name]
+        if old and old ~= id then
+            local from, to = RankNumber(old), RankNumber(id)
+            if not (from and to and to <= from) then S.outranked[old] = name end
+        end
+    end
+end
+
 function S.ScanBook()
     local known, has, knownTab, low = {}, {}, {}, {}
     local lines = {}
@@ -257,6 +277,7 @@ function S.ScanBook()
             end
         end
     end
+    if Core.FOREVER and ns.options.ranks then NoteNewRanks(S.known, known) end
     S.known, S.has, S.knownTab = known, has, knownTab
     lineByName = lines
     -- a new tab moves the numbers of the others: ask the game again

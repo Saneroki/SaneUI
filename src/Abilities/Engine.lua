@@ -10,6 +10,9 @@ local _, ns = ...
 --
 --  The game only lets buttons change out of combat and with an empty cursor.
 --  Until then E.pending is set and the work is tried again.
+--
+--  Forever's ranks: the game leaves the old rank on a button when you learn a new
+--  one, so the buttons on the rank you had until now move up here (RaiseRanks).
 -------------------------------------------------------------------------------
 local E = {}
 ns.Engine = E
@@ -19,8 +22,10 @@ E.pending = false
 
 local pushed = {} -- [action slot] = { id = spell, at = when }: the game itself put a new spell there
 local grace = {}  -- [slot] = until when a slot we just changed may still read as its old self
+local lifted = {} -- [spell] = when a button of yours moved up to this rank
 local PUSH_WINDOW = 60
 local GRACE = 1
+local GAME_SLOTS_FROM, GAME_SLOTS_TO = 121, 144 -- on no bar of yours (ns.BARS, ns.PAGES, Bar 1's second page): left to the game
 
 local function Copy(entry)
     return { kind = entry.kind, id = entry.id, name = entry.name, icon = entry.icon }
@@ -98,10 +103,34 @@ function E.NotePushed(spellID, slot)
     if spellID and type(slot) == "number" and slot > 0 then pushed[slot] = { id = spellID, at = GetTime() } end
 end
 
+-- A new rank of a spell: every button on the rank you had until now moves up to it. A button on an
+-- older rank stays: it would have moved with an earlier rank, so it is there on purpose (a cheap
+-- heal, a slow). A macro's words are yours. What the game refuses now is tried at the next update.
+local function RaiseRanks(now)
+    if not next(S.outranked) then return end
+    local refused = {}
+    for slot = 1, ns.MAX_SLOT do
+        local real = (slot < GAME_SLOTS_FROM or slot > GAME_SLOTS_TO) and ns.RealEntry(slot)
+        local name = real and real.kind == "spell" and S.outranked[real.id]
+        local id = name and S.known[name]
+        if id and id ~= real.id then
+            if PutOnCursor({ kind = "spell", name = name }) then
+                PlaceAction(slot)
+                lifted[id] = now
+            else
+                refused[real.id] = name
+            end
+            ClearCursor()
+        end
+    end
+    S.outranked = refused
+end
+
 -- The game drops a newly learned spell on the first free button by itself. That was not
 -- your decision, so it must not end a reservation: the spell goes to its own reserved
--- button if it has one, and off a button that is reserved for something else. Only the
--- slot the game used is undone; the same spell on another button is yours.
+-- button if it has one, and off a button that is reserved for something else. A new rank
+-- that one of your buttons moved up to needs no second button. Only the slot the game
+-- used is undone; the same spell on another button is yours.
 local function UndoPushes(reserved, now)
     for slot, push in pairs(pushed) do
         pushed[slot] = nil
@@ -113,7 +142,9 @@ local function UndoPushes(reserved, now)
             for other, entry in pairs(reserved) do
                 if entry.kind == "spell" and (entry.name == name or (base and entry.name == base)) then ownSlot = other break end
             end
-            if ownSlot and ownSlot ~= slot then
+            if lifted[push.id] and now - lifted[push.id] < PUSH_WINDOW then
+                TakeOff(slot)
+            elseif ownSlot and ownSlot ~= slot then
                 TakeOff(slot) -- it is placed on its own button below
             elseif not ownSlot and reserved[slot] then
                 PickupAction(slot)
@@ -137,6 +168,7 @@ function E.Reconcile()
     local reserved = ns.char.reserved
     local now = GetTime()
     local again = false
+    RaiseRanks(now)
     UndoPushes(reserved, now)
 
     for slot, entry in pairs(reserved) do

@@ -168,17 +168,19 @@ local OPTIONS = {
     { key = "window", default = true, text = "Move and resize the spellbook", parent = "book",
       tip = "Drag the bar at the top to move it and the grip in its lower right corner to resize it, not in a fight. /sane ab window reset puts it back." },
     { key = "ghosts", default = true, text = "Show reservations on the action bars",
-      header = "Action bars", headerTip = "What reserved buttons show and say.",
+      header = "Action bars", headerTip = "What the module does with your buttons.",
       tip = "A reserved button shows the spell's icon in grey with a small clock in its corner until you learn it. Point at it for the spell's tooltip." },
     { key = "announce", default = true, text = "Say in chat when a reserved button is filled",
       tip = "When you learn a spell or get an item a button was reserved for, one chat line names the button. Off: it lands quietly." },
+    { key = "ranks", default = true, text = "Move buttons up to a new rank",
+      tip = "When you learn a new rank of a spell, the buttons with the rank you had until now change to it, after the fight if you are in one. A button with an older rank stays: you keep that one on purpose. Macros are left alone." },
 }
 
--- The spellbook's switches (the first five) are Forever's: in Retail they are kept with the settings, without
--- words, so neither the options page nor the spellbook's menu has them (an option without text has no control).
+-- The spellbook's switches (the first five) and the ranks are Forever's: in Retail they are kept with the settings,
+-- without words, so neither the options page nor the spellbook's menu has them (an option without text has no control).
 if not Core.FOREVER then
     for _, option in ipairs(OPTIONS) do
-        if option.key == "book" or option.parent == "book" then
+        if option.key == "book" or option.parent == "book" or option.key == "ranks" then
             option.text, option.tip, option.header, option.headerTip = nil, nil, nil, nil
         end
     end
@@ -382,6 +384,7 @@ end
 -- the game's action functions fail on a slot that is none, and on an ID that is no number, and a
 -- texture fails on an icon that is neither a file ID nor a path.
 local MAX_SLOT = 180
+ns.MAX_SLOT = MAX_SLOT
 local function Texture(icon)
     return icon == nil or type(icon) == "number" or type(icon) == "string"
 end

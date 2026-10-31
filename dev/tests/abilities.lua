@@ -948,6 +948,138 @@ check(action(55) and action(55).id == 8691 and not action(56), "and goes to the 
 E.Clear(55)
 W.Wait(1)
 
+-- A new rank: the buttons on the rank you had until now move up to it -------------------------------
+do
+    local FIREBALL5, FIREBALL6, FIREBALL7 = 8400, 8401, 8402
+    local FROSTBOLT1, FROSTBOLT2, FROSTBOLT3, FROSTBOLT4 = 116, 205, 837, 7322
+    W.spells[FIREBALL5], W.spells[FIREBALL6] = { name = "Fireball", sub = "Rank 5" }, { name = "Fireball", sub = "Rank 6" }
+    W.spells[FIREBALL7] = { name = "Fireball", sub = "Rank 7" }
+    W.spells[FROSTBOLT1], W.spells[FROSTBOLT2] = { name = "Frostbolt", sub = "Rank 1" }, { name = "Frostbolt", sub = "Rank 2" }
+    W.spells[FROSTBOLT3], W.spells[FROSTBOLT4] = { name = "Frostbolt", sub = "Rank 3" }, { name = "Frostbolt", sub = "Rank 4" }
+    local slots = { 14, 40, 41, 42, 43, 44, 45, 46, 75, 134 }
+    for _, slot in ipairs(slots) do
+        check(not W.actions[slot] and not reserved(slot), "(button " .. slot .. " is free for these checks)")
+    end
+    local function holds(slot, id) return action(slot) and action(slot).id == id end
+    -- As in the game: the rank before it is a low rank from now on.
+    local function learnRank(id, before, line)
+        for _, row in ipairs(W.book) do
+            if row.id == before then row.low = true end
+        end
+        W.Learn(id, line or 3)
+    end
+
+    W.actions[40] = { kind = "spell", id = FIREBALL2 }
+    W.actions[14] = { kind = "spell", id = FIREBALL2 }    -- Bar 1's second page
+    W.actions[75] = { kind = "spell", id = FIREBALL2 }    -- a form's row
+    W.actions[41] = { kind = "spell", id = FIREBALL1 }    -- an older rank, kept on purpose
+    W.actions[134] = { kind = "spell", id = FIREBALL2 }   -- a slot on no bar of yours
+    W.actions[42] = { kind = "macro", id = 1, text = "Burn" }
+    W.printed = {}
+    learnRank(FIREBALL3, FIREBALL2)
+    W.Wait(1)
+    check(holds(40, FIREBALL3) and holds(14, FIREBALL3) and holds(75, FIREBALL3), "a new rank: every button on the rank you had moves up to it")
+    check(holds(41, FIREBALL1), "a button on an older rank stays: you keep that one on purpose")
+    check(holds(134, FIREBALL2) and action(42).kind == "macro", "a slot on no bar of yours and your macros stay as they are")
+    check(not W.cursor and not next(S.outranked) and #W.printed == 0, "the old rank is gone from the cursor, and it goes without a word in chat")
+
+    W.cursor = { kind = "item", id = 6948 }
+    learnRank(FIREBALL4, FIREBALL3)
+    W.Wait(1)
+    check(holds(40, FIREBALL3) and W.cursor and W.cursor.id == 6948 and E.pending, "with something on your cursor it waits, and leaves your cursor alone")
+    W.cursor = nil
+    W.Fire("CURSOR_CHANGED")
+    W.Wait(1)
+    check(holds(40, FIREBALL4) and holds(14, FIREBALL4) and not W.cursor, "and is done when the cursor is free")
+
+    W.combat = true
+    learnRank(FIREBALL5, FIREBALL4)
+    learnRank(FIREBALL6, FIREBALL5)
+    W.Wait(1)
+    check(holds(40, FIREBALL4), "in a fight the buttons stay")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    W.Wait(2)
+    check(holds(40, FIREBALL6) and holds(41, FIREBALL1), "and move when it is over: two ranks at once land on the newest, the older button still stays")
+
+    -- A rank named with a numeral (the rogue's poisons): a new name, the same spell.
+    W.spells[8692] = { name = "Instant Poison III", sub = "Rank 3" }
+    W.actions[46] = { kind = "spell", id = 8691 }
+    learnRank(8692, 8691, 2)
+    W.Wait(1)
+    check(holds(46, 8692), "a rank named with a numeral moves up too: the spell is the same, its name is not")
+    W.actions[46] = nil
+
+    -- The pick-up refused: tried again at the next update, however the update came about.
+    local Pickup = C_Spell.PickupSpell
+    C_Spell.PickupSpell = function() end
+    learnRank(FIREBALL7, FIREBALL6)
+    W.Wait(1)
+    check(holds(40, FIREBALL6) and next(S.outranked) ~= nil, "what the game refuses is not forgotten")
+    C_Spell.PickupSpell = Pickup
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(1)
+    check(holds(40, FIREBALL7) and not next(S.outranked), "and is done at the next update")
+
+    -- The game's own copy of a new rank, on a free button.
+    W.Learn(FROSTBOLT1, 4)
+    W.Wait(1)
+    W.actions[43] = { kind = "spell", id = FROSTBOLT1 }
+    learnRank(FROSTBOLT2, FROSTBOLT1, 4)
+    W.actions[44] = { kind = "spell", id = FROSTBOLT2 }
+    W.Fire("SPELL_PUSHED_TO_ACTIONBAR", FROSTBOLT2, 44, 1)
+    W.Wait(1)
+    check(holds(43, FROSTBOLT2) and not action(44), "the game's own copy of the new rank goes: your button has moved up to it")
+    learnRank(FROSTBOLT3, FROSTBOLT2, 4)
+    W.Wait(1)
+    W.actions[44] = { kind = "spell", id = FROSTBOLT3 }
+    W.Fire("SPELL_PUSHED_TO_ACTIONBAR", FROSTBOLT3, 44, 1)
+    W.Wait(1)
+    check(holds(43, FROSTBOLT3) and not action(44), "also when the game says so a moment later")
+    W.actions[43] = nil
+    learnRank(FROSTBOLT4, FROSTBOLT3, 4)
+    W.actions[44] = { kind = "spell", id = FROSTBOLT4 }
+    W.Fire("SPELL_PUSHED_TO_ACTIONBAR", FROSTBOLT4, 44, 1)
+    W.Wait(1)
+    check(holds(44, FROSTBOLT4), "with no button on the old rank it stays where the game put it")
+
+    -- A rank given back (a talent) moves nothing down, and with the switch off nothing moves.
+    local function giveBack(id, before)
+        for index = #W.book, 1, -1 do
+            if W.book[index].id == id then table.remove(W.book, index) end
+        end
+        for _, row in ipairs(W.book) do
+            if row.id == before then row.low = false end
+        end
+        W.Fire("SPELLS_CHANGED")
+        W.Wait(1)
+    end
+    W.actions[45] = { kind = "spell", id = FIREBALL7 }
+    giveBack(FIREBALL7, FIREBALL6)
+    check(S.known.Fireball == FIREBALL6 and holds(45, FIREBALL7) and not next(S.outranked), "a rank given back moves no button down")
+    W.actions[46] = { kind = "spell", id = FIREBALL6 }
+    ns.options.ranks = false
+    learnRank(FIREBALL7, FIREBALL6)
+    W.Wait(1)
+    check(holds(46, FIREBALL6), "with the switch off the old rank stays, as in the game")
+    ns.options.ranks = true
+
+    -- Back as it was: Fireball rank 2 the highest, no Frostbolt.
+    for index = #W.book, 1, -1 do
+        local id = W.book[index].id
+        if id == FIREBALL2 then
+            W.book[index].low = false
+        elseif id == 8692 or (id ~= FIREBALL1 and (W.spells[id].name == "Fireball" or W.spells[id].name == "Frostbolt")) then
+            table.remove(W.book, index)
+        end
+    end
+    for _, slot in ipairs(slots) do W.actions[slot] = nil end
+    for _, id in ipairs({ FIREBALL5, FIREBALL6, FIREBALL7, FROSTBOLT1, FROSTBOLT2, FROSTBOLT3, FROSTBOLT4, 8692 }) do W.spells[id] = nil end
+    W.Fire("SPELLS_CHANGED")
+    W.Wait(1)
+    check(S.known.Fireball == FIREBALL2 and not S.known.Frostbolt, "(the spellbook is back as it was)")
+end
+
 -- A slot the game hides from addons (a secret value) is no answer: nothing is ended or filled on it
 E.Reserve(66, entry("Blink"))
 W.Wait(2)
@@ -1036,6 +1168,7 @@ line("Show unlearned spells").fn()
 check(ns.options.showHidden == true and ghostCount() > 0, "and on")
 check(not line("Show all spell ranks"), "a mage has the game's own 'Show all spell ranks' line; no second one is added")
 check(line("Show reservations on the action bars").checked() and line("Say in chat when a reserved button is filled"), "the two older options moved here")
+check(line("Move buttons up to a new rank").checked(), "and the switch for new ranks stands with them, on by default")
 local layouts = line("Action bar layouts")
 check(layouts.sub[1].text == "Save the current layout as..." and layouts.sub[2].text == "Raid" and layouts.sub[2].sub[1].text == "Load", "and so did the saved layouts")
 check(StaticPopupDialogs.SANEUI_SPELLBOOK_SAVE == nil and StaticPopupDialogs.SANEUI_SPELLBOOK_LOAD == nil,
@@ -1096,8 +1229,8 @@ local page = W.options.pages[5]
 local function box(text)
     for _, item in ipairs(page.items) do if item.setting and item.setting.name == text then return item.setting end end
 end
-check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 9
-    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its seven switches under two headers")
+check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 10
+    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its eight switches under two headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)
 check(ns.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")
@@ -1561,6 +1694,15 @@ do
     W.Learn(ICEBLOCK, 4)
     W.Wait(2)
     check(action(1) and action(1).id == ICEBLOCK and not reserved(1) and not barGhost:IsShown(), "and becomes the real button once learned")
+    -- Retail has no ranks: a spell that comes back under another ID (a talent, a specialization) is no new rank.
+    local ICEBLOCK2 = 45439
+    W.spells[ICEBLOCK2] = { name = "Ice Block" }
+    for _, row in ipairs(W.book) do
+        if row.id == ICEBLOCK then row.id = ICEBLOCK2 end
+    end
+    W.Fire("SPELLS_CHANGED")
+    W.Wait(1)
+    check(S.known["Ice Block"] == ICEBLOCK2 and action(1).id == ICEBLOCK and not next(S.outranked), "Retail: no rank moves a button up there")
     W.actions[1] = nil
 
     -- Without the built-in lists of spellbook tabs (Data/SkillLines.lua) a spell still to come has no tab, and no error
@@ -1583,7 +1725,8 @@ do
     W.menuModifiers.MENU_SPELL_BOOK_SETTINGS(nil, W.Description(lines))
     ns.class = "MAGE"
     check(lines[1].title == "Sane UI" and line("Show reservations on the action bars") and line("Action bar layouts")
-        and not line("Show unlearned spells") and not line("Compact spellbook pages") and not line("Show all spell ranks"),
+        and not line("Show unlearned spells") and not line("Compact spellbook pages") and not line("Show all spell ranks")
+        and not line("Move buttons up to a new rank"),
         "Retail: the spellbook's menu has the bars' lines only, also for a warrior")
 
     W.printed = {}

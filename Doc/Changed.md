@@ -3,8 +3,15 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 391 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Abilities: buttons move up to a new rank (Saneroki, 2026-10-31)
+Saneroki: "I will put spells that i learned on the actionbar. I will then learn a rankup but at native the old rank spell will stay on the actionbar. I want the ability module to lookout for when I learn spell rankups and replace the old rank spells with the new rank spells automatically on the actionbar"
+- **`src/Abilities/Sources.lua`:** `ScanBook` compares the rank to cast with the last read (`NoteNewRanks`); a rank that went up notes the old one in `S.outranked`. Forever only, upward only by the rank line's number, no rank line: any change counts.
+- **`src/Abilities/Engine.lua`:** `RaiseRanks`, first step of `Reconcile`, so not in a fight and not with something on the cursor: the newest rank goes on every button holding the old one, on all bars, Bar 1's second page and the form rows, not on slots 121 to 144, which none of your bars shows. Older ranks on a button stay (a low rank kept on purpose), macros too; no chat line, the game says it already. A refused pick-up is tried at the next update. `UndoPushes` takes off the game's own copy of a rank a button moved up to.
+- **`src/Abilities/Abilities.lua`, `Book/Menu.lua`:** the switch *Move buttons up to a new rank* (`ranks`, on, Forever only), on the options page and in the spellbook's menu.
+- **`dev/tests/abilities.lua`:** 29 checks: the buttons that move and those that stay, a rank named with a numeral, cursor, fight, two ranks at once, a refused pick-up, the game's own copy, a rank given back, the switch, Retail, the menu. `src/Abilities/README.md`, `Doc/agent/abilities.md`.
 
 ### The database on Forever's release client, 70707; quests' rewards, vendors' prices (Saneroki, 2026-10-31)
 Saneroki: "New information or data might have become publick. Do an extensice research download addins that you might suspect contais more up to date wow forever data and try to update all databases with your new finds."

@@ -104,6 +104,7 @@ local function Extend(_, root)
 
     Checkbox(root, "ghosts")
     Checkbox(root, "announce")
+    if Core.FOREVER then Checkbox(root, "ranks") end
 
     Layouts(root)
 end

@@ -51,6 +51,7 @@ module keeps reserved buttons and saved bar layouts.
   - *Open the spellbook on its Home page*: off = the spellbook opens on the tab you last looked at.
   - *Compact spellbook pages* and *Move and resize the spellbook* (both above).
   - *Show reservations on the action bars*, *Say in chat when a reserved button is filled*.
+  - *Move buttons up to a new rank* (below).
   - *Action bar layouts*: save all your bars under a name, load them again later (per class).
 
   The switches are also in the game's options:
@@ -63,6 +64,12 @@ module keeps reserved buttons and saved bar layouts.
   is no button and the reservation is taken off, as a real action is. Also where the bar hides its empty buttons.
 - **Remove a reservation:** right-click the grey spell in the spellbook → *Remove from Bar 2, button 5*.
   Or drop any real spell on the button. Or `/sane ab clear` for all of them.
+- **A new rank moves your buttons up** (switch *Move buttons up to a new rank*, on; WoW: Forever). The game
+  leaves the old rank on a button when you learn a new one. Here every button with the rank you had until
+  now changes to the new rank, on all your bars and form rows, after the fight if you are in one and once
+  your cursor is free. A button with an **older** rank stays: it would have moved up with an earlier rank,
+  so you keep it on purpose, such as a cheap heal. Macros are left alone. Should the game also put the new
+  rank on a free button, that copy is taken off again.
 - **Link a spell in chat:** Shift-click it (grey ones too).
 - **Visit your class trainer once.** Not needed for the list, but his window says which spellbook tab
   each spell belongs to. Until then a few new spells sit under *Other spells to learn* in the first class tab.
@@ -237,6 +244,16 @@ module keeps reserved buttons and saved bar layouts.
 - **A spell the game puts on a button by itself** (`SPELL_PUSHED_TO_ACTIONBAR`: the spell and the slot) is
   moved off that one slot only; the same spell on a button of yours stays. A slot the game hides from
   addons (a secret value) is neither ended nor filled.
+- **A new rank on your buttons** (Forever's; `NoteNewRanks` in `Sources.lua`, `RaiseRanks` in `Engine.lua`).
+  Every read of the spellbook compares the rank to cast with the last read; the first read has nothing to
+  compare with, so a login moves nothing. A rank that went up notes the old one in `S.outranked`, and
+  `Reconcile`, once neither a fight nor the cursor blocks it, puts the newest rank on each button holding the
+  old one. So two ranks learned at once land on the newest, however long the wait. Only that one rank
+  moves, which keeps the low ranks you put on a button on purpose. Compared by the number in the rank
+  line, a rank given back moves nothing down; without a rank line (a profession's *Journeyman*) any change
+  counts. All slots but 121 to 144, which none of your bars shows, so they are left to the game. A pick-up the game
+  refuses stays noted for the next update. When a button moved up, the game's own copy of that rank on a free button
+  goes too (`UndoPushes`).
 - **Saved layouts** (`Presets.lua`) ask in the game's own dialogs: a name to save under (`GENERIC_INPUT_BOX`,
   `Core.AskText`), yes or no to load or delete (`GENERIC_CONFIRMATION`, `Core.Confirm`). The module puts
   no dialog of its own into the game's list. Without the game's dialog the command to type is said.
@@ -284,7 +301,7 @@ module keeps reserved buttons and saved bar layouts.
 | `Data/WeaponSkills.lua` | The weapon skills each class can learn |
 | `Data/SkillLines.lua` | Spell name → spellbook tab, the last-resort list |
 | `Buttons.lua` | Every action button, by what it is; where a (hidden) one stands |
-| `Engine.lua` | Reservations and turning them into real buttons |
+| `Engine.lua` | Reservations and turning them into real buttons; buttons that follow a new rank |
 | `Ghosts.lua` | Grey icons on the real bars, their clock and tooltip |
 | `Presets.lua` | Save and load bar layouts |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
@@ -297,6 +314,8 @@ module keeps reserved buttons and saved bar layouts.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-10-31 — New ranks: when you learn a new rank, the buttons with the rank you had until now change to
+  it (switch *Move buttons up to a new rank*, Forever only). Older ranks on a button and macros stay.
 - 2026-10-25 — Retail: the module runs there with the reservations, their ghosts on the bars and the saved
   layouts. The spellbook stays the game's own (it lists the spells still to come itself): no grey entries,
   Home, compact pages or window of ours, no spellbook switches in the options or the spellbook's menu, no
