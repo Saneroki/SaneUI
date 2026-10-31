@@ -8,8 +8,10 @@ Your normal spellbook (P) also lists the spells you have **not learned yet**, in
 they will end up. Drag a grey spell onto an action bar button: the button is *reserved* and becomes the
 real spell the moment you learn it. A **Home** page, the first tab of the spellbook, says what your
 trainer can teach you right now and which spells you get from quests.
+**Action Bar 1 keeps the page you chose:** no stance, form or stealth changes it, and bars 6 to 8 stand beside
+its pages, so every page and bar holds buttons of its own.
 In Retail the game's spellbook lists the spells still to come itself and stays the game's own; there the
-module keeps reserved buttons and saved bar layouts.
+module keeps reserved buttons, saved bar layouts and Bar 1's page.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Abilities* under *Sane UI* in the game's addon list.
@@ -51,12 +53,12 @@ module keeps reserved buttons and saved bar layouts.
   - *Open the spellbook on its Home page*: off = the spellbook opens on the tab you last looked at.
   - *Compact spellbook pages* and *Move and resize the spellbook* (both above).
   - *Show reservations on the action bars*, *Say in chat when a reserved button is filled*.
-  - *Move buttons up to a new rank* (below).
+  - *Move buttons up to a new rank* and *Action Bar 1 keeps the page you chose* (below).
   - *Action bar layouts*: save all your bars under a name, load them again later (per class).
 
   The switches are also in the game's options:
   Esc > Options > AddOns > Sane UI > Abilities, or `/sane options`.
-- **Reserve a button:** drag a grey spell onto any button of action bars 1–8. A gold frame shows the
+- **Reserve a button:** drag a grey spell onto any button of action bars 1–8, on whichever page Bar 1 shows. A gold frame shows the
   button you are over. What was on that button is on your cursor afterwards, as when you swap two buttons.
 - **Move a reservation:** drag the grey icon on the action bar to another button, the way you move a
   real action: with the bars unlocked, or with the pick-up key (Shift by default) held. On a reserved
@@ -70,6 +72,20 @@ module keeps reserved buttons and saved bar layouts.
   your cursor is free. A button with an **older** rank stays: it would have moved up with an earlier rank,
   so you keep it on purpose, such as a cheap heal. Macros are left alone. Should the game also put the new
   rank on a free button, that copy is taken off again.
+- **Action Bar 1 keeps its page** (switch *Action Bar 1 keeps the page you chose*, on). The game puts another row
+  of buttons on Bar 1 in a stance, a form or stealth. Here the bar stays on its page, in a fight too: only its
+  arrows or your page keys change it, and a key casts what its button shows. Where the game puts a bar of its own
+  in Bar 1's place (a vehicle, a possessed creature, a temporary shape, skyriding) the buttons are the game's
+  for that time, and the keys of Bar 6 press them, as the keys of a main bar do; afterwards your page is back.
+  The switch takes effect at once. A spell the game drops on a form's row, which never shows now, comes to the
+  first free button.
+- **Bars and pages that are all your own.** Bar 1's six pages are slots 1 to 72: page 2 is its own, pages 3 to 6
+  are also Bars 4, 5, 3 and 2, and the game leaves such a page out while that bar is on. Bars 6, 7 and 8 are
+  slots 145 to 180, on none of its pages, and no form changes them. So with Bars 6 to 8 on and Bars 2 to 5 off
+  you have three fixed bars and six pages, 108 buttons, none of them a copy of another. Bars 6 to 8 are the
+  game's own: switched on in its options, placed in Edit Mode, bound in its key bindings under *Action Bar 6* to
+  *8*, clean as all its bars and with your reservations on them. Page 2 is saved in your layouts too, and a button
+  on a bar that is off is named by its page: *Bar 1 (page 3), button 2*.
 - **Link a spell in chat:** Shift-click it (grey ones too).
 - **Visit your class trainer once.** Not needed for the list, but his window says which spellbook tab
   each spell belongs to. Until then a few new spells sit under *Other spells to learn* in the first class tab.
@@ -86,8 +102,8 @@ module keeps reserved buttons and saved bar layouts.
   compact pages, no moving or resizing, and the spellbook's switches are not on the options page. What is
   there: reserved buttons with their grey icon and clock on the bars (moved as above), saved bar layouts
   (*Action bar layouts* in the spellbook's menu, or `/sane ab save`, `load`: what you do not have yet is
-  reserved), `/sane ab item`, `list`, `clear`, `debug`, and the two switches *Show reservations on the action
-  bars* and *Say in chat when a reserved button is filled*.
+  reserved), `/sane ab item`, `list`, `clear`, `debug`, and the switches *Show reservations on the action
+  bars*, *Say in chat when a reserved button is filled* and *Action Bar 1 keeps the page you chose*.
 
 ## Technical details
 - **Part of Sane UI, and an addon of its own** (`SaneUI_Abilities.toc`: `## Dependencies: SaneUI`,
@@ -108,6 +124,19 @@ module keeps reserved buttons and saved bar layouts.
 - **Why reservations:** the game refuses a spell you do not know in an action slot. The module keeps
   `slot → spell/item/macro` in its saved settings, draws a grey icon on the button, and places the real
   thing when you have it (`Engine.lua`).
+- **Bar 1's page (`Bar1.lua`).** A button of Bar 1 reads its own `actionpage` before its bar's
+  (`SecureActionButtonMixin:CalculateAction`, `useparent-actionpage`), and the game writes a form's row to the bar
+  alone (`MainActionBar`, in `ActionBarController_UpdateAll`, on page 1 only). So each of the twelve holds a page of its
+  own and that writing reaches neither what it shows nor what its key casts, which goes through the same lookup
+  (`ActionButtonDown`, `SecureActionButton_OnClick`, `SECURE_ACTIONS.action`). A header of ours
+  (`SecureHandlerStateTemplate`) has the buttons as frame references, and the game's state driver gives it
+  `Bar1.STATES`: `[bar:n]` the page, or `game` under `[vehicleui][overridebar][possessbar][shapeshift][bonusbar:5][petbattle]`.
+  On every change its snippet writes the page to the buttons, whose `OnAttributeChanged` runs `UpdateAction`, in a fight too;
+  `game` clears it, so they read the bar's again, and for that time gives the keys of `MULTIACTIONBAR5BUTTONn` to
+  `ACTIONBUTTONn` as override bindings of the header. `ACTIONBAR_PAGE_CHANGED` wakes the driver: a page turns a frame
+  after the arrows. A wrap of the main bar's `OnAttributeChanged` is no way: the game runs a wrap only on a frame
+  that is explicitly protected, which the main bar is not. With the switch off or standing down the driver goes and `state-page` is
+  cleared, which lets go of the buttons and the keys; out of a fight. Without the twelve buttons the bar stays the game's.
 - **How the grey entries get into Blizzard's spellbook (`Book/Book.lua`).** The game's spell entries are
   never touched by addon code beyond *where they stand*:
   1. The first page's column is made 60000 high. The game then puts a whole tab on "page 1" and creates
@@ -304,6 +333,7 @@ module keeps reserved buttons and saved bar layouts.
 | `Engine.lua` | Reservations and turning them into real buttons; buttons that follow a new rank |
 | `Ghosts.lua` | Grey icons on the real bars, their clock and tooltip |
 | `Presets.lua` | Save and load bar layouts |
+| `Bar1.lua` | Action Bar 1 keeps the page you chose; its buttons and the keys of Bar 6 under the game's own bars |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
 | `Book/Item.lua` | One grey spellbook entry: look, the two marks, tooltip, link, menu |
 | `Book/Drag.lua` | Carrying a grey spell to a real action bar button |
@@ -314,6 +344,9 @@ module keeps reserved buttons and saved bar layouts.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-10-31 — Action Bar 1 keeps the page you chose (switch *Action Bar 1 keeps the page you chose*, on): no stance,
+  form or stealth changes it. Bars 6 to 8 are your fixed bars, on none of its pages. Page 2 of Bar 1 is kept in
+  layouts and named in chat, and a bar that is off is named as its page.
 - 2026-10-31 — New ranks: when you learn a new rank, the buttons with the rank you had until now change to
   it (switch *Move buttons up to a new rank*, Forever only). Older ranks on a button and macros stay.
 - 2026-10-25 — Retail: the module runs there with the reservations, their ghosts on the bars and the saved

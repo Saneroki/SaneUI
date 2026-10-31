@@ -13,7 +13,7 @@ Use current source and the user's instructions when they differ from a note.
 | Task | Next reading |
 | --- | --- |
 | Lifecycle, events, errors, saved variables, options, shared windows | [core.md](core.md) |
-| Future spells, reservations, action layouts, spellbook/Home UI | [abilities.md](abilities.md) |
+| Future spells, reservations, action layouts, Action Bar 1's page, spellbook/Home UI | [abilities.md](abilities.md) |
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, dungeon maps with their bosses; the guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
@@ -36,8 +36,8 @@ Use current source and the user's instructions when they differ from a note.
 Sane UI replaces or extends parts of WoW: Forever's UI. Version `0.3.0`, interface `16001` in all
 nine TOCs. Modules are independent addons under category/group Sane UI; only Core is required.
 Core holds the options (`src/Core/Settings/`, `Core.Config`: pages put up at login, filled when first
-opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities extends the game's book with future spells and
-reserves action slots. Tooltips draws panels over native tooltips. Social supplies a messenger-style
+opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities extends the game's book with future spells,
+reserves action slots and keeps Action Bar 1 on the page you chose. Tooltips draws panels over native tooltips. Social supplies a messenger-style
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
 channels as chosen on its page. Nameplates (2026-10-20) dresses the game's own plates: a round-cornered
 health bar over the game's, as wide as its one line inside (quest, raid marker, level, item level, threat, name, health), the unit's power and your combo points

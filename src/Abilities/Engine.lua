@@ -128,9 +128,9 @@ end
 
 -- The game drops a newly learned spell on the first free button by itself. That was not
 -- your decision, so it must not end a reservation: the spell goes to its own reserved
--- button if it has one, and off a button that is reserved for something else. A new rank
--- that one of your buttons moved up to needs no second button. Only the slot the game
--- used is undone; the same spell on another button is yours.
+-- button if it has one, and off a button that is reserved for something else or on a form's
+-- row that Bar 1 never shows now. A new rank that one of your buttons moved up to needs no
+-- second button. Only the slot the game used is undone; the same spell on another button is yours.
 local function UndoPushes(reserved, now)
     for slot, push in pairs(pushed) do
         pushed[slot] = nil
@@ -146,7 +146,7 @@ local function UndoPushes(reserved, now)
                 TakeOff(slot)
             elseif ownSlot and ownSlot ~= slot then
                 TakeOff(slot) -- it is placed on its own button below
-            elseif not ownSlot and reserved[slot] then
+            elseif not ownSlot and (reserved[slot] or ns.Bar1.Unseen(slot)) then
                 PickupAction(slot)
                 local free = FreeSlot()
                 if free then PlaceAction(free) end

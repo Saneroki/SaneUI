@@ -180,7 +180,7 @@ D.Class("MAGE", function()
     }
 end)
 
-for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets",
+for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1",
                         "Book/Layout", "Book/Item", "Book/Drag", "Book/Book", "Book/Home", "Book/Window", "Book/Menu" }) do
     load(file)
 end
@@ -1229,8 +1229,8 @@ local page = W.options.pages[5]
 local function box(text)
     for _, item in ipairs(page.items) do if item.setting and item.setting.name == text then return item.setting end end
 end
-check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 10
-    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its eight switches under two headers")
+check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 11
+    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its nine switches under two headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)
 check(ns.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")
@@ -1751,6 +1751,254 @@ W.Play("forever")
 ns.QueueUpdate(true, 0)
 W.Wait(1)
 
+-- Action Bar 1 keeps its page -----------------------------------------------------------------
+-- The game's part as its own code has it: its controller writes the main bar's page, a button takes its
+-- own page before its bar's, the state driver reads the conditions. The snippet itself runs for real.
+local barOne = {}
+do
+    local function Attributes(widget)
+        widget.attributes = {}
+        function widget:GetAttribute(name) return self.attributes[name] end
+        function widget:SetAttribute(name, value)
+            self.attributes[name] = value
+            local changed = self:GetScript("OnAttributeChanged")
+            if changed then changed(self, name, value) end
+        end
+    end
+
+    local bound = { MULTIACTIONBAR5BUTTON1 = { "1" }, MULTIACTIONBAR5BUTTON12 = { "=", "F12" }, MULTIACTIONBAR6BUTTON1 = { "SHIFT-1" } }
+    local drivers, holds = {}, { ["bar:1"] = true } -- the frames driven, and the conditions that hold now
+    local page, bonus, instead = 1, 0, nil          -- the page you chose, a form's number, a row of the game's own
+
+    W.templates.SecureHandlerStateTemplate = function(header)
+        Attributes(header)
+        header.refs, header.keys = {}, {}
+        function header:SetFrameRef(label, frame) self.refs[label] = frame end
+        header:SetScript("OnAttributeChanged", function(self, name, value)
+            local body = name == "state-page" and self:GetAttribute("_onstate-page")
+            if not body then return end
+            local handle = {}
+            function handle:GetFrameRef(label) return header.refs[label] end
+            function handle:ClearBindings() wipe(header.keys) end
+            function handle:SetBinding(priority, key, command)
+                assert(priority == true)
+                header.keys[key] = command
+            end
+            local run = assert(loadstring("local self, stateid, newstate = ...\n" .. body))
+            setfenv(run, { tonumber = tonumber, GetBindingKey = function(command) return unpack(bound[command] or {}) end })
+            run(handle, "page", value)
+        end)
+    end
+
+    -- The first clause with a condition that holds, or without one.
+    local function Parse(values)
+        for clause in (values .. ";"):gmatch("(.-);") do
+            local answer = clause:gsub("%b[]", ""):match("%S+")
+            if not clause:find("[", 1, true) then return answer end
+            for condition in clause:gmatch("%[(.-)%]") do
+                if holds[condition] then return answer end
+            end
+        end
+    end
+    local function Drive()
+        for frame, values in pairs(drivers) do
+            local value = Parse(values)
+            value = tonumber(value) or value
+            if frame:GetAttribute("state-page") ~= value then frame:SetAttribute("state-page", value) end
+        end
+    end
+    RegisterStateDriver = function(frame, state, values)
+        assert(state == "page" and not W.combat)
+        drivers[frame] = values
+        Drive()
+    end
+    UnregisterStateDriver = function(frame)
+        assert(not W.combat)
+        drivers[frame] = nil
+    end
+
+    local mainBar = W.NewWidget("Frame", "MainActionBar")
+    Attributes(mainBar)
+    mainBar.attributes.actionpage = 1
+    local function Slot(button)
+        return button.id + ((button:GetAttribute("actionpage") or mainBar:GetAttribute("actionpage")) - 1) * 12
+    end
+    local function Controller()
+        mainBar:SetAttribute("actionpage", instead or (bonus > 0 and page == 1 and 6 + bonus) or page)
+        for _, button in ipairs(barOne) do button.action = Slot(button) end
+    end
+    local function Turn(to)
+        holds["bar:" .. page], page = nil, to
+        holds["bar:" .. to] = true
+        Controller()
+        Drive()
+    end
+    local function Form(number)
+        bonus = number
+        Controller()
+        Drive()
+    end
+    local function Replaced(condition, row)
+        holds[condition], instead = row and true or nil, row
+        Controller()
+        Drive()
+    end
+
+    check(ns.options.holdPage and not ns.Bar1.Held(), "without the game's twelve buttons the bar stays the game's")
+    local firstButton = ActionButton1
+    for index = 1, ns.NUM_BUTTONS do
+        local button = W.NewWidget("CheckButton", "ActionButton" .. index, mainBar)
+        button.id = index
+        Attributes(button)
+        button:SetScript("OnAttributeChanged", function(self) self.action = Slot(self) end)
+        button.action = index
+        _G["ActionButton" .. index], barOne[index] = button, button
+    end
+    local header
+    W.combat = true
+    ns.Bar1.Apply()
+    check(not ns.Bar1.Held(), "in a fight it waits")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    for _, widget in ipairs(W.frames) do
+        if widget._template == "SecureHandlerStateTemplate" then header = widget end
+    end
+    check(ns.Bar1.Held() and header and barOne[1]:GetAttribute("actionpage") == 1 and barOne[12]:GetAttribute("actionpage") == 1,
+        "after it every button holds the page you chose")
+
+    -- A warrior's stances and a druid's forms
+    for number = 1, 4 do
+        Form(number)
+        check(mainBar:GetAttribute("actionpage") == 6 + number, "(the game writes the form's row to the bar)")
+        check(barOne[1].action == 1 and barOne[12].action == 12 and Slot(barOne[5]) == 5, "and the buttons stay: what they show is what their keys cast")
+    end
+    Turn(3)
+    check(barOne[1].action == 25 and barOne[12].action == 36 and ns.Bar1Offset() == 24, "your pages turn in a form")
+    W.combat = true
+    Turn(2)
+    check(barOne[1].action == 13 and barOne[12].action == 24, "also in a fight")
+    W.combat = false
+    Turn(1)
+    check(barOne[1].action == 1, "and page 1 is page 1 in a form too")
+    Turn(2)
+
+    -- The game's own bar in the bar's place
+    check(next(header.keys) == nil, "(your main keys are your own)")
+    W.combat = true
+    Replaced("vehicleui", 12)
+    W.combat = false
+    check(barOne[1].action == 133 and barOne[12].action == 144, "in a vehicle the buttons are the game's again")
+    check(header.keys["1"] == "ACTIONBUTTON1" and header.keys["="] == "ACTIONBUTTON12" and header.keys.F12 == "ACTIONBUTTON12",
+        "and the keys of Bar 6 press them, each key of a button")
+    check(header.keys["SHIFT-1"] == nil, "Bar 7's keys stay Bar 7's")
+    Replaced("vehicleui", nil)
+    check(barOne[1].action == 13 and next(header.keys) == nil, "out of it the page you chose is back, and your keys")
+    for _, condition in ipairs({ "overridebar", "possessbar", "shapeshift", "bonusbar:5", "petbattle" }) do
+        Replaced(condition, 11)
+        check(barOne[1].action == 121 and header.keys["1"] == "ACTIONBUTTON1", "the same with " .. condition)
+        Replaced(condition, nil)
+    end
+
+    -- The switch
+    Turn(1)
+    Form(1)
+    Core.Set(ns.name, "holdPage", false)
+    Controller()
+    check(not ns.Bar1.Held() and barOne[1]:GetAttribute("actionpage") == nil and barOne[1].action == 73 and next(header.keys) == nil,
+        "switched off the bar follows the game again")
+    check(not ns.Bar1.Unseen(73), "and a form's row is seen")
+    Core.Set(ns.name, "holdPage", true)
+    Controller()
+    check(ns.Bar1.Held() and barOne[1].action == 1, "switched on it holds again, at once")
+    W.combat = true
+    Core.Set(ns.name, "holdPage", false)
+    check(ns.Bar1.Held(), "the switch waits for the end of a fight")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(not ns.Bar1.Held(), "and then does as it says")
+    Core.Set(ns.name, "holdPage", true)
+    check(ns.Bar1.Unseen(73) and ns.Bar1.Unseen(120) and not ns.Bar1.Unseen(72) and not ns.Bar1.Unseen(121), "the four rows of the forms are out of sight")
+    Form(0)
+
+    -- Every page is yours: page 2 in layouts and reservations, the bars that are off seen as pages
+    check(ns.SlotLabel(13) == "Bar 1 (page 2), button 1" and ns.SlotLabel(24) == "Bar 1 (page 2), button 12", "page 2 has a name")
+    check(ns.SlotLabel(145) == "Bar 6, button 1" and ns.SlotLabel(180) == "Bar 8, button 12", "bars 6 to 8 stand as themselves")
+    local sideBar = W.NewWidget("Frame", "MultiBarRight")
+    local sideButton = MultiBarRightButton1
+    MultiBarRightButton1 = W.NewWidget("CheckButton", "MultiBarRightButton1", sideBar)
+    check(ns.SlotLabel(25) == "Bar 4, button 1", "a bar that is on is a bar")
+    sideBar:Hide()
+    check(ns.SlotLabel(25) == "Bar 1 (page 3), button 1", "a bar that is off is a page of Bar 1")
+    MultiBarRightButton1 = sideButton
+    local seen = {}
+    for _, slot in ipairs(ns.ManagedSlots()) do
+        check(not seen[slot], "no slot twice")
+        seen[slot] = true
+    end
+    check(#ns.ManagedSlots() == 156 and seen[13] and seen[24] and seen[145] and seen[180] and seen[120] and not seen[121], "the eight bars, page 2 and the forms' rows")
+    W.actions[13] = { kind = "spell", id = FIREBALL2 }
+    check(ns.Presets.Save("Pages") and ns.DB.presets.MAGE.Pages.slots[13], "a layout keeps page 2")
+    W.actions[13] = nil
+    check(ns.Presets.Load("Pages"), "(loaded)")
+    W.Wait(1)
+    check(action(13) and action(13).id == FIREBALL2, "and puts it back")
+    ns.DB.presets.MAGE.Pages = nil
+    E.Clear(13)
+    W.Wait(1)
+
+    -- Ghosts on page 2 and on the bars with no page
+    local sixthBar = W.NewWidget("Frame", "MultiBar5")
+    local sixth = W.NewWidget("CheckButton", "MultiBar5Button1", sixthBar)
+    sixth.action = 145
+    MultiBar5Button1 = sixth
+    Turn(2)
+    E.Reserve(13, entry("Blink"))
+    E.Reserve(145, entry("Polymorph") or entry("Blink"))
+    W.Wait(1)
+    ns.Buttons.All(true)
+    ns.Fire("REFRESH")
+    local onPage, onSixth
+    for _, widget in ipairs(W.frames) do
+        if widget.entry and widget.fallback ~= nil and widget:IsShown() then
+            if widget.action == 13 then onPage = widget end
+            if widget.action == 145 then onSixth = widget end
+        end
+    end
+    check(onPage and onSixth, "a reservation shows on page 2 and on Bar 6")
+    check(not action(13) and reserved(13) and reserved(145), "and waits there")
+    E.Clear(13)
+    E.Clear(145)
+    MultiBar5Button1 = nil
+    Turn(1)
+    W.Wait(1)
+
+    -- The game drops a new spell on a form's row that never shows now
+    W.spells[6100] = { name = "Quick Step" }
+    W.book[#W.book + 1] = { id = 6100, line = 2 }
+    W.actions[73] = { kind = "spell", id = 6100 }
+    W.Fire("SPELL_PUSHED_TO_ACTIONBAR", 6100, 73, 1)
+    W.Fire("SPELLS_CHANGED")
+    W.Wait(3)
+    local landed
+    for slot = 1, ns.NUM_BUTTONS do
+        if action(slot) and action(slot).id == 6100 then landed = slot end
+    end
+    check(not action(73) and landed, "a spell the game drops on a form's row comes to a button you can see")
+    W.actions[landed] = nil
+    Core.Set(ns.name, "holdPage", false)
+    W.actions[73] = { kind = "spell", id = 6100 }
+    W.Fire("SPELL_PUSHED_TO_ACTIONBAR", 6100, 73, 1)
+    W.Fire("SPELLS_CHANGED")
+    W.Wait(3)
+    check(action(73), "with the switch off that row is seen and it stays")
+    W.actions[73] = nil
+    Core.Set(ns.name, "holdPage", true)
+
+    for index = 1, ns.NUM_BUTTONS do _G["ActionButton" .. index] = nil end
+    ActionButton1 = firstButton
+    W.Wait(1)
+end
+
 -- Errors are caught and kept (core.lua); none happened in everything above ----------------
 for label, problem in pairs(Core.errors) do io.stderr:write(label .. ": " .. problem.text .. "\n") end
 check(next(Core.errors) == nil, "no step of the module raised an error")
@@ -1806,6 +2054,7 @@ ns.QueueUpdate(true, 0)
 W.Wait(1)
 ns.Fire("REFRESH")
 check(not barGhost:IsShown() and ns.char.reserved[1], "nothing shows them again; the reservations are kept for the next session")
+check(not ns.Bar1.Held() and barOne[1]:GetAttribute("actionpage") == nil, "and Bar 1 follows the game again")
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Abilities: all %d checks passed.\n"):format(passed))

@@ -25,6 +25,8 @@ local ADDON, ns = ...
 --  there the spellbook, its switches and the trainers stay the game's own
 --  (Core.FOREVER below), and Forever's trainer data is not even read (the TOC).
 --  The reservations, their grey icons on the bars and the saved layouts serve both.
+--
+--  Action Bar 1 keeps the page you chose in both games (Bar1.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -34,19 +36,22 @@ ns.NUM_BUTTONS = 12
 -- The bars this module manages, in the game's own numbering.
 --   prefix   Blizzard's button frames
 --   offset   first action slot of the bar, minus one
+--   page     Bar 1's page with the same slots: the game skips it there while this bar is on.
+--            Bars 6 to 8 are on no page of Bar 1, and no form changes them.
 ns.BARS = {
     { prefix = "ActionButton",              offset = 0,   paged = true },
-    { prefix = "MultiBarBottomLeftButton",  offset = 60  },
-    { prefix = "MultiBarBottomRightButton", offset = 48  },
-    { prefix = "MultiBarRightButton",       offset = 24  },
-    { prefix = "MultiBarLeftButton",        offset = 36  },
+    { prefix = "MultiBarBottomLeftButton",  offset = 60,  page = 6 },
+    { prefix = "MultiBarBottomRightButton", offset = 48,  page = 5 },
+    { prefix = "MultiBarRightButton",       offset = 24,  page = 3 },
+    { prefix = "MultiBarLeftButton",        offset = 36,  page = 4 },
     { prefix = "MultiBar5Button",           offset = 144 },
     { prefix = "MultiBar6Button",           offset = 156 },
     { prefix = "MultiBar7Button",           offset = 168 },
 }
 
--- Bar 1 shows another row of 12 slots in a form, a stance or stealth.
+-- Bar 1 shows another row of 12 slots in a form, a stance or stealth, unless it keeps its page (Bar1.lua).
 ns.PAGES = { 0, 72, 84, 96, 108 }
+ns.SECOND_PAGE = 12 -- Bar 1's page 2; pages 3 to 6 are the slots of bars 2 to 5
 
 -- The two marks on an icon, in the spellbook (Book/Item.lua) and on the action bars (Ghosts.lua).
 ns.QUEST_MARK = "QuestNormal"                -- the quest giver's "!": a quest reward
@@ -174,6 +179,8 @@ local OPTIONS = {
       tip = "When you learn a spell or get an item a button was reserved for, one chat line names the button. Off: it lands quietly." },
     { key = "ranks", default = true, text = "Move buttons up to a new rank",
       tip = "When you learn a new rank of a spell, the buttons with the rank you had until now change to it, after the fight if you are in one. A button with an older rank stays: you keep that one on purpose. Macros are left alone." },
+    { key = "holdPage", default = true, text = "Action Bar 1 keeps the page you chose",
+      tip = "The game puts another row of buttons on Action Bar 1 in a stance, a form or stealth. On: the bar stays on its page, in a fight too, and only its arrows or your page keys change it. In a vehicle the game's own bar still takes its place." },
 }
 
 -- The spellbook's switches (the first five) and the ranks are Forever's: in Retail they are kept with the settings,
@@ -193,7 +200,13 @@ local function PagesChanged(on)
 end
 
 Core.Options(ns.name, OPTIONS, function(key, value)
-    if key == "book" then PagesChanged(value) else ns.Fire("REFRESH") end
+    if key == "book" then
+        PagesChanged(value)
+    elseif key == "holdPage" then
+        ns.Bar1.Apply()
+    else
+        ns.Fire("REFRESH")
+    end
 end)
 
 -------------------------------------------------------------------------------
@@ -258,8 +271,8 @@ function ns.ActionOf(frame)
     return nil
 end
 
--- Which row of slots Bar 1 shows right now: 0 normally, 72/84/96/108 in a form or stance.
--- The first button of Bar 1 knows.
+-- Which row of slots Bar 1 shows right now: that of its page, or 72/84/96/108 in a form or
+-- stance where it follows the game. The first button of Bar 1 knows.
 function ns.Bar1Offset()
     local button = _G.ActionButton1
     local action = ns.ActionOf(button)
@@ -275,13 +288,14 @@ function ns.SlotOf(button, fallback)
 end
 
 local managed
--- Every slot the module looks after: the bars plus Bar 1's form and stance rows.
+-- Every slot the module looks after: the bars plus Bar 1's page 2 and its form and stance rows.
 function ns.ManagedSlots()
     if not managed then
         managed = {}
         for _, bar in ipairs(ns.BARS) do
             for i = 1, ns.NUM_BUTTONS do managed[#managed + 1] = bar.offset + i end
         end
+        for i = 1, ns.NUM_BUTTONS do managed[#managed + 1] = ns.SECOND_PAGE + i end
         for page = 2, #ns.PAGES do
             for i = 1, ns.NUM_BUTTONS do managed[#managed + 1] = ns.PAGES[page] + i end
         end
@@ -302,10 +316,17 @@ end
 function ns.SlotLabel(slot)
     for number, bar in ipairs(ns.BARS) do
         if slot > bar.offset and slot <= bar.offset + ns.NUM_BUTTONS then
+            -- A bar that is off is only seen as a page of Bar 1.
+            local button = bar.page and _G[bar.prefix .. "1"]
+            local holder = button and button:GetParent()
+            if holder and not ns.Plain(holder:IsShown()) then
+                return TEXT.formSlot:format(TEXT.pageRow:format(bar.page), slot - bar.offset)
+            end
             return TEXT.slot:format(number, slot - bar.offset)
         end
     end
     local offset = slot - 1 - ((slot - 1) % ns.NUM_BUTTONS)
+    if offset == ns.SECOND_PAGE then return TEXT.formSlot:format(ns.PageName(offset), slot - offset) end
     for page = 2, #ns.PAGES do
         if ns.PAGES[page] == offset then
             return TEXT.formSlot:format(ns.PageName(offset), slot - offset)
@@ -413,6 +434,7 @@ function ns.OnLogin()
     Table(trainer, "spells")
     -- The trainer data meant for your class, faction and race (Data/Trainer.lua).
     ns.Safe("trainer data", ns.Data.Fill)
+    ns.Bar1.Apply()
 
     local function scan() ns.QueueUpdate(true) end
     local function update() ns.QueueUpdate(false) end
@@ -472,8 +494,8 @@ ns.On("PLAYER_ENTERING_WORLD", function()
 end)
 
 -- An error that no step caught stands the module down (Core's StandDown): the spellbook's pages
--- and its window go back to the game, the reservations' marks leave the bars and the class
--- trainer's filter is put back. The reservations themselves stay saved for the next session.
+-- and its window go back to the game, the reservations' marks leave the bars, the class trainer's
+-- filter is put back and Bar 1 follows the game again. The reservations stay saved for the next session.
 -- Each step on its own, the quick ones first, so one that fails keeps none of the others.
 ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
 function ns.GiveBack()
@@ -481,6 +503,7 @@ function ns.GiveBack()
     if ns.Drag then ns.Safe("giving back", ns.Drag.Cancel) end
     if ns.Sources then ns.Safe("giving back", ns.Sources.TrainerClosed) end
     if ns.Book then ns.Safe("giving back", ns.Book.StandDown, TEXT.why.problem) end
+    if ns.Bar1 then ns.Safe("giving back", ns.Bar1.Apply) end
 end
 
 -------------------------------------------------------------------------------

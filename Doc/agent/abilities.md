@@ -16,6 +16,7 @@ learn form-page names → `Engine.Reconcile` → module `REFRESH`.
 | `Engine.lua` | Reserve/clear/reconcile slots; defer real actions for combat or busy cursor; buttons follow a new rank (`RaiseRanks`) |
 | `Presets.lua` | Class-shared saved bar layouts; save/load/delete ask in the game's dialogs (`Core.AskText`, `Core.Confirm`) |
 | `Ghosts.lua` | Noninteractive grey overlays on real empty action buttons |
+| `Bar1.lua` | Action Bar 1 keeps its page: a state driver writes `actionpage` to its twelve buttons, `game` under the game's own bars (then the keys of Bar 6 go to `ACTIONBUTTONn`); switch `holdPage`, both games |
 
 Entry shape: `{kind = "spell"|"item"|"macro", id, name, icon}`. Future spells add `sub/rank/level/cost`,
 `prior` (rank before), `talentFirst`, `after`, quest, tab, source and state. States, checked in the game
@@ -36,9 +37,10 @@ Upward only by rank number; no rank line = any change counts (professions). `lif
 take off the game's own copy within the push window; the game does push ranks. Quiet: no chat line. A refused
 pick-up stays noted for the next update. First read compares with nothing, so login never moves a button.
 
-Eight managed bar offsets: `0,60,48,24,36,144,156,168`; 12 buttons each. Bar 1 form rows add
-`72,84,96,108`; read current button `.action` for paging. Other bars' buttons are found by the slot
-they carry (`ns.ActionOf`).
+Eight managed bar offsets: `0,60,48,24,36,144,156,168`; 12 buttons each. Bar 1 adds its page 2 (`12`,
+`ns.SECOND_PAGE`) and its form rows `72,84,96,108`; read current button `.action` for paging. Bars 2 to 5 are also
+Bar 1's pages 6, 5, 3, 4 (`ns.BARS[n].page`); bars 6 to 8 are on no page. Other bars' buttons are found by the slot
+they carry (`ns.ActionOf`). With `holdPage` the form rows never show: a spell the game drops there goes to `FreeSlot` (`Bar1.Unseen`).
 
 Saved under `modules.Abilities`: `options`, `chars[GUID].reserved[slot]`, `presets[class][name]`
 (`slots/by`), `extras[class]`, `trainer[class]` (`tabs/spells/told`), `pageNames[class]`, `diag`,
@@ -78,7 +80,7 @@ providers or frame fields can taint casting and action bars. The workaround is d
 give back, take over, entries' size, window, Home's tab row); no file listens for `PLAYER_REGEN_ENABLED`.
 The game's page buttons and tab row are `Core.Lend`-ed; `Locked` is `Core.Locked`. Controller mode,
 failed setup or repeated conflicting placement cause fallback. After fallback, changing tabs lets Blizzard redraw.
-A module-level stand-down (Core's door guard) runs `ns.GiveBack`, each step in `ns.Safe`: `Ghosts.Hide`, `Drag.Cancel`, the trainer's filter back (`Sources.TrainerClosed`), `Book.StandDown`; the TRAINER_* listeners do nothing once `off`;
+A module-level stand-down (Core's door guard) runs `ns.GiveBack`, each step in `ns.Safe`: `Ghosts.Hide`, `Drag.Cancel`, the trainer's filter back (`Sources.TrainerClosed`), `Book.StandDown`, `Bar1.Apply` (the bar follows the game again); the TRAINER_* listeners do nothing once `off`;
 `RunUpdate`, the login timers and the book/drag `OnUpdate`s are `ns.Guard`ed, `Ghosts.Refresh` is a no-op once `off`.
 Watcher runs 10 frames after layout, then every 0.2 s only while visible.
 
