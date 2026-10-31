@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Sync: every profile keeps Graphics, Audio and All other game settings (Saneroki, 2026-11-01)
+Saneroki asked whether a `/reload` really saves everything to the profile in use. It did not: Speedleveling held neither
+Graphics, Audio nor All other game settings. These three parts find their CVars in a job of Core's scheduler, which was
+started only when a part had something to write. A profile that held nothing of them never started it before the logout,
+and the logout's reading only started it, too late, every time.
+- Each writing now gets such a part ready, whatever the profile holds (`Prepare`, `Sync.Give`); the job stays once a session.
+- `dev/tests/sync.lua` holds it: without the fix the new check fails.
+
 ### Social: a tick for each of the game's channels; a refused leave not asked at every click (Saneroki, 2026-11-01)
 Saneroki: a click on any channel's *Never in it*, *Always in it* or *The game decides* said "Unable to leave chat
 channel Newcomer Chat"; each channel should have a plain tick instead of its flyout, ticked joined, unticked left.

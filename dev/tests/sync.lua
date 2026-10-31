@@ -422,6 +422,16 @@ local popups = #W.popups
 Sync.Give()
 check(#game.calls == 0 and W.cvarSets == 0 and #W.popups == popups, "what is the same already is not set again")
 
+-- A profile that holds nothing of a part that finds its CVars: found at the writing all the same, or the logout's
+-- reading would only start looking and such a profile would never hold them -----------------------
+graphics.names, graphics.has, Sync.options.taken.GRAPHICS_LABEL = nil, nil, nil
+Sync.Give()
+check(Core.Steps.Running(FINDING), "the writing finds them, whatever the profile holds")
+Settle()
+Sync.Capture()
+check(type(Sync.options.taken.GRAPHICS_LABEL) == "table" and Sync.options.taken.GRAPHICS_LABEL.cvars.graphicsQuality ~= nil,
+    "so the next reading saves them")
+
 -- Not in a fight: it waits until the fight is over ------------------------------------------------
 W.cvars.cameraSavedDistance = "5"
 W.combat = true

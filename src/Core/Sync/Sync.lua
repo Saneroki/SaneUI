@@ -66,6 +66,7 @@ Sync.GROUPS = {
 --      Read()      what the game holds now, as plain data (nil: nothing to keep)
 --      Write(data) gives it back, setting only what differs; true when the game shows it only after a
 --                  /reload, then named by reload ("the chat windows")
+--      Prepare()   gets ready to be read, whatever the profile holds: the logout leaves no time for that
 Sync.parts = {}
 Sync.part = {}
 
@@ -176,6 +177,9 @@ end
 -- not written: from now on this game's are read in their place.
 function Sync.Give()
     if not On() then return end
+    for _, part in ipairs(Sync.parts) do
+        if part.Prepare and Sync.PartKept(part.id) then Sync.Safe("preparing " .. part.id, part.Prepare) end
+    end
     if not Ours() then
         given = true
         return

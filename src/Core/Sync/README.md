@@ -83,9 +83,9 @@ the game's own chat channels on every character is the Social module's.)
     (`Enum.ConsoleCategory`), as the game lists them (`ConsoleGetAllCommands`).
   - **Other per-character settings:** every other CVar the game stores for each character
     (`C_CVar.GetCVarInfo`: stored for the character, not locked, not read only) that no page holds.
-  - These last two are found once a session when first wanted, in one pass that is a job of Core's scheduler
-    (`Core.Steps`: a few milliseconds a frame, never in a fight); until then what was kept stays, and what is
-    to be set is set once they are found. Never taken by them: a character's state (tracked, collapsed, last
+  - These last two are found once a session at the first writing, whatever the profile holds, in one pass that
+    is a job of Core's scheduler (`Core.Steps`: a few milliseconds a frame, never in a fight); until then what was
+    kept stays, and what is to be set is set once they are found. Never taken by them: a character's state (tracked, collapsed, last
     chosen or seen), one computer's (`gx*`, drivers, devices, monitor, window mode, speech voices), and a
     CVar the game does not let addons set (locked, secure or read only).
   - **Edit Mode layout** (`Layout.lua`), **your own chat channels** and **chat windows** (`Chat.lua`).

@@ -10,8 +10,8 @@
 --      per character   every other CVar the game stores for each character on its
 --                      servers (C_CVar.GetCVarInfo): map filters, the minimap,
 --                      tutorials seen, ...
---  The last two the game lists (ConsoleGetAllCommands): once a session, when
---  first wanted, in one pass that is a job of Core's scheduler (Steps.lua), of
+--  The last two the game lists (ConsoleGetAllCommands): once a session, at the
+--  first writing, in one pass that is a job of Core's scheduler (Steps.lua), of
 --  which only the names stay. A part reads only what this client has, and
 --  writes only what differs and what the game lets us set (Sync.SetCVar).
 -------------------------------------------------------------------------------
@@ -345,6 +345,7 @@ end
 local function Found(id, group, kind, part)
     part.kind = kind
     found[#found + 1] = part
+    part.Prepare = function() Names(part) end
     part.Read = function()
         local names = Names(part)
         if not names or #names == 0 then return Sync.Taken(id) end
