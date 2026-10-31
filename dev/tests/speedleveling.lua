@@ -204,7 +204,7 @@ local records = {
         ["object:1617"] = { points = { { map = 1411, x = 1, y = 1 }, { map = 1413, x = 1, y = 1 } } },
         ["object:1623"] = { points = { { map = 1413, x = 2, y = 2 }, { map = 1413, x = 3, y = 3 }, { map = 1413, x = 4, y = 4 } } },
         ["object:1735"] = { points = { { map = 1413, x = 5, y = 5 } } },
-        -- For the gatherers' steps: a zone (1500) with a cave of weak ore and a hill of copper, one like it after it
+        -- For Mining's and Herbalism's steps: a zone (1500) with a cave of weak ore and a hill of copper, one like it after it
         -- (1502), a harder zone (1501) of tin, and the nodes of a herb at the first zone's middle.
         ["object:9001"] = { points = { { map = 1500, x = 20, y = 20 }, { map = 1500, x = 21, y = 20 }, { map = 1500, x = 20, y = 21 },
                                        { map = 1500, x = 22, y = 22 }, { map = 1500, x = 19, y = 20 }, { map = 1500, x = 21, y = 21 } } },
