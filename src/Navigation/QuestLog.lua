@@ -70,7 +70,7 @@ local _, ns = ...
 --                           closer to the screen's edge; clicked through but its title bar, its words and its
 --                           items; the objectives done left out, the
 --                           headers without their fold marks
---  In either the game's quest tracker is out of sight (lent to a hidden frame, Core.Lend; back once the log is off).
+--  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker).
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -160,7 +160,7 @@ local stale = true -- the log changed while out of sight
 local order = ""   -- the quests in the order shown (Proximity: drawn anew once it changes)
 local heading      -- the title bar's words now
 local ticker       -- sorted by proximity and in sight: the order looked at again (Tick)
-local away, lent   -- the hidden frame the game's quest tracker is lent to while ours shows (Tracker)
+local away, lent   -- the hidden frame the game's quest tracker is lent to (QuestLog.Tracker)
 local chosen       -- the quest last clicked or shown, lit in the list
 local open = false -- its text shows under it
 local opened       -- that text's rows while they are listed (Read): the first, the last, how high they are together
@@ -1198,11 +1198,13 @@ end)
 -------------------------------------------------------------------------------
 --  The panel
 -------------------------------------------------------------------------------
--- The game's quest tracker out of sight while ours shows: lent to a hidden frame of ours (Core.Lend; its own
--- code goes on, unseen, its place among the game's frames kept), given back once ours is off, or stands down.
-local function Tracker()
+-- The game's quest tracker out of sight (Saneroki, 2026-10-31): whether ours shows or was switched off, while the
+-- game's map and quest log are not chosen (Show the game's map; chosen, it goes only while ours shows). Lent to a
+-- hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
+-- once the game's are chosen, or the module stands down.
+function QuestLog.Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
-    local hide = frame and frame:IsShown() and not ns.off
+    local hide = not ns.off and (not (ns.options or {}).nativeMap or (frame and frame:IsShown()))
     if hide and tracker and not lent then
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
@@ -1457,7 +1459,7 @@ function QuestLog.Lay(on)
     Dress(on)
     local shown = ns.TopBar.LogShown()
     if shown and not frame:IsShown() then frame:Show() elseif not shown and frame:IsShown() then frame:Hide() end
-    Tracker()
+    QuestLog.Tracker()
     if shown and stale then QuestLog.Refresh() end
     if not shown then
         ns.Areas.Hover(nil)
@@ -1474,7 +1476,7 @@ end
 function QuestLog.Hide()
     if frame then frame:Hide() end
     Tick(false)
-    Tracker()
+    QuestLog.Tracker()
     seat()
 end
 

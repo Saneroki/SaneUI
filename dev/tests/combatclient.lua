@@ -93,6 +93,10 @@ function Client.Install(W)
     AuraContainerSortDirection = { Normal = 0, Reverse = 1 }
     W.templates.CustomAuraContainerTemplate = function(container)
         container._groups = {}
+        container._flow = {}
+        function container:SetFlowLayoutAnchorPoint(corner) self._flow.corner = corner end
+        function container:SetFlowLayoutGrowthDirection(across, up) self._flow.across, self._flow.up = across, up end
+        function container:SetFlowLayoutMaximumLineSize(line) self._flow.line = line end
         function container:AddAuraGroup(key, filter, options)
             local icon = W.NewWidget("Button", nil, self)
             self._groups[key] = { filter = filter, options = options, enabled = true, icon = icon }
@@ -164,14 +168,24 @@ function Client.Install(W)
     PlayerFrame.PlayerFrameContainer = W.NewWidget("Frame", nil, PlayerFrame)
     PlayerFrame.PlayerFrameContent = W.NewWidget("Frame", nil, PlayerFrame)
     PlayerFrame._mouse = true
+    -- As in the game, its health bar takes no click but holds the mouse moving over it.
+    PlayerFrame.PlayerFrameContent.HealthBar = W.NewWidget("StatusBar", nil, PlayerFrame.PlayerFrameContent)
+    PlayerFrame.PlayerFrameContent.HealthBar._motion = true
     TargetFrame = W.NewWidget("Button", "TargetFrame", UIParent)
     FocusFrame = W.NewWidget("Button", "FocusFrame", UIParent)
     PetFrame = W.NewWidget("Button", "PetFrame", PlayerFrame)
     PetFrame._mouse = true
+    PetFrameHappiness = W.NewWidget("Frame", "PetFrameHappiness", PetFrame)
+    PetFrameHappiness._mouse, PetFrameHappiness._motion = true, true
+    -- The game's bars that go (GameBars.lua), the menu bar with a button of it.
+    StatusTrackingBarManager = W.NewWidget("Frame", "StatusTrackingBarManager", UIParent)
+    StanceBar = W.NewWidget("Frame", "StanceBar", UIParent)
+    MicroMenu = W.NewWidget("Frame", "MicroMenu", UIParent)
+    MicroMenu.Button = W.NewWidget("Button", nil, MicroMenu)
     -- The game's cast bars and its timers' bars, hearing what its code registers. Your cast (W.cast, W.channel: name,
     -- icon, starts, ends, id, spell, locked, craft; a channel's empowered, stages), another unit's (W.casts[unit]) and
     -- your timers (W.mirror[index]: as the game gives them; W.mirrorLeft[timer]: milliseconds).
-    for _, name in ipairs({ "PlayerCastingBarFrame", "OverlayPlayerCastingBarFrame" }) do
+    for _, name in ipairs({ "PlayerCastingBarFrame", "OverlayPlayerCastingBarFrame", "PetCastingBarFrame" }) do
         _G[name] = W.NewWidget("StatusBar", name, UIParent)
         for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_INTERRUPTIBLE" }) do
             _G[name]:RegisterUnitEvent(event, "player")

@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Unit frames show their auras in one line above them: buffs on the
+  left, crowd control in the middle, debuffs on the right.
+- The game's experience, stance and bag bars and its quest tracker are
+  gone from the screen, and its menu bar shows only under the mouse.
 - Action Bar 1 stays on the page you chose: stances, forms and stealth
   no longer change it, only its arrows and your page keys do. Bars 6
   to 8 stand beside its pages, so every page and bar can hold buttons

@@ -347,6 +347,14 @@ function lends:SetMouse(on)
     return true
 end
 
+-- The mouse moving over it alone (the game's health bars take no click, but hold the mouse off the world).
+function lends:SetMotion(on)
+    if not Free(self) then return false end
+    Note(self, "motion", self.frame:IsMouseMotionEnabled())
+    self.frame:SetMouseMotionEnabled(on)
+    return true
+end
+
 function lends:SetShown(on)
     if not Free(self) then return false end
     Note(self, "shown", self.frame:IsShown())
@@ -386,6 +394,7 @@ local PUT = {
     alpha = function(self, alpha) self.frame:SetAlpha(alpha) end,
     scale = function(self, scale) self.frame:SetScale(scale) end,
     mouse = function(self, on) self.frame:EnableMouse(on) end,
+    motion = function(self, on) self.frame:SetMouseMotionEnabled(on) end,
     shown = function(self, on) self.frame:SetShown(on) end,
     heard = function(self, heard)
         for _, note in ipairs(heard) do

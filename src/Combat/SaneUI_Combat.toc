@@ -72,3 +72,5 @@ Units\GroupTools.lua
 Units\Group.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua
+# The game's experience and stance bars out of sight, its menu bar on mouseover
+GameBars.lua

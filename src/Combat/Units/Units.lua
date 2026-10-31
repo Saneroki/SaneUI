@@ -37,8 +37,10 @@ local _, ns = ...
 --  and texts (their alpha) and its clicks, so what hangs on it stays the
 --  game's: the totems and a class's resource bar. The game's pet frame, which
 --  its layout puts back under its own parent, by its alpha and its clicks too.
---  The game's cast bars and timers hear nothing while ours stand in for them
---  (Core.Lend's SetDeaf): the game shows and lays those out itself.
+--  What lies under those takes the mouse no more either (Unmouse): a frame at
+--  alpha 0 still does, and the game's health and power bars would hold it off
+--  the world. The game's cast bars and timers hear nothing while ours stand in
+--  for them (Core.Lend's SetDeaf): the game shows and lays those out itself.
 --
 --  Secure frames are made, shown, moved, sized and given back out of a fight
 --  only: what is asked for in one waits for its end (Core.AfterCombat). Off
@@ -65,6 +67,7 @@ Units.KINDS = {
       row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade", power = true },
       bars = { { option = "unitCast", game = "PlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitCast", game = "OverlayPlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
+               { option = "unitCast", game = "PetCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitBreath", game = "MirrorTimerContainer", away = "deaf", events = ns.UnitTimers.EVENTS } } },
     { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent",
       place = "targetPlace", first = { point = "TOP", relative = "BOTTOM", x = 190, y = 269 },
@@ -246,6 +249,17 @@ local function Make(kind)
     kind.window:Place()
 end
 
+-- What takes the mouse, a frame and all under it, no longer does (each by Lend): clicks and movement, or movement alone.
+local function Unmouse(frame, Lend)
+    if frame:IsForbidden() then return end
+    if frame:IsMouseClickEnabled() then
+        Lend(frame, "SetMouse", false)
+    elseif frame:IsMouseMotionEnabled() then
+        Lend(frame, "SetMotion", false)
+    end
+    for _, child in ipairs({ frame:GetChildren() }) do Unmouse(child, Lend) end
+end
+
 -- The game's frame out of sight (kind.away): "parts" your own frame's picture, bars and texts and its clicks;
 -- "parent" your target's or focus's whole, in our hidden frame; "fade" the pet's by its alpha and its clicks; "deaf"
 -- a bar of the game's by the events it no longer hears.
@@ -263,12 +277,16 @@ local function Away(kind)
     if kind.away == "parts" then
         for _, key in ipairs(Units.PLAYER_PARTS) do
             local part = rawget(game, key)
-            if type(part) == "table" and part.SetAlpha then Lend(part, "SetAlpha", 0) end
+            if type(part) == "table" and part.SetAlpha then
+                Lend(part, "SetAlpha", 0)
+                Unmouse(part, Lend)
+            end
         end
+        Lend(game, "SetMouse", false)
     else
         Lend(game, "SetAlpha", 0)
+        Unmouse(game, Lend)
     end
-    Lend(game, "SetMouse", false)
 end
 
 -- The game's frame back as it was.

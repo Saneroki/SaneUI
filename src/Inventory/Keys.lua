@@ -8,19 +8,20 @@ local _, ns = ...
 --  (Bindings.xml, in the game's key bindings under Sane UI), by the game's own
 --  override bindings, which leave your key bindings as they are: the full
 --  screen with the bags on it, and pressed again while it shows, back to its
---  size. A click on the game's own bag buttons (the backpack, a bag slot, the
---  keyring) does the same, after the game's own click (a hook), unless it put
---  an item into that bag.
+--  size.
 --
 --  The game's bag windows stay closed meanwhile: they stand in a hidden frame
 --  of ours (lent: Core.Lend, their parent given back as it was), so the game
 --  opens and closes them as it always does (at a vendor, the bank, the mail)
 --  and nothing of them shows. Chosen in the full window's dropdown Classic
 --  windows (Window.lua: Keys.GameBags), they show again until they are all
---  closed. The setting Bag Keys Open Our Bags (bagKeys) switches all of it;
---  so does Can expand to fullscreen (expand), without which the full screen
---  never comes, and Edit Mode while it is open (Core.EditMode); standing
---  down gives it all back.
+--  closed. The game's bag bar (the backpack, the bag slots, the keyring) stands
+--  in that frame too, for as long as ours are the bags (Saneroki, 2026-10-31):
+--  no button of it to see or click, and not in Edit Mode either; the Classic
+--  windows leave it there. The setting Bag Keys Open Our Bags (bagKeys)
+--  switches all of it; so does Can expand to fullscreen (expand), without which
+--  the full screen never comes, and, for the keys and windows, Edit Mode while
+--  it is open (Core.EditMode); standing down gives it all back.
 --
 --  Override bindings change out of a fight only: set at the login, anew when
 --  your key bindings change (UPDATE_BINDINGS, only when the keys of those
@@ -35,25 +36,25 @@ ns.Keys = Keys
 Keys.ACTIONS = { "TOGGLEBACKPACK", "OPENALLBAGS", "TOGGLEBAG1", "TOGGLEBAG2", "TOGGLEBAG3", "TOGGLEBAG4", "TOGGLEREAGENTBAG1" }
 Keys.COMMAND = "SANEUI_INVENTORY_BAGS"
 BINDING_NAME_SANEUI_INVENTORY_BAGS = "Open the bags on Inventory's full screen"
--- The game's bag buttons, hooked: ours after each click.
-Keys.BUTTONS = { "MainMenuBarBackpackButton", "CharacterBag0Slot", "CharacterBag1Slot", "CharacterBag2Slot",
-                 "CharacterBag3Slot", "CharacterReagentBag0Slot", "KeyRingButton" }
 
 local owner         -- the frame our override bindings belong to
-local hidden        -- the hidden frame the game's bag windows stand in
+local hidden        -- the hidden frame the game's bag windows and bag bar stand in
 local bound         -- the keys of those actions when they were last bound: rebound only when they change
 local lends = {}    -- [frame] = its lend (Core.Lend)
+local barLend       -- the lend of the game's bag bar
 local gameBags = false -- the player chose the game's bags (Classic windows): they show
-local pressing = false -- our key is being answered: the hooks leave it alone
-local held = false     -- the cursor held an item as a bag button was pressed: it went into that bag
 
--- Whether our bags are the bags now: the setting on, the module running, and the full screen able to come (with
--- Can expand to fullscreen off it never does, in Edit Mode not until it closes: the game's keys and bags are the
--- game's then).
-function Keys.Taken()
+-- Whether ours stand in for the game's bags: the setting on, the module running, and the full screen able to come
+-- (with Can expand to fullscreen off it never does).
+local function Ours()
     local options = ns.options or {}
+    return owner ~= nil and not ns.off and options.bagKeys ~= false and options.expand ~= false
+end
+
+-- Whether our bags are the bags now: so, and Edit Mode closed (the game's keys and bags are the game's until then).
+function Keys.Taken()
     local editing = Core.EditMode and Core.EditMode.active
-    return owner ~= nil and not ns.off and options.bagKeys ~= false and options.expand ~= false and not editing
+    return Ours() and not editing
 end
 
 -- The game's binding functions, where this client has them.
@@ -124,11 +125,26 @@ local function Back()
     end
 end
 
+-- The game's bag bar in our hidden frame while ours stand in for the game's bags, or back where it stood.
+local function Bar()
+    local bar = rawget(_G, "BagsBar")
+    if type(bar) ~= "table" then return end
+    if Ours() and not barLend then
+        local lend = Core.Lend(bar)
+        if lend:SetParent(hidden) then barLend = lend end
+    elseif barLend and not Ours() then
+        local lent = barLend
+        barLend = nil
+        ns.Safe("keys", lent.Return, lent)
+    end
+end
+
 -- As things stand now: away while our bags are the bags and the player did not choose the game's.
 function Keys.Apply()
     if not owner then return end
     Keys.Bind()
     if Keys.Taken() and not gameBags then Away() else Back() end
+    Bar()
 end
 
 -- The player chose the game's bags (on: they show, Classic windows) or ours again.
@@ -149,24 +165,10 @@ end
 -------------------------------------------------------------------------------
 --  Opening ours
 -------------------------------------------------------------------------------
--- Our key (Bindings.xml), or a bag button of the game's: the full screen with the bags, or back from it.
+-- Our key (Bindings.xml): the full screen with the bags, or back from it.
 function Keys.Press()
     if ns.off then return end
-    pressing = true
     ns.Safe("keys", ns.Window.Toggle, "bags")
-    pressing = false
-end
-
--- A bag button of the game's pressed: whether an item goes into its bag; clicked: ours, while ours are the
--- bags.
-local function Pressed()
-    local has = rawget(_G, "CursorHasItem")
-    held = has and has() and true or false
-end
-
-local function Clicked()
-    if held or pressing or gameBags or not Keys.Taken() then return end
-    Keys.Press()
 end
 
 function Keys.Start()
@@ -174,13 +176,6 @@ function Keys.Start()
     hidden = CreateFrame("Frame")
     hidden:Hide()
     ns.On("UPDATE_BINDINGS", Changed)
-    for _, name in ipairs(Keys.BUTTONS) do
-        local button = rawget(_G, name)
-        if type(button) == "table" and button.HookScript then
-            button:HookScript("PreClick", ns.Guard(Pressed))
-            button:HookScript("OnClick", ns.Guard(Clicked))
-        end
-    end
     for _, frame in ipairs(Frames()) do frame:HookScript("OnHide", ns.Guard(Closed)) end
     -- Edit Mode opened or closed: the bag keys are the game's while it is open (Keys.Taken).
     if Core.EditMode and Core.EditMode.Watch then Core.EditMode.Watch(ns.Guard(Keys.Apply)) end
@@ -191,6 +186,7 @@ end
 function Keys.Leave()
     if not owner then return end
     Back()
+    Bar()
     if InCombatLockdown() then
         Core.AfterCombat("Inventory: keys", Keys.Leave)
         return

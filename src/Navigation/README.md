@@ -155,8 +155,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   shades it on its map.
 - **The quest log**, a window over the full map and on the screen while the map is small (**the button *Quest Log* on
   the full map's bar turns it on or off, in both**; no pin, no close button; drag its title bar to move it, dock it at
-  a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker (out of
-  sight meanwhile), at a place and size of its own (at first the screen's top left corner), without a background, a
+  a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker, which
+  stays out of sight even with the log turned off (*Show the game's map* brings it back), at a place and size of its own (at first the screen's top left corner), without a background, a
   border or a line under its title, only the list over the game, clicked through but its title bar and its words.
   Its title bar says how many quests you have of how many you may, and how they are sorted:
   *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
@@ -452,7 +452,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   and each row's hit rect only its words (`Reach`), the mouse wheel
   the game's while the list fits, the objectives done left out, no fold marks. One switch for both, `store.questLog`
   (TopBar's button); no buttons on its low title bar (Core's `bare`, `barHeight`). The game's `ObjectiveTrackerFrame`
-  lent to a hidden frame (`Core.Lend`) while it shows. An objective's words made anew from the game's
+  lent to a hidden frame (`Core.Lend`; `QuestLog.Tracker`), the log shown or off, while `nativeMap` is off. An objective's words made anew from the game's
   (`Objective`, `Asked`, `QuestLog.ASKS`). Sorted (`store.questLogSort`, by Core's `titleClick` on its
   title, `titleTip` its tip; the title `%d/%d <sorting>`): by `GetDistanceSqToQuest` (looked at again
   every `QuestLog.RESORT` seconds by a ticker while shown, drawn anew only once the order changed), by level, the

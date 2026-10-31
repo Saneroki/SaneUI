@@ -281,7 +281,8 @@ ContainerFrameCombinedBags = W.NewWidget("Frame", "ContainerFrameCombinedBags", 
 ContainerFrame1 = W.NewWidget("Frame", "ContainerFrame1", UIParent)
 ContainerFrame2 = W.NewWidget("Frame", "ContainerFrame2", UIParent)
 for _, bagFrame in ipairs({ ContainerFrameCombinedBags, ContainerFrame1, ContainerFrame2 }) do bagFrame:Hide() end
-MainMenuBarBackpackButton = W.NewWidget("Button", "MainMenuBarBackpackButton", UIParent)
+BagsBar = W.NewWidget("Frame", "BagsBar", UIParent)
+MainMenuBarBackpackButton = W.NewWidget("Button", "MainMenuBarBackpackButton", BagsBar)
 OpenAllBags = function() ContainerFrameCombinedBags:Show() end
 CloseAllBags = function() ContainerFrameCombinedBags:Hide() end
 local cursorItem = false
@@ -1066,27 +1067,20 @@ check(handle.edge.full and Board.Has("bags") and Board.Panel("bags"):IsShown(), 
 Keys.Press()
 check(not handle.edge.full, "pressed again: back to its size")
 Stand()
-MainMenuBarBackpackButton:GetScript("PreClick")(MainMenuBarBackpackButton, "LeftButton")
-MainMenuBarBackpackButton:GetScript("OnClick")(MainMenuBarBackpackButton, "LeftButton")
-Stand()
-check(handle.edge.full, "a click on the game's backpack button: ours too")
-Keys.Press()
-Stand()
-cursorItem = true
-MainMenuBarBackpackButton:GetScript("PreClick")(MainMenuBarBackpackButton, "LeftButton")
-cursorItem = false
-MainMenuBarBackpackButton:GetScript("OnClick")(MainMenuBarBackpackButton, "LeftButton")
-check(not handle.edge.full, "a click that put an item into the backpack opens nothing")
+check(BagsBar:GetParent() ~= UIParent and not BagsBar:IsVisible() and not MainMenuBarBackpackButton:IsVisible(),
+    "the game's bag bar is gone: nothing of it to see or click")
 -- The game's bags chosen in Classic windows: they show, until they are all closed.
 Keys.GameBags(true)
 OpenAllBags()
 check(ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrameCombinedBags:IsVisible(), "the game's bags chosen: they show")
+check(not BagsBar:IsVisible(), "its bag bar stays gone meanwhile")
 CloseAllBags()
 check(ContainerFrameCombinedBags:GetParent() ~= UIParent, "all closed: hidden again, ours are the bags")
 Core.Set(ns.name, "bagKeys", false)
-check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent, "the setting off: the game's keys and bags are the game's")
+check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and BagsBar:GetParent() == UIParent,
+    "the setting off: the game's keys, bags and bag bar are the game's")
 Core.Set(ns.name, "bagKeys", true)
-check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent, "on again")
+check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent and BagsBar:GetParent() ~= UIParent, "on again")
 -- Can expand to fullscreen off: the full screen never comes, so the bag keys and bags are the game's, and a key
 -- pressed then wishes for nothing later (the bags taken off the layout first, to see that they stay off).
 Push()
@@ -1101,11 +1095,10 @@ check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIP
 local classic = handle.options.classic
 check(not classic[1].ready() and not classic[2].ready(), "nor is there the button Sane UI on the game's sheet and bags then")
 CloseAllBags()
-MainMenuBarBackpackButton:GetScript("PreClick")(MainMenuBarBackpackButton, "LeftButton")
-MainMenuBarBackpackButton:GetScript("OnClick")(MainMenuBarBackpackButton, "LeftButton")
+check(BagsBar:GetParent() == UIParent, "its bag bar is back: the only way to its bags")
 Keys.Press()
 Stand()
-check(not handle.edge.full, "nor does ours come by the game's bag button or our own key")
+check(not handle.edge.full, "nor does ours come by our own key")
 Core.Set(ns.name, "expand", true)
 check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent and classic[1].ready()
     and classic[2].ready(), "on again: ours, and the button Sane UI on the game's sheet and bags")
@@ -1120,6 +1113,7 @@ EventRegistry:TriggerEvent("EditMode.Enter")
 OpenAllBags()
 check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrameCombinedBags:IsVisible(),
     "Edit Mode open: your bag keys are the game's, and the game's bags show")
+check(BagsBar:GetParent() ~= UIParent, "but not its bag bar: nothing to place there")
 CloseAllBags()
 EventRegistry:TriggerEvent("EditMode.Exit")
 check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent, "Edit Mode closed: ours again")

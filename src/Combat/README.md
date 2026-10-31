@@ -18,7 +18,7 @@ marker on the left, then the name (none on your own), the health and how much is
 target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours your
 pet, with its health and its resource. Directly above each health bar its unit's cast while it casts. Your breath
 lies over your health bar, in the game's bubbles, half see-through, the game's other timers on you stand above your
-cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone.
+cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone. Its experience and stance bars are gone, and its menu bar shows only while the mouse is on it.
 
 Your party and your raid are one frame of ours, in place of the game's two: unit frames edge to edge, up to forty, in the
 nameplates' look, sized to fit the limits you set in Edit Mode. On every health bar of ours, these and the unit frames, you see
@@ -84,10 +84,10 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   gold one; the frame glows red while you have the unit's aggro (your own: while anything is after you) or while
   it is a player who may attack you. Every frame is the same width, whatever it shows: 240 at 100 % (*Unit frame
   size* scales all three alike); only the glow reaches beyond its edge.
-  - **Auras:** the three that matter most of each kind: debuffs above the frame from its left (on a foe the ones
-    you put on it, on a friend or you any, what you can dispel and a boss's first), buffs above it from its right
-    (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
-    control right of it. **Right click** an icon, out of a fight, for its menu: *Always show* (in front of the
+  - **Auras:** the three that matter most of each kind, in one line above the frame: buffs on the left, from its
+    edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
+    control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
+    friend or you any, what you can dispel and a boss's first). **Right click** an icon, out of a fight, for its menu: *Always show* (in front of the
     rest, whoever cast it), *Never show*, and *Aura lists...*, a window with both lists side by side: type a
     spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
     `/sane auras` opens it too. The game lets the lists act on the buffs of you, your group and friendly units and
@@ -130,7 +130,8 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Auras on the frames*); the
-  section *Action bars* (*Clean action bars*, off for the game's look); *Quest marks on nameplates*; the section
+  section *Action bars* (*Clean action bars*, off for the game's look; *Hide the game's experience bar*, *Hide the
+  game's stance bar*, *Menu bar on mouseover*); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
 - **In Retail:** our spellbook and talents are made after WoW: Forever's, which Retail has not, so neither is
@@ -350,8 +351,11 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
     fight (`Kind`): your own frame keeps two slots (`Alternate`) as a druid, or while your power is not mana but you
     have mana (asked again on `PLAYER_SPECIALIZATION_CHANGED`); the face is the health bar's height, the rest hangs
     under it.
-  - `Auras.lua` (`ns.UnitAuras`): per frame and kind (`Auras.KINDS`: debuffs, buffs, control) a container of the
-    game's (`CustomAuraContainerTemplate`, as the nameplates'), groups of `Auras.MOST` (3): `listed` (the filter
+  - `Auras.lua` (`ns.UnitAuras`): per frame and kind (`Auras.KINDS`: buffs, control, debuffs) a container of the
+    game's (`CustomAuraContainerTemplate`, as the nameplates'), each on the frame's `roof` at its `point`
+    (`BOTTOMLEFT`, `BOTTOM`, `BOTTOMRIGHT`): the game sizes a container to what it holds, so the one in the middle
+    stays centred. `Auras.LINE` (three icons) is its widest line (`SetFlowLayoutMaximumLineSize`): what your list
+    adds goes up, not sideways into the next kind. Groups of `Auras.MOST` (3): `listed` (the filter
     `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Always show, off while that list is empty) and `auto` (the kind's
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
     `BigDefensive`, `excludeSpellIDs` = both lists; control only Never show). The game applies those candidate filters
@@ -373,6 +377,13 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
     its unit and registered again as it was: they are not hidden or moved, because the cast bar is a managed frame
     (its `OnHide` would run the bottom layout in our taint, the game sets its alpha and parent anew itself). The overlay
     deaf, the game's own talents window shows its spinner where its cast would stand.
+- **The game's other bars** (`GameBars.lua`, `ns.GameBars`, Saneroki 2026-10-31): `StatusTrackingBarManager` and
+  `StanceBar` lent to a hidden frame (`Core.Lend`'s `SetParent`, each by its switch: `hideTracking`, `hideStance`).
+  The game runs them on, unseen; its bottom bars stay where they stood, since its layout asks each bar's `IsShown`.
+  Your stance keys run `StanceBar:Select`, which works hidden. The menu bar (`menuHover`) keeps its place: in
+  WoW: Forever `MainActionBar` hangs on `MicroMenuContainer`. `MicroMenu`'s alpha is lent, a hook after each button's
+  `OnEnter` fades it in (`Core.Motion.Fade`), a frame of ours looks each frame for `MicroMenu:IsMouseOver()` while
+  it shows. In Edit Mode it shows, to be placed.
 - **The action bars** (`ActionBars.lua`): the bars of `Bars.BARS` (main, the extra bars, stance, pet, possess)
   keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`; the
   main bar's `ActionBarPageNumber` and its arrows stay) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
@@ -461,6 +472,7 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, sizes, Edit Mode's settings and preview |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
+| `GameBars.lua` | The game's experience and stance bars out of sight, its menu bar on mouseover |
 
 ## History
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.

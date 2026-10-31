@@ -44,7 +44,7 @@ function methods:CreateAnimationGroup()
     function group:Play() self.playing = true end
     function group:Stop() self.playing = false end
     function group:IsPlaying() return self.playing end
-    group.SetLooping = noop
+    group.SetLooping, group.SetToFinalAlpha = noop, noop
     function group:CreateAnimation()
         return setmetatable({}, { __index = function() return noop end })
     end

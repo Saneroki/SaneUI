@@ -2,18 +2,21 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Auras
---  Around a unit frame, as around a nameplate, the auras that matter most,
---  Auras.MOST of each kind at most (above: over what stands on the frame now,
---  its cast: the containers stand on its roof, Bar.Fit):
---    above, from the left    debuffs: on a foe the ones you put on it, on a
---                            friend (and you) any, the game's most important
---                            first (its unit frames' order: what you can
---                            dispel, a boss's)
---    above, from the right   buffs: on a foe those the game shows on its own
---                            plates, on a friend (and you) any, big defensives
---                            first
---    right of the frame      crowd control on it, by anyone
---  and before them, in front of the rest, the ones on your list Always show;
+--  Above a unit frame, in one line over what stands on the frame now (its cast:
+--  the containers stand on its roof, Bar.Fit), the auras that matter most,
+--  Auras.MOST of each kind at most (Saneroki, 2026-10-31):
+--    on the left, from its edge    buffs: on a foe those the game shows on its
+--                                  own plates, on a friend (and you) any, big
+--                                  defensives first
+--    in the middle                 crowd control on it, by anyone
+--    on the right, from its edge   debuffs: on a foe the ones you put on it, on
+--                                  a friend (and you) any, the game's most
+--                                  important first (its unit frames' order:
+--                                  what you can dispel, a boss's)
+--  A container is as wide as what it holds (the game sizes it), so the middle
+--  one, standing by its bottom middle, stays centred however many it shows.
+--  And before them, in front of the rest, the ones on your list Always show
+--  (what no longer fits a line goes up: the three stay clear of each other);
 --  never the ones on your list Never show (Lists.lua keeps the two lists).
 --
 --  All are the game's own aura containers (CustomAuraContainerTemplate), one
@@ -37,16 +40,18 @@ ns.UnitAuras = Auras
 Auras.SIZE = 22 -- an icon, square
 Auras.GAP = 2   -- between icons, and from the frame
 Auras.MOST = 3  -- of each kind, and of each list
+Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP) - Auras.GAP -- a container's widest line: what comes after goes up
 Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
--- The kinds: their place, their filters on a foe and a friend, the order the game gives them, and whether the lists
--- act on them (listed: the filter of the group of the list Always show).
+-- The kinds: their place on the frame's roof, the corner they grow from inside their container and which way, their
+-- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
+-- of the group of the list Always show).
 Auras.KINDS = {
-    { key = "debuffs", harmful = true, corner = "BOTTOMLEFT", growth = "Right", sort = "UnitFrameDebuff",
-      foe = "HARMFUL|PLAYER|!CROWD_CONTROL", friend = "HARMFUL|!CROWD_CONTROL", listed = "HARMFUL" },
-    { key = "buffs", harmful = false, corner = "BOTTOMRIGHT", growth = "Left", sort = "BigDefensive",
+    { key = "buffs", harmful = false, point = "BOTTOMLEFT", corner = "BOTTOMLEFT", growth = "Right", sort = "BigDefensive",
       foe = "HELPFUL|INCLUDE_NAME_PLATE_ONLY", friend = "HELPFUL", listed = "HELPFUL" },
-    { key = "control", harmful = true, corner = "TOPLEFT", growth = "Right", sort = "Default",
+    { key = "control", harmful = true, point = "BOTTOM", corner = "BOTTOMLEFT", growth = "Right", sort = "Default",
       foe = "HARMFUL|CROWD_CONTROL", friend = "HARMFUL|CROWD_CONTROL" },
+    { key = "debuffs", harmful = true, point = "BOTTOMRIGHT", corner = "BOTTOMRIGHT", growth = "Left", sort = "UnitFrameDebuff",
+      foe = "HARMFUL|PLAYER|!CROWD_CONTROL", friend = "HARMFUL|!CROWD_CONTROL", listed = "HARMFUL" },
 }
 
 local owners = setmetatable({}, { __mode = "k" }) -- [an icon the game made] = { face, kind }
@@ -159,11 +164,13 @@ local function Container(face, kind)
         return nil
     end
     container:SetFlowLayoutAnchorPoint(kind.corner)
-    container:SetFlowLayoutGrowthDirection(flow[kind.growth], kind.corner:find("^TOP") and flow.Down or flow.Up)
+    container:SetFlowLayoutGrowthDirection(flow[kind.growth], flow.Up)
+    container:SetFlowLayoutMaximumLineSize(Auras.LINE)
     local dressed = ns.Guard(function(frame) Dress(frame, face, kind) end) -- guarded: the game calls it per icon
     local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
     local function Options(sort)
-        return { maxFrameCount = Auras.MOST, initializeFrame = dressed, layout = { elementSpacing = Auras.GAP },
+        return { maxFrameCount = Auras.MOST, initializeFrame = dressed,
+                 layout = { elementSpacing = Auras.GAP, lineSpacing = Auras.GAP },
                  sortMethod = sorts and sorts[sort] or nil, sortDirection = ways and ways.Normal or nil }
     end
     if kind.listed then container:AddAuraGroup("listed", kind.listed, Options("Default")) end
@@ -174,11 +181,11 @@ end
 
 function Auras.Make(face)
     face.auras = {}
-    for _, kind in ipairs(Auras.KINDS) do face.auras[kind.key] = Container(face, kind) end
-    local auras = face.auras
-    if auras.debuffs then auras.debuffs:SetPoint("BOTTOMLEFT", face.roof, "BOTTOMLEFT", 0, Auras.GAP) end
-    if auras.buffs then auras.buffs:SetPoint("BOTTOMRIGHT", face.roof, "BOTTOMRIGHT", 0, Auras.GAP) end
-    if auras.control then auras.control:SetPoint("TOPLEFT", face, "TOPRIGHT", Auras.GAP * 3, 0) end
+    for _, kind in ipairs(Auras.KINDS) do
+        local container = Container(face, kind)
+        face.auras[kind.key] = container
+        if container then container:SetPoint(kind.point, face.roof, kind.point, 0, Auras.GAP) end
+    end
     faces[#faces + 1] = face
     Auras.Listed(face)
 end

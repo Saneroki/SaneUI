@@ -15,8 +15,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   Esc, to go back. Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Inventory >
   Expand window*). In Edit Mode the window can be docked in another corner; the push goes with it.
 - **Your bag keys** (the backpack's, *Open All Bags*, each bag's, the reagent bag's, whatever keys you gave them)
-  and a click on the game's own bag buttons open the full screen with your bags on it; pressed again, it goes
-  back. The game's own bags stay closed meanwhile (at a vendor or the bank too); the dropdown *Classic windows*
+  open the full screen with your bags on it; pressed again, it goes back. The game's bag bar is gone from the
+  screen, Edit Mode included. The game's own bags stay closed meanwhile (at a vendor or the bank too); the dropdown *Classic windows*
   still opens them, until you close them. Sane UI's key *Open the bags on Inventory's full screen* is in the
   game's key bindings under Sane UI. *Sane UI > Inventory > Bags > Bag Keys Open Our Bags* switches it off; with
   *Can expand to fullscreen* off the full screen never comes, so your bag keys and bags are the game's then too, and
@@ -226,9 +226,9 @@ login has no last line, until the game has said your time.
   `TOGGLEBAG1` to `4` and `TOGGLEREAGENTBAG1` (`GetBindingKey`) bound to our `SANEUI_INVENTORY_BAGS` by the game's
   override bindings (`SetOverrideBinding` on a frame of ours; anew at `UPDATE_BINDINGS` when those keys changed;
   out of a fight, else after it), which runs `Window.Toggle("bags")`: the full screen filled with the bags put on
-  the layout once it stands (`Board.Add`), or back while it stands with them (`Board.Has`). The game's bag
-  buttons (`MainMenuBarBackpackButton`, `CharacterBag0Slot` to `3`, `CharacterReagentBag0Slot`, `KeyRingButton`):
-  hooks after their `PreClick` (an item on the cursor goes into the bag: nothing more) and `OnClick`. The game's bag
+  the layout once it stands (`Board.Add`), or back while it stands with them (`Board.Has`). The game's `BagsBar`
+  (the backpack, the bag slots, the keyring) lent to the same hidden frame as the bag windows while ours stand in
+  for them (`Keys.lua`'s `Ours`: Edit Mode and Classic windows leave it there). The game's bag
   windows (`ContainerFrameCombinedBags`, `ContainerFrame1` to `NUM_CONTAINER_FRAMES`) lent to a hidden frame of
   ours (`Core.Lend`'s `SetParent`): the game opens and closes them as always, unseen; Classic windows' *Bags*
   (`Window.lua`) gives them back (`Keys.GameBags(true)`) until a hook after their `OnHide` finds none shown. The
@@ -721,7 +721,7 @@ classes' gains can be held against each other; `early` for a character without a
 |---|---|
 | `SaneUI_Inventory.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Inventory.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (Core's *Expand window* and *Window corners*), `GiveBack`, the start |
-| `Keys.lua` | The bag keys and the game's bag buttons open the full screen with the bags; the game's bag windows kept unseen |
+| `Keys.lua` | The bag keys open the full screen with the bags; the game's bag windows and bag bar kept unseen |
 | `Bindings.xml` | Inventory's key in the game's key bindings |
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which wear the journal (`Board.DRESS`), their bodies' sizes |

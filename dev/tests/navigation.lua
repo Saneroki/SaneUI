@@ -3344,10 +3344,14 @@ end)()
     local switch
     for _, widget in ipairs(W.frames) do if widget._text == ns.TopBar.TEXT.questLog then switch = widget end end
     switch._scripts.OnClick(switch)
-    check(not log.frame._shown and ObjectiveTrackerFrame._parent == UIParent, "the bar's button: off, the game's quest tracker back")
+    check(not log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "the bar's button: off, and the game's quest tracker stays gone")
     W.SmallAndBack(function() check(not log.frame._shown, "and off on the screen alone too") end)
+    Core.Set(ns.name, "nativeMap", true)
+    check(ObjectiveTrackerFrame._parent == UIParent, "the game's map and quest log chosen, ours off: the game's quest tracker back")
     switch._scripts.OnClick(switch)
-    check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "on again: there again")
+    check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "ours on: gone again while it shows")
+    Core.Set(ns.name, "nativeMap", false)
+    check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "the game's no longer chosen: gone for good")
     -- A click on the title bar beside its words folds the list away, and opens it again.
     do
         local line, panel, back = log.bar, box._parent, nil

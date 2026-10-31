@@ -75,6 +75,11 @@ Decided (Saneroki, 2026-10-16):
   with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
   black and white lists by a right click on an icon, and a window to add auras to either list.
+- **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
+  mouseover (`GameBars.lua`). Sane UI's own experience and stance bars are still to come; the game's stance keys and
+  your action bars change stances meanwhile.
+- **Auras above a unit frame** (Saneroki, 2026-10-31; built): buffs on the left, crowd control in the middle, debuffs
+  on the right.
 - **Clean action bars** (Saneroki, 2026-10-29; built): the game's action bars without any border, decoration or
   background, only the filled slots; they stay the game's bars, placed in its Edit Mode.
 

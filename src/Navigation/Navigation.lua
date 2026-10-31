@@ -284,7 +284,10 @@ Core.Options(ns.name, OPTIONS, { version = 4, upgrade = Upgrade, changed = funct
         ns.Guarded(ns.Window.Update)
         return ns.Guarded(ns.Native.Update)
     end
-    if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
+    if key == "nativeMap" then
+        ns.Guarded(ns.QuestLog.Tracker)
+        return ns.Guarded(ns.Native.Update)
+    end
     if key == "followMap" then
         ns.Guarded(ns.Canvas.Following)
         return ns.Guarded(ns.TopBar.Update)

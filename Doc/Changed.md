@@ -6,6 +6,31 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 590 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Unit frames' auras in three groups above them; the game's own bars out of the way (Saneroki, 2026-10-31)
+Saneroki: on every unit frame buffs on the left, crowd control in the middle, debuffs on the right; the game's experience, leave vehicle, cast and stance bars, its breath and fatigue bars, its bag bar, unit frames, party and raid frames and quest log gone, its menu bar on mouseover. Stance buttons of our own are not built: the bar goes as asked, and a card is on the board. A game restart takes it in (a new file in Combat's TOC).
+- **`src/Combat/Units/Auras.lua`:** the kinds in the order buffs, control, debuffs, each with its `point` on the frame's roof; crowd control no longer beside the frame but by its bottom middle (the game sizes a container to what it holds, so it stays centred). `Auras.LINE`, three icons, is each container's widest line, `lineSpacing` its gap: what the list *Always show* adds goes up, not into the next kind.
+- **`src/Combat/GameBars.lua` (new):** `StatusTrackingBarManager` and `StanceBar` lent to a hidden frame, by the switches *Hide the game's experience bar* (`hideTracking`) and *Hide the game's stance bar* (`hideStance`), on, in the section Action bars. The menu bar (*Menu bar on mouseover*, `menuHover`, on) keeps its place, since Forever's main action bar hangs on it: `MicroMenu`'s alpha lent, a hook after each button's `OnEnter` fades it in, a frame of ours sees the mouse off it. In Edit Mode it shows. Stands down with the module (`ns.GiveBack`, `ns.GIVEN_BACK`).
+- **`src/Combat/Units/Units.lua`:** `PetCastingBarFrame` deaf with the other cast bars (it shows while you possess a pet). `Unmouse`: what lies under your own frame's hidden parts and the pet frame takes the mouse no more; the game's health and power bars, at alpha 0, took no click but held the mouse off the world over their spot.
+- **`src/Core/Kit.lua`:** `Core.Lend`'s `SetMotion`, the mouse moving over a frame alone: `SetMouse` gives back clicks a frame never took.
+- **`src/Inventory/Keys.lua`:** the game's `BagsBar` lent to the hidden frame of the bag windows while ours stand in for them (`Ours`; Edit Mode and Classic windows leave it there; *Bag Keys Open Our Bags* or *Can expand to fullscreen* off bring it back). The hooks on its buttons are gone with it, nothing can click them now.
+- **`src/Navigation/QuestLog.lua`:** `QuestLog.Tracker`: the game's quest tracker stays out of sight with our log switched off too; only *Show the game's map* brings it back, and then it goes while ours shows, as before.
+- **Checked, already so:** the game's target, focus and their targets' frames, party and raid frames (`CompactPartyFrame` is a child of `PartyFrame` in this build), your cast bar, your breath, fatigue and feign death timers, the leave vehicle button (Navigation's trip view, while it is on) and the keys and buttons to the game's quest log.
+- **Tests:** `dev/tests/combat.lua`, `combatclient.lua`, `book.lua`, `inventory.lua`, `navigation.lua`.
+- **Docs:** `src/Combat/README.md`, `src/Inventory/README.md`, `src/Navigation/README.md`, `Doc/ideas/Combat.md`.
+
+### Speed Leveling: the guide read at a glance (Saneroki, 2026-10-31)
+Saneroki: the guide window optimized to read the steps at a glance: less grey text, no count twice (*0/12 ... 0/12*), *Step x*
+out of the way at the top right, a more solid background and no grey bar, the list under the steps more readable, a little
+more white, still fading into the background. A `/reload` takes it in.
+- **`src/SpeedLeveling/Steps.lua`:** a thing to do says its count once, before its words, or a tick when done (`Uncounted`
+  takes the game's own count out at either end, a colour around it or not; `Count`). The count's column and bars are gone, so
+  is the rule under the head. *Step 12* or a chain's name at the card's top right, the first words beside it, a long name on
+  a line of its own. Shade 0.3 to 0.65; the list on a lighter shade of its own (0.4), words 0.9, fading to 0.7 at most, a tick
+  in place of a done step's number; `DONE` 0.5 to 0.7; soft words 0.8 to 0.9; notes and things to do a little larger.
+- **Interface lab:** the scene `guide`; `LabGround(0.9)` reads it on snow.
+- **Tests:** `dev/tests/speedguide.lua`.
+- **Docs:** `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/ideas/Leveling.md`.
+
 ### Speed Leveling: the guide read at a glance (Saneroki, 2026-10-31)
 Saneroki: the guide window optimized to read the steps at a glance: less grey text, no count twice (*0/12 ... 0/12*), *Step x*
 out of the way at the top right, a more solid background and no grey bar, the list under the steps more readable, a little

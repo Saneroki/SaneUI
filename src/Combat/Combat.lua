@@ -21,7 +21,8 @@ local ADDON, ns = ...
 --  creature's nameplate, a mark while it belongs to an objective still to do
 --  (QuestMarks.lua). Our own frames for you, your target and your focus in a
 --  nameplate's look, in place of the game's (Units/); the game's action bars
---  clean, their buttons' icons alone (ActionBars.lua). One frame of ours for your party and raid in place of the
+--  clean, their buttons' icons alone (ActionBars.lua); its experience and stance bars gone, its menu bar on
+--  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
 --  game's two (Units/Group.lua). Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
@@ -64,7 +65,7 @@ ns.TEXT = {
     unitSize = "Unit frame size",
     unitSizeTip = "How large the three frames and their rows are.",
     unitAuras = "Auras on the frames",
-    unitAurasTip = "The auras that matter most, three of each kind: debuffs above a frame from its left (on a foe yours), buffs above it from its right, crowd control right of it. Right click an icon (out of a fight) to always or never show it, or to open your aura lists (/sane auras).",
+    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Right click an icon (out of a fight) to always or never show it, or to open your aura lists (/sane auras).",
     auraAlways = "Always show",
     auraNever = "Never show",
     auraLists = "Aura lists...",
@@ -110,6 +111,12 @@ ns.TEXT = {
     actionBars = "Action bars",
     cleanBars = "Clean action bars",
     cleanBarsTip = "The game's action bars without their borders, decorations and backgrounds: only the buttons that hold something, each its icon alone. Empty buttons show while you drag something onto the bars, and in Edit Mode. Off: the game's own look.",
+    hideTracking = "Hide the game's experience bar",
+    hideTrackingTip = "The game's experience and reputation bars are gone from the screen. Off: the game's own.",
+    hideStance = "Hide the game's stance bar",
+    hideStanceTip = "The game's stance, form and aura buttons are gone from the screen. Their keys and your action bars still change them. Off: the game's own.",
+    menuHover = "Menu bar on mouseover",
+    menuHoverTip = "The game's menu bar is out of sight, and shows while the mouse is on it; in Edit Mode it always shows. Off: always in sight.",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -134,7 +141,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = (ns.Serves()
     and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames and action bars are back"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars are back"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -161,6 +168,9 @@ local OPTIONS = {
     { key = "groupUnitWidth", default = 150, min = 40, max = 400 },
     { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
+    { key = "hideTracking", default = true, text = ns.TEXT.hideTracking, tip = ns.TEXT.hideTrackingTip },
+    { key = "hideStance", default = true, text = ns.TEXT.hideStance, tip = ns.TEXT.hideStanceTip },
+    { key = "menuHover", default = true, text = ns.TEXT.menuHover, tip = ns.TEXT.menuHoverTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
 }
 if ns.Serves() then
@@ -178,6 +188,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
         ns.Guarded(ns.Group.Apply)
     end
     if key == "cleanBars" then ns.Guarded(ns.ActionBars.Apply) end
+    if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
@@ -192,6 +203,7 @@ function ns.GiveBack()
     ns.Safe("group frames", ns.Group.GiveBack)
     ns.Safe("aura lists", ns.AuraLists.Hide)
     ns.Safe("action bars", ns.ActionBars.GiveBack)
+    ns.Safe("game bars", ns.GameBars.GiveBack)
 end
 
 function ns.OnLoad()
@@ -208,4 +220,5 @@ function ns.OnLogin()
     ns.Units.Start()
     ns.Group.Start()
     ns.ActionBars.Start()
+    ns.GameBars.Start()
 end

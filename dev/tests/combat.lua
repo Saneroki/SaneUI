@@ -40,6 +40,14 @@ function methods:SetMouseClickEnabled(on) self._mouse = on end
 function methods:IsMouseClickEnabled() return self._mouse or false end
 function methods:IsMouseMotionEnabled() return self._motion or false end
 function methods:IsMouseEnabled() return self._mouse or false end
+function methods:IsForbidden() return false end
+function methods:GetChildren()
+    local children = {}
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == self and widget._kind ~= "Texture" and widget._kind ~= "FontString" then children[#children + 1] = widget end
+    end
+    return unpack(children)
+end
 function methods:EnableMouseWheel(on) self._wheel = on end
 function methods:IsMouseWheelEnabled() return self._wheel or false end
 function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
@@ -161,7 +169,7 @@ if RETAIL then
         "the quest marks beside nameplates, as in Forever")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames and action bars are back",
+        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars are back",
         "standing down: the quest marks go, and what is told says so")
     check(PlayerFrame._mouse == true and TargetFrame._parent == UIParent and MainActionBar.BorderArt._alpha == 1,
         "and the game's unit frames and action bars are its own again")
@@ -874,6 +882,8 @@ do
     EventRegistry:TriggerEvent("EditMode.Enter")
     check(not watched[focus] and focus._shown and focus.face.sample and focus.face.name._text == ns.TEXT.samples.focus
         and focus.face.level._text == "20", "in Edit Mode your focus's frame shows as a sample, named for it")
+    check(MicroMenu._alpha == 1 and StanceBar._parent ~= UIParent,
+        "the game's menu bar shows in Edit Mode, to be placed; its stance bar stays gone")
     check(focus.face.rowShown and focus.face.rowName._text == ns.TEXT.samples.focustarget
         and player.face.rowShown and player.face.rowName._text == ns.TEXT.samples.pet,
         "and the rows under the frames too, named for what they stand for")
@@ -885,6 +895,7 @@ do
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton],
         "after Edit Mode the unit watch shows it again, and its row")
+    check(MicroMenu._alpha == 0, "and the menu bar rests out of sight again")
     check(not player.face.cast._shown and not player.face.cast.sample and not target.face.cast._shown
         and not player.face.breath._shown,
         "and your cast and breath only while they run")
@@ -910,6 +921,8 @@ do
     local pet = player.face.rowButton
     check(pet:GetAttribute("unit") == "pet" and watched[pet] and PetFrame._alpha == 0 and PetFrame._mouse == false
         and PetFrame._parent == PlayerFrame, "your pet's row under your frame, the game's pet frame out of sight")
+    check(not PlayerFrame.PlayerFrameContent.HealthBar._motion and not PetFrameHappiness._mouse and not PetFrameHappiness._motion,
+        "what lies under the game's frames takes no mouse either: nothing of them stands in the way")
     units.pet = { name = "Wolf", health = 80, most = 100, powerType = 2, powerToken = "FOCUS", power = 50, powerMost = 100 }
     pet:Show()
     check(player.face.rowName._text == "Wolf" and player.face.row._value == 80 and player.face.row._barColor[2] == green[2],
@@ -1252,9 +1265,17 @@ do
     local mine = player.face.auras
     check(mine.debuffs._groups.auto.filter == "HARMFUL|!CROWD_CONTROL" and mine.buffs._groups.auto.filter == "HELPFUL",
         "on you: any debuffs, any buffs")
-    check(debuffs._points[1][1] == "BOTTOMLEFT" and debuffs._points[1][2] == target.face.roof and debuffs._points[1][3] == "BOTTOMLEFT"
-        and buffs._points[1][3] == "BOTTOMRIGHT" and control._points[1][3] == "TOPRIGHT" and control._points[1][1] == "TOPLEFT",
-        "debuffs above from the left, buffs above from the right, crowd control right of the frame")
+    local roof = target.face.roof
+    check(buffs._points[1][1] == "BOTTOMLEFT" and buffs._points[1][2] == roof and buffs._points[1][3] == "BOTTOMLEFT"
+        and control._points[1][1] == "BOTTOM" and control._points[1][2] == roof and control._points[1][3] == "BOTTOM"
+        and debuffs._points[1][1] == "BOTTOMRIGHT" and debuffs._points[1][2] == roof and debuffs._points[1][3] == "BOTTOMRIGHT",
+        "above the frame, on its roof: buffs on the left, crowd control in the middle, debuffs on the right")
+    check(buffs._flow.corner == "BOTTOMLEFT" and buffs._flow.across == "Right" and debuffs._flow.corner == "BOTTOMRIGHT"
+        and debuffs._flow.across == "Left" and control._flow.corner == "BOTTOMLEFT" and control._flow.up == "Up",
+        "buffs grow from the left edge, debuffs from the right; crowd control fills its own width, so it stays centred")
+    check(debuffs._flow.line == 70 and buffs._flow.line == 70 and control._flow.line == 70
+        and debuffs._groups.auto.options.layout.lineSpacing == ns.UnitAuras.GAP,
+        "at most three in a line: what your list Always show adds goes up, not into the middle")
     check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
     -- A right click on an icon, out of a fight: the spell on a list.
     local icon = debuffs._groups.auto.icon
@@ -1352,6 +1373,50 @@ do
 end
 
 -------------------------------------------------------------------------------
+--  The game's experience and stance bars gone, its menu bar on mouseover
+-------------------------------------------------------------------------------
+do
+    local box = StanceBar._parent
+    check(box ~= UIParent and not box._shown and StatusTrackingBarManager._parent == box and not StanceBar:IsVisible()
+        and not StatusTrackingBarManager:IsVisible(), "the game's experience and stance bars stand in a hidden frame")
+    Core.Set(ns.name, "hideTracking", false)
+    check(StatusTrackingBarManager._parent == UIParent and StanceBar._parent == box, "its switch off: the experience bar alone is back")
+    Core.Set(ns.name, "hideTracking", true)
+    Core.Set(ns.name, "hideStance", false)
+    check(StanceBar._parent == UIParent and StatusTrackingBarManager._parent == box, "and the stance bar's its own")
+    Core.Set(ns.name, "hideStance", true)
+    check(StanceBar._parent == box, "on again: gone again")
+
+    local general = Core.general
+    local animations = general.animations
+    general.animations = false -- each fade where it goes at once
+    local button = MicroMenu.Button
+    local function Leave()
+        for index = #W.frames, 1, -1 do
+            local widget = W.frames[index]
+            if not widget._parent and widget._scripts.OnUpdate and widget._shown then return widget._scripts.OnUpdate(widget, 0) end
+        end
+    end
+    check(MicroMenu._alpha == 0 and MicroMenu._parent == UIParent, "the menu bar out of sight at rest, in its place")
+    button:GetScript("OnEnter")(button)
+    check(MicroMenu._alpha == 1, "the mouse on a button of it: in sight")
+    MicroMenu._mouseOver = true
+    Leave()
+    check(MicroMenu._alpha == 1, "and while the mouse stays on it")
+    MicroMenu._mouseOver = false
+    Leave()
+    check(MicroMenu._alpha == 0, "the mouse off it: out of sight again")
+    Core.Set(ns.name, "menuHover", false)
+    check(MicroMenu._alpha == 1, "its switch off: always in sight")
+    button:GetScript("OnEnter")(button)
+    Leave()
+    check(MicroMenu._alpha == 1, "and the mouse changes nothing then")
+    Core.Set(ns.name, "menuHover", true)
+    check(MicroMenu._alpha == 0, "on again")
+    general.animations = animations
+end
+
+-------------------------------------------------------------------------------
 --  A window of ours this game has not (Combat.lua, ns.Serves): it alone is not there
 -------------------------------------------------------------------------------
 do
@@ -1398,6 +1463,11 @@ check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not w
     "our unit frames gone, the game's back, its cast bar and timers hearing again")
 check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1,
     "the action bars as the game has them")
+check(StatusTrackingBarManager._parent == UIParent and StanceBar._parent == UIParent and MicroMenu._alpha == 1,
+    "its experience, stance and menu bars too")
+check(PlayerFrame.PlayerFrameContent.HealthBar._motion == true and not PlayerFrame.PlayerFrameContent.HealthBar._mouse
+    and PetFrameHappiness._mouse == true and PetFrameHappiness._motion == true,
+    "what took the mouse takes it again, and no more than it did")
 check(PartyFrame._parent == UIParent and CompactRaidFrameContainer._parent == UIParent,
     "and the game's party and raid frames are its own again")
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
