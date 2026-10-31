@@ -36,6 +36,8 @@ Ghosts.lua
 Presets.lua
 # Action Bar 1 keeps the page you chose
 Bar1.lua
+# The buttons of every action bar touch
+Spacing.lua
 
 # The spellbook
 Book\Layout.lua

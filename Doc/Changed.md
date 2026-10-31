@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 399 checks (Core, with its options and profiles), 590 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
+Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
 ### Unit frames' auras in three groups above them; the game's own bars out of the way (Saneroki, 2026-10-31)
@@ -43,6 +43,12 @@ more white, still fading into the background. A `/reload` takes it in.
 - **Interface lab:** the scene `guide`; `LabGround(0.9)` reads it on snow.
 - **Tests:** `dev/tests/speedguide.lua`.
 - **Docs:** `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/ideas/Leveling.md`.
+
+### Abilities: the buttons of every action bar touch (Saneroki, 2026-10-31)
+Saneroki: "The padding between the spells on all actionbars should also be 0 so all spells / icons are directly touching each other without pading or margings on their sides, between them and under or above them." The bars stacked, from the bottom up: Bar 1 on Alt, Bar 8 on Ctrl, Bar 7 on Shift, Bar 6 on the plain keys.
+- **`src/Abilities/Spacing.lua` (new):** Edit Mode's Icon Padding stops at 2 and the game's `minButtonPadding` is not ours to write. So the grid stays the game's and each button leaves the `CENTER` of its small frame (`button.container`) towards the middle of its line, by its place times the padding: all eleven bars, every orientation and number of rows, any icon size (the offsets stand in the button's own scale). The bar keeps its place and box. A hook after `UpdateGridLayout` follows Edit Mode; a button moves out of a fight. The switch *Action bar buttons touch* (`tightBars`, on, both games; also in the spellbook's menu); off and standing down put every button back.
+- **`src/Abilities/Abilities.lua`:** `ns.SlotLabel` asks whether a bar is off with `IsVisible`: a button's parent is its small frame, not the bar, so `IsShown` said on for every bar.
+- **`dev/tests/abilities.lua`:** a bar as the game makes it, its grid worked out as the game's: touching on a row, with any padding, vertical, growing left, two rows, without spacers; the row in its bar's middle; a new layout, in a fight too; the switch; standing down.
 
 ### Abilities: Action Bar 1 keeps its page; bars 6 to 8 are the fixed bars (Saneroki, 2026-10-31)
 Saneroki: "I want you to implement it so that the actionbar 1 does not automatically on its own change the pages. Those pages are for me manually to change." And three bars beside it, his main bar on 1 to = and the others with Shift and Ctrl, the game's bar with its pages on Alt: "So that all pages and bars are truely unique." "The most important thing about the new actionbars is that they have all features and exactly same behaviours of the official native actionbars".

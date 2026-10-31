@@ -180,7 +180,7 @@ D.Class("MAGE", function()
     }
 end)
 
-for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1",
+for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1", "Spacing",
                         "Book/Layout", "Book/Item", "Book/Drag", "Book/Book", "Book/Home", "Book/Window", "Book/Menu" }) do
     load(file)
 end
@@ -1229,8 +1229,8 @@ local page = W.options.pages[5]
 local function box(text)
     for _, item in ipairs(page.items) do if item.setting and item.setting.name == text then return item.setting end end
 end
-check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 11
-    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its nine switches under two headers")
+check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 12
+    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its ten switches under two headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)
 check(ns.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")
@@ -1924,11 +1924,12 @@ do
     check(ns.SlotLabel(13) == "Bar 1 (page 2), button 1" and ns.SlotLabel(24) == "Bar 1 (page 2), button 12", "page 2 has a name")
     check(ns.SlotLabel(145) == "Bar 6, button 1" and ns.SlotLabel(180) == "Bar 8, button 12", "bars 6 to 8 stand as themselves")
     local sideBar = W.NewWidget("Frame", "MultiBarRight")
+    local sideFrame = W.NewWidget("Frame", "MultiBarRightButtonContainer1", sideBar)
     local sideButton = MultiBarRightButton1
-    MultiBarRightButton1 = W.NewWidget("CheckButton", "MultiBarRightButton1", sideBar)
+    MultiBarRightButton1 = W.NewWidget("CheckButton", "MultiBarRightButton1", sideFrame)
     check(ns.SlotLabel(25) == "Bar 4, button 1", "a bar that is on is a bar")
     sideBar:Hide()
-    check(ns.SlotLabel(25) == "Bar 1 (page 3), button 1", "a bar that is off is a page of Bar 1")
+    check(ns.SlotLabel(25) == "Bar 1 (page 3), button 1", "a bar that is off is a page of Bar 1, though the small frame its button stands in is not hidden itself")
     MultiBarRightButton1 = sideButton
     local seen = {}
     for _, slot in ipairs(ns.ManagedSlots()) do
@@ -1999,6 +2000,112 @@ do
     W.Wait(1)
 end
 
+-- The buttons of every action bar touch --------------------------------------------------------
+-- A bar as the game makes it: a small frame for each button, the grid moving those frames (place: as its grid does,
+-- in the scale of the button), the button in the middle of its frame.
+local tightBar
+do
+    local WIDTH = 45
+    local function Grid(name, count, fields)
+        local bar = W.NewWidget("Frame", name)
+        bar.actionButtons, bar.shownButtonContainers, bar.numRows = {}, {}, 1
+        bar.minButtonPadding, bar.buttonPadding, bar.isHorizontal, bar.addButtonsToRight, bar.addButtonsToTop = 2, 2, true, true, true
+        for key, value in pairs(fields or {}) do bar[key] = value end
+        function bar:UpdateGridLayout() end
+        for index = 1, count do
+            local frame = W.NewWidget("Frame", name .. "ButtonContainer" .. index, bar)
+            local button = W.NewWidget("CheckButton", name .. "Button" .. index, frame)
+            button:SetPoint("CENTER")
+            button.container = frame
+            bar.actionButtons[index], bar.shownButtonContainers[index] = button, frame
+        end
+        _G[name] = bar
+        return bar
+    end
+    -- Where the game has a shown frame, then where our button stands.
+    local function FramePlace(bar, at)
+        local stride = math.ceil(#bar.shownButtonContainers / bar.numRows)
+        local along, across = (at - 1) % stride, math.floor((at - 1) / stride)
+        local step = WIDTH + math.max(bar.minButtonPadding, bar.buttonPadding)
+        local right, up = bar.addButtonsToRight and 1 or -1, bar.addButtonsToTop and 1 or -1
+        if bar.isHorizontal then return along * step * right, across * step * up end
+        return across * step * right, along * step * up
+    end
+    local function Place(bar, at)
+        local x, y = FramePlace(bar, at)
+        local _, frame, _, ox, oy = bar.actionButtons[at]:GetPoint(1)
+        assert(frame == bar.shownButtonContainers[at] and bar.actionButtons[at]:GetNumPoints() == 1)
+        return x + ox, y + oy
+    end
+    local function Touching(bar, first, second)
+        local ax, ay = Place(bar, first)
+        local bx, by = Place(bar, second)
+        return math.abs(math.abs(ax - bx) + math.abs(ay - by) - WIDTH) < 0.001 and (ax == bx or ay == by)
+    end
+    local function Row(bar, from, to, step)
+        for at = from, to - step, step do
+            if not Touching(bar, at, at + step) then return false end
+        end
+        return true
+    end
+
+    check(ns.options.tightBars, "the buttons touch from the start")
+    local main = Grid("MainActionBar", 12)
+    tightBar = main
+    local sixth = Grid("MultiBar5", 12, { buttonPadding = 7 })
+    local right = Grid("MultiBarRight", 12, { isHorizontal = false, addButtonsToTop = false })
+    local two = Grid("MultiBarBottomLeft", 12, { numRows = 2 })
+    local left = Grid("MultiBarBottomRight", 12, { addButtonsToRight = false })
+    local stance = Grid("StanceBar", 10)
+    for _, spare in ipairs({ 9, 10 }) do stance.shownButtonContainers[spare] = nil end -- a bar without spacers: two forms fewer
+    W.combat = true
+    ns.Spacing.Apply()
+    check(select(4, main.actionButtons[1]:GetPoint(1)) == 0, "in a fight no button moves")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(Row(main, 1, 12, 1), "after it every button of a row touches the next")
+    check(Row(sixth, 1, 12, 1), "whatever the padding Edit Mode has")
+    check(Row(right, 1, 12, 1), "a vertical bar too")
+    check(Row(left, 1, 12, 1), "and a bar that grows to the left")
+    check(Row(stance, 1, 8, 1), "the stance bar, with the forms you have")
+    check(select(4, stance.actionButtons[9]:GetPoint(1)) == 0, "a button on no line stands in its frame")
+    check(Row(two, 1, 6, 1) and Row(two, 7, 12, 1) and Touching(two, 1, 7) and Touching(two, 6, 12), "the rows of a bar touch each other")
+    -- The bar stays where it is: the row closes towards its middle, so the place of the bar is the place of the row.
+    local fx, fy = FramePlace(main, 1)
+    local lx = FramePlace(main, 12)
+    local bx1, by1 = Place(main, 1)
+    local bx2 = Place(main, 12)
+    check(math.abs((bx1 + bx2) - (fx + lx)) < 0.001 and by1 == fy, "the row stays in the middle of its bar")
+    check(ns.Bar1Offset() == 0 and main.actionButtons[1]:GetParent() == main.shownButtonContainers[1], "(the button stays in its own frame)")
+
+    -- The game lays a bar out anew: Edit Mode's padding, its orientation
+    main.buttonPadding = 6
+    main:UpdateGridLayout()
+    check(Row(main, 1, 12, 1), "a new padding closes as well")
+    main.isHorizontal, main.addButtonsToTop = false, false
+    main:UpdateGridLayout()
+    check(Row(main, 1, 12, 1), "and a new orientation")
+    main.isHorizontal, main.addButtonsToTop, main.buttonPadding = true, true, 2
+    W.combat = true
+    main:UpdateGridLayout()
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(Row(main, 1, 12, 1), "laid out in a fight, it follows after the fight")
+
+    -- The switch
+    Core.Set(ns.name, "tightBars", false)
+    check(select(4, main.actionButtons[12]:GetPoint(1)) == 0 and select(5, two.actionButtons[1]:GetPoint(1)) == 0, "switched off every button is back in the middle of its frame")
+    main.buttonPadding = 4
+    main:UpdateGridLayout()
+    check(select(4, main.actionButtons[1]:GetPoint(1)) == 0, "and the game's padding counts again")
+    main.buttonPadding = 2
+    Core.Set(ns.name, "tightBars", true)
+    check(Row(main, 1, 12, 1), "switched on they touch again")
+    local _, frame = main.actionButtons[3]:GetPoint(1)
+    check(frame == main.shownButtonContainers[3], "(in their own frames)")
+    for _, name in ipairs({ "MultiBar5", "MultiBarRight", "MultiBarBottomLeft", "MultiBarBottomRight", "StanceBar" }) do _G[name] = nil end
+end
+
 -- Errors are caught and kept (core.lua); none happened in everything above ----------------
 for label, problem in pairs(Core.errors) do io.stderr:write(label .. ": " .. problem.text .. "\n") end
 check(next(Core.errors) == nil, "no step of the module raised an error")
@@ -2055,6 +2162,7 @@ W.Wait(1)
 ns.Fire("REFRESH")
 check(not barGhost:IsShown() and ns.char.reserved[1], "nothing shows them again; the reservations are kept for the next session")
 check(not ns.Bar1.Held() and barOne[1]:GetAttribute("actionpage") == nil, "and Bar 1 follows the game again")
+check(select(4, tightBar.actionButtons[1]:GetPoint(1)) == 0 and select(4, tightBar.actionButtons[12]:GetPoint(1)) == 0, "and the buttons are back in the middle of their frames")
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Abilities: all %d checks passed.\n"):format(passed))

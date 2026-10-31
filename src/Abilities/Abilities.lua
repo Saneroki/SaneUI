@@ -26,7 +26,8 @@ local ADDON, ns = ...
 --  (Core.FOREVER below), and Forever's trainer data is not even read (the TOC).
 --  The reservations, their grey icons on the bars and the saved layouts serve both.
 --
---  Action Bar 1 keeps the page you chose in both games (Bar1.lua).
+--  Action Bar 1 keeps the page you chose (Bar1.lua) and the buttons of every action bar
+--  touch (Spacing.lua), in both games.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -181,6 +182,8 @@ local OPTIONS = {
       tip = "When you learn a new rank of a spell, the buttons with the rank you had until now change to it, after the fight if you are in one. A button with an older rank stays: you keep that one on purpose. Macros are left alone." },
     { key = "holdPage", default = true, text = "Action Bar 1 keeps the page you chose",
       tip = "The game puts another row of buttons on Action Bar 1 in a stance, a form or stealth. On: the bar stays on its page, in a fight too, and only its arrows or your page keys change it. In a vehicle the game's own bar still takes its place." },
+    { key = "tightBars", default = true, text = "Action bar buttons touch",
+      tip = "No space between the buttons of your action bars, side by side or between the rows of a bar: the icons stand directly against each other. Edit Mode's Icon Padding has no effect while this is on. It changes after the fight if you are in one." },
 }
 
 -- The spellbook's switches (the first five) and the ranks are Forever's: in Retail they are kept with the settings,
@@ -204,6 +207,8 @@ Core.Options(ns.name, OPTIONS, function(key, value)
         PagesChanged(value)
     elseif key == "holdPage" then
         ns.Bar1.Apply()
+    elseif key == "tightBars" then
+        ns.Spacing.Apply()
     else
         ns.Fire("REFRESH")
     end
@@ -316,10 +321,10 @@ end
 function ns.SlotLabel(slot)
     for number, bar in ipairs(ns.BARS) do
         if slot > bar.offset and slot <= bar.offset + ns.NUM_BUTTONS then
-            -- A bar that is off is only seen as a page of Bar 1.
+            -- A bar that is off is only seen as a page of Bar 1. A button's parent is a small frame of its bar's.
             local button = bar.page and _G[bar.prefix .. "1"]
             local holder = button and button:GetParent()
-            if holder and not ns.Plain(holder:IsShown()) then
+            if holder and not ns.Plain(holder:IsVisible()) then
                 return TEXT.formSlot:format(TEXT.pageRow:format(bar.page), slot - bar.offset)
             end
             return TEXT.slot:format(number, slot - bar.offset)
@@ -435,6 +440,7 @@ function ns.OnLogin()
     -- The trainer data meant for your class, faction and race (Data/Trainer.lua).
     ns.Safe("trainer data", ns.Data.Fill)
     ns.Bar1.Apply()
+    ns.Spacing.Apply()
 
     local function scan() ns.QueueUpdate(true) end
     local function update() ns.QueueUpdate(false) end
@@ -495,7 +501,8 @@ end)
 
 -- An error that no step caught stands the module down (Core's StandDown): the spellbook's pages
 -- and its window go back to the game, the reservations' marks leave the bars, the class trainer's
--- filter is put back and Bar 1 follows the game again. The reservations stay saved for the next session.
+-- filter is put back, Bar 1 follows the game again and the buttons go back to their places on the bars. The
+-- reservations stay saved for the next session.
 -- Each step on its own, the quick ones first, so one that fails keeps none of the others.
 ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
 function ns.GiveBack()
@@ -504,6 +511,7 @@ function ns.GiveBack()
     if ns.Sources then ns.Safe("giving back", ns.Sources.TrainerClosed) end
     if ns.Book then ns.Safe("giving back", ns.Book.StandDown, TEXT.why.problem) end
     if ns.Bar1 then ns.Safe("giving back", ns.Bar1.Apply) end
+    if ns.Spacing then ns.Safe("giving back", ns.Spacing.Apply) end
 end
 
 -------------------------------------------------------------------------------

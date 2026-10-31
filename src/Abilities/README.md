@@ -9,9 +9,9 @@ they will end up. Drag a grey spell onto an action bar button: the button is *re
 real spell the moment you learn it. A **Home** page, the first tab of the spellbook, says what your
 trainer can teach you right now and which spells you get from quests.
 **Action Bar 1 keeps the page you chose:** no stance, form or stealth changes it, and bars 6 to 8 stand beside
-its pages, so every page and bar holds buttons of its own.
+its pages, so every page and bar holds buttons of its own. **The buttons of every bar touch,** with no space between them.
 In Retail the game's spellbook lists the spells still to come itself and stays the game's own; there the
-module keeps reserved buttons, saved bar layouts and Bar 1's page.
+module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons that touch.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Abilities* under *Sane UI* in the game's addon list.
@@ -53,7 +53,7 @@ module keeps reserved buttons, saved bar layouts and Bar 1's page.
   - *Open the spellbook on its Home page*: off = the spellbook opens on the tab you last looked at.
   - *Compact spellbook pages* and *Move and resize the spellbook* (both above).
   - *Show reservations on the action bars*, *Say in chat when a reserved button is filled*.
-  - *Move buttons up to a new rank* and *Action Bar 1 keeps the page you chose* (below).
+  - *Move buttons up to a new rank*, *Action Bar 1 keeps the page you chose* and *Action bar buttons touch* (below).
   - *Action bar layouts*: save all your bars under a name, load them again later (per class).
 
   The switches are also in the game's options:
@@ -86,6 +86,15 @@ module keeps reserved buttons, saved bar layouts and Bar 1's page.
   game's own: switched on in its options, placed in Edit Mode, bound in its key bindings under *Action Bar 6* to
   *8*, clean as all its bars and with your reservations on them. Page 2 is saved in your layouts too, and a button
   on a bar that is off is named by its page: *Bar 1 (page 3), button 2*.
+  The setup this is made for, from the bottom of the screen up: Bar 1 with its pages on Alt + 1 to =, Bar 8 on Ctrl,
+  Bar 7 on Shift, and at the top Bar 6, the main bar, on the plain keys.
+- **Buttons that touch** (switch *Action bar buttons touch*, on). No space between the buttons of any action bar,
+  the stance, pet and possess bars too, side by side or between the rows of a bar: the icons stand directly against
+  each other, and the mouse has no gap to fall in. Edit Mode's *Icon Padding* stops at 2, so its slider does nothing
+  while this is on. A row closes towards the middle of its bar, so a bar's box in Edit Mode is a little wider than
+  its row (padding 2: 22 wider on 12 buttons) and stays where it is. Bars that stand on top of each other are placed
+  in Edit Mode: their boxes are as high as the icons, so boxes that touch have icons that touch. Edit Mode's snapping
+  leaves 4 between two bars: its arrow keys move a selected bar by 1.
 - **Link a spell in chat:** Shift-click it (grey ones too).
 - **Visit your class trainer once.** Not needed for the list, but his window says which spellbook tab
   each spell belongs to. Until then a few new spells sit under *Other spells to learn* in the first class tab.
@@ -103,7 +112,8 @@ module keeps reserved buttons, saved bar layouts and Bar 1's page.
   there: reserved buttons with their grey icon and clock on the bars (moved as above), saved bar layouts
   (*Action bar layouts* in the spellbook's menu, or `/sane ab save`, `load`: what you do not have yet is
   reserved), `/sane ab item`, `list`, `clear`, `debug`, and the switches *Show reservations on the action
-  bars*, *Say in chat when a reserved button is filled* and *Action Bar 1 keeps the page you chose*.
+  bars*, *Say in chat when a reserved button is filled*, *Action Bar 1 keeps the page you chose* and *Action bar
+  buttons touch*.
 
 ## Technical details
 - **Part of Sane UI, and an addon of its own** (`SaneUI_Abilities.toc`: `## Dependencies: SaneUI`,
@@ -137,6 +147,15 @@ module keeps reserved buttons, saved bar layouts and Bar 1's page.
   after the arrows. A wrap of the main bar's `OnAttributeChanged` is no way: the game runs a wrap only on a frame
   that is explicitly protected, which the main bar is not. With the switch off or standing down the driver goes and `state-page` is
   cleared, which lets go of the buttons and the keys; out of a fight. Without the twelve buttons the bar stays the game's.
+- **Buttons that touch (`Spacing.lua`).** `ActionBar_OnLoad` gives each button a small frame of its own (`button.container`,
+  parented to the bar), `UpdateGridLayout` lays out those frames with `max(minButtonPadding, buttonPadding)` between
+  them, and Edit Mode's icon size is the frames' scale. `minButtonPadding` is the game's field and stays unwritten:
+  the grid stays the game's, and each button only leaves the `CENTER` of its frame, by its place in the line times the
+  padding, towards the line's middle. Offsets stand in the button's own scale, as the padding does, so the icon size
+  needs no sums. Lines as in the grid: `stride` buttons, rows on a horizontal bar and columns on a vertical one,
+  `shownButtonContainers` in order (the stance and possess bars have no spacers). A hook after `UpdateGridLayout` looks
+  again; the line of what a bar's places depend on (`Shape`) skips what has not changed. A button moves out of a fight
+  (`Core.AfterCombat`). A ghost hangs on the same frame and covers the button (`SetAllPoints`), wherever it stands.
 - **How the grey entries get into Blizzard's spellbook (`Book/Book.lua`).** The game's spell entries are
   never touched by addon code beyond *where they stand*:
   1. The first page's column is made 60000 high. The game then puts a whole tab on "page 1" and creates
@@ -334,6 +353,7 @@ module keeps reserved buttons, saved bar layouts and Bar 1's page.
 | `Ghosts.lua` | Grey icons on the real bars, their clock and tooltip |
 | `Presets.lua` | Save and load bar layouts |
 | `Bar1.lua` | Action Bar 1 keeps the page you chose; its buttons and the keys of Bar 6 under the game's own bars |
+| `Spacing.lua` | The buttons of every action bar touch |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
 | `Book/Item.lua` | One grey spellbook entry: look, the two marks, tooltip, link, menu |
 | `Book/Drag.lua` | Carrying a grey spell to a real action bar button |
@@ -344,6 +364,8 @@ module keeps reserved buttons, saved bar layouts and Bar 1's page.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-10-31 — The buttons of every action bar touch (switch *Action bar buttons touch*, on), the stance, pet and possess
+  bars too. A bar that is off is named as its page of Bar 1 (the first try asked the wrong frame).
 - 2026-10-31 — Action Bar 1 keeps the page you chose (switch *Action Bar 1 keeps the page you chose*, on): no stance,
   form or stealth changes it. Bars 6 to 8 are your fixed bars, on none of its pages. Page 2 of Bar 1 is kept in
   layouts and named in chat, and a bar that is off is named as its page.
