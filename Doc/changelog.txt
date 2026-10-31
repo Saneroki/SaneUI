@@ -14,6 +14,8 @@ The bigger changes of each version, newest first.
   it now lies. Quests show their experience, money and rewards, and
   how many of each thing they ask for; vendors show what things cost;
   weapons their damage; creatures their rank and the spells they cast.
+  Drop rates from the start, rare gems from nodes among them, and the
+  map shades where many quests' objectives are found.
 - Your professions level up along your guide, whatever your race or
   profession: it tells you to mine or pick herbs where it passes the
   most nodes anyway, checks once more before a harder zone, sends you

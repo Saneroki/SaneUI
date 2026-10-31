@@ -128,3 +128,13 @@ about = "What players' records of Forever itself show, 2026-10-31, only what the
 kind = "batch"
 game = "forever"
 about = "What Forever's beta and live servers told players' games, and what was recorded in play, up to 2026-10-28, as our tool picked it. The servers' answers: quests' names, levels, chains, objectives with their counts and texts, money, items, spells and reputation; creatures' titles, ranks, kinds and families; these correct what imports said. Experience: as turn-ins paid, else worked out from Forever's client (its table at the server's difficulty, times the server's multiplier). Recorded in play, filling only what the master lacks: creatures' levels, health and the spells they were seen to cast (their facts from Forever's client), services, vendors' goods, stocks and costs, flights' times, what creatures, nodes and chests gave in more than one window (no chances), and weapons' damage as the game's tooltip shows it. Unverified: the game's word or our own sightings replace it entry by entry."
+
+[21]
+kind = "batch"
+game = "forever"
+about = "What was counted in play in Forever up to 2026-10-28, as our tool picked it. Drops: what creatures, nodes, chests and fishing waters gave, with how many loots and drops and the chance those make, where at least 10 loots and 3 drops stand behind it (yields changed by a Legacy talent left out), else the item alone; bosses' rolled items from the kills. Places: the quests' objectives' areas where counts went up, and herb and ore points seen more than once. Unverified: the game's word or our own counts replace it."
+
+[22]
+kind = "batch"
+game = "forever"
+about = "The original game's drop chances (patch 1.12), only where every record of it agrees to the digit and the item is already known to drop from that creature in Forever, and no chance of Forever's own is known. Unverified: Forever's own counts replace it."

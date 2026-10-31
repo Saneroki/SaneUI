@@ -1,6 +1,6 @@
 -- What Retail lacks of Forever's interface, for the tests' stand-in (wowstub.lua, W.Play): globals,
 -- Table.Field, Enum.X.Y, Constants.X.Y and events (event:NAME), from the newest exports of the two games
--- (Forever 1.60.1.70532, Retail 12.1.5.70575). Made by dev/tools/blizzard games; do not edit by hand.
+-- (Forever 1.60.1.70707, Retail 12.1.5.70575). Made by dev/tools/blizzard games; do not edit by hand.
 return {
     retail = [[
 ACTION_BARS_RELATIVE_TO_BASE_POSITIONING
@@ -97,7 +97,8 @@ C_GameRules.GetForeverExperiencePreset
 C_GameRules.IsHardcoreActive
 C_GameRules.IsSDHDToggleEnabled
 C_GameRules.IsSelfFoundAllowed
-C_GameRules.SetForeverExperiencePreset
+C_GameRules.SetForeverExperiencePresetPostLogin
+C_GameRules.SetForeverExperiencePresetPreLogin
 C_GameRules.SetSDHDToggleValue
 C_GamepadTargeting.Disable
 C_GamepadTargeting.Enable
@@ -135,6 +136,7 @@ C_PetInfo.GetPetHappiness
 C_PetInfo.GetPetLoyalty
 C_PetInfo.GetPetTrainingPoints
 C_PetInfo.GetPetUIModelSceneID
+C_PetInfo.IsPetOrderMoveToPending
 C_PlayerInfo.ShouldDisplaySurname
 C_PlayerInteractionManager.ShardTransferConfirm
 C_QuestLog.GetQuestTimers
@@ -215,7 +217,6 @@ ChallengePointBarMixin
 ChangeMultiCastActionPage
 CharacterCritChanceFrame_OnEnter
 CharacterDefenseFrame_OnEnter
-CharacterFrameMixin.useFooterJumpHints
 CharacterFrameRightPaneToggleButtonMixin
 CharacterFrameSidePaneMixin
 CharacterFrame_GetTab
@@ -251,11 +252,9 @@ ClassTalentActiveSpecMixin
 ClassTalentTreeHeaderMixin
 ClassTalentUtil.GetSpendSoundKitID
 ClassTalentUtilSpendSoundKitByEntryTypeOverrides
-ClassTalentsFrameMixin.useFooterJumpHints
 ClassTalentsFrameTabMixin
 ClassTrainerCategoryButtonMixin
 ClassTrainerFrameMixin
-ClassTrainerFrameMixin.useFooterJumpHints
 ClassTrainerFrame_InitCategoryButton
 ClassTrainerFrame_UpdateTrainingPoints
 ClassTrainerSkillButtonMixin
@@ -343,7 +342,9 @@ Constants.LegacyConsts.LEGACY_TREE_ADVENTURE_ID
 Constants.LegacyConsts.LEGACY_TREE_ADVENTURE_TALENTED_NODE_ID
 Constants.LegacyConsts.LEGACY_TREE_PROFESSIONS_ID
 Constants.LegacyConsts.LEGACY_TREE_PROGRESSION_ID
-Constants.LevelConstsExposed.MIN_TALENT_LEVEL
+Constants.LevelConstsExposed_Camelot.MIN_ACHIEVEMENT_LEVEL
+Constants.LevelConstsExposed_Camelot.MIN_RES_SICKNESS_LEVEL
+Constants.LevelConstsExposed_Camelot.MIN_TALENT_LEVEL
 Constants.LootConsts_Camelot.MasterLootQualityThreshold
 Constants.MajorFactionsConsts.PVP_RANK_POINTS_FACTION_ID
 Constants.PetBattleConsts.SUMMON_RANDOM_FAVORITE_BATTLEPET_SPELL_ID
@@ -366,10 +367,10 @@ Constants.RaidMarkerConsts.MAX_RAID_TARGETS_RESTRICTED
 Constants.RaidMarkerConsts.MAX_RAID_TARGETS_USER
 Constants.RaidMarkerConsts.MAX_VALID_RAID_TARGETS
 Constants.TransmogOutfitDataConsts.CLEAR_TRANSMOG_OUTFIT_MANUAL_SPELL_ID
-ContainerFrameCombinedBagsMixin.useFooterJumpHints
 ContainerFrame_AddButtons_BagCleanup
 ContainerFrame_AddButtons_BagFilters
 ContainerFrame_UpdatePortraitPosition
+CreateHDSDToggleOptions
 DEFAULT_PET_MODEL_SCENE_ID
 DefaultCompactUnitFrameOptions.displayVehicleRoleIcon
 DifficultyUtil.HasAnyUserSelectableDifficulties
@@ -545,7 +546,7 @@ Enum.EvictionType.ServerExpiryNormal
 Enum.EvictionType.ServerExpiryParty
 Enum.ForeverExperiencePreset
 Enum.ForeverExperiencePreset.Classic
-Enum.ForeverExperiencePreset.Modern
+Enum.ForeverExperiencePreset.Enhanced
 Enum.GamepadPossessBarOverride
 Enum.GamepadPossessBarOverride.Page1BottomBar
 Enum.GamepadPossessBarOverride.Page1LeftBar
@@ -648,6 +649,7 @@ Enum.LootRollType.Transmog
 Enum.MinimapTrackingFilter.TrainerClass
 Enum.MinimapTrackingFilter.VendorAmmo
 Enum.NamePartType
+Enum.NamePartType.Combined
 Enum.NamePartType.Firstname
 Enum.NamePartType.Surname
 Enum.NamegenType
@@ -733,6 +735,7 @@ Enum.TransmogSituationTrigger.SettingsUpdate
 Enum.TransmogSlot.Ranged
 Enum.UICovenantDisplayInfoFlags.HideRenownLevelUpToast
 Enum.UICursorType.Ammo
+Enum.VasTransactionPurchaseResult.ProxyNoMixedAlliance
 Enum.VoiceProviderID
 Enum.VoiceProviderID.Discord
 Enum.VoiceProviderID.Legacy
@@ -863,6 +866,7 @@ GamepadActionBarStyleUtil.squareStyleParams.shapeMethod
 GamepadBackpackButtonMixin
 GamepadBagBarMixin
 GamepadBagSlotButtonMixin
+GamepadBagSlotMixin
 GamepadBaseDialogMixin
 GamepadButtonIconWithTextMixin
 GamepadCharacterReagentBagMixin
@@ -870,6 +874,10 @@ GamepadClassActionButtonMixin
 GamepadFlyoutMixin
 GamepadFlyoutPopupButtonMixin
 GamepadFrameControlsManagerMixin
+GamepadFrameControlsManagerMixin.FrameHidden
+GamepadFrameControlsManagerMixin.FrameShown
+GamepadFrameControlsManagerMixin.HandlePopupHide
+GamepadFrameControlsManagerMixin.HandlePopupShown
 GamepadFriendlyTargetingActionBarMixin
 GamepadGroupLootFrame_SetupGamepad
 GamepadGroupLootRollFrameMixin
@@ -1000,6 +1008,7 @@ GetGlancingBlowChance
 GetGlancingBlowPenalty
 GetHealthRegen
 GetHealthRegenFromSpirit
+GetHonorableKillsHeaderTextID
 GetKeyRingSize
 GetManaRegenFromSpirit
 GetNextAvailableRaidTargetMarkerIndex
@@ -1017,7 +1026,6 @@ GetSecureTradeRMTWarningString
 GetSpellCritChanceFromStat
 GetTexCoordsForRoleSmall
 GetTexCoordsForRoleSmallCircle
-GraphicsOverrides.CreateHDSDToggleOptions
 GroupFinderVanillaStyle_LoadUI
 GroupLootContainer_InitGamepad
 GroupLootContainer_RefreshRolls
@@ -1075,6 +1083,7 @@ InterfaceOverrides.HasCooldownViewer
 InterfaceOverrides.HasExternalDefensives
 InterfaceOverrides.HasSwingTimer
 InterfaceOverrides.RegisterOutlineSettings
+InterfaceOverrides.SetupToastSettings
 IsCursorVisible
 ItemButtonUtil.ClearPendingItemSelectionSource
 ItemButtonUtil.ConsumePendingItemSelectionSource
@@ -1186,7 +1195,6 @@ LFGOptionsButton
 LFGPARENT_BROWSING_TAB_INDEX
 LFGPARENT_LISTING_TAB_INDEX
 LFGParentFrameMixin
-LFGParentFrameMixin.useFooterJumpHints
 LFGParentFrameRightTabMixin
 LFGParentFrameTab1_OnClick
 LFGParentFrameTab2_OnClick
@@ -1542,11 +1550,9 @@ NameUtil.SplitPlayerNameIntoParts
 NameplateLevelFrameMixin
 NameplatesOverrides.GetNPCNamesOptionDefault
 NameplatesOverrides.GetNameplateStyleOptions
-NameplatesOverrides.ShowRarityIconInfoDisplayOption
 NameplatesOverrides.ShowRealmOption
 NavBar_GetButton
 NavBar_GetNumButtons
-NavButtonMixin
 NineSliceUtil.UpdateCornerCropping
 OpenMailDeleteMixin
 OpenMailMixin
@@ -1658,7 +1664,6 @@ PlayerFrame_UpdateHealthBarVisuals
 PlayerFrame_UpdateManaBarVisuals
 PlayerFrame_UpdatePvPTimerText
 PlayerFrame_UpdateStatusTextureVisuals
-PlayerSpellsFrameMixin.useFooterJumpHints
 PlayerSpellsUtil.SpellBookCategories.Transmog
 PopupEventManager
 Professions.GetDefaultShowUnlearned
@@ -1679,7 +1684,6 @@ ProfessionsBookPageFrameMixin
 ProfessionsBookRightTabMixin
 ProfessionsFrameRightTabMixin
 ProfessionsLinkButtonMixin
-ProfessionsMixin.useFooterJumpHints
 PromptedBindingFooterMixin
 PromptedBindingFooterMixin.ALIGNMENT_TYPE
 PromptedBindingFooterMixin.ALIGNMENT_TYPE.CENTER
@@ -1802,6 +1806,7 @@ SendMailMixin
 SendMailScrollChildMixin
 SendMailScrollFrameGamepadFocusAreaMixin
 SetLookingForGroupUIAvailable
+SetPaperDollBackgroundOverlayAlpha
 SetPreferredGamepadInteractTarget
 SetQuestTitleLevelAndDifficultyColor
 ShardTransferImminentMinimizeMixin
@@ -1824,14 +1829,34 @@ SkillsSubHeaderMixin
 SkillsSubHeaderToggleCollapseButtonMixin
 SmartNavigationDebug
 SmartNavigationMixin
+SmartNavigationMixin.HandlePanelOpen
+SmartNavigationMixin.HideCursor
+SmartNavigationMixin.OnDropDownShown
+SmartNavigationMixin.RefreshButtonGroups
+SmartNavigationMixin.RemovePanelInfo
+SmartNavigationMixin.SelectFirstButton
+SmartNavigationMixin.SelectTopLeftButton
+SmartNavigationMixin.SetGridHeightCompensation
+SmartNavigationMixin.SetRightStickScrollingEnabled
+SmartNavigationMixin.SetScrollFrameForFrame
+SmartNavigationMixin.SetTargetButtonForFrame
+SmartNavigationMixin.SetUseGridNavigation
+SmartNavigationMixin.SetWrapping
+SmartNavigationMixin.ShowCursor
+SmartNavigationSecureHelper
 SmartNavigation_AddBidirectionalJumpNavigationOverride
 SmartNavigation_AddIgnoreInputNavigationOverride
 SmartNavigation_AddJumpNavigationOverride
 SmartNavigation_CallOutgoingDirNavigationCallbacks
 SmartNavigation_CanFocusFrame
+SmartNavigation_ClearDirectionBufferThresholdInDirection
+SmartNavigation_ClearDirectionBufferThresholds
 SmartNavigation_ClearIgnoreStatus
 SmartNavigation_ClearJumpNavigationOverrides
 SmartNavigation_ClearJumpNavigationOverridesInDirection
+SmartNavigation_ClearOutgoingNavigationCallbacks
+SmartNavigation_GetCustomCursorAnchorPointForFrame
+SmartNavigation_GetDirectionBufferThreshold
 SmartNavigation_GetNavigationOverrideFrame
 SmartNavigation_IsCurrentButtonClickable
 SmartNavigation_IsFrameBlockingSmartNavClick
@@ -1854,9 +1879,9 @@ SmartNavigation_SelectScrollBoxCurrentOrTop
 SmartNavigation_SetButtonFrame
 SmartNavigation_SetCustomCursorAnchorPointForFrame
 SmartNavigation_SetDirectionBufferThreshold
-SmartNavigation_SetReturnFrameFocusButton
 SmartNavigation_ShouldScrollFrameMaintainPreviousButtonOnScroll
 SmartNavigation_UseVerticalCursorForFrame
+SocialOverrides.SetupToastWindowSetting
 SocialUIUtil.GetSupportedBattleNetFriendTagInterestsForCurrentGameType
 SocialUIUtil.GetSupportedBattleNetFriendTagRolesForCurrentGameType
 SoftCursorBoundsMixin
@@ -1896,6 +1921,7 @@ TransmogAppearanceSlotMixin.DEFAULT_OPTION_INFO.enabled
 TransmogAppearanceSlotMixin.DEFAULT_OPTION_INFO.name
 TransmogAppearanceSlotMixin.DEFAULT_OPTION_INFO.type
 TransmogSlotFlyoutLayoutData
+TryAddHonorColumn
 UIPanelCloseButtonDefaultAnchorsMixin
 UIReload
 UnitDefenseSkill
@@ -1921,7 +1947,6 @@ WhoInviteButtonMixin
 WhoSearchMixin
 WorldMapConstants
 WorldMapConstants.NAVBAR_X_OFFSET
-WorldMapMixin.useFooterJumpHints
 bankFrameWidthOverride
 event:BC_26_COLD_SWAP_FEATURE_ENABLED_CHANGED
 event:BC_26_EXPERIENCE_CHANGED
@@ -1940,11 +1965,13 @@ event:INPUT_DEVICE_INTERFACE_TRANSITION
 event:LFG_LIST_ROLE_UPDATE
 event:LFG_LIST_SHOW_SEARCH
 event:MAIL_OPEN_ALL_CANCELED
+event:PET_ORDER_MOVE_TO_PENDING_CHANGED
 event:PET_STATS_UPDATE
 event:PLAYER_PVP_FLAG_CHANGED
 event:PLAYER_SWING
 event:PLAYER_SWING_RANGE_UPDATE
 event:SECURE_TRANSFER_CONFIRM_TAKE_MAIL_MONEY
+event:SETTINGS_HEADER_TEXT_UPDATE
 event:SHARD_TRANSFER
 event:SHARD_TRANSFER_CANCELLED
 event:SHARD_TRANSFER_IMMINENT

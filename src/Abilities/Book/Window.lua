@@ -32,8 +32,8 @@ local Core = SaneUI.Core
 local TEXT = ns.TEXT
 
 local MIN_WIDTH, MIN_HEIGHT = 420, 360
--- The spellbook inside the window (Blizzard_PlayerSpells, the Forever variant): 1612 x 702 in
--- 1618 x 720 open, 806 x 702 in 809 x 720 small.
+-- The spellbook inside the window (Blizzard_PlayerSpells, the Forever variant): 1148 x 702 in
+-- 1154 x 720 open, 574 x 702 in 577 x 720 small.
 local INSET_X = { large = 6, small = 3 }
 local INSET_Y = 18
 

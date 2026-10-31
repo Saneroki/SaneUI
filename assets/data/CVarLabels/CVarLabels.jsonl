@@ -148,6 +148,7 @@
 {"key":"pvpframesdisplaypowerbars","since":0,"src":["game"],"label":"PVP_COMPACT_UNIT_FRAME_PROFILE_DISPLAYPOWERBAR","tip":"OPTION_TOOLTIP_PVP_COMPACT_UNIT_FRAME_PROFILE_DISPLAYPOWERBAR"}
 {"key":"pvpframeshealthtext","since":0,"src":["game"],"label":"PVP_COMPACT_UNIT_FRAME_PROFILE_HEALTHTEXT","tip":"OPTION_TOOLTIP_PVP_COMPACT_UNIT_FRAME_PROFILE_HEALTHTEXT"}
 {"key":"pvpoptiondisplaypets","since":0,"src":["game"],"label":"PVP_COMPACT_UNIT_FRAME_PROFILE_DISPLAYPETS","tip":"OPTION_TOOLTIP_PVP_COMPACT_UNIT_FRAME_PROFILE_DISPLAYPETS"}
+{"key":"questpoi","since":0,"src":["game"],"label":"OPTIONS_MENU_QUEST_POIS_TEXT","tip":"OPTIONS_MENU_QUEST_POIS_TOOLTIP"}
 {"key":"raidframescenterbigdefensive","since":0,"src":["game"],"label":"COMPACT_UNIT_FRAME_PROFILE_SHOW_BIG_DEFENSIVES","tip":"OPTION_TOOLTIP_COMPACT_UNIT_FRAME_PROFILE_SHOW_BIG_DEFENSIVES"}
 {"key":"raidframesdispelindicatoranimatedborder","since":0,"src":["game"],"label":"COMPACT_UNIT_FRAME_PROFILE_DISPLAY_DISPEL_OVERLAY_ANIMATED_BORDER","tip":"OPTION_TOOLTIP_COMPACT_UNIT_FRAME_PROFILE_DISPLAY_DISPEL_OVERLAY_ANIMATED_BORDER"}
 {"key":"raidframesdispelindicatoroverlay","since":0,"src":["game"],"label":"COMPACT_UNIT_FRAME_PROFILE_DISPLAY_DISPEL_OVERLAY","tip":"OPTION_TOOLTIP_COMPACT_UNIT_FRAME_PROFILE_DISPLAY_DISPEL_OVERLAY"}
