@@ -270,6 +270,20 @@ check(guide.steps[8].lines[2].what == "note" and guide.steps[8].lines[2].words =
 for _, step in ipairs(guide.steps) do
     for _, line in ipairs(step.lines) do check(line.quest ~= 500 and line.quest ~= 99, "no step of another mode or race") end
 end
+-- Dungeons: a normal guide has none, a dungeon guide runs them; each drops the steps for the other way.
+do
+    local function Marks(group)
+        local text = table.concat({ "#group " .. group, "step", "    #label gone", Line("dungeon", "WC"), Line("take", "1"),
+            "step", Line("take", "2"), "step", Line("take", "3"), Line("dungeon", "!WC") }, "\n")
+        local read = Format.Read(text, orc)
+        local quests = {}
+        for _, step in ipairs(read.steps) do quests[#quests + 1] = step.lines[1].quest end
+        return table.concat(quests, " "), read
+    end
+    local plain, read = Marks("A Guide")
+    check(plain == "2 3" and read.labels.gone == nil, "a normal guide: no step of a dungeon, its name gone with it")
+    check(Marks("A Dungeon Guide") == "1 2", "a dungeon guide: the dungeon's steps, not those for skipping it")
+end
 local level = Format.Read("step\n" .. Line("level", "10-1475") .. "\n" .. Line("level", "<10.5,1"), orc).steps[1]
 check(level.lines[1].points == -1475 and level.lines[1].level == 10, "so many points short of a level")
 check(level.unless[1].what == "reached" and level.unless[1].share == 0.5 and level.unless[1].below, "a level that passes a step by")

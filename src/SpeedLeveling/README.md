@@ -303,6 +303,10 @@ Horde paladins' and Alliance shamans' too. Nothing is set up: the class, race, s
 Without Core's data (Retail, for now) there are none.
 
 ## How a guide is run
+**Dungeons** (Saneroki, 2026-10-31): a normal guide has none: a step marked for a dungeon is left out as the guide is read,
+and one marked for skipping that dungeon stays. Only a guide of a dungeon group runs them, and the other way round
+(`Format.DungeonStep`).
+
 `Run.lua` runs a guide read from text (`Format.lua`) for the character, asking the game what each line's thing is done
 through `Lines.lua`:
 

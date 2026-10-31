@@ -28,6 +28,8 @@ local _, ns = ...
 --      local plays = Format.Plays(who, head.games)     -- whether its games include the one played
 --      local guide, problems = Format.Read(text, who)  -- one guide's, for that character; nil while Core knows no format
 --      who     { side = "Horde", race = "Orc", class = "WARRIOR", level = 7, game = "forever" }
+--  A step marked for a dungeon stands only in a guide of a dungeon group
+--  (Format.DungeonStep), one marked for doing without it only in the others.
 --      guide   { name, title, group, subgroup, after = { { name, only } }, defaultFor, only, games = { game },
 --                part, divider, mine, steps = { step }, labels = { [label] = index } }
 --                -- mine: it is for this character; part: reached only as another's next; divider: no guide
@@ -307,7 +309,7 @@ local COMMANDS = {
     grouped = function() return { test = { what = "grouped" } } end,
     solo = function() return { test = { what = "solo" } } end,
     maxLevel = function(v) local level = tonumber(v[1]) return level and { test = { what = "maxLevel", level = level } } or nil end,
-    dungeon = function() return nil end,     -- the chosen guide already says dungeon or not: kept, no filter
+    dungeon = function() return nil end,     -- whether the step is for this guide: Format.Read, by Format.DungeonStep
     manualOnly = function() return nil end,  -- turns the line before it into one to tick by hand (Command)
     place = function(v, last)
         local place, map = Place(v, last)
@@ -502,8 +504,15 @@ function Format.Read(text, who)
                     if command then
                         local ours = words.commands[command]
                         local read = ours and COMMANDS[ours]
+                        if ours == "dungeon" and not Format.DungeonStep(guide, rest) then
+                            -- A step of a dungeon in a normal guide, or for those who skip one in a dungeon guide: out.
+                            guide.steps[#guide.steps] = nil
+                            if step.label then guide.labels[step.label] = nil end
+                            skipping = true
+                            read = nil
+                        end
                         local made, map
-                        if read then made, map = read(Values(rest), said, lastMap) end
+                        if read and not skipping then made, map = read(Values(rest), said, lastMap) end
                         if map then lastMap = map end
                         if made then
                             if not Command(step, made, said, manualOnly) and said == nil then
@@ -512,6 +521,8 @@ function Format.Read(text, who)
                             manualOnly = ours == "manualOnly" or manualOnly
                         elseif ours == "manualOnly" then
                             manualOnly = true
+                        elseif skipping then
+                            said = nil
                         elseif ours == "dungeon" or ours == "note" or ours == "timer" or ours == "pin"
                             or ours == "line" or ours == "map" then
                             if said then step.lines[#step.lines + 1] = { what = "say", words = said } end
@@ -536,6 +547,15 @@ function Format.Read(text, who)
     guide.name = guide.name or ns.TEXT.unnamed
     guide.mine = guide.mine and Format.Plays(who, guide.games)
     return guide, problems
+end
+
+-- Whether a step marked for a dungeon ("WC") or for doing without it ("!WC") is for this guide (Saneroki, 2026-10-31: "i
+-- don't want to have dungeon quests in the normal guide. For that there is the dungeon guide."): a guide of a dungeon
+-- group runs them all, every other guide none.
+function Format.DungeonStep(guide, value)
+    local inDungeons = tostring(guide.group or ""):lower():find("dungeon", 1, true) ~= nil
+    local without = tostring(value or ""):find("^%s*!") ~= nil
+    return inDungeons ~= without
 end
 
 -- Whether a step mark drops the step for the game played: a phase or an experience rate Sane UI's games are not at.
