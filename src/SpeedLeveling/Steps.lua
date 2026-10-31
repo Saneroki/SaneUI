@@ -6,15 +6,18 @@ local _, ns = ...
 --  Expressway with a thin dark outline straight on the game (Saneroki's pick of
 --  font for it), from the top:
 --    - the guide's zone, its levels after it, and at the right how far you are
---      ("12/84 · 14%"), a thin rule under them;
---    - each step at hand on a faint dark shade: "Step 12" small, its first
---      words large (what to do), its things to do (a count and a thin bar under
---      those that have one; a tick on those done), its other words smaller, a
---      "!" before a warning and an "i" before the rest;
---    - the next steps greyed out, a line each with its number, fading as they
---      go down; the wheel scrolls the list through every step of the guide,
---      a tick before each step done as the game knows it (Run.Ticked), wherever
---      it stands, a right click on one offers to go to it.
+--      ("12/84 · 14%");
+--    - each step at hand on a dark shade (Saneroki, 2026-10-31: to be read at a
+--      glance on any ground, the shade alone sets the steps apart): "Step 12"
+--      small at its top right, its first words large (what to do), its things to
+--      do, each once with its count before its words, or a tick when done, its
+--      other words a little smaller, a "!" before a warning and an "i" before
+--      the rest;
+--    - the next steps a step behind those on a lighter shade, a line each with
+--      its number, fading a little as they go down; the wheel scrolls the list
+--      through every step of the guide, a tick in place of the number of each
+--      step done as the game knows it (Run.Ticked), wherever it stands, a right
+--      click on one offers to go to it.
 --  Over its top the row of icons to use and to target (Icons.lua); the game's
 --  map pin goes with it (Pin.lua); the arrow is
 --  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
@@ -40,26 +43,29 @@ ns.Steps = Steps
 Steps.WIDTH = 280     -- the view's width
 Steps.PAD = 7         -- inside a step's shade
 Steps.GAP = 6         -- between two steps
-Steps.NUMBERS = 24    -- the next steps' numbers' column
-Steps.SHADE = 0.3     -- the shade behind a step at hand
-Steps.FADE = 0.12     -- each next step is so much fainter than the one above it
-Steps.FAINTEST = 0.3
-Steps.GREY = 0.55     -- the next steps' words, greyed out; their numbers a little darker
-Steps.DONE = 0.5      -- a thing done, so faint
-Steps.BAR = 2         -- a count's bar, high
+Steps.NUMBERS = 28    -- the next steps' numbers' column
+Steps.SHADE = 0.65    -- the shade behind a step at hand
+Steps.LIST_SHADE = 0.4 -- the lighter shade behind the listed steps
+Steps.LIST_PAD = 3    -- inside it, over and under the list
+Steps.FADE = 0.04     -- each next step is so much fainter than the one above it
+Steps.FAINTEST = 0.7
+Steps.LIST = 0.9      -- the next steps' words, a little behind those at hand; their numbers a little darker
+Steps.DONE = 0.7      -- a thing done, so faint
+Steps.BESIDE = 8      -- between the step's number and the first words beside it
 Steps.MENU = 520      -- a group's menu of guides, high at most: a longer one scrolls
 Steps.FONT = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Fonts\\Expressway.ttf"
 Steps.TICK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t" -- the game's ready check's tick
 
 -- The fonts, by part: size in UI units.
 local FONTS = {
-    title = 16, levels = 11, count = 11, label = 10, instruction = 13.5, line = 12, note = 11, mark = 11, ahead = 12,
+    title = 16, levels = 11, count = 11, label = 10, instruction = 13.5, line = 12.5, note = 12, mark = 12, ahead = 12,
     number = 11,
 }
-local SOFT = { 0.8, 0.8, 0.8 }
+local SOFT = { 0.9, 0.9, 0.9 }
 
-local frame, window, header, rule, ruleShadow, title, levels, progress
+local frame, window, header, title, levels, progress
 local empty           -- the line shown while no guide is followed: a click opens the guides
+local listShade       -- the shade behind the listed steps
 local cards, rows = {}, {}
 local fonts = {}
 local offset = 0      -- the list scrolled from its start after the steps at hand (back for less than 0)
@@ -100,7 +106,8 @@ local function Card()
     card.shade:SetAllPoints()
     card.shade:SetColorTexture(0, 0, 0, Steps.SHADE)
     card.label = Text(card, "label")
-    card.texts, card.counts, card.tracks, card.fills, card.marks = {}, {}, {}, {}, {}
+    card.label:SetJustifyH("RIGHT")
+    card.texts, card.marks = {}, {}
     card:SetScript("OnClick", ns.Guard(function(self, button)
         if button == "RightButton" then ns.Guide.Back() else ns.Guide.Skip(self.number) end
     end))
@@ -133,8 +140,6 @@ end
 local function Row()
     local row = CreateFrame("Button", nil, frame)
     row:RegisterForClicks("RightButtonUp")
-    row.tick = row:CreateFontString(nil, "OVERLAY")
-    row.tick:SetFontObject(Font("number"))
     row.number = Text(row, "number")
     row.number:SetJustifyH("RIGHT")
     row.text = Text(row, "ahead")
@@ -162,10 +167,8 @@ local function Build()
     progress = Text(header, "count")
     progress:SetJustifyH("RIGHT")
     progress:SetTextColor(unpack(SOFT))
-    rule = frame:CreateTexture(nil, "ARTWORK")
-    rule:SetColorTexture(1, 1, 1, 0.45)
-    ruleShadow = frame:CreateTexture(nil, "ARTWORK")
-    ruleShadow:SetColorTexture(0, 0, 0, 0.6)
+    listShade = frame:CreateTexture(nil, "BACKGROUND")
+    listShade:SetColorTexture(0, 0, 0, Steps.LIST_SHADE)
     empty = CreateFrame("Button", nil, frame)
     empty:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     empty.text = Text(empty, "note")
@@ -258,10 +261,24 @@ local function Warns(text, warn)
     return warn ~= nil and text:lower():find("|c" .. warn, 1, true) ~= nil
 end
 
--- A next step's words greyed out: no colours, no picture before them.
-local function Greyed(text)
+-- A next step's words plain: no colours, no picture before them.
+local function PlainWords(text)
     text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
     return (text:gsub("^%s*|T.-|t%s*", ""))
+end
+
+-- A thing to do's words without a count of their own, which the game writes before them ("0/12 Boars slain") or after
+-- them ("Boars slain: 0/12"), a colour around them or not: the line says it once.
+local function Uncounted(text)
+    text = text:gsub("^(|c%x%x%x%x%x%x%x%x)%s*%d+%s*/%s*%d+:?%s+", "%1"):gsub("^%s*%d+%s*/%s*%d+:?%s+", "")
+    text = text:gsub(":?%s*%(?%d+%s*/%s*%d+%)?%s*(|r)%s*$", "%1")
+    return (text:gsub(":?%s*%(?%d+%s*/%s*%d+%)?%s*$", ""))
+end
+
+-- What stands before a thing to do's words: a tick once it is done, else how far it is where it has a number.
+local function Count(line)
+    if line.done then return Steps.TICK end
+    return line.have and line.need and ("%d/%d"):format(line.have, line.need) or nil
 end
 
 -- One step at hand on its card, from the top y of the view; its height.
@@ -273,14 +290,16 @@ local function DrawCard(card, step, y, warn)
     card:SetWidth(Steps.WIDTH)
     card.number = step.number
     card.label:ClearAllPoints()
-    card.label:SetPoint("TOPLEFT", card, "TOPLEFT", P, -P)
+    card.label:SetPoint("TOPRIGHT", card, "TOPRIGHT", -P, -P)
     card.label:SetText((step.chain or ns.TEXT.step:format(step.shown)) .. (step.done and (" " .. Steps.TICK) or ""))
     card.label:SetTextColor(unpack(SOFT))
-    local cy = -P - card.label:GetStringHeight() - 2
-    local used = { texts = 0, counts = 0, bars = 0, marks = 0 }
+    -- The first words stand beside the number; a long name (a chain's) has the top to itself.
+    local cy, beside = -P, inner - card.label:GetStringWidth() - Steps.BESIDE
+    if beside < inner / 2 then cy, beside = cy - card.label:GetStringHeight() - 2, inner end
+    local used = { texts = 0, marks = 0 }
     local function Next(kind, part)
         used[kind] = used[kind] + 1
-        local list = kind == "texts" and card.texts or kind == "counts" and card.counts or card.marks
+        local list = kind == "texts" and card.texts or card.marks
         local text = Part(list, used[kind], function() return Text(card, part) end)
         text:SetFontObject(Font(part))
         text:ClearAllPoints()
@@ -292,47 +311,19 @@ local function DrawCard(card, step, y, warn)
             -- What to do, large.
             local text = Next("texts", "instruction")
             text:SetPoint("TOPLEFT", card, "TOPLEFT", P, cy)
-            text:SetWidth(inner)
+            text:SetWidth(beside)
             text:SetText(line.text)
             text:SetAlpha(alpha)
             cy = cy - text:GetStringHeight() - 4
         elseif line.count then
-            -- A thing to do: its words, its count or tick at the right, a bar under one with a count.
-            local count = Next("counts", "count")
-            count:SetPoint("TOPRIGHT", card, "TOPRIGHT", -P, cy)
-            count:SetJustifyH("RIGHT")
-            if line.done then
-                count:SetText(Steps.TICK)
-            elseif line.have and line.need then
-                count:SetText(("%d/%d"):format(line.have, line.need))
-            else
-                count:SetText("")
-            end
-            count:SetAlpha(alpha)
+            -- A thing to do: its count or tick, then its words.
             local text = Next("texts", "line")
+            local count, words = Count(line), Uncounted(line.text)
             text:SetPoint("TOPLEFT", card, "TOPLEFT", P, cy)
-            text:SetWidth(inner - math.max(count:GetStringWidth(), 12) - 6)
-            text:SetText((line.text:gsub(":?%s*%d+%s*/%s*%d+%s*$", "")))
+            text:SetWidth(beside)
+            text:SetText(count and (count .. " " .. words) or words)
             text:SetAlpha(alpha)
-            cy = cy - text:GetStringHeight() - 2
-            if line.have and line.need and line.need > 0 then
-                used.bars = used.bars + 1
-                local track = Part(card.tracks, used.bars, function() return card:CreateTexture(nil, "ARTWORK") end)
-                local fill = Part(card.fills, used.bars, function() return card:CreateTexture(nil, "OVERLAY") end)
-                track:SetColorTexture(1, 1, 1, 0.18)
-                track:ClearAllPoints()
-                track:SetPoint("TOPLEFT", card, "TOPLEFT", P, cy - 1)
-                track:SetSize(inner, Steps.BAR)
-                fill:SetColorTexture(1, 1, 1, line.done and 0.45 or 0.85)
-                fill:ClearAllPoints()
-                fill:SetPoint("TOPLEFT", track, "TOPLEFT")
-                fill:SetSize(math.max(0.01, inner * math.min(1, line.have / line.need)), Steps.BAR)
-                track:Show()
-                fill:Show()
-                cy = cy - Steps.BAR - 4
-            else
-                cy = cy - 2
-            end
+            cy = cy - text:GetStringHeight() - 4
         else
             -- Other words: "!" before a warning, "i" before the rest.
             local mark = Next("marks", "mark")
@@ -342,20 +333,16 @@ local function DrawCard(card, step, y, warn)
             mark:SetAlpha(alpha)
             local text = Next("texts", "note")
             text:SetPoint("TOPLEFT", card, "TOPLEFT", P + 10, cy)
-            text:SetWidth(inner - 10)
+            text:SetWidth(beside - 10)
             text:SetText(line.text)
             text:SetAlpha(alpha)
             cy = cy - text:GetStringHeight() - 3
         end
+        beside = inner
     end
     -- What this step did not use, out of sight.
     for n = used.texts + 1, #card.texts do card.texts[n]:SetText("") end
-    for n = used.counts + 1, #card.counts do card.counts[n]:SetText("") end
     for n = used.marks + 1, #card.marks do card.marks[n]:SetText("") end
-    for n = used.bars + 1, #card.tracks do
-        card.tracks[n]:Hide()
-        card.fills[n]:Hide()
-    end
     local height = -cy + P - 2
     card:SetHeight(height)
     card:Show()
@@ -414,16 +401,9 @@ function Steps.Update()
     levels:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 6, 1)
     progress:ClearAllPoints()
     progress:SetPoint("BOTTOMRIGHT", header, "TOPRIGHT", 0, -title:GetStringHeight() + 1)
-    local headHeight = title:GetStringHeight() + 5
+    local headHeight = title:GetStringHeight() + Steps.GAP
     header:SetHeight(headHeight)
     y = y - headHeight
-    rule:ClearAllPoints()
-    rule:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
-    rule:SetSize(Steps.WIDTH, 1)
-    ruleShadow:ClearAllPoints()
-    ruleShadow:SetPoint("TOPLEFT", rule, "BOTTOMLEFT")
-    ruleShadow:SetSize(Steps.WIDTH, 1)
-    y = y - 2 - 8
 
     if hint then
         empty.text:SetText(hint)
@@ -433,6 +413,7 @@ function Steps.Update()
         empty:Show()
         for _, card in ipairs(cards) do card:Hide() end
         for _, row in ipairs(rows) do row:Hide() end
+        listShade:Hide()
         frame:SetHeight(math.max(1, -y + empty.text:GetStringHeight() + 2))
         ns.Arrow.Update(false)
         ns.Icons.Update(false)
@@ -450,12 +431,14 @@ function Steps.Update()
     end
     for index = #picture.hand + 1, #cards do cards[index]:Hide() end
 
-    -- The listed steps, greyed out and fading as they go down: the next ones, or wherever the wheel took the list
-    -- (a tick before one done; one at hand a little lighter).
+    -- The listed steps, a little behind those at hand and fading a little as they go down: the next ones, or wherever
+    -- the wheel took the list (a tick for the number of one done; one at hand a little lighter).
     local here = {}
     for _, step in ipairs(picture.hand) do here[step.number] = true end
     local shown = math.min(count, #picture.ahead)
     listEnds = #picture.ahead < count
+    local listTop = y
+    if shown > 0 then y = y - Steps.LIST_PAD end
     for index = 1, shown do
         local line = picture.ahead[index]
         local row = rows[index] or Row()
@@ -466,17 +449,14 @@ function Steps.Update()
         row:SetWidth(Steps.WIDTH)
         row.number:ClearAllPoints()
         row.number:SetPoint("TOPRIGHT", row, "TOPLEFT", Steps.NUMBERS - 6, -1)
-        row.number:SetText(line.shown)
-        row.number:SetTextColor(Steps.GREY * 0.8, Steps.GREY * 0.8, Steps.GREY * 0.8)
-        row.tick:ClearAllPoints()
-        row.tick:SetPoint("TOPRIGHT", row.number, "TOPLEFT", -2, 1)
-        row.tick:SetText(line.done and Steps.TICK or "")
+        row.number:SetText(line.done and Steps.TICK or line.shown)
+        row.number:SetTextColor(Steps.LIST * 0.85, Steps.LIST * 0.85, Steps.LIST * 0.85)
         row.text:ClearAllPoints()
         row.text:SetPoint("TOPLEFT", row, "TOPLEFT", Steps.NUMBERS, 0)
         row.text:SetWidth(Steps.WIDTH - Steps.NUMBERS)
-        row.text:SetText(Greyed(line.text))
-        local grey = here[line.number] and SOFT[1] or Steps.GREY
-        row.text:SetTextColor(grey, grey, grey)
+        row.text:SetText(PlainWords(line.text))
+        local light = here[line.number] and 1 or Steps.LIST
+        row.text:SetTextColor(light, light, light)
         local height = row.text:GetStringHeight() + 3
         row:SetHeight(height)
         row:SetAlpha(hovered and 1 or math.max(Steps.FAINTEST, 1 - Steps.FADE * index))
@@ -484,6 +464,11 @@ function Steps.Update()
         y = y - height
     end
     for index = shown + 1, #rows do rows[index]:Hide() end
+    if shown > 0 then y = y - Steps.LIST_PAD end
+    listShade:ClearAllPoints()
+    listShade:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, listTop)
+    listShade:SetSize(Steps.WIDTH, math.max(1, listTop - y))
+    listShade:SetShown(shown > 0)
     frame:SetHeight(math.max(1, -y))
     ns.Arrow.Update(true)
     ns.Icons.Update(true)

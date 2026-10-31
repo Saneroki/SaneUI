@@ -430,6 +430,23 @@ local icon1 = rawget(_G, "SaneUISpeedLevelingIcon1")
 check(icon1 and icon1:GetAttribute("type") == "item" and icon1:GetAttribute("item") == "item:6948",
     "the usable item is an icon; a click uses it")
 
+-- At a glance: a thing to do says its count once, before its words, whichever way the game writes it; the step's number
+-- stands at the top right.
+;(function()
+    local function Said()
+        Steps.Update()
+        for _, widget in ipairs(W.frames) do
+            if widget._shown and type(widget._text) == "string" and widget._text:find("^2/4 ") then return widget._text end
+        end
+    end
+    quests.objectives[10] = { { finished = false, numFulfilled = 2, numRequired = 4, text = "2/4 Boars slain" } }
+    check(Said() == "2/4 Boars slain", "the game writes the count first: once: " .. tostring(Said()))
+    quests.objectives[10][1].text = "Boars slain: 2/4"
+    check(Said() == "2/4 Boars slain", "after the words: once, in the same place: " .. tostring(Said()))
+    local label = Shown(ns.TEXT.step:format(3))
+    check(label and label._points[1][1] == "TOPRIGHT", "the step's number at the card's top right")
+end)()
+
 -- An objective met: the goal line done.
 quests.objectives[10] = { { finished = true, numFulfilled = 4, numRequired = 4 } }
 check(Run.Lines(3)[2].done and Run.Lines(3)[2].have == 4, "an objective the game says is finished, with its count")

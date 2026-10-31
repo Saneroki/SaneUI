@@ -89,7 +89,7 @@ prints its log.
   and the game's quest log standing in, a quest unfolded with its text and big reward icons, two ghosts on top; `LabOnScreen()` shows its look
   on the screen alone, `LabRight()` moves it to the right half, `LabQuestLog` in the console), `unitframes` (Core and Combat from their TOCs, your frame with its cast, your three timers
   and your pet, your target's and focus's frames, the game's cast and timer functions standing in; `LabCast("Fireball")` casts, `LabCombat`
-  in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
+  in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `guide` (Core from its TOC and Speed Leveling's view, `Steps.lua`, alone, a made-up guide over a screenshot of the world; `LabGround(0.9)` in the console reads it on snow, `LabGuide` is the module), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
   says another), `auctionscan` (the game's auction house window from its own files and Core from its TOC: the full scan's bar
   under it through its phases, the game's scan calls standing in; `LabScan.Answer()` in the console is the server's answer),
   `deals` (the game's auction house window from its own files, Core, its auction data and Economy from their TOCs: the tab Deals on

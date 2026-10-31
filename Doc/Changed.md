@@ -6,6 +6,19 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 590 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: the guide read at a glance (Saneroki, 2026-10-31)
+Saneroki: the guide window optimized to read the steps at a glance: less grey text, no count twice (*0/12 ... 0/12*), *Step x*
+out of the way at the top right, a more solid background and no grey bar, the list under the steps more readable, a little
+more white, still fading into the background. A `/reload` takes it in.
+- **`src/SpeedLeveling/Steps.lua`:** a thing to do says its count once, before its words, or a tick when done (`Uncounted`
+  takes the game's own count out at either end, a colour around it or not; `Count`). The count's column and bars are gone, so
+  is the rule under the head. *Step 12* or a chain's name at the card's top right, the first words beside it, a long name on
+  a line of its own. Shade 0.3 to 0.65; the list on a lighter shade of its own (0.4), words 0.9, fading to 0.7 at most, a tick
+  in place of a done step's number; `DONE` 0.5 to 0.7; soft words 0.8 to 0.9; notes and things to do a little larger.
+- **Interface lab:** the scene `guide`; `LabGround(0.9)` reads it on snow.
+- **Tests:** `dev/tests/speedguide.lua`.
+- **Docs:** `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/ideas/Leveling.md`.
+
 ### Abilities: Action Bar 1 keeps its page; bars 6 to 8 are the fixed bars (Saneroki, 2026-10-31)
 Saneroki: "I want you to implement it so that the actionbar 1 does not automatically on its own change the pages. Those pages are for me manually to change." And three bars beside it, his main bar on 1 to = and the others with Shift and Ctrl, the game's bar with its pages on Alt: "So that all pages and bars are truely unique." "The most important thing about the new actionbars is that they have all features and exactly same behaviours of the official native actionbars".
 - **`src/Abilities/Bar1.lua` (new):** a header with a state driver (`Bar1.STATES`) writes the page to the twelve buttons' own `actionpage`, which comes before the bar's that the game writes a form's row to: no form changes what they show or what their keys cast, in a fight too, and the arrows and page keys still turn the page. `game` under the game's own bars (`[vehicleui][overridebar][possessbar][shapeshift][bonusbar:5][petbattle]`): the buttons read the bar's page again and the keys of Bar 6 press `ACTIONBUTTONn`, by the header's override bindings. Switch off and standing down let go at once, out of a fight.

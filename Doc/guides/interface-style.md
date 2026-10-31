@@ -305,8 +305,9 @@ Speed Leveling's guide, straight on the world without a window (`src/SpeedLeveli
 - **Its words in Expressway**, a clean sans with a thin dark outline, not Kalam: it stands over the game, not on paper
   (Saneroki's pick). Names in the game's own font colours, as the guide marks them.
 - **From the top:** a row of icons (the items to use, the names to target), then the zone with its levels and how
-  far (*12/84 · 14%*) over a thin rule, the steps at hand on a faint dark shade, the next steps **greyed out** and
-  fading as they go down (Saneroki: he likes them greyed).
+  far (*12/84 · 14%*), the steps at hand on a dark shade that alone sets them apart, *Step 12* small at each one's top
+  right, a thing to do's count once, before its words, no bars or rules; the next steps light, on a lighter shade of their
+  own, fading a little as they go down (Saneroki, 2026-10-31: read at a glance, on any ground; no grey words).
 - **The icons are icons only,** each in the far herbs' round leather ring (*Far herbs and ore*): an item's picture
   with its cooldown and count, a target's portrait once seen, else the game's speech bubble or sword (Saneroki: clean,
   just the icons, over the guide's top).

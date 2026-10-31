@@ -46,6 +46,9 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   rest, nobody Passes, no talk between them; on no other profile is anything rolled. Junk is tried again a little later
   where the game refuses, never given up. Gathering for the next zone became steps of the guide, one for every profession.
   The satchel's switch and the bags' box are one and the same, the profile; off, the guide is gone, not paused.
+- **Decision (Saneroki, 2026-10-31): the guide read at a glance.** No grey words, each count once, no bars or rules: the
+  shade sets the steps apart. *Step 12* at the top right of its step; the list light, on a shade of its own, a little
+  behind the steps at hand.
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
   looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the
