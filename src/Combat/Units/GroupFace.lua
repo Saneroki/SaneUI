@@ -49,12 +49,12 @@ local NONE = Core.HealthMarks.NONE
 local Face = {}
 ns.GroupFace = Face
 
-Face.LINE = 1 / 5    -- the power line's height, a share of the bar's
+Face.LINE, Face.LINE_MOST = 1 / 5, 8 -- the power line's height, a share of the bar's, and the most on a tall slot
 Face.INSET, Face.GAP = 3, 2 -- the words from the bar's ends, and between two pieces
 Face.BARE = 80       -- narrower than this: no health at all, the name has it all
 Face.ICON = 14       -- one of your buffs' icons, and the cog, square
 Face.ICON_GAP = 1    -- between two of your buffs' icons
-Face.BIG_OFF = 4     -- the big icons are that much lower than the frame
+Face.BIG_OFF, Face.BIG_MOST = 4, 32 -- the big icons are that much lower than the frame, and at most that high
 Face.ROLE = 10       -- the role's mark, square
 Face.FAR = 0.45      -- how solid a unit out of your reach is
 Face.AGGRO = 2       -- the first of the game's threat kinds that is having aggro
@@ -85,7 +85,7 @@ end
 
 -- The big icons as high as the frame lets them be; one that shows that wide too.
 function Face.Big(face, height)
-    local big = math.max(height - Face.BIG_OFF, Face.ICON)
+    local big = math.max(math.min(height - Face.BIG_OFF, Face.BIG_MOST), Face.ICON)
     if big == face.big then return end
     face.big = big
     face.marks:Resize(big)
@@ -112,7 +112,7 @@ function Face.Fit(face)
     Bar.Ends(health, "both", round, tall)
     Bar.End(marks.lostEnd, marks.lost, "RIGHT", "both", round, tall)
     marks:Fit(inner)
-    face.power:SetHeight(math.max(tall * Face.LINE, pixel * 2))
+    face.power:SetHeight(math.max(math.min(tall * Face.LINE, Face.LINE_MOST), pixel * 2))
     Face.Big(face, height)
     local bare = width < Face.BARE
     local turned = bare ~= face.bare

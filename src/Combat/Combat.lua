@@ -165,7 +165,7 @@ local OPTIONS = {
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
     { key = "groupWidth", default = 960, min = 100, max = 2000 },
     { key = "groupHeight", default = 140, min = 30, max = 800 },
-    { key = "groupUnitWidth", default = 150, min = 40, max = 400 },
+    { key = "groupUnitWidth", default = 240, min = 40, max = 400 },
     { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
     { key = "hideTracking", default = true, text = ns.TEXT.hideTracking, tip = ns.TEXT.hideTrackingTip },

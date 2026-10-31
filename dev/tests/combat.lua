@@ -186,14 +186,17 @@ do
     local Marks = Core.HealthMarks
     check(Group.GAP == 0, "units stand edge to edge, no gap between them")
     -- Sizes: within the limits, the unit's own limit first.
-    local wide, high = Group.Size(1, 5, 960, 140, 150)
-    check(wide == 150 and high == 28, "a party: as wide as a unit may be")
-    wide, high = Group.Size(8, 5, 960, 140, 150)
+    local wide, high = Group.Size(1, 1000, 500, 100)
+    check(wide == 100 and high == 100, "a party: as wide as a unit may be, five of them fill the height whoever is there")
+    wide, high = Group.Size(2, 1000, 500, 100)
+    check(wide == 100 and high == 100, "two groups fit: the same size")
+    wide, high = Group.Size(3, 250, 500, 100)
+    check(wide == 83 and high == 100, "three do not fit: all share the width, the height stays")
+    wide, high = Group.Size(8, 960, 140, 150)
     check(wide == 120 and high == 28, "forty in eight columns share the max width")
-    wide, high = Group.Size(8, 5, 480, 70, 150)
-    check(wide == 60 and high == 14, "smaller limits, smaller units")
-    wide, high = Group.Size(8, 5, 100, 30, 150)
+    wide, high = Group.Size(8, 100, 30, 150)
     check(wide == Group.LEAST_WIDTH and high == Group.LEAST_HEIGHT, "never smaller than can be read")
+    check(ns.options.groupUnitWidth == ns.Units.WIDTH, "a unit at most as wide as the unit frames, at first")
 
     -- Alone: the window is there, no header, the game's frames away and given back whole.
     PartyFrame = W.NewWidget("Frame", "PartyFrame", UIParent)
@@ -237,7 +240,7 @@ do
         "each group a column to the right of the last, touching it")
     local first, second, third = headers[1][1], headers[1][2], headers[1][3]
     check(first._template == "SecureUnitButtonTemplate" and first:GetAttribute("*type2") == "togglemenu"
-        and first:GetScript("OnEnter") and first._width == 150 and first._height == 28,
+        and first:GetScript("OnEnter") and first._width == 240 and first._height == 28,
         "its buttons answer as your other frames do, at the size the limits give")
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
@@ -415,10 +418,10 @@ do
     -- A raid of forty: eight columns; a frame too narrow for its health gives that room to the name.
     raid, members = true, 40
     GetRaidRosterInfo = function(index) return "x", 0, math.ceil(index / 5) end
-    check(select(1, Group.Filled()) == 8 and select(2, Group.Filled()) == 5, "a raid fills a column a group")
+    check(Group.Filled() == 8, "a raid fills a column a group")
     GetRaidRosterInfo = function(index) return "x", 0, index <= 3 and 1 or 4 end
     members = 7
-    check(select(1, Group.Filled()) == 2 and select(2, Group.Filled()) == 4, "only the groups in use count")
+    check(Group.Filled() == 2, "only the groups in use count")
     members = 40
     GetRaidRosterInfo = function(index) return "x", 0, math.ceil(index / 5) end
     -- A face takes its button's size by its anchors, and hears of it by OnSizeChanged.
@@ -441,7 +444,12 @@ do
     raid, members = false, 3
     Group.Apply()
     Sized(second)
-    check(second._width == 150 and not second.face.bare and second.face.value._text == "50%", "back in a party they are wide again")
+    check(second._width == 240 and not second.face.bare and second.face.value._text == "50%", "back in a party they are wide again")
+    Core.Set(ns.name, "groupHeight", 500)
+    check(second._height == 100 and first._height == 100, "a higher window: three in a party are a fifth of it high")
+    second._height = 28
+    Sized(second)
+    Core.Set(ns.name, "groupHeight", 140)
 
     -- Edit Mode: the preview, no box around it, its settings in the dialog.
     local drawn = {}
@@ -476,7 +484,7 @@ do
     check(faces[2].name._text == name and faces[2]._width == 100, "a size changed: the same units, narrower")
     Core.Set(ns.name, "groupWidth", 960)
     Core.Set(ns.name, "groupPreview", 7)
-    check(faces[7]._shown and not faces[8]._shown and faces[6]._points[1][4] == 150, "seven: two columns")
+    check(faces[7]._shown and not faces[8]._shown and faces[6]._points[1][4] == 240 and faces[7]._height == 28, "seven: two columns")
     Core.Selection.Select(window)
     check(window.settingRows and #window.settingRows.shows == #Group.SETTINGS, "its settings in Edit Mode's dialog")
     window.options.set("groupPreview", 12)

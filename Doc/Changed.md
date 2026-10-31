@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Party and raid slots fill the window (Saneroki, 2026-10-31)
+Saneroki: five slots fill the window's height whoever is there; a slot as wide as the max unit width, at first the unit frames' width; all slots share
+the width evenly only where the columns would not fit. A `/reload` takes it in.
+- **`src/Combat/Units/Group.lua`:** `Group.Size(columns, width, height, unit)`, no cap on the height, no rows by the group's size; `Group.HEIGHT` gone.
+- **`src/Combat/Units/GroupFace.lua`:** the big icons and the mana line stop growing on tall slots (`Face.BIG_MOST`, `Face.LINE_MOST`).
+- **`src/Combat/Combat.lua`:** `groupUnitWidth` 240 at first. **Tests:** `dev/tests/combat.lua`.
+
 ### Speed Leveling: the list on the wheel, in the place of the steps (Saneroki, 2026-10-31)
 Saneroki: no scrollable list under the steps, to focus on them; the wheel over the steps makes them go and the list come up.
 A `/reload` takes it in.

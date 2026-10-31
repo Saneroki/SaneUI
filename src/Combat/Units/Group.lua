@@ -11,9 +11,10 @@ local _, ns = ...
 --  allow. Nothing is drawn around it in play, only the units; in Edit Mode it has
 --  the box every window has there. A click on that gives its settings, in Core's
 --  dialog: its max width and height, a unit's max width, and how many made-up
---  units to preview. A unit is as wide as those
---  allow for the columns the group fills, Group.HEIGHT high or less: so a
---  party's frames are wide and a raid of forty's narrow (Group.Size). Sizes
+--  units to preview. Five units always fill the max height, however few are
+--  there (Saneroki, 2026-10-31): a slot is a fifth of it high. A slot is as wide
+--  as the max unit width, narrower only where the columns the group fills would
+--  not fit into the max width: then all share that evenly (Group.Size). Sizes
 --  change out of a fight only; a fight keeps them, and members who join in one
 --  show at that size.
 --
@@ -48,7 +49,6 @@ ns.Group = Group
 
 Group.GROUPS, Group.PER_GROUP = 8, 5
 Group.GAP = 0           -- between two units: they stand edge to edge (Saneroki, 2026-10-30: "0px gaps")
-Group.HEIGHT = 28       -- a unit's height at most
 Group.LEAST_WIDTH, Group.LEAST_HEIGHT = 40, 14
 Group.GAME = { "PartyFrame", "CompactRaidFrameContainer", "CompactRaidFrameManager" } -- the game's frames ours stand in for
 Group.SHOWN = "[group] show; hide"                         -- when the live frames show
@@ -65,12 +65,13 @@ local headers, samples, faces, lends = {}, {}, {}, nil -- the headers; the rolle
 local built = false -- the headers have their buttons
 local holdCount = 0 -- ready checks ended: only the last one's result is taken away
 
--- How large a unit is for that many columns and rows, within the limits.
-function Group.Size(columns, rows, width, height, unit)
-    columns, rows = math.max(columns, 1), math.max(rows, 1)
+-- How large a unit is for that many columns within the limits: five fill the height whoever is there; as wide as a
+-- unit may be, or the width shared evenly where that many would not fit.
+function Group.Size(columns, width, height, unit)
+    columns = math.max(columns, 1)
     local wide = math.floor((width - (columns - 1) * Group.GAP) / columns)
-    local high = math.floor((height - (rows - 1) * Group.GAP) / rows)
-    return math.max(math.min(wide, unit), Group.LEAST_WIDTH), math.max(math.min(high, Group.HEIGHT), Group.LEAST_HEIGHT)
+    local high = math.floor((height - (Group.PER_GROUP - 1) * Group.GAP) / Group.PER_GROUP)
+    return math.max(math.min(wide, unit), Group.LEAST_WIDTH), math.max(high, Group.LEAST_HEIGHT)
 end
 
 -- The limits as the settings say.
@@ -79,19 +80,18 @@ local function Limits()
     return tonumber(options.groupWidth), tonumber(options.groupHeight), tonumber(options.groupUnitWidth)
 end
 
--- How many columns your group fills now and how many are in its largest: a raid by its groups, a party is one.
+-- How many columns your group fills now: a raid one for each group in use, a party one.
 function Group.Filled()
-    if not Core.Ask(IsInRaid) then return 1, math.max(Core.Ask(GetNumGroupMembers) or 1, 1) end
-    local counts, columns, rows = {}, 0, 0
+    if not Core.Ask(IsInRaid) then return 1 end
+    local used, columns = {}, 0
     for index = 1, Core.Ask(GetNumGroupMembers) or 0 do
         local _, _, group = Core.Ask(GetRaidRosterInfo, index)
-        if group then
-            counts[group] = (counts[group] or 0) + 1
-            if counts[group] == 1 then columns = columns + 1 end
-            rows = math.max(rows, counts[group])
+        if group and not used[group] then
+            used[group] = true
+            columns = columns + 1
         end
     end
-    return columns, rows
+    return columns
 end
 
 -- A button of a header: its unit followed by our face.
@@ -166,8 +166,7 @@ end
 -- Every live unit at the size the group calls for. Out of a fight.
 local function Layout()
     local width, height, unit = Limits()
-    local columns, rows = Group.Filled()
-    local wide, high = Group.Size(columns, rows, width, height, unit)
+    local wide, high = Group.Size(Group.Filled(), width, height, unit)
     for _, header in ipairs(headers) do
         for child = 1, Group.PER_GROUP do
             if header[child] then header[child]:SetSize(wide, high) end
@@ -226,8 +225,7 @@ end
 local function Preview()
     local count = math.min(tonumber(ns.options.groupPreview) or 0, Group.GROUPS * Group.PER_GROUP)
     local width, height, unit = Limits()
-    local rows, columns = math.min(count, Group.PER_GROUP), math.ceil(count / Group.PER_GROUP)
-    local wide, high = Group.Size(columns, rows, width, height, unit)
+    local wide, high = Group.Size(math.ceil(count / Group.PER_GROUP), width, height, unit)
     for index, sample in ipairs(Rolled(count)) do
         sample.raid = count > Group.PER_GROUP
         local face = faces[index]

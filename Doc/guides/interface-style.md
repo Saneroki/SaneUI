@@ -377,7 +377,9 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   of a nameplate's neutral creature, not green; so too the focus's target, and your pet under your frame (green).
 - **Party and raid, one frame (Saneroki, 2026-10-30):** no party frame at all: "no matter if I am in a party or a raid the
   window should look the same, just with more slots." Unit frames like the nameplates, a bit shorter and taller. Up from the bottom
-  left, five to a column, a column to the right for each group, forty at most. Left the raid marker and the name, with a tiny mark for tanks and
+  left, five to a column, a column to the right for each group, forty at most. Five slots always fill the window's height, even with three
+  in the party; a slot is as wide as the max unit width (at first the unit frames' width), and all share the width only where the columns would
+  not fit. Left the raid marker and the name, with a tiny mark for tanks and
   healers in the top left corner, "a + or a shield like line", no golden circle, in front of the health bar and behind the name and raid icon; over them, big so it is easy to see, anchored left and floating like the buffs, the dispel
   type's icon, the ready check and an incoming resurrection ("make them overlay"); right the health's share alone: "We don't need current health values on the unit frames. % is enough and once the frames get to short we can remove the %
   health altogether to maximize the text space". Little space at the bar's ends and between pieces, for as much of the name as possible.

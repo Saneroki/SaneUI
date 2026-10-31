@@ -167,8 +167,9 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 - **Its sizes and preview:** in Edit Mode, click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
   and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
   markers, ready checks, aggro, the dead and offline, missing buffs, barriers, lost health and dispels; they stay the same while you
-  slide the sizes. A unit is as wide as the max width allows for the columns in use, never wider than the max unit width, and 28 high or
-  as the max height allows. Sizes change out of a fight: in one, a member who joins shows at the size in use.
+  slide the sizes. A slot is a fifth of the max height high, whoever is there, so five fill the window even with three in the party. It is as
+  wide as the max unit width (at first as wide as your unit frames), and only where the columns in use would not fit into the max width do all
+  share that width evenly. Sizes change out of a fight: in one, a member who joins shows at the size in use.
 - **Barriers, lost health, dispels:** on your unit frames and your party and raid frames (*Barriers*, *Lost maximum health*,
   *Dispellable debuffs*, each its own switch; the same three on the page Nameplates for the plates). A barrier is the game's shield
   art on the bar: after the health while it fits, pushed against the bar's right end when it does not, always as long as it is.
@@ -516,6 +517,7 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   column a group, forty at most, units edge to edge with no gap and nothing around them; the mana of tanks and healers inside the
   bar; your missing buffs; max sizes and a preview of any number of made-up units in Edit Mode. Barriers, lost maximum health and
   dispels on every health bar (Core's `HealthMarks.lua`).
+- **2026-10-31:** slots fill the window: five always fill the max height, and the width is shared only where the columns would not fit (Saneroki).
 - **2026-10-30:** your own slot a frame like all the others, its name the word Party or Raid, a cog on it for the group's tools (Saneroki).
 - **2026-10-30:** tiny role marks for tanks and healers in the top left corner, no golden circle; the ready check, dispel and incoming resurrection icons big, floating
   over the left of the frame, the raid marker and the name staying where they are behind them (Saneroki).
