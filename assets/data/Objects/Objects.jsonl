@@ -909,6 +909,8 @@
 {"key":656160,"since":0,"src":[1],"name":"Wilted Peacebloom","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}
 {"key":656161,"since":0,"src":[1],"name":"Stunted Silverleaf","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}
 {"key":656177,"since":0,"src":[5],"name":"Prickly Pear Fruit","kind":"quest"}
+{"key":656332,"since":0,"src":[15],"name":"Chunk of Amber","kind":"ore","skill":186,"skillLevel":1}
+{"key":656333,"since":0,"src":[15],"name":"Large Chunk of Amber","kind":"ore","skill":186,"skillLevel":1,"yellowAt":25,"greyAt":100}
 {"key":656366,"since":0,"src":[5],"name":"Naxxramas Crystal Fragment","kind":"quest"}
 {"key":659159,"since":0,"src":[5],"name":"Mailbox","kind":"quest"}
 {"key":660729,"since":0,"src":[5],"name":"The Forsaken Ally","kind":"quest"}

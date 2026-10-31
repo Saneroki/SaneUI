@@ -4828,6 +4828,8 @@
 {"key":"object:652228","since":0,"src":[5],"items":[{"item":274289,"how":"loot"}]}
 {"key":"object:656161","since":0,"src":[1],"items":[{"item":765,"how":"gather"}]}
 {"key":"object:656177","since":0,"src":[5],"items":[{"item":275718,"how":"loot"}]}
+{"key":"object:656332","since":0,"src":[15],"items":[{"item":2770,"how":"gather"},{"item":2835,"how":"gather"}]}
+{"key":"object:656333","since":0,"src":[15],"items":[{"item":2770,"how":"gather"},{"item":2835,"how":"gather"},{"item":774,"how":"gather"},{"item":818,"how":"gather"},{"item":1210,"how":"gather"}]}
 {"key":"object:656366","since":0,"src":[5],"items":[{"item":275851,"how":"loot"}]}
 {"key":"object:660729","since":0,"src":[5],"items":[{"item":277195,"how":"loot"}]}
 {"key":"object:660730","since":0,"src":[5],"items":[{"item":277194,"how":"loot"}]}

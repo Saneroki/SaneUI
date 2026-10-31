@@ -95,3 +95,15 @@ kind = "batch"
 game = "forever"
 build = 70245
 about = "The teleports: where each of the original game's (patch 1.12) teleports brings one, where every record of it agrees, it lies on a continent and Forever's own world has a floor there: the mage's to Stormwind, Ironforge, the Undercity, Thunder Bluff and Orgrimmar, the druid's to Moonglade, the engineers' transporter to Everlook; the teleports themselves (their spells, sides, reagents and the items that cast them) read from Forever's client by dev/tools/travel-data. Unverified: a cast in play confirms it."
+
+[15]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "The gathering nodes Forever added, picked by hand, 2026-10-31: Chunk of Amber and Large Chunk of Amber (Teldrassil's ore), what they give and where they stand; the Large one's skill range is what the game's servers sent. Where Poor Copper Vein, Wilted Peacebloom and Stunted Silverleaf stand in Mulgore and on Zephras Isle, which the batches before held too few of. Unverified: a node seen in play confirms it."
+
+[16]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "The original game's creature kinds (patch 1.12), only where every record of it agrees and the creature's name is the same in Forever's: for the creatures the batches before gave no kind. Unverified: a creature seen in play confirms it."
