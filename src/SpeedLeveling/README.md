@@ -247,6 +247,29 @@ megabytes do not hold the game up, then opened for your account or read as a gui
 not come through is sent to the box below), and under it a box to paste a guide's text into, with *Read*. It says how many were kept and which lines could not be
 read. Kept for the account; which guide a character follows and where it is in each, per character.
 
+### Class quests
+`ClassQuests.lua` (Saneroki, 2026-10-31): the guide knows who plays. When your level reaches a quest chain of your class,
+for your race and side, its next step stands on top of the steps at hand, *Bear Form: 2 of 4* in place of a step's
+number, and the arrow, the map pin and the key go by it until the chain is done: *Talk to Mathrengyl Bearwalker in
+Darnassus*, then what the quest asks, in the game's own words and counts, then the NPC who takes it and the next quest.
+Every class of WoW: Forever has its chains (118, in Core's set *ClassQuests*): a druid's Bear Form at 10, Cure Poison at
+14, Aquatic Form at 16, Cat Form at 20; a warrior's at 10, 20, 30 and 50; a warlock's pets, a shaman's totems, a
+hunter's taming, a paladin's Redemption, a priest's spells of its race, each race's own way to them, Skyborne's and
+Horde paladins' and Alliance shamans' too. Nothing is set up: the class, race, side and level are read from the game.
+
+- **The guide is not touched:** the step stands outside its numbers (`ClassQuests.STEP`, `Run.Hand`, `Run.Target`), so
+  your place in it, and its count, stay the same, and it goes on under the class quest.
+- **One step at a time,** made as it comes up from Core's *Quests* and *Spawns*; a quest in your log or handed in tells
+  how far the chain is, and what lies before it is behind you. A quest's own higher level holds its chain back, and
+  the next chain that is due comes up meanwhile. Of several NPCs who give a quest, the nearest. Where a chain's first
+  quest can be had from others too (a priest's spells, a warlock's Felsteed; the set's `also`), any one of them will do.
+- **What your guide does itself stays your guide's:** a quest it hands in shows nothing here, and one it only takes
+  shows from there on.
+- **A click leaves the chain** for this character (`Core.Character`, its `classLeft`), and your guide goes on; take one
+  of its quests yourself and it is back; a right click on the zone brings back all you left. The switch *Class quests*.
+
+Without Core's data (Retail, for now) there are none.
+
 ## How a guide is run
 `Run.lua` runs a guide read from text (`Format.lua`) for the character, asking the game what each line's thing is done
 through `Lines.lua`:
@@ -352,6 +375,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, skip, back, go, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
 | `Gathering.lua` | The steps of your professions woven into the guide, before each harder zone (Core's *Objects* and *Spawns*) |
+| `ClassQuests.lua` | Your class's quest chains over the guide, by your level: who plays, how far a chain is, its step (Core's *ClassQuests*, *Quests* and *Spawns*) |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |
 | `Key.lua` | The key: the buttons Find (and its chain), Fight and Use, the header and its snippets, the state driver, the game's settings lent (the interact key and how far it looks, Click-to-Move) |

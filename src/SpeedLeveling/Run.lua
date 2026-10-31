@@ -14,7 +14,8 @@ local _, ns = ...
 --  now (on a quest, money, an item count, a zone, a level); one with nothing to
 --  do is done at once. You are moved on past each step done, and past one that
 --  only goes along. A guide comes with the steps of your professions woven in
---  (Gathering.lua).
+--  (Gathering.lua), and a class quest that is due stands over it all
+--  (ClassQuests.lua), outside the guide's own numbers.
 --
 --  What the game knows (Saneroki, 2026-10-30: the guide works out by itself what
 --  is done): of each thing to do it can judge a quest's, a level's, a spell's or a
@@ -484,7 +485,8 @@ end
 
 function Run.Check()
     if not guide then return false end
-    return MoveOn()
+    local moved = MoveOn()
+    return ns.ClassQuests.Check() or moved
 end
 
 function Run.Through()
@@ -498,6 +500,7 @@ function Run.Place() return place or at end
 function Run.Hand()
     local hand = {}
     if not guide then return hand end
+    for _, index in ipairs(ns.ClassQuests.Hand()) do hand[#hand + 1] = index end
     for index = math.max(1, at - Run.BEHIND), at - 1 do
         if Along(index) then hand[#hand + 1] = index end
     end
@@ -534,6 +537,11 @@ end
 -- the steps that need it they are off); the one you are at, you go on past it, back to your place if you looked back.
 function Run.Skip(index)
     if not (guide and guide.steps[index]) then return end
+    if index == ns.ClassQuests.STEP then
+        ns.ClassQuests.Leave()
+        Run.Check()
+        return
+    end
     if not Finished(index) then Skipped()[index] = true end
     if index == at then
         held = nil
@@ -570,14 +578,16 @@ function Run.Saw(what)
     end
 end
 
--- Where the arrow points: the first place not yet passed of the steps at hand, the step you are at first; a point on
--- the way, or a place to get to, is passed once you were within its reach. The place line and its step; nil for none.
+-- Where the arrow points: the first place not yet passed of the steps at hand, a class quest that is due first, then
+-- the step you are at; a point on the way, or a place to get to, is passed once you were within its reach. The place
+-- line and its step; nil for none.
 function Run.Target()
     if not guide then return nil end
     local order = {}
-    if guide.steps[at] then order[1] = at end
+    for _, index in ipairs(ns.ClassQuests.Hand()) do order[#order + 1] = index end
+    if guide.steps[at] then order[#order + 1] = at end
     for _, index in ipairs(Run.Hand()) do
-        if index ~= at then order[#order + 1] = index end
+        if index ~= at and index > 0 then order[#order + 1] = index end
     end
     for _, index in ipairs(order) do
         for number, line in ipairs(guide.steps[index].lines) do
@@ -630,6 +640,7 @@ end
 function Run.Use(read)
     guide, held, at, place = read, nil, 1, nil
     wipe(seen)
+    ns.ClassQuests.Use(guide)
     if not guide then
         Notes().guide = nil
         return
@@ -641,6 +652,7 @@ function Run.Use(read)
     local kept = tonumber(notes.at[guide.key or guide.name])
     at = kept and math.max(1, math.min(kept, #guide.steps + 1)) or 1
     MoveOn()
+    ns.ClassQuests.Check()
 end
 
 -------------------------------------------------------------------------------
@@ -756,6 +768,7 @@ local WORDS = {
     trainer = function() return ns.TEXT.trainer end,
     stable = function() return ns.TEXT.stable end,
     arrive = function() return ns.TEXT.arrive end,
+    brief = function(line) return Lines.Brief(line.quest) end,
 }
 
 function Run.Words(line)

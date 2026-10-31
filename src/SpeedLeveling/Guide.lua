@@ -13,7 +13,8 @@ local _, ns = ...
 --                         ahead = { line }, shift }: count steps listed from the one after those at hand, moved by
 --                         shift (back for less than 0; picture.shift: as far as it went); at: the step shown, place:
 --                         your place in the guide as it is numbered for you (they differ while you look back)
---                         step = { number, shown, done, lines = { { text, done, have, need, count } } },
+--                         step = { number, shown, chain, done, lines = { { text, done, have, need, count } } },
+--                         (chain: a class quest's name and how far, in place of its number)
 --                         line = { number, shown, text, done } (shown: the number to show; done: Run.Ticked, as the
 --                         game knows it)
 --                         (text in our colours; count: a thing to do, its have and need when it has a number)
@@ -166,8 +167,8 @@ function Guide.Picture(count, shift)
                       hand = {}, ahead = {} }
     local last = at
     for _, index in ipairs(ns.Run.Hand()) do
-        picture.hand[#picture.hand + 1] = { number = index, shown = Shown(index), done = ns.Run.Ticked(index),
-                                            lines = OurLines(index) }
+        picture.hand[#picture.hand + 1] = { number = index, shown = Shown(index), chain = guide.steps[index].chain,
+                                            done = ns.Run.Ticked(index), lines = OurLines(index) }
         last = math.max(last, index)
     end
     local index = math.max(1, last + 1 + (shift or 0))
@@ -275,7 +276,9 @@ end
 function Guide.Things()
     if not Guide.Following() then return nil end
     local names = {}
+    local steps = ns.Run.Guide().steps
     for _, index in ipairs(ns.Run.Hand()) do
+        for _, name in ipairs(steps[index].things or EMPTY) do names[#names + 1] = name end
         for _, state in ipairs(ns.Run.Lines(index)) do
             if not state.done then Picked(ns.Run.Words(state.line), names) end
         end

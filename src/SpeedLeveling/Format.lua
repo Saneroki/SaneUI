@@ -46,7 +46,7 @@ Format.DOING = { take = true, handin = true, goal = true, carry = true, destroy 
                  skill = true, hearth = true, bind = true, flightpath = true, fly = true, zone = true, area = true,
                  revive = true, cast = true, shop = true, trainer = true, stable = true, tame = true, equip = true,
                  standing = true, bankIn = true, bankOut = true, aura = true, arrive = true, manual = true }
-Format.WORDS = { say = true, note = true, place = true, pin = true, line = true, link = true, timer = true }
+Format.WORDS = { say = true, note = true, brief = true, place = true, pin = true, line = true, link = true, timer = true }
 -- What passes a step by while it holds: the step is not for now.
 Format.TESTS = { onQuest = true, notOnQuest = true, questReady = true, questOpen = true, handedIn = true, open = true,
                  skipOnQuest = true, money = true, count = true, inZone = true, inArea = true, reached = true,

@@ -19,6 +19,8 @@
 #                   from a click only, the tab on the game's window, the gold on sale
 #   speedleveling.lua  the Speed Leveling key: what is wanted around you, Find's macro chain, the key's action in each
 #                      state, the hearth and quest items, the quest givers, the game's settings
+#   classquests.lua Speed Leveling's class quests over the guide, by class, race, side and level
+#   classquests.py  the set ClassQuests against the master: every chain can be followed, every Forever character has chains
 #   speedguide.lua  Speed Leveling's guide: a guide read from text and run by our own engine, bought guides opened for
 #                   the account, the steps at hand, the view over the world, the arrow and the icons
 #   lore.lua        the Lore module: talks as a scene, the game's talk windows held, the rewards read for you,
@@ -68,6 +70,7 @@ lua5.1 dev/tests/loot.lua
 lua5.1 dev/tests/economy.lua
 lua5.1 dev/tests/speedleveling.lua
 lua5.1 dev/tests/speedguide.lua
+lua5.1 dev/tests/classquests.lua
 lua5.1 dev/tests/lore.lua
 lua5.1 dev/tests/guild.lua
 lua5.1 dev/tests/sync.lua
@@ -82,6 +85,7 @@ python3 -I dev/tests/gpu_runner.py
 python3 -I dev/tests/auctions.py
 python3 -I dev/tests/saneui.py
 python3 -I dev/tests/board.py
+python3 -I dev/tests/classquests.py
 python3 -I dev/tests/webpages.py
 python3 -I dev/tests/walk.py
 python3 -I dev/tests/map_data.py

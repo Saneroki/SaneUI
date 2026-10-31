@@ -19,7 +19,7 @@ local Core = SaneUI.Core
 --      Core.Presets.VERSION
 --      Core.Presets.profiles[name]   { [module] = { [switch] = value } }
 -------------------------------------------------------------------------------
-local Presets = { VERSION = 2, profiles = {} }
+local Presets = { VERSION = 3, profiles = {} }
 Core.Presets = Presets
 
 -- What both Accountwide and Speedleveling hold.
@@ -67,7 +67,7 @@ local SPEEDLEVELING = {
 local LEVELING = { follow = "on" }
 for _, switch in ipairs({ "loot", "corpses", "talk", "walk", "objects", "useOn", "skull", "guide", "hearth", "items",
                           "take", "handin", "rewards", "gossip", "leave", "lootAll", "equipUpgrades", "rolls", "cinematics",
-                          "showGuide", "gather", "showArrow", "mapPin", "icons" }) do
+                          "showGuide", "gather", "classQuests", "showArrow", "mapPin", "icons" }) do
     LEVELING[switch] = true
 end
 

@@ -23,6 +23,7 @@ local ADDON, ns = ...
 --    Lines.lua   what each line of a guide asks, and whether it is done
 --    Run.lua     a guide run for the character: where you are, what is at hand
 --    Guide.lua   the guide shown, its picture, the guides kept
+--    ClassQuests.lua  your class's quest chains over the guide, by your level
 --    Wanted.lua  what is wanted around you, by name: your guide's steps, your
 --                quests' open objectives (Core's data, else the game's words),
 --                the creatures the game marks for your quests, the NPCs your
@@ -123,6 +124,15 @@ ns.TEXT = {
     gatherTip = "Before the guide goes on to a harder zone, a step of its own for each profession you have that is too low for it: gathering, crafting and secondary skills alike. Mining and Herbalism go by what gathers at least half of the ore or herbs there, the crafts by what they work with (from Sane UI's data of the world; WoW: Forever). A click on the step skips it.",
     raiseSkill = "Level %s to %d",
     skillBefore = "Before %s",
+    classQuests = "Class quests",
+    classQuestsTip = "When your level reaches a quest chain of your class, for your race and side (Bear Form at 10, a warlock's pets, a shaman's totems), its next step stands over the guide, and the arrow, the map pin and the key go by it until the chain is done. Your guide goes on under it, and what your guide does itself is left to it. A click on the step leaves that chain; a right click on the zone brings it back.",
+    classStep = "%s: %d of %d",
+    classAt = "%s %s",
+    classAtIn = "%s %s in %s",
+    classTalk = "Talk to",
+    classGo = "Go to",
+    classUse = "Use %s",
+    classBack = "Bring back the class quests you left",
     showArrow = "Show the arrow",
     showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, along Navigation's route wherever your map pin stands, in it a picture of what to do there, under it what to do and how far, and the time to get there. It stands where the toast of a new level and the travel overlay stand, and makes way for them.",
     mapPin = "Map pin on the guide's place",
@@ -242,6 +252,7 @@ local OPTIONS = {
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
     { key = "showGuide", default = false, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
     { key = "gather", default = false, text = ns.TEXT.gather, tip = ns.TEXT.gatherTip },
+    { key = "classQuests", default = false, text = ns.TEXT.classQuests, tip = ns.TEXT.classQuestsTip },
     { key = "showArrow", default = false, text = ns.TEXT.showArrow, tip = ns.TEXT.showArrowTip },
     { key = "mapPin", default = false, text = ns.TEXT.mapPin, tip = ns.TEXT.mapPinTip },
     { key = "icons", default = false, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip },
@@ -304,8 +315,8 @@ Core.Options(ns.name, OPTIONS, { moved = Moved, changed = function(key)
         ns.Guarded(ns.Steps.Update)
     elseif key == "lootAll" then
         ns.Guarded(ns.Errands.Update)
-    elseif key == "gather" then
-        ns.Guarded(ns.Guide.CheckSoon) -- the steps of the professions come or go: the guide moves on, the view with it
+    elseif key == "gather" or key == "classQuests" then
+        ns.Guarded(ns.Guide.CheckSoon) -- the steps of the professions or a class quest come or go: the view with them
     elseif key == "guide" or key == "follow" then
         -- On, paused or off: what the key wants follows, the view is drawn anew, the satchel's switch told.
         if key == "follow" then ns.Guarded(ns.Guide.CheckSoon) end

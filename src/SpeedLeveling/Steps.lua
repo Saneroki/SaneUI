@@ -25,8 +25,9 @@ local _, ns = ...
 --  listed step goes to it, a
 --  right click on it opens its menu (Go to step, the guides); a right click on
 --  the zone opens the menu of the guides kept (choose the one to follow, Paste
---  a guide). It stands where Edit Mode puts it (Core.Window), at first at the
---  screen's right, a little down; it grows downwards.
+--  a guide, the class quests you left brought back). It stands where Edit Mode
+--  puts it (Core.Window), at first at the screen's right, a little down; it
+--  grows downwards.
 --
 --      Steps.Update()   shown or hidden and drawn anew, as the switches and the guide are now
 --      Steps.Frame()    the view's frame while it is shown (the icons stand over its top)
@@ -215,6 +216,12 @@ function Menu(owner)
         if not next(groups) then root:CreateTitle(ns.TEXT.noneHere) end
         root:CreateDivider()
         root:CreateButton(ns.TEXT.paste, ns.Guard(ns.Guides.Open))
+        if ns.ClassQuests.Left() > 0 then
+            root:CreateButton(ns.TEXT.classBack, ns.Guard(function()
+                ns.ClassQuests.Back()
+                ns.Guide.CheckSoon()
+            end))
+        end
         Steps.LockItem(root, window)
     end))
 end
@@ -267,7 +274,7 @@ local function DrawCard(card, step, y, warn)
     card.number = step.number
     card.label:ClearAllPoints()
     card.label:SetPoint("TOPLEFT", card, "TOPLEFT", P, -P)
-    card.label:SetText(ns.TEXT.step:format(step.shown) .. (step.done and (" " .. Steps.TICK) or ""))
+    card.label:SetText((step.chain or ns.TEXT.step:format(step.shown)) .. (step.done and (" " .. Steps.TICK) or ""))
     card.label:SetTextColor(unpack(SOFT))
     local cy = -P - card.label:GetStringHeight() - 2
     local used = { texts = 0, counts = 0, bars = 0, marks = 0 }

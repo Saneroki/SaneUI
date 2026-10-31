@@ -14,6 +14,7 @@ local _, ns = ...
 --      Lines.OnQuest(quest), Lines.Ready(quest), Lines.HandedIn(quest, account)
 --      Lines.Objective(quest, goal)   finished, have, need, text, kind of a quest's objective; nil for none
 --      Lines.Objectives(quest)        how many objectives the game gives for it
+--      Lines.Brief(quest)             what a quest in your log asks, in the game's words; nil where it gives none
 --      Lines.Count(item, bank), Lines.Worn(slot)
 --      Lines.Known(spell), Lines.Skill(name, max), Lines.Aura(spell)
 --      Lines.Cooldown(kind, id)       seconds left, 0 when ready; nil when the game does not say
@@ -83,6 +84,15 @@ end
 function Lines.Objectives(quest)
     local objectives = Core.Ask(Log().GetQuestObjectives, quest)
     return type(objectives) == "table" and #objectives or 0
+end
+
+function Lines.Brief(quest)
+    local log = Log()
+    local index = Core.Ask(log.GetLogIndexForQuestID or rawget(_G, "GetQuestLogIndexByID"), quest)
+    if type(index) ~= "number" or index < 1 then return nil end
+    local _, asks = Core.Ask(rawget(_G, "GetQuestLogQuestText"), index)
+    asks = Plain(asks)
+    return type(asks) == "string" and asks ~= "" and asks or nil
 end
 
 -------------------------------------------------------------------------------

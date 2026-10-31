@@ -1,0 +1,19 @@
+set = "ClassQuests"
+key = "int"              # a chain, numbered by hand: its class × 100 and its place among that class's
+learn = false
+about = "The quest chains of each class, picked by hand for the leveling guide: for whom, from which level, their quests in order (src/SpeedLeveling/README.md, *Class quests*)."
+
+# Only what no other set says: who gives, takes and asks what stands in Quests, where they stand in Spawns. For whom a
+# chain is stands here, over a quest's own side and races there: those can lag behind Forever's races. A breadcrumb to
+# a chain is left out: the chain starts at the quest a character needs.
+[fields]
+name   = { type = "text" }                       # what the chain is known by
+class  = { type = "int" }                        # the game's class ID
+side   = { type = "enum", values = ["alliance", "horde"] }  # none: both
+races  = { type = "list", of = "int" }           # the game's race IDs; none: every race of its side
+level  = { type = "int", min = 1 }               # the level it starts at
+quests = { type = "list", of = "ref", set = "Quests" }  # in the order the game asks them
+also   = { type = "list", of = "ref", set = "Quests" }  # the first quest as other NPCs give it: any one of them will do
+
+[index]
+byClass = "class"

@@ -96,6 +96,16 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
 - **The map pin on the guide's place (Saneroki, 2026-10-30; built):** as a step becomes active the game's map pin goes on
   its place, so the route in Forever leads there. The game's own pin, so Speed Leveling needs nothing of Navigation.
 
+- **Class quests (Saneroki, 2026-10-31; built):** "The druid and warrior have class quests at different levels like 10
+  and 20 and i believe 16 and other levels. [...] add those quest chains to the guide when I reach the right leves so I
+  know where to go. The guide should automatically understand on wich character class the guide currently plays and if
+  the character is the right level when it shows the steps." Then: "It should work on all forever classes, not only
+  warrir and druid but all." So the set *ClassQuests* (118 chains, picked by hand: no chain can be worked out from
+  *Quests*, whose links and classes lag behind Forever's new quests) and `ClassQuests.lua`: the chain's next step stands
+  over the guide from its level on, outside the guide's numbers; what the guide does itself stays its own
+  (`src/SpeedLeveling/README.md`, *Class quests*). Left out: chains from level 54 on (dungeon sets, raids), and a chain
+  that starts from a dropped item, which no step can lead to.
+
 ## What has to exist first
 
 | Needed | Where | State (2026-10-18) |
@@ -104,7 +114,7 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
 | Where objectives are done | sets *Spawns*, *QuestAreas*, *Drops*, *Objects* | schemas only |
 | Creatures: level, elite, spawn density, respawn | sets *NPCs*, *CreatureSpawns* | partly |
 | Getting around: walking times, flights, boats, hearthstone | sets *Walking*, *Travel* | schemas only |
-| Class and race facts: trainers, class quests, starting areas | sets *Trainers*, *Zones* | partly |
+| Class and race facts: trainers, class quests, starting areas | sets *Trainers*, *ClassQuests*, *Zones* | class quests built (2026-10-31); the rest partly |
 | The game's XP rules: XP per kill by level difference, quest XP falling off by level, rested XP | Blizzard's code and the game | to gather |
 | The character's state: level, completed quests, log, bags | Core's *Characters* | planned |
 | The window and the waypoint | Navigation | planned |

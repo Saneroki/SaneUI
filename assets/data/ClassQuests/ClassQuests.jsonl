@@ -1,0 +1,118 @@
+{"key":101,"since":0,"src":["hand"],"name":"Path of Defense","class":1,"side":"horde","races":[2,6,8],"level":10,"quests":[1505,1498,1502,1503]}
+{"key":102,"since":0,"src":["hand"],"name":"Speak with Dillinger","class":1,"side":"horde","races":[5],"level":10,"quests":[1818,1819,1820,1821,1822]}
+{"key":103,"since":0,"src":["hand"],"name":"A Warrior's Training","class":1,"side":"alliance","races":[1],"level":10,"quests":[1638,1639,1640,1665,1666,1667]}
+{"key":104,"since":0,"src":["hand"],"name":"Vejrek","class":1,"side":"alliance","races":[3,7],"level":10,"quests":[1679,1678,1680,1681,1682]}
+{"key":105,"since":0,"src":["hand"],"name":"Vorlus Vilehoof","class":1,"side":"alliance","races":[4],"level":10,"quests":[1684,1683,1686,1692,1693]}
+{"key":106,"since":0,"src":["hand"],"name":"The Skybreaker Bulwark","class":1,"races":[95,96],"level":10,"quests":[94003]}
+{"key":107,"since":0,"src":["hand"],"name":"Brutal Armor","class":1,"side":"horde","level":20,"quests":[1823,1824,1825,1838,1848]}
+{"key":108,"since":0,"src":["hand"],"name":"Furen's Armor","class":1,"side":"alliance","level":20,"quests":[1698,1699,1702,1701,1782]}
+{"key":109,"since":0,"src":["hand"],"name":"Whirlwind Weapon","class":1,"level":30,"quests":[1718,1719,1791,1712,1713,1792]}
+{"key":110,"since":0,"src":["hand"],"name":"Warrior Kinship","class":1,"level":50,"quests":[8417,8423,8424,8425]}
+{"key":201,"since":0,"src":["hand"],"name":"A Second Home","class":2,"side":"horde","races":[5],"level":4,"quests":[91208,91209,91282,91294,91285,91316,91317,95803]}
+{"key":202,"since":0,"src":["hand"],"name":"A Lesson in Divinity","class":2,"side":"horde","races":[5],"level":12,"quests":[94427,94434,94435,94436,94438,94440,94441]}
+{"key":203,"since":0,"src":["hand"],"name":"Redemption","class":2,"side":"alliance","races":[1],"level":12,"quests":[2998,1642,1643,1644,1780,1781,1786,1787,1788]}
+{"key":204,"since":0,"src":["hand"],"name":"Redemption","class":2,"side":"alliance","races":[3],"level":12,"quests":[2999,1646,1647,1648,1778,1779,1783,1784,1785]}
+{"key":205,"since":0,"src":["hand"],"name":"The Windshaper's Wrath","class":2,"side":"horde","races":[5],"level":18,"quests":[91858,91859,91860,91861,91862,96204,95034]}
+{"key":206,"since":0,"src":["hand"],"name":"The Moonsilver Blade","class":2,"side":"horde","races":[5],"level":20,"quests":[95036,95111,95125,95126]}
+{"key":207,"since":0,"src":["hand"],"name":"Old Fire-Eye","class":2,"side":"horde","races":[5],"level":20,"quests":[95140]}
+{"key":208,"since":0,"src":["hand"],"name":"Verigan's Fist","class":2,"side":"alliance","races":[1,3],"level":20,"quests":[1649,1650,1651,1652,1653,1654,1806]}
+{"key":209,"since":0,"src":["hand"],"name":"The Tome of Nobility","class":2,"side":"alliance","races":[1,3],"level":40,"quests":[1661],"also":[4485,4486]}
+{"key":210,"since":0,"src":["hand"],"name":"Forging the Mightstone","class":2,"side":"alliance","races":[1,3],"level":50,"quests":[8415,8414,8416,8418]}
+{"key":301,"since":0,"src":["hand"],"name":"Taming the Beast","class":3,"side":"horde","races":[6],"level":10,"quests":[6061,6087,6088,6089]}
+{"key":302,"since":0,"src":["hand"],"name":"Taming the Beast","class":3,"side":"horde","races":[2,8],"level":10,"quests":[6062,6083,6082,6081]}
+{"key":303,"since":0,"src":["hand"],"name":"Taming the Beast","class":3,"side":"alliance","races":[4],"level":10,"quests":[6063,6101,6102,6103]}
+{"key":304,"since":0,"src":["hand"],"name":"Taming the Beast","class":3,"side":"alliance","races":[3],"level":10,"quests":[6064,6084,6085,6086]}
+{"key":305,"since":0,"src":["hand"],"name":"Taming the Beast","class":3,"side":"alliance","races":[1],"level":10,"quests":[94792,94863,94864,94793]}
+{"key":306,"since":0,"src":["hand"],"name":"Taming the Beast","class":3,"races":[95,96],"level":10,"quests":[94978,94979,94013,94050]}
+{"key":307,"since":0,"src":["hand"],"name":"The Hunter's Charm","class":3,"level":50,"quests":[8151,8153,8231,8232]}
+{"key":401,"since":0,"src":["hand"],"name":"The Shattered Hand","class":4,"side":"horde","races":[2,8],"level":10,"quests":[1963,1858]}
+{"key":402,"since":0,"src":["hand"],"name":"The Deathstalkers","class":4,"side":"horde","races":[5],"level":10,"quests":[1885,1886,1898,1899,1978]}
+{"key":403,"since":0,"src":["hand"],"name":"Seek out SI:7","class":4,"side":"alliance","races":[1],"level":10,"quests":[2205,2206]}
+{"key":404,"since":0,"src":["hand"],"name":"Road to Salvation","class":4,"side":"alliance","races":[3,7],"level":10,"quests":[2218,2238,2239]}
+{"key":405,"since":0,"src":["hand"],"name":"The Apple Falls","class":4,"side":"alliance","races":[4],"level":10,"quests":[2241,2242]}
+{"key":406,"since":0,"src":["hand"],"name":"Fenwick Thatros","class":4,"side":"horde","races":[5],"level":16,"quests":[1998,1999]}
+{"key":407,"since":0,"src":["hand"],"name":"Zando'zan","class":4,"side":"horde","level":16,"quests":[2379,2382,2381]}
+{"key":408,"since":0,"src":["hand"],"name":"Redridge Rendezvous","class":4,"side":"alliance","level":16,"quests":[2281,2282]}
+{"key":409,"since":0,"src":["hand"],"name":"Mathias and the Defias","class":4,"side":"alliance","level":20,"quests":[2360,2359,2607,2608,2609]}
+{"key":410,"since":0,"src":["hand"],"name":"The Shattered Salute","class":4,"side":"horde","level":20,"quests":[2460,2458,2478,2479,2480]}
+{"key":411,"since":0,"src":["hand"],"name":"A Simple Request","class":4,"level":50,"quests":[8233,8234,8235,8236]}
+{"key":501,"since":0,"src":["hand"],"name":"Garments of the Light","class":5,"side":"alliance","races":[1],"level":5,"quests":[5623,5624]}
+{"key":502,"since":0,"src":["hand"],"name":"Garments of the Light","class":5,"side":"alliance","races":[3,7],"level":5,"quests":[5626,5625]}
+{"key":503,"since":0,"src":["hand"],"name":"Garments of the Moon","class":5,"side":"alliance","races":[4],"level":5,"quests":[5622,5621]}
+{"key":504,"since":0,"src":["hand"],"name":"Garments of Spirituality","class":5,"side":"horde","races":[8],"level":5,"quests":[5649,5648]}
+{"key":505,"since":0,"src":["hand"],"name":"Garments of Darkness","class":5,"side":"horde","races":[5],"level":5,"quests":[5651,5650]}
+{"key":506,"since":0,"src":["hand"],"name":"Divine Grace","class":5,"side":"alliance","races":[1],"level":10,"quests":[94773],"also":[94774,94775,94776,94777,94778,94779]}
+{"key":507,"since":0,"src":["hand"],"name":"Stars of Elune","class":5,"side":"alliance","races":[4],"level":10,"quests":[5627]}
+{"key":508,"since":0,"src":["hand"],"name":"Desperate Prayer","class":5,"side":"alliance","races":[3],"level":10,"quests":[5634],"also":[5635,5636,5637,5638,5639,5640]}
+{"key":509,"since":0,"src":["hand"],"name":"Confounding Flash","class":5,"side":"alliance","races":[7],"level":10,"quests":[94817],"also":[94821,94822,94823,94824,94825,94826]}
+{"key":510,"since":0,"src":["hand"],"name":"Hex of Weakness","class":5,"side":"horde","races":[8],"level":10,"quests":[5652],"also":[5654,5655,5656,5657]}
+{"key":511,"since":0,"src":["hand"],"name":"Touch of Weakness","class":5,"side":"horde","races":[5],"level":10,"quests":[5658],"also":[5660,5661,5662,5663]}
+{"key":512,"since":0,"src":["hand"],"name":"Arcane Feedback","class":5,"side":"alliance","races":[1],"level":20,"quests":[5676],"also":[5677,5678]}
+{"key":513,"since":0,"src":["hand"],"name":"Elune's Grace","class":5,"side":"alliance","races":[4],"level":20,"quests":[5672],"also":[5673,5674,5675]}
+{"key":514,"since":0,"src":["hand"],"name":"A Lack of Fear","class":5,"side":"alliance","races":[3],"level":20,"quests":[5641],"also":[5645,5647]}
+{"key":515,"since":0,"src":["hand"],"name":"Contingency Plan","class":5,"side":"alliance","races":[7],"level":20,"quests":[94818],"also":[94819,94820]}
+{"key":516,"since":0,"src":["hand"],"name":"Shadowguard","class":5,"side":"horde","races":[8],"level":20,"quests":[5680],"also":[5642,5643]}
+{"key":517,"since":0,"src":["hand"],"name":"Devouring Plague","class":5,"side":"horde","races":[5],"level":20,"quests":[5679],"also":[5644,5646]}
+{"key":518,"since":0,"src":["hand"],"name":"Cenarion Aid","class":5,"level":50,"quests":[8254,8255,8256,8257]}
+{"key":701,"since":0,"src":["hand"],"name":"Earth Totem","class":7,"side":"horde","races":[96],"level":3,"quests":[92466,92467,92468]}
+{"key":702,"since":0,"src":["hand"],"name":"Earth Totem","class":7,"side":"horde","races":[2,8],"level":4,"quests":[1516,1517,1518]}
+{"key":703,"since":0,"src":["hand"],"name":"Earth Totem","class":7,"side":"horde","races":[6],"level":4,"quests":[1519,1520,1521]}
+{"key":704,"since":0,"src":["hand"],"name":"Earth Totem","class":7,"side":"alliance","races":[3],"level":4,"quests":[94373,94374,94375]}
+{"key":705,"since":0,"src":["hand"],"name":"Fire Totem","class":7,"side":"horde","races":[2,8],"level":10,"quests":[2983,1524,1525,1526,1527]}
+{"key":706,"since":0,"src":["hand"],"name":"Fire Totem","class":7,"side":"horde","races":[6],"level":10,"quests":[2984,1524,1525,1526,1527]}
+{"key":707,"since":0,"src":["hand"],"name":"Fire Totem","class":7,"side":"alliance","races":[3],"level":10,"quests":[94449,94465,94466,94467,94468]}
+{"key":708,"since":0,"src":["hand"],"name":"Fire Totem","class":7,"side":"horde","races":[96],"level":10,"quests":[97243,97244,97245,97257]}
+{"key":709,"since":0,"src":["hand"],"name":"Water Totem","class":7,"side":"horde","races":[2,8,96],"level":20,"quests":[1528,1530,1535,1536,1534,220,63,100,96]}
+{"key":710,"since":0,"src":["hand"],"name":"Water Totem","class":7,"side":"horde","races":[6],"level":20,"quests":[1529,1530,1535,1536,1534,220,63,100,96]}
+{"key":711,"since":0,"src":["hand"],"name":"Water Totem","class":7,"side":"alliance","races":[3],"level":20,"quests":[94494,94495,94497,94499,94500,94501,94502,94503,94505]}
+{"key":712,"since":0,"src":["hand"],"name":"Air Totem","class":7,"side":"horde","races":[2,8,96],"level":30,"quests":[1531]}
+{"key":713,"since":0,"src":["hand"],"name":"Air Totem","class":7,"side":"horde","races":[6],"level":30,"quests":[1532]}
+{"key":714,"since":0,"src":["hand"],"name":"Air Totem","class":7,"side":"alliance","races":[3],"level":30,"quests":[94789]}
+{"key":715,"since":0,"src":["hand"],"name":"The Tempest's Weapons","class":7,"side":"horde","level":30,"quests":[79360,79364,79361,79366,79442]}
+{"key":716,"since":0,"src":["hand"],"name":"The Tempest's Weapons","class":7,"side":"alliance","races":[3],"level":30,"quests":[96264,79358,96135,96016]}
+{"key":717,"since":0,"src":["hand"],"name":"Elemental Mastery","class":7,"side":"horde","level":50,"quests":[8410,8412,8413]}
+{"key":801,"since":0,"src":["hand"],"name":"Mirror Lake","class":8,"side":"alliance","races":[1],"level":10,"quests":[1860,1861]}
+{"key":802,"since":0,"src":["hand"],"name":"Mage-tastic Gizmonitor","class":8,"side":"alliance","races":[7],"level":10,"quests":[1879,1880]}
+{"key":803,"since":0,"src":["hand"],"name":"The Balnir Farmstead","class":8,"side":"horde","races":[5],"level":10,"quests":[1881,1882]}
+{"key":804,"since":0,"src":["hand"],"name":"Ju-Ju Heaps","class":8,"side":"horde","races":[2,8],"level":10,"quests":[1883,1884]}
+{"key":805,"since":0,"src":["hand"],"name":"Boughs in the Wind","class":8,"side":"alliance","races":[95],"level":10,"quests":[93791,93797]}
+{"key":806,"since":0,"src":["hand"],"name":"Manaweave Robe","class":8,"side":"alliance","races":[1,7],"level":15,"quests":[1919,1920,1921,1941]}
+{"key":807,"since":0,"src":["hand"],"name":"Spellfire Robes","class":8,"side":"horde","races":[2,5,8],"level":15,"quests":[1959,1960,1961,1962]}
+{"key":808,"since":0,"src":["hand"],"name":"Astral Knot Garment","class":8,"side":"alliance","races":[1,7],"level":26,"quests":[1939,1938,1940,1942]}
+{"key":809,"since":0,"src":["hand"],"name":"Nether-lace Garment","class":8,"side":"horde","races":[2,5,8],"level":26,"quests":[1943,1944,1945,1946]}
+{"key":810,"since":0,"src":["hand"],"name":"Mage's Wand","class":8,"level":30,"quests":[1947,1948,1949,1950,1951,1952]}
+{"key":811,"since":0,"src":["hand"],"name":"Celestial Power","class":8,"level":35,"quests":[1953,1954,1955,1956,1957,1958]}
+{"key":812,"since":0,"src":["hand"],"name":"Magecraft","class":8,"level":50,"quests":[8250,8251,8252,8253]}
+{"key":901,"since":0,"src":["hand"],"name":"Summon Voidwalker","class":9,"side":"horde","races":[5],"level":10,"quests":[1478,1473,1471]}
+{"key":902,"since":0,"src":["hand"],"name":"Summon Voidwalker","class":9,"side":"horde","races":[2,8],"level":10,"quests":[1506,1501,1504]}
+{"key":903,"since":0,"src":["hand"],"name":"Summon Voidwalker","class":9,"side":"alliance","level":10,"quests":[1685,1688,1689]}
+{"key":904,"since":0,"src":["hand"],"name":"Summon Succubus","class":9,"side":"horde","races":[5],"level":20,"quests":[1472,1476,1474]}
+{"key":905,"since":0,"src":["hand"],"name":"Summon Succubus","class":9,"side":"horde","races":[2,8],"level":20,"quests":[1507,1508,1509,1510,1511,1515,1512,1513]}
+{"key":906,"since":0,"src":["hand"],"name":"Summon Succubus","class":9,"side":"alliance","level":20,"quests":[1717,1716,1738,1739]}
+{"key":907,"since":0,"src":["hand"],"name":"Summon Felhunter","class":9,"side":"alliance","level":30,"quests":[1798,1758,1802,1804,1795]}
+{"key":908,"since":0,"src":["hand"],"name":"Summon Felhunter","class":9,"side":"horde","races":[2,8],"level":30,"quests":[2996,1801,1803,1805,1795]}
+{"key":909,"since":0,"src":["hand"],"name":"Summon Felhunter","class":9,"side":"horde","races":[5],"level":30,"quests":[3001,1801,1803,1805,1795]}
+{"key":910,"since":0,"src":["hand"],"name":"The Completed Robe","class":9,"side":"alliance","level":31,"quests":[4738,1796,4781,4782,4783,4784,4786],"also":[4736]}
+{"key":911,"since":0,"src":["hand"],"name":"The Completed Robe","class":9,"side":"horde","races":[2,8],"level":31,"quests":[4737,1796,4781,4782,4783,4784,4786],"also":[4739]}
+{"key":912,"since":0,"src":["hand"],"name":"The Completed Robe","class":9,"side":"horde","races":[5],"level":31,"quests":[4739,1796,4781,4782,4783,4784,4786],"also":[4737]}
+{"key":913,"since":0,"src":["hand"],"name":"The Completed Orb of Dar'Orahil","class":9,"side":"alliance","level":35,"quests":[4968,1799,4962,4961,4976,4964],"also":[4965]}
+{"key":914,"since":0,"src":["hand"],"name":"The Completed Orb of Noh'Orahil","class":9,"side":"horde","races":[2,8],"level":35,"quests":[4967,1799,4963,4961,4976,4975],"also":[4969]}
+{"key":915,"since":0,"src":["hand"],"name":"The Completed Orb of Noh'Orahil","class":9,"side":"horde","races":[5],"level":35,"quests":[4969,1799,4963,4961,4976,4975],"also":[4967]}
+{"key":916,"since":0,"src":["hand"],"name":"Summon Felsteed","class":9,"side":"alliance","level":40,"quests":[4488,4490],"also":[4487]}
+{"key":917,"since":0,"src":["hand"],"name":"Summon Felsteed","class":9,"side":"horde","races":[2,8],"level":40,"quests":[3631,4490],"also":[4489]}
+{"key":918,"since":0,"src":["hand"],"name":"Summon Felsteed","class":9,"side":"horde","races":[5],"level":40,"quests":[4489,4490],"also":[3631]}
+{"key":919,"since":0,"src":["hand"],"name":"An Imp's Request","class":9,"level":50,"quests":[8419,8421,8422]}
+{"key":1101,"since":0,"src":["hand"],"name":"Bear Form","class":11,"side":"alliance","races":[4],"level":10,"quests":[5921,5929,5931,6001]}
+{"key":1102,"since":0,"src":["hand"],"name":"Bear Form","class":11,"side":"horde","races":[6],"level":10,"quests":[5922,5930,5932,6002]}
+{"key":1103,"since":0,"src":["hand"],"name":"Bear Form","class":11,"races":[95,96],"level":10,"quests":[94006,94638]}
+{"key":1104,"since":0,"src":["hand"],"name":"Moonglade","class":11,"side":"alliance","races":[95],"level":10,"quests":[94912,94914]}
+{"key":1105,"since":0,"src":["hand"],"name":"Moonglade","class":11,"side":"horde","races":[96],"level":10,"quests":[94911,94913]}
+{"key":1106,"since":0,"src":["hand"],"name":"Cure Poison","class":11,"side":"alliance","races":[4,95],"level":14,"quests":[6121,6122,6123,6124,6125]}
+{"key":1107,"since":0,"src":["hand"],"name":"Cure Poison","class":11,"side":"horde","races":[6,96],"level":14,"quests":[6126,6127,6128,6129,6130]}
+{"key":1108,"since":0,"src":["hand"],"name":"Aquatic Form","class":11,"side":"alliance","races":[4,95],"level":16,"quests":[26,29,272,5061]}
+{"key":1109,"since":0,"src":["hand"],"name":"Aquatic Form","class":11,"side":"horde","races":[6,96],"level":16,"quests":[27,28,30,31]}
+{"key":1110,"since":0,"src":["hand"],"name":"Cat Form","class":11,"side":"alliance","races":[4],"level":20,"quests":[98393,98394,98396,98731,98397]}
+{"key":1111,"since":0,"src":["hand"],"name":"Cat Form","class":11,"side":"horde","races":[6],"level":20,"quests":[98340,98405,98342,98739,98362]}
+{"key":1112,"since":0,"src":["hand"],"name":"Cat Form","class":11,"side":"alliance","races":[95],"level":20,"quests":[98393,98341,98404,98738,98397]}
+{"key":1113,"since":0,"src":["hand"],"name":"Cat Form","class":11,"side":"horde","races":[96],"level":20,"quests":[98340,98341,98404,98738,98362]}
+{"key":1114,"since":0,"src":["hand"],"name":"Torwa Pathfinder","class":11,"level":50,"quests":[9063,9052,9051,9053]}
