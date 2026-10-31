@@ -452,7 +452,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   and each row's hit rect only its words (`Reach`), the mouse wheel
   the game's while the list fits, the objectives done left out, no fold marks. One switch for both, `store.questLog`
   (TopBar's button); no buttons on its low title bar (Core's `bare`, `barHeight`). The game's `ObjectiveTrackerFrame`
-  lent to a hidden frame (`Core.Lend`; `QuestLog.Tracker`), the log shown or off, while `nativeMap` is off. An objective's words made anew from the game's
+  lent to a hidden frame (`Core.Lend`; `QuestLog.Tracker`), the log shown or off, while `nativeMap` is off; it is a
+  managed frame, which the game's frame manager reparents whenever an Edit Mode layout is applied, so a hook after its
+  `SetParent` puts it back at once. An objective's words made anew from the game's
   (`Objective`, `Asked`, `QuestLog.ASKS`). Sorted (`store.questLogSort`, by Core's `titleClick` on its
   title, `titleTip` its tip; the title `%d/%d <sorting>`): by `GetDistanceSqToQuest` (looked at again
   every `QuestLog.RESORT` seconds by a ticker while shown, drawn anew only once the order changed), by level, the

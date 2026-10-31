@@ -130,8 +130,8 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Auras on the frames*); the
-  section *Action bars* (*Clean action bars*, off for the game's look; *Hide the game's experience bar*, *Hide the
-  game's stance bar*, *Menu bar on mouseover*); *Quest marks on nameplates*; the section
+  section *Action bars* (*Clean action bars*, off for the game's look; *Hide the game's experience and reputation
+  bars*, *Hide the game's stance bar*, *Menu bar on mouseover*); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
 - **In Retail:** our spellbook and talents are made after WoW: Forever's, which Retail has not, so neither is

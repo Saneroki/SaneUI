@@ -1201,7 +1201,15 @@ end)
 -- The game's quest tracker out of sight (Saneroki, 2026-10-31): whether ours shows or was switched off, while the
 -- game's map and quest log are not chosen (Show the game's map; chosen, it goes only while ours shows). Lent to a
 -- hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
--- once the game's are chosen, or the module stands down.
+-- once the game's are chosen, or the module stands down. The tracker is a frame the game manages: each time a layout
+-- of Edit Mode is applied (the login, Edit Mode closing, a layout changed) its manager takes it back under its own
+-- parent, whatever parent it has now. A hook after its SetParent puts it out of sight again at once.
+local function Reclaim(tracker)
+    if not lent or tracker:GetParent() == away then return end
+    if Core.Locked(tracker) then return Core.AfterCombat("quest tracker", Reclaim, tracker) end
+    tracker:SetParent(away)
+end
+
 function QuestLog.Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
     local hide = not ns.off and (not (ns.options or {}).nativeMap or (frame and frame:IsShown()))
@@ -1209,6 +1217,7 @@ function QuestLog.Tracker()
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
             away:Hide()
+            hooksecurefunc(tracker, "SetParent", ns.Guard(Reclaim))
         end
         local lend = Core.Lend(tracker)
         if lend:SetParent(away) then lent = lend end
