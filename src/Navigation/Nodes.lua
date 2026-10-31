@@ -66,7 +66,8 @@ function Nodes.Find(name)
             local record = OBJECTS:Get(key)
             if type(record) == "table" and Nodes.DRAWN[record.kind] then
                 known = { key = key, name = record.name, kind = record.kind, skill = record.skill,
-                          skillLevel = tonumber(record.skillLevel) or 0 }
+                          skillLevel = tonumber(record.skillLevel) or 0, yellowAt = record.yellowAt,
+                          greyAt = record.greyAt }
                 break
             end
         end

@@ -19,8 +19,11 @@ Lines.lua
 Run.lua
 # The guide shown and followed; what its steps at hand want for the key and the quest givers
 Guide.lua
-# The steps of your professions woven into the guide, before each harder zone (Core's herbs, ore and spawns)
+# The steps of your professions woven into the guide, where it passes the most nodes and before each harder zone
+# (Core's herbs, ore and spawns); cloth where the guide has you kill humanoids; a node near your way right now
 Gathering.lua
+Grind.lua
+Detours.lua
 # Your class's quest chains over the guide when your level reaches them (Core's ClassQuests)
 ClassQuests.lua
 # What the key looks for around you, by name: your guide's steps, your quests' objectives, the NPCs to hand in to;

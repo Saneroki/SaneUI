@@ -59,6 +59,8 @@ Neighbours.lua
 Switches.lua
 # The way to a place, for a module that leads the player, from the one that finds ways
 Ways.lua
+# The herbs and ore in sight now, for a module that leads the player, from the one that finds them
+Sight.lua
 # The stats as players write them (Str, Stam, Crit), for every view that names one
 Stats.lua
 # Whether an item would make the character better, for the loot, the bags and quest rewards

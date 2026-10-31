@@ -512,19 +512,23 @@ local function Start()
     end
 end
 
--- The guide run here is through: on to the one it names after it, the first kept one that is for this character.
-local function Onward()
-    local guide = ns.Run.Guide()
-    if not guide or not ns.Run.Through() then return end
+-- The guide after one, read: the first it names that is kept and for this character; nil at the end of the way.
+function Guide.After(guide)
     local who = Who()
     for _, after in ipairs(guide.after) do
         local key = Find(after.name, guide.group, who)
         local next = key and (not after.only or ns.Format.For(who, after.only)) and Read(key)
-        if next and next.mine then
-            ns.Run.Use(next)
-            return
-        end
+        if next and next.mine then return next end
     end
+    return nil
+end
+
+-- The guide run here is through: on to the one after it.
+local function Onward()
+    local guide = ns.Run.Guide()
+    if not guide or not ns.Run.Through() then return end
+    local next = Guide.After(guide)
+    if next then ns.Run.Use(next) end
 end
 
 -------------------------------------------------------------------------------

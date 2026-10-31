@@ -83,6 +83,11 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   made apart from the code and put into the game; no guide's text in the repository); a right click on the guide's
   zone lists the guides for the character by group; the guide on, paused or off, also from the minimap's satchel
   (Core's quick switches, `Core.Offer`). Built.
+- **Decision (Saneroki, 2026-10-31): professions along the way.** Mining and Herbalism level where the guide passes the
+  most nodes anyway, as far as those nodes teach and the next harder zone asks, with a check before that zone only where
+  the next zone would not teach it; a node the minimap shows close to your way is fetched in a step outside the guide's
+  numbers, that ends by itself when the node is gone; Tailoring and First Aid kill on after the guide's humanoids while
+  they are worth it. Built: `Gathering.lua`, `Detours.lua`, `Grind.lua`, *Professions along the way* in the module's README.
 - **Decision (Saneroki, 2026-10-29, as steps 2026-10-30): professions before the next zone.** Before the guide goes on
   to a harder zone, a normal step of the guide for each profession you have that is lower than that zone asks, gathering,
   crafting and secondary alike, worked out from Core's herbs, ore and their spawns (half of a zone's spawns gathered); the

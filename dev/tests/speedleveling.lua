@@ -132,6 +132,7 @@ UnitRace = function() return "Orc", "Orc", 2 end
 UnitClass = function() return "Warrior", "WARRIOR", 1 end
 UnitFactionGroup = function() return "Horde" end
 UnitLevel = function() return 5 end
+UnitIsDeadOrGhost = function() return false end
 UnitXP = function() return 0 end
 UnitXPMax = function() return 400 end
 
@@ -203,12 +204,26 @@ local records = {
         ["object:1617"] = { points = { { map = 1411, x = 1, y = 1 }, { map = 1413, x = 1, y = 1 } } },
         ["object:1623"] = { points = { { map = 1413, x = 2, y = 2 }, { map = 1413, x = 3, y = 3 }, { map = 1413, x = 4, y = 4 } } },
         ["object:1735"] = { points = { { map = 1413, x = 5, y = 5 } } },
+        -- For the gatherers' steps: a zone (1500) with a cave of weak ore and a hill of copper, one like it after it
+        -- (1502), a harder zone (1501) of tin, and the nodes of a herb at the first zone's middle.
+        ["object:9001"] = { points = { { map = 1500, x = 20, y = 20 }, { map = 1500, x = 21, y = 20 }, { map = 1500, x = 20, y = 21 },
+                                       { map = 1500, x = 22, y = 22 }, { map = 1500, x = 19, y = 20 }, { map = 1500, x = 21, y = 21 } } },
+        ["object:1731"] = { points = { { map = 1500, x = 70, y = 70 }, { map = 1500, x = 71, y = 70 }, { map = 1500, x = 70, y = 71 },
+                                       { map = 1500, x = 72, y = 72 }, { map = 1500, x = 69, y = 70 }, { map = 1500, x = 71, y = 71 },
+                                       { map = 1502, x = 30, y = 30 }, { map = 1502, x = 31, y = 30 }, { map = 1502, x = 30, y = 31 },
+                                       { map = 1502, x = 32, y = 32 }, { map = 1502, x = 29, y = 30 }, { map = 1502, x = 31, y = 31 } } },
+        ["object:1732"] = { points = { { map = 1501, x = 50, y = 50 }, { map = 1501, x = 51, y = 50 }, { map = 1501, x = 50, y = 51 },
+                                       { map = 1501, x = 52, y = 52 }, { map = 1501, x = 49, y = 50 }, { map = 1501, x = 51, y = 51 } } },
     },
     Objects = { [1617] = { kind = "herb", skill = 182, skillLevel = 1 }, [1623] = { kind = "herb", skill = 182, skillLevel = 115 },
-                [1735] = { kind = "ore", skill = 186, skillLevel = 125 } },
+                [1735] = { kind = "ore", skill = 186, skillLevel = 125 },
+                [9001] = { kind = "ore", name = "Weak Ore", skill = 186, skillLevel = 1 },
+                [1731] = { kind = "ore", name = "Copper Vein", skill = 186, skillLevel = 1, yellowAt = 25, greyAt = 100 },
+                [1732] = { kind = "ore", name = "Tin Vein", skill = 186, skillLevel = 65, yellowAt = 90, greyAt = 165 } },
+    CreatureSpawns = {},
     SkillLines = { [182] = { name = "Herbalism" }, [186] = { name = "Mining" } },
 }
-local byKind = { herb = { 1617, 1623 }, ore = { 1735 } }
+local byKind = { herb = { 1617, 1623 }, ore = { 1735, 9001, 1731, 1732 } }
 local byItem = { [500] = { "npc:200", "npc:201", "npc:202", "npc:204", "object:7" } }
 local realSet = Core.Data.Set
 Core.Data.Set = function(name)
@@ -1113,9 +1128,9 @@ check(W.cvars.softTargetInteract == "3", "on again: the interact key on")
 --  Professions before the next zone
 -------------------------------------------------------------------------------
 -- The guide goes from here (1411) to the next zone (1413), where half the herbs need 115, the ore 125, and back to a
--- zone that asks less. Herbalism 92 and Blacksmithing 130 are yours, Mining is not learnt.
+-- zone that asks less. Alchemy 92 and Blacksmithing 130 are yours, Engineering is not learnt.
 ns.Gathering.STAY = 2
-local skills = { { name = "Herbalism", rank = 92 }, { name = "Blacksmithing", rank = 130 } }
+local skills = { { name = "Alchemy", rank = 92 }, { name = "Blacksmithing", rank = 130 } }
 C_SkillInfo = { GetNumSkillLines = function() return #skills end, GetSkillLineInfo = function(index) return skills[index] end }
 local trip = table.concat({ "#forever", "#" .. "name Trip", "#" .. "group G", "step", L("place", "1411,50,50"),
     L("take", "60"), "step", L("place", "1411,51,51"), L("take", "61"), "step", L("place", "1413,40,40"), L("take", "62"),
@@ -1126,21 +1141,21 @@ local need = ns.Gathering.Need(1413)
 check(need and need.herb == 115 and need.ore == 125 and need.any == 125 and ns.Gathering.Need(1411).herb == 1,
     "a zone's asks: the skill that gathers half its herbs, its ore, the higher of the two")
 local function Woven(number) return ns.Run.Guide().steps[number].woven end
-local asked -- the step of Herbalism for the harder zone
+local asked -- the step of Alchemy for the harder zone
 for number, step in ipairs(ns.Run.Guide().steps) do
-    if step.woven == "Herbalism" and step.lines[2].level == 115 then asked = number end
+    if step.woven == "Alchemy" and step.lines[2].level == 115 then asked = number end
 end
-check(asked and Woven(asked - 1) == "Mining" and Woven(asked + 1) == "Skinning",
+check(asked and Woven(asked - 1) == "Engineering" and Woven(asked + 1) == "Leatherworking",
     "before the first step into the harder zone: each profession a step of its own, in order")
 local total = #ns.Run.Guide().steps
 ns.Run.Go(asked - 2)
 ns.Run.Skip(ns.Run.At())
 ns.Guide.CheckSoon()
 W.Wait(1)
-check(ns.Run.At() == asked, "Mining not learnt is passed by: the first one that is yours stops you")
+check(ns.Run.At() == asked, "Engineering not learnt is passed by: the first one that is yours stops you")
 local shown = ns.Guide.Picture(20, 0)
 local line = shown.hand[1].lines[2]
-check(shown.hand[1].lines[1].text == "Level Herbalism to 115" and line.text == "Before Zone" and line.count
+check(shown.hand[1].lines[1].text == "Level Alchemy to 115" and line.text == "Before Zone" and line.count
     and line.have == 92 and line.need == 115, "the step says what to do, with a count and a bar")
 check(shown.total == 5 and shown.hand[1].shown == 3 and shown.place == 3 and shown.hand[1].number == asked,
     "the guide's own numbers stay: it bears the number of the step it goes before")
@@ -1162,7 +1177,7 @@ W.Wait(1)
 check(not ns.Run.Listed(asked) and not Woven(ns.Run.At()), "Professions before the next zone off: not one of them stops you or is listed")
 Core.Set(ns.name, "gather", true)
 W.Wait(1)
-skills[#skills + 1] = { name = "Mining", rank = 1 }
+skills[#skills + 1] = { name = "Engineering", rank = 1 }
 check(ns.Run.Listed(asked - 1) and #ns.Run.Guide().steps == total, "learnt later: its step is there, the guide's numbers stay")
 skills[#skills] = nil
 here.map = 1413
@@ -1177,6 +1192,275 @@ check(#ns.Run.Guide().steps == 5, "a zone the guide only passes through asks not
 ns.Gathering.STAY = 2
 ns.Guide.Choose("G\\Test")
 ns.Gathering.STAY = 10
+
+-------------------------------------------------------------------------------
+--  Mining and Herbalism where the guide passes the nodes
+-------------------------------------------------------------------------------
+-- Maps of 1000 yards each way. The guide passes the cave of weak ore, then the hill of copper, in 1500, then goes on to
+-- the tin of 1501, which asks 65.
+CreateVector2D = rawget(_G, "CreateVector2D") or function(x, y) return { x = x, y = y } end
+C_Map.GetWorldPosFromMapPos = function(_, position)
+    return 1, { x = position.x * 1000, y = position.y * 1000 }
+end
+C_Map.CanSetUserWaypointOnMap = function() return true end
+ns.Gathering.STAY, ns.Gathering.RICH, ns.Gathering.FEW = 2, 5, 3
+skills = { { name = "Mining", rank = 1 } }
+local function Stops(name, list, after)
+    local text = { "#forever", "#" .. "name " .. name, "#" .. "group G" }
+    if after then text[#text + 1] = "#" .. known.afterWord .. " " .. after end
+    for _, stop in ipairs(list) do
+        text[#text + 1] = "step"
+        text[#text + 1] = L("place", stop[1])
+        text[#text + 1] = L(stop[3] or "take", stop[2])
+    end
+    return table.concat(text, "\n")
+end
+for word, ours in pairs(known.marks) do if ours == "after" then known.afterWord = word end end
+ns.Guide.AddAll(ns.Format.Parts(Stops("Ore", { { "1500,50,50", "70" }, { "1500,20,20", "71" }, { "1500,40,40", "72" },
+    { "1500,70,70", "73" }, { "1500,90,90", "74" }, { "1501,50,50", "75" }, { "1501,51,51", "76" } })), false)
+here.map = 1500
+ns.Guide.Choose("G\\Ore")
+local function Asks()
+    local list = {}
+    for number, step in ipairs(ns.Run.Guide().steps) do
+        if step.woven == "Mining" then
+            for _, wants in ipairs(step.lines) do
+                if wants.what == "skill" then list[#list + 1] = { number = number, level = wants.level, step = step, words = wants.words } end
+            end
+        end
+    end
+    return list
+end
+local asks = Asks()
+check(#asks == 2 and asks[1].level == 16 and asks[2].level == 65,
+    "the cave asks what weak ore teaches, the hill the rest of what the harder zone asks; no check right after a spot")
+check(ns.Run.Guide().steps[asks[1].number - 1].shown == 2 and asks[1].step.shown == 3,
+    "each stands after the step with the most nodes around it, with the next step's number")
+local nodes = asks[1].step.lines[1]
+check(nodes.what == "place" and nodes.map == 1500 and math.abs(nodes.x - 20.5) < 1 and math.abs(nodes.y - 20.5) < 1,
+    "the step's place is where the nodes are, the arrow goes there")
+check(asks[1].words == "Around here", "it says so")
+check(ns.Gathering.Chance({ skillLevel = 1, yellowAt = 25, greyAt = 100 }, 10) == 1
+    and ns.Gathering.Chance({ skillLevel = 1, yellowAt = 25, greyAt = 100 }, 100) == 0
+    and math.abs(ns.Gathering.Chance({ skillLevel = 1, yellowAt = 25, greyAt = 100 }, 65) - 35 / 75) < 0.001
+    and ns.Gathering.Chance({ skillLevel = 65 }, 10) == nil, "how likely a node teaches: sure, falling, nothing; too hard yet")
+ns.Run.Go(asks[1].number)
+ns.Run.Skip(asks[1].number)
+ns.Run.Go(asks[1].number - 1)
+ns.Run.Skip(asks[1].number - 1)
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() >= asks[1].number, "a click on a step of the guide goes on")
+Core.Character(ns.name).skipped = {}
+ns.Guide.Choose("G\\Ore")
+ns.Run.Go(asks[1].number)
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() == asks[1].number, "Mining 1 in the cave: it waits for you")
+here.map = 1411
+ns.Run.Skip(ns.Run.At())
+ns.Run.Go(asks[1].number - 1)
+ns.Run.Skip(asks[1].number - 1)
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() ~= asks[1].number, "out of its zone it is passed by: you are never sent back")
+here.map = 1500
+skills[1].rank = 16
+ns.Run.Go(asks[1].number)
+ns.Guide.CheckSoon()
+W.Wait(1)
+skills[1].rank = 1
+ns.Gathering.CLOSE = 0
+ns.Guide.Choose("G\\Ore")
+asks = Asks()
+check(#asks == 3 and asks[3].level == 65 and asks[3].words == "Before Zone" and asks[3].number == asks[2].number + 2,
+    "the check before the harder zone, after the zone's last step")
+ns.Gathering.CLOSE = 3
+-- A zone where nothing of a kind grows asks nothing there, and the next zone that teaches the same needs no check.
+ns.Guide.AddAll(ns.Format.Parts(Stops("Bare", { { "1503,50,50", "80" }, { "1503,51,51", "81" }, { "1503,52,52", "82" } })), false)
+ns.Guide.Choose("G\\Bare")
+check(#Asks() == 0, "no ore in the zone, none on the way: no step of Mining")
+ns.Gathering.CLOSE = 0
+ns.Guide.AddAll(ns.Format.Parts(Stops("Twice", { { "1500,70,70", "83" }, { "1500,71,71", "84" }, { "1500,90,90", "85" },
+    { "1502,30,30", "86" }, { "1502,31,31", "87" }, { "1502,90,90", "88" }, { "1501,50,50", "89" }, { "1501,51,51", "90" } })), false)
+ns.Guide.Choose("G\\Twice")
+asks = Asks()
+local checks = {}
+for _, ask in ipairs(asks) do
+    if ask.words == "Before Zone" then checks[#checks + 1] = ask.step.unless[1].maps[1] end
+end
+check(#checks == 1 and checks[1] == 1502,
+    "the check stands in the last zone that teaches it: the zone before needs none, you need not come back")
+ns.Gathering.CLOSE = 3
+-- The harder zone can stand in the guide after this one: the guides are read on.
+ns.Guide.AddAll(ns.Format.Parts(Stops("Later", { { "1501,50,50", "89" }, { "1501,51,51", "90" } })), false)
+ns.Guide.AddAll(ns.Format.Parts(Stops("Before", { { "1500,70,70", "91" }, { "1500,71,71", "92" } }, "Later")), false)
+ns.Guide.Choose("G\\Before")
+asks = Asks()
+check(asks[1] and asks[1].level == 65, "what the next guide's zone asks is known in the guide before it")
+
+-------------------------------------------------------------------------------
+--  A node close to your way, right now
+-------------------------------------------------------------------------------
+-- Your way goes from 50,50 of 1500 to the guide's next place. What the minimap shows comes through Core.Sight.
+ns.Guide.Choose("G\\Ore")
+here.map, here.x, here.y = 1500, 50, 50
+local sight = {}
+Core.Sight.Serve(function() return sight end)
+local copper = { key = 1731, name = "Copper Vein", kind = "ore", skillLevel = 1, yellowAt = 25, greyAt = 100 }
+local function Dot(node, x, y) return { node = node, map = 1500, x = x / 100, y = y / 100, seen = W.clock } end
+ns.Detours.Update(true)
+ns.Run.Go(1)
+local place = ns.Run.Target()
+local function Over() return ns.Detours.Hand()[1] == ns.Detours.STEP end
+W.Wait(3)
+check(not Over(), "nothing in sight: no detour")
+sight[1] = Dot(copper, 90, 10)
+W.Wait(3)
+check(not Over(), "a node too far from your way: none")
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(Over() and ns.Run.Hand()[1] == ns.Detours.STEP, "a node near your way: a step over the guide's")
+local line2, at2 = ns.Run.Target()
+check(line2 and at2 == ns.Detours.STEP and math.abs(line2.x - 52) < 0.01 and math.abs(line2.y - 52) < 0.01,
+    "the arrow and the map pin go to the node")
+local shown2 = ns.Guide.Picture(3, 0)
+check(shown2.hand[1].chain == "On the way" and shown2.hand[1].lines[1].text == "Mine the Copper Vein",
+    "it says what to fetch, in place of a number")
+local atBefore, totalBefore = ns.Run.At(), #ns.Run.Guide().steps
+sight[1] = nil
+W.Wait(3)
+check(not Over() and ns.Run.At() == atBefore and #ns.Run.Guide().steps == totalBefore and ns.Run.Target() == place,
+    "the node gone, somebody took it: the step ends by itself, you are back on the guide where you were")
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(not Over(), "a node it ended on is left alone a while")
+W.Wait(ns.Detours.AGAIN)
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(Over(), "and asked for again after that")
+ns.Run.Skip(ns.Detours.STEP)
+check(not Over() and ns.Run.At() == atBefore, "a click ends it and keeps your place")
+W.Wait(ns.Detours.AGAIN)
+sight[1] = Dot(copper, 52, 52)
+sight[1].seen = W.clock - ns.Detours.FRESH - 1
+W.Wait(1.6)
+check(not Over(), "a node not seen for long is not trusted")
+sight[1] = Dot(copper, 52, 52)
+local yellow = Dot({ key = 1, name = "Grey", kind = "ore", skillLevel = 1, yellowAt = 10, greyAt = 20 }, 53, 53)
+skills[1].rank = 30
+sight[1] = yellow
+W.Wait(3)
+check(not Over(), "a node that teaches you nothing any more: none")
+skills[1].rank = 1
+UnitAffectingCombat = function() return true end
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(not Over(), "not in a fight")
+UnitAffectingCombat = nil
+W.Wait(3)
+check(Over(), "after it, yes")
+skills[1].rank = 70
+W.Wait(3)
+check(not Over(), "your skill got where the steps ahead want it: over")
+W.Wait(ns.Detours.AGAIN)
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(not Over(), "nothing ahead asks more: no detour, levelling is not needed here any more")
+skills[1].rank = 1
+ns.Run.Go(1) -- the guide went on past the steps that skill was enough for: back before them
+sight[1] = nil
+W.Wait(ns.Detours.AGAIN)
+ns.Detours.Update(true) -- and the view it follows, shown again
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(Over(), "it goes on")
+here.x, here.y = 52, 52
+sight[1].seen = W.clock
+W.Wait(ns.Detours.WAIT + 3)
+check(not Over(), "standing beside a node that does not go: it ends")
+W.Wait(ns.Detours.AGAIN)
+here.x, here.y = 50, 50
+sight[1] = Dot(copper, 52, 52)
+W.Wait(3)
+check(Over(), "and once more")
+W.Wait(ns.Detours.LONG + 3)
+check(not Over(), "a detour takes no longer than that")
+sight = {}
+ns.Detours.Update(false)
+Core.Sight.Serve(nil)
+skills = { { name = "Alchemy", rank = 92 }, { name = "Blacksmithing", rank = 130 } }
+
+-------------------------------------------------------------------------------
+--  Cloth where the guide has you kill humanoids
+-------------------------------------------------------------------------------
+records.NPCs[210] = { name = "Gnoll", kind = "humanoid", levelMax = 10 }
+records.NPCs[211] = { name = "Gnoll Boss", kind = "humanoid", levelMax = 10 }
+records.NPCs[212] = { name = "Wolf", kind = "beast", levelMax = 10 }
+records.NPCs[213] = { name = "Gnoll Pup", kind = "humanoid", levelMax = 10 }
+records.CreatureSpawns[210] = { points = { 1, 2, 3, 4, 5, 6 } }
+records.CreatureSpawns[211] = { points = { 1 } }
+records.CreatureSpawns[212] = { points = { 1, 2, 3, 4, 5, 6 } }
+records.CreatureSpawns[213] = { points = { 1, 2, 3, 4, 5, 6 } }
+records.Quests[81] = { objectives = { { index = 1, kind = "kill", what = 210 } } }
+records.Quests[82] = { objectives = { { index = 1, kind = "kill", what = 211 } } }
+records.Quests[83] = { objectives = { { index = 1, kind = "kill", what = 212 } } }
+records.Quests[84] = { objectives = { { index = 1, kind = "kill", what = 213 } } }
+ns.Gathering.STAY = 100
+ns.Guide.AddAll(ns.Format.Parts(Stops("Cloth", { { "1500,50,50", "81,1", "goal" }, { "1500,60,60", "82,1", "goal" },
+    { "1500,70,70", "83,1", "goal" }, { "1500,80,80", "84,1", "goal" } })), false)
+skills = { { name = "Tailoring", rank = 20 } }
+ns.Guide.Choose("G\\Cloth")
+local function Stacks()
+    local list = {}
+    for number, step in ipairs(ns.Run.Guide().steps) do
+        if step.woven == "Tailoring" and step.lines[3] and step.lines[3].what == "carry" then list[#list + 1] = { number = number, step = step } end
+    end
+    return list
+end
+local cloth = Stacks()
+check(#cloth == 2 and cloth[1].step.lines[3].item == 2589 and cloth[1].step.lines[3].count == 5 and cloth[2].step.lines[3].count == 10,
+    "after humanoids that are many: the cloth of their level, a little more at each stop; no boss, no beast")
+check(ns.Run.Guide().steps[cloth[1].number - 1].shown == 1, "right after the kills")
+local function Unless(step, what)
+    for _, test in ipairs(step.unless) do if test.what == what then return test end end
+end
+check(Unless(cloth[1].step, "reached").level == 13, "passed by once you are over them: killing them no longer pays")
+local have = 0
+local realCount = ns.Lines.Count
+ns.Lines.Count = function(item, bank) return item == 2589 and have or realCount(item, bank) end
+ns.Run.Go(1)
+ns.Run.Skip(1)
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() == cloth[1].number, "you stop there while you lack it")
+UnitLevel = function() return 13 end
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() ~= cloth[1].number, "outlevelled: on")
+UnitLevel = function() return 5 end
+ns.Run.Go(cloth[1].number)
+ns.Guide.CheckSoon()
+W.Wait(1)
+have = 5
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() ~= cloth[1].number, "you carry what it asks: on")
+have = 0
+skills[1].rank = 75
+ns.Run.Go(cloth[1].number)
+ns.Run.Check()
+skills[1].rank = 20
+ns.Run.Go(cloth[1].number)
+ns.Run.Skip(cloth[1].number)
+ns.Guide.CheckSoon()
+W.Wait(1)
+check(ns.Run.At() ~= cloth[2].number, "skip the first one and the zone's others go with it")
+ns.Lines.Count = realCount
+skills = {}
+ns.Guide.Choose("G\\Test")
+here.map = 1411
+ns.Gathering.STAY, ns.Gathering.RICH, ns.Gathering.FEW = 10, 30, 5
 
 check(not ns.off and #SaneUI.Core.log == 0, "no error stood the module down along the way: "
     .. tostring(SaneUI.Core.log[1] and SaneUI.Core.log[1].text))

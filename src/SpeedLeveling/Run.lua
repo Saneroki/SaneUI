@@ -14,8 +14,9 @@ local _, ns = ...
 --  now (on a quest, money, an item count, a zone, a level); one with nothing to
 --  do is done at once. You are moved on past each step done, and past one that
 --  only goes along. A guide comes with the steps of your professions woven in
---  (Gathering.lua), and a class quest that is due stands over it all
---  (ClassQuests.lua), outside the guide's own numbers.
+--  (Gathering.lua, Grind.lua), and a class quest that is due, and a herb or ore
+--  worth a detour, stand over it all (ClassQuests.lua, Detours.lua), outside the
+--  guide's own numbers.
 --
 --  What the game knows (Saneroki, 2026-10-30: the guide works out by itself what
 --  is done): of each thing to do it can judge a quest's, a level's, a spell's or a
@@ -52,6 +53,7 @@ local _, ns = ...
 --      Run.Way(place)        how far from a place, in yards, and which way; Run.Distance
 --      Run.Target()          where the arrow points: the place line and its step
 --      Run.MapId(map)        a place's map as the game's number, from its number or its zone's name
+--      Run.Yards(map)        a map's width and height in yards
 --      Run.ObjectiveKind(quest, goal), Run.Targets(), Run.Uses(), Run.UseOn(), Run.Quests(), Run.Words(line)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -145,6 +147,9 @@ local function Size(map)
     mapSizes[map] = size
     return size
 end
+
+-- A map's width and height in yards; nil where the game does not say.
+function Run.Yards(map) return Size(map) or nil end
 
 -- How far the character is from a place, in yards, and which way it lies (radians from the north, turning to the
 -- left as the game's facing does); nil where the game does not say (another continent, a dungeon).
@@ -500,6 +505,7 @@ function Run.Place() return place or at end
 function Run.Hand()
     local hand = {}
     if not guide then return hand end
+    for _, index in ipairs(ns.Detours.Hand()) do hand[#hand + 1] = index end
     for _, index in ipairs(ns.ClassQuests.Hand()) do hand[#hand + 1] = index end
     for index = math.max(1, at - Run.BEHIND), at - 1 do
         if Along(index) then hand[#hand + 1] = index end
@@ -537,6 +543,10 @@ end
 -- the steps that need it they are off); the one you are at, you go on past it, back to your place if you looked back.
 function Run.Skip(index)
     if not (guide and guide.steps[index]) then return end
+    if index == ns.Detours.STEP then
+        ns.Detours.Leave()
+        return
+    end
     if index == ns.ClassQuests.STEP then
         ns.ClassQuests.Leave()
         Run.Check()
@@ -578,12 +588,13 @@ function Run.Saw(what)
     end
 end
 
--- Where the arrow points: the first place not yet passed of the steps at hand, a class quest that is due first, then
--- the step you are at; a point on the way, or a place to get to, is passed once you were within its reach. The place
+-- Where the arrow points: the first place not yet passed of the steps at hand, a detour first, then a class quest that
+-- is due, then the step you are at; a point on the way, or a place to get to, is passed once you were within its reach. The place
 -- line and its step; nil for none.
 function Run.Target()
     if not guide then return nil end
     local order = {}
+    for _, index in ipairs(ns.Detours.Hand()) do order[#order + 1] = index end
     for _, index in ipairs(ns.ClassQuests.Hand()) do order[#order + 1] = index end
     if guide.steps[at] then order[#order + 1] = at end
     for _, index in ipairs(Run.Hand()) do
@@ -640,6 +651,7 @@ end
 function Run.Use(read)
     guide, held, at, place = read, nil, 1, nil
     wipe(seen)
+    ns.Detours.Use(guide)
     ns.ClassQuests.Use(guide)
     if not guide then
         Notes().guide = nil

@@ -308,6 +308,17 @@ local function OnMap(entry)
     return zone, x, y
 end
 
+-- What is in sight now, for a module that leads the player: each found one where it stands on its zone's map.
+local function InSight()
+    local nodes = {}
+    for _, entry in ipairs(found) do
+        local map, x, y = OnMap(entry)
+        if map then nodes[#nodes + 1] = { node = entry.node, map = map, x = x, y = y, seen = entry.seen } end
+    end
+    return nodes
+end
+Core.Sight.Serve(InSight)
+
 -- A click on a picture: a ping there, at once (the game takes one only in the click). A double click: the game's map
 -- pin where it is too (PinView.Drop says so where the game takes none); the game's button tells the second click as
 -- one of its own, after the first's OnClick.

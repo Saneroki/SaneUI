@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Your professions level up along your guide, whatever your race or
+  profession: it tells you to mine or pick herbs where it passes the
+  most nodes anyway, checks once more before a harder zone, sends you
+  to a herb or ore close to your way right now (and back on track if
+  somebody takes it first), and has tailors kill on for cloth while
+  the enemies are worth it. Teldrassil's amber nodes are on the map.
 - Class quests in your guide, for every class of WoW: Forever: when
   you reach the level of a class quest chain for your class, race and
   side (Bear Form at 10, a warlock's pets, a shaman's totems), the

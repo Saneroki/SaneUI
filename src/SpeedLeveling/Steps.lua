@@ -367,6 +367,7 @@ local function Hide()
     ns.Arrow.Update(false)
     ns.Icons.Update(false)
     ns.Pin.Update(false)
+    ns.Detours.Update(false)
 end
 
 function Steps.Update()
@@ -436,6 +437,7 @@ function Steps.Update()
         ns.Arrow.Update(false)
         ns.Icons.Update(false)
         ns.Pin.Update(false)
+        ns.Detours.Update(false)
         return
     end
     empty:Hide()
@@ -486,6 +488,7 @@ function Steps.Update()
     ns.Arrow.Update(true)
     ns.Icons.Update(true)
     ns.Pin.Update(true)
+    ns.Detours.Update(true)
 end
 
 function Steps.Frame()

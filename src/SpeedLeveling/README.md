@@ -83,7 +83,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Equip upgrades | on | Gear that comes into your bags, looted or a quest's reward, and is an upgrade (`Core.Upgrade`: anything you can wear for a place with nothing in it, else one worth more by your class's and specialization's weights, Inventory's `Weights.lua`, else a higher item level) is put on, one at a time, out of a fight; the chat says what. Only what the game flags as new (`C_NewItems`), so what you took off yourself stays off, and an item the game refused is not tried again |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
-| Professions before the next zone | on | Before the guide goes on to a harder zone, a step of its own for each profession you have that is too low for it (*Professions before the next zone*, below). |
+| Professions along the way | on | Your professions level up where the guide takes you anyway: where it passes the most nodes, a check before a harder zone, a detour to a node close to your way, a little more killing for cloth (*Professions along the way*, below). |
 | Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
@@ -203,29 +203,61 @@ Set once for each place: a pin you put yourself, or took away, stays until the g
 pin takes its place. Once the guide has no place to go to, or is paused, off or resting, the pin goes if it still stands
 where the guide put it; a pin of yours stays. A place the game takes no pin on (a dungeon, a whole continent) has none.
 
-### Professions before the next zone
-`Gathering.lua` (Saneroki, 2026-10-29; as steps of the guide 2026-10-30): before the guide takes you on to a harder zone,
-your professions keep up with it, each in a step of its own, a normal step of the guide: *Level Mining to 65*, *Before
-the Barrens*, your skill's count and bar under it. A profession not learnt has no step; one high enough is passed by;
-a click skips it as any step, and the switch off takes them all away.
+### Professions along the way
+Your professions level up where the guide takes you anyway (Saneroki, 2026-10-29; as steps of the guide 2026-10-30; where
+the guide passes the nodes, detours and cloth 2026-10-31). All of it is worked out by itself, for any race and any
+professions: the steps are the same for every character, and each is passed by unless it is yours. A click skips any of
+them, the switch off takes them all away.
 
-As a guide is taken up (`Run.Use`, `Gathering.Weave`) it is walked once: before the first step into a zone that asks
-more than the guide's zones so far, the steps go in (before a step that goes along with it, too). A zone counts only
-where the guide spends `Gathering.STAY` steps (10), so an errand or a flight through asks nothing; a point on the way is
-no visit; a town or cave counts as its zone. You are not asked for a zone you already stand in, and whoever is known to
-have come past the step (a quest further on is done) is moved past it: a profession's step never stops the guide working
-out by itself where you are.
+**Mining and Herbalism, where it costs least** (`Gathering.lua`). As a guide is taken up (`Run.Use`, `Gathering.Weave`) it
+is walked once, with the guides after it (`Guide.After`, `Gathering.AHEAD`). A zone counts where the guide spends
+`Gathering.STAY` steps (10) and enough of that kind grows (`Gathering.RICH`, 30: a city is no place to level). Of the steps
+there, the one with the most nodes within `Gathering.NEAR` yards (150, at least `Gathering.FEW`, 5) gets a step after it:
+*Level Mining to 16*, *Around here*, your skill's count and bar under it, the arrow and the map pin on those nodes. How
+far: to what the next harder zone asks, as far as the nodes around still teach (`Gathering.TEACHES`: a skill point at 40 %
+or better; from `yellowAt` and `greyAt` of *Objects*, a node without them counts as the weakest kind). So a spot of weak
+nodes asks less and a later one of better nodes asks the rest. For a Night Elf: 16 in the Shadowthread Cave after the
+guide's spider (Chunk of Amber), 65 at Fel Rock (Large Chunk of Amber), the rest on Darkshore's copper.
 
-What a zone asks is worked out from the game's own facts in Core's sets: each herb's and ore's skill (*Objects*) and
-where they grow (*Spawns*): per zone and kind, the lowest skill that gathers at least half of its spawns
-(`Gathering.SHARE`; Durotar 1 and 1, the Barrens 50 and 65, Stranglethorn Vale 170 and 125, Felwood 260 and 230). Each
-profession goes by what it works with (`Gathering.PROFESSIONS`): Mining, Blacksmithing and Engineering by the ore,
-Herbalism and Alchemy by the herbs, the others by the higher of the two.
+Before the guide goes on to the harder zone a second step checks the same again, *Before Redridge Mountains*: so you need
+not come back. It stays out where a spot stands just before it (`Gathering.CLOSE`) and where the next zone teaches that
+too. A zone where nothing of a kind grows asks nothing of it, and a step is passed by once you left its zone (`unless`
+`inZone`, `away`), so you are never sent back. A step only stops you while your skill is lower than it asks.
 
-The steps are woven in for every profession, also those the character lacks (`step.woven`; `Run.Listed` leaves those
-out), so the steps of a guide stay the same whatever is learnt, and so does your place in it, which is kept by number.
-The view keeps the guide's own numbers (`step.shown`, `guide.total`): a profession's step bears the number of the step
-it goes before.
+**A node close to your way, right now** (`Detours.lua`). Between those steps, whatever the game's minimap really shows
+(`Core.Sight`, from Navigation's `Found.lua`: a node seen, not a place one can stand) is fetched when it is worth it: you
+have the profession, a step ahead still asks more of it (`Gathering.Goal`), the node can teach you, it was seen in the
+last `Detours.FRESH` seconds, and the way round it adds at most `Detours.FAR` yards (60) to your way to the guide's next
+place, less the less likely a skill point is (`Gathering.Chance`). Not in a fight, dead or in flight. A step stands over the
+guide's, *On the way*, *Mine the Copper Vein*, with the arrow, the map pin and the key on that node.
+
+It ends by itself as soon as the node is gone, whoever took it (the minimap no longer shows it), and you are back on the
+guide where you were; also once your skill got there, after `Detours.WAIT` seconds beside a node that does not go, after
+`Detours.LONG` seconds at most, or with a click. A node it ended on is left alone for `Detours.AGAIN` seconds. It stands at
+`Detours.STEP`, outside the guide's numbers, as a class quest does (`ClassQuests.STEP`), so your place in the guide stays.
+Without Navigation, or where the minimap does not answer (Retail), there are none.
+
+**Cloth where you kill anyway** (`Grind.lua`). After a step that has you kill humanoids (the quest's objective, or the
+creatures that drop what it asks; *Quests*, *Drops*, *NPCs*), Tailoring and First Aid get a step to kill on for the cloth of
+their level (`Grind.CLOTH`): *Kill on here for cloth: worth it until level 12*, the cloth's count and bar under it. Only
+while your skill still works with that cloth, and only where there are more of them (`Grind.MANY` spawn points: a quest's
+one boss is none). Each stop asks `Grind.STOP` more, up to `Grind.STACK`, so it stays a little at each place. It is passed
+by once you are more than `Grind.OUTLEVEL` levels over them, once you carry what it asks, or once you left the zone; skip
+the first one and the others of that zone go with it.
+
+**The crafts and the rest** keep their step before the first step into a zone that asks more than the guide's zones so
+far: *Level Blacksmithing to 65*, *Before the Barrens*. Each goes by what it works with (`Gathering.PROFESSIONS`):
+Blacksmithing and Engineering by the ore, Alchemy by the herbs, the others by the higher of the two. A point on the way is
+no visit, a town or cave counts as its zone, and whoever is known to have come past the step (a quest further on is done)
+is moved past it: a profession's step never stops the guide working out by itself where you are.
+
+What a zone asks is worked out from the game's own facts in Core's sets: each herb's and ore's skill (*Objects*) and where
+they grow (*Spawns*): per zone and kind, the lowest skill that gathers at least half of its spawns (`Gathering.SHARE`;
+Durotar 1 and 1, the Barrens 50 and 65, Stranglethorn Vale 170 and 125, Felwood 260 and 230).
+
+The steps are woven in for every profession, also those the character lacks (`step.woven`; `Run.Listed` leaves those out),
+so the steps of a guide stay the same whatever is learnt, and so does your place in it, which is kept by number. The view
+keeps the guide's own numbers (`step.shown`, `guide.total`): a profession's step bears the number of the step it stands by.
 Without Core's data (Retail, for now) none are woven.
 
 ### The icons
@@ -374,7 +406,9 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
 | `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, skip, back, go, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
-| `Gathering.lua` | The steps of your professions woven into the guide, before each harder zone (Core's *Objects* and *Spawns*) |
+| `Gathering.lua` | The steps of your professions woven into the guide, where it passes the most nodes and before each harder zone (Core's *Objects* and *Spawns*) |
+| `Grind.lua` | Cloth: a step to kill on after the guide's humanoids, while it pays (Core's *Quests*, *NPCs*, *Drops*) |
+| `Detours.lua` | A herb or ore the minimap shows close to your way right now: a step over the guide's until it is gone (`Core.Sight`) |
 | `ClassQuests.lua` | Your class's quest chains over the guide, by your level: who plays, how far a chain is, its step (Core's *ClassQuests*, *Quests* and *Spawns*) |
 | `Wanted.lua` | What is wanted around you, by name and in order; the things of the world by ID (read anew when the quest log changes) |
 | `Items.lua` | What the key uses: `Items.Hearth`, `Items.Pick` (each a macro line or nil), `Items.OnTarget` (the step's item for your target) |

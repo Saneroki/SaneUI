@@ -24,6 +24,7 @@ local ADDON, ns = ...
 --    Run.lua     a guide run for the character: where you are, what is at hand
 --    Guide.lua   the guide shown, its picture, the guides kept
 --    ClassQuests.lua  your class's quest chains over the guide, by your level
+--    Gathering.lua, Grind.lua, Detours.lua  your professions along the guide
 --    Wanted.lua  what is wanted around you, by name: your guide's steps, your
 --                quests' open objectives (Core's data, else the game's words),
 --                the creatures the game marks for your quests, the NPCs your
@@ -120,10 +121,15 @@ ns.TEXT = {
     switchTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     showGuide = "Show the guide",
     showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. A click on a step at hand skips it, a right click goes back one; the wheel over the listed steps scrolls through the whole guide, done steps too; a right click on a listed step goes to it; a right click on the zone chooses the guide to follow.",
-    gather = "Professions before the next zone",
-    gatherTip = "Before the guide goes on to a harder zone, a step of its own for each profession you have that is too low for it: gathering, crafting and secondary skills alike. Mining and Herbalism go by what gathers at least half of the ore or herbs there, the crafts by what they work with (from Sane UI's data of the world; WoW: Forever). A click on the step skips it.",
+    gather = "Professions along the way",
+    gatherTip = "Your professions level up where your guide takes you anyway. Mining and Herbalism: a step where the guide passes the most nodes in a zone, a check before it leaves that zone, and a step with the map pin on a herb or ore the minimap shows close enough to your way, for as long as the steps ahead still want more. Tailoring and First Aid: after killing humanoids, a step to kill on for their cloth while they are worth the experience. Crafts and the rest: a step before a harder zone. All from Sane UI's data of the world (WoW: Forever). A click on a step skips it; the others are for the professions you have.",
     raiseSkill = "Level %s to %d",
     skillBefore = "Before %s",
+    skillHere = "Around here",
+    detour = "On the way",
+    gatherHerb = "Pick the %s",
+    gatherOre = "Mine the %s",
+    grind = "Kill on here for cloth: worth it until level %d",
     classQuests = "Class quests",
     classQuestsTip = "When your level reaches a quest chain of your class, for your race and side (Bear Form at 10, a warlock's pets, a shaman's totems), its next step stands over the guide, and the arrow, the map pin and the key go by it until the chain is done. Your guide goes on under it, and what your guide does itself is left to it. A click on the step leaves that chain; a right click on the zone brings it back.",
     classStep = "%s: %d of %d",
