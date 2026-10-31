@@ -37,17 +37,40 @@ local PICTURE = { title = "Elwynn Forest", levels = "6-10", at = 12, place = 12,
     { number = 14, shown = 14, chain = "The Lost Hero, part 2 of 4 in its chain", lines = {
         { text = "Hand in |cffffd100An Old Letter|r at the Abbey" },
         { text = "Hand in An Old Letter", count = true, what = "handin" } } },
-}, ahead = Rows("Accept Bounty on Murlocs from Marshal McBride", "Hand in The Fargodeep Mine",
+}, ahead = {} }
+local LIST = Rows("Accept Bounty on Murlocs from Marshal McBride", "Hand in The Fargodeep Mine",
                 "Fly to Stormwind City", "Train your class spells", "Take the road west into Westfall",
-                "Set your hearthstone at Sentinel Hill") }
+                "Set your hearthstone at Sentinel Hill", "Accept Westfall Stew from Salma Saldean",
+                "Kill Harvest Watchers around the farms", "Collect Goretusk Livers", "Hand in Westfall Stew",
+                "Accept The Defias Brotherhood", "Go into the Deadmines' entrance at Moonbrook",
+                "Hand in The Defias Brotherhood", "Train your class spells", "Fly to Darkshire", "Accept Worgen in the Woods",
+                "Kill Nightbane Shadow Weavers", "Hand in Worgen in the Woods")
 
 local function Nothing() end
-ns.name, ns.options = "SpeedLeveling", { showGuide = true, ahead = 6 }
+ns.name, ns.options = "SpeedLeveling", { showGuide = true, ahead = 10 }
 ns.Guard = function(fn) return fn end
 ns.Guarded = function(fn, ...) return fn(...) end
 ns.TEXT = { step = "Step %d", progress = "%d/%d \194\183 %d%%", guideView = "Guide" }
 ns.Arrow, ns.Icons, ns.Pin, ns.Detours = { Update = Nothing }, { Update = Nothing }, { Update = Nothing }, { Update = Nothing }
-ns.Guide = { Picture = function() return PICTURE end, State = function() return "on" end, Empty = Nothing,
+-- As the real one: a list only as long as asked for, so none until the wheel asks. LabWheel(-1) turns it, LabMouse(false)
+-- takes the mouse off the view.
+local function Pictured(count)
+    PICTURE.ahead = count > 0 and LIST or {}
+    return PICTURE
+end
+ns.Guide = { Picture = Pictured, State = function() return "on" end, Empty = Nothing, Go = Nothing,
              WarnHex = function() return "ffffd100" end }
 
-Lab.OnLogin(function() ns.Steps.Update() end)
+function LabWheel(delta)
+    local view = _G.SaneUISpeedLevelingSteps
+    view:GetScript("OnMouseWheel")(view, delta)
+end
+
+function LabMouse(over)
+    _G.SaneUISpeedLevelingSteps.IsMouseOver = function() return over end
+end
+
+Lab.OnLogin(function()
+    ns.Steps.Update()
+    LabMouse(true)
+end)

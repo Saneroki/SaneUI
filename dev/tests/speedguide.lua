@@ -447,6 +447,50 @@ check(icon1 and icon1:GetAttribute("type") == "item" and icon1:GetAttribute("ite
     check(label and label._points[1][1] == "TOPRIGHT", "the step's number at the card's top right")
 end)()
 
+-- The list only on the wheel, in the place of the steps at hand; the mouse gone, they are back.
+;(function()
+    Steps.Update()
+    local card = Shown(ns.TEXT.step:format(3))._parent
+    check(card._shown and Shown(3) == nil, "the steps alone: no list under them")
+    local long, tall = ns.options.ahead, ns.Steps.ROW
+    ns.options.ahead, ns.Steps.ROW = 1, 10000 -- a line of the list at a time: this guide is short, a longer list has nowhere to scroll
+    view._mouseOver = true
+    view._scripts.OnMouseWheel(view, -1)
+    local number = Shown(3)
+    check(not card._shown and number and number._parent.step == 3, "a turn of the wheel: the list in their place, from the step you are at")
+    local row = number._parent
+    view._scripts.OnMouseWheel(view, -1)
+    check(row.step == 4, "the next turn scrolls it")
+    row._scripts.OnMouseWheel(row, 1)
+    check(row.step == 3, "and back, over a line of it too")
+    view._scripts.OnUpdate(view, ns.Steps.LINGER * 2)
+    check(not card._shown, "the mouse over the view: it stays")
+    view._mouseOver = false
+    view._scripts.OnUpdate(view, ns.Steps.LINGER / 2)
+    check(not card._shown, "the mouse just gone: it stays a moment")
+    Menu = { GetManager = function() return { IsAnyMenuOpen = function() return true end } end }
+    view._scripts.OnUpdate(view, ns.Steps.LINGER * 2)
+    check(not card._shown, "a menu of a line open: it stays")
+    Menu = nil
+    view._scripts.OnUpdate(view, ns.Steps.LINGER * 2)
+    check(card._shown and not row._shown and view._scripts.OnUpdate == nil, "the mouse gone: the steps are back")
+    view._mouseOver = true
+    card._scripts.OnMouseWheel(card, 1)
+    check(not card._shown and row._shown, "a turn over a step brings the list too")
+    local went
+    local go = Guide.Go
+    Guide.Go = function(step) went = step end
+    row._scripts.OnClick(row, "LeftButton")
+    check(row._shown, "a single click does nothing")
+    row._scripts.OnDoubleClick(row, "LeftButton")
+    check(went == row.step, "a double click goes to that step")
+    Steps.Update()
+    check(card._shown and not row._shown, "and the steps are back")
+    Guide.Go = go
+    view._mouseOver = false
+    ns.options.ahead, ns.Steps.ROW = long, tall
+end)()
+
 -- An objective met: the goal line done.
 quests.objectives[10] = { { finished = true, numFulfilled = 4, numRequired = 4 } }
 check(Run.Lines(3)[2].done and Run.Lines(3)[2].have == 4, "an objective the game says is finished, with its count")

@@ -13,21 +13,21 @@ local _, ns = ...
 --      do, each once with its count before its words, or a tick when done, its
 --      other words a little smaller, a "!" before a warning and an "i" before
 --      the rest;
---    - the next steps a step behind those on a lighter shade, a line each with
---      its number, fading a little as they go down; the wheel scrolls the list
---      through every step of the guide, a tick in place of the number of each
---      step done as the game knows it (Run.Ticked), wherever it stands, a right
---      click on one offers to go to it.
+--    - the wheel turned over the view (Saneroki, 2026-10-31: the steps at hand
+--      alone, to keep the eye on them) puts the list in their place, from the
+--      step you are at on the same shade, a line each with its number or, for a
+--      step done as the game knows it (Run.Ticked), a tick. The wheel scrolls it
+--      through every step of the guide, those at hand white, the rest a little
+--      grey; a double click on one goes to it, a right click offers to. The
+--      steps come back once the mouse has left the view (Steps.LINGER).
 --  Over its top the row of icons to use and to target (Icons.lua); the game's
 --  map pin goes with it (Pin.lua); the arrow is
 --  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
 --  anew with it.
 --  A click on a step at hand skips it (one the game knows is done, or one you
 --  looked back at, only goes on, back to your place); a right click goes back
---  one, your place kept; the wheel over the list scrolls it, a double click on a
---  listed step goes to it, a
---  right click on it opens its menu (Go to step, the guides); a right click on
---  the zone opens the menu of the guides kept (choose the one to follow, Paste
+--  one, your place kept; a right click on a listed step opens its menu (Go to
+--  step, the guides); a right click on the zone opens the menu of the guides kept (choose the one to follow, Paste
 --  a guide, the class quests you left brought back). It stands where Edit Mode
 --  puts it (Core.Window), at first at the screen's right, a little down; it
 --  grows downwards.
@@ -45,11 +45,10 @@ Steps.PAD = 7         -- inside a step's shade
 Steps.GAP = 6         -- between two steps
 Steps.NUMBERS = 28    -- the next steps' numbers' column
 Steps.SHADE = 0.65    -- the shade behind a step at hand
-Steps.LIST_SHADE = 0.4 -- the lighter shade behind the listed steps
-Steps.LIST_PAD = 3    -- inside it, over and under the list
-Steps.FADE = 0.04     -- each next step is so much fainter than the one above it
-Steps.FAINTEST = 0.7
-Steps.LIST = 0.9      -- the next steps' words, a little behind those at hand; their numbers a little darker
+Steps.LIST_PAD = 3    -- inside the shade, over and under the list
+Steps.LIST = 0.85     -- the listed steps' words, those at hand white; their numbers a little darker
+Steps.ROW = 16        -- about a listed step's height: the list fills the steps' place, as long as it can
+Steps.LINGER = 0.4    -- seconds after the mouse left the view before the steps come back
 Steps.DONE = 0.7      -- a thing done, so faint
 Steps.BESIDE = 8      -- between the step's number and the first words beside it
 Steps.MENU = 520      -- a group's menu of guides, high at most: a longer one scrolls
@@ -68,9 +67,10 @@ local empty           -- the line shown while no guide is followed: a click open
 local listShade       -- the shade behind the listed steps
 local cards, rows = {}, {}
 local fonts = {}
-local offset = 0      -- the list scrolled from its start after the steps at hand (back for less than 0)
-local lastAt          -- the step the guide was at when last drawn: when it moves on, the list starts again
-local hovered = false
+local browsing = false -- the wheel put the list in the place of the steps at hand
+local offset = 0      -- the list scrolled from the step after those at hand (back for less than 0)
+local least = 0       -- the view's height as the list came: it stays so high, so that the mouse stays over it
+local away = 0        -- seconds the mouse has been off the view
 
 local function Font(part)
     if fonts[part] then return fonts[part] end
@@ -97,7 +97,7 @@ end
 -------------------------------------------------------------------------------
 --  Building
 -------------------------------------------------------------------------------
-local Menu
+local Menu, TakesWheel
 
 local function Card()
     local card = CreateFrame("Button", nil, frame)
@@ -111,6 +111,7 @@ local function Card()
     card:SetScript("OnClick", ns.Guard(function(self, button)
         if button == "RightButton" then ns.Guide.Back() else ns.Guide.Skip(self.number) end
     end))
+    TakesWheel(card)
     return card
 end
 
@@ -120,36 +121,79 @@ local function Part(list, n, make)
     return list[n]
 end
 
-local function Hover(on)
-    if hovered == on then return end
-    hovered = on
-    Steps.Update()
+-- Whether a menu of the game's is open: a row's, which the mouse left the view for.
+local function MenuOpen()
+    local menus = rawget(_G, "Menu")
+    local manager = menus and menus.GetManager and Core.Ask(menus.GetManager)
+    return manager ~= nil and Core.Ask(manager.IsAnyMenuOpen, manager) == true
+end
+
+local Browse, Watching -- Watching: Watch, guarded, made once
+
+-- While the list shows: the mouse gone for a moment, the steps come back.
+local function Watch(_, elapsed)
+    if frame:IsMouseOver() or MenuOpen() then
+        away = 0
+    else
+        away = away + elapsed
+        if away >= Steps.LINGER then
+            Browse(false)
+            Steps.Update()
+        end
+    end
+end
+
+-- The list in the place of the steps at hand, or the steps back.
+function Browse(on)
+    browsing, away, offset = on, 0, 0
+    least = on and frame:GetHeight() or 0
+    Watching = Watching or ns.Guard(Watch)
+    frame:SetScript("OnUpdate", on and Watching or nil) -- guarded: Watching is ns.Guard(Watch)
 end
 
 local RowMenu
 
--- The list scrolled by the wheel: through every step of the guide, the done ones above too.
 local listEnds -- the list drawn last reached the guide's end: it scrolls no further down
 
+-- The first turn brings the list, from the step you are at; then the wheel scrolls it through every step of the guide,
+-- the done ones above too.
 local function Wheel(_, delta)
-    if delta < 0 and listEnds then return end
-    offset = offset - delta
+    if browsing then
+        if delta < 0 and listEnds then return end
+        offset = offset - delta
+    else
+        if ns.Guide.State() ~= "on" or not ns.Guide.Picture(0, 0) then return end
+        Browse(true)
+        offset = -1
+    end
     Steps.Update()
+end
+
+-- Over any part of the view.
+function TakesWheel(part)
+    part:EnableMouseWheel(true)
+    part:SetScript("OnMouseWheel", ns.Guard(Wheel))
+end
+
+local function GoTo(step)
+    Browse(false)
+    ns.Guide.Go(step)
 end
 
 local function Row()
     local row = CreateFrame("Button", nil, frame)
-    row:RegisterForClicks("RightButtonUp")
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.number = Text(row, "number")
     row.number:SetJustifyH("RIGHT")
     row.text = Text(row, "ahead")
     row.text:SetWordWrap(false)
-    row:SetScript("OnClick", ns.Guard(function(self) RowMenu(self) end))
-    row:SetScript("OnDoubleClick", ns.Guard(function(self) ns.Guide.Go(self.step) end))
-    row:SetScript("OnEnter", ns.Guard(function() Hover(true) end))
-    row:SetScript("OnLeave", ns.Guard(function() Hover(false) end))
-    row:EnableMouseWheel(true)
-    row:SetScript("OnMouseWheel", ns.Guard(Wheel))
+    row:SetScript("OnClick", ns.Guard(function(self, button)
+        if button == "RightButton" then RowMenu(self) end
+    end))
+    row:SetScript("OnDoubleClick", ns.Guard(function(self, button)
+        if button == "LeftButton" then GoTo(self.step) end
+    end))
+    TakesWheel(row)
     return row
 end
 
@@ -157,8 +201,10 @@ local function Build()
     frame = CreateFrame("Frame", "SaneUISpeedLevelingSteps", UIParent)
     frame:SetSize(Steps.WIDTH, 120)
     frame:SetFrameStrata("LOW")
+    TakesWheel(frame)
     header = CreateFrame("Button", nil, frame)
     header:RegisterForClicks("RightButtonUp")
+    TakesWheel(header)
     header:SetScript("OnClick", ns.Guard(function(self) Menu(self) end))
     title = Text(header, "title")
     title:SetWordWrap(false)
@@ -168,7 +214,7 @@ local function Build()
     progress:SetJustifyH("RIGHT")
     progress:SetTextColor(unpack(SOFT))
     listShade = frame:CreateTexture(nil, "BACKGROUND")
-    listShade:SetColorTexture(0, 0, 0, Steps.LIST_SHADE)
+    listShade:SetColorTexture(0, 0, 0, Steps.SHADE)
     empty = CreateFrame("Button", nil, frame)
     empty:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     empty.text = Text(empty, "note")
@@ -248,7 +294,7 @@ function RowMenu(row)
     local step, shown = row.step, row.shown
     util.CreateContextMenu(row, ns.Guard(function(_, root)
         root:CreateTitle(ns.TEXT.step:format(shown))
-        root:CreateButton(ns.TEXT.goToStep:format(shown), ns.Guard(function() ns.Guide.Go(step) end))
+        root:CreateButton(ns.TEXT.goToStep:format(shown), ns.Guard(function() GoTo(step) end))
         root:CreateButton(ns.TEXT.guides, ns.Guard(function() Menu(row) end))
     end))
 end
@@ -350,7 +396,10 @@ local function DrawCard(card, step, y, warn)
 end
 
 local function Hide()
-    if frame then frame:Hide() end
+    if frame then
+        if browsing then Browse(false) end
+        frame:Hide()
+    end
     ns.Arrow.Update(false)
     ns.Icons.Update(false)
     ns.Pin.Update(false)
@@ -359,16 +408,11 @@ end
 
 function Steps.Update()
     if ns.off then return Hide() end
-    local count = ns.options.ahead or 0
+    local count = browsing and math.max(ns.options.ahead or 0, math.ceil(least / Steps.ROW), 1) or 0
     -- Off: no guide over the world. Paused: its head and a line saying so, a click on it goes on (Saneroki, 2026-10-26).
     local follow = ns.Guide.State()
     if follow == "off" then return Hide() end
     local picture = ns.options.showGuide and ns.Guide.Picture(count, offset)
-    if picture and lastAt ~= picture.at then
-        -- The guide moved on: the list starts after the steps at hand again.
-        lastAt, offset = picture.at, 0
-        if picture.shift ~= 0 then picture = ns.Guide.Picture(count, 0) end
-    end
     if picture then offset = picture.shift end
     -- No guide followed: the view stays, its head and a line saying so; a click on it opens the guides.
     local hint = not picture and ns.options.showGuide and ns.Guide.Empty() or nil
@@ -406,6 +450,7 @@ function Steps.Update()
     y = y - headHeight
 
     if hint then
+        if browsing then Browse(false) end
         empty.text:SetText(hint)
         empty:ClearAllPoints()
         empty:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
@@ -424,15 +469,15 @@ function Steps.Update()
     empty:Hide()
     local warn = ns.Guide.WarnHex()
 
-    -- The steps at hand.
-    for index, step in ipairs(picture.hand) do
+    -- The steps at hand, or the list in their place.
+    local hand = browsing and {} or picture.hand
+    for index, step in ipairs(hand) do
         cards[index] = cards[index] or Card()
         y = y - DrawCard(cards[index], step, y, warn) - Steps.GAP
     end
-    for index = #picture.hand + 1, #cards do cards[index]:Hide() end
+    for index = #hand + 1, #cards do cards[index]:Hide() end
 
-    -- The listed steps, a little behind those at hand and fading a little as they go down: the next ones, or wherever
-    -- the wheel took the list (a tick for the number of one done; one at hand a little lighter).
+    -- The listed steps, wherever the wheel took the list (a tick for the number of one done; those at hand white).
     local here = {}
     for _, step in ipairs(picture.hand) do here[step.number] = true end
     local shown = math.min(count, #picture.ahead)
@@ -459,12 +504,11 @@ function Steps.Update()
         row.text:SetTextColor(light, light, light)
         local height = row.text:GetStringHeight() + 3
         row:SetHeight(height)
-        row:SetAlpha(hovered and 1 or math.max(Steps.FAINTEST, 1 - Steps.FADE * index))
         row:Show()
         y = y - height
     end
     for index = shown + 1, #rows do rows[index]:Hide() end
-    if shown > 0 then y = y - Steps.LIST_PAD end
+    if shown > 0 then y = math.min(y - Steps.LIST_PAD, -least) end
     listShade:ClearAllPoints()
     listShade:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, listTop)
     listShade:SetSize(Steps.WIDTH, math.max(1, listTop - y))

@@ -6,6 +6,19 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: the list on the wheel, in the place of the steps (Saneroki, 2026-10-31)
+Saneroki: no scrollable list under the steps, to focus on them; the wheel over the steps makes them go and the list come up.
+A `/reload` takes it in.
+- **`src/SpeedLeveling/Steps.lua`:** only the steps at hand show. The first turn of the wheel anywhere over the view
+  (`TakesWheel`) puts the list in their place, from the step you are at, on the steps' shade and as high as they stood, filled
+  with as many steps as fit (`Steps.ROW`); further turns scroll it. The steps come back `Steps.LINGER` seconds after the mouse
+  left the view, not while a line's menu is open, and at once on going to a step. Those at hand white, the rest 0.85. The
+  fade by line, `LIST_SHADE` and `lastAt` are gone. A double click on a line now works: it took right clicks alone.
+- **`src/SpeedLeveling/SpeedLeveling.lua`:** the setting *Steps in the list*, 10 at first, 1 to 20; words of the view's tip.
+- **Interface lab:** `LabWheel(-1)` in the scene `guide`.
+- **Tests:** `dev/tests/speedguide.lua`.
+- **Docs:** `src/SpeedLeveling/README.md`, `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/ideas/Leveling.md`.
+
 ### Unit frames' auras in three groups above them; the game's own bars out of the way (Saneroki, 2026-10-31)
 Saneroki: on every unit frame buffs on the left, crowd control in the middle, debuffs on the right; the game's experience, leave vehicle, cast and stance bars, its breath and fatigue bars, its bag bar, unit frames, party and raid frames and quest log gone, its menu bar on mouseover. Stance buttons of our own are not built: the bar goes as asked, and a card is on the board. A game restart takes it in (a new file in Combat's TOC).
 - **`src/Combat/Units/Auras.lua`:** the kinds in the order buffs, control, debuffs, each with its `point` on the frame's roof; crowd control no longer beside the frame but by its bottom middle (the game sizes a container to what it holds, so it stays centred). `Auras.LINE`, three icons, is each container's widest line, `lineSpacing` its gap: what the list *Always show* adds goes up, not into the next kind.

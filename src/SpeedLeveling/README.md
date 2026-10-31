@@ -87,7 +87,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
-| Steps listed ahead | 5 | How many steps the list under those at hand shows (0 to 12); the wheel scrolls it through the whole guide |
+| Steps in the list | 10 | How many steps the list shows at least that the wheel brings up over the guide (1 to 20); it fills the steps' place and scrolls through the whole guide |
 | Guides | | Opens the window of the guides (also `/sane guides`) |
 
 ## What it looks for
@@ -148,21 +148,24 @@ name for different characters stand apart, and the guide named next is the one f
 ## The guide over the world
 - **What it shows,** from the top, in Expressway with a thin dark outline (Saneroki's pick of font, shipped in the
   module's `Fonts/`), where Edit Mode puts it (at first at the screen's right, a little down; it grows down):
-  - the guide's zone, its levels after it, and at the right how far you are (*12/84 · 14%*), a thin rule under;
-  - each step at hand on a faint dark shade: *Step 12* small, its first words large (what to do), its things to do
-    (*Mottled Boar slain* with *2/4* at the right and a thin bar under it, a hand-drawn tick once done), its other
-    words smaller, *!* before a warning, *i* before the rest; what is done is faint;
-  - the next steps greyed out, a line each with its number, fading as they go down; the wheel scrolls the list through
-    every step of the guide. The game's tick before a step says it is done as the game knows it, wherever the step
-    stands (*How a guide is run*). When the guide moves on, the list starts after the steps at hand again.
+  - the guide's zone, its levels after it, and at the right how far you are (*12/84 · 14%*);
+  - each step at hand on a dark shade that alone sets it apart: *Step 12* small at its top right, its first words large
+    (what to do), its things to do, each with its count once, before its words (*2/4 Mottled Boar slain*, the game's
+    tick once done), its other words a little smaller, *!* before a warning, *i* before the rest; what is done is a little
+    faint.
+- **The list of steps** comes with the wheel, nothing stands under the steps at hand (Saneroki, 2026-10-31: "I need to
+  focus on the steps"). A turn of the wheel anywhere over the view puts the list in their place, from the step you are at,
+  on the same shade: a line each with its number, those at hand white, the rest a little grey, a tick for the number of a
+  step done as the game knows it, wherever it stands (*How a guide is run*). The wheel scrolls it through every step of
+  the guide; the steps come back a moment after the mouse left the view.
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
 - **No guide yet:** the view stays, its head and one line saying so (none there, none chosen, or none of them is for
   this character or game); a click on that line opens *Guides*.
 - **Paused** (*Your guide*): its head, and a line saying so; a click on it goes on. Off: nothing is shown.
 - **The mouse:** a click on a step at hand skips it (one the game knows is done, or one you went back to, only goes
-  on), a right click goes back one step, your place kept. The wheel over the list scrolls it; a double click on a
-  listed step goes to it; a right click on it opens its menu (*Go to step*, the guides);
+  on), a right click goes back one step, your place kept. A double click on a listed step goes to it; a right click on
+  it opens its menu (*Go to step*, the guides);
   a right click on the zone chooses the guide to follow: the guides for this character by group, each group a menu of
   its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
