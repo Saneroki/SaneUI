@@ -109,8 +109,8 @@ end
 -------------------------------------------------------------------------------
 --  How far a chain is
 -------------------------------------------------------------------------------
--- Whether a quest in your log is ready to hand in: done, or one that asks only to go to whoever takes it (the game
--- never calls that one complete).
+-- Whether a quest in your log is ready to hand in: done, or one with no objectives, that asks only to go to whoever
+-- takes it.
 local function Ready(quest)
     return Lines.Ready(quest) or Lines.Objectives(quest) == 0
 end

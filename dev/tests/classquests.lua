@@ -237,7 +237,7 @@ quests.done[12] = true
 check(Check() == true and Step() == nil and Run.Hand()[1] == 1, "the last handed in: the chain is through, the guide alone")
 check(Run.Target() == nil, "and the arrow is the guide's again")
 
--- A quest that only asks you to go to whoever takes it: the game never calls it complete, and it has nothing to do.
+-- A quest that only asks you to go to whoever takes it: nothing to do, whatever the game calls it.
 Reset()
 quests.done[10], quests.done[11] = true, true
 quests.on[12] = true
