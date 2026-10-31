@@ -57,6 +57,8 @@ Bar.lua
 Neighbours.lua
 # Quick switches the modules offer, for a view that gathers them (the minimap's satchel)
 Switches.lua
+# The way to a place, for a module that leads the player, from the one that finds ways
+Ways.lua
 # The stats as players write them (Str, Stam, Crit), for every view that names one
 Stats.lua
 # Whether an item would make the character better, for the loot, the bags and quest rewards

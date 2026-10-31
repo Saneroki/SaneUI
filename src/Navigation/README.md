@@ -1107,6 +1107,12 @@ Tests: `dev/tests/navigation.lua`.
   sound (`Nodes.lua`); and sparkles on the herb or ore your interact key would gather (`Sparkles.lua`).
 - **2026-10-30, at a toast's height:** at Saneroki's ask the overlay stands level with the toast of a new level: the words
   over its line at `Core.TOAST_TOP` below the screen's top, wherever the screen's height (was a share of it).
+- **2026-10-31, a way asked for:** at Saneroki's ask the planner finds a second way, for Speed Leveling's arrow through
+  Core (`Core.Ways`): to the guide's place, whatever the map pin says and with *Route to the map pin* off, followed by
+  the arrow's asks (the canvas may not be up) and never drawn. `Planner.lua`'s state went into two ways, `pin` and
+  `guide`; where the pin stands on the place asked for, the pin's way is the one and no second search runs (`Settle`).
+  `Ahead` tells the arrow the line `Planner.LEAD` yards on, the yards to the next ride or the end, that ride and where
+  it brings one. The overlay tells Core when it shows (`Core.TellsAtTop`): the arrow stands at its place and makes way.
 - **2026-10-30, the way out:** at Saneroki's ask the overlay stands a little higher (`TripView.UP` 0.72, just under
   the game's error messages) and holds the way out of every flight and vehicle (what the game's own button asks,
   `CanExitVehicle`), alone in a vehicle. The game's `MainMenuBarVehicleLeaveButton` is lent (`Core.Lend`: alpha 0, no

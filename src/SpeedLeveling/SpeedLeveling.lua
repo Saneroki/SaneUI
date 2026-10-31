@@ -124,7 +124,7 @@ ns.TEXT = {
     raiseSkill = "Level %s to %d",
     skillBefore = "Before %s",
     showArrow = "Show the arrow",
-    showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, in it a picture of what to do there, under it what to do and how far, and the time to get there.",
+    showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, along Navigation's route wherever your map pin stands, in it a picture of what to do there, under it what to do and how far, and the time to get there. It stands where the toast of a new level and the travel overlay stand, and makes way for them.",
     mapPin = "Map pin on the guide's place",
     mapPinTip = "The game's map pin goes on each place the guide sends you to, as soon as it comes up, so the golden line on Navigation's map leads there. A pin you put yourself stays until the guide goes on to its next place.",
     icons = "Targets and items over the guide",
@@ -201,6 +201,9 @@ ns.TEXT = {
     tame = "Tame the beast",
     -- The arrow and the icons (Arrow.lua, Icons.lua).
     arrowView = "Guide's arrow",
+    rides = { flight = "Fly to %s", boat = "Boat to %s", zeppelin = "Zeppelin to %s", tram = "Tram to %s",
+              lift = "Take the lift", portal = "Portal to %s", hearth = "Hearth to %s", teleport = "Teleport to %s" },
+    ridesThere = "the next place",
     seconds = "%d s",
     minutes = "%d:%02d",
     goToStep = "Go to step %d",

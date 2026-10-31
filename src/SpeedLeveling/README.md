@@ -84,7 +84,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Professions before the next zone | on | Before the guide goes on to a harder zone, a step of its own for each profession you have that is too low for it (*Professions before the next zone*, below). |
-| Show the arrow | on | The way to the guide's place, a part of its own placed in Edit Mode (*The arrow*) |
+| Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
 | Steps listed ahead | 5 | How many steps the list under those at hand shows (0 to 12); the wheel scrolls it through the whole guide |
@@ -167,11 +167,20 @@ name for different characters stand apart, and the guide named next is the one f
   its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
 ### The arrow
-A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide (at first over the middle of the screen),
-shown while the guide is and has a place to go to:
+A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide, at first where the toast of a new level and
+the travel overlay stand (`Core.TOAST_TOP`), out of sight while one of those shows (`Core.TopTaken`); shown while the
+guide is and has a place to go to:
 
 - **Sane UI's leather ring that runs out into a point** (the far herbs' mark, `Art/mark-pointed`), turned the way to
-  the place (up: ahead), a step every 0.05 s.
+  go (up: ahead), a step every 0.05 s.
+- **The way is Navigation's route, not a straight line** (Saneroki, 2026-10-31): the arrow follows the line to the
+  guide's place, round what stands in the way, by flight, boat, zeppelin, tram, lift, portal, hearthstone and teleport,
+  whatever the map pin says: a pin of your own elsewhere keeps its golden line, the arrow its own way, and neither the
+  pin nor the setting *Route to the map pin* is needed for it (`Core.Ways`; Speed Leveling asks Core, not Navigation).
+  The ring turns to the line a little ahead of you; the yards are along the line. A ride that comes next stands in for
+  the step: its picture and its words (*Fly to Crossroads*), the yards to it; at a ride that starts where you stand the
+  ring goes, as nothing is left to point at, and the picture and the words stay. Without Navigation, until it has found
+  the way (a search waits out a fight), or where no way is known, straight to the place, as a last resort.
 - **In its hole, what to do there** (`Guide.Doing`), the game's own cursor pictures: a speech bubble to talk, a sword
   to kill, a bag to loot, an open hand to use or pick something, the quest's yellow *!* to take one and *?* to hand
   one in, a coin bag to buy, a book to train, the Hearthstone at an inn or to hearth, a winged boot to fly, a map when

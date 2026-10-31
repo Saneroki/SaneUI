@@ -182,6 +182,7 @@ local function Build()
     -- In sight while Lore fades the interface out for a talk: a quest handed in is where most levels come.
     if view.SetIgnoreParentAlpha then view:SetIgnoreParentAlpha(true) end
     view:Hide()
+    Core.TellsAtTop(view)
     fade = Core.Motion.Fade(view)
 
     local middle, left, right = Shade(view, LevelUp.DARK, LevelUp.DARK), Shade(view, 0, LevelUp.DARK), Shade(view, LevelUp.DARK, 0)

@@ -29,6 +29,29 @@ local Core = SaneUI.Core
 -- toast of a new level (Inventory) and the travel overlay (Navigation) keep this height.
 Core.TOAST_TOP = 190
 
+-- What tells something at that height for a while (Core.TellsAtTop(frame), each once): while one of them shows,
+-- Core.TopTaken() is true and what only stands there (the guide's arrow) makes way; Core.OnTopTaken(fn): fn() whenever
+-- one came or went.
+local tellers, topWatchers = {}, {}
+local function TopChanged()
+    for _, fn in ipairs(topWatchers) do Core.Safe("toast place", fn) end
+end
+function Core.TellsAtTop(frame)
+    tellers[#tellers + 1] = frame
+    local changed = Core.Guard("toast place", TopChanged)
+    frame:HookScript("OnShow", changed)
+    frame:HookScript("OnHide", changed)
+end
+function Core.TopTaken()
+    for _, frame in ipairs(tellers) do
+        if frame:IsShown() then return true end
+    end
+    return false
+end
+function Core.OnTopTaken(fn)
+    topWatchers[#topWatchers + 1] = fn
+end
+
 -- A word of the game's own (the name of one of its strings, in the player's language), or ours where
 -- this client has none.
 function Core.Word(name, fallback)

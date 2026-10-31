@@ -390,6 +390,24 @@ teleports' tool; 147 with the walking data's openings; 159 with the coarse layer
   over the full map hidden in a fight by the game's state driver; out of sight while carried (Core's `lifted`).
 - **Tests:** `dev/tests/navigation.lua` 727 checks, `dev/tests/window.lua` 440.
 
+## Built (2026-10-31): a way for the guide's arrow
+
+`Planner.lua` follows two ways now, each `{ target, plan, job, lastPlan, nextLook, onTaxi }`: `pin` (the map pin's, drawn,
+followed by the canvas' tracker through `Planner.Track`) and `guide` (the place asked for, never drawn, followed by the
+arrow's own asks, `Planner.Ahead`, as the canvas may not be up). `Core.Ways` joins them to Speed Leveling, which needs
+nothing of Navigation (`Core.Ways.Serve` at the end of `Planner.lua`). `Settle` decides who finds the way: where the pin
+stands within `Planner.SAME` yards of the place, the pin's way, with no second search (a way already found stays until
+the pin's is there); else `guide` plans by itself, the route's filter switch not asked. Two jobs may run side by side:
+`Search` keeps nothing between its yields.
+
+`Ahead`: where along the line (`Follow`), past a leg the player is at the end of (`Past`; a ride only when nearer its end
+than its start, as a lift's ends may lie one over the other), the line `Planner.LEAD` yards on (`Lead`; from a lift, on
+the walk after it), the yards to the leg's end (`Left`, by each walk's `along` and `yards`, `Measure`), the ride next and
+where it brings one (`Towards`: a flight's flight point, else the zone its way ends in), and whether it starts here
+(`BOARDED`: all rides but the lift, which comes by itself).
+
+The toast's place: `Core.TellsAtTop(frame)` from `TripView` and Inventory's `LevelUp`, read by the arrow (`Core.TopTaken`).
+
 ## What is not there yet
 
 1. **Core's data framework** has step 1a (`Doc/ideas/Data-build.md`): the sets (part of Core since 2026-10-21), `Data.Set`, `Get`,

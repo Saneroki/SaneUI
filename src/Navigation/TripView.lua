@@ -218,6 +218,7 @@ local function Build()
     exit:Hide()
     frame:SetScript("OnUpdate", ns.Guard(function(_, elapsed) Moving(elapsed) end))
     frame:Hide()
+    Core.TellsAtTop(frame)
 end
 
 -------------------------------------------------------------------------------

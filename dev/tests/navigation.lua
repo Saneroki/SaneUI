@@ -3985,6 +3985,62 @@ check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and s
     and shownWay.legs[3].kind == "walk", "a pin far away: on foot to a known flight point, the flight, on foot to the pin")
 check(#shownWay.legs[1].points >= 2 and near(shownWay.legs[2].points[1].u, 600) and near(shownWay.legs[3].points[2].u, -900),
     "each leg from where it starts to where it ends")
+-- The way asked for (the guide's arrow, Core.Ways) to where the pin leads: the pin's way, no second search. What it
+-- tells: the walk to the flight, then the flight at the flight point, then the last walk; a way of its own once the
+-- pin is gone, never drawn; none once nothing is asked.
+;(function()
+    local Ways, walk, flight, last = Core.Ways, shownWay.legs[1], shownWay.legs[2], shownWay.legs[3]
+    local start, pinned = { player.map, player.x, player.y }, waypoint
+    check(Ways.Ahead() == nil, "nothing asked: no way")
+    Ways.Aim(1429, 0.05, 0.99)
+    check(#Core.Steps.Jobs() == 0, "asked to where the pin leads: no second search")
+    local ahead = Ways.Ahead()
+    check(ahead and ahead.ride == "flight" and ahead.to == "Far" and not ahead.here and ahead.yards > Planner.THERE,
+        "on the walk: the flight next, where it brings one, the yards to it")
+    -- A place of a plane, as the player stands.
+    local function Stand(u, v)
+        player.map, player.x, player.y = 1415, (u + 4000) / 8000, (4000 - v) / 20000
+        W.Wait(1)
+    end
+    local at = walk.points[#walk.points]
+    Stand(at.u + 2, at.v)
+    ahead = Ways.Ahead()
+    check(ahead and ahead.ride == "flight" and ahead.here, "at the flight point: the flight to take, here")
+    -- No pin any more: the way is its own, and nothing of it is drawn.
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    check(shownWay == nil and #Core.Steps.Jobs() == 1, "the pin gone: its line goes, the way asked for is searched alone")
+    Frames(8)
+    ahead = Ways.Ahead()
+    check(shownWay == nil and ahead and ahead.ride == "flight" and ahead.here, "found without a pin, and not drawn")
+    Ways.Aim()
+    check(Ways.Ahead() == nil and #Core.Steps.Jobs() == 0, "nothing asked any more: no way")
+    -- The way there with the route off in the pin filter: it needs no line.
+    local route = ns.Pins.Shows
+    ns.Pins.Shows = function(kind) if kind == "route" then return false end return route(kind) end
+    Ways.Aim(1429, 0.05, 0.99)
+    Frames(8)
+    ahead = Ways.Ahead()
+    check(shownWay == nil and ahead and ahead.ride == "flight", "the route off in the filter: the way asked for all the same")
+    ns.Pins.Shows = route
+    -- Landed: on the last walk nothing but the walk is left, the yards along it to the place.
+    local long = 0
+    for index = 2, #last.points do
+        local a, b = last.points[index - 1], last.points[index]
+        long = long + math.sqrt((b.u - a.u) ^ 2 + (b.v - a.v) ^ 2)
+    end
+    Stand(last.points[1].u, last.points[1].v)
+    ahead = Ways.Ahead()
+    check(ahead and not ahead.ride and not ahead.here and math.abs(ahead.yards - long) < Planner.THERE,
+        "on the last walk: no ride, the yards along it")
+    Ways.Aim()
+    -- Back where the player stood, the pin's way anew.
+    player.map, player.x, player.y, waypoint = start[1], start[2], start[3], pinned
+    W.Wait(1)
+    Planner.Update()
+    Frames(8)
+end)()
 -- At a flight master (TAXIMAP_OPENED) what this character has found is what the game tells then: its flight map's
 -- (Current and Reachable; Unreachable not, the game's flight map leaves those out) and every plane's, as the game's maps
 -- mark them. Only the found are flown; on the map the found one as the game draws it.
@@ -4034,6 +4090,39 @@ check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "wit
         if column >= 127.5 and column <= 144.5 and row <= 16.5 then door = true end
     end
     check(leg and leg.kind == "walk" and door, "a pin across a walled tile: one walk, drawn through its door")
+    -- The way asked for, with the pin somewhere else: through that door all the same, turned along the line, never
+    -- straight at the place through the wall, and the line on the map stays the pin's. The yards are the line's.
+    local lead, rest = leg.points[1], Planner.LEAD
+    for index = 2, #leg.points do
+        local a, b = leg.points[index - 1], leg.points[index]
+        local length = math.sqrt((b.u - a.u) ^ 2 + (b.v - a.v) ^ 2)
+        if length >= rest then
+            lead = { u = a.u + (b.u - a.u) * rest / length, v = a.v + (b.v - a.v) * rest / length }
+            break
+        end
+        rest = rest - length
+    end
+    local long = 0
+    for index = 2, #leg.points do
+        local a, b = leg.points[index - 1], leg.points[index]
+        long = long + math.sqrt((b.u - a.u) ^ 2 + (b.v - a.v) ^ 2)
+    end
+    local straight = math.sqrt((eu - su) ^ 2 + (ev - sv) ^ 2)
+    waypoint = { uiMapID = 1415, position = CreateVector2D((su + 200 + 4000) / 8000, (4000 - sv) / 20000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local pinWay = shownWay
+    Core.Ways.Aim(1415, (eu + 4000) / 8000, (4000 - ev) / 20000)
+    Frames(8)
+    local ahead = Core.Ways.Ahead()
+    local way = ahead and ahead.way
+    local yards = ahead and ahead.yards
+    check(shownWay == pinWay and ahead and not ahead.ride and math.abs(yards - long) < 1 and long > straight + 10,
+        "the pin elsewhere: the way asked for is its own, as long as the walk through the door, and not drawn")
+    check(way and math.abs(way - math.atan2(su - lead.u, lead.v - sv)) < 1e-3,
+        "the arrow turned to the line a little ahead of the player")
+    Core.Ways.Aim()
     player.map, player.x, player.y, waypoint = before[1], before[2], before[3], before[4]
     W.Fire("USER_WAYPOINT_UPDATED")
     W.Wait(0)
@@ -4347,6 +4436,7 @@ local function Flights()
     local lines = TripView.Lines(trip)
     check(TripView.frame and TripView.frame:IsShown() and lines.title == "Alpha to Gamma" and lines.next:find("^Next: Beta in 0:2[01]$")
         and lines.left:find("^1:0[01]$") and TripView.exit:IsShown(), "its overlay, with the game's Request Stop")
+    check(Core.TopTaken(), "the overlay takes the toast's place: what only stands there makes way")
     Planner.Track(1415, 0, 500, GetTime() + 100)
     Frames(2)
     local leg = shownWay and shownWay.legs[1]
@@ -4391,7 +4481,7 @@ local function Flights()
     check(leave:GetAlpha() == 0 and TripView.exit:IsShown(), "the setting on: ours stands in again")
     canLeave = false
     leave:Update()
-    check(not TripView.frame:IsShown(), "out of the vehicle: nothing")
+    check(not TripView.frame:IsShown() and not Core.TopTaken(), "out of the vehicle: nothing, the toast's place free")
     Planner.Track(1415, -1000, 1000, GetTime() + 200)
     check(shownWay == nil, "after the flight, without a map pin: no line")
     -- A whole flight: its pace learnt for this character.

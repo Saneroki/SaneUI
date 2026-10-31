@@ -423,6 +423,67 @@ check(Run.Lines(3)[2].done and Run.Lines(3)[2].have == 4, "an objective the game
 -- The place reached: the arrow stops pointing to it once you are near.
 local line, idx = Run.Target()
 check(line and line.map == 1411 and idx == 3, "the arrow points to the step's place")
+-- The arrow: along the way found for it (Core.Ways), whatever the map pin, straight while there is none; the ride next
+-- in its words and picture, at a ride only those; at the place where the toast stands, and away while that shows.
+;(function()
+    local Arrow, aimed, told = ns.Arrow, nil, nil
+    Core.Set(ns.name, "showArrow", false)
+    Core.Ways.Serve({ Aim = function(map, x, y) aimed = map and { map, x, y } or false end, Ahead = function() return told end })
+    local facing, way = rawget(_G, "GetPlayerFacing"), Run.Way
+    GetPlayerFacing, Run.Way = function() return 0.5 end, function() return 200, 1.5 end
+    Core.Set(ns.name, "showArrow", true)
+    local frame = rawget(_G, "SaneUISpeedLevelingArrow")
+    check(frame and frame._shown and aimed and aimed[1] == 1411 and math.abs(aimed[2] - 0.455) < 1e-6
+        and math.abs(aimed[3] - 0.622) < 1e-6, "the arrow asks the way to the guide's place, on the game's map")
+    local point, _, relative, _, y = frame:GetPoint(1)
+    check(point == "TOP" and relative == "TOP" and y == -Core.TOAST_TOP,
+        "at first where the toast of a new level and the travel overlay stand")
+    local ring, picture, texts = nil, nil, {}
+    for _, widget in ipairs(W.frames) do
+        if widget._texture == Arrow.RING then ring = widget end
+        if widget._kind == "FontString" and widget._parent == frame then texts[#texts + 1] = widget end
+    end
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Texture" and widget._parent == ring._parent and widget ~= ring and widget._texture then
+            picture = widget
+        end
+    end
+    local words, far = texts[1], texts[2]
+    local said = words:GetText()
+    check(ring._shown and math.abs(ring._rotation - 1) < 1e-6 and said and said ~= "", "no way known: straight at the place")
+    told = { way = 2.5, yards = 340 }
+    Arrow.Update(true)
+    check(math.abs(ring._rotation - 2) < 1e-6 and far:GetText():find(Core.Distance(340), 1, true) and words:GetText() == said,
+        "a way known: turned along it, with its yards, the step's words")
+    told = { way = 2.5, yards = 90, ride = "flight", to = "Crossroads" }
+    Arrow.Update(true)
+    check(ring._shown and words:GetText() == "Fly to Crossroads" and picture:GetTexture():find("UITaxiCursor2x", 1, true),
+        "a ride next: its words and picture, the ring still leads to it")
+    told = { way = 2.5, yards = 1, ride = "flight", to = "Crossroads", here = true }
+    Arrow.Update(true)
+    check(not ring._shown and picture._shown and far:GetText() == "" and words:GetText() == "Fly to Crossroads",
+        "at the ride: nothing to point at, what to take")
+    told = { way = 2.5, yards = 1 }
+    Arrow.Update(true)
+    check(not ring._shown and not picture._shown and far:GetText() == "" and words:GetText() == said,
+        "within the place's reach by the way: only the words")
+    told = { way = 2.5, yards = 340 }
+    Arrow.Update(true)
+    local toast = CreateFrame("Frame")
+    toast:Hide()
+    Core.TellsAtTop(toast)
+    check(not Core.TopTaken() and frame._shown, "nothing at the toast's place: the arrow there")
+    toast:Show()
+    check(Core.TopTaken() and not frame._shown, "the toast or the travel overlay comes: the arrow makes way")
+    Arrow.Update(true)
+    check(not frame._shown, "and stays away as the guide goes on")
+    toast:Hide()
+    check(not Core.TopTaken() and frame._shown and ring._shown, "gone: the arrow back")
+    Core.Set(ns.name, "showArrow", false)
+    check(not frame._shown and aimed == false, "the arrow off: no way asked any more")
+    Core.Ways.Serve(nil)
+    GetPlayerFacing, Run.Way = facing, way
+end)()
 -- The game's map pin there, set once for the place: what you do to it stays until the guide goes on.
 ;(function()
     local function At(x, y)

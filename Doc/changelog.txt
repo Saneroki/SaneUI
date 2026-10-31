@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The guide's arrow follows the route to your next goal, by flight
+  and boat too, wherever your map pin stands, and says which ride
+  comes next. It stands where the level-up and travel overlays
+  stand and makes way while they show.
 - The advice and the tab Deals weigh your faction's auction house
   against a neutral one, each with its own cut and deposit: buy in
   one and sell in the other where the trip pays.

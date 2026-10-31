@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 362 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### The guide's arrow goes by the route; it stands at the toast's place (Saneroki, 2026-10-31)
+Saneroki: the arrow should not point in a straight line to the guide's goal but guide along the routing to the next goal, also when the map pin points elsewhere; and it should stand where the level up and the travel widget stand, hidden while those show.
+- **`src/Navigation/Planner.lua`:** its state in two ways, `pin` (drawn) and `guide` (not drawn, the place asked for, whatever the pin says and with the route off too); `Settle` lets the pin's way serve where the pin stands on that place, so no search runs twice. `Planner.Aim`, `Planner.Ahead`: the line `Planner.LEAD` yards on, the yards to the next ride or the end, that ride, where it brings one, whether it starts here.
+- **`src/Core/Ways.lua` (new, a game restart takes it in):** `Core.Ways`, so Speed Leveling and Navigation need not know each other. **`src/Core/Kit.lua`:** `Core.TellsAtTop`, `Core.TopTaken`, `Core.OnTopTaken`.
+- **`src/SpeedLeveling/Arrow.lua`:** turned along the way, yards along it, the ride next in its words and picture, at a ride only those; straight only without a way. At first at `Core.TOAST_TOP`, out of sight while the toast of a new level (`src/Inventory/LevelUp.lua`) or the travel overlay (`src/Navigation/TripView.lua`) shows.
+- **Tests:** `dev/tests/navigation.lua`, `speedguide.lua` (the arrow's first tests), `inventory.lua`.
+
 ### New characters start on Accountwide (Saneroki, 2026-10-31)
 Saneroki: "So the default of SaneUI will be the account wide profile".
 - **`src/Core/Profiles.lua`:** `ForNew()` gives a character not seen yet *Accountwide*, no longer *Speedleveling*; the line *New Characters* on the page Profiles says so at first. `SaneUIDB.newProfile` still overrides it. Characters already seen keep their profile.

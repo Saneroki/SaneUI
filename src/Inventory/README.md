@@ -695,7 +695,7 @@ the world's entry and each `PLAYER_XP_UPDATE`: the game adds the events again wh
 shows. The game's toast is `EventToastManagerFrame`, a toast of `Enum.EventToastEventType.LevelUp` in it; it must run on,
 since its animations end it and bring the next toast, and they stop on a hidden frame, and its alpha would be its fade's
 during those. So at `DisplayToast` (hooked) it is lent under a frame of ours at alpha 0, and back at the next toast or
-at the end of them: every other toast shows as ever. `ns.GiveBack` gives both back. Its height is `Core.TOAST_TOP`, as
+at the end of them: every other toast shows as ever. `ns.GiveBack` gives both back. While it shows, Speed Leveling's arrow makes way (`Core.TellsAtTop`). Its height is `Core.TOAST_TOP`, as
 the travel overlay's. Its look:
 `Doc/guides/interface-style.md`, *A new level over the world*.
 

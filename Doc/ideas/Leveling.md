@@ -89,6 +89,10 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   crafts go by what they work with. Built.
 - **Not yet:** the routes and their planner (below).
 
+- **The arrow by the route (Saneroki, 2026-10-31; built):** the arrow goes by Navigation's routes to the guide's place,
+  not straight at it, and by its own way wherever the map pin stands, for a pin may stand elsewhere for other reasons;
+  the ride that comes next in its words and picture (`Core.Ways`). It stands where the toast of a new level and the travel
+  overlay stand, out of sight while those show.
 - **The map pin on the guide's place (Saneroki, 2026-10-30; built):** as a step becomes active the game's map pin goes on
   its place, so the route in Forever leads there. The game's own pin, so Speed Leveling needs nothing of Navigation.
 

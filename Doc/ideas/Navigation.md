@@ -490,6 +490,9 @@ the game's own art and the game's own API.
   zeppelins and the tram **light blue** (red before), the portals violet, the hearthstone and the teleports pale blue.
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
+- **A way for the guide's arrow (Saneroki, 2026-10-31):** the guide's arrow follows the routing to the guide's next
+  goal, never a straight line, also when the map pin stands elsewhere: the planner finds a second way, not drawn, for
+  whoever asks through Core (`Core.Ways`); where the pin stands on that place the pin's way is the one.
 
 ## Leveling guide
 
