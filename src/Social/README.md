@@ -198,20 +198,22 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     A speed is the time a whole fade (out of sight to all there, or back) or a slide takes. A line under one
     that is off is greyed out.
 - **The game's chat channels, the same on every character:** in the last column of the list on the chat's name,
-  under *On every character*, each of the game's channels (as the game names them, in its language: those you are in,
-  those on offer where you are, and any you chose for) opens three choices: *The game decides* (at first),
-  *Always in it* or *Never in it*. A channel you are always in is joined wherever the game offers it (a city's
-  channels only in a city); one you are never in is left whenever the game puts you in it. It acts a while
-  after a character comes into the world, when the game changes its channels, and at once when you choose.
+  under *Joined on every character*, each of the game's channels (as the game names them, in its language: those you
+  are in, those on offer where you are, and any you chose for) has a tick, on while you are in it. Tick one and you
+  join it, wherever the game offers it (a city's channels only in a city); untick it and you leave it, and it is left
+  again whenever the game puts you in it. It acts a while after a character comes into the world, when the game
+  changes its channels, and at once when you click. The game may refuse to let you leave one (Retail's Newcomer Chat,
+  for one): it says so in a line of its own, the tick comes back on, and Sane UI does not ask again until the next
+  login or your next click on that tick.
   It works whether the window is open or not, and on every character (the settings of *Social* are account
   wide unless unticked in *Profiles > Game settings*).
 - **You start in no public channel.** On a character's first load Sane UI takes it out of every channel of the game
   (General, Trade, Local Defense, Services, Looking For Group, Newcomer Chat, ...): each is left the first time the
   character is seen in it, so also a city's when it first comes to one. That happens once per channel and character,
-  on every profile. Join one when you want it, with `/join Trade` or with *Always in it* above: it stays, on that
+  on every profile. Join one when you want it, with `/join Trade` or with its tick above: it stays, on that
   login and any other. A channel you made yourself is not touched.
-- **Retail's Newcomer Chat is left every time.** The game puts a character in it by itself, so *Accountwide* and
-  *Speedleveling* hold *Never in it* for it, on every character, old ones too. To stay in it, choose *Always in it*.
+- **Retail's Newcomer Chat is left every time the game lets go of a character.** The game puts a character in it by
+  itself, so *Accountwide* and *Speedleveling* hold it unticked, on every character, old ones too. To stay in it, tick it.
 - **Not shown at first** in the list of what to show: *Loot, money and experience*, and General, Trade (Forever's Trade
   (Local) too), Local Defense, Services and Newcomer Chat, also after you join one: tick it there to read it. A tick belongs to the
   channel, whatever number the game gives it.
@@ -565,7 +567,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   changes (also by a profile). While chat is
   locked down (`C_ChatInfo.InChatMessagingLockdown`) it waits, and looks again at the next
   `ADDON_RESTRICTION_STATE_CHANGED`. It runs through `ns.Safe`, not `ns.Guarded`: an error there is noted and
-  does not close the window. The menu's three choices per channel are submenus (`Menu.lua`).
+  does not close the window. In the menu each channel is a check box (`Join.In`, `Join.Flip`, `Menu.lua`): a wish
+  counts at once, never ticked it is what the game says, and every notice of the game shows an open list's ticks as
+  they are (`Menu.Refresh`). `Settle` goes through every wish at each click, and the game writes a line of its own at
+  each leave it refuses, so `CHAT_MSG_CHANNEL_LEAVE_PREVENTED` notes the channel for this login (`kept`).
 - **Out of the public channels, once** (`Join.lua`, `char.public`): a wish that never leaves again would throw out a
   channel you join yourself, so this is no wish but a note per character (`Core.Character`), `[a channel's word in lower
   case] = true`, made only at a first load: when no row is saved for the character yet (`Join.Notes`, which is why it asks
@@ -802,6 +807,8 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-01 — The game's channels in the list: a tick each, joined or left, instead of three choices; a leave the
+  game refuses is not asked for at every click (Saneroki).
 - 2026-10-30 — Defaults (Saneroki): the game's chat out of sight, whole chat names; a character starts in no public
   channel, each left once and never again, whatever you join later; loot, money, experience, General, Trade, Local
   Defense and Services not shown at first. A tick now belongs to the channel, not its number.

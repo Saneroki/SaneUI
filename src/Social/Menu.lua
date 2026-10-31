@@ -5,8 +5,8 @@ local _, ns = ...
 --  The list behind the chat's name in the line to write in (and the window's
 --  chat button), in columns: the chats you can write in right now, the one you
 --  write in marked (Channels.lua); everything the window can show, each with a
---  tick; the game's own channels, each with what it does on every character
---  (Join.lua). It is the game's menu (MenuUtil), in its grid.
+--  tick; the game's own channels, each ticked while you are in it, on every
+--  character (Join.lua). It is the game's menu (MenuUtil), in its grid.
 --
 --  It stays open while you choose: no choice closes it, and nor does the mouse
 --  leaving the window, though the window's button goes out of sight then. Only
@@ -47,9 +47,8 @@ local function Choose(channel) ns.Guarded(Write, channel) end
 local function IsShown(chat) return ns.Guarded(ns.Channels.Shown, chat.group) end
 local function Switch(chat) ns.Guarded(ns.Channels.Flip, chat.group) end
 -- The game's channels are apart from the window: a failure there is noted, the window stays.
-local function Wished(choice) return ns.Join.Wished(choice.name) == choice.wish end
-local function IsWished(choice) return ns.Safe("channels", Wished, choice) end
-local function Wish(choice) ns.Safe("channels", ns.Join.Wish, choice.name, choice.wish) end
+local function IsIn(name) return ns.Safe("channels", ns.Join.In, name) end
+local function Flip(name) ns.Safe("channels", ns.Join.Flip, name) end
 
 -- The game closes a menu when one of its radio lines is chosen; its check boxes leave it open by themselves.
 local function WriteLine(root, channel)
@@ -60,12 +59,8 @@ local function ShowLine(root, chat)
     root:CreateCheckbox(chat.text, IsShown, Switch, chat)
 end
 
--- Each of the game's channels opens the three choices of what it does on every character.
 local function ChannelLine(root, channel)
-    local entry = root:CreateButton(channel.name)
-    for _, choice in ipairs(ns.TEXT.wishes) do
-        entry:CreateRadio(choice.text, IsWished, Wish, { name = channel.name, wish = choice.wish }):SetResponse(MenuResponse.Refresh)
-    end
+    root:CreateCheckbox(channel.name, IsIn, Flip, channel.name)
 end
 
 -- A column: its title, its lines and spacers down to the end of the longest. The game's grid runs down each column
@@ -97,6 +92,11 @@ function Menu.Close()
     if not open then return false end
     open:Close()
     return true
+end
+
+-- The game has answered about a channel: an open list shows its ticks as they are now.
+function Menu.Refresh()
+    if open then ns.Safe("the list", open.ReinitializeAll, open) end
 end
 
 -- Opens the list at the mouse for the line line (the edit box in our window, if one is), or closes it if it is open.

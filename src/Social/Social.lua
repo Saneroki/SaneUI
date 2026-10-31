@@ -116,9 +116,8 @@ ns.TEXT = {
     today = "Today",
     yesterday = "Yesterday",
     you = Core.Word("YOU", "You"),
-    -- The game's channels in the list on the chat's name: what each does on every character (Join.lua).
-    everywhere = "On every character",
-    wishes = { { text = "The game decides" }, { wish = true, text = "Always in it" }, { wish = false, text = "Never in it" } },
+    -- The game's channels in the list on the chat's name: ticked while you are in them, on every character (Join.lua).
+    everywhere = "Joined on every character",
 }
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the chat window is closed"

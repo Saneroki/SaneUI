@@ -644,6 +644,7 @@ function W.Install(env)
         local menu = { owner = owner }
         generator(owner, Description(menu))
         W.menus[#W.menus + 1] = menu
+        function menu:ReinitializeAll() self.refreshed = (self.refreshed or 0) + 1 end
         function menu:Close()
             self.closed = true
             for _, released in ipairs(self.released or {}) do released(self) end

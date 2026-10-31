@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Social: a tick for each of the game's channels; a refused leave not asked at every click (Saneroki, 2026-11-01)
+Saneroki: a click on any channel's *Never in it*, *Always in it* or *The game decides* said "Unable to leave chat
+channel Newcomer Chat"; each channel should have a plain tick instead of its flyout, ticked joined, unticked left.
+- **The bug:** a click runs `Join.Settle`, which goes through every wish. Retail's standard profiles wish Newcomer Chat
+  away, the game refuses that leave (`CHAT_MSG_CHANNEL_LEAVE_PREVENTED`) and writes its line at each try. `Join.lua`
+  notes a refused channel (`kept`) and does not ask again until the next login or a click on its own tick; the wish stays.
+- **The ticks:** the third column of `Menu.lua`'s list, now *Joined on every character*, has a check box per channel
+  (`Join.In`, `Join.Flip`); the three choices and `TEXT.wishes` are gone. A wish counts at once, never ticked the tick
+  is what the game says, a refused one stays on. `Menu.Refresh` shows an open list's ticks anew when the game answers.
+  Tests: `dev/tests/social.lua`.
+
 ### Speed Leveling: the list is the whole guide, your step marked in its middle; a red cross (Saneroki, 2026-11-01)
 Saneroki: highlight the current active steps clearly and scroll continuously from the first step to the last; on the first
 scroll the list centered on the current step; about 10 steps at a time; left alone it goes back to the steps after 10 seconds,

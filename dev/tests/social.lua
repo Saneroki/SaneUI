@@ -3295,20 +3295,21 @@ ns.Menu.Toggle(W.NewWidget("Frame"), nil)
 local menu, entries = W.menus[#W.menus], {}
 local titled
 for _, item in ipairs(menu) do
-    if item.title == "On every character" then titled = true elseif titled and item.sub then entries[item.text] = item.sub end
+    if item.title == "Joined on every character" then titled = true elseif titled and item.text then entries[item.text] = item end
 end
 local general = entries.General
-check(titled and general and #general == 3 and general[1].text == "The game decides" and general[2].text == "Always in it"
-    and general[3].text == "Never in it" and general[1].checked(general[1].data) and not general[3].checked(general[3].data),
-    "last in the list on the chat's name, each of the game's channels opens its three choices: the game decides at first")
-check(menu.grid[2] == 3 and #menu % 3 == 0 and menu[2 * #menu / 3 + 1].title == "On every character" and general[3].response == MenuResponse.Refresh,
-    "the game's channels stand in a third column, and joining or leaving one leaves the list open")
+check(titled and general and general.checked(general.data) and #general.inits == 0 and not general.sub
+    and not entries.LookingForGroup.checked(entries.LookingForGroup.data),
+    "last in the list on the chat's name, each of the game's channels has a tick of its own, on while the character is in it")
+check(menu.grid[2] == 3 and #menu % 3 == 0 and menu[2 * #menu / 3 + 1].title == "Joined on every character",
+    "the game's channels stand in a third column")
 ns.Menu.Close()
-general[3].fn(general[3].data)
-check(calls[1] == "Leave General" and options.presence.General == false and general[3].checked(general[3].data),
-    "never in it: left as soon as it is chosen")
-entries.LookingForGroup[2].fn(entries.LookingForGroup[2].data)
-check(calls[2] == "Join LookingForGroup" and options.presence.LookingForGroup == true, "always in it: joined when the character is not")
+general.fn(general.data)
+check(calls[1] == "Leave General" and options.presence.General == false and not general.checked(general.data),
+    "unticked: left as soon as it is clicked")
+entries.LookingForGroup.fn(entries.LookingForGroup.data)
+check(calls[2] == "Join LookingForGroup" and options.presence.LookingForGroup == true and entries.LookingForGroup.checked(entries.LookingForGroup.data),
+    "ticked: joined when the character is not")
 LeaveChannelByName("LookingForGroup")
 ns.Join.Settle()
 check(#calls == 3, "a join is asked for once a zone: one the game refuses is not asked for again and again")
@@ -3325,8 +3326,8 @@ W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_CHANGED")
 W.Wait(2.5)
 check(Called("Join Trade") and Called("Join Services") and calls[5] and #calls == 7,
     "in a city, told by the game of its channels, those it offers there are joined, and in a new zone the refused one is asked for again")
-general[1].fn(general[1].data)
-check(options.presence.General == nil, "the game decides again")
+general.fn(general.data)
+check(options.presence.General == true and Called("Join General"), "ticked again, joined again")
 options.presence.General = false
 joined.General = 9 -- the game put the character in it again
 W.locked, calls = true, {}
@@ -3341,6 +3342,27 @@ joined.LocalDefense, calls = 4, {}
 options.presence.LocalDefense = false
 Core.described[ns.name].changed("presence")
 check(calls[1] == "Leave LocalDefense" and not Core.errors["Social: channels"], "a profile with other wishes is followed at once")
+;(function() -- a leave the game refuses: it writes a line of its own each time
+    ns.Menu.Toggle(W.NewWidget("Frame"), nil)
+    local list = W.menus[#W.menus]
+    local refreshed = list.refreshed or 0
+    options.presence["Newcomer Chat"] = false
+    joined["Newcomer Chat"], calls = 7, {}
+    ns.Join.Settle()
+    check(calls[1] == "Leave Newcomer Chat", "a channel wished away is asked to be left")
+    joined["Newcomer Chat"] = 7 -- the game kept the character in it
+    W.Fire("CHAT_MSG_CHANNEL_LEAVE_PREVENTED", "Newcomer Chat")
+    check(ns.Join.In("Newcomer Chat") and (list.refreshed or 0) == refreshed + 1, "refused, its tick is on again at once: the character is still in it")
+    calls = {}
+    ns.Join.Flip("Services")
+    ns.Join.Flip("Services")
+    ns.Join.Settle()
+    check(not Called("Leave Newcomer Chat"), "and a click on another channel does not ask for it again")
+    ns.Join.Flip("Newcomer Chat")
+    check(Called("Leave Newcomer Chat") and options.presence["Newcomer Chat"] == false, "a click on its own tick does: the player asked")
+    ns.Menu.Close()
+    options.presence["Newcomer Chat"], options.presence.Services, joined["Newcomer Chat"] = nil, nil, nil
+end)()
 
 -- The game's friends list from the dropdown Classic windows, in a fight and out of one
 local toggled, fight = 0, W.combat

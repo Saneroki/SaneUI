@@ -3,10 +3,15 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Join: the game's own chat channels, the same on every
 --  character. A channel of the game (General, Trade, ..., as the game names it,
---  in its language) may carry a wish, kept in the setting presence:
---      none    the game decides, as it always does
---      true    always in it: joined wherever the game offers it
---      false   never in it: left whenever the game put the character in it
+--  in its language) may carry a wish, kept in the setting presence and set by
+--  its tick in the list on the chat's name (Flip, In):
+--      none    never ticked: the game decides, as it always does
+--      true    ticked, always in it: joined wherever the game offers it
+--      false   unticked, never in it: left whenever the game put the character in it
+--  The game may refuse a leave (Retail's Newcomer Chat, for one) and writes a
+--  line of its own each time, so a channel it refused is not asked again until
+--  the next login or a click on its tick (kept); its tick shows the character
+--  is still in it, and the wish stays.
 --  The game says which of its channels are on offer where the character is
 --  (EnumerateServerChannels): a city's channels only in a city. A join is asked
 --  for once per zone, so one the game refuses is not asked for again and again.
@@ -31,8 +36,8 @@ local _, ns = ...
 --  profile it uses, and are made only at its first load, with nothing saved for
 --  it yet: a character saved before stays in what it is in. Retail's Newcomer
 --  Chat, which the game joins by itself, carries the wish never in it in both
---  standard profiles (Core's Presets.lua), so it is left on every character, and
---  again each time the game puts one back in it.
+--  standard profiles (Core's Presets.lua), so it is left on every character the
+--  game lets go, and again each time the game puts one back in it.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -50,6 +55,7 @@ local GAME = Enum and Enum.PermanentChatChannelType and Enum.PermanentChatChanne
 local JOINS = { "JoinPermanentChannel", "JoinTemporaryChannel", "JoinChannelByName" }
 
 local asked = {} -- [channel] = the zone a join was asked for in
+local kept = {}  -- [a channel's name, lower case] = true: the game refused to let the character leave it
 local owed       -- chat was locked down at the last look
 local ready      -- the first look came: from then on the game is done joining its own
 local public     -- this character's notes: [a channel's word, lower case] = true, left once or joined by the player; nil: leaves none
@@ -125,7 +131,7 @@ function Join.Settle()
     for name, wish in pairs(Wishes()) do
         local number = type(name) == "string" and Plain(GetChannelName(name))
         if wish == false and number and number ~= 0 then
-            LeaveChannelByName(name)
+            if not kept[name:lower()] then LeaveChannelByName(name) end
         elseif wish == true and number == 0 and asked[name] ~= zone and (not offered or offered[name:lower()]) then
             asked[name] = zone
             JoinPermanentChannel(name, nil, 1, 1) -- into the first chat window, as /join does
@@ -133,15 +139,28 @@ function Join.Settle()
     end
 end
 
--- A wish set from the list on the chat's name (nil: the game decides), followed at once.
+-- A wish set (nil: the game decides), followed at once.
 function Join.Wish(name, wish)
     Wishes()[name] = wish
     asked[name] = nil
     ns.Safe("channels", Join.Settle)
 end
 
-function Join.Wished(name)
-    return Wishes()[name]
+-- Whether a channel's tick is on. The wish counts at once, as the game answers a moment later; one the game
+-- refused to let go is still joined, whatever is wished; never ticked, it is what the game says.
+function Join.In(name)
+    if kept[name:lower()] then return true end
+    local wish = Wishes()[name]
+    if wish ~= nil then return wish end
+    return (Plain(GetChannelName(name)) or 0) ~= 0
+end
+
+-- A click on a channel's tick: joined or left from now on, on every character. A channel the game refused is asked
+-- for again: you asked.
+function Join.Flip(name)
+    local wish = not Join.In(name)
+    kept[name:lower()] = nil
+    Join.Wish(name, wish)
 end
 
 -- The game's channels for the list on the chat's name: those the character is in, by their number;
@@ -202,6 +221,12 @@ function Join.Watch()
     ns.On("PLAYER_ENTERING_WORLD", first)
     ns.On("CHAT_MSG_CHANNEL_NOTICE", function() -- the game joined, changed or left a channel for the character
         if ready then soon() end
+        ns.Menu.Refresh()
+    end)
+    ns.On("CHAT_MSG_CHANNEL_LEAVE_PREVENTED", function(name)
+        name = Plain(name)
+        if type(name) == "string" then kept[ns.Channels.Base(name):lower()] = true end
+        ns.Menu.Refresh()
     end)
     ns.On("ADDON_RESTRICTION_STATE_CHANGED", function() -- chat's lockdown may be over
         if owed then soon() end
