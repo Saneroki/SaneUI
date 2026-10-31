@@ -48,7 +48,8 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   The satchel's switch and the bags' box are one and the same, the profile; off, the guide is gone, not paused.
 - **Decision (Saneroki, 2026-10-31): the guide read at a glance.** No grey words, each count once, no bars or rules: the
   shade sets the steps apart. *Step 12* at the top right of its step. No list under the steps: "I need to focus on the
-  steps"; the wheel over them shows the list in their place, until the mouse leaves.
+  steps"; the wheel over them shows the list of the whole guide in their place, your step clearly marked in its middle. A
+  red cross takes it away; left alone 10 seconds it goes by itself (2026-11-01).
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
   looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the

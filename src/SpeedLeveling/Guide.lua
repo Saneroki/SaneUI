@@ -9,15 +9,15 @@ local _, ns = ...
 --  the view, the player's ways through it, and what its steps at hand want for
 --  the key (Wanted.lua, Key.lua) and for the quest givers (Quests.lua).
 --
---      Guide.Picture(count, shift)  nil (no guide), or { title, levels, at, place, total, hand = { step },
---                         ahead = { line }, shift }: count steps listed from the one after those at hand, moved by
---                         shift (back for less than 0; picture.shift: as far as it went); at: the step shown, place:
---                         your place in the guide as it is numbered for you (they differ while you look back)
---                         step = { number, shown, chain, done, lines = { { text, done, have, need, count } } },
---                         (chain: a class quest's name and how far, in place of its number)
---                         line = { number, shown, text, done } (shown: the number to show; done: Run.Ticked, as the
+--      Guide.Picture()    nil (no guide), or { title, levels, at, place, total, hand = { step } }: at: the step shown,
+--                         place: your place in the guide as it is numbered for you (they differ while you look back)
+--                         step = { number, shown, chain, done, lines = { { text, done, have, need, count } } }
+--                         (shown: the number to show; chain: a class quest's name and how far, in place of its number;
+--                         text in our colours; count: a thing to do, its have and need when it has a number)
+--      Guide.Listed()     every step of the guide the list shows, in order, by number, and where in that the step you
+--                         are at stands
+--      Guide.Line(number) a listed step as the list says it: { number, shown, text, done } (done: Run.Ticked, as the
 --                         game knows it)
---                         (text in our colours; count: a thing to do, its have and need when it has a number)
 --      Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
 --      Guide.Things()     the things of the world the steps at hand name to pick up or use (names)
@@ -53,8 +53,6 @@ local Core = SaneUI.Core
 local Plain = Core.Plain
 local Guide = {}
 ns.Guide = Guide
-
-Guide.AHEAD = 6   -- the steps after those at hand the picture lists, at most (the view may show fewer)
 
 local EMPTY = {}
 local DEFLATE, ZLIB = 0, 1 -- the game's Enum.CompressionMethod.Deflate and Zlib, should their names be missing
@@ -155,35 +153,48 @@ local function OurLines(index)
     return lines
 end
 
-function Guide.Picture(count, shift)
+-- The number a step is shown with: the guide's own, the steps of your professions apart (Gathering.lua).
+local function Shown(guide, index) return guide.steps[index].shown or index end
+
+function Guide.Picture()
     local guide = ns.Run.Guide()
     if not guide then return nil end
     local title, levels = Split(Paint(guide.title or guide.name))
-    local at = ns.Run.At()
-    -- The number a step is shown with: the guide's own, the steps of your professions apart (Gathering.lua).
-    local function Shown(index) return guide.steps[index].shown or index end
-    local picture = { title = title, levels = levels, at = math.min(at, #guide.steps),
-                      place = Shown(math.min(ns.Run.Place(), #guide.steps)), total = guide.total or #guide.steps,
-                      hand = {}, ahead = {} }
-    local last = at
+    local picture = { title = title, levels = levels, at = math.min(ns.Run.At(), #guide.steps),
+                      place = Shown(guide, math.min(ns.Run.Place(), #guide.steps)), total = guide.total or #guide.steps,
+                      hand = {} }
     for _, index in ipairs(ns.Run.Hand()) do
-        picture.hand[#picture.hand + 1] = { number = index, shown = Shown(index), chain = guide.steps[index].chain,
+        picture.hand[#picture.hand + 1] = { number = index, shown = Shown(guide, index), chain = guide.steps[index].chain,
                                             done = ns.Run.Ticked(index), lines = OurLines(index) }
-        last = math.max(last, index)
-    end
-    local index = math.max(1, last + 1 + (shift or 0))
-    picture.shift = index - (last + 1)
-    while #picture.ahead < (count or Guide.AHEAD) and guide.steps[index] do
-        if ns.Run.Listed(index) then
-            local lines = OurLines(index)
-            if lines[1] then
-                picture.ahead[#picture.ahead + 1] = { number = index, shown = Shown(index), text = lines[1].text,
-                                                      done = ns.Run.Ticked(index) }
-            end
-        end
-        index = index + 1
     end
     return picture
+end
+
+-- Whether a step has words to show.
+local function Says(step)
+    for _, line in ipairs(step.lines) do
+        if ns.Run.Words(line) and (line.what ~= "place" or line.words) then return true end
+    end
+    return false
+end
+
+function Guide.Listed()
+    local guide, list, at = ns.Run.Guide(), {}, 1
+    if not guide then return list, at end
+    local here = ns.Run.At()
+    for index, step in ipairs(guide.steps) do
+        if ns.Run.Listed(index) and Says(step) then
+            list[#list + 1] = index
+            if index <= here then at = #list end
+        end
+    end
+    return list, at
+end
+
+function Guide.Line(number)
+    local lines = OurLines(number)
+    return { number = number, shown = Shown(ns.Run.Guide(), number), text = lines[1] and lines[1].text or "",
+             done = ns.Run.Ticked(number) }
 end
 
 -- What a step asks you to do, in our words for the arrow's picture: "take", "handin" (a quest), "talk", "buy",

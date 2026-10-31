@@ -15,36 +15,22 @@ picture:SetTexture("assets/generated/ui-lab/backdrops/elwynn-forest")
 
 function LabGround(shade) picture:SetColorTexture(shade, shade, shade) end
 
-local function Rows(...)
-    local rows = {}
-    for index, text in ipairs({ ... }) do
-        rows[index] = { number = 14 + index, shown = 14 + index, text = text, done = index == 2 }
-    end
-    return rows
-end
-
-local PICTURE = { title = "Elwynn Forest", levels = "6-10", at = 12, place = 12, total = 124, shift = 0, hand = {
-    { number = 12, shown = 12, lines = {
+local PICTURE = { title = "Elwynn Forest", levels = "6-10", at = 35, place = 35, total = 100, hand = {
+    { number = 34, shown = 34, lines = {
         { text = "Clear the farm of |cffff2020Defias|r and pick up their bandanas" },
         { text = "0/12 Defias Thug slain", count = true, have = 0, need = 12, what = "goal" },
         { text = "Red Burlap Bandana: 3/8", count = true, have = 3, need = 8, what = "goal" },
         { text = "Speak to |cff19ff19Marshal Dughan|r", count = true, done = true, what = "goal" },
         { text = "|cffffd100The farm house upstairs has more of them than it seems|r" },
         { text = "Go round the back to stay out of their sight" } } },
-    { number = 13, shown = 13, lines = {
+    { number = 35, shown = 35, lines = {
         { text = "Level Mining to 65" },
         { text = "Before Westfall", count = true, have = 40, need = 65, what = "skill" } } },
-    { number = 14, shown = 14, chain = "The Lost Hero, part 2 of 4 in its chain", lines = {
-        { text = "Hand in |cffffd100An Old Letter|r at the Abbey" },
-        { text = "Hand in An Old Letter", count = true, what = "handin" } } },
-}, ahead = {} }
-local LIST = Rows("Accept Bounty on Murlocs from Marshal McBride", "Hand in The Fargodeep Mine",
-                "Fly to Stormwind City", "Train your class spells", "Take the road west into Westfall",
-                "Set your hearthstone at Sentinel Hill", "Accept Westfall Stew from Salma Saldean",
-                "Kill Harvest Watchers around the farms", "Collect Goretusk Livers", "Hand in Westfall Stew",
-                "Accept The Defias Brotherhood", "Go into the Deadmines' entrance at Moonbrook",
-                "Hand in The Defias Brotherhood", "Train your class spells", "Fly to Darkshire", "Accept Worgen in the Woods",
-                "Kill Nightbane Shadow Weavers", "Hand in Worgen in the Woods")
+} }
+
+local WORDS = { "Accept Bounty on Murlocs from Marshal McBride", "Hand in The Fargodeep Mine", "Fly to Stormwind City",
+                "Train your class spells", "Take the road west into Westfall", "Set your hearthstone at Sentinel Hill",
+                "Kill Harvest Watchers around the farms", "Collect Goretusk Livers" }
 
 local function Nothing() end
 ns.name, ns.options = "SpeedLeveling", { showGuide = true, ahead = 10 }
@@ -52,13 +38,19 @@ ns.Guard = function(fn) return fn end
 ns.Guarded = function(fn, ...) return fn(...) end
 ns.TEXT = { step = "Step %d", progress = "%d/%d \194\183 %d%%", guideView = "Guide" }
 ns.Arrow, ns.Icons, ns.Pin, ns.Detours = { Update = Nothing }, { Update = Nothing }, { Update = Nothing }, { Update = Nothing }
--- As the real one: a list only as long as asked for, so none until the wheel asks. LabWheel(-1) turns it, LabMouse(false)
--- takes the mouse off the view.
-local function Pictured(count)
-    PICTURE.ahead = count > 0 and LIST or {}
-    return PICTURE
+-- A guide of a hundred steps, you at the 35th. LabWheel(-1) turns the wheel, LabMouse(false) takes the mouse off the view.
+local function Listed()
+    local list = {}
+    for number = 1, 100 do list[number] = number end
+    return list, 35
 end
-ns.Guide = { Picture = Pictured, State = function() return "on" end, Empty = Nothing, Go = Nothing,
+
+local function Line(number)
+    return { number = number, shown = number, text = WORDS[number % #WORDS + 1], done = number < 34 }
+end
+
+ns.Guide = { Picture = function() return PICTURE end, Listed = Listed, Line = Line, State = function() return "on" end,
+             Empty = Nothing, Go = Nothing,
              WarnHex = function() return "ffffd100" end }
 
 function LabWheel(delta)

@@ -154,10 +154,12 @@ name for different characters stand apart, and the guide named next is the one f
     tick once done), its other words a little smaller, *!* before a warning, *i* before the rest; what is done is a little
     faint.
 - **The list of steps** comes with the wheel, nothing stands under the steps at hand (Saneroki, 2026-10-31: "I need to
-  focus on the steps"). A turn of the wheel anywhere over the view puts the list in their place, from the step you are at,
-  on the same shade: a line each with its number, those at hand white, the rest a little grey, a tick for the number of a
-  step done as the game knows it, wherever it stands (*How a guide is run*). The wheel scrolls it through every step of
-  the guide; the steps come back a moment after the mouse left the view.
+  focus on the steps"). A turn of the wheel anywhere over the view puts the list of the whole guide in their place, on the
+  same shade, the step you are at in its middle (Saneroki, 2026-11-01): a line each with its number, those at hand white
+  on a gold band with a gold line at its left, the rest a little grey, a tick for the number of a step done as the game
+  knows it, wherever it stands (*How a guide is run*). The wheel scrolls it a line at a time from the guide's first step
+  to its last (`Guide.Listed`, every step it can show). The steps come back at the red cross in the top right corner, or
+  after 10 seconds without the mouse on the view or a menu of a line open (`Steps.LINGER`).
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
 - **No guide yet:** the view stays, its head and one line saying so (none there, none chosen, or none of them is for

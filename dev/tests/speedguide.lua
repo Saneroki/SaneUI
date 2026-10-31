@@ -359,7 +359,7 @@ local picture = Guide.Picture()
 check(picture.title == "Valley of Trials" and picture.at == 1 and picture.total == 8, "the head: title, where")
 check(picture.hand[1].lines[1].text:find("|cff%x%x%x%x%x%xKaltunk|r"), "the NPC's name in our colour")
 check(not picture.hand[1].lines[1].text:find(COLOUR.friend, 1, true), "the format's colour word is gone")
-check(picture.ahead[1].number == 2 and picture.ahead[1].text:find("copper", 1, true), "the next steps listed")
+check(Guide.Line(Guide.Listed()[2]).number == 2 and Guide.Line(2).text:find("copper", 1, true), "the next steps listed")
 
 -- The quest givers: the step's quest to take, and the next step's.
 local wants = Guide.Quests()
@@ -447,37 +447,65 @@ check(icon1 and icon1:GetAttribute("type") == "item" and icon1:GetAttribute("ite
     check(label and label._points[1][1] == "TOPRIGHT", "the step's number at the card's top right")
 end)()
 
--- The list only on the wheel, in the place of the steps at hand; the mouse gone, they are back.
+-- The list only on the wheel, in the place of the steps at hand: the whole guide, your step in its middle and marked,
+-- a line at a time from its first step to its last; the steps back at the cross, or when it is left alone.
 ;(function()
     Steps.Update()
     local card = Shown(ns.TEXT.step:format(3))._parent
-    check(card._shown and Shown(3) == nil, "the steps alone: no list under them")
+    local all, at = Guide.Listed()
+    check(all[at] == 3 and all[1] == 1 and all[#all] > 3, "the list is every step of the guide, in order")
+    local function Rows()
+        local rows = {}
+        for _, widget in ipairs(W.frames) do
+            if widget.step and widget._shown then rows[#rows + 1] = widget end
+        end
+        return rows
+    end
+    check(card._shown and #Rows() == 0 and not ns.Steps.closer._shown, "the steps alone: no list under them")
     local long, tall = ns.options.ahead, ns.Steps.ROW
-    ns.options.ahead, ns.Steps.ROW = 1, 10000 -- a line of the list at a time: this guide is short, a longer list has nowhere to scroll
+    ns.options.ahead, ns.Steps.ROW = 3, 10000 -- three lines of the list, whatever the view's height
     view._mouseOver = true
     view._scripts.OnMouseWheel(view, -1)
-    local number = Shown(3)
-    check(not card._shown and number and number._parent.step == 3, "a turn of the wheel: the list in their place, from the step you are at")
-    local row = number._parent
+    local rows = Rows()
+    check(not card._shown and #rows == 3 and rows[2].step == all[at], "a turn of the wheel: the list in their place, your step in its middle")
+    check(rows[1].step == 2 and rows[1].band._shown and rows[2].band._shown and rows[2].mark._shown
+        and not rows[3].band._shown and not rows[3].mark._shown, "every step at hand clearly marked, the others not")
+    check(rows[2].text._color == nil or rows[2].text._color[1] == 1, "and white")
+    check(ns.Steps.closer._shown, "the cross in the corner")
+    for _ = 1, 20 do view._scripts.OnMouseWheel(view, 1) end
+    rows = Rows()
+    check(rows[1].step == all[1], "the wheel goes up to the guide's first step, and stops there")
     view._scripts.OnMouseWheel(view, -1)
-    check(row.step == 4, "the next turn scrolls it")
-    row._scripts.OnMouseWheel(row, 1)
-    check(row.step == 3, "and back, over a line of it too")
+    check(Rows()[1].step == all[2], "a line at a time")
+    for _ = 1, 40 do rows[1]._scripts.OnMouseWheel(rows[1], -1) end
+    rows = Rows()
+    check(rows[#rows].step == all[#all] and #rows == 3, "down to its last, the list full")
+    -- Left alone: the mouse on it holds it; off it, the steps come back in a while, a turn of the wheel starts that anew.
     view._scripts.OnUpdate(view, ns.Steps.LINGER * 2)
-    check(not card._shown, "the mouse over the view: it stays")
+    check(not card._shown, "the mouse on the view: it stays")
     view._mouseOver = false
-    view._scripts.OnUpdate(view, ns.Steps.LINGER / 2)
-    check(not card._shown, "the mouse just gone: it stays a moment")
+    view._scripts.OnUpdate(view, ns.Steps.LINGER - 1)
+    check(not card._shown, "the mouse gone: not at once")
+    rows[1]._scripts.OnMouseWheel(rows[1], 1)
+    view._scripts.OnUpdate(view, ns.Steps.LINGER - 1)
+    check(not card._shown, "the wheel counts")
     Menu = { GetManager = function() return { IsAnyMenuOpen = function() return true end } end }
     view._scripts.OnUpdate(view, ns.Steps.LINGER * 2)
-    check(not card._shown, "a menu of a line open: it stays")
+    check(not card._shown, "so does a menu of a line, open")
     Menu = nil
-    view._scripts.OnUpdate(view, ns.Steps.LINGER * 2)
-    check(card._shown and not row._shown and view._scripts.OnUpdate == nil, "the mouse gone: the steps are back")
+    view._scripts.OnUpdate(view, ns.Steps.LINGER - 1)
+    check(not card._shown, "still within its time")
+    view._scripts.OnUpdate(view, 2)
+    check(card._shown and #Rows() == 0 and view._scripts.OnUpdate == nil and not ns.Steps.closer._shown,
+        "left alone: the steps are back")
+    -- The cross, and over a step the wheel brings it too.
     view._mouseOver = true
     card._scripts.OnMouseWheel(card, 1)
-    check(not card._shown and row._shown, "a turn over a step brings the list too")
-    local went
+    check(not card._shown and Rows()[2].step == all[at], "a turn over a step brings the list, in the middle again")
+    ns.Steps.closer._scripts.OnClick(ns.Steps.closer, "LeftButton")
+    check(card._shown and #Rows() == 0, "the cross: the steps are back at once")
+    card._scripts.OnMouseWheel(card, 1)
+    local went, row = nil, Rows()[1]
     local go = Guide.Go
     Guide.Go = function(step) went = step end
     row._scripts.OnClick(row, "LeftButton")
@@ -758,9 +786,7 @@ check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part fr
     check(not Run.Ticked(7) and not Run.Ticked(8) and not Run.Ticked(9), "those ahead do not: nothing to do is not done")
     quests.done[603] = true
     check(Run.Ticked(10), "a step ahead the game knows is done shows as done before you get there")
-    local list = Guide.Picture(4).ahead
-    check(list[1].number == 8 and not list[1].done and list[3].number == 10 and list[3].done,
-        "the list's ticks are what the game knows, not where you are")
+    check(not Guide.Line(8).done and Guide.Line(10).done, "the list's ticks are what the game knows, not where you are")
     quests.done[603] = nil
 
     -- The level comes: on to the hearth, which stays: nothing after it is known done yet. Your click still does it.
@@ -793,7 +819,7 @@ check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part fr
     local picture = Guide.Picture(3)
     check(picture.at == 4 and picture.place == 13 and picture.hand[#picture.hand].number == 4 and picture.hand[#picture.hand].done,
         "the picture: that step, done; how far you are stays your place")
-    check(picture.ahead[1].number == 5 and picture.ahead[1].done and picture.ahead[3].done, "the steps after it still show as done")
+    check(Guide.Line(5).done and Guide.Line(7).done, "the steps after it still show as done")
     check(Core.Character(ns.name).at[key] == 13, "your place is what is kept")
     Steps.Update()
     check(Shown(ns.TEXT.step:format(4) .. " " .. Steps.TICK), "the view: a tick by the step's number")

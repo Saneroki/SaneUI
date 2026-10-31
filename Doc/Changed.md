@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: the list is the whole guide, your step marked in its middle; a red cross (Saneroki, 2026-11-01)
+Saneroki: highlight the current active steps clearly and scroll continuously from the first step to the last; on the first
+scroll the list centered on the current step; about 10 steps at a time; left alone it goes back to the steps after 10 seconds,
+and a red x in the top right corner takes it away by hand. A `/reload` takes it in.
+- **`src/SpeedLeveling/Guide.lua`:** `Guide.Listed()` is every step the list shows and where you stand among them, `Guide.Line`
+  one of them; the wheel goes a line at a time over that, where it stuck on the steps not listed before. `Guide.Picture` has
+  no list of its own any more (`ahead`, `shift`, `Guide.AHEAD` gone).
+- **`src/SpeedLeveling/Steps.lua`:** the list opens with your step in its middle; steps at hand on a gold band with a gold
+  line at the left (`Steps.BAND`, `Steps.MARK`). The cross (`Steps.closer`, the game's ready-check cross) stands at the view's top
+  right, how far you are moves left of it. `Steps.LINGER` is 10 seconds without the mouse on the view, a turn of the wheel or
+  an open menu of a line.
+- **Interface lab:** the scene `guide` has a guide of a hundred steps, you at the 35th.
+- **Tests:** `dev/tests/speedguide.lua`, `speedleveling.lua`.
+- **Docs:** `src/SpeedLeveling/README.md`, `Doc/guides/interface-style.md`, `Doc/ideas/Leveling.md`.
+
 ### Party and raid slots fill the window (Saneroki, 2026-10-31)
 Saneroki: five slots fill the window's height whoever is there; a slot as wide as the max unit width, at first the unit frames' width; all slots share
 the width evenly only where the columns would not fit. A `/reload` takes it in.
