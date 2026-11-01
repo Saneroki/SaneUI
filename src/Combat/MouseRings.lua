@@ -181,7 +181,8 @@ local function ClassColour()
 end
 
 local function Ring(art, r, g, b)
-    local ring = CreateFrame("Cooldown", nil, holder)
+    local ring = CreateFrame("Cooldown", nil, holder, "CooldownFrameTemplate")
+    ring:ClearAllPoints() -- the template fills its parent
     ring:SetPoint("CENTER")
     ring:SetSwipeTexture(art)
     ring:SetSwipeColor(r, g, b, Rings.ALPHA)

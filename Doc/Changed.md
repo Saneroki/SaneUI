@@ -14,7 +14,7 @@ Saneroki: "Run both games": the first real run of `/patchday`.
 
 ### Combat: the mouse rings' look; they start and end at the cursor's tip (Saneroki, 2026-11-01)
 Saneroki: "a leading line and glow and other styling", and "the end and start of the circles" lined up "with the mouse click tip" instead of straight up.
-- **`src/Combat/MouseRings.lua`:** see-through rings (`Rings.ALPHA`); the global cooldown's thinner and white, the cast's thicker, further out and in your class's colour; a bright line with a soft glow at the cast's head, the game's cast bar spark twice with additive blending, none on a cast the game hides. Both rings turned by `Rings.TURN`, so they start and end on the line to the cursor's tip; the line starts there too.
+- **`src/Combat/MouseRings.lua`:** see-through rings (`Rings.ALPHA`); the global cooldown's thinner and white, the cast's thicker, further out and in your class's colour; a bright line with a soft glow at the cast's head, the game's cast bar spark twice with additive blending, none on a cast the game hides. Both rings turned by `Rings.TURN`, so they start and end on the line to the cursor's tip; the line starts there too. The rings are the game's `CooldownFrameTemplate`, as every cooldown of ours.
 - **`dev/tools/shape-art`, `src/Core/Shape.lua`:** `ring-wide.blp`, `Shape.RING_WIDE`. **`src/Combat/Combat.lua`:** the settings' words. **`dev/tests/combat.lua`**, `src/Combat/README.md`, `src/Core/README.md`, `Doc/guides/images.md`.
 
 ### Combat: rings around the mouse for the global cooldown and your cast (Saneroki, 2026-11-01)
