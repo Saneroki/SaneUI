@@ -251,6 +251,7 @@ page = patchnotes.document(notes, {"sets": {"Spells": {"counts": {"new": 1, "cha
 check("a whole file", page.startswith("<!doctype html>"), True)
 check("every level is folded shut", re.search(r"<details[^>]* open", page), None)
 check("and its button opens them", 'aria-pressed="false">Expand all</button>' in page, True)
+check("a section's link opens it and brings it up", ('href="#classes"' in page, "window.scrollTo" in page, "preventDefault" in page), (True, True, True))
 check("it needs nothing outside itself", ("<link" in page, "<script src" in page, "fonts." in page), (False, False, False))
 check("one dark theme, whatever the computer's", ("color-scheme: dark" in page, "prefers-color-scheme" in page, "data-theme" in page), (True, False, False))
 check("the page has its name", "<title>Forever 1.60.2.70801 Patch Notes</title>" in page, True)

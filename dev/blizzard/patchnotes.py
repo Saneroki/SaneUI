@@ -220,7 +220,7 @@ STYLE = """
         --display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
         --body: "Segoe UI", system-ui, "Noto Sans", sans-serif;
         --data: ui-monospace, "Cascadia Code", "DejaVu Sans Mono", monospace;
-        color-scheme: dark; }
+        color-scheme: dark; overflow-anchor: none; }  /* a section opened above the screen must not shift a link's scroll */
 body { background: var(--bg); color: var(--ink); font: 400 1.05rem/1.55 var(--body); }
 .page { max-width: 54rem; margin: 0 auto; padding: 2.5rem 16px 4rem; }
 .eyebrow { margin: 0; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
@@ -243,6 +243,7 @@ a { color: var(--gold); text-underline-offset: .15em; }
               border-radius: 4px; padding: .1rem .6rem; cursor: pointer; }
 button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 main { display: grid; gap: 1.4rem; margin-top: 1.6rem; min-width: 0; }
+.section { scroll-margin-top: 6rem; }
 details > summary { cursor: pointer; list-style: none; display: flex; gap: .55rem; align-items: baseline; }
 details > summary::-webkit-details-marker { display: none; }
 details > summary::before { content: "\\25B8"; color: var(--gold); font-size: .8em; transition: transform .1s; }
@@ -270,17 +271,32 @@ ul.points ul { margin: .15rem 0 0; padding-left: 1.1rem; color: var(--soft); fon
 
 SCRIPT = """
 (function () {
-  var button = document.getElementById("toggle-all"), all = document.querySelectorAll("main > details:not(.every), main > details:not(.every) details");
+  var button = document.getElementById("toggle-all"), page = document.querySelector(".page"), bar = document.querySelector(".bar");
+  var all = document.querySelectorAll("main > details:not(.every), main > details:not(.every) details");
+  var room = 0, foot = parseFloat(getComputedStyle(page).paddingBottom);
   button.addEventListener("click", function () {
     var open = button.getAttribute("aria-pressed") !== "true";
     all.forEach(function (item) { item.open = open; });
     button.setAttribute("aria-pressed", open ? "true" : "false");
     button.textContent = open ? "Collapse all" : "Expand all";
+    room = 0;
+    page.style.paddingBottom = "";
   });
+  // A section's link opens it and brings it up under the bar; with the rest folded the page is too short for that, so
+  // the page gets the room it lacks. It jumps at once: a smooth scroll skipped clicks when tried, and a link must arrive.
   document.querySelectorAll(".bar a").forEach(function (link) {
-    link.addEventListener("click", function () {
+    link.addEventListener("click", function (event) {
       var target = document.getElementById(link.getAttribute("href").slice(1));
-      if (target) { target.open = true; }
+      if (!target) { return; }
+      event.preventDefault();
+      target.open = true;
+      var top = target.getBoundingClientRect().top + window.scrollY - bar.offsetHeight - 8;
+      var short = top + window.innerHeight - document.documentElement.scrollHeight;
+      if (short > 0) {
+        room += short;
+        page.style.paddingBottom = foot + room + "px";
+      }
+      window.scrollTo(0, top);
     });
   });
 })();
