@@ -149,7 +149,8 @@ name for different characters stand apart, and the guide named next is the one f
 - **What it shows,** from the top, in Expressway with a thin dark outline (Saneroki's pick of font, shipped in the
   module's `Fonts/`), where Edit Mode puts it (at first at the screen's right, a little down; it grows down):
   - the guide's zone, its levels after it, and at the right how far you are (*12/84 · 14%*);
-  - each step at hand on a dark shade that alone sets it apart: *Step 12* small at its top right, its first words large
+  - each step at hand on a dark shade that alone sets it apart, its corners round, no border (Core's `Shape`; Saneroki,
+    2026-11-01): *Step 12* small at its top right, its first words large
     (what to do), its things to do, each with its count once, before its words (*2/4 Mottled Boar slain*, the game's
     tick once done), its other words a little smaller, *!* before a warning, *i* before the rest; what is done is a little
     faint.

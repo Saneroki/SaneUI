@@ -38,6 +38,7 @@ function methods:SetWidth(width) self._width = width end
 function methods:GetWidth() return self._width end
 function methods:SetSize(width, height) self._width, self._height = width, height end
 function methods:SetRotation(angle) self._rotation = angle end
+function methods:SetTexture(texture) self._texture = texture return true end -- found
 function methods:SetTextColor(r, g, b) self._color = { r, g, b } end
 function methods:SetFormattedText(format, ...) self._text = format:format(...) end
 function methods:GetLeft() return self._left or 900 end
@@ -498,6 +499,14 @@ end)()
         return rows
     end
     check(card._shown and #Rows() == 0 and not ns.Steps.closer._shown, "the steps alone: no list under them")
+    -- Every corner of a shade as round, no border.
+    local function Round(shade, height)
+        for corner = 1, 4 do
+            if shade.radii[corner] ~= ns.Steps.ROUND then return false end
+        end
+        return #shade.trims == 0 and shade.width == ns.Steps.WIDTH and shade.height == height
+    end
+    check(Round(card.shade, card:GetHeight()), "a step's shade: its corners round, no border, as high as its step")
     local long, tall = ns.options.ahead, ns.Steps.ROW
     ns.options.ahead, ns.Steps.ROW = 3, 10000 -- three lines of the list, whatever the view's height
     view._mouseOver = true
@@ -508,6 +517,12 @@ end)()
         and not rows[3].band._shown and not rows[3].mark._shown, "every step at hand clearly marked, the others not")
     check(rows[2].text._color == nil or rows[2].text._color[1] == 1, "and white")
     check(ns.Steps.closer._shown, "the cross in the corner")
+    local shade
+    for _, widget in ipairs(W.frames) do
+        if widget.plate and widget._parent == view then shade = widget end
+    end
+    check(shade and shade._shown and Round(shade.plate, shade:GetHeight()), "the list's shade alike")
+    check(ns.Steps.LIST_PAD >= ns.Steps.ROUND, "a gold band at the list's top or bottom stays clear of the round corners")
     for _ = 1, 20 do view._scripts.OnMouseWheel(view, 1) end
     rows = Rows()
     check(rows[1].step == all[1], "the wheel goes up to the guide's first step, and stops there")

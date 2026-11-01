@@ -52,6 +52,7 @@ end
 ns.Guide = { Picture = function() return PICTURE end, Listed = Listed, Line = Line, State = function() return "on" end,
              Empty = Nothing, Go = Nothing,
              WarnHex = function() return "ffffd100" end }
+ns.Run = { Guide = function() return PICTURE end }
 
 function LabWheel(delta)
     local view = _G.SaneUISpeedLevelingSteps

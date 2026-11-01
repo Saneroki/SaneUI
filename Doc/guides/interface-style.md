@@ -307,7 +307,8 @@ Speed Leveling's guide, straight on the world without a window (`src/SpeedLeveli
 - **Its words in Expressway**, a clean sans with a thin dark outline, not Kalam: it stands over the game, not on paper
   (Saneroki's pick). Names in the game's own font colours, as the guide marks them.
 - **From the top:** a row of icons (the items to use, the names to target), then the zone with its levels and how
-  far (*12/84 · 14%*), the steps at hand on a dark shade that alone sets them apart, *Step 12* small at each one's top
+  far (*12/84 · 14%*), the steps at hand on a dark shade that alone sets them apart, its corners round and no border
+  (Saneroki, 2026-11-01), *Step 12* small at each one's top
   right, a thing to do's count once, before its words, no bars or rules (Saneroki, 2026-10-31: read at a glance, on any
   ground; no grey words). The steps at hand alone: the list of the whole guide comes in their place with the wheel, on the same
   shade, your step in its middle, those at hand white on a gold band with a gold line at the left as Lore's chosen reward,

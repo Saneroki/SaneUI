@@ -8,7 +8,8 @@ local _, ns = ...
 --    - the guide's zone, its levels after it, and at the right how far you are
 --      ("12/84 · 14%");
 --    - each step at hand on a dark shade (Saneroki, 2026-10-31: to be read at a
---      glance on any ground, the shade alone sets the steps apart): "Step 12"
+--      glance on any ground, the shade alone sets the steps apart; 2026-11-01: its
+--      corners round, no border): "Step 12"
 --      small at its top right, its first words large (what to do), its things to
 --      do, each once with its count before its words, or a tick when done, its
 --      other words a little smaller, a "!" before a warning and an "i" before
@@ -47,7 +48,8 @@ Steps.PAD = 7         -- inside a step's shade
 Steps.GAP = 6         -- between two steps
 Steps.NUMBERS = 28    -- the next steps' numbers' column
 Steps.SHADE = 0.65    -- the shade behind a step at hand
-Steps.LIST_PAD = 3    -- inside the shade, over and under the list
+Steps.ROUND = 6       -- its corners' radius
+Steps.LIST_PAD = Steps.ROUND -- inside the shade, over and under the list: the gold band stays clear of the corners
 Steps.LIST = 0.85     -- the listed steps' words, those at hand white; their numbers a little darker
 Steps.ROW = 16        -- about a listed step's height: the list fills the steps' place, as long as it can
 Steps.BAND = 0.3      -- the gold band behind a step at hand in the list
@@ -108,12 +110,17 @@ end
 -------------------------------------------------------------------------------
 local Menu, TakesWheel
 
+-- A dark shade in that frame: round corners, no border (Core's Shape, of one radius wherever it is).
+local function Shade(host)
+    local shade = Core.Shape.New(host, { radius = Steps.ROUND })
+    shade:Look({ top = { 0, 0, 0 }, alpha = Steps.SHADE })
+    return shade
+end
+
 local function Card()
     local card = CreateFrame("Button", nil, frame)
     card:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    card.shade = card:CreateTexture(nil, "BACKGROUND")
-    card.shade:SetAllPoints()
-    card.shade:SetColorTexture(0, 0, 0, Steps.SHADE)
+    card.shade = Shade(card)
     card.label = Text(card, "label")
     card.label:SetJustifyH("RIGHT")
     card.texts, card.marks = {}, {}
@@ -244,8 +251,9 @@ local function Build()
     progress = Text(header, "count")
     progress:SetJustifyH("RIGHT")
     progress:SetTextColor(unpack(SOFT))
-    listShade = frame:CreateTexture(nil, "BACKGROUND")
-    listShade:SetColorTexture(0, 0, 0, Steps.SHADE)
+    listShade = CreateFrame("Frame", nil, frame)
+    listShade:SetFrameLevel(frame:GetFrameLevel()) -- under the list's lines
+    listShade.plate = Shade(listShade)
     closer = CreateFrame("Button", nil, frame)
     closer:SetSize(Steps.CLOSE, Steps.CLOSE)
     closer:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
@@ -434,6 +442,7 @@ local function DrawCard(card, step, y, warn)
     for n = used.marks + 1, #card.marks do card.marks[n]:SetText("") end
     local height = -cy + P - 2
     card:SetHeight(height)
+    card.shade:Fit(0, 0, Steps.WIDTH, height) -- only its size counts: its corners are round wherever it is
     card:Show()
     return height
 end
@@ -555,9 +564,11 @@ function Steps.Update()
     end
     for index = shown + 1, #rows do rows[index]:Hide() end
     if shown > 0 then y = math.min(y - Steps.LIST_PAD, -least) end
+    local listHeight = math.max(1, listTop - y)
     listShade:ClearAllPoints()
     listShade:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, listTop)
-    listShade:SetSize(Steps.WIDTH, math.max(1, listTop - y))
+    listShade:SetSize(Steps.WIDTH, listHeight)
+    listShade.plate:Fit(0, 0, Steps.WIDTH, listHeight)
     listShade:SetShown(shown > 0)
     frame:SetHeight(math.max(1, -y))
     ns.Arrow.Update(true)
