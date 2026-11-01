@@ -57,3 +57,11 @@ priority = 2
 command = ["dev/tools/map-layers", "paint", "--levels", "far", "--kind", "instance"]
 status = ["dev/tools/map-layers", "status", "--levels", "far", "--kind", "instance"]
 done = '^(\d+) of \1 paintings made'
+
+# What forever-1.60.1.70532-to-1.60.1.70707 changed of the world, painted again (dev/tools/patchday rerender).
+[[job]]
+name = "patch-70707"
+priority = 11
+command = ["dev/tools/patchday", "paint", "forever-1.60.1.70532-to-1.60.1.70707"]
+status = ["dev/tools/patchday", "paint", "forever-1.60.1.70532-to-1.60.1.70707", "--status"]
+done = '^(\d+) of \1 squares painted'

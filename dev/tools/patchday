@@ -361,10 +361,14 @@ def layers_state():
 
 
 def zone_subjects(world, state, tables):
-    """The painted zones a quarter of whose tiles changed, by the zones' names on the game's maps."""
+    """The painted zones a quarter of whose tiles changed in what a painting is made from (ground, holes, water, minimap;
+    a tile that only places a changed model does not count), by the zones' names on the game's maps."""
     named = {row["Name_lang"]: key for key, row in worlds.read_csv(tables, "UiMap").items() if row.get("Type") == "3"}
-    wanted = {f"zone-{named[z['zone']]}" for z in world["zones"]
-              if z["zone"] in named and z["of"] and z["tiles"] / z["of"] >= worlds.ZONE_SHARE and (z["ground"] or z["water"])}
+    tiles_of = {zone["zone"]: zone["of"] for zone in world["zones"]}
+    changed = Counter(name for tile in world["tiles"] if tile["ground"] or tile["holes"] or tile["water"] or tile["minimap"]
+                      for name in tile["zones"])
+    wanted = {f"zone-{named[name]}" for name, count in changed.items()
+              if name in named and tiles_of.get(name) and count / tiles_of[name] >= worlds.ZONE_SHARE}
     wanted |= {f"instance-{key}" for key in world["instances"]}
     return sorted(wanted & {subject["name"] for subject in state["subjects"]})
 

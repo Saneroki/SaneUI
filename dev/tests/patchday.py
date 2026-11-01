@@ -295,9 +295,17 @@ pd.ROOT = temp
 (pd.LAYERS / "state.json").write_text(json.dumps({"paths": {"continents": "old", "tables": "old", "minimap": "keep"},
                                                   "subjects": [{"name": "zone-1429"}, {"name": "zone-1"}]}))
 pd.JOBS.write_text('[[job]]\nname = "worldtiles"\npriority = 10\ncommand = ["x"]\n')
-world_facts = {"squares": ["1-3-4", "1-9-9"], "instances": [], "tiles": [], "maps": {}, "areas": {}, "uimaps": {},
-               "zones": [{"zone": "Elwynn Forest", "tiles": 5, "of": 10, "ground": 3, "water": 0},
-                         {"zone": "Elwynn Forest 2", "tiles": 1, "of": 10, "ground": 3, "water": 0}]}
+moved_tile = {"ground": 2, "holes": 0, "water": 0, "minimap": False, "zones": ["Elwynn Forest"]}
+model_tile = {"ground": 0, "holes": 0, "water": 0, "minimap": False, "zones": ["Elwynn Forest 2"], "models": [700]}
+world_facts = {"squares": ["1-3-4", "1-9-9"], "instances": [], "tiles": [moved_tile] * 3 + [model_tile] * 9, "maps": {}, "areas": {},
+               "uimaps": {}, "zones": [{"zone": "Elwynn Forest", "tiles": 3, "of": 10, "ground": 6, "water": 0},
+                                       {"zone": "Elwynn Forest 2", "tiles": 9, "of": 10, "ground": 0, "water": 0}]}
+state_now = {"subjects": [{"name": "zone-1429"}, {"name": "zone-1430"}]}
+uimaps_now = temp / "uimaps"
+uimaps_now.mkdir()
+table(uimaps_now, "UiMap", [{"ID": "1429", "Name_lang": "Elwynn Forest", "Type": "3"}, {"ID": "1430", "Name_lang": "Elwynn Forest 2", "Type": "3"}])
+check("a zone counts the tiles its pictures are made from, not those of a changed model",
+      pd.zone_subjects(world_facts, state_now, uimaps_now), ["zone-1429"])
 (folder / "world.json").write_text(json.dumps(world_facts))
 pd.reports = lambda: reports
 pd.client_tables = lambda product, version: new / "tables"

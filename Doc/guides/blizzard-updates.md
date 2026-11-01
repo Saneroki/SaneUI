@@ -121,7 +121,8 @@ all a change reaches but an area alone. `squares` names the Atlas' squares to pa
 the ground, holes, water and minimap textures; a building moved alters the walking data, not a painting, until its
 minimap texture changes.
 
-**The repaint:** `rerender` moves the painted squares and the far paintings of zones a quarter of whose tiles changed into
+**The repaint:** `rerender` moves the painted squares and the far paintings of zones a quarter of whose tiles changed in what a painting
+is made from into
 `assets/generated/replaced/<build>/`, points the maps' `state.json` at the new build's terrain, and adds the job
 `patch-<build>` to the queue at priority 11, above the world's tiles. It starts nothing; the runner takes it up. A square
 of the list not painted yet stays the world's tiles' own. Long jobs go into the file on Saneroki's word: running the skill
