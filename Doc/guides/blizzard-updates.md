@@ -110,7 +110,7 @@ the game's newest patch and writes into its folder:
 | `draft <game>` | `facts.md`, `facts.json`, `patchnotes.json` | What the master took from the game at this build; empty notes in Blizzard's layout |
 | `rerender <game>` | `rerender.json`, `dev/imagegen/jobs.toml` | The repaint queued; below |
 | `paint <patch>` | the paintings | The job's own command |
-| `page <game>` | `patchnotes.md`, `Patchnotes/<Game>-<version>.html` | The notes checked, as text beside the patch and as a build's own page: a plain file to open, every level folded shut, nothing it needs outside itself. Never a page of the tools' server |
+| `page <game>` | `patchnotes.md`, `Patchnotes/<Game>-<version>.html` | The notes checked, as text beside the patch and as a build's own page: a plain file to open, every level folded shut, one dark theme whatever the computer's is, nothing it needs outside itself. Never a page of the tools' server |
 | `store <game>` | the set `PatchNotes` | The notes into the database, key the build, for a view in the game: their points, and every entry the game changed tied to the point that tells of it (`Doc/guides/data.md`, *The patch notes*); refused until they are compared with Blizzard's, or Blizzard is found to have published none: then ours stand as they are |
 
 **What counts as moved:** the terrain is read as the game reads it, a file that only changed its bytes is no change. The
