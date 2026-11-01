@@ -3507,6 +3507,7 @@ end)()
         check(log.frame._alpha == 0, "off it, out of sight")
         log.bar.find:GetScript("OnEnter")(log.bar.find)
         check(log.frame._alpha == 1, "the mouse on its title bar's words too")
+        log.bar.find:GetScript("OnLeave")(log.bar.find)
         watch:GetScript("OnUpdate")(watch, 1)
         check(log.frame._alpha == 0, "and off them")
         general.animations = animations

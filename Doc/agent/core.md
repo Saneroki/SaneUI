@@ -149,7 +149,9 @@ not know each other. Traps: the game hides your own health from addons at all ti
 is never compared: health counts as not full for `Rest.HEALTH` seconds after `UNIT_HEALTH` (and after a fight or a
 loading screen, which say nothing); a number the game does tell is used. Only alpha changes, and by one clock on a
 frame of ours: alpha may change on protected frames in a fight, and it leaves them the mouse, which is how the mouse
-is seen on them. A protected frame made out of sight is not made harmless: its clicks stay.
+is seen on them. A protected frame made out of sight is not made harmless: its clicks stay. `IsMouseOver` and
+`IsVisible` may answer a secret (`SecretWhenAnchoringSecret`, the aspect Shown), and testing one in a condition is an
+error: through `Core.Plain` every time, hidden meaning no.
 
 ## Profiles
 

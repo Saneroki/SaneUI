@@ -2408,6 +2408,9 @@ end
     end
     door:GetScript("OnEnter")(door)
     check(Seen(), "the mouse in by a door: the whole set in sight")
+    Look(1)
+    check(Seen(), "and while it stays on that door")
+    door:GetScript("OnLeave")(door)
     first._mouseOver = true
     Look(1)
     check(Seen(), "and while the mouse is on a hot frame")
@@ -2418,12 +2421,58 @@ end
     check(Rested(), "off it for longer: out of sight")
     first:GetScript("OnEnter")(first)
     check(Seen(), "a hot frame is a door too")
+    first:GetScript("OnLeave")(first)
     first:Hide()
     first._mouseOver = true
     Look(1)
     check(Rested(), "a hot frame out of sight holds nothing")
     first._mouseOver = false
     first:Show()
+    door:GetScript("OnEnter")(door)
+    door:Hide()
+    Look(1)
+    check(Rested(), "and a door that went out of sight without a word no longer does")
+    door:Show()
+    door:GetScript("OnLeave")(door)
+
+    -- Where the game hides a frame's place or showing, its answers are secrets, and no condition may test one: hidden
+    -- is no. A secret tests true in the stand-in, where the game fails: held in sight here means a bare test.
+    local placed, shown = first.IsMouseOver, first.IsVisible
+    rawset(first, "IsMouseOver", function() return W.Secret() end)
+    door:GetScript("OnEnter")(door)
+    door:GetScript("OnLeave")(door)
+    Look(1)
+    check(Rested(), "a hidden answer to where the mouse is: not on it")
+    rawset(first, "IsVisible", function() return W.Secret() end)
+    rawset(first, "IsMouseOver", placed)
+    door:GetScript("OnEnter")(door)
+    door:GetScript("OnLeave")(door)
+    first._mouseOver = true
+    Look(1)
+    check(Rested(), "and a hidden answer to whether it shows")
+    first._mouseOver = false
+    rawset(first, "IsVisible", shown)
+    rawset(door, "IsVisible", function() return W.Secret() end)
+    door:GetScript("OnEnter")(door)
+    Look(1)
+    check(Seen(), "a door keeps it while the mouse is on it, though the game hides whether the door shows")
+    door:GetScript("OnLeave")(door)
+    Look(1)
+    check(Rested(), "and lets go as the mouse leaves it")
+    rawset(door, "IsVisible", shown)
+
+    -- An area alone: no hook on a frame that may have no such script (the game's aura containers).
+    local area = CreateFrame("Frame", nil, UIParent)
+    rest:Area(area)
+    check(not area:GetScript("OnEnter") and not area:GetScript("OnLeave"), "an area takes no hook")
+    door:GetScript("OnEnter")(door)
+    door:GetScript("OnLeave")(door)
+    area._mouseOver = true
+    Look(1)
+    check(Seen(), "and holds the set while the mouse is on it")
+    area._mouseOver = false
+    Look(1)
+    check(Rested(), "and lets it go")
 
     held = true
     rest:Look()
@@ -2452,6 +2501,7 @@ end
     rest:Switch(false)
     check(first._alpha == 1 and second._alpha == 0.5 and not rest:Resting(), "switched off: each frame as it was")
     door:GetScript("OnEnter")(door)
+    door:GetScript("OnLeave")(door)
     W.Combat(true)
     W.Combat(false)
     check(first._alpha == 1 and not rest.hover.watch:IsRunning(), "and the mouse and the game's events change nothing then")

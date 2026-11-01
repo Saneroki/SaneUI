@@ -221,7 +221,7 @@ local function Rests(kind, face)
                                  hold = function() return Running(face) end })
     rest:Hot(kind.button)
     rest:Hot(kind.row.button)
-    for _, container in pairs(face.auras) do rest:Hot(container) end
+    for _, container in pairs(face.auras) do rest:Area(container) end -- the game's aura containers take no mouse
     kind.rest, face.rest = rest, rest
 end
 

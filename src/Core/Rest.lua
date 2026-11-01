@@ -27,9 +27,16 @@ local Core = SaneUI.Core
 --  fight too (the game allows that on protected frames), by one clock of its own:
 --  no animation on a frame of the game's.
 --
+--  Whether the mouse is on it: the game may hide where a frame stands and whether
+--  it shows (the size of a frame it lays out from hidden data, an aura container's:
+--  IsMouseOver and IsVisible then answer a secret, which no condition may test), so
+--  each answer goes through Core.Plain, and hidden means no. The doors do not need
+--  to ask: their OnEnter and OnLeave say it.
+--
 --      local rest = Core.Rest.New({ label = "action bars", frames = { ... }, hold = function() ... end })
---      rest:Hot(frame)         -- the mouse on it counts as on the set: its rectangle, and it comes in by its OnEnter
---      rest:Door(frame)        -- only a way in: its OnEnter (a button inside a hot frame)
+--      rest:Hot(frame)         -- the mouse on it counts as on the set: an area and a door
+--      rest:Area(frame)        -- only its rectangle: what holds the mouse once it came (a frame of no mouse of its own)
+--      rest:Door(frame)        -- only a way in, and on while the mouse is on it: its OnEnter and OnLeave (a button)
 --      rest:Enter()            -- the mouse came, told by a module that hears it itself; it goes off the hot frames
 --      rest:Switch(on)         -- on: at rest as said above; off: the frames as they were
 --      rest:Look()             -- hold's answer may have changed
@@ -39,6 +46,7 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 local Rest = {}
 Core.Rest = Rest
+local Plain = Core.Plain
 
 Rest.FADE = 0.2     -- seconds a set takes to come and go
 Rest.LINGER = 0.2   -- seconds the mouse may be off a set before it goes: from one hot frame to the next
@@ -179,10 +187,15 @@ end
 
 function sets:Door(frame)
     frame:HookScript("OnEnter", self.entered) -- guarded: Core.Guard, made once in Rest.New
+    frame:HookScript("OnLeave", self.left)    -- guarded: the same
+end
+
+function sets:Area(frame)
+    self.hot[#self.hot + 1] = frame
 end
 
 function sets:Hot(frame)
-    self.hot[#self.hot + 1] = frame
+    self:Area(frame)
     self:Door(frame)
 end
 
@@ -208,16 +221,18 @@ function sets:Switch(on)
     end
     live[self] = nil
     Follow()
-    self.over = false
+    self.over, self.door = false, nil
     self.hover:Stop()
     for index = #self.lends, 1, -1 do Core.Safe(self.label, self.lends[index].Return, self.lends[index]) end
     wipe(self.lends)
 end
 
--- The mouse on a hot frame that is in sight of the game (a frame out of its parent's sight has no place to be on).
+-- The mouse on a door it came in by (one that went without a word no longer holds it), or on an area in sight of the
+-- game (a frame out of its parent's sight has no place to be on).
 local function Under(set)
+    if set.door and Plain(set.door:IsVisible()) ~= false then return true end
     for _, frame in ipairs(set.hot) do
-        if frame:IsVisible() and frame:IsMouseOver() then return true end
+        if Plain(frame:IsVisible()) and Plain(frame:IsMouseOver()) then return true end
     end
     return false
 end
@@ -237,7 +252,11 @@ function Rest.New(options)
     set.hover = Core.Hover(host, { hot = false, linger = Rest.LINGER, label = set.label,
                                    keep = function() return Under(set) end,
                                    leave = function() Over(set, false) end })
-    set.entered = Core.Guard(set.label, function() set:Enter() end)
+    set.entered = Core.Guard(set.label, function(frame)
+        set.door = frame
+        set:Enter()
+    end)
+    set.left = Core.Guard(set.label, function() set.door = nil end)
     return set
 end
 

@@ -1569,6 +1569,7 @@ do
     key:GetScript("OnEnter")(key)
     check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and you.button._alpha == 0,
         "the mouse on an empty button of one bar: every bar in sight, no unit frame")
+    key:GetScript("OnLeave")(key)
     MainActionBar._mouseOver = true
     Look(bars)
     check(MainActionBar._alpha == 1 and StanceBar._alpha == 1, "and stay while the mouse is on a bar")
@@ -1577,10 +1578,12 @@ do
     check(Rested(), "off every bar: out of sight")
     you.button:GetScript("OnEnter")(you.button)
     check(you.button._alpha == 1 and foe.button._alpha == 0 and MainActionBar._alpha == 0, "the mouse on your frame: it alone in sight")
+    you.button:GetScript("OnLeave")(you.button)
     Look(you.rest)
     check(Rested(), "and off it again")
     foe.row.button:GetScript("OnEnter")(foe.row.button)
     check(foe.button._alpha == 1 and you.button._alpha == 0, "the mouse on a frame's row: that frame")
+    foe.row.button:GetScript("OnLeave")(foe.row.button)
     Look(foe.rest)
     check(Rested(), "and off it")
 
