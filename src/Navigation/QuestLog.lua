@@ -70,6 +70,9 @@ local _, ns = ...
 --                           closer to the screen's edge; clicked through but its title bar, its words and its
 --                           items; the objectives done left out, the
 --                           headers without their fold marks
+--  On the screen alone it rests out of sight (Core.Rest, the setting Hide the quest log at rest; Saneroki, 2026-11-01):
+--  it shows with the mouse on its words, title bar or items, and as your unit frames and action bars do while something
+--  goes on. Its items' tray goes with it.
 --  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker),
 --  but in Edit Mode, where it is the game's to place.
 --
@@ -163,6 +166,8 @@ local order = ""   -- the quests in the order shown (Proximity: drawn anew once 
 local heading      -- the title bar's words now
 local ticker       -- sorted by proximity and in sight: the order looked at again (Tick)
 local away, lent   -- the hidden frame the game's quest tracker is lent to (QuestLog.Tracker)
+local rest         -- on the screen alone, out of sight at rest (Core.Rest; QuestLog.Rested)
+local doors = false -- the title bar is a way in for the mouse (Doors)
 local chosen       -- the quest last clicked or shown, lit in the list
 local open = false -- its text shows under it
 local opened       -- that text's rows while they are listed (Read): the first, the last, how high they are together
@@ -1317,6 +1322,7 @@ local watching = ns.Guard(Watching) -- made once: set at every coming of the mou
 
 function Hover()
     handle:Hover(true)
+    rest:Enter()
     Scroller()
     if not frame:GetScript("OnUpdate") then frame:SetScript("OnUpdate", watching) end
 end
@@ -1423,6 +1429,8 @@ function QuestLog.Build()
     tray = CreateFrame("Frame", nil, UIParent)
     tray:SetAllPoints(UIParent)
     tray:Hide()
+    rest = Core.Rest.New({ label = "quest log", frames = { frame, tray } })
+    rest:Hot(frame)
     frame:EnableMouse(true) -- over the full map: the map behind it is not clicked through it (Dress)
     frame:SetScript("OnEnter", ns.Guard(Hover))
     back = frame:CreateTexture(nil, "BACKGROUND")
@@ -1503,6 +1511,20 @@ function Resort()
     if Order(Sorted((Entries()), "proximity")) ~= order then QuestLog.Refresh() end
 end
 
+-- At rest out of sight, as the setting says: only on the screen alone, over the full map it is opened to be seen.
+function QuestLog.Rested()
+    if rest then rest:Switch(not ns.off and not full and (ns.options or {}).questLogRest ~= false) end
+end
+
+-- Core's title bar comes with the first look: the mouse on it, or on the words in it, brings the log into sight.
+local function Doors()
+    local titleBar = handle.bar
+    if doors or not titleBar then return end
+    doors = true
+    rest:Door(titleBar)
+    rest:Door(titleBar.find)
+end
+
 -- Its look (Saneroki 2026-10-29): over the full map (on) its background, above the map's layer, the map not
 -- clicked through it, every objective; on the screen alone, in the game's minimap's
 -- layer, none of these: clicked through but its title bar and its rows' words. Each look at its own place, kept.
@@ -1514,6 +1536,8 @@ local function Dress(on)
     frame:SetFrameStrata(on and "DIALOG" or "LOW") -- the full map stands in the layer HIGH (Core's Edge)
     handle:Use(KEY[on], FIRST[on])
     handle:Refresh()
+    Doors()
+    QuestLog.Rested()
 end
 
 -- Shown or not, as the full map's bar's button has it, in the look of the map as it is (on: it fills the screen and
@@ -1536,9 +1560,15 @@ function QuestLog.Shown()
     return frame and frame:IsShown() or false
 end
 
+-- For the test: its set.
+function QuestLog.Rest()
+    return rest
+end
+
 -- The module stood down: the window goes, the game's quest tracker is back.
 function QuestLog.Hide()
     if frame then frame:Hide() end
+    QuestLog.Rested()
     Tick(false)
     QuestLog.Tracker()
     seat()

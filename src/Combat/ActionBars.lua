@@ -25,6 +25,13 @@ local _, ns = ...
 --  The reservations of the module Abilities stay on their empty buttons:
 --  they hang on the bar, not on the button.
 --
+--  Out of sight at rest (Core.Rest, the setting Hide the action bars at rest;
+--  Saneroki, 2026-11-01), the bars as one set, by their alpha: the mouse on any
+--  bar shows them all, their buttons take it as ever and their keys work. They
+--  stay in sight in a vehicle (its actions stand on them) and while something is
+--  dragged or your keys are set (the game's Quick Keybind mode), whatever goes on.
+--  This goes for how they look or as the game has them alike.
+--
 --  Hooks after the game's own (each button's Update and UpdateButtonArt, a
 --  bar's Update, UpdateState and UpdateDividers) keep the look as the game
 --  changes them. Off (the setting) or standing down, everything is as the game
@@ -55,6 +62,8 @@ local HasAction = (rawget(_G, "C_ActionBar") and C_ActionBar.HasAction) or rawge
 
 local on = false      -- the bars are clean now
 local dragging = false -- the game shows its grid: something is dragged onto the bars
+local binding = false  -- the game's Quick Keybind mode: every button shows, to take a key
+local rest            -- the bars as one set, out of sight at rest (Core.Rest)
 local bars = {}       -- the game's bars found, each once
 local dressed = {}    -- [the game's button] = what we changed on it: its lends, the looks it had
 local slots = setmetatable({}, { __mode = "k" })  -- [the game's button] = our dark square on it, once made
@@ -76,7 +85,7 @@ end
 local function Empty(button)
     local own = dressed[button]
     if not on or not own then return end
-    local showing = dragging or Core.EditMode.active
+    local showing = dragging or binding or Core.EditMode.active
     slots[button]:SetShown(showing)
     button:SetAlpha((showing or Holds(button)) and 1 or 0)
 end
@@ -252,8 +261,10 @@ end
 -- Clean or as the game has them, as the setting says; out of a fight (the buttons' cooldowns are placed only then).
 local function Apply()
     local want = not ns.off and (ns.options or {}).cleanBars ~= false
-    if want == on then return end
-    if want then Clean() else Restore() end
+    if want ~= on then
+        if want then Clean() else Restore() end
+    end
+    rest:Switch(not ns.off and (ns.options or {}).barsRest ~= false)
 end
 
 function Bars.Apply()
@@ -264,23 +275,61 @@ end
 local function Grid(shown)
     dragging = shown
     for button in pairs(dressed) do Empty(button) end
+    rest:Look()
+end
+
+-- A vehicle's actions stand on the bars, and without one of its own (no art of its bar) on them alone.
+local function Ridden()
+    local actions = rawget(_G, "C_ActionBar")
+    return actions and (Core.Ask(actions.HasVehicleActionBar) or Core.Ask(actions.HasOverrideActionBar)) or false
+end
+
+-- What keeps the bars in sight at rest.
+local function Held()
+    return dragging or binding or Ridden()
+end
+
+-- The bars as one set: any of them, or a button on one, under the mouse shows them all.
+local function Rests()
+    rest = Core.Rest.New({ label = "action bars", frames = { unpack(Find()) }, hold = Held })
+    for _, bar in ipairs(rest.frames) do
+        rest:Hot(bar)
+        for _, button in pairs(rawget(bar, "actionButtons") or {}) do rest:Door(button) end
+    end
+    local registry = rawget(_G, "EventRegistry")
+    if not registry or type(registry.RegisterCallback) ~= "function" then return end
+    for event, shown in pairs({ QuickKeybindModeEnabled = true, QuickKeybindModeDisabled = false }) do
+        registry:RegisterCallback("QuickKeybindFrame." .. event, ns.Guard(function()
+            binding = shown
+            Grid(dragging)
+        end), Bars)
+    end
 end
 
 function Bars.Start()
+    Rests()
     ns.On("ACTIONBAR_SHOWGRID", function() Grid(true) end)
     ns.On("ACTIONBAR_HIDEGRID", function() Grid(false) end)
     Core.EditMode.Watch(ns.Guard(function() Grid(dragging) end))
     -- Buttons that hold something now or no longer, without an update of their own the hooks would hear.
     ns.On("PLAYER_ENTERING_WORLD", function() Grid(dragging) end)
+    local look = function() rest:Look() end
+    ns.On("UPDATE_VEHICLE_ACTIONBAR", look)
+    ns.On("UPDATE_OVERRIDE_ACTIONBAR", look)
     Bars.Apply()
 end
 
 -- Standing down: the bars as the game has them, at once.
 function Bars.GiveBack()
     Restore()
+    if rest then rest:Switch(false) end
 end
 
--- For the test: whether the bars are clean now.
+-- For the test: whether the bars are clean now; their set.
 function Bars.Clean()
     return on
+end
+
+function Bars.Rest()
+    return rest
 end

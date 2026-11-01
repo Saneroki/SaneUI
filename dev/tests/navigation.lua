@@ -3476,6 +3476,40 @@ end)()
         check(#rows == 4 and rows[1].row.quest == 8 and rows[2].row.turnIn and rows[3].row.quest == 7
             and not rows[4].row.done, "the objectives done left out, a done quest's turn in kept")
         check(rows[1]._hit and rows[1]._hit[2] > 0 and rows[2]._hit[2] > 0, "only its rows' words take the mouse")
+
+        -- At rest out of sight (Core.Rest), on the screen alone; the rest of what that does: window.lua.
+        local general, animations = Core.general, Core.general.animations
+        general.animations = false
+        Core.Set(ns.name, "questLogRest", false)
+        check(log.frame._alpha == 1, "Hide the quest log at rest off: always in sight")
+        Core.Set(ns.name, "questLogRest", true)
+        check(log.frame._alpha == 0 and log.frame._shown, "on: out of sight at rest, shown still, so it can be seen again")
+        W.Combat(true)
+        check(log.frame._alpha == 1, "in a fight in sight")
+        W.Combat(false)
+        check(log.frame._alpha == 0, "after it out of sight")
+        IsInGroup = function() return true end
+        W.Fire("GROUP_ROSTER_UPDATE")
+        check(log.frame._alpha == 1, "in a group in sight")
+        IsInGroup = function() return false end
+        W.Fire("GROUP_ROSTER_UPDATE")
+        check(log.frame._alpha == 0, "alone out of sight")
+        rows[1]:GetScript("OnEnter")(rows[1])
+        check(log.frame._alpha == 1, "the mouse on its words: in sight")
+        rows[1]:GetScript("OnLeave")(rows[1])
+        log.frame._mouseOver = true
+        local rest = ns.QuestLog.Rest()
+        local watch = rest.hover.watch.frame
+        watch:GetScript("OnUpdate")(watch, 1)
+        check(log.frame._alpha == 1, "and while it is on the window")
+        log.frame._mouseOver = false
+        watch:GetScript("OnUpdate")(watch, 1)
+        check(log.frame._alpha == 0, "off it, out of sight")
+        log.bar.find:GetScript("OnEnter")(log.bar.find)
+        check(log.frame._alpha == 1, "the mouse on its title bar's words too")
+        watch:GetScript("OnUpdate")(watch, 1)
+        check(log.frame._alpha == 0, "and off them")
+        general.animations = animations
         local inset
         for _, each in ipairs(box._points) do if each[1] == "TOPLEFT" then inset = each end end
         check(log.titleInset == ns.QuestLog.EDGE_SMALL and inset[4] == ns.QuestLog.EDGE_SMALL,

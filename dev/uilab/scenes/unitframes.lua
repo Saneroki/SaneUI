@@ -75,6 +75,7 @@ Lab.TOC("src/Core/SaneUI.toc")
 LabCombat = Lab.TOC("src/Combat/SaneUI_Combat.toc")
 LabCombat.UnitAuras.missing = true -- the lab has no aura containers: the frames do without, as in a client without them
 Lab.OnLogin(function()
+    SaneUI.Core.Set("Combat", "unitRest", false) -- the scene is to look at: never out of sight
     for _, timer in ipairs(timers) do Lab.Fire("MIRROR_TIMER_START", unpack(timer)) end
     local function Again()
         LabCast("Fireball")

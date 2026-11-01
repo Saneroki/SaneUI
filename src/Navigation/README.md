@@ -158,6 +158,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker, which
   stays out of sight even with the log turned off (*Show the game's map* brings it back), at a place and size of its own (at first the screen's top left corner), without a background, a
   border or a line under its title, only the list over the game, clicked through but its title bar and its words.
+  There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, on at first): it
+  shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
+  group (`Core.Rest`, the tray of its items with it). Over the full map it always shows.
   Its title bar says how many quests you have of how many you may, and how they are sorted:
   *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
   Elite, Group, Dungeon and the like; the rest Normal; a quest always shows under its zone, however the game's own log

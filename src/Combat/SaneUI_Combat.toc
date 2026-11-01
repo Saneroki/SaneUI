@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Combat
-## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them, your cast and breath part of your frame; rings around the mouse for your global cooldown and cast; one frame for your party and raid, up to forty, sized in Edit Mode; a threat and damage meter of your group; the game's action bars clean, only the buttons that hold something. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
+## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them, your cast and breath part of your frame; rings around the mouse for your global cooldown and cast; one frame for your party and raid, up to forty, sized in Edit Mode; a threat and damage meter of your group; the game's action bars clean, only the buttons that hold something; frames and bars out of sight at rest. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI

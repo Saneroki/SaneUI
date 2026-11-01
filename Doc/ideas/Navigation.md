@@ -367,6 +367,9 @@ When the window fills the screen:
   dropdown and chosen again to come back; whatever is chosen, the mouse pushed into the top right corner, where
   the minimap is docked, always fills the screen with our map.
 - **Quest log on the left side** of the screen; the map takes the rest.
+- **On the screen alone at rest out of sight** (Saneroki, 2026-11-01; built): "the same for the Questlog as option which
+  also can be turned on by default": as the unit frames and action bars (`Doc/ideas/Combat.md`, `Core.Rest`). Over the
+  full map it stays, opened to be seen.
 - **The quest log as Saneroki asked it (Saneroki, 2026-10-21):**
   - **No scroll bar:** the mouse over the list and its wheel scroll it. Only while the list is longer than fits
     and the mouse is on it, a scroll bar shows, on the side the window is docked to (at the left edge: its left).

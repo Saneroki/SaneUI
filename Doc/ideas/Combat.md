@@ -75,6 +75,13 @@ Decided (Saneroki, 2026-10-16):
   with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
   black and white lists by a right click on an icon, and a window to add auras to either list.
+- **Out of sight at rest** (Saneroki, 2026-11-01; built): "Unit frames and Actionbars are hidden by default but are
+  visible on mouse over, missing health or class resource, always visible in combat, always visible in groups. If I
+  hover over any actionbar all actionbars will be visible." On by default, a setting each; the quest log the same, its
+  own setting, on too. Built in Core (`Core.Rest`), so Navigation needs no Combat. Decided with it: a unit frame's mouse
+  shows that frame alone; a cast or a timer on a frame shows it; a vehicle, a drag and Quick Keybind mode hold the
+  bars; the game hides your health at all times, so it counts as not full for some seconds after it last changed;
+  rage and combo points rest empty. Having a target shows nothing: it is not on the list, and the plate shows it.
 - **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
   mouseover (`GameBars.lua`). Around the mouse, only while they run, rings for the global cooldown and your cast, centred on
   the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). Sane UI's own experience and stance bars are still to come; the game's stance keys and

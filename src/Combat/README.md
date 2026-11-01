@@ -18,7 +18,7 @@ marker on the left, then the name (none on your own), the health and how much is
 target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours your
 pet, with its health and its resource. Directly above each health bar its unit's cast while it casts. Your breath
 lies over your health bar, in the game's bubbles, half see-through, the game's other timers on you stand above your
-cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone. Its experience and stance bars are gone, and its menu bar shows only while the mouse is on it.
+cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone. Its experience and stance bars are gone, and its menu bar shows only while the mouse is on it. At rest your unit frames and the action bars are out of sight: they show with the mouse on them, while your health or your resource is not full, in a fight and in a group.
 
 Your party and your raid are one frame of ours, in place of the game's two: unit frames edge to edge, up to forty, in the
 nameplates' look, sized to fit the limits you set in Edit Mode. On every health bar of ours, these and the unit frames, you see
@@ -139,8 +139,9 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
   their empty buttons.
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
-  focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Auras on the frames*); the
-  section *Action bars* (*Clean action bars*, off for the game's look; *Hide the game's experience and reputation
+  focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
+  rest*, *Auras on the frames*); the section *Action bars* (*Clean action bars*, off for the game's look; *Hide the
+  action bars at rest*; *Hide the game's experience and reputation
   bars*, *Hide the game's stance bar*, *Menu bar on mouseover*); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
@@ -453,6 +454,15 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
   WoW: Forever `MainActionBar` hangs on `MicroMenuContainer`. `MicroMenu`'s alpha is lent, a hook after each button's
   `OnEnter` fades it in (`Core.Motion.Fade`), a frame of ours looks each frame for `MicroMenu:IsMouseOver()` while
   it shows. In Edit Mode it shows, to be placed.
+- **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first): what
+  shows when, and why your health is told from its changes, stands in `src/Core/Rest.lua`. Your frames are a set each
+  (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura containers shows that frame alone, and a cast
+  or a timer on it does too (`Running`; `Bar.Fit` looks again as they come and go), since nothing else shows them and
+  you need your breath under water. The action bars are one set (`ActionBars.lua`): `Bars.BARS`, each hot, each of
+  their buttons a door, so the mouse on one shows them all; held in a vehicle (`HasVehicleActionBar`,
+  `HasOverrideActionBar`: its actions stand on them), while something is dragged and in the game's Quick Keybind mode,
+  which show every button too. Only alpha changes: out of sight they take the mouse as ever, and that is how the mouse
+  is seen on them. Having a target does not show a frame: the plate shows it (Saneroki's list names no target).
 - **The action bars** (`ActionBars.lua`): the bars of `Bars.BARS` (main, the extra bars, stance, pet, possess)
   keep their place, buttons and secure code; through `Core.Lend` their `Bars.ART` (`BorderArt`, `EndCaps`; the
   main bar's `ActionBarPageNumber` and its arrows stay) and each button's `Bars.BUTTON_ART` (`NormalTexture`, `SlotArt`,
@@ -565,12 +575,12 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
 | `Units/Lists.lua` | Your lists Always show and Never show, and their window (`/sane auras`) |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
-| `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight |
+| `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
 | `Units/GroupBuffs.lua` | Which of your own buffs a member of your party or raid is missing |
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, sizes, Edit Mode's settings and preview |
-| `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone |
+| `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone; out of sight at rest, as one set |
 | `GameBars.lua` | The game's experience and stance bars out of sight, its menu bar on mouseover |
 | `Meter/Threat.lua` | The meter's threat: every member's share of the mob, its gains added up per fight |
 | `Meter/Read.lua` | Who is in the group, and a fight's numbers from the game's meter, hidden or not; what the list can be sorted by |
@@ -635,3 +645,4 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
   ring and the aura's icon, the raid marker moving aside for it; ready checks left of the raid marker; the dead red and the offline grey, their
   bars full; a solid red border on aggro; the box back in Edit Mode only (Saneroki).
 - **2026-11-01:** rings around the mouse for the global cooldown and your cast (Saneroki): only while they run, around the whole cursor, not its tip.
+- **2026-11-01:** unit frames and action bars out of sight at rest (Saneroki): in sight with the mouse on them, while your health or resource is not full, in a fight and in a group; the mouse on any action bar shows them all.

@@ -142,6 +142,15 @@ Errors keyed by label contain `text/count/when` (`ERRORS_MAX` 100 labels, the ol
 (`LOG_MAX` 100) also holds label, version and build; consecutive identical failures coalesce. The client writes saved
 variables at reload/logout: `saneui showerrors` (`dev/tools/errors`) reads them after that.
 
+## At rest out of sight
+
+`Core.Rest` (`Rest.lua`) serves your unit frames and action bars (Combat) and the quest log (Navigation), which may
+not know each other. Traps: the game hides your own health from addons at all times, not only in a fight, so `UnitHealth`
+is never compared: health counts as not full for `Rest.HEALTH` seconds after `UNIT_HEALTH` (and after a fight or a
+loading screen, which say nothing); a number the game does tell is used. Only alpha changes, and by one clock on a
+frame of ours: alpha may change on protected frames in a fight, and it leaves them the mouse, which is how the mouse
+is seen on them. A protected frame made out of sight is not made harmless: its clicks stay.
+
 ## Profiles
 
 Saneroki, 2026-10-17; the standard profiles 2026-10-30. Each character uses a profile: *Accountwide* (new characters'

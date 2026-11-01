@@ -22,7 +22,8 @@ local ADDON, ns = ...
 --  (QuestMarks.lua). Around the mouse, while they run, rings for the global
 --  cooldown and your cast (MouseRings.lua). Our own frames for you, your target and your focus in a
 --  nameplate's look, in place of the game's (Units/); the game's action bars
---  clean, their buttons' icons alone (ActionBars.lua); its experience and stance bars gone, its menu bar on
+--  clean, their buttons' icons alone, and out of sight at rest with those frames (ActionBars.lua, Units/, Core.Rest);
+--  its experience and stance bars gone, its menu bar on
 --  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
 --  game's two (Units/Group.lua). The threat and damage meter, a window on the screen and on the full screen
 --  (Meter/). Reminders of buffs and debuffs on bars of their own (Reminders/). Each part falls back to the game's own when it fails
@@ -66,6 +67,8 @@ ns.TEXT = {
     unitFocusTargetTip = "Under your focus's frame while your focus has a target: a row with that one's health and name.",
     unitSize = "Unit frame size",
     unitSizeTip = "How large the three frames and their rows are.",
+    unitRest = "Hide the unit frames at rest",
+    unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
     unitAuras = "Auras on the frames",
     unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Right click an icon (out of a fight) to always or never show it, or to open your aura lists (/sane auras).",
     auraAlways = "Always show",
@@ -113,6 +116,8 @@ ns.TEXT = {
     actionBars = "Action bars",
     cleanBars = "Clean action bars",
     cleanBarsTip = "The game's action bars without their borders, decorations and backgrounds: only the buttons that hold something, each its icon alone. Empty buttons show while you drag something onto the bars, and in Edit Mode. Off: the game's own look.",
+    barsRest = "Hide the action bars at rest",
+    barsRestTip = "The game's action bars are out of sight while nothing goes on. The mouse on any of them shows them all, and they show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group, in a vehicle, while something is dragged onto them, while you set your keys and in Edit Mode. Out of sight they still take the mouse, and their keys work. Off: always in sight.",
     hideTracking = "Hide the game's experience and reputation bars",
     hideTrackingTip = "The game's experience and reputation bars are gone from the screen. Off: the game's own.",
     hideStance = "Hide the game's stance bar",
@@ -206,6 +211,7 @@ local OPTIONS = {
     { key = "unitFocus", default = true, text = ns.TEXT.unitFocus, tip = ns.TEXT.unitFocusTip },
     { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip },
     { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip },
+    { key = "unitRest", default = true, text = ns.TEXT.unitRest, tip = ns.TEXT.unitRestTip },
     { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip },
     { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip },
     { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip },
@@ -220,6 +226,7 @@ local OPTIONS = {
     { key = "groupUnitWidth", default = 240, min = 40, max = 400 },
     { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
+    { key = "barsRest", default = true, text = ns.TEXT.barsRest, tip = ns.TEXT.barsRestTip },
     { key = "hideTracking", default = true, text = ns.TEXT.hideTracking, tip = ns.TEXT.hideTrackingTip },
     { key = "hideStance", default = true, text = ns.TEXT.hideStance, tip = ns.TEXT.hideStanceTip },
     { key = "menuHover", default = true, text = ns.TEXT.menuHover, tip = ns.TEXT.menuHoverTip },
@@ -252,7 +259,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key:match("^group") or key == "unitBarrier" or key == "unitLost" or key == "unitDispel" then
         ns.Guarded(ns.Group.Apply)
     end
-    if key == "cleanBars" then ns.Guarded(ns.ActionBars.Apply) end
+    if key == "cleanBars" or key == "barsRest" then ns.Guarded(ns.ActionBars.Apply) end
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end

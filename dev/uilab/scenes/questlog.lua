@@ -11,6 +11,8 @@ local Core = SaneUI.Core
 local ns = Lab.Addon("SaneUI_Navigation")
 Core.NewModule("SaneUI_Navigation", "Navigation", ns)
 ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
+ns.options = ns.options or {}
+ns.options.questLogRest = false -- the scene is to look at: never out of sight
 
 ns.Pins = { ICONS = { offer = "questnormal" }, RED = { 1, 0.2, 0.15 }, Standing = function() return "offered" end,
             Changed = function() end }

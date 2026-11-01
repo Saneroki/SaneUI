@@ -2305,5 +2305,168 @@ do
     check(closed == 1 and not scene:IsShown(), "and Esc closes it")
 end
 
+-- What shows only while it is needed: out of sight at rest, in sight while something goes on (Core.Rest). A function
+-- of its own: the main chunk stands at Lua's 200 locals.
+(function()
+    local Rest = Core.Rest
+    local animations = Core.general.animations
+    Core.general.animations = false -- each change where it goes at once
+    local first, second = CreateFrame("Frame", nil, UIParent), CreateFrame("Frame", nil, UIParent)
+    local door = CreateFrame("Button", nil, UIParent)
+    second:SetAlpha(0.5)
+    local held = false
+    local rest = Rest.New({ label = "test", frames = { first, second }, hold = function() return held end })
+    rest:Hot(first)
+    rest:Door(door)
+    local function Rested() return first._alpha == 0 and second._alpha == 0 and rest:Resting() end
+    local function Seen() return first._alpha == 1 and second._alpha == 1 and not rest:Resting() end
+    check(first._alpha ~= 0 and not rest:Resting(), "a set not switched on leaves its frames alone")
+    rest:Switch(true)
+    check(Rested(), "switched on and nothing going on: every frame of the set out of sight")
+
+    W.Combat(true)
+    check(Seen(), "in a fight in sight")
+    W.Combat(false)
+    check(Rested(), "and out of it again")
+
+    local grouped = IsInGroup
+    IsInGroup = function() return true end
+    W.Fire("GROUP_ROSTER_UPDATE")
+    check(Seen(), "in a group in sight")
+    IsInGroup = grouped
+    W.Fire("GROUP_ROSTER_UPDATE")
+    check(Rested(), "and alone again out of it")
+
+    local dead = UnitIsDeadOrGhost
+    UnitIsDeadOrGhost = function() return true end
+    W.Fire("PLAYER_DEAD")
+    check(Seen(), "dead in sight")
+    UnitIsDeadOrGhost = dead
+    W.Fire("PLAYER_ALIVE")
+    check(Rested(), "alive again out of it")
+
+    -- Your health: its numbers where the game tells them, else by its last change.
+    local health = UnitHealth
+    UnitHealth = function() return 60 end
+    W.Fire("UNIT_HEALTH", "player")
+    check(Seen(), "health a number under the most: in sight")
+    UnitHealth = health
+    W.Fire("UNIT_HEALTH", "player")
+    check(Rested(), "full again: out of sight")
+    UnitHealth = function() return W.Secret() end
+    W.Fire("UNIT_HEALTH", "player")
+    check(Seen(), "the game hides your health: changed just now, it counts as not full")
+    W.Wait(Rest.HEALTH - 1)
+    W.Fire("UNIT_HEALTH", "player")
+    W.Wait(Rest.HEALTH - 1)
+    check(Seen(), "and while it goes on changing, as it comes back step by step")
+    W.Wait(Rest.HEALTH)
+    check(Rested(), "unchanged for a while: taken for full")
+    W.Combat(true)
+    W.Combat(false)
+    check(Seen(), "after a fight the same, the game telling nothing of what it left")
+    W.Wait(Rest.HEALTH + Rest.AGAIN)
+    check(Rested(), "and out of sight once that time is up")
+    UnitHealth = health
+
+    -- Your resource: where each rests.
+    local kind, power, most = UnitPowerType, UnitPower, UnitPowerMax
+    local has = {}
+    UnitPowerType = function() return has.kind end
+    UnitPower = function(_, each) return has[each] or 0 end
+    UnitPowerMax = function(_, each) return has[each] and 100 or 0 end
+    local function Power(what, each, amount)
+        has.kind, has[each] = each, amount
+        W.Fire("UNIT_POWER_UPDATE", "player")
+        check(what(), ("power %d at %s"):format(each, tostring(amount)))
+        has[each] = nil
+    end
+    Power(Seen, Enum.PowerType.Mana, 40)
+    Power(Rested, Enum.PowerType.Mana, 100)
+    Power(Seen, Enum.PowerType.Energy, 40)
+    Power(Rested, Enum.PowerType.Energy, 100)
+    Power(Seen, Enum.PowerType.Rage, 30)
+    Power(Rested, Enum.PowerType.Rage, 0)
+    has[Enum.PowerType.Mana] = 50 -- a druid in a form: full energy, mana not
+    Power(Seen, Enum.PowerType.Energy, 100)
+    has[Enum.PowerType.Mana] = nil
+    Power(Rested, Enum.PowerType.Energy, 100)
+    has[Enum.PowerType.ComboPoints] = 2
+    Power(Seen, Enum.PowerType.Energy, 100)
+    has[Enum.PowerType.ComboPoints] = nil
+    UnitPower = function() return W.Secret() end
+    has.kind, has[Enum.PowerType.Mana] = Enum.PowerType.Mana, 50
+    W.Fire("UNIT_POWER_UPDATE", "player")
+    check(Rested(), "a resource the game hides tells nothing, and shows nothing")
+    UnitPowerType, UnitPower, UnitPowerMax = kind, power, most
+    W.Fire("UNIT_POWER_UPDATE", "player")
+
+    -- The mouse: a door brings it in, the hot frames keep it.
+    local function Look(seconds)
+        local watch = rest.hover.watch.frame
+        watch:GetScript("OnUpdate")(watch, seconds)
+    end
+    door:GetScript("OnEnter")(door)
+    check(Seen(), "the mouse in by a door: the whole set in sight")
+    first._mouseOver = true
+    Look(1)
+    check(Seen(), "and while the mouse is on a hot frame")
+    first._mouseOver = false
+    Look(Rest.LINGER / 2)
+    check(Seen(), "a moment off it, on its way to the next")
+    Look(Rest.LINGER)
+    check(Rested(), "off it for longer: out of sight")
+    first:GetScript("OnEnter")(first)
+    check(Seen(), "a hot frame is a door too")
+    first:Hide()
+    first._mouseOver = true
+    Look(1)
+    check(Rested(), "a hot frame out of sight holds nothing")
+    first._mouseOver = false
+    first:Show()
+
+    held = true
+    rest:Look()
+    check(Seen(), "its module holds it in sight")
+    held = false
+    rest:Look()
+    check(Rested(), "and lets it go")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(Seen(), "in Edit Mode in sight, to be placed")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(Rested(), "and at rest again after it")
+
+    -- A fade, by one clock that touches no frame's animations.
+    Core.general.animations = true
+    W.Combat(true)
+    check(first._alpha == 0 and rest.clock:IsRunning(), "coming into sight takes a moment")
+    rest.clock.group:Run(0.5)
+    check(first._alpha == 0.5 and second._alpha == 0.5, "every frame of the set at the same step")
+    W.Combat(false)
+    rest.clock.group:Run(0.5)
+    check(first._alpha == 0.25, "turned back half way: from where it stands")
+    rest.clock.group:Run(1)
+    check(first._alpha == 0 and first._groups == nil, "and none of it an animation on a frame of the set")
+    Core.general.animations = false
+
+    rest:Switch(false)
+    check(first._alpha == 1 and second._alpha == 0.5 and not rest:Resting(), "switched off: each frame as it was")
+    door:GetScript("OnEnter")(door)
+    W.Combat(true)
+    W.Combat(false)
+    check(first._alpha == 1 and not rest.hover.watch:IsRunning(), "and the mouse and the game's events change nothing then")
+
+    -- One that fails stays in sight.
+    rest:Switch(true)
+    check(first._alpha == 0, "on again")
+    rawset(second, "SetAlpha", function() error("broken") end)
+    W.Combat(true)
+    rawset(second, "SetAlpha", nil)
+    check(not rest.on and first._alpha == 1 and first._alpha == 1 and Core.errors.test and Core.errors.test.text:find("broken"),
+        "a set whose alpha fails is off and noted, its frames given back")
+    W.Combat(false)
+    Core.general.animations = animations
+end)()
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

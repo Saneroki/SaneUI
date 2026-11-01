@@ -1111,6 +1111,15 @@ function W.Install(env)
         return nil
     end
     env.InCombatLockdown = function() return W.combat end
+    env.IsMouseButtonDown = function() return false end
+    -- You, as Core.Rest reads you: alone, alive, whole, not in a fight unless W.Combat says so. A test sets its own.
+    env.UnitAffectingCombat = function() return W.combat end
+    env.IsInGroup = function() return false end
+    env.UnitIsDeadOrGhost = function() return false end
+    env.UnitHealth, env.UnitHealthMax = function() return 100 end, function() return 100 end
+    env.UnitPowerType = function() return 0, "MANA" end
+    local function Mana(_, kind) return (kind or 0) == 0 and 100 or 0 end
+    env.UnitPower, env.UnitPowerMax = Mana, Mana
     env.IsShiftKeyDown = function() return false end
     env.debugprofilestop = function() return W.ms end
     env.GetFramerate = function() return W.fps end
@@ -1125,6 +1134,7 @@ function W.Install(env)
     env.GetMacroIndexByName = function(name) return W.macros[name] or 0 end
 
     env.Enum = {
+        PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4, Runes = 5, RunicPower = 6, Essence = 19 },
         ConsoleCommandType = { Cvar = 0, Command = 1, Macro = 2, Script = 3 },
         ConsoleCategory = { Debug = 0, Graphics = 1, Console = 2, Combat = 3, Game = 4, Default = 5, Net = 6, Sound = 7 },
         SpellBookSpellBank = { Player = 0, Pet = 1 },

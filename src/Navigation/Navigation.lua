@@ -48,6 +48,8 @@ ns.TEXT = {
     nativeMinimapTip = "The game's own minimap in the top right corner instead of this map's small window; the mouse pushed into that corner still fills the screen with this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
+    questLogRest = "Hide the quest log at rest",
+    questLogRestTip = "The quest log on the screen alone is out of sight while nothing goes on. It shows while the mouse is on it, while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight its words, title bar and items still take the mouse. Over the full map it always shows. Off: always in sight.",
     pins = "Pins on the map",
     pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you.",
     route = "Route to the map pin",
@@ -227,6 +229,7 @@ local OPTIONS = {
     { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip, hidden = NoTravel },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
+    { key = "questLogRest", default = true, text = ns.TEXT.questLogRest, tip = ns.TEXT.questLogRestTip },
     SPARKLES, GLINTS, TURNS,
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
@@ -288,6 +291,7 @@ Core.Options(ns.name, OPTIONS, { version = 4, upgrade = Upgrade, changed = funct
         ns.Guarded(ns.QuestLog.Tracker)
         return ns.Guarded(ns.Native.Update)
     end
+    if key == "questLogRest" then return ns.Guarded(ns.QuestLog.Rested) end
     if key == "followMap" then
         ns.Guarded(ns.Canvas.Following)
         return ns.Guarded(ns.TopBar.Update)

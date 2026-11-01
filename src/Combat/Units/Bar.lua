@@ -311,6 +311,7 @@ function Bar.Fit(frame)
     for index = shown + 1, #frame.powers do frame.powers[index]:Hide() end
     if not frame.rowShown then frame.row:Hide() end
     marks:Fit(inner)
+    if frame.rest then frame.rest:Look() end -- what stands on it changed: at rest it may have to show (Units.lua)
 end
 
 -- A unit's rank by the line behind the border ("boss", "elite", "rare"), or nil.

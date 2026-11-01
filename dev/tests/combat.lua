@@ -1494,6 +1494,97 @@ do
     check(MicroMenu._alpha == 1, "and the mouse changes nothing then")
     Core.Set(ns.name, "menuHover", true)
     check(MicroMenu._alpha == 0, "on again")
+
+    -- Out of sight at rest (Core.Rest): your frames and the game's action bars. The rest of what it does: window.lua.
+    local bars, you, foe = ns.ActionBars.Rest(), ns.Units.KINDS[1], ns.Units.KINDS[2]
+    local health, power, most = units.player.health, units.player.power, units.player.powerMost
+    units.player.health, units.player.power, units.player.powerMost = units.player.most, 0, 100 -- a warrior at rest
+    Core.Set(ns.name, "unitRest", false)
+    check(you.button._alpha == 1 and foe.button._alpha == 1 and not you.rest:Resting(), "Hide the unit frames at rest off: always in sight")
+    Core.Set(ns.name, "unitRest", true)
+    Core.Set(ns.name, "barsRest", false)
+    check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and not bars:Resting(), "Hide the action bars at rest off: always in sight")
+    Core.Set(ns.name, "barsRest", true)
+    local function Rested()
+        return you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 0 and StanceBar._alpha == 0
+    end
+    local function Seen()
+        return you.button._alpha == 1 and foe.button._alpha == 1 and MainActionBar._alpha == 1 and StanceBar._alpha == 1
+    end
+    W.Fire("UNIT_POWER_UPDATE", "player")
+    check(Rested(), "both on by themselves: frames and bars out of sight at rest")
+    units.player.power = 30
+    W.Fire("UNIT_POWER_UPDATE", "player")
+    check(Seen(), "your resource not where it rests: all in sight")
+    units.player.power = 0
+    W.Fire("UNIT_POWER_UPDATE", "player")
+    check(Rested(), "at rest again")
+    W.Combat(true)
+    check(Seen(), "in a fight all in sight")
+    W.Combat(false)
+    check(Rested(), "after it out of sight")
+
+    -- The mouse: one bar shows them all, one frame itself.
+    local function Look(rest, seconds)
+        local watch = rest.hover.watch.frame
+        watch:GetScript("OnUpdate")(watch, seconds or 1)
+    end
+    local key = MainActionBar.actionButtons[2]
+    key:GetScript("OnEnter")(key)
+    check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and you.button._alpha == 0,
+        "the mouse on an empty button of one bar: every bar in sight, no unit frame")
+    MainActionBar._mouseOver = true
+    Look(bars)
+    check(MainActionBar._alpha == 1 and StanceBar._alpha == 1, "and stay while the mouse is on a bar")
+    MainActionBar._mouseOver = false
+    Look(bars)
+    check(Rested(), "off every bar: out of sight")
+    you.button:GetScript("OnEnter")(you.button)
+    check(you.button._alpha == 1 and foe.button._alpha == 0 and MainActionBar._alpha == 0, "the mouse on your frame: it alone in sight")
+    Look(you.rest)
+    check(Rested(), "and off it again")
+    foe.row.button:GetScript("OnEnter")(foe.row.button)
+    check(foe.button._alpha == 1 and you.button._alpha == 0, "the mouse on a frame's row: that frame")
+    Look(foe.rest)
+    check(Rested(), "and off it")
+
+    -- What a frame has to show, and what holds the bars.
+    W.cast = { name = "Fireball", icon = 135812, starts = W.clock * 1000, ends = (W.clock + 2.5) * 1000, id = 1, spell = 133 }
+    W.Fire("UNIT_SPELLCAST_START", "player", 1, 133)
+    check(you.button._alpha == 1 and foe.button._alpha == 0, "your cast shows on your frame at rest")
+    W.cast = nil
+    W.Fire("UNIT_SPELLCAST_STOP", "player", 1, 133)
+    W.clock = W.clock + ns.UnitCast.HOLD
+    local cast = you.button.face.cast
+    cast:GetScript("OnUpdate")(cast, 1)
+    check(you.button._alpha == 0, "and goes with it")
+    W.mirror = { { timer = "BREATH", value = 30000, maxvalue = 60000, scale = -1, paused = 0, label = "Breath" } }
+    W.Fire("MIRROR_TIMER_START", "BREATH", 30000, 60000, -1, 0, "Breath")
+    check(you.face == nil and you.button.face.breath.on and you.button._alpha == 1, "your breath under water too")
+    W.mirror = nil
+    W.Fire("MIRROR_TIMER_STOP", "BREATH")
+    check(you.button._alpha == 0, "and out of the water it goes")
+    W.Fire("ACTIONBAR_SHOWGRID")
+    check(MainActionBar._alpha == 1 and you.button._alpha == 0, "something dragged: the bars in sight to drop it on")
+    W.Fire("ACTIONBAR_HIDEGRID")
+    check(MainActionBar._alpha == 0, "let go: out of sight")
+    EventRegistry:TriggerEvent("QuickKeybindFrame.QuickKeybindModeEnabled")
+    check(MainActionBar._alpha == 1 and key._alpha == 1, "setting your keys: the bars in sight, their empty buttons too")
+    EventRegistry:TriggerEvent("QuickKeybindFrame.QuickKeybindModeDisabled")
+    check(MainActionBar._alpha == 0 and key._alpha == 0, "done: out of sight")
+    local vehicle = C_ActionBar.HasVehicleActionBar
+    C_ActionBar.HasVehicleActionBar = function() return true end
+    W.Fire("UPDATE_VEHICLE_ACTIONBAR")
+    check(MainActionBar._alpha == 1 and you.button._alpha == 0, "in a vehicle the bars stay in sight: its actions are on them")
+    C_ActionBar.HasVehicleActionBar = vehicle
+    W.Fire("UPDATE_VEHICLE_ACTIONBAR")
+    check(MainActionBar._alpha == 0, "out of it they rest")
+    Core.Set(ns.name, "unitPlayer", false)
+    check(not you.rest:Resting(), "your frame off: nothing of it rests")
+    Core.Set(ns.name, "unitPlayer", true)
+    check(you.rest:Resting(), "on again it does")
+    units.player.health, units.player.power, units.player.powerMost = health, power, most
+    W.Fire("UNIT_POWER_UPDATE", "player")
     general.animations = animations
 end
 
@@ -1720,8 +1811,9 @@ check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not w
     and PlayerFrame._mouse == true and PlayerFrame.PlayerFrameContent._alpha == 1 and FocusFrame._parent == UIParent
     and PlayerCastingBarFrame:IsEventRegistered("UNIT_SPELLCAST_START") and MirrorTimerContainer:IsEventRegistered("MIRROR_TIMER_START"),
     "our unit frames gone, the game's back, its cast bar and timers hearing again")
-check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1,
-    "the action bars as the game has them")
+check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1
+    and not ns.ActionBars.Rest().on and MainActionBar._alpha == 1,
+    "the action bars as the game has them, in sight")
 check(StatusTrackingBarManager._parent == UIParent and StanceBar._parent == UIParent and MicroMenu._alpha == 1,
     "its experience, stance and menu bars too")
 check(PlayerFrame.PlayerFrameContent.HealthBar._motion == true and not PlayerFrame.PlayerFrameContent.HealthBar._mouse

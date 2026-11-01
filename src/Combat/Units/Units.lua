@@ -42,6 +42,13 @@ local _, ns = ...
 --  the world. The game's cast bars and timers hear nothing while ours stand in
 --  for them (Core.Lend's SetDeaf): the game shows and lays those out itself.
 --
+--  Out of sight at rest (Core.Rest, the setting Hide the unit frames at rest;
+--  Saneroki, 2026-11-01): each frame goes by its alpha, its button still taking
+--  the mouse, so the mouse on a frame, its row or its auras shows that frame
+--  alone; a cast or a timer running on it shows it too (the game's own bars for
+--  those are gone, and you need your breath under water). A fight, a group, your
+--  health and your resource show them all.
+--
 --  Secure frames are made, shown, moved, sized and given back out of a fight
 --  only: what is asked for in one waits for its end (Core.AfterCombat). Off
 --  (each frame's and row's setting) or standing down, the game's frame is back.
@@ -198,6 +205,26 @@ local function Button(parent, unit)
     return button
 end
 
+-- Whether something runs on a frame that would be missed out of sight: its cast, your breath, your other timers.
+local function Running(face)
+    if face.breath and face.breath.on then return true end
+    for _, bar in ipairs(face.above) do
+        if bar.on then return true end
+    end
+    return false
+end
+
+-- A frame at rest out of sight (Core.Rest): the mouse on it, its row or its auras shows it. Bar.Fit looks again as a
+-- cast or a timer comes or goes.
+local function Rests(kind, face)
+    local rest = Core.Rest.New({ label = "unit frames", frames = { kind.button },
+                                 hold = function() return Running(face) end })
+    rest:Hot(kind.button)
+    rest:Hot(kind.row.button)
+    for _, container in pairs(face.auras) do rest:Hot(container) end
+    kind.rest, face.rest = rest, rest
+end
+
 -- A frame: the game's secure unit button, our face on it (as high as the health bar, the rest hanging under it), a
 -- window of Core's to place it; its row's button under it.
 local function Make(kind)
@@ -247,6 +274,7 @@ local function Make(kind)
     kind.window = Core.Window.New(button, { store = ns.store, key = kind.place, title = ns.TEXT[kind.option],
                                             first = kind.first })
     kind.window:Place()
+    Rests(kind, face)
 end
 
 -- What takes the mouse, a frame and all under it, no longer does (each by Lend): clicks and movement, or movement alone.
@@ -341,6 +369,7 @@ local function Kind(kind)
     local row = kind.row
     local wanted = not ns.off and ns.options[kind.option] ~= false
     if not wanted then
+        if kind.rest then kind.rest:Switch(false) end
         Unwatch(row.button)
         Unwatch(kind.button)
         Back(row)
@@ -368,6 +397,7 @@ local function Kind(kind)
     Rowed(button.face)
     Fit(button.face)
     Fill(button.face)
+    kind.rest:Switch(ns.options.unitRest ~= false)
 end
 
 -- Core's marks on a face as the settings say.
@@ -449,6 +479,7 @@ function Units.GiveBack()
     for _, kind in ipairs(Units.KINDS) do
         local button = kind.button
         if button then
+            ns.Safe("unit frames", kind.rest.Switch, kind.rest, false)
             button:SetAlpha(0)
             Core.AfterCombat("unit frame " .. kind.unit, function()
                 Unwatch(kind.row.button)
