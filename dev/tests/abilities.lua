@@ -1972,7 +1972,7 @@ do
     check(ns.SlotLabel(73) == "Bar 7 (Cat Form), button 1", "a form's row is named as Bar 7's")
     ns.DB.pageNames.MAGE = nil
 
-    -- Prowl, for a druid alone: another class's stealth is no form of its own.
+    -- A druid has Cat Form's row, which Prowl keeps, and Bear Form's; a human and Moonkin Form have the bar's own.
     local class = ns.class
     ns.FormBar.Set(false)
     check(not ns.FormBar.Held() and barSeven[1]:GetAttribute("actionpage") == nil and barSeven[1].action == 157, "off again, the bar is the game's")
@@ -1980,13 +1980,18 @@ do
     ns.class = "DRUID"
     ns.FormBar.Set(true)
     Shown(1, true)
-    holds["bonusbar:1,stealth"] = true
-    Drive()
-    check(barSeven[1].action == 85, "Prowl has its row")
-    holds["bonusbar:1,stealth"] = nil
-    Drive()
-    check(barSeven[1].action == 73, "out of Prowl, Cat Form's")
+    check(barSeven[1].action == 73, "a druid's Cat Form has its row")
     Shown(1, nil)
+    Shown(2, true)
+    check(barSeven[1].action == 73, "and Prowl stays on it, should the game tell it as a row of its own")
+    Shown(2, nil)
+    Shown(3, true)
+    check(barSeven[1].action == 97, "Bear Form has its row")
+    Shown(3, nil)
+    Shown(4, true)
+    check(barSeven[1].action == 157, "Moonkin Form has the bar's own")
+    Shown(4, nil)
+    check(barSeven[1].action == 157, "and so has a human")
     ns.FormBar.Set(false)
     ns.class = class
 

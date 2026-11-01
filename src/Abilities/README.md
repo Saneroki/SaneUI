@@ -92,7 +92,7 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   this character's form* in the spellbook's menu, or `/sane ab formbar on`). The same keys then show another row of
   buttons in each form or stance, in a fight too, while another character on the same profile keeps a fixed Bar 7. The
   rows are the ones the game keeps for Bar 1's forms, free because Bar 1 keeps its page; a druid has one for Cat Form,
-  one for Prowl and one for Bear Form, out of a form the bar is itself. Drag to a button in the form, or reserve and save
+  which Prowl keeps, and one for Bear Form, and as a human or in Moonkin Form the bar is itself. Drag to a button in the form, or reserve and save
   them in a layout, as on any bar. A spell the game drops on a form's row stays there while this is on.
 - **Buttons that touch** (switch *Action bar buttons touch*, on). No space between the buttons of any action bar,
   the stance, pet and possess bars too, side by side or between the rows of a bar: the icons stand directly against

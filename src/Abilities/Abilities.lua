@@ -103,7 +103,7 @@ ns.TEXT = {
     pagesUsage = "type: /sane ab pages on  or  /sane ab pages off",
     -- This character's Action Bar 7 (FormBar.lua): its line in the spellbook's menu, and /sane ab formbar
     formBarText = "Action Bar 7 follows this character's form",
-    formBarTip = "For this character alone: Action Bar 7 and its keys show another row of buttons in each form or stance, in a fight too. A druid's Prowl has a row of its own.",
+    formBarTip = "For this character alone: Action Bar 7 and its keys show another row of buttons in each form or stance, in a fight too. A druid has a row for Cat Form, Prowl included, and one for Bear Form.",
     formBarOn = "this character's Action Bar 7 follows its form.", formBarOff = "this character's Action Bar 7 stays as it is.",
     formBarUsage = "type: /sane ab formbar on  or  /sane ab formbar off",
     -- The trainer's list, a spell added by hand (Sources.lua)

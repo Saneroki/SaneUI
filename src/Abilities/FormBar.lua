@@ -14,8 +14,8 @@ local _, ns = ...
 --  keys stay the game's own, and the game's secure state driver does it all, so
 --  it works in a fight.
 --
---  Prowl is no form of its own: for a druid it gets the row the game keeps next
---  to Cat Form's, so what only works in stealth can stand there.
+--  A druid has two such rows (Saneroki, 2026-11-01): Cat Form's, which Prowl keeps,
+--  and Bear Form's. As a human or in Moonkin Form the bar is itself.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local FormBar = {}
@@ -25,7 +25,8 @@ local PREFIX = "MultiBar6Button"
 
 -- The game's row for each form as a page, "own" for Bar 7's own slots.
 FormBar.STATES = "[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9; [bonusbar:4] 10; own"
-FormBar.PROWL = "[bonusbar:1,stealth] 8; "
+-- A druid's: Prowl stays on Cat Form's row, should the game tell it as a row of its own, and Moonkin Form has none.
+FormBar.DRUID = "[bonusbar:1][bonusbar:2] 7; [bonusbar:3] 9; own"
 
 -- Run by the game's secure code on every change of that state. No page: the bar's own again.
 FormBar.SNIPPET = [[
@@ -49,7 +50,7 @@ local function Apply()
     if want then
         header = header or ns.Bar1.Header(PREFIX, FormBar.SNIPPET)
         if not header then return end
-        RegisterStateDriver(header, "page", ns.class == "DRUID" and FormBar.PROWL .. FormBar.STATES or FormBar.STATES)
+        RegisterStateDriver(header, "page", ns.class == "DRUID" and FormBar.DRUID or FormBar.STATES)
     else
         UnregisterStateDriver(header, "page")
         header:SetAttribute("state-page", nil)
