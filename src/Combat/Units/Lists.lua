@@ -2,16 +2,19 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Lists
---  Your two lists of auras for the unit frames (Auras.lua), kept in the
---  module's settings by the spell's number with its name:
---      Always show    shown in front of the rest, whoever cast them
---      Never show     never shown
---  A spell is on one of them at most: put on one, it leaves the other.
+--  Your marks of auras, kept in the module's settings by the spell's number with
+--  its name, three lists:
+--      Important      on the unit frames shown in front of the rest, whoever cast
+--                     them, with a glow (Auras.lua); a glow in the game's list of
+--                     your buffs and debuffs (BuffList.lua)
+--      Unimportant    never on the unit frames, faded in that list
+--      Hidden         out of sight in that list, until the mouse is on it
+--  A spell is on one of them at most: put on one, it leaves the others.
 --
---  Filled from a right click on an icon of a unit frame (its menu), and in a
---  window of its own (/sane auras, and the menu's Aura lists): a box to add a
+--  Filled from a right click on an aura (Lists.Entries, in either's menu), and in
+--  a window of its own (/sane auras, and the menu's Aura lists): a box to add a
 --  spell by its number or its name (a name only where the game knows the
---  spell by it: one of yours), the two lists side by side, each spell with its
+--  spell by it: one of yours), the lists side by side, each spell with its
 --  icon, name and number and an X to take it off. Under them, what the game
 --  lets the lists do.
 -------------------------------------------------------------------------------
@@ -20,15 +23,18 @@ local Plain = Core.Plain
 local Lists = {}
 ns.AuraLists = Lists
 
-Lists.WIDTH, Lists.HEIGHT = 560, 420
+Lists.WIDTH, Lists.HEIGHT = 740, 420
 Lists.INSET = 12
 Lists.LINE = 24 -- a spell's line
 Lists.ICON = 18
 Lists.TOP = 62  -- from the window's top to the lists' titles, under the box
-Lists.KEYS = { white = "auraWhite", black = "auraBlack" } -- the lists' settings
+Lists.KEYS = { white = "auraWhite", black = "auraBlack", hidden = "auraHidden" } -- the lists' settings
+Lists.ORDER = { "white", "black", "hidden" }
+Lists.WORDS = { white = "auraImportant", black = "auraUnimportant", hidden = "auraHidden" } -- their words in ns.TEXT
 
 local frame, window, box, status
 local columns = {} -- [which] = { scroll, child, lines }
+local names        -- [a spell's name] = its list, made when asked after a change
 
 -- A list: { [spell number] = its name }.
 local function List(which)
@@ -64,22 +70,54 @@ local function Fill()
     end
 end
 
--- A spell on a list (which: "white" or "black"): off the other one, every frame's auras anew, the window too.
+-- A list changed: every frame's auras anew, the game's list, the window.
+local function Changed()
+    names = nil
+    ns.UnitAuras.Refresh()
+    ns.BuffList.Style()
+    Fill()
+end
+
+-- The list of a spell by its name, any rank of it: "white", "black", "hidden" or nil.
+function Lists.Mark(name)
+    if not names then
+        names = {}
+        for _, which in ipairs(Lists.ORDER) do
+            for _, spell in pairs(List(which)) do names[spell] = which end
+        end
+    end
+    return names[name]
+end
+
+-- A spell on a list: off the others.
 function Lists.Put(which, spell)
     local id = tonumber(spell and spell.id)
     if not id then return end
-    local other = which == "white" and "black" or "white"
-    List(other)[id] = nil
+    for _, other in ipairs(Lists.ORDER) do List(other)[id] = nil end
     List(which)[id] = spell.name or tostring(id)
-    ns.UnitAuras.Refresh()
-    Fill()
-    if status then status:SetText(ns.TEXT.listsPut:format(spell.name or id, ns.TEXT[which == "white" and "auraAlways" or "auraNever"])) end
+    Changed()
+    if status then status:SetText(ns.TEXT.listsPut:format(spell.name or id, ns.TEXT[Lists.WORDS[which]])) end
 end
 
 function Lists.Take(which, id)
     List(which)[id] = nil
-    ns.UnitAuras.Refresh()
-    Fill()
+    Changed()
+end
+
+-- A menu's lines for an aura: the three marks, one at most, a tick taken off again by a click; then the window.
+function Lists.Entries(root, spell)
+    for _, which in ipairs(Lists.ORDER) do
+        root:CreateCheckbox(ns.TEXT[Lists.WORDS[which]], ns.Guard(function() return Lists.Mark(spell.name) == which end),
+            ns.Guard(function()
+                if Lists.Mark(spell.name) ~= which then return Lists.Put(which, spell) end
+                for id, name in pairs(List(which)) do
+                    if name == spell.name then List(which)[id] = nil end
+                end
+                Changed()
+            end))
+    end
+    root:CreateDivider()
+    root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() Lists.Open() end))
 end
 
 -- The spell typed into the box: by its number, or by its name where the game knows it so.
@@ -118,7 +156,7 @@ local function Column(which, left, right)
     local inside, I = window.inside, Lists.INSET
     local title = inside:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOPLEFT", inside, "TOPLEFT", left, -(I + Lists.TOP))
-    title:SetText(ns.TEXT[which == "white" and "auraAlways" or "auraNever"])
+    title:SetText(ns.TEXT[Lists.WORDS[which]])
     local scroll = CreateFrame("ScrollFrame", nil, inside, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
     scroll:SetPoint("BOTTOM", inside, "BOTTOM", 0, I + 40)
@@ -178,19 +216,17 @@ local function Build()
     box:SetAutoFocus(false)
     box:SetScript("OnEnterPressed", ns.Guard(function() Add("white") end))
     box:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
-    local always = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
-    always:SetSize(120, 22)
-    always:SetPoint("LEFT", box, "RIGHT", 10, 0)
-    always:SetText(ns.TEXT.auraAlways)
-    always:SetScript("OnClick", ns.Guard(function() Add("white") end))
-    local never = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
-    never:SetSize(120, 22)
-    never:SetPoint("LEFT", always, "RIGHT", 6, 0)
-    never:SetText(ns.TEXT.auraNever)
-    never:SetScript("OnClick", ns.Guard(function() Add("black") end))
-    local half = (Lists.WIDTH - 2 * I) / 2
-    Column("white", I, I + half)
-    Column("black", I + half, Lists.WIDTH - I)
+    local last = box
+    local third = (Lists.WIDTH - 2 * I) / #Lists.ORDER
+    for index, which in ipairs(Lists.ORDER) do
+        local add = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
+        add:SetSize(120, 22)
+        add:SetPoint("LEFT", last, "RIGHT", index == 1 and 10 or 6, 0)
+        add:SetText(ns.TEXT[Lists.WORDS[which]])
+        add:SetScript("OnClick", ns.Guard(function() Add(which) end))
+        last = add
+        Column(which, I + (index - 1) * third, I + index * third)
+    end
     local rule = inside:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     rule:SetPoint("BOTTOMLEFT", I, I)
     rule:SetPoint("RIGHT", inside, "RIGHT", -I, 0)

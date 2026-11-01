@@ -58,8 +58,10 @@ Units\Bar.lua
 Units\Text.lua
 # The auras that matter most around them, in the game's own aura containers; the right click on an icon
 Units\Auras.lua
-# Your lists Always show and Never show, and their window (/sane auras)
+# Your marks of auras: Important, Unimportant, Hidden, and their window (/sane auras)
 Units\Lists.lua
+# The game's list of your buffs and debuffs with those marks on it; the right click on it
+Units\BuffList.lua
 # Your cast as part of your frame, in place of the game's cast bar
 Units\Cast.lua
 # Your breath and the game's other timers on you as part of your frame, in place of its bars
@@ -72,10 +74,9 @@ Units\GroupBuffs.lua
 Units\GroupFace.lua
 Units\GroupTools.lua
 Units\Group.lua
-# Reminders of buffs and debuffs: what shows when, the invisible bars, the right click on the game's auras, the window
+# Reminders of buffs and debuffs: what shows when, the invisible bars, the window
 Reminders\Reminders.lua
 Reminders\Bars.lua
-Reminders\Clicks.lua
 Reminders\Editor.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua

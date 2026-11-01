@@ -70,9 +70,13 @@ ns.TEXT = {
     unitRest = "Hide the unit frames at rest",
     unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
     unitAuras = "Auras on the frames",
-    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Right click an icon (out of a fight) to always or never show it, or to open your aura lists (/sane auras).",
-    auraAlways = "Always show",
-    auraNever = "Never show",
+    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with a yellow glow; those you mark Unimportant never show. Right click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
+    auraImportant = "Important",
+    auraUnimportant = "Unimportant",
+    auraHidden = "Hidden",
+    buffList = "Your buffs and debuffs",
+    buffListOn = "Marks and menu on the game's list",
+    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Right click one, out of a fight, for its menu: Create reminder, Important (a yellow glow around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list). Shift + right click cancels a buff, and in a fight a right click does, as in the game. Off: the game's list as it is, a right click cancels.",
     auraLists = "Aura lists...",
     auraFight = "In a fight the game keeps auras from addons: after it",
     listsTitle = "Aura lists",
@@ -80,7 +84,7 @@ ns.TEXT = {
     listsEmpty = "None yet.",
     listsPut = "%s: %s.",
     listsUnknown = "The game does not know that spell here by its name: type its number, or right click its icon on a unit frame.",
-    listsRule = "The game lets the lists act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
+    listsRule = "On the unit frames the game lets Important and Unimportant act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
     unitBarrier = "Barriers",
     unitBarrierTip = "What absorbs damage on a unit, in the game's shield art on its health bar: after the health while it fits, against the bar's right end when it does not. On your unit frames and your party and raid frames.",
     unitLost = "Lost maximum health",
@@ -157,12 +161,13 @@ ns.TEXT = {
     meterBack = "Back to the fights",
     reminders = "Reminders",
     remindersOn = "Reminder bars",
-    remindersTip = "Right click a buff or debuff and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. On the game's buffs Shift + right click cancels a buff. /sane reminders opens the list. Off: no bars, and a right click on a buff cancels it, as in the game.",
+    remindersTip = "Right click a buff or debuff and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. /sane reminders opens the list, with your bars: make as many as you like, and give each spell its bar. Off: no bars.",
     reminderCreate = "Create reminder",
     reminderEdit = "Edit reminder",
     reminderCancel = "Shift + right click cancels it",
     reminderBar = "Reminder bar %d",
-    reminderBarShort = "Bar %d",
+    reminderNewBar = "New bar",
+    reminderDeleteBar = "Delete bar",
     reminderNone = "None yet. Right click a buff or debuff and choose Create reminder.",
     reminderOnYou = "On you",
     reminderOnOther = "On the unit it was made on",
@@ -173,7 +178,7 @@ ns.TEXT = {
     reminderCombat = { any = "In and out of combat", out = "Only show outside of combat", ["in"] = "Only show inside of combat" },
     reminderRest = "Don't show in resting areas",
     reminderEarly = "Offset time (seconds)",
-    reminderDelete = "Delete",
+    reminderDelete = "Delete reminder",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -218,6 +223,7 @@ local OPTIONS = {
     { key = "unitDispel", default = true, text = ns.TEXT.unitDispel, tip = ns.TEXT.unitDispelTip },
     { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
     { key = "auraBlack", default = {} }, -- those never shown
+    { key = "auraHidden", default = {} }, -- those out of sight in the game's list (Units/BuffList.lua)
     { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip, header = ns.TEXT.group },
     { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip },
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
@@ -243,6 +249,7 @@ local OPTIONS = {
     { key = "meterInterrupts", default = true },
     { key = "meterReset", default = true },
     { key = "meterOrder", default = "dps" },
+    { key = "buffList", default = true, text = ns.TEXT.buffListOn, tip = ns.TEXT.buffListTip, header = ns.TEXT.buffList },
     { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
 }
 if ns.Serves() then
@@ -263,6 +270,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
+    if key == "buffList" then ns.Guarded(ns.BuffList.Apply) end
     if key == "reminders" then ns.Guarded(ns.Reminders.Apply) end
 end })
 
@@ -282,13 +290,14 @@ function ns.GiveBack()
     ns.Safe("mouse rings", ns.MouseRings.Hide)
     ns.Safe("meter", ns.Meter.GiveBack)
     ns.Safe("reminders", ns.Reminders.GiveBack)
+    ns.Safe("buff list", ns.BuffList.Apply)
 end
 
 function ns.OnLoad()
     ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
 end
 
-Core.Command("auras", "your aura lists for the unit frames: always and never shown", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("auras", "your aura lists: important, unimportant, hidden", function() ns.Guarded(ns.AuraLists.Toggle) end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.Guarded(ns.ReminderEditor.Toggle) end)
 
@@ -303,5 +312,6 @@ function ns.OnLogin()
     ns.GameBars.Start()
     ns.Safe("mouse rings", ns.MouseRings.Apply)
     ns.Meter.Build()
+    ns.BuffList.Start()
     ns.Reminders.Start()
 end

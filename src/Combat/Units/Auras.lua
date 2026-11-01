@@ -15,9 +15,9 @@ local _, ns = ...
 --                                  what you can dispel, a boss's)
 --  A container is as wide as what it holds (the game sizes it), so the middle
 --  one, standing by its bottom middle, stays centred however many it shows.
---  And before them, in front of the rest, the ones on your list Always show
---  (what no longer fits a line goes up: the three stay clear of each other);
---  never the ones on your list Never show (Lists.lua keeps the two lists).
+--  And before them, in front of the rest and with a yellow glow, the ones you
+--  marked Important (what no longer fits a line goes up: the three stay clear of
+--  each other); never the ones marked Unimportant (Lists.lua keeps the lists).
 --
 --  All are the game's own aura containers (CustomAuraContainerTemplate), one
 --  per kind and frame, as the nameplates' are. The game fills them, in a fight
@@ -28,8 +28,8 @@ local _, ns = ...
 --  decides alone (the window says so).
 --
 --  A right click on an icon, out of a fight (in one the game keeps the icons
---  from addons), opens a menu: Create reminder (Reminders/), Always show, Never
---  show, Aura lists. Which spell
+--  from addons), opens a menu: Create reminder (Reminders/), Important,
+--  Unimportant, Hidden, Aura lists. Which spell
 --  it is: the icon's name (the game writes it into a text of ours, unseen),
 --  found among the unit's auras of its kind.
 -------------------------------------------------------------------------------
@@ -43,9 +43,10 @@ Auras.GAP = 2   -- between icons, and from the frame
 Auras.MOST = 3  -- of each kind, and of each list
 Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP) - Auras.GAP -- a container's widest line: what comes after goes up
 Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
+Auras.GLOW = 1.75 -- an important icon's glow against its size, as in the game's list (BuffList.lua)
 -- The kinds: their place on the frame's roof, the corner they grow from inside their container and which way, their
 -- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
--- of the group of the list Always show).
+-- of the group of your important ones).
 Auras.KINDS = {
     { key = "buffs", harmful = false, point = "BOTTOMLEFT", corner = "BOTTOMLEFT", growth = "Right", sort = "BigDefensive",
       foe = "HELPFUL|INCLUDE_NAME_PLATE_ONLY", friend = "HELPFUL", listed = "HELPFUL" },
@@ -99,20 +100,19 @@ local function Which(frame)
     return nil
 end
 
--- The menu of a right click on an icon: the spell on a list, or the lists' window.
+-- The menu of a right click on an icon: a reminder, its mark, or the lists' window.
 local function Menu(frame)
     local spell = Which(frame)
     MenuUtil.CreateContextMenu(frame, ns.Guard(function(_, root)
         if spell then
             root:CreateTitle(spell.name)
-            ns.ReminderClicks.Entry(root, spell)
-            root:CreateButton(ns.TEXT.auraAlways, ns.Guard(function() ns.AuraLists.Put("white", spell) end))
-            root:CreateButton(ns.TEXT.auraNever, ns.Guard(function() ns.AuraLists.Put("black", spell) end))
+            ns.Reminders.Entry(root, spell)
+            ns.AuraLists.Entries(root, spell)
         else
             root:CreateTitle(ns.TEXT.auraFight)
+            root:CreateDivider()
+            root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() ns.AuraLists.Open() end))
         end
-        root:CreateDivider()
-        root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() ns.AuraLists.Open() end))
     end))
 end
 
@@ -122,8 +122,9 @@ end
 local OnClicked = ns.Guard(Clicked)
 
 -- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
--- square in a dark edge, the swipe of the time gone, the stack count over it, its name unseen (for the menu).
-local function Dress(frame, face, kind)
+-- square in a dark edge, the swipe of the time gone, the stack count over it, its name unseen (for the menu); in the
+-- group of your important ones a glow, so it needs no telling which an icon is, in a fight either.
+local function Dress(frame, face, kind, glowing)
     local size = Auras.SIZE
     frame:SetSize(size, size)
     local edge = frame:CreateTexture(nil, "BACKGROUND")
@@ -146,6 +147,14 @@ local function Dress(frame, face, kind)
     local name = top:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     name:SetAlpha(0)
     name:SetPoint("CENTER")
+    if glowing then
+        local glow = top:CreateTexture(nil, "OVERLAY")
+        glow:SetTexture(ns.BuffList.GLOW)
+        glow:SetBlendMode("ADD")
+        glow:SetVertexColor(ns.BuffList.COLOUR[1], ns.BuffList.COLOUR[2], ns.BuffList.COLOUR[3])
+        glow:SetPoint("CENTER", frame, "CENTER", 0, 0)
+        glow:SetSize(size * Auras.GLOW, size * Auras.GLOW)
+    end
     frame:SetIcon(icon)
     frame:SetDurationCooldown(cooldown)
     frame:SetApplicationCount(count)
@@ -154,7 +163,7 @@ local function Dress(frame, face, kind)
     owners[frame] = { face = face, kind = kind, name = name }
 end
 
--- A container of the game's for one kind on the face: the group of the list Always show first (where the lists act
+-- A container of the game's for one kind on the face: the group of your important ones first (where the lists act
 -- on the kind), then the rest. nil where this client has none.
 local function Container(face, kind)
     local flow = rawget(_G, "AnchorUtil") and AnchorUtil.FlowDirection
@@ -168,15 +177,17 @@ local function Container(face, kind)
     container:SetFlowLayoutAnchorPoint(kind.corner)
     container:SetFlowLayoutGrowthDirection(flow[kind.growth], flow.Up)
     container:SetFlowLayoutMaximumLineSize(Auras.LINE)
-    local dressed = ns.Guard(function(frame) Dress(frame, face, kind) end) -- guarded: the game calls it per icon
+    -- guarded: the game calls these per icon
+    local dressed = ns.Guard(function(frame) Dress(frame, face, kind) end)
+    local shining = ns.Guard(function(frame) Dress(frame, face, kind, true) end)
     local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
-    local function Options(sort)
-        return { maxFrameCount = Auras.MOST, initializeFrame = dressed,
+    local function Options(sort, initialize)
+        return { maxFrameCount = Auras.MOST, initializeFrame = initialize,
                  layout = { elementSpacing = Auras.GAP, lineSpacing = Auras.GAP },
                  sortMethod = sorts and sorts[sort] or nil, sortDirection = ways and ways.Normal or nil }
     end
-    if kind.listed then container:AddAuraGroup("listed", kind.listed, Options("Default")) end
-    container:AddAuraGroup("auto", kind.friend, Options(kind.sort))
+    if kind.listed then container:AddAuraGroup("listed", kind.listed, Options("Default", shining)) end
+    container:AddAuraGroup("auto", kind.friend, Options(kind.sort, dressed))
     container.kind = kind
     return container
 end
@@ -192,8 +203,8 @@ function Auras.Make(face)
     Auras.Listed(face)
 end
 
--- The lists into a face's containers: the group Always show its spells (off while the list is empty), the rest
--- without them and without those of Never show; crowd control without those of Never show.
+-- The lists into a face's containers: the group of the important its spells (off while the list is empty), the rest
+-- without them and without the unimportant; crowd control without the unimportant.
 function Auras.Listed(face)
     local white, black = Lists()
     for _, container in pairs(face.auras or {}) do

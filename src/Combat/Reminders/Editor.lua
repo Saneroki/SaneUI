@@ -2,24 +2,28 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Editor
---  The little window of your reminders (/sane reminders): the list on the left,
---  the settings of the one chosen on the right, each taking effect at once.
+--  The little window of your reminders (/sane reminders): on top your bars, one
+--  to look at, a new one, deleting that one (its reminders go to the first bar
+--  left, the last bar stays); under them on the left that bar's reminders, on
+--  the right the settings of the one chosen, each taking effect at once.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Editor = {}
 ns.ReminderEditor = Editor
 
-Editor.WIDTH, Editor.HEIGHT = 520, 330
+Editor.WIDTH, Editor.HEIGHT = 520, 370
 Editor.INSET = 12
 Editor.LIST = 190 -- the list's width
 Editor.LINE = 26  -- a reminder's line
 Editor.ICON = 20
 Editor.ROW = 30   -- from one setting to the next
+Editor.TOP = 34   -- the bars' line
 Editor.COMBAT = { "any", "out", "in" }
 
-local frame, window, list, child, empty, panel, head, face, bar, combat, early
+local frame, window, list, child, empty, panel, head, face, bar, combat, early, viewed, takeBar
 local ticks, lines = {}, {}
-local chosen
+local chosen  -- the reminder whose settings show
+local looking -- the bar whose reminders show
 
 local Fill
 
@@ -31,14 +35,22 @@ local function Set(key, value)
     Fill()
 end
 
+-- The reminders on a bar.
+local function On(number)
+    local found = {}
+    for _, reminder in ipairs(ns.Reminders.List()) do
+        if reminder.bar == number then found[#found + 1] = reminder end
+    end
+    return found
+end
+
 local function Lines()
-    local reminders = ns.Reminders.List()
+    local reminders = On(looking)
     for index, reminder in ipairs(reminders) do
         local line = lines[index] or Editor.Line(index)
         line.reminder = reminder
         line.icon:SetTexture(reminder.icon)
         line.name:SetText(reminder.name)
-        line.bar:SetText(ns.TEXT.reminderBarShort:format(reminder.bar))
         line.mark:SetShown(reminder == chosen)
         line:Show()
     end
@@ -47,9 +59,18 @@ local function Lines()
     child:SetHeight(math.max(#reminders * Editor.LINE, 1))
 end
 
+-- Which bar is looked at, and with it which reminder is chosen.
+local function Look(number)
+    local bars = ns.Reminders.Bars()
+    looking = tContains(bars, number) and number or bars[1]
+    if not chosen or chosen.bar ~= looking then chosen = On(looking)[1] end
+end
+
 function Fill()
     if not frame then return end
     Lines()
+    viewed:GenerateMenu()
+    takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil)
     panel:SetShown(chosen ~= nil)
     if not chosen then return end
     face:SetTexture(chosen.icon)
@@ -73,11 +94,9 @@ function Editor.Line(index)
     line.icon:SetSize(Editor.ICON, Editor.ICON)
     line.icon:SetPoint("LEFT", 3, 0)
     line.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    line.bar = line:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    line.bar:SetPoint("RIGHT", line, "RIGHT", -4, 0)
     line.name = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     line.name:SetPoint("LEFT", line.icon, "RIGHT", 6, 0)
-    line.name:SetPoint("RIGHT", line.bar, "LEFT", -6, 0)
+    line.name:SetPoint("RIGHT", line, "RIGHT", -4, 0)
     line.name:SetJustifyH("LEFT")
     line.name:SetWordWrap(false)
     line:SetScript("OnClick", ns.Guard(function() Editor.Open(line.reminder) end))
@@ -97,7 +116,15 @@ local function Tick(key, row, word)
     ticks[key] = tick
 end
 
--- A dropdown of one setting: entries as { word, value }, on its row of the panel, its word before it.
+-- The bars' words for a dropdown: { word, number } each, by the bar's place among them.
+local function Bars()
+    local entries = {}
+    for place, number in ipairs(ns.Reminders.Bars()) do entries[place] = { ns.TEXT.reminderBar:format(place), number } end
+    return entries
+end
+
+-- A dropdown of one setting: entries as { word, value } (or a function that gives them), on its row of the panel, its
+-- word before it.
 local function Choice(key, row, word, entries)
     local label = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     label:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -row * Editor.ROW - 6)
@@ -106,12 +133,47 @@ local function Choice(key, row, word, entries)
     menu:SetWidth(180)
     menu:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, -row * Editor.ROW)
     menu:SetupMenu(ns.Guard(function(_, root)
-        for _, entry in ipairs(entries) do
+        for _, entry in ipairs(type(entries) == "function" and entries() or entries) do
             root:CreateRadio(entry[1], ns.Guard(function() return chosen ~= nil and chosen[key] == entry[2] end),
-                             ns.Guard(function() Set(key, entry[2]) end))
+                             ns.Guard(function()
+                                 if key == "bar" then looking = entry[2] end
+                                 Set(key, entry[2])
+                             end))
         end
     end))
     return menu
+end
+
+-- The window's top line: the bar looked at, a new bar, deleting that one.
+local function Top(inside, I)
+    viewed = CreateFrame("DropdownButton", nil, inside, "WowStyle1DropdownTemplate")
+    viewed:SetWidth(Editor.LIST)
+    viewed:SetPoint("TOPLEFT", inside, "TOPLEFT", I, -I)
+    viewed:SetupMenu(ns.Guard(function(_, root)
+        for _, entry in ipairs(Bars()) do
+            root:CreateRadio(entry[1], ns.Guard(function() return looking == entry[2] end), ns.Guard(function()
+                Look(entry[2])
+                Fill()
+            end))
+        end
+    end))
+    local add = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
+    add:SetSize(100, 22)
+    add:SetPoint("LEFT", viewed, "RIGHT", I, 0)
+    add:SetText(ns.TEXT.reminderNewBar)
+    add:SetScript("OnClick", ns.Guard(function()
+        Look(ns.Reminders.AddBar())
+        Fill()
+    end))
+    takeBar = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
+    takeBar:SetSize(100, 22)
+    takeBar:SetPoint("LEFT", add, "RIGHT", 6, 0)
+    takeBar:SetText(ns.TEXT.reminderDeleteBar)
+    takeBar:SetScript("OnClick", ns.Guard(function()
+        ns.Reminders.TakeBar(looking)
+        Look(ns.Reminders.Bars()[1])
+        Fill()
+    end))
 end
 
 local function Early(box)
@@ -129,8 +191,9 @@ local function Build()
         close = function() frame:Hide() end,
     })
     local inside, I = window.inside, Editor.INSET
+    Top(inside, I)
     list = CreateFrame("ScrollFrame", nil, inside, "UIPanelScrollFrameTemplate")
-    list:SetPoint("TOPLEFT", inside, "TOPLEFT", I, -I)
+    list:SetPoint("TOPLEFT", inside, "TOPLEFT", I, -I - Editor.TOP)
     list:SetPoint("BOTTOM", inside, "BOTTOM", 0, I)
     list:SetWidth(Editor.LIST - 24)
     child = CreateFrame("Frame", nil, list)
@@ -143,7 +206,7 @@ local function Build()
     empty:SetText(ns.TEXT.reminderNone)
 
     panel = CreateFrame("Frame", nil, inside)
-    panel:SetPoint("TOPLEFT", inside, "TOPLEFT", I + Editor.LIST + I, -I)
+    panel:SetPoint("TOPLEFT", inside, "TOPLEFT", I + Editor.LIST + I, -I - Editor.TOP)
     panel:SetPoint("BOTTOMRIGHT", inside, "BOTTOMRIGHT", -I, I)
     face = panel:CreateTexture(nil, "ARTWORK")
     face:SetSize(Editor.ICON + 4, Editor.ICON + 4)
@@ -157,9 +220,7 @@ local function Build()
     panel.on = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     panel.on:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -1)
 
-    local bars = {}
-    for index = 1, ns.Reminders.BARS do bars[index] = { ns.TEXT.reminderBar:format(index), index } end
-    bar = Choice("bar", 1, ns.TEXT.reminderOnBar, bars)
+    bar = Choice("bar", 1, ns.TEXT.reminderOnBar, Bars)
     Tick("missing", 2, ns.TEXT.reminderMissing)
     Tick("active", 3, ns.TEXT.reminderActive)
     local combats = {}
@@ -181,25 +242,31 @@ local function Build()
     early:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
 
     local delete = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    delete:SetSize(100, 22)
+    delete:SetSize(130, 22)
     delete:SetPoint("BOTTOMRIGHT")
     delete:SetText(ns.TEXT.reminderDelete)
     delete:SetScript("OnClick", ns.Guard(function()
         if not chosen then return end
         ns.Reminders.Take(chosen)
-        chosen = ns.Reminders.List()[1]
-        Fill()
     end))
     window:Place()
 end
 
--- The window, on that reminder (nil: the one chosen last, or the first).
+-- The window, on that reminder (nil: as it was left).
 function Editor.Open(reminder)
     if ns.off then return end
     if not frame then Build() end
-    if reminder then chosen = reminder end
-    chosen = chosen or ns.Reminders.List()[1]
+    chosen = reminder or chosen
+    Look(chosen and chosen.bar or looking)
     frame:Show()
+    Fill()
+end
+
+-- A reminder deleted, from here or a menu: the window without it.
+function Editor.Refresh()
+    if not frame then return end
+    if chosen and not tContains(ns.Reminders.List(), chosen) then chosen = nil end
+    Look(looking)
     Fill()
 end
 

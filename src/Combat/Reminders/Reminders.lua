@@ -4,14 +4,15 @@ local _, ns = ...
 --  Sane UI - Combat - Reminders
 --  A reminder watches one buff or debuff, by its name (so any rank of it), on
 --  you or the unit it was made on, and puts its icon on a reminder bar (Bars.lua)
---  while its settings want it. Kept per character, a buff being a character's:
---      bar       which reminder bar, 1 to Reminders.BARS
+--  while its settings want it. Kept per character, a buff being a character's,
+--  with the bars, one at first; a bar made is yours until you delete it:
+--      bar       which reminder bar: its number, which never changes
 --      missing   shown while the aura is not there
 --      active    shown while it is
 --      early     with missing: seconds before it runs out to show it already
 --      combat    "any", "out" (only out of a fight), "in" (only in one)
 --      noRest    not shown in resting areas (cities, inns)
---  Made by a right click on an aura (Clicks.lua, Units/Auras.lua), set in the
+--  Made by a right click on an aura (Units/BuffList.lua, Units/Auras.lua), set in the
 --  window (Editor.lua, /sane reminders).
 --
 --  In a fight the game hides most auras from addons (ShouldSpellAuraBeSecret;
@@ -26,7 +27,6 @@ local Plain = Core.Plain
 local Reminders = {}
 ns.Reminders = Reminders
 
-Reminders.BARS = 5      -- how many reminder bars there are
 Reminders.EVERY = 0.25  -- seconds between looks, while there are reminders
 Reminders.MOST_EARLY = 9999 -- the longest offset, in seconds
 
@@ -38,6 +38,37 @@ function Reminders.List()
     local char = Core.Character(ns.name)
     char.reminders = char.reminders or {}
     return char.reminders
+end
+
+-- This character's bars: their numbers, in the order made.
+function Reminders.Bars()
+    local char = Core.Character(ns.name)
+    char.reminderBars = char.reminderBars or { 1 }
+    return char.reminderBars
+end
+
+-- A new bar, and its number.
+function Reminders.AddBar()
+    local bars = Reminders.Bars()
+    local char = Core.Character(ns.name)
+    char.lastBar = math.max(char.lastBar or 0, bars[#bars] or 0) + 1
+    bars[#bars + 1] = char.lastBar
+    Reminders.Apply()
+    return char.lastBar
+end
+
+-- A bar gone, its reminders on the first of those left, so none is lost. The last bar stays.
+function Reminders.TakeBar(bar)
+    local bars = Reminders.Bars()
+    if not bars[2] then return end
+    for index = #bars, 1, -1 do
+        if bars[index] == bar then table.remove(bars, index) end
+    end
+    for _, reminder in ipairs(Reminders.List()) do
+        if reminder.bar == bar then reminder.bar = bars[1] end
+    end
+    ns.ReminderBars.Drop(bar)
+    Reminders.Apply()
 end
 
 -- The reminder of an aura ({ name, harmful, unit }), if it has one.
@@ -57,7 +88,7 @@ function Reminders.Make(spell)
     if reminder then return reminder end
     local stays = spell.harmful and spell.unit == "player"
     reminder = { id = spell.id, name = spell.name, icon = spell.icon, harmful = spell.harmful, unit = spell.unit,
-                 bar = 1, missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false }
+                 bar = Reminders.Bars()[1], missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false }
     table.insert(Reminders.List(), reminder)
     Reminders.Apply()
     return reminder
@@ -69,6 +100,7 @@ function Reminders.Take(reminder)
         if list[index] == reminder then table.remove(list, index) end
     end
     Reminders.Apply()
+    ns.ReminderEditor.Refresh()
 end
 
 -- Whether the game hides this aura from addons now.
@@ -123,7 +155,7 @@ end
 function Reminders.Update()
     if ns.off then return end
     local bars = {}
-    for index = 1, Reminders.BARS do bars[index] = {} end
+    for _, bar in ipairs(Reminders.Bars()) do bars[bar] = {} end
     for _, reminder in ipairs(Reminders.List()) do
         local state = Look(reminder)
         local list = bars[reminder.bar]
@@ -131,7 +163,16 @@ function Reminders.Update()
             list[#list + 1] = { icon = reminder.icon, left = state and state.on and state.left or nil }
         end
     end
-    for index, list in ipairs(bars) do ns.ReminderBars.Fill(index, list) end
+    for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
+end
+
+-- A menu's lines for an aura ({ id, name, icon, harmful, unit }): make its reminder or open the one it has, delete it.
+function Reminders.Entry(root, spell)
+    if ns.options.reminders == false then return end
+    local reminder = Reminders.Find(spell)
+    local word = reminder and ns.TEXT.reminderEdit or ns.TEXT.reminderCreate
+    root:CreateButton(word, ns.Guard(function() ns.ReminderEditor.Open(Reminders.Make(spell)) end))
+    if reminder then root:CreateButton(ns.TEXT.reminderDelete, ns.Guard(function() Reminders.Take(reminder) end)) end
 end
 
 -- Your own cast of a spell a reminder watches, where the game tells it in a fight: the aura is there, for how long
@@ -154,21 +195,25 @@ local function Unit()
     end
 end
 
--- The looks run while there are reminders and the setting is on; the bars go when not.
+-- The looks run while there are reminders and the setting is on; the bars go when it is off.
 function Reminders.Apply()
-    local on = not ns.off and ns.options.reminders ~= false and Reminders.List()[1] ~= nil
-    if on and not ticker then
+    local on = not ns.off and ns.options.reminders ~= false
+    local looking = on and Reminders.List()[1] ~= nil
+    if looking and not ticker then
         ticker = C_Timer.NewTicker(Reminders.EVERY, ns.Guard(Reminders.Update))
-    elseif ticker and not on then
+    elseif ticker and not looking then
         ticker:Cancel()
         ticker = nil
     end
     if on then Reminders.Update() else ns.ReminderBars.Hide() end
-    ns.ReminderClicks.Sync()
 end
 
 function Reminders.Start()
-    ns.ReminderClicks.Start()
+    local bars, known = Reminders.Bars(), {} -- a reminder on no bar there is: on the first
+    for _, bar in ipairs(bars) do known[bar] = true end
+    for _, reminder in ipairs(Reminders.List()) do
+        if not known[reminder.bar] then reminder.bar = bars[1] end
+    end
     Core.On("PLAYER_TARGET_CHANGED", Unit)
     Core.On("PLAYER_FOCUS_CHANGED", Unit)
     Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", Cast)
@@ -176,7 +221,7 @@ function Reminders.Start()
     Reminders.Apply()
 end
 
--- Standing down: the looks stop, the bars and the window go, the buffs' right clicks are the game's again.
+-- Standing down: the looks stop, the bars and the window go.
 function Reminders.GiveBack()
     Reminders.Apply()
     ns.ReminderEditor.Hide()

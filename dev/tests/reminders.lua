@@ -1,7 +1,8 @@
--- Runs the Combat module's reminders (src/Combat/Reminders/) against the stand-in client (wowstub.lua): the right click on
--- the game's own buffs and on a unit frame's icons, what shows on a bar and when (missing, active, the offset, combat,
--- resting), a bar as wide as what it holds, a fight in which the game hides the auras, the window, standing down. At its
--- end it runs again as Retail loads the module ("retail": W.Play).
+-- Runs the Combat module's reminders (src/Combat/Reminders/) and the marks on the game's buff list (src/Combat/Units/
+-- BuffList.lua) against the stand-in client (wowstub.lua): the right click on the game's own buffs, the marks Important,
+-- Unimportant and Hidden there, what shows on a bar and when (missing, active, the offset, combat, resting), a bar as wide
+-- as what it holds, bars made and deleted, a fight in which the game hides the auras, the window, standing down. At its end
+-- it runs again as Retail loads the module ("retail": W.Play).
 -- Usage, from the project folder:  lua5.1 dev/tests/reminders.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -100,12 +101,20 @@ local resting, shift = false, false
 IsResting = function() return resting end
 IsShiftKeyDown = function() return shift end
 local function Buttons(count)
-    local frame = { auraFrames = {}, UpdateAuraButtons = function() end }
-    for index = 1, count do frame.auraFrames[index] = W.NewWidget("Button", nil, UIParent) end
+    local frame = { auraFrames = {}, UpdateAuraButtons = function() end, AuraContainer = { UpdateGridLayout = function() end } }
+    for index = 1, count do
+        local button = W.NewWidget("Button", nil, UIParent)
+        button:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -35 * index, 0)
+        for _, key in ipairs({ "Icon", "Duration", "Count", "Symbol", "DebuffBorder", "TempEnchantBorder" }) do
+            rawset(button, key, W.NewWidget("Frame", nil, button))
+        end
+        rawget(button, "Icon"):SetSize(30, 30)
+        frame.auraFrames[index] = button
+    end
     return frame
 end
-BuffFrame, DebuffFrame = Buttons(2), Buttons(1)
-BuffFrame.auraFrames[3] = { isAuraAnchor = true }
+BuffFrame, DebuffFrame = Buttons(3), Buttons(1)
+BuffFrame.auraFrames[4] = { isAuraAnchor = true }
 
 if RETAIL then W.Play("retail") end
 W.LoadCore(root)
@@ -136,7 +145,7 @@ on.player.Thorns = THORNS
 thorns.auraType, thorns.buttonInfo = "Buff", { index = 1, auraInstanceID = 11 }
 BuffFrame.auraFrames[2].auraType = "TempEnchant"
 DebuffFrame.auraFrames[1].auraType = "Debuff"
-ns.ReminderClicks.Sync()
+ns.BuffList.Sync()
 check(shield._mouse == true, "out of a fight it takes the right click: the game's button would cancel the buff")
 check(Shield(BuffFrame.auraFrames[2])._mouse == false, "a weapon enchant stays the game's: no aura, nothing to remind of")
 shift = true
@@ -157,8 +166,9 @@ shield._scripts.OnMouseUp(shield, "LeftButton")
 check(W.menus[1] == nil, "a left click opens nothing")
 shield._scripts.OnMouseUp(shield, "RightButton")
 local menu = W.menus[1]
-check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.reminderCreate and menu[3].title == TEXT.reminderCancel,
-    "its menu: the spell, Create reminder, how to cancel it")
+check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.reminderCreate and menu[3].text == TEXT.auraImportant
+    and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraLists
+    and menu[7].title == TEXT.reminderCancel, "its menu: the spell, Create reminder, the marks, how to cancel it")
 menu[2].fn()
 local list = Reminders.List()
 local reminder = list[1]
@@ -167,17 +177,97 @@ check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and remind
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
 W.menus = {}
 shield._scripts.OnMouseUp(shield, "RightButton")
-check(W.menus[1][2].text == TEXT.reminderEdit, "made once: the menu then opens it")
+check(W.menus[1][2].text == TEXT.reminderEdit and W.menus[1][3].text == TEXT.reminderDelete,
+    "made once: the menu then opens it, or deletes it")
 W.menus[1][2].fn()
 check(#Reminders.List() == 1, "and makes no other")
 
 -------------------------------------------------------------------------------
+--  The marks on the game's list
+-------------------------------------------------------------------------------
+local List = ns.BuffList
+local function Menu(button)
+    W.menus = {}
+    local own = Shield(button)
+    own._scripts.OnMouseUp(own, "RightButton")
+    return W.menus[1]
+end
+local function Line(button, word)
+    for _, item in ipairs(Menu(button)) do
+        if item.text == word then return item end
+    end
+end
+local bear = BuffFrame.auraFrames[3]
+local mid = BuffFrame.auraFrames[2]
+local slotOf = {}
+for index, button in ipairs({ thorns, mid, bear }) do slotOf[index] = button._points[1][4] end
+thorns.hasValidInfo, mid.hasValidInfo, bear.hasValidInfo = true, true, true
+mid.buttonInfo = { index = 1 }
+on.player.Bear = { name = "Bear", spellId = 5487, icon = 1, auraInstanceID = 14, expirationTime = 0 }
+bear.auraType, bear.buttonInfo = "Buff", { index = 2, auraInstanceID = 14 }
+local function Rebuilt() BuffFrame:UpdateAuraButtons() end
+
+Line(thorns, TEXT.auraImportant).fn()
+check(ns.options.auraWhite[782] == "Thorns" and Shield(thorns).glow._shown, "Important: on the list, and a glow in the game's list")
+check(Line(thorns, TEXT.auraImportant).checked() == true, "its line ticked")
+check(thorns.Icon._alpha ~= 0.25 and not Shield(bear).glow._shown, "the others as they were")
+Line(thorns, TEXT.auraUnimportant).fn()
+check(ns.options.auraBlack[782] and not ns.options.auraWhite[782] and not Shield(thorns).glow._shown,
+    "Unimportant: off the other list, no glow")
+check(thorns.Icon._alpha == List.FADED and thorns.Count._alpha == List.FADED and thorns.Duration._alpha == List.FADED,
+    "faded, in its parts: the button's own alpha is the game's warning flash")
+check(thorns._alpha ~= List.FADED, "the button itself is not touched")
+Line(thorns, TEXT.auraUnimportant).fn()
+check(not ns.options.auraBlack[782] and thorns.Icon._alpha == 1, "clicked again: no mark")
+
+Line(thorns, TEXT.auraHidden).fn()
+check(ns.options.auraHidden[782] and thorns.Icon._alpha == 0, "Hidden: out of sight")
+check(mid._points[1][4] == slotOf[1] and bear._points[1][4] == slotOf[2] and thorns._points[1][4] == slotOf[3],
+    "and last in the list: no hole, and showing it moves nothing under the mouse")
+thorns._scripts.OnEnter(thorns)
+check(thorns.Icon._alpha == 1, "the mouse on the list shows it")
+thorns._scripts.OnLeave(thorns)
+check(thorns.Icon._alpha == 1, "as the buttons have gaps it stays a moment")
+mid._scripts.OnEnter(mid)
+W.Wait(List.LINGER + 0.1)
+check(thorns.Icon._alpha == 1, "on to the next button: it stays")
+mid._scripts.OnLeave(mid)
+W.Wait(List.LINGER + 0.1)
+check(thorns.Icon._alpha == 0, "off the list: gone again")
+
+-- In a fight: by the aura's instance where the game tells it, else plain at the first change.
+W.Combat(true)
+secret = true
+Rebuilt()
+check(thorns.Icon._alpha == 0, "in a fight it stays by its instance")
+local info = thorns.buttonInfo
+thorns.buttonInfo = { index = 1, auraInstanceID = W.Secret() }
+Rebuilt()
+check(thorns.Icon._alpha == 1 and mid._points[1][4] == slotOf[2] and thorns._points[1][4] == slotOf[1],
+    "the instance hidden too: the list as the game has it, as a mark on the wrong aura is worse than none")
+thorns.buttonInfo = info
+secret = false
+W.Combat(false)
+W.Fire("PLAYER_REGEN_ENABLED")
+check(thorns.Icon._alpha == 0, "marked again after the fight")
+Line(thorns, TEXT.auraHidden).fn()
+check(thorns._points[1][4] == slotOf[1] and thorns.Icon._alpha == 1, "no mark: back in its place")
+Core.Set("Combat", "buffList", false)
+check(Shield(thorns)._mouse == false, "off: the game's list as it is")
+Core.Set("Combat", "buffList", true)
+check(Shield(thorns)._mouse == true, "on again")
+
+-------------------------------------------------------------------------------
 --  What shows on a bar
 -------------------------------------------------------------------------------
-local function Row()
+local function Row(which)
+    local found = 0
     for _, widget in ipairs(W.frames) do
         if widget._kind == "Frame" and widget._parent ~= UIParent and widget._height == Bars.SIZE
-            and widget._points[1] and widget._points[1][1] == "CENTER" then return widget end
+            and widget._points[1] and widget._points[1][1] == "CENTER" then
+            found = found + 1
+            if found == (which or 1) then return widget end
+        end
     end
 end
 Update()
@@ -305,6 +395,34 @@ check(soul.active and not soul.missing, "a debuff on you: shown when active")
 Reminders.Take(soul)
 
 -------------------------------------------------------------------------------
+--  Bars: one at first, more made, deleted
+-------------------------------------------------------------------------------
+check(#Reminders.Bars() == 1, "one bar by default")
+local second = Reminders.AddBar()
+local third = Reminders.AddBar()
+check(#Reminders.Bars() == 3 and second ~= third, "as many as you make, each its own")
+local rage = Reminders.Make({ id = 5487, name = "Bear", icon = 1, harmful = false, unit = "player" })
+rage.bar = second
+on.player.Thorns, on.player.Bear = nil, nil
+Update()
+local rowTwo = Row(2)
+check(Row()._width == Bars.SIZE and rowTwo ~= nil and rowTwo._width == Bars.SIZE, "each bar holds its own, apart")
+for _, widget in ipairs(W.frames) do
+    check(not (widget._texture == List.GLOW and widget._parent and widget._parent._parent == rowTwo),
+        "no glow on a reminder bar")
+end
+Reminders.TakeBar(second)
+check(#Reminders.Bars() == 2 and rage.bar == Reminders.Bars()[1], "a bar deleted: its reminders on the first bar left")
+Update()
+check(Row()._width == 2 * Bars.SIZE + Bars.GAP and not rowTwo:IsVisible(), "and its frame gone")
+Reminders.TakeBar(third)
+Reminders.TakeBar(Reminders.Bars()[1])
+check(#Reminders.Bars() == 1, "the last bar stays")
+Reminders.Take(rage)
+on.player.Thorns = THORNS
+Update()
+
+-------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
 local function Kind(kind, template)
@@ -315,27 +433,37 @@ local function Kind(kind, template)
     return found
 end
 local ticks, menus = Kind("CheckButton", "UICheckButtonTemplate"), Kind("DropdownButton", "WowStyle1DropdownTemplate")
-check(#ticks == 3 and #menus == 2, "three ticks and two dropdowns: bars and combat")
+check(#ticks == 3 and #menus == 3, "three ticks and three dropdowns: the bar looked at, its bar, combat")
 check(ticks[1]:GetChecked() == true and ticks[2]:GetChecked() == false, "as the reminder is set")
 ticks[2]:SetChecked(true)
 ticks[2]._scripts.OnClick(ticks[2])
 check(reminder.active == true, "a tick takes effect at once")
-check(#menus[1]._items == Reminders.BARS, "a line for each bar")
-menus[1]._items[3].fn()
-check(reminder.bar == 3, "on bar 3")
-menus[1]._items[1].fn()
-check(menus[2]._items[2].text == TEXT.reminderCombat.out, "only outside of combat, in its words")
-menus[2]._items[3].fn()
+local function Pressed(word)
+    for _, button in ipairs(Kind("Button", "UIPanelButtonTemplate")) do
+        if button:GetText() == word then return button end
+    end
+end
+local newBar, takeBar = Pressed(TEXT.reminderNewBar), Pressed(TEXT.reminderDeleteBar)
+ns.ReminderEditor.Open(reminder)
+check(takeBar._disabled, "one bar: it cannot be deleted")
+newBar._scripts.OnClick(newBar)
+check(#Reminders.Bars() == 2 and not takeBar._disabled, "a new bar by its button")
+ns.ReminderEditor.Open(reminder)
+check(#menus[2]._items == 2 and #menus[1]._items == 2, "a line for each bar, in both dropdowns")
+menus[2]._items[2].fn()
+check(reminder.bar == Reminders.Bars()[2], "on the new bar")
+takeBar._scripts.OnClick(takeBar)
+check(#Reminders.Bars() == 1 and reminder.bar == Reminders.Bars()[1], "the bar deleted by its button, the reminder kept")
+ns.ReminderEditor.Open(reminder)
+check(menus[3]._items[2].text == TEXT.reminderCombat.out, "only outside of combat, in its words")
+menus[3]._items[3].fn()
 check(reminder.combat == "in", "chosen")
-menus[2]._items[1].fn()
+menus[3]._items[1].fn()
 local box = Kind("EditBox", "InputBoxTemplate")[1]
 box:SetText("12")
 box._scripts.OnTextChanged(box, true)
 check(reminder.early == 12, "the offset typed")
-local delete
-for _, button in ipairs(Kind("Button", "UIPanelButtonTemplate")) do
-    if button:GetText() == TEXT.reminderDelete then delete = button end
-end
+local delete = Pressed(TEXT.reminderDelete)
 delete._scripts.OnClick(delete)
 check(#Reminders.List() == 0, "deleted")
 
@@ -347,11 +475,16 @@ on.player.Thorns = nil
 Update()
 check(row:GetParent() and row._width == Bars.SIZE, "shown again")
 Core.Set("Combat", "reminders", false)
-check(shield._mouse == false, "off: the right click is the game's")
+check(not row:IsVisible(), "off: no bars")
+on.player.Thorns = THORNS
+check(Menu(thorns)[2].text == TEXT.auraImportant, "and no reminder in the menu; the marks stay")
+on.player.Thorns = nil
 Core.Set("Combat", "reminders", true)
-check(shield._mouse == true, "on again")
+check(row:IsVisible(), "on again")
+on.player.Thorns = THORNS
+Line(thorns, TEXT.auraUnimportant).fn()
 ns.StandDown("a test")
-check(shield._mouse == false, "standing down: the buffs' right click is the game's again")
+check(shield._mouse == false and thorns.Icon._alpha == 1, "standing down: the game's list as it is, its right click the game's")
 
 if RETAIL then
     io.write(("Reminders in Retail: all %d checks passed.\n"):format(passed))

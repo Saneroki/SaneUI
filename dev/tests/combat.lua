@@ -1355,7 +1355,7 @@ do
         "buffs grow from the left edge, debuffs from the right; crowd control fills its own width, so it stays centred")
     check(debuffs._flow.line == 70 and buffs._flow.line == 70 and control._flow.line == 70
         and debuffs._groups.auto.options.layout.lineSpacing == ns.UnitAuras.GAP,
-        "at most three in a line: what your list Always show adds goes up, not into the middle")
+        "at most three in a line: what you marked Important goes up, not into the middle")
     check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
     -- A right click on an icon, out of a fight: the spell on a list.
     local icon = debuffs._groups.auto.icon
@@ -1365,18 +1365,26 @@ do
     icon._scripts.OnMouseUp(icon, "RightButton")
     local menu = W.menus[1]
     check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.reminderCreate
-        and menu[3].text == ns.TEXT.auraAlways and menu[4].text == ns.TEXT.auraNever
-        and menu[5].text == ns.TEXT.auraLists, "its menu: Create reminder, Always show, Never show, Aura lists")
+        and menu[3].text == ns.TEXT.auraImportant and menu[4].text == ns.TEXT.auraUnimportant
+        and menu[5].text == ns.TEXT.auraHidden and menu[6].text == ns.TEXT.auraLists,
+        "its menu: Create reminder, Important, Unimportant, Hidden, Aura lists")
     menu[3].fn()
     check(ns.options.auraWhite[7386] == "Sunder Armor" and debuffs._groups.listed.enabled
         and debuffs._groups.listed.candidates.includeSpellIDs[7386] and debuffs._groups.auto.candidates.excludeSpellIDs[7386]
         and mine.buffs._groups.listed.candidates.includeSpellIDs[7386],
-        "Always show: shown in front of the rest (the game includes it there and leaves it out of the rest)")
+        "Important: shown in front of the rest (the game includes it there and leaves it out of the rest)")
+    local function Shines(button)
+        for _, widget in ipairs(W.frames) do
+            if widget._texture == ns.BuffList.GLOW and widget._parent and widget._parent._parent == button then return true end
+        end
+    end
+    check(Shines(debuffs._groups.listed.icon) and not Shines(debuffs._groups.auto.icon),
+        "the important ones glow on the frame, the group's own icons in a fight too; the rest do not")
     W.menus = {}
     icon._scripts.OnMouseUp(icon, "RightButton")
     W.menus[1][4].fn()
     check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
-        and control._groups.auto.candidates.excludeSpellIDs[7386], "Never show: off the other list, never shown")
+        and control._groups.auto.candidates.excludeSpellIDs[7386], "Unimportant: off the other list, never shown")
     W.combat = true
     W.menus = {}
     icon._scripts.OnMouseUp(icon, "RightButton")
@@ -1392,7 +1400,7 @@ do
     box:SetText("1459")
     box._scripts.OnEnterPressed(box)
     check(ns.options.auraWhite[1459] == "Arcane Intellect" and mine.buffs._groups.listed.candidates.includeSpellIDs[1459],
-        "typed by its number, Enter: on Always show")
+        "typed by its number, Enter: Important")
     local line
     for _, widget in ipairs(W.frames) do
         if widget.entry and widget.entry.id == 1459 and widget._shown then line = widget end

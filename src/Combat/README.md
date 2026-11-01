@@ -31,8 +31,10 @@ The threat and damage meter: your party or raid, you on top, each with their cla
 a thin bar each for threat, damage, healing and interrupts. No title bar and no background, and clicks go through
 it; the mouse on it brings its buttons.
 
-Reminders: right click a buff or debuff and choose *Create reminder*. Its icon then shows on one of five invisible
-reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide as what shows on it.
+Right click a buff or debuff and mark it: *Important* (a yellow glow, first on the unit frames), *Unimportant* (faded,
+never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it). Or choose *Create reminder*: its
+icon then shows on an invisible reminder bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
+shows on it, and you make as many bars as you like.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -97,10 +99,10 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
   - **Auras:** the three that matter most of each kind, in one line above the frame: buffs on the left, from its
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
-    friend or you any, what you can dispel and a boss's first). **Right click** an icon, out of a fight, for its menu: *Always show* (in front of the
-    rest, whoever cast it), *Never show*, and *Aura lists...*, a window with both lists side by side: type a
+    friend or you any, what you can dispel and a boss's first). **Right click** an icon, out of a fight, for its menu: *Important* (in front of the
+    rest, whoever cast it, with a yellow glow), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*) and *Aura lists...*, a window with the lists side by side: type a
     spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
-    `/sane auras` opens it too. The game lets the lists act on the buffs of you, your group and friendly units and
+    `/sane auras` opens it too. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (and in a fight it keeps the icons from addons: their
     menu comes after it).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
@@ -213,18 +215,28 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
     shows its people as they were, until an arrow, *Back to the fights* or a new fight.
   - **In a fight** the game hides these numbers from addons: they show, but the list goes by the places on the game's
     own list. On a boss it hides threat too: there you see the share alone, and threat is neither added up nor sorted.
+- **Your buffs and debuffs** (the page's tick *Marks and menu on the game's list*): the game's own lists at the top of the
+  screen stay, with your marks on them. **Right click** one, out of a fight, for its menu: *Create reminder*, and a tick each:
+  - **Important:** a yellow glow around it; on the unit frames it comes first, with the same glow.
+  - **Unimportant:** faded to 25% of its strength; never on the unit frames.
+  - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
+  - A mark goes by the aura's name, so any rank of it. Click the tick again to take it off, or use `/sane auras`.
+  - **Cancelling a buff:** out of a fight **Shift + right click**, in a fight a right click, as in the game.
+  - **In a fight** the game hides what a button shows: marks stay where it tells the aura's instance; where it does not, the
+    list shows plain from its first change until the fight ends.
 - **Reminders** (the page's tick *Reminder bars*, `/sane reminders`):
   - **Making one:** right click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame,
-    out of a fight, and choose *Create reminder*; the window opens on it. An aura with a reminder says *Edit reminder*.
-    On the game's buffs a right click no longer cancels out of a fight: **Shift + right click** does; in a fight a right
-    click cancels as ever.
+    out of a fight, and choose *Create reminder*; the window opens on it. An aura with a reminder says *Edit reminder*
+    and *Delete reminder*.
   - **Its settings**, each at once: which bar; *Display when missing*; *Display when active*; *Offset time*, with
     missing: so many seconds before it runs out it shows already, with the seconds left on the icon; *Combat*: in and
     out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting areas*. Never while you
     are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on you or on the
     unit it was made on (your target, your focus).
-  - **The bars:** five, invisible, only the icons of what shows now, side by side around the bar's middle. Placed in Edit
-    Mode, where each shows all it holds; a bar with no reminders is not there. Nothing on them takes the mouse.
+  - **The bars:** one at first, more by *New bar* in the window, each with its own reminders (the dropdown on top shows a
+    bar's, *Bar* moves a reminder to another). *Delete bar* puts its reminders on the first bar left; the last bar stays.
+    Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
+    every bar stands with all it holds. Nothing on them takes the mouse.
   - **In a fight** the game hides most auras from addons. What was on stays known: when it goes the reminder shows at once
     and the offset counts on. What comes during a fight the game does not tell, except your own cast where it lets that
     through; else a reminder that shows stays until the fight ends.
@@ -426,18 +438,19 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
     (`BOTTOMLEFT`, `BOTTOM`, `BOTTOMRIGHT`): the game sizes a container to what it holds, so the one in the middle
     stays centred. `Auras.LINE` (three icons) is its widest line (`SetFlowLayoutMaximumLineSize`): what your list
     adds goes up, not sideways into the next kind. Groups of `Auras.MOST` (3): `listed` (the filter
-    `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Always show, off while that list is empty) and `auto` (the kind's
+    `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Important, off while that list is empty, its icons with a glow, so a
+    fight needs no telling which is which) and `auto` (the kind's
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
-    `BigDefensive`, `excludeSpellIDs` = both lists; control only Never show). The game applies those candidate filters
+    `BigDefensive`, `excludeSpellIDs` = both lists; control only Unimportant). The game applies those candidate filters
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
     Each icon (`initializeFrame`, `Dress`): the picture cropped in a dark edge, the swipe, the count, its name into a
     text of ours at alpha 0 (`SetSpellName`), and an `OnMouseUp` hook: a right click, while not `Core.Restricted()`,
     finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
     context menu (`MenuUtil`). `Auras.Set` sets each container's unit (`none` while off), `UpdateAllAuras` at every fill.
-  - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack` (`{ [spell number] = name }`), one list at a
-    time per spell (`Put`, `Take`, then `Auras.Refresh`); the window a `Core.Window` panel (`auraListsPlace`, not
+  - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden` (`{ [spell number] = name }`), one list at a
+    time per spell (`Put`, `Take`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; the window a `Core.Window` panel (`auraListsPlace`, not
     sizable, no full screen): the box (`InputBoxTemplate`; a number by `C_Spell.GetSpellName`, a name by
-    `C_Spell.GetSpellInfo`), the buttons *Always show* and *Never show*, the two lists in scroll areas, each line with
+    `C_Spell.GetSpellInfo`), a button per list, the lists in scroll areas, each line with
     icon, name, number and the game's close button, the rule under them. `/sane auras` (`Core.Command`).
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
@@ -537,11 +550,18 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
   keeps the last plain look: `auraInstanceID` and the end; `GetAuraDuration` is not secret and fails on an instance gone
   (*RequiresValidUnitAuraInstance*), which `Core.Ask` turns to `nil`: the aura went. Past its end and still there it was
   renewed: on, time unknown. `UNIT_AURA`'s payload is secret there and is not used. The bars are plain frames, free to
-  change in a fight. **The right click (`Clicks.lua`):** the game's `AuraButtonMixin:OnClick` cancels a buff in secure code,
-  and `CancelAuraByInstanceID` and `CancelUnitBuff` are closed to addons, so a menu entry cannot cancel: a frame over each
+  change in a fight. Bars: `char.reminderBars`, numbers that never change, so a bar's place (`reminderBar<number>`) stays
+  with it; shown as the place in that list. Deleting one forgets its place. Without reminders the ticker is off.
+- **The buff list** (`Units/BuffList.lua`): the game's `AuraButtonMixin:OnClick` cancels a buff in secure code, and
+  `CancelAuraByInstanceID` and `CancelUnitBuff` are closed to addons, so a menu entry cannot cancel: a frame over each
   button, child of it, clicks only (`SetMouseMotionEnabled(false)`, so the tooltip stays), click-enabled only out of a
   restriction and Edit Mode, without Shift (`MODIFIER_STATE_CHANGED`) and on real auras (`Sync`, also after
-  `UpdateAuraButtons`: a button's `auraType` changes). Fields of the game's buttons are only read.
+  `UpdateAuraButtons`: a button's `auraType` changes). Fields of the game's buttons are only read. The glow is on that
+  frame. The fade on the button's regions (`REGIONS`), as `AuraButtonMixin:OnUpdate` sets the button's own alpha every
+  frame for its warning flash. Hidden last: the game's list keeps a place for every button with `hasValidInfo`, written by
+  it, so `Took` keeps each button's anchor after the game's layout (a hook on `AuraContainer:UpdateGridLayout`; the debuffs'
+  list anchors valid buttons only, `doNotAnchorDisabledFrames`), `Arrange` deals those places out, seen first. The mouse:
+  `HookScript` `OnEnter`, `OnLeave` on the buttons, `LINGER` for the gaps. In a fight `known[instance]` from the last plain look.
 
 ## Files
 
@@ -572,7 +592,8 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar, the power bars under it (a druid's mana and form), the row |
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the right click on an icon |
-| `Units/Lists.lua` | Your lists Always show and Never show, and their window (`/sane auras`) |
+| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden, the menus' lines for them, and their window (`/sane auras`) |
+| `Units/BuffList.lua` | The game's list of your buffs and debuffs: glow, fade, hidden last, the right click by a frame over each button |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
@@ -588,12 +609,12 @@ reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide
 | `Meter/Row.lua` | One character: their line and a bar per thing shown |
 | `Meter/Controls.lua` | The buttons at the end of the first line, and the flyouts |
 | `Meter/Meter.lua` | The window: its two places, the list, grown down or up, the game's meter out of sight, the looks in a fight |
-| `Reminders/Reminders.lua` | The reminders: kept per character, what is known of an aura, in a fight too, whether one shows, the looks |
+| `Reminders/Reminders.lua` | The reminders and bars: kept per character, what is known of an aura, in a fight too, whether one shows, the looks |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Clicks.lua` | The right click on the game's auras, by a frame over each button; the menu's line for an aura |
-| `Reminders/Editor.lua` | The window: your reminders and the settings of the one chosen |
+| `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
 
 ## History
+- **2026-11-01:** Important, Unimportant, Hidden on the game's list of your buffs and on the unit frames (Saneroki); reminder bars made and deleted, one by default.
 - **2026-11-01:** reminders of buffs and debuffs on invisible bars (Saneroki), from a right click on an aura.
 - **2026-11-01:** the threat and damage meter (Saneroki), on the game's own meter and threat, with its pages and saved fights.
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.
