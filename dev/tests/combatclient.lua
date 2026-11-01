@@ -14,7 +14,7 @@ function Client.Install(W)
     CreateScrollBoxListLinearView = function()
         local view = {}
         function view:SetElementInitializer(_, init) self.init = init end
-        function view:SetElementExtent(extent) self.extent = extent end
+        function view:SetElementExtentCalculator(extent) self.extent = extent end
         return view
     end
     ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
@@ -23,8 +23,7 @@ function Client.Install(W)
     W.templates.MinimalScrollBar = function() end
     W.templates.WowScrollBoxList = function(box)
         box.rows = {}
-        function box:SetPanExtent(extent) self.pan = extent end
-        function box:OnMouseWheel(delta) self.wheeled = delta end
+        function box:ScrollToElementDataIndex(index) self.first = index end
         function box:SetDataProvider(provider)
             self.lines = provider.elements
             for index, line in ipairs(self.lines) do

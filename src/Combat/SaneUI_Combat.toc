@@ -82,10 +82,11 @@ Reminders\Editor.lua
 ActionBars.lua
 # The game's experience and stance bars out of sight, its menu bar on mouseover
 GameBars.lua
-# The threat and damage meter: threat added up, what the game tells of a fight, the fights and saved ones, one character's
-# row, the buttons on the first line, the window
+# The threat and damage meter: threat added up, what the game tells of a fight, which bars a character has, the fights and
+# saved ones, one character's row, the buttons on the first line, the window
 Meter\Threat.lua
 Meter\Read.lua
+Meter\Shows.lua
 Meter\Fights.lua
 Meter\Row.lua
 Meter\Controls.lua

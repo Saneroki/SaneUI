@@ -7,7 +7,8 @@ local _, ns = ...
 --      < 3 >    the arrows page through the fights, the number the page
 --      note     the flyout Saved fights: this fight saved under a name of your own, each
 --               saved fight to load or delete
---      cog      the flyout with the ticks, and Order by, a flyout of its own
+--      cog      the flyout with the ticks, and Order by, a flyout of its own; under them when it shows
+--  A right click on a name opens that character's own flyout: which bars they have, whatever the window's ticks say.
 --  The flyouts are the game's menus (Blizzard_Menu).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -23,9 +24,11 @@ Controls.NOTE = "Interface\\Buttons\\UI-GuildButton-PublicNote-Up"
 Controls.PREVIOUS = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-"
 Controls.NEXT = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-"
 Controls.TICKS = { "meterMine", "meterThreat", "meterDamage", "meterHealing", "meterInterrupts", "meterReset" } -- their order
+Controls.WHEN = { "meterHideRest", "meterHideAlone", "meterHover" } -- the ticks under When it shows
 Controls.LETTERS = 60             -- the most a saved fight's name can have
 
 local frame, back, on, number, menu
+local chosen -- the character whose flyout is open
 
 -- The ticks' and the order's settings go through Core: told to the module (Combat.lua's changed), kept.
 local IsOn = ns.Guard(function(key) return ns.options[key] and true or false end)
@@ -58,6 +61,36 @@ local function Ticks(_, root)
     for _, each in ipairs(ns.MeterRead.ORDERS) do
         order:CreateRadio(each.text, IsOrder, SetOrder, each.key):SetResponse(MenuResponse.Refresh)
     end
+    root:CreateDivider()
+    root:CreateTitle(ns.TEXT.meterWhen)
+    for _, key in ipairs(Controls.WHEN) do
+        root:CreateCheckbox(ns.TEXT.meterTicks[key], IsOn, Flip, key)
+    end
+end
+
+-- One character's own bars: what the checkbox shows is what they have.
+local Has = ns.Guard(function(kind) return ns.MeterShows.Is(chosen, kind) end)
+local Toggle = ns.Guard(function(kind)
+    ns.MeterShows.Flip(chosen, kind)
+    ns.Meter.Refresh()
+end)
+local AsWindow = ns.Guard(function()
+    ns.MeterShows.Clear(chosen)
+    ns.Meter.Refresh()
+end)
+
+local Character = ns.Guard(function(_, root)
+    root:CreateTitle(chosen.name)
+    for _, each in ipairs(ns.MeterShows.KINDS) do
+        root:CreateCheckbox(ns.TEXT.meterTicks[each.tick], Has, Toggle, each.kind)
+    end
+    if ns.MeterShows.Own(chosen) then root:CreateButton(ns.TEXT.meterAsWindow, AsWindow) end
+end)
+
+-- That character's own flyout, from a right click on their name.
+function Controls.Character(owner, person)
+    chosen = person
+    menu = MenuUtil.CreateContextMenu(owner, Character)
 end
 
 local function Fights(_, root)

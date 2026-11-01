@@ -73,6 +73,14 @@ for _, button in ipairs(MainActionBar.actionButtons) do button.Update, button.Up
 RAID_CLASS_COLORS = { DRUID = { r = 1, g = 0.49, b = 0.04 } }
 GetClassAtlas = function(class) return "classicon-" .. class end
 
+-- The game's menu is a frame: it says whether it is open.
+local menuMade = MenuUtil.CreateContextMenu
+MenuUtil.CreateContextMenu = function(...)
+    local menu = menuMade(...)
+    function menu:IsShown() return false end
+    return menu
+end
+
 -- Your group: you, a tank, a healer, and who is hunting.
 local GUID = { player = "Player-1-1", raid1 = "Player-1-1", raid2 = "Player-1-2", raid3 = "Player-1-3", raid4 = "Player-1-4" }
 units.player = { name = "Droopy", surname = "Fairwind", player = true, class = "DRUID", level = 60, health = 850, most = 1000,
@@ -234,6 +242,16 @@ end
 -------------------------------------------------------------------------------
 --  Where it stands, what it is
 -------------------------------------------------------------------------------
+-- At first it hides out of a fight and alone: there empty, for the mouse's coming; the rest of this file has it in sight.
+local block
+for _, widget in ipairs(W.frames) do
+    if rawget(widget, "_template") == nil and widget._parent == handle.inside and widget._kind == "Frame" then block = widget end
+end
+check(frame:IsShown() and not block._shown, "out of a fight the window is there, nothing of it to see")
+Set("meterHideRest", false)
+Set("meterHideAlone", false)
+check(block._shown, "with both off in sight")
+
 Meter.Refresh()
 local point, _, relative, x, y = frame:GetPoint(1)
 check(point == "TOPLEFT" and relative == "TOPLEFT" and x == 320 and y == 0, "at first right of the quest log, at the very top")
@@ -255,7 +273,7 @@ check(DamageMeter:GetParent() ~= meterParent, "and its window is out of sight: o
 local mine = Find("Droopy Fairwind")
 check(mine and mine.level._text == 60 and mine.item._text == 71, "your own line: level, item level and name")
 check(mine.icon._atlas == "classicon-druid" or mine.icon._shown, "and your class's icon")
-check(mine:GetParent() ~= box, "you stand apart from the list")
+check(mine:GetParent() == block, "you stand apart from the list")
 check(Order() == "Dorin, Brisa, Caelum", "the others by DPS, the game's list as it comes")
 
 local healer = Find("Caelum Crowley")
@@ -291,17 +309,21 @@ check(rate, "by DPS the game's list by DPS is read")
 frame._height = Row.Height(4) * 2 + 1
 frame:GetScript("OnSizeChanged")(frame)
 check(frame._wheel == true, "more than fit: the wheel scrolls them")
+check(box._height == Row.Height(4), "whole rows only")
 frame:GetScript("OnMouseWheel")(frame, -1)
-check(box.wheeled == -1, "and turns the list")
-check(box.pan == Row.Height(4), "a character a notch")
+check(box.first == 2, "a character a notch")
+frame:GetScript("OnMouseWheel")(frame, -1)
+frame:GetScript("OnMouseWheel")(frame, -1)
+check(box.first == 3, "no further than the last")
+frame:GetScript("OnMouseWheel")(frame, 1)
+check(box.first == 2, "and back")
 frame._height = Meter.HEIGHT
 frame:GetScript("OnSizeChanged")(frame)
-check(not frame._wheel, "all fit: the wheel is the game's again")
+check(not frame._wheel and box.first == 1, "all fit: the wheel is the game's again, nobody out of sight")
 
 -------------------------------------------------------------------------------
 --  Grows down, or up
 -------------------------------------------------------------------------------
-local block = mine:GetParent()
 frame._left, frame._bottom, frame._width, frame._height = 320, 680, 260, 400
 handle.options.docked()
 check(block:GetPoint(1) == "TOPLEFT", "in the screen's top half it hangs from the top")
@@ -332,6 +354,56 @@ for _ = 1, 20 do
     end
 end
 check(not controls._shown and not frame.drag._shown, "gone with the mouse")
+
+-------------------------------------------------------------------------------
+--  A character's own bars
+-------------------------------------------------------------------------------
+local function Choice(words)
+    for _, item in ipairs(W.menus[#W.menus].items or W.menus[#W.menus]) do
+        if item.text == words then return item end
+    end
+end
+Set("meterDamage", false)
+Set("meterHealing", false)
+Set("meterInterrupts", false)
+local brisaRow = Find("Brisa Ashford")
+check(Bar(brisaRow, "Threat") and not Bar(brisaRow, "Damage"), "the window set to threat alone")
+check(not brisaRow.line._shown, "a name takes no click at rest")
+frame:GetScript("OnEnter")(frame)
+frame._mouseOver = true
+check(brisaRow.line._shown, "with the mouse on the window it does")
+brisaRow.line:GetScript("OnClick")(brisaRow.line, "RightButton")
+check(Choice("Show Damage") and not Choice("Show Damage").checked("damage"), "a right click on a name: that character's own flyout")
+Choice("Show Damage").fn("damage")
+brisaRow = Find("Brisa Ashford")
+check(Bar(brisaRow, "Threat") and Bar(brisaRow, "Damage"), "damage for that character alone")
+check(not Bar(Find("Dorin Dunmere"), "Damage"), "and for nobody else")
+check(box.view.extent(nil, brisaRow.line.person) > box.view.extent(nil, Find("Dorin Dunmere").line.person),
+    "their row is higher")
+check(ns.store.meterPeople[GUID.raid2].damage == true, "kept by who they are")
+frame.drag:GetScript("OnMouseUp")(frame.drag, "RightButton")
+check(Choice("Show Threat").checked("threat"), "your own line's name takes it too")
+Choice("Show Threat").fn("threat")
+check(not Bar(mine, "Threat") and #Find("Dorin Dunmere").bars >= 1, "and a bar can go for one character as well")
+frame.drag:GetScript("OnMouseUp")(frame.drag, "RightButton") -- the game's menu builds itself anew after a tick
+Choice("As the window's ticks").fn()
+check(Bar(mine, "Threat") and ns.store.meterPeople[GUID.player] == nil, "as the window's ticks again")
+brisaRow.line:GetScript("OnClick")(brisaRow.line, "RightButton")
+Set("meterDamage", true)
+Choice("Show Damage").fn("damage")
+check(not Bar(Find("Brisa Ashford"), "Damage") and Bar(Find("Dorin Dunmere"), "Damage"),
+    "with the window showing damage, one character can do without")
+Choice("Show Damage").fn("damage")
+check(ns.store.meterPeople[GUID.raid2] == nil, "what comes out as the ticks is no choice of its own")
+Set("meterHealing", true)
+Set("meterInterrupts", true)
+frame._mouseOver = false
+for _ = 1, 20 do
+    for _, widget in ipairs(W.frames) do
+        local update = widget._shown and widget._scripts and widget._scripts.OnUpdate
+        if update then update(widget, 0.1) end
+    end
+end
 
 -------------------------------------------------------------------------------
 --  Pages
@@ -440,6 +512,65 @@ W.Combat(true)
 check(not Fights.Loaded(), "and so does a new fight")
 W.Combat(false)
 raid = true
+
+-------------------------------------------------------------------------------
+--  When it shows
+-------------------------------------------------------------------------------
+Set("meterHideRest", true)
+Set("meterHideAlone", true)
+check(frame:IsShown() and not block._shown, "Hide outside combat: out of a fight out of sight")
+W.Fire("PLAYER_REGEN_DISABLED") -- as the game tells of it, its lockdown has not begun
+check(block._shown, "a fight brings it")
+local running = false
+for _, widget in ipairs(W.frames) do
+    if widget._parent == frame and widget._shown and widget._scripts and widget._scripts.OnUpdate then running = true end
+end
+check(running, "and its looks run, the game's lockdown or not")
+W.Combat(true)
+raid = false
+W.Fire("GROUP_ROSTER_UPDATE")
+check(not block._shown, "Hide when not in group: left alone in the fight out of sight")
+raid = true
+W.Fire("GROUP_ROSTER_UPDATE")
+check(block._shown, "a group brings it back")
+W.Combat(false)
+W.Wait(0)
+check(not block._shown, "the fight over: gone again")
+
+frame._mouseOver = true
+frame:GetScript("OnEnter")(frame)
+check(block._shown, "Show on mouseover: the mouse on its place brings it")
+frame._mouseOver = false
+for _ = 1, 20 do
+    for _, widget in ipairs(W.frames) do
+        local update = widget._shown and widget._scripts and widget._scripts.OnUpdate
+        if update then update(widget, 0.1) end
+    end
+end
+check(not block._shown and not frame._wheel, "and it goes with the mouse, the wheel the game's")
+
+Set("meterHover", false)
+check(not frame:IsShown(), "without it the window itself is gone")
+W.Combat(true)
+check(frame:IsShown() and block._shown, "and a fight brings it")
+W.Combat(false)
+W.Wait(0)
+Set("meterHover", true)
+
+Fights.Load(record)
+Meter.Refresh()
+check(block._shown, "a saved fight loaded stays in sight, in a group or not")
+Fights.Unload()
+Meter.Refresh()
+check(not block._shown, "back to the fights it goes")
+if not RETAIL then
+    Meter.Dress(true)
+    check(block._shown, "on the full screen it always shows")
+    Meter.Dress(false)
+    check(not block._shown, "and not back on the screen")
+end
+Set("meterHideRest", false)
+Set("meterHideAlone", false)
 
 -------------------------------------------------------------------------------
 --  Its other look, on or off, standing down

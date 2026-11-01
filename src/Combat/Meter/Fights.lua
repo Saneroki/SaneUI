@@ -21,6 +21,7 @@ local page     -- the page looked at, in the game's list; nil: the live one
 local loaded   -- the saved fight looked at, read for the meter (Loaded)
 local before   -- the newest fight the game held when this one began
 local closing  -- a fight is over and has no number yet: its threat waits for it (Settle)
+local fighting -- from the game's word that a fight begins to its word that it ended
 
 local function Live()
     return { type = ns.options.meterReset and "Current" or "Overall" }
@@ -38,7 +39,7 @@ end
 local function Loaded(record)
     local read = { people = {}, numbers = {}, top = {}, rank = {}, seconds = record.seconds, saved = record }
     for index, one in ipairs(record.people) do
-        local guid = "saved" .. index
+        local guid = one.guid or "saved" .. index -- a character's own bars still count for them
         read.people[index] = { guid = guid, name = one.name, class = one.class, level = one.level, item = one.item,
                                me = one.me }
         local numbers = {}
@@ -55,7 +56,6 @@ end
 function Fights.Read(types)
     if loaded then return loaded end
     local people = ns.MeterRead.People()
-    local fighting = InCombatLockdown()
     if fighting then ns.MeterThreat.Sample(people) end
     local where, session = Where(ns.MeterRead.Sessions())
     local read = ns.MeterRead.Fight(where, types, people)
@@ -97,9 +97,14 @@ function Fights.About()
     return nil
 end
 
+-- Whether a fight is on, as the game told: as it tells of one its lockdown has not begun yet (InCombatLockdown).
+function Fights.Fighting()
+    return fighting or false
+end
+
 -- A fight begins: the live page, and the threat from nothing.
 function Fights.Began()
-    page, loaded, closing = nil, nil, nil
+    page, loaded, closing, fighting = nil, nil, nil, true
     local sessions = ns.MeterRead.Sessions()
     before = sessions[#sessions] and sessions[#sessions].id
     ns.MeterThreat.Begin()
@@ -118,7 +123,7 @@ end
 
 -- A fight is over.
 function Fights.Ended()
-    closing = true
+    closing, fighting = true, false
     ns.MeterThreat.End()
     Fights.Settle()
 end
@@ -151,8 +156,8 @@ local function Saved(name)
         for kind, entry in pairs(read.numbers[person.guid] or {}) do
             numbers[kind] = { total = Plain(entry.total), rate = Plain(entry.rate) }
         end
-        record.people[index] = { name = person.name, class = person.class, level = person.level, item = person.item,
-                                 me = person.me, numbers = numbers }
+        record.people[index] = { guid = person.guid, name = person.name, class = person.class, level = person.level,
+                                 item = person.item, me = person.me, numbers = numbers }
     end
     return record
 end

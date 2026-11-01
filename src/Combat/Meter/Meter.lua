@@ -7,10 +7,16 @@ local _, ns = ...
 --  At first right of the quest log's first place at the very top of the screen; on the
 --  full screen in its top left corner.
 --
---  The list of your party or raid, you on top (Row.lua), as many as fit: the mouse
---  wheel over the window scrolls the others under your own line, which stays. Sorted
---  by what the flyout says (Read.ORDERS); in a fight, where the game hides the numbers,
---  by the places on its own list, and threat not at all on a boss.
+--  The list of your party or raid, you on top (Row.lua), as many as fit whole: the mouse
+--  wheel over the window takes the others a character at a time under your own line,
+--  which stays. A character has the bars the ticks say, or their own (Shows.lua), so rows
+--  differ in height. Sorted by what the flyout says (Read.ORDERS); in a fight, where the
+--  game hides the numbers, by the places on its own list, and threat not at all on a boss.
+--
+--  Hide outside combat and Hide when not in group take it out of sight (Seen), but on
+--  the full screen, in Edit Mode and with a saved fight loaded. With Show on mouseover
+--  the window stays there empty, so the mouse coming onto its place brings it back;
+--  without, it is hidden whole.
 --
 --  There is nothing else to it: no title bar, no background, and clicks go through
 --  all of it. Only while the mouse is on it the buttons stand at the right end of the
@@ -24,11 +30,13 @@ local _, ns = ...
 --  setting is on and its window out of sight while ours is on (Hold); ours or the
 --  game's, never both. Nothing runs at rest: a look every Meter.EVERY seconds in a fight,
 --  or while somebody's item level is still to be asked for (Core.Inspect), and at rest
---  only when the game says something changed.
+--  only when the game says something changed. The fight is the events' (Fights.Fighting):
+--  as the game tells of it its lockdown has not begun.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Row = ns.MeterRow
 local Controls = ns.MeterControls
+local Shows = ns.MeterShows
 local Meter = {}
 ns.Meter = Meter
 
@@ -41,8 +49,6 @@ Meter.ASK = 4               -- out of a fight, looks between two questions for a
 Meter.MARGIN = 6            -- how far around the window the mouse still counts as on it
 Meter.LINGER = 0.3          -- seconds the buttons stay after the mouse left
 Meter.CVAR = "damageMeterEnabled" -- the game's meter's switch
-Meter.KINDS = { { "threat", "meterThreat" }, { "damage", "meterDamage" }, { "healing", "meterHealing" },
-                { "interrupts", "meterInterrupts" } } -- the bars, in their order, and each one's tick
 
 local KEY = { [true] = "meterFullPlace", [false] = "meterPlace" } -- where each look's place is kept
 local FIRST = {
@@ -52,13 +58,13 @@ local FIRST = {
 
 local frame, handle, hover, watch
 local block, mine, box, view -- what holds the rows, your own, the list of the others
-local kinds = {}             -- the kinds shown now
+local shown = {}             -- [person] = their bars, this round
 local worth = {}             -- [person] = what the list is sorted by, this round
 local read                   -- the fight read last
 local leader                 -- who stands on the first line of the list: without your own line, the buttons stand there
 local full = false           -- the look over the full screen
-local line                   -- what the list holds, as guids in order: drawn anew only when that changed
-local extent                 -- a row's height now
+local line                   -- what the list holds, as guids and bars in order: drawn anew only when that changed
+local first = 1              -- the first of the list that shows: the wheel moves it
 local stale                  -- something changed while out of sight
 local hovered                -- the mouse is on it
 local rest = 0               -- looks out of a fight since the last question
@@ -73,16 +79,12 @@ local function Order()
     return ns.MeterRead.ORDERS[1]
 end
 
--- What to read of the game: the kinds shown, and the one the list is sorted by, as a rate if it goes by that.
+-- What to read of the game: the kinds anybody has, and the one the list is sorted by, as a rate if it goes by that.
 local function Types()
-    wipe(kinds)
     local types = {}
-    for _, each in ipairs(Meter.KINDS) do
-        if ns.options[each[2]] then
-            kinds[#kinds + 1] = each[1]
-            local names = ns.MeterRead.TYPES[each[1]]
-            if names then types[each[1]] = names.total end
-        end
+    for kind in pairs(Shows.Wanted()) do
+        local names = ns.MeterRead.TYPES[kind]
+        if names then types[kind] = names.total end
     end
     local order = Order()
     local names = ns.MeterRead.TYPES[order.kind]
@@ -129,42 +131,73 @@ local function Room(first)
 end
 
 local function Draw(row, person)
-    Row.Draw(row, person, read, kinds, Room(person == leader))
+    Row.Draw(row, person, read, shown[person] or Shows.Of(person), Room(person == leader), hovered)
 end
 
--- The list's room in the window, from what is shown: rows whole, so nobody stands half out of it. Your own line first.
+-- How high a row of the list stands.
+local function Extent(person)
+    return Row.Height(#(shown[person] or Shows.Of(person)))
+end
+
+-- How many of the list fit whole from its first shown on, and how high they stand. Room left at the list's end
+-- takes the first shown back up, so a window made larger shows no gap under the last.
+local function Fit(list, room)
+    first = math.max(1, math.min(first, #list))
+    local used, count = 0, 0
+    for index = first, #list do
+        local height = Extent(list[index])
+        if used + height > room then break end
+        used, count = used + height, count + 1
+    end
+    while first > 1 and first + count > #list do
+        local height = Extent(list[first - 1])
+        if used + height > room then break end
+        first, used, count = first - 1, used + height, count + 1
+    end
+    return count, used
+end
+
+-- The list in the window: whole rows, so nobody stands half out of it, your own line first.
 local function Lay(list, me)
-    local height = Row.Height(#kinds)
-    local top = me and height or 0
-    local fit = math.floor((frame:GetHeight() - top) / height)
-    local shown = math.max(0, math.min(fit, #list))
-    mine:SetHeight(height)
+    wipe(shown)
+    local top = 0
+    if me then
+        shown[me] = Shows.Of(me)
+        top = Row.Height(#shown[me])
+        mine:SetHeight(top)
+    end
     mine:SetShown(me ~= nil)
+    local names = {}
+    for index, person in ipairs(list) do
+        shown[person] = Shows.Of(person)
+        names[index] = person.guid .. ":" .. #shown[person]
+    end
+    local count, used = Fit(list, frame:GetHeight() - top)
     box:SetPoint("TOPLEFT", block, "TOPLEFT", 0, -top)
     box:SetPoint("TOPRIGHT", block, "TOPRIGHT", 0, -top)
-    box:SetHeight(math.max(shown * height, 1))
-    box:SetShown(shown > 0)
-    block:SetHeight(math.max(top + shown * height, Row.LINE))
-    frame:EnableMouseWheel(#list > shown)
-    if me then Row.Draw(mine, me, read, kinds, Room(true)) end
-    leader = not me and list[1] or nil
+    box:SetHeight(math.max(used, 1))
+    box:SetShown(count > 0)
+    block:SetHeight(math.max(top + used, Row.LINE))
+    frame:EnableMouseWheel(count < #list)
+    leader = not me and list[first] or nil
+    frame.drag.person = me or leader
+    if me then Row.Draw(mine, me, read, shown[me], Room(true), hovered) end
 
-    local names = {}
-    for index, person in ipairs(list) do names[index] = person.guid end
     local now = table.concat(names, " ")
-    if now ~= line or height ~= extent then
-        line, extent = now, height
-        view:SetElementExtent(height)
-        box:SetPanExtent(height)
+    if now ~= line then
+        line = now
         box:SetDataProvider(CreateDataProvider(list), ScrollBoxConstants.RetainScrollPosition)
     else
         box:ForEachFrame(Draw)
+    end
+    if count > 0 then
+        box:ScrollToElementDataIndex(first, ScrollBoxConstants.AlignBegin, 0, ScrollBoxConstants.NoScrollInterpolation)
     end
 end
 
 -- Read and drawn anew, if in sight; else once it is.
 function Refresh()
-    if not frame or not frame:IsShown() then
+    if not frame or not frame:IsShown() or not block:IsShown() then
         stale = true
         return
     end
@@ -174,7 +207,32 @@ function Refresh()
     Lay(Sorted())
     Controls.Page()
 end
-Meter.Refresh = function() ns.Guarded(Refresh) end
+
+-- Whether it stands in sight by itself, the mouse aside.
+local function Wanted()
+    if full or Core.EditMode.active or ns.MeterFights.Loaded() then return true end
+    if ns.options.meterHideRest and not ns.MeterFights.Fighting() then return false end
+    if ns.options.meterHideAlone and not Core.Ask(IsInGroup) then return false end
+    return true
+end
+
+-- In sight or not. With Show on mouseover the empty window stays, for the mouse's coming; its wheel is the game's then.
+local function Seen()
+    if not frame then return end
+    local on = ns.options.meter and not ns.off
+    local wanted = Wanted()
+    frame:SetShown((on and (wanted or ns.options.meterHover)) and true or false)
+    local seen = (wanted or hovered) and true or false
+    block:SetShown(seen)
+    if not seen then frame:EnableMouseWheel(false) end
+    if seen and stale then Refresh() end
+end
+
+local function Again()
+    Seen()
+    Refresh()
+end
+Meter.Refresh = function() ns.Guarded(Again) end
 local soon = Core.Later(Meter.Refresh)
 
 -- Somebody of the group whose item level is still to be asked for.
@@ -188,7 +246,7 @@ end
 -- A look: in a fight all of it, out of one only the question for an item level, a few looks apart; with nobody left
 -- to ask about the look ends.
 local function Look()
-    if InCombatLockdown() then return Refresh() end
+    if ns.MeterFights.Fighting() then return Refresh() end
     if not Missing() then return watch:Stop() end
     rest = rest + 1
     if rest < Meter.ASK then return end
@@ -201,7 +259,7 @@ end
 -- Whether there is something to look for: looks run or end.
 local function Watching()
     if not watch then return end
-    if frame:IsShown() and (InCombatLockdown() or Missing()) then
+    if frame:IsShown() and (ns.MeterFights.Fighting() or Missing()) then
         if not watch:IsRunning() then watch:Start() end
     else
         watch:Stop()
@@ -224,7 +282,7 @@ local function Hovered(on)
     Controls.Show(on)
     handle:Hover(on)
     frame.drag:SetShown(on)
-    Refresh()
+    Again()
 end
 
 -- The game keeps gathering while its meter is switched on: its setting on and its window out of sight (Hold(true)),
@@ -257,10 +315,8 @@ end
 -- As the settings say: shown or not, drawn anew.
 function Meter.Apply()
     if not frame then return end
-    local on = ns.options.meter and not ns.off
-    Hold(on)
-    frame:SetShown(on and true or false)
-    Refresh()
+    Hold(ns.options.meter and not ns.off)
+    Again()
     Watching()
 end
 
@@ -272,7 +328,7 @@ function Meter.Dress(on)
     frame:SetFrameStrata(on and "DIALOG" or "LOW")
     handle:Use(KEY[on], FIRST[on])
     Sided()
-    Refresh()
+    Again()
 end
 
 -- On or off, as the button on the full screen's bar and /sane meter say.
@@ -315,12 +371,17 @@ function Meter.Build()
     local bar = CreateFrame("EventFrame", nil, block, "MinimalScrollBar")
     bar:Hide() -- the wheel scrolls: the list shows nothing but its rows
     view = CreateScrollBoxListLinearView()
+    -- The game's list asks these of every row: always a number (also after a failure), each row drawn apart.
+    view:SetElementExtentCalculator(function(_, person) return ns.Safe("meter", Extent, person) or Row.LINE end)
     view:SetElementInitializer("Frame", function(row, person) ns.Safe("meter", Draw, row, person) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
-    box:EnableMouseWheel(false) -- the window's wheel, on your own line too
-    frame:SetScript("OnMouseWheel", ns.Guard(function(_, delta) box:OnMouseWheel(delta) end))
+    box:EnableMouseWheel(false) -- the window's wheel, on your own line too: a character a notch
+    frame:SetScript("OnMouseWheel", ns.Guard(function(_, delta)
+        first = first + (delta < 0 and 1 or -1)
+        Refresh()
+    end))
 
-    -- The first line drags the window, while the mouse is on it.
+    -- The first line drags the window, while the mouse is on it, and a right click there is on its name as on any.
     local drag = CreateFrame("Frame", nil, block)
     drag:SetPoint("TOPLEFT")
     drag:SetPoint("TOPRIGHT", -Controls.WIDTH, 0)
@@ -328,6 +389,9 @@ function Meter.Build()
     drag:SetFrameLevel(block:GetFrameLevel() + 10)
     drag:EnableMouse(true)
     drag:Hide()
+    drag:SetScript("OnMouseUp", ns.Guard(function(self, mouse)
+        if mouse == "RightButton" and self.person then Controls.Character(self, self.person) end
+    end))
     frame.drag = drag
     handle:DragBy(drag)
     Controls.Build(block)
@@ -346,26 +410,29 @@ function Meter.Build()
     handle:Place()
     Sided()
     Core.Inspect.Watch(ns.Guard(function() soon() end))
-    Core.EditMode.Watch(ns.Guard(function() Hold(ns.options.meter and not ns.off) end))
+    Core.EditMode.Watch(ns.Guard(Meter.Apply))
+    if InCombatLockdown() then ns.MeterFights.Began() end -- a /reload in a fight
     Meter.Apply()
     Meter.Dress(ns.Window.Full())
 end
 
 local function Began()
     ns.MeterFights.Began()
-    Refresh()
+    Again()
     Watching()
 end
 
 local function Ended()
     ns.MeterFights.Ended()
-    Refresh()
+    Again()
     Watching()
 end
 
--- The game's words of a change: at rest drawn anew once however many came; in a fight the next look shows it.
+-- The game's words of a change: at rest drawn anew once however many came; in a fight only whether it is to be seen
+-- (a group joined), the next look shows the rest.
 local function Changed()
-    if not InCombatLockdown() then soon() end
+    if not ns.MeterFights.Fighting() then return soon() end
+    if frame then ns.Guarded(Seen) end
 end
 
 ns.On("PLAYER_REGEN_DISABLED", function() if frame then ns.Guarded(Began) end end)

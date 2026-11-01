@@ -5,7 +5,8 @@ local _, ns = ...
 --  One character on the meter: a line with their class's icon, level, item level
 --  and name, and under it a bar for each thing shown, left to right, in its own
 --  colour, its name in it and its numbers at its right end. Nothing else: no
---  background, nothing that takes the mouse.
+--  background, and nothing takes the mouse but, while the mouse is on the window, the
+--  line with the name for a right click (Controls.Character).
 --
 --  A bar's length is the character's total against the highest of the fight; threat's,
 --  while there is a mob, their share of it, as the game counts aggro.
@@ -66,8 +67,19 @@ local function Bar(row, index)
     return bar
 end
 
+local function Picked(line)
+    ns.MeterControls.Character(line, line.person)
+end
+
 local function Make(row)
     row.bars = {}
+    row.line = CreateFrame("Button", nil, row)
+    row.line:SetPoint("TOPLEFT")
+    row.line:SetPoint("TOPRIGHT")
+    row.line:SetHeight(Row.LINE)
+    row.line:RegisterForClicks("RightButtonUp")
+    row.line:SetScript("OnClick", ns.Guard(Picked))
+    row.line:Hide()
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetSize(Row.ICON, Row.ICON)
     row.icon:SetPoint("TOPLEFT", 0, -1)
@@ -132,9 +144,12 @@ local function Amount(bar, kind, entry, top)
 end
 
 -- That character's line and a bar for each of kinds, from a read fight (Read.Fight). room: what stays free at the
--- line's right end (the buttons stand there on the first line).
-function Row.Draw(row, person, read, kinds, room)
+-- line's right end (the buttons stand there on the first line); live: the mouse is on the window, the line takes a
+-- right click.
+function Row.Draw(row, person, read, kinds, room, live)
     if not row.bars then Make(row) end
+    row.line.person = person
+    row.line:SetShown(live and true or false)
     Class(row, person.class)
     row.level:SetText(person.level or "")
     row.item:SetText(person.item or Row.NONE)

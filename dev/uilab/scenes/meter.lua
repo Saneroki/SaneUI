@@ -2,8 +2,9 @@
 -- The game's meter, the threat and the group stand in here, so everything of the window itself is Sane UI's real code:
 -- the mouse on it shows the buttons, the first line drags it, its corner sizes it, the wheel scrolls, the flyouts tick.
 -- The panel beside it: Pull and End fight, the group's size, the window to the other half of the screen. In the
--- console: LabPull(), LabEnd(), LabGroup(25), LabHalf(), LabMeter is the module's Meter table. The game hides the numbers
--- in a fight (secret values), which only dev/tests/meter.lua runs through: here they stay plain.
+-- console: LabPull(), LabEnd(), LabGroup(25), LabHalf(), LabMeter is the module's Meter table. It begins in a fight: End
+-- fight hides the meter by its setting, the mouse on its place brings it back. The game hides the numbers in a fight
+-- (secret values), which only dev/tests/meter.lua runs through: here they stay plain.
 for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "PlayerCastingBarFrame",
                         "OverlayPlayerCastingBarFrame", "MirrorTimerContainer", "PartyFrame", "CompactRaidFrameContainer" }) do
     CreateFrame("Frame", name, UIParent)
@@ -274,5 +275,4 @@ Lab.OnLogin(function()
     Backdrop()
     Panel()
     LabPull()
-    C_Timer.After(8, LabEnd)
 end)

@@ -153,6 +153,7 @@ return function(Lab)
     local function down(button, x, y)
         Lab.mouse.buttons[button] = true
         move(x, y)
+        Lab.Fire("GLOBAL_MOUSE_DOWN", button) -- what closes Blizzard's menus on a click elsewhere
         local f = Lab.FrameAt(x, y, function(fr) return S[fr].mouse end)
         Lab.pressed = f
         if not f then

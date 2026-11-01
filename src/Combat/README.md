@@ -195,12 +195,16 @@ shows on it, and you make as many bars as you like.
   you see, start and end on the line to its tip, and grow with the game's *Cursor Size* (Accessibility).
 - **The threat and damage meter** (*Threat and damage meter* on the page Combat, the button on the full screen's bar or
   `/sane meter` switch it, on at first), in place of the game's own damage meter:
+  - **When it shows:** the cog's section of that name, all three on at first. *Hide outside combat*, *Hide when not in
+    group*: out of sight while that is so. *Show on mouseover*: while it is hidden, the mouse on its place brings it,
+    buttons and all; off, it comes only with a fight or a group. On Combat's full screen, in Edit Mode and with a saved
+    fight loaded it always shows.
   - **Where:** at first at the very top of the screen, right of the quest log's first place. On Combat's full screen in
     its top left corner, each with its own place and size, kept. In Edit Mode, or with the mouse on it: drag the first
     line to move it, as the quest log's title bar does, it docks at the edges too; its corner's grip sizes it.
   - **The list:** a line per character with the class's icon, level, item level (`-` until it could be read: the game
     gives it only near a player, out of a fight) and name, and under it the bars. You stand on top, always in sight;
-    only as many as fit show, and the mouse wheel over the window scrolls the others under your line. In the screen's
+    only as many as fit whole show, and the mouse wheel over the window takes the others one at a time under your line. In the screen's
     top half the list hangs from the window's top and grows down, in the bottom half it stands on its bottom and grows up.
   - **The bars:** left to right, in the colour of what they count, its word in the bar and on the right its numbers: per
     second and the fight's total (interrupts: how many). A bar's length is the total against the highest of the fight;
@@ -209,6 +213,10 @@ shows on it, and you make as many bars as you like.
     them go through the fights the game holds (the last page is the live one; a new fight goes back to it); the note
     opens *Saved fights*; the cog the ticks: *My self on top*, *Show Threat*, *Show Damage*, *Show Healing*, *Show
     Interrupts*, *Reset on new combat*, and *Order by* (DPS, HPS, Threat, Interrupts, Total damage, Total healing).
+  - **One character's own bars:** with the mouse on the window, right click a name: their own flyout, with *Show Threat*,
+    *Show Damage*, *Show Healing* and *Show Interrupts* for them alone, whatever the cog's ticks say, kept for this account.
+    The window set to threat alone can so show one member's damage too and another's healing, or leave a bar off one
+    character. *As the window's ticks* takes their choices back. Your own line too, and in saved fights.
   - **Reset on new combat:** ticked, the live page is this fight alone and every number starts at nothing; unticked it
     is all fights added up. The fights' own pages stay either way.
   - **Saved fights:** *Save this fight...* keeps the fight shown under a name of your own, for this account, in a group
@@ -544,9 +552,17 @@ shows on it, and you make as many bars as you like.
   mob)` for every member each look, `rawThreat / Threat.SCALE`, positive gains added per fight and overall; a mob is known
   only by a new target, as its GUID may be hidden. A fight's threat stays with the fight's session once the game lists
   it (`Fights.Settle`). Looks: `Core.Watch` every `Meter.EVERY` seconds in a fight or while an item level is still to ask
-  for (`Core.Inspect`); at rest only `Core.Later` after the game's events. A saved fight: `store.meterFights`, plain numbers.
+  for (`Core.Inspect`); at rest only `Core.Later` after the game's events. A fight is `Fights.Fighting()`, from the game's
+  two events: as `PLAYER_REGEN_DISABLED` comes `InCombatLockdown()` still says no. A saved fight: `store.meterFights`, plain numbers.
   Hover: `Core.Hover` (motion only, so every click goes on); the wheel on the window while the list is longer than its room;
   the first line's `drag` frame shows only on hover, `window:DragBy` (Core).
+  - **Which bars:** `Shows.Of(person)`: the ticks, but for `store.meterPeople[guid] = { [kind] = true or false }`, only what
+    differs from the ticks; a saved fight keeps each GUID so its people have theirs. So rows differ in height: the list's extent is
+    a calculator, `Fit` takes whole rows from `first` (the wheel moves it, a character a notch), and the scroll box is exactly as
+    high as they are, scrolled by `ScrollToElementDataIndex`. A row's `line`, a button over its name that only shows on hover,
+    takes the right click; on the first line `drag` lies over it and takes it. `Types` reads what anybody has (`Shows.Wanted`).
+  - **In sight:** `Wanted()` (the full screen, Edit Mode, a saved fight, or both Hide ticks satisfied). With *Show on mouseover*
+    the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
 - **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders and the setting is on: it looks at each aura
   (`C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks) and hands each bar what shows. `Hidden` asks
@@ -609,10 +625,11 @@ shows on it, and you make as many bars as you like.
 | `GameBars.lua` | The game's experience and stance bars out of sight, its menu bar on mouseover |
 | `Meter/Threat.lua` | The meter's threat: every member's share of the mob, its gains added up per fight |
 | `Meter/Read.lua` | Who is in the group, and a fight's numbers from the game's meter, hidden or not; what the list can be sorted by |
+| `Meter/Shows.lua` | Which bars a character has: the window's ticks, or their own |
 | `Meter/Fights.lua` | Which fight is shown: the pages, the live page, the saved fights |
 | `Meter/Row.lua` | One character: their line and a bar per thing shown |
 | `Meter/Controls.lua` | The buttons at the end of the first line, and the flyouts |
-| `Meter/Meter.lua` | The window: its two places, the list, grown down or up, the game's meter out of sight, the looks in a fight |
+| `Meter/Meter.lua` | The window: its two places, the list of whole rows, grown down or up, when it shows, the game's meter out of sight, the looks in a fight |
 | `Reminders/Reminders.lua` | The reminders and bars: kept per character, what is known of an aura, in a fight too, whether one shows, the looks |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
 | `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
@@ -621,6 +638,7 @@ shows on it, and you make as many bars as you like.
 - **2026-11-01:** Show on and Hide from unit frames, apart from how an aura looks (Saneroki).
 - **2026-11-01:** Important, Unimportant, Hidden on the game's list of your buffs and on the unit frames (Saneroki); reminder bars made and deleted, one by default.
 - **2026-11-01:** reminders of buffs and debuffs on invisible bars (Saneroki), from a right click on an aura.
+- **2026-11-02:** the meter hides out of a fight and alone, shows on mouseover, and each character can have bars of their own (Saneroki).
 - **2026-11-01:** the threat and damage meter (Saneroki), on the game's own meter and threat, with its pages and saved fights.
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.
 - **2026-10-20:** its window, docked at the bottom middle (Saneroki); the bottom edge's middle half fills the

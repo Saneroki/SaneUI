@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The threat and damage meter hides out of a fight and when you are
+  not in a group, and comes back with the mouse on its place. Right
+  click a name to give one character bars of their own.
 - Your unit frames and action bars rest out of sight: they show with
   the mouse on them, while your health or resource is not full, in a
   fight and in a group, and the mouse on any action bar shows them
