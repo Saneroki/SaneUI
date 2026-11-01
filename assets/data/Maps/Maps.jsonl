@@ -1,0 +1,71 @@
+{"key":0,"since":70245,"src":["game"],"name":"Eastern Kingdoms","directory":"Azeroth","kind":"world","parent":-1}
+{"key":1,"since":70245,"src":["game"],"name":"Kalimdor","directory":"Kalimdor","kind":"world","parent":-1}
+{"key":29,"since":70245,"src":["game"],"name":"CashTest","directory":"TEST_01","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":30,"since":70245,"src":["game"],"name":"Alterac Valley","directory":"PVPZone01","kind":"battleground","parent":-1}
+{"key":33,"since":70245,"src":["game"],"name":"Shadowfang Keep","directory":"Shadowfang","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":34,"since":70245,"src":["game"],"name":"Stormwind Stockade","directory":"StormwindJail","kind":"dungeon","parent":-1,"area":717,"maxPlayers":10}
+{"key":35,"since":70245,"src":["game"],"name":"<unused>StormwindPrison","directory":"StormwindPrison","kind":"world","parent":-1,"area":717}
+{"key":36,"since":70245,"src":["game"],"name":"Deadmines","directory":"DeadminesInstance","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":37,"since":70245,"src":["game"],"name":"Azshara Crater","directory":"PVPZone02","kind":"world","parent":-1}
+{"key":43,"since":70245,"src":["game"],"name":"Wailing Caverns","directory":"WailingCaverns","kind":"dungeon","parent":-1,"area":718,"maxPlayers":10}
+{"key":44,"since":70245,"src":["game"],"name":"<unused> Monastery","directory":"Monastery","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":47,"since":70245,"src":["game"],"name":"Razorfen Kraul","directory":"RazorfenKraulInstance","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":48,"since":70245,"src":["game"],"name":"Blackfathom Deeps","directory":"Blackfathom","kind":"dungeon","parent":-1,"area":719,"maxPlayers":10}
+{"key":70,"since":70245,"src":["game"],"name":"Uldaman","directory":"Uldaman","kind":"dungeon","parent":-1,"area":1337,"maxPlayers":10}
+{"key":90,"since":70245,"src":["game"],"name":"Gnomeregan","directory":"GnomeragonInstance","kind":"dungeon","parent":-1,"area":721,"maxPlayers":10}
+{"key":109,"since":70245,"src":["game"],"name":"Sunken Temple","directory":"SunkenTemple","kind":"dungeon","parent":-1,"area":1477,"maxPlayers":20}
+{"key":129,"since":70245,"src":["game"],"name":"Razorfen Downs","directory":"RazorfenDowns","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":169,"since":70245,"src":["game"],"name":"Emerald Dream","directory":"EmeraldDream","kind":"raid","parent":-1,"maxPlayers":40}
+{"key":189,"since":70245,"src":["game"],"name":"Scarlet Monastery","directory":"MonasteryInstances","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":209,"since":70245,"src":["game"],"name":"Zul'Farrak","directory":"TanarisInstance","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":229,"since":70245,"src":["game"],"name":"Blackrock Spire","directory":"BlackRockSpire","kind":"dungeon","parent":-1,"area":1583,"maxPlayers":10}
+{"key":230,"since":70245,"src":["game"],"name":"Blackrock Depths","directory":"BlackrockDepths","kind":"dungeon","parent":-1,"area":1584,"maxPlayers":5}
+{"key":249,"since":70245,"src":["game"],"name":"Onyxia's Lair","directory":"OnyxiaLairInstance","kind":"raid","parent":-1,"area":2159,"maxPlayers":40}
+{"key":269,"since":70245,"src":["game"],"name":"Caverns of Time","directory":"CavernsOfTime","kind":"dungeon","parent":-1,"maxPlayers":10}
+{"key":289,"since":70245,"src":["game"],"name":"Scholomance","directory":"SchoolofNecromancy","kind":"dungeon","parent":-1,"maxPlayers":5}
+{"key":309,"since":70245,"src":["game"],"name":"Zul'Gurub","directory":"Zul'gurub","kind":"raid","parent":-1,"area":1977,"maxPlayers":20}
+{"key":329,"since":70245,"src":["game"],"name":"Stratholme","directory":"Stratholme","kind":"dungeon","parent":-1,"maxPlayers":5}
+{"key":349,"since":70245,"src":["game"],"name":"Maraudon","directory":"Mauradon","kind":"dungeon","parent":-1,"area":2100,"maxPlayers":10}
+{"key":369,"since":70245,"src":["game"],"name":"Deeprun Tram","directory":"DeeprunTram","kind":"world","parent":-1,"area":2257}
+{"key":389,"since":70245,"src":["game"],"name":"Ragefire Chasm","directory":"OrgrimmarInstance","kind":"dungeon","parent":-1,"area":2437,"maxPlayers":10}
+{"key":409,"since":70245,"src":["game"],"name":"Molten Core","directory":"MoltenCore","kind":"raid","parent":-1,"area":2717,"maxPlayers":40}
+{"key":429,"since":70245,"src":["game"],"name":"Dire Maul","directory":"DireMaul","kind":"dungeon","parent":-1,"area":2557,"maxPlayers":5}
+{"key":449,"since":70245,"src":["game"],"name":"Alliance PVP Barracks","directory":"AlliancePVPBarracks","kind":"world","parent":-1,"area":2918}
+{"key":450,"since":70245,"src":["game"],"name":"Horde PVP Barracks","directory":"HordePVPBarracks","kind":"world","parent":-1,"area":2917}
+{"key":469,"since":70245,"src":["game"],"name":"Blackwing Lair","directory":"BlackwingLair","kind":"raid","parent":-1,"area":2677,"maxPlayers":40}
+{"key":489,"since":70245,"src":["game"],"name":"Warsong Gulch","directory":"PVPZone03","kind":"battleground","parent":-1,"area":3277}
+{"key":509,"since":70245,"src":["game"],"name":"Ruins of Ahn'Qiraj","directory":"AhnQiraj","kind":"raid","parent":-1,"area":3429,"maxPlayers":20}
+{"key":529,"since":70245,"src":["game"],"name":"Arathi Basin","directory":"PVPZone04","kind":"battleground","parent":-1,"area":3358}
+{"key":531,"since":70245,"src":["game"],"name":"Ahn'Qiraj Temple","directory":"AhnQirajTemple","kind":"raid","parent":-1,"area":3428,"maxPlayers":40}
+{"key":533,"since":70245,"src":["game"],"name":"Naxxramas","directory":"Stratholme Raid","kind":"raid","parent":-1,"area":3456,"maxPlayers":40}
+{"key":2720,"since":70245,"src":["game"],"name":"The Searing Basin","directory":"2720","kind":"dungeon","parent":-1}
+{"key":2784,"since":70245,"src":["game"],"name":"Demon Fall Canyon","directory":"2784","kind":"dungeon","parent":-1,"maxPlayers":5}
+{"key":2789,"since":70245,"src":["game"],"name":"The Tainted Scar","directory":"2789","kind":"raid","parent":-1,"maxPlayers":40}
+{"key":2791,"since":70245,"src":["game"],"name":"Storm Cliffs","directory":"2791","kind":"raid","parent":-1,"maxPlayers":40}
+{"key":2804,"since":70245,"src":["game"],"name":"The Crystal Vale","directory":"2804","kind":"raid","parent":-1}
+{"key":2806,"since":70245,"src":["game"],"name":"Shadow Hold","directory":"2806","kind":"dungeon","parent":-1}
+{"key":2807,"since":70245,"src":["game"],"name":"Burning of Andorhal","directory":"2807","kind":"dungeon","parent":-1}
+{"key":2817,"since":70245,"src":["game"],"name":"Starfall Barrow Den","directory":"2817","kind":"dungeon","parent":-1}
+{"key":2832,"since":70245,"src":["game"],"name":"Nightmare Grove","directory":"2832","kind":"raid","parent":-1}
+{"key":2853,"since":70245,"src":["game"],"name":"Deadwind Pass","directory":"2853","kind":"dungeon","parent":-1}
+{"key":2856,"since":70245,"src":["game"],"name":"Scarlet Enclave","directory":"2856","kind":"raid","parent":-1}
+{"key":2868,"since":70245,"src":["game"],"name":"Eastern Plaguelands (Scarlet Raid Phase)","directory":"2868","kind":"world","parent":0}
+{"key":2875,"since":70245,"src":["game"],"name":"Karazhan Crypts","directory":"2875","kind":"dungeon","parent":-1,"area":16074}
+{"key":2902,"since":70245,"src":["game"],"name":"The Scarab Dais","directory":"2902","kind":"dungeon","parent":-1}
+{"key":2921,"since":70245,"src":["game"],"name":"Naxxramas","directory":"2921","kind":"dungeon","parent":-1}
+{"key":2959,"since":70245,"src":["game"],"name":"City of Dalaran","directory":"2959","kind":"dungeon","parent":-1,"area":16544}
+{"key":2980,"since":70245,"src":["game"],"name":"Dalaran City","directory":"2980","kind":"world","parent":0}
+{"key":2991,"since":70245,"src":["game"],"name":"Zephras Isle","directory":"2991","kind":"world","parent":-1}
+{"key":2995,"since":70245,"src":["game"],"name":"Hyjal Crater","directory":"2995","kind":"arena","parent":-1}
+{"key":2995,"since":70707,"day":"2026-10-31","src":["game"],"kind":"world"}
+{"key":2996,"since":70245,"src":["game"],"name":"Warsong Gulch (Winter)","directory":"2996","kind":"world","parent":-1}
+{"key":2997,"since":70245,"src":["game"],"name":"Darkspear Islands","directory":"2997","kind":"battleground","parent":-1}
+{"key":2998,"since":70245,"src":["game"],"name":"Excavation Site: Wetlands","directory":"2998","kind":"dungeon","parent":-1}
+{"key":2999,"since":70245,"src":["game"],"name":"Ruins of Lordaeron","directory":"2999","kind":"dungeon","parent":-1}
+{"key":3005,"since":70245,"src":["game"],"name":"Battle for Gilneas","directory":"3005","kind":"battleground","parent":-1}
+{"key":3021,"since":70245,"src":["game"],"name":"Eastern Kingdoms Preserved","directory":"3021","kind":"world","parent":-1}
+{"key":3065,"since":70245,"src":["game"],"name":"The Hall of Thanes","directory":"3065","kind":"dungeon","parent":-1}
+{"key":3104,"since":70245,"src":["game"],"name":"nothing to see here","directory":"3104","kind":"world","parent":-1}
+{"key":3109,"since":70245,"src":["game"],"name":"Manor Mistmantle","directory":"3109","kind":"dungeon","parent":-1}
+{"key":3217,"since":70707,"day":"2026-10-31","src":["game"],"name":"Dalaran Skycuter","directory":"3217","kind":"world","parent":-1}
+{"key":3218,"since":70707,"day":"2026-10-31","src":["game"],"name":"Mulgore Skycuter","directory":"3218","kind":"world","parent":-1}

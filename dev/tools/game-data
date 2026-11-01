@@ -16,7 +16,8 @@ Sets, and what each takes:
 - ItemSets: name, items (those Items keeps), bonuses (how many items, the spell).
 - Spells: the players' spells: every spell of a skill line Sane UI keeps (classes, their pets, professions,
   secondary skills, weapons, armour, languages, riding, mounts, companions, runes, racials) and every spell of
-  a talent or Legacy node. Name, rank, icon, cost (a fixed amount of a power only), cast time, cooldown, range.
+  a talent or Legacy node. Name, rank, icon, cost (a fixed amount of a power only), cast time, cooldown, range, and
+  its effects with their numbers, which is where a patch changes what a spell does.
   Not a line's spells of the kind a player never learns (AcquireMethod 3: another form of a spell players have
   under their own ID), nor a spell another one sets off (a part of it, as taming's helpers).
 - Auras: the buffs items give that are no player spell: what an item's use casts, and what that spell sets
@@ -40,6 +41,9 @@ Sets, and what each takes:
   it (where one item alone does). A toy is an item's field (toy), not a set: the client says nothing more of it.
 - TransmogSets: name, classes, the items whose looks make them (those Items keeps).
 - Enchantments: the name an item's tooltip shows (a plain one), the skill and level it needs.
+- Races, Racials, Classes: the races the character screen gives racial abilities to, those abilities (name, kind, what they
+  do, icon) and the classes: what a patch does to a race is told by these.
+- Maps, Areas: the game's maps and its areas, zones and subzones alike, which zone maps alone do not hold.
 - Holidays: name, description, and each start the client holds (its packed time taken apart; year 31: every
   year) with how many hours all its stages last. A start for any month or day (a weekly event) is left out: the
   client's rule for those is not ours to guess.
@@ -237,7 +241,21 @@ class Spells:
             "cooldown": cooldown or None,
             "minRange": round(low, 2) or None,
             "maxRange": round(high, 2) or None,
+            "effects": self.effect_list(key),
         }
+
+    def effect_list(self, key):
+        """What the spell does, effect by effect: the numbers a patch changes. Only what an effect holds: 0 is no value."""
+        found = []
+        for row in sorted(self.effects.get(key, []), key=lambda e: num(e["EffectIndex"])):
+            if row["DifficultyID"] != "0":
+                continue
+            effect = {"index": num(row["EffectIndex"]), "effect": num(row["Effect"]), "aura": num(row["EffectAura"]),
+                      "points": round(float(row["EffectBasePointsF"]), 3), "perLevel": round(float(row["EffectRealPointsPerLevel"]), 3),
+                      "period": num(row["EffectAuraPeriod"]), "targets": num(row["EffectChainTargets"]),
+                      "misc": num(row["EffectMiscValue[0]"]), "trigger": num(row["EffectTriggerSpell"])}
+            found.append({part: value for part, value in effect.items() if value or part == "index"})
+        return found
 
     def puts_aura(self, spell):
         return any(num(e["Effect"]) in AURAS for e in self.effects.get(str(spell), []))
@@ -725,6 +743,59 @@ def collections(t, spells, kept_items, w):
                                          "difficulty": num(row["DifficultyID"]) or None})
 
 
+COLOURS = re.compile(r"\|c\w+:?|\|r")        # the game's colour codes in a line of text
+SIDES = {2: "alliance", 4: "horde", 6: "both"}   # FactionGroupMask, AreaTable's and FactionTemplate's
+MAP_KINDS = {0: "world", 1: "dungeon", 2: "raid", 3: "battleground", 4: "arena"}   # Map's InstanceType
+
+
+def characters(t, w):
+    """Races, Racials, Classes: the races are those the character screen gives racial abilities to."""
+    abilities = t("ChrRaceRacialAbility")
+    races = {row["ChrRacesID"] for row in abilities.values()}
+    templates = t("FactionTemplate")
+    for key, row in sorted(t("ChrRaces").items(), key=lambda item: num(item[0])):
+        if key not in races:
+            w.leave("Races", key, "no racial abilities: no race of this game's players")
+            continue
+        template = templates.get(row["FactionID"])
+        group = num(template["FactionGroup"]) if template else 0
+        w.stage("Races", num(key), {"name": row["Name_lang"], "nameFemale": row["Name_female_lang"] or None,
+                                    "file": row["ClientFileString"], "side": SIDES.get(group & 6),
+                                    "description": plain(row["LoreDescription_lang"]), "bit": num(row["PlayableRaceBit"]),
+                                    "order": num(row["UiDisplayOrder"])})
+    for key, row in sorted(abilities.items(), key=lambda item: num(item[0])):
+        parts = [part.strip() for part in row["Name_lang"].split(" - ")]
+        kind = parts[-2].lower() if len(parts) > 2 else None
+        w.stage("Racials", num(key), {"race": num(row["ChrRacesID"]), "name": parts[-1],
+                                      "kind": kind if kind in ("active", "passive") else None,
+                                      "description": plain(row["Description_lang"]),
+                                      "short": plain(COLOURS.sub("", row["DescriptionShort_lang"])),
+                                      "icon": num(row["Icon"]) or None, "order": num(row["Order"])})
+    for key, row in sorted(t("ChrClasses").items(), key=lambda item: num(item[0])):
+        w.stage("Classes", num(key), {"name": row["Name_lang"], "file": row["Filename"], "description": plain(row["Description_lang"]),
+                                      "icon": num(row["IconFileDataID"]) or None, "power": num(row["DisplayPower"]),
+                                      "color": "%02X%02X%02X" % (num(row["ClassColorR"]), num(row["ClassColorG"]), num(row["ClassColorB"])),
+                                      "armor": num(row["ArmorTypeMask"]) or None})
+
+
+def places(t, w):
+    """Maps and Areas: the game's own lists, which zone maps alone do not hold."""
+    for key, row in sorted(t("Map").items(), key=lambda item: num(item[0])):
+        if test(row["MapName_lang"]):
+            w.leave("Maps", key, "a test's")
+            continue
+        w.stage("Maps", num(key), {"name": row["MapName_lang"], "directory": row["Directory"],
+                                   "kind": MAP_KINDS.get(num(row["InstanceType"]), "other"), "parent": num(row["ParentMapID"]),
+                                   "area": num(row["AreaTableID"]) or None, "maxPlayers": num(row["MaxPlayers"]) or None})
+    for key, row in sorted(t("AreaTable").items(), key=lambda item: num(item[0])):
+        if not row["AreaName_lang"].strip() or test(row["AreaName_lang"]):
+            w.leave("Areas", key, "no name, or a test's")
+            continue
+        w.stage("Areas", num(key), {"name": row["AreaName_lang"].strip(), "parent": num(row["ParentAreaID"]) or None,
+                                    "map": num(row["ContinentID"]), "side": SIDES.get(num(row["FactionGroupMask"]) & 6),
+                                    "level": max(num(row["ExplorationLevel"]), 0) or None, "mounts": num(row["MountFlags"]) or None})
+
+
 def currencies(t, w):
     for key, row in sorted(t("CurrencyTypes").items(), key=lambda item: num(item[0])):
         name = row["Name_lang"].strip()
@@ -774,6 +845,8 @@ def main():
     professions(t, spells, lines, kept_items, w)
     auras(t, spells, player, kept_items, w)
     currencies(t, w)
+    characters(t, w)
+    places(t, w)
     collections(t, spells, kept_items, w)
     quest_areas(t, folder, w)
     STAGING.mkdir(parents=True, exist_ok=True)

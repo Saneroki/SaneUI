@@ -1,0 +1,16 @@
+set = "Racials"
+key = "int"              # the game's ability ID (ChrRaceRacialAbility)
+about = "Each race's racial abilities as the character screen shows them, with their history: what a patch made of them."
+
+[fields]
+race        = { type = "ref", set = "Races" }
+name        = { type = "text" }                       # the ability alone: Ruthless
+kind        = { type = "enum", values = ["active", "passive"] }
+description = { type = "text" }
+short       = { type = "text" }                       # the short line, without its colours
+icon        = { type = "int", min = 0 }
+order       = { type = "int" }                        # its place in the race's list
+
+[index]
+byRace = "race"
+byName = "name"

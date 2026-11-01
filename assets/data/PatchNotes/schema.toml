@@ -1,20 +1,36 @@
 set = "PatchNotes"
 key = "int"              # the game's build these notes are of
-ship = false             # kept in the master; nothing in the game reads it yet, so no set file is made
-about = "What each build of the game changed: Sane UI's patch notes, laid out as Blizzard lays out its own, by build."
+about = "What each build of the game changed: Sane UI's patch notes, by build: the points as a page shows them, and what each changed in the other sets."
 
 [fields]
 patch    = { type = "text" }                    # the game's patch number: 1.60.2
-from     = { type = "int", min = 0 }            # the build before it
+from     = { type = "int", min = 0 }            # the build they are compared with
 official = { type = "list", of = "text" }       # the pages of Blizzard's the notes were compared with
 sane     = { type = "list", of = "text" }       # what changed in Sane UI for this build
 points   = { type = "list", of = "tuple", parts = [
     { name = "section", type = "text" },        # Blizzard's section: Classes, Items and Rewards, ...
-    { name = "group",   type = "text" },        # a class, an instance
+    { name = "group",   type = "text" },        # a class, a race, an instance
     { name = "sub",     type = "text" },        # a specialization, a boss
     { name = "kind",    type = "enum", values = ["point", "extra", "note"] },  # extra and note belong to the point before
     { name = "text",    type = "text" },
     { name = "was",     type = "text" },        # the value before: "(was X)"
     { name = "origin",  type = "enum", values = ["both", "client", "blizzard"] },
     { name = "link",    type = "text" },        # the place in Blizzard's page
+    { name = "class",   type = "int" },         # the class it is about (the set Classes)
+    { name = "race",    type = "int" },         # the race it is about (the set Races)
 ] }
+changes  = { type = "list", of = "tuple", parts = [  # every entry the game changed at this build, in the other sets
+    { name = "set",    type = "text" },         # the set: Spells; its Changes(key) gives the values
+    { name = "key",    type = "text" },         # the entry's key in it, as text
+    { name = "how",    type = "enum", values = ["new", "changed", "gone"] },
+    { name = "fields", type = "text" },         # the fields that changed, joined by commas
+    { name = "class",  type = "int" },
+    { name = "race",   type = "int" },
+    { name = "point",  type = "int" },          # the point in points that tells of it, counted from 1
+] }
+counts   = { type = "map", keys = "text", of = "int" }  # per set, how many of its entries changed
+
+[index]
+byPatch = "patch"
+byClass = "points.class"
+byRace = "points.race"

@@ -1,0 +1,14 @@
+set = "Maps"
+key = "int"              # the game's map ID (Map): continents, instances, transports
+about = "The game's maps: what a patch added, renamed or changed, with their history."
+
+[fields]
+name       = { type = "text" }
+directory  = { type = "text" }
+kind       = { type = "enum", values = ["world", "dungeon", "raid", "battleground", "arena", "other"] }
+parent     = { type = "int" }                         # ParentMapID
+area       = { type = "int", min = 0 }                # its AreaTable ID
+maxPlayers = { type = "int", min = 0 }
+
+[index]
+byKind = "kind"

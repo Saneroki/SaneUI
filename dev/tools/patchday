@@ -18,12 +18,12 @@ Usage:  dev/tools/patchday check [--json]      which game's installed build is n
                                                queue. Starts nothing: the runner takes it up when its turn comes
         dev/tools/patchday paint <patch> [--status]
                                                the job's own command: paints what rerender set aside
-        dev/tools/patchday page <game>         patchnotes.json checked, as patchnotes.md and patchnotes.html
+        dev/tools/patchday page <game>         patchnotes.json checked, as patchnotes.md in the patch's folder and as this
+                                               build's page, Patchnotes/<Game>-<version>.html: a plain file to open
         dev/tools/patchday store <game>        patchnotes.json into the database: the set PatchNotes, key the build
 
 <game> is forever or retail. The folders come from ~/.config/saneui/blizzard.json: exports (each build's extract),
-tables (each build's client tables as CSV, a folder per build, <build>-laid with the hotfixes on), reports. The page of
-every patch's notes is /patchnotes/ on the tools' server, 127.0.0.1 port 8768.
+tables (each build's client tables as CSV, a folder per build, <build>-laid with the hotfixes on), reports.
 """
 import argparse
 import importlib.machinery
@@ -52,14 +52,13 @@ JOBS = ROOT / "dev" / "imagegen" / "jobs.toml"
 TILES = ROOT / "assets" / "generated" / "world-tiles"
 LAYERS = ROOT / "assets" / "generated" / "map-layers"
 STAGING = ROOT / "dev" / "data" / "staging"
+PATCHNOTES = ROOT / "Patchnotes"
 MAP_LAYERS = str(ROOT / "dev" / "tools" / "map-layers")
 DATA = str(ROOT / "dev" / "tools" / "data")
 BUILD_TOOLS = ("map-data", "travel-data", "walk-data", "walk-gates")   # the data tools' BUILD, Forever's
 COUNT_ONLY = {"Walking", "Tiles"}   # sets listed by their counts: an entry says nothing to a reader
 SHOWN = 80                          # characters of a value in facts
 PRIORITY = 11                       # above the world's tiles (10): the map tells what the game shows
-CLASSES = {1: "Warrior", 2: "Paladin", 3: "Hunter", 4: "Rogue", 5: "Priest", 6: "Death Knight", 7: "Shaman", 8: "Mage",
-           9: "Warlock", 10: "Monk", 11: "Druid", 12: "Demon Hunter", 13: "Evoker"}
 
 
 def fail(text):
@@ -154,7 +153,7 @@ def steps_of(patch):
             "points": bool(notes) and any(True for _ in patchnotes.points_of(notes)),
             "crosschecked": bool(notes.get("crosschecked")),
             "stored": stored(patch.game, patch.build),
-            "page": (folder / "patchnotes.html").is_file()}
+            "page": (PATCHNOTES / patchnotes.file_name(patch.game, patch.new)).is_file()}
 
 
 # --- check ----------------------------------------------------------------------------------------
@@ -303,6 +302,8 @@ def facts_of(master, game, build):
                 klass = fields.get("class") or (classes.get(key) if name == "Spells" else None)
                 if klass:
                     row["class"] = klass
+                if fields.get("race"):
+                    row["race"] = fields["race"]
                 if version.gone:
                     found["gone"].append(row)
                 elif before is None or before.gone:
@@ -328,7 +329,7 @@ def facts_text(facts, title):
         for how in ("new", "changed", "gone"):
             for row in found.get(how, ()):
                 what = "; ".join(f"{c['field']} {c['from']} → {c['to']}" for c in row.get("changes", ()))
-                klass = f" ({CLASSES.get(row['class'], row['class'])})" if row.get("class") else ""
+                klass = f" ({patchnotes.CLASSES.get(row['class'], row['class'])})" if row.get("class") else ""
                 lines.append(f"- {how} {row['key']} {row.get('name', '')}{klass}{': ' + what if what else ''}")
         lines.append("")
     return "\n".join(lines) + "\n"
@@ -484,8 +485,10 @@ def run_page(args):
     facts_path = patch.folder / "facts.json"
     facts = json.loads(facts_path.read_text(encoding="utf-8")) if facts_path.is_file() else None
     (patch.folder / "patchnotes.md").write_text(patchnotes.markdown(notes), encoding="utf-8")
-    (patch.folder / "patchnotes.html").write_text(patchnotes.fragment(notes, facts), encoding="utf-8")
-    print(f"{patch.folder / 'patchnotes.md'}\n{patch.folder / 'patchnotes.html'}")
+    PATCHNOTES.mkdir(exist_ok=True)
+    page = PATCHNOTES / patchnotes.file_name(patch.game, patch.new)
+    page.write_text(patchnotes.document(notes, facts), encoding="utf-8")
+    print(f"{patch.folder / 'patchnotes.md'}\n{page}")
 
 
 def run_store(args):
@@ -498,27 +501,12 @@ def run_store(args):
         fail("The build is not in builds.toml: run patchday bump first.")
     STAGING.mkdir(parents=True, exist_ok=True)
     path = STAGING / f"patchnotes-{patch.game}-{patch.build}.jsonl"
+    facts_path = patch.folder / "facts.json"
+    facts = json.loads(facts_path.read_text(encoding="utf-8")) if facts_path.is_file() else None
     line = {"set": "PatchNotes", "key": patch.build, "game": patch.game, "build": patch.build, "day": notes["day"], "src": "game",
-            "fields": patchnotes.fields(notes)}
+            "fields": patchnotes.fields(notes, facts)}
     path.write_text(json.dumps(line, ensure_ascii=False) + "\n", encoding="utf-8")
     subprocess.run([DATA, "import", str(path), "--apply", "--take"], check=True)
-
-
-# --- the page of every patch ----------------------------------------------------------------------
-
-def web(request):
-    """/patchnotes/ on the tools' server: the patches that have notes, and each one's page."""
-    folder = reports() / "patches"
-    made = sorted(folder.glob("*/patchnotes.html"), key=lambda path: path.stat().st_mtime, reverse=True)
-    wanted = request.path.strip("/")
-    if wanted:
-        page = next((path for path in made if path.parent.name == wanted), None)
-        if page is None:
-            return 404, "text/plain; charset=utf-8", "No such patch."
-        return 200, "text/html; charset=utf-8", patchnotes.document(page.read_text(encoding="utf-8"))
-    rows = "".join(f'<li><a href="{patchnotes.e(path.parent.name)}/">{patchnotes.e(path.parent.name)}</a></li>' for path in made)
-    return 200, "text/html; charset=utf-8", patchnotes.document(
-        f"<title>Patch notes</title><h1>Patch notes</h1><ul>{rows or '<li>None yet.</li>'}</ul>")
 
 
 def main():

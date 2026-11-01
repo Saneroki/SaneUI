@@ -14,8 +14,9 @@ boss), the points as lists, "(was X)" after what changed (Doc/guides/blizzard-up
             word alone: what the server holds, which the client cannot show)
 
 The words stay our own: where Blizzard lists a change, the point takes its names, numbers and scope, and links to it.
-From it come patchnotes.md, patchnotes.html (a page with no document around it, as the Artifact tool wants one; the
-local server wraps it: document()) and the database's entry (rows()).
+From it come patchnotes.md, Patchnotes/<Game>-<version>.html (a plain file that needs nothing but itself: document()) and
+the database's entry (fields()): the points by section, class and race, and every entry the game changed, each tied to
+the point that tells of it, so that a view in the game can show them.
 """
 import html
 import json
@@ -28,9 +29,17 @@ ORIGINS = {"both": "Blizzard and client", "client": "Client only", "blizzard": "
 SECTIONS = ("General", "Achievements", "Characters", "Classes", "Dungeons and Raids", "Enemies and NPCs", "Items and Rewards",
             "Player versus Player", "Professions", "Quests", "Reputation", "User Interface", "World", "Bug Fixes")
 BAD_TEXT = re.compile("[\t\x1c\x1e\x1f]")
-FONTS = ("https://fonts.googleapis.com/css2?family=Marcellus&family=Source+Sans+3:wght@400;600"
-         "&family=IBM+Plex+Mono:wght@400;500&display=swap")
 LISTED = 200   # at most this many entries of a set in the page's list of every change
+CLASSES = {1: "Warrior", 2: "Paladin", 3: "Hunter", 4: "Rogue", 5: "Priest", 6: "Death Knight", 7: "Shaman", 8: "Mage",
+           9: "Warlock", 10: "Monk", 11: "Druid", 12: "Demon Hunter", 13: "Evoker"}
+CLASS_IDS = {name: key for key, name in CLASSES.items()}
+RACE_IDS = {"Human": 1, "Orc": 2, "Dwarf": 3, "Night Elf": 4, "Undead": 5, "Tauren": 6, "Gnome": 7, "Troll": 8,
+            "High Order Skyborne": 95, "Windshaper Skyborne": 96}
+# Where a section's points find the entries they tell of.
+SEARCHED = {"Characters": ("Racials", "Races", "Spells"), "Classes": ("Spells", "Talents"), "Dungeons and Raids": ("Encounters",),
+            "Items and Rewards": ("Items", "Auras", "Enchantments"), "Items": ("Items", "Auras", "Enchantments"),
+            "Legacy System": ("Legacy",), "Professions": ("Spells", "Items"), "Reputation": ("Factions",),
+            "World": ("Areas", "Maps", "Zones")}
 
 
 def skeleton(game, build, old, patch, day):
@@ -82,7 +91,8 @@ def rows(notes):
 
     def add(section, group, sub, kind, text, origin, was=None, link=None):
         row = {"section": section, "kind": kind, "text": text, "origin": origin}
-        for part, value in (("group", group), ("sub", sub), ("was", was), ("link", link)):
+        for part, value in (("group", group), ("sub", sub), ("was", was), ("link", link), ("class", CLASS_IDS.get(group)),
+                            ("race", RACE_IDS.get(group))):
             if value:
                 row[part] = value
         out.append(row)
@@ -96,9 +106,51 @@ def rows(notes):
     return out
 
 
-def fields(notes):
+def numbered(notes):
+    """Every point with its place in rows(), counted from 1."""
+    place = 1
+    for section, group, _, point in points_of(notes):
+        yield place, section, group, point
+        place += 1 + len(point.get("extra", ())) + bool(point.get("note"))
+
+
+def said_in(name, text):
+    """Whether a text names an entry: a whole name, and one long enough to mean it."""
+    return len(name) > 3 and bool(re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text))
+
+
+def changes(notes, facts):
+    """Every entry the game changed at this build, a line each (facts' sets; those of counts alone are in counts), the
+    first point that names it tied to it: of its section's sets, of its own class and race."""
+    entries = []
+    for set_name, found in sorted((facts or {}).get("sets", {}).items()):
+        for how in ("new", "changed", "gone"):
+            for row in found.get(how, ()):
+                entry = {"set": set_name, "key": str(row["key"]), "how": how}
+                moved = ",".join(change["field"] for change in row.get("changes", ()))
+                if moved:
+                    entry["fields"] = moved
+                entry.update({part: row[part] for part in ("class", "race") if row.get(part)})
+                entries.append((entry, row.get("name")))
+    for place, section, group, point in numbered(notes):
+        text = " ".join((point["text"], *point.get("extra", ())))
+        wanted, klass, race = SEARCHED.get(section, ()), CLASS_IDS.get(group), RACE_IDS.get(group)
+        for entry, name in entries:
+            if name and "point" not in entry and entry["set"] in wanted and entry.get("class", klass) == klass \
+                    and entry.get("race", race) == race and said_in(name, text):
+                entry["point"] = place
+    return [entry for entry, _ in entries]
+
+
+def fields(notes, facts=None):
     """The database entry's fields."""
     found = {"patch": notes["patch"], "from": notes["from"], "points": rows(notes)}
+    tied = changes(notes, facts)
+    if tied:
+        found["changes"] = tied
+    counts = {name: sum(part["counts"].values()) for name, part in (facts or {}).get("sets", {}).items()}
+    if counts:
+        found["counts"] = counts
     if notes.get("official"):
         found["official"] = [page["url"] for page in notes["official"]]
     if notes.get("sane"):
@@ -160,13 +212,13 @@ def markdown(notes):
 # --- The page -----------------------------------------------------------------------------------
 
 STYLE = """
-/* A record of one build, read like Blizzard's notes: one column of nested lists, each level folding. Slate and beaten
-   metal: gold for what Blizzard confirms, silver for what only the client shows. */
+/* A record of one build, read like Blizzard's notes: one column of nested lists, each level folded until opened. Slate
+   and beaten metal: gold for what Blizzard confirms, silver for what only the client shows. */
 :root { --bg: #e9edf1; --panel: #f6f8fa; --ink: #18212c; --soft: #4c5a6a; --line: #c3ccd6; --gold: #7d5a10;
         --gold-fill: #f0e3c2; --silver: #46586c; --silver-fill: #dde4eb; --plain-fill: #e6e0ea; --plain: #5b4a69;
-        --display: "Marcellus", "Palatino Linotype", Georgia, serif;
-        --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
-        --data: "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace; }
+        --display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+        --body: "Segoe UI", system-ui, "Noto Sans", sans-serif;
+        --data: ui-monospace, "Cascadia Code", "DejaVu Sans Mono", monospace; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #11161e; --panel: #19212c; --ink: #dfe5ec; --soft: #9aa8b8; --line: #303c4b; --gold: #dcb868;
   --gold-fill: #3a2f17; --silver: #b5c3d2; --silver-fill: #27323f; --plain-fill: #2e2736; --plain: #c9b8d8; color-scheme: dark } }
@@ -174,8 +226,7 @@ STYLE = """
   --bg: #11161e; --panel: #19212c; --ink: #dfe5ec; --soft: #9aa8b8; --line: #303c4b; --gold: #dcb868;
   --gold-fill: #3a2f17; --silver: #b5c3d2; --silver-fill: #27323f; --plain-fill: #2e2736; --plain: #c9b8d8; color-scheme: dark }
 body { background: var(--bg); color: var(--ink); font: 400 1.05rem/1.55 var(--body); }
-.page { max-width: 54rem; margin: 0 auto; padding-block: 2.5rem 4rem;
-        padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.page { max-width: 54rem; margin: 0 auto; padding: 2.5rem 16px 4rem; }
 .eyebrow { margin: 0; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
 h1, h2, h3, h4 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; }
 h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.1; margin-top: .3rem; }
@@ -188,9 +239,8 @@ a { color: var(--gold); text-underline-offset: .15em; }
 .tag-both { background: var(--gold-fill); color: var(--gold); }
 .tag-client { background: var(--silver-fill); color: var(--silver); }
 .tag-blizzard { background: var(--plain-fill); color: var(--plain); }
-.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; flex-wrap: wrap; gap: .3rem .9rem; align-items: center;
+.bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: .3rem .9rem; align-items: center;
        margin-top: 1.6rem; padding-block: .55rem; background: var(--bg); border-bottom: 1px solid var(--line); font-size: .9rem; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 .bar a { color: var(--soft); text-decoration: none; }
 .bar a:hover { color: var(--gold); }
 .bar button { margin-left: auto; font: inherit; font-size: .85rem; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
@@ -227,9 +277,9 @@ SCRIPT = """
   var button = document.getElementById("toggle-all"), all = document.querySelectorAll("main > details:not(.every), main > details:not(.every) details");
   button.addEventListener("click", function () {
     var open = button.getAttribute("aria-pressed") !== "true";
-    all.forEach(function (item) { item.open = !open; });
+    all.forEach(function (item) { item.open = open; });
     button.setAttribute("aria-pressed", open ? "true" : "false");
-    button.textContent = open ? "Expand all" : "Collapse all";
+    button.textContent = open ? "Collapse all" : "Expand all";
   });
   document.querySelectorAll(".bar a").forEach(function (link) {
     link.addEventListener("click", function () {
@@ -272,7 +322,7 @@ def block_html(block, level):
     for group in block.get("groups", ()):
         if has_points(group):
             kind, tag = ("group", "h3") if level == 0 else ("sub", "h4")
-            parts.append(f'<details class="{kind}" open><summary><{tag}>{e(group["name"])}</{tag}>'
+            parts.append(f'<details class="{kind}"><summary><{tag}>{e(group["name"])}</{tag}>'
                          f'<span class="count">{counted(group)}</span></summary>{block_html(group, level + 1)}</details>')
     return "".join(parts)
 
@@ -306,9 +356,7 @@ def every_change(facts):
 
 
 def head_html(notes):
-    return (f"<title>{e(title_of(notes))}</title>\n"
-            '<meta name="claude:viewport-fit-sides" content="cover">\n'
-            f'<link rel="stylesheet" href="{e(FONTS)}">\n<style>{STYLE}</style>\n')
+    return f"<title>{e(title_of(notes))}</title>\n<style>{STYLE}</style>\n"
 
 
 def body_html(notes, facts=None):
@@ -329,32 +377,32 @@ def body_html(notes, facts=None):
     if notes.get("sane"):
         links.append(("Sane UI", "sane-ui"))
     bar = "".join(f'<a href="#{anchor}">{e(name)}</a>' for name, anchor in links)
-    body = "".join(f'<details class="section" id="{slug(s["name"])}" open><summary><h2>{e(s["name"])}</h2>'
+    body = "".join(f'<details class="section" id="{slug(s["name"])}"><summary><h2>{e(s["name"])}</h2>'
                    f'<span class="count">{counted(s)}</span></summary>{block_html(s, 0)}</details>' for s in sections)
     sane = ""
     if notes.get("sane"):
         lines = "".join(f"<li>{e(line)}</li>" for line in notes["sane"])
-        sane = (f'<details class="section sane" id="sane-ui" open><summary><h2>Sane UI</h2>'
+        sane = (f'<details class="section sane" id="sane-ui"><summary><h2>Sane UI</h2>'
                 f'<span class="count">{len(notes["sane"])}</span></summary><ul class="points">{lines}</ul></details>')
     return (f'<div class="page"><header><p class="eyebrow">Sane UI patch notes</p><h1>{e(GAMES[notes["game"]])} {e(notes["patch"])}</h1>'
             f'<p class="builds">Build {e(notes["from"])} to {e(notes["build"])} &middot; {e(spelled(notes["day"]))}</p>'
             f'{official}<ul class="legend">{legend}</ul></header>'
-            f'<nav class="bar" aria-label="Sections">{bar}<button id="toggle-all" type="button" aria-pressed="false">Collapse all</button></nav>'
+            f'<nav class="bar" aria-label="Sections">{bar}<button id="toggle-all" type="button" aria-pressed="false">Expand all</button></nav>'
             f"<main>{body}{sane}{every_change(facts)}</main>"
             '<p class="foot">Made by Sane UI from the game client. Not an official Blizzard page.</p></div>'
             f"<script>{SCRIPT}</script>")
 
 
-def fragment(notes, facts=None):
-    """patchnotes.html: the page without a document around it, which the Artifact tool adds."""
-    return head_html(notes) + body_html(notes, facts)
+def file_name(game, version):
+    """A build's file in Patchnotes/."""
+    return f"{GAMES[game]}-{version}.html"
 
 
-def document(text):
-    """A page written by fragment() as a whole document, for the local server."""
+def document(notes, facts=None):
+    """A build's page as a whole file, opened as it is: nothing it needs lies outside it."""
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
-            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
-            f"</head><body>{text}</body></html>")
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            f"{head_html(notes)}</head><body>{body_html(notes, facts)}</body></html>\n")
 
 
 def load(path):

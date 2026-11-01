@@ -11,7 +11,6 @@ page hangs under its own name:
     /maps/        maps compared      dev/tools/map-compare-page over its build (saneui showmaps)
     /world/       world map          dev/tools/world-map-page over its build (saneui showworldmap)
     /instances/   instance maps      the same page with one kind of map (saneui showinstancemaps)
-    /patchnotes/  patch notes        dev/tools/patchday (saneui showpatchnotes)
   and the pages of ~/.config/saneui/pages.json, folders kept outside the project:
     {"pages": [{"name": ..., "place": ..., "folder": ...}]}
 
@@ -110,7 +109,6 @@ PAGES = [
     Page("maps compared", "maps", [ROOT / "dev" / "tools" / "map-compare-page", GENERATED / "map-layers" / "compare"]),
     Page("world map", "world", WORLD, "?only=continent"),
     Page("instance maps", "instances", WORLD, "?only=instance"),
-    Page("patch notes", "patchnotes", ROOT / "dev" / "tools" / "patchday"),
 ]
 
 

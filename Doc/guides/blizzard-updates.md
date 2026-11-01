@@ -110,8 +110,8 @@ the game's newest patch and writes into its folder:
 | `draft <game>` | `facts.md`, `facts.json`, `patchnotes.json` | What the master took from the game at this build; empty notes in Blizzard's layout |
 | `rerender <game>` | `rerender.json`, `dev/imagegen/jobs.toml` | The repaint queued; below |
 | `paint <patch>` | the paintings | The job's own command |
-| `page <game>` | `patchnotes.md`, `patchnotes.html` | The notes checked, as text and as a page; `patchnotes.html` has no document around it, as the Artifact tool wants a page. `/patchnotes/` on the tools' server shows every patch's |
-| `store <game>` | the set `PatchNotes` | The notes into the database, key the build; refused until they are compared with Blizzard's |
+| `page <game>` | `patchnotes.md`, `Patchnotes/<Game>-<version>.html` | The notes checked, as text beside the patch and as a build's own page: a plain file to open, every level folded shut, nothing it needs outside itself. Never a page of the tools' server |
+| `store <game>` | the set `PatchNotes` | The notes into the database, key the build, for a view in the game: their points, and every entry the game changed tied to the point that tells of it (`Doc/guides/data.md`, *The patch notes*); refused until they are compared with Blizzard's, or Blizzard is found to have published none: then ours stand as they are |
 
 **What counts as moved:** the terrain is read as the game reads it, a file that only changed its bytes is no change. The
 ground counts by its heights with the base added, inside a chunk and from `GROUND` yards: the game bakes a chunk's base
@@ -134,7 +134,8 @@ X)" after what changed. Each point says where it stands: `both` (Blizzard says i
 the sentence stays ours, and what we saw beyond it is its `extra`. The page's foot holds every change the master took, closed.
 
 **Retail:** its data waits (`.claude/rules/code.md`), so `tables`, `world` and the notes only read: nothing of its facts
-goes into the master, its terrain is not extracted and it has no routes or Atlas. Its notes do go into the set.
+goes into the master, its terrain is not extracted and it has no routes or Atlas. Its notes do go into the set, which is
+the one set Retail has so far.
 
 ## The pipeline
 

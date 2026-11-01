@@ -1,0 +1,15 @@
+set = "Races"
+key = "int"              # the game's race ID (ChrRaces)
+about = "The races players can be: what the game says of each, with its history."
+
+[fields]
+name        = { type = "text" }
+nameFemale  = { type = "text" }
+file        = { type = "text" }                       # the game's own word for it: Scourge, NightElf
+side        = { type = "enum", values = ["alliance", "horde"] }
+description = { type = "text" }
+bit         = { type = "int" }                        # its bit in a mask of races (PlayableRaceBit)
+order       = { type = "int" }                        # its place on the character screen
+
+[index]
+bySide = "side"

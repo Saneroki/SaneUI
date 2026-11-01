@@ -18,6 +18,17 @@ castTime    = { type = "int", min = 0 }    # in milliseconds; 0 instant
 cooldown    = { type = "int", min = 0 }    # in milliseconds
 minRange    = { type = "number", min = 0 } # in yards
 maxRange    = { type = "number", min = 0 }
+effects     = { type = "list", of = "tuple", parts = [   # what it does, as the client holds it: its numbers (SpellEffect)
+    { name = "index", type = "int" },
+    { name = "effect", type = "int" },     # the kind of effect
+    { name = "aura", type = "int" },       # the kind of aura it puts on
+    { name = "points", type = "number" },  # its base value
+    { name = "perLevel", type = "number" },
+    { name = "period", type = "int" },     # milliseconds between an aura's ticks
+    { name = "targets", type = "int" },    # how many it chains to
+    { name = "misc", type = "int" },       # the effect's own number: a school, a stat, a summoned creature
+    { name = "trigger", type = "int" },    # the spell it sets off
+] }
 
 [index]
 byName = "name"                            # every rank of Frostbolt

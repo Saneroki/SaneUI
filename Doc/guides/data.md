@@ -141,7 +141,6 @@ set = "Items"
 key = "int"              # Blizzard's ID; "text" for a set keyed by a name (CVarLabels)
 learn = true             # the game may teach it in play (Learned, step 1c)
 history = false          # optional: the set files carry only the newest versions (a big set no view asks the past of)
-ship = false             # optional: the master keeps it and the game gets no set file (nothing in the game reads it yet)
 about = "Every item players can have: what the game says about it, with its history."
 
 [fields]
@@ -214,7 +213,7 @@ part of Core.
 | Characters | No sets: saved data only (*Characters*) |
 | Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
 | Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
-| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID), PatchNotes (the build) |
+| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID), Races (race ID), Racials (the game's ability ID), Classes (class ID), Maps (map ID), Areas (area ID), PatchNotes (the build) |
 | Collections | Achievements (achievement ID), Mounts (mount ID), TransmogSets (transmog set ID) |
 
 - **A text key `<kind>:<ID>`** where one set holds things whose IDs overlap (a creature and an object can have
@@ -228,6 +227,28 @@ part of Core.
   some of them.
 - **A quest a requirement names** (`requires.quest`) is the game's quest ID, also of a quest the set does not
   hold: the game tells whether it is done.
+
+### The patch notes
+
+`PatchNotes` holds a build's notes for a view in the game; `/patchday` writes it (`Doc/guides/blizzard-updates.md`, *Patch
+day*), and Retail has it too. A record is what the notes say of one build:
+
+```lua
+local Notes = Data.Set("PatchNotes")
+local notes = Notes:Get(70707)                 -- patch, from, official, sane, points, changes, counts
+for _, point in ipairs(notes.points) do
+    -- point.section, .group, .sub, .kind ("point", or "extra" and "note" of the point before it), .text, .was,
+    -- .origin ("both", "client", "blizzard"), .link, .class (Classes), .race (Races)
+end
+for _, change in ipairs(notes.changes) do
+    -- change.set, .key (as text), .how ("new", "changed", "gone"), .fields (joined by commas), .class, .race, and
+    -- .point: its place in notes.points. The values: Data.Set(change.set):Changes(tonumber(change.key) or change.key)
+end
+local builds = Notes:Keys("byClass", 7)        -- every build that speaks of a class; also byRace, byPatch
+```
+
+`counts` says per set how many entries changed, also of a set whose entries are not listed (Walking, Tiles). Facts stand in
+their own sets with their history: a racial's change is `Data.Set("Racials"):Changes(680)`.
 
 ### A line of the master
 
@@ -1323,7 +1344,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
 | `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
-| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions and Encounters; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
+| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, Encounters, Races, Racials, Classes, Maps and Areas; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests
 

@@ -1,0 +1,15 @@
+set = "Areas"
+key = "int"              # the game's area ID (AreaTable), as a map chunk names it
+about = "The game's areas, zones and the subzones in them: what a patch added, renamed or moved, with their history."
+
+[fields]
+name   = { type = "text" }
+parent = { type = "int", min = 0 }                    # the area it lies in; none: a zone
+map    = { type = "int", min = 0 }                    # its map (ContinentID)
+side   = { type = "enum", values = ["alliance", "horde", "both"] }  # the side it counts as (FactionGroupMask); none: contested
+level  = { type = "int", min = 0 }                    # ExplorationLevel
+mounts = { type = "flags" }                           # MountFlags
+
+[index]
+byParent = "parent"
+byMap = "map"

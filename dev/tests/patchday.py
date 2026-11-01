@@ -2,15 +2,19 @@
 """Tests of dev/tools/patchday without the game's files, on made-up terrain, tables and notes: a ground that moved
 against a chunk's base or outer ring baked anew, water, holes, areas and placements; which squares of the Atlas a
 change reaches; a client table compared, its noise left out; the patch notes checked and written as text, as a page and
-as the database's rows, which fit the real schema; a build added to builds.toml; what the master took from a build; the
-repaint: what is set aside, the job in the queue, how far it says it is; the page of patches. Run by dev/tests/run."""
+as the database's rows, which fit the real schema, the changes tied to their points; a build's own plain file, folded
+shut; a build added to builds.toml; what the master took from a build; the repaint: what is set aside, the job in the
+queue, how far it says it is; Core reading the notes and a racial's history; races and classes from the client. Run by
+dev/tests/run."""
 import csv
 import importlib.machinery
 import importlib.util
 import json
 import re
+import resource
 import shutil
 import struct
+import subprocess
 import sys
 import tempfile
 import tomllib
@@ -221,21 +225,33 @@ rows = patchnotes.rows(notes)
 check("a point's extra and note follow it", [r["kind"] for r in rows], ["point", "point", "extra", "note", "point"])
 check("where a point stands", (rows[1]["section"], rows[1]["group"], rows[4]["sub"]), ("Classes", "Mage", "Frost"))
 check("a part without value stays out", "was" in rows[0], False)
+check("a point knows its class", rows[1]["class"], 8)
+sample_facts = {"sets": {"Spells": {"counts": {"new": 0, "changed": 2, "gone": 1},
+                                    "changed": [{"key": 1, "name": "Frostbolt faster", "class": 8, "changes": [{"field": "cost", "from": "1", "to": "2"}, {"field": "cooldown", "from": "1", "to": "2"}]},
+                                                {"key": 2, "name": "Frostbolt faster", "class": 7, "changes": []}],
+                                    "gone": [{"key": 3, "name": "Unnamed anywhere"}]},
+                         "Walking": {"counts": {"new": 0, "changed": 9, "gone": 0}}}}
+tied = {entry["key"]: entry for entry in patchnotes.changes(notes, sample_facts)}
+check("a change is tied to the point that names it, its class's", tied["1"], {"set": "Spells", "key": "1", "how": "changed", "fields": "cost,cooldown", "class": 8, "point": 5})
+check("not another class's", "point" in tied["2"], False)
+check("nor one no point names", "point" in tied["3"], False)
+check("a set of counts alone stands in counts", patchnotes.fields(notes, sample_facts)["counts"], {"Spells": 3, "Walking": 9})
 master = masters.Master(masters.MASTER).load()
 schema = master.schemas["PatchNotes"]
-fields = patchnotes.fields(notes)
+fields = patchnotes.fields(notes, sample_facts)
 values = [schemas.value_problem(next(f for f in schema.fields if f.name == name), value, {}, set()) for name, value in fields.items()]
 check("the database's entry fits the real schema", values, [None] * len(values))
-check("the set stays in the master", schema.ship, False)
-check("a set that does not ship has no file", compiler.compile_sets(Thing(schemas={"PatchNotes": schema}), temp / "core", "forever"), [])
 
 text = patchnotes.markdown(notes)
 check("text: a value before", "(was 25)" in text, True)
 check("text: what we found more", "- Also found: Its rank 2 too" in text, True)
 check("text: an empty section is left out", "## Quests" in text, False)
-page = patchnotes.fragment(notes, {"sets": {"Spells": {"counts": {"new": 1, "changed": 0, "gone": 0}, "new": [{"key": 7, "name": "Nova"}]},
+page = patchnotes.document(notes, {"sets": {"Spells": {"counts": {"new": 1, "changed": 0, "gone": 0}, "new": [{"key": 7, "name": "Nova"}]},
                                             "Walking": {"counts": {"new": 0, "changed": 9, "gone": 0}}}})
-check("the page has no document of its own", "<!doctype" in page.lower() or "<body" in page, False)
+check("a whole file", page.startswith("<!doctype html>"), True)
+check("every level is folded shut", re.search(r"<details[^>]* open", page), None)
+check("and its button opens them", 'aria-pressed="false">Expand all</button>' in page, True)
+check("it needs nothing outside itself", ("<link" in page, "<script src" in page, "fonts." in page), (False, False, False))
 check("the page has its name", "<title>Forever 1.60.2.70801 Patch Notes</title>" in page, True)
 check("the page folds", page.count("<details") >= 5, True)
 check("text is escaped", ("&lt;Blink&gt;" in page, "<Blink>" in page), (True, False))
@@ -245,10 +261,9 @@ check("no empty section on the page", 'id="quests"' in page, False)
 check("every change stays closed", '<details class="section every" id="every">' in page, True)
 check("a set of counts alone", "9 changed" in page, True)
 check("it says it is no page of Blizzard's", "Not an official Blizzard page" in page, True)
-check("the whole document", patchnotes.document("x").startswith("<!doctype html>"), True)
 none = json.loads(json.dumps(notes))
 none["official"] = []
-check("no notes of Blizzard's is said", "published no notes" in patchnotes.fragment(none), True)
+check("no notes of Blizzard's is said", "published no notes" in patchnotes.document(none), True)
 
 # --- builds.toml ----------------------------------------------------------------------------------------------------
 sample = '# head\n[forever]\n70245 = { patch = "1.60.1" }\n70707 = { patch = "1.60.1", day = "2026-10-31" }\n\n[forever-ptr]\n\n[retail]\n\n[forever-beta]\n70425 = { patch = "1.60.1" }\n'
@@ -346,13 +361,116 @@ check("all painted", pd.painted(plan), 2)
 check("the runner's pattern reads the status", bool(re.search(job["done"], "2 of 2 squares painted (100.0 %)")), True)
 check("not while one is missing", bool(re.search(job["done"], "1 of 2 squares painted (50.0 %)")), False)
 
-# --- the page of patches ----------------------------------------------------------------------------------------------
-(folder / "patchnotes.html").write_text(patchnotes.fragment(notes), encoding="utf-8")
-status, kind, body = pd.web(Thing(path=""))
-check("the list of patches", (status, 'href="forever-1-to-2/"' in body), (200, True))
-status, kind, body = pd.web(Thing(path="forever-1-to-2/"))
-check("a patch's page", (status, "Mage" in body), (200, True))
-check("no other patch", pd.web(Thing(path="nothing/"))[0], 404)
+# --- a build's file ---------------------------------------------------------------------------------------------------
+pd.PATCHNOTES = temp / "Patchnotes"
+pd.Patch = lambda game, place: Thing(game=game, name="forever-1-to-2", folder=folder, build=2, product="wowf", new="1.60.2.70801", extract=new)
+(folder / "patchnotes.json").write_text(json.dumps(notes), encoding="utf-8")
+pd.run_page(Thing(game="forever"))
+check("a file for each build and game", [p.name for p in pd.PATCHNOTES.iterdir()], ["Forever-1.60.2.70801.html"])
+check("the text stays with the patch", (folder / "patchnotes.md").is_file(), True)
+
+# --- the sets as the game reads them ------------------------------------------------------------------------------------
+sets = temp / "sets"
+sets.mkdir()
+for name in ("PatchNotes", "Racials", "Races", "Classes"):
+    (sets / f"{name}.lua").write_text(compiler.set_file(master, master.schemas[name], "forever")[0], encoding="utf-8")
+reader = temp / "read.lua"
+reader.write_text(f"""
+package.path = "{ROOT}/dev/tests/?.lua;" .. package.path
+local W = require("wowstub")
+W.Install(_G)
+W.build = 70707
+W.AddSets("{sets}")
+W.LoadCore("{ROOT}")
+W.Fire("ADDON_LOADED", "SaneUI")
+W.Fire("PLAYER_LOGIN")
+W.Wait(0)
+local Data = SaneUI.Core.Data
+local notes = Data.Set("PatchNotes"):Get(70707)
+assert(notes and notes.patch == "1.60.1" and notes.points[1].section == "General", "a build's notes")
+local shaman, tied = false, 0
+for _, point in ipairs(notes.points) do shaman = shaman or (point.class == 7 and point.group == "Shaman") end
+assert(shaman, "a point knows its class")
+for _, change in ipairs(notes.changes) do
+    if change.point then
+        tied = tied + 1
+        assert(notes.points[change.point].text, "a change names its point")
+    end
+end
+assert(tied > 0 and notes.counts.Racials > 0, "changes are tied to points, and counted per set")
+local builds = Data.Set("PatchNotes"):Keys("byClass", 7)
+assert(builds[1] == 70707, "the builds that speak of a class")
+local changes = Data.Set("Racials"):Changes(680)
+local named = false
+for _, change in ipairs(changes) do named = named or (change.field == "name" and change.from == "Axe Specialization" and change.to == "Command") end
+assert(named, "a racial's history")
+assert(Data.Set("Races"):Get(2).side == "horde" and Data.Set("Classes"):Get(7).name == "Shaman", "races and classes")
+io.write("read")
+""", encoding="utf-8")
+
+
+def small():
+    resource.setrlimit(resource.RLIMIT_AS, (2_000_000_000, 2_000_000_000))
+
+
+got = subprocess.run(["lua5.1", str(reader)], capture_output=True, text=True, cwd=ROOT, preexec_fn=small)
+check("Core reads the notes, a racial's history and its race", (got.stdout.strip()[-4:], got.stderr[-300:]), ("read", ""))
+
+retail = temp / "retail"
+retail.mkdir()
+(retail / "PatchNotes.lua").write_text(compiler.set_file(master, master.schemas["PatchNotes"], "retail")[0], encoding="utf-8")
+reader.write_text(f"""
+package.path = "{ROOT}/dev/tests/?.lua;" .. package.path
+local W = require("wowstub")
+W.Install(_G)
+W.Play("retail")
+W.build = 70688
+W.AddSets("{retail}")
+W.LoadCore("{ROOT}")
+W.Fire("ADDON_LOADED", "SaneUI")
+W.Fire("PLAYER_LOGIN")
+W.Wait(0)
+local notes = SaneUI.Core.Data.Set("PatchNotes"):Get(70688)
+assert(notes and notes.patch == "12.1.5", "Retail's notes")
+local druid = false
+for _, point in ipairs(notes.points) do druid = druid or point.class == 11 end
+assert(druid, "a point knows its class")
+io.write("read")
+""", encoding="utf-8")
+got = subprocess.run(["lua5.1", str(reader)], capture_output=True, text=True, cwd=ROOT, preexec_fn=small)
+check("Retail reads its own notes", (got.stdout.strip()[-4:], got.stderr[-300:]), ("read", ""))
+
+# --- what the client says of races and classes ----------------------------------------------------------------------
+loader = importlib.machinery.SourceFileLoader("game_data", str(ROOT / "dev" / "tools" / "game-data"))
+gd = importlib.util.module_from_spec(importlib.util.spec_from_loader("game_data", loader))
+loader.exec_module(gd)
+client = {"ChrRaceRacialAbility": {"680": {"Name_lang": "Orc - Passive - Command", "ChrRacesID": "2", "Description_lang": "Pets deal more",
+                                           "DescriptionShort_lang": "|cnWHITE_FONT_COLOR:Command (Passive):|r Pets", "Icon": "5", "Order": "2"},
+                                   "696": {"Name_lang": "Skyborne - Alliance - Active - Read Leyline", "ChrRacesID": "95", "Description_lang": "A",
+                                           "DescriptionShort_lang": "B", "Icon": "6", "Order": "1"}},
+          "ChrRaces": {"2": {"Name_lang": "Orc", "Name_female_lang": "", "ClientFileString": "Orc", "FactionID": "2", "LoreDescription_lang": "L",
+                             "PlayableRaceBit": "1", "UiDisplayOrder": "5"},
+                       "13": {"Name_lang": "Naga"}},
+          "FactionTemplate": {"2": {"FactionGroup": "5"}},
+          "ChrClasses": {"7": {"Name_lang": "Shaman", "Filename": "SHAMAN", "Description_lang": "D", "IconFileDataID": "9", "DisplayPower": "0",
+                               "ClassColorR": "0", "ClassColorG": "112", "ClassColorB": "222", "ArmorTypeMask": "3"}},
+          "Map": {"3217": {"MapName_lang": "Dalaran Skycuter", "Directory": "3217", "InstanceType": "0", "ParentMapID": "-1", "AreaTableID": "0", "MaxPlayers": "0"}},
+          "AreaTable": {"2521": {"AreaName_lang": "Verdantis River", "ParentAreaID": "12", "ContinentID": "0", "FactionGroupMask": "0",
+                                 "ExplorationLevel": "-1", "MountFlags": "0"}}}
+writer = gd.Writer("forever", 70707, None)
+tables_of = client.__getitem__
+gd.characters(tables_of, writer)
+gd.places(tables_of, writer)
+staged = {(line["set"], line["key"]): line["fields"] for line in writer.lines}
+check("a racial's name, kind and short line", [staged["Racials", 680][k] for k in ("name", "kind", "short")], ["Command", "passive", "Command (Passive): Pets"])
+check("a faction's name in a racial is no name", (staged["Racials", 696]["name"], staged["Racials", 696]["kind"]), ("Read Leyline", "active"))
+check("a race by its abilities, its side by its template", (staged["Races", 2]["side"], ("Races", 13) in staged), ("horde", False))
+check("a class's colour", staged["Classes", 7]["color"], "0070DE")
+check("an area below level 0 has no level", "level" in staged["Areas", 2521], False)
+spells = Thing(effects={"7": [{"DifficultyID": "1", "EffectIndex": "0"},
+                              {"DifficultyID": "0", "EffectIndex": "1", "Effect": "2", "EffectAura": "0", "EffectBasePointsF": "88.5", "EffectRealPointsPerLevel": "0.6",
+                               "EffectAuraPeriod": "0", "EffectChainTargets": "3", "EffectMiscValue[0]": "0", "EffectTriggerSpell": "0"}]})
+check("a spell's numbers, the normal difficulty's", gd.Spells.effect_list(spells, "7"), [{"index": 1, "effect": 2, "points": 88.5, "perLevel": 0.6, "targets": 3}])
 
 shutil.rmtree(temp, ignore_errors=True)
 print(f"patchday: {checks} checks, {failed} failed")

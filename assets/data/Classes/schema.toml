@@ -1,0 +1,12 @@
+set = "Classes"
+key = "int"              # the game's class ID (ChrClasses): the class field of Talents and SkillLines
+about = "The classes players can be: what the game says of each, with its history."
+
+[fields]
+name        = { type = "text" }
+file        = { type = "text" }                       # the game's own word for it: PALADIN
+description = { type = "text" }
+icon        = { type = "int", min = 0 }
+power       = { type = "int" }                        # Enum.PowerType of its main power
+color       = { type = "text" }                       # its colour as six hexadecimal digits
+armor       = { type = "flags" }                      # ArmorTypeMask
