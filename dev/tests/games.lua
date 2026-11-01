@@ -1,6 +1,6 @@
 -- What Retail lacks of Forever's interface, for the tests' stand-in (wowstub.lua, W.Play): globals,
 -- Table.Field, Enum.X.Y, Constants.X.Y and events (event:NAME), from the newest exports of the two games
--- (Forever 1.60.1.70707, Retail 12.1.5.70575). Made by dev/tools/blizzard games; do not edit by hand.
+-- (Forever 1.60.1.70707, Retail 12.1.5.70688). Made by dev/tools/blizzard games; do not edit by hand.
 return {
     retail = [[
 ACTION_BARS_RELATIVE_TO_BASE_POSITIONING

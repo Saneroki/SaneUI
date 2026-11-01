@@ -105,7 +105,7 @@ the game's newest patch and writes into its folder:
 | --- | --- | --- |
 | `check [--json]` | nothing | Which game's installed build is newer than its last export; what the newest patch still lacks, read from what stands there, so a stopped run goes on where it was |
 | `bump <game>` | `builds.toml`, `BUILD` of the data tools | The new build's line; `BUILD` is Forever's alone |
-| `tables <game>` | `tables.tsv`, `tables/<Table>.tsv` | Every client table against the build before, by topic: what the master does not hold is seen too (a race's abilities) |
+| `tables <game>` | `tables.tsv`, `tables/<Table>.tsv` | Every client table against the build before, by topic: what the master does not hold is seen too (a race's abilities); a table the client numbers anew is compared by what its rows hold |
 | `world <game>` | `world.md`, `world.json` | The terrain and the map tables against the build before |
 | `draft <game>` | `facts.md`, `facts.json`, `patchnotes.json` | What the master took from the game at this build; empty notes in Blizzard's layout |
 | `rerender <game>` | `rerender.json`, `dev/imagegen/jobs.toml` | The repaint queued; below |

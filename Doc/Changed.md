@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Patch notes for Forever 70707 and Retail 70688; the map's repaint queued (Saneroki, 2026-11-01)
+Saneroki: "Run both games": the first real run of `/patchday`.
+- **`assets/data/PatchNotes/`:** Forever's build 70707 and Retail's 70688 under their build numbers. **`assets/data/builds.toml`:** Retail's 70688. `dev/tests/games.lua` made anew.
+- **`dev/imagegen/jobs.toml`:** the job `patch-70707`: 58 squares of the world's tiles and the far paintings of Mulgore, Felwood, Thunder Bluff and Shen'dralas painted again from build 70707's terrain, which the maps' inputs now read.
+- **`dev/tools/patchday`:** a zone is painted again by the tiles its pictures are made from, no longer by every tile that places a changed model (12 zones became 4). **`dev/blizzard/clienttables.py`:** a table the client numbers anew is compared by what its rows hold (471,112 false changes in one of Retail's tables gone); Housing has its topic, the game's rules are no spells.
+
 ### Combat: the mouse rings' look; they start and end at the cursor's tip (Saneroki, 2026-11-01)
 Saneroki: "a leading line and glow and other styling", and "the end and start of the circles" lined up "with the mouse click tip" instead of straight up.
 - **`src/Combat/MouseRings.lua`:** see-through rings (`Rings.ALPHA`); the global cooldown's thinner and white, the cast's thicker, further out and in your class's colour; a bright line with a soft glow at the cast's head, the game's cast bar spark twice with additive blending, none on a cast the game hides. Both rings turned by `Rings.TURN`, so they start and end on the line to the cursor's tip; the line starts there too.

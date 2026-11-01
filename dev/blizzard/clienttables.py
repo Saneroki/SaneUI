@@ -14,13 +14,15 @@ from pathlib import Path
 csv.field_size_limit(1 << 30)
 LIMIT = 2000                # lines of a table's own file
 NOISE = {"VerifiedBuild"}   # columns that change with every build
+RENUMBERED = 0.9            # of a large table's rows changed: its own numbering moved, its contents are compared
+LARGE = 1000                # rows
 NAMES = ("Name_lang", "AreaName_lang", "Display_lang", "Description_lang", "Name", "Title_lang", "QuestTitle_lang")
 # The first topic whose words start the table's name; a table of none is Other.
 TOPICS = (
     ("Characters", ("ChrRace", "ChrClass", "ChrSpecial", "ChrCustom", "ChrModel", "CharBase", "CharStart", "Faction",
                     "BarberShop", "XP", "GameTable", "GtCombat", "GtChance", "GtOct")),
     ("Talents", ("Talent", "Trait", "NodeSpec", "Glyph", "Spec")),
-    ("Spells", ("Spell", "Aura", "Totem", "OverrideSpell", "PowerType", "RuneType", "Rune", "Cfg_")),
+    ("Spells", ("Spell", "Aura", "Totem", "OverrideSpell", "PowerType", "RuneType", "Rune")),
     ("Items and Rewards", ("Item", "Enchant", "Gem", "Socket", "Scaling", "Transmog", "Mount", "Toy", "Currency", "Heirloom",
                            "Reward", "Loot", "Treasure")),
     ("Professions", ("Skill", "TradeSkill", "Profession", "Crafting", "Lock", "Trainer")),
@@ -29,6 +31,7 @@ TOPICS = (
     ("World", ("Map", "Area", "UiMap", "WorldMap", "Taxi", "Light", "Liquid", "Weather", "Zone", "Terrain", "Transport",
                "Phase", "WMO", "AltMinimap", "Destructible")),
     ("Dungeons and Raids", ("Journal", "Encounter", "LFG", "Difficulty", "Dungeon", "Instance", "Boss")),
+    ("Housing", ("Decor", "House", "Room", "Exterior", "Neighborhood")),
     ("Player versus Player", ("PVP", "Pvp", "Battlemaster", "Honor", "Arena")),
     ("Achievements", ("Achievement", "Criteria", "ModifierTree", "PlayerCondition", "Holidays", "Calendar")),
     ("User Interface", ("UI", "Ui", "Global", "Binding", "Chat", "Tutorial", "Help", "Interface", "Emotes", "Language", "Cvar")),
@@ -74,7 +77,10 @@ def compare_table(name, old_path, new_path, id_column):
     for key in sorted(old.keys() - new.keys(), key=_order):
         lines.append((key, "", "gone", "", "", ""))
     changed = 0
-    for key in sorted(old.keys() & new.keys(), key=_order):
+    common = old.keys() & new.keys()
+    if len(common) >= LARGE and _numbering_moved(old_head, old, new_head, new, common):
+        return renumbered(name, old_head, old, new_head, new, id_column, label)
+    for key in sorted(common, key=_order):
         before, after = dict(zip(old_head, old[key])), dict(zip(new_head, new[key]))
         moved = [c for c in sorted(before.keys() | after.keys(), key=_column_order(new_head))
                  if before.get(c) != after.get(c) and c not in NOISE]
@@ -85,6 +91,26 @@ def compare_table(name, old_path, new_path, id_column):
     counts = dict(table=name, topic=topic(name), rows=len(new), new=len(new.keys() - old.keys()),
                   gone=len(old.keys() - new.keys()), changed=changed, columns=[c for c, _ in columns.most_common(8)])
     return counts, lines
+
+
+def _numbering_moved(old_head, old, new_head, new, common):
+    """Whether nearly every row of a table differs under its ID: a table the client numbers by place in the file."""
+    sample = sorted(common, key=_order)[::max(1, len(common) // 500)]
+    moved = sum(1 for key in sample if dict(zip(old_head, old[key])) != dict(zip(new_head, new[key])))
+    return moved >= RENUMBERED * len(sample)
+
+
+def renumbered(name, old_head, old, new_head, new, id_column, label):
+    """A renumbered table: its rows as what they hold, without their ID."""
+    def held(head, rows):
+        kept = [index for index, column in enumerate(head) if column != id_column and column not in NOISE]
+        return Counter(tuple(row[i] for i in kept if i < len(row)) for row in rows.values())
+    before, after = held(old_head, old), held(new_head, new)
+    added, lost = after - before, before - after
+    lines = [("", "", "new", "", "", " ".join(row)) for row in sorted(added)] + \
+            [("", "", "gone", "", " ".join(row), "") for row in sorted(lost)]
+    return dict(table=name, topic=topic(name), rows=len(new), new=sum(added.values()), gone=sum(lost.values()), changed=0,
+                columns=["(numbered anew)"]), lines
 
 
 def _order(key):

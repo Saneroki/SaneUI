@@ -190,6 +190,17 @@ check("a change names its row, column and values", "1\tHuman\tchanged\tFactionID
 check("the build's own column is noise", any("VerifiedBuild" in line for line in lines), False)
 check("the list", (out / "tables.tsv").read_text(encoding="utf-8").count("\n"), 3)
 
+big = temp / "big"
+(big / "a").mkdir(parents=True)
+(big / "b").mkdir()
+(big / "out").mkdir()
+table(big / "a", "Numbered", [{"ID": str(i), "Value": str(i * 2)} for i in range(1200)])
+table(big / "b", "Numbered", [{"ID": str(i), "Value": str(i * 2 + 2)} for i in range(1200)])   # one row in front, the rest moved
+found = {row["table"]: row for row in clienttables.compare(big / "a", big / "b", big / "out")}
+check("a table numbered anew is compared by what it holds", [found["Numbered"][k] for k in ("new", "gone", "changed")], [1, 1, 0])
+check("Housing has its topic", clienttables.topic("HouseDecor"), "Housing")
+check("the game's rules are no spells", clienttables.topic("Cfg_GameRules"), "Other")
+
 # --- the patch notes ------------------------------------------------------------------------------------------------
 notes = patchnotes.skeleton("forever", 70801, 70707, "1.60.2", "2026-11-12")
 check("Blizzard's sections, General first", (notes["sections"][0]["name"], notes["sections"][-1]["name"]), ("General", "Bug Fixes"))
