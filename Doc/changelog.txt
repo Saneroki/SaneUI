@@ -6,8 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Thin rings around the mouse show your global cooldown and your cast
-  while they run. They stand around the whole cursor, not its tip.
+- See-through rings around the mouse show your global cooldown and your
+  cast while they run. They stand around the whole cursor and start at
+  its tip.
 - Unit frames show their auras in one line above them: buffs on the
   left, crowd control in the middle, debuffs on the right.
 - The game's experience, stance and bag bars and its quest tracker are

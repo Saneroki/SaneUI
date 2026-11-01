@@ -2,26 +2,30 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Mouse Rings
---  Two thin rings around the mouse, there only while they run: the inner one
---  the global cooldown, in silver, the outer one your cast, in the game's gold,
---  a channel in its green. A cast fills from the top, clockwise; a channel
---  empties, as the game's cast bar does. At rest no ring stands there.
+--  Two see-through rings around the mouse, there only while they run: the
+--  inner, thinner one the global cooldown, in white, the outer one your cast,
+--  in your class's colour, a bright line with a soft glow leading its sweep. A
+--  cast fills clockwise; a channel empties, as the game's cast bar does. At
+--  rest no ring stands there.
 --
 --  They go around what you see, not around the point that clicks. The game's
 --  cursor hangs from its tip at the top left corner of a square picture, so
 --  the rings stand on the middle of what those pictures show, Rings.MIDDLE of
 --  a side right of and below the tip, and the inner ring's hole holds every
---  cursor of the game whole. All of it is measured in that picture's side, in
---  the screen's real pixels: the game's Cursor Size (Accessibility), on Default
---  the display's scale, for the cursor grows with neither the UI's scale nor
---  the screen's height. Read each time the rings come out, so a change is seen
---  with nothing listening for it.
+--  cursor of the game whole. Both start and end on the line to the tip
+--  (Rings.TURN), not straight up. All of it is measured in that picture's
+--  side, in the screen's real pixels: the game's Cursor Size (Accessibility),
+--  on Default the display's scale, for the cursor grows with neither the UI's
+--  scale nor the screen's height. Read each time the rings come out, so a
+--  change is seen with nothing listening for it.
 --
---  The sweep is the game's own Cooldown widget with Core's ring (Shape.RING) as
---  its swipe. The game may hide cooldowns from addons (secret values), and the
---  widget takes hidden numbers only from its own code, so the global cooldown
---  goes in as the game's duration object, whatever it hides; a cast by its
---  plain start and end, the duration object only where those are hidden.
+--  The sweep is the game's own Cooldown widget with Core's rings (Shape.RING,
+--  RING_WIDE) as its swipe. The game may hide cooldowns from addons (secret
+--  values), and the widget takes hidden numbers only from its own code, so the
+--  global cooldown goes in as the game's duration object, whatever it hides; a
+--  cast by its plain start and end, the duration object only where those are
+--  hidden. The line needs the plain numbers: on a hidden cast the ring runs
+--  without it.
 --
 --  Nothing runs at rest: the holder that follows the mouse goes out of sight
 --  when its rings are over, and its OnUpdate stops with it.
@@ -37,13 +41,17 @@ Rings.SPELL = Core.ForGame({ forever = 29515, retail = 61304 })
 Rings.LONGEST = 2                            -- seconds: longer is no global cooldown but a school locked by an interrupt
 Rings.SIDES = { [0] = 32, 48, 64, 96, 128 }  -- the cursor picture's side by the game's Cursor Size (cursorSizePreferred)
 Rings.MIDDLE = { 0.48, 0.47 }                -- the middle of what the cursors show: sides right of and below the tip
-Rings.INNER = 0.875                          -- the rings' outer radii, in sides: the hole in Core's ring is 0.86 of that
-Rings.OUTER = 1.125
-Rings.SILVER = { 0.85, 0.87, 0.9, 0.85 }
-Rings.GOLD = { 1, 0.82, 0, 0.9 }             -- the game's NORMAL_FONT_COLOR
-Rings.GREEN = { 0.1, 1, 0.1, 0.9 }           -- its GREEN_FONT_COLOR
+Rings.TURN = math.atan2(Rings.MIDDLE[1], Rings.MIDDLE[2]) -- radians from straight up to the tip, counter-clockwise
+Rings.INNER = 0.875                          -- the rings' outer radii, in sides
+Rings.OUTER = 1.25
+Rings.HOLE = 0.81                            -- the outer ring's hole, a share of its radius (Core's RING_WIDE)
+Rings.ALPHA = 0.8                            -- how solid the rings are
+Rings.SPARK = "Interface\\CastingBar\\UI-CastingBar-Spark" -- the game's: the leading line, and larger the glow around it
+Rings.LINE = 0.6                             -- their sizes, shares of the outer ring's radius
+Rings.GLOW = 0.9
+Rings.GLOW_ALPHA = 0.5
 
-local holder, cooldown, casting -- the frame that follows the mouse, and the two rings in it
+local holder, cooldown, casting, sparks, spark, glow -- what follows the mouse, its two rings, the line and glow on a level above
 
 -- The cursor picture's side in real pixels: the Cursor Size chosen, or on Default the largest the display's scale reaches.
 local function Side()
@@ -61,9 +69,13 @@ end
 local function Fit()
     local _, high = GetPhysicalScreenSize()
     local side = Side() * 768 / high / holder:GetEffectiveScale() -- real pixels to UI units
+    local radius = side * Rings.OUTER
     holder.right, holder.down = side * Rings.MIDDLE[1], side * Rings.MIDDLE[2]
+    holder.orbit = radius * (1 + Rings.HOLE) / 2 -- the middle of the outer ring's band
     cooldown:SetSize(2 * side * Rings.INNER, 2 * side * Rings.INNER)
-    casting:SetSize(2 * side * Rings.OUTER, 2 * side * Rings.OUTER)
+    casting:SetSize(2 * radius, 2 * radius)
+    spark:SetSize(radius * Rings.LINE, radius * Rings.LINE)
+    glow:SetSize(radius * Rings.GLOW, radius * Rings.GLOW)
 end
 
 local function Place()
@@ -73,9 +85,30 @@ local function Place()
     holder:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale + holder.right, y / scale - holder.down)
 end
 
+local function Aim(light, x, y, turn)
+    light:ClearAllPoints()
+    light:SetPoint("CENTER", holder, "CENTER", x, y)
+    light:SetRotation(turn)
+end
+
+-- The line and its glow at the head of the sweep, across the ring's band.
+local function Lead()
+    local share = casting:IsShown() and holder.span and (GetTime() - holder.from) / holder.span
+    if not share or share <= 0 or share >= 1 then return sparks:Hide() end
+    local angle = math.pi / 2 + Rings.TURN - share * 2 * math.pi
+    local x, y = holder.orbit * math.cos(angle), holder.orbit * math.sin(angle)
+    Aim(spark, x, y, angle - math.pi / 2)
+    Aim(glow, x, y, angle - math.pi / 2)
+    sparks:Show()
+end
+
 -- With the mouse, while a ring runs; out of sight when none does.
 local function Follow()
-    if cooldown:IsShown() or casting:IsShown() then return Place() end
+    if cooldown:IsShown() or casting:IsShown() then
+        Place()
+        return Lead()
+    end
+    sparks:Hide()
     holder:Hide()
 end
 
@@ -115,14 +148,14 @@ end
 -- Your cast as the game says it now: started, delayed, or over.
 local function Casting()
     local cast = ns.options.mouseCast and ns.UnitCast.Read("player")
+    holder.span = nil
     if not cast then return Stop(casting) end
-    local look = cast.channel and Rings.GREEN or Rings.GOLD
     Wake()
-    casting:SetSwipeColor(look[1], look[2], look[3], look[4])
     casting:SetReverse(not cast.channel)
     local starts, ends = Plain(cast.starts), Plain(cast.ends)
     if starts and ends then
-        casting:SetCooldown(starts / 1000, (ends - starts) / 1000)
+        holder.from, holder.span = starts / 1000, (ends - starts) / 1000
+        casting:SetCooldown(holder.from, holder.span)
     elseif not Hidden(cast) then
         return Stop(casting)
     end
@@ -138,17 +171,36 @@ local function OnEvent(self, event) ns.Safe("mouse rings", Heard, self, event) e
 local OnUpdate = ns.Guard(Follow)
 local OnDone = ns.Guard(function(ring) ring:Hide() end)
 
-local function Ring()
+-- Your class's colour, or white.
+local function ClassColour()
+    local _, class = UnitClass("player")
+    local colours = rawget(_G, "RAID_CLASS_COLORS")
+    local colour = class and colours and colours[class]
+    if colour then return colour.r, colour.g, colour.b end
+    return 1, 1, 1
+end
+
+local function Ring(art, r, g, b)
     local ring = CreateFrame("Cooldown", nil, holder)
     ring:SetPoint("CENTER")
-    ring:SetSwipeTexture(Core.Shape.RING)
+    ring:SetSwipeTexture(art)
+    ring:SetSwipeColor(r, g, b, Rings.ALPHA)
     ring:SetDrawEdge(false)
     ring:SetDrawBling(false)
     ring:SetHideCountdownNumbers(true)
     ring:SetReverse(true)
+    ring:SetRotation(-Rings.TURN) -- the widget turns clockwise, textures the other way
     ring:SetScript("OnCooldownDone", OnDone)
     ring:Hide()
     return ring
+end
+
+local function Light(sublevel, r, g, b)
+    local light = sparks:CreateTexture(nil, "OVERLAY", nil, sublevel)
+    light:SetTexture(Rings.SPARK)
+    light:SetBlendMode("ADD")
+    light:SetVertexColor(r, g, b, 1)
+    return light
 end
 
 local function Build()
@@ -158,10 +210,15 @@ local function Build()
     holder:Hide()
     holder:SetScript("OnEvent", OnEvent)
     holder:SetScript("OnUpdate", OnUpdate)
-    cooldown, casting = Ring(), Ring()
-    local silver = Rings.SILVER
-    cooldown:SetSwipeColor(silver[1], silver[2], silver[3], silver[4])
-    Rings.holder, Rings.cooldown, Rings.casting = holder, cooldown, casting
+    local r, g, b = ClassColour()
+    cooldown, casting = Ring(Core.Shape.RING, 1, 1, 1), Ring(Core.Shape.RING_WIDE, r, g, b)
+    sparks = CreateFrame("Frame", nil, holder)
+    sparks:SetAllPoints(holder)
+    sparks:SetFrameLevel(casting:GetFrameLevel() + 2)
+    sparks:Hide()
+    spark, glow = Light(0, r, g, b), Light(-1, r, g, b)
+    glow:SetAlpha(Rings.GLOW_ALPHA)
+    Rings.holder, Rings.cooldown, Rings.casting, Rings.sparks, Rings.spark, Rings.glow = holder, cooldown, casting, sparks, spark, glow
 end
 
 -- The rings as the settings say: built when first wanted, hearing only what a ring on needs.
@@ -187,5 +244,6 @@ function Rings.Hide()
     holder:UnregisterAllEvents()
     Stop(cooldown)
     Stop(casting)
+    sparks:Hide()
     holder:Hide()
 end

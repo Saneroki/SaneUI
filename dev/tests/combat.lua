@@ -34,6 +34,9 @@ function methods:SetFrameLevel(level) self._level = level end
 function methods:GetFrameLevel() return self._level or 1 end
 function methods:Raise() self._level = 500 end
 function methods:SetClampedToScreen(on) self._clamped = on end
+function methods:SetRotation(angle) self._rotation = angle end
+function methods:SetSwipeColor(...) self._swipe = { ... } end
+function methods:SetBlendMode(mode) self._blend = mode end
 function methods:EnableMouse(on) self._mouse, self._motion = on, on end
 function methods:SetMouseMotionEnabled(on) self._motion = on end
 function methods:SetMouseClickEnabled(on) self._mouse = on end
@@ -125,6 +128,7 @@ units.player = { name = "Droopy", surname = "Fairwind", player = true, class = "
                  most = 1000, power = 30, powerMost = 100 }
 W.actions[1] = { kind = "spell", id = 6603 } -- the main bar's first button holds an action, its second is empty
 if RETAIL then W.Play("retail") end
+RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 
 W.LoadCore(root)
 local Core = SaneUI.Core
@@ -1473,7 +1477,6 @@ do
     function methods:Clear() self._start, self._object = nil, nil end
     methods.UnregisterAllEvents = methods.UnregisterAllEvents or function(self) self._events, self._units = {}, nil end
     function methods:SetReverse(on) self._reverse = on end
-    function methods:SetSwipeColor(...) self._swipe = { ... } end
     local spell, asked = rawget(_G, "C_Spell"), {}
     local global
     local GetCooldown, GetDuration, GetCVar = spell.GetSpellCooldown, spell.GetSpellCooldownDuration, C_CVar.GetCVar
@@ -1503,6 +1506,17 @@ do
 
     check(holder._strata == "TOOLTIP" and not holder._shown and not cooldown._shown and not casting._shown,
         "no ring at rest: nothing around the mouse")
+    local class = RAID_CLASS_COLORS.WARRIOR
+    check(cooldown._swipe[1] == 1 and cooldown._swipe[3] == 1 and cooldown._swipe[4] == Rings.ALPHA and Rings.ALPHA < 1
+        and casting._swipe[1] == class.r and casting._swipe[2] == class.g and casting._swipe[4] == Rings.ALPHA,
+        "see-through: the global cooldown's white, the cast's your class's colour")
+    check(Rings.spark._blend == "ADD" and Rings.glow._blend == "ADD" and Rings.glow._alpha == Rings.GLOW_ALPHA,
+        "the leading line and its softer glow add light")
+    local toTip = math.sqrt(Rings.MIDDLE[1] ^ 2 + Rings.MIDDLE[2] ^ 2)
+    check(near(cooldown._rotation, -Rings.TURN) and near(casting._rotation, -Rings.TURN)
+        and near(math.cos(math.pi / 2 + Rings.TURN) * toTip, -Rings.MIDDLE[1])
+        and near(math.sin(math.pi / 2 + Rings.TURN) * toTip, Rings.MIDDLE[2]),
+        "both rings start and end on the line to the cursor's tip, not straight up")
     Cooldown(false, 0)
     check(not holder._shown and not cooldown._shown, "no global cooldown: still none")
     check(asked[#asked] == (RETAIL and 61304 or 29515), "the game's own spell for it where it has one, another in Forever")
@@ -1564,21 +1578,26 @@ do
     W.cast = { name = "Fireball", icon = 135812, starts = began, ends = began + 2500, id = "ring-1", spell = 133 }
     W.Fire("UNIT_SPELLCAST_START", "player", "ring-1", 133)
     check(holder._shown and casting._shown and near(casting._start, began / 1000) and near(casting._duration, 2.5)
-        and casting._reverse == true and casting._swipe[1] == Rings.GOLD[1] and casting._swipe[2] == Rings.GOLD[2],
-        "a cast: the outer ring fills in gold, from its start to its end")
+        and casting._reverse == true, "a cast: the outer ring fills, from its start to its end")
     W.cast.ends = began + 3000
     W.Fire("UNIT_SPELLCAST_DELAYED", "player", "ring-1", 133)
     check(near(casting._duration, 3), "pushed back: the ring goes with it")
+    W.Wait(0.75)
+    Follow()
+    local orbit = casting._width / 2 * (1 + Rings.HOLE) / 2
+    local line, turned = Rings.spark._points[1], Rings.TURN - math.pi / 2
+    check(Rings.sparks._shown and near(line[4], orbit * math.cos(Rings.TURN)) and near(line[5], orbit * math.sin(Rings.TURN))
+        and near(Rings.spark._rotation, turned) and near(Rings.glow._rotation, turned) and Rings.glow._width > Rings.spark._width,
+        "a quarter of the way: the line and its glow at the sweep's head, across the ring's band")
     W.Fire("UNIT_SPELLCAST_FAILED", "player", "ring-2", 116)
     check(casting._shown, "what you tried while casting leaves the cast alone")
     W.cast = nil
     W.Fire("UNIT_SPELLCAST_INTERRUPTED", "player", "ring-1", 133)
     Follow()
-    check(not casting._shown and not holder._shown, "interrupted: gone at once")
+    check(not casting._shown and not holder._shown and not Rings.sparks._shown, "interrupted: gone at once, the line with it")
     W.channel = { name = "Drain Life", icon = 136169, starts = began, ends = began + 5000, spell = 689 }
     W.Fire("UNIT_SPELLCAST_CHANNEL_START", "player", "ring-3", 689)
-    check(casting._shown and casting._reverse == false and casting._swipe[2] == Rings.GREEN[2] and near(casting._duration, 5),
-        "a channel: the ring empties, in green")
+    check(casting._shown and casting._reverse == false and near(casting._duration, 5), "a channel: the ring empties")
     W.channel = nil
     W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "ring-3", 689)
     Follow()
@@ -1589,7 +1608,9 @@ do
     UnitCastingDuration = function() return "the cast's duration" end
     W.cast = { name = "Fireball", icon = 135812, starts = hidden, ends = hidden, id = "ring-4", spell = 133 }
     W.Fire("UNIT_SPELLCAST_START", "player", "ring-4", 133)
-    check(casting._shown and casting._object == "the cast's duration", "its numbers hidden: the ring runs on the game's duration")
+    Follow()
+    check(casting._shown and casting._object == "the cast's duration" and not Rings.sparks._shown,
+        "its numbers hidden: the ring runs on the game's duration, without the line")
     casting._shown = false
     W.refuseDuration = true
     W.Fire("UNIT_SPELLCAST_DELAYED", "player", "ring-4", 133)

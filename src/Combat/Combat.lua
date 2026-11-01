@@ -119,11 +119,11 @@ ns.TEXT = {
     menuHover = "Menu bar on mouseover",
     menuHoverTip = "The game's menu bar is out of sight, and shows while the mouse is on it; in Edit Mode it always shows. Off: always in sight.",
     mouseRings = "Rings around the mouse",
-    mouseRingsTip = "Thin rings around the mouse only while something runs, gone when it is over. They stand around the whole picture of the cursor, not around its tip, and grow with the game's Cursor Size.",
+    mouseRingsTip = "See-through rings around the mouse only while something runs, gone when it is over. They stand around the whole picture of the cursor, start and end at its tip, and grow with the game's Cursor Size.",
     mouseCooldown = "Global cooldown",
-    mouseCooldownTip = "The inner ring, in silver, fills while the global cooldown runs.",
+    mouseCooldownTip = "The inner, thinner ring, in white, fills while the global cooldown runs.",
     mouseCast = "Your cast",
-    mouseCastTip = "The outer ring fills in gold while you cast, and empties in green while you channel. Interrupted, it goes at once.",
+    mouseCastTip = "The outer ring, in your class's colour, fills while you cast and empties while you channel, a bright line with a soft glow at its head. Interrupted, it goes at once.",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever

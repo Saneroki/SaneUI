@@ -24,8 +24,8 @@ Your party and your raid are one frame of ours, in place of the game's two: unit
 nameplates' look, sized to fit the limits you set in Edit Mode. On every health bar of ours, these and the unit frames, you see
 barriers, maximum health lost for a while, and what can be dispelled (Core's health marks, on the nameplates too).
 
-Around the mouse, only while they run, two thin rings: the global cooldown and your cast. They go around the whole picture of the
-cursor, not around its tip, so the cursor stands in their middle.
+Around the mouse, only while they run, two see-through rings: the global cooldown and your cast, a bright line with a soft glow leading
+the cast's. They go around the whole picture of the cursor, so it stands in their middle, and start and end at its tip.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -178,9 +178,10 @@ cursor, not around its tip, so the cursor stands in their middle.
   art on the bar: after the health while it fits, pushed against the bar's right end when it does not, always as long as it is.
   Lost maximum health: the health bar ends earlier, the rest is the game's hatching. What you or your group can take off a unit (on a
   foe, a buff you can remove): the game's icon of its type, big, floating over the left of the health bar (on a nameplate, above its right end).
-- **Rings around the mouse** (*Global cooldown*, *Your cast*, each its own switch on the page Combat, both on at first): the inner ring, in
-  silver, fills while the global cooldown runs; the outer one fills in gold while you cast and empties in green while you channel. There only while
-  they run, gone at once when the cast is interrupted. They stand around the cursor you see and grow with the game's *Cursor Size* (Accessibility).
+- **Rings around the mouse** (*Global cooldown*, *Your cast*, each its own switch on the page Combat, both on at first): the inner, thinner ring,
+  in white, fills while the global cooldown runs; the outer one, in your class's colour, fills while you cast and empties while you channel, a bright
+  line with a soft glow at its head. See-through, there only while they run, gone at once when the cast is interrupted. They stand around the cursor
+  you see, start and end on the line to its tip, and grow with the game's *Cursor Size* (Accessibility).
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -273,8 +274,11 @@ cursor, not around its tip, so the cursor stands in their middle.
   is opened by its own function and seated in the body (Core's `Seat.lua`: only its place, scale and layer lent),
   a frame later (`Core.Later`); the panel hidden, given back and closed. Its opening followed once, from the
   login or when its addon is first there: while its panel is on the layout, the full screen comes.
-- **Mouse rings** (`MouseRings.lua`): a hidden holder at the `TOOLTIP` strata with two `Cooldown` widgets, their swipe Core's ring
-  (`Shape.RING`, `Art/ring.blp`, one picture for both, so the larger ring is the thicker one). The holder comes out when a ring starts, follows
+- **Mouse rings** (`MouseRings.lua`): a hidden holder at the `TOOLTIP` strata with two `Cooldown` widgets, their swipes Core's rings
+  (`Shape.RING`, `RING_WIDE`) in `Rings.ALPHA`, both turned by `Rings.TURN` so they start and end on the line from their centre to the cursor's tip
+  (the widget turns clockwise, a texture the other way). Above them a frame with the leading line and its glow, the game's cast bar spark twice, added
+  to what lies under it, placed on the band's middle each frame from the cast's plain start and end, none where those are hidden. The holder comes
+  out when a ring starts, follows
   `GetCursorPosition` on its `OnUpdate` and goes when neither ring is shown, so nothing runs at rest. Where it stands: the game's cursor hangs from its
   tip at the top left corner of a square picture, so the rings' centre is `Rings.MIDDLE` of a side right of and below the tip, and the inner ring's
   hole holds all 119 of the game's cursor pictures of that size whole (measured on the art, the widest is the sword). Everything is in that side, in
