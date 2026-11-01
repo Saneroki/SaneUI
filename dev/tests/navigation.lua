@@ -295,6 +295,7 @@ UnregisterStateDriver = function(frame) W.drivers[frame] = nil end
 BaseScrollBoxEvents = { OnScroll = "OnScroll" }
 function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
 function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
+function methods:RegisterForClicks(...) self._registered = { ... } end
 function methods:GetRight() return self._right or 0 end
 function methods:GetTop() return self._top or 0 end
 function methods:SetJustifyH(side) self._justify = side end
@@ -2580,9 +2581,98 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
     check(point[1] == "RIGHT" and point[4] == 300 and point[5] == 720, "at the list's right, beside its row")
     local state = quest.state._points[1]
     check(state[1] == "RIGHT" and state[4] == -(QuestLog.ITEM + 4), "its row's words keep clear of it")
-    GameTooltip._text = nil
-    items[1]._scripts.OnEnter(items[1])
+    check(items[1]._attributes.useOnKeyDown == false and #items[1]._registered == 1 and items[1]._registered[1] == "AnyUp",
+        "a click acts on its release, any button, as on the game's tracker, whatever the game's option for keys says")
+
+    -- The mouse on it: the game's tooltip of what is carried, and it counts as the mouse on the log.
+    ;(function()
+        local tip, was = {}, {}
+        for _, name in ipairs({ "SetOwner", "SetQuestLogSpecialItem", "SetItemByID", "Show" }) do
+            was[name] = GameTooltip[name]
+            GameTooltip[name] = function(_, a, b) tip[#tip + 1] = { name, a, b } end
+        end
+        local window = QuestLog.handle.frame
+        window._scripts.OnUpdate = nil
+        items[1]._scripts.OnEnter(items[1])
+        check(tip[1][1] == "SetOwner" and tip[1][2] == items[1] and tip[1][3] == "ANCHOR_RIGHT"
+            and tip[2][1] == "SetQuestLogSpecialItem" and tip[2][2] == 2 and tip[3][1] == "Show",
+            "the mouse on it: the game's tooltip of what is carried, by its quest's place in the log")
+        check(window._scripts.OnUpdate, "and the mouse on it counts as the mouse on the log")
+        wipe(tip)
+        local index = C_QuestLog.GetLogIndexForQuestID
+        C_QuestLog.GetLogIndexForQuestID = function() return nil end
+        items[1]._scripts.OnEnter(items[1])
+        C_QuestLog.GetLogIndexForQuestID = index
+        check(tip[2][1] == "SetItemByID" and tip[2][2] == 5000, "its quest gone from the log, a fight holding the button: the item as such")
+
+        -- The list changed under the mouse: the tooltip says what the button under it uses now.
+        wipe(tip)
+        GameTooltip._owner = items[1]
+        W.special[2] = { "|Hitem:5002|h[Rod]|h", 134402, 2 }
+        W.Fire("BAG_UPDATE_DELAYED")
+        rows = logBox:Draw()
+        Laid()
+        W.Wait(0)
+        check(items[1]._attributes.item == "item:5002" and items[1].count._text == 2 and tip[2][1] == "SetQuestLogSpecialItem",
+            "another item under the mouse: its button and its tooltip follow")
+        GameTooltip._owner = nil
+        for name, fn in pairs(was) do GameTooltip[name] = fn end
+    end)()
     items[1]._scripts.OnLeave(items[1])
+
+    -- A bag changed: the game tells of no charge lost or item come, so the rows are compared with it; no redraw for nothing.
+    ;(function()
+        local refresh, drawn = QuestLog.Refresh, 0
+        QuestLog.Refresh = function(...) drawn = drawn + 1; return refresh(...) end
+        W.Fire("BAG_UPDATE_DELAYED")
+        check(drawn == 0, "a bag changed, the quests' items as they were: nothing drawn anew")
+        W.special[2][3] = 1
+        W.Fire("BAG_UPDATE_DELAYED")
+        check(drawn == 1, "a charge lost: drawn anew")
+        rows = logBox:Draw()
+        Laid()
+        W.Wait(0)
+        check(items[1].count._text == "", "and its count follows")
+        W.special[2] = nil
+        W.Fire("BAG_UPDATE_DELAYED")
+        check(drawn == 2, "the item gone: drawn anew")
+        rows = logBox:Draw()
+        Laid()
+        W.Wait(0)
+        check(not items[1]._shown, "the item gone from the bags: its button goes")
+        W.special[2] = { "|cffffffff|Hitem:5000:0:0|h[Torch]|h|r", 134400, 3 }
+        W.Fire("BAG_UPDATE_DELAYED")
+        check(drawn == 3, "an item come into the bags: drawn anew")
+        rows = logBox:Draw()
+        Laid()
+        W.Wait(0)
+        check(items[1]._shown and items[1]._attributes.item == "item:5000" and items[1].count._text == 3, "and its button is back")
+        QuestLog.Refresh = refresh
+    end)()
+
+    -- The link's modifier: with the chat's box open it links the item and uses nothing, with it closed a click uses it.
+    ;(function()
+        local button, links = items[1], #W.links
+        local press, release = button._scripts.PreClick, button._scripts.PostClick
+        W.modifier = "CHATLINK"
+        press(button, "LeftButton")
+        check(button._attributes.type == "item", "Shift and a click, the chat's box closed: it uses the item")
+        release(button, "LeftButton")
+        check(#W.links == links, "and writes nothing")
+        ChatFrameUtil.GetActiveWindow = function() return {} end
+        press(button, "LeftButton")
+        check(button._attributes.type == "", "the box open: the click uses nothing")
+        release(button, "LeftButton")
+        check(#W.links == links + 1 and W.links[#W.links] == "|cffffffff|Hitem:5000:0:0|h[Torch]|h|r", "and links it")
+        check(button._attributes.type == "item", "the next click uses it again, whatever comes next")
+        W.combat = true
+        press(button, "LeftButton")
+        check(button._attributes.type == "item", "in a fight the game locks what it does: nothing set")
+        release(button, "LeftButton")
+        check(button._attributes.type == "item", "nor after it")
+        W.combat = false
+        ChatFrameUtil.GetActiveWindow, W.modifier = nil, nil
+    end)()
 
     -- Scrolled away: its button goes with it; a fight holds them as they stand, and they follow once it is over.
     Laid(900)
@@ -2885,10 +2975,20 @@ rows[2]._scripts.OnLeave(rows[2])
 pins = Drawn()
 check(pins["quest:7"].pin.focused and pins["quest:7"].glow._shown, "its pin glowing: the quest the arrow leads to")
 -- Shift and a click watches it; the right button's menu; abandoned only after a question.
-IsShiftKeyDown = function() return true end
-rows[2]._scripts.OnClick(rows[2], "LeftButton")
-IsShiftKeyDown = function() return false end
-check(watched[7], "Shift and a click: watched")
+;(function()
+    -- Shift is the link's modifier too, unless the player changed it.
+    local insert = ChatFrameUtil.InsertLink
+    GetQuestLink = function() return "[quest]" end
+    W.modifier = "CHATLINK"
+    IsShiftKeyDown = function() return true end
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    check(not watched[7] and W.links[#W.links] == "[quest]", "the chat's box open: Shift and a click links it, no watching")
+    ChatFrameUtil.InsertLink = function() return false end
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    IsShiftKeyDown = function() return false end
+    ChatFrameUtil.InsertLink, GetQuestLink, W.modifier = insert, nil, nil
+    check(watched[7], "nothing takes the link: Shift and a click watches it")
+end)()
 local popups = #W.popups
 rows[4]._scripts.OnClick(rows[4], "RightButton")
 local menu = W.menus[#W.menus]

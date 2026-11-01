@@ -177,8 +177,12 @@ is small, and the maps of the dungeons and raids. The plan is in
   area where its foes are), at the zoom it has. **A double click does the same but for its text, and puts the game's
   map pin there, so the golden line leads you there.** A click waits a moment for a second one, so a double click
   leaves the text as it was. Shift and a click tracks it. **The item a quest wants used** (the one the game's
-  tracker shows) stands at the far end of its row: a click uses it, in a fight too. In a fight the items stay where
-  they stood and follow once it is over; over the full map none shows in a fight, as the map may close then.
+  tracker shows) stands at the far end of its row: a click uses it, in a fight too, any button of the mouse, as on the
+  game's tracker. With the mouse on it you get its tooltip, as your tooltip settings show it (at first while Shift is
+  held): what you carry, how it is bound, its charges, its cooldown. Shift and a click uses it as well; with the
+  chat's box open it writes it into the chat instead. It comes, goes and counts its charges as your bags change. In a
+  fight the items stay where they stood and follow once it is over; over the full map none shows in a fight, as the
+  map may close then.
   **On the screen's right half the log mirrors itself:** its title and words right aligned, the items at the left.
   The
   right button: *Quest Details* (its text, as a click unfolds it), *Show Map* (the map at its objective), *Track*, *Share* and *Abandon*. A click on a quest's pin on
@@ -478,7 +482,12 @@ is small, and the maps of the dungeons and raids. The plan is in
   log has to come and go with the map in a fight), placed by the screen at the rows in sight (`Seat`, on the next
   frame after a refresh, a scroll or a move; out of a fight only: `Core.AfterCombat`). While the log is over the full
   map the tray is hidden in a fight by the game's state driver; it is out of sight while the log is carried (Core's
-  `lifted`), and the log is not moved in a fight (`usable`).
+  `lifted`), and the log is not moved in a fight (`usable`). A click acts on the release (`AnyUp`, `useOnKeyDown`
+  false, as the tracker), whatever the game's option for keys says; every button and modifier uses it by the template's
+  `type`, but for the tracker's link: the link's modifier with the chat's box open (`Linking`) empties `type` in
+  `PreClick` and links in `PostClick`, out of a fight only (locked, a click does both). The tooltip is the tracker's
+  `SetQuestLogSpecialItem`, by the log's index of the quest now, `SetItemByID` once it left the log. The game sends no
+  event for an item's charges: `BAG_UPDATE_DELAYED` compares `Special` with the rows.
   A quest's text from `GetQuestLogQuestText`, its rewards by the quest's ID (`GetQuestLogRewardXP`,
   `GetQuestLogRewardMoney`, `GetNumQuestLogRewards`, `GetQuestLogRewardInfo`, `GetNumQuestLogChoices`,
   `GetQuestLogChoiceInfo`, `C_QuestInfoSystem`'s currencies and spells: no quest chosen for them), read only while the
@@ -869,6 +878,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-01, the quests' items rechecked:** as Saneroki asked, the click run through the game's own code of both
+  games: every mouse button and modifier uses the item once, in and out of a fight. The tooltip is now what you carry,
+  as on the game's tracker; a click acts on the release; with the chat's box open Shift and a click links the item and
+  no longer uses it up; an item follows your bags. And Shift and a click on a quest tracks it again: the link's
+  modifier, Shift too, had taken the click even where nothing took the link.
 - **2026-10-30, Atlas first, Follow me a tick:** as Saneroki asked, the map starts as Atlas where it can be drawn, else
   as Scrying, and in Retail its one view stands without buttons or a setting. *Follow again after* is gone: *Follow
   me*, on at first, says whether the map comes back; ticked, the minimap snaps back the moment you walk, the full map

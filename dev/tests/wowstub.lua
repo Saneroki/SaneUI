@@ -366,6 +366,7 @@ function methods:GetTextColor()
 end
 function methods:SetOwner(owner) self._owner = owner end
 function methods:GetOwner() return self._owner end
+function methods:IsOwned(owner) return self._owner == owner end
 function methods:AddLine(text) self._lines = self._lines or {}; self._lines[#self._lines + 1] = text end
 function methods:GetEffectiveScale() return 1 end
 function methods:GetFrameLevel() return 1 end

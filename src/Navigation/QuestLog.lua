@@ -31,8 +31,8 @@ local _, ns = ...
 --                    where the map shows it (its question mark, or the middle of the area where its foes are), at
 --                    the zoom it has, as a drag would move it (Canvas.LookAt). A double click: the same but for its
 --                    text, which stays as it was, and the game's map pin there, so the golden line leads there. Shift
---                    and a click: watched or not (the game's objective tracker); the chat link's modifier: its
---                    link into the chat; the right button: a menu (its text, the map at its
+--                    and a click: watched or not (the game's objective tracker); the chat link's modifier, where
+--                    something takes it: its link into the chat instead; the right button: a menu (its text, the map at its
 --                    objective with its zone whole, watch, share, abandon after a question). The mouse over
 --                    it: its area on the map (Areas.lua). The item it wants used, as the game's tracker shows
 --                    one, stands at the far end of its row (The quests' items)
@@ -275,11 +275,11 @@ local function TurnIn(quest, index)
 end
 
 -- The item a quest wants used, where the game's tracker shows one (QuestUtil.QuestShowsItemByIndex): its ID, its
--- picture and how many charges it has; none for a quest done, unless the game keeps it then.
+-- picture, how many charges it has and its link; none for a quest done, unless the game keeps it then.
 local function Special(index, complete)
     local link, picture, charges, keeps = Core.Ask(rawget(_G, "GetQuestLogSpecialItemInfo"), index)
     local item = type(link) == "string" and tonumber(link:match("item:(%d+)"))
-    if item and (not complete or keeps) then return item, picture, charges end
+    if item and (not complete or keeps) then return item, picture, charges, link end
     return nil
 end
 
@@ -314,11 +314,11 @@ local function Add(entry)
     local quest = entry.quest
     local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
     local failed = Core.Ask(C_QuestLog.IsFailed, quest) and true or false
-    local item, picture, charges = Special(entry.index, complete)
+    local item, picture, charges, link = Special(entry.index, complete)
     rows[#rows + 1] = { kind = "quest", quest = quest, text = entry.text, level = entry.level, index = entry.index,
                         complete = complete, failed = failed, scaling = entry.scaling,
                         group = ForGroup(quest, entry.suggested), item = item, picture = picture, charges = charges,
-                        watched = (Core.Ask(C_QuestLog.GetQuestWatchType, quest)) ~= nil }
+                        link = link, watched = (Core.Ask(C_QuestLog.GetQuestWatchType, quest)) ~= nil }
     local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, quest)
     for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
         if objective.text and objective.text ~= "" and (full or not objective.finished) then
@@ -578,11 +578,12 @@ local function Clicked(element, mouse)
     end
     if row.part then return Unfold(quest) end
     if row.kind == "preview" then return Pressed(quest) end
+    -- The link's modifier is Shift too unless the player changed it: where nothing takes the link, as in the game's
+    -- own log, the click goes on to watching.
     if IsModifiedClick("CHATLINK") then
         local link = rawget(_G, "GetQuestLink") and GetQuestLink(quest)
         local chat = rawget(_G, "ChatFrameUtil")
-        if link and chat and chat.InsertLink then chat.InsertLink(link) end
-        return
+        if link and chat and chat.InsertLink and chat.InsertLink(link) then return end
     end
     if IsShiftKeyDown() then return Watch(quest, not row.watched) end
     Pressed(quest)
@@ -1110,17 +1111,44 @@ local function Cooled(button)
     end
 end
 
+-- The game's tooltip of what the player carries, as its tracker shows it: how it is bound, its charges, its cooldown,
+-- not the item as such. Filled like any other, so the module Tooltips draws it and keeps to its settings. By where
+-- its quest stands in the log now; the item as such once it is gone from there (a fight holds a button where it stood).
 local function ItemTip(button)
     if not button.item then return end
+    Hover()
     GameTooltip:SetOwner(button, mirrored and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
-    GameTooltip:SetItemByID(button.item)
+    local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, button.quest)
+    if index and Special(index) == button.item then
+        GameTooltip:SetQuestLogSpecialItem(index)
+    else
+        GameTooltip:SetItemByID(button.item)
+    end
     GameTooltip:Show()
+end
+
+-- As on the game's tracker: with the chat's box open the link's modifier writes the item into it. With the box closed
+-- Shift and a click uses it, so holding Shift to see its tooltip (the option Show tooltips) changes nothing.
+local function Linking()
+    local chat = rawget(_G, "ChatFrameUtil")
+    return IsModifiedClick("CHATLINK") and chat and chat.GetActiveWindow and chat.GetActiveWindow() and true or false
+end
+
+-- Linked, the click uses nothing: only out of a fight, in one the game locks what the button does.
+local function ItemPressed(button)
+    if Linking() and not InCombatLockdown() then button:SetAttribute("type", "") end
+end
+
+local function ItemClicked(button)
+    if Linking() and button.link then ChatFrameUtil.InsertLink(button.link) end
+    if not InCombatLockdown() then button:SetAttribute("type", "item") end
 end
 
 local function ItemButton(index)
     local button = CreateFrame("Button", nil, tray, "SecureActionButtonTemplate")
-    button:RegisterForClicks("AnyUp", "AnyDown")
+    button:RegisterForClicks("AnyUp")
     button:SetAttribute("type", "item")
+    button:SetAttribute("useOnKeyDown", false) -- on the release, as the game's tracker, whatever the game's option says
     button:SetSize(QuestLog.ITEM, QuestLog.ITEM)
     button.icon = button:CreateTexture(nil, "ARTWORK")
     button.icon:SetAllPoints()
@@ -1134,6 +1162,8 @@ local function ItemButton(index)
     button.count:SetPoint("BOTTOMRIGHT", -1, 1)
     button:SetScript("OnEnter", ns.Guard(ItemTip))
     button:SetScript("OnLeave", ns.Guard(function() Core.HideTip() end))
+    button:SetScript("PreClick", ns.Guard(ItemPressed))
+    button:SetScript("PostClick", ns.Guard(ItemClicked))
     itemButtons[index] = button
     return button
 end
@@ -1165,7 +1195,8 @@ local function Seat()
             if row and row.item and middle and middle + half <= top + 1 and middle - half >= bottom - 1 then
                 used = used + 1
                 local button = itemButtons[used] or ItemButton(used)
-                button.item = row.item
+                local other = button.item ~= row.item
+                button.item, button.quest, button.link = row.item, row.quest, row.link
                 button:SetAttribute("item", "item:" .. row.item)
                 button.icon:SetTexture(row.picture)
                 button.count:SetText((row.charges or 0) > 1 and row.charges or "")
@@ -1173,6 +1204,7 @@ local function Seat()
                 button:SetPoint(mirrored and "LEFT" or "RIGHT", tray, "BOTTOMLEFT", edge, middle)
                 button:Show()
                 Cooled(button)
+                if other and GameTooltip:IsOwned(button) then ItemTip(button) end -- the list changed under the mouse
             end
         end)
     end
@@ -1192,6 +1224,17 @@ end
 ns.On("BAG_UPDATE_COOLDOWN", function()
     for _, button in ipairs(itemButtons) do
         if button.item then Cooled(button) end
+    end
+end)
+
+-- The game tells of no quest's item that came, went or lost a charge, its tracker keeps looking for itself: looked at
+-- once a bag changed, the list drawn anew only then.
+ns.On("BAG_UPDATE_DELAYED", function()
+    for _, row in ipairs(rows) do
+        if row.kind == "quest" then
+            local item, _, charges = Special(row.index, row.complete)
+            if item ~= row.item or charges ~= row.charges then return QuestLog.Refresh() end
+        end
     end
 end)
 

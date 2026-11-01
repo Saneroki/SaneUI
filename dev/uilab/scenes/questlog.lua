@@ -1,9 +1,11 @@
 -- The quest log: its list with a quest unfolded, its text and its big reward icons (QuestLog.lua)
 -- The rest of Navigation stands in, the game's quest log is the scene's own: three quests in two zones, one to pick a
 -- reward from, one that teaches a spell, one for a group, the items the game's own from the data master, and two ghosts
--- from a giver's exclamation mark on the map on top, one for a group. In the console, LabQuestLog is
--- the module's log: LabQuestLog.Text(1102) unfolds another quest, LabQuestLog.Text(nil) folds it; LabOnScreen() shows its
--- look on the screen alone, LabOnScreen(true) back over the full map; LabRight() moves it to the right half.
+-- from a giver's exclamation mark on the map on top, one for a group. Two quests want an item used, their buttons at
+-- the far end of their rows with their tooltips; the lab has not the game's secure template, so a click does nothing here.
+-- In the console, LabQuestLog is the module's log: LabQuestLog.Text(1102) unfolds another quest, LabQuestLog.Text(nil)
+-- folds it; LabOnScreen() shows its look on the screen alone, LabOnScreen(true) back over the full map; LabRight() moves
+-- it to the right half.
 Lab.TOC("src/Core/SaneUI.toc")
 local Core = SaneUI.Core
 local ns = Lab.Addon("SaneUI_Navigation")
@@ -23,6 +25,7 @@ ns.Live = { Quests = function() return {} end }
 local QUESTS = {
     [1101] = {
         title = "The Fargodeep Mine", level = 7, zone = "Elwynn Forest", watched = true,
+        special = { item = 6411, charges = 3 },
         objectives = { { text = "Gold Dust: 4/10", type = "item" },
                        { text = "Kobold Tunneler slain: 3/7", type = "monster" },
                        { text = "Candle Thief slain: 2/2", type = "monster", finished = true } },
@@ -43,7 +46,7 @@ local QUESTS = {
         xp = 880, money = 900, spells = { 133 },
     },
     [1103] = {
-        title = "A Long Way Down", level = 14, zone = "Westfall", group = 3,
+        title = "A Long Way Down", level = 14, zone = "Westfall", group = 3, special = { item = 2589 },
         objectives = { { text = "Harvest Golem slain: 2/8", type = "monster" }, { text = "Speak to Salma", type = "event" } },
         asks = "Destroy 8 Harvest Golems.", story = "They march at night.", xp = 1250, money = 0,
     },
@@ -85,7 +88,20 @@ C_QuestLog.GetQuestTagInfo = function() return nil end
 C_QuestLog.GetNextWaypointText = function() return nil end
 GetQuestDifficultyColor = function() return { r = 1, g = 0.82, b = 0 } end
 GetQuestLogCompletionText = function(index) return QUESTS[Entry(index)].turnIn end
-GetQuestLogSpecialItemInfo = function() return nil end
+-- A quest's item, as the game's tracker asks for it.
+local function Special(index)
+    local quest = QUESTS[Entry(index)]
+    return quest and quest.special
+end
+GetQuestLogSpecialItemInfo = function(index)
+    local special = Special(index)
+    if not special then return nil end
+    local _, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(special.item)
+    return link or ("|Hitem:%d|h|h"):format(special.item), icon, special.charges
+end
+GameTooltip.SetQuestLogSpecialItem = function(self, index) self:SetItemByID(Special(index).item) end
+-- The game's state driver, which the lab has not: it only hides the items' tray in a fight.
+RegisterStateDriver, UnregisterStateDriver = function() end, function() end
 GetQuestLogQuestText = function(index)
     local quest = QUESTS[Entry(index)]
     return quest.story, quest.asks
