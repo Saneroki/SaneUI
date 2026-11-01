@@ -31,10 +31,10 @@ Layout.RADIUS = 8                              -- of a bubble's corners, and of 
 Layout.SPACING = 3                             -- row to row
 Layout.SHARE = 0.82                            -- of a row's width a bubble may take
 Layout.MIN_TEXT = 60
--- The line you write in is the game's edit box, 32 high with a few empty pixels around its art.
+-- The line you write in is the game's edit box, 32 high with its plate and a few empty pixels around that.
 Layout.INPUT_HEIGHT = 32                       -- its height with one line of text: the button beside it is as high
 Layout.INPUT_LINES = 6                         -- it grows with its text, up to so many lines
-Layout.INPUT_INSET = 3                         -- its plate is that much smaller than the edit box, all around
+Layout.INPUT_INSET = 3                         -- its plate is that much smaller than the line, all around
 Layout.INPUT_LEFT, Layout.INPUT_BOTTOM = 28, 2 -- its place from the window's corner, right of the button
 Layout.GRIP_ROOM = 18                          -- the room the grip takes at the window's lower right
 Layout.FACE = 24                               -- the smiley beside the line, before the grip (Picker.lua)

@@ -254,6 +254,8 @@ function editBox:GetFont() return "the game's chat font", 14, "" end
 function editBox:SetTextInsets(left, right, top, bottom) self.insets = { left, right, top, bottom } end
 function editBox:GetTextInsets() return unpack(self.insets) end
 function editBox:SetMultiLine(on) self.wraps = on end
+function editBox:SetHitRectInsets(left, right, top, bottom) self.hit = { left, right, top, bottom } end
+function editBox:SetHeight(height) self._height = height; self.heightWrites = (self.heightWrites or 0) + 1 end
 function editBox:SetText(text) self.typed = text; if self._scripts.OnTextChanged then self._scripts.OnTextChanged(self, false) end end
 function editBox.UpdateHeader() end
 editBox.insets, editBox._height = { 50, 13, 0, 0 }, 32
@@ -850,14 +852,22 @@ for _, widget in ipairs(W.frames) do if widget._parent == plate and widget._kind
 check(plate and plate:IsShown() and linePieces == 9 and part(plate, "Texture")._color[3] == FILL and part(plate, "Texture")._color[4] == 0.5,
     "the line stands on the very fill of your own bubbles: same pieces, same colour, as see-through")
 check(art[1]._alpha == 0 and art[6]._alpha == 0, "the game's border around it is invisible")
-check(editBox.wraps == true and editBox.header._points[1][1] == "TOPLEFT" and editBox.header._points[1][5] == -9 and editBox.insets[3] == 9 and editBox.insets[1] == 50,
-    "its text wraps, and the chat's name and one line of text stand where they stood")
+check(editBox.wraps == true and editBox.header._points[1][1] == "TOPLEFT" and editBox.header._points[1][5] == 1 and editBox.insets[1] == 50,
+    "its text wraps, and the chat's name stands on its first line")
+-- With insets above and below, a box of several lines shows no blinking cursor: that room is the plate's.
+check(editBox.insets[3] == 0 and editBox.insets[4] == 0, "the box has no room above or below its text, or the game's cursor would not show")
+check(editBox._height == 12 and editBox._points[1][5] == Layout.INPUT_BOTTOM + 10, "the box is as tall as one line of text, in the middle of the line")
+check(plate._points[1][5] == 7 and plate._points[2][5] == -7 and editBox.hit[3] == -10 and editBox.hit[4] == -10,
+    "the plate fills the line around it, and a click anywhere on the line is the box's")
 editBox._width = 300 -- 237 for the text: 39 letters a line
 editBox:SetText(("x"):rep(30))
-check(editBox._height == 32 and bottom() == Layout.EDGE + Layout.Input(32), "a text that fits leaves the line as it is")
+check(editBox._height == 12 and bottom() == Layout.EDGE + Layout.Input(32), "a text that fits leaves the line as it is")
 local anchored = #box._points
-editBox:SetText(("x"):rep(35))
-check(#box._points == anchored, "and a key that leaves the line as high changes nothing in the window")
+do
+    local writes = editBox.heightWrites
+    editBox:SetText(("x"):rep(35))
+    check(#box._points == anchored and editBox.heightWrites == writes, "and a key that leaves the line as high changes nothing in the window, nor the box's height")
+end
 -- A whisper's name the game hides (messaging lockdown): the insets it counts from that name are hidden too.
 local hidden = {}
 local insets = editBox.insets
@@ -866,11 +876,11 @@ editBox.insets = { hidden, 13, 0, 0 }
 editBox:SetText(("x"):rep(36))
 issecretvalue = nil
 editBox.insets = insets
-check(not ns.off and editBox._height == 32, "a line whose room for the chat's name the game hides grows as it can, and nothing stands down")
+check(not ns.off and editBox._height == 12, "a line whose room for the chat's name the game hides grows as it can, and nothing stands down")
 editBox:SetText(("x"):rep(100))
-check(editBox._height == 32 + 2 * 12 and bottom() == Layout.EDGE + Layout.Input(56) and box.view.padding.top == above(56), "a longer one makes it taller, and the messages move up")
+check(editBox._height == 12 + 2 * 12 and bottom() == Layout.EDGE + Layout.Input(56) and box.view.padding.top == above(56), "a longer one makes it taller, and the messages move up")
 editBox:SetText(("x"):rep(1000))
-check(editBox._height == 32 + (Layout.INPUT_LINES - 1) * 12, "up to a number of lines")
+check(editBox._height == 12 + (Layout.INPUT_LINES - 1) * 12, "up to a number of lines")
 editBox.typed = "two\nlines"
 EventRegistry:TriggerEvent("ChatFrame.OnEditBoxPreSendText", editBox)
 check(editBox.typed == "two lines", "a line break in it is a space when the message is sent")

@@ -30,11 +30,15 @@ local _, ns = ...
 --  bubbles, same grey, same corners, as see-through as they are. And it is set
 --  to wrap its text: when the text is wider than the line, the line grows
 --  taller (Grow) and the window gives it more room. For that the chat's name
---  hangs on the line's top instead of its middle, and the text gets an inset
---  above and below. All of it is undone when our window goes (Release): what
---  is changed of the game's (the edit box's place, its layer, its alpha and
---  mouse at rest, its label's place, its border's alpha) is lent (Core.Lend),
---  each thing noted the first time it is changed and given back exactly.
+--  hangs on the box's top instead of its middle. The box itself is only as
+--  tall as its text: the room above and below the text is the plate's, never
+--  an inset of the box, and its height is written only when a line comes or
+--  goes. A box of several lines with insets above and below is laid out anew
+--  again and again, and the game's blinking cursor never shows in it. All of
+--  it is undone when our window goes (Release): what is changed of the game's
+--  (the edit box's place, its layer, its alpha and mouse at rest, its label's
+--  place, its border's alpha) is lent (Core.Lend), each thing noted the first
+--  time it is changed and given back exactly.
 --
 --  A click on the chat's name, or on the window's button, opens the list of
 --  the chats you can write in (Menu.lua). The smiley right of the line is
@@ -95,9 +99,13 @@ local function Give(height)
     room(height)
 end
 
-local function FontSize(editBox)
-    local _, size = editBox:GetFont()
-    return Core.Plain(size) or 14
+-- The height of one line of its text, and how much of the line's first height lies above and below it.
+local function OneLine(editBox)
+    ruler:SetFont(editBox:GetFont())
+    ruler:SetText("x") -- the first thing asked of it: it may hold nothing to measure yet
+    local line = math.ceil(ruler:GetLineHeight())
+    local above = math.floor((Layout.INPUT_HEIGHT - line) / 2)
+    return line, above, Layout.INPUT_HEIGHT - line - above
 end
 
 -- The text's room left and right: the game counts the left one from the width of the chat's name,
@@ -107,16 +115,8 @@ local function Insets(editBox)
     return Core.Plain(left), Core.Plain(right)
 end
 
--- The room above and below the text that puts one line in the middle of a line of the first height.
--- The game sets the insets anew with every change of the label, without these two.
-local function Inset(editBox)
-    local left, right = Insets(editBox)
-    if not (left and right) then return end
-    local pad = math.floor((Layout.INPUT_HEIGHT - FontSize(editBox)) / 2)
-    editBox:SetTextInsets(left, right, pad, pad)
-end
-
--- As tall as its text needs, and the window makes room for that.
+-- As tall as its text needs, and the window makes room for that. The box's height only when a line came
+-- or went, not with every key: the game grows a box of several lines itself, and is left to it.
 local function Grow(editBox)
     local left, right = Insets(editBox)
     local width = (Core.Plain(editBox:GetWidth()) or 0) - (left or 15) - (right or 13)
@@ -127,7 +127,7 @@ local function Grow(editBox)
         ruler:SetText(editBox:GetText())
         height = Layout.InputHeight(ruler:GetStringHeight(), ruler:GetLineHeight())
     end
-    editBox:SetHeight(height)
+    if height ~= given then editBox:SetHeight(OneLine(editBox) + height - Layout.INPUT_HEIGHT) end
     Give(height)
 end
 
@@ -141,15 +141,9 @@ function Input.Paint()
     if fill then ns.Bubble.Paint(fill) end
 end
 
+-- Its text changed, or its label, whose width is the text's left inset.
 local Changed = ns.Guard(function(editBox)
     if InUse(editBox) then Grow(editBox) end
-end)
-
--- The label's width is the text's left inset: both the insets and the height follow it.
-local Relabelled = ns.Guard(function(editBox)
-    if not InUse(editBox) then return end
-    Inset(editBox)
-    Grow(editBox)
 end)
 
 -- Nobody writes in the line, and the game keeps it on show (IM style): out of sight instead, and the
@@ -198,11 +192,11 @@ local function Dress(editBox)
         editBox:SetMultiLine(true)
         local header = editBox.header
         if header then
-            -- Where it is in a line of the first height, but counted from the top: it stays on the first line.
+            -- In the middle of the first line of text, counted from the top: it stays on that line.
             look.header = Core.Lend(header)
             look.header:SetPoints(function(region)
                 region:ClearAllPoints()
-                region:SetPoint("TOPLEFT", 15, -math.floor((Layout.INPUT_HEIGHT - (Core.Plain(region:GetHeight()) or 14)) / 2))
+                region:SetPoint("TOPLEFT", 15, -math.floor((OneLine(editBox) - (Core.Plain(region:GetHeight()) or 14)) / 2))
             end)
         end
         dressed[editBox] = look
@@ -210,15 +204,17 @@ local function Dress(editBox)
     if not hooked[editBox] then
         hooked[editBox] = true
         editBox:HookScript("OnTextChanged", Changed)
-        if editBox.UpdateHeader then hooksecurefunc(editBox, "UpdateHeader", Relabelled) end
+        if editBox.UpdateHeader then hooksecurefunc(editBox, "UpdateHeader", Changed) end
         if editBox.Deactivate then hooksecurefunc(editBox, "Deactivate", Deactivated) end
     end
+    -- The line reaches past the box by the room around its text: the plate shows it, and a click there is the box's.
+    local _, above, below = OneLine(editBox)
+    editBox:SetHitRectInsets(0, 0, -above, -below)
     plate:ClearAllPoints()
-    plate:SetPoint("TOPLEFT", editBox, "TOPLEFT", Layout.INPUT_INSET, -Layout.INPUT_INSET)
-    plate:SetPoint("BOTTOMRIGHT", editBox, "BOTTOMRIGHT", -Layout.INPUT_INSET, Layout.INPUT_INSET)
+    plate:SetPoint("TOPLEFT", editBox, "TOPLEFT", Layout.INPUT_INSET, above - Layout.INPUT_INSET)
+    plate:SetPoint("BOTTOMRIGHT", editBox, "BOTTOMRIGHT", -Layout.INPUT_INSET, Layout.INPUT_INSET - below)
     plate:Show()
     Input.Paint()
-    Inset(editBox)
     ns.Picker.Show(editBox)
 end
 
@@ -226,8 +222,7 @@ local function Undress(editBox, look)
     for _, lent in ipairs(look) do lent:Return() end
     editBox:SetMultiLine(false)
     editBox:SetHeight(Layout.INPUT_HEIGHT)
-    local left, right = Insets(editBox)
-    if left and right then editBox:SetTextInsets(left, right, 0, 0) end
+    editBox:SetHitRectInsets(0, 0, 0, 0)
     if look.header then look.header:Return() end
 end
 
@@ -243,9 +238,11 @@ end
 --  The edit box's place
 -------------------------------------------------------------------------------
 local function Place(editBox)
+    local _, _, below = OneLine(editBox)
+    local bottom = Layout.INPUT_BOTTOM + below
     editBox:ClearAllPoints()
-    editBox:SetPoint("BOTTOMLEFT", area, "BOTTOMLEFT", Layout.INPUT_LEFT, Layout.INPUT_BOTTOM)
-    editBox:SetPoint("BOTTOMRIGHT", area, "BOTTOMRIGHT", -Layout.INPUT_RIGHT, Layout.INPUT_BOTTOM)
+    editBox:SetPoint("BOTTOMLEFT", area, "BOTTOMLEFT", Layout.INPUT_LEFT, bottom)
+    editBox:SetPoint("BOTTOMRIGHT", area, "BOTTOMRIGHT", -Layout.INPUT_RIGHT, bottom)
 end
 
 local function Seat(editBox)
