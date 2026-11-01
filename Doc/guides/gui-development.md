@@ -172,13 +172,12 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 - **Never colour alone:** pair it with an icon, a word or a state
   ([principle 11](blizzard-design-principles.md)).
 - Reuse Blizzard's translated strings where one fits; keep own texts short.
-- **An edit box of several lines keeps the game's blinking cursor only if the game can lay it out in peace**
-  (Saneroki, 2026-11-01): no text insets above or below (the room around its text belongs to what stands
-  behind it, as the plate of Social's line, with `SetHitRectInsets` so a click there is still the box's), and
-  its height written only when a line comes or goes, never with every key or frame: the game grows such a box
-  with its text by itself. Nothing fails when this goes wrong, the text just has no cursor: look here first
-  when a field shows none. `OnCursorChanged` tells where the cursor stands; `x` and `y` count from inside the
-  insets.
+- **A field that shows no blinking cursor gets one of ours** (Saneroki, 2026-11-01): the game's own cursor does
+  not show in Social's line, and nothing fails when it does not. `Core.Caret(box)` (`src/Core/Kit.lua`) puts a
+  bar where the game says its cursor stands, for a box whose text starts at the left. `OnCursorChanged` tells
+  that place, counted from inside the insets; the game sends it again and again while the cursor stands still,
+  so only a real move may restart the blink. The game draws its cursor and the marked text as textures without
+  a name among the box's regions: art of an edit box is hidden by name, never by going through its regions.
 
 ## Lists
 

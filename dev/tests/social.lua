@@ -254,6 +254,8 @@ function editBox:GetFont() return "the game's chat font", 14, "" end
 function editBox:SetTextInsets(left, right, top, bottom) self.insets = { left, right, top, bottom } end
 function editBox:GetTextInsets() return unpack(self.insets) end
 function editBox:SetMultiLine(on) self.wraps = on end
+function editBox:IsMultiLine() return self.wraps end
+function editBox:GetBlinkSpeed() return 0.4 end
 function editBox:SetHitRectInsets(left, right, top, bottom) self.hit = { left, right, top, bottom } end
 function editBox:SetHeight(height) self._height = height; self.heightWrites = (self.heightWrites or 0) + 1 end
 function editBox:SetText(text) self.typed = text; if self._scripts.OnTextChanged then self._scripts.OnTextChanged(self, false) end end
@@ -854,8 +856,7 @@ check(plate and plate:IsShown() and linePieces == 9 and part(plate, "Texture")._
 check(art[1]._alpha == 0 and art[6]._alpha == 0, "the game's border around it is invisible")
 check(editBox.wraps == true and editBox.header._points[1][1] == "TOPLEFT" and editBox.header._points[1][5] == 1 and editBox.insets[1] == 50,
     "its text wraps, and the chat's name stands on its first line")
--- With insets above and below, a box of several lines shows no blinking cursor: that room is the plate's.
-check(editBox.insets[3] == 0 and editBox.insets[4] == 0, "the box has no room above or below its text, or the game's cursor would not show")
+check(editBox.insets[3] == 0 and editBox.insets[4] == 0, "the room above and below its text is not the box's")
 check(editBox._height == 12 and editBox._points[1][5] == Layout.INPUT_BOTTOM + 10, "the box is as tall as one line of text, in the middle of the line")
 check(plate._points[1][5] == 7 and plate._points[2][5] == -7 and editBox.hit[3] == -10 and editBox.hit[4] == -10,
     "the plate fills the line around it, and a click anywhere on the line is the box's")
@@ -884,6 +885,38 @@ check(editBox._height == 12 + (Layout.INPUT_LINES - 1) * 12, "up to a number of 
 editBox.typed = "two\nlines"
 EventRegistry:TriggerEvent("ChatFrame.OnEditBoxPreSendText", editBox)
 check(editBox.typed == "two lines", "a line break in it is a space when the message is sent")
+-- The game's cursor does not show in the line: a bar of ours stands where the game says it is.
+do
+    local caret
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == editBox and widget.fill then caret = widget end
+    end
+    local script = editBox._scripts
+    editBox.focus = false
+    script.OnEditFocusLost(editBox)
+    check(caret and not caret:IsShown(), "no cursor of ours without the keyboard")
+    editBox.focus = true
+    script.OnEditFocusGained(editBox)
+    check(caret:IsShown() and caret.fill:IsShown(), "with the keyboard it is there, lit")
+    script.OnCursorChanged(editBox, 30, -12, 2, 15)
+    check(caret._points[1][1] == "TOPLEFT" and caret._points[1][2] == editBox and caret._points[1][4] == 50 + 30 and caret._points[1][5] == -12
+        and caret._height == 15 and caret._width == 2, "where the game says: counted from inside the insets, as high as a line")
+    caret._scripts.OnUpdate(caret, 0.3)
+    check(caret.fill:IsShown(), "lit for the game's blink")
+    caret._scripts.OnUpdate(caret, 0.2)
+    check(not caret.fill:IsShown(), "then dark for as long")
+    script.OnCursorChanged(editBox, 30, -12, 2, 15)
+    check(not caret.fill:IsShown(), "the game telling of its layout, the cursor where it was, changes nothing")
+    script.OnCursorChanged(editBox, 36, -12, 2, 15)
+    check(caret.fill:IsShown(), "a key that moves it lights it at once")
+    editBox.insets = { 80, 13, 0, 0 }
+    editBox.UpdateHeader(editBox)
+    check(caret._points[1][4] == 80 + 36, "it follows the chat's name, whose width is the text's left inset")
+    editBox.insets = { 50, 13, 0, 0 }
+    editBox.typed = ""
+    script.OnEditFocusGained(editBox)
+    check(caret._points[1][4] == 50 and caret._points[1][5] == 0, "an empty line has it at the start, whatever was written before")
+end
 close()
 check(not plate:IsShown() and bottom() == Layout.EDGE, "closed, the plate goes with it")
 editBox._width = 0

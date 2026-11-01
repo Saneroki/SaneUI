@@ -22,6 +22,7 @@ local Core = SaneUI.Core
 --      Core.AskText(text, arg, accept, typed, done, letters)  -- a name typed (GENERIC_INPUT_BOX)
 --      Core.Font(name, base, size, flags)   -- a font of ours: base's file (the game's), our size
 --      Core.Sound(kit)                      -- one of the game's sounds (a SOUNDKIT name or number)
+--      Core.Caret(box, on)                  -- a blinking cursor of ours in an edit box (below)
 --      local lent = Core.Lend(frame)        -- a frame of the game's, changed for a while (below)
 -------------------------------------------------------------------------------
 
@@ -265,6 +266,92 @@ function Core.Sound(kit)
     local kits = rawget(_G, "SOUNDKIT")
     local id = type(kit) == "string" and kits and kits[kit] or kit
     if type(id) == "number" and rawget(_G, "PlaySound") then pcall(PlaySound, id) end
+end
+
+-------------------------------------------------------------------------------
+--  A cursor of ours in an edit box
+-------------------------------------------------------------------------------
+-- The game's own blinking cursor does not show in every edit box, and nothing tells when it does not.
+-- Core.Caret(box) puts a bar where the game says its cursor stands (OnCursorChanged, counted from inside the
+-- box's insets), as high as a line, in the text's colour, while the box has the keyboard. It blinks at the
+-- game's speed and stays lit while keys move it. A frame of its own on the box, nothing written into the box, so
+-- the game's edit boxes can have one. Asked again, it stands anew (the insets changed); Core.Caret(box, false):
+-- no bar, until it is asked for again. For a box whose text starts at the left.
+local CARET_WIDTH, CARET_SPEED = 2, 0.5 -- the bar's width; seconds lit and dark where the game names no speed
+local carets = {}                       -- [edit box] = its bar
+
+-- The bar where the cursor stands, or gone: not wanted, no keyboard, or a place the game keeps hidden.
+local function Stand(bar)
+    local box = bar.box
+    local left, right, top, bottom = box:GetTextInsets()
+    left, right, top, bottom = Core.Plain(left), Core.Plain(right), Core.Plain(top), Core.Plain(bottom)
+    local empty = Core.Plain(box:GetText()) == "" -- opened empty, the game may tell nothing
+    local x, y = empty and 0 or bar.x, empty and 0 or bar.y
+    if not (bar.on and box:HasFocus() and left and right and top and bottom and x and y) then
+        bar:Hide()
+        return
+    end
+    local room = (Core.Plain(box:GetWidth()) or 0) - left - right
+    if room > 0 then x = math.min(x, room) end
+    bar:ClearAllPoints()
+    if box:IsMultiLine() then
+        bar:SetPoint("TOPLEFT", box, "TOPLEFT", left + x, y - top)
+    else -- one line stands in the middle of the box
+        bar:SetPoint("LEFT", box, "LEFT", left + x, (bottom - top) / 2)
+    end
+    local _, size = box:GetFont()
+    bar:SetSize(CARET_WIDTH, bar.height or Core.Plain(size) or 14)
+    bar.fill:SetColorTexture(box:GetTextColor())
+    bar:Show()
+end
+
+local function Light(bar)
+    bar.since = 0
+    bar.fill:Show()
+end
+
+local Blink = Core.Guard("cursor", function(bar, elapsed)
+    bar.since = bar.since + elapsed
+    if bar.since < bar.speed then return end
+    bar.since = 0
+    bar.fill:SetShown(not bar.fill:IsShown())
+end)
+
+-- The game tells this for its layout too, with the cursor where it was: only a move lights the bar.
+local Moved = Core.Guard("cursor", function(box, x, y, _, height)
+    local bar = carets[box]
+    x, y = Core.Plain(x), Core.Plain(y)
+    if x ~= bar.x or y ~= bar.y then Light(bar) end
+    bar.x, bar.y = x, y
+    height = Core.Plain(height)
+    if height and height > 0 then bar.height = height end
+    Stand(bar)
+end)
+
+local Focus = Core.Guard("cursor", function(box)
+    local bar = carets[box]
+    Light(bar)
+    Stand(bar)
+end)
+
+function Core.Caret(box, on)
+    local bar = carets[box]
+    if not bar then
+        bar = CreateFrame("Frame", nil, box)
+        bar.box, bar.x, bar.y = box, 0, 0
+        bar.fill = bar:CreateTexture(nil, "OVERLAY")
+        bar.fill:SetAllPoints()
+        local speed = Core.Plain(box:GetBlinkSpeed())
+        bar.speed = speed and speed > 0 and speed or CARET_SPEED
+        bar:SetScript("OnUpdate", Blink)
+        Light(bar)
+        carets[box] = bar
+        box:HookScript("OnCursorChanged", Moved)
+        box:HookScript("OnEditFocusGained", Focus)
+        box:HookScript("OnEditFocusLost", Focus)
+    end
+    bar.on = on ~= false
+    Stand(bar)
 end
 
 -------------------------------------------------------------------------------

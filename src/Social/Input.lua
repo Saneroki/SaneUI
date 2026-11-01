@@ -31,14 +31,13 @@ local _, ns = ...
 --  to wrap its text: when the text is wider than the line, the line grows
 --  taller (Grow) and the window gives it more room. For that the chat's name
 --  hangs on the box's top instead of its middle. The box itself is only as
---  tall as its text: the room above and below the text is the plate's, never
---  an inset of the box, and its height is written only when a line comes or
---  goes. A box of several lines with insets above and below is laid out anew
---  again and again, and the game's blinking cursor never shows in it. All of
---  it is undone when our window goes (Release): what is changed of the game's
---  (the edit box's place, its layer, its alpha and mouse at rest, its label's
---  place, its border's alpha) is lent (Core.Lend), each thing noted the first
---  time it is changed and given back exactly.
+--  tall as its text: the room above and below the text is the plate's, and
+--  its height is written only when a line comes or goes. The game's blinking
+--  cursor does not show in this line, so a bar of ours does (Core.Caret). All
+--  of it is undone when our window goes (Release): what is changed of the
+--  game's (the edit box's place, its layer, its alpha and mouse at rest, its
+--  label's place, its border's alpha) is lent (Core.Lend), each thing noted
+--  the first time it is changed and given back exactly.
 --
 --  A click on the chat's name, or on the window's button, opens the list of
 --  the chats you can write in (Menu.lua). The smiley right of the line is
@@ -143,7 +142,9 @@ end
 
 -- Its text changed, or its label, whose width is the text's left inset.
 local Changed = ns.Guard(function(editBox)
-    if InUse(editBox) then Grow(editBox) end
+    if not InUse(editBox) then return end
+    Grow(editBox)
+    Core.Caret(editBox)
 end)
 
 -- Nobody writes in the line, and the game keeps it on show (IM style): out of sight instead, and the
@@ -215,11 +216,13 @@ local function Dress(editBox)
     plate:SetPoint("BOTTOMRIGHT", editBox, "BOTTOMRIGHT", -Layout.INPUT_INSET, Layout.INPUT_INSET - below)
     plate:Show()
     Input.Paint()
+    Core.Caret(editBox)
     ns.Picker.Show(editBox)
 end
 
 local function Undress(editBox, look)
     for _, lent in ipairs(look) do lent:Return() end
+    Core.Caret(editBox, false)
     editBox:SetMultiLine(false)
     editBox:SetHeight(Layout.INPUT_HEIGHT)
     editBox:SetHitRectInsets(0, 0, 0, 0)

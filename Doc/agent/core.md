@@ -12,7 +12,7 @@ end (`dev/build`, from `assets/data/`).
 | File under `src/Core/` | What it does; the names it defines |
 | --- | --- |
 | `Core.lua` | Chat, events, errors, modules, `/sane`: `Core.Print`; `Secret`/`Plain`/`Ask`; `Surnames`/`FullName`/`PlayerKey`/`PlayerKeyOf`; `Coins`; `Points`/`Repoint`; `NoteError`/`Report`/`Safe`/`Guard`/`Later`/`AskReload`; `On`/`Off`/`OnUnit`/`OffUnit`; `Locked`/`Restricted`/`AfterCombat`/`Owed`; `NewModule`, `Command`; `TellGame`/`ForGame`/`ServesGame` (Forever, Retail) |
-| `Kit.lua` | Small helpers: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`/`ShowTip`/`HideTip`, `Unconfirmed`/`TipLook`/`TipSection`/`LookOf`, `Pool`, `Confirm`/`AskText` (the game's dialogs), `Font`, `Sound`, `Lend`/`Lent` (a game frame changed for a while, given back exactly) |
+| `Kit.lua` | Small helpers: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`/`ShowTip`/`HideTip`, `Unconfirmed`/`TipLook`/`TipSection`/`LookOf`, `Pool`, `Confirm`/`AskText` (the game's dialogs), `Font`, `Caret` (a blinking cursor of ours in an edit box), `Sound`, `Lend`/`Lent` (a game frame changed for a while, given back exactly) |
 | `Units.lua` | Distances and times as the setting *Units* says, the code keeping yards: `Core.Metric`, `Distance`/`DistanceNumber`/`DistanceText`, `Clock`/`ClockAt`/`GameClock` |
 | `Serial.lua` | Plain values as one line of text and back (a profile exported, imported): `Core.Serial.Write`/`Read`; read letter by letter, never run |
 | `Motion.lua` | Kinds of motion on the game's easing curves: `Core.Motion.KINDS` (glide, swing, even, off), `Kind`/`Ease`/`Share`/`Choices`, `Clock`, `Fade`/`Slide` |

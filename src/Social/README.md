@@ -444,8 +444,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   (`Layout.InputHeight`), after every change of the text (`HookScript` `OnTextChanged`) and of the
   label (`hooksecurefunc` on its `UpdateHeader`, which also sets the text's insets anew). The box is
   only as tall as its text (`OneLine`): the room above and below the text is the plate's, the box's
-  hit rectangle reaches over it, and the box keeps the game's insets, none above or below: with
-  those, or a height written with every key, the game's blinking cursor does not show. The label
+  hit rectangle reaches over it, and the box keeps the game's insets. The game's own blinking cursor
+  does not show in the line, so a bar of ours stands where it would (`Core.Caret`). The label
   hangs on the box's top so it stays on the first line. A line break in the text (pasted) becomes a
   space when the message is sent (`ChatFrame.OnEditBoxPreSendText`). The window is told of a new
   height and the box is given it (`Give`) only when a line comes or goes, not with every key. All of it is undone when our window goes (`Release`: each edit
