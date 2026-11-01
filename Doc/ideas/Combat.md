@@ -165,6 +165,10 @@ one unit. Combat text comes from `COMBAT_TEXT_UPDATE`, and what happened from
 up or compared. The combat log is restricted, so combat text can't be built from it. Each unit's own `UNIT_COMBAT`
 is open: the combat text is built on it, in the Nameplates module (`src/Nameplates/CombatText.lua`, 2026-10-23).
 
+**Damage, healing, interrupts:** the game's own meter, in both games: `C_DamageMeter` keeps the fights (sessions) and each
+one's lists of sources, best first, `SecretWhenInCombat`: built on it 2026-11-01 (`src/Combat/Meter/`, Saneroki), threat by
+`UnitDetailedThreatSituation`, whose values are plain but on a boss. Sorting in a fight goes by the list's places.
+
 ## How every part works
 
 The same rules for each part, so the parts look and behave as one. Decided: our own windows on Core's

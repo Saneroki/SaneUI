@@ -85,7 +85,7 @@ prints its log.
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
   here one in `assets/generated/ui-lab/backdrops/`, local), `satchel` (Navigation's satchel, `Satchel.lua` and
   `Strays.lua`: its button on a small map's stand-in and its page, with a pretend addon's button and the game's
-  addon compartment; `LabSatchel` in the console), `questlog` (Navigation's quest log, `QuestLog.lua`, the rest of Navigation
+  addon compartment; `LabSatchel` in the console), `meter` (Core and Combat from their TOCs, the threat and damage meter over the world, the game's meter, threat and a made-up raid standing in, a panel beside it to pull, end fights and change the group: all of the window is the real code, buttons, flyouts, dragging, sizing, the wheel; `LabPull()`, `LabEnd()`, `LabGroup(25)`, `LabHalf()`; the numbers stay plain, the hidden ones are `dev/tests/meter.lua`'s), `questlog` (Navigation's quest log, `QuestLog.lua`, the rest of Navigation
   and the game's quest log standing in, a quest unfolded with its text and big reward icons, two ghosts on top; `LabOnScreen()` shows its look
   on the screen alone, `LabRight()` moves it to the right half, `LabQuestLog` in the console), `unitframes` (Core and Combat from their TOCs, your frame with its cast, your three timers
   and your pet, your target's and focus's frames, the game's cast and timer functions standing in; `LabCast("Fireball")` casts, `LabCombat`

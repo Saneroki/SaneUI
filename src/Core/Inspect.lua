@@ -134,8 +134,7 @@ end
 -- (the server was asked). Asks if it may.
 function Inspect.Level(unit, guid)
     if Plain(UnitIsUnit(unit, "player")) then
-        local _, equipped = GetAverageItemLevel()
-        equipped = Plain(equipped)
+        local _, equipped = Ask(rawget(_G, "GetAverageItemLevel"))
         return equipped and math.floor(equipped + 0.5) or nil, false
     end
     if not guid then return nil, false end

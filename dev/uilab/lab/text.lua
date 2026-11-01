@@ -474,6 +474,11 @@ return function(Lab)
     end
     function FS:SetFormattedText(fmt, ...) FS.SetText(self, string.format(fmt, ...)) end
     function FS:SetWordWrap(on) S[self].wrap = on and true or false; changed(self) end
+    -- The text, and the string as wide as it is: Blizzard's menus lay out their rows by that.
+    function FS:SetTextToFit(text)
+        FS.SetText(self, text)
+        self:SetWidth(FS.GetUnboundedStringWidth(self))
+    end
     function FS:CanWordWrap() return S[self].wrap ~= false end
     function FS:SetNonSpaceWrap(on) S[self].nonSpaceWrap = on and true or nil; changed(self) end
     function FS:CanNonSpaceWrap() return S[self].nonSpaceWrap or false end

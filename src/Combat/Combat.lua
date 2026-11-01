@@ -24,7 +24,8 @@ local ADDON, ns = ...
 --  nameplate's look, in place of the game's (Units/); the game's action bars
 --  clean, their buttons' icons alone (ActionBars.lua); its experience and stance bars gone, its menu bar on
 --  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
---  game's two (Units/Group.lua). Each part falls back to the game's own when it fails
+--  game's two (Units/Group.lua). The threat and damage meter, a window on the screen and on the full screen
+--  (Meter/). Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
 --  Our spellbook and talents are made after WoW: Forever's, so in Retail
@@ -124,6 +125,31 @@ ns.TEXT = {
     mouseCooldownTip = "The inner, thinner ring, in white, fills while the global cooldown runs.",
     mouseCast = "Your cast",
     mouseCastTip = "The outer ring, in your class's colour, fills while you cast and empties while you channel, a bright line with a soft glow at its head. Interrupted, it goes at once.",
+    meter = "Threat and damage meter",
+    meterTip = "Your party or raid, you on top, each with their class, level, item level and name and a bar each for threat, damage, healing and interrupts. No background, and clicks go through it. With the mouse on it the buttons show at the end of the first line, that line drags it and its corner sizes it; the mouse wheel scrolls the others. Instead of the game's own damage meter.",
+    meterPin = "The threat and damage meter on or off: here and on the screen.",
+    meterKinds = { threat = "Threat", damage = "Damage", healing = "Healing", interrupts = "Interrupts" },
+    meterTicks = { meterMine = "My self on top", meterThreat = "Show Threat", meterDamage = "Show Damage",
+                   meterHealing = "Show Healing", meterInterrupts = "Show Interrupts",
+                   meterReset = "Reset on new combat" },
+    meterTicksTip = "What the meter shows",
+    meterOrder = "Order by",
+    meterDps = "DPS",
+    meterHps = "HPS",
+    meterTotalDamage = "Total damage",
+    meterTotalHealing = "Total healing",
+    meterNext = "The next fight",
+    meterPrevious = "The fight before",
+    meterFight = "Fight",
+    meterAbout = "%s, %d:%02d",
+    meterSavedFights = "Saved fights",
+    meterSavedTip = "Save this fight under a name of your own, or load one you saved, in a group or not.",
+    meterSave = "Save this fight...",
+    meterSaveAsk = "Save this fight as:",
+    meterSaved = "Fight saved as %s.",
+    meterSaveLater = "Your fight is saved as %s when it is over: the game hides its numbers until then.",
+    meterLoad = "Load",
+    meterBack = "Back to the fights",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -148,7 +174,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = (ns.Serves()
     and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars are back"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -182,6 +208,15 @@ local OPTIONS = {
     { key = "mouseCooldown", default = true, text = ns.TEXT.mouseCooldown, tip = ns.TEXT.mouseCooldownTip,
       header = ns.TEXT.mouseRings, headerTip = ns.TEXT.mouseRingsTip },
     { key = "mouseCast", default = true, text = ns.TEXT.mouseCast, tip = ns.TEXT.mouseCastTip },
+    { key = "meter", default = true, text = ns.TEXT.meter, tip = ns.TEXT.meterTip, header = ns.TEXT.meter },
+    -- Chosen in the meter's own flyout (Meter/Controls.lua).
+    { key = "meterMine", default = true },
+    { key = "meterThreat", default = true },
+    { key = "meterDamage", default = true },
+    { key = "meterHealing", default = true },
+    { key = "meterInterrupts", default = true },
+    { key = "meterReset", default = true },
+    { key = "meterOrder", default = "dps" },
 }
 if ns.Serves() then
     table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
@@ -200,6 +235,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "cleanBars" then ns.Guarded(ns.ActionBars.Apply) end
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
+    if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
@@ -216,6 +252,7 @@ function ns.GiveBack()
     ns.Safe("action bars", ns.ActionBars.GiveBack)
     ns.Safe("game bars", ns.GameBars.GiveBack)
     ns.Safe("mouse rings", ns.MouseRings.Hide)
+    ns.Safe("meter", ns.Meter.GiveBack)
 end
 
 function ns.OnLoad()
@@ -223,6 +260,7 @@ function ns.OnLoad()
 end
 
 Core.Command("auras", "your aura lists for the unit frames: always and never shown", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 
 function ns.OnLogin()
     ns.Window.Build()
@@ -234,4 +272,5 @@ function ns.OnLogin()
     ns.ActionBars.Start()
     ns.GameBars.Start()
     ns.Safe("mouse rings", ns.MouseRings.Apply)
+    ns.Meter.Build()
 end

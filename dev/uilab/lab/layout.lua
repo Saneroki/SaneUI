@@ -206,6 +206,15 @@ return function(Lab)
         SR.SetPoint(self, "BOTTOMRIGHT", rel, "BOTTOMRIGHT", 0, 0)
     end
 
+    -- As the game's: a part a pool gives out again stands nowhere, at no size, with nothing on it (Blizzard's menus).
+    function SR:SetToDefaults()
+        SR.ClearAllPoints(self)
+        self:SetSize(0, 0)
+        self:SetAlpha(1)
+        if Lab.Is(self, "FontString") then self:SetText("") end
+        if Lab.Is(self, "Texture") then self:SetTexture(nil) end
+    end
+
     function SR:ClearAllPoints()
         S[self].points = {}
         Lab.Touch()

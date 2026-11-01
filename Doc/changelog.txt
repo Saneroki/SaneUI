@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A threat and damage meter: your party or raid, you on top, with a
+  bar each for threat, damage, healing and interrupts, no background,
+  and clicks go through it. Mouse over it for its page arrows, the
+  saved fights and what it shows; drag your own line to move it.
 - A pass over everything: bugs fixed in every module, and the parts
   that talk to other players hardened. Among what you will notice: a
   profile's Defaults no longer resets your key bindings; the game's

@@ -130,6 +130,7 @@ local Core = SaneUI.Core
 --      window:TitleAt(side, inset)      -- its title at the bar's "LEFT" or "RIGHT" (a window that mirrors itself)
 --      window:Use(key, first)           -- its place kept under another name from now on, first its first place
 --                                       -- there, and put there (a window with a place for each of its looks)
+--      window:DragBy(handle)            -- that part of a window without a title bar moves it as a title bar would
 --      window:Hover(on)                 -- the mouse is on the window, or left it (grip = "hover")
 --      window:Unlock(on)                -- on: its box over it and dragged by it outside Edit Mode too, until
 --                                       -- off (window.unlocked); a right click on the box: options.unlockedMenu(box)
@@ -596,6 +597,22 @@ local function Moved(window)
     if Core.Selection then Core.Selection.Moved(window) end
 end
 
+-- Dragging handle carries the window, as a title bar does; dragged(): told as a drag begins.
+local function Carried(window, handle, dragged)
+    local frame, options = window.frame, window.options
+    Window.Mover(handle, frame, {
+        usable = function() return window:Draggable() end,
+        started = function()
+            window.moving = true
+            if dragged then dragged() end
+            if options.lifted then Core.Safe("window", options.lifted) end
+            -- Outside Edit Mode a drag docks only where a screen edge is not (the middle), or not at all.
+            if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil, options.insets) end
+        end,
+        stopped = function() Moved(window) end,
+    })
+end
+
 local function Sized(window)
     if not window.sizing then return end
     window.sizing = false
@@ -784,17 +801,7 @@ local function Bar(window)
     box:HookScript("OnEscapePressed", function() Core.Safe("window", Search, window, false) end)
     bar.glass, bar.box = glass, box
 
-    Window.Mover(bar, frame, {
-        usable = function() return window:Draggable() end,
-        started = function()
-            window.moving = true
-            bar.dragged = true
-            if options.lifted then Core.Safe("window", options.lifted) end
-            -- Outside Edit Mode a drag docks only where a screen edge is not (the middle), or not at all.
-            if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil, options.insets) end
-        end,
-        stopped = function() Moved(window) end,
-    })
+    Carried(window, bar, function() bar.dragged = true end)
     if options.barClick then
         bar:SetScript("OnMouseDown", Core.Guard("window", function() bar.dragged = false end))
         bar:SetScript("OnMouseUp", Core.Guard("window", function(_, mouse)
@@ -808,6 +815,12 @@ local function Bar(window)
     end))
     find:SetScript("OnDragStop", Core.Guard("window", function() bar:GetScript("OnDragStop")(bar) end))
     return bar
+end
+
+-- A window without a title bar moved by a part of its own, as a title bar moves one (Draggable).
+function methods:DragBy(handle)
+    self.dragger = handle
+    Carried(self, handle)
 end
 
 -- The buttons at the title bar's right, made with it: from the right, close, full screen (with edge), the
@@ -962,7 +975,7 @@ end
 -- Mode (there its box does), not while it fills the screen or is on its way, and, docked at a screen edge,
 -- only if it says so (dragDocked): an edge is Edit Mode's.
 function methods:Draggable()
-    if not self.options.titleBar or Core.EditMode.active or (self.edge and self.edge.away) or self:Locked() then return false end
+    if not (self.options.titleBar or self.dragger) or Core.EditMode.active or (self.edge and self.edge.away) or self:Locked() then return false end
     local zone = self.zone
     if zone and not Window.DRAG_ZONES[zone] and not self.options.dragDocked then return false end
     return not self.options.usable or Core.Safe("window", self.options.usable) or false

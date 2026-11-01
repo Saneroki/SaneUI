@@ -10,6 +10,37 @@ local Client = {}
 
 function Client.Install(W)
     local methods = W.methods
+    -- The game's scrolling list and short numbers, for the meter (Meter/): a row for every member, all at once.
+    CreateScrollBoxListLinearView = function()
+        local view = {}
+        function view:SetElementInitializer(_, init) self.init = init end
+        function view:SetElementExtent(extent) self.extent = extent end
+        return view
+    end
+    ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
+    ScrollBoxConstants = { RetainScrollPosition = true }
+    CreateDataProvider = function(elements) return { elements = elements } end
+    W.templates.MinimalScrollBar = function() end
+    W.templates.WowScrollBoxList = function(box)
+        box.rows = {}
+        function box:SetPanExtent(extent) self.pan = extent end
+        function box:OnMouseWheel(delta) self.wheeled = delta end
+        function box:SetDataProvider(provider)
+            self.lines = provider.elements
+            for index, line in ipairs(self.lines) do
+                self.rows[index] = self.rows[index] or CreateFrame("Frame", nil, self)
+                self.view.init(self.rows[index], line)
+            end
+        end
+        function box:ForEachFrame(fn)
+            for index, line in ipairs(self.lines or {}) do fn(self.rows[index], line) end
+        end
+    end
+    GetNumSubgroupMembers = function() return 0 end
+    AbbreviateLargeNumbers = function(number)
+        if issecretvalue(number) then return W.Secret() end
+        return tostring(math.floor(number))
+    end
     local texture = methods.CreateTexture
     function methods:CreateTexture(name, layer, ...)
         local made = texture(self, name, layer, ...)
