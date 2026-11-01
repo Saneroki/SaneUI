@@ -13,6 +13,8 @@ local _, ns = ...
 --      Slots.Quest(line)                -- a quest's thing (the window's gold border)
 --      Slots.Item(id)                   -- a line for an item the game knows (the list of items)
 --      Slots.Name(id)                   -- an item's name, if the game knows it
+--      Slots.Facts(line)                -- what the game says of a line's item, by its link, into the line (a roll's
+--                                       -- too); false while the game does not know the item yet
 --
 --  A line: slot, kind ("item", "money", "currency"), icon, name, count,
 --  quality, locked, link, id (an item's), quest (a quest wants it), starts (it
@@ -20,7 +22,8 @@ local _, ns = ...
 --  equipped, 3 when used, 4 a quest's), class (the game's Enum.ItemClass),
 --  kind's words (what, where), worth (a vendor's price for one), upgrade (it
 --  would make the character better: Core.Upgrade; "empty", "better" or nil),
---  uncollected (a look the character could collect and has not).
+--  uncollected (a look the character could collect and has not); on a roll's
+--  card roll (its roll: Rolls.lua).
 --
 --  The rules (the options Taken at once; coins, currencies, quest items and
 --  junk on at first, each its own switch, in every profile): Everything, else a
@@ -63,6 +66,16 @@ function Slots.Name(id)
     return (ItemFacts(id))
 end
 
+function Slots.Facts(line)
+    line.id = line.link and tonumber(line.link:match("item:(%d+)"))
+    local name, what, sub, where, worth, bind, class = ItemFacts(line.link)
+    line.what, line.sub, line.worth, line.bind, line.class = what, sub, worth, bind, class
+    Where(line, where)
+    line.upgrade = Core.Upgrade(line.link, line.id)
+    line.uncollected = Slots.Uncollected(line.link)
+    return name ~= nil
+end
+
 -- One slot of the open loot as a line; nil for an empty one (taken, or nothing there).
 function Slots.Line(slot)
     local icon, name, count, currency, quality, locked, questItem, questID, active, coin = GetLootSlotInfo(slot)
@@ -94,12 +107,7 @@ function Slots.Line(slot)
     line.starts = (questID and not Plain(active)) and true or false
     if line.kind == "item" then
         line.link = Plain(GetLootSlotLink(slot))
-        line.id = line.link and tonumber(line.link:match("item:(%d+)"))
-        local _, what, sub, where, worth, bind, class = ItemFacts(line.link)
-        line.what, line.sub, line.worth, line.bind, line.class = what, sub, worth, bind, class
-        Where(line, where)
-        line.upgrade = Core.Upgrade(line.link, line.id)
-        line.uncollected = Slots.Uncollected(line.link)
+        Slots.Facts(line)
     end
     return line
 end

@@ -1,6 +1,6 @@
 # Sane UI: Loot
 
-**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot as bare words), things taken at once by your own switches as soon as the loot is ready (coins, currencies, quest items and junk at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, cards for your group's rolls with who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot as bare words), things taken at once by your own switches as soon as the loot is ready (coins, currencies, quest items and junk at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, a line of the same make for each of your group's rolls, with the game's icons, the time left and who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Stands in for the game's loot window and its roll frames. What a corpse, a chest or a catch holds stands at the
@@ -10,7 +10,8 @@ comes under the mouse. What is taken at once, as soon as the loot is ready, is y
 items and junk at first, in every profile; everything or more kinds (trade goods, gear, consumables) by a switch; and
 over them your word on an item (its A, or the options' list *Your items*). As master looter a click gives the thing away from a
 menu. With your bags full a page beside the window weighs the thing against the cheapest thing you carry. Your
-group's rolls are paper cards (Need, Greed, Pass; how many chose each and who), and what you and your group receive
+group's rolls are lines of the same make: inside the bar the game's icons for Need, Greed and Pass with how many
+chose each, over its foot the time left, running down from green to red. What you and your group receive
 rises over the world, also what was taken at once: that is how you see what you looted. When it fails, the game's own loot window, its Auto Loot and its roll frames are back.
 
 ## How to use
@@ -72,12 +73,20 @@ rises over the world, also what was taken at once: that is how you see what you 
   thing of yours worth the least at a vendor; the pencil arrows go through the next cheapest ("2 of 9"). Click it
   (or drag it) to pick it up, then drop it on the world: the game asks before it is gone. Never offered: what a vendor
   will not take, a quest's things, epics and better. The page goes once there is room.
-- **Group rolls** (*Sane UI's roll cards*, on): when your group rolls for a thing, a card of paper: its picture and
-  name, then the choices the game offers as pencil boxes (*Need*, *Greed* or *Transmog*, *Disenchant* where offered,
-  *Pass*); a choice the game refuses is faint, its reason in the tooltip. A pencil line along the card's foot shrinks
-  with the time left. *Who chose what* (on): each choice counts how many chose it ("Greed 2"); the mouse on it names
-  them. A modified click on the picture links it or tries it on. The cards stack up from their place (Edit Mode,
-  *Group rolls*). Off: the game's own roll frames.
+- **Group rolls** (*Sane UI's roll cards*, on): when your group rolls for a thing, one line of the loot window on the
+  world, no paper and no frame.
+  - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, the green arrow on an
+    upgrade (its tooltip says which), its name. No A, and no line under the name: the time has its place. The mouse on
+    it shows the thing's tooltip; a modified click links it or tries it on.
+  - **The choices** inside the bar at its right end, the game's own icons with no words (*Need*, *Greed* or *Transmog*,
+    *Disenchant* where offered, *Pass*), lit by the mouse as the game's are; its tooltip names the choice. A choice the
+    game refuses is faint and grey, its reason in the tooltip. *Who chose what* (on): a number on each icon says how
+    many chose it; the mouse on it names them.
+  - **The time left** lies over the bar's foot, from the picture to the right end, a third of its height, as a
+    nameplate's resource lies on its health: green at first, yellow half way, red at the end, on a dark shade so it
+    stands out on a green thing's bar too; where the time is spent the bar is seen through it.
+  - The lines stack up from their place, as near as the window's (Edit Mode, *Group rolls*). Off: the game's own roll
+    frames.
 - **Loot feed** (*What you receive*, on, in every profile): each thing you receive rises over the world for a few
   seconds, its picture, name, how many and (faint) how many you carry; the same thing again adds to its line. So you
   see what you looted also when it was taken at once, by the switches, by Shift or for a roll won by Speed Leveling's
@@ -160,7 +169,15 @@ rises over the world, also what was taken at once: that is how you see what you 
   `GetLootRollTimeLeft` every 0.1 s while a card shows, `RollOnLoot` with the game's roll kinds (Pass 0, Need 1, Greed
   2, Disenchant 3, Transmog 4). Switched on, the rolls already open get cards (`GetActiveLootRollIDs`,
   `C_Loot.GetLootRollDuration`). Who chose what from `CHAT_MSG_LOOT` (`Chat.Rolled`), on the card of that item whose
-  chooser has not chosen yet. Placed by `Core.Window.New` (key `rollsPlace`).
+  chooser has not chosen yet. A card holds a `Row.New`: a roll is a line of `Row.Set` (`roll` set: no A; `row.room`
+  keeps the icons' part of the bar free; its facts by `Slots.Facts` from the roll's link, so the arrow is the window's),
+  the card itself takes no mouse. An item the game does not know yet is dressed again on `GET_ITEM_INFO_RECEIVED`. The
+  choices are `Button`s on the row with the game's atlases `lootroll-toast-icon-<word>-up`, `-down`, `-highlight`
+  (`SetNormalAtlas` and so on; all five in both games' atlas tables), refused as the game's `GroupLootFrame_DisableLootButton`: off, alpha 0.35, desaturated, its motion scripts on
+  for the reason. The time left (`Row.Time`) is a `StatusBar` on the row as Nameplates' `dress.power`: the same fill, a
+  third of the bar's height (`SIZE.time`), the bar's caps; not `Core.Bar`, the art of the game's experience bar, which
+  takes no colour. Under it a dark shade (`WHITE8X8`, black at 0.6). Its colour is the game's blend for a health bar
+  (`HealthBar_OnValueChanged`, smooth): `Row.TimeColor`. Placed by `Core.Window.New` (key `rollsPlace`).
 - **The feed** (`Feed.lua`): `CHAT_MSG_LOOT` (`Chat.Received`), `CHAT_MSG_MONEY` (`Chat.Money`), `CHAT_MSG_CURRENCY`
   (`Chat.Currency`, `C_CurrencyInfo.GetCurrencyInfoFromLink`, else the name in the line); how many carried by
   `C_Item.GetItemCount`. The game says these lines of everything received, so what the rules, Shift or a won roll took
@@ -169,7 +186,9 @@ rises over the world, also what was taken at once: that is how you see what you 
   at most, 5 s each, then a 1.2 s fade, the rest waiting (`waiting`) until a line goes; in Edit Mode they stand. Placed by `Core.Window.New` (key `feedPlace`).
 - **The game's sentences** (`Chat.lua`): each of the game's strings (`LOOT_ITEM_SELF_MULTIPLE`, `LOOT_ROLL_GREED`,
   `YOU_LOOT_MONEY`, `GOLD_AMOUNT`, `CURRENCY_GAINED`...) made once into a pattern: its `%s` and `%d` (and `%1$s`)
-  marked, the rest made plain, the marks made captures. A string the client lacks is left out.
+  marked, the rest made plain, the marks made captures. A string the client lacks is left out. Many of a roll's
+  sentences begin with a link to the roll's history, a `%d` of its own (Retail's for your own choice ends with a
+  second): `Chat.Rolled` finds those numbers and gives back only the words.
 - **Settings** (`Loot.lua`, `Core.Options`, in tabs): `window`, `atMouse`, `notes`, `full`; `takeAll`,
   `takeCoins`, `takeCurrency`, `takeQuest`, `takeTrade`, `takeGear`, `takeConsumable`, `takeJunk` (`takeCoins`,
   `takeCurrency`, `takeQuest`, `takeJunk` on at first, Loot's own defaults, no profile sets them; `notes` and the rest
@@ -188,15 +207,20 @@ rises over the world, also what was taken at once: that is how you see what you 
 | `Slots.lua` | The open loot as plain lines; the rules that take at once; the note under a name |
 | `Chat.lua` | The game's sentences about loot read back into their parts |
 | `Game.lua` | The game's loot window, Auto Loot and roll frames kept out of the way, and given back |
-| `Row.lua` | One line of the loot window: its shade and outline, picture, name, kind, worth and A |
+| `Row.lua` | One line of the loot window (a roll's too): its shade and outline, picture, name, kind, worth and A; a roll's time left |
 | `Window.lua` | The loot window; the rules' things taken as the loot is ready |
 | `Items.lua` | The options' tab *Your items* |
 | `Master.lua` | The master looter's menu |
 | `Full.lua` | The page that makes room when the bags are full |
-| `Rolls.lua` | The roll cards |
+| `Rolls.lua` | The roll cards: a line, the game's icons inside it, the time left over its foot |
 | `Feed.lua` | What you and your group receive, over the world |
 
 ## History
+- 2026-11-02 — The roll cards in the loot window's look (Saneroki: "the same design philosophy", a progress bar that
+  goes down, "starts green but becomes more red"; then "The need, greed and Pass should be just icons and be inside the
+  bars and the timer should be a overlay of the item bar like a classresource is on the nameplates healthbar"): one
+  line of the window, the game's icons inside it, the time a line over its foot. On Forever the game's roll sentences
+  begin with a link to the roll's history: read as the chooser's name, who chose what never counted there; it does now.
 - 2026-10-28 — Built (Saneroki asked for a loot module with its own loot window): the window on the journal's page,
   the rules, the loot list, the master looter's menu, the bags-full page (board #34's note), the roll cards with who
   chose what, the feed, Edit Mode places, `/sane loot`.

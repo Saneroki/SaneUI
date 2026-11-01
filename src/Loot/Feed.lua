@@ -51,7 +51,7 @@ end
 
 local function NewLine()
     local line = CreateFrame("Frame", nil, holder)
-    line:SetSize(S.card[1], S.feedLine)
+    line:SetSize(S.feed, S.feedLine)
     line.icon = line:CreateTexture(nil, "ARTWORK")
     line.icon:SetSize(S.feedLine - 4, S.feedLine - 4)
     line.icon:SetPoint("LEFT")
@@ -191,7 +191,7 @@ end
 
 function Feed.Start()
     holder = CreateFrame("Frame", nil, UIParent)
-    holder:SetSize(S.card[1], S.feedLine * 3)
+    holder:SetSize(S.feed, S.feedLine * 3)
     holder:SetFrameStrata("LOW")
     holder:Hide()
     holder:SetScript("OnUpdate", ns.Guard(Tick))

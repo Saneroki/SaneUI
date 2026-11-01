@@ -31,9 +31,10 @@ local ADDON, ns = ...
 --    Master.lua  the master looter's menu on a thing: who may have it, a roll
 --    Full.lua    your bags full: a page beside the window with what the thing
 --                is worth and the least worth thing of yours, to make room
---    Rolls.lua   a card for each roll of your group: Need, Greed, Pass (and
---                what else the game offers), the time left as a pencil line,
---                how many chose what and who
+--    Rolls.lua   a card for each roll of your group: a line as the loot
+--                window's with the game's icons for Need, Greed, Pass (and what
+--                else it offers) inside, the time left a line over its foot
+--                from green to red, how many chose what and who
 --    Feed.lua    what you and your group receive, rising over the world
 --  Standing down, the game's loot window and roll frames are the game's again
 --  (GiveBack).
@@ -147,7 +148,7 @@ ns.TEXT = {
     itemsForgetTip = "Takes the things you gave no word on off this list (until you loot them again).",
     rollsHeader = "Group rolls",
     rolls = "Sane UI's roll cards",
-    rollsTip = "When your group rolls for a thing: a card on the page with its picture and name, Need, Greed and Pass (Disenchant or Transmog when the game offers them), the time left as a pencil line that shrinks. Placed in Edit Mode. Off: the game's own roll frames.",
+    rollsTip = "When your group rolls for a thing: a line as in the loot window with its picture and name, in it the game's icons for Need, Greed and Pass (Disenchant or Transmog when the game offers them), over its foot the time left, running down from green to red. Placed in Edit Mode. Off: the game's own roll frames.",
     tally = "Who chose what",
     tallyTip = "On each choice of a card, how many of your group took it; the mouse on it names them. Read from the game's own lines about the rolls.",
     feedHeader = "Loot feed",
@@ -182,9 +183,9 @@ ns.SIZE = {
     room = 0.6,     -- the most of the screen's height the window's lines take; more scroll
     seen = 60,      -- the things met in loot kept for the tab Your items, the newest first
     burst = 4,      -- slots taken at once in one frame; the rest in the frames after
-    card = { 300, 50 }, -- a roll card
-    cardGap = 6,    -- between roll cards
-    choice = 54,    -- a choice's pencil box on a card
+    choice = 24,    -- a choice's icon on a roll card
+    time = 12,      -- the time left over a roll card's foot: a third of its bar, as a nameplate's resource
+    feed = 300,     -- the feed's lines
     feedLine = 24,  -- a line of the feed
     full = 196,     -- the page beside the window with the bags full
 }

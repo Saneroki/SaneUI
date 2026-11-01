@@ -112,9 +112,7 @@ local function Tip(row)
     else
         GameTooltip:SetText(line.name)
     end
-    if line.upgrade then
-        GameTooltip:AddLine(line.upgrade == "empty" and ns.TEXT.upgradeEmpty or ns.TEXT.upgradeBetter, 0.1, 1, 0.1, true)
-    end
+    ns.Row.Upgrade(line)
     if line.locked then GameTooltip:AddLine(ns.TEXT.locked, 1, 0.3, 0.3, true) end
     local word = line.id and ns.options.kept[line.id]
     if word == true then GameTooltip:AddLine(ns.TEXT.onList, 1, 0.82, 0, true)

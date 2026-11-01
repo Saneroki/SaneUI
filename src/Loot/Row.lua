@@ -26,8 +26,13 @@ local _, ns = ...
 --      Row.Color(quality), Row.Gold()       -- a quality's colour, the game's gold
 --      Row.Font(fontString, size)           -- the game's outlined font of its nameplates, that size
 --      Row.Bar(frame, height)               -- a bar of that make behind a frame (the line's, the A's)
+--      Row.Time(row)                        -- the time left, a line over the bar's foot (a roll card's)
+--      Row.TimeColor(share)                 -- its colour with that share left: green, through yellow, to red
+--      Row.Upgrade(line)                    -- the tooltip's line about an upgrade
 --      Row.Width(row)                       -- how wide its parts run
---  The clicks and the tooltips are the window's (Window.lua).
+--  A line of a roll (Rolls.lua) has no A; row.room keeps that much of the
+--  bar's right end free for its choices. The clicks and the tooltips are the
+--  window's (Window.lua) and the roll cards'.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local J = Core.Journal
@@ -46,6 +51,7 @@ local HOVER = { 0.5, 0.5, 0.5, 1 }
 local FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate" }
 local DARK = { 0.16, 0.16, 0.18 } -- a bar of no thing (the A)
 local SOFT = { 0.88, 0.88, 0.88 } -- the line under the name
+local SHADE = 0.6 -- the dark under the time left
 
 function Row.Color(quality)
     local colors = rawget(_G, "ITEM_QUALITY_COLORS")
@@ -146,6 +152,47 @@ function Row.Bar(frame, height)
     return bar
 end
 
+-- The colour of a share left, as the game blends a health bar's (HealthBar_OnValueChanged, smooth): green to half
+-- way, yellow there, then red at nothing.
+function Row.TimeColor(share)
+    if share > 0.5 then return (1 - share) * 2, 1, 0 end
+    return 1, share * 2, 0
+end
+
+-- The time left as a line over the bar's foot, as a nameplate's resource lies on its health (Nameplates' Bar.lua: the
+-- same fill, the bar's own round at its right end), from the picture on, the picture kept clear. Under it a dark
+-- shade: the bar is still seen where the time is spent, and the line stands out on a bar of its own colour (green on
+-- an uncommon thing's). The words stand over it (row.lift).
+--      line:Left(share)   how much is left, 0 to 1: so long, in its colour
+function Row.Time(row)
+    local bar = row.bar
+    local line = CreateFrame("StatusBar", nil, row)
+    line:SetHeight(S.time)
+    line:SetPoint("BOTTOMLEFT", row.holder, "BOTTOMRIGHT", 0, 0)
+    line:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -bar.pixel, bar.pixel)
+    line:SetStatusBarTexture(FILL)
+    line:SetMinMaxValues(0, 1)
+    local shade = line:CreateTexture(nil, "BACKGROUND")
+    shade:SetTexture(WHITE)
+    shade:SetVertexColor(0, 0, 0, SHADE)
+    shade:SetAllPoints(line)
+    Caps(line:GetStatusBarTexture(), bar.fill, bar.inner)
+    Caps(shade, bar.fill, bar.inner)
+    function line.Left(_, share)
+        line:SetValue(share)
+        line:SetStatusBarColor(Row.TimeColor(share))
+    end
+    line:Left(1)
+    row.lift = S.time / 2
+    return line
+end
+
+-- The tooltip's line about a thing that would make the character better.
+function Row.Upgrade(line)
+    if not line.upgrade then return end
+    GameTooltip:AddLine(line.upgrade == "empty" and ns.TEXT.upgradeEmpty or ns.TEXT.upgradeBetter, 0.1, 1, 0.1, true)
+end
+
 function Row.New(parent)
     local row = CreateFrame("Button", nil, parent)
     row:SetHeight(S.row)
@@ -202,7 +249,7 @@ end
 -- reaches to the line's right end where it sells for nothing: no empty words to lean on). The words keep clear of
 -- the bar's round right end.
 local function Lay(row, second, worth)
-    local left, right = row.bar.pixel + row.bar.inner + S.gap, S.row * CAP
+    local left, right = row.bar.pixel + row.bar.inner + S.gap, S.row * CAP + (row.room or 0)
     local named = left + (row.upgrade:IsShown() and S.arrow + S.gap / 2 or 0) -- the name after the green arrow
     for _, part in ipairs({ row.name, row.note, row.worth, row.auto, row.upgrade }) do part:ClearAllPoints() end
     row.upgrade:SetPoint("RIGHT", row.name, "LEFT", -S.gap / 2, 0)
@@ -218,7 +265,7 @@ local function Lay(row, second, worth)
         end
     else
         row.auto:SetPoint("RIGHT", row, "RIGHT", -right, 0)
-        row.name:SetPoint("LEFT", row, "LEFT", named, 0)
+        row.name:SetPoint("LEFT", row, "LEFT", named, row.lift or 0)
     end
     if row.auto:IsShown() then
         row.name:SetPoint("RIGHT", row.auto, "LEFT", -S.gap / 2, 0)
@@ -254,7 +301,7 @@ function Row.Set(row, line, notes, onList)
     row.note:SetText(note)
     local worth = notes and Worth(line) or ""
     row.worth:SetText(worth)
-    row.auto:SetShown(line.kind == "item" and line.id ~= nil)
+    row.auto:SetShown(line.kind == "item" and line.id ~= nil and not line.roll)
     Row.Auto(row, onList)
     Lay(row, note ~= "" or worth ~= "", worth ~= "")
     row.bar:SetLit(false)

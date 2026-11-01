@@ -27,7 +27,7 @@ Items.lua
 Master.lua
 # With your bags full: what the thing is worth, and the least worth of yours to make room
 Full.lua
-# A card for each roll of your group: Need, Greed, Pass, the time left, who chose what
+# A line for each roll of your group: the game's icons for Need, Greed, Pass, the time left, who chose what
 Rolls.lua
 # What you and your group receive, rising over the world and fading
 Feed.lua

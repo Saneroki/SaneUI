@@ -18,14 +18,15 @@ local Plain = SaneUI.Core.Plain
 local Chat = {}
 ns.Chat = Chat
 
--- A sentence of the game's as a pattern: its %s are any words, its %d a number; the rest found as written.
-local function Pattern(name)
+-- A sentence of the game's as a pattern: its %s are any words, its %d a number (only found, not given back, with
+-- plain: a roll's sentences begin with the number of a link to the roll's history); the rest found as written.
+local function Pattern(name, plain)
     local words = rawget(_G, name)
     if type(words) ~= "string" or words == "" then return nil end
     -- its parts marked first ("%s", "%d", "%1$s"), the rest made plain, then the marks made captures
     words = words:gsub("%%%d?%$?s", "\001"):gsub("%%%d?%$?d", "\002")
     words = words:gsub("[%%%(%)%.%+%-%*%?%[%]%^%$]", "%%%0")
-    words = words:gsub("\001", "(.-)"):gsub("\002", "(%%d+)")
+    words = words:gsub("\001", "(.-)"):gsub("\002", plain and "%%d+" or "(%%d+)")
     return "^" .. words .. "$"
 end
 
@@ -57,12 +58,12 @@ local CURRENCY = { { "CURRENCY_GAINED_MULTIPLE_BONUS", count = true }, { "CURREN
 
 -- Each list's patterns, made at its first use (the game's strings are all there by then).
 local made = {}
-local function Patterns(list)
+local function Patterns(list, plain)
     if made[list] then return made[list] end
     local patterns = {}
     for _, entry in ipairs(list) do
         local name = type(entry) == "table" and entry[1] or entry
-        local pattern = Pattern(name)
+        local pattern = Pattern(name, plain)
         if pattern then patterns[#patterns + 1] = { pattern = pattern, entry = entry } end
     end
     made[list] = patterns
@@ -87,7 +88,7 @@ end
 function Chat.Rolled(text)
     text = Plain(text)
     if type(text) ~= "string" then return nil end
-    for _, p in ipairs(Patterns(ROLLED)) do
+    for _, p in ipairs(Patterns(ROLLED, true)) do
         local a, b = text:match(p.pattern)
         if a then
             if p.entry.other then return true, a, p.entry[2], b end

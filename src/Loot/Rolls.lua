@@ -2,26 +2,29 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Loot - Rolls
---  When your group rolls for a thing (START_LOOT_ROLL), a card of the
---  journal's paper in a pencil box: the thing's picture in its slot and its
---  name in its quality's ink across the top; under the name the choices the
---  game offers, each a pencil box with its word (Need; Greed, or Transmog where
---  the game offers that; Disenchant where it does; Pass), a choice the game
---  refuses faint with its reason in the tooltip; along the card's foot the
---  time left, a pencil line that shrinks. The cards stack up from where Edit
---  Mode placed them, the oldest at the foot.
+--  When your group rolls for a thing (START_LOOT_ROLL), a card that is one
+--  line of the loot window (Row.lua; Saneroki, 2026-11-02: the same design): a
+--  bar as the nameplates' in the thing's quality colour, its picture at the
+--  bar's end, the green arrow on an upgrade, its name; no A, no line under the
+--  name. Inside the bar at its right end the choices the game offers, the
+--  game's own icons with no words (Need; Greed, or Transmog where the game
+--  offers that; Disenchant where it does; Pass), a choice the game refuses
+--  faint and grey with its reason in the tooltip. Over the bar's foot the time
+--  left, a line as a nameplate's resource on its health, running down, green
+--  at first and redder towards nothing. The cards stack up from where Edit
+--  Mode placed them, the oldest at the foot, as near as the window's lines.
 --
 --  Who chose what: the game says it in its own lines (Chat.Rolled); each
---  choice counts them ("Greed 2"), the mouse on it names them. A choice made,
---  the game takes the card away (CANCEL_LOOT_ROLL); a choice of the game's to
---  confirm (one that binds) is its own question.
+--  choice counts them, a number on its icon; the mouse on it says the choice
+--  and names them. A choice made, the game takes the card away
+--  (CANCEL_LOOT_ROLL); a choice of the game's to confirm (one that binds) is
+--  its own question.
 --
 --      Rolls.Start(), Rolls.Refresh()   -- the cards as the game's rolls are now
 --      Rolls.Try()                      -- a card to look at (/sane loot try)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
-local J = Core.Journal
 local S = ns.SIZE
 local Rolls = {}
 ns.Rolls = Rolls
@@ -32,6 +35,8 @@ local BY_WORD = {}
 for kind, word in pairs(WORDS) do BY_WORD[word] = kind end
 local TRY = 20 -- seconds a tried card stands
 local TICK = 0.1
+local FAINT = 0.35 -- a refused choice, as the game's (GroupLootFrame_DisableLootButton)
+local ICON = "lootroll-toast-icon-%s-%s" -- the game's roll buttons: its atlases by the word of WORDS
 
 local holder, placed
 local cards = {}   -- shown, the oldest first
@@ -48,7 +53,6 @@ end
 -------------------------------------------------------------------------------
 local function ChoiceTip(button)
     local card = button.card
-    button.box:SetStrong(true)
     GameTooltip:SetOwner(button, "ANCHOR_TOP")
     GameTooltip:SetText(button.word)
     if button.reason then GameTooltip:AddLine(button.reason, 1, 0.3, 0.3, true) end
@@ -64,80 +68,77 @@ local function ChoiceTip(button)
     GameTooltip:Show()
 end
 
-local function ChoiceUntip(button)
-    button.box:SetStrong(false)
-    GameTooltip_Hide()
-end
-
 local function Choose(button)
     local card = button.card
     if button.reason or card.sample or not card.rollID then return end
     RollOnLoot(card.rollID, button.kind)
 end
 
+-- An icon on the line: the game's, how many chose it on it; refused it still takes the mouse for its reason.
 local function Choice(card)
-    local button = CreateFrame("Button", nil, card)
-    button:SetSize(S.choice, 20)
+    local button = CreateFrame("Button", nil, card.row)
+    button:SetSize(S.choice, S.choice)
+    button:SetMotionScriptsWhileDisabled(true)
     button.card = card
-    button.text = button:CreateFontString(nil, "ARTWORK")
-    J.Font(button.text, 12, true)
-    button.text:SetPoint("CENTER")
-    button.box = J.Box(button, 0.45)
+    button.count = button:CreateFontString(nil, "OVERLAY")
+    ns.Row.Font(button.count, 11)
+    button.count:SetTextColor(1, 1, 1)
+    button.count:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
     button:SetScript("OnClick", ns.Guard(Choose))
     button:SetScript("OnEnter", ns.Guard(ChoiceTip))
-    button:SetScript("OnLeave", ns.Guard(ChoiceUntip))
+    button:SetScript("OnLeave", GameTooltip_Hide)
     return button
 end
 
-local function ThingTip(frame)
-    local card = frame:GetParent()
-    GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+-- The choice's icon, as the game shows its buttons: pushed and lit by the mouse; refused, faint and grey.
+local function Icon(button)
+    local word = WORDS[button.kind]
+    button:SetNormalAtlas(ICON:format(word, "up"))
+    button:SetPushedAtlas(ICON:format(word, "down"))
+    button:SetHighlightAtlas(ICON:format(word, "highlight"), "ADD")
+    button:SetEnabled(not button.reason)
+    button:SetAlpha(button.reason and FAINT or 1)
+    button:GetNormalTexture():SetDesaturated(button.reason and true or false)
+end
+
+local function ThingTip(row)
+    local card = row.card
+    row.bar:SetLit(true)
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     if card.rollID and not card.sample and GameTooltip.SetLootRollItem then
         GameTooltip:SetLootRollItem(card.rollID)
     elseif card.link then
         GameTooltip:SetHyperlink(card.link)
     else
-        GameTooltip:SetText(card.name:GetText() or "")
+        GameTooltip:SetText(row.name:GetText() or "")
     end
+    if row.line then ns.Row.Upgrade(row.line) end
     GameTooltip:Show()
 end
 
--- A modified click on the picture links it or tries it on, as anywhere in the game.
-local function ThingClick(frame)
-    local card = frame:GetParent()
+local function ThingUntip(row)
+    row.bar:SetLit(false)
+    GameTooltip_Hide()
+end
+
+-- A modified click on the line links the thing or tries it on, as anywhere in the game.
+local function ThingClick(row)
+    local card = row.card
     if card.link and IsModifiedClick() then HandleModifiedItemClick(card.link) end
 end
 
 local function NewCard()
     local card = CreateFrame("Frame", nil, holder)
-    card:SetSize(S.card[1], S.card[2])
-    card:EnableMouse(true)
-    J.Paper(card)
-    J.Box(card, 0.6, "BORDER")
-    local size = S.card[2] - 2 * S.gap - 4
-    card.thing = CreateFrame("Button", nil, card)
-    card.thing:SetSize(size, size)
-    card.thing:SetPoint("LEFT", S.gap + 2, 1)
-    J.Slot(card.thing, 1)
-    local inset = size * J.SLOT_ICON
-    card.icon = card.thing:CreateTexture(nil, "ARTWORK")
-    card.icon:SetPoint("TOPLEFT", inset, -inset)
-    card.icon:SetPoint("BOTTOMRIGHT", -inset, inset)
-    card.count = card.thing:CreateFontString(nil, "OVERLAY")
-    card.count:SetFont(J.FONT_BOLD, 11 * J.PX, "OUTLINE")
-    card.count:SetPoint("BOTTOMRIGHT", -1, 1)
-    card.thing:SetScript("OnEnter", ns.Guard(ThingTip))
-    card.thing:SetScript("OnLeave", GameTooltip_Hide)
-    card.thing:SetScript("OnClick", ns.Guard(ThingClick))
-    card.name = card:CreateFontString(nil, "ARTWORK")
-    J.Font(card.name, 13, true)
-    card.name:SetJustifyH("LEFT")
-    card.name:SetWordWrap(false)
-    card.name:SetPoint("TOPLEFT", card.thing, "TOPRIGHT", S.gap, 0)
-    card.name:SetPoint("RIGHT", card, "RIGHT", -S.gap, 0)
+    card:SetSize(S.width, S.row)
+    card.row = ns.Row.New(card)
+    card.row.card = card
+    card.row:SetPoint("TOPLEFT", card, "TOPLEFT")
+    card.row:SetPoint("TOPRIGHT", card, "TOPRIGHT")
+    card.row:SetScript("OnEnter", ns.Guard(ThingTip))
+    card.row:SetScript("OnLeave", ns.Guard(ThingUntip))
+    card.row:SetScript("OnClick", ns.Guard(ThingClick))
+    card.time = ns.Row.Time(card.row)
     card.choices = {}
-    card.time = J.Rule(card, "ARTWORK")
-    card.time:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", S.gap, 3)
     card.chose = {}
     return card
 end
@@ -158,35 +159,27 @@ local function Offered(info)
     return list
 end
 
-local function Words(button)
+local function Count(button)
     local count = 0
     for _ in pairs(button.card.chose[button.kind] or {}) do count = count + 1 end
-    if ns.options.tally and count > 0 then
-        button.text:SetText(("%s %d"):format(button.word, count))
-    else
-        button.text:SetText(button.word)
-    end
+    button.count:SetText(ns.options.tally and count > 0 and tostring(count) or "")
 end
 
 local function Dress(card, info)
-    card.icon:SetTexture(info.icon)
-    card.count:SetText(info.count and info.count > 1 and info.count or "")
-    card.name:SetText(info.name or "")
-    card.name:SetTextColor(ns.Row.Color(info.quality))
-    card.link = info.link
     local offered = Offered(info)
-    local right = -S.gap
-    for index = #offered, 1, -1 do
-        local entry = offered[index]
+    local step = S.choice + S.rowGap
+    card.row.room = #offered * step
+    ns.Row.Set(card.row, info, false, false)
+    card.link = info.link
+    for index, entry in ipairs(offered) do
         local button = card.choices[index] or Choice(card)
         card.choices[index] = button
         button.kind, button.word, button.reason = entry[1], entry[2], entry[3]
         if button.reason == "" then button.reason = ns.TEXT.locked end
         button:ClearAllPoints()
-        button:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", right, S.gap + 3)
-        right = right - S.choice - 2
-        button:SetAlpha(button.reason and J.FAINT[4] or 1)
-        Words(button)
+        button:SetPoint("RIGHT", card.row, "RIGHT", -S.pad - (#offered - index) * step, card.row.lift)
+        Icon(button)
+        Count(button)
         button:Show()
     end
     for index = #offered + 1, #card.choices do card.choices[index]:Hide() end
@@ -198,17 +191,16 @@ end
 local function Stack()
     for index, card in ipairs(cards) do
         card:ClearAllPoints()
-        card:SetPoint("BOTTOM", holder, "BOTTOM", 0, (index - 1) * (S.card[2] + S.cardGap))
+        card:SetPoint("BOTTOM", holder, "BOTTOM", 0, (index - 1) * (S.row + S.rowGap))
     end
 end
 
--- The time left on each card, its line as long as the share of it.
+-- The time left on each card, its bar as long as the share of it.
 local function Tick(_, elapsed)
     since = since + elapsed
     if since < TICK then return end
     since = 0
     local now = GetTime()
-    local full = S.card[1] - 2 * S.gap
     for _, card in ipairs(cards) do
         local left, total
         if card.sample then
@@ -216,9 +208,7 @@ local function Tick(_, elapsed)
         else
             left, total = Plain(GetLootRollTimeLeft(card.rollID)) or 0, card.total
         end
-        local share = total and total > 0 and math.min(1, math.max(0, left / total)) or 0
-        card.time:SetWidth(math.max(1, full * share))
-        card.time:SetShown(share > 0)
+        card.time:Left(total and total > 0 and math.min(1, math.max(0, left / total)) or 0)
     end
     for index = #cards, 1, -1 do
         local card = cards[index]
@@ -237,16 +227,20 @@ local function Card()
     return card
 end
 
--- What the game says of a roll's thing, as a table; nil once the roll is gone.
+-- What the game says of a roll's thing, as a line of the window with what may be chosen; nil once the roll is gone.
+-- known: the game knows the item by now (else a moment later: Told).
 local function Info(rollID)
     local icon, name, count, quality, _, canNeed, canGreed, canDisenchant, reasonNeed, reasonGreed, _, _, canTransmog =
         GetLootRollItemInfo(rollID)
     name = Plain(name)
     if not name then return nil end
-    return { icon = Plain(icon), name = name, count = Plain(count) or 1, quality = Plain(quality) or 1,
-             canNeed = Plain(canNeed), canGreed = Plain(canGreed), canDisenchant = Plain(canDisenchant),
-             canTransmog = Plain(canTransmog), reasonNeed = Plain(reasonNeed), reasonGreed = Plain(reasonGreed),
-             link = Plain(GetLootRollItemLink(rollID)) }
+    local line = { kind = "item", roll = rollID, icon = Plain(icon), name = name, count = Plain(count) or 1,
+                   quality = Plain(quality) or 1, locked = false, canNeed = Plain(canNeed), canGreed = Plain(canGreed),
+                   canDisenchant = Plain(canDisenchant), canTransmog = Plain(canTransmog),
+                   reasonNeed = Plain(reasonNeed), reasonGreed = Plain(reasonGreed),
+                   link = Plain(GetLootRollItemLink(rollID)) }
+    line.known = ns.Slots.Facts(line)
+    return line
 end
 
 local function Find(rollID)
@@ -298,10 +292,20 @@ local function Heard(text)
                 card.chose[kind] = card.chose[kind] or {}
                 card.chose[kind][who] = true
                 for _, button in ipairs(card.choices) do
-                    if button:IsShown() then Words(button) end
+                    if button:IsShown() then Count(button) end
                 end
                 return
             end
+        end
+    end
+end
+
+-- The game has told an item: a card that waited on it gets what it lacked (the green arrow, the line under the name).
+local function Told()
+    for _, card in ipairs(cards) do
+        if not card.sample and not card.row.line.known then
+            local info = Info(card.rollID)
+            if info and info.known then Dress(card, info) end
         end
     end
 end
@@ -322,11 +326,11 @@ function Rolls.Try()
     if not holder then return end
     local card = Card()
     card.sample, card.rollID, card.ends = true, -#cards, GetTime() + TRY
-    Dress(card, { icon = "Interface\\Icons\\INV_Misc_QuestionMark", name = ns.TEXT.rollsView, quality = 3,
-                  canNeed = true, canGreed = true })
+    Dress(card, { kind = "item", roll = card.rollID, icon = "Interface\\Icons\\INV_Misc_QuestionMark",
+                  name = ns.TEXT.rollsView, quality = 3, locked = false, canNeed = true, canGreed = true, known = true })
     card.chose[GREED] = { ["Saneroki"] = true }
     for _, button in ipairs(card.choices) do
-        if button:IsShown() then Words(button) end
+        if button:IsShown() then Count(button) end
     end
     since = TICK
 end
@@ -341,7 +345,7 @@ end
 
 function Rolls.Start()
     holder = CreateFrame("Frame", nil, UIParent)
-    holder:SetSize(S.card[1], S.card[2])
+    holder:SetSize(S.width, S.row)
     holder:SetFrameStrata("MEDIUM")
     holder:Hide()
     holder:SetScript("OnUpdate", ns.Guard(Tick))
@@ -352,6 +356,7 @@ function Rolls.Start()
     ns.On("CANCEL_LOOT_ROLL", ns.Guard(function(rollID) Rolls.Remove(rollID) end))
     ns.On("CANCEL_ALL_LOOT_ROLLS", ns.Guard(RemoveAll))
     ns.On("CHAT_MSG_LOOT", ns.Guard(Heard))
+    ns.On("GET_ITEM_INFO_RECEIVED", ns.Guard(Told))
     Core.EditMode.Watch(ns.Guard(Edit))
 end
 

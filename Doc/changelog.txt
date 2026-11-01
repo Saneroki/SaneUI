@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Group rolls look like the loot window now: one bar for the thing,
+  with the game's icons for Need, Greed and Pass inside it and the
+  time left along its foot, running down from green to red.
 - The threat and damage meter hides out of a fight and when you are
   not in a group, and comes back with the mouse on its place. Right
   click a name to give one character bars of their own.
@@ -228,7 +231,7 @@ The bigger changes of each version, newest first.
   items, ticked where they are taken at once. Master looters
   give things from a menu. Bags full? A page beside it shows
   what the thing is worth and the cheapest thing you could drop.
-  Group rolls come as paper cards that show who chose what, and
+  Group rolls come as cards that show who chose what, and
   what you and your group receive rises over the world.
 - Speed Leveling: your leveling guide over the world, and one key
   for questing - on its own, with no other addon needed. No

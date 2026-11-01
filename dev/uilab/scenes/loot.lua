@@ -2,7 +2,23 @@
 -- Core and the module Loot from their TOCs; the loot is the scene's own: the game's loot functions stand in for a
 -- corpse holding these slots, LootSlot takes one (LOOT_SLOT_CLEARED), the last taken closes the loot. Linen Cloth is put
 -- on your list after the loot opens, to show the A lit. The module's table is LabLoot in the console:
--- LabLoot.Window.Close() closes it, LabLoot.Open() opens the loot again with every slot back.
+-- LabLoot.Window.Close() closes it, LabLoot.Open() opens the loot again with every slot back. Beside it your group's
+-- rolls, a line each: the last runs down and starts again, the others stand at a share of their time to show the time
+-- line's colours; LabLoot.Roll() brings them back.
+
+-- The lab hides what lies beyond a mask's rectangle, where the game's CLAMPTOWHITE shows it: here masks without a
+-- picture, so the bars are seen (square at their ends; round in the game).
+local create = CreateFrame
+CreateFrame = function(kind, ...)
+    local frame = create(kind, ...)
+    local mask = frame.CreateMaskTexture
+    frame.CreateMaskTexture = function(self, ...)
+        local made = mask(self, ...)
+        made.SetTexture = function() end
+        return made
+    end
+    return frame
+end
 
 -- The game's own loot window and roll frames, as Loot's Game.lua finds them (the lab loads neither).
 CreateFrame("Frame", "LootFrame", UIParent):RegisterEvent("LOOT_OPENED")
@@ -48,6 +64,45 @@ end
 CloseLoot = function() Lab.Fire("LOOT_CLOSED") end
 IsFishingLoot = function() return false end
 
+-- The rolls, a thing of the corpse each: share is the time left (nil: running down), need = false a Need refused;
+-- the words the game would say of who chose what, on the chat's line.
+local ROLL_TIME = 60
+local ROLLS = {
+    { item = 12784, share = 0.1 },
+    { item = 873, share = 0.35, disenchant = true, need = false },
+    { item = 6411, share = 0.7, chose = "Greed" },
+    { item = 13262 },
+}
+local open = {}
+
+GetLootRollItemInfo = function(id)
+    local roll = open[id] and ROLLS[id]
+    if not roll then return nil end
+    local name, _, quality, _, _, _, _, _, _, icon = C_Item.GetItemInfo(roll.item)
+    return icon, name, 1, quality, false, roll.need ~= false, true, roll.disenchant or false,
+        roll.need == false and 2 or 0, 0, 0, 0, false
+end
+GetLootRollItemLink = function(id)
+    local roll = open[id] and ROLLS[id]
+    return roll and select(2, C_Item.GetItemInfo(roll.item)) or nil
+end
+GetLootRollTimeLeft = function(id)
+    local roll = open[id] and ROLLS[id]
+    if not roll then return 0 end
+    return roll.share and roll.share * ROLL_TIME * 1000 or (ROLL_TIME - GetTime() % ROLL_TIME) * 1000
+end
+GetActiveLootRollIDs = function()
+    local ids = {}
+    for id in pairs(open) do ids[#ids + 1] = id end
+    return ids
+end
+RollOnLoot = function(id)
+    open[id] = nil
+    Lab.Fire("CANCEL_LOOT_ROLL", id)
+end
+C_Loot = C_Loot or {}
+C_Loot.GetLootRollDuration = function() return ROLL_TIME * 1000 end
+
 -- Money in the game's coins, as the game writes it (the lab lacks it): each kind its number and picture, none of 0.
 C_CurrencyInfo = C_CurrencyInfo or {}
 C_CurrencyInfo.GetCoinTextureString = function(copper)
@@ -91,10 +146,25 @@ function ns.Open()
     local frame = ns.Window.frame
     if frame then
         frame:ClearAllPoints()
-        frame:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
+        frame:SetPoint("RIGHT", UIParent, "CENTER", -200, 40)
+    end
+end
+
+-- The rolls open as the game opens them; who chose what, on the game's lines.
+function ns.Roll()
+    Lab.Fire("CANCEL_ALL_LOOT_ROLLS")
+    for id, roll in ipairs(ROLLS) do
+        open[id] = true
+        Lab.Fire("START_LOOT_ROLL", id, ROLL_TIME * 1000)
+        if roll.chose then
+            Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_GREED:format(id, "Mirabel", GetLootRollItemLink(id)))
+        end
     end
 end
 
 Lab.OnLogin(function()
-    if ns and ns.Open then ns.Open() end
+    if ns and ns.Open then
+        ns.Open()
+        ns.Roll()
+    end
 end)

@@ -365,6 +365,14 @@ of the name):
   game's red, **BoE** in its orange, **Uncollected** in its light blue (its own colour for an appearance not
   collected), then its kind, and at the right what a vendor pays for all of it in the game's coins.
 - **The next under the mouse:** a thing taken, the lines close up so the next stands where it stood.
+- **The roll cards** (`src/Loot/Rolls.lua`; Saneroki, 2026-11-02: the same design as the window, "a progress bar that
+  goes down, starts green but becomes more red"; then "The need, greed and Pass should be just icons and be inside the
+  bars and the timer should be a overlay of the item bar like a classresource is on the nameplates healthbar"): a roll
+  is one line of the window, as wide as the window at its widest, with no A and no line under the name. Inside the bar
+  at its right end the game's own icons, no words, a refused one faint and grey, how many chose it a number on it.
+  Over the bar's foot, from the picture on, the time left, a third of the bar's height as a nameplate's resource, in
+  the game's blend for a health bar (green, yellow half way, red at nothing; `Row.TimeColor`), on a dark shade so it
+  stands out on a green thing's bar.
 
 ### Unit frames and action bars
 
