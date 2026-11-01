@@ -1,9 +1,9 @@
 -- Speed Leveling's guide over the world: the steps at hand and the list, a made-up guide over a screenshot of the game
--- Core from its TOC and the view, Steps.lua, alone: what it asks of the rest of the module stands in, the key's secure
--- frames are not in the lab. The module table is LabGuide in the console, LabGuide.Steps.Update() draws it anew;
--- LabGround(0.9) lays a plain ground of that lightness under it, to read it on snow.
+-- Core from its TOC and the view, Steps.lua, with its row of icons, Icons.lua, alone: what they ask of the rest of the
+-- module stands in, the key's secure frames are not in the lab. The module table is LabGuide in the console,
+-- LabGuide.Steps.Update() draws it anew; LabGround(0.9) lays a plain ground of that lightness under it, to read it on snow.
 Lab.TOC("src/Core/SaneUI.toc")
-local ns = Lab.Addon("SaneUI_SpeedLeveling", "src/SpeedLeveling/Steps.lua")
+local ns = Lab.Addon("SaneUI_SpeedLeveling", "src/SpeedLeveling/Steps.lua", "src/SpeedLeveling/Icons.lua")
 LabGuide = ns
 
 local world = CreateFrame("Frame", nil, UIParent)
@@ -33,11 +33,13 @@ local WORDS = { "Accept Bounty on Murlocs from Marshal McBride", "Hand in The Fa
                 "Kill Harvest Watchers around the farms", "Collect Goretusk Livers" }
 
 local function Nothing() end
-ns.name, ns.options = "SpeedLeveling", { showGuide = true, ahead = 10 }
+ns.name, ns.options = "SpeedLeveling", { showGuide = true, ahead = 10, icons = true }
 ns.Guard = function(fn) return fn end
 ns.Guarded = function(fn, ...) return fn(...) end
 ns.TEXT = { step = "Step %d", progress = "%d/%d \194\183 %d%%", guideView = "Guide" }
-ns.Arrow, ns.Icons, ns.Pin, ns.Detours = { Update = Nothing }, { Update = Nothing }, { Update = Nothing }, { Update = Nothing }
+ns.On = Nothing
+ns.Arrow, ns.Pin, ns.Detours = { Update = Nothing }, { Update = Nothing }, { Update = Nothing }
+ns.Items = { QuestItems = function() return {} end }
 -- A guide of a hundred steps, you at the 35th. LabWheel(-1) turns the wheel, LabMouse(false) takes the mouse off the view.
 local function Listed()
     local list = {}
@@ -50,7 +52,8 @@ local function Line(number)
 end
 
 ns.Guide = { Picture = function() return PICTURE end, Listed = Listed, Line = Line, State = function() return "on" end,
-             Empty = Nothing, Go = Nothing,
+             Empty = Nothing, Go = Nothing, Uses = Nothing,
+             Targets = function() return { "Defias Thug", "Defias Pillager" }, { "Marshal Dughan" } end,
              WarnHex = function() return "ffffd100" end }
 ns.Run = { Guide = function() return PICTURE end }
 
@@ -63,7 +66,15 @@ function LabMouse(over)
     _G.SaneUISpeedLevelingSteps.IsMouseOver = function() return over end
 end
 
+-- The view's place that far from the screen's top, as Edit Mode leaves it: LabPlace(40) in the upper half, LabPlace(600) in the lower.
+function LabPlace(down)
+    local spot = _G.SaneUISpeedLevelingGuide
+    spot:ClearAllPoints()
+    spot:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -70, -down)
+    ns.Steps.Update()
+end
+
 Lab.OnLogin(function()
     ns.Steps.Update()
-    LabMouse(true)
+    LabMouse(false)
 end)

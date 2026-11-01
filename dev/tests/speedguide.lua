@@ -39,6 +39,7 @@ function methods:GetWidth() return self._width end
 function methods:SetSize(width, height) self._width, self._height = width, height end
 function methods:SetRotation(angle) self._rotation = angle end
 function methods:SetTexture(texture) self._texture = texture return true end -- found
+function methods:EnableMouse(on) self._mouse = on end
 function methods:SetTextColor(r, g, b) self._color = { r, g, b } end
 function methods:SetFormattedText(format, ...) self._text = format:format(...) end
 function methods:GetLeft() return self._left or 900 end
@@ -465,6 +466,86 @@ check(icon1 and icon1:GetAttribute("type") == "item" and icon1:GetAttribute("ite
     W.items[6948].count = 1
     Steps.Update()
     check(icon1:GetAttribute("item") == "item:6948", "the Hearthstone back: its icon again")
+end)()
+
+-- Only the steps in sight: the head and the icons come with the mouse and stay a moment. The half of the screen that
+-- holds its place says which way the view goes: from its top down, they under the steps; from its bottom up, they over.
+;(function()
+    local spot, head = rawget(_G, "SaneUISpeedLevelingGuide"), ns.Steps.closer._parent
+    local row = rawget(_G, "SaneUISpeedLevelingIcons")
+    local function Tick(seconds) spot._scripts.OnUpdate(spot, seconds) end
+    local function Hidden() return not head._shown and row._alpha == 0 and icon1._mouse == false end
+    local function Seen() return head._shown and row._alpha == 1 and icon1._mouse == true end
+    view._mouseOver = false
+    Tick(1)
+    Steps.Update()
+    check(view._shown and Hidden(), "the steps alone: no head, no icons, nothing in the mouse's way")
+    view._mouseOver = true
+    Tick(0.1)
+    check(Seen(), "the mouse on the steps: the head and the icons come")
+    view._mouseOver = false
+    head._mouseOver = true
+    Tick(1)
+    check(Seen(), "they stay with the mouse on the head")
+    head._mouseOver = false
+    Tick(ns.Steps.PEEK / 2)
+    check(Seen(), "and a moment after it left")
+    Tick(ns.Steps.PEEK)
+    check(Hidden(), "then they go")
+    head._mouseOver = true
+    Tick(1)
+    check(Hidden(), "the mouse where the head is not in sight: nothing comes")
+    head._mouseOver = false
+    row._mouseOver = true
+    Tick(1)
+    check(Hidden(), "nor where the icons are: out of a fight they are not there")
+
+    -- In a fight the game holds the icons: they stay open to the mouse and come where it is, out of sight or not.
+    row._mouseOver = false
+    W.Combat(true)
+    check(not head._shown and row._alpha == 0 and icon1._mouse == true, "a fight begins: the icons open to the mouse, unseen")
+    row._mouseOver = true
+    Tick(1)
+    check(head._shown and row._alpha == 1, "the mouse on them in the fight: they come")
+    row._mouseOver = false
+    Tick(1)
+    check(not head._shown and row._alpha == 0 and icon1._mouse == true, "and go, still open to the mouse")
+    W.Combat(false)
+    check(Hidden(), "the fight over: out of the mouse's way again")
+
+    -- Which way: the place's edges stay, the view and what shows with it go from there.
+    local screen = UIParent._height
+    local high = 768
+    UIParent._height = high
+    local function Standing(top)
+        spot._top, spot._bottom = top, top - ns.Steps.PLACE
+        Steps.Update()
+    end
+    Standing(high - 40)
+    local point = view._points[1]
+    check(point[1] == "TOPLEFT" and point[2] == spot and point[3] == "TOPLEFT", "the upper half: the view hangs from its place's top")
+    point = head._points[1]
+    check(point[1] == "TOPLEFT" and point[2] == view and point[3] == "BOTTOMLEFT" and point[5] == -ns.Steps.GAP, "the head under the steps")
+    point = row._points[1]
+    check(point[1] == "TOPLEFT" and point[5] == spot._top - view:GetHeight() - ns.Steps.GAP - head:GetHeight() - ns.Icons.BESIDE,
+        "the icons under the head")
+    Standing(ns.Steps.PLACE + 40)
+    point = view._points[1]
+    check(point[1] == "BOTTOMLEFT" and point[2] == spot and point[3] == "BOTTOMLEFT", "the lower half: it stands on its place's bottom")
+    point = head._points[1]
+    check(point[1] == "BOTTOMLEFT" and point[2] == view and point[3] == "TOPLEFT" and point[5] == ns.Steps.GAP, "the head over the steps")
+    point = row._points[1]
+    check(point[1] == "BOTTOMLEFT" and point[5] == spot._bottom + view:GetHeight() + ns.Steps.GAP + head:GetHeight() + ns.Icons.BESIDE,
+        "the icons over the head")
+    W.Combat(true)
+    local before = row._points[1]
+    Standing(high - 40)
+    check(row._points[1] == before and Core.Owed("speedleveling: icons"), "moved in a fight the icons stay, owed to its end")
+    W.Combat(false)
+    check(row._points[1][1] == "TOPLEFT", "and follow once it is over")
+    spot._top, spot._bottom = nil, nil
+    UIParent._height = screen
+    Steps.Update()
 end)()
 
 -- At a glance: a thing to do says its count once, before its words, whichever way the game writes it; the step's number

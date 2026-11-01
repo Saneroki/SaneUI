@@ -51,6 +51,10 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   steps"; the wheel over them shows the list of the whole guide in their place, your step clearly marked in its middle. A
   red cross takes it away; left alone 10 seconds it goes by itself (2026-11-01). The shades have round corners and no
   border (2026-11-01).
+- **Decision (Saneroki, 2026-11-01): only the steps in sight.** The zone, the levels, how far and the icons come with the
+  mouse on the steps. In the screen's upper half the guide grows down from a fixed top, these under the steps; in the lower
+  half up from a fixed bottom, these over them. Built: Edit Mode moves a box of one size that the steps hang from or stand
+  on.
 - **Decision (Saneroki, 2026-10-25):** the key only opens a corpse's loot, as a right click does; how and what is
   looted is the Loot module's (board card 34; built 2026-10-28, `src/Loot/README.md`). Quest items, the hearth and things of the world that cannot be
   targeted are the key's too: things your quests want are picked up beside you (the interact key's soft target), the

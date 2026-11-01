@@ -4,9 +4,7 @@ local _, ns = ...
 --  Sane UI - Speed Leveling - Steps
 --  The guide over the world (Saneroki, 2026-10-25): no window, words in
 --  Expressway with a thin dark outline straight on the game (Saneroki's pick of
---  font for it), from the top:
---    - the guide's zone, its levels after it, and at the right how far you are
---      ("12/84 · 14%");
+--  font for it). In sight only the steps (Saneroki, 2026-11-01):
 --    - each step at hand on a dark shade (Saneroki, 2026-10-31: to be read at a
 --      glance on any ground, the shade alone sets the steps apart; 2026-11-01: its
 --      corners round, no border): "Step 12"
@@ -21,22 +19,29 @@ local _, ns = ...
 --      (Run.Ticked), a tick; those at hand white on a gold band, the rest a little
 --      grey. The wheel scrolls it a line at a time from the guide's first step to
 --      its last; a double click on one goes to it, a right click offers to. The
---      steps come back at the red cross in the top right corner, or after
---      Steps.LINGER seconds without the mouse on the view.
---  Over its top the row of icons to use and to target (Icons.lua); the game's
---  map pin goes with it (Pin.lua); the arrow is
---  a part of its own (Arrow.lua). Both follow this view: shown with it, drawn
---  anew with it.
+--      steps come back at the red cross by the head, or after Steps.LINGER
+--      seconds without the mouse on the view.
+--  With the mouse on the steps, and a moment after it left them (Steps.PEEK), the
+--  rest comes: the head (the guide's zone, its levels after it, and at the right
+--  how far you are, "12/84 · 14%") and past it the row of icons to use and to
+--  target (Icons.lua). Which way the view goes is by where it stands (Saneroki,
+--  2026-11-01): in the screen's upper half its top stays, it grows down, the head
+--  and the icons under the steps; in the lower half its bottom stays, it grows
+--  up, the head and the icons over them. The game's map pin goes with the view
+--  (Pin.lua); the arrow is a part of its own (Arrow.lua). Both follow this view:
+--  shown with it, drawn anew with it.
 --  A click on a step at hand skips it (one the game knows is done, or one you
 --  looked back at, only goes on, back to your place); a right click goes back
 --  one, your place kept; a right click on a listed step opens its menu (Go to
 --  step, the guides); a right click on the zone opens the menu of the guides kept (choose the one to follow, Paste
---  a guide, the class quests you left brought back). It stands where Edit Mode
---  puts it (Core.Window), at first at the screen's right, a little down; it
---  grows downwards.
+--  a guide, the class quests you left brought back). Edit Mode moves its place
+--  (Core.Window), a box of one size, at first at the screen's right, a little
+--  down: the steps hang from its top or stand on its bottom, so that edge stays.
 --
 --      Steps.Update()   shown or hidden and drawn anew, as the switches and the guide are now
---      Steps.Frame()    the view's frame while it is shown (the icons stand over its top)
+--      Steps.Frame()    the view's frame while it is shown: the steps
+--      Steps.Edge()     where the icons stand off: the view's left, the height of the head's far side, whether that
+--                       side is its top; nil while the view is not shown
 --      Steps.GiveBack() hidden; the arrow and the icons too
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -44,6 +49,9 @@ local Steps = {}
 ns.Steps = Steps
 
 Steps.WIDTH = 280     -- the view's width
+Steps.PLACE = 120     -- its place's height: the box Edit Mode moves
+Steps.PEEK = 0.4      -- seconds the head and the icons stay once the mouse left the view
+Steps.LOOK = 0.05     -- seconds between two looks at where the mouse is
 Steps.PAD = 7         -- inside a step's shade
 Steps.GAP = 6         -- between two steps
 Steps.NUMBERS = 28    -- the next steps' numbers' column
@@ -70,7 +78,13 @@ local FONTS = {
 }
 local SOFT = { 0.9, 0.9, 0.9 }
 
+local spot            -- the view's place: Edit Mode's box, of one size
 local frame, window, header, title, levels, progress
+local low             -- it stands in the screen's lower half: it grows up, the head and the icons over the steps
+local seen = false   -- the head and the icons are in sight
+local bare = false    -- nothing but the head to show: it stays
+local gone = Steps.PEEK -- seconds the mouse has been off the view
+local waited = 0      -- seconds since the last look at where the mouse is
 local empty           -- the line shown while no guide is followed: a click opens the guides
 local listShade       -- the shade behind the listed steps
 local closer          -- the cross that takes the list away
@@ -144,6 +158,28 @@ local function MenuOpen()
     return manager ~= nil and Core.Ask(manager.IsAnyMenuOpen, manager) == true
 end
 
+-- Whether the mouse is on the view, on what shows with it, or in a menu it opened.
+local function Over()
+    return frame:IsMouseOver() or (seen and header:IsMouseOver()) or ns.Icons.Over() or MenuOpen()
+end
+
+-- The head and the icons in sight or out of it.
+local function Reveal(on)
+    if on == seen then return end
+    seen = on
+    header:SetShown(on)
+    ns.Icons.Reveal(on)
+end
+
+-- They follow the mouse and stay a moment after it left; while the view is being placed, or has nothing else, they stay.
+local function Look(_, elapsed)
+    waited = waited + elapsed
+    if waited < Steps.LOOK then return end
+    if bare or window.unlocked or Core.EditMode.active or Over() then gone = 0 else gone = gone + waited end
+    waited = 0
+    Reveal(gone < Steps.PEEK)
+end
+
 local Browse, Watching -- Watching: Watch, guarded, made once
 
 -- How many lines the list shows: as the setting says, more where the steps stood higher: it fills their place.
@@ -158,7 +194,7 @@ end
 
 -- While the list shows: left alone a while, the steps come back.
 local function Watch(_, elapsed)
-    if frame:IsMouseOver() or MenuOpen() then
+    if Over() then
         away = 0
     else
         away = away + elapsed
@@ -236,12 +272,15 @@ local function Row()
 end
 
 local function Build()
-    frame = CreateFrame("Frame", "SaneUISpeedLevelingSteps", UIParent)
-    frame:SetSize(Steps.WIDTH, 120)
-    frame:SetFrameStrata("LOW")
+    spot = CreateFrame("Frame", "SaneUISpeedLevelingGuide", UIParent)
+    spot:SetSize(Steps.WIDTH, Steps.PLACE)
+    spot:SetFrameStrata("LOW")
+    frame = CreateFrame("Frame", "SaneUISpeedLevelingSteps", spot)
+    frame:SetSize(Steps.WIDTH, Steps.PLACE)
     TakesWheel(frame)
     header = CreateFrame("Button", nil, frame)
     header:RegisterForClicks("RightButtonUp")
+    header:Hide()
     TakesWheel(header)
     header:SetScript("OnClick", ns.Guard(function(self) Menu(self) end))
     title = Text(header, "title")
@@ -254,9 +293,9 @@ local function Build()
     listShade = CreateFrame("Frame", nil, frame)
     listShade:SetFrameLevel(frame:GetFrameLevel()) -- under the list's lines
     listShade.plate = Shade(listShade)
-    closer = CreateFrame("Button", nil, frame)
+    closer = CreateFrame("Button", nil, header)
     closer:SetSize(Steps.CLOSE, Steps.CLOSE)
-    closer:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    closer:SetPoint("TOPRIGHT", header, "TOPRIGHT", 0, 0)
     closer:SetFrameLevel(header:GetFrameLevel() + 2)
     closer:SetNormalTexture(Steps.CROSS)
     closer:SetHighlightTexture(Steps.CROSS, "ADD")
@@ -278,12 +317,31 @@ local function Build()
         if self.resume then Core.Set(ns.name, "follow", "on") else ns.Guides.Open() end
     end))
     empty:Hide()
-    window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
-                                      first = { point = "TOPRIGHT", x = -70, y = -200 },
-                                      -- moved in Edit Mode: the icons over it follow
-                                      docked = function() ns.Guarded(Steps.Update) end,
-                                      unlockedMenu = function(owner) Steps.LockMenu(owner, window) end })
+    window = Core.Window.New(spot, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
+                                     first = { point = "TOPRIGHT", x = -70, y = -200 },
+                                     -- moved in Edit Mode: which way it grows and the icons follow
+                                     docked = function() ns.Guarded(Steps.Update) end,
+                                     unlockedMenu = function(owner) Steps.LockMenu(owner, window) end })
     window:Place()
+    spot:SetScript("OnUpdate", ns.Guard(Look))
+end
+
+-- The view on its place by the half of the screen that holds it: hanging from the top, the head under it, or standing
+-- on the bottom, the head over it.
+local function Seat()
+    local top, bottom = spot:GetTop(), spot:GetBottom()
+    local lower = top ~= nil and bottom ~= nil and top + bottom < UIParent:GetHeight()
+    if lower == low then return end
+    low = lower
+    local corner = low and "BOTTOMLEFT" or "TOPLEFT"
+    frame:ClearAllPoints()
+    frame:SetPoint(corner, spot, corner)
+    header:ClearAllPoints()
+    if low then
+        header:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, Steps.GAP)
+    else
+        header:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, -Steps.GAP)
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -450,7 +508,10 @@ end
 local function Hide()
     if frame then
         if browsing then Browse(false) end
+        Reveal(false)
+        gone = Steps.PEEK
         frame:Hide()
+        spot:Hide()
     end
     ns.Arrow.Update(false)
     ns.Icons.Update(false)
@@ -473,7 +534,9 @@ function Steps.Update()
     end
     if not picture and not hint then return Hide() end
     if not frame then Build() end
+    spot:Show()
     frame:Show()
+    Seat()
     -- Another guide run since the list came (chosen, or the one after): its steps at hand, not the old guide's list.
     if browsing and ns.Run.Guide() ~= browsed then Browse(false) end
     if not picture then picture = { title = ns.TEXT.guideView, total = 0, at = 0, place = 0, hand = {} } end
@@ -481,8 +544,6 @@ function Steps.Update()
 
     -- The head: the zone, its levels, how far.
     local y = 0
-    header:ClearAllPoints()
-    header:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
     header:SetWidth(Steps.WIDTH)
     progress:SetText(picture.total > 0 and ns.TEXT.progress:format(picture.place, picture.total,
                      math.floor(picture.place / picture.total * 100 + 0.5)) or "")
@@ -498,10 +559,9 @@ function Steps.Update()
     levels:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 6, 1)
     progress:ClearAllPoints()
     progress:SetPoint("BOTTOMRIGHT", header, "TOPRIGHT", -cross, -title:GetStringHeight() + 1)
-    local headHeight = title:GetStringHeight() + Steps.GAP
-    header:SetHeight(headHeight)
-    y = y - headHeight
+    header:SetHeight(title:GetStringHeight())
 
+    bare = false
     if hint then
         if browsing then Browse(false) end
         empty.text:SetText(hint)
@@ -570,6 +630,7 @@ function Steps.Update()
     listShade:SetSize(Steps.WIDTH, listHeight)
     listShade.plate:Fit(0, 0, Steps.WIDTH, listHeight)
     listShade:SetShown(shown > 0)
+    bare = #hand == 0 and shown == 0
     frame:SetHeight(math.max(1, -y))
     ns.Arrow.Update(true)
     ns.Icons.Update(true)
@@ -579,6 +640,16 @@ end
 
 function Steps.Frame()
     return frame and frame:IsShown() and frame or nil
+end
+
+-- By the place, whose edges do not move, and the heights just set, however far the game is with laying them out.
+function Steps.Edge()
+    if not Steps.Frame() then return nil end
+    local left, top, bottom = spot:GetLeft(), spot:GetTop(), spot:GetBottom()
+    if not (left and top and bottom) then return nil end
+    local reach = frame:GetHeight() + Steps.GAP + header:GetHeight()
+    if low then return left, bottom + reach, true end
+    return left, top - reach, false
 end
 
 function Steps.GiveBack()

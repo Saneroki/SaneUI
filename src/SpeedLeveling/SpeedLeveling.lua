@@ -38,7 +38,7 @@ local ADDON, ns = ...
 --    Rolls.lua   group rolls decided with the other Sane UI of your group
 --    Steps.lua   the guide over the world
 --    Arrow.lua   the way to the guide's place, a part of its own
---    Icons.lua   the items to use and the names to target, over the guide
+--    Icons.lua   the items to use and the names to target, past the guide's head
 --    Guides.lua  the window of the guides kept
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -120,7 +120,7 @@ ns.TEXT = {
     switchTitle = "Speed Leveling",
     switchTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     showGuide = "Show the guide",
-    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. A click on a step at hand skips it, a right click goes back one; the wheel over the guide shows the list of its steps in their place, your step in the middle, and scrolls it from the guide's first step to its last; the red cross, or 10 seconds without the mouse on it, brings the steps back; a double click on a listed step goes to it, a right click offers to; a right click on the zone chooses the guide to follow.",
+    showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. Only the steps show: the mouse on them brings the zone, how far you are and the icons. In the upper half of the screen the guide grows down from its top, these under the steps; in the lower half up from its bottom, these over them. A click on a step at hand skips it, a right click goes back one; the wheel over the guide shows the list of its steps in their place, your step in the middle, and scrolls it from the guide's first step to its last; the red cross, or 10 seconds without the mouse on it, brings the steps back; a double click on a listed step goes to it, a right click offers to; a right click on the zone chooses the guide to follow.",
     gather = "Professions along the way",
     gatherTip = "Your professions level up where your guide takes you anyway. Mining and Herbalism: a step where the guide passes the most nodes in a zone, a check before it leaves that zone, and a step with the map pin on a herb or ore the minimap shows close enough to your way, for as long as the steps ahead still want more. Tailoring and First Aid: after killing humanoids, a step to kill on for their cloth while they are worth the experience. Crafts and the rest: a step before a harder zone. All from Sane UI's data of the world (WoW: Forever). A click on a step skips it; the others are for the professions you have.",
     raiseSkill = "Level %s to %d",
@@ -143,8 +143,8 @@ ns.TEXT = {
     showArrowTip = "The way to the guide's place, a part of its own placed in Edit Mode, or dragged: a right click on it unlocks it. The leather ring turned the way to go, along Navigation's route wherever your map pin stands, in it a picture of what to do there, under it what to do and how far, and the time to get there. It stands where the toast of a new level and the travel overlay stand, and makes way for them.",
     mapPin = "Map pin on the guide's place",
     mapPinTip = "The game's map pin goes on each place the guide sends you to, as soon as it comes up, so the golden line on Navigation's map leads there. A pin you put yourself stays until the guide goes on to its next place.",
-    icons = "Targets and items over the guide",
-    iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row over the guide's top: a click uses the item or targets the name. Changed out of a fight only: the game holds such buttons in one.",
+    icons = "Targets and items with the guide",
+    iconsTip = "The items the guide's steps want used (the Hearthstone, quest items) and the NPCs and creatures to target, as icons in a row past the guide's head, with the mouse on the guide: a click uses the item or targets the name. Changed out of a fight only: the game holds such buttons in one.",
     ahead = "Steps in the list",
     aheadTip = "How many steps the list shows at least that the wheel brings up over the guide; it fills the steps' place and scrolls from the guide's first step to its last.",
     unlock = "Unlock to drag",

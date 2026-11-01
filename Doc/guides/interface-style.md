@@ -306,17 +306,21 @@ Speed Leveling's guide, straight on the world without a window (`src/SpeedLeveli
 
 - **Its words in Expressway**, a clean sans with a thin dark outline, not Kalam: it stands over the game, not on paper
   (Saneroki's pick). Names in the game's own font colours, as the guide marks them.
-- **From the top:** a row of icons (the items to use, the names to target), then the zone with its levels and how
-  far (*12/84 · 14%*), the steps at hand on a dark shade that alone sets them apart, its corners round and no border
-  (Saneroki, 2026-11-01), *Step 12* small at each one's top
+- **In sight only the steps** (Saneroki, 2026-11-01): the steps at hand on a dark shade that alone sets them apart, its
+  corners round and no border (Saneroki, 2026-11-01), *Step 12* small at each one's top
   right, a thing to do's count once, before its words, no bars or rules (Saneroki, 2026-10-31: read at a glance, on any
   ground; no grey words). The steps at hand alone: the list of the whole guide comes in their place with the wheel, on the same
   shade, your step in its middle, those at hand white on a gold band with a gold line at the left as Lore's chosen reward,
   the rest a little grey ("I need to focus on the steps"). The game's red ready-check cross in the top right corner takes
   it away; left alone it goes after 10 seconds.
+- **The rest comes with the mouse on the steps** (Saneroki, 2026-11-01) and stays a moment after it left: the zone with
+  its levels and how far (*12/84 · 14%*), and past them a row of icons (the items to use, the names to target).
+- **Which way it goes, by where it stands** (Saneroki, 2026-11-01): in the screen's upper half its top stays and it grows
+  down, the zone and the icons under the steps; in the lower half its bottom stays and it grows up, they over the steps.
+  The icons stand outermost either way; the steps keep their order.
 - **The icons are icons only,** each in the far herbs' round leather ring (*Far herbs and ore*): an item's picture
   with its cooldown and count, a target's portrait once seen, else the game's speech bubble or sword (Saneroki: clean,
-  just the icons, over the guide's top).
+  just the icons, past the guide's head).
 - **The arrow is a part of its own,** placed apart in Edit Mode (Saneroki): the far herbs' leather ring with its
   point, turned the way to the step's place; in its hole the game's own cursor picture of what to do there (a speech
   bubble to talk, a sword to kill, a bag to loot, an open hand to use, the quest's *!* and *?*, a coin bag, a book, the

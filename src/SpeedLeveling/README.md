@@ -86,7 +86,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Professions along the way | on | Your professions level up where the guide takes you anyway: where it passes the most nodes, a check before a harder zone, a detour to a node close to your way, a little more killing for cloth (*Professions along the way*, below). |
 | Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
-| Targets and items over the guide | on | The items the steps want used and the names to target, as icons over the guide's top (*The icons*) |
+| Targets and items with the guide | off | The items the steps want used and the names to target, as icons past the guide's head, with the mouse on the guide (*The icons*) |
 | Steps in the list | 10 | How many steps the list shows at least that the wheel brings up over the guide (1 to 20); it fills the steps' place and scrolls through the whole guide |
 | Guides | | Opens the window of the guides (also `/sane guides`) |
 
@@ -146,9 +146,8 @@ A guide is known by its group, its name and, when its head keeps it for some cha
 name for different characters stand apart, and the guide named next is the one for this character.
 
 ## The guide over the world
-- **What it shows,** from the top, in Expressway with a thin dark outline (Saneroki's pick of font, shipped in the
-  module's `Fonts/`), where Edit Mode puts it (at first at the screen's right, a little down; it grows down):
-  - the guide's zone, its levels after it, and at the right how far you are (*12/84 · 14%*);
+- **What it shows,** in Expressway with a thin dark outline (Saneroki's pick of font, shipped in the module's `Fonts/`),
+  only the steps (Saneroki, 2026-11-01):
   - each step at hand on a dark shade that alone sets it apart, its corners round, no border (Core's `Shape`; Saneroki,
     2026-11-01): *Step 12* small at its top right, its first words large
     (what to do), its things to do, each with its count once, before its words (*2/4 Mottled Boar slain*, the game's
@@ -163,9 +162,19 @@ name for different characters stand apart, and the guide named next is the one f
   after 10 seconds without the mouse on the view or a menu of a line open (`Steps.LINGER`).
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
-- **No guide yet:** the view stays, its head and one line saying so (none there, none chosen, or none of them is for
-  this character or game); a click on that line opens *Guides*.
-- **Paused** (*Your guide*): its head, and a line saying so; a click on it goes on. Off: nothing is shown.
+- **With the mouse on the steps,** and for a moment after it left them (`Steps.PEEK`), the rest comes: the head (the
+  guide's zone, its levels after it, and at the right how far you are, *12/84 · 14%*) and past it the icons (*The icons*).
+  A menu of the head's keeps them; so does Edit Mode, or the box over the view unlocked; a view with no steps to show keeps
+  its head. Out of sight the head does not take the mouse, so a click there reaches the world.
+- **Which way it goes,** by where it stands (Saneroki, 2026-11-01): in the screen's upper half its top stays, it grows down,
+  the head and the icons under the steps; in the lower half its bottom stays, it grows up, they over the steps; the
+  steps stay in their order. Edit Mode moves its place (`Steps.PLACE`, the window's frame), a box of one size, at first
+  at the screen's right, a little down: the steps hang from its top or stand on its bottom, so that edge never moves
+  whatever the steps' height, and its middle says which half it is in.
+- **No guide yet:** the view stays, one line saying so (none there, none chosen, or none of them is for this character
+  or game) and its head with the mouse on it; a click on that line opens *Guides*.
+- **Paused** (*Your guide*): a line saying so, its head with the mouse on it; a click on the line goes on. Off: nothing
+  is shown.
 - **The mouse:** a click on a step at hand skips it (one the game knows is done, or one you went back to, only goes
   on), a right click goes back one step, your place kept. A double click on a listed step goes to it; a right click on
   it opens its menu (*Go to step*, the guides);
@@ -267,14 +276,17 @@ keeps the guide's own numbers (`step.shown`, `guide.total`): a profession's step
 Without Core's data (Retail, for now) none are woven.
 
 ### The icons
-Over the guide's top, a row of icons only (`Icons.lua`): first the items the steps want used (the Hearthstone while a
+Past the guide's head, a row of icons only (`Icons.lua`): first the items the steps want used (the Hearthstone while a
 step hearths, the steps' items, the game's own quest items of your quests — only what can actually be used, never the
 gear or the loot a step merely mentions), then the NPCs and the creatures to target, eight at most. Each in Sane UI's
 round leather ring (`Art/mark-round`): an item its picture, cooldown and count; a target the game's speech bubble or
 sword, its portrait once you have seen it (its nameplate, your target). A click uses the item, or targets the name
 (with the skull while *Skull on what is found* is on); the mouse on one says what it is. They are Sane UI's own secure
 buttons: set out of a fight only (in one the row stays as it was and follows once it is over), placed by the screen
-where the guide's top is.
+where the guide's head ends. They show with the mouse on the guide, by how see-through they are: that alone the game lets
+change in a fight. Out of sight they are out of the mouse's way, a click there reaches the world; a fight begins with
+them open to the mouse (`PLAYER_REGEN_DISABLED`, the moment before the lock), so in one the row comes when the mouse is on
+its place.
 
 ### The guides window
 *Guides* (`/sane guides`, or the menu): at the left the guides, the pack's and those you added, under their groups'
@@ -430,7 +442,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
 | `Pin.lua` | The game's map pin on the guide's place |
-| `Icons.lua` | The icons over the guide: items to use and names to target, Sane UI's own secure buttons |
+| `Icons.lua` | The icons past the guide's head: items to use and names to target, Sane UI's own secure buttons |
 | `Guides.lua` | The window of the guides: the list by group, the import line, the box to paste into, *Read* |
 | `Bindings.xml` | The key in the game's key bindings |
 

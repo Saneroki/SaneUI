@@ -3,7 +3,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Icons
 --  What the guide's steps at hand want used and found, as icons only, in a row
---  above the guide's top (Saneroki, 2026-10-25): first the items to use (the
+--  past the guide's head (Saneroki, 2026-10-25): first the items to use (the
 --  Hearthstone while a step hearths, the steps' items, the game's own quest
 --  items of the quests in your log), then the NPCs and the creatures to
 --  target. Each in Sane UI's round leather ring: an item its picture, its
@@ -19,10 +19,18 @@ local _, ns = ...
 --  Sane UI's own secure buttons (the game's SecureActionButtonTemplate): what
 --  each does and whether it is there is set out of a fight only; in one the
 --  row stays as it was and follows once it is over. It is placed by the screen
---  where the guide's top is, not hung on the guide, whose height changes in a
+--  where the guide's head ends, not hung on the guide, whose height changes in a
 --  fight.
 --
+--  Seen only with the mouse on the guide (Saneroki, 2026-11-01). Out of sight it
+--  is out of the mouse's way too, so a click there reaches the world; but the
+--  game lets nothing of a secure button change in a fight except how see-through
+--  it is, so a fight begins with every icon open to the mouse: the row comes
+--  when the mouse is on its place, wherever the guide has gone since.
+--
 --      Icons.Update(shown)          as the guide is now (shown or not); Steps.GiveBack hides it with the guide
+--      Icons.Reveal(on)             in sight or out of it
+--      Icons.Over()                 whether the mouse is on the row, where it counts
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Icons = {}
@@ -30,7 +38,7 @@ ns.Icons = Icons
 
 Icons.HOLE = 26     -- a ring's hole, wide
 Icons.MOST = 8      -- icons at most
-Icons.ABOVE = 2     -- the row's distance over the guide's top
+Icons.BESIDE = 2    -- the row's distance from the guide's head
 Icons.RING = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Art\\mark-round"
 
 -- The round ring's measures, as the art has them (dev/tools/mark-art): its hole's and its leather's radius, shares of
@@ -46,7 +54,8 @@ local FRIEND, FOE = "Interface\\CURSOR\\UISpeakCursor2x", "Interface\\CURSOR\\UI
 local row
 local buttons = {}
 local shownList = {}  -- what the buttons do now: { { item = ID } or { name, foe } }
-local placed          -- the row's place and what it holds, as last set: "left,top|..."
+local placed          -- the row's place and what it holds, as last set: "left|edge|up|..."
+local revealed = false -- the mouse is on the guide
 
 local function Font(name, size)
     local font = CreateFont(name)
@@ -185,8 +194,8 @@ local function Wanted()
     return list
 end
 
-local function Signature(list, left, top)
-    local parts = { math.floor(left + 0.5), math.floor(top + 0.5), ns.options.skull and "skull" or "" }
+local function Signature(list, left, edge, up)
+    local parts = { math.floor(left + 0.5), math.floor(edge + 0.5), up and "up" or "down", ns.options.skull and "skull" or "" }
     for _, entry in ipairs(list) do parts[#parts + 1] = entry.item or ((entry.foe and "foe:" or "friend:") .. entry.name) end
     return table.concat(parts, "|")
 end
@@ -195,10 +204,35 @@ local function Later()
     Core.AfterCombat("speedleveling: icons", function() ns.Guarded(ns.Steps.Update) end)
 end
 
+-- In sight or out of it, and out of a fight in the mouse's way or not.
+local function Reach()
+    if not row then return end
+    row:SetAlpha(revealed and 1 or 0)
+    if InCombatLockdown() then return end
+    for _, button in ipairs(buttons) do button:EnableMouse(revealed) end
+end
+
+-- A fight begins (the moment before the lock): the icons open to the mouse for all of it.
+local function Fighting()
+    if InCombatLockdown() then return end
+    for _, button in ipairs(buttons) do button:EnableMouse(true) end
+end
+
+function Icons.Reveal(on)
+    revealed = on
+    Reach()
+end
+
+function Icons.Over()
+    return row ~= nil and row:IsShown() and (revealed or InCombatLockdown()) and row:IsMouseOver()
+end
+
 local function Build()
     row = CreateFrame("Frame", "SaneUISpeedLevelingIcons", UIParent)
     row:SetSize(STEP, STEP)
     row:SetFrameStrata("LOW")
+    ns.On("PLAYER_REGEN_DISABLED", Fighting)
+    ns.On("PLAYER_REGEN_ENABLED", Reach)
     ns.On("NAME_PLATE_UNIT_ADDED", Seen)
     ns.On("PLAYER_TARGET_CHANGED", function() Seen("target") end)
     local function Redraw()
@@ -213,9 +247,9 @@ end
 
 function Icons.Update(shown)
     local on = shown and not ns.off and ns.options.icons
-    local view = on and ns.Steps.Frame()
-    local left, top = view and view:GetLeft(), view and view:GetTop()
-    if not (left and top) then
+    local left, edge, up
+    if on then left, edge, up = ns.Steps.Edge() end
+    if not left then
         if row and row:IsShown() then
             if InCombatLockdown() then return Later() end
             row:Hide()
@@ -225,7 +259,7 @@ function Icons.Update(shown)
     end
     if not row then Build() end
     local list = Wanted()
-    local signature = Signature(list, left, top)
+    local signature = Signature(list, left, edge, up)
     if InCombatLockdown() then
         -- The game holds secure buttons in a fight: only their pictures change; the rest once it is over.
         for _, button in ipairs(buttons) do if button:IsShown() then Draw(button) end end
@@ -257,8 +291,9 @@ function Icons.Update(shown)
         end
         row:SetSize(math.max(1, #list) * STEP, STEP)
         row:ClearAllPoints()
-        row:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left, top + Icons.ABOVE)
+        row:SetPoint(up and "BOTTOMLEFT" or "TOPLEFT", UIParent, "BOTTOMLEFT", left, edge + (up and Icons.BESIDE or -Icons.BESIDE))
         row:SetShown(#list > 0)
+        Reach()
     end
     for _, button in ipairs(buttons) do if button:IsShown() then Draw(button) end end
 end
