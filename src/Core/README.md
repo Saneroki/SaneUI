@@ -567,6 +567,7 @@ but for a window to try those with (`/sane window`).
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
 | `Art/banner.blp` | Sane UI's banner, at the top of the options' page *Sane UI*. Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneUI-banner.png` |
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
+| `Art/ring.blp` | A thin white ring as large as the picture (`Shape.RING`), for the game's Cooldown widget to sweep: Combat's rings around the mouse (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 | `Art/corner-tl.blp`, `Art/corner-tr.blp`, `Art/corner-bl.blp`, `Art/corner-br.blp` | One corner of a rectangle (`Shape.CORNER`): white but for the corner it is named for, cut away outside a quarter circle as wide as the picture (64 × 64, DXT5 with mipmaps), laid over that corner as large as the radius with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 

@@ -141,6 +141,8 @@ local Board, Edge = ns.Board, Core.Edge
 if RETAIL then
     check(Core.RETAIL and not ns.Serves() and not Board.Present("spellbook") and not Board.Present("talents"),
         "Retail has not the spellbook and talents ours are made after: neither of ours is there")
+    check(ns.MouseRings.SPELL == 61304 and ns.MouseRings.holder and ns.MouseRings.holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN"),
+        "the rings around the mouse stand in Retail too, on that game's own spell for the global cooldown")
     check(ns.Window.handle == nil and not ns.Window.Full() and not ns.Window.Fill(),
         "no window: the bottom edge fills no screen")
     check(next(W.overrides) == nil and not ns.Keys.Taken() and not ns.Keys.Taken("TOGGLETALENTS"),
@@ -1459,6 +1461,167 @@ end
 ns.Window.Reboard()
 W.Wait(0)
 check(Core.Lent(planner), "seated before the module fails")
+-- The rings around the mouse: out only while they run, around the cursor's picture, not its tip.
+do
+    local Rings = ns.MouseRings
+    local holder, cooldown, casting = Rings.holder, Rings.cooldown, Rings.casting
+    function methods:SetCooldown(start, duration) self._start, self._duration, self._object, self._shown = start, duration, nil, true end
+    function methods:SetCooldownFromDurationObject(object)
+        if W.refuseDuration then error("secret value") end
+        self._object, self._start, self._shown = object, nil, true
+    end
+    function methods:Clear() self._start, self._object = nil, nil end
+    methods.UnregisterAllEvents = methods.UnregisterAllEvents or function(self) self._events, self._units = {}, nil end
+    function methods:SetReverse(on) self._reverse = on end
+    function methods:SetSwipeColor(...) self._swipe = { ... } end
+    local spell, asked = rawget(_G, "C_Spell"), {}
+    local global
+    local GetCooldown, GetDuration, GetCVar = spell.GetSpellCooldown, spell.GetSpellCooldownDuration, C_CVar.GetCVar
+    spell.GetSpellCooldown = function(id) asked[#asked + 1] = id; return global end
+    spell.GetSpellCooldownDuration = function() return "the game's duration" end
+    local size, scale, dpi, effective = "-1", 1, 1, methods.GetEffectiveScale
+    C_CVar.GetCVar = function(name) if name == "cursorSizePreferred" then return size end return GetCVar(name) end
+    GetScreenDPIScale = function() return dpi end
+    function methods:GetEffectiveScale() return scale end
+    local function Cooldown(active, duration)
+        global = active ~= nil and { isActive = active, duration = duration } or nil
+        W.Fire("SPELL_UPDATE_COOLDOWN")
+    end
+    local function Follow() holder._scripts.OnUpdate(holder, 0) end
+    local function Done(ring)
+        ring._shown = false
+        ring._scripts.OnCooldownDone(ring)
+        Follow()
+    end
+    local function Spot()
+        local point = holder._points[1]
+        return point[4], point[5]
+    end
+    W.cursorX, W.cursorY = 1000, 500
+    local unit = 768 / 2160 -- a real pixel in UI units on the stand-in's screen
+    Follow() -- the casts of the tests above are over
+
+    check(holder._strata == "TOOLTIP" and not holder._shown and not cooldown._shown and not casting._shown,
+        "no ring at rest: nothing around the mouse")
+    Cooldown(false, 0)
+    check(not holder._shown and not cooldown._shown, "no global cooldown: still none")
+    check(asked[#asked] == (RETAIL and 61304 or 29515), "the game's own spell for it where it has one, another in Forever")
+    Cooldown(true, 1.5)
+    check(holder._shown and cooldown._shown and cooldown._object == "the game's duration" and not casting._shown,
+        "the global cooldown starts: the inner ring runs on the game's duration, whatever it hides")
+    local x, y = Spot()
+    check(near(x, 1000 + 32 * Rings.MIDDLE[1] * unit) and near(y, 500 - 32 * Rings.MIDDLE[2] * unit),
+        "the rings stand on the middle of the cursor's picture, right of and below its tip")
+    check(near(cooldown._width, 2 * 32 * Rings.INNER * unit) and near(casting._width, 2 * 32 * Rings.OUTER * unit)
+        and cooldown._width == cooldown._height, "as large as the cursor asks for")
+    check(Rings.INNER * 0.86 > math.sqrt((1 - Rings.MIDDLE[1]) ^ 2 + (1 - Rings.MIDDLE[2]) ^ 2) - 0.02,
+        "the hole holds the cursor's picture as far as it ever reaches")
+    W.cursorX, W.cursorY = 300, 700
+    Follow()
+    x, y = Spot()
+    check(near(x, 300 + 32 * Rings.MIDDLE[1] * unit) and near(y, 700 - 32 * Rings.MIDDLE[2] * unit), "with the mouse while it runs")
+    Done(cooldown)
+    check(not cooldown._shown and not holder._shown, "over: gone, and nothing runs any more")
+    Cooldown(true, 8)
+    check(not holder._shown, "a school locked by an interrupt is no global cooldown")
+    local plain, hidden = rawget(_G, "issecretvalue"), { secret = true }
+    issecretvalue = function(value) return type(value) == "table" and value.secret == true end
+    global = { isActive = true, duration = hidden }
+    W.Fire("SPELL_UPDATE_COOLDOWN")
+    check(cooldown._shown and cooldown._object, "in a fight the game hides the numbers: the ring runs all the same")
+    Cooldown(false, 0)
+    check(not cooldown._shown, "the game took the cooldown back (the spell failed): gone at once")
+    Follow()
+
+    -- The cursor's size, in real pixels: neither the screen's height nor the UI's scale changes it.
+    dpi = 2
+    Cooldown(true, 1.5)
+    x = Spot()
+    check(near(x, 300 + 64 * Rings.MIDDLE[1] * unit) and near(cooldown._width, 2 * 64 * Rings.INNER * unit),
+        "on Default the display's scale sizes the cursor: twice as large at 200%")
+    Cooldown(false, 0)
+    Follow()
+    size, scale = "3", 0.5
+    Cooldown(true, 1.5)
+    x = Spot()
+    check(near(x, 300 / 0.5 + 96 * Rings.MIDDLE[1] * unit / 0.5), "the Cursor Size chosen wins; a smaller UI asks for more of its units")
+    Cooldown(false, 0)
+    Follow()
+    size, scale = "0", 1
+    dpi = 1.25
+    Cooldown(true, 1.5)
+    check(near(cooldown._width, 2 * 32 * Rings.INNER * unit), "the smallest size chosen")
+    Cooldown(false, 0)
+    Follow()
+    size = "-1"
+    Cooldown(true, 1.5)
+    check(near(cooldown._width, 2 * 32 * Rings.INNER * unit), "a scale between two sizes takes the one it reaches")
+    Cooldown(false, 0)
+    Follow()
+
+    -- Your cast: the outer ring.
+    local began = W.clock * 1000
+    W.cast = { name = "Fireball", icon = 135812, starts = began, ends = began + 2500, id = "ring-1", spell = 133 }
+    W.Fire("UNIT_SPELLCAST_START", "player", "ring-1", 133)
+    check(holder._shown and casting._shown and near(casting._start, began / 1000) and near(casting._duration, 2.5)
+        and casting._reverse == true and casting._swipe[1] == Rings.GOLD[1] and casting._swipe[2] == Rings.GOLD[2],
+        "a cast: the outer ring fills in gold, from its start to its end")
+    W.cast.ends = began + 3000
+    W.Fire("UNIT_SPELLCAST_DELAYED", "player", "ring-1", 133)
+    check(near(casting._duration, 3), "pushed back: the ring goes with it")
+    W.Fire("UNIT_SPELLCAST_FAILED", "player", "ring-2", 116)
+    check(casting._shown, "what you tried while casting leaves the cast alone")
+    W.cast = nil
+    W.Fire("UNIT_SPELLCAST_INTERRUPTED", "player", "ring-1", 133)
+    Follow()
+    check(not casting._shown and not holder._shown, "interrupted: gone at once")
+    W.channel = { name = "Drain Life", icon = 136169, starts = began, ends = began + 5000, spell = 689 }
+    W.Fire("UNIT_SPELLCAST_CHANNEL_START", "player", "ring-3", 689)
+    check(casting._shown and casting._reverse == false and casting._swipe[2] == Rings.GREEN[2] and near(casting._duration, 5),
+        "a channel: the ring empties, in green")
+    W.channel = nil
+    W.Fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "ring-3", 689)
+    Follow()
+    check(not casting._shown and not holder._shown, "the channel over: gone")
+
+    -- A cast the game hides: its duration where the game takes that, else no ring.
+    local CastingDuration = rawget(_G, "UnitCastingDuration")
+    UnitCastingDuration = function() return "the cast's duration" end
+    W.cast = { name = "Fireball", icon = 135812, starts = hidden, ends = hidden, id = "ring-4", spell = 133 }
+    W.Fire("UNIT_SPELLCAST_START", "player", "ring-4", 133)
+    check(casting._shown and casting._object == "the cast's duration", "its numbers hidden: the ring runs on the game's duration")
+    casting._shown = false
+    W.refuseDuration = true
+    W.Fire("UNIT_SPELLCAST_DELAYED", "player", "ring-4", 133)
+    check(not casting._shown and not ns.off, "and where the game refuses that: no ring, and nothing broken")
+    W.refuseDuration, W.cast, UnitCastingDuration, issecretvalue = nil, nil, CastingDuration, plain
+    W.Fire("UNIT_SPELLCAST_STOP", "player", "ring-4", 133)
+    Follow()
+
+    -- The settings: a ring off hears nothing and goes.
+    W.cast = { name = "Fireball", icon = 135812, starts = began, ends = began + 2500, id = "ring-5", spell = 133 }
+    W.Fire("UNIT_SPELLCAST_START", "player", "ring-5", 133)
+    Cooldown(true, 1.5)
+    Core.Set(ns.name, "mouseCast", false)
+    check(not casting._shown and cooldown._shown and not holder:IsEventRegistered("UNIT_SPELLCAST_START")
+        and holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN"), "the cast's ring off: it goes, the other runs on")
+    Core.Set(ns.name, "mouseCooldown", false)
+    Follow()
+    check(not cooldown._shown and not holder._shown and not holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN"), "both off: nothing is heard")
+    Core.Set(ns.name, "mouseCast", true)
+    check(casting._shown and holder._shown, "on again in the middle of a cast: the ring is there at once")
+    Core.Set(ns.name, "mouseCooldown", true)
+    W.cast = nil
+    W.Fire("UNIT_SPELLCAST_STOP", "player", "ring-5", 133)
+    Cooldown(false, 0)
+    Follow()
+    check(not holder._shown, "and at rest again")
+
+    spell.GetSpellCooldown, spell.GetSpellCooldownDuration, C_CVar.GetCVar = GetCooldown, GetDuration, GetCVar
+    GetScreenDPIScale, methods.GetEffectiveScale = nil, effective
+    W.cursorX, W.cursorY = nil, nil
+end
+
 -- A step of the giving back fails (here the board's own): the others give back all the same, the keys first.
 Board.layouts.Hide = function() error("the board failed") end
 ns.StandDown("a test")
@@ -1481,6 +1644,9 @@ check(PartyFrame._parent == UIParent and CompactRaidFrameContainer._parent == UI
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 check(not questMark._shown, "a plate the game shows after it gets no quest mark")
+
+check(not ns.MouseRings.holder._shown and not ns.MouseRings.holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN")
+    and not ns.MouseRings.holder:IsEventRegistered("UNIT_SPELLCAST_START"), "and no ring around the mouse, none to come")
 
 -- As Retail loads the module: this file once more, in a client of its own.
 check(os.execute(("lua5.1 '%s/dev/tests/combat.lua' retail"):format(root)) == 0, "in Retail the module loads and runs as that game has it")

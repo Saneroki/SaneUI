@@ -229,6 +229,8 @@ local function Read(unit)
     return cast
 end
 
+Cast.Read = Read
+
 -- Who interrupted a cast, by the GUID the game gives: a name, or nil.
 local function Interrupter(guid)
     if type(guid) ~= "string" or guid == "" then return nil end

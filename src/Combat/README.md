@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); rings around the mouse for the global cooldown and your cast (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -23,6 +23,9 @@ cast: none of the game's own bars is left. The game's action bars are clean: onl
 Your party and your raid are one frame of ours, in place of the game's two: unit frames edge to edge, up to forty, in the
 nameplates' look, sized to fit the limits you set in Edit Mode. On every health bar of ours, these and the unit frames, you see
 barriers, maximum health lost for a while, and what can be dispelled (Core's health marks, on the nameplates too).
+
+Around the mouse, only while they run, two thin rings: the global cooldown and your cast. They go around the whole picture of the
+cursor, not around its tip, so the cursor stands in their middle.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -175,6 +178,9 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   art on the bar: after the health while it fits, pushed against the bar's right end when it does not, always as long as it is.
   Lost maximum health: the health bar ends earlier, the rest is the game's hatching. What you or your group can take off a unit (on a
   foe, a buff you can remove): the game's icon of its type, big, floating over the left of the health bar (on a nameplate, above its right end).
+- **Rings around the mouse** (*Global cooldown*, *Your cast*, each its own switch on the page Combat, both on at first): the inner ring, in
+  silver, fills while the global cooldown runs; the outer one fills in gold while you cast and empties in green while you channel. There only while
+  they run, gone at once when the cast is interrupted. They stand around the cursor you see and grow with the game's *Cursor Size* (Accessibility).
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -267,6 +273,19 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
   is opened by its own function and seated in the body (Core's `Seat.lua`: only its place, scale and layer lent),
   a frame later (`Core.Later`); the panel hidden, given back and closed. Its opening followed once, from the
   login or when its addon is first there: while its panel is on the layout, the full screen comes.
+- **Mouse rings** (`MouseRings.lua`): a hidden holder at the `TOOLTIP` strata with two `Cooldown` widgets, their swipe Core's ring
+  (`Shape.RING`, `Art/ring.blp`, one picture for both, so the larger ring is the thicker one). The holder comes out when a ring starts, follows
+  `GetCursorPosition` on its `OnUpdate` and goes when neither ring is shown, so nothing runs at rest. Where it stands: the game's cursor hangs from its
+  tip at the top left corner of a square picture, so the rings' centre is `Rings.MIDDLE` of a side right of and below the tip, and the inner ring's
+  hole holds all 119 of the game's cursor pictures of that size whole (measured on the art, the widest is the sword). Everything is in that side, in
+  real pixels turned into UI units (`768 / physical height / effective scale`): `cursorSizePreferred` 0 to 4 is 32, 48, 64, 96, 128; -1, *Default*, the
+  largest of them `GetScreenDPIScale` reaches. Measured when the holder comes out, so nothing listens for a change. The global cooldown: on
+  `SPELL_UPDATE_COOLDOWN` the game's answer for `Rings.SPELL` (61304, Retail's spell for it; Forever's tables lack that spell, so 29515, of no class
+  and on that cooldown alone), `isActive` never hidden; its seconds, where they may be read, tell a school locked by an interrupt from it
+  (`Rings.LONGEST`). It goes in as `C_Spell.GetSpellCooldownDuration`'s object, as the widget takes hidden numbers only from Blizzard's code. A cast:
+  `ns.UnitCast.Read("player")` on `Cast.EVENTS`, read anew each time (a delay moves the ring, what you tried while casting leaves it); `SetCooldown`
+  from its plain start and end, `SetReverse` so a cast fills and a channel empties; hidden, `UnitCastingDuration`/`UnitChannelDuration` through a
+  `pcall`, no ring where the game refuses that. A failing ring is told once and leaves the module up (`ns.Safe`); a ring off hears nothing.
 - **Quest marks** (`QuestMarks.lua`): on `NAME_PLATE_UNIT_ADDED` a frame of ours on the plate the game gives
   (`C_NamePlate.GetNamePlateForUnit`: none for a forbidden plate; none for players), left of its health bar
   where it has one (its fields read with `rawget`, never written), one per plate, kept while it shows.
@@ -461,6 +480,7 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 | `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
+| `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar, the power bars under it (a druid's mana and form), the row |
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the right click on an icon |
@@ -524,3 +544,4 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 - **2026-10-30:** the game's raid manager gone, your own slot a button to the group's tools in its place; the dispel type's icon instead of a
   ring and the aura's icon, the raid marker moving aside for it; ready checks left of the raid marker; the dead red and the offline grey, their
   bars full; a solid red border on aggro; the box back in Edit Mode only (Saneroki).
+- **2026-11-01:** rings around the mouse for the global cooldown and your cast (Saneroki): only while they run, around the whole cursor, not its tip.

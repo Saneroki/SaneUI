@@ -197,7 +197,8 @@ All of Sane UI's pictures together: 1.5 MB in `assets/optimized/` (from 15.3 MB 
 ships now: one banner per options page (looked for when the options first open, drawn when its page
 is), the Tooltips module's six small TGA shapes (`assets/optimized/Tooltips/Art/`, 72 KB together, made by
 `dev/tools/tooltip-art`), and Core's two masks for round corners (`assets/optimized/Core/Art/circle.blp` and
-`circle-hole.blp`, 86 KB each, made by `dev/tools/shape-art`), read when a window first draws its plate.
+`circle-hole.blp`, 86 KB each, made by `dev/tools/shape-art`), read when a window first draws its plate; its ring
+(`ring.blp`, 86 KB, the same tool), read when the rings around the mouse first come out.
 
 ## Tried and rejected
 

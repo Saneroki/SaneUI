@@ -9,6 +9,9 @@
   circle-hole.blp  the same disc taken out of a white square: what lies outside stays. The trim's
                    arc is the corner's piece in the trim's colour, cut by the circle and by this
                    hole, which is the trim's width smaller: a ring as wide as the trim, at any radius.
+  ring.blp         white, its alpha a ring as large as the picture, its hole RING of the picture wide: what
+                   the game's Cooldown widget sweeps around the mouse (Shape.RING, Combat's MouseRings.lua),
+                   the same picture for a ring of any size, so a larger ring is a thicker one.
   cap-left.blp     a bar's left end (Shape.CAP_LEFT), a quarter as wide as it is high: white, but
   cap-right.blp    for its two corners, each cut round by a quarter circle as wide as the end. Laid
                    over the first (or last) quarter of a bar's height at the bar's end, wrapped with
@@ -50,6 +53,7 @@ ART = ROOT / "assets" / "optimized" / "Core" / "Art"
 SIZE = 256
 CAP = (64, 256)  # a bar's end: width, height
 CORNER = 64      # a corner, square
+RING = 0.86      # a ring's hole, a share of its width
 SAMPLES = 4  # a side's samples per texel
 
 
@@ -63,6 +67,14 @@ def disc(size):
     """The share of each texel (size x size) that lies inside the disc as large as the picture."""
     axis = samples(size).reshape(-1) - size / 2
     inside = (axis[:, None] ** 2 + axis[None, :] ** 2) <= (size / 2) ** 2
+    return inside.reshape(size, SAMPLES, size, SAMPLES).mean(axis=(1, 3))
+
+
+def ring(size):
+    """The share of each texel (size x size) that lies inside the ring as large as the picture."""
+    axis = samples(size).reshape(-1) - size / 2
+    away = axis[:, None] ** 2 + axis[None, :] ** 2
+    inside = (away <= (size / 2) ** 2) & (away >= (RING * size / 2) ** 2)
     return inside.reshape(size, SAMPLES, size, SAMPLES).mean(axis=(1, 3))
 
 
@@ -139,6 +151,8 @@ W, H = CAP
 MASKS = {
     "circle.blp": (SIZE, SIZE, lambda w, h: disc(w), [(SIZE // 2, SIZE // 2, 255), (0, 0, 0)]),
     "circle-hole.blp": (SIZE, SIZE, lambda w, h: 1 - disc(w), [(SIZE // 2, SIZE // 2, 0), (0, 0, 255)]),
+    # Out in the band, nothing in the hole or the corners.
+    "ring.blp": (SIZE, SIZE, lambda w, h: ring(w), [(SIZE // 2, 8, 255), (SIZE // 2, SIZE // 2, 0), (SIZE // 2, 24, 0), (0, 0, 0)]),
     # The middle and the inner side whole; the outer corners cut away.
     "cap-left.blp": (W, H, lambda w, h: cap(w, h, right=False), [(H // 2, 0, 255), (0, W - 1, 255), (0, 0, 0), (H - 1, 0, 0)]),
     "cap-right.blp": (W, H, lambda w, h: cap(w, h, right=True), [(H // 2, W - 1, 255), (0, 0, 255), (0, W - 1, 0), (H - 1, W - 1, 0)]),

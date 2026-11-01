@@ -61,6 +61,8 @@ Core.Shape = Shape
 Shape.TRIM = 2 -- the trim's width in UI units
 Shape.CIRCLE = "Interface\\AddOns\\" .. ADDON .. "\\Art\\circle"
 Shape.HOLE = "Interface\\AddOns\\" .. ADDON .. "\\Art\\circle-hole"
+-- A thin white ring as large as the picture, to sweep with the game's Cooldown widget (dev/tools/shape-art).
+Shape.RING = "Interface\\AddOns\\" .. ADDON .. "\\Art\\ring"
 -- A bar's two ends (a nameplate's): masks a quarter of the bar's height wide, white but for the corners on
 -- their outer side, round with that radius; laid over the bar's ends with CLAMPTOWHITE (dev/tools/shape-art).
 Shape.CAP_LEFT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\cap-left"

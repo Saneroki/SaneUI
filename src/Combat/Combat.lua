@@ -19,7 +19,8 @@ local ADDON, ns = ...
 --  (Talents/) and your spellbook (Book/), our own windows as the game's, and
 --  the window of a talent planner Sane UI knows (Core.Neighbours). Beside a
 --  creature's nameplate, a mark while it belongs to an objective still to do
---  (QuestMarks.lua). Our own frames for you, your target and your focus in a
+--  (QuestMarks.lua). Around the mouse, while they run, rings for the global
+--  cooldown and your cast (MouseRings.lua). Our own frames for you, your target and your focus in a
 --  nameplate's look, in place of the game's (Units/); the game's action bars
 --  clean, their buttons' icons alone (ActionBars.lua); its experience and stance bars gone, its menu bar on
 --  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
@@ -117,6 +118,12 @@ ns.TEXT = {
     hideStanceTip = "The game's stance, form and aura buttons are gone from the screen. Their keys and your action bars still change them. Off: the game's own.",
     menuHover = "Menu bar on mouseover",
     menuHoverTip = "The game's menu bar is out of sight, and shows while the mouse is on it; in Edit Mode it always shows. Off: always in sight.",
+    mouseRings = "Rings around the mouse",
+    mouseRingsTip = "Thin rings around the mouse only while something runs, gone when it is over. They stand around the whole picture of the cursor, not around its tip, and grow with the game's Cursor Size.",
+    mouseCooldown = "Global cooldown",
+    mouseCooldownTip = "The inner ring, in silver, fills while the global cooldown runs.",
+    mouseCast = "Your cast",
+    mouseCastTip = "The outer ring fills in gold while you cast, and empties in green while you channel. Interrupted, it goes at once.",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -172,6 +179,9 @@ local OPTIONS = {
     { key = "hideStance", default = true, text = ns.TEXT.hideStance, tip = ns.TEXT.hideStanceTip },
     { key = "menuHover", default = true, text = ns.TEXT.menuHover, tip = ns.TEXT.menuHoverTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
+    { key = "mouseCooldown", default = true, text = ns.TEXT.mouseCooldown, tip = ns.TEXT.mouseCooldownTip,
+      header = ns.TEXT.mouseRings, headerTip = ns.TEXT.mouseRingsTip },
+    { key = "mouseCast", default = true, text = ns.TEXT.mouseCast, tip = ns.TEXT.mouseCastTip },
 }
 if ns.Serves() then
     table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
@@ -189,6 +199,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     end
     if key == "cleanBars" then ns.Guarded(ns.ActionBars.Apply) end
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
+    if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
@@ -204,6 +215,7 @@ function ns.GiveBack()
     ns.Safe("aura lists", ns.AuraLists.Hide)
     ns.Safe("action bars", ns.ActionBars.GiveBack)
     ns.Safe("game bars", ns.GameBars.GiveBack)
+    ns.Safe("mouse rings", ns.MouseRings.Hide)
 end
 
 function ns.OnLoad()
@@ -221,4 +233,5 @@ function ns.OnLogin()
     ns.Group.Start()
     ns.ActionBars.Start()
     ns.GameBars.Start()
+    ns.Safe("mouse rings", ns.MouseRings.Apply)
 end

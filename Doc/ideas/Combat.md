@@ -76,7 +76,8 @@ Decided (Saneroki, 2026-10-16):
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
   black and white lists by a right click on an icon, and a window to add auras to either list.
 - **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
-  mouseover (`GameBars.lua`). Sane UI's own experience and stance bars are still to come; the game's stance keys and
+  mouseover (`GameBars.lua`). Around the mouse, only while they run, rings for the global cooldown and your cast, centred on
+  the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). Sane UI's own experience and stance bars are still to come; the game's stance keys and
   your action bars change stances meanwhile.
 - **Auras above a unit frame** (Saneroki, 2026-10-31; built): buffs on the left, crowd control in the middle, debuffs
   on the right.
