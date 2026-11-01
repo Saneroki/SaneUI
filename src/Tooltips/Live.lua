@@ -31,7 +31,7 @@ local TEXT = ns.TEXT
 local Live = {}
 ns.Live = Live
 
-local MAX_AURAS = 16
+local KINDS_GAP = 6 -- a little room between a unit's buffs and its debuffs
 local YOU, YOU_WORD = ns.COLOR.RED, ns.Global("UNIT_YOU") or TEXT.YOU -- you as a unit's target: the game's word, in its red
 -- A buff's icon fades out at its edge like the panel's (a mask of our own, made by dev/tools/tooltip-art)
 local AURA_MASK = "Interface\\AddOns\\" .. ADDON .. "\\Art\\aura-mask"
@@ -50,24 +50,52 @@ local function Aura(unit, index, filter)
     return type(aura) == "table" and aura or nil
 end
 
+-- How many auras of a kind a unit has.
+local function Count(unit, filter)
+    local count = 0
+    while Aura(unit, count + 1, filter) do count = count + 1 end
+    return count
+end
+
+-- A unit's icons laid out in that width, buffs then debuffs, going on in a new line where a line is full: place(its
+-- number, x, its line from 0) for each. How many lines they take.
+local function Walk(buffs, debuffs, width, place)
+    local size, gap = ns.Panel.AURA, ns.Panel.AURA_GAP
+    local x, line = 0, 0
+    for index = 1, buffs + debuffs do
+        if index == buffs + 1 and buffs > 0 then x = x + KINDS_GAP end
+        if x > 0 and x + size > width then x, line = 0, line + 1 end
+        if place then place(index, x, line) end
+        x = x + size + gap
+    end
+    return line + 1
+end
+
+function Live.AuraLines(buffs, debuffs, width)
+    return Walk(buffs, debuffs, width)
+end
+
 -- What a unit has that takes a row: a target, buffs or debuffs, and the kind of its power
--- ("MANA"). Asked when its tooltip is read, and again while its panel is shown: a change
--- lays the panel out anew.
+-- ("MANA"), then how many buffs and debuffs. Asked when its tooltip is read, and again while
+-- its panel is shown: a change of its rows lays the panel out anew.
 function Live.Facts(unit)
     local target = Plain(UnitExists(unit .. "target")) == true
-    local auras = AurasOpen() and (Aura(unit, 1, "HELPFUL") or Aura(unit, 1, "HARMFUL")) and true or false
+    local open = AurasOpen()
+    local buffs, debuffs = open and Count(unit, "HELPFUL") or 0, open and Count(unit, "HARMFUL") or 0
     local _, power = UnitPowerType(unit)
     power = Plain(power)
     local most = Plain(UnitPowerMax(unit))
     if most == 0 then power = nil end
-    return target, auras, power or false
+    return target, buffs + debuffs > 0, power or false, buffs, debuffs
 end
 
 function Live.Changed(panel)
-    local head = panel.model.shown.head
+    local head, live = panel.model.shown.head, panel.live
     if not head.unit then return false end
-    local target, auras, power = Live.Facts(head.unit)
+    local target, auras, power, buffs, debuffs = Live.Facts(head.unit)
+    local lines = auras and live.aurasWidth and Live.AuraLines(buffs, debuffs, live.aurasWidth)
     return target ~= head.hasTarget or auras ~= head.hasAuras or power ~= head.power
+        or (lines and lines ~= live.aurasLines) or false
 end
 
 -- The colour of a name: a player's class, or how the unit feels about you.
@@ -119,48 +147,50 @@ local function Refresh(panel, unit)
     end
 end
 
--- The unit's buffs, then its debuffs, in one row of small icons.
+-- One small icon of a panel, made once.
+local function AuraIcon(panel, index)
+    local icons = panel.auraIcons
+    local icon = icons[index]
+    if icon then return icon end
+    local crop = ns.Pools.ICON_CROP
+    icon = panel:CreateTexture(nil, "ARTWORK", nil, 2)
+    icon:SetTexCoord(crop, 1 - crop, crop, 1 - crop)
+    icon:SetSize(ns.Panel.AURA, ns.Panel.AURA)
+    local mask = panel:CreateMaskTexture()
+    mask:SetTexture(AURA_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetAllPoints(icon)
+    icon:AddMaskTexture(mask)
+    icon.mask = mask
+    icons[index] = icon
+    return icon
+end
+
+-- All the unit's buffs, then all its debuffs, in lines of small icons.
 local function Auras(panel, unit)
     local live = panel.live
-    local icons = panel.auraIcons
-    if not icons then
-        icons = {}
-        panel.auraIcons = icons
-    end
-    local used = 0
+    panel.auraIcons = panel.auraIcons or {}
+    local pictures, buffs = {}, 0
     if live.aurasTop and AurasOpen() then
-        local size, gap, crop = ns.Panel.AURA, ns.Panel.AURA_GAP, ns.Pools.ICON_CROP
-        local room = math.min(MAX_AURAS, math.floor((live.aurasWidth + gap) / (size + gap)))
-        local x = live.aurasLeft or ns.Panel.SIDE
         for pass = 1, 2 do
-            local filter = pass == 1 and "HELPFUL" or "HARMFUL"
-            local index = 1
-            while used < room do
-                local aura = Aura(unit, index, filter)
-                if not aura then break end
-                used, index = used + 1, index + 1
-                local icon = icons[used]
-                if not icon then
-                    icon = panel:CreateTexture(nil, "ARTWORK", nil, 2)
-                    icon:SetTexCoord(crop, 1 - crop, crop, 1 - crop)
-                    icon:SetSize(size, size)
-                    local mask = panel:CreateMaskTexture()
-                    mask:SetTexture(AURA_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-                    mask:SetAllPoints(icon)
-                    icon:AddMaskTexture(mask)
-                    icon.mask = mask
-                    icons[used] = icon
-                end
-                icon:SetTexture(aura.icon)
-                icon:ClearAllPoints()
-                icon:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -live.aurasTop)
-                icon:Show()
-                x = x + size + gap
+            local filter, index = pass == 1 and "HELPFUL" or "HARMFUL", 1
+            local aura = Aura(unit, index, filter)
+            while aura do
+                pictures[#pictures + 1] = aura.icon
+                index = index + 1
+                aura = Aura(unit, index, filter)
             end
-            if pass == 1 and used > 0 then x = x + 6 end -- a little room between the two kinds
+            if pass == 1 then buffs = #pictures end
         end
+        local left, step = live.aurasLeft or ns.Panel.SIDE, ns.Panel.AURA + ns.Panel.AURA_GAP
+        Walk(buffs, #pictures - buffs, live.aurasWidth, function(index, x, line)
+            local icon = AuraIcon(panel, index)
+            icon:SetTexture(pictures[index])
+            icon:ClearAllPoints()
+            icon:SetPoint("TOPLEFT", panel, "TOPLEFT", left + x, -(live.aurasTop + line * step))
+            icon:Show()
+        end)
     end
-    for index = used + 1, #icons do icons[index]:Hide() end
+    for index = #pictures + 1, #panel.auraIcons do panel.auraIcons[index]:Hide() end
 end
 
 -- A buff's time: a bar that runs out. The game's own timer drives it where the client has one

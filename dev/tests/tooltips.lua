@@ -1205,6 +1205,35 @@ for use, bar in pairs(panel.liveBars) do
 end
 check(#panel.auraIcons == 3 and panel.auraIcons[1]._texture == 11 and panel.auraIcons[3]._texture == 13 and panel.auraIcons[3]:IsShown(), "its buffs, then its debuffs, as small icons")
 check(panel.auraIcons[1].mask._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\aura-mask", "each with a soft edge")
+do -- All of them, however many, in as many lines as they take; no Alt.
+    local few, step = panel.live.aurasLines, ns.Panel.AURA + ns.Panel.AURA_GAP
+    local three = auras.mouseover
+    local many = { HELPFUL = {}, HARMFUL = {} }
+    for index = 1, 30 do many.HELPFUL[index] = { icon = 100 + index } end
+    for index = 1, 12 do many.HARMFUL[index] = { icon = 200 + index } end
+    auras.mouseover = many
+    W.Fire("UNIT_AURA", "mouseover", {})
+    tick(panel)
+    local shown = 0
+    for _, icon in ipairs(panel.auraIcons) do shown = shown + (icon:IsShown() and 1 or 0) end
+    check(shown == 42 and panel.auraIcons[42]._texture == 212, "every buff and debuff, the most the game keeps too")
+    check(few == 1 and panel.live.aurasLines > 1, "going on in new lines")
+    local tops, lastRight = {}, 0
+    for _, icon in ipairs(panel.auraIcons) do
+        local _, _, _, x, y = icon:GetPoint(1)
+        tops[y] = true
+        lastRight = math.max(lastRight, x + ns.Panel.AURA - panel.live.aurasLeft)
+    end
+    local lines = 0
+    for _ in pairs(tops) do lines = lines + 1 end
+    check(lines == panel.live.aurasLines and lastRight <= panel.live.aurasWidth, "and within the panel's width")
+    local after = panel.live.aurasTop + panel.live.aurasLines * step
+    check(after > panel.live.aurasTop + step, "the rows after them make room")
+    auras.mouseover = three
+    W.Fire("UNIT_AURA", "mouseover", {})
+    tick(panel)
+    check(panel.live.aurasLines == 1 and not panel.auraIcons[4]:IsShown(), "and back to one line")
+end
 world.mouseover.target = false
 W.Fire("UNIT_TARGET", "mouseover")
 tick(panel)

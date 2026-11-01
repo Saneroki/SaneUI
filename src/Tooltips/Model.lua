@@ -109,7 +109,7 @@ local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb
     "iconRight", "indent", "caps", "prose", "live", "inside", "value", "max", "flush", "mark", "bare", "br", "bg", "bb",
     "graph", "range", "stamp" }
 local HEAD = { "tag", "compared", "accent", "ar", "ag", "ab", "icon", "portrait", "badge", "badgeR", "badgeG", "badgeB",
-    "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers",
+    "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraBuffs", "auraDebuffs", "auraUnit", "auraID", "numbers",
     "model", "modelKind", "modelZoom", "modelTurn", "dress" }
 
 local function Copy()

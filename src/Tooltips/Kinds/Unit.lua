@@ -16,7 +16,7 @@ local _, ns = ...
 --      Target  Ragnaros                           whom it targets
 --      [======= 4,230   83% ========    ]          health as a bar, its numbers inside, and
 --      [================_______________]          over its lower part its mana, rage or energy
---      [] [] [] [] []                             its buffs and debuffs
+--      [] [] [] [] []                             all its buffs and debuffs, in as many lines as they take
 --      145 XP                      12 to level    a creature: what killing it gives you, and
 --      QUEST ──────────────────────────────       how many such kills to your next level
 --      The Defias Brotherhood                     your quests (a sword: to kill; a bag: to loot)
@@ -461,7 +461,7 @@ local function Unit(ctx)
     -- Target, health, power, buffs: laid out here, filled and kept up to date by Live.lua, as long
     -- as the unit is this one (the GUID): "mouseover" is another unit, or none, once the mouse left it
     head.unit, head.guid = unit, Plain(UnitGUID(unit))
-    head.hasTarget, head.hasAuras, head.power = ns.Live.Facts(unit)
+    head.hasTarget, head.hasAuras, head.power, head.auraBuffs, head.auraDebuffs = ns.Live.Facts(unit)
     Read.Section(TEXT.STATUS)
     if head.hasTarget then
         local target = Read.Text("sub", ns.Global("TARGET") or TEXT.TARGET, DETAIL[1], DETAIL[2], DETAIL[3])

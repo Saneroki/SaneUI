@@ -40,6 +40,10 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.
 - **`dev/uilab/scenes/guide.lua`:** a stand-in for `ns.Run`, without which the wheel failed in the scene. **`dev/tests/speedguide.lua`:** the shades' corners, their size and no border.
 
+### All of a unit's buffs in its tooltip (Saneroki, 2026-11-02)
+Saneroki: "When I mouse over units, can I see all their buffs and debuffs in their tooltips without holding alt?"
+- **`src/Tooltips/Live.lua`, `Panel.lua`:** a unit's icons were one line, at most 16 and as many as fit its width; now all of them, in as many lines as they take (`Live.AuraLines`), the panel laid out anew when the lines change. Alt played no part in it. A `/reload` takes it in.
+
 ### Show on and hide from unit frames (Saneroki, 2026-11-01)
 Saneroki: "Sometimes I want auras to display normal but also make sure they don't show up on the unit frames or have priority over others to show on unit frames without fading or highlighting them with glows."
 - **`src/Combat/Units/Lists.lua`:** two lists more, `auraShow` and `auraHide`, a side of their own: a spell has one mark of how it looks and one of the unit frames. **`Units/Auras.lua`:** a group `shown` after the glowing `listed`, the second side over the first. A `/reload` takes it in.

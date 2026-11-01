@@ -240,6 +240,7 @@ only read.
 - **What stays the game's own:** a tooltip with a bar, an item or another frame inside (the panel could not
   show it in full); a tooltip with a line the game hides in a fight (it cannot be read); a tooltip nobody
   sees (another addon's, to read things with).
+- **A unit's buffs and debuffs:** all of them, without a key held, buffs first, in as many lines of small icons as they take.
 - **In a fight** a unit's buffs are not shown (the game does not hand them out then), and a tooltip the
   game hides lines of stays the game's own.
 - **In Retail** the panels are the same, but for what needs Forever's rules or Sane UI's database, which holds
@@ -462,7 +463,7 @@ only read.
   in the shape it is used in.
 - **What changes while a panel is shown** (`Live.lua`): a unit's health and power, its target, its buffs,
   a buff's running time. `Panel.lua` lays these parts out, `Live.lua` fills them when told by the unit's events (`UNIT_HEALTH`, `UNIT_POWER_UPDATE`, `UNIT_TARGET`, `UNIT_AURA`, heard only while the panel is shown, one look per frame; the aura timer by the panel's `OnUpdate`). When the unit gets
-  or loses a row (a target, its buffs), the tooltip is read anew. The unit is asked for by a token
+  or loses a row (a target, its buffs, a line of them: `Live.AuraLines`), the tooltip is read anew. The unit is asked for by a token
   (`mouseover`); once the mouse has left it, that token is another unit or none: the unit's GUID is kept
   in the model, and while the token's GUID differs, the panel stands still.
 - **Gone at once when the mouse leaves.** The game lets a tooltip fade out slowly once the mouse has left

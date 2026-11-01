@@ -857,8 +857,10 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
             end
             y = y + height + CAPTION_BELOW
         elseif kind == "auras" then
+            local unit = panel.model.shown.head
             live.aurasTop, live.aurasWidth, live.aurasLeft = y, inner, ox + SIDE
-            y = y + AURA + ROW_GAP
+            live.aurasLines = ns.Live.AuraLines(unit.auraBuffs or 0, unit.auraDebuffs or 0, inner)
+            y = y + live.aurasLines * (AURA + AURA_GAP) - AURA_GAP + ROW_GAP
         elseif kind == "graph" then
             -- Only its place: drawn once the rows have theirs for good (Panel.Draw)
             panel.graphRow, panel.graphX, panel.graphY = row, ox + SIDE, y
