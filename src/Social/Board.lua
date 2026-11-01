@@ -118,7 +118,7 @@ end
 -- right the guild window over the friends list, each share as large as its room.
 local function Default(width, height)
     -- The guild's window: the module Guild's own, offered to this board (Core.Board.Offer), as large as it wants
-    -- to be; else the window the guild key opens, as large as it is.
+    -- to be (out of a guild it wants no room); else the window the guild key opens, as large as it is.
     local offered = Core.Board.Offered("Social", "guild")
     local size = offered and offered.want and ns.Safe("board", offered.want, width, height) or (not offered and ns.Guild.Size(inside))
     local rooms = Layout.Board(width, height, { friends = true, talks = true, guild = Framed(size or nil),

@@ -522,6 +522,89 @@ W.Fire("PLAYER_GUILD_UPDATE", "player")
 check(overrides.J == "SANEUI_GUILD_TOGGLE", "in a guild again, ours")
 Frames(3)
 
+-- On Social's board out of a guild: ticked, the window stands and says why it holds nothing; the page is built there
+-- for the first time, its views with no guild at all. Social's own guild window, and its first layout, as Board.lua
+-- has them. The window closed again, the rest of this file has the window of its own.
+;(function()
+    -- The board's panels fade in by the game's animations: here they are there at once.
+    local function Inert(known) return setmetatable(known, { __index = function() return function() end end }) end
+    function W.methods:CreateAnimationGroup()
+        return Inert({ CreateAnimation = function() return Inert({ GetProgress = function() return 1 end }) end })
+    end
+    local inGuild, info, count = IsInGuild, GetGuildInfo, GetNumGuildMembers
+    local function Join(joined)
+        IsInGuild = joined and inGuild or function() return false end
+        GetGuildInfo = joined and info or function() return nil end
+        GetNumGuildMembers = joined and count or function() return 0, 0 end
+        W.Fire("PLAYER_GUILD_UPDATE", "player")
+        W.Wait(1)
+        Frames(3)
+    end
+    Join(false)
+    local own = { { key = "talks", title = "Conversations" }, { key = "friends", title = "Friends List" },
+                  { key = "guild", title = "Guild", present = function() return false end } }
+    local stood = {}
+    W.caught = stood
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local store = { layouts = { chosen = 1, tabs = { { tree = { split = "x", shares = { 0.3, 0.3, 0.4 },
+        parts = { { key = "talks" }, { key = "guild" }, { key = "friends" } } } } } } }
+    local board, handle
+    local function Lay() if handle.edge.full then board:Show(handle.inside, 1920, 1048) else board:Hide() end end
+    handle = Core.Window.New(frame, { store = store, key = "place", title = "Social", dock = true,
+        edge = { expand = true, motion = "off", expandOpacity = 50, expandTexture = "solid", corners = 10, squareEdges = true },
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 }, docked = function() if board then Lay() end end })
+    board = Board.New(handle, { store = store, key = "layouts", label = "Social", windows = function() return own end, changed = Lay,
+        default = function(width, height)
+            local wanted = Board.Offered("Social", "guild").want(width, height)
+            if wanted then return { split = "x", parts = { { key = "talks" }, { key = "guild" } }, shares = { 1, 1 } } end
+            return { split = "x", parts = { { key = "talks" }, { key = "friends" } }, shares = { 1, 1 } }
+        end })
+    handle:Place()
+    function frame:GetLeft() return 810 end
+    function frame:GetBottom() return 440 end
+    check(Board.Open("Social"), "Social's full screen comes")
+
+    local panel = board.panels.guild
+    check(panel and panel:IsShown() and ns.Page.Frame() and ns.Page.Frame():IsVisible() and board.rects.friends and board.rects.talks,
+        "a layout that holds the guild window shows it out of a guild too: its tick and its tab are never without effect")
+    local page = ns.Page.Frame()
+    check(page.empty:IsShown() and page.empty:GetText():find(ns.TEXT.noGuild, 1, true) and not page.body:IsShown()
+        and not page.tabs:IsShown() and not page.viewTitle:IsShown() and not page.subs:IsShown(),
+        "it says you are not in a guild, with no tabs or views behind that")
+    check(page.synced:GetText() == "" and not page.dot:IsShown() and not page.sync:IsEnabled(), "and nothing of a guild in its head")
+    check(#page.empty._points == 2, "the words stay inside the panel, however narrow it is")
+    check(#stood == 0 and not ns.off and Core.errors["Guild: view"] == nil and Core.errors["Guild: view: overview"] == nil,
+        "the page and its view built with no guild, without an error: " .. tostring(stood[1]))
+
+    board:Toggle("guild")
+    check(not panel:IsShown() and not board:Has("guild") and board.rects.friends, "unticked, it goes")
+    board:Toggle("guild")
+    check(panel:IsShown() and board:Has("guild"), "ticked, it is back")
+
+    Join(true)
+    check(not page.empty:IsShown() and page.body:IsShown() and page.tabs:IsShown() and page.viewTitle:IsShown()
+        and page.name:GetText() == "The Order" and page.synced:GetText() ~= "" and page.dot:IsShown() and page.sync:IsEnabled(),
+        "a guild joined while it shows: the page fills")
+    Join(false)
+    check(page.empty:IsShown() and not page.body:IsShown() and not page.tabs:IsShown(), "and left, it says so again")
+
+    store.layouts.tabs[1].tree = nil
+    Lay()
+    check(not board:Has("guild") and not panel:IsShown() and board.rects.friends,
+        "the first layout has no guild window out of a guild: the friends list has its room")
+    Join(true)
+    check(board:Has("guild") and panel:IsShown(), "a guild joined while the full screen stands: the first layout has it")
+    Join(false)
+    check(not board:Has("guild"), "and left, it has it no more")
+    check(#stood == 0 and not ns.off, "nothing went wrong on the way: " .. tostring(stood[1]))
+
+    Join(true)
+    Board.Close("Social")
+    frame:Hide()
+    W.caught = nil
+    check(not Board.Standing("Social") and Board.Open("Social") == false, "its window closed, the guild window stands in a window of its own")
+end)()
+
 -- What its views show, without frames.
 local Layout = ns.Layout
 local left, middle, right = Layout.Overview(1100)

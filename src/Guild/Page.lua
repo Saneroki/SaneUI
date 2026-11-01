@@ -67,23 +67,28 @@ local listening = false
 local function Head()
     local Guild = Core.Data.Guild
     local info = Guild.Info()
-    local inGuild = IsInGuild and IsInGuild()
+    local inGuild = Core.Ask(rawget(_G, "IsInGuild")) == true
     page.crest:Update()
     page.name:SetText(inGuild and info.name or TEXT.title)
     page.realm:SetText(inGuild and (info.realm and "· " .. info.realm or "") or "")
     page.online:SetText(inGuild and TEXT.online:format(math.max(0, (info.online or 0))) or "")
+    page.dot:SetShown(inGuild)
     local peers, newest = Guild.Peers(), nil
     for _, peer in pairs(peers) do
         if not newest or peer.seen > newest then newest = peer.seen end
     end
     local now = Core.Ask(GetServerTime) or 0
-    page.synced:SetText(newest and TEXT.synced:format(Layout.SinceText(now - newest)) or TEXT.neverSynced)
-    page.sync:SetEnabled(inGuild and true or false)
+    local synced = newest and TEXT.synced:format(Layout.SinceText(now - newest)) or TEXT.neverSynced
+    page.synced:SetText(inGuild and synced or "")
+    page.sync:SetEnabled(inGuild)
     page.empty:SetShown(not inGuild)
-    page.body:SetShown(inGuild and true or false)
-    page.subs:SetShown(inGuild and true or false)
-    page.tool:SetShown(inGuild and true or false)
+    page.body:SetShown(inGuild)
+    page.subs:SetShown(inGuild)
+    page.tool:SetShown(inGuild)
+    page.viewTitle:SetShown(inGuild)
+    page.context:SetShown(inGuild)
     if page.tabs then
+        page.tabs:SetShown(inGuild)
         local officer = inGuild and Guild.Rights().officer
         for index, section in ipairs(sections) do
             if section.officer then page.tabs:SetTabShown(index, officer and true or false) end
@@ -293,9 +298,9 @@ function Page.Build(parent)
     page.subTabs = {}
     page.body = CreateFrame("Frame", nil, page)
     Body(false)
-    page.empty = Kit.Empty(page, "GameFontNormalLarge")
-    page.empty:ClearAllPoints()
-    page.empty:SetPoint("CENTER", 0, 20)
+    page.empty = Kit.Empty(page, "GameFontNormalLarge") -- out of a guild: said in place of the tabs and the view
+    page.empty:SetPoint("LEFT", Layout.EDGE, 20)
+    page.empty:SetPoint("RIGHT", -Layout.EDGE, 20)
     page.empty:SetText(TEXT.noGuild .. "\n\n|cffb0b0b0" .. TEXT.noGuildHint .. "|r")
     page.statusFrame = CreateFrame("Frame", nil, page)
     page.statusFrame:SetPoint("BOTTOMLEFT", Layout.EDGE, 2)

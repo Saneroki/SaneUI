@@ -18,7 +18,9 @@ is on. The other views say they come later.
   window there). Without Social, or with the switch *On Social's Full Screen* off, it is a window of its own: moved
   by its title bar, sized in Edit Mode, closed by Esc, its place and size kept. The game's micro menu button still
   opens the game's own guild window, and so does *The Game's Guild Window* on the roster. Outside a guild nothing
-  opens (`/sane guild` says so; the guild key opens the game's own window, where a guild is found).
+  opens (`/sane guild` says so; the guild key opens the game's own window, where a guild is found), and the first
+  layout of Social's full screen has no guild window, the friends list has its room. Ticked in the dropdown *Windows*
+  or by its tab, it stands all the same and says you are not in a guild; joined, it fills.
 - **The head:** the guild's own emblem in its ring (the game's tabard), the guild's name and realm, how many are
   online, when the guild last answered (*Synced 2 min*); the gear opens the options page *Guild*; *Sync* asks the
   guild for what is newer (once a minute at most) and the game for the roster.
@@ -72,7 +74,10 @@ is on. The other views say they come later.
   game's guild window alone (`Core.Board.Offered`). `Window.Toggle` opens Social's full screen with it
   (`Core.Board.Open`), closes it when it shows (`Core.Board.Close`), and falls back to the window of its own
   (`Core.Window.New`, kind `panel`) where no board answers; outside a guild it opens nothing and says so (a window of
-  its own still open closes). The switch *On Social's Full Screen* withdraws the offer (`Core.Board.Withdraw`).
+  its own still open closes). The switch *On Social's Full Screen* withdraws the offer (`Core.Board.Withdraw`). The
+  spec has no `present`, so a layout that holds it always shows it; out of a guild its `want` gives no room (Social's
+  first layout leaves it out) and the page shows `page.empty` in place of its tabs and views (`Head`). A guild joined
+  or left lays the board out anew (`PLAYER_GUILD_UPDATE`, only when it really changed; `Core.Board.Told`).
 - **The guild key** (`Keys.lua`, `Bindings.xml`): override bindings on the keys of the game's `TOGGLEGUILDTAB` run our
   `SANEUI_GUILD_TOGGLE` while the player is in a guild, set out of a fight (or after it), again when the bindings
   change or the player joins or leaves a guild, taken away when the switch is off or the module stands down.
@@ -97,7 +102,7 @@ is on. The other views say they come later.
   (Social holds the game's guild window again), the roster no more asked for; each step on its own.
 - **Tests:** `lua5.1 dev/tests/guild.lua`: the wire (parts numbered wrongly, a block that does not fit), the guild's
   records (a roster that shrinks, a fight, asks and answers, a switch turned off, Sync), a window offered to a board,
-  what the views show, the page with every tab, the guild key (in a guild and outside one), Esc on the window of its
+  on a real board out of a guild (ticked, the page built with no guild, a guild joined and left), what the views show, the page with every tab, the guild key (in a guild and outside one), Esc on the window of its
   own, the window and its tabs in Retail (`W.Play`) with the doll's weapons there, standing down.
 
 ## Files
@@ -121,6 +126,8 @@ Every view that says it comes later (Doc/ideas/Guild.md, *Build order*); the pic
 (*Player*); news cards; the notification strip at the minimap.
 
 ## History
+- 2026-11-02 — Out of a guild: ticked on Social's full screen it stands and says so (it was left out without a word);
+  the first layout holds it only in a guild, and follows a guild joined or left.
 - 2026-10-25 — Retail: the doll without the ranged slot, as the game's own.
 - 2026-10-20 — The module (Saneroki): the window with all its tabs on Social's full screen or alone, the overview, the
   roster, everybody's gear; the guild key; sharing of the character card with the guild.

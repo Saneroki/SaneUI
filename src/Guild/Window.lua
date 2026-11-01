@@ -10,7 +10,12 @@ local _, ns = ...
 --  own (Core.Window.New, a panel: its title bar, moved by it, Esc closes it,
 --  its place and size kept). The page is made once and moves between the two.
 --
+--  Out of a guild the first layout has no room for it, the friends list has
+--  that; a layout it was put into (its tick in the dropdown Windows, its tab)
+--  shows it all the same, and the page says why it holds nothing (Page.lua).
+--
 --      Window.Offer()    at the load: offered to Social's board (it lists it whether Social is there or not)
+--      Window.Start()    at the login: a guild joined or left lays the board out anew
 --      Window.Toggle()   the guild key, /sane guild: open it where it stands, or close it
 --      Window.Rehome()   the switch changed: offered or withdrawn
 --      Window.Leave()    the module stood down: closed, withdrawn
@@ -22,16 +27,22 @@ ns.Window = Window
 
 local BOARD, KEY = "Social", "guild"
 local frame, window -- the window of its own, once made
+local guilded       -- whether the player was in a guild when last looked
 
 local function OnSocial()
     return ns.options.social ~= false
 end
 
+local function InGuild()
+    return Core.Ask(rawget(_G, "IsInGuild")) == true
+end
+
 -- Social's board's window for the guild: the page in its panel's body.
 local SPEC = {
     key = KEY, title = TEXT.title, least = Layout.LEAST, icon = "Interface\\Icons\\INV_Epicguildtabard",
-    want = function(width, height) return Layout.Want(width, height) end,
-    present = function() return IsInGuild and IsInGuild() and true or false end,
+    want = function(width, height)
+        if InGuild() then return Layout.Want(width, height) end
+    end,
     build = function(panel) ns.Guarded(ns.Page.Build, panel.body) end,
     show = function(panel, on)
         if on then
@@ -49,6 +60,18 @@ end
 
 function Window.Rehome()
     if OnSocial() then Core.Board.Offer(BOARD, SPEC) else Core.Board.Withdraw(BOARD, KEY) end
+end
+
+-- A guild joined or left: the first layout has its room or not. The game says PLAYER_GUILD_UPDATE for more than that.
+local function GuildChanged()
+    if ns.off or InGuild() == guilded then return end
+    guilded = InGuild()
+    Core.Board.Told(BOARD)
+end
+
+function Window.Start()
+    guilded = InGuild()
+    ns.On("PLAYER_GUILD_UPDATE", GuildChanged)
 end
 
 -------------------------------------------------------------------------------
@@ -77,10 +100,6 @@ local function Build()
         Core.Sound("IG_CHARACTER_INFO_CLOSE")
     end))
     window:Place()
-end
-
-local function InGuild()
-    return Core.Ask(rawget(_G, "IsInGuild")) == true
 end
 
 -- Open it where it stands, or close it: on Social's full screen (opened with the guild window in its layout, or

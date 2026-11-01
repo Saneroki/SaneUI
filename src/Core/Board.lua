@@ -31,9 +31,10 @@ local Core = SaneUI.Core
 --  after the layouts' tabs and the +: its icon in place of words, lit while
 --  the window is in the layout; a click puts it in or takes it off, as its tick
 --  in the dropdown does, and its tooltip says its title. A window the module
---  has nothing for right now (present: false; the guild window out of a guild)
+--  cannot hold right now (present: false; the game's guild window, closed)
 --  stays in the layout but is left out of the laying out, the others sharing
---  its room until it is back.
+--  its room until it is back. Its tick then does nothing to see, so a window
+--  of the module's own stands instead and says why it is empty.
 --
 --  Kept in the module's store, account-wide as windows' places are:
 --      store[key] = { chosen = 2, tabs = { { name = "Default", tree = nil }, { name = "Raid", tree = node } } }
@@ -956,8 +957,8 @@ function Board.New(window, options)
     return board
 end
 
--- What a board is offered changed: one that stands lays out anew.
-local function Told(label)
+-- What a board is offered changed, or what a window offered to it wants: one that stands lays out anew.
+function Board.Told(label)
     local board = boards[label]
     if board and board.standing and board.options.changed then Core.Safe(Label(board), board.options.changed) end
 end
@@ -974,11 +975,11 @@ function Board.Offer(label, spec)
         if other.key == spec.key then
             if other == spec then return end
             list[index] = spec
-            return Told(label)
+            return Board.Told(label)
         end
     end
     list[#list + 1] = spec
-    Told(label)
+    Board.Told(label)
 end
 
 -- That window offered no more (its module stood down, or its window stands elsewhere now): the board's own of that
@@ -989,7 +990,7 @@ function Board.Withdraw(label, key)
     for index, spec in ipairs(list) do
         if spec.key == key then
             table.remove(list, index)
-            return Told(label)
+            return Board.Told(label)
         end
     end
 end

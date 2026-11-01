@@ -2963,6 +2963,20 @@ do
     check(not Core.errors["Social: guild window"] and not ns.off, "nothing went wrong with the guild window")
     ToggleGuildFrame, UIPanelWindows = nil, nil
     ns.Window.Reboard()
+    -- A guild window another module offers: the first layout gives it room while it wants some, as large as it wants,
+    -- the friends list under it; out of a guild it wants none, and the friends list has that room too.
+    local wants = { 900, 500 }
+    Core.Board.Offer("Social", { key = "guild", title = "offered", want = function() return wants end })
+    check(ns.Board.Has("guild") and panels.guild:IsShown() and panels.friends:IsShown()
+        and panels.guild._width == 900 + 2 * Layout.EDGE and panels.friends._width == panels.guild._width,
+        "the first layout gives an offered guild window its room, the friends list under it")
+    wants = nil
+    Core.Board.Told("Social")
+    check(not ns.Board.Has("guild") and not panels.guild:IsShown() and panels.friends:IsShown()
+        and panels.friends._width == Layout.FRIENDS_WIDTH and panels.friends._points[1][5] == -Core.Board.PAD,
+        "out of a guild it has none: the friends list stands at the top right")
+    Core.Board.Withdraw("Social", "guild")
+    check(not Core.errors.board and not Core.errors["Social: board"] and not ns.off, "nothing went wrong with the offered window")
     end)()
     end
     ;(function() -- Core's board: the layouts behind tabs, the windows sharing the screen as they are arranged

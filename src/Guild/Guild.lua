@@ -172,5 +172,6 @@ function ns.OnLogin()
     Guild.Allow("card", ns.options.shareCard ~= false)
     Guild.Start()
     ns.Keys.Start()
+    ns.Window.Start()
     Core.Command("guild", "the guild window: open or close it", function() ns.Guarded(ns.Window.Toggle) end)
 end

@@ -275,9 +275,11 @@ not by itself. The rules:
 
 - **They share the screen, never overlap.** A layout is a tree of splits (side by side, `"x"`, or one over the
   other, `"y"`), each part a share of its room; `Board.Lay` gives each window its rect, whole pixels, `PAD`
-  between neighbours and from the screen's edges. A window that has nothing to show now (`present` false: the
-  guild window out of a guild, closed) stays in the layout and is left out of the laying out; the others share its
-  room until it is back.
+  between neighbours and from the screen's edges. A window that cannot be held now (`present` false: the game's own
+  guild window, closed) stays in the layout and is left out of the laying out; the others share its room until it
+  is back. Its tick and its tab then do nothing to see, so a window of the module's own has no `present`: it stands
+  and says why it is empty (the module Guild's, out of a guild); that it takes no room unasked is its first
+  layout's to say (`want`), and a change there is told with `Board.Told`.
 - **Arranged on the full screen itself, laid out once.** The gap between two neighbours is a strip that takes the
   mouse (the game's sizing cursor): held, only a line follows; let go, the two share their room anew, neither
   under its `least`. A window's head is dragged: held, it is see-through and a tinted shape shows where it would
