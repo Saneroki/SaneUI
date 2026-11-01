@@ -27,7 +27,7 @@ local ADDON, ns = ...
 --  The reservations, their grey icons on the bars and the saved layouts serve both.
 --
 --  Action Bar 1 keeps the page you chose (Bar1.lua) and the buttons of every action bar
---  touch (Spacing.lua), in both games.
+--  touch (Spacing.lua), in both games. A character can let Action Bar 7 follow its form (FormBar.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -63,6 +63,7 @@ ns.RESERVED_MARK = "auctionhouse-icon-clock" -- waiting for something: a button 
 ns.TEXT = {
     -- Bars and slots (here), in chat, tooltips and menus
     slot = "Bar %d, button %d", formSlot = "Bar 1 (%s), button %d", actionSlot = "action slot %d",
+    formBarSlot = "Bar 7 (%s), button %d",
     normalRow = "normal", formRow = "form or stance %d", pageRow = "page %d", -- Bar 1's rows
     -- The spellbook's pages change hands at a /reload only
     pagesOn = "the spellbook shows your unlearned spells again after /reload.",
@@ -78,6 +79,7 @@ ns.TEXT = {
         "/sane ab add <spell ID or link> - list a spell the addon does not know about",
         "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
         "/sane ab pages off - leave the spellbook's pages to the game (and /sane ab pages on)",
+        "/sane ab formbar on - this character's Action Bar 7 follows its form (and /sane ab formbar off)",
         "/sane ab window reset - the spellbook's own size and place again",
         "/sane ab debug - what the lists were built from",
     },
@@ -86,6 +88,7 @@ ns.TEXT = {
         "/sane ab list - your reservations     /sane ab clear - remove them all",
         "/sane ab save <name>, /sane ab load <name>, /sane ab delete <name>, /sane ab layouts - saved bar layouts",
         "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
+        "/sane ab formbar on - this character's Action Bar 7 follows its form (and /sane ab formbar off)",
         "/sane ab debug - your reservations and Bar 1's slots",
     },
     debugSpells = "spells: %d learned, %d still to learn (trainer list %d, weapon skills %d, talents %d, read at the trainer %d, added by hand %d).",
@@ -98,6 +101,11 @@ ns.TEXT = {
     noLayouts = "no saved layouts yet. Save one with /sane ab save <name>.", layouts = "saved layouts: %s",
     addUsage = "type: /sane ab add <spell ID or link>", windowUsage = "type: /sane ab window reset",
     pagesUsage = "type: /sane ab pages on  or  /sane ab pages off",
+    -- This character's Action Bar 7 (FormBar.lua): its line in the spellbook's menu, and /sane ab formbar
+    formBarText = "Action Bar 7 follows this character's form",
+    formBarTip = "For this character alone: Action Bar 7 and its keys show another row of buttons in each form or stance, in a fight too. A druid's Prowl has a row of its own.",
+    formBarOn = "this character's Action Bar 7 follows its form.", formBarOff = "this character's Action Bar 7 stays as it is.",
+    formBarUsage = "type: /sane ab formbar on  or  /sane ab formbar off",
     -- The trainer's list, a spell added by hand (Sources.lua)
     trainerRead = "read your class trainer's list. Every spell now sits in its own spellbook tab.",
     noSpell = "there is no spell with the ID %s.", isPassive = "%s is passive: it cannot go on a button.",
@@ -334,7 +342,7 @@ function ns.SlotLabel(slot)
     if offset == ns.SECOND_PAGE then return TEXT.formSlot:format(ns.PageName(offset), slot - offset) end
     for page = 2, #ns.PAGES do
         if ns.PAGES[page] == offset then
-            return TEXT.formSlot:format(ns.PageName(offset), slot - offset)
+            return (ns.FormBar.Held() and TEXT.formBarSlot or TEXT.formSlot):format(ns.PageName(offset), slot - offset)
         end
     end
     return TEXT.actionSlot:format(slot)
@@ -352,7 +360,7 @@ end
 local function LearnPageName()
     if not (GetShapeshiftForm and GetShapeshiftFormInfo) then return end
     local form = ns.Plain(GetShapeshiftForm())
-    local offset = ns.Bar1Offset()
+    local offset = ns.FormBar.Row() or ns.Bar1Offset()
     if not form or form < 1 or offset < ns.PAGES[2] then return end
     local _, _, _, spellID = GetShapeshiftFormInfo(form)
     spellID = ns.Plain(spellID)
@@ -440,6 +448,7 @@ function ns.OnLogin()
     -- The trainer data meant for your class, faction and race (Data/Trainer.lua).
     ns.Safe("trainer data", ns.Data.Fill)
     ns.Bar1.Apply()
+    ns.FormBar.Apply()
     ns.Spacing.Apply()
 
     local function scan() ns.QueueUpdate(true) end
@@ -501,7 +510,7 @@ end)
 
 -- An error that no step caught stands the module down (Core's StandDown): the spellbook's pages
 -- and its window go back to the game, the reservations' marks leave the bars, the class trainer's
--- filter is put back, Bar 1 follows the game again and the buttons go back to their places on the bars. The
+-- filter is put back, Bars 1 and 7 follow the game again and the buttons go back to their places on the bars. The
 -- reservations stay saved for the next session.
 -- Each step on its own, the quick ones first, so one that fails keeps none of the others.
 ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
@@ -511,6 +520,7 @@ function ns.GiveBack()
     if ns.Sources then ns.Safe("giving back", ns.Sources.TrainerClosed) end
     if ns.Book then ns.Safe("giving back", ns.Book.StandDown, TEXT.why.problem) end
     if ns.Bar1 then ns.Safe("giving back", ns.Bar1.Apply) end
+    if ns.FormBar then ns.Safe("giving back", ns.FormBar.Apply) end
     if ns.Spacing then ns.Safe("giving back", ns.Spacing.Apply) end
 end
 
@@ -603,6 +613,11 @@ local commands = {
         else
             ns.Print((select(2, ns.Sources.AddExtra(id))))
         end
+    end,
+    formbar = function(rest)
+        if rest ~= "on" and rest ~= "off" then return ns.Print(TEXT.formBarUsage) end
+        ns.FormBar.Set(rest == "on")
+        ns.Print(rest == "on" and TEXT.formBarOn or TEXT.formBarOff)
     end,
     window = function(rest)
         if rest == "reset" then

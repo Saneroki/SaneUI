@@ -180,7 +180,7 @@ D.Class("MAGE", function()
     }
 end)
 
-for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1", "Spacing",
+for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1", "FormBar", "Spacing",
                         "Book/Layout", "Book/Item", "Book/Drag", "Book/Book", "Book/Home", "Book/Window", "Book/Menu" }) do
     load(file)
 end
@@ -1919,6 +1919,95 @@ do
     Core.Set(ns.name, "holdPage", true)
     check(ns.Bar1.Unseen(73) and ns.Bar1.Unseen(120) and not ns.Bar1.Unseen(72) and not ns.Bar1.Unseen(121), "the four rows of the forms are out of sight")
     Form(0)
+
+    -- One character's Bar 7 can follow its form (FormBar.lua).
+    local seven, barSeven = W.NewWidget("Frame", "MultiBar6"), {}
+    Attributes(seven)
+    seven.attributes.actionpage = 14
+    local function Slot7(button)
+        return button.id + ((button:GetAttribute("actionpage") or seven:GetAttribute("actionpage")) - 1) * 12
+    end
+    local function Shown(number, condition)
+        holds["bonusbar:" .. number] = condition
+        Drive()
+    end
+    ns.FormBar.Set(true)
+    check(ns.FormBar.On() and not ns.FormBar.Held(), "without the game's twelve buttons the bar stays the game's")
+    ns.FormBar.Set(false)
+    for index = 1, 12 do
+        local button = W.NewWidget("CheckButton", "MultiBar6Button" .. index, seven)
+        Attributes(button)
+        button.id = index
+        button:SetScript("OnAttributeChanged", function(self) self.action = Slot7(self) end)
+        button.action = Slot7(button)
+        _G["MultiBar6Button" .. index], barSeven[index] = button, button
+    end
+    check(barSeven[1].action == 157 and barSeven[12].action == 168, "(Bar 7 on its own slots)")
+    check(not ns.FormBar.On() and not ns.FormBar.Held() and ns.char.formBar == nil, "off by itself")
+    Shown(1, true)
+    check(barSeven[1].action == 157, "and off, no form changes the bar")
+    Shown(1, nil)
+
+    W.combat = true
+    ns.FormBar.Set(true)
+    check(ns.char.formBar == true and not ns.FormBar.Held(), "in a fight the switch waits")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(ns.FormBar.Held(), "and then does as it says")
+    check(barSeven[1].action == 157 and ns.FormBar.Row() == nil, "out of a form the bar's own slots")
+    check(not ns.Bar1.Unseen(73), "a form's row is seen now")
+    for number, row in pairs({ [1] = 73, [2] = 85, [3] = 97, [4] = 109 }) do
+        Shown(number, true)
+        check(barSeven[1].action == row and barSeven[12].action == row + 11 and ns.FormBar.Row() == row - 1, "each form has its row")
+        check(barOne[1].action == 1, "and Bar 1 keeps its page")
+        Shown(number, nil)
+        check(barSeven[1].action == 157, "and back on the bar's own")
+    end
+    W.combat = true
+    Shown(3, true)
+    check(barSeven[1].action == 97, "also in a fight")
+    Shown(3, nil)
+    W.combat = false
+    ns.DB.pageNames.MAGE = { [72] = "Cat Form" }
+    check(ns.SlotLabel(73) == "Bar 7 (Cat Form), button 1", "a form's row is named as Bar 7's")
+    ns.DB.pageNames.MAGE = nil
+
+    -- Prowl, for a druid alone: another class's stealth is no form of its own.
+    local class = ns.class
+    ns.FormBar.Set(false)
+    check(not ns.FormBar.Held() and barSeven[1]:GetAttribute("actionpage") == nil and barSeven[1].action == 157, "off again, the bar is the game's")
+    check(ns.Bar1.Unseen(73), "and a form's row is unseen again")
+    ns.class = "DRUID"
+    ns.FormBar.Set(true)
+    Shown(1, true)
+    holds["bonusbar:1,stealth"] = true
+    Drive()
+    check(barSeven[1].action == 85, "Prowl has its row")
+    holds["bonusbar:1,stealth"] = nil
+    Drive()
+    check(barSeven[1].action == 73, "out of Prowl, Cat Form's")
+    Shown(1, nil)
+    ns.FormBar.Set(false)
+    ns.class = class
+
+    -- /sane ab formbar
+    sane("formbar on")
+    check(ns.FormBar.Held() and printedMatch("Action Bar 7 follows its form"), "by the command")
+    sane("formbar off")
+    check(not ns.FormBar.Held(), "and off")
+    sane("formbar")
+    check(printedMatch("/sane ab formbar on"), "the command's words")
+
+    -- A module stood down leaves the bar to the game; the switch stays.
+    ns.FormBar.Set(true)
+    ns.off = true
+    ns.FormBar.Apply()
+    check(not ns.FormBar.Held() and barSeven[1].action == 157 and ns.FormBar.On(), "standing down gives the bar back")
+    ns.off = nil
+    ns.FormBar.Apply()
+    check(ns.FormBar.Held(), "back with the module")
+    ns.FormBar.Set(false)
+    for index = 1, 12 do _G["MultiBar6Button" .. index] = nil end
 
     -- Every page is yours: page 2 in layouts and reservations, the bars that are off seen as pages
     check(ns.SlotLabel(13) == "Bar 1 (page 2), button 1" and ns.SlotLabel(24) == "Bar 1 (page 2), button 12", "page 2 has a name")

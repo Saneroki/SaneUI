@@ -94,6 +94,19 @@ local function BookLines(root)
     root:CreateDivider()
 end
 
+-- This character's own switch (FormBar.lua), so no switch of the options page.
+local FormBarOn = ns.Guard(function() return ns.FormBar.On() end)
+local FormBarFlip = ns.Guard(function() ns.FormBar.Set(not ns.FormBar.On()) end)
+local FormBarTip = ns.Guard(function(tooltip)
+    GameTooltip_SetTitle(tooltip, TEXT.formBarText)
+    GameTooltip_AddNormalLine(tooltip, TEXT.formBarTip)
+end)
+
+local function FormBarLine(root)
+    local box = root:CreateCheckbox(TEXT.formBarText, FormBarOn, FormBarFlip)
+    if box and box.SetTooltip then box:SetTooltip(FormBarTip) end
+end
+
 -- First the book, then the bars, as on the options page. The book's lines are Forever's: in Retail
 -- the spellbook's pages are the game's own (Abilities.lua, at the top), and the bars' lines follow the title.
 local function Extend(_, root)
@@ -106,6 +119,7 @@ local function Extend(_, root)
     Checkbox(root, "announce")
     if Core.FOREVER then Checkbox(root, "ranks") end
     Checkbox(root, "holdPage")
+    FormBarLine(root)
     Checkbox(root, "tightBars")
 
     Layouts(root)

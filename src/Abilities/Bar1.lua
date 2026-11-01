@@ -20,7 +20,7 @@ local _, ns = ...
 --
 --  All of it runs in the game's secure state driver, so it works in a fight.
 --  Bars 6 to 8 need nothing here: their slots are on none of Bar 1's pages and
---  no form changes them.
+--  no form changes them, unless a character lets Bar 7 follow its form (FormBar.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Bar1 = {}
@@ -50,31 +50,26 @@ Bar1.SNIPPET = [[
 local header       -- the driver's frame, made once and out of a fight
 local held = false -- the buttons hold their page now
 
--- The twelve buttons, or nil where the game has them no more: the bar then stays the game's.
-local function Buttons()
+-- A frame of the game's secure code that knows a bar's twelve buttons and runs snippet on each change of its state
+-- "page". Nil where the game has the buttons no more: the bar then stays the game's.
+function Bar1.Header(prefix, snippet)
     local buttons = {}
     for index = 1, ns.NUM_BUTTONS do
-        buttons[index] = rawget(_G, "ActionButton" .. index)
+        buttons[index] = rawget(_G, prefix .. index)
         if not buttons[index] then return nil end
     end
-    return buttons
-end
-
-local function Make(buttons)
-    header = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
-    for index, button in ipairs(buttons) do header:SetFrameRef("button" .. index, button) end
-    header:SetAttribute("_onstate-page", Bar1.SNIPPET)
+    local frame = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
+    for index, button in ipairs(buttons) do frame:SetFrameRef("button" .. index, button) end
+    frame:SetAttribute("_onstate-page", snippet)
+    return frame
 end
 
 local function Apply()
     local want = not ns.off and ns.options.holdPage and true or false
     if want == held then return end
     if want then
-        if not header then
-            local buttons = Buttons()
-            if not buttons then return end
-            Make(buttons)
-        end
+        header = header or Bar1.Header("ActionButton", Bar1.SNIPPET)
+        if not header then return end
         RegisterStateDriver(header, "page", Bar1.STATES)
     else
         UnregisterStateDriver(header, "page")
@@ -88,9 +83,9 @@ function Bar1.Apply()
     Core.AfterCombat("Abilities: Bar 1", Apply)
 end
 
--- Whether a slot is on a form's row while the bar keeps its page: that row never shows.
+-- Whether a slot is on a form's row while the bar keeps its page: that row never shows, unless Bar 7 shows it.
 function Bar1.Unseen(slot)
-    return held and slot > ns.PAGES[2] and slot <= ns.PAGES[#ns.PAGES] + ns.NUM_BUTTONS
+    return held and not ns.FormBar.Held() and slot > ns.PAGES[2] and slot <= ns.PAGES[#ns.PAGES] + ns.NUM_BUTTONS
 end
 
 -- For the test: whether the buttons hold their page now.

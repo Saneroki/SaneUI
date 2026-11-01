@@ -88,6 +88,12 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   on a bar that is off is named by its page: *Bar 1 (page 3), button 2*.
   The setup this is made for, from the bottom of the screen up: Bar 1 with its pages on Alt + 1 to =, Bar 8 on Ctrl,
   Bar 7 on Shift, and at the top Bar 6, the main bar, on the plain keys.
+- **Action Bar 7 can follow your form** (a switch of this character alone, off at first: the line *Action Bar 7 follows
+  this character's form* in the spellbook's menu, or `/sane ab formbar on`). The same keys then show another row of
+  buttons in each form or stance, in a fight too, while another character on the same profile keeps a fixed Bar 7. The
+  rows are the ones the game keeps for Bar 1's forms, free because Bar 1 keeps its page; a druid has one for Cat Form,
+  one for Prowl and one for Bear Form, out of a form the bar is itself. Drag to a button in the form, or reserve and save
+  them in a layout, as on any bar. A spell the game drops on a form's row stays there while this is on.
 - **Buttons that touch** (switch *Action bar buttons touch*, on). No space between the buttons of any action bar,
   the stance, pet and possess bars too, side by side or between the rows of a bar: the icons stand directly against
   each other, and the mouse has no gap to fall in. Edit Mode's *Icon Padding* stops at 2, so its slider does nothing
@@ -353,6 +359,7 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `Ghosts.lua` | Grey icons on the real bars, their clock and tooltip |
 | `Presets.lua` | Save and load bar layouts |
 | `Bar1.lua` | Action Bar 1 keeps the page you chose; its buttons and the keys of Bar 6 under the game's own bars |
+| `FormBar.lua` | One character's Action Bar 7 follows its form |
 | `Spacing.lua` | The buttons of every action bar touch |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
 | `Book/Item.lua` | One grey spellbook entry: look, the two marks, tooltip, link, menu |

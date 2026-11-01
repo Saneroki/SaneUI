@@ -36,6 +36,8 @@ Ghosts.lua
 Presets.lua
 # Action Bar 1 keeps the page you chose
 Bar1.lua
+# One character's Action Bar 7 follows its form
+FormBar.lua
 # The buttons of every action bar touch
 Spacing.lua
 

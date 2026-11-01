@@ -17,6 +17,7 @@ learn form-page names → `Engine.Reconcile` → module `REFRESH`.
 | `Presets.lua` | Class-shared saved bar layouts; save/load/delete ask in the game's dialogs (`Core.AskText`, `Core.Confirm`) |
 | `Ghosts.lua` | Noninteractive grey overlays on real empty action buttons |
 | `Bar1.lua` | Action Bar 1 keeps its page: a state driver writes `actionpage` to its twelve buttons, `game` under the game's own bars (then the keys of Bar 6 go to `ACTIONBUTTONn`); switch `holdPage`, both games |
+| `FormBar.lua` | One character's Action Bar 7 follows its form: `ns.char.formBar`, a state driver writes the form's page (7 to 10) to its twelve buttons' `actionpage`, none out of a form; the rows are free while Bar 1 holds its page (`Bar1.Unseen`); a druid's Prowl by `[bonusbar:1,stealth]` |
 | `Spacing.lua` | The buttons of all eleven bars touch: each leaves the `CENTER` of its `button.container` towards its line's middle; the game's grid and `minButtonPadding` stay untouched; switch `tightBars`, both games |
 
 Entry shape: `{kind = "spell"|"item"|"macro", id, name, icon}`. Future spells add `sub/rank/level/cost`,
