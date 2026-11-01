@@ -376,15 +376,17 @@ function Core.Guard(label, fn)
     end
 end
 
--- Core.Later(fn, delay) returns a function that asks for fn to run once, delay seconds later
+-- Core.Later(fn, delay, label) returns a function that asks for fn to run once, delay seconds later
 -- (0 or none: the next frame). Asking again before then changes nothing. For events that come in
--- bursts, and for work that must wait until the game has finished its own.
-function Core.Later(fn, delay)
+-- bursts, and for work that must wait until the game has finished its own. An error in fn comes in by
+-- the door "later", or by label where one is given (as Core.Guard's): Core's own told once under it.
+function Core.Later(fn, delay, label)
     local asked = false
+    label = label or "later"
     local function Run()
         asked = false
         local ok, problem = xpcall(fn, Trace)
-        if not ok then Failed(nil, "later", problem) end
+        if not ok then Failed(nil, label, problem) end
     end
     return function()
         if asked then return end

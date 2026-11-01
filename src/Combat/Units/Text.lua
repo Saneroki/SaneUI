@@ -16,7 +16,8 @@ local _, ns = ...
 --  its middle; and in your pet's power under that, the power again.
 --
 --  The health's room is as wide as the most it can show ("1.32m | 100%"), so
---  the name's does not change as health goes; while the game hides the most
+--  the name's does not change as health goes, measured once for that most (the
+--  words every frame may show, once for all); while the game hides the most
 --  health (a creature's, in a fight), as wide as the last plain one, or a guess.
 --  A group's frame shows how much is left alone ("85%": face.compact), and
 --  nothing where it is too narrow for even that (face.bare), so the name has
@@ -96,11 +97,12 @@ end
 local function Drawn(text)
     local measure = text.GetUnboundedStringWidth or text.GetStringWidth
     local width = Plain(measure(text))
-    if type(width) ~= "number" or width ~= width or width < 0 or width > Text.WIDEST then return nil end
+    if type(width) ~= "number" or width ~= width or width <= 0 or width > Text.WIDEST then return nil end
     return width
 end
 
--- A font string of ours that only measures plain texts: never seen, on a frame of its own that is always shown.
+-- A font string of ours that only measures plain texts: never seen, on a frame of its own that is always shown. The
+-- width, and whether it was measured (a guess by the letters while the game cannot measure).
 local ruler
 function Text.Width(plain)
     if not ruler then
@@ -112,8 +114,20 @@ function Text.Width(plain)
         ruler:SetPoint("LEFT", holder, "LEFT")
     end
     ruler:SetText(plain)
-    local width = Drawn(ruler) or #plain * Text.SIZE * Text.GUESS
-    return math.ceil(width) + Text.SLACK
+    local width = Drawn(ruler)
+    if width then return math.ceil(width) + Text.SLACK, true end
+    return math.ceil(#plain * Text.SIZE * Text.GUESS) + Text.SLACK, false
+end
+
+-- The words every frame may show ("100%", Dead, Offline, the sample), each measured once the game can measure it.
+local fixed = {}
+local function Fixed(plain)
+    local width = fixed[plain]
+    if width then return width end
+    local measured
+    width, measured = Text.Width(plain)
+    if measured then fixed[plain] = width end
+    return width
 end
 
 -- The line itself: the level, the raid marker, the name and the health, on a frame over the health bar; inset from the
@@ -264,10 +278,17 @@ local function Hidden(text, compact, now, share, ...)
     end
 end
 
--- The widest the health can be written with that most, on this face.
-local function Widest(face, most)
+-- The health's room on this face: the widest it can be written with that most ("1.32m | 100%"), measured again only
+-- for another most (what was guessed is not kept), or "100%" where compact; while the most is hidden (nil), as wide as
+-- the last plain one, or the sample; nothing on a bare face.
+local function Room(face, most)
     if face.bare then return 0 end
-    return Text.Width(face.compact and "100%" or Text.Short(most) .. " | 100%")
+    if face.compact then return Fixed("100%") end
+    if type(most) == "number" and face.valueMost ~= most then
+        local width, measured = Text.Width(Text.Short(most) .. " | 100%")
+        face.valueRoom, face.valueMost = width, measured and most or nil
+    end
+    return face.valueRoom or Fixed(Text.SAMPLE)
 end
 
 -- Plain health in its words.
@@ -296,11 +317,10 @@ function Text.Health(face, unit)
     end
     local now, most = Raw(UnitHealth, unit), Raw(UnitHealthMax, unit)
     local plainNow, plainMost = Plain(now), Plain(most)
-    if type(plainMost) == "number" then face.valueRoom = Widest(face, plainMost) end
-    local room = face.bare and 0 or face.valueRoom or Text.Width(face.compact and "100%" or Text.SAMPLE)
+    local room = Room(face, plainMost)
     if word then
         text:SetText(word)
-        room = math.max(room, Text.Width(word))
+        room = math.max(room, Fixed(word))
     elseif face.bare or type(now) == "nil" or type(most) == "nil" then
         text:SetText("")
     elseif type(plainNow) == "number" and type(plainMost) == "number" then
@@ -314,8 +334,8 @@ end
 -- Made-up health in the same words (a sample): now of most, or a word instead.
 function Text.Sample(face, now, most, word)
     if face.noHealth then return Unwritten(face) end
-    local room = Widest(face, most)
-    if word then room = math.max(room, Text.Width(word)) end
+    local room = Room(face, most)
+    if word then room = math.max(room, Fixed(word)) end
     face.value:SetText(word or Written(face, now, most))
     Side(face, "right", face.inset + room)
 end

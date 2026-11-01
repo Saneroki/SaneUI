@@ -34,22 +34,67 @@ local function Guild() return Core.Data.Guild end
 -------------------------------------------------------------------------------
 --  What the table shows (no frames: tested)
 -------------------------------------------------------------------------------
+-- The words of a member the search looks in (its name, note, officer's note, zone and rank), in small letters: made
+-- once a member and kept while the roster is the same (Guild.Stamp), as every filling searches every member.
+local words = setmetatable({}, { __mode = "k" }) -- [member] = its words
+local wordsOf                                      -- the roster's stamp the words are of
+
+local function Words(member)
+    local stamp = Guild().Stamp()
+    if stamp ~= wordsOf then
+        wipe(words)
+        wordsOf = stamp
+    end
+    local found = words[member]
+    if not found then
+        found = table.concat({ member.name or "", member.note or "", member.officerNote or "", member.zone or "",
+                               member.rank or "" }, "\n"):lower()
+        words[member] = found
+    end
+    return found
+end
+
 -- Whether a member has every word of the search in its name, note, officer's note, zone or rank.
 function Roster.Matches(member, text)
     if not text or text == "" then return true end
-    local hay = table.concat({ member.name or "", member.note or "", member.officerNote or "", member.zone or "",
-                               member.rank or "" }, "\n"):lower()
+    local hay = Words(member)
     for word in text:lower():gmatch("%S+") do
         if not hay:find(word, 1, true) then return false end
     end
     return true
 end
 
-local function Less(a, b, key, down)
-    local x, y = a[key], b[key]
-    if key == "away" then x, y = a.online and -1 or (a.away or 9999), b.online and -1 or (b.away or 9999) end
-    if type(x) == "string" or type(y) == "string" then x, y = tostring(x or ""):lower(), tostring(y or ""):lower() end
-    x, y = x or 0, y or 0
+-- A member's value under a sort key: under Last Online how long ago (online: before everyone), words in small
+-- letters.
+local function Value(member, key)
+    if key == "away" then return member.online and -1 or (member.away or 9999) end
+    local value = member[key]
+    if type(value) == "string" then return value:lower() end
+    return value
+end
+
+-- Each member's value under the key, made once before the sort (the sort compares a member many times): when any is
+-- words, all are (a number as written, none as ""), else numbers (none as 0).
+local function Keys(part, key)
+    local keys, text = {}, false
+    for _, member in ipairs(part) do
+        local value = Value(member, key)
+        keys[member] = value
+        if type(value) == "string" then text = true end
+    end
+    for _, member in ipairs(part) do
+        local value = keys[member]
+        if text then
+            keys[member] = type(value) == "string" and value or tostring(value or ""):lower()
+        else
+            keys[member] = value or 0
+        end
+    end
+    return keys
+end
+
+local function Less(a, b, keys, down)
+    local x, y = keys[a], keys[b]
     if x == y then return (a.name or "") < (b.name or "") end
     if down then return x > y end
     return x < y
@@ -65,8 +110,12 @@ function Roster.Rows(members, text, key, down, folds)
         end
     end
     local function Sort(part)
+        if key then
+            local keys = Keys(part, key)
+            table.sort(part, function(a, b) return Less(a, b, keys, down) end)
+            return
+        end
         table.sort(part, function(a, b)
-            if key then return Less(a, b, key, down) end
             if a.rankIndex ~= b.rankIndex then return (a.rankIndex or 0) < (b.rankIndex or 0) end
             return (a.name or "") < (b.name or "")
         end)
@@ -344,6 +393,73 @@ local function BuildDetail(parent)
 end
 
 -------------------------------------------------------------------------------
+--  The game's guild window
+-------------------------------------------------------------------------------
+--  The head's button opens the game's own guild window by the game's own micro menu button: a secure button of
+--  ours (SecureActionButtonTemplate, type click) clicks it, so the game's panel manager runs the game's own path,
+--  nothing of ours (Doc/guides/addon-standards.md, The game's panels; Doc/guides/windows.md, Combat). It lies over
+--  the head's own button, on UIParent in the layer above the head's: a protected child would make our window
+--  protected and locked in a fight, and the window comes to the front of its layer when clicked. Anchored, shown
+--  and hidden out of a fight only: as a fight begins (the game says so before it locks) it goes, unanchored, so
+--  nothing of ours is tied to it then, and the head's own button stands in (its click says so); once the fight is
+--  over it is back over the head's button. Where the game has no micro menu button, the head's button opens the
+--  game's window itself.
+local STRATA = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP" }
+local game -- the secure button, once made
+
+-- The layer above that one (the last stays the last); nil for one the game does not have.
+local function Above(strata)
+    for index, name in ipairs(STRATA) do
+        if name == strata then return STRATA[math.min(index + 1, #STRATA)] end
+    end
+    return nil
+end
+
+-- Made once, out of a fight; nil without the game's micro menu button, or in a fight (then made at the next seat).
+local function GameButton()
+    if game then return game end
+    local micro = rawget(_G, "GuildMicroButton")
+    if type(micro) ~= "table" or not micro.Click or InCombatLockdown() then return nil end
+    game = CreateFrame("Button", nil, UIParent, "UIPanelButtonTemplate, SecureActionButtonTemplate")
+    game:SetText(TEXT.gameWindow)
+    game:RegisterForClicks("AnyUp")
+    game:SetAttribute("useOnKeyDown", false) -- on the release, as it is registered, whatever the game's key-down setting says
+    game:SetAttribute("type", "click")
+    game:SetAttribute("clickbutton", micro)
+    game:Hide()
+    return game
+end
+
+-- Over the head's button while the head shows, out of a fight; else away.
+local function Seat()
+    local button = GameButton()
+    if not button or InCombatLockdown() then return end
+    button:ClearAllPoints()
+    if not (head and head:IsVisible()) then return button:Hide() end
+    local strata = Above(head:GetFrameStrata())
+    if strata then button:SetFrameStrata(strata) end
+    button:SetAllPoints(head.game)
+    button:Show()
+end
+local seat = ns.Guard(Seat)
+
+-- A fight begins: the secure button goes before the game locks it; the head's own stands in meanwhile.
+local function FightBegins()
+    if not game or InCombatLockdown() then return end
+    game:Hide()
+    game:ClearAllPoints()
+end
+ns.On("PLAYER_REGEN_DISABLED", function() ns.Safe("game window", FightBegins) end)
+ns.On("PLAYER_REGEN_ENABLED", function() ns.Safe("game window", Seat) end)
+
+-- The head's own button: in a fight it says so (the secure one is away then); where the game has no micro menu
+-- button, it opens the game's window itself.
+local function GameClicked()
+    if InCombatLockdown() then return ns.Say(TEXT.inFight) end
+    if not game and rawget(_G, "ToggleGuildFrame") then ToggleGuildFrame() end
+end
+
+-------------------------------------------------------------------------------
 --  The head
 -------------------------------------------------------------------------------
 local function Head()
@@ -384,10 +500,9 @@ local function BuildHead(parent)
     head.game:SetSize(170, Layout.BUTTON)
     head.game:SetPoint("RIGHT", -10, 0)
     head.game:SetText(TEXT.gameWindow)
-    head.game:SetScript("OnClick", ns.Guard(function()
-        if InCombatLockdown() then return ns.Say(TEXT.inFight) end
-        if rawget(_G, "ToggleGuildFrame") then ToggleGuildFrame() end
-    end))
+    head.game:SetScript("OnClick", ns.Guard(GameClicked))
+    head:HookScript("OnShow", seat) -- shown or hidden by an ancestor too: the secure button follows
+    head:HookScript("OnHide", seat)
     head.info = CreateFrame("Button", nil, head, "UIPanelButtonTemplate")
     head.info:SetSize(130, Layout.BUTTON)
     head.info:SetPoint("RIGHT", head.game, "LEFT", -4, 0)
@@ -472,6 +587,7 @@ end
 
 function Roster.Show(on)
     if on then Roster.Refresh() end
+    Seat()
 end
 
 function Roster.Refresh()

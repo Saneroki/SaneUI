@@ -392,9 +392,9 @@ end
 -- The game hid the tooltip and fills it again at once: it refreshes a comparison so, several times
 -- a second (TooltipComparisonManager: SetOwner hides it, ClearAllPoints, the lines, SetShown, and
 -- only then its points). Until the panel is drawn anew at the end of the frame, the old picture
--- holds the place it had when the tooltip was hidden, on nothing else: the tooltip has no place
--- yet (its corner would put the panel where the game's tooltip stands, not beside the other panel:
--- two places in turn), and a panel it hung on may soon hang on it.
+-- holds the place it had when the tooltip was hidden (Stood), on nothing else: the tooltip has no
+-- place yet (its corner would put the panel where the game's tooltip stands, not beside the other
+-- panel: two places in turn), and a panel it hung on may soon hang on it.
 function Host.Hold(tooltip, panel)
     Host.Blank(tooltip, panel)
     local x, y = panel.stoodX, panel.stoodY
@@ -409,12 +409,19 @@ function Host.Keep(tooltip)
     if Plain(tooltip:GetAlpha()) ~= 0 then tooltip:SetAlpha(0) end
 end
 
--- The panel goes, and the tooltip is the game's again, as it was. The panel lets go of what it
--- hung on, so it hangs on no other panel that may soon hang on it; where it stood is noted (Hold).
-function Host.Free(tooltip, panel)
+-- Where the panel stands now, noted for Hold: by Free, and when the game hides the tooltip
+-- (Tooltips.lua, Hidden; the panel stays until the end of the frame), since the game may clear the
+-- tooltip's points before it fills it again, and a panel hanging on it has no place to read then.
+function Host.Stood(panel)
     local shown = panel:IsShown()
     panel.stoodX = shown and Plain(panel:GetLeft()) or nil
     panel.stoodY = shown and Plain(panel:GetTop()) or nil
+end
+
+-- The panel goes, and the tooltip is the game's again, as it was. The panel lets go of what it
+-- hung on, so it hangs on no other panel that may soon hang on it; where it stood is noted (Hold).
+function Host.Free(tooltip, panel)
+    Host.Stood(panel)
     panel:Hide()
     panel:ClearAllPoints()
     panel.corner, panel.pinPoint = nil, nil

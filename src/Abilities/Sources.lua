@@ -128,11 +128,13 @@ end
 
 -- The rows read at an earlier visit, by name and rank, so they are not read again: asking the
 -- game which spell a row teaches costs a tooltip each, and the window is read at every update.
+-- A row kept without its spell ID (the game had not loaded the spell's name when it was read) is
+-- not among them: it is read again until the game names its spell.
 local function Kept(spells)
     if not kept then
         kept = {}
         for _, spell in pairs(spells) do
-            if type(spell) == "table" and type(spell.name) == "string" then
+            if type(spell) == "table" and type(spell.name) == "string" and type(spell.id) == "number" then
                 kept[spell.name .. "#" .. tostring(spell.sub or "")] = true
             end
         end
@@ -172,13 +174,17 @@ local function ReadTrainer()
         local sub = type(row.sub) == "string" and row.sub ~= "" and row.sub or nil
         local key = row.name .. "#" .. (sub or "")
         if not done[key] then
-            done[key] = true
             local id = ServiceSpell(row.index, row.name)
-            local cost = GetTrainerServiceCost and ns.Plain((GetTrainerServiceCost(row.index))) or nil
-            store.spells[id or key] = { name = row.name, sub = sub, icon = row.icon, id = id,
-                                        level = type(row.level) == "number" and row.level or 0,
-                                        cost = type(cost) == "number" and cost or nil }
-            changed = true
+            -- Without its ID the row is kept by name and rank, and asked again at the next read (Kept).
+            if id then done[key] = true end
+            if id or type(store.spells[key]) ~= "table" then
+                local cost = GetTrainerServiceCost and ns.Plain((GetTrainerServiceCost(row.index))) or nil
+                store.spells[key] = nil -- kept by its ID from now on
+                store.spells[id or key] = { name = row.name, sub = sub, icon = row.icon, id = id,
+                                            level = type(row.level) == "number" and row.level or 0,
+                                            cost = type(cost) == "number" and cost or nil }
+                changed = true
+            end
         end
     end
     if changed then

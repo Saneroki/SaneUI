@@ -103,8 +103,8 @@ end
 
 -- What a read kept, in words: how many, their names, the lines that could not be read (the first four).
 local function Said(names, problems)
-    if #names == 0 then return ns.TEXT.noneRead end
-    local said = ns.TEXT.read:format(#names, table.concat(names, ", "))
+    if #names == 0 and #problems == 0 then return ns.TEXT.noneRead end
+    local said = #names > 0 and ns.TEXT.read:format(#names, table.concat(names, ", ")) or ns.TEXT.noneRead
     if #problems > 0 then
         said = said .. "\n" .. ns.TEXT.unread:format(#problems) .. "\n"
             .. table.concat(problems, "\n", 1, math.min(#problems, 4))

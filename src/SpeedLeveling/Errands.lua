@@ -14,6 +14,8 @@ local _, ns = ...
 --                     (Core.Upgrade; the game's own flag of a new item, so what
 --                     you took off yourself stays off) is put on, one at a time
 --                     so that the next is measured against it, out of a fight.
+--                     The game's question on a piece that binds when put on is
+--                     answered; one that ends a trade or a refund is yours.
 --    Skip cinematics  the game's cinematics and movies stopped as they start, a
 --                     frame later when the game has them going, as Esc does.
 --                     One the game does not let you leave plays on.
@@ -56,11 +58,17 @@ function Errands.Update()
 end
 
 -------------------------------------------------------------------------------
---  The game's question on a thing that binds when picked up
+--  The game's questions on binding
 -------------------------------------------------------------------------------
--- Answered as its own Yes would.
+-- Each answered as its own Yes would, while the switch it belongs to is on: on a thing that binds when picked up (Take
+-- all loot), and on a piece that binds when put on (Equip upgrades: the game asks before it puts on what PutOn asked
+-- for, so without the answer the question would stay up and the chat's "Equipped" be wrong). One that ends a trade or
+-- a refund stays yours.
+local QUESTIONS = { LOOT_BIND = "lootAll", EQUIP_BIND = "equipUpgrades" }
+
 local function Answer(which)
-    if which ~= "LOOT_BIND" or ns.off or not ns.options.lootAll then return end
+    local switch = QUESTIONS[which]
+    if not switch or ns.off or not ns.options[switch] then return end
     local dialogs, find = rawget(_G, "StaticPopupDialogs"), rawget(_G, "StaticPopup_FindVisible")
     local info = type(dialogs) == "table" and dialogs[which]
     local dialog = info and find and Core.Ask(find, which)
@@ -72,11 +80,19 @@ end
 -------------------------------------------------------------------------------
 --  Equip upgrades
 -------------------------------------------------------------------------------
+-- The bags carried: the backpack and the bags, and the reagent bag where the game has one (Retail; Forever has none).
+local function BagCount()
+    local constants = rawget(_G, "Constants")
+    constants = type(constants) == "table" and constants.InventoryConstants or nil
+    local bags = constants and constants.NumBagSlots or rawget(_G, "NUM_BAG_SLOTS") or 4
+    return bags + (constants and constants.NumReagentBagSlots or 0)
+end
+
 -- The first new item in your bags that is an upgrade, and the place it goes.
 local function NewUpgrade()
     local bags, new = rawget(_G, "C_Container"), rawget(_G, "C_NewItems")
     if not (bags and new) then return nil end
-    for bag = 0, rawget(_G, "NUM_BAG_SLOTS") or 4 do
+    for bag = 0, BagCount() do
         for slot = 1, Core.Ask(bags.GetContainerNumSlots, bag) or 0 do
             if Core.Ask(new.IsNewItem, bag, slot) then
                 local link = Core.Ask(bags.GetContainerItemLink, bag, slot)

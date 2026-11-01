@@ -35,18 +35,26 @@ SIDE = {HUMAN: "alliance", DWARF: "alliance", NIGHTELF: "alliance", GNOME: "alli
 
 
 def lines(name):
-    """The first version of each entry of a set's master file, with the fixes laid over it."""
+    """Each entry of a set's master file as it is now: every version laid over the first (a null clears the field,
+    as in the master), then the fixes."""
     folder = os.path.join(DATA, name)
     entries = {}
+
+    def lay(record):
+        entry = entries.setdefault(record["key"], {})
+        for field, value in record.items():
+            if value is None:
+                entry.pop(field, None)
+            else:
+                entry[field] = value
+
     for line in open(os.path.join(folder, name + ".jsonl"), encoding="utf-8"):
-        record = json.loads(line)
-        entries.setdefault(record["key"], {}).update(record)
+        lay(json.loads(line))
     fixes = os.path.join(folder, "fixes.jsonl")
     if os.path.exists(fixes):
         for line in open(fixes, encoding="utf-8"):
             if line.strip():
-                record = json.loads(line)
-                entries.setdefault(record["key"], {}).update(record)
+                lay(json.loads(line))
     return entries
 
 

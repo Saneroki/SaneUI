@@ -21,7 +21,9 @@ local _, ns = ...
 --  and the player's word on an item (the A) decide. The game's own Auto Loot
 --  is lent off meanwhile (Game.lua); held Shift (its key) still takes
 --  everything, and the window then shows only what is left a moment later
---  (bags full, a thing locked to a roll).
+--  (bags full, a thing locked to a roll). A thing the rules asked for that the
+--  game does not clear (the player said No to its question about one that
+--  binds, the bags are full, a unique thing) is a line again a moment later.
 --
 --  A click on a line takes the thing (LootSlot, as the game's window does: the
 --  game asks itself for one that binds when picked up); a master looter's click
@@ -50,6 +52,7 @@ ns.Window = Window
 local OFF_WHITE = { 238 / 255, 229 / 255, 208 / 255 } -- the buttons' words; gold under the mouse
 local CHAT_SHOWN, CHAT_BYTES = 250, 1270 -- what the game's chat box holds: 255 letters on show, 1280 bytes with links
 local STEP = S.row + S.rowGap
+local LOOSEN = 1 -- seconds the game gets to clear a thing the rules asked for (from that ask); then its line shows again
 
 local panel, scroll, sheet, linkButton, closeButton, placed, driver
 local rows = {}
@@ -65,14 +68,16 @@ local full, view = 0, 0  -- the lines' height, and how much of it shows
 local at              -- at the mouse: the window's top left { x, y } from the screen's bottom left
 local snap            -- the thing the player took: { slot, index, scroll }; the next comes to its place
 local hover           -- the line under the mouse
+local loosen          -- a moment after the rules asked: what the game did not clear shows again (below)
 
 -------------------------------------------------------------------------------
 --  Taking: the rules' things as fast as the game lets them go, a few a frame
 -------------------------------------------------------------------------------
 local function Loot(slot)
     if asked[slot] then return end
-    asked[slot] = true
+    asked[slot] = GetTime()
     LootSlot(slot)
+    loosen()
 end
 
 -- A few of the waiting slots now; the driver takes the rest in the frames after.
@@ -386,7 +391,10 @@ local function Read(auto)
     end
     for _, line in ipairs(lines) do
         if asked[line.slot] then
-            taking[line.slot] = true
+            if taking[line.slot] then -- still being taken (not released by a refusal): hidden until the game clears it
+                taking[line.slot] = true
+                loosen()
+            end
         elseif ns.Slots.Wanted(line, ns.options) and not ns.Master.Gives(line) then
             Queue(line.slot)
         end
@@ -499,12 +507,47 @@ local function Cleared(slot)
     if took and panel and panel:IsShown() then Under(took) end
 end
 
--- A thing the rules took could not be taken (the bags are full): its line shows again.
+-- The things the rules asked for LOOSEN seconds ago (all of them: the game said no) that the game has not cleared:
+-- their lines show again. True when there were any; a second answer says whether younger asks still wait their moment.
+local function Release(all)
+    local any, younger, now = false, false, GetTime()
+    for slot in pairs(taking) do
+        local at = asked[slot]
+        if at then
+            if all or now - at >= LOOSEN - 0.05 then
+                taking[slot] = nil
+                any = true
+            else
+                younger = true
+            end
+        end
+    end
+    return any, younger
+end
+
+-- A moment after the rules asked, what the game did not clear is a line again: the player said No to the game's
+-- question about a thing that binds when picked up, or the game refused one without a word to us (nothing follows
+-- then: no LOOT_SLOT_CLEARED, no error).
+local function Loosen()
+    if not open then return end
+    local any, younger = Release()
+    if any then Window.Fill() end
+    if younger then loosen() end -- the asks of the last moment get their own second
+end
+loosen = Core.Later(function() ns.Guarded(Loosen) end, LOOSEN)
+
+-- The game refused a thing the rules asked for and said why (the bags are full, a unique thing, one the bags hold
+-- the most of): its line shows again at once. With the bags full the rest waits in the window too: nothing more
+-- would go in.
 local function Refused(_, message)
-    if not open or message ~= rawget(_G, "ERR_INV_FULL") then return end
-    wipe(taking)
-    wipe(queue)
-    if driver then driver:Hide() end
+    if not open then return end
+    if message == rawget(_G, "ERR_INV_FULL") then
+        wipe(taking)
+        wipe(queue)
+        if driver then driver:Hide() end
+    else
+        Release(true)
+    end
     Window.Fill()
 end
 

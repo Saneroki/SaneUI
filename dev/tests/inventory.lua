@@ -20,6 +20,8 @@ local function near(a, b) return math.abs(a - b) < 1e-6 end
 --  What the module needs of the client (as dev/tests/combat.lua)
 -------------------------------------------------------------------------------
 local methods = W.methods
+-- The game's dropdown says whether its menu is open (DropdownButtonMixin:IsMenuOpen): here a test opens it by _open.
+function methods:IsMenuOpen() return self._open == true end
 UIParent._width, UIParent._height = 1920, 1080
 function methods:GetLeft() return self._left end
 function methods:GetBottom() return self._bottom end
@@ -41,10 +43,7 @@ function methods:EnableMouseWheel(on) self._wheel = on end
 function methods:IsMouseWheelEnabled() return self._wheel or false end
 function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
-function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
-function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 function methods:RegisterForClicks(...) self._clicks = { ... } end
-function methods:IsProtected() return self._protected or false end
 -- An animation: the test moves its clock (as dev/tests/window.lua does).
 local function noop() end
 function methods:CreateAnimationGroup()
@@ -117,12 +116,6 @@ PLAYER_LEVEL_NO_SPEC = "Level %s |c%s%s|r"
 DressUpTexturePath = function(race) return "bg-" .. race end
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
 function methods:SetClipsChildren(on) self._clips = on end
-C_Timer.NewTimer = function(delay, fn)
-    local timer = {}
-    function timer:Cancel() self.cancelled = true end
-    C_Timer.After(delay, function() if not timer.cancelled then fn(timer) end end)
-    return timer
-end
 -- The game's model scene that takes the mouse: its orbit camera (scene 595's: looking level at 1.02 from 3.9), turned
 -- by the left button's drag and zoomed by the wheel; its field of view; its projection (the test's own focal length,
 -- FOCAL points at a distance of one, drawn in pixels from its bottom left at PIXELS a point, or as shares of its size,
@@ -271,8 +264,11 @@ GetBindingKey = function(action)
     if action == "TOGGLEBACKPACK" then return "B" end
     if action == "OPENALLBAGS" then return "SHIFT-B" end
 end
-ClearOverrideBindings = function(owner) W.overrides[owner] = nil end
+-- Protected in the game: refused in a fight.
+local function Fighting(name) if W.combat then error("ADDON_ACTION_BLOCKED: " .. name .. "() in combat", 3) end end
+ClearOverrideBindings = function(owner) Fighting("ClearOverrideBindings") W.overrides[owner] = nil end
 SetOverrideBinding = function(owner, _, key, command)
+    Fighting("SetOverrideBinding")
     W.overrides[owner] = W.overrides[owner] or {}
     W.overrides[owner][key] = command
 end
@@ -382,6 +378,16 @@ do
     C_SpecializationInfo, PLAYER_LEVEL = specs, nil
     W.Fire("PLAYER_LEVEL_UP")
     check(level._text:match("^Level 1 |cff%x+Mage|r$"), "back in WoW: Forever, without a specialization: as it was")
+end
+-- The weights go by the same name: a druid of the tree WoW: Forever names Feral Combat gets the feral line.
+do
+    local Weights, class, specs = ns.Weights, UnitClass, rawget(_G, "C_SpecializationInfo")
+    UnitClass = function() return "Druid", "DRUID", 11 end
+    C_SpecializationInfo = { GetSpecialization = function() return 2 end, GetSpecializationInfo = function() return 0, "Feral Combat" end }
+    W.Fire("PLAYER_TALENT_UPDATE") -- the character's weights are asked for anew
+    check(Weights.Now() == Weights.For("forever", "DRUID", "feral"), "a feral druid of WoW: Forever: the feral line, by the tree's name")
+    UnitClass, C_SpecializationInfo = class, specs
+    W.Fire("PLAYER_TALENT_UPDATE")
 end
 check(scenes == 1, "the game's scene for the character sheet is set up when shown")
 local scene
@@ -503,9 +509,22 @@ check(drawn[neck].texture == "amulet" and drawn[neck].quality == 4, "an item put
 worn[1].locked = true
 W.Fire("ITEM_LOCK_CHANGED", 1, nil)
 check(drawn[head].grey == true, "an equipped item locked (on the cursor): grey")
-worn[1].locked, worn[1].broken = false, true
-W.Fire("UPDATE_INVENTORY_DURABILITY")
-check(drawn[head].tint[1] == Slots.RED[1] and drawn[head].tint[2] == 0 and drawn[head].grey == false, "a broken item: red, as the game tints it")
+-- The inventory's events come in bursts: the slots are drawn once, on the next frame, however many came.
+do
+    local draws, texture = 0, SetItemButtonTexture
+    SetItemButtonTexture = function(...) draws = draws + 1; return texture(...) end
+    Slots.Update()
+    local once = draws
+    worn[1].locked, worn[1].broken, draws = false, true, 0
+    W.Fire("UPDATE_INVENTORY_DURABILITY")
+    W.Fire("UPDATE_INVENTORY_ALERTS")
+    W.Fire("UNIT_INVENTORY_CHANGED", "player")
+    check(draws == 0 and drawn[head].grey == true, "a burst of the inventory's events: nothing is drawn before the next frame")
+    W.Wait(0)
+    check(draws == once and drawn[head].tint[1] == Slots.RED[1] and drawn[head].tint[2] == 0 and drawn[head].grey == false,
+        "then the slots once: a broken item red, as the game tints it: " .. draws .. " of " .. once)
+    SetItemButtonTexture = texture
+end
 W.Fire("UNIT_MODEL_CHANGED", "player")
 check(scenes == 2, "the character's model changed: set up anew")
 UnitPVPName = function() return "Tester Stub, the Bold" end
@@ -652,6 +671,7 @@ Steps()
 -- The dropdown of the characters: its lines, one by a part of its name.
 local characters = Roster.menu
 local function Lines()
+    characters:GenerateMenu() -- as the game's dropdown makes its menu when it is opened
     local lines = {}
     for _, line in ipairs(characters._items) do
         if line.data then lines[#lines + 1] = line end
@@ -919,6 +939,17 @@ do
         "a character's class, level and realm of a wrong kind: left out of its line and its tooltip, nothing fails")
     Alts.Refresh(true)
 end
+-- Its menu is made anew only while it is open: the game's dropdown makes it afresh when it is opened.
+do
+    local generate, made = characters.GenerateMenu, 0
+    characters.GenerateMenu = function(self) made = made + 1; return generate(self) end
+    Alts.Refresh(true)
+    check(made == 0, "the window drawn anew while its menu is closed: the menu waits for its opening")
+    characters._open = true
+    Alts.Refresh(true)
+    characters._open, characters.GenerateMenu = nil, nil
+    check(made == 1, "its menu open: made anew with the window: " .. made)
+end
 
 -- What you wear, read by Core slot by slot (Core.Data.Worn): the game's paper doll, its slots as our sheet has
 -- them, as wide as the items' room, the weapons' row in the middle below.
@@ -1069,9 +1100,31 @@ check(not handle.edge.full, "pressed again: back to its size")
 Stand()
 check(BagsBar:GetParent() ~= UIParent and not BagsBar:IsVisible() and not MainMenuBarBackpackButton:IsVisible(),
     "the game's bag bar is gone: nothing of it to see or click")
--- The game's bags chosen in Classic windows: they show, until they are all closed.
-Keys.GameBags(true)
-OpenAllBags()
+-- Your bag key changed in a fight: the game refuses override bindings until it is over, so ours waits for its end
+-- (Core.AfterCombat), and the old key runs ours meanwhile.
+do
+    W.Combat(true)
+    local bindings = GetBindingKey
+    GetBindingKey = function(action) if action == "TOGGLEBACKPACK" then return "F" end end
+    W.Fire("UPDATE_BINDINGS")
+    local waited = Overrides().B == Keys.COMMAND and Overrides().F == nil and Core.Owed("Inventory: keys")
+    W.Combat(false)
+    check(waited and Overrides().F == Keys.COMMAND and Overrides().B == nil and not Core.Owed("Inventory: keys") and not ns.off,
+        "your bag key changed in a fight: ours waits for the fight's end, the old key runs ours meanwhile; over, the new key does")
+    GetBindingKey = bindings
+    W.Fire("UPDATE_BINDINGS")
+end
+-- The game's bags chosen in Classic windows: they show, until they are all closed. Opened by the game while they stand
+-- in our hidden frame (a vendor), they come into sight only once given back, and their OnShow runs then: the game runs
+-- it when a frame starts being seen, by its parent as by itself.
+do
+    local seen = 0
+    ContainerFrameCombinedBags:HookScript("OnShow", function() seen = seen + 1 end)
+    OpenAllBags()
+    local unseen = seen == 0 and ContainerFrameCombinedBags:IsShown() and not ContainerFrameCombinedBags:IsVisible()
+    Keys.GameBags(true)
+    check(unseen and seen == 1, "opened in our hidden frame (shown, unseen, its OnShow not run), then chosen: its OnShow ran as it came into sight")
+end
 check(ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrameCombinedBags:IsVisible(), "the game's bags chosen: they show")
 check(not BagsBar:IsVisible(), "its bag bar stays gone meanwhile")
 CloseAllBags()
@@ -1201,6 +1254,12 @@ do
     check(view._shown, "with its own time, the last one's end keeps away")
     W.Wait(LevelUp.FADE_OUT + 1.1)
     check(not view._shown, "till its own end")
+    -- A value the game keeps secret (the 12.x client): a level it hides is not told, a gain it hides is left out.
+    W.Fire("PLAYER_LEVEL_UP", W.Secret(), 18, 0, 0, 0, 0, 0, 0, 0, 0)
+    local quiet = not view._shown
+    W.Fire("PLAYER_LEVEL_UP", 25, W.Secret(), 20, 0, 0, 0, 0, 0, 0, 0)
+    check(quiet and Said() == "Level 25!/Mana |cff6fe06f+20|r/Leveled 0s" and not ns.off,
+        "a level the game keeps secret is not told, a gain it keeps secret is left out, the rest said (" .. Said() .. ")")
 
     local parent = game:GetParent()
     Toast(LEVEL)
@@ -1253,6 +1312,9 @@ do
     check(Weights.For("forever", "WARRIOR", "no such") == arms or Weights.For("forever", "WARRIOR", "no such").ITEM_MOD_STRENGTH_SHORT == 1,
         "a specialization without a line: its class's first")
     check(Weights.For("forever", "NOBODY", "arms") == nil, "a class without lines: none")
+    check(Weights.For("forever", "DRUID", "feral combat") == Weights.For("forever", "DRUID", "feral")
+        and Weights.For("forever", "DRUID", "feral").ITEM_MOD_AGILITY_SHORT == 1,
+        "a druid of the tree WoW: Forever names Feral Combat: the feral line, not its class's first")
 end
 
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

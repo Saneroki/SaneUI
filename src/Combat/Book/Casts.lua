@@ -144,7 +144,3 @@ end
 function Casts.Peace()
     fighting = false
 end
-
-function Casts.Fighting()
-    return fighting or InCombatLockdown()
-end

@@ -1,7 +1,7 @@
 -- Runs the Loot module against the stand-in client (wowstub.lua): the game's loot window and roll frames kept out
 -- of the way and given back, the open loot read into lines, what the rules take at once (and what never), the window
 -- with its lines (bars by quality, a quest's gold), clicks (take, link, the loot list), Link and Close as bare words,
--- the lines closing up under the mouse, a slot cleared and changed, the game's Auto Loot,
+-- the lines closing up under the mouse, a slot cleared and changed, the game's Auto Loot, a link the game hides,
 -- full bags (a thing the rules could not take shows again; the page that makes room, the cheapest first), the master
 -- looter's menu, the game's sentences read back, the roll cards (choices offered, a choice made, who chose what,
 -- the time line), the feed (merged lines, the group's by quality, money, what was taken at once, a big pile, a hidden
@@ -216,7 +216,8 @@ local ns = W.LoadAddon(root, "Loot", "SaneUI_Loot")
 W.Fire("ADDON_LOADED", "SaneUI_Loot")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Loot == ns and not ns.off, "the module is made and started")
-check(not LootFrame:IsEventRegistered("LOOT_OPENED"), "the game's loot window no longer hears that loot opened")
+check(not LootFrame:IsEventRegistered("LOOT_OPENED") and Core.Lent(LootFrame),
+    "the game's loot window no longer hears that loot opened: lent deaf through Core")
 check(LootFrame:IsEventRegistered("LOOT_CLOSED"), "what else it hears it still hears")
 check(GroupLootContainer:GetParent() ~= UIParent and not GroupLootContainer:GetParent():IsShown(),
     "the game's roll frames are held in a hidden frame")
@@ -524,6 +525,20 @@ check(Shown() and not Word(ns.TEXT.link):IsShown() and Word(ns.TEXT.close):IsSho
 Window.Close()
 options.takeQuest, options.takeCoins = true, true
 
+-- A link the game hides from addons (a secret value, which Core.Plain passes over): the thing stands by its name,
+-- with no A (no item to put on the list); a modified click links nothing and Link opens nothing; nothing stands down.
+loot = { Slot(ROBE, { link = W.Secret() }) }
+Open()
+check(Shown() and #Rows() == 1 and Rows()[1].name:GetText() == "Apprentice Robe" and Rows()[1].line.id == nil
+      and not Rows()[1].auto:IsShown(), "a hidden link: the thing by its name, no A")
+W.modifier = "CHATLINK"
+linked, opened = nil, nil
+Rows()[1]._scripts.OnClick(Rows()[1], "LeftButton")
+W.modifier = nil
+linkWord._scripts.OnClick(linkWord)
+check(linked == nil and opened == nil and not ns.off, "nothing to link: a modified click and Link link nothing, nothing stands down")
+Window.Close()
+
 -- the rules take everything: no window, the game closes the loot
 loot = { Coins(10), Slot(TUSK, { questItem = true }) }
 Open()
@@ -552,6 +567,53 @@ check(#Rows() == 1, "the quest item is being taken")
 W.Fire("UI_ERROR_MESSAGE", 3, ERR_INV_FULL)
 check(#Rows() == 2, "the bags were full: it shows after all")
 Window.Close()
+
+-- a thing that binds when picked up, taken by Everything: the game asks the player, who says No, and nothing follows;
+-- a moment later its line is back
+options.takeAll = true
+options.kept[6000] = false -- the robe never: the window stays open for it
+loot = { Slot(RING), Slot(ROBE) }
+Open()
+check(#taken == 1 and taken[1] == 1 and Shown() and #Rows() == 1 and Rows()[1].line.slot == 2,
+    "Everything: the bound ring is being taken, the robe waits in the window")
+W.Wait(1.1)
+check(#Rows() == 2 and Rows()[1].line.slot == 1, "nothing came of it: a moment later the ring's line is back")
+-- taken after all (the player said Yes): its line goes, and stays gone
+loot[1].gone = true
+W.Fire("LOOT_SLOT_CLEARED", 1)
+check(#Rows() == 1, "taken after all: its line goes")
+W.Wait(1.1)
+check(#Rows() == 1 and Shown(), "and stays gone")
+Window.Close()
+
+-- refused as soon as it was asked for, before the loot opened (the bags are full: the game says so at once): the
+-- window opens with its line
+loot = { Slot(RING), Slot(ROBE) }
+W.Fire("LOOT_CLOSED")
+taken = {}
+W.Fire("LOOT_READY", false)
+W.Fire("UI_ERROR_MESSAGE", 3, ERR_INV_FULL)
+W.Fire("LOOT_OPENED", false, false)
+check(Shown() and #Rows() == 2, "refused before the loot opened: the window opens with its line")
+Window.Close()
+
+-- refused with a word of the game's own (a unique thing): what was asked for shows again at once, and the rest is
+-- still asked for; not cleared either, those are lines again a moment later
+loot = { Slot(RING), Slot(ROBE) }
+for _ = 1, 5 do loot[#loot + 1] = Slot(CLOTH) end
+W.Fire("LOOT_CLOSED")
+taken = {}
+W.Fire("LOOT_READY", false)
+check(#taken == ns.SIZE.burst, "ready: the first few asked for")
+W.Fire("UI_ERROR_MESSAGE", 7, "You can only carry one of those.")
+W.Fire("LOOT_OPENED", false, false)
+check(Shown() and #Rows() == 1 + ns.SIZE.burst and #taken == 6,
+    "refused one: what was asked for shows again, the rest is asked for still")
+W.Wait(1.1)
+check(#Rows() == 7, "not cleared either: those are lines again a moment later")
+Window.Close()
+options.takeAll = false
+options.kept[6000] = nil
 
 -- as soon as the loot is ready, before it opens; a big pile a few slots a frame, nothing asked twice
 options.takeTrade = true
@@ -817,10 +879,7 @@ W.clock = W.clock + 10
 Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 0.1)
 
 -- A line the game hides from addons (a secret value) is passed over: nothing breaks, nothing stands down.
-local hidden = "You receive loot: " .. ROBE .. "."
-issecretvalue = function(value) return value == hidden end
-W.Fire("CHAT_MSG_LOOT", hidden)
-issecretvalue = nil
+W.Fire("CHAT_MSG_LOOT", W.Secret())
 check(#Feed() == 0 and not ns.off, "a hidden line is passed over")
 
 -------------------------------------------------------------------------------
@@ -1000,13 +1059,24 @@ local page = CreateFrame("Frame", nil, UIParent)
 Core.Config.BuildTabbed(page, ns.name)
 check(page.tabs and #page.tabs == 4 and page.parts[4].child and page.parts[4].child._height > 0,
     "its tabs: the switches', then Your items")
+-- Your items shows anew whenever it is seen anew (its OnShow, which the game runs for a frame shown with its parent
+-- too): a thing met in loot while the page was away is listed as the page shows, the tab as high as its list.
+local yours = page.parts[4]
+yours:Show() -- the tab chosen
+local wasHigh = yours.child._height
+page:Hide()
+options.seen[#options.seen + 1] = 2589
+page:Show()
+check(yours.child._height > wasHigh and yours.child._height == ns.Items.Refresh(),
+    "the page shown again: its tab lists what was met meanwhile")
 
 -- switched off: the game's own window, and its Auto Loot as it was
 Core.Set(ns.name, "window", false)
-check(LootFrame:IsEventRegistered("LOOT_OPENED") and C_CVar.GetCVar("autoLootDefault") == "1"
-      and options.lent.autoLootDefault == nil, "ours off: the game's window and its Auto Loot back")
+check(LootFrame:IsEventRegistered("LOOT_OPENED") and not Core.Lent(LootFrame) and C_CVar.GetCVar("autoLootDefault") == "1"
+      and options.lent.autoLootDefault == nil, "ours off: the game's window given back, and its Auto Loot")
 Core.Set(ns.name, "window", true)
-check(not LootFrame:IsEventRegistered("LOOT_OPENED") and C_CVar.GetCVar("autoLootDefault") == "0", "and ours again")
+check(not LootFrame:IsEventRegistered("LOOT_OPENED") and Core.Lent(LootFrame) and C_CVar.GetCVar("autoLootDefault") == "0",
+    "and ours again")
 
 -------------------------------------------------------------------------------
 --  Retail
@@ -1024,7 +1094,8 @@ W.Play("forever")
 loot = { Slot(ROBE) }
 Open()
 ns.StandDown("a test")
-check(ns.off and LootFrame:IsEventRegistered("LOOT_OPENED"), "stood down: the game's loot window hears loot again")
+check(ns.off and LootFrame:IsEventRegistered("LOOT_OPENED") and not Core.Lent(LootFrame),
+    "stood down: the game's loot window hears loot again, given back")
 check(GroupLootContainer:GetParent() == UIParent, "and its roll frames are back")
 check(C_CVar.GetCVar("autoLootDefault") == "1", "and its Auto Loot as it was")
 check(not Shown(), "ours is closed")

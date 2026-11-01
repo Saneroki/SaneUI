@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/web-pages, the one server of the tools' pages: a page by its place, folders over each other, a
-tool's web(), new code without a restart, what only this computer may ask, and every page of the real list.
-Run by dev/tests/run."""
+tool's web() (its headers, a request refused before it is read, a sys.exit answered), new code without a restart, what
+only this computer may ask, a config that cannot be read, and every page of the real list. Run by dev/tests/run."""
+import contextlib
 import http.client
 import importlib.machinery
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -39,6 +41,8 @@ for page in wp.PAGES:
         check(f"{page.name} has web()", "def web(request):" in page.tool.path.read_text(), True)
     else:
         check(f"{page.name}'s first folder lies in the project or is made", page.folders[0].is_relative_to(ROOT), True)
+    if page.place in ("world", "instances", "maps"):
+        check(f"{page.name} is ready only with its build", page.needs, "world.json" if page.place != "maps" else "maps.js")
 saneui = (ROOT / "dev" / "saneui").read_text()
 for place in places:
     if place != "pieces":
@@ -59,6 +63,10 @@ second.mkdir()
 tool = scratch / "tool"
 tool.write_text('def web(request):\n'
                 '    if request.path == "/boom":\n        raise ValueError("boom")\n'
+                '    if request.path == "/exit":\n        raise SystemExit("no folder set")\n'
+                '    if request.path == "/tag":\n'
+                '        if request.headers.get("If-None-Match") == \'"v1"\':\n            return 304, "image/png", b"", {"ETag": \'"v1"\'}\n'
+                '        return 200, "image/png", b"png", {"ETag": \'"v1"\', "Cache-Control": "no-cache"}\n'
                 '    if request.method == "POST":\n        return 200, "application/json", {"got": request.json()}\n'
                 '    return 200, "text/html; charset=utf-8", f"<body>one {request.path} {request.query}</body>"\n')
 wp.PAGES[:] = [wp.Page("folders", "files", [first, second]), wp.Page("a tool", "tool", tool, "?a=1")]
@@ -76,6 +84,16 @@ def ask(path, method="GET", body=None, headers=None):
     data = answer.read().decode()
     link.close()
     return answer.status, data, answer.getheader("Location")
+
+
+def heads(path, headers=None):
+    """A GET's status and headers."""
+    link = http.client.HTTPConnection("127.0.0.1", port)
+    link.request("GET", path, None, headers or {})
+    answer = link.getresponse()
+    answer.read()
+    link.close()
+    return answer.status, {name.lower(): value for name, value in answer.getheaders()}
 
 
 status, data, _ = ask("/")
@@ -108,6 +126,30 @@ check("a tool's POST", (status, json.loads(data)), (200, {"got": {"x": 1}}))
 status, data, _ = ask("/tool/boom")
 check("an error stays in its page", (status, "boom" in data), (500, True))
 check("the others go on", ask("/files/only.txt")[0], 200)
+status, data, _ = ask("/tool/exit")
+check("a tool's sys.exit answers with its message", (status, "no folder set" in data), (500, True))
+check("the others go on after it", ask("/files/only.txt")[0], 200)
+check("a Content-Length that is no number", ask("/tool/", "POST", b"{}", {"Content-Length": "many"})[0], 400)
+check("a request too big is refused before it is read", ask("/tool/", "POST", b"{}", {"Content-Length": str(wp.BODY_LIMIT + 1)})[0], 413)
+check("a request of the limit's size is taken", ask("/tool/", "POST", b"{}", {"Content-Length": "2"})[0], 200)
+status, held = heads("/tool/tag")
+check("a tool's fourth value sends its headers", (status, held.get("etag"), held.get("cache-control")), (200, '"v1"', "no-cache"))
+check("the request's headers reach the tool: 304 to the mark it gave", heads("/tool/tag", {"If-None-Match": '"v1"'})[0], 304)
+check("a page without headers of its own is not kept", heads("/tool/")[1].get("cache-control"), "no-store")
+check("a folder page with the file its build makes", wp.Page("w", "w", [first], needs="index.html").ready(), True)
+check("a folder page without it is not built yet", wp.Page("w", "w", [first], needs="world.json").ready(), False)
+# A config that cannot be read: said once each, the project's pages answer alone.
+told = io.StringIO()
+with contextlib.redirect_stderr(told):
+    for text in ("{not json", '{"nothing": []}', '{"pages": [{"name": "x", "place": "x"}]}', '{"pages": "x"}'):
+        wp.CONFIG.write_text(text)
+        check(f"a broken config ({text[:12]}) leaves the project's pages", [p.place for p in wp.pages()], ["files", "tool"])
+    wp.pages()
+check("a broken config is said once each", told.getvalue().count("not read"), 4)
+check("the server answers with a broken config", ask("/")[0], 200)
+wp.CONFIG.write_text(json.dumps({"pages": [{"name": "outside", "place": "out", "folder": str(second)}]}))
+check("a good config adds its page", ask("/out/only.txt")[1], "only in the second")
+wp.CONFIG = scratch / "none.json"
 tool.write_text(tool.read_text().replace("one ", "two "))
 os.utime(tool, (1, 1))
 check("a tool's new code needs no restart", "two /" in ask("/tool/")[1], True)

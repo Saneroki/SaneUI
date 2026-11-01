@@ -1,119 +1,39 @@
-# Development, data and reference lookup
+# Development: build, tests, tools
 
 ## Commands
 
+Every script runs as `saneui <command>`: `saneui` lists them by group, `saneui help <command>` prints a command's own
+help (a tool's docstring is its manual). The ones every session uses:
+
 | Command | Effect |
 | --- | --- |
-| `dev/tests/run` | Lua 5.1 syntax/global/TOC lint, then all offline tests |
-| `dev/saneui` (`saneui`) | One command for every script by expressive names (`saneui` lists them; `--card` feeds the Konsole greeting, `--names` fish's completion, `--link` makes `~/bin/saneui`); `start\|pause\|resume\|stop\|status gpurunner\|comfyui`; the GPU queue's `gpuqueue`, `switch`, `rebuildstart`, `rebuild`, `hold`, `unhold` |
-| `dev/build [--install] [--release [TAG]]` | Tests (a release: its own), rsync source into the `BUILD/` addon folders (one per `src/*/*.toc`; `SaneUI_Atlas` with `assets/optimized/Atlas/`, only once its `Index.lua` is there), compile Core's data sets (`BUILD/SaneUI/Sets/`, listed at the end of its TOC, Forever live's); with `--install` copies into both games' folders at once, Forever's `_forever_` and Retail's `_retail_` (by their `.flavor.info`; either missing: nothing installed; `WOW_FOREVER` and `WOW_RETAIL` name them elsewhere), each with the sets of its own game version (Retail's or a PTR's copy of Core keeps its `Sets/` in the copy, then compiled anew into it: a client refuses another game version's sets; old `SaneUI_Data_*` folders removed); without it nothing goes into the game. Each built TOC gets `## X-SaneUI-Build: dev <commit>[ +changes]` or `release <tag> <commit>`. `--release TAG` (default `current`) builds git's copy of the tag (`git archive`, LFS art smudged) into `BUILD/release/<tag>`; installed, it takes our modules it lacks out of the game. |
-| `dev/installdev` / `dev/installrelease [TAG]` | `dev/build --install` / `dev/build --release TAG --install` (`saneui installdev`, `saneui installrelease`) |
-| `dev/build --check` | Tests and rsync dry-run; writes nothing |
-| `dev/snapshot X.Y.Z [--dry]` (`saneui snapshot`) | A release from main's newest commit: `## Version` in every TOC committed (temp index, CAS on main), tested on `git archive` of it, then tag `vX.Y.Z`, branch `release/X.Y` (new or fast-forward), tag `current` moved; working-tree TOCs get only the version line; nothing pushed |
-| New scripts | Every executable in `dev/`, `dev/tools/`, `Scripts/` needs a `dev/saneui` entry (`GROUPS`: name, words, card words or None; `BACKGROUND` for verbs); `dev/tests/saneui.py` checks it |
-| `Scripts/update [branch\|--latest\|--list] [--no-install\|--check]` | `git fetch --prune`, switch to the branch (a `claude/` one only on GitHub is made tracking; `--latest` = newest `claude/`), fast-forward only, then `exec dev/build`. Stops on tracked changes and on a non-`claude/` branch that has diverged; a diverged `claude/` branch is reset to GitHub's after its commits never seen on GitHub (remote branches before the fetch, the remote ref's reflog) go to `saved/<branch>-<hash>` |
-| `dev/tools/errors [10\|30\|all\|short]` | Read client's saved error log after reload/logout (of the game folder played last: its `SaneUI.lua` written last) |
-| `dev/tools/web-pages [list\|open PLACE\|start\|stop\|status\|run --port N]` | Every tool's web page on one server, on one port (127.0.0.1 port 8768), running by default as the user service `saneui-web-pages` (`saneui webpages`, `saneui start\|stop\|status webpages`, `saneui show...`). A page is one line in `PAGES`: folders, or a tool with `web(request)`; folders outside the project from `~/.config/saneui/pages.json`. Its ☰ menu is `dev/tools/web-nav.js`. |
-| `dev/tools/board [list\|show\|add\|edit\|move\|start\|review\|done\|delete\|import]` | The task board (`saneui board`, the page `saneui showboard`, `/board/` of `dev/tools/web-pages`): every todo and idea a card from Backlog over Next up, In progress and Review to Finalized; one file `board.json` in the private folder (`~/.config/saneui/private.json`), written under a lock, `Backlog.md` beside it written with each change; the page in `dev/tools/board-page/` polls the file, so its and the sessions' changes meet; `SANEUI_BOARD` names another file (tests) |
-| `dev/tools/ui-lab serve\|check [scene]` | The interface lab (`saneui showuilab`, `/lab/` of `dev/tools/web-pages`): Sane UI's Lua run under Lua 5.1 with a stand-in of the game's widget API and a fake server (`dev/uilab/`), drawn in the browser; scenes in `dev/uilab/scenes/`, worlds in `dev/uilab/worlds/`, drafts in `dev/uilab/drafts/` (`Doc/guides/ui-lab.md`) |
-| `dev/tools/tooltip-art` | Regenerate six original white/alpha TGA shapes in Tooltips/Art |
-| `dev/tools/art` | `assets/*.png` → BLP2 DXT5 with mipmaps, sized for 4K from the drawn size, in `assets/optimized/`; banners also to `<Module>/Art/banner.blp`; kind `sheet` keeps a flipbook whole (needs Pillow, NumPy, ImageMagick; see `Doc/guides/images.md`) |
-| `dev/tools/art-measure [png] [w] [h]` | Re-measure texture sizes and filters for a picture (the numbers in `Doc/guides/images.md`) |
-| `dev/tools/terrain-art <textures> <terrain> <tables> <map art> [--maps instances]` | The game's minimap textures (`<file ID>.blp`, every file the set *Tiles* names), its terrain files (root ADTs named `<tile key>.adt`), client tables (CSV) and map art (`<file ID>.blp`) → Navigation's terrain overview with the water cut away (64 texels a tile, 8 x 8 tiles a texture, `assets/optimized/Navigation/Art/Terrain/`), the zones' outlines (`Art/Zones/`, `Outlines.lua`), the stitched map of the zone maps (`Art/Sketches/`) and `Art/Edge.blp`, the open sky around Zephras Isle cut away as the sea is; `--maps 2991` draws one map and leaves the others' files; BLP2 DXT5 with mipmaps (Pillow, NumPy, ImageMagick; about 4 minutes) |
-| `dev/tools/walk-data <game files> <tables> [--maps instances] [--only keys] [--pictures folder]` | The walking data of Navigation's routes from the game's terrain (root ADTs), buildings (obj0 ADTs, WMO roots and every group file), doodads (the models the object files and the buildings' doodad sets name, `m2/`) and water: 2.08-yard floors, surfaces, rectangles, openings, regions, one block a tile (CBOR, deflate, base64) → `dev/data/staging/walking.jsonl` for Core's set *Walking* (`dev/tools/data import`); five to seven minutes on 24 processes |
-| `dev/tools/indoor-art <game files> <tables> [--only ids] [--check folder minimap]` | The game's indoor minimap textures (its table WMOMinimapTexture, extracted into the game files' `wmo-minimap/`), buildings (obj0 ADTs, WMO roots) → Navigation's indoor maps: one picture per part of a building, the black taken out (`assets/optimized/Navigation/Art/Indoors/`, BLP2 DXT5 with mipmaps) and `dev/data/staging/indoors.jsonl` for Core's set *Indoors*; `--check` draws them over the terrain's tiles to see they sit on their roofs (Pillow, NumPy, ImageMagick) |
-| `dev/tools/map-data <tables> <terrain>` | The game's zones (UiMap, UiMapAssignment, AreaTable) and the entrances of dungeons and raids (Map's corpse points) → `dev/data/staging/map-game.jsonl` for Core's sets *Zones* and *Places*; its `Placer` puts world positions on zone maps by the game's areas (terrain chunks of the root ADTs, building parts of WMOAreaTable), its `PlaceKeys` numbers *Places*: both used by every tool that writes map points |
-| `dev/tools/travel-data <tables>` | The flights of the game's flight masters from its client tables (TaxiNodes, TaxiPath, TaxiPathNode) → `dev/data/staging/travel.jsonl` for Core's set *Travel*: nodes, side, cost, length, path |
-| `dev/tools/map-meta <game files> <tables> <file names> [--texels N]` | The game's terrain files (`adt/`, `adt-tex0/`, `adt-obj0/` named `<tile key>.adt`, buildings `wmo/<file ID>.wmo` and the large ones' parts `<file ID>_<part>.wmo`), client tables (CSV) and file names (`<file ID>;<path>`) → the guides of the painted map view in `assets/generated/maps/meta/`: roads, standing buildings and ground cover of both continents (128 texels a tile), `places.json` (every zone's areas, city districts, flight masters, dungeon and raid entrances, caves and mines, exits to the next zone, with positions in zone percent); NumPy, Pillow, about 25 seconds |
-| `dev/tools/atlas paint\|status\|join` | Paints the Atlas (the painted map view) square by square in a local ComfyUI: both continents' land in squares of one tile at 2048 pixels, each from the game's terrain with words from `dev/imagegen/maps/zones.toml` and `atlas.toml` and what the game has in it, checked against the game's water (up to three seeds); resumable, a terminal screen with progress, time left, `p` pause (frees the graphics card) and `q` quit; `--near` a few squares around a point, `--dry` without painting; `join` stitches painted squares, cut along the line of least difference. The game's folders as for `map-meta` the first time; the run in `assets/generated/atlas/`; NumPy, Pillow |
-| `dev/tools/map-layers inputs\|paint\|contact\|status` | The three levels of Navigation's painted maps for zones and instances alike (`Doc/guides/map-style.md`): every subject's frame, terrain plan (an instance's own map's tiles with its buildings' indoor maps laid over them) and the game's map art in it; close the Atlas' squares by the Atlas' own code; middle a top-down pencil map in the game's manner (`qwen21-edit-3ref`: terrain, map art, parchment); far a photorealistic aerial render (terrain, middle, close); each middle and far painting checked for its outlines against the terrain and by the vision model (`qwen3vl-look`), painted again when it fails. The run in `assets/generated/map-layers/`; Pillow, NumPy |
-| `dev/tools/map-layers tiles\|stitch` | The world's high resolution tiles: every land square of the Atlas' grid (2048 pixels a terrain tile) painted with the far harness, coarse to fine, into `assets/generated/world-tiles/` in the Atlas' run layout (the GPU job `worldtiles`); `stitch` joins the zones' renders along their outlines |
-| `dev/tools/world-map build\|serve` | The world map offline (`saneui makeworldmap`, `showworldmap`): every layer, the game's and ours, laid where the game lays it and stacked in a web page with a slider each; the Atlas' pack read by `src/Atlas/Atlas.lua` itself (`dev/tools/world-map-index.lua`, Lua 5.1); the page in `dev/tools/world-map-page/`; written to `assets/generated/world-map/` |
-| `dev/tools/imagegen <list.txt> [--count N] [--only a,b] [--dry-run]` | Run a prompt list through a local ComfyUI (`comfyui start`): the list includes a recipe from `dev/imagegen/recipes/` (workflow by name, settings, fixed words) and the house style `dev/imagegen/style.txt`; saves `<name>-<seed>.png` (clips: a folder of frames and a `.gif`), `contact.png` and `imagegen.jsonl` in its `out:` (stdlib; Pillow for BLP references, flatten, previews; see `Doc/guides/image-generation.md`) |
-| `dev/tools/flipbook <clip> <sheet.png> [--frames N] [--drawn UNITS] [--loop fade:8\|drop-last] [--glow]` | A clip's frames → a power-of-two flipbook sheet, a `.gif` preview and the FlipBook numbers; the sheet goes through `dev/tools/art` as kind `sheet` (Pillow, NumPy) |
-| `dev/tools/voicedb build\|stats\|show\|request\|batch\|names\|check` | The voice database: every game text that gets a voice, its speaker, preset and direction, in `dev/voices/build/` (see `Doc/guides/voice-generation.md`) |
-| `dev/tools/voicegen key\|account\|design\|pick\|names\|say\|sound\|ogg` | Send the voice database's lines, the cast's designs and the names to the cloud voice service; master WAVs and game Ogg files in `dev/voices/sound/`, every file made in `dev/voices/made.jsonl`; short UI sounds as candidates in `assets/generated/sounds/`. Key and service config in `~/.config/saneui/voice-service.json`, never in the repository (stdlib and ffmpeg; see `Doc/guides/voice-generation.md`) |
-| `dev/tools/project-index [--check]` | Regenerate navigation hashes/index, or report stale files |
-| `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from Blizzard's options code (the newest export); `--staging [file] [--build N]` writes the same as staging for the data set *CVarLabels* (`dev/data/staging/cvar-labels.jsonl`) |
-| `dev/tools/data check\|import\|compile\|game\|show\|diff\|stats` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply] [--take]` takes staging in, the report first (new, agreeing, changed, older, gone, conflicts; `--take` writes conflicts in as corrections); `compile <folder> [--game G]` Core's set files into Core's addon folder; `game <folder>` a game folder's game version; `show <set> <key>`, `diff <set> [--patch P]`, `stats` for people; `--master <folder>` for another master (tests); Python in `dev/data/` |
-| `dev/tools/sync-pages [--check]` | Regenerate `src/Core/Sync/Data/Pages.lua` (what each of the game's options pages sets) from Blizzard's options code (the newest export) |
-| `dev/tools/blizzard where\|check\|show\|uses\|adopt` | Blizzard's interface code: `where` prints the newest export's code and art folders (Sane UI's base, never `references/`); a new build's export against the one before it: `check [<new>] [--old <export>\|git:<rev>] [--build V]` writes the todo list of what reaches Sane UI (broken, deprecated, changed, review, housekeeping) to `dev/blizzard/reports/`; `show <name>` a symbol in both with its diff; `uses [--list] [--unknown]` what Sane UI takes from Blizzard; `adopt` remakes CVarLabels and Pages from the newest export; Python in `dev/blizzard/` (see `Doc/guides/blizzard-updates.md`) |
+| `saneui installdev` (`dev/build --install`) | `dev/tests/run`, then `BUILD/` from `src/*/*.toc` (one addon folder per TOC, with its art from `assets/optimized/<Module>/`, the Atlas only once `assets/optimized/Atlas/Index.lua` is there; Core's data sets compiled into `BUILD/SaneUI/Sets/` and listed at the end of its TOC), then the copy into both games at once, Forever's `_forever_` and Retail's `_retail_` (found by their `.flavor.info`; either missing: nothing is installed and it says which; `WOW_FOREVER` and `WOW_RETAIL` name them on another computer), each game with the sets of its own game version. Each built TOC gets `## X-SaneUI-Build: dev <commit>[ +changes]` or `release <tag> <commit>`; `saneui installed` shows it. LFS pointer files are refused (`git lfs pull` first). |
+| `saneui build` | Tests and `BUILD/` only; `--check` is a dry run that writes nothing; `--release TAG` (default `current`) builds git's copy of a tag from `git archive` into `BUILD/release/<tag>` (installed with `saneui installrelease`, it takes our modules it lacks out of the game). |
+| `saneui test` (`dev/tests/run`) | Lint, then every offline test; the first failure stops the run. Its header lists every test with what it covers. Run `lua5.1` under `ulimit -v 2000000` (a runaway test must fail, not take the machine down). |
+| `saneui lint` (`dev/tests/lint`) | The TOCs (every file listed and there, one TOC per folder, the same version and interface in all), every Lua file parsed, no stray global, every door the game calls guarded (`Doc/guides/addon-standards.md`, section 10), Core's data sets compiled and checked. |
+| `saneui snapshot X.Y.Z [--dry]` | A release, only when Saneroki says so: `## Version` in every TOC committed on main (a temporary index, compare-and-swap), tested on `git archive` of it, then the tag `vX.Y.Z`, the branch `release/X.Y` and the tag `current`; nothing pushed. |
+| `saneui showerrors` (`dev/tools/errors [10\|30\|all\|short]`) | The game's saved error log (`SaneUIDB.log`, written at a `/reload` or logout; the game folder played last). |
+| `saneui board`, `saneui showboard` | The task board: `list`, `show ID`, `add`, `edit`, `move ID COLUMN`, `start\|review\|done ID`; the page on 127.0.0.1 port 8768 (`/board/`). One file, `board.json`, in the private folder, written under a lock, `Backlog.md` beside it. |
+| `saneui webpages` (`dev/tools/web-pages`) | The one server for every tool page, 127.0.0.1 port 8768, the user service `saneui-web-pages` (`saneui start\|stop\|status webpages`). A page is one line in its `PAGES` (a folder, or a tool with `web(request)`); pages outside the project from `~/.config/saneui/pages.json`; the ☰ menu is `dev/tools/web-nav.js`. In a session: `preview_start`, name `pages`; two sessions' lab scenes need a copy: `dev/tools/web-pages run --port N`. |
+| `saneui showuilab`, `checkuilab` (`dev/tools/ui-lab serve\|check [scene]`) | The interface lab: Sane UI's Lua run under Lua 5.1 with a stand-in of the game and a fake server, drawn in the browser (`dev/uilab/`: scenes, worlds, drafts; `Doc/guides/ui-lab.md`). |
+| `saneui showsections FILE [words]` | A long document's headings with lines and tokens, or the sections named. |
+| `saneui data`, `readgamedata`, `readmapdata`, `readtraveldata`, `makewalkdata`, `makewalkgates`, `makecvarlabels`, `makesyncpages` | Core's data framework and the tools that stage data for it (`Doc/guides/data.md`, *Tools*). |
 | `saneui patchday` (`dev/tools/patchday`) | A new game build beyond its interface, for the skill `/patchday`: the client's tables and the world against the build before, the patch notes, the map's repaint (`Doc/guides/blizzard-updates.md`, *Patch day*). |
+| `saneui compareblizzard`, `readpatch`, `fixpatch` (`dev/tools/blizzard`) | A new game build's interface code against the one before, the patch notes and the fixing session (`Doc/guides/blizzard-updates.md`); `dev/tools/blizzard where\|show\|games\|uses\|adopt` (the map, *Blizzard's code*). |
+| `saneui patchday` (`dev/tools/patchday`) | A new game build beyond its interface, for the skill `/patchday`: the client's tables and the world against the build before, the patch notes, the map's repaint (`Doc/guides/blizzard-updates.md`, *Patch day*). |
+| The art, map, image and voice tools (`make…`, `show…`, `atlas`, `gpurunner`, `voicedb`, `makevoices`) | `saneui help <name>`; the guides `images.md`, `map-style.md`, `image-generation.md`, `voice-generation.md`. |
 
-Required build tools: Bash, Python 3, `lua5.1`, `luac5.1`, `rsync`. No dependencies need downloading
-for existing offline tests. `WOW_FOREVER` overrides all tools' default Steam/Proton game folder,
-`WOW_RETAIL` Retail's (default `_retail_` beside it; installs always go into both); check `dev/build` for the literal machine path. Copy rather than symlink: Steam container cannot
-see `/data`. Build discovers `src/*/*.toc`, excludes Markdown, supplies the root `LICENSE` as `LICENSE.txt`,
-deletes stale owned build directories and rsyncs installed module contents. New files/addons need
-game restart; changed known files need reload. Preserve unrelated `BUILD/SaneUI.zip` and local WTF.
+A new executable in `dev/`, `dev/tools/` or `Scripts/` needs its `GROUPS` entry in `dev/saneui` (and `BACKGROUND` for
+`start|stop|status` verbs) in the same commit: `dev/tests/saneui.py` fails otherwise. Required on this computer and
+in a cloud session: Bash, Python 3, `lua5.1`, `luac5.1`, `rsync`; the art and map tools also Pillow, NumPy and
+ImageMagick. No package manager, no downloads for the offline tests.
 
 ## Tests and their limits
 
-`dev/tests/lint` checks every `src/` folder: one TOC each, listed/missing source, matching versions/interface,
-dependency/group metadata, Lua 5.1 parsing, and bytecode `SETGLOBAL` names; and Core's data sets, compiled for every game
-version into a scratch copy of Core's TOC (every file listed, Lua that writes no global), and the data's saved variables in Core's TOC. It is not a full API lint.
-`wowstub.lua` supplies events/timers/actions/cursor/spells/options and generic widgets; unknown
-PascalCase widget methods silently succeed. Tests extend this with tooltip/chat/book fixtures.
-WoW's argument-passing `xpcall` is shimmed because stock Lua 5.1 lacks it.
-
-| Test | Coverage |
-| --- | --- |
-| `core.lua` | Lifecycle/isolation, options pages (put up at login, filled on open), defaults, profiles, errors, guards, helpers |
-| `spellbook.lua` | Lazy sources/trainer, page merge/folding/Home, reservations/pushes/combat/cursor, presets, UI restoration |
-| `tooltips.lua` | Reader output, model redraw, live values, quests (on sample set files)/cache/prices, the Inventory section (Core's characters), other addons' lines in their own section, native restoration/anchors/secrets, per-kind/module fallback |
-| `social.lua` | Event decoding, width/wrapping, native input/restoration, filtering, fading, lockdown and fallback, game channels join/leave |
-| `sync.lua` | Sync parts capture/apply, scope and state filters, reload dialog, combat wait, kept CVars, profiles, per-character CVars, the generated page lists |
-| `window.lua` | Dock arithmetic, movement/sizing/skin, expansion/demo |
-| `data.lua` | The data framework in the game: the scheduler's budget, pauses (combat, restrictions), failing jobs, `Fresh`/`Spend`; the sample set files (compiled by `data/sample.py` into a temporary folder) read back by the codec as the tools meant them, sets arriving (ready at once, listeners told on the next frame), missing or refused (format, game version, a file that does not run), frozen records, the client's game version, `/sane data`; `History`, `At`, `Versions`, `Changes`, `Keys` and `Each`, also from a set newer than the client; the data's saved variables (`Data.Saved`, a part per game version, a wrong format set aside) |
-| `data/sets.py` (Python) | A module's sample lines (`data/tooltips/`) on the real schemas, checked and compiled into set files for that module's test |
-| `data/sample.py` (Python) | Compiles `data/sample/` for `forever` and `forever-beta` into a folder given, with `expected-<game version>.lua` (every version of every entry as Lua tables) beside the set files: what `data.lua` compares with |
-| `data/tools.py` (Python) | The data tools on `data/sample/`: every rule of the check, every case of the import within its game version (and `--take`), `show`, `diff` and `stats`, compiling (same bytes, game versions apart, rows read back by Lua 5.1, listed in Core's TOC), CVarLabels up to date, every set of the plan with its schema |
-| `blizzard.py` (Python) | `dev/tools/blizzard` on a small export (`blizzard/old`) and a new build made from it in the test with one change of each kind, against a small module (`blizzard/src`): Lua tokens and definitions, TOC conditions, XML and documentation symbols, every section of the todo list, hints, diffs, cited lines, the Markdown and JSON; Sane UI's own source read by `luac5.1` without problems |
-
-A green suite does not prove native API availability, rendering, protected calls or taint.
-For in-game failures inspect saved errors first. Debugger-driven runtime investigation should use
-the applicable available debugging skill; source-obvious/documentation tasks need no debugger.
-
-## Reference search routes
-
-Start at the newest export's `Interface/AddOns/` (`dev/tools/blizzard where` prints its folders; never `references/`)
-and restrict `rg` to the relevant addon:
-
-| Need | Reference addon/directory |
-| --- | --- |
-| The game's own spellbook, its frame/search/tab/pager behaviour | `Blizzard_PlayerSpells` and `Blizzard_PagedContent` |
-| Chat edit boxes, slash/security flow, docking/minimizing | `Blizzard_ChatFrame` |
-| Tooltip processor, comparisons, line kinds | Tooltip-related addons and SharedXML tooltip files |
-| Menus | `Blizzard_Menu` (implementation guide) |
-| Options lifecycle | `Blizzard_Settings_Shared` (implementation README) |
-| Scroll boxes, fonts, frame templates, pools | `Blizzard_SharedXML`, `Blizzard_SharedXMLBase`, `Blizzard_Fonts_Shared` |
-| API signatures/enums | `Blizzard_APIDocumentationGenerated` |
-| Native images | the newest export's art (lookup a known path, do not inventory all art) |
-
-Check flavour directories (`Camelot/Classic/Mainline/Shared`) and adjacent TOC conditions before
-assuming a file loads in this client. References are uncommitted.
-
-## Data and licensing
-
-Trainer data has nine class files and quest rewards. Keep costs as copper and
-prerequisites/race/faction filters. Tests use synthetic trainer data, so inspect real rows separately
-when changing the database.
-
-`src/Tooltips/Data/Quests.lua` is the module's own quest database; its header describes the format,
-and changes are made in it. One licence, the root `LICENSE`, covers Core and every module with its data; no
-module or data file has a licence of its own. Original art/name terms differ from MIT code in root
-`LICENSE`; these notes are a map, not legal reinterpretation.
-
-## Existing documentation caveats
-
-Observed on 2026-10-14, checked again on 2026-10-16; do not mistake older text for current behaviour:
-
-- Source has eleven addons (2026-10-25): Core (`SaneUI`), Abilities, Tooltips, Social, Combat, Navigation, Atlas, Inventory,
-  Nameplates, Guild, SpeedLeveling; Core's data sets are Core's own files (2026-10-21: no `SaneUI_Data_*` packs any more). Older text saying fewer (or an addon *Settings* or *Sync*)
-  is stale.
-- Tooltips README's “Not there yet” sub-bullet on a player's specialisation (`src/Tooltips/README.md`,
-  section *Not there yet*) conflicts with the spec its Player row and `Inspect.Talents` show; delete
-  that sub-bullet there.
-- Historical `Doc/Changed.md` entries describe removed implementations, including former external
-  addon integrations; current source and newest review sections win.
-- `Doc/ideas/Maps.txt` is a proposal (top-centre minimap hot corner, expand/zoom out), no Maps module.
+`dev/tests/*.lua` run a module against `dev/tests/wowstub.lua`, a stand-in of the game's widgets, events, timers,
+cursor, spells and options; `dev/tests/games.lua` (made by `dev/tools/blizzard games`) takes Forever's extras away
+when a test plays Retail (`W.Play("retail")`). Unknown widget methods succeed silently and nothing there is secure or
+secret, so a green suite proves simulated behaviour, not the real client's API, rendering, protected calls or taint:
+the game's own saved error log (`saneui showerrors`) is the first place to look after a failure in the game. The
+Python tests cover the tools (`dev/tests/*.py`, `dev/tests/data/`, `dev/tests/blizzard/`). A test's name says what it
+covers (`dev/tests/run`'s header); keep tests next to the logic they prove and let them fail when the fix is undone.

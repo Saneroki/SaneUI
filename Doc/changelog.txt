@@ -6,6 +6,17 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A pass over everything: bugs fixed in every module, and the parts
+  that talk to other players hardened. Among what you will notice: a
+  profile's Defaults no longer resets your key bindings; the game's
+  cast bar stays on a plate while our cast bar is off, and the game's
+  hidden aura icons no longer pop their tooltip beside our bar; the
+  bag sort finishes a join that does not fit; a rare item dropped on
+  the bin asks the typed confirmation again; the loot window brings
+  back a thing the game refused; the auction house's seller, time
+  left and repair cost stand under Details in a tooltip; the guide
+  key comes back after a fight at login; a pasted guide with no step
+  for your character is kept but not chosen, and says so.
 - See-through rings around the mouse show your global cooldown and your
   cast while they run. They stand around the whole cursor and start at
   its tip.

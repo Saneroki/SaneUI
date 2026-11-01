@@ -52,14 +52,18 @@ Sync.Part(ID, "elsewhere", {
             if not now[command] then kept[command] = keys end
         end
         for command, keys in pairs(now) do
-            if keys[1] then kept[command] = keys end
+            -- A command without keys is kept as false: the profile carries "unbound" (Write takes a key off then);
+            -- a command the profile does not name at all is one it never saw (a module's, another addon's).
+            if not command:find("^HEADER") then kept[command] = keys[1] and keys or false end
         end
         return kept
     end,
     Write = function(data)
         local now, changed = Bound(), false
         for command, keys in pairs(now) do
-            if keys[1] and not Core.Same(keys, data[command]) then
+            -- A command the profile has never seen (bound here, none where the profile was captured: a module's, another
+            -- addon's) keeps its keys; one of them the profile wants elsewhere is moved there below.
+            if keys[1] and data[command] ~= nil and not Core.Same(keys, data[command]) then
                 for _, key in ipairs(keys) do Game("SetBinding", key) end
                 changed = true
             end
@@ -73,9 +77,13 @@ Sync.Part(ID, "elsewhere", {
         if changed then Game("SaveBindings", Game("GetCurrentBindingSet")) end
         return false
     end,
-    -- The game's own keys again (Character specific).
+    -- The game's own keys again (Character specific), in the character's own set. The account's set is every
+    -- character's: in use, it is left as it is (as the game's own Defaults would wipe it for all of them).
     Default = function()
-        Game("LoadBindings", rawget(_G, "Enum") and Enum.BindingSet and Enum.BindingSet.Default or 0)
-        Game("SaveBindings", Game("GetCurrentBindingSet"))
+        local sets = rawget(_G, "Enum") and Enum.BindingSet or {}
+        local set = Game("GetCurrentBindingSet")
+        if set ~= (sets.Character or 2) then return end
+        Game("LoadBindings", sets.Default or 0)
+        Game("SaveBindings", set)
     end,
 })

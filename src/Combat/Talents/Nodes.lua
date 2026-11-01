@@ -112,7 +112,6 @@ local function UpdateGlow(node)
         glow.texture:Hide()
     end
 end
-Nodes.UpdateGlow = UpdateGlow
 
 -- What every node of ours gets when the game's pool makes it: the glow, the class talents' tooltip, the sounds.
 local function Dress(node, most, capstone)

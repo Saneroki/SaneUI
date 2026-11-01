@@ -170,11 +170,12 @@ Only what Sane UI uses is listed. *For information* at the end lists the API new
 
 ## How it reads an export
 
-It reads the export as this client loads it: each Blizzard addon's TOC for game type `camelot`, which also counts
-the load group `mainline` (`standard` is the main game's), `[Family]` read as `Mainline` and `[Game]` as
-`Camelot`; lines for the login screen and other languages left out; XML files with what they include. A file
-this client does not load is not compared. The API documentation (`Blizzard_APIDocumentationGenerated`) is read
-whole: it describes this client's own functions, widgets, events, enums and structures.
+It reads the export as the export's own client loads it (`CLIENTS` in `dev/blizzard/export.py`): each Blizzard
+addon's TOC for Forever's game type `camelot` or Retail's `standard`, which both also count the load group
+`mainline`, `[Family]` read as `Mainline` and `[Game]` as `Camelot` or `Standard`; lines for the login screen and
+other languages left out; XML files with what they include. A file
+that client does not load is not compared. The API documentation (`Blizzard_APIDocumentationGenerated`) is read
+whole: it describes that client's own functions, widgets, events, enums and structures.
 
 Every definition becomes a symbol with an id, a signature and a hash:
 

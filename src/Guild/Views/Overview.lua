@@ -330,13 +330,13 @@ function Overview.Title()
     return Guild().Info().name or ""
 end
 
--- The guild's chat, kept since login (the last 100 lines) for the panel.
+-- The guild's chat, kept since login (the last 100 lines) for the panel; the time of day as the setting Units says.
 local function Heard(text, name, ...)
     text, name = Core.Plain(text), Core.Plain(name)
     if type(text) ~= "string" or type(name) ~= "string" then return end
     local guid = Core.Plain(select(10, ...))
     local _, class = Core.Ask(GetPlayerInfoByGUID, guid)
-    chat[#chat + 1] = { name = Core.PlayerKeyOf(name) or name, class = class, text = text, time = Core.Ask(date, "%H:%M") }
+    chat[#chat + 1] = { name = Core.PlayerKeyOf(name) or name, class = class, text = text, time = Core.ClockAt() }
     if #chat > CHAT_MOST then table.remove(chat, 1) end
     if view and view:IsVisible() then Chat() end
 end

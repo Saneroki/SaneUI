@@ -156,7 +156,7 @@ def main():
         graph = json.loads(found[run["workflow"]].read_text(encoding="utf-8"))
         uploaded = {ref: server.upload(ref, run["flatten"]) for ref in job["refs"]}
         job["name"] = path.stem
-        filled = ig.fill(graph, job, run["seed"] or 1, run["set"], uploaded)
+        filled = ig.fill(graph, job, 1 if run["seed"] is None else run["seed"], run["set"], uploaded)  # seed 0 is a seed
         title = f"Recipe {path.stem}"
         ui = ig.ui_workflow(filled, definitions, title)
         if not ui:

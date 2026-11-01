@@ -28,7 +28,8 @@ local _, ns = ...
 --      Guide.Doing(step)  what that step asks you to do: "talk", "kill", "loot", "use", ... (the arrow's picture)
 --      Guide.Kept()       the guides to choose from, kept and from packs: { { key, name, title, group, subgroup,
 --                         mine, bought, pack } }, by group, subgroup and name (parts and dividers not listed)
---      Guide.AddAll(texts, bought)  each guide's text kept (one of the same group and name replaced): names, problems
+--      Guide.AddAll(texts, bought)  each guide's text kept (one of the same group and name replaced; one with no step
+--                         to follow for this character is not kept): names, problems
 --      Guide.LoadPacks()  the guide packs of this game loaded (at the start); each hands its guides to Guide.Take
 --      Guide.Remove(key), Guide.Choose(key), Guide.Chosen()
 --      Guide.Empty()      while no guide is followed, the view's words for why (none kept, none for you); else nil
@@ -58,6 +59,11 @@ local EMPTY = {}
 local DEFLATE, ZLIB = 0, 1 -- the game's Enum.CompressionMethod.Deflate and Zlib, should their names be missing
 local shipped = {} -- [key] = a pack's guide: its head and its text packed (zlib), pack = the addon, order
 local taken = 0    -- the packs' guides handed over so far (their order)
+
+-- A saved value as text; nil for anything else (a saved file may be damaged).
+local function Text(value)
+    return type(value) == "string" and value or nil
+end
 -- Our colours for names in a guide's words, by kind: the game's own font colours, these where it lacks one.
 local COLOURS = {
     friend = { "GREEN_FONT_COLOR", "19FF19" }, foe = { "RED_FONT_COLOR", "FF2020" },
@@ -84,7 +90,9 @@ end
 -------------------------------------------------------------------------------
 --  Colours
 -------------------------------------------------------------------------------
-local hexes -- [kind] = our colour as eight hex digits, once made
+local hexes  -- [kind] = our colour as eight hex digits, once made
+local paints -- [kind] = { its colour word in a guide's text as a pattern, "|c" before it; "|c" and our colour }, once made
+local picked -- the pattern of a name the colour word of a thing to pick up or use encloses; false: the format has none
 
 local function Hex(kind)
     if not hexes then
@@ -103,13 +111,25 @@ end
 -- Our warning colour, as a text's colour code has it ("ffffd100").
 function Guide.WarnHex() return Hex("warn") end
 
+-- The format's colour words by our kinds, as patterns, with our colour for each: Core's words do not change while the
+-- game runs (Format.lua keeps its copy the same way), so they are asked once, not at every line painted.
+local function Paints()
+    if not paints then
+        paints = {}
+        local words = Core.Neighbours.Format("guide")
+        for kind, word in pairs(words and words.colours or EMPTY) do
+            local hex = type(word) == "string" and Hex(kind)
+            if hex then paints[kind] = { "|c" .. word:gsub("%p", "%%%0"), "|c" .. hex } end
+        end
+        picked = paints.pick and (paints.pick[1] .. "(.-)|r") or false
+    end
+    return paints
+end
+
 -- A guide's words in our colours: its colour words, and its line breaks.
 local function Paint(text)
     if type(text) ~= "string" then return "" end
-    local words = Core.Neighbours.Format("guide")
-    for kind, word in pairs(words and words.colours or EMPTY) do
-        text = text:gsub("|c" .. word:gsub("%p", "%%%0"), "|c" .. Hex(kind))
-    end
+    for _, paint in pairs(Paints()) do text = text:gsub(paint[1], paint[2]) end
     return (text:gsub("\\n", "\n"))
 end
 
@@ -120,10 +140,9 @@ end
 
 -- The names the guide's words colour as things to pick up or use.
 local function Picked(text, into)
-    local words = Core.Neighbours.Format("guide")
-    local word = words and words.colours and words.colours.pick
-    if type(text) ~= "string" or not word then return end
-    for name in text:gmatch("|c" .. word:gsub("%p", "%%%0") .. "(.-)|r") do
+    Paints()
+    if type(text) ~= "string" or not picked then return end
+    for name in text:gmatch(picked) do
         name = name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("^%s+", ""):gsub("%s+$", "")
         if name ~= "" then into[#into + 1] = name end
     end
@@ -153,8 +172,12 @@ local function OurLines(index)
     return lines
 end
 
--- The number a step is shown with: the guide's own, the steps of your professions apart (Gathering.lua).
-local function Shown(guide, index) return guide.steps[index].shown or index end
+-- The number a step is shown with: the guide's own, the steps of your professions apart (Gathering.lua); a step that
+-- is not there (a number of another guide's list) by its number.
+local function Shown(guide, index)
+    local step = guide and guide.steps[index]
+    return step and step.shown or index
+end
 
 function Guide.Picture()
     local guide = ns.Run.Guide()
@@ -333,14 +356,17 @@ end
 -- A guide's key: its group and its name, and for whom when its head says ("<<"): guides of one name for different
 -- characters are kept apart.
 local function KeyOf(group, name, only)
+    group, only = Text(group), Text(only)
     local key = (group and group ~= "" and (group .. "\\") or "") .. name
     if only and only ~= "" then key = key .. " << " .. only end
     return key
 end
 
--- Whether a kept guide is for this character in this game.
+-- Whether a kept guide is for this character in this game (what its record says of that counts only as words;
+-- Format.Plays takes a list or nothing).
 local function Mine(kept, who)
-    if kept.only and kept.only ~= "" and not ns.Format.For(who, kept.only) then return false end
+    local only = Text(kept.only)
+    if only and only ~= "" and not ns.Format.For(who, only) then return false end
     return ns.Format.Plays(who, kept.games)
 end
 
@@ -362,13 +388,21 @@ local function Read(key)
     return guide
 end
 
+-- Whether a guide read can be run here: for this character, and with a step to run (one read with none, a head alone
+-- or every step somebody else's, would give the picture no step to show).
+local function Runs(guide)
+    return guide and guide.mine and guide.steps[1] ~= nil or false
+end
+
+-- The guides to choose from. A record's words count only where they are words, and one without a name is passed over
+-- (a saved file may be damaged): no list and no menu fails on it.
 function Guide.Kept()
     local list, who, seen = {}, Who(), {}
     local function Add(key, kept, pack)
-        if seen[key] or type(kept) ~= "table" or kept.part or kept.divider then return end
+        if seen[key] or type(kept) ~= "table" or kept.part or kept.divider or not Text(kept.name) then return end
         seen[key] = true
-        list[#list + 1] = { key = key, name = kept.name or key, title = kept.title, group = kept.group or "",
-                            subgroup = kept.subgroup or "", mine = Mine(kept, who), bought = kept.bought == true,
+        list[#list + 1] = { key = key, name = kept.name, title = Text(kept.title), group = Text(kept.group) or "",
+                            subgroup = Text(kept.subgroup) or "", mine = Mine(kept, who), bought = kept.bought == true,
                             pack = pack }
     end
     for key, kept in pairs(Store()) do Add(key, kept, false) end
@@ -398,10 +432,10 @@ function Guide.Empty()
     return ns.TEXT.noGuideHere
 end
 
--- A kept guide to follow; nil: none.
+-- A kept guide to follow; nil: none, as is one that is not for this character or has no step for it.
 function Guide.Choose(key)
     local guide = key and Read(key)
-    ns.Run.Use(guide and guide.mine and guide or nil)
+    ns.Run.Use(Runs(guide) and guide or nil)
     Changed()
 end
 
@@ -414,15 +448,25 @@ function Guide.AddAll(texts, bought)
         local head = ns.Format.Head(text)
         if head and not head.divider then
             local guide, found = ns.Format.Read(text, who)
-            local key = KeyOf(head.group, head.name, head.only)
-            local kept = Pack(text)
-            kept.name, kept.group, kept.subgroup, kept.title = head.name, head.group, head.subgroup, head.title
-            kept.only, kept.defaultFor, kept.after, kept.games = head.only, head.defaultFor, head.after, head.games
-            kept.part, kept.bought = head.part, bought or nil
-            store[key] = kept
-            names[#names + 1] = head.name
             for _, problem in ipairs(found or EMPTY) do problems[#problems + 1] = head.name .. ", " .. problem end
-            if not first and guide and not head.part and Mine(kept, who) then first = key end
+            if not guide then
+                problems[#problems + 1] = head.name .. ", nothing to follow in it: not kept"
+            else
+                -- Kept for the account (what is for whom is read again for each character); one with no step for
+                -- this character now (every step another class's, or of a higher level) is never chosen for it.
+                local key = KeyOf(head.group, head.name, head.only)
+                local kept = Pack(text)
+                kept.name, kept.group, kept.subgroup, kept.title = head.name, head.group, head.subgroup, head.title
+                kept.only, kept.defaultFor, kept.after, kept.games = head.only, head.defaultFor, head.after, head.games
+                kept.part, kept.bought = head.part, bought or nil
+                store[key] = kept
+                names[#names + 1] = head.name
+                if not guide.steps[1] then
+                    problems[#problems + 1] = head.name .. ", no step to follow for this character now: kept, not chosen"
+                elseif not first and not head.part and Mine(kept, who) then
+                    first = key
+                end
+            end
         end
     end
     -- A character without a guide yet takes the first one for it.
@@ -445,7 +489,8 @@ local function Find(name, group, who)
     local found, rank
     for _, guides in ipairs({ Store(), shipped }) do
         for key, kept in pairs(guides) do
-            if type(kept) == "table" and (kept.name == name or KeyOf(kept.group, kept.name) == name) then
+            local named = type(kept) == "table" and Text(kept.name)
+            if named and (named == name or KeyOf(kept.group, named) == name) then
                 local this = (Mine(kept, who) and 0 or 2) + ((kept.group or "") == (group or "") and 0 or 1)
                 if not rank or this < rank then found, rank = key, this end
             end
@@ -506,7 +551,7 @@ end
 local function Start()
     local notes = Core.Character(ns.name)
     local guide = type(notes.guide) == "string" and Read(notes.guide)
-    if guide and guide.mine then
+    if Runs(guide) then
         ns.Run.Use(guide)
         return
     end
@@ -515,7 +560,7 @@ local function Start()
         local entry = Entry(key)
         if Mine(entry, who) and type(entry.defaultFor) == "string" and ns.Format.For(who, entry.defaultFor) then
             local read = Read(key)
-            if read and read.mine then
+            if Runs(read) then
                 ns.Run.Use(read)
                 return
             end
@@ -529,7 +574,7 @@ function Guide.After(guide)
     for _, after in ipairs(guide.after) do
         local key = Find(after.name, guide.group, who)
         local next = key and (not after.only or ns.Format.For(who, after.only)) and Read(key)
-        if next and next.mine then return next end
+        if Runs(next) then return next end
     end
     return nil
 end

@@ -81,13 +81,6 @@ Text.STEPS = {
     { breakpoint = 1000, abbreviation = "k", significandDivisor = 100, fractionDivisor = 10, abbreviationIsGlobal = false },
 }
 
-local function Font()
-    for _, name in ipairs(Text.FONTS) do
-        if rawget(_G, name) then return name end
-    end
-    return nil
-end
-
 -- The line's font: the game's font for its plates' names (its face and outline), smaller, set once on every text
 -- of ours, so a change the game makes to its font object later changes none of them.
 local font
@@ -138,6 +131,16 @@ function Text.Width(text)
     local width = Drawn(ruler)
     if not width then width = #text * Font().height * Text.GUESS end -- the game cannot say yet: about so wide
     return math.ceil(width)
+end
+
+-- The room a threat takes ("100%"): measured once, and again only while the game could not say.
+local percent
+local function Percent()
+    if percent then return percent end
+    ruler:SetText("100%")
+    local width = Drawn(ruler)
+    if width then percent = math.ceil(width) end
+    return percent or Text.Width("100%")
 end
 
 -- How high the bar is: the line's font and its padding over and under it, inside a border of a pixel.
@@ -336,7 +339,7 @@ function Text.Threat(dress, unit)
         Room(dress, "threat", nil)
         return ns.Bar.Glow(dress, false)
     end
-    Room(dress, "threat", Text.Width("100%"))
+    Room(dress, "threat", Percent())
     if not pcall(text.SetFormattedText, text, "%d%%", share) then text:SetText("") end
     local plain = Plain(kind)
     if plain then
@@ -424,7 +427,8 @@ local function Hidden(text, unit, now)
     end
 end
 
-function Text.Health(dress, unit)
+-- The health and its room; anew: its guess at the most made again (the unit's level or rank changed).
+function Text.Health(dress, unit, anew)
     local text = dress.value
     local now, most = ns.Bar.Raw(UnitHealth, unit), ns.Bar.Raw(UnitHealthMax, unit)
     if type(now) == "nil" or type(most) == "nil" then
@@ -433,10 +437,18 @@ function Text.Health(dress, unit)
     end
     local plainNow, plainMost = Plain(now), Plain(most)
     -- Its room: as wide as the most it can show, so the bar does not change width as health goes. The game hides the
-    -- health of a plate's unit from addons always, and its most often: the most's width when it says it (kept),
-    -- else a guess from the unit's level and rank (Text.Guess).
-    if type(plainMost) == "number" then dress.valueRoom = Text.Width(Text.Short(plainMost) .. " | 100%") end
-    Room(dress, "value", dress.valueRoom or Text.Width(Text.Guess(unit) .. " | 100%"))
+    -- health of a plate's unit from addons always, and its most often: the most's width when it says it (kept, and
+    -- measured again only when the most changed), else a guess from the unit's level and rank (Text.Guess; kept on
+    -- the dress until they change: every UNIT_HEALTH is no time to measure).
+    if anew then dress.valueGuess = nil end
+    if type(plainMost) == "number" then
+        if plainMost ~= dress.valueMost then
+            dress.valueMost, dress.valueRoom = plainMost, Text.Width(Text.Short(plainMost) .. " | 100%")
+        end
+    elseif not dress.valueRoom and not dress.valueGuess then
+        dress.valueGuess = Text.Width(Text.Guess(unit) .. " | 100%")
+    end
+    Room(dress, "value", dress.valueRoom or dress.valueGuess)
     if type(plainNow) == "number" and type(plainMost) == "number" then
         return text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
     end
@@ -474,10 +486,11 @@ function Text.Set(dress, unit)
         for _, text in ipairs({ dress.count, dress.level, dress.gear, dress.threat, dress.value, dress.name }) do text:SetText("") end
         dress.quest:Hide()
         dress.raid:Hide()
-        dress.nameRoom, dress.valueRoom = nil, nil
+        dress.nameRoom, dress.valueRoom, dress.valueMost, dress.valueGuess = nil, nil, nil, nil
         for piece in pairs(dress.room) do dress.room[piece] = nil end
         return
     end
+    dress.valueMost, dress.valueGuess = nil, nil -- the most and its guess measured anew (the game's fonts set up since)
     dress.holding = true -- laid out once, after all of them
     Text.Quest(dress, unit)
     Text.Level(dress, unit)

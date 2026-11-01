@@ -70,7 +70,8 @@ local _, ns = ...
 --                           closer to the screen's edge; clicked through but its title bar, its words and its
 --                           items; the objectives done left out, the
 --                           headers without their fold marks
---  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker).
+--  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker),
+--  but in Edit Mode, where it is the game's to place.
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -85,6 +86,7 @@ QuestLog.FIRST = { x = 12, y = -84 } -- its first place, from the screen's top l
 QuestLog.FIRST_SMALL = { x = 0, y = 0 } -- on the screen alone: the screen's top left corner
 QuestLog.SORTS = { "proximity", "level", "zone", "type" } -- a click on its title: the next of them, round
 QuestLog.RESORT = 2       -- sorted by proximity: the order looked at again every so many seconds while in sight
+QuestLog.REFLOW = 0.1     -- seconds after the last step of a size change that an open quest's text is wrapped anew
 QuestLog.BACK = 0.88      -- its background's opacity over the full map (on the screen alone: none)
 QuestLog.EDGE = 10        -- room inside its edges
 QuestLog.EDGE_SMALL = 4   -- on the screen alone: at the side it stands at (and its title)
@@ -199,12 +201,14 @@ end
 -- a zone folded over the full map (store.questLogFolds, by its name). And how many quests it holds.
 local function Entries()
     local entries, quests, folded = {}, 0, false
+    local folds = full and ns.store.questLogFolds -- (as saved: a table, or nothing at all)
+    if type(folds) ~= "table" then folds = nil end
     local count = Plain(Core.Ask(C_QuestLog.GetNumQuestLogEntries)) or 0
     for index = 1, count do
         local info = Core.Ask(C_QuestLog.GetInfo, index)
         if type(info) == "table" then
             if info.isHeader then
-                folded = (full and ns.store.questLogFolds and ns.store.questLogFolds[info.title]) and true or false
+                folded = (folds and folds[info.title]) and true or false
                 entries[#entries + 1] = { kind = "header", text = info.title, index = index, collapsed = folded }
             elseif not info.isHidden and info.questID then
                 quests = quests + 1
@@ -567,7 +571,7 @@ local function Clicked(element, mouse)
     if row.kind == "header" then
         -- Not in your log, a type: no zone; on the screen alone no fold mark, no folding.
         if not row.index or not full then return end
-        ns.store.questLogFolds = ns.store.questLogFolds or {}
+        if type(ns.store.questLogFolds) ~= "table" then ns.store.questLogFolds = {} end
         ns.store.questLogFolds[row.text] = not row.collapsed or nil
         return QuestLog.Refresh()
     end
@@ -1134,13 +1138,15 @@ local function Linking()
     return IsModifiedClick("CHATLINK") and chat and chat.GetActiveWindow and chat.GetActiveWindow() and true or false
 end
 
--- Linked, the click uses nothing: only out of a fight, in one the game locks what the button does.
+-- Linked, the click uses nothing: only out of a fight, in one the game locks what the button does. So the link is
+-- written only where the use was held off: in a fight the click uses the item alone (a click does one thing, as on
+-- the game's tracker).
 local function ItemPressed(button)
     if Linking() and not InCombatLockdown() then button:SetAttribute("type", "") end
 end
 
 local function ItemClicked(button)
-    if Linking() and button.link then ChatFrameUtil.InsertLink(button.link) end
+    if Linking() and button.link and button:GetAttribute("type") == "" then ChatFrameUtil.InsertLink(button.link) end
     if not InCombatLockdown() then button:SetAttribute("type", "item") end
 end
 
@@ -1246,7 +1252,9 @@ end)
 -- hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
 -- once the game's are chosen, or the module stands down. The tracker is a frame the game manages: each time a layout
 -- of Edit Mode is applied (the login, Edit Mode closing, a layout changed) its manager takes it back under its own
--- parent, whatever parent it has now. A hook after its SetParent puts it out of sight again at once.
+-- parent, whatever parent it has now. A hook after its SetParent puts it out of sight again at once. Not in Edit Mode:
+-- there the tracker is the game's, to be seen and placed (its manager breaks it from its container as it is dragged,
+-- and Reclaim would take it back at once); ours again as Edit Mode closes (Core.EditMode.Watch).
 local function Reclaim(tracker)
     if not lent or tracker:GetParent() == away then return end
     if Core.Locked(tracker) then return Core.AfterCombat("quest tracker", Reclaim, tracker) end
@@ -1255,7 +1263,8 @@ end
 
 function QuestLog.Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
-    local hide = not ns.off and (not (ns.options or {}).nativeMap or (frame and frame:IsShown()))
+    local hide = not ns.off and not Core.EditMode.active
+        and (not (ns.options or {}).nativeMap or (frame and frame:IsShown()))
     if hide and tracker and not lent then
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
@@ -1270,6 +1279,7 @@ function QuestLog.Tracker()
         was:Return()
     end
 end
+Core.EditMode.Watch(ns.Guard(QuestLog.Tracker))
 
 -- The side the window stands at: the screen edge it is docked to, else the half of the screen its middle is in.
 local function Side()
@@ -1439,9 +1449,11 @@ function QuestLog.Build()
     measure:SetPoint("TOPLEFT")
     measure:SetSpacing(2)
     measure:SetAlpha(0)
-    -- Sized: an open quest's text wraps anew; on the screen alone its rows' words are measured again.
+    -- Sized: an open quest's text wraps anew, once the size rests (a grip's drag sizes it every frame: the whole log
+    -- read anew each time is too much); on the screen alone its rows' words are measured again at once.
+    local reflow = Core.Later(function() if open then QuestLog.Refresh() end end, QuestLog.REFLOW)
     local function Sized()
-        if open then QuestLog.Refresh() end
+        if open then reflow() end
         if not full and box.ForEachFrame then box:ForEachFrame(Reach) end
         Scroller()
         seat()

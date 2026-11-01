@@ -8,9 +8,11 @@ local _, ns = ...
 --  on or taking it off changes no count, so it is no new item.
 --
 --  It listens from the login on, lightly: the bags are counted a frame after
---  a burst of bag events is over. While the bank is open nothing is counted
---  (taking items out of it is no new item); a moment after it closes the
---  counts are taken anew, without anything new.
+--  a burst of bag events is over, and a new item has the window drawn anew
+--  with the bags' own refresh (Bags.Soon: once, not twice in that frame).
+--  While the bank is open nothing is counted (taking items out of it is no
+--  new item); a moment after it closes the counts are taken anew, without
+--  anything new.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Recent = {}
@@ -75,7 +77,7 @@ local function Take(new)
     end
     totals, counting = counting, totals
     started = true
-    if changed and ns.Bags and ns.Bags.Refresh then ns.Bags.Refresh() end
+    if changed and ns.Bags and ns.Bags.Soon then ns.Bags.Soon() end -- with the bags' own refresh, in one frame
 end
 
 local Soon = Core.Later(function() Take(true) end)

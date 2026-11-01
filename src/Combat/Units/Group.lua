@@ -25,7 +25,9 @@ local _, ns = ...
 --  game's secure unit buttons, made by the headers when you first join a group
 --  (out of a fight); each carries our face (GroupFace.lua), which follows the unit
 --  its header gives it, so clicks, the game's menu, the tooltip and @mouseover
---  are as on your other frames. The game's state driver shows them while you
+--  are as on your other frames; a slot keeps its token while its member changes
+--  (one left, the next slid in), so every face reads its unit anew whenever the
+--  group changes, in a fight too. The game's state driver shows them while you
 --  are in a group; alone you have your own frame. Your own slot among them is
 --  one of them, with the group's word for a name and a cog that opens the
 --  group's tools (GroupTools.lua).
@@ -362,7 +364,13 @@ end
 
 function Group.Start()
     ns.GroupBuffs.Learn()
-    ns.On("GROUP_ROSTER_UPDATE", Core.Later(Group.Apply))
+    -- The group changed: every face reads its slot anew at once (a header gives a slot the same token whoever fills it,
+    -- and no event of the unit's tells of its new member; a fight holds the rest back), then the sizes and the driver.
+    local Applied = Core.Later(Group.Apply)
+    ns.On("GROUP_ROSTER_UPDATE", function()
+        if InCombatLockdown() then Again() end -- out of a fight Apply fills every face itself
+        Applied()
+    end)
     ns.On("PLAYER_ROLES_ASSIGNED", Again)
     ns.On("RAID_TARGET_UPDATE", Again)
     ns.On("PLAYER_REGEN_ENABLED", Again)

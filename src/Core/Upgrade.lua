@@ -28,8 +28,8 @@ local TWO_HANDS = { INVTYPE_2HWEAPON = true }
 local RANGED = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THROWN = true }
 local DPS = "ITEM_MOD_DAMAGE_PER_SECOND_SHORT"
 
--- Where each kind of gear is worn: the game's places (INVSLOT_*); "ranged" is the ranged place where the game has
--- one, else the main hand (Retail).
+-- Where each kind of gear is worn: the game's places (INVSLOT_*); "ranged" is Forever's ranged place (the game's
+-- RangedSlot: bows, guns, wands, thrown weapons, relics), Retail's main hand, where its ranged weapons are held.
 local PLACES = {
     INVTYPE_HEAD = { "INVSLOT_HEAD" }, INVTYPE_NECK = { "INVSLOT_NECK" }, INVTYPE_SHOULDER = { "INVSLOT_SHOULDER" },
     INVTYPE_CHEST = { "INVSLOT_CHEST" }, INVTYPE_ROBE = { "INVSLOT_CHEST" }, INVTYPE_WAIST = { "INVSLOT_WAIST" },
@@ -44,11 +44,16 @@ local PLACES = {
 }
 local OFF_HAND = { INVSLOT_OFFHAND = true }
 
-local ranged -- the ranged place's number, false where the game has none (asked once)
+local ranged -- the ranged place's number (asked once), false where the game does not say it
 local function Place(name)
     if name == "ranged" then
-        if ranged == nil then ranged = Core.Ask(rawget(_G, "GetInventorySlotInfo"), "RangedSlot") or false end
-        return ranged or rawget(_G, "INVSLOT_MAINHAND")
+        if ranged == nil then
+            local doll = rawget(_G, "C_PaperDollInfo")
+            local slot = Core.Ask(doll and doll.GetInventorySlotInfo or rawget(_G, "GetInventorySlotInfo"), "RangedSlot")
+            ranged = Core.ForGame({ forever = type(slot) == "number" and slot or rawget(_G, "INVSLOT_RANGED"),
+                                    retail = rawget(_G, "INVSLOT_MAINHAND") }) or false
+        end
+        return ranged or nil
     end
     return rawget(_G, name)
 end

@@ -4,8 +4,8 @@
 -- on past done steps, the steps at hand, skipping, going back and being held there, what the game tells as it
 -- happens, places, tests that pass a step by, the next guide), what the game knows done by itself (at a guide picked
 -- partway, past steps it cannot judge, after a click back, your place kept), the guides kept (packed, chosen), the
--- picture over the world (drawn, clicked, scrolled, hidden), the arrow, the icons (only what can be used; secure), and
--- standing down.
+-- picture over the world (drawn, clicked, scrolled, hidden), the arrow (a facing the game hides), the icons (only what
+-- can be used; secure: held in a fight), what the game hides (secret values), and standing down.
 -- The guide format's own words come from Core (Core.Neighbours.KNOWN.guide): the test names none of its own.
 -- Usage, from the project folder:  lua5.1 dev/tests/speedguide.lua
 
@@ -56,18 +56,6 @@ function UnregisterStateDriver() end
 function ClearOverrideBindings() end
 function GetBindingKey() return nil end
 UnitExists = function(unit) return unit == "player" end
-
-C_Timer.NewTicker = function(every, fn)
-    local ticker = { cancelled = false }
-    function ticker:Cancel() self.cancelled = true end
-    local function Tick()
-        if ticker.cancelled then return end
-        fn(ticker)
-        if not ticker.cancelled then C_Timer.After(every, Tick) end
-    end
-    C_Timer.After(every, Tick)
-    return ticker
-end
 
 -- An orc warrior of the Horde, level 5, 100 of 400 points into it, with some money.
 UnitRace = function() return "Orc", "Orc", 2 end
@@ -345,6 +333,30 @@ check(type(Core.Store(ns.name).guides["Our Group\\1-6 Valley << Horde"]) == "tab
     "kept by group and name, and for whom its head says")
 check(Guide.Chosen() == "Our Group\\1-6 Valley << Horde", "a character without a guide takes the first for it")
 check(Core.Character(ns.name).guide == "Our Group\\1-6 Valley << Horde", "kept for the character")
+-- A guide with no step to follow for this character (every step somebody else's) is kept for the account but never
+-- chosen for it (the picture would have no step to show), and said so; a step that is not there asks nothing of the guide.
+;(function()
+    local valley = Guide.Chosen()
+    local headAlone = "#forever\n" .. Mark("name", "Head Alone") .. "\n" .. Mark("group", "Our Group")
+    local elsewhere = "#forever\n" .. Mark("name", "Elsewhere") .. "\n" .. Mark("group", "Our Group") .. "\nstep << Mage\n"
+        .. Line("take", "50")
+    local kept, problems = Guide.AddAll({ headAlone, elsewhere }, false)
+    check(#problems == 2 and problems[1]:find("Head Alone", 1, true) and problems[2]:find("Elsewhere", 1, true)
+        and problems[2]:find("kept, not chosen", 1, true) and type(Core.Store(ns.name).guides["Our Group\\Elsewhere"]) == "table",
+        "every step somebody else's: kept for the account, not chosen, and said: " .. tostring(problems[2]))
+    check(Guide.Chosen() == valley, "the guide followed stays")
+    Core.Store(ns.name).guides["Our Group\\Empty"] = { name = "Empty", group = "Our Group", text = elsewhere }
+    Guide.Choose("Our Group\\Empty")
+    local ok, picture = pcall(Guide.Picture)
+    check(ok and Guide.Chosen() == nil and picture == nil, "one kept before with no step for you: chosen, none is followed: "
+        .. tostring(picture))
+    check(pcall(Steps.Update), "and the view draws nothing of it")
+    Core.Store(ns.name).guides["Our Group\\Empty"] = nil
+    Core.Store(ns.name).guides["Our Group\\Elsewhere"], Core.Store(ns.name).guides["Our Group\\Head Alone"] = nil, nil
+    Guide.Choose(valley)
+    check(Guide.Chosen() == valley, "the guide back")
+    check(Guide.Line(999).shown == 999 and Guide.Line(999).text == "", "a step that is not there: its number, no words")
+end)()
 check(#Guide.Kept() == 2 and Guide.Kept()[1].group == "Our Group", "listed by group and name")
 Guide.AddAll(opened, true)
 check(#Guide.Kept() == 4, "the bought guides kept too")
@@ -360,6 +372,16 @@ check(picture.title == "Valley of Trials" and picture.at == 1 and picture.total 
 check(picture.hand[1].lines[1].text:find("|cff%x%x%x%x%x%xKaltunk|r"), "the NPC's name in our colour")
 check(not picture.hand[1].lines[1].text:find(COLOUR.friend, 1, true), "the format's colour word is gone")
 check(Guide.Line(Guide.Listed()[2]).number == 2 and Guide.Line(2).text:find("copper", 1, true), "the next steps listed")
+-- The format's colour words are Core's, asked once: a picture drawn again asks nothing anew.
+;(function()
+    local format, asked = Core.Neighbours.Format, 0
+    Core.Neighbours.Format = function(...) asked = asked + 1 return format(...) end
+    Guide.Picture()
+    Guide.Bare("|c" .. COLOUR.foe .. "Boar|r")
+    Guide.Things()
+    check(asked == 0, "the format's colour words are kept from the first painting, not asked at every line: " .. asked)
+    Core.Neighbours.Format = format
+end)()
 
 -- The quest givers: the step's quest to take, and the next step's.
 local wants = Guide.Quests()
@@ -429,6 +451,20 @@ Steps.Update()
 local icon1 = rawget(_G, "SaneUISpeedLevelingIcon1")
 check(icon1 and icon1:GetAttribute("type") == "item" and icon1:GetAttribute("item") == "item:6948",
     "the usable item is an icon; a click uses it")
+-- In a fight the game holds secure buttons: the row stays as it was, and follows by itself once the fight is over.
+;(function()
+    W.Combat(true)
+    W.items[6948].count = 0 -- the Hearthstone gone from the bags in the fight
+    Steps.Update()
+    check(icon1:IsProtected() and icon1._shown and icon1:GetAttribute("item") == "item:6948" and Core.Owed("speedleveling: icons"),
+        "in a fight the secure icons stay as they were, the change owed to its end")
+    W.Combat(false)
+    check(icon1:GetAttribute("item") == nil and icon1:GetAttribute("type") == "macro" and not Core.Owed("speedleveling: icons"),
+        "the fight over: the row follows by itself")
+    W.items[6948].count = 1
+    Steps.Update()
+    check(icon1:GetAttribute("item") == "item:6948", "the Hearthstone back: its icon again")
+end)()
 
 -- At a glance: a thing to do says its count once, before its words, whichever way the game writes it; the step's number
 -- stands at the top right.
@@ -515,6 +551,18 @@ end)()
     Steps.Update()
     check(card._shown and not row._shown, "and the steps are back")
     Guide.Go = go
+    -- Another guide chosen while the list shows, one shorter than the list's numbers: its steps at hand, no list of the
+    -- old one's.
+    card._scripts.OnMouseWheel(card, 1)
+    check(#Rows() == 3 and not card._shown, "the list once more")
+    local chosen = Guide.Chosen()
+    Guide.Choose("Our Group\\6-10 Hills << Horde")
+    local ok, problem = pcall(Steps.Update)
+    check(ok and #Rows() == 0 and not ns.Steps.closer._shown,
+        "another guide chosen while the list shows: its steps, not the old list: " .. tostring(problem))
+    Guide.Choose(chosen)
+    Steps.Update()
+    check(Guide.Chosen() == chosen and Shown(ns.TEXT.step:format(3)) ~= nil, "the first guide back, at its step")
     view._mouseOver = false
     ns.options.ahead, ns.Steps.ROW = long, tall
 end)()
@@ -558,6 +606,11 @@ check(line and line.map == 1411 and idx == 3, "the arrow points to the step's pl
     Arrow.Update(true)
     check(math.abs(ring._rotation - 2) < 1e-6 and far:GetText():find(Core.Distance(340), 1, true) and words:GetText() == said,
         "a way known: turned along it, with its yards, the step's words")
+    GetPlayerFacing = function() return W.Secret() end -- the facing hidden from addons: it goes through Core.Plain
+    Arrow.Update(true)
+    check(not ring._shown and far:GetText() == "" and words:GetText() == said,
+        "a facing the game hides: no turn and no yards, the words alone, nothing computed with it")
+    GetPlayerFacing = function() return 0.5 end
     told = { way = 2.5, yards = 90, ride = "flight", to = "Crossroads" }
     Arrow.Update(true)
     check(ring._shown and words:GetText() == "Fly to Crossroads" and picture:GetTexture():find("UITaxiCursor2x", 1, true),
@@ -676,6 +729,25 @@ for _, kept in ipairs(Guide.Kept()) do
     end
 end
 check(twins == 2 and mineTwins == 1, "guides of one name for different characters kept apart: " .. twins)
+-- A damaged saved file: a record with numbers and tables where words belong, or without a name, fails no list and no
+-- menu; what of it is words counts.
+;(function()
+    local guides = Core.Store(ns.name).guides
+    guides["Our Group\\Odd"] = { name = "Odd", group = 7, subgroup = {}, title = false, only = 9, games = "forever",
+                                 text = "step\n" .. Line("take", "1") }
+    guides[42] = { name = {}, group = "Our Group", text = "step" }
+    local ok, kept = pcall(Guide.Kept)
+    local odd, nameless
+    for _, entry in ipairs(ok and kept or {}) do
+        if entry.name == "Odd" then odd = entry end
+        if entry.key == 42 then nameless = entry end
+    end
+    check(ok and odd and odd.group == "" and odd.subgroup == "" and odd.title == nil and odd.mine and not nameless,
+        "a damaged record is listed by what of it is words, one without a name not at all: " .. tostring(ok and "" or kept))
+    local found, after = pcall(Guide.After, { after = { { name = "Odd" } }, group = "Our Group" })
+    check(found and after and after.key == "Our Group\\Odd", "and found as the guide after another: " .. tostring(after))
+    guides["Our Group\\Odd"], guides[42] = nil, nil
+end)()
 
 -------------------------------------------------------------------------------
 --  Guide packs, and the view's menu
@@ -789,6 +861,11 @@ check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part fr
     check(not Guide.Line(8).done and Guide.Line(10).done, "the list's ticks are what the game knows, not where you are")
     quests.done[603] = nil
 
+    -- A level the game hides (a secret value) goes through Core.Plain: no level reached, nothing computed with it.
+    local plainLevel = UnitLevel
+    UnitLevel = function() return W.Secret() end
+    check(Run.Check() == false and Run.At() == 7, "a level the game hides is no level reached: the step stays, no error")
+    UnitLevel = plainLevel
     -- The level comes: on to the hearth, which stays: nothing after it is known done yet. Your click still does it.
     W.level = 9
     check(Run.Check() and Run.At() == 8, "a level reached moves it on")

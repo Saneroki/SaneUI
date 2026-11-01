@@ -131,5 +131,6 @@ function Roster.Show(characters, key, counts)
         end
     end
     menu:OverrideText(word)
-    menu:GenerateMenu()
+    -- the game's dropdown makes its menu when it is opened: only one open now is made anew
+    if menu:IsMenuOpen() then menu:GenerateMenu() end
 end

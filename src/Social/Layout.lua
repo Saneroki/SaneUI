@@ -20,7 +20,6 @@ Layout.LEVEL = 100                             -- the window's frame level: abov
 Layout.INPUT_LEVEL = 13                        -- the line to write in drawn so far above the window: over the messages (their bubbles reach 11 there)
 Layout.FADE = 1                                -- seconds a message takes to fade out, at first (a setting: fadeOutTime)
 Layout.APPEAR = 0.4                            -- seconds a message takes to fade in, at first (a setting: fadeInTime)
-Layout.SLIDE = 0.3                             -- seconds the messages take to slide to their new place, at first (slideTime)
 Layout.EDGE = 6                                -- from the window's border to what is in it
 Layout.SCROLL = 14                             -- room at the right for the scroll bar
 Layout.ICON = 28                               -- the round class icon with its ring

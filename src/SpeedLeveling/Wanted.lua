@@ -268,10 +268,10 @@ end
 
 -- Whether a unit is wanted: a creature or NPC of those names, or one the game marks for a quest of yours: a creature
 -- to kill or loot, or an NPC that is no foe (one to hand a quest in to, or to speak to; on any client, without Core's
--- data).
-function Wanted.Unit(unit)
+-- data). have: the names as a set, where the caller asked for them already (Key.Refresh asks once for all it does).
+function Wanted.Unit(unit, have)
     if not Core.Ask(UnitExists, unit) or Core.Ask(UnitIsPlayer, unit) then return false end
-    local _, have = Wanted.Names()
+    if not have then have = select(2, Wanted.Names()) end
     local name = Core.Ask(UnitName, unit)
     if type(name) == "string" and have[name] then return true end
     local doing = Core.UnitQuest(unit)

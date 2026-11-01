@@ -3,6 +3,8 @@
 -- they use them, its unit functions for the units a test names, its unit watch, the game's frames ours stand for,
 -- and its main action bar with two buttons (a test puts an action on one: W.actions).
 -- Usage, before the module is loaded:  local fight = require("combatclient").Install(W)
+-- Run on its own (lua5.1 dev/tests/combatclient.lua) it tries its stand-ins under the stand-in client's rules, with
+-- Core loaded: a hidden value, a fight, a frame shown with its row.
 
 local Client = {}
 
@@ -117,9 +119,33 @@ function Client.Install(W)
         local list = W.auras[unit] and W.auras[unit][filter]
         return list and list[index]
     end
-    local watched = {}
-    RegisterUnitWatch = function(frame) watched[frame] = true end
-    UnregisterUnitWatch = function(frame) watched[frame] = nil end
+    -- The game's unit watch (RegisterUnitWatch): a watched frame is shown while its unit is there and hidden while it
+    -- is not, as it is registered and at every tick of the watch, in a fight too (the game's own secure code does it).
+    -- The game ticks every 0.2 seconds; here the test does, fight.Watch(), once it changed a unit.
+    local watched, watching = {}, {} -- the frames, as a set to ask and in the order they registered
+    local function Seen(frame)
+        local exists = UnitExists(frame:GetAttribute("unit"))
+        local combat = W.combat
+        W.combat = false -- the stand-in refuses a touch of a secure frame in a fight; the game's own watch is let
+        if exists then frame:Show() else frame:Hide() end
+        W.combat = combat
+    end
+    RegisterUnitWatch = function(frame)
+        if not watched[frame] then watching[#watching + 1] = frame end
+        watched[frame] = true
+        Seen(frame)
+    end
+    UnregisterUnitWatch = function(frame)
+        watched[frame] = nil
+        for index = #watching, 1, -1 do
+            if watching[index] == frame then table.remove(watching, index) end
+        end
+    end
+    local function Watch()
+        for _, frame in ipairs({ unpack(watching) }) do -- a copy: a frame registered by a script waits for the next tick
+            if watched[frame] then Seen(frame) end
+        end
+    end
     -- The game's state driver (what a frame's visibility hangs on: W.drivers[frame]), and its secure group headers: a
     -- header makes its buttons when told to start below its first, and gives them the units a test says (W.members
     -- [group] = { unit, ... }) whenever it is told anything.
@@ -164,7 +190,10 @@ function Client.Install(W)
             end
         end
     end
+    -- The game's frames ours stand for. Its unit frames are its secure unit buttons, protected: the stand-in refuses a
+    -- touch of one in a fight, as the game does.
     PlayerFrame = W.NewWidget("Button", "PlayerFrame", UIParent)
+    PlayerFrame._protected = true
     PlayerFrame.PlayerFrameContainer = W.NewWidget("Frame", nil, PlayerFrame)
     PlayerFrame.PlayerFrameContent = W.NewWidget("Frame", nil, PlayerFrame)
     PlayerFrame._mouse = true
@@ -172,8 +201,11 @@ function Client.Install(W)
     PlayerFrame.PlayerFrameContent.HealthBar = W.NewWidget("StatusBar", nil, PlayerFrame.PlayerFrameContent)
     PlayerFrame.PlayerFrameContent.HealthBar._motion = true
     TargetFrame = W.NewWidget("Button", "TargetFrame", UIParent)
+    TargetFrame._protected = true
     FocusFrame = W.NewWidget("Button", "FocusFrame", UIParent)
+    FocusFrame._protected = true
     PetFrame = W.NewWidget("Button", "PetFrame", PlayerFrame)
+    PetFrame._protected = true
     PetFrame._mouse = true
     PetFrameHappiness = W.NewWidget("Frame", "PetFrameHappiness", PetFrame)
     PetFrameHappiness._mouse, PetFrameHappiness._motion = true, true
@@ -220,8 +252,10 @@ function Client.Install(W)
     end
     GetMirrorTimerProgress = function(timer) return W.mirrorLeft[timer] end
     -- The game's main action bar: its art, a divider, two buttons, the first holding an action, the second empty.
+    -- Its buttons are secure (the game's action buttons): a touch of one in a fight is refused.
     local function GameButton(slot)
         local button = W.NewWidget("CheckButton", nil, UIParent)
+        button._protected = true
         button.action, button.icon, button.IconMask = slot, W.NewWidget("Texture", nil, button), W.NewWidget("MaskTexture")
         button.icon:AddMaskTexture(button.IconMask)
         for _, key in ipairs({ "NormalTexture", "SlotArt", "SlotBackground", "Border" }) do
@@ -241,8 +275,106 @@ function Client.Install(W)
     MainActionBar.ActionBarPageNumber.UpButton._mouse = true
     MainActionBar.HorizontalDividersPool = { EnumerateActive = function() return pairs({ [divider] = true }) end }
     MainActionBar.actionButtons = { GameButton(1), GameButton(2) }
-    return { units = units, Unit = Unit, watched = watched, divider = divider, UnitName = UnitName,
+    return { units = units, Unit = Unit, watched = watched, Watch = Watch, divider = divider, UnitName = UnitName,
              UnitIsPlayer = UnitIsPlayer }
 end
+
+-- Run on its own, the client tries its stand-ins under the stand-in client's rules, with Core loaded (what the module
+-- reads the game through): a hidden value a test gives a unit reaches the module as the game's secret; a secure group
+-- header is refused in a fight and told after it; the unit watch shows a frame and its row, the row's OnShow with its
+-- frame's, and a frame out of sight hears nothing of its row.
+local function SelfCheck()
+    local root = arg[0]:match("^(.*)/dev/tests/") or "."
+    package.path = root .. "/dev/tests/?.lua;" .. package.path
+    local W = require("wowstub")
+    W.Install(_G)
+    local passed = 0
+    local function check(condition, what)
+        if not condition then error("FAILED: " .. what, 2) end
+        passed = passed + 1
+    end
+    local fight = Client.Install(W)
+    local units = fight.units
+    W.LoadCore(root)
+    local Core = SaneUI.Core
+    W.Fire("ADDON_LOADED", "SaneUI")
+
+    -- A value the game hides in a fight (health, threat), given to a unit: the module reads every unit value through
+    -- Core.Plain and Core.Ask (Units/Bar.lua, Units/GroupFace.lua): nil for the hidden one, the plain ones beside it.
+    local hidden = W.Secret()
+    units.target = { name = "Kobold Miner", health = hidden, most = 120, tanking = hidden }
+    local health, most = Core.Ask(UnitHealth, "target"), Core.Ask(UnitHealthMax, "target")
+    check(issecretvalue(UnitHealth("target")) and health == nil and most == 120 and Core.Plain(UnitHealth("target")) == nil
+        and Core.Ask(UnitDetailedThreatSituation, "player", "target") == nil and Core.Plain(UnitName("target")) == "Kobold Miner",
+        "a hidden value reaches the module as the game's secret: nil through Core.Plain and Core.Ask, the plain ones beside it")
+
+    -- A secure group header (Units/Group.lua makes them out of a fight): told to start in a fight, the game refuses and
+    -- no button is made; asked through Core.AfterCombat it waits for the fight's end, then makes its buttons with the
+    -- group's units.
+    W.members[1] = { "player", "party1" }
+    local header = CreateFrame("Frame", nil, UIParent, "SecureGroupHeaderTemplate")
+    header:SetAttribute("template", "SecureUnitButtonTemplate")
+    header:SetAttribute("groupFilter", "1")
+    W.Combat(true)
+    local ok, err = pcall(header.SetAttribute, header, "startingIndex", -1)
+    local now = Core.AfterCombat("the header", header.SetAttribute, header, "startingIndex", -1)
+    check(not ok and tostring(err):find("ADDON_ACTION_BLOCKED") and header[1] == nil and not now and Core.Owed("the header"),
+        "in a fight the header cannot be told to start: the game refuses, no button is made; asked after the fight it waits")
+    W.Combat(false)
+    check(not Core.Owed("the header") and header[1]._template == "SecureUnitButtonTemplate"
+        and header[1]:GetAttribute("unit") == "player" and header[2]:GetAttribute("unit") == "party1" and header[3] == nil,
+        "after the fight it is told: two buttons made from the template, each with its unit")
+
+    -- A frame and its row as Units/Units.lua makes them: the game's secure unit buttons, the row a child of the frame,
+    -- hidden, both on the game's unit watch, the frame's first. What each hears of its showing and hiding.
+    local heard = {}
+    local function Heard()
+        local words = table.concat(heard, ", ")
+        heard = {}
+        return words
+    end
+    local function Hears(frame, word)
+        frame:HookScript("OnShow", function() heard[#heard + 1] = word .. " shown" end)
+        frame:HookScript("OnHide", function() heard[#heard + 1] = word .. " hidden" end)
+    end
+    units.target = nil
+    local frame = CreateFrame("Button", nil, UIParent, "SecureUnitButtonTemplate")
+    frame:SetAttribute("unit", "target")
+    local row = CreateFrame("Button", nil, frame, "SecureUnitButtonTemplate")
+    row:SetAttribute("unit", "targettarget")
+    row:Hide()
+    Hears(frame, "frame")
+    Hears(row, "row")
+    RegisterUnitWatch(frame)
+    RegisterUnitWatch(row)
+    check(fight.watched[frame] and not frame._shown and not row._shown and Heard() == "frame hidden",
+        "registered with no target: the frame hidden at once and hears it; the row was hidden already")
+    units.target = { name = "Kobold Miner", health = 40, most = 120 }
+    units.targettarget = { name = "Droopy", surname = "Fairwind", player = true, health = 600, most = 1000 }
+    W.Combat(true)
+    fight.Watch()
+    check(frame._shown and row._shown and Heard() == "frame shown, row shown",
+        "the watch's tick, in a fight too: the frame shown, then its row, each hearing it")
+    W.Combat(false)
+    units.target, units.targettarget = nil, nil
+    fight.Watch()
+    check(not frame._shown and not row._shown and Heard() == "frame hidden, row hidden",
+        "the target gone: the frame hidden with its row, which hears it with its frame; hidden then itself, out of sight, it hears nothing")
+    row:Show() -- the game's watch may show the row before its frame
+    units.target = { name = "Kobold Miner", health = 40, most = 120 }
+    units.targettarget = { name = "Droopy", surname = "Fairwind", player = true, health = 600, most = 1000 }
+    local before = Heard()
+    fight.Watch()
+    check(before == "" and frame._shown and row._shown and Heard() == "frame shown, row shown",
+        "a row shown while its frame is out of sight hears nothing; as the frame shows, the row's OnShow runs with its frame's")
+    UnregisterUnitWatch(row)
+    UnregisterUnitWatch(frame)
+    units.target = nil
+    fight.Watch()
+    check(not fight.watched[frame] and frame._shown and Heard() == "", "off the watch, a frame keeps its state")
+    io.write(("Combat client: all %d checks passed.\n"):format(passed))
+end
+
+if (...) ~= "combatclient" then SelfCheck() end
 
 return Client

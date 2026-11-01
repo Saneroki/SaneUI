@@ -152,24 +152,25 @@ return function(Lab)
     function Lab.Meta(kindName)
         if Lab.meta[kindName] then return Lab.meta[kindName] end
         local k = Lab.kinds[kindName]
-        local cache = {}
-        local mt = {
-            __index = function(t, key)
-                local m = cache[key]
-                if m ~= nil then return m end
-                m = lookup(k, key)
-                if m == nil and type(key) == "string" then
-                    local doc = documented(k, key)
-                    if doc then
-                        m = function()
-                            local text = "the lab does not do " .. kindName .. ":" .. key .. "() yet (the game has it)"
-                            Lab.Missing(text)
-                        end
+        -- __index is a table, as the game's widgets have it: Blizzard's menus read the original metatable's
+        -- __index[key] (Blizzard_Menu's Compositor), which a function cannot give. A method is found by the table's
+        -- own metamethod the first time and kept in the table from then on.
+        local index = setmetatable({}, { __index = function(found, key)
+            local m = lookup(k, key)
+            if m == nil and type(key) == "string" then
+                local doc = documented(k, key)
+                if doc then
+                    m = function()
+                        local text = "the lab does not do " .. kindName .. ":" .. key .. "() yet (the game has it)"
+                        Lab.Missing(text)
                     end
                 end
-                if m ~= nil then cache[key] = m end
-                return m
-            end,
+            end
+            if m ~= nil then rawset(found, key, m) end
+            return m
+        end })
+        local mt = {
+            __index = index,
             __tostring = function(t) return kindName .. ": " .. tostring(S[t] and S[t].name or "unnamed") end,
         }
         Lab.meta[kindName] = mt

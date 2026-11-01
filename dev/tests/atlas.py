@@ -3,11 +3,14 @@
 zone's brief, the words put together, the check against the game's water on made-up pictures, the colour
 pass, the cut where two squares meet, the grid of squares, ComfyUI's websocket frames and the screen's
 numbers. Run by dev/tests/run."""
+import contextlib
 import importlib.machinery
 import importlib.util
+import io
 import os
 import struct
 import sys
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -183,6 +186,22 @@ check("join_two: two plain squares, one lighter, meet without a step (their ligh
       int(np.abs(np.diff(soft)).max()) <= 2 and int(soft[0]) == 100 and int(soft[-1]) == 140, True)
 check("join_two: the ends of the overlap are the squares' own", (int(at.join_two(dim, bright, False)[0, at.STEP - 1, 0]),
                                                                  int(at.join_two(dim, bright, False)[0, at.SQ, 0])), (100, 140))
+try:
+    at.join(Path("/nonexistent"), 0, (0, 0, at.JOINED + 1, 1))
+    refused = None
+except ValueError as error:
+    refused = "pack" in str(error) and "--near" in str(error)
+check("join: a block over JOINED squares a side is refused before a square is read, pointing at --near and pack", refused, True)
+check("join: JOINED squares a side fit in memory (1.5 GB at most)", (at.SQ + (at.JOINED - 1) * at.STEP) ** 2 * 3 <= 1.5 * 2 ** 30, True)
+with tempfile.TemporaryDirectory() as folder:
+    target = Path(folder) / "sq-1-2.png"
+    at.save_png(Image.new("RGB", (4, 4), (1, 2, 3)), target)
+    check("save_png: through a temp file beside the target, none left", sorted(p.name for p in Path(folder).iterdir()), ["sq-1-2.png"])
+    check("painting_of: a whole file", at.painting_of(target)[0, 0].tolist(), [1, 2, 3])
+    target.write_bytes(target.read_bytes()[:40])   # cut short by a run killed while saving
+    with contextlib.redirect_stderr(io.StringIO()) as told:
+        painting = at.painting_of(target)
+    check("painting_of: a file cut short is skipped, told", (painting, "skipped" in told.getvalue()), (None, True))
 
 # --- Packing ------------------------------------------------------------------------------------------
 

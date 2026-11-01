@@ -168,7 +168,7 @@ function Holder.Take(window)
     end
     local addon, util = window.options.native.addon, rawget(_G, "EventUtil")
     if addon and util and util.ContinueOnAddOnLoaded then
-        util.ContinueOnAddOnLoaded(addon, Begin)
+        util.ContinueOnAddOnLoaded(addon, Begin)  -- guarded: Begin runs its steps through xpcall
     else
         Begin()
     end

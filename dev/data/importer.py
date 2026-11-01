@@ -361,6 +361,23 @@ def _take(master, report, entry, known, where, data, take):
     return True
 
 
+def _known(entries, staged):
+    """The keys that have a version once a set's staged lines of a game version are taken: the entries the master
+    has, and the staged keys a line will make an entry of (what _take asks of a new entry: no confirmation, not
+    gone, at least one fact, and replaces a known entry or none), found in rounds for a chain of new entries. A
+    line that replaces a key not among them is refused whole (_take), so the master never gets a replaces naming
+    an entry the game version does not have (a staged key whose every line was refused)."""
+    known = set(entries)
+    makers = [data for data in staged if "confirmed" not in data and not data.get("gone")
+              and any(value is not None for value in data.get("fields", {}).values())]
+    while True:
+        more = {data["key"] for data in makers
+                if data["key"] not in known and (data.get("replaces") is None or data["replaces"] in known)}
+        if not more:
+            return known
+        known |= more
+
+
 def run(master, staged, take=False):
     """Takes staged lines [(where, data)] into the loaded master's lines (not written yet). Returns a Report.
     take: a conflict is written into its version as a correction."""
@@ -389,7 +406,7 @@ def run(master, staged, take=False):
     for (set_name, game), items in itertools.groupby(work, key=lambda item: (item[1]["set"], item[1]["game"])):
         items = list(items)
         entries = _entries(master, set_name, game)
-        known = set(entries) | {data["key"] for _, data in items if not data.get("gone")}
+        known = _known(entries, [data for _, data in items])
         touched = False
         for where, data in items:
             entry = entries.setdefault(data["key"], Entry())
@@ -420,6 +437,9 @@ def _catch_up(master, report):
 
 
 def apply(master, report):
-    """Writes every set and game version the import changed."""
+    """Writes every set and game version the import changed: each file whole beside its own first, then all moved
+    over their targets together, so an import stopped midway leaves the master as it was."""
+    moves = []
     for set_name, game in sorted(report.changed):
-        masters.write(master, set_name, game, master.lines[(set_name, game)])
+        moves += masters.write_beside(master, set_name, game, master.lines[(set_name, game)])
+    masters.move_over(moves)

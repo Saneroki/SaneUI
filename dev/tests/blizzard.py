@@ -295,6 +295,9 @@ with tempfile.TemporaryDirectory() as out:
     check("patch: the board's card", card, "7")
     check("brief: the task, the card, the lookup", brief.startswith("# Make Sane UI comply with Forever 1.60.2.70000")
           and "`saneui board start 7`" in brief and "`the-lookup`" in brief and "dev/tools/blizzard adopt" in brief, True)
+    check("brief: the patch's folder and the exports by the tools' words, no folder of this computer",
+          ("`patches/forever-old-to-new` in the reports' folder" in brief and "`dev/tools/blizzard show <name>`" in brief,
+           str(out) in brief or str(old.root) in brief), (True, False))
     check("brief: the todo list's head", "- broken: `C_Test.Removed` (API function): gone from the new export (src/Test/Test.lua:13)"
           in brief, True)
     check("patch tables: gone and new", any(row.startswith("api:C_Test.Removed\tapi\told-only")

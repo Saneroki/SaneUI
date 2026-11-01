@@ -269,10 +269,18 @@ function Bags.Choose(view)
     Bags.Redraw()
 end
 
--- Another profile came into use: what it keeps of the bags.
+-- Another profile came into use: what it keeps of the bags (a table of its own: the canvas draws by it), its
+-- sidebar and strip as it keeps them, the items in the room left, read and drawn anew.
 function Bags.Reload()
-    if not kept then return end
+    if not kept then   -- no window built yet: the categories and columns still follow the new profile
+        Bags.Store()
+        return
+    end
     kept = Bags.Store()
+    Bags.canvas.owner.store = kept
+    Sidebar.Fold(kept.side == false)
+    Bags.Restrip()
+    Bags.Size()
     Bags.Refresh()
 end
 
@@ -288,6 +296,7 @@ end
 --  The game's events, while the panel is shown
 -------------------------------------------------------------------------------
 local Soon = Core.Later(Bags.Refresh)
+Bags.Soon = Soon -- the window read and drawn anew a frame later, once however often it is asked (Recent's new items too)
 
 -- A slot's lock changed (an item on the cursor): only its grey.
 local function Locked(bag, slot)
@@ -736,11 +745,6 @@ function Bags.Size(newWidth, newHeight)
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
     ns.Safe("bags", Foot.Room, width)
     Bags.Redraw()
-end
-
--- The sidebar folded or unfolded: the items laid out in the room left.
-function Bags.Resized()
-    Bags.Size()
 end
 
 function Bags.Search(text)

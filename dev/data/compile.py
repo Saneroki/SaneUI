@@ -6,6 +6,7 @@ loading screen and some memory are a fair price for it). Compiling is a pure fun
 no clock, entries sorted by key, so the same master always gives the same bytes.
 """
 import hashlib
+import os
 import re
 import shutil
 
@@ -280,7 +281,9 @@ def list_in_toc(path, names):
     while lines and not lines[-1].strip():
         lines.pop()
     lines += ["", MARK] + [f"{SETS}\\{name}.lua" for name in names]
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    temp = path.with_name(path.name + ".tmp")   # written whole beside it, then moved over it: never half a TOC
+    temp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    os.replace(temp, path)
 
 
 def compile_sets(master, folder, game):

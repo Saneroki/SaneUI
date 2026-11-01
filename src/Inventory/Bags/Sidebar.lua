@@ -574,10 +574,11 @@ function Bag.Categories(list, counts, viewing, takes)
         if not (def and def.fixed) and not Categories.Off(key) then
             if group and not done[group] then
                 done[group] = true
-                local row = list:Row(Categories.GroupWord(group), counts["group:" .. group] or 0,
-                    Categories.GroupIcon(group), nil, 0, viewing == "group:" .. group)
-                row.view, row.group, row.drag = "group:" .. group, group, true
-                row.takes = takes and ns.Menus.Takes("group:" .. group)
+                local view = ns.Views.GroupKey(group)
+                local row = list:Row(Categories.GroupWord(group), counts[view] or 0,
+                    Categories.GroupIcon(group), nil, 0, viewing == view)
+                row.view, row.group, row.drag = view, group, true
+                row.takes = takes and ns.Menus.Takes(view)
                 local folded = Categories.Folded(group)
                 list:Toggles(row, folded, Categories.Divided(group), Bag.FoldGroup, Bag.DivideGroup)
                 for _, member in ipairs(Categories.Members(group)) do

@@ -566,7 +566,9 @@ def make():
                          '<button data-m="m" title="maybe">?</button><button data-m="n" title="no">✕</button></div></figure>')
         info[number] = {"w": item["words"], "s": item["source"], "z": [w, h], "a": item["states"], "r": said}
         item["number"] = number
-    NUMBERS.write_text(json.dumps(numbers, indent=0, sort_keys=True))
+    new = NUMBERS.with_name(NUMBERS.name + ".new")   # whole or not at all: the numbers the picks refer to stay
+    new.write_text(json.dumps(numbers, indent=0, sort_keys=True))
+    new.replace(NUMBERS)
     (OUT / "index.html").write_text(page(sections, cards, info), encoding="utf-8")
     overview(sections, {m["number"]: m for m in made})
     for key, title, _, _ in SECTIONS:

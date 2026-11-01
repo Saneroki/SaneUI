@@ -209,7 +209,10 @@ def stub(symbol_rows, forever, retail, path):
              f"-- (Forever {forever.build or forever.label}, Retail {retail.build or retail.label}). Made by "
              "dev/tools/blizzard games; do not edit by hand.",
              "return {", "    retail = [["] + names + ["]],", "}"]
-    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    path = Path(path)
+    temp = path.with_name(path.name + ".tmp")  # written whole beside it, then moved over it: never half a file
+    temp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    os.replace(temp, path)
     return len(names)
 
 

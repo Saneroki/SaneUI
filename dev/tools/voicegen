@@ -120,7 +120,9 @@ def config(need_key=True):
 
 def call(cfg, method, path, body=None, raw=False, tries=6):
     """One request; waits and tries again while the service is busy (409 still making, 429 too many at
-    a time) or down (5xx). Gives the answer (JSON, or bytes with raw) and its headers."""
+    a time), and a GET while it is down (5xx, no answer). A POST is paid for (a voice, a sound, a
+    dictionary): one whose answer was lost is not sent again, which would make and pay for it twice,
+    but fails and is left to the next run. Gives the answer (JSON, or bytes with raw) and its headers."""
     data = json.dumps(body).encode("utf-8") if body is not None else None
     for attempt in range(tries):
         req = urllib.request.Request(cfg["host"].rstrip("/") + path, data=data, method=method,
@@ -131,15 +133,16 @@ def call(cfg, method, path, body=None, raw=False, tries=6):
                 return (payload if raw else json.loads(payload or b"{}")), r.headers
         except urllib.error.HTTPError as e:
             text = e.read().decode("utf-8", "replace")
-            if e.code in (409, 429, 500, 502, 503, 504) and attempt < tries - 1:
+            again = e.code in (409, 429) or (method == "GET" and e.code in (500, 502, 503, 504))
+            if again and attempt < tries - 1:
                 time.sleep(min(60, 2 ** attempt * 2))
                 continue
             raise ServiceError(f"{method} {path.split('?')[0]}: {e.code} {text[:400]}", e.code) from None
-        except urllib.error.URLError as e:
-            if attempt < tries - 1:
+        except OSError as e:            # no answer: not reachable (a URLError), or the timeout, which comes bare
+            if method == "GET" and attempt < tries - 1:
                 time.sleep(min(60, 2 ** attempt * 2))
                 continue
-            raise ServiceError(f"{method} {path.split('?')[0]}: {e.reason}") from None
+            raise ServiceError(f"{method} {path.split('?')[0]}: {getattr(e, 'reason', e)}") from None
 
 
 def load(path, empty):
@@ -347,6 +350,27 @@ def select(query, model, preset):
     return [r for r in found if not preset or r["preset"] == preset], lines
 
 
+def plan(requests, cfg, voices, model, take, done, dry=False):
+    """What to send for the requests: one request per sound (two lines said alike by one voice get one
+    master, the second file made from it), the ones made before (their game file only, from the master
+    kept), and the presets without a voice yet; a dry run counts those all the same, for the cost."""
+    todo, again, twins, missing = [], [], {}, set()
+    for r in requests:
+        voice, body, shape = body_of(r, cfg, voices, model, take)
+        if not voice:
+            missing.add(r["preset"])
+            if not dry:
+                continue
+        if shape in done and os.path.exists(os.path.join(MASTER, shape + ".wav")):
+            again.append((r, shape))
+        elif shape in twins:
+            twins[shape].append(r)
+        else:
+            twins[shape] = []
+            todo.append((r, voice, body, shape))
+    return todo, again, twins, missing
+
+
 def say(query, model="newest", preset=None, take=1, limit=None, jobs=3, yes=False, dry=False):
     requests, lines = select(query, model, preset)
     if not requests:
@@ -356,21 +380,13 @@ def say(query, model="newest", preset=None, take=1, limit=None, jobs=3, yes=Fals
     else:
         cfg = config(need_key=not dry)
     voices, done = load(VOICES_FILE, {}), made()
-    todo, again, missing = [], [], set()
-    for r in requests:
-        voice, body, shape = body_of(r, cfg, voices, model, take)
-        if not voice:
-            missing.add(r["preset"])
-            if not dry:         # a dry run counts them all the same, for the cost
-                continue
-        if shape in done and os.path.exists(os.path.join(MASTER, shape + ".wav")):
-            again.append((r, shape))
-            continue
-        todo.append((r, voice, body, shape))
+    todo, again, twins, missing = plan(requests, cfg, voices, model, take, done, dry)
     todo = todo[:limit] if limit else todo
     chars = sum(len(t[2]["text"]) for t in todo)
+    alike = sum(len(twins[t[3]]) for t in todo)
     print(f"voicegen: {len(todo)} files to make, {chars:,} characters, about "
-          f"${chars / 1000 * db.PRICE[model]:,.2f} on the {model} model; {len(again)} made before")
+          f"${chars / 1000 * db.PRICE[model]:,.2f} on the {model} model"
+          + (f", {alike} more from the same sounds" if alike else "") + f"; {len(again)} made before")
     if missing:
         print("  no voice yet (dev/tools/voicegen design, pick): " + ", ".join(sorted(missing)))
     if dry:
@@ -398,6 +414,8 @@ def say(query, model="newest", preset=None, take=1, limit=None, jobs=3, yes=Fals
             keep = span(pcm, VOICE_RATE)
             save(os.path.join(MASTER, shape + ".json"), {"keep": keep, "alignment": answer.get("alignment")})
             encode(wav, os.path.join(SOUND, model, r["file"]), keep=keep)
+            for twin in twins[shape]:   # the same sound for another file: from this master, no request
+                encode(wav, os.path.join(SOUND, model, twin["file"]), keep=keep)
         except ServiceError as e:
             with lock:
                 failed.append(r["file"])
@@ -414,6 +432,8 @@ def say(query, model="newest", preset=None, take=1, limit=None, jobs=3, yes=Fals
                 fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
             ok.append(r["file"])
             print(f"  {r['file']}  {entry['seconds']:.1f} s")
+            for twin in twins[shape]:
+                print(f"  {twin['file']}  the same sound")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
         list(pool.map(make, todo))

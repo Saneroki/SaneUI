@@ -221,7 +221,7 @@ return function(Lab)
                 Lab.kinds.Frame.methods.Hide(f)
             end
         end
-        local now = {}
+        local drawn = {}
         local z = 0
         local function add(o, suffix, item, l, b, w, h, clip)
             z = z + 1
@@ -239,7 +239,7 @@ return function(Lab)
                 item.cl = { r2(cx), r2(cy), r2(cw), r2(ch) }
             end
             local id = tostring(S[o].order) .. (suffix or "")
-            now[id] = json.encode(item)
+            drawn[id] = json.encode(item)
         end
         for _, f in ipairs(Lab.FrameOrder()) do
             local fs = S[f]
@@ -337,13 +337,13 @@ return function(Lab)
             end
         end
         local changes, n = {}, 0
-        for id, enc in pairs(now) do
+        for id, enc in pairs(drawn) do
             if last[id] ~= enc then changes[id] = enc; n = n + 1 end
         end
         for id in pairs(last) do
-            if not now[id] then changes[id] = "null"; n = n + 1 end
+            if not drawn[id] then changes[id] = "null"; n = n + 1 end
         end
-        last = now
+        last = drawn
         Lab.changed = false
         return changes, n
     end

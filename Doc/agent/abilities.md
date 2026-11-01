@@ -86,10 +86,12 @@ A module-level stand-down (Core's door guard) runs `ns.GiveBack`, each step in `
 `RunUpdate`, the login timers and the book/drag `OnUpdate`s are `ns.Guard`ed, `Ghosts.Refresh` is a no-op once `off`.
 Watcher runs 10 frames after layout, then every 0.2 s only while visible.
 
-Options: `showHidden/home/compact/window/ghosts/announce/ranks/book`, initially true. `book` takes effect
-after reload. `ns.options` = `Core.Settings(ns.name)`; menu lines, the page checkbox and `/sane ab pages`
-write through `Core.Set` (the module's `changed` fires `REFRESH`; no second refresh); a switch's words
-via `Core.Described`. Every word shown is in `ns.TEXT` (`Abilities.lua`), the game's via `Core.Word`.
+Options: `book/showHidden/home/compact/window/ghosts/announce/ranks/holdPage/tightBars`, all true at first; `book`
+takes effect after a reload; the book's five and `ranks` are Forever's (in Retail kept without words: no control).
+`ns.options` = `Core.Settings(ns.name)`; menu lines, the page checkbox and `/sane abilities pages` write through
+`Core.Set` (the module's `changed` fires `REFRESH`; no second refresh); a switch's words via `Core.Described`.
+Every word shown is in `ns.TEXT` (`Abilities.lua`), the game's via `Core.Word`.
 Pools (`Core.Pool`): Book's grey entries/folds/fold headings, Home's rows/level headings.
-Commands: `list/clear/debug/add/item/save/load/delete/layouts/pages/window reset`.
+Commands: `/sane abilities` (`ab`, `spellbook`, `sb` are its short and old words) with `list/clear/debug/item/formbar/save/
+load/delete/layouts`, and Forever's `add`, `pages on|off`, `window reset` (`BOOK_COMMANDS`, left out of Retail's help).
 Tests: `dev/tests/abilities.lua`; made-up families stand in for class tables, real class files are format-checked.

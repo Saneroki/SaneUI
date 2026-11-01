@@ -2,10 +2,11 @@
 """Makes src/Core/Sync/Data/Pages.lua: for each of the game's options pages in its groups Gameplay and
 Accessibility (Esc > Options), what that page sets, so Sync can keep it with Sane UI's settings.
 
-It reads Blizzard's options code of the newest export (dev/tools/blizzard where) as this client loads it (game type camelot, which also
-counts the load group mainline; family Mainline: the TOCs of Blizzard_SettingsDefinitions_Shared and _Frame
-with their conditions, and the Lua files their XML files name). A page is the category a file registers
-(Settings.RegisterVerticalLayoutCategory); a file "<Name>Overrides.lua" adds to the page of <Name>.lua.
+It reads Blizzard's options code of the newest export (dev/tools/blizzard where) as this client loads it: the
+Lua files of Blizzard_SettingsDefinitions_Shared and _Frame as dev/blizzard/export.py reads their TOCs (the
+client's own TOC and load conditions, the Lua files their XML files name), in their load order. A page is the
+category a file registers (Settings.RegisterVerticalLayoutCategory); a file "<Name>Overrides.lua" adds to the
+page of <Name>.lua.
 Per page it keeps:
   cvars   every CVar the page registers (Settings.SetupCVar*, RegisterCVarSetting, CreateCVarAccessorClosures,
           CVarCallbackRegistry) or writes (SetCVar); not one it only reads to decide something else.
@@ -37,12 +38,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
 import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
 # BLIZZARD_CODE: another export than the newest (dev/tools/blizzard check reads another build's so).
-ADDONS = Path(os.environ.get("BLIZZARD_CODE") or exports.required("code")) / "Interface" / "AddOns"
+CODE = Path(os.environ.get("BLIZZARD_CODE") or exports.required("code"))
+ADDONS = CODE / "Interface" / "AddOns"
+# The two addons, in the order the game loads them (_Frame depends on _Shared).
 FOLDERS = ("Blizzard_SettingsDefinitions_Shared", "Blizzard_SettingsDefinitions_Frame")
 BINDINGS = ADDONS / "Blizzard_FrameXML" / "Bindings_Camelot.xml"
 OUTPUT = ROOT / "src" / "Core" / "Sync" / "Data" / "Pages.lua"
-GAME_TYPES = {"camelot", "mainline"}  # the load groups this client is in, as dev/blizzard/export.py has them
-FAMILY = "Mainline"
 GROUPS = ("SETTING_GROUP_GAMEPLAY", "SETTING_GROUP_ACCESSIBILITY")
 KEYBINDINGS = "SETTINGS_KEYBINDINGS_LABEL"
 WIDTH = 104  # characters of names on one line of the file
@@ -63,39 +64,13 @@ ORDER = re.compile(r'\[(\w+)\]\s*=\s*(\d+)')
 LABEL_FUNCTION = re.compile(r'function\s+(Settings\.\w+)\(\)\s*return\s+(\w+)\s*;?\s*end')
 
 
-def loads(conditions):
-    """Whether a TOC line with these conditions loads for this client."""
-    def names(found):
-        return {name.lower() for group in found for name in group.replace(",", " ").split()}
-    allow = names(re.findall(r"\[AllowLoadGameType ([^\]]+)\]", conditions))
-    deny = names(re.findall(r"\[ExcludeLoadGameType ([^\]]+)\]", conditions))
-    return (not allow or bool(allow & GAME_TYPES)) and not deny & GAME_TYPES
-
-
-def files():
-    """The Lua files of both addons, in the order the game loads them."""
+def files(export):
+    """The Lua files of both addons as this client loads them, in their load order: _Shared's, then _Frame's,
+    each addon's as the export read its TOC (the client's load conditions, the scripts its XML files name)."""
     found = []
     for folder in FOLDERS:
-        base = ADDONS / folder
-        for line in (base / f"{folder}.toc").read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            path, _, conditions = line.partition(" ")
-            if not loads(conditions):
-                continue
-            path = path.replace("[Family]", FAMILY).replace("[Game]", "Camelot").replace("\\", "/")
-            full = base / path
-            if not full.exists():
-                continue
-            if full.suffix == ".lua":
-                found.append(full)
-                continue
-            for script in re.findall(r'<Script file="([^"]+)"', full.read_text(encoding="utf-8", errors="replace")):
-                script = script.replace("\\", "/")
-                lua = full.parent / script if (full.parent / script).exists() else base / script
-                if lua.exists():
-                    found.append(lua)
+        found += [export.interface / rel for rel in export.loaded
+                  if rel.startswith(f"AddOns/{folder}/") and rel.lower().endswith(".lua")]
     return found
 
 
@@ -178,8 +153,8 @@ def flags(text):
     return pairs
 
 
-def collect():
-    sources = [(path, path.read_text(encoding="utf-8", errors="replace")) for path in files()]
+def collect(export):
+    sources = [(path, path.read_text(encoding="utf-8", errors="replace")) for path in files(export)]
     labels = dict(match for _, text in sources for match in LABEL_FUNCTION.findall(text))
     order = {}
     pages, by_stem, extras = [], {}, []
@@ -271,18 +246,25 @@ def render(pages):
     return "\n".join(lines) + "\n"
 
 
+def replace_text(path, text):
+    """Writes a file whole beside its target, then moves it over it: never half a file in the repository."""
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(text, encoding="utf-8")
+    os.replace(temp, path)
+
+
 def main():
     check = "--check" in sys.argv[1:]
     if not ADDONS.is_dir():
-        sys.exit(f"Blizzard's code is not in {ADDONS.relative_to(ROOT)}: nothing to read.")
-    pages = collect()
+        sys.exit(f"Blizzard's code is not in {ADDONS}: nothing to read.")
+    pages = collect(exports.Export(CODE, addons=FOLDERS))
     text = render(pages)
     if check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
         print("up to date" if current == text else f"{OUTPUT.relative_to(ROOT)} would change")
         sys.exit(0 if current == text else 1)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(text, encoding="utf-8")
+    replace_text(OUTPUT, text)
     print(f"Wrote {OUTPUT.relative_to(ROOT)}: {len(pages)} pages, {sum(len(page['cvars']) for page in pages)} CVars.")
 
 

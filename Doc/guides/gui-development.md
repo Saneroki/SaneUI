@@ -8,16 +8,21 @@ read [addon-standards.md](addon-standards.md).
 
 ## Sane UI's own look
 
-Sane UI redesigns every window and view it makes or recreates in a look of its own (Saneroki, 2026-10-21):
-layouts, art, fonts and style are Sane UI's, described in [interface-style.md](interface-style.md). For those,
-Blizzard's art, its templates' looks, its fonts and the older bronze skin are no longer the model. The game's
+Sane UI redesigns every window and view it makes or recreates (Saneroki, 2026-10-30, replacing the journal look of
+2026-10-21): the layout stays Sane UI's own, but it is built from WoW: Forever's own images in the game's default
+fonts; the pencil drawing icons stay; no red buttons, but natural buttons with golden or silver, beaten-up metal
+borders. The parts are picked by number from the catalogue (`saneui showgameart`); the picks, the references (the
+character list, the character screen's top bar) and how Retail is served stand in
+[interface-style.md](interface-style.md), *The new direction*. What is built in the journal look (parchment,
+leather, Kalam, Sane UI's own painted art) keeps it until it is rebuilt from the picks. The game's
 native windows that Sane UI does not recreate stay as the game draws them, mostly untouched.
 
 What stays from Blizzard for our own windows too: how the game works, found in Blizzard's code as below
 (its API, events, secure templates and taint, scaling, Esc and the window manager, languages), and the
 design principles of what a view shows and how it behaves
 ([blizzard-design-principles.md](blizzard-design-principles.md)). Where this guide below says to use
-Blizzard's art, templates or fonts for the look, that holds for the native windows Sane UI changes in place.
+Blizzard's art or fonts for the look, that holds for our own windows too (the images and fonts are the game's,
+the layout ours); its templates' looks hold for the native windows Sane UI changes in place.
 
 ## The one rule
 
@@ -31,14 +36,14 @@ languages, and changes with the game. Something drawn by hand does none of that.
 2. See which template, font and art it uses, and how it behaves (open, close, sound, tooltip, Esc).
 3. Use the same parts. Write own code only for what Blizzard has no part for.
 
-The reference holds several game flavours side by side (`Mainline`, `Classic`, `Camelot`, `Shared`
+The newest export (`dev/tools/blizzard where`) holds several game flavours side by side (`Mainline`, `Classic`, `Camelot`, `Shared`
 folders). A file only exists in our client if the Blizzard TOC next to it loads it there: check the
 `.toc` (`[Family]`, `[Game]`, `[AllowLoadGameType ...]`) before relying on a template. Every name in
-this guide was found in the reference on 2026-10-14; check again before use, and guard for `nil`.
+this guide was found in the export of 2026-10-14; check again in the newest export before use, and guard for `nil`.
 
 ## Building blocks
 
-| Need | Blizzard part | Where in the reference |
+| Need | Blizzard part | Where in the newest export |
 | --- | --- | --- |
 | Window with title, close button, portrait | `ButtonFrameTemplate`, `PortraitFrameTemplate`; without portrait: `ButtonFrameTemplate_HidePortrait`, `DefaultPanelTemplate` | `Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml` |
 | Sunken area inside a window | `InsetFrameTemplate` | same |
@@ -72,7 +77,8 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 
 - A window of ours is `Core.Window.New` with `skin = true`: Core's skin (the game's dark dialog tile and a thin trim in
   Sane UI's bronze, with round corners that are square on the screen's edges, as set: Core's `Shape.lua`)
-  is the look of Sane UI's windows until each is rebuilt in its own look ([interface-style.md](interface-style.md)). A dialog that should look like one of the game's starts from a
+  is the look of Sane UI's windows until each is rebuilt from Forever's own images in its own layout
+  ([interface-style.md](interface-style.md), *The new direction*). A dialog that should look like one of the game's starts from a
   Blizzard frame template (`ButtonFrameTemplate`), which brings border, title bar, close button and the
   right sizes. Neither rebuilds a border from single textures: the game has no border whose corners take
   any radius, so Core's Shape is the one place that draws one.
@@ -82,7 +88,8 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 - Opening and closing play the same sounds as Blizzard's windows (`PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN)`
   / `..._CLOSE`; tabs `IG_CHARACTER_INFO_TAB`; checkbox `IG_MAINMENU_OPTION_CHECKBOX_ON`). Always by
   `SOUNDKIT` constant, never by number or file. A sound of our own only where the game has none that fits
-  (`Doc/guides/voice-generation.md`, *Short sounds*): a file in the module's `Sounds/`, played with
+  (`Doc/guides/voice-generation.md`, *Short sounds*): a file in `assets/optimized/<Module>/Sounds/` (never in
+  `src/`), which `dev/build` puts into the addon's `Sounds/`, played with
   `PlaySoundFile(path, "SFX")`.
 - A movable window is clamped to the screen (`SetClampedToScreen(true)`), remembers its place, and has
   a way back to the default place. In Sane UI that is Core's work, never a module's own code:
@@ -117,9 +124,12 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
   files. Second choice is a file path into the client (`Interface\...`), found in
   the newest export's art. Icons by file ID from the API.
 - Blizzard's art is used from the client, never copied into the addon (policy and licence).
-- Sane UI's own windows use Sane UI's own art ([interface-style.md](interface-style.md)): painted parts
-  in `assets/`, stretched and tiled by code, with text, stains and sketches laid over them by code.
-  Blizzard's art (above) for the native windows Sane UI changes in place, and for icons.
+- Sane UI's own windows are built from WoW: Forever's own images (above: atlas first), picked by number from
+  the catalogue (`saneui showgameart`) and written into [interface-style.md](interface-style.md), *The new
+  direction*, in Sane UI's own layouts; the pencil drawing icons stay. The parts still in the journal look
+  (painted parts in `assets/`, stretched and tiled by code, with text, stains and sketches laid over them by
+  code) keep it until they are rebuilt from the picks. Blizzard's art (above) for the native windows Sane UI
+  changes in place, and for the game's icons.
 - Own pictures: format, size for 4K, encoder and how to draw them are decided in
   [images.md](images.md) (BLP2, DXT5 with mipmaps, made by `dev/tools/art`; the game's own filter).
 - Stretch only what was made for it (nine-slice borders, tiling backgrounds). Everything else keeps its
@@ -135,10 +145,11 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 - **Distances and the time of day follow the setting Units** (Saneroki, 2026-10-30; Metric at first): the code keeps yards,
   what a player reads comes from `Core.Distance`, `Core.DistanceText`, `Core.Clock` and `Core.ClockAt`
   (`src/Core/Units.lua`), never a written `"%d yd"` or `date("%H:%M")`. A slider of yards: `distance = true`.
-- **Sane UI's own windows:** text on paper is Kalam in pencil grey with the paper's grain, text on leather is
-  pressed into the leather, both made in code ([interface-style.md](interface-style.md), *Text*). The font
-  is Sane UI's own font file, behind a font object of our own; for a language Kalam lacks, that object
-  falls back to the game's font.
+- **Sane UI's own windows:** the game's default fonts, by their font objects as below (Saneroki, 2026-10-30;
+  [interface-style.md](interface-style.md), *The new direction*). The parts still in the journal look keep its
+  text until they are rebuilt: Kalam in pencil grey with the paper's grain on paper, pressed into the leather
+  on leather, both made in code (*Text* there), Sane UI's own font file behind a font object of our own that
+  falls back to the game's font for a language Kalam lacks.
 - **Native windows: font objects (`SetFontObject`), never a font file of our own.** The client's font objects switch
   fonts per language and follow its text settings. To change only the size, take file and flags from
   the game's font object (`GetFont`) and set them back with the new size, as Chat does with
@@ -263,7 +274,7 @@ The old `UIDropDownMenu` is still in the client but is a known source of taint
 - [ ] Reads without colour, with large text, and with long translated text.
 - [ ] Nothing written into Blizzard frames; protected frames untouched in combat.
 - [ ] On an error the Blizzard default is back.
-- [ ] Tried in the game, or marked as not tried.
+- [ ] The answer says what the game needs to take it: a `/reload`, or a restart (a TOC change, a new file).
 
 ## Sources
 

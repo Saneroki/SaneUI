@@ -19,6 +19,7 @@ import collections
 import datetime
 import json
 import math
+import os
 import re
 
 import compile as compiler
@@ -344,7 +345,7 @@ def _harvest_part(master, game, part, ledger, report, newest):
     def seen(build, day):
         """Notes a build of this game version, its patch (as the game said it) and the first day it was seen."""
         newest[game] = max(newest.get(game, 0), build or 0)
-        if build in master.builds.get(game, {}) or not isinstance(patches.get(build), str):
+        if build in master.builds.get(game, {}) or not is_patch(patches.get(build)):
             return
         known = report["builds"].setdefault(game, {})
         patch, first = known.get(build, (patches[build], day))
@@ -417,9 +418,19 @@ def _harvest_part(master, game, part, ledger, report, newest):
     return lines
 
 
+PATCH = re.compile(r"^\d+\.\d+\.\d+$")
+
+
+def is_patch(value):
+    """Whether a saved file's patch is a patch number as builds.toml names one (1.60.1): the game writes it, but
+    the file is anyone's, and nothing else goes into the master."""
+    return isinstance(value, str) and bool(PATCH.match(value))
+
+
 def add_builds(master, builds):
     """Adds builds the master does not know yet to builds.toml, each at the end of its game version's table:
-    {game: {build: (patch, first day)}}. Returns how many."""
+    {game: {build: (patch, first day)}}; one whose patch is no patch number (is_patch) is left out. The file is
+    written whole beside itself, then moved over (never half of it). Returns how many were added."""
     path = master.root / "builds.toml"
     text = path.read_text(encoding="utf-8").splitlines()
     added = 0
@@ -434,11 +445,16 @@ def add_builds(master, builds):
             end -= 1
         for build in sorted(found):
             patch, day = found[build]
+            if not is_patch(patch):
+                continue
             words = f'{build} = {{ patch = "{patch}"' + (f', day = "{day}"' if day else "") + " }"
             text.insert(end, words)
             end += 1
             added += 1
-    path.write_text("\n".join(text) + "\n", encoding="utf-8")
+    if added:
+        temp = path.with_name(path.name + ".tmp")
+        temp.write_text("\n".join(text) + "\n", encoding="utf-8")
+        os.replace(temp, path)
     return added
 
 

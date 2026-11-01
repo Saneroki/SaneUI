@@ -461,8 +461,7 @@ only read.
   whole (slice margins do not keep its corners: tried, it cut the icon to a strip), so each mask is made
   in the shape it is used in.
 - **What changes while a panel is shown** (`Live.lua`): a unit's health and power, its target, its buffs,
-  a buff's running time. `Panel.lua` lays these parts out, `Live.lua` fills them ten times a second (the
-  buffs twice), from the panel's `OnUpdate`, which only runs while the panel is shown. When the unit gets
+  a buff's running time. `Panel.lua` lays these parts out, `Live.lua` fills them when told by the unit's events (`UNIT_HEALTH`, `UNIT_POWER_UPDATE`, `UNIT_TARGET`, `UNIT_AURA`, heard only while the panel is shown, one look per frame; the aura timer by the panel's `OnUpdate`). When the unit gets
   or loses a row (a target, its buffs), the tooltip is read anew. The unit is asked for by a token
   (`mouseover`); once the mouse has left it, that token is another unit or none: the unit's GUID is kept
   in the model, and while the token's GUID differs, the panel stands still.
@@ -536,7 +535,7 @@ only read.
   itself: a tooltip is always read by the data it was first filled from (`GetPrimaryTooltipData`). Only a
   tooltip the player sees is drawn: visible, owned (`GetOwner`) and placed (an anchor other than
   `ANCHOR_NONE`, or points). Other addons read things with tooltips nobody sees; those get no panel, and a
-  panel whose tooltip is no longer seen goes at once (its `OnUpdate` with it).
+  panel whose tooltip is no longer seen goes at the frame's end, unless the same frame fills it again (a refresh never hides it, nor its model).
 - **The mouse switch** is the game's own anchor: a hook on `GameTooltip_SetDefaultAnchor` sets the owner
   again with `ANCHOR_CURSOR_RIGHT`, and the game moves the tooltip. No `OnUpdate` of ours. It runs in
   `ns.Safe`: an error is noted and told, and the switch works whether or not the panels do.

@@ -137,8 +137,10 @@ def atlas_pack(continent, out):
     index = ATLAS / "Index.lua"
     if not index.is_file():
         return {}
-    lines = subprocess.run([LUA, str(INDEX_LUA), str(ROOT), str(index)], capture_output=True, text=True,
-                           check=True).stdout.split("\n")
+    ran = subprocess.run([LUA, str(INDEX_LUA), str(ROOT), str(index)], capture_output=True, text=True)
+    if ran.returncode:   # the Lua's own words, not only that it failed
+        raise RuntimeError(f"{INDEX_LUA.name} failed on {index} (exit {ran.returncode}):\n{ran.stderr.strip()}")
+    lines = ran.stdout.split("\n")
     levels = {}
     for line in lines:
         if not line.strip():

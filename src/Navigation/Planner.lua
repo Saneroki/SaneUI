@@ -139,7 +139,8 @@ local Travel = Core.Data.Set("Travel")
 local Ships = Core.Data.Ships()
 local Trips = Core.Data.Trips()
 -- A way followed: target ({ map, u, v, at }: where it leads, in its plane), plan (the journey: { legs, at (the leg the
--- player is on), cut, target }), job (the plan being made: a job of Core's scheduler), lastPlan, nextLook, onTaxi.
+-- player is on), cut, target }), job (the plan being made: a job of Core's scheduler), lastPlan, nextLook, onTaxi,
+-- failed (the target no journey reached, until the next plan asked for: Looked plans none for it again).
 local function NewWay()
     return { lastPlan = -math.huge, nextLook = 0, onTaxi = false }
 end
@@ -678,7 +679,8 @@ local function Rode(plan, map, u, v, now)
                 if plan.cut.leg > index and now - leg.since >= at.time then
                     leg.rode = true
                     local landing = at[far == far.lift[1] and 1 or 2]
-                    local tile = Walk.Tile(landing.floor[1])
+                    -- (a plan made before the walking data came: its lifts' ends have no landing, no floor follows)
+                    local tile = landing.floor and Walk.Tile(landing.floor[1])
                     if tile and landing.floor[2] <= tile.count then
                         footing = { landing.floor[1], landing.floor[2], map = map, u = landing.pu, v = landing.pv,
                                     z = select(5, Walk.Rect(tile, landing.floor[2])) }
@@ -1210,7 +1212,7 @@ local function Make(way, start)
             ns.Print(Planner.TEXT.sea)
         end
         if start.keep then return Draw(way, {}, start.keep) end
-        way.plan = nil
+        way.plan, way.failed = nil, goal -- (planned again once the target, the data, the flights or a trip changed)
         if way == pin then
             ns.Route.Show(nil)
             Settle()
@@ -1300,7 +1302,7 @@ end
 -- before: before), from where it lands; on a flight, from where it lands, its way on drawn in front (without a
 -- target, that alone).
 local function Plan(way, before)
-    way.lastPlan = GetTime()
+    way.lastPlan, way.failed = GetTime(), nil
     local flying = Flying()
     if flying and way.target then
         local last = flying.points[#flying.points]
@@ -1527,7 +1529,10 @@ local function Looked(way, map, u, v, now)
     end
     if not way.target then return end
     if way.job or now - way.lastPlan < Planner.AGAIN then return end
-    if not way.plan then return Plan(way) end
+    if not way.plan then
+        if way.failed == way.target then return end -- no journey reaches it: not searched again every look
+        return Plan(way)
+    end
     local leg = way.plan.legs[way.plan.cut.leg]
     local gap = way.plan.cut.gap
     if leg and leg.ship and (gap and gap <= Planner.ABOARD or Riding()) then return end -- aboard: the line stays
@@ -1647,6 +1652,9 @@ end)
 -- its place once the game tells it.
 ns.On("PLAYER_ENTERING_WORLD", function()
     footing = nil
+    -- A loading screen may have brought the player where no known way led (a summon, a portal, a boat the data
+    -- lacks): a target no journey reached is searched for again from here.
+    for _, way in ipairs(WAYS) do way.failed = nil end
     if homeward then arriving() end
 end)
 -- The walking data or the flights arrived (a pin set before them got a straight line): planned again, the places'

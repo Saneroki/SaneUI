@@ -153,6 +153,18 @@ W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
 local Core, ns = SaneUI.Core, {}
 local function load(file) W.Load(root, "SaneUI_Abilities", "Abilities/" .. file, ns) end
+-- A slot the game hides from addons (hidden = true on its action, as the 12.x client does in a fight) answers
+-- every reader with a secret value. Before Abilities.lua runs: it keeps the readers it finds.
+local function Hidden(reader)
+    return function(slot)
+        local action = W.actions[slot]
+        if action and action.hidden then return W.Secret(), W.Secret() end -- a kind and an ID; the others take one
+        return reader(slot)
+    end
+end
+C_ActionBar.HasAction, C_ActionBar.GetActionTexture, C_ActionBar.GetActionText =
+    Hidden(C_ActionBar.HasAction), Hidden(C_ActionBar.GetActionTexture), Hidden(C_ActionBar.GetActionText)
+GetActionInfo = Hidden(GetActionInfo)
 load("Abilities")
 -- A line typed after "/sane abilities".
 local function sane(text) SlashCmdList.SANEUI("abilities " .. text) end
@@ -415,7 +427,7 @@ W.trainerFilter.unavailable = false                     -- the player hides what
 W.trainer = {
     { kind = "available", name = "Frost Nova", icon = 301, level = 10, sub = "Rank 1", category = "Frost", id = FROSTNOVA, cost = 400 },
     { kind = "unavailable", name = "Arcane Mind", icon = 304, level = 12, category = "Arcane", id = MIND, cost = 100 },
-    { kind = "unavailable", name = "Mana Shield", icon = 305, level = 20, sub = "Rank 1", category = "Arcane", cost = 2000 }, -- no spell ID to be had
+    { kind = "unavailable", name = "Mana Shield", icon = 305, level = 20, sub = "Rank 1", category = "Arcane", cost = 2000, id = SHIELD }, -- a spell the game has not named yet: no ID to be had
     { kind = "unavailable", name = "Shadow Ward", icon = 306, level = 32, category = "Shadow", cost = 9000 }, -- a tab this mage does not have yet
     { kind = "used", name = "Fireball", icon = 307, level = 1, category = "Fire", id = FIREBALL1 },
 }
@@ -434,6 +446,14 @@ check(entry("Arcane Mind").tab == 2 and S.stats.tabTrainer >= 2, "the tab from t
 check(entry("Mana Shield") and entry("Mana Shield").source == "trainer" and entry("Mana Shield").tab == 2 and entry("Mana Shield").state == "level",
     "a spell only the trainer's window knows joins the list")
 check(#S.All() == 14, "and a spell both lists have is there once")
+-- The game had not loaded the spell's name when the row was read (without it the row's ID is not taken): read
+-- again at the next look, the row gets its ID once the game names the spell.
+W.spells[SHIELD] = { name = "Mana Shield", sub = "Rank 1" }
+W.Fire("TRAINER_SHOW")
+W.Wait(1)
+check(taught.spells[SHIELD] and taught.spells[SHIELD].id == SHIELD and taught.spells[SHIELD].cost == 2000
+    and taught.spells["Mana Shield#Rank 1"] == nil and entry("Mana Shield") and entry("Mana Shield").id == SHIELD and #S.All() == 14,
+    "a row kept without its spell ID gets it at a later read, once the game names the spell")
 W.lines[5], W.skillLines[78] = "Shadow", 5
 ns.QueueUpdate(true, 0)
 W.Wait(1)
@@ -580,6 +600,13 @@ watch(SaneUISpellbook, 0.05)
 check(stands(made[1], view1, 0, -999), "after them the entries are looked at five times a second, not in every frame")
 watch(SaneUISpellbook, 0.2)
 check(stands(made[1], view1, homeX, homeY), "and one out of place is put back at the next look")
+-- Closed, the watcher does not run (it is a script of our page frame): an entry the game moves then is put back as the
+-- spellbook opens, by the OnShow of the game's first column, shown with its window; ours is hooked after the game's.
+book:Hide()
+made[1]:ClearAllPoints()
+made[1]:SetPoint("TOPLEFT", view1, "TOPLEFT", 0, -999)
+book:Show()
+check(stands(made[1], view1, homeX, homeY), "an entry moved while the spellbook was closed is put back as it opens: the column's OnShow runs when its window shows")
 
 -- Spells without a tab: at the end of the first class tab
 S.AddExtra(LATE)
@@ -1083,12 +1110,12 @@ end
 -- A slot the game hides from addons (a secret value) is no answer: nothing is ended or filled on it
 E.Reserve(66, entry("Blink"))
 W.Wait(2)
-W.actions[66] = { kind = "spell", id = FIREBALL2 }
-issecretvalue = function() return true end
+W.actions[66] = { kind = "spell", id = FIREBALL2, hidden = true }
 ns.QueueUpdate(false, 0)
 W.Wait(1)
 check(reserved(66) and ns.HasAction(66) == "unknown", "a hidden slot keeps its reservation")
-issecretvalue = nil
+check(ns.RealEntry(66) == nil and ns.ActionTexture(66) == nil, "what sits there, and its icon, are not known: a secret goes through Core.Plain and comes out nil")
+W.actions[66].hidden = nil
 ns.QueueUpdate(false, 0)
 W.Wait(1)
 check(not reserved(66) and action(66), "and is judged once the game shows it again")
@@ -2017,6 +2044,10 @@ do
     -- Every page is yours: page 2 in layouts and reservations, the bars that are off seen as pages
     check(ns.SlotLabel(13) == "Bar 1 (page 2), button 1" and ns.SlotLabel(24) == "Bar 1 (page 2), button 12", "page 2 has a name")
     check(ns.SlotLabel(145) == "Bar 6, button 1" and ns.SlotLabel(180) == "Bar 8, button 12", "bars 6 to 8 stand as themselves")
+    ns.DB.pageNames.MAGE = { [72] = "Bear Form", [84] = {} }
+    check(ns.SlotLabel(73) == "Bar 1 (Bear Form), button 1" and ns.SlotLabel(85) == "Bar 1 (form or stance 2), button 1",
+        "a form's row by the name noted for it; a name of another kind in the saved settings is none")
+    ns.DB.pageNames.MAGE = nil
     local sideBar = W.NewWidget("Frame", "MultiBarRight")
     local sideFrame = W.NewWidget("Frame", "MultiBarRightButtonContainer1", sideBar)
     local sideButton = MultiBarRightButton1
@@ -2088,6 +2119,19 @@ do
     check(action(73), "with the switch off that row is seen and it stays")
     W.actions[73] = nil
     Core.Set(ns.name, "holdPage", true)
+    -- Turned to page 2, the button you can see is one of page 2
+    Turn(2)
+    W.actions[73] = { kind = "spell", id = 6100 }
+    W.Fire("SPELL_PUSHED_TO_ACTIONBAR", 6100, 73, 1)
+    W.Fire("SPELLS_CHANGED")
+    W.Wait(3)
+    landed = nil
+    for slot = 1, 2 * ns.NUM_BUTTONS do
+        if action(slot) and action(slot).id == 6100 then landed = slot end
+    end
+    check(not action(73) and landed and landed > ns.NUM_BUTTONS, "turned to page 2, it comes to a free button of that page: the row you see")
+    W.actions[landed] = nil
+    Turn(1)
 
     for index = 1, ns.NUM_BUTTONS do _G["ActionButton" .. index] = nil end
     ActionButton1 = firstButton
@@ -2111,6 +2155,7 @@ do
             local button = W.NewWidget("CheckButton", name .. "Button" .. index, frame)
             button:SetPoint("CENTER")
             button.container = frame
+            button._protected = true -- the game's buttons are secure frames: in a fight the stand-in refuses to move one, as the game blocks it
             bar.actionButtons[index], bar.shownButtonContainers[index] = button, frame
         end
         _G[name] = bar
@@ -2185,6 +2230,16 @@ do
     W.combat = false
     W.Fire("PLAYER_REGEN_ENABLED")
     check(Row(main, 1, 12, 1), "laid out in a fight, it follows after the fight")
+    -- By the stand-in's own fight (the game's two events): a protected button moved in it would be an error here, and
+    -- the module stood down; a padding changed in a fight is owed until the fight's end
+    W.Combat(true)
+    main.buttonPadding = 8
+    main:UpdateGridLayout()
+    local owed, moved = Core.Owed("Abilities: spacing"), Row(main, 1, 12, 1)
+    W.Combat(false)
+    check(owed and not moved and not ns.off and Row(main, 1, 12, 1), "a padding changed in a fight is owed, no protected button touched; the fight's end pays it")
+    main.buttonPadding = 2
+    main:UpdateGridLayout()
 
     -- The switch
     Core.Set(ns.name, "tightBars", false)

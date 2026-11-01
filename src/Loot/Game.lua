@@ -5,9 +5,10 @@ local _, ns = ...
 --  The game's own parts this module stands in for, kept out of the way while
 --  ours are chosen, and given back (Doc/guides/windows.md, Taint and the game's
 --  own windows: nothing of Blizzard's is written, no function replaced):
---    - the game's loot window (LootFrame) is no longer told that loot opened:
---      it does not hear LOOT_OPENED, so it never opens and never takes its
---      place among the game's panels. The rest it hears it still hears; the
+--    - the game's loot window (LootFrame) is lent deaf to LOOT_OPENED (Core's
+--      lend, which notes what it heard and gives it back): it is no longer
+--      told that loot opened, so it never opens and never takes its place
+--      among the game's panels. The rest it hears it still hears; the
 --      game's own questions (a thing that binds when picked up, a master
 --      looter's choice) are the game's event handlers', not the window's;
 --    - the game's own Auto Loot (its setting autoLootDefault, Esc > Options >
@@ -27,7 +28,8 @@ local Core = SaneUI.Core
 local Game = {}
 ns.Game = Game
 
-local deaf = false -- the game's loot window does not hear LOOT_OPENED
+local DEAF = { "LOOT_OPENED" } -- what the game's loot window is lent deaf to
+local deaf         -- the game's loot window, lent deaf to that (Core.Lend) while ours stands in for it
 local lent         -- the game's roll frames, lent to hidden
 local hidden
 
@@ -66,7 +68,7 @@ local function PutBack()
 end
 
 -- Whether our loot window and our roll cards stand in for the game's now.
-function Game.Window() return deaf end
+function Game.Window() return deaf ~= nil end
 function Game.Rolls() return lent ~= nil end
 
 local function Hidden()
@@ -81,10 +83,13 @@ end
 function Game.Update()
     local window = rawget(_G, "LootFrame")
     local ours = not ns.off and ns.options.window and true or false
-    if window and ours ~= deaf then
-        if ours then window:UnregisterEvent("LOOT_OPENED") else window:RegisterEvent("LOOT_OPENED") end
-        deaf = ours
-        if not ours then ns.Safe("window", ns.Window.Close) end
+    if window and ours and not deaf then
+        local lend = Core.Lend(window)
+        if lend:SetDeaf(DEAF) then deaf = lend end
+    elseif not ours and deaf then
+        deaf:Return()
+        deaf = nil
+        ns.Safe("window", ns.Window.Close)
     end
     if deaf then ns.Safe("auto loot", Lend) else ns.Safe("auto loot", PutBack) end
     local container = rawget(_G, "GroupLootContainer")
@@ -100,9 +105,10 @@ function Game.Update()
 end
 
 function Game.GiveBack()
-    local window = rawget(_G, "LootFrame")
-    if window and deaf then window:RegisterEvent("LOOT_OPENED") end
-    deaf = false
+    if deaf then
+        ns.Safe("loot window", deaf.Return, deaf)
+        deaf = nil
+    end
     ns.Safe("auto loot", PutBack)
     if lent then
         lent:Return()

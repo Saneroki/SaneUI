@@ -113,6 +113,13 @@ local function Pattern(name, english)
     return "^" .. sentence .. "$"
 end
 
+-- The same for a sentence the game writes inside a colour code of its own ("|cff20ff20Outbid|r").
+local function Coloured(name, english)
+    return "^|c%x+" .. Pattern(name, english):sub(2, -2) .. "|r$"
+end
+
+local REPAIR_COST = Pattern("REPAIR_COST", "Repair cost:") -- at a vendor; the line after it is the coins (Read.lua)
+
 ns.PATTERN = {
     MIN_LEVEL = Pattern("ITEM_MIN_LEVEL", "Requires Level %d"),
     DPS = Pattern("DPS_TEMPLATE", "(%s damage per second)"),
@@ -130,6 +137,23 @@ ns.PATTERN = {
     -- What a spell asks of you: a stance or a form, a weapon. The panel shows them in its header, each in a
     -- row of its own under what the spell is (Kinds/Spell.lua); so are its reagents and tools (LINES).
     SPELL_REQUIRES = { Pattern("SPELL_REQUIRED_FORM", "Requires %s"), Pattern("SPELL_EQUIPPED_ITEM", "Requires %s") },
+    -- The sentences the game's own code writes into a tooltip after the data it was filled from, as
+    -- another addon would (Read.lua, Collect): at the auction house an auction's seller, its time left,
+    -- its buyer and bids (those two inside a colour code), the note under a group of pets; at a vendor
+    -- an item's repair cost, with a line of coins under it. Known by their words, they stay the game's.
+    APPENDED = {
+        Pattern("AUCTION_HOUSE_TOOLTIP_SELLER_FORMAT", "Seller: |cffffffff%s|r"),
+        Pattern("AUCTION_HOUSE_TOOLTIP_MULTIPLE_SELLERS_FORMAT", "Sellers: |cffffffff%s|r"),
+        Pattern("AUCTION_HOUSE_TOOLTIP_OVERFLOW_SELLERS_FORMAT", "Sellers: |cffffffff%s, and %s more|r"),
+        Pattern("AUCTION_HOUSE_TOOLTIP_DURATION_FORMAT", "Time Left: |cffffffff%s|r"),
+        Pattern("AUCTION_HOUSE_BUYER_FORMAT", "Buyer: |cffffffff%s|r"),
+        Pattern("AUCTION_HOUSE_HIGH_BIDDER_FORMAT", "High Bidder: |cffffffff%s|r"),
+        Coloured("AUCTION_HOUSE_HIGHEST_BIDDER", "High Bidder"),
+        Coloured("AUCTION_HOUSE_OUTBID", "Outbid"),
+        Pattern("AUCTION_HOUSE_BUCKET_VARIATION_PET_TOOLTIP", "Pets in this group may vary in stats, level, and quality. Check the auction's tooltip before buying."),
+        REPAIR_COST,
+    },
+    REPAIR_COST = REPAIR_COST,
 }
 
 -- Whole lines of the game an item's panel knows by their words.

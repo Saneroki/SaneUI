@@ -257,6 +257,23 @@ check(Shows("Gameplay") and Shows("Accessibility") and Shows("System") and Shows
 check(Control("Controls") and Control("Nameplate options") and Control("Graphics") and Control("Edit Mode layout")
     and Control("Chat windows") and Control("Your own chat channels") and Control("All other game settings")
     and Control("Controls"):GetChecked(), "a checkbox for each part, showing whether it is kept")
+-- The tab CVars (Settings/CVars.lua: the CVars kept by name, through Sync): its list is made when the tab is first
+-- shown, released when the page is hidden with it and shown anew when the page shows again: the part's OnHide and
+-- OnShow run with its parent's, as the game runs them.
+do
+    local part = canvas.parts[3]
+    Click(canvas.tabs[3])
+    local list = part.list
+    check(part:IsVisible() and not canvas.parts[1]:IsShown() and list ~= nil, "the tab CVars chosen: its part shown, the others hidden, its list made")
+    local inits, releases = 0, 0
+    list.Init = function() inits = inits + 1 end
+    list.Release = function() releases = releases + 1 end
+    canvas:Hide()
+    canvas:Show()
+    check(releases == 1 and inits == 1 and part.list == list,
+        "the page hidden and shown again: the list is released and shown anew with it (the tab's OnHide and OnShow run under the page's)")
+    Click(canvas.tabs[1])
+end
 
 -- Character A comes into the game: nothing kept yet, so nothing is written --------------------------
 -- A slow login: the game has its stored settings only after entering the world. Sane UI waits for them.
@@ -612,6 +629,29 @@ check(W.cvars.debugThing == "3", "and written like them")
 Config.CVars.Keep("debugThing", false)
 check(not Sync.Kept("debugThing") and options.named.debugThing == nil, "the CVar list unticks it through Sync")
 
+-- A value the game hides (a secret value, as the 12.x client hands some out): read as nothing, never written, never
+-- a secret in the saved settings: what Sync reads of the game goes through Core.Plain ---------------------------
+do
+    local getCVar, getInfo = C_CVar.GetCVar, C_CVar.GetCVarInfo
+    C_CVar.GetCVar = function(name) if name == "debugThing" then return W.Secret() end return getCVar(name) end
+    C_CVar.GetCVarInfo = function(name)
+        if name == "debugThing" then return W.Secret(), select(2, getInfo(name)) end
+        return getInfo(name)
+    end
+    W.cvars.debugThing = "2"
+    check(Sync.Value("debugThing") == nil and Sync.Settable("debugThing") == nil and Sync.SetCVar("debugThing", "4") == false
+        and W.cvars.debugThing == "2" and Core.errors["Sync: setting CVars"] == nil,
+        "a CVar whose value the game hides reads as nothing, and is not written (the game would refuse it)")
+    Sync.Keep("debugThing", true)
+    Sync.Capture()
+    Sync.Give()
+    check(options.named.debugThing == false and W.cvars.debugThing == "2",
+        "kept by name, the profile holds false for it until it can be read, never the secret, and writes nothing")
+    C_CVar.GetCVar, C_CVar.GetCVarInfo = getCVar, getInfo
+    Sync.Keep("debugThing", false)
+    W.cvars.debugThing = nil
+end
+
 -- A standard profile's CVars (Presets.lua) -----------------------------------------------------------
 do
     local preset = Core.Presets.profiles.Speedleveling.Sync.named
@@ -674,6 +714,15 @@ check(W.cvars.nameplateSize == "4" and W.cvarSets == sets and SaneUIDB.profiles.
 check(SaneUICharDB.settings and SaneUICharDB.settings.Sync == nil, "nor kept with the character's own settings")
 Profiles.Use("Mine")
 check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "back on the profile, the character takes its settings, the game's too")
+-- Turned to Character specific in a fight: the game's settings are left as they are until the fight is over
+-- (Core.AfterCombat; a secure CVar the game would refuse), then they go to their defaults.
+W.Combat(true)
+Profiles.Use(Profiles.OWN)
+check(W.cvars.nameplateSize == "2" and Core.Owed("Sync: defaults"), "turned to Character specific in a fight: the game keeps its settings until the fight is over")
+W.Combat(false)
+check(W.cvars.nameplateSize == W.cvarInfo.nameplateSize.default and not Core.Owed("Sync: defaults"), "over, they are at their defaults")
+Profiles.Use("Mine")
+check(W.cvars.nameplateSize == "2", "and the profile's again when it is used again")
 
 -- The key bindings: every key by its command, written where they differ, saved in the game's set ---
 do
@@ -692,24 +741,55 @@ do
     LoadBindings = function(set) loaded = set end
     local part = Sync.part.keyBindings
     local read = part.Read()
-    check(read.JUMP[1] == "SPACE" and read.MOVEFORWARD[2] == "UP" and read.SITORSTAND == nil and read.HEADER_MOVE == nil,
-        "what is bound, by command; nothing for what has no key")
+    check(read.JUMP[1] == "SPACE" and read.MOVEFORWARD[2] == "UP" and read.SITORSTAND == false and read.HEADER_MOVE == nil,
+        "what is bound, by command; false for a command seen without a key; nothing for a header")
     part.Write({ JUMP = { "BUTTON4" }, SITORSTAND = { "X" }, MOVEFORWARD = { "W", "UP" } })
     check(list[2][3] == "BUTTON4" and list[2][4] == nil and list[4][3] == "X" and saved[1] == 2, "written where they differ, saved in the set in use")
     part.Write({ JUMP = { "BUTTON4" }, SITORSTAND = { "X" }, MOVEFORWARD = { "W", "UP" } })
     check(#saved == 1, "nothing differs: nothing saved")
     part.Write({ JUMP = { "BUTTON4" }, MOVEFORWARD = { "W", "UP" } })
-    check(list[4][3] == nil, "a key the profile does not have is taken off")
+    check(list[4][3] == "X", "a command the profile has never seen (bound here, none where it was captured) keeps its keys")
+    part.Write({ JUMP = { "BUTTON4" }, MOVEFORWARD = { "W", "UP" }, SITORSTAND = false })
+    check(list[4][3] == nil, "a command the profile saw without a key is unbound here")
+    list[4][3] = "X"
+    part.Write({ JUMP = { "X" }, MOVEFORWARD = { "W", "UP" } })
+    check(list[2][3] == "X" and list[2][4] == nil and list[4][3] == nil, "one of its keys the profile wants elsewhere is moved there all the same")
     options.taken.keyBindings = { OTHERADDON = { "F9" } }
     check(part.Read().OTHERADDON[1] == "F9", "a command this client does not list keeps its keys")
     part.Default()
-    check(loaded == 0, "with no profile: the game's own keys")
+    check(loaded == 0 and saved[#saved] == 2, "with no profile: the game's own keys, saved in the character's set")
+    GetCurrentBindingSet = function() return 1 end
+    local saves = #saved
+    loaded = nil
+    part.Default()
+    check(loaded == nil and #saved == saves, "with the account's set in use they are left as they are: that set is every character's")
+    GetCurrentBindingSet = function() return 2 end
     options.taken.keyBindings = nil
     loaded = nil
     Sync.Give()
     check(loaded == nil, "a login with no keys in the profile: the keys stay as the game has them")
+    Profiles.Reset()
+    check(loaded == nil, "Defaults on the page Profiles (Sane UI's settings only, the game's stay): the keys stay too")
     Sync.Moved()
     check(loaded == 0, "come over from another profile: the game's own keys, not the keys of the one left")
+    local count = GetNumBindings
+    GetNumBindings = function() return 0 end
+    Sync.Capture()
+    loaded = nil
+    Sync.Moved()
+    check(loaded == nil, "come over with the same settings (a copy of this profile): the keys stay")
+    GetNumBindings = count
+    -- Turning to Character specific: the game's own keys again only if the profile held them and the part is kept
+    Sync.KeepPart("keyBindings", false)
+    loaded = nil
+    Profiles.Use(Profiles.OWN)
+    check(loaded == nil, "Character specific with Key bindings unticked: the keys are left as they are")
+    Profiles.Use("Mine")
+    Sync.KeepPart("keyBindings", true)
+    loaded = nil
+    Profiles.Use(Profiles.OWN)
+    check(loaded == 0, "ticked, the profile holding keys: the game's own again")
+    Profiles.Use("Mine")
     GetNumBindings, GetBinding, SetBinding, GetCurrentBindingSet, SaveBindings, LoadBindings = nil, nil, nil, nil, nil, nil
 end
 
@@ -732,6 +812,12 @@ do
         and layouts.layouts[2].layoutType == 2 and added[2] == true, "saved through the game, its name and kind, made the one in use")
     check(part.Write({ name = "bad", kind = 1, text = "x" }) == false, "one that cannot be added: the layout in use stays")
     check(part.Write({ name = "Nothing", kind = 1 }) == false, "nor one without its text")
+    added = nil
+    check(part.Write({ name = "Nowhere", kind = 0, text = "preset text" }) == false and added == nil,
+        "nor one of the game's own kind (a preset), whatever text it comes with")
+    C_EditMode.SaveLayouts = function() error("not now") end
+    check(part.Write({ name = "Other", kind = 1, text = "other text" }) == false and added == nil,
+        "one the game does not save is not made the one in use")
     for _, name in ipairs(stubs) do C_EditMode[name] = was[name] end
 end
 

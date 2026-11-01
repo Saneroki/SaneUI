@@ -1,186 +1,214 @@
 # Core, with its options (Settings)
 
+Core (`SaneUI`, `src/Core/`) is the main addon and every module's library. A line per file: `src/Core/README.md`,
+section *Files*; the API of each file in its head comment; the rules in `Doc/guides/addon-standards.md`; windows in
+`Doc/guides/windows.md`; the data framework in `Doc/guides/data.md`. Sync: [sync.md](sync.md).
+
 ## Responsibilities and entry points
 
-| File under `src/` | Responsibility |
-| --- | --- |
-| `Core/Core.lua` | Shared table, events, module lifecycle, errors, slash dispatch |
-| `Core/Saved.lua` | `SaneUIDB`, stores (`store.options`: the live settings, found, never kept there), character data, option descriptions (`Core.Options` hooks: changed, replaced, moved, capture, version/upgrade, game), `Core.Settle` (upgrade, check, drop undescribed), `Core.Set`/`Reset`/`Described`/`Settings`/`Same` |
-| `Core/Kit.lua` | `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`/`ShowTip`/`HideTip`, `Pool`, `Confirm`/`AskText` (the game's generic dialogs), `Font`, `Sound`, `Lend` (a game frame changed for a while and given back exactly), `Lent(frame)` (lent now, to any module) |
-| `Core/Serial.lua` | `Core.Serial.Write/Read`: plain values as one line of text (profile export/import); read letter by letter, never run |
-| `Core/Presets.lua` | What the standard profiles set over the defaults: our recommended CVars, Speedleveling's extras, `VERSION` |
-| `Core/Profiles.lua` | Where each module's settings live (the profile in use, or with Accountwide off the character's own), `Move` between places, the profiles, the first shape brought over (v1 → v2), `/sane profile` |
-| `Core/Window.lua` | Own windows (Edit Mode: its box to drag, the grip, a click selects it, grid snap when Edit Mode's *Snap* is on; `titleBar`: title (`SetTitle`), search box (`search`), the module's `buttons`, then the game's window / full screen / close; full only, the options' cog (`Settings/Screen.lua`) and the ? (`help`) left of them, drag at any time but at a screen edge; every full window has the bar; `window.inside` under it; `first.dock`, standing clear of a held zone (`CASCADE`), `insets`, `toplevel`; `Remember`/`Recall`/`Native`/`Open` for the game's triggers; `Attach` on the game's window; `All`/`ResetAll`) and low-level movers/sizers for Blizzard windows |
-| `Core/Classic.lua` | The game's windows ours stand for (window option `classic`): `Classic.Menu` (the dropdown *Classic windows* of every window, each under its title, the open one's first), `Classic.Attach` (the button *Sane UI* on each entry's `frame`: secure, clicking the game's close button, on a panel; plain with `plain`; `full`, `ours`, `back`, `ready`, `addon`), `Classic.Press(what, binding)` (the key that opens a panel our code may not open) |
-| `Core/Views.lua` | `tabs`: views behind `TabSystemTemplate` with `TabSystemTopButtonTemplate` tabs (spellbook widths 100..150, inset 22, row 32) at the top of `window.inside`; built on first choice; `window:Tab(i)`, kept as `place.tab` |
-| `Core/Selection.lua` | Edit Mode selection: box in `editmode-actionbar-selected`, Core's own dialog in Edit Mode's look (`DialogBorderTranslucentTemplate`, DIALOG 200, BOTTOMRIGHT -250,200) with `HUD_EDIT_MODE_RESET_POSITION` → `window:Reset()`; cleared after the manager's `SelectSystem` (hook) and on Edit Mode exit |
-| `Core/Holder.lua` | `native.hold`: the game's window lent (`Core.Lend`) to a hidden frame while closed and ours chosen; hooks after its `Show`/`Hide`/`SetShown` open ours; to ours while it is open: scale `TINY`, alpha 0; `native.unseen` closes it unseen before giving back; `native.addon` waits for its addon; failure gives back (`off`) |
-| `Core/Seat.lua` | `Core.Seat.New(frame, { label, sized, gone })`: a window not ours (the game's spellbook, a known addon's, Social's guild window) seated in a room of a full window, `Hold(left, top, width, height, strata, level)` in UIParent's units, `Free`, `Size`; place, scale, layer lent (`Core.Lend`), never the parent (our code never shows or hides it); hooks after its `SetPoint`/`SetScale` (`placing` flag), `OnSizeChanged` refits and tells `sized`, `OnHide` gives back and tells `gone`; a protected window in a fight is not seated; level only raised |
-| `Core/Board.lua` | `Core.Board.New(window, { store, key, label, windows = fn → specs, default = fn(w, h) → tree, changed })` (`window.board`): a module's full screen of windows as a tiling tree (`{ key }` or `{ split = "x"/"y", parts, shares }`), layouts in `store[key] = { chosen, tabs = { { name, tree } } }` (tab 1 tree nil → module default; `false` → empty); `board:Show(inside, w, h)` → rects by key (panels: Skin plate, head `HEAD` 30 draggable, X `UIPanelCloseButtonNoScripts`, body), `Hide`, `Search`, `Has`, `Forget`, `Remove`, `Toggle`; drags: gap strips (resize cursor, line follows, `Board.Move` on release, writes back through `Present`'s `of`/`from`), head drag (ghost; side → `Beside`, middle → `Swap`, screen edge `SCREEN` → strip `STRIP`); one watcher `OnUpdate` only while held; tabs (`MinimalTabTemplate`) in `window.bar` after `bar.find`, hidden under the search box, `+`, right-click Rename/Reset (first)/Delete (`Core.AskText`, `Core.Confirm`); dropdown *Windows* left of *Classic windows* (`Window.Refresh` ends the search box at it); spec `{ key, title, least, build, show, size, search, present }` (absent → pruned, siblings share) |
-| `Core/Neighbours.lua` | The known addons (Saneroki, 2026-10-20; CLAUDE.md, *No other addons*): the one file that names them. `Neighbours.KNOWN[key] = { addon, title, window, api, open, close }`; `Neighbours.Window(key)` a handle while loaded and its functions are there (`Frame`, `Shown`, `Open`, `Close` behind `Core.Safe`, `Follow(fn)`: one hook after its opening function); `"talents"`: Combat's Talents panel |
-| `Core/Escape.lua` | `Core.Escape(owner, close)`: one named stand-in `SaneUIEscape`, Sane UI's only `UISpecialFrames` entry; on hide runs every close, reshown next frame while any remain |
-| `Core/Watch.lua` | `Core.Watch(frame, every, fn, label)` (a child frame's OnUpdate, only while started and shown; an error stops it) and `Core.Hover(frame, options)` (OnEnter starts, `dwell`/`linger`/`margin`/`keep`, held left button counts, mouse motion only) |
-| `Core/Fuzzy.lua` | Forgiving search ranked in whole numbers by how a word was found (whole 600, text start 500, word start 400, initials 300, inside 200, spread letters 100, plus up to 90 for a close fit; every word must match, ranks add up): `Query`, `Match`, `Rank`, `Highlight` (`NORMAL_FONT_COLOR:WrapTextInColorCode`), `Plain`; `Filter(rows, query, fields, done)`: ≤ `AT_ONCE` 200 rows at once, else a `Core.Steps` job, a generation counter drops older ones, lowered texts kept weakly per row |
-| `Core/EditMode.lua` | `Core.EditMode.active`, `Watch(fn)`: Blizzard's Edit Mode open or closed (`EventRegistry` `EditMode.Enter`/`Exit`) |
-| `Core/Dock.lua` | Nine snap zones (four corners, four edge middles, `CENTER`), pure `Find`/`Rect` arithmetic (with `insets`), drag preview |
-| `Core/Shape.lua` | A window's plate: fill pieces with round corners (circle masks, `Art/circle*.blp` by `dev/tools/shape-art`), bronze trim (trims and holes only made for a look with one); per-corner radius from `corners` % of the size at rest, or a fixed `radius`; square at screen edges with `squareEdges`; `Look{alpha}`, `Follow()`, `Shape.Round(texture)`; `Shape.Options` |
-| `Core/Skin.lua` | The game's dark dialog tile (`Skin.TILE`, 32 units) and a bronze trim on a Shape; `skin:Rest()` on placement, refits on size changes unless `Hold(true)`; `Skin.TILES` (marble, rock, slate, iron, night), `Tile(key)`, `Choices(solid)` |
-| `Core/Bar.lua` | Progress bar in the game's experience bar atlases (`Bar.ART`): two StatusBars (fill over the part still to come), pip, dividers (`segments`, nil: `STATUS_BAR_NUM_SEGMENTS`), flipbook flare; gains rise in `RISE`..`RISE_WHOLE` s by size (`OutQuartic`), each step only pip and flare, losses jump; `SetSize` moves by the kind of motion |
-| `Core/Motion.lua` | Kinds of motion of a window's size on Blizzard's `EasingUtil` curves (`Motion.Ease`, linear without it): Glide 0.35 s OutQuartic (default), Swing 0.45 s OutBack, Even 0.5 s InOutCubic, Instant (key `off`, which Social passes); the general switch on Appearance (`Core.general.motion`), a window may have its own; unknown keys fall back; a clock hidden mid-way jumps to its end; `Motion.Fade(region)` / `Motion.Slide(region, s)` (Alpha / two Translations, smoothing OUT; at once with animations off or out of sight) |
-| `Core/Edge.lua` | A docked window fills the screen when the mouse is pushed against its screen edge, back when pushed again (not in Edit Mode); own background (square when full; `Edge.SOLID` or `Skin.TILES`), takes the mouse; dropdown *Classic windows* while full (`classic`: the game's windows it stands for; an entry with `checked` is a kept choice, a checkbox, and chosen again while ticked calls `back` and the window stays); section *Expand window* in the window's options (`Edge.Options(list, at, tab, under)`; its changes followed by Core: `described[name].changed` wrapped at `ADDON_LOADED`); content by `Motion.Fade`/`Slide`; hooks via `Core.Safe`; window option `strip` (a share): the strip is that share of the screen's side in its middle (anchored to UIParent; its length again at `DISPLAY_SIZE_CHANGED`, `UI_SCALE_CHANGED`) |
-| `Core/Expand.lua` | Opens after the mouse rests `DWELL` 0.2 s on it (or its `corner` spot; `hover = false`: never by the mouse), closes after `LINGER` 0.5 s away; on `Core.Hover` (every `STEP` 0.1 s, `MARGIN`, held left button counts), stopped while `Stay(true)`; size moves by the kind of motion; hooks via `Core.Safe` |
-| `Core/Bindings.lua`, `Bindings.xml` | `BINDING_HEADER_SANEUI` (Core's title), `SANEUI_OPTIONS` → `Core.Config.Open`; modules add theirs under the same header |
-| `Core/Demo.lua` | Lazy `/sane window` demonstration: a panel (Esc, to the front) with a button of its own (*Start again*) and two tabs (*Window*: opens on rest, *Keep open*; *Bar*: *Add* fills it, wraps to 0 at full); `/sane window reset all` → `Window.ResetAll` |
-| `Core/Data/Steps.lua` | `Core.Steps`, the scheduler of the data framework and of Core's other long work: jobs as coroutines (`Run(name or options, fn, ...)` gives a handle: `:Stop()`, `:Running()`, `ms`, `frames`; options `priority`, `done(problem)`, `error(problem)`, `label`; `Stop`, `Check`, `Fresh`, `Spend`, `Running`, `Jobs`, `Paused`), at most 5 ms and a quarter of a frame (`GetFramerate`) for all, by `debugprofilestop`; a frame serves a `Fresh` job, then those with priority, then the rest in turns; nothing while `Core.Restricted()` (a fight; Combat, Encounter, ChallengeMode, PvPMatch, Map from the restriction event's own state; not Chat); a failing job dropped and reported; its frame has an `OnUpdate` only while there is work. The framework: `Doc/guides/data.md` |
-| `Core/Data/Codec.lua` | Makes `Core.Data`; `Data.Codec`: a set's row into a record (`Decoder(fields, types)`, `Cut`, `Build`, `Versions`): tab between fields, characters 30 and 31 inside one, an empty part no value (a list's element a hole, the others keep their places), a build and a day only a gone version; never raises on a broken row, never runs what it reads |
-| `Core/Data/Data.lua` | `Core.Data`: the sets, read with Core from its set files (`Sets/<Set>.lua` at the end of the built TOC; `Add` hands one over, ready at once), `Retell` (the answers made are forgotten only when the game version or build changed), the client's game version (`Game`: `WOW_PROJECT_ID`, `IsBetaBuild`, `IsTestBuild`/`IsPublicTestClient`; none told: every set refused), `Set(name)` handles (`Get`, `At`, `History`, `Versions`, `Changes`, `Keys`, `Each` (a job's handle, `done(problem)`), `Stamp`, `OnStamp`/`OffStamp` (told on the next frame, never inside the set's file), `State`, `Ready`, `hash`, `build`; the versions the client's build has reached, records with their patch), `WhenReady(set, fn)`, `Prepare` (says a set that is not there, once; a set that cannot be had remembers it), `Saved(name, fn)` (the data's saved variables of Core's TOC, `Data.SAVED`: Characters, Guild; this client's part, once Core's saved variables are read), records made on first ask and kept weakly, `frozen`/`Tampered` for the tests; failures said once, a listener's as `data: <set> listener`; `/sane data [show <set> <key>]` |
-| `Core/People.lua` | Aliases and notes of players: `Menu.ModifyMenu` on `MENU_UNIT_*` (player menus), `Core.AskText`; `SaneUIDB.modules.Core.people[key]` by `Core.PlayerKeyOf`; `Core.People.Alias/Note/Shown/Set/Watch`; shown by Social (`Bubble.Speaker`, friends rows) and Tooltips (unit header) |
-| `Core/Data/Map.lua` | `Data.Map()`: what Core's data puts on a map, per uiMapID (`On(map)`: places `{ kind, key, id, what, x, y, name, to, ... }`, nil while first read), `Spawns(key)`, `OnChange(fn)`; read from Spawns, Places, Travel (NPCs, Objects, Quests say what each is) as `Each` walks one after the other when a set arrives or changes; sets Core does not hold passed over silently (`Doc/guides/data.md`, *What a map shows*) |
-| `Core/Data/Ships.lua` | `Data.Ships()`: a boat's or zeppelin's timetable from *Travel* (`Table(key)`: stops with `arrive`/`leave` seconds into its `round`, `dock`, `area`; runs at `SPEED` 30 yd/s, `ACCEL` 1 yd/s², leaps free, stretched to the set's `wait` (`given`) or a learnt round), `Next(key, stop, at)` from the realm's learnt epoch (`Core.Store(Core.name).ships[realm][key] = { epoch, seen, rides, round, span, doubt }`, shape checked on read, trusted `TRUST` 12 h), `Aboard()`, `Near(yards)`, `Seen`, `OnLearn`, `Now()`; the round learnt from the rounds between rides: an agreeing ride (within 2 × `AGREE`) confirms it and corrects it over a longer `span`, one that does not is a new run of the realm (epoch taken, round kept, `doubt`), a second in a row gives the round; learnt by a guarded `C_Timer` chain from *Travel*'s arrival (its `OnStamp`; every `LOOK` 3 s, `CLOSE` 1 s near a stop or aboard): `UnitPosition` along a way at cruise speed, `SAMPLES` 5 agreeing within `AGREE` 4 s; nothing while *Travel* is not loaded (`Doc/guides/data.md`, *The ships' times*) |
-| `Core/Data/Trips.lua` | `Data.Trips()`: `Now()` (kind, stops `{ name or map/area, at }`, yards, at, next, left, nextLeft, landing, canLand, points), `CanLand`, `Land` (`TaxiRequestEarlyLanding`), `OnChange`; flights from `hooksecurefunc("TakeTaxiNode")` (`GetNumRoutes`, `TaxiGetNodeSlot`, `TaxiNodeName`, `C_TaxiMap.GetAllTaxiNodes` slot to node) and the set's flights' paths, kept in `Core.Character(Core.name).trip`, pace measured after `MEASURE` 8 s else the median of `flightPaces` (5), `PACE` 30; ships from `Ships:Aboard()`; the tram by `UnitPosition` in its map along the set's `tram` way; hooks and a guarded `C_Timer` chain (`LOOK` 2 s, `CLOSE` 1 s) begun once a module asked for `Data.Trips()` and the world is there, `PLAYER_CONTROL_LOST/GAINED` after that; kept flights, paces and tram times of a wrong shape are none; each trip's `pace` and `t`; the tram's times learnt per realm (`trams[realm][key] = { epoch, seen }`, `SAMPLES` 3 within `AGREE` 2 s), `NearTram`, `TramNext` |
-| `Core/Data/Characters.lua` | What the account's characters have (pack Characters' saved variable, by GUID; whole names kept, a first name alone never written over one): marks from bag/equipment/money/level/bank events, read as the job *characters* (bank only while open, whole in one step, read again at close; marked places and the one being read read at logout); saved values of a wrong kind set aside under `broken`; places packed `item\031count\030...`; `Data.Characters()`, `Character(key)`, `Count(item)` (worked out in the job *characters: counts* once loaded), `CharactersStamp`, `OnCharacters(fn)` (told on a later frame, once for what changed together), `Forget(key)` (an alt's entry and every answer made from it; called by `Profiles.Forget`; never the one played) |
-| `Core/Data/Confirm.lua` | `Data.Confirm(set, key, part)` (only an entry the set has unverified), `Confirmed`, `ConfirmedParts`, `OnConfirm`, `Share`; parts: `*`, a boss's `l<item>`/`a<spell>`, a spawn point `p<code>`, a field `name` or member `startNPCs=69` (Check.lua); `Confirmations.Told` (an entry Core learned: the parts the game told, for the harvest); kept in `SaneUIData_Learned[game].confirmed`, dropped at login once the set no longer lists the entry unverified; shared as wire kind `V` (field parts accepted where the set has the field), learned rows as block `L` (`Confirm.SHARED`: Items' stats only) |
-| `Core/Data/Check.lua` | `Data.Check(set, key, told)`: told fields compared by the set's `play` list (`Handle:PlayFields`; whole, `x.part` member, `x[]` member, `x{}` map key, `?` optional); agree → `Data.Confirm` parts, `Covered` → whole; differ or missing → `Data.Learn` (members appended, never removed) + `Told` parts; `Checks.NONE` = shown empty |
-| `Core/Data/Drops.lua` | `Data.Drops()`: `Of(key, period)`, `Rare`, `Chance`, `From(item)`, `Knows`, `Name`, `Gathered`, `Say` (`/sane data gathered`): the set Drops, `Tally.Counts` and `Bundle.Voices`, robustly summed; `SURE` 3, `ENOUGH` 50, `RARE` 10 % |
-| `Core/Data/Found.lua` | `Data.Discovered(set, key, what, parts, how)`, `Data.Found(fromDay)`, `Data.Discoveries.Prices`, `Say` (`/sane data found`); `SaneUIData_Learned[game].found`, 90 days; switches `chatData`, `chatPrices`, one line in `GAP` 15 min, never in a fight; link `addon:SaneUI:data` |
-| `Core/Data/Bundle.lua` | `Data.Bundle`: `Tick` every `EVERY` 15 min, `Block`, `Note`, `Voices`, `Each`, `Forget`; `Data.ForgetShared`; kind `B` on `Core.Wire`: counts and rows of `SETS`; `SaneUIData_Shared[game]`: `counts[id]`, `facts`, `taken`, `outgoing`; strikes by `Relay.Strike`; `SENDERS` 3, `Prices.Mine` at once |
-| `Core/Data/Tally.lua` | `Data.Tally`: `Loot`, `Drop`, `Visit`, `Read`, `Counts`, `Keys`, `All`, `Id`, `Bundle`, `Sent`, `Point` (merge `MERGE` 8 yd, visit `VISIT` 900 s), `Cell` (row*100+col), `Here`, `Of`; `SaneUIData_Learned[game].tally[build] = { id (16 hex), drops, points, cells }` packed rows (`c\031how\031quest\031n`, `d\031how\031item\031quest\031times\031units`; `map\031x\031y\031visits`; `map\031cell\031n`), `maps[map] = "w\031h"`; `BUILDS` 4, `KEYS`, `RECORDS`; a `/sane data` line (`Data.reports`) |
-| `Core/Data/Watchers.lua` | Creatures seen/talked (spawn point by point, `Watchers.Code`; NPC whole when no services), talked → `Tally.Point`; mailboxes, crossings; bosses' loot and casts; items' stats (`Watchers.Item`). No quest code (Quests.lua) |
-| `Core/Data/Quests.lua` | `Data.QuestWatch`: `QUEST_DETAIL` (title, giver/object/start item, rewards via `GetQuestItemInfo` 6th answer, `GetRewardXP/Money`, `C_QuestInfoSystem.GetQuestRewardSpells`; `Narrow` requirements; `next` after `QUEST_TURNED_IN` within `NEXT` 3 s, no gossip between), `QUEST_ACCEPTED` → `Taken` (log level, group, daily, objectives merged keeping `what`/`stage`), `QUEST_WATCH_UPDATE` noted → `Look` (cell `quest:<q>/<i>`, kill `what` from the dead target named in the text), `Looted(item, name)` (loot objectives' `what`), `Wanting()` (Loot.lua), `QUEST_COMPLETE`/`PROGRESS` taker; texts English only; XP within `XP` 5 levels, money/XP below max level |
-| `Core/Data/Loot.lua` | `Data.Loot`: `LOOT_OPENED` → per `GetLootSourceInfo` GUID: `How` (object: gather/loot each cast; creature: pickpocket after 921, skin after a gather cast by name in Spells, loot once), `Tally.Loot/Drop` (quest context from `QuestWatch.Wanting`), creature cell, node point; fishing `zone:<map>`; from a bag item nothing; no source API → `Loot.blind` |
-| `Core/Data/Facts.lua` | `Data.Facts`: creatures (mouseover/target/nameplate, out of fight, not player-controlled, once per id:level): name, levels widened, rank, kind, `health{}`; services by event; `MERCHANT_SHOW` goods members; spells (spellbook job *watch: spells*, `Facts.Spell`: name, rank, icon); tooltips (`TooltipDataProcessor.AddTooltipPostCall` Item/Spell, guarded, queued) |
-| `Core/Data/Fees.lua` | On `Prices`: `Cut`, `Sale`, `Deposit`, `Post`, `Step`, `PostAt`, `Later`, `Limit`, `Route`, `RouteUsual`, `Trip`, `TRUSTED`, `BETTER`, `AWAY`, `TRIP`: the client's rates by house, the duration from the CVar `auctionHouseDurationDropdown`, 1s an auction, whole silver for what does not stack |
-| `Core/Data/Rhythm.lua` | `Data.Rhythm`: one line per item, `house.rhythm[key]` (fast, slow, dev, 8 stretches of 3 hours and 7 weekdays as n,mean, what sold fading over a week): `Seen` (a sample at a stretch's first scan), `Sold`, `Watched`, `Stretch`, `Read` (`usual`, `drift`, `high`/`low` within a week, `highAt`/`lowAt`, `allDay`, `daily`, `each`); a swing counts only clear of the item's noise (`Swing`) |
-| `Core/Data/Prices.lua` | `Data.Series("Prices")`: `Low(item)`, `Last(item)` (low, market, units, auctions, sellers, at), `Range(item, from, to)`, `Outlook(item)` (Rhythm's, the account with the most samples, held for the hour), `Under(item, price)` (`Offers`, or the game's lists), `Usual(key)`, `Scanned()`, `OnSale()` (both houses), `Read()`, `Other()`, `Within(house, fn, ...)` (reads another house for a moment), `KeyOf`; `item` may be a key, `Stamp`, `OnChange`, `See` (a list of the game's, newest of all), `Account` (takes in what a link of the addon `SaneUI_AuctionDatabase` left, `dev/tools/auction-database link`), `Key`, `Open`, `House(unit)`, `Gear`, `LinkKey`, `Take`, `Save`; one `book` per house parsed from `house.index`; browse, commodity and item search events; `FRESH` 30 days; the one door to auction prices |
-| `Core/Data/Scan.lua` | `Data.Scan`: `State`, `OnChange`, `Start` (by hand); `recent[at]` a scan as a line per item, today's and yesterday's (`Scan.RECENT`, Forever's); `rhythm` (`Scan.RHYTHM`): a sample per stretch, `Bought` what went since the last scan of this session (`last`, `WATCH` 30 minutes); `AUCTION_HOUSE_SHOW` → `C_AuctionHouse.ReplicateItems` after `SETTLE`, then every `INTERVAL` (960 s) from the answer (`house.at`), `ANSWER` 90 s → refused, `RETRY` 180 s; `REPLICATE_ITEM_LIST_UPDATE` (any addon's) → job *Full auction scan*: rows, gear keys (`Later`, `ITEMS`, `ASKS`), `Keep`: `SaneUIData_Market[game].houses[region/realm/side]` (the addon `SaneUI_AuctionData`, `Data.APART`): `days[day]` = `key=low,market,units,auctions,sellers;`, `whole[at]` = every row packed (`WHOLE`, `BLOCK`), `index`; `KEEP` per game |
-| `Core/Data/Relay.lua` | `Data.Relay`: `Offer(house, at, lines)`, `Told`, `Block`, `Ask`; kind `A` on `Core.Wire`: have, want, ask, blocks on guild or group, never whisper; `QUIET` 900 s, `MOST`, `BYTES`, `WAIT`; `Prices.Heard` takes them in (strict shape, only older; 5× off waits for a second sender), kept apart (`book.shared`, `book.under`, saved `heard[sender]`); `Strike`, `Ignored` (`strikes[sender]`, `STRIKES` 3, `IGNORED` a week); `Prices.Forget(sender)`, `ForgetAll` (button on General, `/sane data forget`); `Data.Sharing()` the switch |
-| `Core/Data/ScanBar.lua` | The scan's bar: a view of `Scan.State`, own button anchored under `AuctionHouseFrame` (click: `Scan.Start`), `Core.Bar`, words in `TEXT` |
-| `Core/Settings/Settings.lua` | `Core.Config` (`Config` locally): put up `Core.pages` at login (`PutUpPages`, `Core.Tabbed`; a canvas page is an empty frame built in its first `OnShow`, `OwnPage`; a module's canvas has `OnDefault` → `Core.Reset`), `Fill` the vertical pages once on options `OnShow`/`Open` with Blizzard initializers on `RegisterProxySetting` (read `Core.Settings`, write `Core.Set`); `Config.Kind` (check, slider, number, text, choice, multi, color, button), `Config.Hidden`, `Config.Free`; list rows wired under every parent (`SetParentInitializer` + `AddEvaluateStateCVar` for the others), `hidden` via `AddShownPredicate`; `SaneUISettingsEntryMixin` (on `SettingsControlMixin`) for words/`entry` numbers; `/sane options` (in combat: `Core.AfterCombat`); compartment func |
-| `Core/Settings/Panel.lua` | Canvas parts: header, MinimalTab tabs, `TabbedFrame(page, tabs, top)` (tabs over a box, a scroll part each), scroll area, titled backdrop boxes (tip on the title; `PlaceBox`, `ShowBox`), checks, sliders, dropdowns (one, or `multi` checkboxes), `Edit` (words/numbers; `Number`, `Step`, `Format`, `Written`), colour swatches, buttons; controls kept per page (`Panel.Page`): `Panel.Refresh(page)` that page, `Panel.Refresh()` the shown pages and the others when next shown |
-| `Core/Settings/Tabbed.lua` | `Config.BuildTabbed`: a module's canvas page in tabs (`option.tab`), drawn from the option descriptions with Panel controls (a box per `header`, `headerTip` its tooltip; `inline` numbers on their parent checkbox's line in the same tab, else a line of their own; `hidden` lines closed up on refresh); header search (`Core.Fuzzy`, list under the box, a choice selects tab, scrolls, marks) and *Defaults* (`Core.Confirm`, `Core.Reset`) |
-| `Core/Settings/Screen.lua` | `Config.Screen`: Sane UI's options over a full screen (the title bar's cog, `Window.lua`): a view in `DIALOG` over `window.inside`, the list of pages (General, Appearance via `BuildTabbed(page, Core.name, onPage, title)`, each module), the chosen one drawn by `Config.BuildTabbed`; Esc taken from the window while shown (`window:Escapes`) |
-| `Core/Settings/Profiles.lua` | Canvas page *Profiles*: tabs; tab Profiles (Accountwide settings; this character's profile + New/Rename/Delete/Defaults, Copy from, Export/Import in a text window `SaneUIProfileText`; characters with their profile and Forget, New Characters first) |
-| `Core/Settings/Synced.lua` | Tab *Game settings*: a box per `Sync.GROUPS` entry with its `Sync.parts` (`Sync.PartKept`/`KeepPart`, per profile), off with Accountwide off |
-| `Core/Settings/CVars.lua`, `CVars.xml` | Tab *CVars* of the page Profiles (`Config.CVarsTab`; the list frame made on the tab's first show): search box (refilters only when its words differ from `filters.search`) + `WowStyle1FilterDropdownTemplate` (not at default, kept, kind; red cross resets), its own ScrollBox of two-line rows (keep tick, name/label, inline `InputBoxTemplate` value: Enter sets, Esc reverts; `common-icon-undo` reset while not default), details in the row tooltip, status + count under the list; labels `{ label, tip }` from `Data/CVarLabels.lua` (`dev/tools/cvar-labels [--check]`) |
-| `Core/Settings/About.lua` | Page *Sane UI* under the banner: links (`About.LINKS`: Discord, website, GitHub, shown to copy) and feedback (bug, feature, note: a window that makes a report to copy, `About.Report`, closed by Esc through `Core.Escape`); `/sane feedback` |
-| `Core/Settings/Banner.xml` | Our list row templates: the banner (its mixin in Settings.lua hides the page title while shown) and `SaneUISettingsEntryTemplate` (inherits `SettingsListElementTemplate`: a box to type into) |
-| `Core/Sync/*` | `Core.Sync`: see [sync.md](sync.md) |
+In the TOC's order (`grep -v '^#' src/Core/SaneUI.toc`); the built TOC adds the set files `Sets/<Set>.lua` at its
+end (`dev/build`, from `assets/data/`).
 
-Core TOC order: Core → Kit → Serial → Motion → Saved → Profiles → Dock → EditMode → Escape → Watch → Fuzzy → Shape → Skin → Edge → Window → Classic → Views → Selection → Holder → Seat → Expand → Bar → Neighbours → Bindings → Demo → Data/ (Steps, Codec, Data, Map, Ships, Trips, Teleports, Characters, Wire, Guild, Confirm, Check, Tally, Watchers, Quests, Loot, Facts) → Sync/ (Sync,
-Data/Pages, Layout, Chat, Game) → Settings/ (Settings, Panel, Tabbed, Profiles, Synced, About, Data/CVarLabels, CVars, XML).
+| File under `src/Core/` | What it does; the names it defines |
+| --- | --- |
+| `Core.lua` | Chat, events, errors, modules, `/sane`: `Core.Print`; `Secret`/`Plain`/`Ask`; `Surnames`/`FullName`/`PlayerKey`/`PlayerKeyOf`; `Coins`; `Points`/`Repoint`; `NoteError`/`Report`/`Safe`/`Guard`/`Later`/`AskReload`; `On`/`Off`/`OnUnit`/`OffUnit`; `Locked`/`Restricted`/`AfterCombat`/`Owed`; `NewModule`, `Command`; `TellGame`/`ForGame`/`ServesGame` (Forever, Retail) |
+| `Kit.lua` | Small helpers: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`/`ShowTip`/`HideTip`, `Unconfirmed`/`TipLook`/`TipSection`/`LookOf`, `Pool`, `Confirm`/`AskText` (the game's dialogs), `Font`, `Sound`, `Lend`/`Lent` (a game frame changed for a while, given back exactly) |
+| `Units.lua` | Distances and times as the setting *Units* says, the code keeping yards: `Core.Metric`, `Distance`/`DistanceNumber`/`DistanceText`, `Clock`/`ClockAt`/`GameClock` |
+| `Serial.lua` | Plain values as one line of text and back (a profile exported, imported): `Core.Serial.Write`/`Read`; read letter by letter, never run |
+| `Motion.lua` | Kinds of motion on the game's easing curves: `Core.Motion.KINDS` (glide, swing, even, off), `Kind`/`Ease`/`Share`/`Choices`, `Clock`, `Fade`/`Slide` |
+| `Saved.lua` | `SaneUIDB`, the switches described and the settings in use: `Core.Store`/`StoreName`/`Character`, `Copy`/`Same`, `Settle`, `Options`/`Described`/`Settings`/`Set`/`Reset` |
+| `Presets.lua` | What the standard profiles set over the defaults: `Core.Presets.profiles` (Accountwide, Speedleveling: our CVars as Sync's `named`, Speed Leveling's switches), `Presets.VERSION` |
+| `Profiles.lua` | Where every module's settings live (*Profiles* below): `Core.Profiles.On`/`Arrive`/`Live`/`InUse`/`List`/`Fixed`/`Create`/`Use`/`Rename`/`Delete`/`CopyFrom`/`Reset`/`Export`/`Import`/`Character`/`Leveling`/`SetLeveling`; `VERSION` 2; `/sane profile` |
+| `Dock.lua` | Nine snap zones: `Core.Dock.ZONES`, `REACH` 60, pure `Find`/`Rect`/`Of`, `Anchor` (a frame hung on the screen's point of its zone), `Hold`/`Holder` (a zone holds one window), `Watch`/`Drop` (the shape while dragged) |
+| `EditMode.lua` | Whether Blizzard's Edit Mode is open: `Core.EditMode.active`, `available`, `Watch(fn)` |
+| `Escape.lua` | `Core.Escape(owner, close)`: one stand-in `SaneUIEscape` in `UISpecialFrames` for all of Sane UI; hidden by Esc, it runs every close and is shown again while any remain |
+| `Watch.lua` | `Core.Watch(frame, every, fn, label)` (a child frame's OnUpdate, only while out and shown; an error stops it); `Core.Hover(frame, options)` (the mouse on a window: dwell, linger, margin; a held left button counts) |
+| `Fuzzy.lua` | Forgiving search for the windows' search boxes: `Core.Fuzzy.Query`/`Match`/`Rank`/`Highlight`/`Plain`, `Filter` (≤ `AT_ONCE` 200 rows at once, else a `Core.Steps` job) |
+| `Shape.lua` | A window's plate, round corners and trim: `Core.Shape.New`/`Options`/`Round`, `DEFAULTS` (`corners`, `squareEdges`), masks `CIRCLE`/`HOLE`/`CORNER`/`CAP_*` (`dev/tools/shape-art`) |
+| `Skin.lua` | Background and border on a Shape, one with an edge it is docked to: `Core.Skin.New`, `TILE`/`TILES`, `Tile`/`Choices` |
+| `Journal.lua` | The book look (cream paper, leather, Kalam): `Core.Journal.Dress`/`Paper`/`Rule`/`Box`/`Slot`/`Button`/`Font`/`Ink`, `PIECES` (art by `dev/tools/journal-art`) |
+| `Edge.lua` | A docked window fills the screen when the mouse pushes its screen edge: `Core.Edge.New`/`Options` (section *Expand window*, `DEFAULTS`), `CLASSIC` (the dropdown *Classic windows*); `edge:Fill`/`Stop`/`Docked`/`Escapes` |
+| `Window.lua` | Own windows (*Window contracts* below): `Core.Window.New`, `KINDS` (screen, panel, talk), `Mover`/`Sizer`/`Corner`, `CloseOf`/`Beside`, `All`/`ResetAll`/`PlaceAll` |
+| `Classic.lua` | The game's windows ours stand for: `Core.Classic.Menu`/`List`/`Windows`/`Pick`/`Ticked`, `Attach`/`Button` (the button *Sane UI* on the game's window), `Press(what, binding)` (the key of a panel our code may not open) |
+| `Views.lua` | Views behind the game's tabs (`TabSystemTemplate`) at the top of `window.inside`: `Window.Views(window)`, `TABS`/`TAB_INSET`/`TAB_WIDTHS` (the spellbook's) |
+| `Selection.lua` | A window chosen in Edit Mode and Core's own dialog for it: `Core.Selection.Select`/`Clear`/`Moved`, `LEVEL` 200, `ANCHOR` |
+| `Holder.lua` | The game's window kept out of sight while ours stands for it (`native.hold`): `Core.Holder.Take(window)`, `TINY`; `holder:Native`/`GiveBack` |
+| `Seat.lua` | A window not ours seated in a room of a full window (place, scale, layer lent, never the parent): `Core.Seat.New(frame, { label, sized, gone })`, `seat:Hold`/`Free`/`Size` |
+| `HealthMarks.lua` | What every health bar shows besides the health (barrier, lost maximum, dispellable): `Core.HealthMarks.New(host, health, options)`, `EVENTS`, `ICONS` |
+| `Board.lua` | A module's full screen of windows as a tiling tree, layouts behind tabs: `Core.Board.New`, `Offer`/`Withdraw`/`Offered`/`Open`/`Standing`/`Close`, pure `Lay`/`Least`/`Move`/`Beside`/`Swap`; `board:Show`/`Hide`/`Search`/`Has`/`Lift`/`Remove`/`Toggle`/`Forget` |
+| `Expand.lua` | A window that opens while the mouse rests on it: `Core.Expand.New`, `DWELL` 0.2, `LINGER` 0.5, `STEP` 0.1, `MARGIN` 4; `expand:Open`/`Close`/`Stay` |
+| `Bar.lua` | A progress bar in the game's experience bar art: `Core.Bar.New(parent, options)`, `ART`, `CURVE` |
+| `Neighbours.lua` | The known addons, the one file that names them: `Core.Neighbours.KNOWN`, `Window(key)`, `Format`, `Lock` |
+| `Switches.lua` | Quick switches the modules offer: `Core.Offer(key, switch)`, `Switches()`, `OnSwitches(fn)`, `SwitchChanged` |
+| `Ways.lua` | The way to a place, between a leader and a finder: `Core.Ways.Serve`/`Aim`/`Ahead` (Speed Leveling's arrow by Navigation's routes) |
+| `Sight.lua` | Herbs and ore in sight now: `Core.Sight.Serve`/`Nodes` (Navigation's Found, for Speed Leveling's detours) |
+| `Stats.lua` | The stats' short words: `Core.StatWord`, `StatLine` |
+| `Upgrade.lua` | Whether an item would make the character better: `Core.Upgrade(link, id)`, `WeighWith(fn)` |
+| `Bindings.lua`, `Bindings.xml` | `BINDING_HEADER_SANEUI`, `BINDING_NAME_SANEUI_OPTIONS`; the key `SANEUI_OPTIONS` → `Core.Config.Open`; a module's keys stand in the same section |
+| `Demo.lua` | `/sane window`: a panel to try what Core gives every window (`reset all` → `Window.ResetAll`) |
+| `Data/Steps.lua` | The scheduler of all long work: `Core.Steps.Run`/`Stop`/`Check`/`Fresh`/`Spend`/`Running`/`Jobs`/`Paused`; 5 ms and a quarter of a frame at most, nothing while `Core.Restricted()` |
+| `Data/Codec.lua` | Makes `Core.Data`; a set's row into a record and back: `Data.Codec.Decoder`/`Encoder`/`Build`/`Versions`; never raises, never runs what it reads |
+| `Data/Data.lua` | The sets: `Data.Set(name)` handles, `WhenReady`, `Prepare`, `Saved`, `Game`, `Retell`, `Sharing`, `Learn`/`Learned`/`Unlearn`, `Add`, `Tampered`/`frozen` (tests); `SAVED`, `APART`; `/sane data` |
+| `Data/Map.lua` | What the data puts on a map: `Data.Map()` → `On(map)`, `Spawns(key)`, `OnChange` (Spawns, Places, Travel) |
+| `Data/Ships.lua` | Boats' and zeppelins' timetables, their realm times learnt: `Data.Ships()` → `Table`, `Next`, `Aboard`, `Near`, `Seen`, `OnLearn`; `Ships.Now`/`Timetable` |
+| `Data/Trips.lua` | The trip underway (flight, boat, zeppelin, tram): `Data.Trips()` → `Now`, `CanLand`/`Land`, `NearTram`/`TramNext`, `OnChange` |
+| `Data/Teleports.lua` | Where a teleport of *Travel* brought the player, learnt: `Data.Teleports` (`LOOK`, `WAIT`, `LEAP`) |
+| `Data/Characters.lua` | What the account's characters have (`SaneUIData_Characters`): `Data.Characters`/`Character`/`Items`/`Worn`/`Count`, `CharactersStamp`/`OnCharacters`, `Forget` |
+| `Data/Wire.lua` | Sane UI's addon messages, one prefix: `Core.Wire.Listen`/`Send`/`SendBlock`/`ListenBlock`, `Waiting`, `Drop` |
+| `Data/Guild.lua` | The guild's records (`SaneUIData_Guild`, quiet until `Guild.Start`): `Data.Guild.Roster`/`Member`/`History`/`Record`/`Records`/`Publish`/`Rights`/`Watch`/`Sync`/`OnChange` |
+| `Data/Confirm.lua` | What the game confirmed of unverified data, shared: `Data.Confirm`/`Confirmed`/`ConfirmedParts`/`OnConfirm`/`Share`; `Data.Confirmations` |
+| `Data/Check.lua` | What the game told compared with a set field by field: `Data.Check(set, key, told)`; `Data.Checks` |
+| `Data/Tally.lua` | What play counts per build period: `Data.Tally.Loot`/`Drop`/`Visit`/`Point`/`Cell`, `Of`/`Read`/`Counts`/`Keys`/`All`/`Id`/`Bundle`/`Sent` |
+| `Data/Drops.lua` | How often things come, for every view: `Data.Drops()` → `Of`, `Rare`, `Chance`, `From`, … |
+| `Data/Found.lua` | The discoveries and their chat line: `Data.Discovered`, `Data.Found(fromDay)`, `Data.Discoveries.Prices` |
+| `Data/Watchers.lua` | Core's watchers: creatures, things, mailboxes, crossings, bosses' loot and casts, items' stats: `Data.Watchers` |
+| `Data/Quests.lua` | The quest watchers (offered, taken, worked on, handed in): `Data.QuestWatch`, `Looted`, `Wanting` |
+| `Data/Loot.lua` | Every loot window counted (corpses, skinning, pockets, nodes, fishing, where): `Data.Loot` |
+| `Data/Facts.lua` | Creatures, services, vendors' goods, spells, tooltips' items compared: `Data.Facts` |
+| `Data/Rhythm.lua` | An item's price with the clock, one line per item: `Data.Rhythm.Seen`/`Sold`/`Watched`/`Usual`/`Stretch`/`Read` |
+| `Data/Prices.lua` | The one door to auction prices: `Data.Series("Prices")` → `Low`/`Last`/`Range`/`Outlook`/`Under`/`Usual`/`Scanned`/`OnSale`/`Stamp`/`OnChange`; `Prices.House`/`Within`/`See`/`Take`/`Heard`/`Forget`/`Account` |
+| `Data/Fees.lua` | What the house takes, on `Prices`: `Cut`/`Sale`/`Deposit`/`Post`/`Step`/`PostAt`/`Later`/`Limit`/`Route`/`RouteUsual`/`Trip`; the client's own rates |
+| `Data/Scan.lua` | The full scan while the house is open (`SaneUIData_Market`, the addon `SaneUI_AuctionData`): `Data.Scan.State`/`OnChange`/`Start`, `INTERVAL` 960 s |
+| `Data/ScanBar.lua` | The scan's bar under the game's auction house window (`Core.Bar`) |
+| `Data/Relay.lua` | A scan shared with the guild and the group (have, want, blocks, ask): `Data.Relay.Offer`/`Told`/`Block`/`ForgetAll` |
+| `Data/Bundle.lua` | Counts and discoveries shared every 15 min (`SaneUIData_Shared`): `Data.Bundle.Note`/`Block`/`Voices`/`Each`/`Forget`, `Data.ForgetShared` |
+| `People.lua` | Aliases and notes of players (`SaneUIDB.modules.Core.people`, the game's player menus): `Core.People.Key`/`Alias`/`Note`/`Shown`/`Set`/`Watch` |
+| `Objectives.lua` | What is still to do about a creature for a quest in the log: `Core.UnitQuest(unit)` |
+| `Inspect.lua` | A player's item level and talents, paced: `Core.Inspect.Level`/`Talents`/`Watch`, `GAP` 2 s |
+| `Sync/Sync.lua` | `Core.Sync`: `GROUPS`, `Part`/`parts`, `PartKept`/`KeepPart`, `Kept`/`Keep`, `Capture`/`Give`/`Moved`, `OfferReload` ([sync.md](sync.md)) |
+| `Sync/Data/Pages.lua` | `Sync.PAGES`, made by `dev/tools/sync-pages` |
+| `Sync/Layout.lua`, `Addons.lua`, `Keys.lua`, `Chat.lua` | The parts `hudLayout`, `addons`, `keyBindings`, `ownChannels`/`chatFrames` |
+| `Sync/Game.lua` | The page parts, Graphics/Audio/per-character CVars; `Sync.SetCVar`, `Lend`/`Return`/`Value`/`Settable` |
+| `Settings/Settings.lua` | `Core.Config`: `Fill`/`Open`/`Show`/`Refresh`/`RefreshSoon`, `Kind`/`Hidden`/`Free`/`Getter`/`Setter`/`Enabled`; `Core.pages`, `Core.frames`, `Core.Tabbed`; `/sane options`; the compartment click |
+| `Settings/Panel.lua` | Canvas parts from the game's templates: `Config.Panel.Header`/`Tabs`/`TabbedFrame`/`Scroll`/`Box`/`Check`/…, `Page`/`Refresh` |
+| `Settings/Tabbed.lua` | A module's page in tabs from its descriptions: `Config.BuildTabbed(page, name, onPage, title)`; its own search (`Core.Fuzzy`) and *Defaults* |
+| `Settings/Screen.lua` | The options over a full screen (the title bar's cog): `Config.Screen`, `STRATA` DIALOG |
+| `Settings/Profiles.lua` | The page *Profiles*: `Config.BuildProfiles(page)` |
+| `Settings/Synced.lua` | Its tab *Game settings*: `Config.AccountTab` (a box per `Sync.GROUPS` entry) |
+| `Settings/About.lua` | The page *Sane UI*: `Config.About.LINKS`/`KINDS`/`ShowLink`/`Report`/`Open`/`Fill`; `/sane feedback` |
+| `Settings/Data/CVarLabels.lua` | The CVars' labels, by `dev/tools/cvar-labels` |
+| `Settings/CVars.lua`, `CVars.xml` | The tab *CVars*: `Config.CVarsTab`, `Config.CVars.All`/`Info`/`Shown`/`Set`/`Keep`; `SaneUISettingsCVarsTemplate`, `SaneUISettingsCVarRowTemplate` |
+| `Settings/Banner.xml` | Our list row templates: `SaneUISettingsBannerTemplate`, `SaneUISettingsEntryTemplate` (a box to type into) |
+
 Settings and Sync are no modules (no `SaneUI.Settings`/`SaneUI.Sync`, no TOC of their own); they hook Core's
 events themselves, after Saved's and Profiles' handlers (TOC order).
 Modules register via `Core.NewModule(ADDON, name, ns)` in their first file.
 Core dispatches `OnLoad` on that addon's `ADDON_LOADED`, then `OnLogin` on `PLAYER_LOGIN`.
-A module arriving after login gets both steps immediately; one that stood down, in whichever step or at whichever door, gets no further step. Saved data is available from `OnLoad`;
-`Core.class`, `charName`, `charKey` from login. Character identity is GUID (first names can be shared),
-with name/realm fallback; Profiles keys a character by its GUID, else `SaneUICharDB.key`. Forever names are first name + surname (`UnitName` returns both): show players
-with `Core.FullName(unit)`; `charName` is the full name. Any other player is keyed, compared and shared by
-`Core.PlayerKey(unit)` / `Core.PlayerKeyOf(text)`: Forever `First Surname` (realm dropped, regionally
-unique; never either part alone, nil without the surname), Retail `Name-Realm`; `Core.Surnames()` tells
+A module arriving after login gets both steps immediately; one that stood down, in whichever step or at whichever
+door, gets no further step. Saved data is available from `OnLoad`; `Core.class`, `charName`, `realm`, `charKey`
+from login. Character identity is the GUID (first names can be shared), with name-realm as the fallback; Profiles
+keys a character by its GUID, else `SaneUICharDB.key`. Forever names are first name + surname (`UnitName` returns
+both): show players with `Core.FullName(unit)`; `charName` is the full name. Any other player is keyed, compared
+and shared by `Core.PlayerKey(unit)` / `Core.PlayerKeyOf(text)`: Forever `First Surname` (realm dropped,
+regionally unique; never either part alone, nil without the surname), Retail `Name-Realm`; `Core.Surnames()` tells
 which (Doc/guides/data.md, *Players*).
 
 ## Shared contracts
 
-- `Core.On(event, fn)`: one shared event frame; event registration is lazy and skips unknown events.
-  A listener's failure goes to `Failed`: the module whose `AddOns/<folder>/` its error text names first stands
-  down (`StandDown`), Core's own is reported under the event name; other listeners still run.
-- Error doors (hard rule, `Doc/guides/addon-standards.md` 10): events, `Core.Later`, module start (`OnLoad` failure:
-  not started further), `module.Guard(fn)` (closure for scripts/hooks/timers: no-op once `off`, all results passed)
-  and `Core.Guard(label, fn)` (Core's own scripts: owner by trace stands down, else `Report(label)`, retried next call)
-  all go to `Failed`; `GameError` (hook on `ScriptErrorsFrame.DisplayMessageInternal`) catches what slipped past
-  (messageType 1 = warning: noted only). Door errors also reach `CallErrorHandler` only when CVar `scriptErrors` is on
-  (`showing` flag stops the echo). `module.On` is `Core.On`: listeners keep running after `off`.
+- `Core.On(event, fn)`: one shared event frame; event registration is lazy and skips an event this client lacks
+  (noted in the log). A listener's failure goes to `Failed`: the module whose `AddOns/<folder>/` its error text
+  names first stands down (`StandDown`), Core's own is reported under the event name; other listeners still run.
+- Error doors (hard rule, `Doc/guides/addon-standards.md`, section 10): events, `Core.Later`, module start (`OnLoad`
+  failure: not started further), `module.Guard(fn)` (closure for scripts/hooks/timers: no-op once `off`, all results
+  passed) and `Core.Guard(label, fn)` (Core's own scripts: the owner found by the trace stands down, else
+  `Report(label)`, retried next call) all go to `Failed`; `GameError` (hook on `ScriptErrorsFrame.DisplayMessageInternal`)
+  catches what slipped past (messageType 1 = warning: noted only). Door errors also reach `CallErrorHandler` only
+  when the CVar `scriptErrors` is on (the `showing` flag stops the echo). `module.On` is `Core.On`: listeners keep
+  running after `off`.
 - `Core.Safe(label, fn, ...)`: catches/reports failure (`Core.Report`: one chat line per label, "problem in <label>,
   noted in the error log (/sane errors).", unless *Errors in chat* is off), returns only the first result. Module `Safe`
   prefixes its name. `Listen`/`Fire` are module-local messages, with each listener safe.
 - `module.Guarded(fn, ...)`: on failure, `StandDown` sets `off` once, calls `GiveBack`, reports via
-  `GIVEN_BACK`. Later guarded calls do nothing. Abilities's book has its own narrower fallback.
+  `GIVEN_BACK`. Later guarded calls do nothing.
 - `Core.Secret(v)` / `Plain(v)`: test secret values / return nil for them. `Ask(fn, ...)` calls via
-  `pcall` and returns up to three plain answers; missing/failing function gives nils.
-- `Core.Later(fn, delay)`: coalescing request function; only one pending timer. `fn` runs behind the
-  door guard (`Failed`). `Points` / `Repoint` preserve anchors, including nil holes.
-- `Core.Options(name, descriptions, hooks)`: describe at file load (hooks: a table, or only `changed`); returns the
-  live settings once Core is loaded. `Core.Settle` makes a copy right whenever it comes into use (upgrade by
-  `version`/`upgrade` first, then kinds/choices/validate/ends; keys no description has go, `_`-keys stay).
-  `Core.Set(name, key, value)` for writes from menus/commands (checks, tells, reload offer, page refresh).
-  `Store(name)` returns the module's store; `Character(name)` returns `modules[name].chars[charKey]`,
-  annotating name/class.
-- `Core.AfterCombat(key, fn, ...)` runs now or after the fight (same key merges); `Core.Locked(frame)`;
-  `Core.Restricted()` (combat or `Core.RESTRICTIONS`, kept from `ADDON_RESTRICTION_STATE_CHANGED`'s payload);
-  `Core.Off`, `Core.OnUnit`/`OffUnit`; `ADDON_ACTION_BLOCKED`/`FORBIDDEN` of ours go to the error log.
-  `modules[name].chars[charKey]`, annotating name/class.
+  `pcall` and returns up to three plain answers; a missing or failing function gives nils.
+- `Core.Later(fn, delay, label)`: coalescing request function; only one pending timer. `fn` runs behind the
+  door guard (`Failed`, under `label` when given, else "later": Core's own laters name theirs, so each failure is told once). `Points` / `Repoint` preserve anchors, including nil holes.
+- `Core.Options(name, descriptions, hooks)`: describe at file load (hooks: a table of `changed`, `replaced`, `moved`,
+  `capture`, `version`/`upgrade`, `game`, `tabs`, or only `changed`); returns the live settings once Core is loaded.
+  `Core.Settle` makes a copy right whenever it comes into use (upgrade by `version`/`upgrade` first, then
+  kinds/choices/validate/ends; keys no description has go, `_`-keys stay). `Core.Set(name, key, value)` for writes
+  from menus/commands (checks, tells, reload offer, page refresh). `Store(name)` returns the module's store;
+  `Character(name)` returns `modules[name].chars[charKey]`, annotating name/class.
+- `Core.AfterCombat(key, fn, ...)` runs now or after the fight (the same key merges, the last arguments win);
+  `Core.Locked(frame)`; `Core.Restricted()` (combat or `Core.RESTRICTIONS`, kept from
+  `ADDON_RESTRICTION_STATE_CHANGED`'s payload, asked once at login); `Core.Off`, `Core.OnUnit`/`OffUnit`;
+  `ADDON_ACTION_BLOCKED`/`FORBIDDEN` of ours go to the error log (`Report("blocked action")`).
 
-Saved shape (v2): `SaneUIDB = { version, modules = { <Module> = { chars, ... } }, profiles = { Accountwide = { <Module> = options }, ... },
-accountwide (false: off), characters = { [key] = { name, realm, class, profile } }, newProfile, ownSince, errors, log }`;
-per character `SaneUICharDB = { settings, since, key, version }`.
-Errors keyed by label contain `text/count/when` (at most 100 labels); chronological log entries also contain label,
-version/build. Keep newest 100; consecutive identical failures coalesce. Uncaught SaneUI errors are
-observed through `ScriptErrorsFrame.DisplayMessageInternal`. The client writes saved variables at
-reload/logout, so run `dev/tools/errors` after that to see current disk evidence.
+Saved shape (v2): `SaneUIDB = { version, modules = { <Module> = { chars = { [key] = ... }, ... } }, profiles = { [name] =
+{ <Module> = settings } }, characters = { [key] = { name, realm, class, profile, before } }, newProfile, presets, errors,
+log }`; per character `SaneUICharDB = { settings, key, version }`. Each copy of a module's settings carries `_version`.
+Errors keyed by label contain `text/count/when` (`ERRORS_MAX` 100 labels, the oldest goes); the chronological log
+(`LOG_MAX` 100) also holds label, version and build; consecutive identical failures coalesce. The client writes saved
+variables at reload/logout: `saneui showerrors` (`dev/tools/errors`) reads them after that.
 
 ## Profiles
 
-Saneroki, 2026-10-17. **Accountwide settings** (`SaneUIDB.accountwide ~= false`, on at first): every character uses
-a profile (`characters[key].profile`, nil = *Accountwide*, always there, not renamed or deleted), holding every
-module's settings and Sync's (the game's). Off: each character's own (`SaneUICharDB.settings`, re-seeded from its
-profile when `since ~= ownSince`), the game's settings untouched (Sync's live table is a session table; Give and
-Capture do nothing).
+Saneroki, 2026-10-17; the standard profiles 2026-10-30. Each character uses a profile: *Accountwide* (new characters'
+unless `newProfile` names another) or *Speedleveling* (both always there, `Standard`: a missing one copied from Accountwide, its
+preset given once per `Presets.VERSION`, `SaneUIDB.presets`), or one
+the player made; or *Character specific* (`Profiles.OWN`): no profile, its own settings in `SaneUICharDB.settings`, the
+game's left to the game (Sync's live table is a session table, hook `game = true`; `Profiles.On()` is false, `Give` and
+`Capture` do nothing, `Sync.Moved` puts the CVars back to the game's defaults). `characters[key].profile` nil means
+Accountwide; `before` the last profile that was not Speedleveling (`SetLeveling`).
 
-Each module's live table (`Core.Settings`) is stored in exactly one place, the one in use; the game writes a table
-once, so it is never also kept elsewhere (`store.options` is a metatable alias). `Move(to)`: capture, copy the live
-tables into the old place, wipe each live table and fill it from the new place (`Core.Settle`), store it there, tell
-(`changed` per differing key by `Core.Same`, or `replaced`), then `moved` (Sync gives the game's settings). Load:
-`ADDON_LOADED` binds every described module; later modules bind in `Core.Options`. `PLAYER_LOGIN`: a different key
-(no GUID at load) registers and moves. `PLAYER_LOGOUT`: `Capture()` only, so logout listeners see the right
-settings in any order. Upgrade v1 → v2 once (`Profiles.Upgrade`): account options (and a parked `account`) →
-*Accountwide*; module `store.version` stamped as each copy's `_version`; a line's profile kept only with
-`autoLoad`; `separate` → off with `ownSince = 1` (v1 own settings kept); `perCharacter`, `account`, `newCharacters`
-(→ `newProfile`) dropped. Profile names unique case-insensitively; Export/Import through `Core.Serial`
-(`{ kind = "Sane UI profile", version, name, settings }`).
+Each module's live table (`Core.Settings`) is stored in exactly one place, the one in use (`Holder`); the game writes a
+table once, so it is never also kept elsewhere (`store.options` is a metatable alias). `Move(to)`: `Capture`, copy the
+live tables into the old place, wipe each and fill it from the new place (`Core.Settle`), tell (`changed` per differing
+key by `Core.Same`, or `replaced`), then `moved` (Sync gives the game's settings), `Window.PlaceAll` (each profile keeps
+its windows' places), `Core.SwitchChanged`. Load: Core's own `ADDON_LOADED` upgrades and mends the file (`Upgrade`, `UpgradeCharacter`, `Mend`;
+the old switch Accountwide is dropped), registers the key (the GUID, else `SaneUICharDB.key`) and binds every
+described module; later modules bind in `Core.Options` (`Arrive`). `PLAYER_LOGIN`: a different key registers and moves. `PLAYER_LOGOUT`: `Capture()` only, so logout
+listeners see the right settings in any order. The v1 shape, brought over once (local `Upgrade`, `Profiles.VERSION` 2):
+account options (and a parked `account`) → *Accountwide*, `store.version` → each copy's `_version`, a character's
+profile kept only with `autoLoad`, `newCharacters` → `newProfile`, the rest dropped. Profile names unique
+case-insensitively (`MAX_NAME` 32); Export/Import through `Core.Serial` (`{ kind = "Sane UI profile", version, name,
+settings }`).
 Pages: `Core.pages.top` (logo only), `.Profiles` (canvas: frame `Core.frames.Profiles`, built in its first `OnShow` by
 `Config.BuildProfiles` with tabs from `Panel.lua`), `[Core.name]` (General), `.Appearance`, then `[module]` titled by
 `module.title`: a vertical page (proxy settings reading `Core.Settings` at each call, writing through `Core.Set`), or a
-canvas page of our own (`Core.frames[module]`, `Config.BuildTabbed`) when one of its switches names a tab
-(`Core.Tabbed(name)`; Social's do). Only `SaneUI[name]` modules get a page: Sync's switches, described under `Sync`,
-are shown by the tab *Game settings*. `Config.Refresh` re-notifies controls, which only read then (Core already told
-the modules).
+canvas page of our own (`Core.frames[module]`, `Config.BuildTabbed`) when one of its switches names a tab or its
+description has `tabs` (`Core.Tabbed(name)`; Social's do). Only `SaneUI[name]` modules get a page, none for the other
+game's (`module.elsewhere`); Sync's switches, described under `Sync`, are shown by the tab *Game settings*.
+`Config.Refresh` re-notifies controls, which only read then (Core already told the modules).
 
 ## Options trap
 
-`Settings/Settings.lua` registers **empty pages at login**, because Blizzard chooses whether
-to show its AddOns tab when options first open. Registering pages in a late-loaded module loses that
-tab for the session. `Config.Fill` (options `OnShow`, `/sane options`) fills the existing vertical
-`Core.pages` once; a canvas page (Profiles, a module's tabbed page) stays an empty frame until its first
-`OnShow`, then builds its controls with `Panel.lua`. Vertical pages use `RegisterInitializer`
-(`Settings.Create*Initializer`, `CreateControlInitializer` for our entry row), never direct checkbox
-creation. The game's search reads vertical layouts only (`IsVerticalLayout`), so tabbed pages search
-themselves. Opening options in combat prints a message and queues `Config.Open` with
-`Core.AfterCombat("options", …)`: they open when the fight ends.
+`Settings/Settings.lua` registers **empty pages at login** (`PutUpPages`), because Blizzard chooses whether to show
+its AddOns tab when the options first open. Registering pages in a late-loaded module loses that tab for the session.
+`Config.Fill` (`SettingsPanel`'s `OnShow`, `/sane options`) fills the existing vertical `Core.pages` once; a canvas
+page (Profiles, a module's tabbed page) stays an empty frame until its first `OnShow`, then builds its controls with
+`Panel.lua`. Vertical pages use `Settings.RegisterInitializer` (`Settings.Create*Initializer`,
+`CreateControlInitializer` for our entry row). The game's search does not reach a
+tabbed page, so those search themselves (`Tabbed.lua`, `Core.Fuzzy`). Opening the options in combat prints a line
+and queues `Config.Open` with `Core.AfterCombat("options", …)`: they open when the fight ends.
 
 ## Window contracts
 
-`Core.Window.New(frame, options)` supplies movement, optional sizing/docking/skin and saved placement.
-Caller builds content in `window.inside`, then calls `window:Place()`. Saved `place = {x,y,width,height,dock}` uses
-the top-left corner measured from UIParent's bottom-left; dock names win over coordinates (`full`, `native`, `tab`:
-what it was left as; `Remember` makes no place table for a nil value). How every window is built, its states, taint rules for the game's own windows and
-what is not built yet: [Doc/guides/windows.md](../guides/windows.md).
-Docked windows grow away from their edge; grip corner and skin follow. `Dock.Anchor` hangs a window on
-UIParent's point of its zone, with no offset, so it stays at its edge
-when the UI scale or game window changes. A kept size is cut to the screen's; when the screen's size or the UI scale
-changes (`DISPLAY_SIZE_CHANGED`, `UI_SCALE_CHANGED`, one `Core.Later`), every shown window at rest is placed anew and one
-that stands full is told `docked` once. `window:Reset()` clears place, keeps `full`, `native` and `tab`.
-In a fight a window holding protected frames is not moved, shown or hidden (`window:Locked()`); its close and Esc wait
-(`Core.AfterCombat(window, ...)`), and Esc is the game's meanwhile. `window:Escapes(on)`: Esc given up while a view over
-the window takes it (Core's options on a full screen, `Settings/Screen.lua`), and taken again.
-`options.docked(zone)` is called (guarded) on placement, including initial placement; `Moved`/`Sized` are idempotent, so
-Edit Mode closing mid-drag and the drag's own stop do not let go twice; a window hidden mid-drag or mid-size is let go too.
+`Core.Window.New(frame, options)` supplies movement, optional sizing/docking/skin and the kept placement (its head
+comment lists every option and method). The caller builds content in `window.inside`, then calls `window:Place()`.
+The kept place `{ x, y, width, height, dock, full, native }` uses the top-left corner measured from UIParent's
+bottom-left; a zone name wins over coordinates; `full`, `native`, `tab`: what it was left as (`Remember`/`Recall`;
+`Remember` makes no place table for a nil value). It is kept in the profile in use (`Held`), `Window.PlaceAll()`
+puts every window there when the profile changes. Every window's build, states and taint rules: [Doc/guides/windows.md](../guides/windows.md).
+Docked windows grow away from their edge; grip corner and skin follow. `Dock.Anchor` hangs a window on UIParent's
+point of its zone (offset only by its `insets`), so it stays at its edge when the UI scale or the game window
+changes; a zone holds one window at a time (another shown there stands clear, `Clear`).
+A kept size is cut to the screen's; when the screen's size or the UI scale changes (`DISPLAY_SIZE_CHANGED`,
+`UI_SCALE_CHANGED`, one `Core.Later`), every shown window at rest is placed anew and one that stands full is told
+`docked` once. `window:Reset()` clears the place, keeps `full`, `native` and `tab`. In a fight a window holding
+protected frames is not moved, shown or hidden (`window:Locked()`): its placing waits for the fight's end, its close
+and Esc wait (`Core.AfterCombat(window, ...)`), and Esc is the game's meanwhile. `window:Escapes(on)`: Esc given up
+while a view over the window takes it (`Settings/Screen.lua`), taken again.
+`window:Open()` answers `"native"`, `"ours"` or `"locked"`; `window:Native(on)` chooses the game's window or ours.
+`options.docked(zone)` is called (guarded) on placement, including the first; `Moved`/`Sized` run once per drag
+(`window.moving`/`sizing`), so Edit Mode closing mid-drag and the drag's own stop do not let go twice.
 
 For Blizzard windows use `Window.Mover`/`Sizer`, keeping state externally. `usable()` gates handling;
-drag `started/stopped` callbacks let the caller preserve state. `Dock.REACH = 60`; `Find` is pure.
-`Expand.New` opens to configured width/height after the mouse rests on it, remembers closed size, supports an
-optional hot corner; the size moves as its kind of motion says (`Motion.KINDS`: glide, swing, even, off), the
-general one or the window's own; its `Core.Hover` watch runs only from the mouse's coming until it is closed. A held
+`started`/`stopped` callbacks let the caller preserve state. `Dock.REACH = 60`; `Find` is pure.
+`Expand.New` opens to its configured size after the mouse rests on it (`DWELL`), closes after `LINGER` away, optional
+hot `corner` (`hover = false`: never by the mouse); the size moves as its kind of motion says (`Motion.KINDS`), the
+general one or the window's own; its `Core.Hover` watch runs only from the mouse's coming until it is closed; a held
 left button prevents closing; `Stay(true)` keeps it open and stops the watch.
 
-Tests: `dev/tests/core.lua` and `window.lua`. Detailed API examples: `src/Core/README.md` and file heads.
+Tests: `dev/tests/core.lua` and `window.lua`.

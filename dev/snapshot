@@ -43,6 +43,13 @@ def key(version):
     return tuple(int(n) for n in VERSION.match(version).groups())
 
 
+def rewrite(file, text):
+    """Writes a file whole through a temp file beside it, moved over it at the end: a failure leaves the old one."""
+    temp = file.with_name(file.name + ".tmp")
+    temp.write_text(text, encoding="utf-8")
+    os.replace(temp, file)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -105,7 +112,16 @@ def main():
     # main moves only if nobody committed meanwhile (compare and swap); then the names.
     if subprocess.run(["git", "-C", str(ROOT), "update-ref", "refs/heads/main", commit, base]).returncode:
         sys.exit("main moved while the tests ran: no release made; run it again")
-    git("tag", "-a", tag, "-m", f"Sane UI {version}", commit)
+    named = subprocess.run(["git", "-C", str(ROOT), "tag", "-a", tag, "-m", f"Sane UI {version}", commit],
+                           capture_output=True, text=True)
+    if named.returncode:
+        # Without its tag there is no release: main goes back to where it stood (if nothing moved it since), so a
+        # run after the fix does not commit a second version line.
+        back = subprocess.run(["git", "-C", str(ROOT), "update-ref", "refs/heads/main", base, commit]).returncode
+        sys.exit(f"git tag -a {tag}: {named.stderr.strip()}\nNo release made; "
+                 + (f"main moved back to {git('rev-parse', '--short', base)}." if back == 0 else
+                    f"main could not be moved back and stands at the version commit {git('rev-parse', '--short', commit)}: "
+                    f"git update-ref refs/heads/main {base} {commit} undoes that."))
     git("update-ref", f"refs/heads/{branch}", commit)
     git("tag", "-f", "current", commit)
     # The working tree: each TOC's version line too, keeping whatever else is not committed in it; the shared
@@ -113,7 +129,7 @@ def main():
     for path in tocs:
         file = ROOT / path
         if file.is_file():
-            file.write_text(LINE.sub(f"## Version: {version}", file.read_text()))
+            rewrite(file, LINE.sub(f"## Version: {version}", file.read_text(encoding="utf-8")))
     git("reset", "-q", commit, "--", *tocs)
     short = git("rev-parse", "--short", commit)
     print(f"Released {tag}: commit {short} on main, branch {branch}, tags {tag} and current.\n"

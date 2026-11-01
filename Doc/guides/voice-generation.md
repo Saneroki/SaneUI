@@ -31,7 +31,7 @@ next (*The voice tool*). The numbers below were measured on the database as buil
   framework (`Doc/ideas/Data.md`), which is what the game loads. Nothing of it is shipped; the game only gets
   the voice packs and their small indexes (`Doc/ideas/Lore.md`, *Voice packs*).
 - **What is in git:** the tools, the cast (`dev/voices/cast.md`), the names (`dev/voices/names.md`), the hand
-  fixes (`dev/voices/fixes.jsonl`) and the directions (`dev/voices/analysis/`): our own work, small, and
+  fixes (`dev/voices/fixes.jsonl`, read when it exists; none yet) and the directions (`dev/voices/analysis/`): our own work, small, and
   worth keeping. **What is not:** the staging files (`dev/voices/staging/`), the built database
   (`dev/voices/build/`, made again in seconds), and the sound (`dev/voices/sound/`, kept with the backups).
   The voice tool adds its record to git: each preset's voice (`dev/voices/voices.json`) and every file made
@@ -109,7 +109,7 @@ A speaker's preset is `<race>-<sex>-<kind>` for the eight playable races and `<r
   the spawn's sex (`UnitSex`).
 - **Fallbacks:** no race known: a human, marked for review; no preset for a race and sex: the race's other sex,
   then a human.
-- **Fixes:** `dev/voices/fixes.jsonl`, one JSON object a line: `{"key": "npc:448", "preset": "gnoll-male"}` gives
+- **Fixes:** `dev/voices/fixes.jsonl` (read when it exists; none yet), one JSON object a line: `{"key": "npc:448", "preset": "gnoll-male"}` gives
   a speaker its preset; `{"key": "bt:1234", "voice": false}` keeps a line silent.
 
 ## Preparing the words
@@ -216,7 +216,7 @@ sad or funny. Most lines are not extreme: intensity 2 or 3 is usual.
 | The names list | The service's pronunciation dictionary made from `names.md`, in its pinned version |
 | The file | `<key>[-<variant>][-<preset>].ogg`: one file per variant and per preset |
 
-- **One request per file,** sent 3 at a time (`--jobs`: the plans allow 3 to 15 on the newest model, twice
+- **One request per sound** (files that share every ingredient of a sound are made from one master), sent 3 at a time (`--jobs`: the plans allow 3 to 15 on the newest model, twice
   that on the fast one), each answer's request number and cost noted. A file already made with the same
   text, voice, model, settings and names is never sent again (the voice tool keeps a list by the hash of all
   of these).
@@ -291,7 +291,7 @@ In this order:
 old one stays in `master/`. A line that sounds wrong gets a direction or a fix first (*Directing lines*); a new
 take is for bad luck only.
 
-**When the service says no:** busy or down, the tool waits and tries again; a wrong key or no credits left
+**When the service says no:** busy (a 409 or 429), the tool waits and tries again; down or no answer to a paid request, the line fails and waits for the next run, where its hash makes it once (nothing is paid twice); a wrong key or no credits left
 stops the run, and what was made is kept.
 
 ## Designing the cast
@@ -341,7 +341,8 @@ seconds long.
    Made 3 to 5 seconds long over many seeds, the best part cut out. The plainest blips and ticks are best
    made by `ffmpeg` itself (a few sine tones that fade, a few milliseconds of filtered noise): exact, and the
    same every time.
-4. **The game's file:** `dev/tools/voicegen ogg <chosen.wav> src/<Module>/Sounds/<name>.ogg --ui`. The quiet
+4. **The game's file:** `dev/tools/voicegen ogg <chosen.wav> assets/optimized/<Module>/Sounds/<name>.ogg --ui` (`src/`
+   holds no sounds: `dev/tests/lint` refuses them; `dev/build` puts it into the addon's `Sounds/`). The quiet
    at the start is cut (the sound starts at once), 30 ms kept at the end, a 3 ms fade in and 20 ms out, the
    peak set to -1 dB (a loudness measure needs longer than a click lasts), one channel at 44.1 kHz, Ogg Vorbis.
    Played with `PlaySoundFile(path, "SFX")`, so the game's sound volume governs it.

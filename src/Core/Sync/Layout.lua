@@ -63,7 +63,9 @@ end
 
 -- A layout this character does not have, from the game's text of it: put after those of its kind in the game's list
 -- and made the one in use, as Edit Mode does; its manager hears of it by the game's event. Whether it could be.
+-- Only a layout of a player's kind (account, character): a preset is the game's own, there or not.
 local function Add(want, info)
+    if want.kind ~= ACCOUNT and want.kind ~= CHARACTER then return false end
     local all = Core.Ask(C_EditMode.GetLayouts)
     local layout = type(want.text) == "string" and Core.Ask(C_EditMode.ConvertStringToLayoutInfo, want.text)
     if type(all) ~= "table" or type(all.layouts) ~= "table" or type(layout) ~= "table"
@@ -76,7 +78,8 @@ local function Add(want, info)
             or (want.kind == CHARACTER and known.layoutType == ACCOUNT) then at = index end
     end
     table.insert(all.layouts, at + 1 - presets, layout)
-    Core.Ask(C_EditMode.SaveLayouts, all)
+    -- Saved by the game, or not at all: only then is the manager told of it, at its index, as the one in use.
+    if not pcall(C_EditMode.SaveLayouts, all) then return false end
     Core.Ask(C_EditMode.OnLayoutAdded, at + 1, true, false)
     return true
 end

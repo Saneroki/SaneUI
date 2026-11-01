@@ -100,10 +100,11 @@ def load(path, crop=True):
     return rgba[ys.min():ys.max() + 1, xs.min():xs.max() + 1] if crop else rgba
 
 
-def side(units):
-    """A texture's side for something drawn that many UI units long (see the docstring)."""
+def side(units, largest=LARGEST):
+    """A texture's side for something drawn that many UI units long (see the docstring), at most largest
+    (dev/tools/flipbook gives its sheet's own cap)."""
     size = 1
-    while size < SLACK * units * UNIT_PIXELS and size < LARGEST:
+    while size < SLACK * units * UNIT_PIXELS and size < largest:
         size *= 2
     return size
 
@@ -155,13 +156,25 @@ def straight(level):
     return Image.fromarray(np.round(out * 255).astype(np.uint8), "RGBA")
 
 
+def magick(args, data):
+    """ImageMagick run on the picture given (its bytes on stdin), its output. Without it, or when it fails, its
+    words and a hint end the tool (exit 1) instead of a traceback."""
+    try:
+        run = subprocess.run(["magick", *args], input=data, capture_output=True)
+    except OSError as error:
+        raise SystemExit(f"magick could not be run ({error}): install ImageMagick 7, which makes the DXT5 blocks.")
+    if run.returncode:
+        raise SystemExit(f"magick failed ({run.returncode}): {run.stderr.decode(errors='replace').strip()}\n"
+                         "ImageMagick 7 with its DDS coder is needed for the DXT5 blocks.")
+    return run.stdout
+
+
 def dxt5(image):
     """The DXT5 blocks of an RGBA picture: ImageMagick writes them as a DDS file (header of 128 bytes)."""
     png = io.BytesIO()
     image.save(png, "PNG")
-    data = subprocess.run(["magick", "png:-", "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=0",
-                           "-define", "dds:cluster-fit=true", "dds:-"],
-                          input=png.getvalue(), capture_output=True, check=True).stdout
+    data = magick(["png:-", "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=0",
+                   "-define", "dds:cluster-fit=true", "dds:-"], png.getvalue())
     blocks = max(1, (image.width + 3) // 4) * max(1, (image.height + 3) // 4)
     assert data[:4] == b"DDS " and data[84:88] == b"DXT5" and len(data) == 128 + 16 * blocks, "no DXT5 from magick"
     return data[128:]

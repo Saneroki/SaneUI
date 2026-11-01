@@ -9,8 +9,9 @@ local _, ns = ...
 --
 --  The list has to know a row's height before the row exists, and the height
 --  depends on where the text wraps. So every message is measured once per
---  window width and text size with a text nobody sees (the ruler), and the
---  result is kept on the message. Drawing uses the same numbers, so both
+--  list width and text size with a text nobody sees (the ruler), and the
+--  result is kept on the message, one for each width it stands at (the chat's
+--  and the full screen's lists differ). Drawing uses the same numbers, so both
 --  always agree.
 --
 --  The rows are the list's and are used again for other messages: Init sets
@@ -97,24 +98,41 @@ function Bubble.Ruler(parent)
     ruler:SetFontObject(font)
 end
 
--- The height of a message's row in a list that wide.
--- A message's height if it was measured at this width and text size; nil if not.
-function Bubble.Known(entry, rowWidth)
-    if entry.fits ~= rowWidth or entry.sized ~= sized then return nil end
-    return Layout.RowHeight(entry.side, entry.textHeight)
+-- What a message measured at a row width, as kept on it: entry.fits[rowWidth] = { the text's width, its
+-- height, the width it wrapped at }, one for each width it was measured at, all forgotten with a new
+-- text size (sized). nil: not measured at this width and text size.
+local function Fit(entry, rowWidth)
+    if entry.sized ~= sized or type(entry.fits) ~= "table" then return nil end
+    return entry.fits[rowWidth]
 end
 
-function Bubble.Measure(entry, rowWidth)
-    if entry.fits ~= rowWidth or entry.sized ~= sized then
+-- A message's height if it was measured at this width and text size; nil if not.
+function Bubble.Known(entry, rowWidth)
+    local fit = Fit(entry, rowWidth)
+    if not fit then return nil end
+    return Layout.RowHeight(entry.side, fit[2])
+end
+
+-- A message's measure at a row width: measured now, unless it is known.
+local function Measured(entry, rowWidth)
+    local fit = Fit(entry, rowWidth)
+    if not fit then
         local widest = Layout.TextWidth(rowWidth, entry.side)
         ruler:SetWidth(widest)
         ruler:SetText(entry.text)
-        entry.textWidth = math.min(ruler:GetWrappedWidth(), widest)
-        entry.textHeight = ruler:GetStringHeight()
+        local textWidth = math.min(ruler:GetWrappedWidth(), widest)
+        local textHeight = ruler:GetStringHeight()
         -- Only now: a measuring that failed half way is not taken for done.
-        entry.fits, entry.sized, entry.widest = rowWidth, sized, widest
+        if entry.sized ~= sized or type(entry.fits) ~= "table" then entry.fits, entry.sized = {}, sized end
+        fit = { textWidth, textHeight, widest }
+        entry.fits[rowWidth] = fit
     end
-    return Layout.RowHeight(entry.side, entry.textHeight)
+    return fit
+end
+
+-- The height of a message's row in a list that wide.
+function Bubble.Measure(entry, rowWidth)
+    return Layout.RowHeight(entry.side, Measured(entry, rowWidth)[2])
 end
 
 -- "Guild  21:07", or "G  21:07": the chat in its colour, and the time. Made once per message and way of naming.
@@ -181,7 +199,7 @@ end
 
 function Bubble.Init(row, entry, rowWidth)
     local part = parts[row] or Build(row)
-    Bubble.Measure(entry, rowWidth) -- already known, unless the width or the text size changed since
+    local fit = Measured(entry, rowWidth) -- already known, unless the width or the text size changed since
     local side = entry.side
     local note, theirs = side == "center", side == "left"
 
@@ -214,7 +232,7 @@ function Bubble.Init(row, entry, rowWidth)
     else
         part.bubble:SetPoint("TOPRIGHT", 0, -Layout.HEAD)
     end
-    local width, height = Layout.Bubble(entry.textWidth, entry.textHeight)
+    local width, height = Layout.Bubble(fit[1], fit[2])
     part.bubble:SetSize(width, height)
     if part.painted ~= painted then
         part.painted = painted
@@ -222,7 +240,7 @@ function Bubble.Init(row, entry, rowWidth)
     end
     part.plate:Fit(0, 0, width, height) -- only its size counts: its corners are round wherever it is
     -- As wide as the ruler was, so the text wraps where it was measured.
-    part.text:SetWidth(entry.widest)
+    part.text:SetWidth(fit[3])
     part.text:SetText(entry.text)
     part.text:SetTextColor(entry.r, entry.g, entry.b)
     Bubble.Mark(row, ns.Select.Span(entry)) -- the words of it picked to copy, if any (Select.lua)

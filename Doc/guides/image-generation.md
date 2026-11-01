@@ -128,13 +128,16 @@ template or an app, so Saneroki can follow the work and go on with it there hims
 
 ## The house style
 
-The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md) (Saneroki,
-2026-10-21): an adventurer's journal of parchment and stitched leather, pencil on the paper; Saneroki's
-decisions go there. `dev/imagegen/style.txt` is that look in one `style:` line for parts, put after every
+The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md); Saneroki's decisions go
+there. Since 2026-10-30 (*The new direction* there) they are built from WoW: Forever's own images, picked by number
+from the game's art, not painted by a model. The journal look (Saneroki, 2026-10-21), an adventurer's journal of
+parchment and stitched leather, pencil on the paper, stays only for what is built in it until that is rebuilt in
+Forever's look, and the harness and `dev/imagegen/style.txt` below serve only that. `dev/imagegen/style.txt` is
+the journal look in one `style:` line for parts, put after every
 prompt of the recipes that make interface art (`concept`, `concept-free`, `part-new`): flat front view, light
 from the top left, no text, no stains, no sketches (code lays those over). Its picture, the anchor, is
 `assets/Concept art/UI style/edges-and-buttons.png` (its edges, title strap and patch buttons were picked); the
-recipe `concept` gives it as image 1. The parts and views of Sane UI's own windows are made by the strict
+recipe `concept` gives it as image 1. The parts and views of Sane UI's own windows in the journal look are made by the strict
 harness in `dev/imagegen/sets/interface/` ([interface-style.md](interface-style.md), *The harness*): each part
 from its crop of a pick, the views laid out in code.
 
@@ -259,22 +262,23 @@ something else wants it. Saneroki runs it as `saneui start gpurunner` / `saneui 
 with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (Saneroki, 2026-10-21).
 
 - **The jobs:** `dev/imagegen/jobs.toml`, one `[[job]]` each: a `name`, a `priority` (higher first) and the
-  `command` of a tool, optionally a `status` command and a `done` pattern for its output (the Atlas:
-  `dev/tools/atlas status`, `'^(\d+) of \1 squares painted'`). The runner reads the file at every look and runs
+  `command` of a tool, optionally a `status` command and a `done` pattern for its output (the file's commented
+  example, the Atlas: `dev/tools/atlas status`, `'^(\d+) of \1 squares painted'`). The runner reads the file at every look and runs
   the most important unfinished job; stopped, it runs the same command again later. A job more important than
   the one at work (a new one in the file, a switch) takes over at once: the one at work is stopped as for the
-  game, its progress kept, and comes back when its turn comes. The Atlas goes on where it
-  stopped (it skips the squares it has painted); `dev/tools/imagegen` makes its whole list again, so give the
-  runner short lists. Long runs go into the file only on Saneroki's word; the Atlas' close squares are in it
-  (Saneroki, 2026-10-21).
+  game, its progress kept, and comes back when its turn comes. A job goes on where it
+  stopped (`dev/tools/map-layers` skips what it has painted); `dev/tools/imagegen` makes its whole list again, so give the
+  runner short lists. Long runs go into the file only on Saneroki's word (Saneroki, 2026-10-21); the jobs today are
+  `worldtiles` (priority 10: `dev/tools/map-layers paint --levels far --kind zone && dev/tools/map-layers tiles`,
+  which replaces the Atlas' close squares) and `instancemaps` (2) (Saneroki, 2026-10-22).
 - **New GPU work goes here:** a tool that runs long on the card is added as a job (with `status` and `done`
   when it can tell how far it is, and skipping what it has made when run again), never started by itself
   next to the runner. Its command also gets its name in `dev/saneui` (README.md, *Building*).
 - **Every render plan is in the queue (Saneroki, 2026-10-21):** a session that adds or changes a render plan
-  (a set's lists in `dev/imagegen/sets/`, such as the UI looks of `ui-explore/` and `ui-style/`, a map's
+  (a set's lists in `dev/imagegen/sets/`, such as `interface/` (the interface parts) and `far-marks/`, a map's
   plan, a job's words or workflow) adds or updates its job in `dev/imagegen/jobs.toml` in the same commit: a
-  `name`, a `priority` (the Atlas' close squares are 10; above it what Saneroki waits for, below it what can
-  wait; ask Saneroki when unclear; the dungeons' paintings are 2, and the redesigns of interface parts, such as
+  `name`, a `priority` (`worldtiles`, which replaces the Atlas' close squares, is 10; above it what Saneroki waits for, below it what can
+  wait; ask Saneroki when unclear; `instancemaps`, the dungeons' paintings, is 2, and the redesigns of interface parts, such as
   the map pins, the route line and the raid markers, go above them when they are queued: Saneroki, 2026-10-21) and a `rebuild` command when the plan's change has to start it anew. A
   finished job whose plan changed is let go again with `saneui switch <job>` or `saneui rebuildstart <job>`
   when it should run now, else `dev/tools/gpu-runner reset <job>`. Quick tries of a few pictures while a

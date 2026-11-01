@@ -60,8 +60,14 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# The common folder into the private work folder (assets/generated), made where it is missing.
-"$here/dev/tools/private-folder" link --quiet || true
+# The folders made for this run alone (a release's copy of git's tree, the sets compiled to compare): gone when it
+# ends, however it ends.
+temps=()
+trap '[ ${#temps[@]} -eq 0 ] || rm -rf "${temps[@]}"' EXIT
+
+# The common folder into the private work folder (assets/generated), made where it is missing; not under --check,
+# which writes nothing.
+[ "$mode" = "--check" ] || "$here/dev/tools/private-folder" link --quiet || true
 
 # root: the tree the build is made from. The dev build: this folder. A release: git's copy of its tag.
 if [ -n "$release" ]; then
@@ -72,7 +78,7 @@ if [ -n "$release" ]; then
         exit 1
     fi
     root="$(mktemp -d)"
-    trap 'rm -rf "$root"' EXIT
+    temps+=("$root")
     git -C "$here" archive "$commit" | tar -x -C "$root"
     if [ "$release" = current ]; then
         named="$(git -C "$here" tag --points-at "$commit" | grep -v '^current$' | sort -V | tail -n1 || true)"
@@ -144,10 +150,10 @@ if [ "$mode" = "--check" ]; then
     done
     stale "$build" | sed 's/^/Would be removed from the build: /'
     scratch="$(mktemp -d)"
+    temps+=("$scratch")
     "$root/dev/tools/data" compile "$scratch" >/dev/null
     echo "BUILD/SaneUI/Sets would change like this:"
     rsync -a --delete --checksum --dry-run --itemize-changes "$scratch/Sets/" "$build/SaneUI/Sets/"
-    rm -rf "$scratch"
     echo "Nothing written (--check)."
     exit 0
 fi
@@ -189,8 +195,12 @@ if [ -n "$missing" ]; then
     echo "Start that game once (its AddOns folder appears), or set WOW_FOREVER and WOW_RETAIL to the folders. The build itself is done." >&2
     exit 1
 fi
-# Art in Git LFS that git never downloaded is a small text file pointing at it: never into the game.
-pointers="$(find "$build" -type f -size -1024c -exec grep -l '^version https://git-lfs.github.com/spec/' {} + || true)"
+# Art in Git LFS that git never downloaded is a small text file pointing at it: never into the game. Only the
+# addons going in are looked at: a release built before git lfs pull lies in BUILD/release/<tag> too, and must
+# not stop the dev build.
+built=()
+for name in $names; do built+=("$build/$name"); done
+pointers="$(find "${built[@]}" -type f -size -1024c -exec grep -l '^version https://git-lfs.github.com/spec/' {} + || true)"
 if [ -n "$pointers" ]; then
     echo "Not installed: these are Git LFS pointers, not the art (git lfs pull fetches it):" >&2
     echo "$pointers" | sed "s|^$build/|  |" >&2
@@ -254,7 +264,19 @@ into() {
     # Not ours to delete: somebody else's addon may carry that name.
     stale "$addons" | sed 's/^/In the game but not in this build, remove it by hand if it is an old module: /'
 }
-for folder in "${folders[@]}"; do
-    into "$folder"
+# One game after the other, each in a shell of its own: a failure in one (a copy refused, a folder gone meanwhile)
+# says which game has the new build and which has not, instead of ending with rsync's message alone.
+games=(Forever Retail)
+for i in "${!folders[@]}"; do
+    set +e
+    (set -e; into "${folders[$i]}")
+    status=$?
+    set -e
+    if [ "$status" -ne 0 ]; then
+        echo "The install into ${games[$i]}'s folder failed (exit $status): ${folders[$i]}" >&2
+        [ "$i" -eq 0 ] || echo "Has the new build: ${games[*]:0:$i}." >&2
+        echo "Does not: ${games[*]:$i}. Once that is fixed, saneui installdev again: both games get it." >&2
+        exit 1
+    fi
 done
 echo "New addon or new file: restart the game. Changed file only: /reload in the game."

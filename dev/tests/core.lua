@@ -767,6 +767,21 @@ check(newRow and newRow.name._text == "New Characters" and Ticked(newRow.menu) =
 Click(canvas.tabs[3])
 check(canvas.parts[3]:IsShown() and not canvas.parts[1]:IsShown() and canvas.parts[3].list, "the tab CVars shows the list of the game's CVars")
 check(Shows("Every console setting of the game."), "under a line that says what it is for")
+-- The options closed and opened again with this tab chosen (the game hides the page and shows it): the tab's part, a
+-- shown child of the page, goes and comes with it, its OnHide and OnShow run by the game (the stand-in walks the shown
+-- children), so its list is released and shown anew; the page itself is built once.
+do
+    local part, list, tabs = canvas.parts[3], canvas.parts[3].list, canvas.tabs
+    local init, release, inits, releases = rawget(list, "Init"), rawget(list, "Release"), 0, 0
+    list.Init = function() inits = inits + 1 end
+    list.Release = function() releases = releases + 1 end
+    canvas:Hide()
+    local gone = releases == 1 and inits == 0 and part:IsShown() and not part:IsVisible()
+    canvas:Show()
+    list.Init, list.Release = init, release
+    check(gone and inits == 1 and part:IsVisible() and part.list == list and canvas.tabs == tabs,
+        "the page hidden and shown again (the options closed and opened): the tab's part goes and comes with it, its list released and shown anew")
+end
 Click(canvas.tabs[1])
 
 -- New: a copy of the settings in use under a name asked for in the game's own dialog, used from then on
@@ -883,13 +898,18 @@ check(SaneUIDB.profiles.Shared and SaneUIDB.profiles.Shared.Demo.loud == true an
     and printedMatch("the profile Shared is imported"), "and keeps it under that name")
 check(Profiles.Import("nonsense") == false and Profiles.Import(Core.Serial.Write({ kind = "other" })) == false
     and Profiles.Import(text, "Shared") == false, "a text that is no profile, or a name that is taken, is refused")
--- A profile from another player keeps of its single CVars (Sync's named) only those the game's options set.
+-- A profile from another player keeps of its single CVars (Sync's named) only those the game's options set, and
+-- nothing of that player's addons and key bindings (Sync.PERSONAL).
 do
     local theirs = Core.Serial.Write({ kind = "Sane UI profile", version = 2, name = "Theirs",
-        settings = { Sync = { named = { autoLootDefault = "1", scriptErrors = "1" } } } })
-    local named = Profiles.Import(theirs) and SaneUIDB.profiles.Theirs.Sync.named
+        settings = { Sync = { named = { autoLootDefault = "1", scriptErrors = "1" }, taken = { addons = { One = false },
+            keyBindings = { JUMP = { "X" } }, CONTROLS_LABEL = { cvars = { autoLootDefault = "1" } } } } } })
+    local sync = Profiles.Import(theirs) and SaneUIDB.profiles.Theirs.Sync
+    local named, taken = sync and sync.named, sync and sync.taken
     check(named and named.autoLootDefault == "1" and named.scriptErrors == nil,
         "an imported profile keeps only the single CVars of the game's options")
+    check(taken and taken.addons == nil and taken.keyBindings == nil and taken.CONTROLS_LABEL.cvars.autoLootDefault == "1",
+        "and nothing of the other player's addons and key bindings; the parts of the game's options stay")
     SaneUIDB.profiles.Theirs = nil
 end
 
@@ -1203,10 +1223,11 @@ SlashCmdList.SANEUI("errors")
 check(printedMatch("counted %(1x, last %?%): a count that is no number") and printedMatch("Demo: step"), "/sane errors skips what it cannot read")
 -- An error about a value the game hides is a hidden text: it can be neither compared nor saved.
 local hidden = setmetatable({}, { __tostring = function() return "hidden" end })
+local knows = issecretvalue -- the stand-in's own (W.Secret), back after the makeshift
 issecretvalue = function(value) return value == hidden end
 Core.NoteError("hidden", hidden)
 Core.NoteError("hidden", hidden)
-issecretvalue = nil
+issecretvalue = knows
 check(Core.errors.hidden.count == 2 and type(Core.errors.hidden.text) == "string" and Core.log[#Core.log].text == Core.errors.hidden.text
     and Core.log[#Core.log].count == 2, "an error with a hidden text is noted without it, and counted")
 SlashCmdList.SANEUI("errors clear")
@@ -1297,6 +1318,11 @@ W.Wait(0.1)
 brittle()
 W.Wait(0.1)
 check(laterRuns == 2 and Core.errors.later and Core.errors.later.count == 2 and printedMatch("problem in later, noted"), "a step done later is caught, and can be asked again")
+local named = Core.Later(function() error("named and broken") end, nil, "a named later")
+named()
+W.Wait(0.1)
+check(Core.errors["a named later"] and Core.errors.later.count == 2 and printedMatch("problem in a named later, noted"),
+    "one given a label is told under it, apart from the others")
 -- The game shows them in its error window as well, only if it was asked to show Lua errors.
 W.cvars.scriptErrors = "1"
 W.caught = {}
@@ -1308,7 +1334,7 @@ check(#W.caught == 1, "an error that came from the game's error window is not ha
 W.caught = nil
 W.cvars.scriptErrors = "0"
 for _, label in ipairs({ "Doors: it stopped", "Named: it stopped", "Named: after it stopped", "PLAYER_FLAGS_CHANGED", "Loose: it stopped",
-    "Loose: after it stopped", "later", "Shown: it stopped", "Shown: after it stopped" }) do Core.errors[label] = nil end
+    "Loose: after it stopped", "later", "a named later", "Shown: it stopped", "Shown: after it stopped" }) do Core.errors[label] = nil end
 -- Core's own doors (Core.Guard): Core stands down for nobody, a module whose code the error ran into does.
 local coreRuns = 0
 local coreDoor = Core.Guard("a window", function(a, b) coreRuns = coreRuns + 1 return b, a end)
@@ -1516,6 +1542,18 @@ borrowed.IsProtected = nil
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(borrowed:GetParent() == other and not lent:Lent(), "and the fight over, the rest")
+-- A frame of the game's that is protected for real (made from a Secure... template): in a fight the stand-in refuses
+-- every touch of it, as the game does (W.Combat), so given back then, Lend touches it only once the fight is over.
+do
+    local secure = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
+    local lentSecure = Core.Lend(secure)
+    lentSecure:SetParent(seat)
+    W.Combat(true)
+    local held = lentSecure:Return() == false and secure:GetParent() == seat and lentSecure:Lent()
+    W.Combat(false)
+    check(held and secure:GetParent() == UIParent and not lentSecure:Lent(),
+        "a secure frame of the game's given back in a fight keeps our place while it lasts, and the game's again once it is over")
+end
 check(Core.Fuzzy.Plain("|cffff0000Red|r |Hitem:1|h[Sword]|h |TInterface\\Icons\\X:0|t") == "Red [Sword] ", "a text of the game's without its codes, for finding")
 check(Core.Fuzzy.Plain("|cnIQ5:Ashbringer|r (+|cnPURE_GREEN_COLOR:5|r)") == "Ashbringer (+5)", "and without its named colour codes (|cnNAME:)")
 
@@ -1532,12 +1570,23 @@ demo.Fire("NOBODY_LISTENS")
 
 -- Secret values -----------------------------------------------------------------------------
 check(Core.Plain(5) == 5 and not Core.Secret(5), "a value from the game is used as it is")
+knows = issecretvalue
 issecretvalue = function(value) return value == "hidden" end
 check(Core.Secret("hidden") and Core.Plain("hidden") == nil and Core.Plain("open") == "open", "but a value the game hides in combat counts as not there")
 check(Core.Ask(function(a) return a, "hidden", 3 end, 1) == 1 and select(2, Core.Ask(function() return 1, "hidden" end)) == nil,
     "asking the game gives its answers, a hidden one as nil")
-issecretvalue = nil
+issecretvalue = knows
 check(Core.Ask(nil) == nil and Core.Ask(function() error("gone") end) == nil, "a function that is not there, or fails, answers nil")
+-- A secret of the stand-in's (W.Secret), as the 12.x client hands one out: a name of the game's that is hidden gives
+-- no key (PlayerKeyOf reads it through Plain: matching on it would be an error), and the game's error window handing
+-- one over as an error's text (through Plain too) notes and tells nothing.
+do
+    local secret, logged = W.Secret(), #Core.log
+    W.printed = {}
+    ScriptErrorsFrame:DisplayMessageInternal(secret, 0, secret)
+    check(Core.Secret(secret) and Core.PlayerKeyOf(secret) == nil and #Core.log == logged and #W.printed == 0,
+        "a value the game hides for real: no key is made of it, and an error text hidden so is let be")
+end
 check(Core.Coins("lots") == nil, "money that is no number is not written")
 GOLD_AMOUNT_TEXTURE, SILVER_AMOUNT_TEXTURE, COPPER_AMOUNT_TEXTURE = "%d[g:%d:%d]", "%d[s:%d:%d]", "%d[c:%d:%d]"
 check(Core.Coins(10101) == "1[g:0:0]1[s:0:0]1[c:0:0]", "money is 1g1s1c, the letters the game's coin icons at the words' size, with no spaces")
@@ -1792,6 +1841,26 @@ check(UnitDefenseSkill == nil and not pcall(CreateFrame("Frame").RegisterEvent, 
 W.Play("forever")
 check(Core.FOREVER and WOW_PROJECT_ID == 18 and C_SpellBook.IsSpellBookItemLowRank == lowRank and Enum.TrainerType ~= nil,
     "back in Forever, all of it is there again")
+-- A ranged weapon's place for an upgrade (Upgrade.lua): Forever's ranged slot, the game's RangedSlot; Retail's main
+-- hand, where its ranged weapons are held. The file is read anew for each game: it asks the game once.
+;(function()
+    local asked = {}
+    C_PaperDollInfo = { GetInventorySlotInfo = function(name) return name == "RangedSlot" and 18 or nil end }
+    GetInventoryItemLink = function(_, slot) asked[#asked + 1] = slot return nil end
+    C_Item.GetItemInfo = function(link) return "Bow", link, 2, 10, 1, "Weapon", "Bows", 1, "INVTYPE_RANGED", 1, 1, 2, 2 end
+    INVSLOT_MAINHAND, INVSLOT_RANGED = 16, 18
+    W.Load(root, "SaneUI", "Core/Upgrade", {})
+    local kind, worth, place = Core.Upgrade("item:2000")
+    check(kind == "empty" and worth == 10 and place == 18 and asked[1] == 18, "Forever: a bow goes against the ranged slot, the game's RangedSlot")
+    W.Play("retail")
+    W.Load(root, "SaneUI", "Core/Upgrade", {})
+    asked = {}
+    kind, worth, place = Core.Upgrade("item:2000")
+    check(Core.RETAIL and kind == "empty" and place == 16 and asked[1] == 16, "Retail: against the main hand, where its ranged weapons are held")
+    W.Play("forever")
+    W.Load(root, "SaneUI", "Core/Upgrade", {})
+    C_PaperDollInfo, GetInventoryItemLink, C_Item.GetItemInfo, INVSLOT_MAINHAND, INVSLOT_RANGED = nil, nil, nil, nil, nil
+end)()
 -- A game version without any data yet (Retail's): a view that asks for a set finds it missing, and nothing is noted.
 check(Core.Data.Set("Quests"):State() == "missing" and Core.Data.Set("Quests"):Get(1) == nil and Core.errors["data: Quests"] == nil,
     "no set of this game version at all: a set asked for is missing without a word in the log")

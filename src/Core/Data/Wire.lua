@@ -55,6 +55,7 @@ Wire.STALE = 120        -- seconds without a new part before a transfer is dropp
 Wire.PER_MINUTE = 90    -- messages taken from one sender in a minute
 Wire.MUTE = 600         -- seconds a sender of too many is not heard
 Wire.CHANNELS = { GUILD = true, OFFICER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
+Wire.refused = 0        -- messages the game refused for good since the login (no guild, no group, the target offline): /sane data
 
 local TAB, BLOCK_KIND = "\t", "P"
 local SIGNS = { forever = "f", ["forever-beta"] = "b", ["forever-ptr"] = "p", retail = "r", ["retail-beta"] = "q", ["retail-ptr"] = "t" }
@@ -68,6 +69,7 @@ local DONE = RESULT.Success or 0
 local TEXT = {
     long = "a message of kind %s is %d bytes, more than %d: not sent",
     large = "a block of kind %s is %d bytes packed, more than %d: not sent",
+    report = "addon messages: %d waiting to be sent, %d refused by the game since the login.",
 }
 
 local listeners, blockListeners = {}, {} -- [kind] = { fn, ... }
@@ -246,7 +248,7 @@ local function Step()
         end
         table.remove(list, 1) -- sent, or the game refused it for good (no guild, no group, the target offline)
         tokens = tokens - 1
-        if result ~= nil and result ~= DONE and result ~= true then Wire.refused = (Wire.refused or 0) + 1 end
+        if result ~= nil and result ~= DONE and result ~= true then Wire.refused = Wire.refused + 1 end
     end
 end
 
@@ -266,6 +268,11 @@ end
 -- How many messages wait to be sent.
 function Wire.Waiting()
     return #urgent + #bulk
+end
+
+-- /sane data: what waits, and what the game refused for good (Data.lua's reports: its file is read before this one).
+Core.Data.reports[#Core.Data.reports + 1] = function()
+    if #urgent + #bulk + Wire.refused > 0 then Core.Print(TEXT.report:format(#urgent + #bulk, Wire.refused)) end
 end
 
 -------------------------------------------------------------------------------

@@ -17,10 +17,14 @@ local Core = SaneUI.Core
 --
 --  No message is trusted (Doc/ideas/Data.md, *Poisoning*). Everything taken is kept apart from this player's own, in
 --  SaneUIData_Shared, per sender, and can be taken out again (Data.ForgetShared). A line off its shape, a total that
---  shrinks or grows faster than anybody can loot, or two bundles too soon earns a strike (Relay.Strike). Counts go into
---  the views summed robustly (Drops.lua), and never into the master: the harvest reads only SaneUIData_Learned. A
---  fact waits until Bundle.SENDERS different members sent the same; the player's other accounts (Prices.Mine) need no
---  others, and what the player saw here always wins. The switch Share data with my guild and group turns all of it off.
+--  shrinks or grows faster than anybody can loot, two bundles too soon, or more than Bundle.IDS block ids under one
+--  name earns a strike (Relay.Strike). A block's id belongs to the member first heard with it: a block under it from
+--  another name (an account's other character, or an impostor) is passed over, so nobody can plant counts under a
+--  member's id and make its honest totals look false. Counts go into the views summed robustly (Drops.lua), and never
+--  into the master: the harvest reads only SaneUIData_Learned's own rows. A fact waits until Bundle.SENDERS different
+--  members sent the same; the player's other accounts (Prices.Mine) need no others, and what the player saw here always
+--  wins; a row taken is kept apart (Data.LearnRow), its told parts as heard (Confirm.Heard), never passed on nor harvested.
+--  The switch Share data with my guild and group turns all of it off.
 -------------------------------------------------------------------------------
 local Data, Wire, Codec = Core.Data, Core.Wire, Core.Data.Codec
 local Tally, Prices, Relay, Confirmations = Data.Tally, Data.Series("Prices"), Data.Relay, Data.Confirmations
@@ -36,6 +40,7 @@ Bundle.FACTS = 20       -- facts in a bundle at most
 Bundle.TOLD = 500       -- facts waiting to be told at most
 Bundle.SOONEST = 14 * 60 -- seconds: a sender's two bundles no closer
 Bundle.AHEAD = 300      -- seconds a bundle's time may lie ahead of this clock
+Bundle.IDS = 2          -- block ids of this build period under one sender's name at most: its own, and one after a reset
 Bundle.PACE = 1         -- loots a second of a way of one key, over a sender's two bundles, at most
 Bundle.BURST = 30       -- ... and so many at once (many corpses looted together)
 Bundle.KEYS = 5000      -- keys kept of one sender at most
@@ -91,8 +96,8 @@ local function Lines()
         if #facts >= Bundle.FACTS then break end
         local set, key = fact:match("^(.-)\031(.*)$")
         local row = Data.Learned(set, tonumber(key) or key)
-        if row and #row <= Bundle.LINE then
-            lines[#lines + 1] = table.concat({ "f", set, key, table.concat(Data.ConfirmedParts(set, tonumber(key) or key), LIST), row }, ENTRY)
+        if row and #row <= Bundle.LINE then -- with the parts the game told here, none a member told (never passed on)
+            lines[#lines + 1] = table.concat({ "f", set, key, table.concat(Confirmations.ToldParts(set, tonumber(key) or key), LIST), row }, ENTRY)
         end
         facts[#facts + 1] = fact
     end
@@ -171,12 +176,13 @@ local function Waiting(sender)
     return all, own
 end
 
--- What the game's own data took from others.
+-- What the game's own data took from others: the row apart (Data.LearnRow, at most Confirm.KEPT a set), its told parts
+-- as heard (never the harvest's, never sent on).
 local function Accept(set, key, row, parts)
     local current = Data.Set(set):Get(key)
-    if not Data.LearnRow(set, key, row, function() return true end) then return end
+    if not Data.LearnRow(set, key, row, function() return true end, Confirmations.KEPT) then return end
     local told = parts ~= "" and Codec.Cut(parts, LIST) or {}
-    for _, part in ipairs(told) do Confirmations.Told(set, key, part) end
+    for _, part in ipairs(told) do Confirmations.Heard(set, key, part) end
     saved.taken[set .. PART .. tostring(key)] = true
     Data.Discovered(set, key, current and "changed" or "new", told, "shared")
     local start = set .. PART .. tostring(key) .. PART
@@ -187,11 +193,12 @@ end
 
 -- A fact from a member: told by enough of them, or by this player's other account, it is taken; else it waits.
 local function Fact(sender, set, keyText, parts, row, build)
+    if #row > Bundle.LINE then return false end
     local key = Whole(keyText)
     local built, body = row:match("^(%d+)\t%d*(.*)$")
     if not (key and built) then return false end
     if not SETS[set] or not Data.Set(set):Ready() or tonumber(built) ~= build then return true end
-    if Data.Learned(set, key) and not saved.taken[set .. PART .. key] then return true end -- what the player saw wins
+    if Data.Learned(set, key) then return true end -- what the player saw wins
     local mine = Prices.Mine(sender)
     local text = set .. PART .. key .. PART .. body
     local fact = saved.facts[text]
@@ -222,17 +229,26 @@ function Bundle.Block(sender, text, channel)
     if last and last ~= at and math.abs(last - at) < Bundle.SOONEST then return Relay.Strike(sender) end
     times[sender] = at
     local block = saved.counts[id]
+    -- The id belongs to the member first heard with it (the top); this player's other character under it (Prices.Mine) is
+    -- one voice with it, its newer totals replace; a stranger's counts under it are passed over, its facts read all the
+    -- same (they wait for Bundle.SENDERS members, by name, like any)
+    local stranger = block ~= nil and block.from ~= sender and not Prices.Mine(sender)
     if not block then
-        block = { build = build, at = at, size = 0, drops = {} }
+        local owned = 0
+        for _, each in pairs(saved.counts) do
+            if each.from == sender and each.build == build then owned = owned + 1 end
+        end
+        if owned >= Bundle.IDS then return Relay.Strike(sender) end
+        block = { build = build, at = at, size = 0, drops = {}, from = sender }
         saved.counts[id] = block
     end
     local since = math.max(at - block.at, 0)
-    block.from, block.at = sender, at
+    if not stranger then block.from, block.at = sender, at end
     for index = 2, #rows do
         local fields = Codec.Cut(rows[index], ENTRY)
         local fair
         if fields[1] == "c" and #fields == 3 then
-            fair = Counted(block, since, fields[2], fields[3])
+            fair = stranger or Counted(block, since, fields[2], fields[3])
         elseif fields[1] == "f" and #fields == 5 then
             fair = Fact(sender, fields[2], fields[3], fields[4], fields[5], period)
         end

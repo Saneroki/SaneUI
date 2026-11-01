@@ -418,26 +418,26 @@ local function Switch(page, name, option)
         local setting = Setting("number", option.default, Get, function(value) Set(Panel.Step(option, value)) end)
         local slider = Settings.CreateSliderOptions(option.min or 0, option.max, option.step or 1)
         if MinimalSliderWithSteppersMixin then
-            slider:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+            slider:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, Core.Guard("options", function(value)
                 return Panel.Said(option, value)
-            end)
+            end))
         end
         return Add(page, Settings.CreateSliderInitializer(setting, slider, option.tip))
     elseif kind == "choice" then
         local setting = Setting(type(option.default), option.default, Get, Set)
-        return Add(page, Settings.CreateDropdownInitializer(setting, function()
+        return Add(page, Settings.CreateDropdownInitializer(setting, Core.Guard("options", function()
             local container = Settings.CreateControlTextContainer()
             for _, choice in ipairs(option.choices) do container:Add(choice[1], choice[2]) end
             return container:GetData()
-        end, option.tip))
+        end), option.tip))
     elseif kind == "multi" then
         local setting = Setting("number", Mask(option, option.default), function() return Mask(option, Get()) end,
             function(mask) Set(Unmask(option, mask)) end)
-        return Add(page, Settings.CreateDropdownInitializer(setting, function()
+        return Add(page, Settings.CreateDropdownInitializer(setting, Core.Guard("options", function()
             local container = Settings.CreateControlTextContainer()
             for index, choice in ipairs(option.choices) do container:AddCheckbox(index, choice[2]) end
             return container:GetData()
-        end, option.tip))
+        end), option.tip))
     elseif kind == "text" or kind == "number" then
         if not (Base and Settings.CreateControlInitializer) then return nil end
         local setting = Setting(type(option.default), option.default, Get, Set)

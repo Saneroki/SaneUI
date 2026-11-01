@@ -28,13 +28,10 @@ function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:GetFrameStrata() return self._strata or "MEDIUM" end
 function methods:SetFrameLevel(level) self._level = level end
 function methods:GetFrameLevel() return self._level or 1 end
-function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
-function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 function methods:SetTexture(texture) self._texture = texture return true end
 function methods:SetDesaturated(on) self._desaturated = on end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
 function methods:SetScale(scale) self._scale = scale end
-function methods:IsProtected() return false end
 function methods:Clear() self._cooldown = nil end
 function methods:SetCooldownFromDurationObject(duration) self._cooldown = duration end
 function methods:SetCooldown(start, duration) self._cooldown = { start, duration } end
@@ -245,11 +242,11 @@ for _, item in ipairs(Entries()) do if item.Name._text == "Blizzard" then blizza
 check(blizzard.RequiredLevel._text == Item.TEXT.trainable and blizzard.Button.TrainableShadow:IsShown(), "at that level: trainable")
 check(nova.Button.Cooldown._cooldown == "nova's cooldown", "the cooldown by the game's duration object")
 -- Without it, the cooldown's numbers, only where they are plain: the game's swirl takes no hidden value from us.
-C_SpellBook.GetSpellBookItemCooldown = function() return { isEnabled = true, startTime = 1234.5, duration = 8, modRate = 1 } end
-issecretvalue = function(value) return value == 1234.5 end -- that start hidden from addons
+local start = W.Secret() -- that start hidden from addons, as the game hides it in a fight: an error if computed with
+C_SpellBook.GetSpellBookItemCooldown = function() return { isEnabled = true, startTime = start, duration = 8, modRate = 1 } end
 Item.Cooldown(bolt)
-check(bolt.Button.Cooldown._cooldown == nil, "without the duration object, a hidden start: no swirl")
-issecretvalue = nil
+check(bolt.Button.Cooldown._cooldown == nil, "without the duration object, a hidden start: no swirl, nothing computed with it")
+start = 1234.5
 Item.Cooldown(bolt)
 check(bolt.Button.Cooldown._cooldown and bolt.Button.Cooldown._cooldown[1] == 1234.5, "a plain one: the swirl from its numbers")
 C_SpellBook.GetSpellBookItemCooldown = function() return nil end
@@ -264,6 +261,13 @@ check(not nova.Button.ActionBarHighlight:IsShown(), "picked up for a bar: no glo
 W.Fire("CURSOR_CHANGED") -- dropped where no bar is
 W.Wait(0)
 check(nova.Button.ActionBarHighlight:IsShown(), "let go: it glows again, as in the game's book")
+-- The status hidden from addons: nothing compared with it, so no glow.
+local status = ActionButtonUtil.GetActionBarStatusForSpell
+ActionButtonUtil.GetActionBarStatusForSpell = function() return W.Secret() end
+W.Fire("ACTIONBAR_SLOT_CHANGED")
+W.Wait(0)
+check(not nova.missing and not nova.Button.ActionBarHighlight:IsShown(), "a status the game hides: no glow, nothing compared with it")
+ActionButtonUtil.GetActionBarStatusForSpell = status
 onBars[122] = true
 
 -- Casting: the game's secure buttons over the icons, out of a fight.
@@ -282,6 +286,8 @@ check(#covers == 2 and covers[1]._parent == UIParent and covers[1]._attributes.t
     "a secure button over each learned spell's icon, on UIParent above the panel; none over one still to learn")
 local spellsCovered = { [covers[1]._attributes.spell] = true, [covers[2]._attributes.spell] = true }
 check(spellsCovered[205] and spellsCovered[122], "each casts its spell by its ID (the rank it is)")
+-- The game locks the secure buttons only after PLAYER_REGEN_DISABLED's handlers ran (the buttons' last chance to
+-- go), so the event first and the lock then: the stand-in's W.Combat(true) locks first.
 W.Fire("PLAYER_REGEN_DISABLED")
 check(#Covers() == 0, "a fight begins: the secure buttons go")
 W.combat = true
@@ -295,10 +301,23 @@ nova.Button:GetScript("OnClick")(nova.Button, "LeftButton")
 check(W.errors[1] == Item.TEXT.fight, "a click in a fight says the book casts again after it")
 nova.Button:GetScript("OnDragStart")(nova.Button)
 check(picked and picked[1] == 5 and picked[2] == 0, "a drag still picks the spell up, for an action bar")
-W.combat = false
-W.Fire("PLAYER_REGEN_ENABLED")
+-- The module standing down in the fight (the board's Part.Leave): the secure buttons are the game's to lock, so
+-- their clearing waits for the fight's end (Core.AfterCombat), none touched meanwhile: the stand-in refuses a
+-- touch in a fight, an error Core would keep.
+local function Problems()
+    local count = 0
+    for _, problem in pairs(Core.errors) do count = count + (type(problem) == "table" and tonumber(problem.count) or 1) end
+    return count
+end
+local problems = Problems()
+Part.Leave()
+check(#Covers() == 0 and covers[1]:IsProtected() and Core.Owed("Combat: spellbook casts") and Problems() == problems,
+    "left in a fight: the secure buttons' clearing waits for its end, none of the game's locked ones touched")
+W.Combat(false) -- the lock lifted, then PLAYER_REGEN_ENABLED: the game's order, the stand-in's too
+check(not Core.Owed("Combat: spellbook casts") and Problems() == problems, "the fight over: cleared then, no error kept")
+Part.Show(true)
 W.Wait(0)
-check(#Covers() == 2, "the fight is over: the secure buttons are back over the page")
+check(#Covers() == 2, "shown again, the fight over: the secure buttons are back over the page")
 
 -- The pet's abilities: by name, a right click switching autocast.
 local petTab = Tabs()[3]
@@ -331,9 +350,13 @@ check(searching == nil and Book.Chosen() == "line1" and #Entries() == 2 and Entr
 -- Hidden: no secure buttons, nothing listened to.
 Part.Show(false)
 check(#Covers() == 0, "its panel hidden: the secure buttons go")
+local before, made = Entries(), #W.frames
 W.Fire("SPELLS_CHANGED")
 W.Wait(0)
-check(true, "deaf while hidden")
+local after = Entries()
+local same = #after == #before and #W.frames == made
+for index, entry in ipairs(before) do same = same and after[index] == entry end
+check(same and #Covers() == 0, "deaf while hidden: the entries as they were, nothing made, no secure buttons")
 
 -- In Retail, whose book is not the one ours is made after (its art, no flyouts' spells loose in it: Combat.lua,
 -- ns.Serves): ours is not there, the game's spellbook stays.

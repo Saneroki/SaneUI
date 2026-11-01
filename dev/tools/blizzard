@@ -4,7 +4,8 @@ Sane UI: a todo list of what broke, what is deprecated, what is called different
 housekeeping (Doc/guides/blizzard-updates.md). Sane UI is built on the newest export (the highest build in the
 exports' folder this computer's settings name: ~/.config/saneui/blizzard.json), never on references/.
 
-Usage:  dev/tools/blizzard where      the newest export's code and art folders, and its build (Forever's and Retail's)
+Usage:  dev/tools/blizzard where      the newest export's code and art folders, and its build (Forever's and Retail's),
+                                   and the reports' folder (the patches' notes and the Forever-Retail lookup)
         dev/tools/blizzard check [<new>] [--old <export>|git:<revision>] [--build <version>] [--out <file.md>]
                                    the todo list, in dev/blizzard/reports/ (Markdown and JSON)
         dev/tools/blizzard show <name> [<new>] [--old ...]
@@ -26,7 +27,7 @@ Usage:  dev/tools/blizzard where      the newest export's code and art folders, 
                                    lookup made anew. --again: the newest two exports once more, nothing exported
         dev/tools/blizzard fix [forever|retail] [--print]
                                    the session that makes Sane UI comply with the newest patch (saneui fixpatch):
-                                   Claude Code started on its brief; --print: only the brief's prompt, to paste
+                                   Claude Code started on its brief; --print: only the brief, to paste
 
 check and show take --retail: Retail's newest export against Forever's, in place of <new> and --old.
 
@@ -219,6 +220,7 @@ def run_where(args):
             print(f"{game}: {product} {version}")
             print(f"  code: {interface / 'BlizzardInterfaceCode'}")
             print(f"  art:  {interface / 'BlizzardInterfaceArt'}")
+    print(f"reports: {reports_folder()}")
 
 
 def reports_folder():
@@ -326,12 +328,13 @@ def run_patch(args):
 
 
 def run_fix(args):
-    """Claude Code started in the project on the newest patch's brief."""
+    """Claude Code started in the project on the newest patch's brief: its text, not its path, so the session is
+    told nothing of where the reports' folder is (no file of Sane UI names it)."""
     briefs = sorted((reports_folder() / "patches").glob(f"{args.game or '*'}-*/session.md"),
                     key=lambda path: path.stat().st_mtime)
     if not briefs:
         fail("No patch's brief yet: saneui readpatch writes one after a patch.")
-    prompt = f"Read {briefs[-1]} and do what it says."
+    prompt = briefs[-1].read_text(encoding="utf-8")
     if args.print or not shutil.which("claude"):
         print(prompt)
         return

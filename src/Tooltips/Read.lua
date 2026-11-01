@@ -28,6 +28,9 @@ local _, ns = ...
 --  and sections, wherever an addon wrote them (at the end, or right after one
 --  of the game's lines): they come last, all of them, in one section of their
 --  own under the caption Addons (Others), and only while Alt is held.
+--  The game's own code writes a few lines after the data as well (an auction's
+--  seller and time left, a repair cost): those are known by their sentences
+--  (Texts.lua, APPENDED) and stay the game's, among the details.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Secret, Ask = Core.Plain, Core.Secret, Core.Ask
@@ -53,6 +56,7 @@ local LOOK_AHEAD = 3 -- how far a line may stand from where the data has it
 --       left, right, their colours (lr.. rb)   as they stand
 --       type, data                             the kind of line and its data, if the game says
 --       own                                    the game's line (not one another addon added)
+--       appended                               one the game's own code wrote after the data (a sentence it knows)
 --       blank, used                            empty; already shown by the kind's reader
 --   section                                    the name of the section rows go into now
 --   rule                                       the game had an empty line here: a section may end (Rest)
@@ -173,8 +177,36 @@ local function Mark(index, info)
     if index < ctx.firstOwn then ctx.firstOwn = index end
 end
 
--- Reads the tooltip's lines into ctx.L and says which the game's data knows. False when a line
--- cannot be read.
+-- The game's own code writes a few lines after the data too, as another addon would (its auction
+-- house: an auction's seller and time left; its vendors: an item's repair cost, and a line of coins
+-- under it). They are the game's all the same: known by their sentences (Texts.lua, APPENDED), each
+-- marked so, and the empty line the game puts before them with it.
+local APPENDED, REPAIR = ns.PATTERN.APPENDED, ns.PATTERN.REPAIR_COST
+local function Sentence(text, coins)
+    for index = 1, #APPENDED do
+        if text:match(APPENDED[index]) then return true end
+    end
+    -- The coins: digits and the coins' pictures, nothing else
+    return coins and (text:gsub("|[AT].-|[at]", "")):match("^[%d%s,%.]+$") ~= nil
+end
+
+local function Appended()
+    local L, coins = ctx.L, false
+    for index = 2, ctx.count do
+        local line = L[index]
+        if not line.own and not line.blank and Sentence(line.left, coins) then
+            line.own, line.appended = true, true
+            local before = L[index - 1]
+            if before.blank and not before.own then before.own, before.appended = true, true end
+            coins = line.left:match(REPAIR) ~= nil
+        else
+            coins = false
+        end
+    end
+end
+
+-- Reads the tooltip's lines into ctx.L and says which the game's data knows (and which of the rest
+-- the game's own code wrote: Appended). False when a line cannot be read.
 local function Collect(tooltip, data)
     local count = Plain(tooltip:NumLines())
     if not count or count < 1 then return false end
@@ -190,7 +222,7 @@ local function Collect(tooltip, data)
         if not (left and right) then return false end
         line.left, line.right = left, right
         line.lr, line.lg, line.lb, line.rr, line.rg, line.rb = lr, lg, lb, rr, rg, rb
-        line.type, line.data, line.own, line.used = nil, nil, false, false
+        line.type, line.data, line.own, line.appended, line.used = nil, nil, false, false, false
         line.blank = right == "" and not left:find("%S")
     end
     ctx.count, ctx.matched, ctx.placed, ctx.firstOwn, ctx.lastOwn = count, false, false, count + 1, 0
@@ -207,19 +239,21 @@ local function Collect(tooltip, data)
         if type(index) == "number" and index >= 1 and index <= count and not L[index].own then Mark(index, info) end
     end
     ctx.placed = ctx.matched
-    if ctx.matched then return true end
-    -- ...or it does not: then its lines are found by their text, in the tooltip's order.
-    local nextLine = 1
-    for index = 1, count do
-        for look = nextLine, math.min(nextLine + LOOK_AHEAD - 1, #lines) do
-            local info = Plain(lines[look])
-            if type(info) == "table" and Plain(info.leftText) == L[index].left then
-                Mark(index, info)
-                nextLine = look + 1
-                break
+    if not ctx.matched then
+        -- ...or it does not: then its lines are found by their text, in the tooltip's order.
+        local nextLine = 1
+        for index = 1, count do
+            for look = nextLine, math.min(nextLine + LOOK_AHEAD - 1, #lines) do
+                local info = Plain(lines[look])
+                if type(info) == "table" and Plain(info.leftText) == L[index].left then
+                    Mark(index, info)
+                    nextLine = look + 1
+                    break
+                end
             end
         end
     end
+    Appended()
     return true
 end
 
@@ -324,7 +358,8 @@ function Read.Memo(key, format, a, b, c)
     return memo.text
 end
 
--- Whether a line is one another addon added: a line of the tooltip that is none of the game's data.
+-- Whether a line is one another addon added: a line of the tooltip that is none of the game's data
+-- (nor one of the sentences the game's own code writes after it: Collect).
 -- Where the data says where each of its lines stands, such a line is found wherever it is after the
 -- game's first one: an addon may write its line right after one of the game's
 -- (TooltipDataProcessor.AddLinePostCall), not only at the end. Where the game's lines are only
@@ -374,7 +409,8 @@ function Read.Rest()
             elseif inside then
                 Read.Section(ctx.nested)
             else
-                Read.Section((ctx.name or Read.Named)(line, index, ctx.rule))
+                -- A sentence the game's code wrote after the data stands with the details, whatever names the kind has (Collect)
+                Read.Section(line.appended and Read.Named(line) or (ctx.name or Read.Named)(line, index, ctx.rule))
             end
             local row = Read.Line(line, "row")
             if caption then

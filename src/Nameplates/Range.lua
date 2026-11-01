@@ -108,6 +108,7 @@ end
 function Range.Rebuild()
     local harmful, helpful = Spells()
     attacks = harmful
+    table.sort(attacks, function(a, b) return a[1] > b[1] end) -- the longest reach first (Range.Check asks them so)
     Range.longest = 0 -- the farthest any of your attacks reaches
     for _, entry in ipairs(harmful) do Range.longest = math.max(Range.longest, entry[1]) end
     ladders.foe = Ladder(Range.ENEMY, harmful)
@@ -170,11 +171,16 @@ function Range.Check(unit, at)
     local least, most = nil, nil
     if told or above then least, most = below or 0, above or Range.FAR end
     if not foe then return least, most, nil, index end
+    -- Your attacks, the longest reach first: the first that reaches it settles it, and so does the first that does
+    -- not and has no least range (none shorter reaches farther), so a foe out of reach costs few questions, not all.
     local no = false
     for _, entry in ipairs(attacks) do
         local reach = Core.Ask(C_Spell.IsSpellInRange, entry.spell, unit)
         if reach == true then return least, most, true, index end
-        if reach == false and (entry.least or 0) == 0 then no = true end
+        if reach == false and (entry.least or 0) == 0 then
+            no = true
+            break
+        end
     end
     -- Beyond the farthest of your attacks by the ladder, though they could not say: out of reach too.
     if no or (least and Range.longest > 0 and least >= Range.longest) then return least, most, false, index end

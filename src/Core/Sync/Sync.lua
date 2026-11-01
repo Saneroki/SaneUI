@@ -59,6 +59,10 @@ Sync.GROUPS = {
     { id = "elsewhere", fallback = TEXT.elsewhere },
 }
 
+-- The parts that are one player's own, never taken from another player's text (Profiles.Import): which addons
+-- are switched on, the key bindings.
+Sync.PERSONAL = { addons = true, keyBindings = true }
+
 -- The parts, in the order they are written into the game; by id too. A part:
 --      id, group   its key in the settings, and the box it is shown in (Sync.GROUPS)
 --      text, tip   its checkbox's words
@@ -220,18 +224,23 @@ local function ToDefaults()
         for name in pairs(type(data) == "table" and type(data.cvars) == "table" and data.cvars or {}) do ToDefault(name) end
     end
     for name in pairs(leftNamed) do ToDefault(name) end
+    -- Only a part the profile held and kept (an unticked one was not read, as in Give): one it held nothing of
+    -- changes nothing.
     for _, part in ipairs(Sync.parts) do
-        if part.Default then Sync.Safe("defaults of " .. part.id, part.Default) end
+        if part.Default and left[part.id] ~= nil then Sync.Safe("defaults of " .. part.id, part.Default) end
     end
     left = nil
 end
 
 -- The settings in use came from elsewhere (another profile, Character specific): what they hold goes into the game at
--- once, if the character is in the world already (otherwise that happens anyway).
+-- once, if the character is in the world already (otherwise that happens anyway). A part they hold nothing of goes
+-- to the game's own (Give) only when they differ from what the last capture read: the same settings again (a copy
+-- of this profile) leave the game as it is.
 function Sync.Moved()
     if not On() then return Sync.Safe("defaults", ToDefaults) end
     if not settled then return end
-    arrived = true
+    local options = Sync.options
+    arrived = left == nil or not Core.Same(left, options.taken) or not Core.Same(leftNamed, options.named)
     Sync.Safe("writing", Sync.Give)
 end
 

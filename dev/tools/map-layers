@@ -117,6 +117,7 @@ def module(name, path):
 at = module("atlas", ROOT / "dev" / "tools" / "atlas")              # the close level: squares, words, checks
 ta, ig = at.ta, at.ig                                               # the terrain; ComfyUI and its workflows
 ia = module("indoor_art", ROOT / "dev" / "tools" / "indoor-art")    # buildings' indoor maps
+wd = ia.WALK                                                        # the walking data's tool (indoor-art loads it)
 
 MAPS = ROOT / "dev" / "imagegen" / "maps"
 LEVELS, ATLAS = MAPS / "levels.toml", MAPS / "atlas.toml"
@@ -403,32 +404,21 @@ def tiles_of(path):
 NOWHERE, BARRED, SWIM, WALKED = 0, 85, 170, 255   # a walking picture's shades: no data, nobody walks, water, floors
 
 
-def cbor(data, at=0):
-    """One item of a walking block (CBOR of whole numbers and arrays only) and where the next begins."""
-    major, info = data[at] >> 5, data[at] & 31
-    at += 1
-    if info >= 24:
-        size = 1 << (info - 24)
-        info, at = int.from_bytes(data[at:at + size], "big"), at + size
-    if major == 4:
-        items = []
-        for _ in range(info):
-            item, at = cbor(data, at)
-            items.append(item)
-        return items, at
-    return (info if major == 0 else -1 - info), at
+cbor, decode = wd.cbor, wd.decode   # a block's CBOR (whole numbers and arrays) written and read, walk-data's own
 
 
 class Walking:
     """The set Walking's blocks by tile key: [format, surfaces (count, kind, region), rectangles (column, row,
-    width, height, z), openings]."""
+    width, height, z), openings]; the newest line of each tile, a tile gone left out."""
 
     def __init__(self, path=WALK):
         self.blocks = {}
         if Path(path).is_file():
             for line in open(path, encoding="utf-8"):
                 row = json.loads(line)
-                if row.get("block"):
+                if row.get("gone"):
+                    self.blocks.pop(row["key"], None)
+                elif row.get("block"):
                     self.blocks[row["key"]] = row["block"]
 
     def picture(self, map_id, box, width):
@@ -443,7 +433,7 @@ class Walking:
                 text = self.blocks.get(map_id * GRID * GRID + row * GRID + column)
                 if not text:
                     continue
-                _, surfaces, rects, _ = cbor(zlib.decompress(base64.b64decode(text), -15))[0]
+                _, surfaces, rects, _ = decode(zlib.decompress(base64.b64decode(text), -15))
                 x0, y0, step = column * size - left, row * size - top, size / 256
                 draw.rectangle([x0, y0, x0 + size, y0 + size], fill=BARRED)
                 n = 0
@@ -830,11 +820,16 @@ def inputs(args):
 
 def checks_of(folder):
     path = folder / "checks.json"
-    return json.loads(path.read_text()) if path.is_file() else {}
+    try:
+        return json.loads(path.read_text()) if path.is_file() else {}
+    except ValueError:  # cut short by a run killed while it was written: the tries without a check are made again
+        print(f"{path}: not JSON, its checks start empty", flush=True)
+        return {}
 
 
 def save_checks(folder, checks):
-    (folder / "checks.json").write_text(json.dumps(checks, indent=1))
+    (folder / "checks.tmp").write_text(json.dumps(checks, indent=1))
+    os.replace(folder / "checks.tmp", folder / "checks.json")
 
 
 def close(server, subject, state, out, whole=False):
@@ -883,7 +878,7 @@ def close(server, subject, state, out, whole=False):
             facts = guides.facts(subject["map"], i, j, square)
         prompt = at.words(fixed, briefs, facts)
         source = folder / "close" / f"{i}-{j}-ground.png"
-        Image.fromarray(square["rgb"]).save(source)
+        at.save_png(Image.fromarray(square["rgb"]), source)
         best = None
         for seed in range(1, at.TRIES + 1):
             painting, _ = run_one(server, at.WORKFLOW, [source], prompt, f"close-{subject['name']}-{i}-{j}", seed, at.SETTINGS)
@@ -895,7 +890,7 @@ def close(server, subject, state, out, whole=False):
                 break
         score, seed, painting, result = best
         coloured = at.colour_of(np.asarray(painting), square)
-        Image.fromarray(coloured).save(target)
+        at.save_png(Image.fromarray(coloured), target)  # whole or not there: the next run takes a file there as finished
         checks[f"close-{i}-{j}"] = {"seed": seed, "water": result, "passes": at.passes(result), "words": prompt}
         save_checks(folder, checks)
         print(f"{subject['name']} close {i},{j}: seed {seed}, water {result}", flush=True)
@@ -912,8 +907,12 @@ def join_close(folder):
     for j in rows:
         line = None
         for i in columns:
-            path = found.get((i, j)) or folder / "close" / f"{i}-{j}-ground.png"
-            square = np.asarray(Image.open(path).convert("RGB"))
+            square = None
+            for path in (found.get((i, j)), folder / "close" / f"{i}-{j}-ground.png"):  # the painting, else its terrain
+                if path is not None and path.is_file() and square is None:
+                    square = at.painting_of(path)
+            if square is None:  # neither opens: the flat sea
+                square = np.full((at.SQ, at.SQ, 3), at.NAVY, np.uint8)
             line = square if line is None else at.join_two(line, square, False)
         lines.append(line)
     whole = lines[0].transpose(1, 0, 2)
@@ -1238,7 +1237,7 @@ def tiles(args):
                 best = (rank, painting, {"seed": seed, "outlines": round(match, 3), "water": water, "seen": seen, "passes": ok})
             if ok:
                 break
-        best[1].save(target)
+        at.save_png(best[1], target)  # whole or not there: the next run takes a file there as finished
         with open(folder / "checks.jsonl", "a", encoding="utf-8") as log:
             log.write(json.dumps({"square": [i, j], "zone": brief.get("name"), **best[2]}) + "\n")
         print(f"{name}: {brief.get('name')}, seed {best[2]['seed']}, outlines {best[2]['outlines']}, "

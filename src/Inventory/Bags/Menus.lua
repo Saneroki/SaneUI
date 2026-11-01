@@ -353,7 +353,12 @@ function Menus.Destroy()
     if kind ~= "item" or type(id) ~= "number" then return false end
     local show = rawget(_G, "StaticPopup_Show")
     if not show then return false end
-    local name, _, quality, _, _, _, _, _, _, _, _, class = Core.Ask(rawget(_G, "GetItemInfo"), link or id)
+    -- Its quality and class (the twelfth answer: beyond Core.Ask's three, so asked as Contents does).
+    local items = rawget(_G, "C_Item")
+    local info = items and items.GetItemInfo or rawget(_G, "GetItemInfo")
+    local ok, name, _, quality, _, _, _, _, _, _, _, _, class = pcall(info, link or id)
+    if not ok then name, quality, class = nil, nil, nil end
+    quality, class = Core.Plain(quality), Core.Plain(class)
     local qualities = Enum and Enum.ItemQuality or {}
     local good = type(quality) == "number" and quality >= (qualities.Rare or 3) and quality ~= (qualities.Heirloom or 7)
     local quest = class == (Enum and Enum.ItemClass and Enum.ItemClass.Questitem or 12)

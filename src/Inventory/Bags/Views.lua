@@ -67,6 +67,18 @@ local byLink = {}                  -- [link] = its entry while merging
 local split = {}                   -- [item] = true: split since the window opened, never merged
 Views.split = split
 
+-- A group's key as a view and as a block's drop, "group:<group>", made once per group (asked per block and per
+-- record of its members at each build and count; the groups are few).
+local groupKeys = {}
+function Views.GroupKey(group)
+    local key = groupKeys[group]
+    if not key then
+        key = "group:" .. group
+        groupKeys[group] = key
+    end
+    return key
+end
+
 local function Block(word, level)
     used = used + 1
     local block = blocks[used]
@@ -214,14 +226,14 @@ local function ByCategories(section, query, order, merge)
                     local slot = plus and firstSection and not query
                     if slot then
                         local block = Block(nil, 3)
-                        block.bare, block.plus, block.drop = true, true, "group:" .. group
+                        block.bare, block.plus, block.drop = true, true, Views.GroupKey(group)
                     end
                     if used == first then used = used - 1 end -- nothing under the title: no title either
                 end
             elseif group then
                 if not Categories.Hidden(group) or query then
                     local block = Block(Categories.GroupWord(group))
-                    block.group, block.drop = group, "group:" .. group
+                    block.group, block.drop = group, Views.GroupKey(group)
                     block.plus = plus and firstSection
                     Clear(byLink)
                     for _, member in ipairs(Categories.Members(group)) do
@@ -389,7 +401,7 @@ function Views.Counts(section, options)
             if not (record.pinned and (options or {}).showPinned ~= false) then -- a pinned item is Pinned's alone
                 Count(key, link)
                 local group = Categories.GroupOf(key)
-                if group then Count("group:" .. group, link) end
+                if group then Count(Views.GroupKey(group), link) end
             end
             if record.pinned then Count(Categories.PINNED, link) end
             if recentItems[record.item] then Count(Categories.RECENT, link) end

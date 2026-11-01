@@ -55,8 +55,10 @@ local Prices = {}
 
 Prices.FRESH = 30  -- days a price counts without being seen again
 Prices.DOUBTS = 200 -- far-off prices in one member's scan before it counts as false
+Prices.KEYS = 8000 -- keys of one house standing as one member's at most: a house's items and gear kinds, with room
 local TRUST = 5    -- how far off a member's price may stand from what is known before a second sender must say it too
 local PRICE_MOST, COUNT_MOST, ITEM_MOST = 1e11, 1e7, 2147483647 -- past these no number in a member's block is true
+local LEVEL_MOST, SUFFIX_MOST, SPECIES_MOST = 9999, 99999, 99999 -- a kind's level, suffix and species past these is none the game makes
 Prices.UNITS = 65536 -- an offer as one number, price * UNITS + count: sorted with no table per offer
 local UNITS = Prices.UNITS
 
@@ -75,6 +77,7 @@ local mine, opened     -- the house of your side, once asked for; the one open n
 local books = {}       -- [a house's part] = { index = { [key] = point }, gear = { [item] = { key, ... } }, dirty,
                        --                      history = { [key] = points }, held, outlook = { [key] = what Rhythm read }, offers = { [key] = offers },
                        --                      shared = { [key] = sender }, under = { [key] = the point it stands over },
+                       --                      heard = { [sender] = how many keys stand as its (Prices.KEYS) },
                        --                      told = { [at] = true: a scan's line of a member's } }
 local keys = {}        -- [a house's part] = its key
 local database         -- [a house's key] = { index, days, recent, kept }: what all accounts hold together, through the links
@@ -220,10 +223,20 @@ local function Put(book, key, point)
     book.index[key] = point
 end
 
+-- A key as a member's (sender) or this account's own again (nil): book.shared, with the keys standing as each member's
+-- counted (Prices.KEYS).
+local function Owned(book, key, sender)
+    local was = book.shared[key]
+    if was == sender then return end
+    if was then book.heard[was] = (book.heard[was] or 1) - 1 end
+    if sender then book.heard[sender] = (book.heard[sender] or 0) + 1 end
+    book.shared[key] = sender
+end
+
 local function Book(house)
     local book = books[house]
     if book then return book end
-    book = { index = {}, gear = {}, history = {}, held = 0, outlook = {}, outlooks = 0, offers = {}, shared = {}, under = {}, told = {} }
+    book = { index = {}, gear = {}, history = {}, held = 0, outlook = {}, outlooks = 0, offers = {}, shared = {}, under = {}, heard = {}, told = {} }
     books[house] = book
     if type(house.index) == "string" then
         for key, point in house.index:gmatch(SAVED) do Put(book, key, point) end
@@ -242,7 +255,7 @@ local function Book(house)
                 local own = book.index[key]
                 if not own or tonumber(point:match("^%d+")) > tonumber(own:match("^%d+")) then
                     if not book.shared[key] then book.under[key] = own end
-                    book.shared[key] = sender
+                    Owned(book, key, sender)
                     Put(book, key, point)
                 end
             end
@@ -255,7 +268,8 @@ end
 function Prices.Take(house, key, at, low, market, units, auctions, sellers)
     local book = Book(house)
     local point = book.index[key]
-    book.shared[key], book.under[key] = nil, nil
+    Owned(book, key, nil)
+    book.under[key] = nil
     Put(book, key, POINT:format(at, low, market, units, auctions, sellers))
     return point == nil or tonumber(point:match("^%d+,(%d+)")) ~= low or tonumber(point:match("^%d+,%d+,(%d+)")) ~= market
 end
@@ -297,7 +311,8 @@ function Prices.See(key, low, units)
     local house = Current()
     if not house then return end
     local book = Book(house)
-    book.shared[key], book.under[key] = nil, nil
+    Owned(book, key, nil)
+    book.under[key] = nil
     if low == nil then
         book.index[key] = nil
     else
@@ -590,12 +605,14 @@ local function Believed(name, low, known, sender, channel)
 end
 
 -- A block's lines by their strict shape: { { name, low, market, units, auctions, sellers }, ... }, or nil where one byte of the
--- text is anything else: then none of it is taken.
+-- text is anything else (a kind's level, suffix or species past what the game makes too): then none of it is taken.
 local function Lines(text)
     local list, read = {}, 0
     for line, name, low, market, units, auctions, sellers in text:gmatch("(([^=;]+)=(%d+),(%d+),(%d+),(%d+),(%d+);)") do
         low, market, units, auctions, sellers = tonumber(low), tonumber(market), tonumber(units), tonumber(auctions), tonumber(sellers)
-        if not (name:find("^%d+$") or name:find("^%d+:%d+:%-?%d+:%d+$")) or tonumber(name:match("^%d+")) > ITEM_MOST
+        local level, suffix, species = name:match("^%d+:(%d+):%-?(%d+):(%d+)$")
+        if not (name:find("^%d+$") or level) or tonumber(name:match("^%d+")) > ITEM_MOST
+            or (level and (tonumber(level) > LEVEL_MOST or tonumber(suffix) > SUFFIX_MOST or tonumber(species) > SPECIES_MOST))
             or low > PRICE_MOST or market > PRICE_MOST or units > COUNT_MOST or auctions > COUNT_MOST or sellers > COUNT_MOST then
             return nil
         end
@@ -619,24 +636,34 @@ end
 
 -- What a member's scan found (Relay.lua): "key=low,market,units,auctions,sellers;..." of a house this account knows, kept apart
 -- as that sender's, over what this account has only where that is older. How many stood, and a word where the sender earned
--- a strike: shape, or far. A point stands in the newest prices and, for a graph, that scan's line; the days, the whole scans
--- and this account's own points never hold it, so it can be taken out again, and nothing shared reaches the harvest.
+-- a strike: shape (a line off it, a key of a kind the game would not make: gear's plain, a plain item's with a kind, or more
+-- lines than a scan has, Relay.MOST), many (more keys standing as the sender's than a house holds, Prices.KEYS: the rest of
+-- the block is passed over), or far. A point stands in the newest prices and, for a graph, that scan's line; the days, the
+-- whole scans and this account's own points never hold it, so it can be taken out again, and nothing shared reaches the harvest.
 function Prices.Heard(key, at, text, sender, channel)
     local house = Known(key)
     if not house then return 0 end
     local read = Lines(text)
-    if not read then return 0, "shape" end
-    local book, lines, taken, far = Book(house), {}, 0, 0
+    if not read or #read > Data.Relay.MOST then return 0, "shape" end
+    for _, line in ipairs(read) do
+        local gear = Prices.Gear(tonumber(line[1]:match("^%d+")))
+        if gear ~= nil and (line[1]:find(":", 1, true) ~= nil) ~= gear then return 0, "shape" end
+    end
+    local book, lines, taken, far, many = Book(house), {}, 0, 0, false
     local stale = Now() - Prices.FRESH * DAY
     for _, line in ipairs(read) do
         local name, low = line[1], line[2]
         local known = book.index[name]
         local knownAt = known and tonumber(known:match("^%d+"))
         if (not knownAt or knownAt < at) and Prices.Gear(tonumber(name:match("^%d+"))) ~= nil then -- the game knows the item
+            if book.shared[name] ~= sender and (book.heard[sender] or 0) >= Prices.KEYS then
+                many = true
+                break
+            end
             local current = knownAt and knownAt >= stale and tonumber(known:match("^%d+,(%d+)")) or nil
             if Believed(name, low, current, sender, channel) then
                 if not book.shared[name] then book.under[name] = known end
-                book.shared[name] = sender
+                Owned(book, name, sender)
                 Put(book, name, POINT:format(at, low, line[3], line[4], line[5], line[6]))
                 taken = taken + 1
                 lines[taken] = name .. "=" .. low .. "," .. line[3] .. ";"
@@ -654,6 +681,7 @@ function Prices.Heard(key, at, text, sender, channel)
         book.dirty = true
         Prices.Changed()
     end
+    if many then return taken, "many" end
     return taken, TooFar(sender, at, far) and "far" or nil
 end
 
@@ -670,6 +698,7 @@ function Prices.Forget(sender)
                 book.index[key], book.shared[key], book.under[key], changed = book.under[key], nil, nil, true
             end
         end
+        if sender then book.heard[sender] = nil else book.heard = {} end
         if changed then
             local shared = database and database[keys[house]]
             for at in pairs(book.told) do

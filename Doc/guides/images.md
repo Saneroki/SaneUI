@@ -42,7 +42,7 @@ Needs Python with Pillow and NumPy, and ImageMagick 7 (`magick`).
 | Compression | **DXT5** (BLP encoding 2, alpha depth 8, alpha encoding 7) | Like Blizzard's logos (`Interface/GLUES/PROMOTIONS/*-SBC-LOGO.BLP`, `Glues-CharacterSelect-Logo-BG.blp`). One byte per texel, and it stays compressed on the graphics card: a quarter of TGA. Our art has soft edges, which need DXT5's full alpha; DXT1 has only on/off alpha. |
 | Mipmaps | **The full chain, down to 1 x 1** | Like Blizzard's. A third more memory. They keep a picture clean when it is drawn at less than half its size (small screens, small UI scale). |
 | Sides | **Powers of two, at most 1024** | Mipmaps halve evenly, DXT works in blocks of 4 x 4, Blizzard's are. |
-| Name and place | `assets/optimized/<Module>/Art/<name>.blp`, lower case | Never in `src/`, which holds no pictures or sounds (`dev/tests/lint` fails on one). Not listed in the TOC: only Lua and XML are. `dev/build` puts `assets/optimized/<Module>/` together with `src/<Module>/`, so in the addon it is `Art/<name>.blp`. Committed (Git LFS), like its source in `assets/`. |
+| Name and place | `assets/optimized/<Module>/Art/<name>.blp`, sets in capitalised folders (`Art/Journal/`, `Art/Categories/`, `Art/Terrain/`) | Never in `src/`, which holds no pictures or sounds (`dev/tests/lint` fails on one). Not listed in the TOC: only Lua and XML are. `dev/build` puts `assets/optimized/<Module>/` together with `src/<Module>/`, so in the addon it is `Art/<name>.blp`. Committed (Git LFS), like its source in `assets/`. |
 
 Some sets are no drawn pictures: Navigation's terrain overview (`assets/optimized/Navigation/Art/Terrain/`), the game's own minimap
 textures made smaller, its zones' outlines (`assets/optimized/Navigation/Art/Zones/`), its stitched map of Blizzard's zone maps
@@ -193,8 +193,12 @@ it, so its size is about the memory it takes:
 | 1024 x 512 | 684 KB | 2 MB |
 | 1024 x 1024 | 1.3 MB | 4 MB |
 
-All of Sane UI's pictures together: 1.5 MB in `assets/optimized/` (from 15.3 MB of drawings). What
-ships now: one banner per options page (looked for when the options first open, drawn when its page
+`assets/optimized/` holds about 250 MB (`du -sh assets/optimized`): most of it the Atlas' test pack (`Atlas/`) and
+Navigation's map sets (`Navigation/Art/Terrain/`, `Zones/`, `Sketches/`, `Coasts/`, `Indoors/`), then Core's
+`Journal/`, caps and corners, Inventory's `Categories/`, the Nameplates', Social's, SpeedLeveling's and Tooltips' art,
+the `Fonts/` folders (Core, Lore, SpeedLeveling) and loose banners, icons, CombatText and FarMarks shapes at its root.
+What a module ships is its `assets/optimized/<Module>/Art/` (and `Fonts/`, `Sounds/`), put in with its code by
+`dev/build`; among it the two banners, Core's and Tooltips' (looked for when the options first open, drawn when its page
 is), the Tooltips module's six small TGA shapes (`assets/optimized/Tooltips/Art/`, 72 KB together, made by
 `dev/tools/tooltip-art`), and Core's two masks for round corners (`assets/optimized/Core/Art/circle.blp` and
 `circle-hole.blp`, 86 KB each, made by `dev/tools/shape-art`), read when a window first draws its plate; its rings

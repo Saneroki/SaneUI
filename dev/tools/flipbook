@@ -28,6 +28,8 @@ Writes the sheet and <sheet>.gif, a preview at the game's speed, and prints the 
 Needs Python with Pillow and NumPy.
 """
 import argparse
+import importlib.machinery
+import importlib.util
 import re
 import sys
 from pathlib import Path
@@ -35,23 +37,19 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-UNIT_PIXELS = 2160 / 768  # a UI unit on a 4K screen at UI scale 1, as in dev/tools/art
-SLACK = 0.85              # as in dev/tools/art: a side may have this share of the texels before it doubles
-LARGEST = 2048            # no side of the sheet larger
+ROOT = Path(__file__).resolve().parents[2]
+_loader = importlib.machinery.SourceFileLoader("art", str(ROOT / "dev/tools/art"))
+_spec = importlib.util.spec_from_loader("art", _loader)
+art = importlib.util.module_from_spec(_spec)
+_loader.exec_module(art)   # a frame's side, as it sizes every texture
+LARGEST = 2048            # no side of the sheet larger. A frame's side gets this as its cap, not art's 1024 of
+                          # Doc/guides/images.md: the sheet is the texture, and it is cut down to this below.
 PREVIEW = 256
 
 
 def fail(message):
     print(message, file=sys.stderr)
     sys.exit(1)
-
-
-def side(units):
-    """A frame's side for something drawn that many UI units long (as dev/tools/art's side)."""
-    size = 1
-    while size < SLACK * units * UNIT_PIXELS:
-        size *= 2
-    return size
 
 
 def grid(frames):
@@ -130,7 +128,7 @@ def main():
     opaque = args.black or args.glow
 
     columns, rows = grid(len(frames))
-    cell = side(args.drawn)
+    cell = art.side(args.drawn, LARGEST)
     while columns * cell > LARGEST and cell > 16:
         cell //= 2
     sheet = Image.new("RGBA", (columns * cell, rows * cell), (0, 0, 0, 255 if opaque else 0))

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/board on a board of its own: cards made, edited, moved before others and to a column's
-top, deleted; the log; Backlog.md as text; a ranked Markdown list read in. Run by dev/tests/run."""
+top, deleted; the log; a card's count of changes, and a change with an old count refused; Backlog.md as text; a
+ranked Markdown list read in. Run by dev/tests/run."""
 import importlib.machinery
 import importlib.util
 import json
@@ -67,6 +68,36 @@ for name, op in (("no title", {"op": "add", "title": " "}), ("bad priority", {"o
 
 text = (TEMP / "Backlog.md").read_text()
 check("Backlog.md written", "- [ ] #1 **medium** one" in text and "## In progress (2)" in text, True)
+check("Backlog.md names the page", "127.0.0.1 port 8768" in text and "/board/" in text, True)
+
+# changes counts a card's steps; the page sends the count back, and a card changed meanwhile is refused.
+with board.changing(path) as b:
+    board.apply(b, {"op": "add", "title": "counted"}, "Claude")
+    board.find(b, 4).pop("changes", None)   # a card from before the count
+b = board.read(path)
+check("changes counts a card's steps", board.find(b, 5)["changes"], 1)
+try:
+    board.apply(board.read(path), {"op": "edit", "id": 5, "title": "stale", "changes": 0}, "Saneroki")
+    check("an edit with an old count is refused", False, True)
+except ValueError as error:
+    check("an edit with an old count is refused", "changed meanwhile" in str(error), True)
+with board.changing(path) as b:
+    board.apply(b, {"op": "edit", "id": 5, "title": "fresh", "changes": 1}, "Saneroki")
+    board.apply(b, {"op": "edit", "id": 4, "notes": "old card", "changes": 0}, "Saneroki")
+    board.apply(b, {"op": "edit", "id": 5, "notes": "the command line sends no count"}, "Claude")
+b = board.read(path)
+check("an edit with the count as it is goes through, and counts", (board.find(b, 5)["title"], board.find(b, 5)["changes"]), ("fresh", 3))
+check("a card without the field counts as 0", (board.find(b, 4)["notes"], board.find(b, 4)["changes"]), ("old card", 1))
+for name, op in (("a move with an old count", {"op": "move", "id": 5, "column": "done", "changes": 2}),
+                 ("a delete with an old count", {"op": "delete", "id": 5, "changes": 2})):
+    try:
+        board.apply(board.read(path), op, "Saneroki")
+        check(name + " is refused", False, True)
+    except ValueError:
+        check(name + " is refused", True, True)
+with board.changing(path) as b:
+    board.apply(b, {"op": "delete", "id": 5, "changes": 3}, "Saneroki")
+check("a delete with the count as it is goes through", [c["id"] for c in board.read(path)["cards"]], [4, 1, 3])
 
 cards = board.parse_markdown("""# Plan
 ## High

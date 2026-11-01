@@ -10,6 +10,7 @@ UI comply (Doc/guides/blizzard-updates.md, *After a patch*).
 """
 import datetime
 from collections import Counter, defaultdict
+from pathlib import Path
 
 import compare
 import games
@@ -134,24 +135,32 @@ def notes(game, old, new, symbol_rows, file_rows, addon_rows, art_rows, folders,
 
 
 def session(game, old, new, analysis, folder, card, lookup):
-    """The brief of the session that makes Sane UI comply with the new build."""
+    """The brief of the session that makes Sane UI comply with the new build. It names no folder of this computer
+    (the reports' folder is private, and no file of Sane UI names it): the patch's folder and the lookup by their
+    names under the reports' folder, the exports by the tools that read them."""
     title = TITLE.get(game, game)
     other = "Retail" if game == "forever" else "Forever"
     sections = analysis.by_section()
+    show = ("`dev/tools/blizzard show <name>` shows one name's change with its diff (the newest export against the one "
+            "before it)." if game == "forever" else
+            "`dev/tools/blizzard show <name> <new> --old <old>` shows one name's change with its diff, given Retail's "
+            "two newest exports' code folders (`dev/tools/blizzard where` prints the newest; the one before it stands "
+            "beside it).")
+    where = (f"`{Path(lookup).name}` in the reports' folder, `symbols.tsv`; " if lookup else "")
     lines = [f"# Make Sane UI comply with {title} {shown(new)}", "",
              f"{title} was patched from {shown(old)} to {shown(new)}. Blizzard's interface code and art of the new build "
-             f"are exported (`dev/tools/blizzard where`). What changed: `notes.md` in `{folder}`; what of it reaches "
-             "Sane UI: `todo.md` there.", "",
+             "are exported, the build before it beside them (`dev/tools/blizzard where` prints the folders, the reports' "
+             f"folder among them). What changed: `notes.md` in the patch's folder, `patches/{Path(folder).name}` in the reports' "
+             "folder; what of it reaches Sane UI: `todo.md` there.", "",
              f"**Your task:** make Sane UI work with {title} {shown(new)}, and keep it working in {other}.", "",
              "1. Read `CLAUDE.md`, `.claude/rules/code.md`, `Doc/guides/blizzard-updates.md` (*After a patch*) and "
              "`Doc/guides/addon-standards.md` (*Forever and Retail*).",
              f"2. The board's card #{card} is this task: `saneui board start {card}`." if card else
              "2. Make a card for it on the board and start it.",
-             "3. Work `todo.md` from the top: Broken, Deprecated, Changed, Review, Housekeeping, ticking each. "
-             f"`dev/tools/blizzard show <name> --old {old.root}` shows one name's change with its diff.",
-             f"4. Every fix serves both games: look the name up in the Forever–Retail lookup (`{lookup}`, "
-             "`symbols.tsv`; `dev/tools/blizzard show <name> --retail`) and use what both have; where they differ, "
-             "an override, as the guide says.",
+             "3. Work `todo.md` from the top: Broken, Deprecated, Changed, Review, Housekeeping, ticking each. " + show,
+             f"4. Every fix serves both games: look the name up in the Forever–Retail lookup ({where}"
+             "`dev/tools/blizzard show <name> --retail`) and use what both have; where they differ, an override, as the "
+             "guide says.",
              "5. " + ("`dev/tools/blizzard adopt` makes the files made from Blizzard's code anew (CVarLabels, Pages); "
                       "commit them with the fixes." if game == "forever" else
                       "The files made from Blizzard's code (CVarLabels, Pages) are Forever's: nothing to adopt."),

@@ -79,6 +79,8 @@ check("a small number is one byte", walk.cbor(5), bytes([5]))
 check("a number past 23 takes a byte more", walk.cbor(200), bytes([0x18, 200]))
 check("a negative number", walk.cbor(-3), bytes([0x22]))
 check("an array of them", decode(walk.cbor([1, [70000, -1, 23]]))[0], [1, [70000, -1, 23]])
+check("the tool's own reader (walk-gates' and map-layers' too) gives the value back",
+      walk.decode(walk.cbor([1, [70000, -1, 23], []])), [1, [70000, -1, 23], []])
 
 
 # --- Made-up ground --------------------------------------------------------------------------------
@@ -788,6 +790,34 @@ check("an item's: the items of the client that cast it, no side, no reagent, now
       fields[travel.TELEPORTS + 23453], {"kind": "teleport", "spell": 23453, "name": "Gnomish Transporter",
                                          "items": [18986, 260819]})
 check("a place for a spell the client has as no teleport: left out, and why", left, [(777, "the client has it as no teleport")])
+
+# --- The staging file, the options -----------------------------------------------------------------
+
+
+def staged(key, text):
+    """A staging line as the tool writes it: a tile's key, its map and its block."""
+    return {"set": "Walking", "key": key, "game": "forever", "build": walk.BUILD, "src": "game",
+            "fields": {"map": key // (walk.GRID * walk.GRID), "links": [], "block": text}}
+
+
+with tempfile.TemporaryDirectory() as folder:
+    staging = Path(folder) / "walking.jsonl"
+    walk.save(staging, [staged(100, "a"), staged(4096 + 7, "b"), staged(4096 + 9, "c")])
+    held = walk.save(staging, [staged(101, "d")], maps={0})
+    rows = [json.loads(text) for text in staging.read_text().splitlines()]
+    check("staging: a run of one map keeps the file's lines of the other maps, its own written anew, by key",
+          ([(row["key"], row["fields"]["block"]) for row in rows], held), ([(101, "d"), (4103, "b"), (4105, "c")], 3))
+    walk.save(staging, [staged(5, "e")])
+    check("staging: a run of every map holds the file alone", [json.loads(t)["key"] for t in staging.read_text().splitlines()], [5])
+    check("staging: written through a temp file beside it, none left", sorted(p.name for p in Path(folder).iterdir()), ["walking.jsonl"])
+given = walk.options(["files", "tables"])
+check("options: the folders, three workers unless asked (a full run with ten reached the app's memory cap), MEMORY GB",
+      (given["folder"], given["tables"], given["processes"], given["memory"], walk.PROCESSES),
+      (Path("files"), Path("tables"), 3, walk.MEMORY, 3))
+given = walk.options(["files", "tables", "--processes", "5", "--memory", "10", "--maps", "1,2991", "--only", "4100"])
+check("options: --processes, --memory, --maps and --only read",
+      (given["processes"], given["memory"], given["maps"], given["only"]), (5, 10.0, {1, 2991}, {4100}))
+check("options: not the usage's", walk.options(["files"]), None)
 
 # --- The coarse layer (dev/tools/walk-gates) ----------------------------------------------------------
 gates = load("walk_gates", ROOT / "dev" / "tools" / "walk-gates")

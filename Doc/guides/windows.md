@@ -60,7 +60,7 @@ in the rest.
 | `Selection.lua` | A window chosen in Edit Mode by a click on its box, and Core's dialog in Edit Mode's look (*Reset To Default Position*). |
 | `Escape.lua` | Esc: one stand-in in the game's `UISpecialFrames` for everything of Sane UI's that Esc closes (`Core.Escape`). |
 | `Watch.lua` | `Core.Watch` (a look a few times a second, only while out and shown) and `Core.Hover` (the mouse on a window: its coming by `OnEnter`, a watch until it has gone). |
-| `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). |
+| `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). The switch *Hotcorner requires leftclick* there (`expandClick`, off at first) makes the edge strip take the left button. |
 | `Classic.lua` | The game's windows ours stand for (`classic`): the dropdown *Classic windows* with every module's, each under its name; the button *Sane UI* on each game window (a secure one clicking the game's close button on its panels), ours instead, full where the entry says. |
 | `Views.lua` | A window's views behind the game's tabs (`tabs`), the tab last chosen kept. |
 | `Holder.lua` | The game's window kept out of sight while ours is chosen, and the game's own opening and closing of it followed (section 7, *The holder*). |
@@ -372,11 +372,7 @@ Each with what is decided and what it needs; the plan has the decisions in full.
    at once, as its own code. It makes our window protected (`window:Locked()` in a fight). Today
    `native.unseen` gives it back closed, and it opens at its key's next press. With the taint log: a vendor
    (held, opened by the NPC, given back mid-talk), then the spellbook (held, its key, the switch).
-2. **Click to expand** (decided: [Windows.md](../ideas/Windows.md), *Click to expand, not hover*): the edge
-   strip takes the left button (`SetMouseClickEnabled`, `SetPassThroughButtons` for the others) when the
-   setting *Click required to expand window* is ticked (Core's section *Hotcorners*, overridden per module).
-   Today the mouse's coming alone fills the screen.
-3. **Edit Mode's layouts, Save, Revert** (decided; the plan's *Edit Mode* has the design, section 9 the
+2. **Edit Mode's layouts, Save, Revert** (decided; the plan's *Edit Mode* has the design, section 9 the
    facts; *Reset To Default Position* is built, in Core's own dialog: `Selection.lua`). In short: a place per layout, keyed `preset:<number>`,
    `account:<name>`, `character:<character>:<name>`; one hook after `EditModeManagerFrame:UpdateLayoutInfo`
    (every way to a layout passes there: login, switching, *Revert Changes*, a new or imported layout),
@@ -387,12 +383,12 @@ Each with what is decided and what it needs; the plan has the decisions in full.
    leaving Edit Mode with only our changes unsaved asks in Core's own dialog. The store then becomes
    `{ layouts = { [key] = { x, y, width, height, dock } }, full, native }`, today's shape read as the
    first layout's once.
-4. **Edit Mode for windows that are hidden outside their use** (a talk window exists only at an NPC; a panel
+3. **Edit Mode for windows that are hidden outside their use** (a talk window exists only at an NPC; a panel
    may be closed): in Edit Mode Core shows each registered window that is hidden as a preview at its kept
    place and size (its plate and title, nothing inside), so it can be moved and sized there too. Without it a
    talk window can never be sized (sizing is Edit Mode's). Previews hold no zone (invariant 7 counts shown
    windows only): two talk windows kept in the middle show there over each other.
-5. **Full screen views: a board per module** (decided, Saneroki agreed to this design 2026-10-16): one full
+4. **Full screen views: a board per module** (decided, Saneroki agreed to this design 2026-10-16): one full
    screen frame per module (background, the title bar, the dropdown, Esc), and a layout function that gives
    each of the module's windows its rectangle there. Going full screen, each window moves from its own place
    to its rectangle with the same motion (Edge's step, per window), the hidden ones (the friends list) come
@@ -402,7 +398,7 @@ Each with what is decided and what it needs; the plan has the decisions in full.
    Built on 2026-10-20 within one full window (section 7, *The board*; Saneroki asked for layouts the player
    arranges, behind tabs): Social's windows stand on it; what is still to come is the windows' own motion
    from their places (today the board comes with the full window, its panels faded in).
-6. **Opening and closing** with the game's sounds for a panel and a talk window, and the proposal of an
+5. **Opening and closing** with the game's sounds for a panel and a talk window, and the proposal of an
    opening motion (`window:Appear()`, Economy's plan; Blizzard's panels do not animate: open for Saneroki).
 
 Built since the review: the kinds (`kind`, section 2) and one window to a zone (invariant 7), 2026-10-16.

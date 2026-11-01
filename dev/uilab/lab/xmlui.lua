@@ -55,7 +55,8 @@ return function(Lab)
     -- A method as the game's XML calls it: the widget's own, never a mixin's of the same name.
     local function call(o, method, ...)
         local mt = getmetatable(o)
-        local m = mt and type(mt.__index) == "function" and mt.__index(o, method)
+        local index = mt and mt.__index
+        local m = type(index) == "table" and index[method]
         if type(m) ~= "function" then return nil end
         return m(o, ...)
     end

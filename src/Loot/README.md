@@ -89,7 +89,7 @@ rises over the world, also what was taken at once: that is how you see what you 
 - `/sane loot try` shows a roll card and the feed as they will look.
 
 ## Technical details
-- **The game's parts** (`Game.lua`): the game's loot window (`LootFrame`) no longer hears `LOOT_OPENED`, so it never
+- **The game's parts** (`Game.lua`): the game's loot window (`LootFrame`) is lent deaf to `LOOT_OPENED` (`Core.Lend`), so it never
   opens and never takes a place among the game's panels; what else it hears it still hears. The game's questions are
   its event handlers', not the window's: `LOOT_BIND_CONFIRM` (a thing that binds), `CONFIRM_LOOT_ROLL`,
   `CONFIRM_DISENCHANT_ROLL`, so taking and rolling from our parts asks as the game's would. The roll frames
@@ -99,7 +99,7 @@ rises over the world, also what was taken at once: that is how you see what you 
   writing the profile's value a moment after the login, and keeps the player's own value in the profile. What it
   was is kept in `lent` the first time too, for the next session's lend; given back only if nobody changed it
   meanwhile. Nothing of Blizzard's is written, no function replaced. Switched off or standing down
-  (`ns.GiveBack`): `LOOT_OPENED` registered again, Auto Loot as it was, the container's parent given back, ours
+  (`ns.GiveBack`): the lend returned (`LOOT_OPENED` heard again), Auto Loot as it was, the container's parent given back, ours
   closed.
 - **Reading the loot** (`Slots.lua`): `GetNumLootItems`, `GetLootSlotInfo`, `GetLootSlotType` (`Enum.LootSlotType`),
   `GetLootSlotLink`; a currency through `CurrencyContainerUtil.GetCurrencyContainerInfo` as the game's window does;
@@ -129,7 +129,7 @@ rises over the world, also what was taken at once: that is how you see what you 
   rules that took everything),
   `LOOT_SLOT_CLEARED` (the last one closes the loot), `LOOT_SLOT_CHANGED` (taken if the rules want it now),
   `LOOT_CLOSED`, `UI_ERROR_MESSAGE` with
-  `ERR_INV_FULL` (what the rules could not take shows). Hidden, it closes the loot (`CloseLoot`). Esc by
+  any refusal the game says (`UI_ERROR_MESSAGE`: what was asked for shows again at once; a full bag also stops the queue), and a slot the game left as it was comes back a moment later. Hidden, it closes the loot (`CloseLoot`). Esc by
   `Core.Escape`. The game's sounds for a container opened and a catch (`Core.Sound`).
 - **The tags under a name** (`Slots.Note`): the bind (`GetItemInfo`'s bindType: 1 BoP in `RED_FONT_COLOR`, 2 BoE, 3
   BoU and 9 WuE in `ORANGE_FONT_COLOR`, 7 and 8 BoA), Uncollected in `LIGHTBLUE_FONT_COLOR` (the game's colour for "You

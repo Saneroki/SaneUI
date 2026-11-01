@@ -319,7 +319,7 @@ end
 function ns.PageName(offset)
     if offset == 0 then return TEXT.normalRow end
     local names = ns.DB and ns.DB.pageNames[ns.class]
-    if type(names) == "table" and names[offset] then return names[offset] end
+    if type(names) == "table" and type(names[offset]) == "string" then return names[offset] end
     for page = 2, #ns.PAGES do
         if ns.PAGES[page] == offset then return TEXT.formRow:format(page - 1) end
     end

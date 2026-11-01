@@ -459,7 +459,7 @@ function Log.Restore(saved, version)
                 local value = kept[key]
                 if type(value) == "string" or type(value) == "number" then entry[key] = value end
             end
-            entry.r, entry.g, entry.b = entry.r or 1, entry.g or 1, entry.b or 1
+            entry.r, entry.g, entry.b = tonumber(entry.r) or 1, tonumber(entry.g) or 1, tonumber(entry.b) or 1
             -- What a bubble needs to be drawn (a hand edit may have taken it out, or made it a number)
             entry.time = entry.time and tostring(entry.time) or ""
             if type(entry.class) ~= "string" then entry.class = nil end

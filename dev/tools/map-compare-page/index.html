@@ -98,6 +98,7 @@
 <script src="maps.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
+const BUILT = typeof MAPS !== "undefined" && Array.isArray(MAPS) && MAPS.length > 0;   // maps.js: saneui makemapcompare
 const view = $("view"), stage = $("stage"), divider = $("divider");
 const W = 2000;   // the stage's width in its own pixels: the map's box spans it
 const LETTER = { close: "C", middle: "M", far: "F" };
@@ -109,12 +110,14 @@ const store = (key, value) => { try { localStorage.setItem(key, value); } catch 
 function place() { stage.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; clip(); }
 
 function fit() {
+  if (!map) return;
   const [n, s, w, e] = map.box, h = W * (n - s) / (w - e);
   scale = Math.min(view.clientWidth / W, view.clientHeight / h) * 0.96;
   panX = (view.clientWidth - W * scale) / 2; panY = (view.clientHeight - h * scale) / 2; place();
 }
 
 function list() {
+  if (!BUILT) return;
   const words = $("filter").value.trim().toLowerCase(), box = $("list");
   box.innerHTML = "";
   for (const [kind, heading] of [["zone", "Zones"], ["instance", "Dungeons and raids"]]) {
@@ -133,6 +136,7 @@ function list() {
 }
 
 function show(name) {
+  if (!BUILT) return;
   map = MAPS.find(m => m.name === name) || MAPS[0];
   store("map", map.name);
   $("subject").textContent = map.title;
@@ -172,6 +176,7 @@ function show(name) {
 }
 
 function draw() {
+  if (!map) return;
   const a = +$("pickA").value, b = +$("pickB").value, saved = {};
   map.layers.forEach((layer, i) => {
     saved[layer.key] = layer.value();
@@ -202,8 +207,9 @@ function mode(on) {
   draw();
 }
 
-$("count").textContent = `${MAPS.length} maps · ${MAPS.filter(m => m.levels.includes("far")).length} far, ` +
+if (BUILT) $("count").textContent = `${MAPS.length} maps · ${MAPS.filter(m => m.levels.includes("far")).length} far, ` +
   `${MAPS.filter(m => m.levels.includes("middle")).length} middle, ${MAPS.filter(m => m.levels.includes("close")).length} close`;
+else { document.title = "Finished maps: not built yet"; $("subject").textContent = $("count").textContent = "Not built yet: saneui makemapcompare"; }
 $("filter").addEventListener("input", list);
 $("modeOverlay").addEventListener("click", () => mode(false));
 $("modeSwipe").addEventListener("click", () => mode(true));
@@ -211,9 +217,9 @@ $("fit").addEventListener("click", fit); $("fit2").addEventListener("click", fit
 $("pickA").addEventListener("change", draw); $("pickB").addEventListener("change", draw);
 $("flip").addEventListener("click", () => { const a = $("pickA").value; $("pickA").value = $("pickB").value;
                                             $("pickB").value = a; draw(); });
-$("ours").addEventListener("click", () => { const top = map.layers.filter(l => l.side === "ours").pop();
+$("ours").addEventListener("click", () => { if (!map) return; const top = map.layers.filter(l => l.side === "ours").pop();
                                             map.layers.forEach(l => l.set(l === top ? 100 : 0)); });
-$("game").addEventListener("click", () => map.layers.forEach(l => l.set(l.side === "game" ? 100 : 0)));
+$("game").addEventListener("click", () => map && map.layers.forEach(l => l.set(l.side === "game" ? 100 : 0)));
 window.addEventListener("hashchange", () => show(location.hash.slice(1)));
 window.addEventListener("resize", () => map && fit());
 document.addEventListener("keydown", (ev) => {
@@ -245,6 +251,7 @@ view.addEventListener("pointerdown", (ev) => {
   if (pointers.size === 2) { const [p, q] = [...pointers.values()]; pinch = [Math.hypot(p[0] - q[0], p[1] - q[1]), scale]; drag = null; }
 });
 view.addEventListener("pointermove", (ev) => {
+  if (!map) return;
   const r = view.getBoundingClientRect(), [N, , Wst, E] = map.box, k = W / (Wst - E);
   const sx = (ev.clientX - r.left - panX) / scale, sy = (ev.clientY - r.top - panY) / scale;
   $("where").textContent = `x ${(N - sy / k).toFixed(0)}  y ${(Wst - sx / k).toFixed(0)}`;

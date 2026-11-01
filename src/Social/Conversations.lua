@@ -721,6 +721,8 @@ function Conversations.Build(holder)
     side = { body = left, label = "conversations" }
     box = Board.List(side, function(row, talk)
         Draw(row, talk)
+        if row.wired then return end -- its scripts once: the list hands its rows from one conversation to another
+        row.wired = true
         row:SetScript("OnClick", function(self, button) ns.Safe("conversations", Click, self, button) end)
         row:SetScript("OnEnter", function(self) ns.Safe("conversations", Tip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide) -- unguarded: the game's own

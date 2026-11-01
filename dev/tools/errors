@@ -15,6 +15,11 @@
 #         dev/tools/errors 30       the newest 30
 #         dev/tools/errors all      all of them (the log keeps 100)
 #         dev/tools/errors short    one line each, without the places
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then   # saneui help showerrors
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+fi
+
 set -euo pipefail
 
 wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_forever_}"

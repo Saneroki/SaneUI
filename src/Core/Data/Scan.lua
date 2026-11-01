@@ -183,7 +183,7 @@ local function Later(scan)
             scan.wanted[item], scan.asked[item] = nil, true
             C_Item.RequestLoadItemDataByID(item)
         end
-        Steps.Spend() -- the game gets a frame to take the answers in
+        Steps.Wait() -- the game gets a frame to take the answers in; the other jobs keep that frame's time
         local rows = scan.later
         scan.later = {}
         for _, index in ipairs(rows) do

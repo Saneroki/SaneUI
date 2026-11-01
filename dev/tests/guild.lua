@@ -40,7 +40,6 @@ C_ChatInfo.SendAddonMessage = function(prefix, text, channel, target)
     return answer
 end
 C_ChatInfo.InChatMessagingLockdown = function() return false end
-InCombatLockdown = function() return false end
 
 -- The guild: its roster as the game gives it, by index.
 local members = {
@@ -98,12 +97,17 @@ local skills = {
 C_SkillInfo = { GetNumSkillLines = function() return #skills end, GetSkillLineInfo = function(index) return skills[index] end }
 TRADE_SKILLS = "Professions"
 GetBindingKey = function(action) if action == "TOGGLEGUILDTAB" then return "J" end end
+-- The search box's instructions (the roster's box is made from the game's template).
+W.templates.SearchBoxTemplate = function(box) box.Instructions = W.NewWidget("FontString", nil, box) end
+-- The game's micro menu button for the guild (the secure button clicks it).
+CreateFrame("Button", "GuildMicroButton", UIParent)
 local overrides = {}
 SetOverrideBinding = function(_, _, key, command) overrides[key] = command end
 ClearOverrideBindings = function() for key in pairs(overrides) do overrides[key] = nil end end
 RAID_CLASS_COLORS = { SHAMAN = { r = 0, g = 0.44, b = 0.87 }, WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 CLASS_ICON_TCOORDS = { SHAMAN = { 0.25, 0.49, 0.25, 0.5 }, WARRIOR = { 0, 0.25, 0, 0.25 } }
 GetRealZoneText = function() return "Barrens" end
+GetPlayerInfoByGUID = function() return "Priest", "PRIEST" end
 
 -- Lists: the game's scrolling list, drawn at once whenever what it shows changes.
 local function Relay(box)
@@ -211,6 +215,21 @@ Frame(1.1)
 check(Wire.Waiting() == 3, "after a throttle the rate is halved: a second is not enough")
 for _ = 1, 10 do Frame(1) end
 check(Wire.Waiting() == 0, "and everything goes in the end")
+sent = {}
+
+-- The game refuses a message for good (no guild, the target offline): dropped, counted, and /sane data says so.
+answer = 2
+Wire.Send("T", { "to nobody", n = 1 }, "GUILD")
+Frame(1)
+check(Wire.Waiting() == 0 and Wire.refused == 1, "a message the game refused for good is dropped, and counted")
+answer = 0
+W.printed = {}
+SlashCmdList.SANEUI("data")
+local refusedSaid = false
+for _, line in ipairs(W.printed) do
+    if tostring(line):find("1 refused by the game", 1, true) then refusedSaid = true end
+end
+check(refusedSaid, "/sane data says how many the game refused since the login")
 sent = {}
 
 -- Blocks: packed, cut into parts, put together again.
@@ -445,15 +464,13 @@ roster[#roster + 1] = droopyRow
 Guild.Read()
 
 -- In a fight the roster is not read: once the fight is over, however often the game said it changed.
-InCombatLockdown = function() return true end
-W.Fire("PLAYER_REGEN_DISABLED")
+W.Combat(true)
 for _, member in ipairs(roster) do if member[1] == "Ann Brook" then member[4] = 21 end end
 W.Fire("GUILD_ROSTER_UPDATE", false)
 W.Fire("GUILD_ROSTER_UPDATE", false)
 for _ = 1, 3 do Frame(1) end
 check(Guild.Member("Ann Brook").level == 20, "in a fight the roster is not read")
-InCombatLockdown = function() return false end
-W.Fire("PLAYER_REGEN_ENABLED")
+W.Combat(false)
 Frames(3)
 check(Guild.Member("Ann Brook").level == 21, "once it is over, it is")
 -- A view that shows the roster has it asked of the game whenever the game lets again; never on a timer.
@@ -525,6 +542,14 @@ rows = Roster.Rows(Guild.Roster(), "barr", nil, false, {})
 local matched = 0
 for _, row in ipairs(rows) do if row.member then matched = matched + 1 end end
 check(matched == 2, "searched by zone: the two in the Barrens")
+for _, member in ipairs(roster) do if member[1] == "Sly Rook" then member[6] = "Barrens" end end
+Guild.Read()
+rows = Roster.Rows(Guild.Roster(), "barr", nil, false, {})
+matched = 0
+for _, row in ipairs(rows) do if row.member then matched = matched + 1 end end
+check(matched == 3, "a member moved: the search finds the roster as it is now")
+for _, member in ipairs(roster) do if member[1] == "Sly Rook" then member[6] = "Duskwood" end end
+Guild.Read()
 rows = Roster.Rows(Guild.Roster(), "", "level", true, { offline = true })
 check(rows[2].member.level >= rows[3].member.level, "sorted by level, highest first")
 check(rows[#rows].fold == "offline", "folded, the offline ones are not listed")
@@ -544,17 +569,93 @@ ns.Window.Toggle()
 Frames(3)
 check(#caught == 0, "opened without an error: " .. tostring(caught[1]))
 check(ns.Page.Frame() ~= nil, "its page is built")
+
+-- The guild's chat in the overview: each line with its time of day as the setting Units says.
+ns.Page.Choose(1, 1)
+Frames(2)
+local realDate = date
+date = function(format, at)
+    if format == "*t" then local t = realDate("*t", at) t.hour, t.min = 23, 59 return t end
+    if format == "%H:%M" then return "23:59" end
+    return realDate(format, at)
+end
+local function ChatRow(text)
+    for _, row in ipairs(W.frames) do
+        if row.element and row.element.text == text and row.cells and row.cells.time then return row end
+    end
+    return nil
+end
+W.Fire("CHAT_MSG_GUILD", "Raid at eight?", "Ann Brook", "", "", "", "", 0, 0, "", 0, 0, "Player-1-3")
+local line = ChatRow("Raid at eight?")
+check(line and line.cells.time:GetText() == "23:59", "a line of the guild's chat with its time of day: 24 hours, as the setting Units says")
+Core.general.units = "imperial"
+W.Fire("CHAT_MSG_GUILD", "Sure.", "Ann Brook", "", "", "", "", 0, 0, "", 0, 0, "Player-1-3")
+line = ChatRow("Sure.")
+check(line and line.cells.time:GetText() == "11:59 PM", "Imperial: 12 hours")
+Core.general.units = nil
+date = realDate
+-- The 12.x client may hand the line's parts out as secret values: a secret text or name makes no line (nothing of
+-- it is computed with: Core.Plain), a secret GUID still one; no error.
+local chatBox = ChatRow("Sure.")._parent
+local had = #chatBox.provider.list
+W.Fire("CHAT_MSG_GUILD", W.Secret(), "Ann Brook", "", "", "", "", 0, 0, "", 0, 0, "Player-1-3")
+W.Fire("CHAT_MSG_GUILD", "Who said that?", W.Secret(), "", "", "", "", 0, 0, "", 0, 0, "Player-1-3")
+W.Fire("CHAT_MSG_GUILD", "Who was that?", "Ann Brook", "", "", "", "", 0, 0, "", 0, 0, W.Secret())
+check(#chatBox.provider.list == had + 1 and ChatRow("Who was that?") ~= nil and ChatRow("Who said that?") == nil
+      and Core.errors["Guild: guild chat"] == nil, "a line the game hands out as secret values: none of a secret text or name, one of a secret GUID, no error")
 local escape = rawget(_G, "SaneUIEscape")
 check(escape and escape:IsShown(), "Esc closes it while it shows: Core's window keeps its own scripts on it")
 ns.Page.Choose(2, 1)
 Frames(2)
 check(#caught == 0, "the roster shown without an error: " .. tostring(caught[1]))
+-- The button The Game's Guild Window: the game's own micro menu button clicked by a secure button of ours, over the
+-- head's own, on UIParent; away in a fight (the head's own stands in), back after it; away with the view.
+local function SecureGame()
+    for _, frame in ipairs(W.frames) do
+        if frame._template and frame._template:find("SecureActionButtonTemplate", 1, true) and frame._text == ns.TEXT.gameWindow then
+            return frame
+        end
+    end
+    return nil
+end
+local secure = SecureGame()
+check(secure and secure._parent == UIParent and secure._shown, "the game's guild window: a secure button of ours on UIParent, shown with the roster")
+check(secure:GetAttribute("type") == "click" and secure:GetAttribute("clickbutton") == GuildMicroButton
+      and secure:GetAttribute("useOnKeyDown") == false, "it clicks the game's own micro menu button, on the release")
+local bed = secure._points[1] and secure._points[1][2]
+check(bed and bed._text == ns.TEXT.gameWindow and bed._template == "UIPanelButtonTemplate" and secure._points[2][2] == bed,
+    "it lies over the head's own button")
+W.Fire("PLAYER_REGEN_DISABLED") -- the game says so before it locks
+W.combat = true                 -- then the stand-in refuses every touch of the secure button
+check(not secure._shown and #secure._points == 0, "a fight begins: it goes, unanchored, before the game locks it")
+bed._scripts.OnClick(bed)
+check(ns.Page.Frame().status:GetText() == ns.TEXT.inFight, "in the fight the head's own button says so")
+-- The roster left and shown anew in the fight: the secure button is left alone (the stand-in refuses a touch, as the
+-- game does) and the module stands.
+ns.Page.Choose(1, 1)
+ns.Page.Choose(2, 1)
+Frames(2)
+check(not secure._shown and #secure._points == 0 and #caught == 0 and not ns.off
+      and Core.errors["Guild: game window"] == nil and Core.errors["Guild: view: roster"] == nil,
+    "the roster shown anew in the fight: the secure button is left alone until it is over")
+W.Combat(false)
+check(secure._shown and secure._points[1] and secure._points[1][2] == bed, "over, it is back over the head's button")
 local kept = false
 for _, retain in pairs(retained) do kept = kept or retain == true end
 check(kept, "its lists are filled anew where they were scrolled to")
+-- The window closed with the roster on show: the secure button (on UIParent, not under the window) goes with the
+-- head, whose OnHide runs under the window's; opened again, the head's OnShow under it seats the button anew.
+local headFrame = bed:GetParent()
+ns.Window.Toggle()
+local went = headFrame:IsShown() and not headFrame:IsVisible() and not secure._shown and #secure._points == 0
+ns.Window.Toggle()
+Frames(2)
+check(went and secure._shown and secure._points[1] and secure._points[1][2] == bed,
+    "the window closed, the secure button goes by the head's OnHide under it; opened again, its OnShow seats it anew")
 ns.Page.Choose(2, 2)
 Frames(2)
 check(#caught == 0, "the equipment shown without an error: " .. tostring(caught[1]))
+check(not secure._shown, "another view: the secure button is away")
 for index = 3, 8 do ns.Page.Choose(index, 1) end
 Frames(2)
 check(#caught == 0, "every tab shown without an error: " .. tostring(caught[1]))

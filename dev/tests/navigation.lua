@@ -484,23 +484,6 @@ UnitIsDeadOrGhost = function() return false end
 UnitCastingInfo = function() return nil end
 UnitChannelInfo = function() return nil end
 GetLootSourceInfo = function() return nil end
-C_Timer.NewTimer = function(delay, fn)
-    local timer = {}
-    function timer:Cancel() self.cancelled = true end
-    C_Timer.After(delay, function() if not timer.cancelled then fn(timer) end end)
-    return timer
-end
-C_Timer.NewTicker = function(every, fn)
-    local timer = {}
-    function timer:Cancel() self.cancelled = true end
-    local function Tick()
-        if timer.cancelled then return end
-        fn(timer)
-        C_Timer.After(every, Tick)
-    end
-    C_Timer.After(every, Tick)
-    return timer
-end
 -- The thing the game picked for the interact key, and its plate (Sparkles.lua).
 UnitIsGameObject = function(unit) return unit == "softinteract" and gather.soft ~= nil end
 C_NamePlate = { GetNamePlateForUnit = function(unit) if unit == "softinteract" and gather.soft then return gather.plate end end }
@@ -1140,6 +1123,12 @@ end
 local Live = ns.Live
 local lmap, lu2, _, facing = Live.Player()
 check(lmap == 1415 and near(lu2, 500) and facing == 1.5, "Live: the player, with the facing")
+-- The game hiding the facing (a secret value, in a fight): read through Core.Plain, so the player is still placed and
+-- the facing is not known, nothing computed with the secret.
+GetPlayerFacing = function() return W.Secret() end
+lmap, lu2, _, facing = Live.Player()
+check(lmap == 1415 and near(lu2, 500) and facing == nil, "Live: the facing a secret value: the player placed, the facing not known")
+GetPlayerFacing = function() return 1.5 end
 check(#Live.Group(1429) == 1 and Live.Group(1429)[1].unit == "party1", "Live: the party on a map")
 check(Live.Quests(1429)[1].questID == 7 and #Live.Quests(1415) == 0, "Live: the quests on a map")
 check(Live.Flights(1429)[1].name == "Goldshire", "Live: the flight points")
@@ -1241,6 +1230,12 @@ check(minimap._level == frame:GetFrameLevel() + Hybrid.LEVEL and minimap._strata
     and Hybrid.LEVEL > Canvas.LEVELS.art,
     "the game's minimap above the map's layers, in the canvas' layer, under our marks: set each time it is placed")
 check(minimap._mask == Hybrid.MASK, "a square view: the game's minimap square")
+-- Retail's game switches its own hybrid minimap off at a loading screen (its OnHide draws the ground again and follows
+-- the rotation) before we hear of it: ours set anew, with the view laid out again.
+ground, ignoreRotation = true, false
+W.Fire("PLAYER_ENTERING_WORLD")
+check(ground == false and ignoreRotation == true and minimap._shown and minimap._zoom == 2,
+    "the game drew its ground and followed the rotation again at a loading screen: ours set anew")
 frame._width = 240
 Canvas.Layout()
 check(minimap._width == 200 and minimap._height == 200 and near(small.k, 100 / 160) and minimap._mask == Hybrid.MASK
@@ -1506,6 +1501,23 @@ end)()
     check(cells[Satchel.TEXT.calendar] and cells[Satchel.TEXT.clock] and cells[Satchel.TEXT.stopwatch]
         and Satchel.calendar._attributes.type == "click" and Satchel.calendar._attributes.clickbutton == W.gameButton,
         "the game's calendar, clock and stopwatch; the calendar's secure button clicks the game's own")
+    -- A fight: the calendar's secure button lets go of its cell as the game tells of the fight (it says so before it locks
+    -- the frames), is left as it stands while the fight lasts (the page filled anew in it may not touch it: the game would
+    -- block that), and covers the cell again once the fight is over.
+    ;(function()
+        local calendar = Satchel.calendar
+        check(calendar._shown and calendar.cell == cells[Satchel.TEXT.calendar] and calendar._points[1][2] == calendar.cell,
+            "the calendar's secure button over its cell")
+        W.Fire("PLAYER_REGEN_DISABLED")
+        W.combat = true
+        Satchel.Fill()
+        check(not calendar._shown and calendar.cell == nil and #calendar._points == 0 and not ns.off,
+            "a fight: it let go of the cell as the game told of it; the page filled anew in the fight leaves it be")
+        W.Combat(false)
+        local _, now = Shown()
+        check(calendar._shown and calendar.cell == now[Satchel.TEXT.calendar] and calendar._points[1][2] == calendar.cell,
+            "the fight over: over its cell again")
+    end)()
     local watch = cells[Satchel.TEXT.stopwatch]
     watch._scripts.OnClick(watch, "LeftButton")
     check(game.StopwatchFrame._shown and Shown() and select(2, Shown())[Satchel.TEXT.stopwatch].tick._shown,
@@ -1776,6 +1788,20 @@ ctrl = true
 pin._scripts.OnClick(pin, "LeftButton")
 ctrl = false
 check(waypoint == nil, "Ctrl-click on it: gone")
+-- A zone the game names under the mouse but gives no world position for (no box): no place to pin, no error.
+;(function()
+    local at = C_Map.GetMapInfoAtPosition
+    C_Map.GetMapInfoAtPosition = function(map, x, y)
+        if map == 1415 then return { mapID = 9998, mapType = 3 } end
+        return at(map, x, y)
+    end
+    ctrl = true
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    ctrl = false
+    C_Map.GetMapInfoAtPosition = at
+    check(waypoint == nil and not ns.off, "Ctrl-click over a zone the game gives no world position for: no map pin, no error")
+end)()
 
 -- Right click: one map out.
 small:Show(1415, 500, -8950, 0.5)
@@ -2027,6 +2053,18 @@ check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of 
     giver, quest = Pin("npc:72"), Pin("quest:7")
     Pins.Changed("waypoint")
     check(Pin("npc:72") == giver and Pin("quest:7") ~= quest, "the arrow led elsewhere: only what the game tells read again")
+    -- The game's pins are kept in parts: the part that changed is read again, the others kept (a zone's level asks the
+    -- game for some twenty maps, several questions each).
+    local flight, rare, log = Pin("flight:2"), Pin("npc:70"), Pin("quest:7")
+    Pins.Changed("vignettes")
+    check(flight and rare and log and Pin("flight:2") == flight and Pin("quest:7") == log and Pin("npc:70") ~= rare,
+        "a rare came or went: the game's vignettes read again, its quests and flight points kept")
+    rare = Pin("npc:70")
+    Pins.Changed("flights")
+    check(Pin("flight:2") ~= flight and Pin("quest:7") == log and Pin("npc:70") == rare, "a flight point found: the flight points alone")
+    flight = Pin("flight:2")
+    Pins.Changed("zone")
+    check(Pin("flight:2") == flight and Pin("quest:7") == log and Pin("npc:70") ~= rare, "a zone entered: its vignettes alone")
     -- One more Silverleaf, 10 yards from the second, in its cell of the gather's grid: it rides with it to the gathering
     -- (not sorted nor gathered on its own), the two one marker, its tooltip counting both.
     riding = true
@@ -2496,6 +2534,15 @@ check(not rows[2].icon._shown and not rows[4].icon._shown and rows[2].left == 0
     listed[1]._scripts.OnClick(listed[1], "LeftButton")
     listed = logBox:Draw()
     check(#listed == 6 and not listed[1].row.collapsed and not ns.store.questLogFolds["Elwynn Forest"], "again: open")
+    -- The folds saved in another shape (an older version's): nothing folded, no error; the next fold makes them anew.
+    ns.store.questLogFolds = true
+    QuestLog.Refresh()
+    listed = logBox:Draw()
+    listed[1]._scripts.OnClick(listed[1], "LeftButton")
+    check(#listed == 6 and type(ns.store.questLogFolds) == "table" and ns.store.questLogFolds["Elwynn Forest"]
+        and #logBox:Draw() == 1, "the folds saved in another shape: nothing folded, no error; a click makes them anew")
+    listed = logBox:Draw()
+    listed[1]._scripts.OnClick(listed[1], "LeftButton")
     ns.store.questLogFolds = nil
 end)()
 do
@@ -2670,6 +2717,7 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
         check(button._attributes.type == "item", "in a fight the game locks what it does: nothing set")
         release(button, "LeftButton")
         check(button._attributes.type == "item", "nor after it")
+        check(#W.links == links + 1, "and the click used the item alone: no link written beside it")
         W.combat = false
         ChatFrameUtil.GetActiveWindow, W.modifier = nil, nil
     end)()
@@ -2717,6 +2765,15 @@ check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
     check(unfolded and unfolded.text._points[1][1] == "TOPRIGHT" and unfolded.text._justify == "RIGHT"
         and headed.text._points[1][1] == "BOTTOMRIGHT" and headed.text._justify == "RIGHT",
         "a quest's text right aligned too, its headings and all")
+    -- Sized with its text open (a grip dragged, a step a frame): read anew once the size rests, not at every step.
+    local refresh, refreshed = QuestLog.Refresh, 0
+    QuestLog.Refresh = function(...) refreshed = refreshed + 1 return refresh(...) end
+    local panel = logBox._parent
+    for _ = 1, 5 do panel._scripts.OnSizeChanged(panel, 300, 400) end
+    check(refreshed == 0, "sized five times with a quest's text open: not read anew at every step")
+    W.Wait(QuestLog.REFLOW)
+    check(refreshed == 1, "but once, as the size rests")
+    QuestLog.Refresh = refresh
     QuestLog.Text(nil)
     log.frame.GetCenter = nil
     log:Place()
@@ -3458,6 +3515,15 @@ end)()
     check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "ours on: gone again while it shows")
     Core.Set(ns.name, "nativeMap", false)
     check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "the game's no longer chosen: gone for good")
+    -- In Edit Mode the tracker is the game's, to be seen and placed; ours again as Edit Mode closes. (With the map
+    -- small: Edit Mode sends a window that fills the screen back to its corner.)
+    W.SmallAndBack(function()
+        EventRegistry:TriggerEvent("EditMode.Enter")
+        check(ObjectiveTrackerFrame._parent == UIParent, "Edit Mode: the game's quest tracker back, to be placed")
+        EventRegistry:TriggerEvent("EditMode.Exit")
+        check(ObjectiveTrackerFrame._parent ~= UIParent and not ObjectiveTrackerFrame._parent._shown,
+            "Edit Mode closed: out of sight again")
+    end)
     -- A click on the title bar beside its words folds the list away, and opens it again.
     do
         local line, panel, back = log.bar, box._parent, nil
@@ -3853,6 +3919,15 @@ key._scripts.OnClick(key, "minimap", false)
 check(not Window.frame._shown, "the minimap key hides our window (its release does nothing more)")
 key._scripts.OnClick(key, "minimap", true)
 check(Window.frame._shown, "and shows it again")
+-- Pressed in the middle of a drag on the map: the window hidden over the canvas, its OnHide runs as the game runs it (a
+-- parent's hide reaches its shown children), and the drag ends with it.
+frame._scripts.OnMouseDown(frame, "LeftButton")
+check(frame._scripts.OnUpdate ~= nil, "a drag begun on the map")
+key._scripts.OnClick(key, "minimap", true)
+check(not Window.frame._shown and frame._shown and frame._scripts.OnUpdate == nil,
+    "the window hidden over it: the drag ends, the canvas' OnHide run for its parent's hide")
+key._scripts.OnClick(key, "minimap", true)
+check(Window.frame._shown, "and shown again")
 -- Another way to the game's map: closed on the next frame, ours opened at its map.
 worldMap._map = 1429
 ShowUIPanel(worldMap)
@@ -3967,6 +4042,15 @@ Core.Set(ns.name, "nativeMinimap", false)
 -------------------------------------------------------------------------------
 local Walk, Search, Planner = ns.Walk, ns.Search, ns.Planner
 check(Walk.Ready() and Walk.Known(), "the walking data is there, with Core")
+-- A set file the game cannot unpack (its base64, deflate or CBOR raising): no ground there, and no error.
+;(function()
+    local decode = C_EncodingUtil.DecodeBase64
+    C_EncodingUtil.DecodeBase64 = function() error("Usage: C_EncodingUtil.DecodeBase64(text)") end
+    Walk.Forget()
+    check(Walk.Tile(3104) == nil and Walk.Unpack("x") == nil, "a tile's block the game cannot unpack: no ground there, no error")
+    C_EncodingUtil.DecodeBase64 = decode
+    Walk.Forget()
+end)()
 local hall = Walk.Tile(3104)
 check(hall and hall.count == 5 and hall.kind[4] == Walk.WATER and hall.region[5] == 7 and select(5, Walk.Rect(hall, 1)) == 40,
     "a tile unpacked: its rectangles, their kinds, regions and heights")
@@ -4150,6 +4234,24 @@ check(#shownWay.legs[1].points >= 2 and near(shownWay.legs[2].points[1].u, 600) 
     W.Wait(1)
     Planner.Update()
     Frames(8)
+end)()
+-- A target no journey reaches (a plane of its own nothing leads to): searched once, not again every Planner.AGAIN
+-- seconds while it stands; again for another target.
+;(function()
+    MAPS[777] = { kind = 2, parent = 947, continent = 77, top = 1000, bottom = -1000, left = 1000, right = -1000 }
+    local Ways = Core.Ways
+    Ways.Aim(777, 0.5, 0.5)
+    check(#Core.Steps.Jobs() == 1, "a way asked for onto a plane nothing leads to: searched")
+    Frames(8)
+    check(#Core.Steps.Jobs() == 0 and Ways.Ahead() == nil, "none found")
+    W.Wait(Planner.AGAIN + 1)
+    Ways.Ahead()
+    check(#Core.Steps.Jobs() == 0, "and not searched again while the target stands")
+    Ways.Aim(777, 0.6, 0.6)
+    check(#Core.Steps.Jobs() == 1, "another target there: searched again")
+    Frames(8)
+    Ways.Aim()
+    MAPS[777] = nil
 end)()
 -- At a flight master (TAXIMAP_OPENED) what this character has found is what the game tells then: its flight map's
 -- (Current and Reachable; Unreachable not, the game's flight map leaves those out) and every plane's, as the game's maps
@@ -5337,6 +5439,18 @@ end)()
     local there = legs[3].points[math.min(4, #legs[3].points)]
     check(back and rode and Kinds(Pin(1414, there.u + 10, there.v + 10)) == "walk",
         "after a ride on the line's lift, on its other level: a pin there is a walk; not after going back without one")
+    -- A plan made before the walking data came (Travel there, Walking not): its lifts' ends have no landing and no
+    -- floor. Ridden on such a lift, the line goes on without a floor from it, and nothing breaks.
+    local nearest = Lifts.Near
+    Stand(fu, fv)
+    legs = Pin(1414, mu, mv)
+    local bare = { {}, {}, time = 1 } -- the lift at hand, as Lifts.Near finds it: its ends without landings
+    Lifts.Near = function(...) return nearest(...) and bare or nil end
+    Wait(800, -133.33, 2)
+    Go(legs[3].points, 1, math.min(4, #legs[3].points))
+    Lifts.Near = nearest
+    check(Kinds(legs) == "walk lift walk" and legs[2].rode,
+        "ridden on a lift whose ends have no landing (a plan made before the walking data came): the line goes on, nothing breaks")
     -- The lifts on the map: a place each at its shaft on its map, a lift; its pin named so, not yet confirmed by the game.
     local onMap = {}
     for _, place in ipairs(Core.Data.Map():On(1456) or {}) do onMap[place.key] = place end
@@ -5785,7 +5899,7 @@ end)()
         list[#list + 1] = { u = pu + du, v = pv + dv, plane = plane, kind = "herb", node = herb, seen = 0, swept = 0 }
     end
     local function Marks(elapsed)
-        holder._scripts.OnUpdate(holder, elapsed or 0.016)
+        holder._scripts.OnUpdate(holder, elapsed or Glints.TICK)
         local shown = {}
         for _, widget in ipairs(W.frames) do
             if widget._parent == holder and widget._shown then shown[#shown + 1] = widget end
@@ -5850,6 +5964,17 @@ end)()
     check(holder._shown and #Marks() == 3, "on again: marked again")
     for index = #list, 1, -1 do if list[index].seen == 0 then table.remove(list, index) end end
     check(#Marks() == 0, "none found: none marked")
+    -- Nothing found at all: the frame rests (nothing asked each frame), until Found tells of one.
+    local rest = {}
+    for index = #list, 1, -1 do rest[#rest + 1] = table.remove(list, index) end
+    Marks()
+    check(not holder._shown, "nothing found: the frame at rest")
+    Add(0, 60)
+    Glints.Found()
+    check(holder._shown and #Marks() == 1, "one found (Found tells of it): running again, marked")
+    table.remove(list)
+    for index = #rest, 1, -1 do list[#list + 1] = rest[index] end
+    Marks()
     GetPlayerFacing = saved
 end)()
 

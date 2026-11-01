@@ -2,6 +2,33 @@
 -- It models only what Sane UI touches: action slots, the cursor, the spellbook, bags,
 -- timers, events, the options and "frames" that accept any widget call.
 -- Used by the tests next to it (core.lua, spellbook.lua, tooltips.lua, social.lua). Not part of the addon.
+--
+-- What it does of the game that a test may lean on:
+--   timers: C_Timer.After, NewTimer and NewTicker as the game has them (callback(ticker), Cancel, IsCancelled,
+--     Invoke, iterations), run by W.Wait; every ticker and timer made is in W.tickers, in order;
+--   events: a frame hears an event from its RegisterEvent on, in the order of registering, never one in flight
+--     when it registered; OnShow and OnHide run when a frame starts or stops being seen, its children with it
+--     (those seen as the walk starts: one shown meanwhile had its own); a point anchored again replaces its anchor;
+--   methods: a widget answers its kind's methods and, the game's frame API being wider than what is modelled here,
+--     any other PascalCase name as a call that does nothing; hooksecurefunc hooks what that one lookup gives and
+--     errors on what it does not (a nil global, a lower-case name, what the kind lacks); W.Methods(widget, own)
+--     gives a widget a mixin's methods and, by false, the names it lacks (nil then, as in the game, and refused);
+--     a StatusBar keeps its value and bounds as given (SetValue, GetValue, SetMinMaxValues, GetMinMaxValues);
+--   W.Secret(value): a secret value as the 12.x client hands them out: a userdata that errors on arithmetic,
+--     comparison, #, indexing and calling, and gives another secret when concatenated; issecretvalue and
+--     canaccessvalue know it. Not modelled: a boolean test (if secret then), a secret as a table key, and == or ~=
+--     of one against a value of another type (Lua 5.1 asks __eq of two userdata only) all pass here, where the
+--     game errors; and type() says "userdata" of it, where the game's secret number says "number", so only
+--     issecretvalue (Core.Plain) tells a secret apart in both;
+--   W.Combat(on): in and out of combat with the game's events, in the game's order: PLAYER_REGEN_DISABLED fires
+--     before the lock (W.combat), its handlers' last chance at a protected frame; the lock ends before
+--     PLAYER_REGEN_ENABLED. While W.combat, Show, Hide, SetParent, SetAttribute and the anchoring and sizing calls
+--     (SetPoint, SetAllPoints, ClearAllPoints, SetWidth, SetHeight, SetSize, SetScale) on a protected frame error
+--     as the game blocks them (ADDON_ACTION_BLOCKED): one made from a Secure... template or marked _protected by
+--     the test and, as in the game, every frame such a frame stands under (IsProtected answers both: protected,
+--     explicitly so); a test that only sets W.combat = true gets the same, a frame that is not protected is never
+--     blocked, and W.AsGame(fn) runs fn as the game's own secure code, the block lifted and W.combat kept;
+--   W.SelfCheck(): the stand-in's own doors tried; Core.Plain and Core.Ask on a secret too when Core is loaded.
 
 local W = {}
 
@@ -24,6 +51,7 @@ W.level = 1
 W.printed = {}
 W.frames = {}
 W.timers = {}
+W.tickers = {}            -- every ticker and timer made (C_Timer.NewTicker, NewTimer), in order
 W.popups = {}
 W.menus = {}
 W.links = {}              -- what was sent to the chat line
@@ -225,18 +253,35 @@ local LACKS = {
 }
 local function NewWidget(kind, name, parent)
     local widget = { _kind = kind, _name = name, _parent = parent, _shown = true, _scripts = {}, _events = {},
-                     _points = {}, _width = 0, _height = 0, _alpha = 1 }
+                     _points = {}, _width = 0, _height = 0, _alpha = 1, _children = {} }
     local lacks = LACKS[kind]
-    setmetatable(widget, { __index = function(_, key)
+    setmetatable(widget, { __index = function(self, key)
         if lacks and lacks[key] then return nil end
+        local own = rawget(self, "_lacks") -- what the test declared this one lacks (W.Methods)
+        if own and own[key] then return nil end
         if methods[key] then return methods[key] end
         if type(key) == "string" and key:match("^%u") then return function() end end
         return nil
     end })
+    if type(parent) == "table" and rawget(parent, "_children") then parent._children[#parent._children + 1] = widget end
     W.frames[#W.frames + 1] = widget
     return widget
 end
 W.NewWidget = NewWidget
+
+-- What a widget has of its own beyond its kind's, as the game's Mixin gives a frame a mixin's methods
+-- (MainActionBarMixin's UpdateDividers), and what it lacks (false): nil from the widget then, as the game's frame
+-- answers a method it has not, never the catch-all, and hooksecurefunc refuses it; so a test's frames carry
+-- exactly the game's methods where a module probes for them.
+--     W.Methods(MainActionBar, { UpdateDividers = function() end, Update = false, UpdateState = false })
+function W.Methods(widget, own)
+    local lacks = rawget(widget, "_lacks") or {}
+    rawset(widget, "_lacks", lacks)
+    for name, fn in pairs(own) do
+        lacks[name] = fn == false or nil
+        rawset(widget, name, fn ~= false and fn or nil)
+    end
+end
 
 -- The parts of the game's templates the addon reaches for.
 W.templates.UICheckButtonTemplate = function(widget) widget.Text = NewWidget("FontString", nil, widget) end
@@ -276,8 +321,16 @@ function methods:HookScript(name, fn)
         fn(...)
     end
 end
+-- Who hears an event: W.listeners[event], the frames in the order they registered, as the game delivers it.
+W.listeners = {}
 function methods:RegisterEvent(event)
     if event == "NOT_A_REAL_EVENT" or W.hiddenEvents[event] then error("unknown event") end
+    local list = W.listeners[event] or {}
+    W.listeners[event] = list
+    for _, known in ipairs(list) do
+        if known == self then self._events[event] = true return end
+    end
+    list[#list + 1] = self
     self._events[event] = true
 end
 function methods:RegisterUnitEvent(event, ...)
@@ -288,19 +341,115 @@ end
 function methods:UnregisterEvent(event)
     self._events[event] = nil
     if self._units then self._units[event] = nil end
+    local list = W.listeners[event]
+    if list then
+        for index = #list, 1, -1 do if list[index] == self then table.remove(list, index) end end
+    end
+end
+function methods:UnregisterAllEvents()
+    for event in pairs(self._events) do self:UnregisterEvent(event) end
 end
 function methods:IsEventRegistered(event)
     return self._events[event] == true, unpack(self._units and self._units[event] or {})
 end
+-- Combat: a protected frame cannot be shown, hidden, re-parented, given an attribute, anchored or sized while
+-- W.combat, as the game blocks it (ADDON_ACTION_BLOCKED): here an error, so a test sees the call the game would
+-- refuse. Protected explicitly: made from a Secure... template, or marked _protected by the test; and, as in the
+-- game, every frame such a frame stands under, since hiding or moving it would hide or move the protected one
+-- (IsProtected answers both, as the game's does: protected, explicitly so).
+local function Explicit(widget)
+    local template = rawget(widget, "_template")
+    return rawget(widget, "_protected") == true or (type(template) == "string" and ("," .. template):match(",%s*Secure") ~= nil)
+end
+local function Protected(widget)
+    if Explicit(widget) then return true, true end
+    for _, child in ipairs(rawget(widget, "_children") or {}) do
+        if Protected(child) then return true, false end
+    end
+    return false, false
+end
+-- The game's own secure code in a fight (a key that opens the spellbook, the unit watch): fn runs with the block
+-- lifted while W.combat and InCombatLockdown() stay true. The frame scripts it sets off (OnShow, OnHide) run under
+-- the block again, as the game runs an addon's hooks of them; a script that stands for the game's own wraps its
+-- touch in W.AsGame itself.
+function W.AsGame(fn, ...)
+    local lifted = W.lifted
+    W.lifted = true
+    local function done(ok, ...)
+        W.lifted = lifted
+        if not ok then error((...), 0) end
+        return ...
+    end
+    return done(pcall(fn, ...))
+end
+local function Blocked(widget, method)
+    if W.combat and not W.lifted and Protected(widget) then
+        error(("ADDON_ACTION_BLOCKED: %s() on a protected frame in combat"):format(method), 3)
+    end
+end
+-- In the game's order: it tells of the fight before it locks protected frames, so a handler of
+-- PLAYER_REGEN_DISABLED has its last chance at one (InCombatLockdown() false there); the lock ends before it tells
+-- of the fight's end, so a handler of PLAYER_REGEN_ENABLED is free again.
+function W.Combat(on)
+    if on then
+        W.Fire("PLAYER_REGEN_DISABLED")
+        W.combat = true
+    else
+        W.combat = false
+        W.Fire("PLAYER_REGEN_ENABLED")
+    end
+end
+function methods:IsProtected() return Protected(self) end
+function methods:SetAttribute(name, value)
+    Blocked(self, "SetAttribute")
+    self._attributes = self._attributes or {}
+    self._attributes[name] = value
+end
+function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
+
+-- Shown and hidden: OnShow and OnHide reach every frame that starts or stops being seen, a parent's shown
+-- children with it, as the game runs them (dev/uilab/lab/frames.lua does the same): nothing for a frame shown
+-- under a hidden parent.
+-- The frame itself first, whatever its own state says (hidden already, in OnHide: IsShown() is false there, as
+-- in the game), then the children shown as the walk started and still shown: one a script shows meanwhile had
+-- its OnShow from its own Show (the parent seen by then), once, as in the game.
+-- A script runs under the block of a fight even inside W.AsGame: it is the addon's hook, which the game runs
+-- insecure however secure the call that set it off.
+local function Walk(widget, script)
+    local shown = {}
+    for index, child in ipairs(widget._children) do shown[index] = child._shown and child or false end
+    local fn = widget._scripts[script]
+    if fn then
+        local lifted = W.lifted
+        W.lifted = nil
+        fn(widget)
+        W.lifted = lifted
+    end
+    for _, child in ipairs(shown) do
+        if child and child._shown then Walk(child, script) end
+    end
+end
+local function ShownChanged(widget, wasVisible)
+    local now = widget:IsVisible()
+    if now and not wasVisible then
+        Walk(widget, "OnShow")
+    elseif wasVisible and not now then
+        Walk(widget, "OnHide")
+    end
+end
 function methods:Show()
-    local was = self._shown
+    Blocked(self, "Show")
+    if self._shown then return end
+    local was = self:IsVisible()
     self._shown = true
-    if not was and self._scripts.OnShow then self._scripts.OnShow(self) end
+    ShownChanged(self, was)
 end
 function methods:Hide()
-    local was = self._shown
+    Blocked(self, "Hide")
+    if not self._shown then return end
+    local was = self:IsVisible()
     self._shown = false
-    if was and self._scripts.OnHide then self._scripts.OnHide(self) end
+    ShownChanged(self, was)
 end
 function methods:SetShown(shown) if shown then self:Show() else self:Hide() end end
 function methods:IsShown() return self._shown end
@@ -336,29 +485,54 @@ function methods:SetAtlas(atlas) self._atlas = atlas end
 function methods:SetChecked(checked) self._checked = checked end
 function methods:GetChecked() return self._checked end
 function methods:GetParent() return self._parent end
-function methods:SetParent(parent) self._parent = parent end
-function methods:ClearAllPoints() self._points = {} end
-function methods:SetPoint(point, relativeTo, relativePoint, x, y)
-    if type(relativeTo) == "number" then relativeTo, relativePoint, x, y = nil, nil, relativeTo, relativePoint end
-    self._points[#self._points + 1] = { point, relativeTo, relativePoint or point, x or 0, y or 0 }
+function methods:SetParent(parent)
+    Blocked(self, "SetParent")
+    local was = self:IsVisible()
+    local old = self._parent
+    if type(old) == "table" and rawget(old, "_children") then
+        local list = old._children
+        for index = #list, 1, -1 do if list[index] == self then table.remove(list, index) end end
+    end
+    self._parent = parent
+    if type(parent) == "table" and rawget(parent, "_children") then parent._children[#parent._children + 1] = self end
+    ShownChanged(self, was)
 end
-function methods:SetAllPoints(other) self._points = { { "TOPLEFT", other, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", other, "BOTTOMRIGHT", 0, 0 } } end
+function methods:ClearAllPoints() Blocked(self, "ClearAllPoints") self._points = {} end
+function methods:SetPoint(point, relativeTo, relativePoint, x, y)
+    Blocked(self, "SetPoint")
+    if type(relativeTo) == "number" then relativeTo, relativePoint, x, y = nil, nil, relativeTo, relativePoint end
+    local entry = { point, relativeTo, relativePoint or point, x or 0, y or 0 }
+    -- a point anchored again replaces its anchor, as in the game: one anchor a point
+    for index, known in ipairs(self._points) do
+        if known[1] == point then self._points[index] = entry return end
+    end
+    self._points[#self._points + 1] = entry
+end
+function methods:SetAllPoints(other)
+    Blocked(self, "SetAllPoints")
+    self._points = { { "TOPLEFT", other, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", other, "BOTTOMRIGHT", 0, 0 } }
+end
 function methods:GetPoint(index)
     local point = self._points[index or 1]
     if point then return point[1], point[2], point[3], point[4], point[5] end
 end
 function methods:GetNumPoints() return #self._points end
-function methods:SetWidth(width) self._width = width end
-function methods:SetScale(scale) self._scale = scale end
+function methods:SetWidth(width) Blocked(self, "SetWidth") self._width = width end
+function methods:SetScale(scale) Blocked(self, "SetScale") self._scale = scale end
 function methods:GetObjectType() return self._kind end
 function methods:GetScale() return self._scale or 1 end
 function methods:GetSize() return self._width, self._height end
 function methods:GetWidth() return self._width end
-function methods:SetHeight(height) self._height = height end
+function methods:SetHeight(height) Blocked(self, "SetHeight") self._height = height end
 function methods:GetHeight() return self._height end
-function methods:SetSize(width, height) self._width, self._height = width, height end
+function methods:SetSize(width, height) Blocked(self, "SetSize") self._width, self._height = width, height end
 function methods:SetAlpha(alpha) self._alpha = alpha end
 function methods:GetAlpha() return self._alpha end
+-- A bar's value and bounds, kept as given (a secret too), for a test to see what the bar was handed.
+function methods:SetMinMaxValues(low, high) self._min, self._max = low, high end
+function methods:GetMinMaxValues() return self._min or 0, self._max or 0 end
+function methods:SetValue(value) self._value = value end
+function methods:GetValue() return self._value or 0 end
 function methods:SetTextColor(r, g, b) self._color = { r, g, b } end
 function methods:GetTextColor()
     local color = self._color or { 1, 1, 1 }
@@ -371,8 +545,14 @@ function methods:AddLine(text) self._lines = self._lines or {}; self._lines[#sel
 function methods:GetEffectiveScale() return 1 end
 function methods:GetFrameLevel() return 1 end
 
+-- Fires an event to the frames registered for it when it fires (a copy of the list: a frame a handler registers
+-- hears the next one, as in the game), each one still registered when its turn comes.
 function W.Fire(event, ...)
-    for _, widget in ipairs(W.frames) do
+    local list = W.listeners[event]
+    if not list then return end
+    local heard = {}
+    for index, widget in ipairs(list) do heard[index] = widget end
+    for _, widget in ipairs(heard) do
         local only = widget._units and widget._units[event]
         local wanted = not only or #only == 0
         if only then
@@ -400,6 +580,25 @@ function W.Wait(seconds)
         nextTimer.fn()
     end
     W.clock = target
+end
+
+-- Secret values: what the 12.x client hides from addons (health, auras, cooldowns in combat). A userdata that
+-- errors wherever the game's secret does (arithmetic, comparison, #, indexing, calling) and gives another secret
+-- when concatenated, as the game does; issecretvalue and canaccessvalue (W.Install) know it by this table.
+-- Not modelled: a boolean test of one and one as a table key, which the game refuses and plain Lua allows.
+local secrets = setmetatable({}, { __mode = "k" })
+W.secrets = secrets
+function W.Secret()
+    local proxy = newproxy(true)
+    local mt = getmetatable(proxy)
+    local function refused() error("secret value", 2) end
+    for _, event in ipairs({ "__add", "__sub", "__mul", "__div", "__mod", "__pow", "__unm", "__len", "__lt", "__le",
+                             "__index", "__newindex", "__call" }) do
+        mt[event] = refused
+    end
+    mt.__concat = function() return W.Secret() end
+    secrets[proxy] = true
+    return proxy
 end
 
 local function SlotChanged(slot)
@@ -510,7 +709,32 @@ function W.Install(env)
         io.stderr:write(debug.traceback("an event handler raised an error: " .. tostring(message), 2) .. "\n")
         os.exit(1)
     end
-    env.C_Timer = { After = function(delay, fn) W.timers[#W.timers + 1] = { at = W.clock + delay, fn = fn } end }
+    -- Timers, as the game's C_Timer has them: After runs fn once; NewTicker calls callback(ticker) every duration,
+    -- iterations times (for ever without), until ticker:Cancel(), in its callback too; NewTimer is a ticker of one
+    -- iteration. Every ticker made is in W.tickers, in order, for a test to reach.
+    local function After(delay, fn) W.timers[#W.timers + 1] = { at = W.clock + delay, fn = fn } end
+    local Ticker = {}
+    Ticker.__index = Ticker
+    function Ticker:Cancel() self._cancelled = true end
+    function Ticker:IsCancelled() return self._cancelled end
+    function Ticker:Invoke() self._callback() end
+    local function NewTicker(duration, callback, iterations)
+        local ticker = setmetatable({ _remaining = iterations, _cancelled = false }, Ticker)
+        ticker._callback = function()
+            if ticker._cancelled then return end
+            callback(ticker)
+            if ticker._cancelled then return end
+            if ticker._remaining then ticker._remaining = ticker._remaining - 1 end
+            if not ticker._remaining or ticker._remaining > 0 then After(duration, ticker._callback) end
+        end
+        After(duration, ticker._callback)
+        W.tickers[#W.tickers + 1] = ticker
+        return ticker
+    end
+    env.C_Timer = { After = After, NewTicker = NewTicker,
+                    NewTimer = function(duration, callback) return NewTicker(duration, callback, 1) end }
+    env.issecretvalue = function(value) return secrets[value] == true end
+    env.canaccessvalue = function(value) return secrets[value] == nil end
     env.CreateFrame = function(kind, name, parent, template)
         local widget = NewWidget(kind, name, parent)
         if name then env[name] = widget end
@@ -574,12 +798,19 @@ function W.Install(env)
     env.tinsert = table.insert
     env.ButtonFrameTemplate_HidePortrait = function(frame) frame._noPortrait = true end
     env.InputScrollFrame_SetInstructions = function(scroll, text) scroll.EditBox.Instructions:SetText(text) end
+    -- hooksecurefunc(name, fn) or hooksecurefunc(table, name, fn): a function that is not there is an error at
+    -- once, as in the game (a global that is nil, a method the widget lacks), not when it is called. A widget's
+    -- method is what the one lookup a module's probe of the name makes gives (its kind's, the catch-all of any
+    -- other PascalCase name, nil for what it lacks: LACKS, W.Methods), so the two doors answer alike; it is hooked
+    -- on the frame, as the game does.
     env.hooksecurefunc = function(a, b, c)
         local owner, name, hook = env, a, b
         if type(a) == "table" then owner, name, hook = a, b, c end
         local original = rawget(owner, name)
-        -- A frame's own method (Show, Hide) comes from its kind's: hooked on the frame, as the game does.
         if original == nil and owner ~= env then original = owner[name] end
+        if type(original) ~= "function" then
+            error(("hooksecurefunc(): %s is not a function"):format(tostring(name)), 2)
+        end
         rawset(owner, name, function(...)
             local results = { original(...) }
             hook(...)
@@ -1035,6 +1266,83 @@ function W.Install(env)
         if optional[key] or W.hidden[key] or (type(key) == "string" and key:match("Button%d+$")) then return nil end
         error("the addon read an undefined global: " .. tostring(key), 2)
     end })
+end
+
+-- The stand-in's own doors tried: a secret value, a ticker (W.Wait moves the clock five seconds: call it before a
+-- test's own timers matter), a protected frame in combat (W.combat set and cleared; the fight's events fired to a
+-- frame of its own only), a widget's methods, a bar's value, the walk of OnShow; and Core.Plain and Core.Ask on a
+-- secret when Core is loaded. The first thing wrong is an error.
+function W.SelfCheck(env)
+    env = env or _G
+    local secret = W.Secret()
+    assert(env.issecretvalue(secret) and not env.canaccessvalue(secret) and not env.issecretvalue(1) and env.canaccessvalue(1),
+        "issecretvalue and canaccessvalue know a secret")
+    assert(not pcall(function() return secret + 1 end) and not pcall(function() return secret < 2 end)
+        and not pcall(function() return #secret end) and not pcall(function() return secret.x end)
+        and not pcall(function() secret() end), "a secret errors in arithmetic, a comparison, #, indexing, a call")
+    local ok, joined = pcall(function() return "hp " .. secret end)
+    assert(ok and env.issecretvalue(joined), "concatenated: another secret")
+    local ticks = 0
+    local ticker = env.C_Timer.NewTicker(1, function(t) ticks = ticks + 1; if ticks == 2 then t:Cancel() end end)
+    local once = 0
+    env.C_Timer.NewTimer(1, function() once = once + 1 end)
+    W.Wait(5)
+    assert(ticks == 2 and once == 1 and ticker:IsCancelled() and W.tickers[#W.tickers - 1] == ticker,
+        "a ticker runs until cancelled, a timer once, both in W.tickers")
+    local holder = env.CreateFrame("Frame", nil, env.UIParent)
+    local button = env.CreateFrame("Button", nil, holder, "SecureActionButtonTemplate")
+    local plain = env.CreateFrame("Frame", nil, env.UIParent)
+    local combat = W.combat
+    W.combat = true
+    assert(not pcall(button.Hide, button) and pcall(plain.Hide, plain) and button:IsProtected() and not plain:IsProtected(),
+        "in combat a protected frame refuses, a plain one does not")
+    local protected, explicitly = holder:IsProtected()
+    assert(protected and not explicitly and select(2, button:IsProtected()) and not pcall(holder.SetWidth, holder, 1)
+        and pcall(plain.SetWidth, plain, 1), "a frame holding a protected one is protected too, not explicitly, and refuses a size")
+    local lockedInside
+    W.AsGame(function() holder:Hide(); lockedInside = env.InCombatLockdown() end)
+    assert(not holder:IsShown() and lockedInside and not W.lifted, "the game's own code hides it in the fight, the lock on")
+    W.combat = combat
+    local listeners, told = W.listeners, {}
+    W.listeners = {}
+    local ear = env.CreateFrame("Frame")
+    ear:RegisterEvent("PLAYER_REGEN_DISABLED")
+    ear:RegisterEvent("PLAYER_REGEN_ENABLED")
+    ear:SetScript("OnEvent", function(_, event) told[event] = env.InCombatLockdown() end)
+    W.Combat(true)
+    local locked = W.combat
+    W.Combat(false)
+    W.listeners, W.combat = listeners, combat
+    assert(told.PLAYER_REGEN_DISABLED == false and locked and told.PLAYER_REGEN_ENABLED == false,
+        "the fight is told before the lock, its end after the lock is gone")
+    local own, hooked = env.CreateFrame("Frame"), {}
+    W.Methods(own, { Own = function() hooked[#hooked + 1] = "own" end, Lacking = false })
+    env.hooksecurefunc(own, "Own", function() hooked[#hooked + 1] = "hook" end)
+    env.hooksecurefunc(own, "Other", function() hooked[#hooked + 1] = "other" end)
+    own:Own()
+    own:Other()
+    assert(own.Lacking == nil and not pcall(env.hooksecurefunc, own, "Lacking", print) and type(own.Other) == "function"
+        and table.concat(hooked, " ") == "own hook other", "a declared method and the catch-all are hooked, a lack is nil and refused")
+    local bar = env.CreateFrame("StatusBar")
+    bar:SetMinMaxValues(0, 10)
+    bar:SetValue(secret)
+    assert(env.issecretvalue(bar:GetValue()) and select(2, bar:GetMinMaxValues()) == 10, "a bar keeps what it was given")
+    local parent = env.CreateFrame("Frame")
+    local first, second = env.CreateFrame("Frame", nil, parent), env.CreateFrame("Frame", nil, parent)
+    local shows = 0
+    second:Hide()
+    second:SetScript("OnShow", function() shows = shows + 1 end)
+    first:SetScript("OnShow", function() second:Show() end)
+    parent:Hide()
+    parent:Show()
+    assert(shows == 1, "a frame shown by its sibling's OnShow has its own once")
+    local sane = rawget(env, "SaneUI")
+    if sane and sane.Core and sane.Core.Plain then
+        assert(sane.Core.Plain(secret) == nil and sane.Core.Plain(1) == 1, "Core.Plain hides a secret")
+        local first, second = sane.Core.Ask(function() return secret, 2 end)
+        assert(first == nil and second == 2, "Core.Ask answers nil for a secret, the plain answers beside it")
+    end
+    return true
 end
 
 return W

@@ -325,10 +325,3 @@ function Items.Counts(sections)
     end
     return counts
 end
-
--- For the tests: the records made so far are forgotten (the game learned more).
-function Items.Forget(item)
-    if item then records[item] = nil else
-        for key in pairs(records) do records[key] = nil end
-    end
-end

@@ -9,17 +9,20 @@ local Core = SaneUI.Core
 --      have   a scan was kept: one message on the guild and the group: this house, this time
 --      want   a member with nothing as new answers on that channel after a moment; the others hear it and stay quiet
 --      blocks only then, on that channel: what moved in that scan. With nobody asking, one message is all there is
---      ask    a minute after the login: who has a newer scan of this house? The one who answers offers it whole
+--      ask    a minute after the login: who has a newer scan of this house? The one who answers offers it whole, once
+--             in Relay.QUIET per house; an account asks once in Relay.QUIET too, however often it reloads
 --
 --  One transfer per house in Relay.QUIET seconds, whatever the guild's size, and only the guild, the party and the
 --  raid: never a whisper, where the server would not stand for the sender. A received text is read, never run, and
 --  fills in only where this account's point is older (Prices.Heard). What came from others is not passed on. The
 --  switch Share data with my guild and group turns all of it off, sending and taking.
 --
---  No message is trusted (Doc/ideas/Data.md, *Poisoning*). A block off its shape, a scan from the future, two scans sooner
---  than the server allows, or a scan full of far-off prices earns a strike; Relay.STRIKES of them and the sender is not
---  heard for Relay.IGNORED seconds, and what it sent is taken out again. Strikes are kept on this computer only, by the
---  sender's whole name. Relay.ForgetAll (a button on the page General, /sane data forget) takes out what all members sent.
+--  No message is trusted (Doc/ideas/Data.md, *Poisoning*). A message or block off its shape (a time that is no number,
+--  a block with no lines), a scan or an offer from the future, two scans sooner than the server allows, a scan full of
+--  far-off prices, more lines or keys than a member can have (Prices.Heard), or a second ask within Relay.QUIET earns a
+--  strike; Relay.STRIKES of them and the sender is not heard for Relay.IGNORED seconds, and what it sent is taken out
+--  again. A house this account does not know is passed over without a word. Strikes are kept on this computer only, by
+--  the sender's whole name. Relay.ForgetAll (a button on the page General, /sane data forget) takes out what all members sent.
 -------------------------------------------------------------------------------
 local Data, Wire = Core.Data, Core.Wire
 local Prices = Data.Series("Prices")
@@ -43,7 +46,10 @@ local offer             -- this account's scan on offer: { house, at, lines, cha
 local transfers = {}    -- [house] = the newest scan a member offered or sent
 local taken = {}        -- [house] = the newest scan taken from a member
 local asking = {}       -- [house] = the scan this account is about to want
+local offered = {}      -- [house] = when this account last offered its scan whole, to a member who asked
+local asks = {}         -- [sender] = when it last asked
 local sent = {}         -- [sender] = the time of its last scan heard
+local saved             -- this account's part of SaneUIData_Market: the strikes, and when it asked last (asked[house])
 local strikes           -- [sender] = { count, till }, in the saved file: this computer's alone
 Relay.heard = { items = 0 } -- what members told: for /sane data
 
@@ -66,6 +72,11 @@ end
 
 local function Now()
     return Core.Ask(rawget(_G, "GetServerTime")) or 0
+end
+
+-- A time in a message: digits only, so never NaN, a fraction or a sign (tonumber takes "nan" and "2.5").
+local function Whole(text)
+    return type(text) == "string" and text:match("^%d+$") and tonumber(text) or nil
 end
 
 -- Whether a sender is not heard now.
@@ -162,40 +173,52 @@ local function Offered(house, at, channel)
     end, math.random() * Relay.WAIT)()
 end
 
--- A member who just logged in asks: the one with the newest scan offers it, the others hear that and stay quiet.
-local function Asked(house, since)
+-- A member who just logged in asks: the one with the newest scan offers it, the others hear that and stay quiet. A house
+-- is offered whole once in Relay.QUIET, whoever asks (a whole scan is minutes of messages); a member that asks again
+-- within Relay.QUIET earns a strike.
+local function Asked(sender, house, since)
+    local now = Now()
+    if asks[sender] and now - asks[sender] < Relay.QUIET then return Strike(sender) end
+    asks[sender] = now
     local kept = Prices.Kept(house)
-    if not kept or kept <= since then return end
+    if not kept or kept <= since or now - (offered[house] or 0) < Relay.QUIET then return end
     Core.Later(function()
-        if (transfers[house] or 0) >= kept then return end
+        if (transfers[house] or 0) >= kept or Now() - (offered[house] or 0) < Relay.QUIET then return end
         local at, lines = Prices.Lines(house, since)
-        if at then Relay.Offer(house, at, lines) end
+        if at then
+            offered[house] = Now()
+            Relay.Offer(house, at, lines)
+        end
     end, 1 + math.random())()
 end
 
+-- A message: a time that is no number, or further ahead than Relay.AHEAD, is a strike (an offer from the future would
+-- keep every member's scans of that house to itself); a house this account does not know is passed over.
 function Relay.Told(sender, fields, channel)
     if channel == "WHISPER" or not Data.Sharing() or Ignored(sender) then return end
-    local what, house, at = fields[1], fields[2], tonumber(fields[3])
-    if not (house and at) then return end
+    local what, house, at = fields[1], fields[2], Whole(fields[3])
+    if not (house and at) or at > Now() + Relay.AHEAD then return Strike(sender) end
+    if not Prices.Kept(house) then return end
     if what == "have" then
         Offered(house, at, channel)
     elseif what == "want" then
         if asking[house] == at then asking[house] = nil end
         if offer and offer.house == house and offer.at == at then Serve(channel) end
     elseif what == "ask" then
-        Asked(house, at)
+        Asked(sender, house, at)
     end
 end
 
--- A block whole: "house\nat\nlines".
+-- A block whole: "house\nat\nlines". One with no lines is no block (Blocks closes none without): a strike, before the
+-- house's transfer moves.
 function Relay.Block(sender, text, channel)
     if channel == "WHISPER" or not Data.Sharing() or Ignored(sender) then return end
-    local house, at, lines = text:match("^([^\n]+)\n(%d+)\n(.*)$")
+    local house, at, lines = text:match("^([^\n]+)\n(%d+)\n(.+)$")
     if not house then return Strike(sender) end
     at = tonumber(at)
     local now = Now()
     if at > now + Relay.AHEAD then return Strike(sender) end
-    if at < now - Relay.OLD then return end
+    if at < now - Relay.OLD or not Prices.Kept(house) then return end
     if sent[sender] and sent[sender] ~= at and math.abs(sent[sender] - at) < Relay.SOONEST then return Strike(sender) end
     sent[sender] = at
     transfers[house] = math.max(transfers[house] or 0, at)
@@ -215,12 +238,17 @@ function Relay.ForgetAll()
     Core.Print(Relay.TEXT.forgotten)
 end
 
--- A minute after the login: who has a newer scan of the house of this player's side?
+-- A minute after the login: who has a newer scan of the house of this player's side? Once in Relay.QUIET, whatever
+-- reloads come between (kept in the saved file): the answer came, or is coming, and the members strike a second ask.
 local function Ask()
-    if not Data.Sharing() then return end
+    if not (saved and Data.Sharing()) then return end
     local home = Prices.House("player")
     local house = home and Prices.Key(home)
     if not house or transfers[house] then return end
+    local now = Now()
+    if type(saved.asked) ~= "table" then saved.asked = {} end
+    if now - (tonumber(saved.asked[house]) or 0) < Relay.QUIET then return end
+    saved.asked[house] = now
     for _, channel in ipairs(Channels()) do
         Wire.Send(KIND, { "ask", house, math.max(Prices.Kept(house) or 0, taken[house] or 0), n = 3 }, channel, nil, true)
     end
@@ -231,9 +259,9 @@ Wire.Listen(KIND, Relay.Told)
 Wire.ListenBlock(KIND, Relay.Block)
 Core.On("PLAYER_LOGIN", Core.Later(Ask, Relay.LISTEN))
 
-Data.Saved("Market", function(saved)
-    if type(saved.strikes) ~= "table" then saved.strikes = {} end
-    strikes = saved.strikes
+Data.Saved("Market", function(part)
+    if type(part.strikes) ~= "table" then part.strikes = {} end
+    saved, strikes = part, part.strikes
 end)
 
 -- /sane data: what members told since the login, what stands of it, what waits, and who is not heard.

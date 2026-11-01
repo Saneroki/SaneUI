@@ -393,12 +393,22 @@ Bar.Power = Power
 
 -- The powers a frame shows, by its slots: the unit's own; on a frame with two (frame.alternate), mana first and under
 -- it the unit's own while that is not mana (a druid's form). Each { type = the game's number, token = its name }; a
--- unit without a power has an empty slot ({}).
+-- unit without a power has an empty slot ({}). Kept on the frame (frame.kinds), made anew only when the unit's power
+-- or the frame's slots changed: asked at every beat of a power.
 function Bar.Kinds(frame, unit)
     local kind, token = Core.Ask(UnitPowerType, unit)
-    if not frame.alternate then return { { type = kind, token = token } } end
-    local kinds = { { type = Bar.MANA, token = "MANA" } }
-    if type(kind) == "number" and kind ~= Bar.MANA then kinds[2] = { type = kind, token = token } end
+    local alternate = frame.alternate == true
+    local kinds = frame.kinds
+    if kinds and frame.kindsType == kind and frame.kindsToken == token and frame.kindsAlternate == alternate then
+        return kinds
+    end
+    if alternate then
+        kinds = { { type = Bar.MANA, token = "MANA" } }
+        if type(kind) == "number" and kind ~= Bar.MANA then kinds[2] = { type = kind, token = token } end
+    else
+        kinds = { { type = kind, token = token } }
+    end
+    frame.kinds, frame.kindsType, frame.kindsToken, frame.kindsAlternate = kinds, kind, token, alternate
     return kinds
 end
 

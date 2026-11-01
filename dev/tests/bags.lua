@@ -44,10 +44,7 @@ function methods:IsMouseWheelEnabled() return self._wheel or false end
 function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
 function methods:SetColorTexture(r, g, b, a) self._colorTexture = { r, g, b, a } end
-function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
-function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 function methods:RegisterForClicks(...) self._clicks = { ... } end
-function methods:IsProtected() return self._protected or false end
 function methods:SetHitRectInsets(left, right, top, bottom) self._hit = { left, right, top, bottom } end
 function methods:SetRotation(radians) self._rotation = radians end
 function methods:SetTexCoord(...) self._coords = { ... } end
@@ -280,7 +277,7 @@ IsShiftKeyDown = function() return shop.shift end
 local cursor = false
 CursorHasItem = function() return cursor end
 local holding
-GetCursorInfo = function() if holding then return "item", holding, "link" end end
+GetCursorInfo = function() if holding then return "item", holding, Link(holding) end end
 ClearCursor = function() holding = nil end
 local alt = false
 IsAltKeyDown = function() return alt end
@@ -346,6 +343,13 @@ check(free.count == 17 and free.total == 24 and table.concat(free.kinds, ",") ==
     "the free slots by kind: the ordinary bags together, the quiver, the reagent bag, the keyring each by itself")
 check(free[2].count == 3 and free[2].bag == 2 and free[2].slot == 2, "a kind's free slots and its first free one")
 check(arrows.special and herb.reagentBag and key.special and not sword.special, "the special bags and the reagent bag known")
+-- A slot whose count and lock the game hides (secret values, the 12.x client's): read through Core.Plain, so
+-- nothing is computed with them: it counts as one, unlocked, the item itself still known.
+Put(0, 2, 2589, W.Secret(), { locked = W.Secret() })
+check(Contents.Read(0, 2, "bags") == linen and linen.count == 1 and linen.locked == false and linen.name == "Linen Cloth",
+    "a secret count and lock: one and unlocked through Core.Plain, the item still known")
+Put(0, 2, 2589, 20)
+Contents.Read(0, 2, "bags")
 
 -------------------------------------------------------------------------------
 --  The categories, without a frame
@@ -977,6 +981,9 @@ Bags.Refresh()
 plus = PlusOf("pinned")
 plus:GetScript("OnClick")(plus)
 check(ns.Select.Mode() == "put", "a + clicked with nothing: choosing an item by a click")
+Cells.Button(0, 3)._mouseOver = true
+check(Cells.Under() == Cells.Button(0, 3), "the button under the mouse, among the buttons drawn")
+Cells.Button(0, 3)._mouseOver = nil
 ns.Select.Click(Cells.Button(0, 3))
 check(kept.pinned[118] and ns.Select.Mode() == nil, "the next item clicked is pinned; the choosing ends")
 Categories.Pin(118, false)
@@ -1409,6 +1416,16 @@ W.Fire("ITEM_LOCK_CHANGED", 0, 2)
 check(drawn[Cells.Button(0, 2)].grey == true, "an item picked up: grey")
 bags[0][2].locked = false
 W.Fire("ITEM_LOCK_CHANGED", 0, 2)
+-- The game hides a stack's count while the bags are shown (a secret value): through Core.Plain it counts as one in
+-- the cell its stacks merge into, nothing computed with the secret, drawn without an error.
+bags[0][2].count = W.Secret()
+W.Fire("BAG_UPDATE_DELAYED")
+W.Wait(0)
+check(drawn[Cells.Button(0, 2)].count == 8 and Cells.Shown(0, 2), "a secret count while shown: one, merged with the other stack through Core.Plain")
+bags[0][2].count = 20
+W.Fire("BAG_UPDATE_DELAYED")
+W.Wait(0)
+check(drawn[Cells.Button(0, 2)].count == 27, "the count told again: all of it")
 
 -- The clean-up: the game's own.
 local clean = ns.Bags.bar.sort
@@ -1422,24 +1439,30 @@ W.combat = false
 check(calls.sortBags == 1, "not in a fight")
 
 -- Our sort, in One Bag: the items moved into the categories' order, partial stacks joined first. The stand-in's
--- cursor picks an item up and puts it down: two items swap, two stacks of one item join (20 to a stack).
+-- cursor picks an item up and puts it down: two items swap, two stacks of one item join (20 to a stack); what
+-- does not fit stays on the cursor, as in the game, its slot empty, until it is put down.
 local Sort = ns.Sort
-local hand
+local hand -- { bag, slot } of the item picked up; carried: what stayed on the cursor after a join that did not fit
 C_Container.PickupContainerItem = function(bag, slot)
     calls.pickups = (calls.pickups or 0) + 1
     if not hand then
         if Slot(bag, slot) then hand, cursor = { bag, slot }, true end
         return
     end
-    local from, to = Slot(hand[1], hand[2]), Slot(bag, slot)
-    if to and to.item == from.item then
+    local from, to = hand.carried or Slot(hand[1], hand[2]), Slot(bag, slot)
+    if to and to ~= from and to.item == from.item then
         local total = to.count + from.count
         to.count = math.min(20, total)
         from.count = total - to.count
-        if from.count == 0 then bags[hand[1]][hand[2]] = nil end
+        bags[hand[1]][hand[2]] = nil
+        if from.count > 0 then
+            hand = { hand[1], hand[2], carried = from }
+            return
+        end
     else
         bags[bag] = bags[bag] or {}
-        bags[hand[1]][hand[2]], bags[bag][slot] = to, from
+        bags[hand[1]][hand[2]] = to
+        bags[bag][slot] = from
     end
     hand, cursor = nil, false
 end
@@ -1504,6 +1527,22 @@ W.combat = false
 clean:GetScript("OnClick")(clean)
 SortDone()
 check(Arranged():sub(1, 7) == "4001x1,", "begun again, it ends sorted")
+-- Two stacks of one item that do not fit in one (15 and 15, 20 to a stack): the game fills the one and leaves the
+-- rest on the cursor; it goes back into its slot and the sort goes on.
+Put(1, 7, 6001, 15)
+Put(1, 8, 6001, 15)
+clean:GetScript("OnClick")(clean)
+check(Sort.Running() and Slot(1, 8) and Slot(1, 8).count == 20 and Slot(1, 7) and Slot(1, 7).count == 10 and not cursor,
+    "a join that does not fit: the stack filled, the rest back in its slot, the cursor empty, the sort goes on")
+SortDone()
+local bars = {}
+for _, bag in ipairs({ 0, 1 }) do
+    for slot = 1, SIZES[bag] do
+        local entry = Slot(bag, slot)
+        if entry and entry.item == 6001 then bars[#bars + 1] = entry.count end
+    end
+end
+check(not Sort.Running() and table.concat(bars, ",") == "20,10", "done: the 20 and the 10 in their places: " .. table.concat(bars, ","))
 row = RowNamed("All Items")
 row:GetScript("OnClick")(row, "LeftButton")
 clean:GetScript("OnClick")(clean)
@@ -1547,6 +1586,12 @@ do
     bin:GetScript("OnReceiveDrag")(bin)
     check(#W.popups == popups + 1 and W.popups[#W.popups].which == "DELETE_ITEM",
         "an item let go there: the game's own question to destroy it, as when dropped into the world")
+    holding, cursor = 2001, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    check(W.popups[#W.popups].which == "DELETE_GOOD_ITEM", "a rare item: the question that has its name typed out (C_Item.GetItemInfo)")
+    holding, cursor = 3002, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    check(W.popups[#W.popups].which == "DELETE_QUEST_ITEM", "a quest item: the question that says so")
     holding, cursor = nil, false
 end
 local sideFrame = ns.BagSidebar.frame
@@ -1802,12 +1847,18 @@ ns.store.board.tabs[1].tree = { split = "x", parts = { { key = "bags" }, { key =
 ns.Window.Reboard()
 check(not (ns.Board.Panel("bank") and ns.Board.Panel("bank"):IsShown()) and panel:IsShown(),
     "away from a banker: no bank window, the bags have the room")
+-- As if nothing had run Categories.Use yet (the bags off the layout, no vendor, no alts): the bank's window is
+-- built with the categories as the player has them all the same.
+for index = #Categories.order, 1, -1 do Categories.order[index] = nil end
+for key in pairs(Categories.rank) do Categories.rank[key] = nil end
 bankOpen = true
 W.Fire("BANKFRAME_OPENED")
 W.Wait(0)
 local Bank = ns.Bank
 local bankPanel = ns.Board.Panel("bank")
 check(bankPanel and bankPanel:IsShown() and bankPanel.title._text == "Bank", "at a banker: the bank's window comes")
+check(#Categories.order > 0 and Categories.rank[Categories.PINNED] == 1,
+    "built before the bags' window ever was: the categories as the player has them (Bags.Store)")
 local silver = Bank.cells:Button(6, 1)
 check(silver and silver:IsShown() and silver:GetParent():GetID() == 6 and drawn[silver].texture == "icon6001",
     "its tabs' slots, the game's buttons, in a pool of its own")
@@ -2048,8 +2099,16 @@ check(Cells.Shown(-1, 1), "back in WoW: Forever: the keyring again")
 
 -- The box Speed Leveling: the profile in use. Last here: the bags' categories come anew with a profile.
 function W.CheckLeveling()
+    Choose(dropdown._items, "Grid")
+    local before = ns.options.bags
     Core.Profiles.Use("Speedleveling")
     W.Wait(0)
+    check(ns.options.bags ~= before and Bags.canvas.owner.store == ns.options.bags,
+        "the profile's own bags store, a table of its own: the canvas draws by it")
+    Choose(dropdown._items, "List")
+    check(ns.options.bags.look == "list" and before.look == "grid" and RowOf(0, 1) ~= nil,
+        "the list chosen on this profile: drawn as a list; the other profile keeps its grid")
+    Choose(dropdown._items, "Grid")
     local leveling = ns.Vendor.boxes[4]
     check(leveling and leveling == Text("Speed Leveling"):GetParent() and leveling:GetChecked(), "Speed Leveling beside them, ticked on its profile")
     leveling:GetScript("OnClick")(leveling)

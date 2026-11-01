@@ -353,7 +353,6 @@ C_PartyInfo.IsGUIDInGroup = function(guid) return guid == RAIDER or guid == MATE
 function methods:GetLeft() return self._left or 40 end
 function methods:GetTop() return self._top or 500 end
 function methods:SetBackdropColor(r, g, b, a) self._fill = { r, g, b, a } end
-function methods:SetParent(parent) self._parent = parent end
 function methods:SetTexCoord(...) self._texcoord = { ... } end
 -- An animation: it remembers whether it runs, how long it waits first and how far it moves.
 local function noop() end
@@ -376,12 +375,6 @@ function methods:CreateAnimationGroup()
     end
     self._fade = group
     return group
-end
-C_Timer.NewTicker = function(seconds, fn)
-    local ticker = { every = seconds, fn = fn }
-    function ticker:Cancel() self.cancelled = true end
-    W.ticker = ticker
-    return ticker
 end
 
 -- The game's scrolling list: here it makes a row for every element, the real one only for those in view.
@@ -533,11 +526,19 @@ check(Log.list[#Log.list].text == "Guild Message of the Day: Raid at eight" and 
 Log.list[#Log.list] = nil
 check(Log.Read("CHAT_MSG_LOOT", "x", "y") == nil and Log.Read("CHAT_MSG_SAY", "", "Thrall") == nil and Log.Read("CHAT_MSG_SAY", nil, "Thrall") == nil,
     "an event the module does not know, or one without text, is nothing")
-issecretvalue = function(value) return value == "hidden" end
-check(Log.Read("CHAT_MSG_SAY", "hidden", "Thrall") == nil, "a message the game hides in a fight is left to the game's own chat")
-entry = Log.Read("CHAT_MSG_SAY", "hi", "hidden", "", "", "", "", 0, 0, "", 0, 1, "hidden")
-check(entry.side == "left" and entry.name == nil and entry.class == nil, "a hidden speaker is nobody")
-issecretvalue = nil
+do -- a message the game hides in a fight: as the test names one, then as the client makes one (the stand-in's W.Secret)
+    local secretly = issecretvalue -- the stand-in's own, which knows W.Secret's: put back after the test's own
+    issecretvalue = function(value) return value == "hidden" end
+    check(Log.Read("CHAT_MSG_SAY", "hidden", "Thrall") == nil, "a message the game hides in a fight is left to the game's own chat")
+    entry = Log.Read("CHAT_MSG_SAY", "hi", "hidden", "", "", "", "", 0, 0, "", 0, 1, "hidden")
+    check(entry.side == "left" and entry.name == nil and entry.class == nil, "a hidden speaker is nobody")
+    issecretvalue = secretly
+    -- The client's own kind of secret, an error to compare, index or measure: the text, the speaker and the GUID go
+    -- through Core.Plain before anything else reads them, so a secret is nothing or nobody, never an error.
+    entry = Log.Read("CHAT_MSG_SAY", "hi", W.Secret(), "", "", "", "", 0, 0, "", 0, 1, W.Secret())
+    check(Log.Read("CHAT_MSG_SAY", W.Secret(), "Thrall") == nil and entry.side == "left" and entry.name == nil and entry.class == nil,
+        "the client's own kind of secret: a secret message is left to the game's chat, a secret speaker is nobody")
+end
 
 -- Layout: what follows from the window's width ------------------------------------------------------
 check(Layout.RowWidth(380.6) == 380 - 2 * Layout.EDGE - Layout.SCROLL, "a row is the window without its edges and the scroll bar, in whole pixels")
@@ -553,7 +554,7 @@ check(Layout.RowHeight("left", 24) == Layout.HEAD + height and Layout.RowHeight(
 W.Fire("PLAYER_LOGIN")
 local window = box and box._parent and box._parent._parent -- the list hangs on the chat's frame, that on the window
 check(window and window:IsShown() and window._parent == UIParent, "the window is there after the login")
-check(window._motion and not window._mouse and window._scripts.OnEnter and W.ticker == nil,
+check(window._motion and not window._mouse and window._scripts.OnEnter and #W.tickers == 0,
     "it takes only the mouse's coming, no click: a click goes through to the game; nothing looks for the mouse until it comes")
 check(window._width == Layout.WIDTH and window._height == Layout.HEIGHT and window._points[1][1] == "BOTTOMLEFT"
     and window._points[1][3] == "BOTTOMLEFT", "at its first place and size: docked in the screen's lower left corner")
@@ -1205,9 +1206,19 @@ local size = control("Text size")
 check(size and size.setting:GetValue() == 14 and chatFont.size == 14,
     "a third setting is the size of the text: the game's chat font at 14 at first")
 local heightBefore, relays = box.heights[2], box.relays
+-- A message in two lists of different widths (the chat's and the full screen's) is measured once for each width.
+;(function()
+    local Bubble, twice = ns.Bubble, box.provider.list[2]
+    check(Bubble.Known(twice, 333) == nil and Bubble.Known(twice, 222) == nil, "(a message, not measured for these widths yet)")
+    local wide, narrow = Bubble.Measure(twice, 333), Bubble.Measure(twice, 222)
+    check(wide and narrow and Bubble.Known(twice, 333) == wide and Bubble.Known(twice, 222) == narrow,
+        "measured for a wide list and a narrow one, a message is known at both widths: neither list measures it again")
+end)()
 size.setting:SetValue(21)
 check(options.textSize == 21 and chatFont.size == 21 and chatFont.file == "the game's chat font", "moving it changes the size and keeps the font")
 check(box.relays == relays + 1 and box.heights[2] > heightBefore and Layout.HEAD == 25 and name(rows[1])._height == 25, "and every message is measured anew: larger text, higher rows, a higher line for the name")
+check(ns.Bubble.Known(box.provider.list[2], 333) == nil and ns.Bubble.Known(box.provider.list[2], 222) == nil,
+    "a new text size forgets every width a message was measured at")
 size.setting:SetValue(14)
 -- The texts that only measure (the messages', the line's) are never seen: their frame is see-through,
 -- which no change of the font sets anew (their own alpha it would).
@@ -1567,6 +1578,9 @@ do
         "at the next login they stand in front of the log, long gone by: faded out")
     Log.Restore({ "junk", { text = 5, side = "left" }, { side = "left", text = "kept", r = {} } })
     check(Log.list[1].text == "kept" and Log.list[1].r == 1 and #Log.list == 102, "what is no message is left out")
+    Log.Restore({ { side = "left", text = "tinted", r = "x", g = "0.5", b = 1 } })
+    check(Log.list[1].text == "tinted" and Log.list[1].r == 1 and Log.list[1].g == 0.5 and #Log.list == 103,
+        "a colour written in words is none, white; one written as a number in words is that number")
     check(char.historyVersion == Log.HISTORY, "the history says what it is")
     Log.Restore({ { side = "left", text = "spoiled", tie = "enemy", class = 5 } })
     check(Log.list[1].time == "" and Log.list[1].tie == nil and Log.list[1].class == nil, "a message without its time, with a tie or class that is none, can still be drawn")
@@ -2365,6 +2379,10 @@ do
         grip:Hide() -- the full screen went while the line was held
         grip:Show()
         check(grip._scripts.OnUpdate == nil, "the full screen gone meanwhile, the line is let go")
+        grip._scripts.OnMouseDown(grip, "LeftButton")
+        ns.Board.Hide() -- the full screen itself: its panels go, nothing hides the line; its OnHide runs under its panel's
+        check(grip._scripts.OnUpdate == nil and grip:IsShown() and not grip:IsVisible() and not talks:IsShown(),
+            "and when the full screen goes indeed: the line, out of sight only with its panel, is let go by its own OnHide")
         grip._scripts.OnLeave(grip)
         check(W.cursorArt == nil, "the mouse gone, the cursor is the game's again")
         ns.store.talkList, W.cursorX = nil, mouseX
@@ -2436,6 +2454,15 @@ do
     W.popups[#W.popups].data.callback()
     check(#ns.Feed.Views() == 1 and #rows.provider.list == 2 and column:IsVisible() and box:IsVisible(),
         "removed once confirmed, and the chat is chosen")
+    ;(function() -- saved views of another shape (an older version, a hand edit) are mended or left out
+        local views = ns.store.views
+        ns.store.views = { next = "x", list = { "junk", { id = "2", name = "Second" }, { id = 3 }, { id = 7, name = 5, shows = "all" } } }
+        local list = ns.Feed.Views()
+        check(#list == 2 and list[1].id == 3 and list[1].name == "Chat view 3" and next(list[1].shows) == nil
+            and list[2].id == 7 and list[2].name == "Chat view 7" and next(list[2].shows) == nil and ns.Feed.Make().id == 8,
+            "a saved view without a number for its id is left out, one without a name or its chats gets them, the next id is past the last")
+        ns.store.views = views
+    end)()
     click(rows.rows[1])
     -- A whisper: a conversation of its own, read once it is chosen.
     W.Fire("CHAT_MSG_WHISPER", "are you coming?", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 5, THRALL)
@@ -2694,6 +2721,24 @@ do
     end)()
     Talks.Restore({ { key = "W:X", kind = "WHISPER", messages = { { text = "no with" } } }, "junk", { key = "Y", kind = "NOPE" } })
     check(#Talks.list == 5, "a saved conversation of the wrong shape is left out")
+    ;(function() -- a Battle.net friend no longer among your friends is looked for once, and again when they change
+        Talks.Restore({ { key = "B:Gone#9", kind = "BN_WHISPER", with = "Gone#9", last = 3, messages = { { side = "left", text = "bye" } } } })
+        local gone, info, number, walks = Talks.by["B:Gone#9"], C_BattleNet.GetFriendAccountInfo, BNGetNumFriends, 0
+        local friends = (number())
+        C_BattleNet.GetFriendAccountInfo = function(index) -- counts the looks; one friend more, past the stub's, once the count says so
+            walks = walks + 1
+            if index > friends then return { bnetAccountID = 10, accountName = "Gone", battleTag = "Gone#9", gameAccountInfo = {} } end
+            return info(index)
+        end
+        check(gone and Talks.Name(gone) == "Gone" and walks == friends and gone.looked, "one gone is looked for among your friends once")
+        Talks.Name(gone)
+        check(walks == friends and Talks.Account(gone) == nil, "and not again at the next draw")
+        BNGetNumFriends = function() return friends + 1, 2 end
+        W.Fire("BN_FRIEND_LIST_SIZE_CHANGED")
+        check(not gone.looked and Talks.Account(gone) == 10 and Talks.Name(gone) == "Gone" and walks > friends,
+            "once the friends changed they are looked for again, and found")
+        BNGetNumFriends, C_BattleNet.GetFriendAccountInfo = number, info
+    end)()
     Talks.list, Talks.by = saved, {}
     for _, talk in ipairs(saved) do Talks.by[talk.key] = talk end
     -- Remove: the one chosen and its messages, once confirmed; the chat cannot be.
@@ -2846,6 +2891,19 @@ do
         W.Fire("PLAYER_REGEN_ENABLED")
         W.Wait(0.1)
         check(not answer:IsShown(), "and is closed once it is over")
+    end
+    do -- the window one with protected parts (the game's guild window holds protected buttons): in a fight the game refuses
+        -- our code every touch of it (the stand-in errors on one), so it is left as it is; given back and closed after the fight
+        anew()
+        answer._protected = true
+        W.Combat(true)
+        ns.Board.Hide()
+        local untouched = answer:IsShown() and held(answer) and Core.Owed("Social: guild window")
+        W.Combat(false)
+        W.Wait(0.1)
+        check(untouched and not answer:IsShown() and #answer._points == 0 and answer._scale == 1 and not Core.errors["Social: guild window"],
+            "a window with protected parts: the full screen gone in a fight, it stays held as it is and its closing waits; given back and closed once the fight is over")
+        answer._protected = nil
     end
     check(not Core.errors["Social: guild window"] and not ns.off, "nothing went wrong with the guild window")
     ToggleGuildFrame, UIPanelWindows = nil, nil

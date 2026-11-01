@@ -269,14 +269,19 @@ local function Read(unit)
     return cast, name, icon, target
 end
 
--- Who interrupted a cast, by the GUID the game gives: a name, or nil.
+-- Who interrupted a cast, by the GUID the game gives: a name, or nil. A unit's as the text takes it (hidden or not);
+-- a player without a unit token by what the game knows of the player (the sixth of its answers: Core.Ask hands
+-- back the first three only), plain only.
 local function Interrupter(guid)
     if type(guid) ~= "string" or guid == "" then return nil end
     local token = Core.Ask(rawget(_G, "UnitTokenFromGUID"), guid)
     local name = token and ns.Bar.Raw(UnitName, token)
     if type(name) ~= "nil" then return name end
-    local _, _, _, _, _, player = Core.Ask(rawget(_G, "GetPlayerInfoByGUID"), guid)
-    return player
+    local info = rawget(_G, "GetPlayerInfoByGUID")
+    if type(info) ~= "function" then return nil end
+    local ok, _, _, _, _, _, player = pcall(info, guid)
+    if not ok then return nil end
+    return Plain(player)
 end
 
 -- A unit's cast on its plate, as the game says it now (an event of its casts with its cast, spell and who

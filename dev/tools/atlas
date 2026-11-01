@@ -29,9 +29,10 @@ Usage:
   --dry                        paint nothing: the game's terrain stands in for each painting (to try the run)
   --near UIMAP X Y ACROSS DOWN only the squares around a point of a zone's map (its UiMap ID, x and y in
                                percent as on the game's map), ACROSS by DOWN of them (to try a city first)
-  join                         the painted squares (of --near, or all of a continent) as one picture, FILE: each
-                               overlap cut along the line where the two paintings differ least, softened a few
-                               pixels to either side (--cut: cut in the overlap's middle instead, to compare);
+  join                         the painted squares (of --near, or of a continent: at most JOINED squares a side,
+                               a whole continent is too large for memory, pack joins it in strips) as one picture,
+                               FILE: each overlap cut along the line where the two paintings differ least, softened
+                               a few pixels to either side (--cut: cut in the overlap's middle instead, to compare);
                                each square first through the colour pass: its broad colours moved toward the
                                game's, keeping M of the model's own (--mood, default 0.5), its water toward the
                                open sea's blue (--as-painted: the paintings as they are)
@@ -551,15 +552,43 @@ def join_two(left, right, cut):
     return np.concatenate([left[:, :-over], middle.clip(0, 255).astype(np.uint8), right[:, over:]], axis=1)
 
 
-def join(out, continent, block, cut=False, game=None, mood=MOOD):
+def painting_of(path):
+    """A square's painting as an (SQ, SQ, 3) array, or None when its file cannot be opened (a run killed while it
+    was saved, before the saving went through a temp file), told: the square counts as not painted."""
+    try:
+        with Image.open(path) as picture:
+            return np.asarray(picture.convert("RGB"))
+    except (OSError, SyntaxError, ValueError, struct.error) as error:  # Pillow's own errors of a broken file
+        print(f"{path}: cannot be opened ({error}): skipped as not painted; remove it to paint it again",
+              file=sys.stderr, flush=True)
+        return None
+
+
+def save_png(picture, target):
+    """A picture saved through a temp file beside its target and os.replace: a run killed while saving leaves no
+    half file there for the next run to take as finished."""
+    temp = target.with_suffix(".tmp")
+    picture.save(temp, format="PNG")
+    os.replace(temp, target)
+
+
+JOINED = 12    # squares a side join holds in memory at most (12 x 12 at SQ pixels: 1.4 GB; a continent's 40 x 40
+               # would be some 16 GB): pack joins a whole continent in strips, --near takes a block of any size
+
+
+def join(out, continent, block, cut=False, game=None, mood=MOOD, limit=JOINED):
     """The squares of a block (i0, j0, i1, j1) as one picture, each through the colour pass when the game's files
-    are given (game); a square not painted is the flat sea."""
+    are given (game); a square not painted, or one that cannot be opened, is the flat sea. A block over limit
+    squares a side is refused (ValueError); limit None takes any."""
     i0, j0, i1, j1 = block
+    if limit and max(i1 - i0, j1 - j0) > limit:
+        raise ValueError(f"{i1 - i0} x {j1 - j0} squares is too large to join in memory ({limit} a side at most): "
+                         "--near narrows it to a block; pack joins a whole continent in strips")
 
     def picture(i, j):
         path = out / str(continent) / f"sq-{i}-{j}.png"
-        if path.is_file():
-            painting = np.asarray(Image.open(path).convert("RGB"))
+        painting = painting_of(path) if path.is_file() else None
+        if painting is not None:
             return colour_of(painting, game.square(continent, i, j), mood) if game else painting
         filled = np.empty((SQ, SQ, 3), np.uint8)
         filled[:] = NAVY
@@ -773,8 +802,8 @@ def pack(out, game, guides, continent, mood, to, painted_only=False, block=None)
         for i in range(count):
             x0 = i * STEP
             path = out / str(continent) / f"sq-{i}-{j}.png"
-            if path.is_file():
-                painting = np.asarray(Image.open(path).convert("RGB"))
+            painting = painting_of(path) if path.is_file() else None
+            if painting is not None:
                 if not painted_only:
                     painting = colour_of(painting, game.square(continent, i, j), mood)
                 if last is not None and last == i - 1:   # joined to the painted square on its left, in two bands
@@ -1097,7 +1126,7 @@ def work(shared, painter, game, guides, fixed, briefs, out, state, todo, limit):
             _, seed, painting, result = best
             target = out / str(continent) / f"sq-{i}-{j}.png"
             target.parent.mkdir(parents=True, exist_ok=True)
-            painting.save(target)
+            save_png(painting, target)
             seconds = round(time.time() - began)
             state["squares"][name_of(continent, i, j)] = {
                 "seed": seed, **result, "ok": passes(result), "tries": tries, "zone": zone, "seconds": seconds,
@@ -1292,7 +1321,11 @@ def main():
         mine = [s for s in painted if s[0] == continent]
         block = near[1:] if near else (min(s[1] for s in mine), min(s[2] for s in mine),
                                         max(s[1] for s in mine) + 1, max(s[2] for s in mine) + 1)
-        Image.fromarray(join(out, continent, block, args.cut, None if args.as_painted else game, args.mood)).save(args.to)
+        try:  # a whole continent is too large to join in memory: --near a block of it, or pack
+            whole = join(out, continent, block, args.cut, None if args.as_painted else game, args.mood, None if near else JOINED)
+        except ValueError as error:
+            ig.fail(f"join: {error}")
+        Image.fromarray(whole).save(args.to)
         print(f"{args.to}: {block[2] - block[0]} x {block[3] - block[1]} squares of {CONTINENTS[continent]}")
         return
 

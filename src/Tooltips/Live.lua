@@ -7,8 +7,11 @@ local ADDON, ns = ...
 --  whom it targets, its buffs and debuffs, and a buff's running time.
 --
 --  Panel.lua lays the parts out and puts them into panel.live; this file
---  fills them. It runs from the panel's OnUpdate (Tooltips.lua), so only
---  while a panel is shown, and not on every frame (PERIOD).
+--  fills them: when the panel is drawn or shown (Start), and after that when
+--  the unit's own events say something changed (its health, its power, its
+--  target, its buffs: Listen, from the panel's OnShow to its OnHide,
+--  Tooltips.lua), answered once per frame from the panel's OnUpdate (Update),
+--  which also runs a buff's timer. Nothing is asked again and again.
 --
 --  In a fight the game hides a unit's numbers from addons. The bars and texts
 --  take such numbers as they are (the game's own widgets may show them);
@@ -28,8 +31,6 @@ local TEXT = ns.TEXT
 local Live = {}
 ns.Live = Live
 
-local PERIOD = 0.1       -- seconds between two updates of a unit's numbers
-local AURA_PERIOD = 0.5  -- ... of its buffs
 local MAX_AURAS = 16
 local YOU, YOU_WORD = ns.COLOR.RED, ns.Global("UNIT_YOU") or TEXT.YOU -- you as a unit's target: the game's word, in its red
 -- A buff's icon fades out at its edge like the panel's (a mask of our own, made by dev/tools/tooltip-art)
@@ -185,9 +186,51 @@ local function AuraTimer(panel)
     end
 end
 
--- A panel was drawn: fill its live parts at once.
+-------------------------------------------------------------------------------
+--  The unit's events. While its panel is shown, the game is asked to send the
+--  events of that unit alone (Core.OnUnit): its health, its power, its target,
+--  its buffs. Each only notes that something was heard; the panel's next frame
+--  answers them all at once (Update), so a burst of them (a buff's every tick)
+--  costs one look. A fight beginning or ending changes what may be asked
+--  (AurasOpen), so every listening panel hears that too.
+-------------------------------------------------------------------------------
+local EVENTS = { "UNIT_HEALTH", "UNIT_POWER_UPDATE", "UNIT_TARGET", "UNIT_AURA" }
+local FIGHT = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
+local listening = {} -- [panel] = true: it listens for its unit (panel.liveUnit) with its ear (panel.ear)
+local fightHeard = false
+
+local function FightChanged()
+    for panel in pairs(listening) do panel.heard = true end
+end
+
+local function Stop(panel)
+    local unit = panel.liveUnit
+    if not unit then return end
+    for _, event in ipairs(EVENTS) do Core.OffUnit(event, unit, panel.ear) end
+    panel.liveUnit, listening[panel] = nil, nil
+end
+
+-- Listens for unit (nil: for nobody), unless the panel does already.
+local function Listen(panel, unit)
+    if panel.liveUnit == unit then return end
+    Stop(panel)
+    if not unit then return end
+    local ear = panel.ear
+    if not ear then
+        ear = function() panel.heard = true end -- made once for the panel
+        panel.ear = ear
+    end
+    for _, event in ipairs(EVENTS) do Core.OnUnit(event, unit, ear) end
+    panel.liveUnit, listening[panel] = unit, true
+    if not fightHeard then
+        fightHeard = true
+        for _, event in ipairs(FIGHT) do Core.On(event, FightChanged) end
+    end
+end
+
+-- A panel was drawn, or shown again: fill its live parts at once, and listen for its unit from now on.
 local function Start(panel)
-    panel.sinceNumbers, panel.sinceAuras = 0, 0
+    panel.heard = false
     AuraTimer(panel)
     local unit = panel.model.shown.head.unit
     if unit then
@@ -196,33 +239,31 @@ local function Start(panel)
     elseif panel.auraIcons then
         for _, icon in ipairs(panel.auraIcons) do icon:Hide() end
     end
+    Listen(panel, unit)
 end
 
--- From the panel's OnUpdate. Returns true when the panel has to be laid out anew (the unit
--- has a target now, lost its buffs, ...).
-local function Update(panel, elapsed)
+-- From the panel's OnUpdate, every frame: a buff's time runs on; and once the unit's events said
+-- something changed (heard), its numbers and buffs anew. Returns true when the panel has to be laid
+-- out anew (the unit has a target now, lost its buffs, ...).
+local function Update(panel)
     local live = panel.live
     if live.auraEnds then live.aura:SetValue(math.max(0, live.auraEnds - GetTime())) end
+    if not panel.heard then return false end
+    panel.heard = false
     local head = panel.model.shown.head
     local unit = head.unit
     if not unit then return false end
-    panel.sinceNumbers = (panel.sinceNumbers or 0) + elapsed
-    if panel.sinceNumbers < PERIOD then return false end
-    panel.sinceNumbers = 0
     -- The name means another unit now, or none (the mouse has left it): the panel stands still.
     if head.guid and Plain(UnitGUID(unit)) ~= head.guid then return false end
-    Refresh(panel, unit)
-    panel.sinceAuras = (panel.sinceAuras or 0) + PERIOD
-    if panel.sinceAuras < AURA_PERIOD then return false end
-    panel.sinceAuras = 0
     if Live.Changed(panel) then return true end
+    Refresh(panel, unit)
     Auras(panel, unit)
     return false
 end
 
 -- A live part that fails (a unit the game does not let us ask about, a renamed constant) would fail
--- again twice a second: from then on panels show what they were drawn with, and the rest of the
--- tooltips works on. Told once.
+-- again at the unit's every event: from then on panels show what they were drawn with, and the rest
+-- of the tooltips works on. Told once. (A panel stops listening when it is hidden all the same.)
 local broken = false
 local function Failed(problem)
     broken = true
@@ -235,9 +276,15 @@ function Live.Start(panel)
     if not ok then Failed(problem) end
 end
 
-function Live.Update(panel, elapsed)
+-- The panel is hidden (Tooltips.lua): its unit's events are not listened for any more.
+function Live.Stop(panel)
+    local ok, problem = xpcall(Stop, Core.Trace, panel)
+    if not ok then Failed(problem) end
+end
+
+function Live.Update(panel)
     if broken then return false end
-    local ok, result = xpcall(Update, Core.Trace, panel, elapsed)
+    local ok, result = xpcall(Update, Core.Trace, panel)
     if ok then return result end
     Failed(result)
     return false

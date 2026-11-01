@@ -32,7 +32,7 @@ local _, ns = ...
 --
 --  Its messages are copies of the log's: they are kept longer (the setting
 --  talkSize, for each conversation) and measured for the panel's width
---  (Bubble.Measure keeps one width on a message). A whisper's copy has no
+--  (Bubble.Measure keeps each width on a message). A whisper's copy has no
 --  chat's name above its bubble: the conversation says whose it is.
 --
 --  The one read now (Talks.reading: the panel on show, it chosen) gets its
@@ -56,10 +56,8 @@ Talks.MOST = 50   -- conversations kept at most: one more, and the one quiet the
 Talks.SAVED = 1000 -- messages kept over a logout, of all conversations together: the newest conversations' first
 Talks.VERSION = 2 -- the shape Save writes; 2: what follows from the rest is not kept (a whisper's colour, a chat's short name)
 
--- The kinds of group whose chat is a conversation of its own, by the group of their messages (Log.GROUPS),
--- in the order they come when you are in them and nobody spoke yet.
+-- The kinds of group whose chat is a conversation of its own, by the group of their messages (Log.GROUPS).
 Talks.GROUPS = { PARTY = true, RAID = true, INSTANCE_CHAT = true }
-Talks.GROUP_ORDER = { "PARTY", "RAID", "INSTANCE_CHAT" }
 local KINDS = { WHISPER = true, BN_WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true }
 local HOME, INSTANCE = LE_PARTY_CATEGORY_HOME or 1, LE_PARTY_CATEGORY_INSTANCE or 2
 Talks.NAMES = 3      -- a group's conversation is named by so many of the others in it, then how many more
@@ -337,10 +335,11 @@ function Talks.Trim()
 end
 
 -- A Battle.net friend's account in this session: the one their last message came with, else found by their
--- BattleTag among your Battle.net friends (and their name with it); nil: not among them.
+-- BattleTag among your Battle.net friends (and their name with it); nil: not among them. One not among them is
+-- not looked for again (looked: the panel asks at every draw) until the friends change or Battle.net comes back.
 function Talks.Account(talk)
     if talk.account then return talk.account end
-    if talk.kind ~= "BN_WHISPER" or not talk.with or not BNGetNumFriends then return nil end
+    if talk.kind ~= "BN_WHISPER" or not talk.with or talk.looked or not BNGetNumFriends then return nil end
     for index = 1, (BNGetNumFriends()) or 0 do
         local info = C_BattleNet.GetFriendAccountInfo(index)
         if info and info.battleTag == talk.with then
@@ -349,8 +348,16 @@ function Talks.Account(talk)
             return talk.account
         end
     end
+    talk.looked = true
     return nil
 end
+
+-- The friends changed, or Battle.net came back: a friend not found before may be there now.
+local function Forget()
+    for _, talk in ipairs(Talks.list) do talk.looked = nil end
+end
+Core.On("BN_FRIEND_LIST_SIZE_CHANGED", function() ns.Safe("talks", Forget) end)
+Core.On("BN_CONNECTED", function() ns.Safe("talks", Forget) end)
 
 -- Whether you can write in a conversation now; false and why not, in the game's words where it has them. A group's:
 -- only while you are in that group.

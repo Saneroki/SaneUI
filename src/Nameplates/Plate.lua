@@ -16,9 +16,11 @@ local _, ns = ...
 --  theirs written, and 1 again when the plate goes, when its health bar goes (a
 --  plate of widgets only: the game's own plate then stays as it is; friendly
 --  players are not shown by name only while the module is on, Scale.ALWAYS)
---  and when the module stands down. The rest of the
---  game's plate stays: its cast bar, widgets and soft target icon, and what
---  clicks it.
+--  and when the module stands down; its cast bar too, but for the setting
+--  Cast bar off (the game's shows then, Cast.lua). Its aura icons, which take
+--  the mouse (their tooltip would pop up beside our bar), lose it under ours
+--  and get it back with the rest. The rest of the game's plate stays: its
+--  widgets and soft target icon, and what clicks it.
 --
 --  A player's plate is dressed like any other (bar, power line, the line,
 --  auras, cast bar) and shows while a fight with the player can start (the
@@ -61,6 +63,8 @@ local shown = {}   -- [unit token] = the dress on that unit's plate, while the g
 Plate.shown = shown -- read by Scale.lua and Range.lua (never written there)
 local owners = setmetatable({}, { __mode = "k" }) -- [the game's unit frame] = the dress over it now
 local bars = setmetatable({}, { __mode = "k" })   -- [the game's health bar] = its unit frame, once followed
+local containers = setmetatable({}, { __mode = "k" }) -- [the game's aura container] = its unit frame, once followed
+local muted = setmetatable({}, { __mode = "k" })  -- [the game's unit frame] = { [aura icon] = true }: the mouse taken
 local gear -- asks for players' item levels again, a little later (made below, with Gear)
 
 -- The game's plate for a unit, where addons may have it; nil for one it keeps from them.
@@ -146,12 +150,54 @@ function Plate.Wanted(unit, dress)
     return Plate.Kin(unit) ~= nil
 end
 
--- The game's parts of a unit frame ours stand in for at that alpha: 0 out of sight under ours, 1 as the game has them.
-local function Parts(frame, alpha)
-    for _, key in ipairs(Plate.HIDDEN) do
-        local part = rawget(frame, key)
-        if type(part) == "table" and part.SetAlpha then part:SetAlpha(alpha) end
+-- The game's aura icons on a unit frame as it shows them now (its container's pooled items, its loss of control one)
+-- take the mouse, and their tooltip would pop up beside our bar while they are out of sight under it: their mouse
+-- off while ours shows, each noted so it gets the mouse back (Unmute).
+local function Mute(frame)
+    local auras = rawget(frame, "AurasFrame")
+    if type(auras) ~= "table" then return end
+    local icons = muted[frame]
+    if not icons then
+        icons = {}
+        muted[frame] = icons
     end
+    local pool = rawget(auras, "auraItemFramePool")
+    if type(pool) == "table" and pool.EnumerateActive then
+        for icon in pool:EnumerateActive() do
+            if not icons[icon] and icon.EnableMouse then
+                icons[icon] = true
+                icon:EnableMouse(false)
+            end
+        end
+    end
+    local control = rawget(auras, "LossOfControlFrame")
+    local icon = type(control) == "table" and rawget(control, "AuraItemFrame")
+    if type(icon) == "table" and icon.EnableMouse and not icons[icon] then
+        icons[icon] = true
+        icon:EnableMouse(false)
+    end
+end
+
+-- Every aura icon of a unit frame whose mouse was taken: the mouse back (the game's parts in sight again).
+local function Unmute(frame)
+    local icons = muted[frame]
+    if not icons then return end
+    muted[frame] = nil
+    for icon in pairs(icons) do icon:EnableMouse(true) end
+end
+
+-- The game's parts of a unit frame ours stand in for at that alpha: 0 out of sight under ours (its aura icons without
+-- the mouse), 1 as the game has them. Its cast bar is left alone while the setting Cast bar is off: the game's shows
+-- then (Cast.lua), and this would hide it anew at every change of target, roster or quest log.
+local function Parts(frame, alpha)
+    local castOff = alpha == 0 and (ns.options or {}).castBar == false
+    for _, key in ipairs(Plate.HIDDEN) do
+        if not (castOff and key == "CastBarsContainer") then
+            local part = rawget(frame, key)
+            if type(part) == "table" and part.SetAlpha then part:SetAlpha(alpha) end
+        end
+    end
+    if alpha == 0 then Mute(frame) else Unmute(frame) end
 end
 
 -- A plate of a stranger or a critter out of sight altogether; else ours shown and the game's parts out of sight
@@ -199,8 +245,10 @@ local function Heard(dress, event, _, ...)
         ns.Text.Name(dress, unit)
     elseif event == "UNIT_LEVEL" then
         ns.Text.Level(dress, unit)
+        ns.Text.Health(dress, unit, true) -- its guess at the most anew, by its level
     elseif event == "UNIT_CLASSIFICATION_CHANGED" then
         ns.Bar.Paint(dress, unit)
+        ns.Text.Health(dress, unit, true) -- and by its rank
     else -- UNIT_FACTION, UNIT_FLAGS: friend or foe, tapped
         ns.Bar.Paint(dress, unit)
         ns.Text.Level(dress, unit)
@@ -269,12 +317,28 @@ local function Turned(bar)
 end
 local OnTurned = ns.Guard(Turned)
 
--- The game's health bar of a unit frame followed, once per bar (hooks after the game's own, nothing replaced).
+-- The game set a unit frame's aura icons out anew (its container's RefreshList: new ones from its pool): their mouse
+-- off too while ours shows over them.
+local function Shuffled(auras)
+    if ns.off then return end
+    local frame = containers[auras]
+    local dress = frame and owners[frame]
+    if dress and dress.frame == frame and dress.away == false then Mute(frame) end
+end
+local OnShuffled = ns.Guard(Shuffled)
+
+-- The game's health bar and aura container of a unit frame followed, once per bar (hooks after the game's own,
+-- nothing replaced; a hook stays, and does nothing once the module stood down).
 local function Follow(frame, bar)
     if bars[bar] then return end
     bars[bar] = frame
     bar:HookScript("OnShow", OnTurned)
     bar:HookScript("OnHide", OnTurned)
+    local auras = rawget(frame, "AurasFrame")
+    if type(auras) == "table" and type(auras.RefreshList) == "function" then
+        containers[auras] = frame
+        hooksecurefunc(auras, "RefreshList", OnShuffled)
+    end
 end
 
 -- The dress taken off its unit: its events off, the game's parts back in sight and ours hidden first, its bar as
@@ -421,8 +485,9 @@ function Plate.Refresh()
     end
 end
 
--- The game's plates as they were: every unit frame ours ever lay over and its parts in sight again (the game hands
--- them out again from its pool, and sets their alpha nowhere), then every dress off, each by itself.
+-- The game's plates as they were: every unit frame ours ever lay over and its parts in sight again, its aura icons
+-- with the mouse (the game hands them out again from its pool, and sets their alpha nowhere), then every dress off,
+-- each by itself.
 function Plate.GiveBack()
     for _, frame in pairs(bars) do
         ns.Safe("give back", frame.SetAlpha, frame, 1)

@@ -230,6 +230,14 @@ function Steps.Spend()
     coroutine.yield()
 end
 
+-- In a job: waits for the next frame and leaves this one's time to the other jobs, for a step that has nothing to
+-- do until the game has answered (the scan's wait for an item's data). The job was served in this frame (Serve), so
+-- it goes on in the next one at the earliest.
+function Steps.Wait()
+    if not current or coroutine.running() ~= current.thread then return end
+    coroutine.yield()
+end
+
 function Steps.Running(name)
     return named[name] ~= nil
 end

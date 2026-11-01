@@ -83,11 +83,12 @@ local function PutOnCursor(entry)
     return GetCursorInfo() ~= nil
 end
 
--- First empty, unreserved button on a bar you can see (Bar 1's normal row included).
+-- First empty, unreserved button on a bar you can see (Bar 1 by the row it shows now: its page, or a form's row).
 local function FreeSlot()
     for _, bar in ipairs(ns.BARS) do
+        local offset = bar.paged and ns.Bar1Offset() or bar.offset
         for i = 1, ns.NUM_BUTTONS do
-            local slot = bar.offset + i
+            local slot = offset + i
             local button = _G[bar.prefix .. i]
             local holder = button and button:GetParent()
             if (not holder or holder:IsVisible()) and not ns.HasAction(slot) and not ns.char.reserved[slot] then

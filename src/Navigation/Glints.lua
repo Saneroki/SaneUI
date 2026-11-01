@@ -49,10 +49,15 @@ Glints.TIP = 510 / 1040 * 252 / 256 -- its point's tip from the middle, in the p
 Glints.EDGE = 44           -- an edge mark's distance from the screen's edge
 Glints.STACK = 58          -- edge marks one under another, from the middle down
 Glints.TEXT = 12           -- the yards' letters' size
+Glints.TICK = 0.1          -- seconds between two looks at your place and the camera; the marks follow your facing every frame
 
 local FONT = "SaneUINavigationGlints"
 
 local holder        -- our frame over the world, under every window; its OnUpdate runs while it shows
+local wanted = false -- the setting on, the module running, and herbs and ore found here (Glints.Update)
+local waited = Glints.TICK -- seconds since the last look at your place (Glints.TICK): the first frame looks at once
+local plane, pu, pv -- where you stand, as of the last look
+local behind = false -- whether your facing stood for the camera's at the last look
 local marks = {}    -- the marks made: { frame, icon, ring, text }
 local list = {}     -- this frame's candidates: { entry, yards, way, x, y } or { entry, yards, way, side }
 local turning = 0   -- seconds the left button has turned the camera
@@ -152,6 +157,13 @@ local function HideAll(from)
     for index = from or 1, #marks do marks[index].frame:Hide() end
 end
 
+-- Nothing found: the marks away and the frame at rest (its OnUpdate runs no more), until Found tells of one
+-- (Glints.Found).
+local function Rest()
+    HideAll()
+    holder:Hide()
+end
+
 -------------------------------------------------------------------------------
 --  Each frame
 -------------------------------------------------------------------------------
@@ -189,11 +201,18 @@ local function Gather(found, plane, pu, pv, facing)
     table.sort(list, Nearer)
 end
 
+-- Every frame while something is found: the marks follow your facing (a turn of the camera must not make them
+-- jump); your place and the camera's state are looked at every Glints.TICK seconds, the turns counted whole.
 local function Update(_, elapsed)
-    local behind = Behind(elapsed)
     local found = Found.Each()
-    local plane, pu, pv = Coords.Player()
-    local facing = behind and pu and #found > 0 and Core.Plain(Core.Ask(GetPlayerFacing))
+    if #found == 0 then return Rest() end
+    waited = waited + elapsed
+    if waited >= Glints.TICK then
+        behind = Behind(waited)
+        waited = 0
+        plane, pu, pv = Coords.Player()
+    end
+    local facing = behind and pu and Core.Plain(Core.Ask(GetPlayerFacing))
     if not facing then return HideAll() end
     Gather(found, plane, pu, pv, facing)
     local top = holder:GetHeight() / 2 - Glints.EDGE
@@ -215,12 +234,19 @@ local function Update(_, elapsed)
     HideAll(shown + 1)
 end
 
--- Shown while the setting is on, the module is and herbs and ore are found; nothing drawn and nothing asked otherwise.
+-- Shown while the setting is on, the module is, herbs and ore are found here and one is found now; nothing drawn and
+-- nothing asked otherwise (nothing found: at rest, until Found tells of one).
 function Glints.Update()
     if not holder then return end
-    local on = ns.options.nodeGlints and not ns.off and Found.Works() and Nodes.Known()
+    wanted = ns.options.nodeGlints and not ns.off and Found.Works() and Nodes.Known() and true or false
+    local on = wanted and #Found.Each() > 0
     if not on then HideAll() end
     holder:SetShown(on)
+end
+
+-- Found found one (Found.lua): the frame runs again, while it is wanted.
+function Glints.Found()
+    if holder and wanted and not holder:IsShown() and #Found.Each() > 0 then holder:Show() end
 end
 
 function Glints.Start()

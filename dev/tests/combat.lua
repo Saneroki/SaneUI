@@ -124,6 +124,14 @@ C_SpecializationInfo = { GetCombatConfigIDForSpecGroup = function(group) return 
 -- The unit frames and the clean action bars: the game's unit functions, unit watch, frames and main action bar.
 local fight = require("combatclient").Install(W)
 local units, Unit, watched, divider = fight.units, fight.Unit, fight.watched, fight.divider
+-- The module hooks each bar's UpdateDividers, Update and UpdateState and each button's Update and UpdateButtonArt,
+-- where the game's bars have them (the newest export: the main bar UpdateDividers alone, the stance bar Update and
+-- UpdateState); the stand-in's widgets answer every such name as a call, so the module hooks them all here, and its
+-- hooksecurefunc wants a function there: no-ops.
+for _, bar in ipairs({ MainActionBar, StanceBar }) do
+    bar.UpdateDividers, bar.Update, bar.UpdateState = function() end, function() end, function() end
+end
+for _, button in ipairs(MainActionBar.actionButtons) do button.Update, button.UpdateButtonArt = function() end, function() end end
 units.player = { name = "Droopy", surname = "Fairwind", player = true, class = "WARRIOR", level = 20, health = 850,
                  most = 1000, power = 30, powerMost = 100 }
 W.actions[1] = { kind = "spell", id = 6603 } -- the main bar's first button holds an action, its second is empty
@@ -284,6 +292,22 @@ do
     W.members[1] = { "player", "party1", "party2" }
     headers[1]:SetAttribute("yOffset", Group.GAP)
     Group.Apply()
+    -- A member left in a fight and the next slid into the slot: the header gives the button the same token, and no
+    -- event of the unit's tells of its new occupant; the face reads it anew at once, the sizes wait for the fight's end.
+    local tess = units.party1
+    units.party1 = { name = "Mara", surname = "Vale", player = true, class = "MAGE", health = 700, most = 1000,
+                     power = 50, powerMost = 100, mana = 50, manaMost = 100 }
+    W.combat = true
+    headers[1]:SetAttribute("yOffset", Group.GAP)
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(0)
+    check(second.face.unit == "party1" and second.face.name._text == "Mara Vale" and second.face.value._text == "70%"
+        and Core.Owed("group frames"), "the group changed in a fight: the slot shows its new member at once, the sizes wait")
+    W.combat = false
+    units.party1 = tess
+    W.Fire("PLAYER_REGEN_ENABLED")
+    W.Wait(0)
+    check(second.face.name._text == "Tess Brook" and not Core.Owed("group frames"), "after the fight: read again, and the sizes")
 
     -- The power line, inside the bar: no taller for it.
     Face.Fill(second.face)
@@ -418,6 +442,19 @@ do
     InCombatLockdown = fighting
     second.face:GetScript("OnEvent")(second.face, "UNIT_AURA", "party1")
     check(not second.face.icons[1]._shown, "after it, it is read again")
+    -- An update that only refreshed what is there is not read again; one that added a buff or took an aura away is.
+    auras.party1 = nil
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, updatedAuraInstanceIDs = { 7 } })
+    check(not second.face.icons[1]._shown, "an aura refreshed: not read again")
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, removedAuraInstanceIDs = { 7 } })
+    check(second.face.icons[1]._shown, "an aura gone: read again, the buff is missing")
+    auras.party1 = { ["Power Word: Fortitude"] = {} }
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, addedAuras = { { isHelpful = false } } })
+    check(second.face.icons[1]._shown, "a debuff added: not read again")
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, addedAuras = { { isHelpful = true } } })
+    check(not second.face.icons[1]._shown, "a buff added: read again, it has it")
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = true })
+    check(not second.face.icons[1]._shown and not ns.off, "all of them anew: read again")
     UnitClass, C_Spell.GetSpellInfo = class, spellInfo
     Buffs.Learn()
 
@@ -533,9 +570,9 @@ do
     Group.Apply()
     NineSliceUtil = nil
     UnitIsDeadOrGhost, UnitIsConnected = deadOf, onlineOf
-    -- What Edit Mode showed, the game's unit watch would hide again.
+    -- What Edit Mode showed, the game's unit watch would hide again: all but your own frame (you are there).
     for _, kind in ipairs(ns.Units.KINDS) do
-        kind.button:Hide()
+        if kind.unit ~= "player" then kind.button:Hide() end
         kind.row.button:Hide()
     end
 end
@@ -823,6 +860,7 @@ do
     units.target = { name = "Kobold Miner", level = 22, health = 40, most = 120, foe = true, reaction = 2,
                      classification = "elite", raid = 8 }
     W.Fire("PLAYER_TARGET_CHANGED")
+    target:Show() -- the game's unit watch: your target is there
     local foe = target.face
     check(foe.name._text == "Kobold Miner" and foe.value._text == "40 | 33%" and foe.raid._shown and foe.raid._cell == 8,
         "your target: its name, health, and its raid marker beside its level")
@@ -864,10 +902,33 @@ do
     target:Hide()
     target:Show()
     check(not foe.rowShown and not foe.row._shown, "a row hidden while its frame was out of sight is gone when it shows")
+    -- The other way round: the game's unit watch shows the row while the frame is out of sight (its unit seen before
+    -- the frame's); the row's OnShow runs with the frame's as the frame shows, and the row is looked at then.
+    target:Hide() -- the game's unit watch: your target gone
+    units.targettarget = { name = "Droopy", surname = "Fairwind", player = true, health = 600, most = 1000 }
+    row:Show() -- the game's unit watch: its target, while the frame is out of sight
+    check(not foe.rowShown and not foe.row._shown, "a row shown while its frame is out of sight: nothing yet")
+    target:Show() -- the game's unit watch: your target is there
+    check(foe.rowShown and foe.row._shown and foe.rowName._text == "Droopy Fairwind",
+        "as the frame shows, the row's OnShow runs with the frame's: the row is there")
+    row:Hide()
     units.targettarget = nil
     units.target.health = 30
     W.Fire("UNIT_HEALTH", "target")
     check(foe.value._text == "30 | 25%" and foe.health._value == 30, "its health as it goes, heard from its own events")
+    -- The health's room is measured once for a most: a beat of health measures nothing, another most once more.
+    local measures, Width = 0, Text.Width
+    Text.Width = function(...) measures = measures + 1 return Width(...) end
+    units.target.health = 25
+    W.Fire("UNIT_HEALTH", "target")
+    W.Fire("UNIT_HEALTH", "target")
+    check(foe.value._text == "25 | 20%" and measures == 0 and foe.valueMost == 120, "a beat of health measures nothing: the room is known for that most")
+    units.target.most = 240
+    W.Fire("UNIT_MAXHEALTH", "target")
+    check(measures == 1 and foe.valueMost == 240 and foe.value._text == "25 | 10%", "another most: measured once more")
+    Text.Width = Width
+    units.target.health, units.target.most = 30, 120
+    W.Fire("UNIT_MAXHEALTH", "target")
     units.target.tanking = true
     W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
     check(foe.glow._alpha == 1, "the glow while you have its aggro")
@@ -875,15 +936,13 @@ do
     W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
     check(foe.glow._alpha == 0, "and none while you do not")
     -- In a fight the game hides its health and your threat: shown as they are, nothing computed with them.
-    issecretvalue = function(value) return type(value) == "table" and value.secret == true end
-    local hidden = { secret = true }
+    local hidden = W.Secret()
     units.target.health, units.target.tanking = hidden, hidden
     W.Fire("UNIT_HEALTH", "target")
     W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
     check(not ns.off and foe.health._value == hidden and type(foe.value._text) == "table"
         and foe.value._text.abbreviated == hidden and foe.glow._alpha.from == hidden,
         "hidden health and threat: the bar, the text and the glow take them as they are")
-    issecretvalue = nil
     units.target.health, units.target.tanking, units.target.dead = 0, false, true
     W.Fire("UNIT_HEALTH", "target")
     check(foe.value._text == ns.UnitText.DEAD, "a dead unit: Dead in place of its health")
@@ -931,6 +990,7 @@ do
     check(PlayerFrame.PlayerFrameContainer._alpha == 1 and PlayerFrame._mouse == true and not player._shown,
         "Your frame off: the game's own frame as it was")
     Core.Set(ns.name, "unitPlayer", true)
+    player:Show() -- the game's unit watch: you are there
     -- Your pet: a row under your frame; the game's pet frame by its alpha and clicks (its layout re-parents it).
     local pet = player.face.rowButton
     check(pet:GetAttribute("unit") == "pet" and watched[pet] and PetFrame._alpha == 0 and PetFrame._mouse == false
@@ -974,11 +1034,16 @@ do
     check(player._height == Units.HEIGHT + 2 * Units.POWER and face.powersShown == 2
         and face.powers[1].value._text == "2.4k | 80%" and face.powers[2].value._text == "80 | 80%" and face.powers[2]._shown,
         "a druid in cat form: mana in the first bar, energy under it")
+    local kinds = face.kinds
+    units.player.power = 60
+    W.Fire("UNIT_POWER_UPDATE", "player")
+    check(face.kinds == kinds and #kinds == 2 and face.powers[2].value._text == "60 | 60%", "a beat of power: the kinds are kept, the bar follows")
     units.player.powerType, units.player.powerToken, units.player.power, units.player.powerMost = 0, "MANA", 2400, 3000
     W.Fire("UNIT_DISPLAYPOWER", "player")
     check(face.powersShown == 1 and not face.powers[2]._shown and face.powers[1].value._text == "2.4k | 80%"
         and player._height == Units.HEIGHT + 2 * Units.POWER,
         "out of the form: the mana bar alone (the button keeps its size: it is changed out of a fight only)")
+    check(face.kinds ~= kinds and #face.kinds == 1, "another power: the kinds anew")
     units.player.class, units.player.powerType, units.player.powerToken = "WARRIOR", 1, "RAGE"
     units.player.power, units.player.powerMost, units.player.mana, units.player.manaMost = 30, 100, nil, nil
     ns.Units.Apply()
@@ -1126,6 +1191,7 @@ do
         check(Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START") and Hears(MirrorTimerContainer, "MIRROR_TIMER_START"),
             "Your frame off: the game's cast bar and timers with the game's frame")
         Core.Set(ns.name, "unitPlayer", true)
+        player:Show() -- the game's unit watch: you are there
         check(not Hears(PlayerCastingBarFrame, "UNIT_SPELLCAST_START") and not ns.off, "on again, and nothing failed")
     end
 
@@ -1247,13 +1313,13 @@ do
     Core.Set(ns.name, "unitSize", 150)
     check(player._scale == 1.5 and target._scale == 1.5 and PlayerFrame._mouse == false, "Unit frame size: all three larger")
     Core.Set(ns.name, "unitSize", 100)
-    -- In a fight secure frames are not changed: what is asked for waits for its end.
-    W.combat = true
+    -- In a fight secure frames are not changed (the stand-in refuses a touch of one while W.Combat is on): what is
+    -- asked for waits for its end.
+    W.Combat(true)
     Core.Set(ns.name, "unitTarget", false)
-    check(watched[target] and TargetFrame._parent ~= UIParent, "switched off in a fight: nothing changes yet")
-    W.combat = false
-    W.Fire("PLAYER_REGEN_ENABLED")
-    check(not watched[target] and TargetFrame._parent == UIParent, "after the fight: ours hidden, the game's back")
+    check(watched[target] and target._shown and TargetFrame._parent ~= UIParent, "switched off in a fight: nothing changes yet")
+    W.Combat(false)
+    check(not watched[target] and not target._shown and TargetFrame._parent == UIParent, "after the fight: ours hidden, the game's back")
     Core.Set(ns.name, "unitTarget", true)
     check(not ns.off, "and nothing failed")
 end

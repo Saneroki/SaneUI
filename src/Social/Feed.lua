@@ -14,8 +14,8 @@ local _, ns = ...
 --  layouts as you like. Each place it stands is a list of its own (Feed.New),
 --  all fed by the window (Log.added → Feed.Added); one out of sight only
 --  notes that it is stale, and is filled anew when it is shown. A message is
---  wrapped once per width and measured once (Bubble.Measure keeps that on the
---  message), so lists as wide as the chat cost no measuring of their own.
+--  wrapped and measured once per width (Bubble.Measure keeps each on the
+--  message), so a second list of a width costs no measuring of its own.
 --
 --  Kept in the module's store, account-wide as the layouts that name them:
 --      store.views = { next = 3, list = { { id = 1, name = "Second chat", shows = { WHISPER = true, ... } }, ... } }
@@ -44,25 +44,33 @@ local menus = setmetatable({}, { __mode = "k" }) -- [view] = its list of chats (
 -------------------------------------------------------------------------------
 --  The views
 -------------------------------------------------------------------------------
+-- The views as saved, each of the right shape (saved data comes from older versions and from hand edits): one
+-- without a number for its id is left out (the full screen's windows go by it), one without a name or its chats
+-- gets them; the next id is past every one there.
 local function Kept()
     local views = ns.store.views
     if type(views) ~= "table" or type(views.list) ~= "table" then
         views = { next = 2, list = { { id = 1, name = ns.TEXT.feed, shows = Core.Copy(Feed.FIRST) } } }
         ns.store.views = views
     end
-    views.next = math.max(tonumber(views.next) or 1, #views.list + 1)
+    local list, last = views.list, 0
+    for index = #list, 1, -1 do
+        local view = list[index]
+        if type(view) ~= "table" or type(view.id) ~= "number" then
+            table.remove(list, index)
+        else
+            if type(view.name) ~= "string" then view.name = ns.TEXT.newView:format(view.id) end
+            if type(view.shows) ~= "table" then view.shows = {} end
+            last = math.max(last, view.id)
+        end
+    end
+    views.next = math.max(tonumber(views.next) or 1, last + 1)
     return views
 end
 
 -- Every view, in the order made.
 function Feed.Views()
     return Kept().list
-end
-
-function Feed.View(id)
-    for _, view in ipairs(Kept().list) do
-        if view.id == id then return view end
-    end
 end
 
 -- Whether a view shows the messages of a group (Log.lua: GUILD, CHANNEL:Trade, ...).

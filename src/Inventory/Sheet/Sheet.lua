@@ -49,12 +49,8 @@ local function Level()
     local className, class, classID = UnitClass("player")
     local colors = rawget(_G, "RAID_CLASS_COLORS")
     local color = colors and class and colors[class]
-    -- the class's colour as ink on the paper (Core.Journal.Ink: darkened, so a light one reads)
-    local colour = "ff1e1711"
-    if color then
-        local r, g, b = Core.Journal.Ink(color.r, color.g, color.b)
-        colour = ("ff%02x%02x%02x"):format(math.floor(r * 255), math.floor(g * 255), math.floor(b * 255))
-    end
+    -- the class's colour as ink on the paper (Paper.InkHex: darkened, so a light one reads)
+    local colour = color and ns.Paper.InkHex(color.r, color.g, color.b) or "ff1e1711"
     -- the specialization, where the class can choose one (WoW: Forever asks IsSpecSelectionEnabled; Retail, which
     -- lacks it, always shows the one there is)
     local spec
@@ -104,9 +100,10 @@ local function Locked(bag, slot)
     if slot == nil then ns.Slots.Update(Core.Plain(bag)) end
 end
 
-local function Items()
-    ns.Slots.Update()
-end
+-- The inventory's events come in bursts (a repair, a vendor's buy, a fight's wear): the slots are drawn once, on the
+-- next frame, however many came (Core.Later); entering the world (after a loading screen) the whole doll the same way.
+local Items = Core.Later(function() ns.Slots.Update() end)
+local Entered = Core.Later(function() ns.Safe("character", Refresh) end)
 
 local function Leveled()
     ns.Safe("character", Level)
@@ -119,7 +116,7 @@ end
 local EVENTS = {
     PLAYER_EQUIPMENT_CHANGED = Equipped, ITEM_LOCK_CHANGED = Locked,
     UPDATE_INVENTORY_DURABILITY = Items, UPDATE_INVENTORY_ALERTS = Items,
-    PLAYER_LEVEL_UP = Leveled, PLAYER_ENTERING_WORLD = Refresh,
+    PLAYER_LEVEL_UP = Leveled, PLAYER_ENTERING_WORLD = Entered,
 }
 -- The player's only (Core.OnUnit): the game sends these for every unit about.
 local UNIT_EVENTS = { UNIT_MODEL_CHANGED = Remodeled, UNIT_INVENTORY_CHANGED = Items, UNIT_NAME_UPDATE = Title }

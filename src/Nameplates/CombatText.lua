@@ -127,8 +127,10 @@ local function Word(kind)
 end
 
 -- An amount as text, in the game's abbreviation (the steps of the plates' health); a hidden one too, as it is.
+local steps -- the game's abbreviation in our steps, made once
 local function Amount(amount)
-    local ok, short = pcall(AbbreviateNumbers, amount, { breakpointData = ns.Text.STEPS })
+    steps = steps or { breakpointData = ns.Text.STEPS }
+    local ok, short = pcall(AbbreviateNumbers, amount, steps)
     if ok then return short end
     ok, short = pcall(string.format, "%d", amount)
     if ok then return short end
@@ -280,7 +282,10 @@ local function Took(host, mine, kind, flags, amount, school)
     local plain = Plain(amount)
     if kind == nil then -- the game hides what it was: its amount as it is, damage only over a foe
         local foe = host.unit and Core.Ask(UnitCanAttack, "player", host.unit) == true
-        Damage(host, "%s", Amount(amount), foe and school or CombatText.PHYSICAL, 1)
+        -- The school may be hidden too: never tested, only handed on (Damage writes a hidden one into the text).
+        local hue = CombatText.PHYSICAL
+        if foe then hue = school end
+        Damage(host, "%s", Amount(amount), hue, 1)
     elseif kind == "WOUND" then
         if plain == 0 then
             CombatText.Nothing(host, CombatText.NOTHING[flags] and flags or "MISS")
@@ -337,21 +342,22 @@ end
 
 local applied = {} -- [group of CombatText.CVARS] = true: ours were set this session
 
--- A group's CVars ours (0), where this client has them; what each had before kept first (once: not a value of ours).
+-- A group's CVars ours (0), where this client has them; what each had before kept first (once, as it was first
+-- seen, also one already at 0: a value of the player's own, never a later value of ours).
 local function Ours(group)
     local found = Found()
     applied[group] = true
     for _, name in ipairs(CombatText.CVARS[group]) do
         local now = Core.Ask(C_CVar.GetCVarInfo, name)
-        if now ~= nil and tostring(now) ~= "0" then
+        if now ~= nil then
             if found[name] == nil then found[name] = tostring(now) end
-            Put(name, "0")
+            if tostring(now) ~= "0" then Put(name, "0") end
         end
     end
 end
 
--- A group's CVars back to what they had before ours (the game's default for one of ours whose earlier value is not
--- known), once, and nothing kept any more: from now on they are the game's and the profiles' alone.
+-- A group's CVars back to what they had before ours, once, and nothing kept any more: from now on they are the
+-- game's and the profiles' alone.
 local function Restore(group)
     if not applied[group] then return end
     applied[group] = nil
@@ -359,7 +365,10 @@ local function Restore(group)
     for _, name in ipairs(CombatText.CVARS[group]) do
         local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
         if now ~= nil then
-            local back = found[name] or (tostring(now) == "0" and default) or nil
+            -- What was found before ours (kept whether it equalled ours or not); a found table wiped meanwhile (a
+            -- reset of the settings, a profile moved) with the CVar still at our 0: the game's default.
+            local back = found[name]
+            if back == nil and tostring(now) == "0" then back = default end
             if back ~= nil and tostring(now) ~= tostring(back) then Put(name, tostring(back)) end
         end
         found[name] = nil

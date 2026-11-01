@@ -90,7 +90,7 @@ local function Switched(kind)
     return Core.general ~= nil and Core.general[SWITCHES[kind]] == true
 end
 
--- The line of a kind, now; in a fight it waits for the fight's end.
+-- The line of a kind, now; in a fight, or while the game restricts addons, it waits for that to end (Released).
 function Speak(kind)
     armed[kind] = nil
     if not Switched(kind) then
@@ -123,11 +123,18 @@ local function Tell(kind)
     C_Timer.After(wait, Core.Guard("data: found", function() Speak(kind) end))
 end
 
-Core.On("PLAYER_REGEN_ENABLED", function()
+-- The fight over, or the game's restriction lifted (Core.lua hears that event first, so Core.Restricted says so already):
+-- the lines that waited for it. Not while another restriction still holds.
+local function Released()
+    if Core.Restricted() then return end
+    local kinds = {}
     for kind, why in pairs(armed) do
-        if why == "fight" then Speak(kind) end
+        if why == "fight" then kinds[#kinds + 1] = kind end
     end
-end)
+    for _, kind in ipairs(kinds) do Speak(kind) end
+end
+Core.On("PLAYER_REGEN_ENABLED", Released)
+Core.On("ADDON_RESTRICTION_STATE_CHANGED", Released)
 
 -- A change accepted. False when it cannot be kept yet.
 function Data.Discovered(set, key, what, parts, how)

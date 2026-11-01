@@ -11,6 +11,8 @@ DXT5 is left out, to compare sizes and filters alone (the tool art reports it pe
 Usage:  dev/tools/art-measure [picture] [drawn width] [drawn height]
         default: assets/SaneSpellbook-banner.png, 300 x 100 units (a banner)
 """
+import importlib.machinery
+import importlib.util
 import math
 import sys
 from pathlib import Path
@@ -19,17 +21,12 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-UNIT_PIXELS = 2160 / 768  # as in dev/tools/art
-SLACK = 0.85
+_loader = importlib.machinery.SourceFileLoader("art", str(ROOT / "dev/tools/art"))
+_spec = importlib.util.spec_from_loader("art", _loader)
+art = importlib.util.module_from_spec(_spec)
+_loader.exec_module(art)   # a texture's side by the rule measured here
 SCREENS = [(2160, 1.15), (2160, 1.0), (2160, 0.65), (1440, 1.0), (1440, 0.65), (1080, 1.0), (1080, 0.65)]
 BACKGROUND = 0.11
-
-
-def side(units):
-    size = 1
-    while size < SLACK * units * UNIT_PIXELS and size < 1024:
-        size *= 2
-    return size
 
 
 def load(path, aspect):
@@ -105,7 +102,7 @@ def main():
     picture = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "assets" / "SaneSpellbook-banner.png"
     drawn_w, drawn_h = (float(sys.argv[2]), float(sys.argv[3])) if len(sys.argv) > 3 else (300.0, 100.0)
     box = load(picture, drawn_w / drawn_h)
-    width, height = side(drawn_w), side(drawn_h)
+    width, height = art.side(drawn_w), art.side(drawn_h)
 
     def kept(w, h):
         texels = min(w / drawn_w, h / drawn_h)

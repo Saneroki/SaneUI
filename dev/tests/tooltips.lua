@@ -461,11 +461,11 @@ check(shape(panel) == "text text INFO strip strip +text",
 check(cells(row(panel, 5)) == "DPS 8.2, Per Mana 0.68, CD ---, Crit 6.2%",
     "its second row: per second of its cast, per point of mana, its cooldown (--- where it has none), the chance of a critical strike")
 check(head(panel).accent and head(panel).ar == 1 and head(panel).ag == 0.5 and head(panel).ab == 0
-    and row(panel, 2).left == "|cffff7f00Fire|r  \194\183  Rank 2",
+    and row(panel, 2).left == "|cffFF8000Fire|r  \194\183  Rank 2",
     "a spell of fire has the colour the game's combat log gives fire, and says so under its name")
 local described
 for index = 1, panel.texts.taken do
-    if panel.texts[index]._text == "Hurls a fiery ball that causes |cffff7f0016|r to |cffff7f0025|r Fire damage." then described = panel.texts[index] end
+    if panel.texts[index]._text == "Hurls a fiery ball that causes |cffFF800016|r to |cffFF800025|r Fire damage." then described = panel.texts[index] end
 end
 check(described, "the digits of its description are in that colour at full strength")
 check(described and described._justify == "CENTER" and panel.texts[1]._justify == "LEFT", "the description stands in the middle; the other lines at the left")
@@ -566,7 +566,7 @@ W.spells[2948] = { name = "Scorch" }
 tip:Fill({ type = TYPE.Spell, id = 2948 }, { { "Scorch" }, { "Scorches the enemy for 1.5 sec, causing 12 Fire damage.", nil, GOLD, nil, LINE.SpellDescription } })
 local scorched = false
 for index = 1, panel.texts.taken do
-    if panel.texts[index]._text == "Scorches the enemy for |cffff7f001|r.|cffff7f005|r sec, causing |cffff7f0012|r Fire damage." then scorched = true end
+    if panel.texts[index]._text == "Scorches the enemy for |cffFF80001|r.|cffFF80005|r sec, causing |cffFF800012|r Fire damage." then scorched = true end
 end
 check(scorched, "only a description's digits are coloured: the point between them keeps the description's colour")
 -- A description's numbers (Numbers.lua), asked directly
@@ -684,10 +684,35 @@ local hatchet = { { "Skull Hatchet", nil, { 0.64, 0.21, 0.93 } }, { "Binds when 
     { " ", nil, nil, nil, LINE.SellPrice, price = 81 } }
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
 check(head(panel).tag == "" and row(panel, 2).left == "Gold" and row(panel, 3).left == "|cff" .. code(COLOR.RED) .. "BoE|r"
-    and row(panel, 3).right == "|cff8787edUncollected|r",
+    and row(panel, 3).right == "|cff8787EDUncollected|r",
     "under Gold first how it binds, and at the right whether you have its look, short, in the game's colour for it")
 check(count(panel) == 4 and row(panel, 4).left == "Vendor" and row(panel, 4).right == "81c",
     "the game's own line of the price is left out: the panel has a row for it, under Gold; no auction price before you have seen one")
+-- At the auction house the game's own code writes an auction's seller, its time left and your bid after the item's lines, as
+-- another addon would (and at a vendor an item's repair cost, with its coins under it): those are the game's own all the same,
+-- shown under Details, not hidden as another addon's lines, whether or not the game says where its lines stand
+do
+    local auction = { { "Skull Hatchet", nil, { 0.64, 0.21, 0.93 } }, { "Binds when equipped", nil, nil, nil, LINE.ItemBinding, data = { bonding = 7 } },
+        { " ", added = true }, { "Seller: |cffffffffBob|r", nil, GOLD, added = true }, { "Time Left: |cffffffffLong|r", nil, GOLD, added = true },
+        { "|cff20ff20High Bidder|r", nil, GOLD, added = true }, { "Seen in 3 shops", added = true } }
+    for _, placed in ipairs({ true, false }) do
+        indexed = placed
+        tip:Fill({ type = TYPE.Item, id = 19019 }, auction)
+        check(shape(panel) == "text DETAILS text text text GOLD text" and row(panel, 3).left == "Seller: |cffffffffBob|r"
+            and row(panel, 4).left == "Time Left: |cffffffffLong|r" and row(panel, 5).left == "|cff20ff20High Bidder|r" and hinted(panel),
+            "an auction's seller, time left and your bid stand under Details without Alt, not hidden as another addon's lines")
+        W.alt = true
+        tip:Fill({ type = TYPE.Item, id = 19019 }, auction)
+        check(shape(panel) == "text DETAILS text text text GOLD text IDS text ADDONS text" and row(panel, 11).left == "Seen in 3 shops",
+            "with Alt the same, and only another addon's line under Addons")
+        W.alt = false
+    end
+    indexed = false
+    tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Skull Hatchet", nil, { 0.64, 0.21, 0.93 } }, { "Repair cost:", added = true },
+        { "12|A:coin-silver:0:0:2:0|a 34|A:coin-copper:0:0:2:0|a", added = true }, { "Seen in 3 shops", added = true } })
+    check(shape(panel) == "text DETAILS text text" and row(panel, 3).left == "Repair cost:" and row(panel, 4).left:find("coin%-silver", 1) ~= nil,
+        "at a vendor the repair cost and the coins under it are the game's too")
+end
 browse = { { itemKey = { itemID = 19019 }, minPrice = 98765 }, { itemKey = { itemID = 4 }, minPrice = 0 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
@@ -1091,29 +1116,79 @@ check(panel.live.healthText:GetParent():GetParent() == panel.live.health and pan
 check(panel.barMask._points[1][5] == select(5, panel.live.health:GetPoint(1)) and #panel.barMask._points == 2,
     "the two bars are one block with round corners")
 panel.live.healthText.SetFormattedText = function(self, format, ...) self._text = format:format(...) end
-tick(panel, 0.2)
-check(panel.live.healthText._text == "40   83%", "as its current health and its share in percent")
+-- A shown panel asks the unit nothing on its own: it listens for the unit's events (which the game sends for that unit
+-- alone) and answers them on its next frame, however many came
+do
+    local asked, health = 0, UnitHealth
+    UnitHealth = function(unit) asked = asked + 1 return health(unit) end
+    for _ = 1, 10 do tick(panel, 0.2) end
+    check(asked == 0 and panel.live.healthText._text ~= "40   83%", "a shown panel does not ask for the unit's health again and again")
+    W.Fire("UNIT_HEALTH", "target")
+    tick(panel)
+    check(asked == 0, "another unit's event is not heard")
+    W.Fire("UNIT_HEALTH", "mouseover")
+    W.Fire("UNIT_HEALTH", "mouseover")
+    tick(panel)
+    check(asked == 1 and panel.live.healthText._text == "40   83%",
+        "its health changed (twice in one frame: one look): the health anew, its current health and its share in percent")
+    UnitHealth = health
+end
+-- In a fight the game hides the unit's health: a secret value, which nothing may compute with. The bar is given it
+-- as it is; a client that leaves the share to us (no UnitHealthPercent) gets no share from a hidden number
+-- (Core.Plain), and the panel stands and listens on
+do
+    local secret, scale, said = W.Secret(), CurveConstants.ScaleTo100, #W.printed
+    local health, bar = UnitHealth, panel.live.health
+    UnitHealth, CurveConstants.ScaleTo100 = function() return secret end, nil
+    bar.SetValue = function(self, value) self._value = value end
+    W.Fire("UNIT_HEALTH", "mouseover")
+    tick(panel)
+    local hidden = issecretvalue(bar._value) and panel.live.healthText._text == "" and #W.printed == said and not Core.errors["Tooltips: live values"]
+    UnitHealth, CurveConstants.ScaleTo100, bar.SetValue = health, scale, nil
+    W.Fire("UNIT_HEALTH", "mouseover")
+    tick(panel)
+    check(hidden and panel.live.healthText._text == "40   83%",
+        "a hidden health: the bar takes it as it is, the text shows no share worked out from it, nothing fails; plain again, its share again")
+end
 world.mouseovertarget = { player = true, name = "Varian", surname = "Wrynn", level = 60, class = { "Mage", "MAGE" } }
-tick(panel, 0.2)
+W.Fire("UNIT_TARGET", "mouseover")
+tick(panel)
 check(panel.live.targetName:GetText() == "Varian Wrynn", "a player as the target by the whole name: first name and surname")
 local isUnit = UnitIsUnit
 UnitIsUnit = function(a, b) return (a == "mouseovertarget" and b == "player") or a == b end
-tick(panel, 0.2)
+W.Fire("UNIT_TARGET", "mouseover")
+tick(panel)
 check(panel.live.targetName:GetText() == "You" and panel.live.targetName:GetTextColor() == COLOR.RED[1]
     and select(2, panel.live.targetName:GetTextColor()) == COLOR.RED[2], "you as its target: the word for you, in the game's red")
 UnitIsUnit = isUnit
 world.mouseovertarget = { name = "Ragnaros", level = 63 }
-tick(panel, 0.2)
+W.Fire("UNIT_TARGET", "mouseover")
+tick(panel)
 -- The mouse has left the player: the game lets the tooltip fade out, and "mouseover" is somebody else
 local guidOf = UnitGUID
 UnitGUID = function(unit) return unit == "mouseover" and "Player-2" or guidOf(unit) end
 UnitHealth = function() return 7 end
 world.mouseover.target = false
-for _ = 1, 5 do tick(panel, 0.2) end
+W.Fire("UNIT_HEALTH", "mouseover")
+W.Fire("UNIT_TARGET", "mouseover")
+tick(panel)
 check(panel.live.healthText._text == "40   83%" and count(panel) == 9 and row(panel, 6).live == "target",
     "once the mouse has left the unit, its panel stands still: no other unit's numbers, no row taken away")
 UnitGUID, UnitHealth = guidOf, function() return 40 end
 world.mouseover.target = true
+-- The whole interface hidden (Alt-Z) and shown again: the panel, a child of UIParent, is unseen and seen again with
+-- it, and the game runs its OnHide and OnShow for that too. So it stops listening for its unit meanwhile, and
+-- listens again, its numbers read anew, once the interface is back
+UIParent:Hide()
+UnitHealth = function() return 25 end
+W.Fire("UNIT_HEALTH", "mouseover")
+local unseen = panel:IsShown() and not panel:IsVisible() and panel.liveUnit == nil and not panel.heard
+UIParent:Show()
+check(unseen and panel:IsVisible() and panel.liveUnit == "mouseover" and panel.live.healthText._text == "25   83%",
+    "the interface hidden (Alt-Z): the panel is unseen with it and stops listening for its unit; shown again with it, it listens again, its health read anew at once")
+UnitHealth = function() return 40 end
+W.Fire("UNIT_HEALTH", "mouseover")
+tick(panel)
 -- A text or a bar that was given a number the game hides answers every question about its size
 -- with a hidden number, for good. They must never be measured, nor used again for another line.
 local hidden = { panel.live.healthText, panel.live.targetName }
@@ -1131,12 +1206,20 @@ end
 check(#panel.auraIcons == 3 and panel.auraIcons[1]._texture == 11 and panel.auraIcons[3]._texture == 13 and panel.auraIcons[3]:IsShown(), "its buffs, then its debuffs, as small icons")
 check(panel.auraIcons[1].mask._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\aura-mask", "each with a soft edge")
 world.mouseover.target = false
-for _ = 1, 5 do tick(panel, 0.2) end
+W.Fire("UNIT_TARGET", "mouseover")
+tick(panel)
 check(count(panel) == 8 and row(panel, 8).kind == "auras", "when it lets go of its target, the row for it goes")
-W.combat = true
-for _ = 1, 5 do tick(panel, 0.2) end
-check(count(panel) == 7 and not panel.auraIcons[1]:IsShown(), "in a fight a unit's buffs cannot be asked for: no row for them")
-W.combat = false
+W.Combat(true)
+tick(panel)
+check(count(panel) == 7 and not panel.auraIcons[1]:IsShown(), "a fight begins: a unit's buffs cannot be asked for in one, so no row for them")
+-- Filled again in the fight, as the game refreshes a unit's tooltip: the panel is drawn, placed and shown as always.
+-- No part of it is a protected frame (the game blocks those in a fight, and so does the stand-in)
+tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
+check(panel:IsShown() and not panel:IsProtected() and not panel.front:IsProtected() and count(panel) == 7,
+    "filled again in the fight: the panel is drawn and placed as always, no part of it protected")
+W.Combat(false)
+tick(panel)
+check(count(panel) == 8 and row(panel, 8).kind == "auras" and panel.auraIcons[1]:IsShown(), "the fight over, the row for its buffs is back")
 world.mouseover.target = true
 options.classColors = false
 tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
@@ -1181,7 +1264,7 @@ check(panel.dragon:IsShown() and panel.dragon._texture == "Interface\\HUD\\UIUni
 check(panel.icon._width == 64 and panel.icon._points[1][1] == "TOPLEFT" and panel.icon._points[1][4] == panel:GetWidth() + 10 - 64
     and panel.icon._points[1][5] == 10,
     "the portrait is large and stands out over the corner, where the dragon covers its edge")
-check(row(panel, 3).left == "|cffffd100Elite|r", "under what it is, its rank in the colour of its dragon")
+check(row(panel, 3).left == "|cffFFD100Elite|r", "under what it is, its rank in the colour of its dragon")
 check(row(panel, 4).left == "Status" and row(panel, 5).kind == "bar" and row(panel, 5).live == "health",
     "under Status its health, and no row for a target or buffs it has not")
 check(row(panel, 6).kind == "caption" and row(panel, 6).left == "Quest" and row(panel, 7).left == "The Kobold Menace" and row(panel, 7).lg == 0.82,
@@ -1202,7 +1285,7 @@ W.Play("retail")
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
 local experience = false
 for index = 1, count(panel) do experience = experience or row(panel, index).left == "137 XP" end
-check(not experience and ns.Numbers.Experience("target") == nil and row(panel, 3).left == "Mage  \194\183  |cffffd100Elite|r",
+check(not experience and ns.Numbers.Experience("target") == nil and row(panel, 3).left == "Mage  \194\183  |cffFFD100Elite|r",
     "in Retail a creature's panel has no experience row; the rest as in Forever")
 W.Play("forever")
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
@@ -1216,28 +1299,28 @@ check(ns.Numbers.Experience("target") == nil, "ten levels below you at 45: grey,
 world.target.level, world.player.level = 50, 45
 check(ns.Numbers.Experience("target") == math.floor(270 * 1.2 * 2 + 0.5), "above you: 5 % more a level, for four levels at most")
 world.player.level, world.target.level = 4, 5
-check(row(panel, 2).left == "Humanoid" and row(panel, 3).left == "Mage  \194\183  |cffffd100Elite|r",
+check(row(panel, 2).left == "Humanoid" and row(panel, 3).left == "Mage  \194\183  |cffFFD100Elite|r",
     "a creature that is more than a plain fighter says its class, before its rank")
 world.target.dead = true
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
-check(row(panel, 3).left == "Mage  \194\183  |cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r" and row(panel, 6).left ~= "137 XP",
+check(row(panel, 3).left == "Mage  \194\183  |cffFFD100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r" and row(panel, 6).left ~= "137 XP",
     "a dead one says so, and gives nothing any more")
 world.target.dead = nil
 world.target.family, world.target.tapped = "Wolf", true
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "<Tunnel Boss>" }, { "Level 5 Humanoid (Elite)" } })
 check(row(panel, 2).left == "<Tunnel Boss>" and row(panel, 2).font == "title" and row(panel, 2).flush and row(panel, 3).left == "Humanoid  \194\183  Wolf",
     "a creature's title as large as its name, close under it; what it is and its family")
-check(row(panel, 4).left == "Mage  \194\183  |cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Tapped|r", "one somebody else has tapped says so")
+check(row(panel, 4).left == "Mage  \194\183  |cffFFD100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Tapped|r", "one somebody else has tapped says so")
 world.target.family, world.target.tapped = nil, nil
 world.target.class = { "Warrior", "WARRIOR" }
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Bowyer" }, { "Level 5 Humanoid (Elite)" },
     { "Stormwind" }, { "Skinnable" } })
 check(row(panel, 2).left == "Bowyer" and row(panel, 2).font == "title" and row(panel, 3).left == "Humanoid  \194\183  Stormwind"
-    and row(panel, 4).left == "Warrior  \194\183  |cffffd100Elite|r  \194\183  |cffffffffSkinnable|r",
+    and row(panel, 4).left == "Warrior  \194\183  |cffFFD100Elite|r  \194\183  |cffFFFFFFSkinnable|r",
     "an NPC's title is the line before its level line, its faction the one after it; a hostile creature says its class")
 world.target.reaction = 5
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Bowyer" }, { "Level 5 Humanoid (Elite)" } })
-check(row(panel, 4).left == "|cffffd100Elite|r", "a friendly one does not")
+check(row(panel, 4).left == "|cffFFD100Elite|r", "a friendly one does not")
 world.target.reaction = nil
 -- Core's quest data (the sample, dev/tests/data/tooltips): quest 60 asks for a candle (item 772, its second
 -- objective) that this creature (NPC 1) drops 33% of the time; it takes quest 61 back and gives 62, 63, 64 and 70
@@ -1337,7 +1420,7 @@ W.Fire("QUEST_LOG_UPDATE")
 world.target.dead, world.target.class = true, { "Kobold", "WARRIOR" }
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" }, { "Corpse" },
     { "Skinnable", nil, { 1, 0.1, 0.1 } } })
-check(row(panel, 3).left == "|cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r  \194\183  |cffff1919Skinnable|r" and count(panel) == 5,
+check(row(panel, 3).left == "|cffFFD100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r  \194\183  |cffFF1A1ASkinnable|r" and count(panel) == 5,
     "a dead creature: Dead and Skinnable (in the game's colour for it) on the class line; no corpse line, no class that is only its name")
 check(head(panel).ar == COLOR.NEUTRAL[1] and head(panel).ag == COLOR.NEUTRAL[2] and head(panel).ab == COLOR.NEUTRAL[3], "its panel has no colour of its own")
 check(head(panel).portrait == "target" and panel.icon:IsShown() and head(panel).dragon == "elite" and panel.dragon:IsShown(),
@@ -1364,7 +1447,7 @@ check(head(panel).dragon == "boss" and math.floor(panel.dragon._width) == 103, "
 world.target.boss = nil
 world.target.kind = "rareelite"
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
-check(head(panel).dragon == "silver" and row(panel, 3).left == "|cff" .. code(COLOR.SILVER) .. "Rare|r  \194\183  |cffffd100Elite|r",
+check(head(panel).dragon == "silver" and row(panel, 3).left == "|cff" .. code(COLOR.SILVER) .. "Rare|r  \194\183  |cffFFD100Elite|r",
     "a rare elite: the silver dragon, and both of its words, each in its dragon's colour")
 world.target.kind = "elite"
 
@@ -1377,7 +1460,6 @@ W.methods.SetUnit = function(self, unit)
 end
 W.methods.ClearModel = function(self) self._model = nil end
 W.methods.SetPortraitZoom = function(self, zoom) self._zoom = zoom end
-W.methods.SetParent = function(self, parent) self._parent = parent end
 W.methods.SetFrameLevel = function(self, level) self._level = level end
 W.methods.GetFrameLevel = function(self) return self._level or 1 end
 local kobold = { { "Kobold", nil, { 1, 0.1, 0.1 } } }
@@ -1406,6 +1488,26 @@ tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
 W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1) -- a key: the shown panels seen or not anew (Gate)
 check(figure._model == "target" and #given == asked and figure:IsShown() and figure:GetAlpha() == 1 and not panel.icon:IsShown(),
     "hidden and shown again for the same unit: its model stands at once, kept while hidden, not given anew")
+-- The game refreshes a unit frame's tooltip several times a second, in one go: SetOwner hides it, SetUnit fills it again.
+-- Its panel is not hidden meanwhile, nor the model in it (shown anew, it would start over: a blink): both stand as they
+-- are until the end of the frame draws the panel anew. Hidden and not filled again, the panel goes at the end of the frame.
+do
+    local panelHides, figureHides = 0, 0
+    panel.Hide = function(self) panelHides = panelHides + 1 return W.methods.Hide(self) end
+    figure.Hide = function(self) figureHides = figureHides + 1 return W.methods.Hide(self) end
+    tip:Hide()
+    local stood = panel:IsShown() and figure:IsShown()
+    tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold, true)
+    stood = stood and panel:IsShown() and figure:IsShown()
+    frame()
+    check(stood and panelHides == 0 and figureHides == 0 and panel:IsShown() and figure:IsShown() and tip:GetAlpha() == 0,
+        "hidden and filled again in one frame, as the game refreshes a unit frame's tooltip: the panel and its model stay shown throughout")
+    tip:Hide()
+    check(panel:IsShown() and panelHides == 0 and tip:GetAlpha() == 0, "hidden and not filled again, the panel stands until the end of the frame")
+    frame()
+    check(not panel:IsShown() and panelHides == 1 and tip:GetAlpha() == 1, "and goes then, the tooltip the game's own again")
+    panel.Hide, figure.Hide = nil, nil
+end
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" }, { "Epic" } })
 check(not figure:IsShown() and panel.icon:IsShown(), "an item has its icon, no model")
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
@@ -1932,7 +2034,7 @@ check(panel:GetWidth() < columnWidth, "with room on the screen, one column again
 local skillLines = { [182] = { skillID = 182, name = "Herbalism", rank = 160, modifier = 0, maxRank = 225 } }
 C_SkillInfo = { GetSkillLineInfoByID = function(id) return skillLines[id] end }
 W.Fire("SKILL_LINES_CHANGED")
-local CHANCE = { "ff1919", "ff7f3f", "ffd100", "3fbf3f", "7f7f7f" } -- none, orange, yellow, green, grey (the game's)
+local CHANCE = { "FF1A1A", "FF8040", "FFD100", "40BF40", "808080" } -- none, orange, yellow, green, grey (the game's)
 local function bands(need, yellow, grey)
     return ("|cff%s%d|r  |cff%s%d|r  |cff%s%d|r  |cff%s%d|r"):format(CHANCE[2], need, CHANCE[3], yellow, CHANCE[4],
         math.ceil((yellow + grey) / 2), CHANCE[5], grey)
@@ -2002,7 +2104,9 @@ check(shape(panel) == "text text", "a thing in the world the data has no skill f
 
 -- Lines somebody wrote in: a button's hint -------------------------------------------------------
 tip:Hide()
-check(not panel:IsShown() and tip:GetAlpha() == 1 and tip.left[1]:GetAlpha() == 1, "a hidden tooltip takes its panel with it and is visible again, its lines too")
+frame()
+check(not panel:IsShown() and tip:GetAlpha() == 1 and tip.left[1]:GetAlpha() == 1,
+    "a hidden tooltip takes its panel with it at the end of the frame and is visible again, its lines too")
 check(#panel._points == 0, "and the panel hangs on nothing any more (so no other panel can come to hang on it the wrong way round)")
 tip:Fill(nil, { { "Close", nil, GOLD } })
 check(not hinted(panel), "a button's hint has no line that Alt shows more: there is nothing more")
@@ -2117,7 +2221,8 @@ tip:FadeOut()
 check(not panel:IsShown() and tip:IsShown() and tip._fading and tip:GetAlpha() == 0 and tip.left[1]:GetAlpha() == 0,
     "the mouse has left it and the game lets it fade: the panel is gone at once, and the fading tooltip is not seen either")
 tip:Hide()
-check(tip.left[1]:GetAlpha() == 1, "once the game hides it, its parts are given back")
+frame()
+check(tip.left[1]:GetAlpha() == 1, "once the game hides it, its parts are given back at the end of the frame")
 tip:Fill({ type = TYPE.Spell, id = 133 }, { { "Fireball", "Rank 2" }, { "30 Mana", "35 yd range" } }, true)
 tip:FadeOut()
 frame()
@@ -2180,13 +2285,13 @@ shopping.CompareHeader = W.NewWidget("Frame", nil, shopping)
 shopping.CompareHeader.Label = W.NewWidget("FontString", nil, shopping.CompareHeader)
 shopping.CompareHeader.Label:SetText("Equipped")
 shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } })
-check(head(worn).tag == "|cffffd100EQUIPPED|r" and worn.texts[1]._text == "|cffffd100EQUIPPED|r" and worn.texts[2]._text == "Thunderfury",
+check(head(worn).tag == "|cffFFD100EQUIPPED|r" and worn.texts[1]._text == "|cffFFD100EQUIPPED|r" and worn.texts[2]._text == "Thunderfury",
     "what you wear says so at its top, inside the panel, where another item says how it binds")
 check(worn:GetAlpha() == 0.85, "and stands back a little")
 shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Binds when picked up", nil, nil, nil, LINE.ItemBinding, data = { bonding = 3 } },
     { "", added = true }, { "If you replace this item, the following stat changes will occur:", nil, GOLD, added = true },
     { "|cff00ff00+2.2|r damage per second", added = true }, { "+3 Stamina", added = true } })
-check(head(worn).tag == "|cffffd100EQUIPPED|r" and count(worn) == 4 and row(worn, 2).left == "Info" and row(worn, 3).left == "|cff00ff00+2.2|r DPS"
+check(head(worn).tag == "|cffFFD100EQUIPPED|r" and count(worn) == 4 and row(worn, 2).left == "Info" and row(worn, 3).left == "|cff00ff00+2.2|r DPS"
     and row(worn, 3).font == "row" and row(worn, 4).left == "+3 Stam" and row(worn, 4).font == "row",
     "a comparison's changes without the sentence over them, as the game's own lines under Info, damage per second short")
 
@@ -2381,13 +2486,15 @@ pinned._scripts.OnMouseUp(pinned, "LeftButton")
 check(pinned:IsShown() and stuck:IsShown(), "nor does one that dragged it")
 pinned._scripts.OnMouseDown(pinned, "RightButton")
 pinned._scripts.OnMouseUp(pinned, "RightButton")
-check(not pinned:IsShown() and not stuck:IsShown(), "a click on it closes it, as the game's X does")
+frame()
+check(not pinned:IsShown() and not stuck:IsShown(), "a click on it closes it, as the game's X does; its panel is gone at the end of the frame")
 check(pinned._hit[1] == 0 and pinned._hit[3] == 0 and pinned.CloseButton._mouse == true, "and the tooltip's area for the mouse and its X are the game's again")
 pinned:ClearAllPoints()
 pinned:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 10, -10) -- dragged somewhere, the last time
 pinned:Fill({ type = TYPE.Item, id = 19019 }, THUNDERFURY)
 check(#pinned._points == 1 and pinned._points[1][1] == "CENTER" and stuck:IsShown(), "opened again, it is in the middle again")
 pinned:Hide()
+frame()
 
 -- Seen only while a key is held (the option show) -----------------------------------------------
 options.show = "shift"
@@ -2474,8 +2581,10 @@ check(panel:IsShown() and tip:GetAlpha() == 0, "(a panel once more)")
 tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
 local health = UnitHealth
 UnitHealth = function() error("not for addons") end
-tick(panel, 1)
-tick(panel, 1)
+W.Fire("UNIT_HEALTH", "mouseover")
+tick(panel)
+W.Fire("UNIT_HEALTH", "mouseover")
+tick(panel)
 UnitHealth = health
 check(not ns.off and panel:IsShown() and Core.errors["Tooltips: live values"] and Core.errors["Tooltips: live values"].count == 1,
     "a live value that fails is noted once; the panel keeps what it was drawn with, and the tooltips go on")

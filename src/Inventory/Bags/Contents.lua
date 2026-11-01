@@ -11,7 +11,8 @@ local _, ns = ...
 --
 --  A slot's record is kept and filled anew at each reading, never made again
 --  while the bags change:
---      { bag, slot, item, count, quality, link, name, icon, locked, bound,
+--      { bag, slot, key ("bag:slot", made once: Contents.Key), item, count,
+--        quality, link, name, icon, locked, bound,
 --        worthless, readable, quest, questID, questActive, new, class,
 --        subclass, equip, level, category, junk, pinned, set, reagentBag,
 --        special, kind, place,
@@ -119,6 +120,23 @@ local records = {} -- [bag] = { [slot] = record }
 Contents.records = records
 Contents.waiting = {} -- [item] = true: the game did not know its name or item level yet (GET_ITEM_INFO_RECEIVED)
 
+-- A slot's key, "bag:slot", made once and kept: a record's (record.key), the equipment sets' slots', a pool's
+-- buttons by slot (no string built per slot at each reading or drawing).
+local keys = {} -- [bag] = { [slot] = "bag:slot" }
+function Contents.Key(bag, slot)
+    local list = keys[bag]
+    if not list then
+        list = {}
+        keys[bag] = list
+    end
+    local key = list[slot]
+    if not key then
+        key = bag .. ":" .. slot
+        list[slot] = key
+    end
+    return key
+end
+
 -- The record of a slot (made once).
 function Contents.Record(bag, slot)
     local slots = records[bag]
@@ -128,7 +146,7 @@ function Contents.Record(bag, slot)
     end
     local record = slots[slot]
     if not record then
-        record = { bag = bag, slot = slot }
+        record = { bag = bag, slot = slot, key = Contents.Key(bag, slot) }
         slots[slot] = record
     end
     return record
@@ -220,7 +238,7 @@ function Contents.Sets()
             location = Plain(location)
             local data = type(location) == "number" and location >= 0 and Ask(unpack, location)
             if type(data) == "table" and data.isBags and data.bag and data.slot then
-                local key = data.bag .. ":" .. data.slot
+                local key = Contents.Key(data.bag, data.slot)
                 if not at[key] then at[key] = name or "" end
             end
         end
@@ -281,7 +299,7 @@ function Contents.Read(bag, slot, place)
     else
         Contents.waiting[record.item] = nil
     end
-    record.set = Contents.setAt[bag .. ":" .. slot]
+    record.set = Contents.setAt[record.key]
     ns.Categories.Classify(record)
     return record
 end

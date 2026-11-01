@@ -601,6 +601,7 @@ end
 
 function Bank.Build(made)
     panel = made
+    Bags.Store() -- the categories and the list's columns as the player has them: the bags' window may not be built yet
     kept = Kept()
     local body = panel.body
     bar = CreateFrame("Frame", nil, body)

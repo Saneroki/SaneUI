@@ -57,6 +57,7 @@ DEFAULT_FONTS = {   # the game's fonts by file name: stand-ins with about their 
     "skurri.ttf": ["/usr/share/fonts/caladea/Caladea-Bold.ttf", "/usr/share/fonts/noto/NotoSerif-Bold.ttf"],
 }
 FALLBACK_FONT = ["/usr/share/fonts/noto/NotoSans-Regular.ttf", "/usr/share/fonts/liberation/LiberationSans-Regular.ttf"]
+SYSTEM_FONTS = Path("/usr/share/fonts")
 
 
 def config():
@@ -211,21 +212,63 @@ def font_file(path):
     return hit
 
 
+def font_served(p):
+    """Whether /font may send the file: one font_file() gave already (FONTS), or a .ttf or .otf it could give: under
+    the system's fonts, a module's Fonts in assets/optimized, the project's assets/fonts, or one of the config's
+    fonts. Never a file by its path alone."""
+    if p in FONTS:
+        return True
+    try:
+        file = Path(p).resolve(strict=True)
+    except OSError:
+        return False
+    if file.suffix.lower() not in (".ttf", ".otf") or not file.is_file():
+        return False
+    named = [Path(f).expanduser().resolve() for f in CONF.get("fonts", {}).values()]
+    places = [SYSTEM_FONTS, ROOT / "assets/fonts"] + list((ROOT / "assets/optimized").glob("*/Fonts"))
+    return file in named or any(file.is_relative_to(place) for place in places)
+
+
 def blp_raw(path):
-    """A BLP2 file of uncompressed pixels (encoding 3, BGRA), which the image library does not read; else None."""
+    """A BLP2 file the image library does not read right, decoded here; else None. Uncompressed pixels (encoding 3,
+    BGRA) it does not read at all. A paletted file (encoding 1) it reads with the palette's own alpha byte, which is
+    unused (zero) in the game's files, and never its alpha plane: the cursors and other paletted pictures came out
+    transparent. The plane follows the indices at the first mip's offset: a byte a pixel at an alpha depth of 8, two
+    pixels a byte at 4 (the low nibble first), eight a byte at 1 (the lowest bit first), nothing at 0 (opaque)."""
     if path.suffix.lower() != ".blp":
         return None
     import struct
     from PIL import Image
     data = path.read_bytes()
-    if data[:4] != b"BLP2" or len(data) < 148 or data[8] != 3:
+    if data[:4] != b"BLP2" or len(data) < 1172 or data[8] not in (1, 3):
         return None
+    encoding, depth = data[8], data[9]
     width, height = struct.unpack_from("<II", data, 12)
     offset = struct.unpack_from("<I", data, 20)[0]
-    raw = data[offset:offset + width * height * 4]
-    if len(raw) < width * height * 4:
+    count = width * height
+    if encoding == 3:
+        raw = data[offset:offset + count * 4]
+        if len(raw) < count * 4:
+            return None
+        return Image.frombytes("RGBA", (width, height), raw, "raw", "BGRA")
+    palette = data[148:148 + 1024]                    # 256 entries of BGRA
+    indices = data[offset:offset + count]
+    plane = data[offset + count:]
+    if depth == 8:
+        alpha = plane[:count]
+    elif depth == 4:
+        alpha = bytes(((plane[i >> 1] >> (4 * (i & 1))) & 15) * 17 for i in range(min(count, 2 * len(plane))))
+    elif depth == 1:
+        alpha = bytes(255 if plane[i >> 3] >> (i & 7) & 1 else 0 for i in range(min(count, 8 * len(plane))))
+    else:
+        alpha = b"\xff" * count
+    if len(indices) < count or len(alpha) < count:
         return None
-    return Image.frombytes("RGBA", (width, height), raw, "raw", "BGRA")
+    img = Image.frombytes("P", (width, height), indices)
+    img.putpalette(bytes(palette[4 * i + 2 - c] for i in range(256) for c in range(3)))   # BGR to RGB
+    img = img.convert("RGB")
+    img.putalpha(Image.frombytes("L", (width, height), alpha))
+    return img
 
 
 def png_of(path):
@@ -395,21 +438,36 @@ class Host:
         return CACHE / "saved" / f"{name}.json"
 
     def send(self, msg):
-        line = json.dumps(msg) + "\n"
-        self.proc.stdin.write(line)
-        self.proc.stdin.flush()
-        while True:
-            out = self.proc.stdout.readline()
-            if not out:
-                err = self.proc.stderr.read() if self.proc.poll() is not None else ""
-                self.proc = None
-                return {"changes": {}, "messages": [{"kind": "error", "text": "the lab's host stopped: " + err[-2000:]}]}
-            if not out.startswith('{"changes"'):
-                q = json.loads(out)
-                self.proc.stdin.write(json.dumps(answer(q)) + "\n")
-                self.proc.stdin.flush()
-                continue
-            return json.loads(out)
+        proc = self.proc
+        proc.stdin.write(json.dumps(msg) + "\n")
+        proc.stdin.flush()
+        # A message the host never answers (while true do end, run from the console) would hold the lock for ever,
+        # every later call of the page waiting behind it: after TIMEOUT seconds the host is killed and the page
+        # told; the next call starts it anew.
+        killed = []
+
+        def kill():
+            killed.append(True)
+            proc.kill()
+
+        timer = threading.Timer(TIMEOUT, kill)
+        timer.start()
+        try:
+            while True:
+                out = proc.stdout.readline()
+                if not out:
+                    err = proc.stderr.read() if proc.poll() is not None else ""
+                    self.proc = None
+                    why = f"no answer in {TIMEOUT} s (an endless loop?), killed" if killed else err[-2000:]
+                    return {"changes": {}, "messages": [{"kind": "error", "text": "the lab's host stopped: " + why}]}
+                if not out.startswith('{"changes"'):
+                    q = json.loads(out)
+                    proc.stdin.write(json.dumps(answer(q)) + "\n")
+                    proc.stdin.flush()
+                    continue
+                return json.loads(out)
+        finally:
+            timer.cancel()
 
     def stop(self, keep=True):
         if self.proc:
@@ -480,6 +538,7 @@ class Host:
 
 HOST = Host()
 IDLE = 900      # seconds without a page asking
+TIMEOUT = 30    # seconds the host may take over one message; longer is an endless loop, and it is killed
 JSON = "application/json"
 
 
@@ -524,13 +583,20 @@ def web(request):
         f = texture_file(q.get("p", [""])[0])
         if not f:
             return 404, "image/png", b""
+        # The picture changes only with its file: the browser keeps it and asks whether it is still the same (the
+        # file's size and time as the mark), answered with 304 and nothing else.
+        stat = os.stat(f)
+        mark = f'"{stat.st_size:x}-{int(stat.st_mtime):x}"'
+        held = {"ETag": mark, "Cache-Control": "no-cache"}
+        if request.headers.get("If-None-Match") == mark:
+            return 304, "image/png", b"", held
         try:
-            return 200, "image/png", png_of(f)
+            return 200, "image/png", png_of(f), held
         except Exception as e:
             return 500, "text/plain", str(e)
     if path == "/font":
         p = q.get("p", [""])[0]
-        if p in FONTS or os.path.exists(p):
+        if font_served(p):
             return 200, "font/ttf", Path(p).read_bytes()
         return 404, "font/ttf", b""
     if path == "/api/source":

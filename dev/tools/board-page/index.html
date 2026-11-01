@@ -159,7 +159,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 const $ = (id) => document.getElementById(id);
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem("board." + k)) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem("board." + k, JSON.stringify(v)); } catch {} } };
-let state = null, version = -1, editing = null, dragId = null, seen = new Set();
+let state = null, version = -1, editing = null, editingChanges = 0, dragId = null, seen = new Set();
 const filter = { text: "", prios: new Set(store.get("prios", [])), area: store.get("area", "") };
 const DONE_SHOWN = 25;
 let doneAll = false, quickAt = null, pending = false;
@@ -218,8 +218,10 @@ function render() {
     return b;
   }));
   const areas = [...new Set(board.cards.map((c) => c.area).filter(Boolean))].sort();
-  $("area").replaceChildren(new Option("Every area", ""), ...areas.map((a) => new Option(a, a)));
-  $("area").value = areas.includes(filter.area) ? filter.area : "";
+  // An area kept from last time that no card has any more stays in the list, so it can be cleared.
+  const listed = filter.area && !areas.includes(filter.area) ? [...areas, filter.area].sort() : areas;
+  $("area").replaceChildren(new Option("Every area", ""), ...listed.map((a) => new Option(areas.includes(a) ? a : `${a} (no card)`, a)));
+  $("area").value = filter.area;
   $("areas").replaceChildren(...areas.map((a) => new Option(a)));
 
   const scroll = {};
@@ -345,6 +347,7 @@ async function released(ev, cancelled) {
     if (at >= 0 && at < cards.length - 1) before = cards[at + 1].id;
   }
   const card = state.board.cards.find((c) => c.id === d.id), all = state.board.cards.filter((c) => c.column === key);
+  if (!card) { if (pending) render(); return; }   // deleted meanwhile
   const next = all[all.findIndex((c) => c.id === d.id) + 1];
   if (card.column === key && (before === (next ? next.id : null))) { if (pending) render(); return; }   // put back where it was
   if (await send({ op: "move", id: d.id, column: key, before }) && card.column !== key)
@@ -401,6 +404,7 @@ function quickEl() {
 function open(id) {
   const card = id ? state.board.cards.find((c) => c.id === id) : null;
   editing = card ? card.id : null;
+  editingChanges = card?.changes ?? 0;   // sent back with the change: a card changed meanwhile is refused
   $("f-id").textContent = card ? "#" + card.id : "New card";
   $("f-title").value = card?.title || "";
   $("f-notes").value = card?.notes || "";
@@ -430,10 +434,29 @@ async function save() {
   if (editing === null) ok = await send({ op: "add", ...fields, column, top: true });
   else {
     const card = state.board.cards.find((c) => c.id === editing);
-    ok = await send({ op: "edit", id: editing, ...fields });
-    if (ok && card && card.column !== column) ok = await send({ op: "move", id: editing, column, top: true });
+    ok = await send({ op: "edit", id: editing, ...fields, changes: editingChanges });
+    if (ok && card && card.column !== column)   // the edit may have counted: the card's changes as they are now
+      ok = await send({ op: "move", id: editing, column, top: true, changes: state.board.cards.find((c) => c.id === editing)?.changes ?? 0 });
   }
   if (ok) $("edit").close();
+  else if (editing !== null) reopen({ ...fields, column });
+}
+
+async function reopen(typed) {   // a change refused (the card changed meanwhile): the card again, as it is now, what was typed kept
+  try {
+    const res = await fetch("api/board?after=" + version);
+    const body = await res.json();
+    if (!body.same) take(body);
+  } catch {}
+  if (state.board.cards.some((c) => c.id === editing)) {
+    open(editing);
+    if (typed) {   // the fresh card's changes count is taken; the words are still the ones typed
+      $("f-title").value = typed.title; $("f-notes").value = typed.notes; $("f-area").value = typed.area;
+      $("f-column").value = typed.column; setPrio(typed.priority);
+      toast(`#${editing} changed meanwhile: look at it again, your words are kept`);
+    }
+  }
+  else { $("edit").close(); toast(`#${editing} is gone`); }
 }
 
 $("form").onsubmit = (ev) => { ev.preventDefault(); save(); };
@@ -441,9 +464,9 @@ $("form").onkeydown = (ev) => { if (ev.key === "Enter" && (ev.ctrlKey || ev.meta
 $("f-cancel").onclick = () => $("edit").close();
 $("f-delete").onclick = async () => {
   const card = state.board.cards.find((c) => c.id === editing);
-  if (card && confirm(`Delete #${card.id} “${card.title}”?`) && await send({ op: "delete", id: editing })) {
-    $("edit").close(); toast(`Deleted #${card.id}`);
-  }
+  if (!card || !confirm(`Delete #${card.id} “${card.title}”?`)) return;
+  if (await send({ op: "delete", id: editing, changes: editingChanges })) { $("edit").close(); toast(`Deleted #${card.id}`); }
+  else reopen();
 };
 $("new").onclick = () => open(null);
 $("search").oninput = (ev) => { filter.text = ev.target.value.trim(); render(); };

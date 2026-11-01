@@ -532,7 +532,9 @@ local function Where(x, y)
         plane, u, v = under, link.du + link.su * u, link.dv + link.sv * v
     end
     local map = Coords.ZoneAt(plane, u, v) or plane
-    local mapX, mapY = Coords.ToMap(Coords.Box(map), u, v)
+    local box = Coords.Box(map) -- (a zone the game gives no world position for has none: no place to pin there)
+    if not box then return {} end
+    local mapX, mapY = Coords.ToMap(box, u, v)
     return { map = map, x = mapX, y = mapY }
 end
 

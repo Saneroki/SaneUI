@@ -87,16 +87,17 @@ end
 Watchers.Code = Code
 
 -- A thing of the data with spawn points (Spawns: "npc:69", "object:1617"): the point the player stands near confirmed,
--- and the whole entry once every point of it is.
+-- and the whole entry once every point of it is. The watchers ask what the game confirmed here (Unverified's own):
+-- what members told never stands in for the game's word here.
 local function Spawn(key)
-    if not Spawns:Unverified(key) then return end
+    if not Spawns:Unverified(key, nil, true) then return end
     local points = Spawns:Get(key, "points")
     if type(points) ~= "table" or #points == 0 then return end
     local all = true
     for _, point in ipairs(points) do
         if type(point) == "table" and type(point.map) == "number" then
             local code = Code(point)
-            if Spawns:Unverified(key, code) then
+            if Spawns:Unverified(key, code, true) then
                 local far = Yards(point)
                 if far and far <= Watchers.NEAR then Data.Confirm("Spawns", key, code) else all = false end
             end
@@ -166,9 +167,18 @@ local function Cast(unit, _, spell)
     if type(spell) ~= "number" then return end -- hidden in the fight: nothing to confirm
     Ability(Encounter(unit), spell, true)
 end
-for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED" }) do
-    Core.On(event, Cast)
+-- Their casts are asked of the game for the units watched alone (Core.OnUnit), never for every unit about, which a fight
+-- sends hundreds of times a second: the target, the focus, the mouse, the boss frames' from the start, a nameplate's
+-- unit once the game shows it (below).
+local CASTS = { "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED" }
+local listening = {} -- [unit] = true: its casts are heard
+local function Listen(unit)
+    if listening[unit] then return end
+    listening[unit] = true
+    for _, event in ipairs(CASTS) do Core.OnUnit(event, unit, Cast) end
 end
+for unit in pairs(WATCHED) do Listen(unit) end
+for index = 1, rawget(_G, "MAX_BOSS_FRAMES") or 5 do Listen("boss" .. index) end
 
 -- The buffs a boss carries: those of its abilities the set names.
 local function Buffs(unit, encounter)
@@ -217,12 +227,12 @@ local function Creature(id, spoke, unit)
     if not id then return end
     local key = "npc:" .. id
     Spawn(key)
-    if NPCs:Unverified(id) then
+    if NPCs:Unverified(id, nil, true) then
         local services = NPCs:Get(id, "services")
         if spoke or type(services) ~= "table" or #services == 0 then Data.Confirm("NPCs", id) end
     end
     if unit then Buffs(unit, Encounter(unit)) end
-    if not Spawns:Unverified(key) and not NPCs:Unverified(id) then looked[id] = true end
+    if not Spawns:Unverified(key, nil, true) and not NPCs:Unverified(id, nil, true) then looked[id] = true end
 end
 
 local function Seen(unit)
@@ -236,7 +246,10 @@ local function Seen(unit)
 end
 Core.On("UPDATE_MOUSEOVER_UNIT", function() Seen("mouseover") end)
 Core.On("PLAYER_TARGET_CHANGED", function() Seen("target") end)
-Core.On("NAME_PLATE_UNIT_ADDED", Seen)
+Core.On("NAME_PLATE_UNIT_ADDED", function(unit)
+    if type(unit) == "string" and unit:match("^nameplate%d+$") then Listen(unit) end -- its casts from now on
+    Seen(unit)
+end)
 
 -- An NPC or a thing talked to or used (the game's unit "npc"): the creature or the object, and its spawn; where the
 -- player stands, within reach of it, a sighting of its place (Tally.Point).
@@ -246,7 +259,7 @@ local function Spoke()
         Creature(id, true)
     elseif kind == "object" then
         Spawn("object:" .. id)
-        if Objects:Unverified(id) then Data.Confirm("Objects", id) end
+        if Objects:Unverified(id, nil, true) then Data.Confirm("Objects", id) end
     end
     if kind and not Core.Ask(rawget(_G, "IsInInstance")) then
         local map, x, y = Data.Tally.Here()
@@ -264,7 +277,7 @@ end
 local function PlacesNear(kind, yards)
     if not Places:Ready() then return end
     for _, key in ipairs(Places:Keys("byKind", kind)) do
-        if Places:Unverified(key) then
+        if Places:Unverified(key, nil, true) then
             local far = Yards(Places:Get(key, "point"))
             if far and far <= yards then Data.Confirm("Places", key) end
         end

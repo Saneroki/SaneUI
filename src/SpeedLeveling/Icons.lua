@@ -22,8 +22,7 @@ local _, ns = ...
 --  where the guide's top is, not hung on the guide, whose height changes in a
 --  fight.
 --
---      Icons.Update(shown)          as the guide is now (shown or not)
---      Icons.GiveBack()
+--      Icons.Update(shown)          as the guide is now (shown or not); Steps.GiveBack hides it with the guide
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Icons = {}
@@ -262,8 +261,4 @@ function Icons.Update(shown)
         row:SetShown(#list > 0)
     end
     for _, button in ipairs(buttons) do if button:IsShown() then Draw(button) end end
-end
-
-function Icons.GiveBack()
-    Icons.Update(false)
 end

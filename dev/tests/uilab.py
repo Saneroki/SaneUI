@@ -2,11 +2,14 @@
 draws something, and a few of the lab's rules hold: anchors resolve as the game resolves them, an unknown event is an
 error, a script the kind does not have is an error, what the game has but the lab does not do is told. The XML reader
 on a file of the test's own (dev/tests/uilab/), Blizzard's templates, and Sane UI's Core from its TOC with its window.
+The page's calls: a font only from the fonts' places, a texture with its mark and 304 to it; a host that answers nothing
+killed after its time, and started anew by the next call.
 Needs the newest export of Blizzard's interface (dev/tools/blizzard where); without it, it says so and passes."""
 import importlib.machinery
 import importlib.util
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -138,6 +141,49 @@ told = run('/sane options')
 expect(not errors(told), f"Core's options open: {[e['text'] for e in errors(told)]}")
 expect(result('SettingsPanel:IsShown()') == "true", "the game's settings panel shows Core's options")
 host.stop(keep=False)
+
+# A host that answers nothing (an endless loop from the console) is killed after its time, the page told, and the
+# next call starts it anew.
+host = started(None)
+lab.TIMEOUT, patience = 2, lab.TIMEOUT
+t0 = lab.time.time()
+told = run("while true do end")
+lab.TIMEOUT = patience
+expect(any("the lab's host stopped" in e["text"] and "no answer in 2 s" in e["text"] for e in errors(told)),
+       f"an endless loop ends the host, with the reason: {[e['text'] for e in errors(told)]}")
+expect(lab.time.time() - t0 < 10, "the page waits no longer than the limit")
+expect(host.proc is None, "the host is gone")
+r = host.call({"op": "frame", "dt": 1 / 30, "input": []})
+expect(host.proc is not None and r.get("reset"), "the next call starts the host anew")
+host.stop(keep=False)
+
+
+# The page's calls, without the server: /font sends only fonts from their places, /tex marks a picture and answers
+# 304 to its mark.
+class Ask:
+    def __init__(self, path, query=None, headers=None):
+        self.method, self.path, self.query, self.headers, self.body = "GET", path, query or {}, headers or {}, b""
+
+
+lab.HOST.watched = True   # these calls start no watch thread
+code = lambda *a: lab.web(Ask(*a))[0]  # noqa: E731
+expect(code("/font", {"p": ["/etc/hostname"]}) == 404, "a file by its path alone is no font")
+expect(code("/font", {"p": [str(ROOT / "dev/tools/ui-lab")]}) == 404, "nor a file of the project")
+stray = Path(tempfile.mkdtemp(prefix="uilab-")) / "stray.ttf"
+stray.write_bytes(b"not a font")
+expect(code("/font", {"p": [str(stray)]}) == 404, "a .ttf outside the fonts' places is not sent")
+system = next((f for f in lab.FALLBACK_FONT if Path(f).is_file()), None)
+if system:
+    expect(code("/font", {"p": [system]}) == 200, "a system font is sent")
+ours = next(iter(sorted((ROOT / "assets/optimized").glob("*/Fonts/*.ttf"))), None)
+if ours:
+    expect(code("/font", {"p": [str(ours)]}) == 200, "a module's font is sent")
+tex = "Interface\\AddOns\\SaneUI\\Art\\corner-tl"
+status, kind, body, held = lab.web(Ask("/tex", {"p": [tex]}))
+expect(status == 200 and body[:4] == b"\x89PNG" and held.get("ETag") and held.get("Cache-Control") == "no-cache",
+       f"a texture comes with its mark: {status} {held}")
+expect(lab.web(Ask("/tex", {"p": [tex]}, {"If-None-Match": held.get("ETag")}))[0] == 304, "the same mark: 304, nothing sent")
+expect(lab.web(Ask("/tex", {"p": [tex]}, {"If-None-Match": '"other"'}))[0] == 200, "another mark: the picture")
 
 # The server runs all the time: a game no page asks for goes (web(), watch()).
 class Quiet:

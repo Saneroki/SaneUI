@@ -24,8 +24,7 @@ local _, ns = ...
 --  (Core.TOAST_TOP), making way for them while they show (Core.TopTaken); shown
 --  while the guide is and it has a place to go to (the switch Show the arrow).
 --
---      Arrow.Update(shown)   shown or not with the guide, drawn anew
---      Arrow.GiveBack()
+--      Arrow.Update(shown)   shown or not with the guide, drawn anew; Steps.GiveBack hides it with the guide
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Arrow = {}
@@ -245,10 +244,6 @@ function Arrow.Update(shown)
     frame:Show()
     Turn()
     Tell()
-end
-
-function Arrow.GiveBack()
-    Arrow.Update(false)
 end
 
 -- The toast of a new level or the travel overlay came or went at the arrow's place.

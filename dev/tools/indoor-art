@@ -510,7 +510,7 @@ def check(folder, minimap, lines):
 # -------------------------------------------------------------------------------------------------
 def main():
     args = sys.argv[1:]
-    only, processes, checks = None, 24, None
+    only, processes, checks = None, WALK.PROCESSES, None  # the workers as walk-data's: the app's memory cap
     if "--only" in args:
         at = args.index("--only")
         only = {int(file) for file in args[at + 1].split(",")}

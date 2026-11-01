@@ -79,14 +79,12 @@ ns.TEXT = {
     experience = "%s experience",
     honor = "%d honor",
     title = "The title %s",
-    spell = "You learn %s",
 
     -- What a reward is (Rewards.lua).
     cantUse = "Can't use",
     emptySlot = "Your slot is empty",
     itemLevel = Game("ITEM_LEVEL_ABBR", "iLvl"),
     noValue = "Sells for nothing",
-    sells = "Sells for %s",
 }
 
 -- What is told when the module stands down (Core's StandDown).

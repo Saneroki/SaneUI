@@ -26,9 +26,10 @@ local _, ns = ...
 --  a lower one).
 --
 --  What the game tells is read per map when it said it changed (the message LIVE), Core's places when they
---  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them. Core's
---  are kept in parts: the NPCs' are read again when the log or the level changed (what this character can
---  take), the objects' and the places' and ways' only when Core's places change.
+--  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them. Both are
+--  kept in parts: of the game's, the quests', the flight points', the vignettes' and the points' each read again
+--  when the game said that changed (Pins.Changed); of Core's, the NPCs' are read again when the log or the level
+--  changed (what this character can take), the objects' and the places' and ways' only when Core's places change.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Live = ns.Coords, ns.Live
@@ -125,7 +126,10 @@ local Map = Core.Data.Map()
 -------------------------------------------------------------------------------
 --  What the game tells, per map
 -------------------------------------------------------------------------------
-local live = {}  -- [uiMapID] = its live pins, until the game says they changed
+-- [part][uiMapID] = its live pins of that part, until the game says that part changed: the quests', the flight points',
+-- the vignettes' (rares, treasures), the game's own points'.
+local live = { quests = {}, flights = {}, vignettes = {}, points = {} }
+local joined = {} -- [uiMapID] = its live pins of every part in one list (For reads one a map), until a part was read anew
 -- [part][uiMapID] = its pins of Core's data of that part, until what they follow changes: the NPCs' (their quests),
 -- the objects' (herbs, ore, chests...), the places' and ways'.
 local data = { npc = {}, object = {}, way = {} }
@@ -243,15 +247,22 @@ local function Points(list, map)
     end
 end
 
+local READERS = { { "quests", Quests }, { "flights", Flights }, { "vignettes", Vignettes }, { "points", Points } }
+
 local function LiveOn(map)
-    local list = live[map]
+    local list = joined[map]
     if list then return list end
     list = {}
-    Quests(list, map)
-    Flights(list, map)
-    Vignettes(list, map)
-    Points(list, map)
-    live[map] = list
+    for _, reader in ipairs(READERS) do
+        local part, pins = reader[1], live[reader[1]][map]
+        if not pins then
+            pins = {}
+            reader[2](pins, map)
+            live[part][map] = pins
+        end
+        for _, pin in ipairs(pins) do list[#list + 1] = pin end
+    end
+    joined[map] = list
     return list
 end
 
@@ -723,17 +734,27 @@ end
 -------------------------------------------------------------------------------
 --  Kept until the game or the data says they changed
 -------------------------------------------------------------------------------
-local LIVE = { quests = true, flights = true, vignettes = true, points = true, zone = true, level = true,
-               waypoint = true }
+-- What the game tells changed, and the live part read again for it: the quests ("waypoint": the quest the game's
+-- arrow leads to, theirs alone), the flight points, the vignettes ("zone": a rare or treasure the zone shows), the
+-- game's own points; the level: every part.
+local LIVE = { quests = "quests", waypoint = "quests", flights = "flights", vignettes = "vignettes", zone = "vignettes",
+               points = "points", level = true }
 
--- What the game tells changed: every map's live pins are read again at the next layout ("waypoint": the quest the
--- game's arrow leads to, theirs alone); the quests or the level changed, the NPCs' of Core's data too (what this
--- character can take follows its quests and level), not its objects', places' and ways'.
+-- What the game tells changed: that part of every map's live pins is read again at the next layout, the other parts
+-- kept (a continent's level asks the game for some twenty maps, several questions each); the quests or the level
+-- changed, the NPCs' of Core's data too (what this character can take follows its quests and level), not its
+-- objects', places' and ways'.
 function Pins.Changed(what)
-    if what and not LIVE[what] then return false end
-    wipe(live)
+    local part = what == nil and true or LIVE[what]
+    if not part then return false end
+    if part == true then
+        for _, lists in pairs(live) do wipe(lists) end
+    else
+        wipe(live[part])
+    end
+    wipe(joined)
     if what == nil then
-        for _, part in pairs(data) do wipe(part) end
+        for _, lists in pairs(data) do wipe(lists) end
     elseif what == "quests" or what == "level" then
         wipe(data.npc)
     end

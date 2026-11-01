@@ -77,9 +77,13 @@ The input, as for dev/tools/map-meta, for every map with terrain files (the cont
                 files <file ID>_<part>.wmo) and m2/ (every model placed or shown by a building, <file ID>.m2)
   client tables a folder of the game's client tables as CSV (LiquidType, LiquidMaterial)
 and the lifts and portals of the master's set Travel (assets/data/Travel: each end's place and height).
-Options: --maps <map>[,<map>...] those maps' tiles only (a map added, as 2991, leaves the others' lines alone), --only
-<key>[,<key>...] some tiles only (with their neighbours' edges), --pictures <folder> a picture of each tile's
-rectangles, --processes N.
+Options: --maps <map>[,<map>...] those maps' tiles only (the staging file's lines of the other maps are kept: a map
+added, as 2991, leaves the others' lines alone), --only <key>[,<key>...] some tiles only (with their neighbours'
+edges), for the pictures and the report alone: no staging, since a region's number is given over the tiles of the
+run and a few tiles' numbers cannot agree with the master's (regions), --pictures <folder> a picture of each tile's
+rectangles, --processes N (default PROCESSES: a full run with many workers reached the memory the app's cgroup may
+hold, and the kernel killed it and the app), --memory GB the memory its cgroup may hold (default MEMORY; the app's scope when started from a session, the other sessions counted too): past it the
+run stops, its workers ended, with no staging written, to be run one map at a time.
 
 Needs Python with NumPy (and Pillow for the pictures). About the game's build of the set Tiles (BUILD).
 
@@ -87,11 +91,12 @@ Once a run is taken in (dev/tools/data import dev/data/staging/walking.jsonl --a
 made anew from the master's blocks: dev/tools/walk-gates, its staging taken in the same way (dev/tests/walk.py fails on a
 layer not made from the blocks as they are).
 
-Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N]
+Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N] [--memory GB]
 """
 import base64
 import json
 import math
+import os
 import struct
 import sys
 import zlib
@@ -106,6 +111,11 @@ ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "walking.jsonl"
 TRAVEL = ROOT / "assets" / "data" / "Travel" / "Travel.jsonl"  # the master's set Travel: its lifts
 BUILD = 70707          # the client build the game files are of (the set Tiles' build)
+PROCESSES = 3          # workers: a full run with 10 reached the memory the app's cgroup may hold (24 GB) and the kernel
+                       # killed the run and the app; one map at a time with 3 peaked near 20 GB (--processes)
+MEMORY = 22            # GB the run's cgroup may hold (--memory; from a session: the app's whole scope): past it the run stops
+TASKS = 50             # tiles a worker reads before a fresh one takes its place: its memory given back
+CACHE = 512 * 2 ** 20  # bytes a per-process cache (models, buildings, pools) may hold: past it the oldest entries go
 
 GRID = 64              # tiles along each side of a continent
 TILE = 1600 / 3        # a tile's side in yards
@@ -359,10 +369,28 @@ def group(path):
     collides = ((flags & 0x08) != 0) | (((flags & 0x20) != 0) & ((flags & 0x04) == 0))
     indices = indices[collides]
     indices = indices[(indices < len(vertices)).all(axis=1)]
-    return vertices[indices].astype(np.float64)
+    return vertices[indices]
 
 
-_models = {}
+class Cache(dict):
+    """A per-process cache capped by the bytes of what it holds (CACHE): past it the oldest entries are dropped.
+    size(value): an entry's bytes. The triangles are kept as float32, as the game's files hold them (a doodad's,
+    turned into its building's space, to a ten-thousandth of a yard over a building 2000 yards across): the floors
+    are judged by JOIN, a quarter yard, and placed() turns them into float64 before the world's yards are added."""
+
+    def __init__(self, size=lambda value: value.nbytes):
+        super().__init__()
+        self.size, self.held = size, 0
+
+    def put(self, key, value):
+        self.held += self.size(value) - (self.size(self[key]) if key in self else 0)
+        self[key] = value
+        while self.held > CACHE and len(self) > 1:
+            self.held -= self.size(self.pop(next(iter(self))))
+        return value
+
+
+_models = Cache()
 
 
 def model(folder, file):
@@ -370,7 +398,7 @@ def model(folder, file):
     without (kept per process). Its header (in MD21 since the game's chunked models) holds the collision's indices
     (three a triangle) and positions."""
     if file not in _models:
-        corners = np.zeros((0, 3, 3))
+        corners = np.zeros((0, 3, 3), np.float32)
         path = folder / "m2" / f"{file}.m2"
         data = path.read_bytes() if path.exists() else b""
         if data[:4] == b"MD21":
@@ -380,8 +408,8 @@ def model(folder, file):
             if count >= 3 and many and at + count * 2 <= len(data) and start + many * 12 <= len(data):
                 indices = np.frombuffer(data, np.uint16, count // 3 * 3, at).astype(np.int64).reshape(-1, 3)
                 vertices = np.frombuffer(data, np.float32, many * 3, start).reshape(-1, 3)
-                corners = vertices[indices[(indices < many).all(axis=1)]].astype(np.float64)
-        _models[file] = corners
+                corners = vertices[indices[(indices < many).all(axis=1)]]
+        _models.put(file, corners)
     return _models[file]
 
 
@@ -429,22 +457,20 @@ def doodads(folder, file, sets):
             name, x, y, z, qx, qy, qz, qw, scale = struct.unpack_from("<I3f4ff", data, entries_at + entry * 40)
             name &= 0xFFFFFF  # the top byte holds the entry's flags
             if name < len(files) and files[name] and measure(folder, files[name])[0] * scale > SMALL:
-                found.append(model(folder, files[name]) @ (quaternion(qx, qy, qz, qw).T * scale) + (x, y, z))
+                found.append((model(folder, files[name]) @ (quaternion(qx, qy, qz, qw).T * scale) + (x, y, z)).astype(np.float32))
     return found
 
 
-_groups = {}
+_groups = Cache()
 
 
 def building(folder, file, sets=(0,)):
     """Every collision triangle of a building in its own space: its parts joined, and the doodads of the sets it
-    shows (kept per process)."""
+    shows (kept per process, CACHE bytes at most)."""
     if (file, sets) not in _groups:
         parts = [group(path) for path in sorted((folder / "wmo").glob(f"{file}_*.wmo"))]
         parts = [part for part in parts + doodads(folder, file, sets) if len(part)]
-        _groups[(file, sets)] = np.concatenate(parts) if parts else np.zeros((0, 3, 3))
-        if len(_groups) > 200:  # keep the memory of one process modest
-            _groups.pop(next(iter(_groups)))
+        _groups.put((file, sets), np.concatenate(parts) if parts else np.zeros((0, 3, 3), np.float32))
     return _groups[(file, sets)]
 
 
@@ -477,12 +503,13 @@ def liquid(kind, flags, first):
     return kind
 
 
-_pools = {}
+_pools = Cache(lambda found: sum(points.nbytes for points, _ in found))
 
 
 def pools(folder, file):
-    """A building's water, magma and slime in its own space (kept per process): a list of (points (n, 3): its
-    surface at POURED x POURED points of every tile its parts' liquids (MLIQ) cover, its liquid type)."""
+    """A building's water, magma and slime in its own space (kept per process, CACHE bytes at most): a list of
+    (points (n, 3): its surface at POURED x POURED points of every tile its parts' liquids (MLIQ) cover, its liquid
+    type)."""
     if file not in _pools:
         found = []
         root = folder / f"{file}.wmo"
@@ -522,10 +549,8 @@ def pools(folder, file):
                      + heights[j + 1, i] * (1 - fx) * fy + heights[j + 1, i + 1] * fx * fy)
             unit = TILE / (ART.CHUNKS * ART.CELLS)  # a water tile's side: a terrain cell's
             points = np.stack([bx + (i + fx) * unit, by + (j + fy) * unit, level], axis=-1).reshape(-1, 3)
-            found.append((points.astype(np.float64), kind))
-        _pools[file] = found
-        if len(_pools) > 200:
-            _pools.pop(next(iter(_pools)))
+            found.append((points.astype(np.float32), kind))
+        _pools.put(file, found)
     return _pools[file]
 
 
@@ -1216,7 +1241,9 @@ def regions(tiles, keep=()):
     than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground), nor those with the sky over
     none of their floors (a cellar the walking data closes: nobody gets in or out) or most of them buried (the ground
     under Stormwind's buildings, open only to the gaps between them), but those of the rectangles in keep (the lifts'
-    and the portals' landings: Freewind Post's mesa, the Undercity, the Wizard's Sanctum's rooms)."""
+    and the portals' landings: Freewind Post's mesa, the Undercity, the Wizard's Sanctum's rooms). The numbers are
+    given over the tiles of the run, in the keys' order: a run of a whole map gives the same numbers again, one of
+    a few tiles (--only) numbers that cannot agree with the master's, so it writes no staging (main)."""
     parent = {}
 
     def find(node):
@@ -1322,6 +1349,28 @@ def cbor(value):
     return head
 
 
+def decode(data):
+    """A value back from CBOR (cbor's whole numbers and arrays), as the game's DeserializeCBOR reads it: the one
+    reader of the blocks, dev/tools/walk-gates' and map-layers' too (dev/tests/walk.py reads them on its own)."""
+    at = 0
+
+    def item():
+        nonlocal at
+        head = data[at]
+        at += 1
+        major, info = head >> 5, head & 31
+        if info >= 24:
+            size = {24: 1, 25: 2, 26: 4, 27: 8}[info]
+            info, at = int.from_bytes(data[at:at + size], "big"), at + size
+        if major == 0:
+            return info
+        if major == 1:
+            return -1 - info
+        return [item() for _ in range(info)]
+
+    return item()
+
+
 def shared(a, b, side, dr, dc):
     """The first and last sample of the edge two rectangles share on a side of a (b on the tile dr, dc tiles
     away), or None when they share none (b does not lie right across that side)."""
@@ -1393,29 +1442,68 @@ def picture(folder, key, rects, links):
 
 
 # -------------------------------------------------------------------------------------------------
-def main():
-    args = sys.argv[1:]
-    only, maps, pictures, processes = None, None, None, 24
-    if "--only" in args:
-        at = args.index("--only")
-        only = {int(key) for key in args[at + 1].split(",")}
-        del args[at:at + 2]
-    if "--maps" in args:
-        at = args.index("--maps")
-        maps = {int(map_id) for map_id in args[at + 1].split(",")}
-        del args[at:at + 2]
-    if "--pictures" in args:
-        at = args.index("--pictures")
-        pictures = Path(args[at + 1])
-        del args[at:at + 2]
-    if "--processes" in args:
-        at = args.index("--processes")
-        processes = int(args[at + 1])
-        del args[at:at + 2]
+def options(args):
+    """The command line taken apart: {folder, tables, only, maps, pictures, processes, memory}, or None when it is
+    not the usage's."""
+    found = {"only": None, "maps": None, "pictures": None, "processes": PROCESSES, "memory": MEMORY}
+    args = list(args)
+    for name, read in (("only", lambda text: {int(key) for key in text.split(",")}),
+                       ("maps", lambda text: {int(map_id) for map_id in text.split(",")}),
+                       ("pictures", Path), ("processes", int), ("memory", float)):
+        if f"--{name}" in args:
+            at = args.index(f"--{name}")
+            found[name] = read(args[at + 1])
+            del args[at:at + 2]
     if len(args) != 2:
+        return None
+    found["folder"], found["tables"] = Path(args[0]), Path(args[1])
+    return found
+
+
+def memory_held():
+    """The bytes the run holds in its cgroup (memory.current less the file cache the kernel can drop), what the
+    kernel judges against the cgroup's cap; None where there is no cgroup to read (another system)."""
+    try:
+        for line in Path("/proc/self/cgroup").read_text().splitlines():
+            _, controllers, path = line.split(":", 2)
+            if controllers == "":  # cgroup v2's one line
+                group = Path("/sys/fs/cgroup") / path.strip().lstrip("/")
+                current = int((group / "memory.current").read_text())
+                stats = (dict(stat.split() for stat in (group / "memory.stat").read_text().splitlines())
+                         if (group / "memory.stat").is_file() else {})
+                return current - int(stats.get("file", 0))
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def save(path, lines, maps=None):
+    """This run's lines into the staging file: with --maps (maps), the file's lines of the other maps are kept
+    beside them (a map run on its own joins the others'), without it the file holds this run alone. Written through
+    a temp file beside it and os.replace, so a run killed while writing leaves the old file whole. Returns how many
+    lines the file holds."""
+    kept = {}
+    if maps and path.is_file():
+        for text in path.read_text(encoding="utf-8").splitlines():
+            if text.strip():
+                line = json.loads(text)
+                if line.get("fields", {}).get("map") not in maps:
+                    kept[line["key"]] = text
+    for line in lines:
+        kept[line["key"]] = json.dumps(line, separators=(",", ":"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(".tmp")
+    temp.write_text("".join(kept[key] + "\n" for key in sorted(kept)), encoding="utf-8")
+    os.replace(temp, path)
+    return len(kept)
+
+
+def main():
+    given = options(sys.argv[1:])
+    if not given:
         print(__doc__.strip().splitlines()[-1], file=sys.stderr)
         return 2
-    folder, tables = Path(args[0]), Path(args[1])
+    folder, tables, only, maps, pictures = (given[name] for name in ("folder", "tables", "only", "maps", "pictures"))
     waters = ART.waters(tables)
     formats = {row["ID"]: int(row["LVF"]) for row in ART.table(tables, "LiquidMaterial")}
     liquids = {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in ART.table(tables, "LiquidType")}
@@ -1441,35 +1529,45 @@ def main():
                        and where["box"][3] <= west0 and where["box"][2] >= east0]
         jobs.append((key, folder, waters, liquids, near_places))
     tiles = {}
-    with Pool(processes) as pool:
+    with Pool(given["processes"], maxtasksperchild=TASKS) as pool:
         for done, (key, rects, links, borders, opened, buried) in enumerate(pool.imap_unordered(tile, jobs, chunksize=1), 1):
             if rects:
                 tiles[key] = (rects, links, borders, opened, buried)
             if done % 50 == 0 or done == len(jobs):
                 print(f"{done} of {len(jobs)} tiles read", file=sys.stderr, flush=True)
+            used = memory_held()
+            if used is not None and used > given["memory"] * 2 ** 30:  # before the kernel kills the run, and the app
+                pool.terminate()
+                print(f"The run's cgroup holds {used / 2 ** 30:.1f} GB, past its {given['memory']:g} GB (--memory): stopped, no "
+                      f"staging written. Run it one map at a time: --maps <map> --processes {PROCESSES}.", file=sys.stderr)
+                return 1
     across(tiles)
     tiles = kept(tiles, regions(tiles, landings(tiles, ends())))
-    STAGING.parent.mkdir(parents=True, exist_ok=True)
-    total, count = 0, 0
-    with open(STAGING, "w", encoding="utf-8") as out:
-        for key in sorted(tiles):
-            if only and key not in only:
-                continue
-            rects, links = tiles[key]
-            text = block(rects, links, key, tiles)
-            total += len(text)
-            count += len(rects)
-            continent, rest = divmod(key, GRID * GRID)
-            row, column = divmod(rest, GRID)
-            around = [continent * GRID * GRID + (row + dr) * GRID + (column + dc)
-                      for dr, dc, _ in NEXT.values() if (continent * GRID * GRID + (row + dr) * GRID + (column + dc)) in tiles]
-            line = {"set": "Walking", "key": key, "game": "forever", "build": BUILD, "src": "game",
-                    "fields": {"map": continent, "links": sorted(around), "block": text}}
-            out.write(json.dumps(line, separators=(",", ":")) + "\n")
-            if pictures:
-                picture(pictures, key, rects, links)
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(tiles) if not only else len(only & set(tiles))} tiles, "
-          f"{count} rectangles, {total // 1024} KB of blocks.")
+    lines, total, count = [], 0, 0
+    for key in sorted(tiles):
+        if only and key not in only:
+            continue
+        rects, links = tiles[key]
+        if pictures:
+            picture(pictures, key, rects, links)
+        if only:
+            continue  # no staging of a few tiles: their region numbers cannot agree with the master's (regions)
+        text = block(rects, links, key, tiles)
+        total += len(text)
+        count += len(rects)
+        continent, rest = divmod(key, GRID * GRID)
+        row, column = divmod(rest, GRID)
+        around = [continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+                  for dr, dc, _ in NEXT.values() if (continent * GRID * GRID + (row + dr) * GRID + (column + dc)) in tiles]
+        lines.append({"set": "Walking", "key": key, "game": "forever", "build": BUILD, "src": "game",
+                      "fields": {"map": continent, "links": sorted(around), "block": text}})
+    if only:
+        print(f"Read {len(only & set(tiles))} of {len(only)} tiles (--only)" + (f", their pictures in {pictures}" if pictures else "")
+              + ": no staging written, a few tiles' region numbers cannot agree with the master's.")
+        return 0
+    held = save(STAGING, lines, maps)
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} tiles, {count} rectangles, {total // 1024} KB of blocks"
+          + (f"; {held - len(lines)} tiles of other maps kept." if maps else "."))
     return 0
 
 

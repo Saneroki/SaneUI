@@ -15,7 +15,9 @@ local _, ns = ...
 --  It works in passes. In a pass every slot is touched at most once: a move
 --  picks the item up and puts it on the other slot (C_Container.
 --  PickupContainerItem twice: the game swaps two items, or joins two stacks
---  of one item). Then it waits for the game to have done them (BAG_UPDATE_
+--  of one item; two that do not fit in one stack fill the one, and what the
+--  game left on the cursor goes back into its slot, a partial stack for the
+--  next pass). Then it waits for the game to have done them (BAG_UPDATE_
 --  DELAYED and the slots unlocked again, at most Sort.LONGEST seconds) and
 --  plans the next pass from what the bags hold then:
 --      join    first, the partial stacks of an item joined: the smallest
@@ -26,8 +28,9 @@ local _, ns = ...
 --  It stops when nothing is left to move, when a pass changed nothing, after
 --  Sort.PASSES passes, at a fight (it never starts in one), when the player
 --  holds something on the cursor (never put down by us), when the window
---  hides. A move that left an item on the cursor puts it back (ClearCursor)
---  and stops. The bar's button is locked while it runs (Bags.Sorting).
+--  hides. A move that left an item on the cursor all the same puts it back
+--  (ClearCursor) and stops. The bar's button is locked while it runs
+--  (Bags.Sorting).
 --
 --      Sort.Plan(list, order, moves)   the next pass's moves, without frames:
 --          list   the ordinary bags' records in their order (Sort.Ordinary)
@@ -213,6 +216,9 @@ local function Pass()
     for _, move in ipairs(moves) do
         api.PickupContainerItem(move.from.bag, move.from.slot)
         api.PickupContainerItem(move.to.bag, move.to.slot)
+        -- A join that did not fit: the game filled the stack and left the rest on the cursor; back into its
+        -- slot, a partial stack for the next pass.
+        if Game("CursorHasItem") then api.PickupContainerItem(move.from.bag, move.from.slot) end
         if Game("CursorHasItem") then
             ClearCursor()
             return Sort.Stop()

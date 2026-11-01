@@ -71,6 +71,7 @@ end
 --  The camera: one map at a time
 -------------------------------------------------------------------------------
 local LEVELS = { [Coords.COSMIC] = "world", [Coords.WORLD] = "world", [Coords.CONTINENT] = "continent" }
+local NONE = {}
 local single = setmetatable({}, { __index = Camera.methods })
 
 local function Info(map)
@@ -122,14 +123,25 @@ local function Limits(self)
     return true
 end
 
+-- The map shown's art layers as the zoom picks one of them (Layer): each with art, its smallest scale; read once with
+-- the map (Put), not at every look.
+local function Layers(self)
+    local list = {}
+    for index, layer in ipairs(ns.Art.Layers(self.shown) or NONE) do
+        if ns.Art.Of(self.shown, index) then list[#list + 1] = { index = index, scale = tonumber(layer.minScale) or 0 } end
+    end
+    self.layers = list
+end
+
 -- The layer of the map's art the zoom shows: the last whose smallest scale it has reached, as the game's own map's
--- zoom levels pick it (Blizzard_MapCanvas, MapCanvas_ScrollContainerMixin.lua).
+-- zoom levels pick it (Blizzard_MapCanvas, MapCanvas_ScrollContainerMixin.lua). Looked up again once the zoom (or
+-- the map whole's) changed: scaled is the share of the map whole it was last picked for.
 local function Layer(self)
     local scale, found = self.k / self.whole, 1
-    for index, layer in ipairs(ns.Art.Layers(self.shown) or {}) do
-        if (tonumber(layer.minScale) or 0) <= scale * (1 + 1e-6) and ns.Art.Of(self.shown, index) then found = index end
+    for _, layer in ipairs(self.layers or NONE) do
+        if layer.scale <= scale * (1 + 1e-6) then found = layer.index end
     end
-    self.layer = found
+    self.layer, self.scaled = found, scale
 end
 
 -- The zoom within its bounds (the game's minimap's step while it shows: Hybrid.lua), the middle on the map.
@@ -142,13 +154,20 @@ local function Clamp(self)
     self.v = math.min(box.v, math.max(box.v - box.height, self.v))
 end
 
--- To a map: its plane, its box and zooms. False, and the camera as it was, where it cannot be shown.
+-- To a map: its plane, its box and zooms, its level (the kind of map it is) and its art's layers, kept until the next
+-- (Settle asks the game nothing). False, and the camera as it was, where it cannot be shown.
 local function Put(self, map)
     local plane = map and PlaneFor(map, self.map)
     if not plane then return false end
     local was, shown = self.map, self.shown
     self.map, self.shown = plane, map
-    if Limits(self) then return true end
+    if Limits(self) then
+        local info = Info(map)
+        self.level = info and LEVELS[info.mapType] or "zone"
+        Layers(self)
+        self.scaled = nil
+        return true
+    end
     self.map, self.shown = was, shown
     if shown then Limits(self) end
     return false
@@ -175,12 +194,11 @@ function single:Wants()
     return Camera.Wanted()
 end
 
--- After every change: the level is the kind of the map shown; the zoom and the middle within the map; the art's layer.
+-- After every change (each frame while a view follows): the zoom and the middle within the map; the art's layer, where
+-- the zoom changed. The level is the map shown's (Put).
 function single:Settle()
-    local info = Info(self.shown)
-    self.level = info and LEVELS[info.mapType] or "zone"
     Clamp(self)
-    if self.box then Layer(self) end
+    if self.box and self.k / self.whole ~= self.scaled then Layer(self) end
 end
 
 function single:Frame(width, height)

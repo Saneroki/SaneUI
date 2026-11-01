@@ -32,13 +32,17 @@ local Core = SaneUI.Core
 --  An NPC with many points on a map (a wanderer, a rare) stands at the middles of its areas there instead; a
 --  boat or a zeppelin at each of its docks (Travel's docks), one place per dock even where it stops twice.
 --
---  Read as a job of the scheduler when a set it reads arrives or changes. A set Core does not hold (empty in the
---  master, so not shipped) or refused is passed over without a word: its places are simply not there.
+--  Read as a job of the scheduler when a set it reads arrives or changes, MapReader.REREAD seconds after the change, so
+--  that a burst of them (the stamps of NPCs and Quests move in play, with every row learned) is one walk. A change of the
+--  facts alone (NPCs, Objects, Quests) is first looked through: the places are read anew only where a creature's or an
+--  object's name or kind changed, not for a creature's health learned. A set Core does not hold (empty in the master, so
+--  not shipped) or refused is passed over without a word: its places are simply not there.
 -------------------------------------------------------------------------------
-local Data = Core.Data
+local Data, Steps = Core.Data, Core.Steps
 
 local MapReader = {}
-MapReader.MANY = 4 -- an NPC with more points than this on one map stands at its areas' middles there
+MapReader.MANY = 4   -- an NPC with more points than this on one map stands at its areas' middles there
+MapReader.REREAD = 5 -- seconds a change waits before the places are read anew: a burst of changes is one walk
 -- The sets read for the places, and those that say what a place is.
 MapReader.PLACES = { "Spawns", "Places", "Travel" }
 MapReader.FACTS = { "NPCs", "Objects", "Quests" }
@@ -49,8 +53,12 @@ for _, name in ipairs(MapReader.FACTS) do handles[name] = Data.Set(name) end
 
 local byMap        -- [uiMapID] = its places, once read; nil while reading or not yet asked
 local spawns = {}  -- [Spawns key] = { [map] = { { x, y }, ... } } of what goes on the map, of the same read as byMap
+local said = { npc = {}, object = {} } -- [id] = what the facts said of each creature and object with a spawn, of the same read (Look)
 local listeners = {}
-local job, stale -- a walk is running; a set changed while it ran
+local job, stale   -- a walk (or a look through the facts) is running; a set changed while it ran
+local changed = {} -- [set name] = true: changed since the last walk began
+local Again        -- what a change asks for, below
+local NONE = {}
 local FROZEN = { __newindex = function() error("a place of Sane UI's data is read-only", 2) end }
 
 -- Whether a set can be had: Core holds it (or is still reading it), and it is not refused.
@@ -101,18 +109,32 @@ local function Creature(id)
         npc and npc.name, npc and npc.levelMin, npc and npc.levelMax
 end
 
+-- What the facts say of a creature (Creature's answers), or of an object, in one line: what a place gets of them. A
+-- line that is the same after a change of the facts asks for no walk (Look).
+local function SaidOf(what, name, low, high)
+    if not what then return "" end
+    return table.concat({ name or "", table.concat(what.services or NONE, ","), what.rare and "rare" or "", what.title or "",
+        table.concat(what.quests or NONE, ","), low or "", high or "", type(what.goods) == "table" and #what.goods or "" }, "\031")
+end
+
+local function SaidOfObject(object)
+    return (object and object.kind or "other") .. "\031" .. (object and object.name or "")
+end
+
 -- One entry of Spawns: its points, each on its map (into spawned); a creature with many points on a map at its
--- areas' middles.
-local function Spawn(found, key, record, spawned)
+-- areas' middles. What the facts said of the creature or object goes into lines, for Look.
+local function Spawn(found, key, record, spawned, lines)
     local kind, id = tostring(key):match("^(%a+):(%d+)$")
     id = tonumber(id)
     if not id or (kind ~= "npc" and kind ~= "object") then return end
     local what, name, low, high
     if kind == "npc" then
         what, name, low, high = Creature(id)
+        lines.npc[id] = SaidOf(what, name, low, high)
         if not what then return end
     else
         local object = Get("Objects", id)
+        lines.object[id] = SaidOfObject(object)
         what, name = object and object.kind or "other", object and object.name
     end
     local place = { kind = kind, key = kind .. ":" .. id, id = id, what = what, name = name, levelMin = low, levelMax = high }
@@ -184,26 +206,27 @@ local tell = Core.Later(function()
 end)
 
 -- Every place read anew, a walk over each set that is there (Each: a job of the scheduler), one after
--- the other; told on the next frame once all are read. A set changed meanwhile: read again after it.
+-- the other; told on the next frame once all are read. A set changed meanwhile: looked at after it (Again).
 -- The places and the points come in together: the last read's stay in use until the new one is done.
 local function Read()
     stale = false
-    local found, spawned, names = {}, {}, {}
+    wipe(changed)
+    local found, spawned, lines, names = {}, {}, { npc = {}, object = {} }, {}
     for _, name in ipairs(MapReader.PLACES) do
         if handles[name]:Ready() then names[#names + 1] = name end
     end
     local function Next(index)
         local name = names[index]
         if not name then
-            job = nil
-            if stale then return Read() end
-            byMap, spawns = found, spawned
-            return tell()
+            job, byMap, spawns, said = nil, found, spawned, lines
+            tell()
+            if stale then Again() end
+            return
         end
         local read = READERS[name]
-        job = handles[name]:Each(function(key, record) read(found, key, record, spawned) end, function(problem)
+        job = handles[name]:Each(function(key, record) read(found, key, record, spawned, lines) end, function(problem)
             if problem then
-                job, byMap, spawns = nil, found, spawned -- what was read stays; the failure is noted by the walk
+                job, byMap, spawns, said = nil, found, spawned, lines -- what was read stays; the failure is noted by the walk
                 return tell()
             end
             Next(index + 1)
@@ -213,13 +236,57 @@ local function Read()
     Next(1)
 end
 
--- A set changed or arrived: read again on the next frame, once for all the sets told together (those read
--- with Core arrive at once); after the walk running now, if one is.
-local Reread = Core.Later(function()
-    if job then stale = true else Read() end
-end)
+-- Only the facts changed (NPCs, Objects, Quests: their stamps move in play, with every row learned): what they say
+-- of each creature and object placed, looked through as a job of the scheduler, and the places read anew only where
+-- one says something else now. A creature's health learned costs no walk; a vendor's services or a rare's name do.
+local function Look()
+    stale = false -- as Read does: a change that lands while this look runs is looked at after it, once
+    local creatures, objects = changed.NPCs or changed.Quests, changed.Objects
+    wipe(changed)
+    local differs = false
+    job = Steps.Run({ name = "Map look", label = "data job Map look", done = function(problem)
+        job = nil
+        if problem or differs then return Read() end
+        if stale then Again() end
+    end }, function()
+        for id, line in pairs(creatures and said.npc or NONE) do
+            if SaidOf(Creature(id)) ~= line then
+                differs = true
+                return
+            end
+            Steps.Check()
+        end
+        for id, line in pairs(objects and said.object or NONE) do
+            if SaidOfObject(Get("Objects", id)) ~= line then
+                differs = true
+                return
+            end
+            Steps.Check()
+        end
+    end)
+    if not job then Read() end -- a look of the same name still running: cannot be (job), read anew to be sure
+end
 
-local function Changed()
+-- What a change asks for: the whole walk where a set of places changed (or none was read yet), else a look
+-- through the facts; after the walk running now, if one is.
+function Again()
+    if job then
+        stale = true
+        return
+    end
+    local whole = byMap == nil
+    for _, name in ipairs(MapReader.PLACES) do
+        if changed[name] then whole = true end
+    end
+    if whole then Read() else Look() end
+end
+
+-- A set changed or arrived: read again MapReader.REREAD seconds later, once for all the sets told meanwhile (those
+-- read with Core arrive at once; the rows learned in play come in bursts); after the walk running now, if one is.
+local Reread = Core.Later(Again, MapReader.REREAD)
+
+local function Changed(handle)
+    changed[handle.name] = true
     if job then
         stale = true
         return

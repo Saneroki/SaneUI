@@ -1,92 +1,78 @@
-# Sane UI: quick context for a new chat
+# Sane UI: the project map
 
-Reviewed 2026-10-14 against source at `be710d5`. This is repository memory, not hidden chat memory.
-Use current source and the user's instructions when they differ from a note.
+The compact map for a new chat: what is where, what to read for a task, where Blizzard's code is. The source wins
+over every note here; `CLAUDE.md` holds the rules. Read as little as needed: this page, the row for the task, then
+the code and the tests near it. Long documents by section: `saneui showsections FILE` (lines and tokens per
+section), `saneui showsections FILE words` (the sections named).
 
-## Read as little as needed
+## The addons
 
-1. Read this page (and root `AGENTS.md` where there is one); check `git status --short` and `git log -5 --oneline`.
-2. Read the relevant note below and the matching development guide: long ones by section (`saneui showsections FILE` lists them).
-3. Read the current implementation and nearby tests for the requested behaviour.
-4. Look up only the needed Blizzard APIs/templates locally. Avoid generated copies in `BUILD/`.
+Sixteen addons in `src/`, one folder each with its TOC and its README (a *TL;DR* first, then *How to use*, the technical
+sections, *Files*; most keep a *History*). Version 0.3.0, `## Interface: 16001, 120105` (Forever and Retail).
+Core is the library every module depends on and the only one needed; every module is independent of the others.
 
-| Task | Next reading |
+| Module (addon) | What it is | Plan, note, tests |
+| --- | --- | --- |
+| Core (`SaneUI`, `src/Core/`) | The library: events, errors and guards, the saved settings of every module in profiles, the `/sane` command, what every window can do (moving, docking, full screens, tabs, Esc), the options (`Settings/`), Sync (`Sync/`, the game's own settings kept with ours), the data framework (`Data/`), the guild's records and the wire to the guild and the group | `src/Core/README.md` (its *Files* section describes every file); [core.md](core.md) (contracts and traps); `Settings/README.md`, `Sync/README.md`, [sync.md](sync.md); `Doc/guides/windows.md`, `Doc/guides/data.md`; tests `core.lua`, `window.lua`, `sync.lua`, `data.lua`, `guild.lua` |
+| Abilities (`SaneUI_Abilities`) | The spellbook with the spells not learned yet, reserved action buttons that fill when a spell is learned, the Home page of what the trainer teaches, Action Bar 1 kept on its page, bars that touch, buttons that follow a new rank | [abilities.md](abilities.md); tests `abilities.lua` |
+| Atlas (`SaneUI_Atlas`) | The painted map of the whole world for Navigation's view *Atlas*; its art and index made into `assets/optimized/Atlas/`, load on demand, Forever only | `Doc/ideas/Navigation.md`, *The painted view*; `Doc/guides/map-style.md` |
+| AuctionData, AuctionScans (`SaneUI_AuctionData`, `SaneUI_AuctionScans`) | No code: the saved files of the auction prices and of every full scan whole (`SaneUIData_Market`, `SaneUIData_Scans`); Core fills and reads them | `Doc/guides/data.md`, *The full auction scan* |
+| Combat (`SaneUI_Combat`) | Its window at the bottom middle and its full screen with our own spellbook and talents; the frames of you, your target, focus, pet and their targets in the nameplates' look, party and raid frames, the game's bars out of the way and its menu bar on mouseover; rings around the mouse for the global cooldown and your cast; boss frames, party pets and your buffs to come | `Doc/ideas/Combat.md`; tests `combat.lua` (with its client fixture `combatclient.lua`), `book.lua`, `talents.lua` |
+| Economy (`SaneUI_Economy`) | The tab *Deals* on the game's auction house window: what to buy and sell right now, a click each, the gold on sale; Core's prices, forecast and fees | `Doc/ideas/Economy.md`; tests `economy.lua` |
+| Guild (`SaneUI_Guild`) | The guild window on Social's full screen or alone: overview, roster, everybody's gear; the other views to come; its data and sharing are Core's | `Doc/ideas/Guild.md`; tests `guild.lua` |
+| Inventory (`SaneUI_Inventory`) | The bottom right corner: the character sheet, the bags (categories, bank, vendor, make room), the alts' things; stat weights decide upgrades | `Doc/ideas/Inventory.md`; tests `inventory.lua`, `sheet.lua`, `bags.lua` |
+| Loot (`SaneUI_Loot`) | Stands in for the loot window and the roll frames: a line a thing at the mouse, kinds taken at once, the master looter's menu, room made when the bags are full, roll cards, a feed | tests `loot.lua` |
+| Lore (`SaneUI_Lore`) | NPC talks as a scene over the world, the interface faded out, each reward read for you; books, voice overs and the library to come | `Doc/ideas/Dialogue.md`, `Doc/ideas/Lore.md`; tests `lore.lua` |
+| Nameplates (`SaneUI_Nameplates`) | The game's plates in our dress: one line in a round-cornered bar, power and combo points, auras in three groups, borders by rank, smaller far away, the combat text | tests `nameplates.lua` |
+| Navigation (`SaneUI_Navigation`) | The minimap and the world map in one window, drawn from the game's tiles and art: pins from Core's data and the game, the quest log, routes by walking data with flights and ships, found herbs and ore, the satchel of minimap buttons, dungeon maps | `Doc/ideas/Navigation.md`; [navigation.md](navigation.md); tests `navigation.lua` |
+| Social (`SaneUI_Social`) | The messenger-style chat window that stands in for the game's chat, its full screen with conversations, friends and the guild, the game's channels joined or left by its ticks | `Doc/ideas/Social.md`; [social.md](social.md); tests `social.lua` |
+| SpeedLeveling (`SaneUI_SpeedLeveling`) | One key for questing and the leveling guide over the world, run by our own engine on text guides (the guide packs, bought guides opened for the account, pasted guides); class quest chains; professions along the way | `Doc/ideas/Leveling.md`; tests `speedleveling.lua`, `speedguide.lua`, `classquests.lua`, `classquests.py` |
+| Tooltips (`SaneUI_Tooltips`) | The game's tooltips drawn anew on dark panels, a layout per kind, with the quests, professions, alts and prices of an item, a price graph and the forecast | `Doc/ideas/Tooltips/`; [tooltips.md](tooltips.md); tests `tooltips.lua` |
+
+Tests are `dev/tests/<name>`; `dev/tests/run` lists them all in its header, with what each covers. The tools, the build and
+the tests: [development.md](development.md). What is not built yet stands in each plan and on the task board (`saneui board list`).
+
+## Shared names
+
+- One global table, `SaneUI` (`SaneUI.Core` is Core); a module's own things live in its private `ns`. Saved
+  variables, declared only in Core's and the two data addons' TOCs: `SaneUIDB` (account: settings, profiles, the
+  error log), `SaneUICharDB` (character), `SaneUIData_Characters`, `SaneUIData_Guild`, `SaneUIData_Learned`,
+  `SaneUIData_Shared`, `SaneUIData_Market`, `SaneUIData_Scans` (`Doc/guides/data.md`, *Saved variables*).
+- `/sane` (`/saneui`) lists the modules and their commands. Core: `errors`, `options` (`config`, `settings`),
+  `window`, `profile`, `data`, `feedback`, `arrange`; Abilities `abilities`; Social `social`; Combat `auras`;
+  Guild `guild`; Loot `loot`; Navigation `map`; Nameplates `range`; Speed Leveling `guides`, `key`
+  (`rg -n 'Core.Command\(' src`).
+- Art ships from `assets/optimized/<Module>/Art/` (`dev/build` puts it into the addon's `Art/`); `src/` holds no
+  pictures or sounds. XML only for templates and key bindings (`Bindings.xml`, `Core/Settings/*.xml`,
+  `Navigation/Route.xml`).
+
+## Blizzard's code
+
+The ground truth for the client's API, events, frames, templates and strings is Blizzard's own interface code, its
+newest export of each game (`dev/tools/blizzard where` prints the code and art folders; never a `references/`
+folder, which is gone). Look a name up before using it:
+
+| Need | Where |
 | --- | --- |
-| Lifecycle, events, errors, saved variables, options, shared windows | [core.md](core.md) |
-| Future spells, reservations, action layouts, Action Bar 1's page, spellbook/Home UI | [abilities.md](abilities.md) |
-| Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
-| Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
-| Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, dungeon maps with their bosses; the guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
-| Combat: its window at the bottom middle, its full screen with our own spellbook and talents (built), as the game's; your spellbook and talents keys open them; your, your target's and your focus's frames in the nameplates' look, with power bars, the auras that matter most and your aura lists, their targets and your pet as rows under them, the casts and your timers part of the frames (built); the game's action bars clean (built); one frame for party and raid in place of the game's, sized and previewed in Edit Mode, your own slot a button to the group's tools in place of its raid manager (built); boss frames, party pets, your buffs (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
-| Nameplates: the game's plates in our dress (built: round-cornered health bar as wide as its one line inside (quest, raid marker, level, item level, threat, name, health), the unit's power and combo points along its bottom, border by rank, glow on aggro, own debuffs above, a foe's buffs left, crowd control right, raid marker; strangers' and critters' plates hidden; smaller far away; the combat text over plates and over your character, pencil drawings for misses, parries, blocks) | `src/Nameplates/README.md` |
-| Speed Leveling: one questing key and your leveling guide over the world, independent of any other addon (built: the key loots the corpse beside you, talks to the quest giver in front of you and takes/hands in its quests (running you to the NPC found by the game's Click-to-Move), uses a step's item on the corpse or creature its words name, picks up quest objects, attacks your foe, else finds and marks what your quests and guide want around you nearest first, hearths when the guide says, uses a quest item when nothing is around; the game's secure state driver and override bindings, Find's macro chained for the 255-char limit; the loot itself is the Loot module's, set to take everything; the key runs you to corpses around you, leaves an NPC you are through with alone and closes a talk that is done; the game's questions on equipping and destroying answered; only the guide's quests taken, quest rewards chosen, new upgrades put on, group rolls agreed between your characters; your class's quest chains over the guide as your level reaches them; Solo rests it all. Your professions level along the guide: where it passes the most nodes, a check before a harder zone, a detour to a node the minimap shows close to your way, cloth while the kills pay. The guide runs by our own engine: the guides that come for each game (a guide pack per game, chosen by a right click on the view), guides you paste as text and the guides you bought, opened for your own account from the import string; on, paused or off, also in the minimap's satchel; a frameless view, arrow and icons placed in Edit Mode) | `src/SpeedLeveling/README.md`, then `Doc/ideas/Leveling.md` |
-| Data: Auction House (`src/AuctionData/`) and Data: Auction Scans (`src/AuctionScans/`): no code, the files of the auction prices and of every scan whole; Core fills and reads them | [core.md](core.md) |
-| Economy: the tab Deals on the game's auction house window, open first: what to buy and sell right now, a click each, the gold on sale (`src/Economy/README.md`, plan `Doc/ideas/Economy.md`); Core's prices, forecast and fees | `src/Economy/README.md` |
-| Loot: the game's loot window and roll frames stood in for (built: the loot window with no window round it (a line a thing, a bar in its quality's colour, a quest's gold, and an A; Link and Close, bare off white words, at the foot; a thing taken, the next under the mouse) at the mouse or placed in Edit Mode, things taken at once as the loot is ready by switches of kinds (coins, currencies, quest items and junk at first) and the player's word on items, listed in the options' tab Your items, the game's Auto Loot lent off, the master looter's menu, a page that makes room when the bags are full, roll cards with who chose what, a feed of what you and your group receive, what was taken at once included; the game's `LootFrame` no longer hears `LOOT_OPENED`, its `GroupLootContainer` lent to a hidden frame) | `src/Loot/README.md` |
-| Guild: the guild window on Social's full screen or alone (built: the page with all tabs, overview, roster, equipment, the guild key; Core's wire and guild records; the other views to come) | `src/Guild/README.md`, then `Doc/ideas/Guild.md` |
-| Inventory: own character sheet, bags, alts' snapshots on its full screen (built: window in the bottom right corner, its full screen and board; the windows to come; never the game's panels, which taint the window manager) | `src/Inventory/README.md`, then `Doc/ideas/Inventory.md` |
-| Lore: NPC talks as a scene (built: gossip and quests see-through over the world, the answers beside them, the quest under them, the interface faded out with its tooltips kept, each reward read for you: its gear kind, usable, sell value, what it changes; the words wait: a left click cycles them, a right click accepts or says goodbye, Space goes on; the game's windows held); books and letters, AI voice overs, a library of the world's lore, tidbits (ideas) | `src/Lore/README.md`, then `Doc/ideas/Dialogue.md`, `Doc/ideas/Lore.md` |
-| Game settings kept per account/character/profile, chat windows, own channels | [sync.md](sync.md) |
-| Core's data framework: the master (`assets/data/`), Core's set files, `Data.Set`, the scheduler, the characters (built: 1a, 1b, 1c.4 in part; Tooltips reads Quests, Drops, Characters) | [Doc/guides/data.md](../guides/data.md), then `Doc/ideas/Data-build.md` |
-| Build, tests, generators, reference paths, documentation caveats | [development.md](development.md) |
-| Locate a declaration or find changed files | `rg -n 'symbol' src dev`; `dev/tools/project-index --check` |
+| A symbol's code in both games, with the diff | `dev/tools/blizzard show <Name> [--retail]` |
+| What differs between Forever and Retail (globals, `C_X.Function`, enums, events, art) | `dev/tools/blizzard games` (the lookup's `symbols.tsv`, `files.tsv`, `addons.tsv`, `art.tsv`); `dev/tests/games.lua` takes Forever's extras away in a test (`W.Play("retail")`) |
+| What Sane UI takes from Blizzard's code | `dev/tools/blizzard uses [--list] [--unknown]` |
+| API signatures, enums, events, which widget methods take a secret value | `Interface/AddOns/Blizzard_APIDocumentationGenerated/` in the export (`rg -n 'Name = "X"'`) |
+| The game's own spellbook, its frame, search, tabs, pager | `Blizzard_PlayerSpells`, `Blizzard_PagedContent` |
+| Chat edit boxes, slash and secure flow, docking | `Blizzard_ChatFrame` |
+| Tooltips: the data processor, comparisons, line kinds | `Blizzard_SharedXMLGame/Tooltip/` (`TooltipDataHandler.lua`), `Blizzard_GameTooltip` |
+| Menus (the new menu system) | `Blizzard_Menu` (its implementation guide) |
+| The options framework | `Blizzard_Settings_Shared` (its README), `Blizzard_SettingsDefinitions_*` |
+| Scroll boxes, fonts, templates, pools, secure templates | `Blizzard_SharedXML`, `Blizzard_SharedXMLBase`, `Blizzard_Fonts_Shared`, `Blizzard_FrameXML` (`SecureTemplates.lua`) |
+| Edit Mode, unit frames, nameplates, action bars, auction house, the panel manager | `Blizzard_EditMode`, `Blizzard_UnitFrame`, `Blizzard_NamePlates`, `Blizzard_ActionBar`, `Blizzard_AuctionHouseUI`, `Blizzard_UIParentPanelManager` |
+| The game's art by path or atlas name | the export's art folder (look a known path up; never list it all); `saneui showgameart` for the numbered pieces Sane UI's look is picked from |
 
-## What exists
+Restrict every search in the export to an addon folder and a name; check the flavour folders (`Mainline`, `Classic`,
+`Camelot`, `Shared`) and the TOC conditions before assuming a file loads in a game. After a new build of either game:
+`Doc/guides/blizzard-updates.md`.
 
-Sane UI replaces or extends parts of WoW: Forever's UI. Version `0.3.0`, interface `16001` in all
-nine TOCs. Modules are independent addons under category/group Sane UI; only Core is required.
-Core holds the options (`src/Core/Settings/`, `Core.Config`: pages put up at login, filled when first
-opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities extends the game's book with future spells,
-reserves action slots and keeps Action Bar 1 on the page you chose. Tooltips draws panels over native tooltips. Social supplies a messenger-style
-window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
-channels as chosen on its page. Nameplates (2026-10-20) dresses the game's own plates: a round-cornered
-health bar over the game's, as wide as its one line inside (quest, raid marker, level, item level, threat, name, health), the unit's power and your combo points
-along its bottom, a border by rank, a red glow on aggro; own debuffs above it, a foe's buffs left, crowd control
-right, in the game's aura containers; the raid marker; strangers' player plates hidden; smaller far away (the
-game's CVars); the game's parts under it at alpha 0 (`src/Nameplates/README.md`).
-Combat (2026-10-16) is set up for unit frames, party, raid, buffs and pets; built (2026-10-20): its window at the bottom middle, whose full screen (the bottom edge's middle
-half, or your spellbook and talents keys) holds our own spellbook and talents, as the game's, and a talent planner Sane UI
-knows as a window of its own (the known addons, Core's `Neighbours.lua`) (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) is a window in
-the bottom right corner whose corner fills the screen with its own character sheet, bags and alts' snapshots, being built (`src/Inventory/README.md`, plan `Doc/ideas/Inventory.md`). Navigation (2026-10-18) is the minimap and the map in one
-window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`); its painted view
-is the module Atlas (`src/Atlas/`, load on demand; its art and index made into `assets/optimized/Atlas/`, built only
-once they are there). Sync keeps the game's per-character
-settings (CVars, chat windows/channels, Edit Mode layout, action bars) in the profile in use (*Accountwide settings*
-on, the profile *Accountwide* for every character at first; off, each character's own Sane UI settings and nothing
-of the game's); its switches are in the tab Game settings of the options page Profiles, next to the CVar list.
+## Keeping the map useful
 
-All addon source is Lua and TOCs, plus XML templates (`Core/Settings/Banner.xml`, `Core/Settings/CVars.xml`: settings-list rows);
-no package manager or compiled application. Original art ships in `<Module>/Art/`: banners as BLP, Tooltips' masks and shapes as TGA (`dev/tools/tooltip-art`).
-Development scripts use Bash, Python 3 and Lua 5.1. Shared global `SaneUI`; account saved variable
-`SaneUIDB` and per-character `SaneUICharDB`, declared only by Core. The game's `Settings` global is distinct from `Core.Config` (Sane UI's options).
-
-`/sane` (`/saneui`) lists enabled modules and commands; Core owns `errors`, `options`
-(`config`, `settings`), `window`; Abilities owns `spellbook` (`sb`); Social owns `social` (`chat`).
-Tooltips has settings but no dedicated slash subcommand.
-
-## Validation and scope of this review
-
-`dev/tests/run` passed on 2026-10-17: lint (5 addons, 99 TOC files) and Lua suites of **1,985 checks**:
-Core (with Settings and Profiles) 320; Abilities 339; Tooltips 363; Social 349; Sync 88; Windows 351; Data 175.
-These numbers are a dated baseline; run the suite to obtain current results.
-
-Review covered addon implementation, TOCs, module documentation, guides, development tools,
-test harness/coverage and recent architectural history. Data tables were inspected by schema,
-registration and provenance, rather than reproducing every numeric record in these notes.
-The index fingerprints every project file in its scope, including complete data-file contents.
-Generated build copies, personal saved settings, IDE metadata and the roughly 16 GB local external
-reference library were not exhaustively read. There is no need for future chats to do that either.
-
-The current module changes have substantial pending in-game QA. Earlier tooltip panels were tried;
-that does not validate today's layouts. See module READMEs for detailed human QA lists.
-
-## Keeping the memory useful
-
-These notes contain stable architecture and traps, not a duplicate manual or task diary. Update the
-affected note when a contract, file responsibility or workflow changes. Keep user-facing behaviour
-in module READMEs and record actual changes in `Doc/Changed.md`.
-
-`files.json` is a generated navigation index with SHA-256 hashes, sizes, source declaration line
-numbers, Markdown headings and TOC load order. Do not read it whole. Use `--check` to identify stale
-files, or query a selected entry with Python. After rereading changed source and updating prose,
-run `dev/tools/project-index`; refreshing hashes alone does not refresh the notes.
+These notes hold stable architecture, contracts and traps, not a manual or a diary: update the note of a module when a
+contract, a file's responsibility or a workflow changes; what the player sees stands in the module's README; every
+change goes into `Doc/Changed.md`. Nothing here says that something is untried in the game.

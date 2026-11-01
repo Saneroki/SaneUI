@@ -41,8 +41,10 @@ that name; *Forever only*, none. What stands in for the last kind in Retail is s
 
 ## Scope
 
-Sane UI is a complete redesign (Saneroki, 2026-10-21): every window and view Sane UI makes or recreates gets this
-look and its own layout, art, fonts and style, not Blizzard's. The game's native windows that Sane UI leaves in
+Sane UI is a complete redesign (Saneroki, 2026-10-21): every window and view Sane UI makes or recreates gets its
+own layout and style, not Blizzard's; since 2026-10-30 its images and fonts are the game's own (*The new direction*).
+The journal look below, its harness (*The harness*) and `dev/imagegen/style.txt` serve only what is built in the
+journal look until that is rebuilt in Forever's look. The game's native windows that Sane UI leaves in
 place stay in their own style, mostly untouched. How the game works (its API, secure frames, scaling) stays as
 Blizzard's code has it ([gui-development.md](gui-development.md)).
 
@@ -536,7 +538,7 @@ needs, for responsive, flexible designs).
 
   Text is always the code's, so it is sharp at any size.
 - **Layouts at any scale:** `compose.py` lays out in the pixels of a 1080p screen, and `S` turns them into pixels
-  (2 at 4K); the pieces are scaled to it. The job lays out every view at 4K; the full screen
+  (2 at 4K); the pieces are scaled to it. The run lays out every view at 4K; the full screen
   (`views/fullscreen.png`, 3840 x 2160): the character window, the guild window and the chat window side by side.
 - **For the game:** the pieces become textures by `Doc/guides/images.md` (format, mipmaps, sizes). Margins for
   slicing are taken at the pieces' scale.
@@ -595,7 +597,7 @@ of its own or on earlier renders.
    - the game's icons.
 
    No model pass runs over a finished view: a global pass repaints everything and brings back looks of its own.
-6. **High resolution and pieces** (`catalog.py`; the GPU runner's job `interface`): every decided part at 4K
+6. **High resolution and pieces** (`catalog.py`, run by hand; no job of the GPU runner today): every decided part at 4K
    scale, rendered once, and cut into the final pieces (*High resolution*).
 7. **Gallery** (`gallery.py`): the decided references, the cleaned picks, the views, the hires parts, the
    variants of the earlier round (#88–121, still to pick from; no new ones are made) and the final pieces,
@@ -624,17 +626,16 @@ Rules:
 
 ## Running it
 
-The whole render is one job of the GPU runner, `interface` (`dev/imagegen/jobs.toml`, priority 20), which runs
-`catalog.py`: it cleans the picks, makes the 4K parts (one render each) and the two masks, takes out the pencil
-lines, cuts the final pieces, lays out the views and the 4K full screen, and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped.
+The whole render is `catalog.py`, run by hand (`python3 dev/imagegen/sets/interface/catalog.py`, every step in
+order): it cleans the picks, makes the 4K parts (one render each) and the two masks, takes out the pencil
+lines, cuts the final pieces, lays out the views and the 4K full screen, and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped. It has no job in `dev/imagegen/jobs.toml` today (the jobs there are `worldtiles` and `instancemaps`); a session that queues it adds one there with a priority ([image-generation.md](image-generation.md), *The GPU runner*).
 
-- See how far it is: `saneui gpuqueue` (the job's line is `catalog.py --status`).
-- Run it now: `saneui switch interface`.
-- After a decision changed (a pick, a cut, a part's source): `saneui rebuildstart interface` forgets what was
-  made (`catalog.py --rebuild`) and renders it all anew.
+- See how far it is: `python3 dev/imagegen/sets/interface/catalog.py --status`.
+- After a decision changed (a pick, a cut, a part's source): `catalog.py --rebuild` forgets what was
+  made and the next run renders it all anew.
 - Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|masks|pencil|pieces|views`;
   the pieces and the views need no graphics card (`pieces.py`, `compose.py`, `gallery.py`).
-- See the results: the gallery, `assets/generated/interface/index.html` (`.claude/launch.json` "interface").
+- See the results: the gallery, the page *interface pieces*, `/pieces/` on 127.0.0.1 port 8768 (`dev/tools/web-pages`, `saneui webpages`).
 
 When Saneroki decides:
 
@@ -643,5 +644,5 @@ When Saneroki decides:
    did not name is archived and never an input.
 3. A view or part that uses it changes in `compose.py` (`SOURCE`), `catalog.py` (`HIRES`), `pieces.py` or
    `clean.py`.
-4. The job is rebuilt.
+4. The pieces are made again by hand (`python3 dev/imagegen/sets/interface/catalog.py --rebuild`; no GPU job today).
 

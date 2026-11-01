@@ -993,8 +993,9 @@ function Panel.Draw(panel)
         panel:Hide()
         return false
     end
+    local shown = panel:IsShown()
     panel:Show()
-    ns.Live.Start(panel)
+    if shown then ns.Live.Start(panel) end -- shown anew, its OnShow started the live parts already
     return true
 end
 

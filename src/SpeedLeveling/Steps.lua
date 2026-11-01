@@ -76,6 +76,7 @@ local cards, rows = {}, {}
 local fonts = {}
 local browsing = false -- the wheel put the list in the place of the steps at hand
 local list = {}       -- the steps it goes through (Guide.Listed)
+local browsed         -- the guide run as the list came: another one run since, and the steps come back
 local top = 1         -- the place among them of its first line
 local least = 0       -- the view's height as the list came: it stays so high, so that the mouse stays over it
 local away = 0        -- seconds the mouse has been off the view
@@ -168,6 +169,7 @@ function Browse(on)
     closer:SetShown(on)
     Watching = Watching or ns.Guard(Watch)
     frame:SetScript("OnUpdate", on and Watching or nil) -- guarded: Watching is ns.Guard(Watch)
+    browsed = on and ns.Run.Guide() or nil
     if not on then return end
     local at
     list, at = ns.Guide.Listed()
@@ -463,6 +465,8 @@ function Steps.Update()
     if not picture and not hint then return Hide() end
     if not frame then Build() end
     frame:Show()
+    -- Another guide run since the list came (chosen, or the one after): its steps at hand, not the old guide's list.
+    if browsing and ns.Run.Guide() ~= browsed then Browse(false) end
     if not picture then picture = { title = ns.TEXT.guideView, total = 0, at = 0, place = 0, hand = {} } end
     empty.resume = follow == "paused" and hint == ns.TEXT.paused
 

@@ -47,11 +47,10 @@ local hooked = {}     -- [button] = true: its SetPoint and SetAlpha are hooked (
 local placing = false -- our own SetPoint on a held button: its hook leaves that be
 local home            -- out of sight: where a held button waits for its cell
 
--- A text as the addon list shows it, without colours, pictures and links.
+-- A text as the addon list shows it, without colours, pictures and links (Core.Fuzzy.Plain), trimmed.
 local function Plain(text)
     if type(text) ~= "string" then return nil end
-    text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", "")
-    text = text:gsub("|H.-|h(.-)|h", "%1"):match("^%s*(.-)%s*$")
+    text = Core.Fuzzy.Plain(text):match("^%s*(.-)%s*$")
     return text ~= "" and text or nil
 end
 

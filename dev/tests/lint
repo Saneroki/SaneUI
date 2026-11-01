@@ -58,6 +58,10 @@ MEDIA = {".blp", ".tga", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ogg
 # the slash command, key bindings.
 OWN = re.compile(r"^(SaneUI\w*|SLASH_SANEUI\d|BINDING_(HEADER|NAME)_SANEUI\w*)$")
 
+if "--help" in sys.argv or "-h" in sys.argv:   # saneui help lint
+    print(__doc__)
+    sys.exit(0)
+
 problems = []
 
 
@@ -186,14 +190,15 @@ def check_sets(core):
 # ":Name" is a method of any object, ".Name" a function of any table (ChatFrameUtil.AddMessageEventFilter, a
 # local name for TooltipDataProcessor), anything else that name itself; a local name a file gives one of
 # them (local AddFilter = ChatFrameUtil.AddMessageEventFilter or ...) is that door too. hooksecurefunc's
-# function is its second argument after a global's name, its third after a table; a door called through
-# pcall (pcall(hooksecurefunc, ...), pcall(frame.SetScript, frame, ...)) has one more.
+# function is the last of two arguments (a global's name, or a name holding the function) or of three (a
+# table and a name); a door called through pcall (pcall(hooksecurefunc, ...), pcall(frame.SetScript, frame,
+# ...)) has one more. A function run once an addon has loaded (EventUtil.ContinueOnAddOnLoaded) is a door too.
 DOORS = {
     ":SetScript": (2,), ":HookScript": (2,), "hooksecurefunc": (2,),
     "C_Timer.After": (2,), "C_Timer.NewTimer": (2,), "C_Timer.NewTicker": (2,),
     ":RegisterCallback": (2,), "Menu.ModifyMenu": (2,), "MenuUtil.CreateContextMenu": (2,),
     "MenuUtil.HookTooltipScripts": (2,), ":CreateButton": (2,), ":CreateCheckbox": (2, 3),
-    ":CreateRadio": (2, 3), ":AddInitializer": (1,), "pcall": (),
+    ":CreateRadio": (2, 3), ":AddInitializer": (1,), "pcall": (), ".ContinueOnAddOnLoaded": (2,),
     # A dropdown's menu, its words for the choice, whether it is at its default and its reset; a list's rows,
     # made, measured and drawn; a menu line's tooltip; a row of the game's options shown and usable (also under
     # its parent row); a setting's getter and setter; a chat filter; a tooltip's every filling.
@@ -202,6 +207,8 @@ DOORS = {
     ":SetTooltip": (1,), ":AddShownPredicate": (1,), ":AddModifyPredicate": (1,), ":SetParentInitializer": (2,),
     "Settings.RegisterProxySetting": (6, 7), ".AddMessageEventFilter": (2,), "ChatFrame_AddMessageEventFilter": (2,),
     ".AddTooltipPostCall": (2,), ".AddLinePostCall": (2,),
+    # A button row of the game's options (its click), a dropdown's options, a slider's words for its value.
+    "CreateSettingsButtonInitializer": (3,), "Settings.CreateDropdownInitializer": (2,), ":SetLabelFormatter": (2,),
 }
 DOOR = re.compile("(" + "|".join(re.escape(d) if d[0] in ":." else r"(?<![\w.:])" + re.escape(d)
                              for d in sorted(DOORS, key=len, reverse=True)) + r")\s*\(")
@@ -369,12 +376,16 @@ def check_guards(folders):
                     name, first = called, 1
                 elif re.fullmatch(r"[\w.]+\.(SetScript|HookScript)", called):
                     wanted = (4,)
-            if name == "hooksecurefunc" and len(spans) > first:
-                named = text[spans[first][0]:spans[first][1]].strip()[:1] in "\"'"
-                wanted = (first + (2 if named else 3),)
+            if name == "hooksecurefunc":
+                # The last of two arguments, whatever the first is (a name may hold the global's name), or of
+                # three; with fewer, the function is missing: reported, not passed over.
+                wanted = (first + (3 if len(spans) - first >= 3 else 2),)
             line = code.count("\n", 0, door.start()) + 1
             for index in wanted:
-                if index > len(spans) or guarded(code[spans[index - 1][0]:spans[index - 1][1]], names, steps):
+                if index > len(spans):
+                    if name != "hooksecurefunc":
+                        continue  # an argument the door does without (a checkbox's tooltip)
+                elif guarded(code[spans[index - 1][0]:spans[index - 1][1]], names, steps):
                     continue
                 flagged(path, lines, line, f"{name.lstrip(':.')} gets a function", marks)
         # A function field the game calls: set on a table (data.callback = ...) or one of its fields ({ callback = ... }).

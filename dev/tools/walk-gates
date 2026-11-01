@@ -43,10 +43,11 @@ import base64
 import heapq
 import json
 import math
-import struct
 import sys
 import zlib
 from collections import defaultdict
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -71,58 +72,23 @@ NEXT = {0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)}  # side: its rows and colu
 # -------------------------------------------------------------------------------------------------
 #  The blocks, as Navigation's Walk.lua reads them
 # -------------------------------------------------------------------------------------------------
-def decode(data):
-    """CBOR's whole numbers and arrays."""
-    at = 0
-
-    def item():
-        nonlocal at
-        head = data[at]
-        at += 1
-        major, info = head >> 5, head & 31
-        if info < 24:
-            value = info
-        else:
-            size = {24: 1, 25: 2, 26: 4, 27: 8}[info]
-            value = int.from_bytes(data[at:at + size], "big")
-            at += size
-        if major == 0:
-            return value
-        if major == 1:
-            return -1 - value
-        return [item() for _ in range(value)]
-
-    return item()
+def module(name, path):
+    loader = SourceFileLoader(name, str(path))
+    found = module_from_spec(spec_from_loader(name, loader))
+    loader.exec_module(found)
+    return found
 
 
-def cbor(value):
-    """A value in CBOR: whole numbers and arrays only."""
-    if isinstance(value, int):
-        major, number = (0, value) if value >= 0 else (1, -1 - value)
-    else:
-        major, number = 4, len(value)
-    if number < 24:
-        head = bytes([major << 5 | number])
-    elif number < 256:
-        head = bytes([major << 5 | 24, number])
-    elif number < 65536:
-        head = bytes([major << 5 | 25]) + struct.pack(">H", number)
-    elif number < 2 ** 32:
-        head = bytes([major << 5 | 26]) + struct.pack(">I", number)
-    else:
-        head = bytes([major << 5 | 27]) + struct.pack(">Q", number)
-    if major == 4:
-        return head + b"".join(cbor(item) for item in value)
-    return head
+WALK = module("walk_data", ROOT / "dev" / "tools" / "walk-data")  # the blocks' CBOR (cbor, decode), the workers' number
 
 
 def pack(value):
     data = zlib.compressobj(9, zlib.DEFLATED, -15)
-    return base64.b64encode(data.compress(cbor(value)) + data.flush()).decode("ascii")
+    return base64.b64encode(data.compress(WALK.cbor(value)) + data.flush()).decode("ascii")
 
 
 def unpack(text):
-    return decode(zlib.decompress(base64.b64decode(text), -15))
+    return WALK.decode(zlib.decompress(base64.b64decode(text), -15))
 
 
 def read(text):
@@ -540,7 +506,7 @@ def main():
     if args and args[0] in ("-h", "--help"):
         print(__doc__.strip())
         return 0
-    only, processes = None, 24
+    only, processes = None, WALK.PROCESSES  # the workers as walk-data's: the app's memory cap (--processes)
     if "--only" in args:
         at = args.index("--only")
         only = {int(key) for key in args[at + 1].split(",")}

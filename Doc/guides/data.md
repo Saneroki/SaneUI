@@ -32,7 +32,7 @@ A module only reads. Gathering, keeping, checking, sharing and telling about cha
 | **Entry** | One thing in a set: the item 16801. |
 | **Version** | An entry's facts from one build (and day) on. An entry has one or more, oldest first. |
 | **Build** | The game's build number (`GetBuildInfo`, second answer), the clock of versions. |
-| **Game version** | One game as one kind of client plays it: `forever`, `forever-ptr`, `forever-beta`. |
+| **Game version** | One game as one kind of client plays it: `forever`, `forever-ptr`, `retail`, `retail-ptr`, `retail-beta` (`forever-beta` only in older files: the beta is gone). |
 | **Source** | Where a fact came from: the game, a person (`hand`), or a numbered batch of staging. |
 | **Set file** | A set compiled for one game version: `Sets/<Set>.lua`, one of Core's files. |
 | **Row** | One version of an entry as one string in a set file. |
@@ -42,12 +42,14 @@ A module only reads. Gathering, keeping, checking, sharing and telling about cha
 
 Facts of one game version never reach another (the plan, *Game versions kept apart*).
 
-- **Names:** `forever` (live), `forever-ptr`, `forever-beta`; later `retail` and its own. A name ending in
-  `-ptr` or `-beta` **stands on** the name without it: its set files are live's with its own on top.
-- **Short signs** for messages: `f`, `fp`, `fb`.
-- **The client's game version** (`Data.Game()`): `WOW_PROJECT_ID == WOW_PROJECT_CAMELOT` (18, this client) is
-  Forever. Then `IsBetaBuild()` gives `-beta`, else `IsPublicTestClient()` or `IsTestBuild()` gives `-ptr`.
-  Any other project, or a missing answer, gives nil: **a client that cannot be told refuses every set.**
+- **Names:** `forever` (live) and `forever-ptr`; `retail`, `retail-ptr` and `retail-beta` (Retail's data comes later;
+  `forever-beta` stands only in older files, the beta being gone). A name ending in `-ptr` or `-beta` **stands on**
+  the name without it: its set files are live's with its own on top.
+- **Short signs** for messages (`SIGNS` in `Wire.lua`): `f`, `p` (Forever's PTR), `r`, `t` (Retail's PTR), `q` (Retail's beta).
+- **The client's game version** (`Data.Game()`): `Core.GAME` first, from `WOW_PROJECT_ID` (`WOW_PROJECT_CAMELOT`, 18,
+  is Forever; `WOW_PROJECT_MAINLINE`, 1, is Retail). Then `IsBetaBuild()` gives `-beta`, else `IsPublicTestClient()`
+  or `IsTestBuild()` gives `-ptr`. Any other project, or a missing answer, gives nil: **a client that cannot be told
+  refuses every set.**
   `/sane data` prints the three answers, so the game shows what each client says.
 
 ## Game facts and personal data
@@ -489,7 +491,7 @@ local Items = Data.Set("Items")     -- a handle: cheap, never nil; one per name
 | `Data.WhenReady(Items, fn)` | `fn(handle)` once the set (its handle or its name) is ready: at once if it is, in the caller's own call; else on the frame after it arrived, once. As a rule a set is there before any module asks. |
 | `Items:State()` | `"ready"`; `"refused"` (another format or game version, or the client's cannot be told) or `"missing"` (Core holds no such set), and a few words why; `"loading"` only while Core's own files are still being read. |
 | `Items:Ready()` | `State() == "ready"`. |
-| `Bosses:Unverified(key, part)` | Whether the entry (or a part of it: a boss's item `"l17076"`, an ability `"a8269"`) is not yet confirmed by the game: listed in its set's file (`S.unverified`) and not confirmed in play since (*Verified*). False for an entry learned in play, one the set lacks, a set not ready. |
+| `Bosses:Unverified(key, part, own)` | Whether the entry (or a part of it: a boss's item `"l17076"`, an ability `"a8269"`) is not yet confirmed by the game: listed in its set's file (`S.unverified`) and not confirmed in play since (*Verified*), here or by members; `own`: not by the game here, what members told aside (Core's watchers ask so before they confirm). False for an entry learned in play, one the set lacks, a set not ready. |
 | `Items.hash`, `Items.build` | Where the data came from: its hash, the newest build it knows (nil while the set is not there). |
 
 - **What this client has reached:** a set made for a later patch than the client's build answers with the
@@ -535,8 +537,11 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
   Every map point of them is placed by map-data's `Placer`: on the zone map of the area the game gives the
   position (the building part it stands in, else the terrain's map chunk), on the smallest map box only where
   neither tells; *Places*' numbers by its `PlaceKeys`.
-- **Read** as walks of the scheduler (`Each`), one set after the other, when a set it reads arrives or changes;
-  a set Core does not hold (empty in the master) or that is refused is passed over without a word.
+- **Read** as walks of the scheduler (`Each`), one set after the other, `MapReader.REREAD` seconds after a set it
+  reads arrives or changes, so that a burst of changes (the stamps of NPCs and Quests move in play, with every row
+  learned) is one walk. A change of the facts alone (NPCs, Objects, Quests) is first looked through, a job of its own:
+  the places are read anew only where a creature's or an object's name or kind changed, not for a creature's health
+  learned. A set Core does not hold (empty in the master) or that is refused is passed over without a word.
 
 ### The ships' times (`Data.Ships`)
 
@@ -656,8 +661,13 @@ Data.Share("Items", 16801)               -- a row learned here (Data.Learn) shar
   lacks counts: a fact of its own). **Parts:** a boss's item `l…` or ability `a…`; a spawn point `p…` (its map and
   place to a tenth of a percent: `Watchers.Code`); a field the game told, `name`, or a member of one,
   `startNPCs=69`, `health=12` (*Checked in play*). Of an entry Core learned, the parts the game told are kept too
-  (`Confirmations.Told`), so the harvest stages only those. At the login, the confirmations of an entry the set no
-  longer lists unverified (a release took it in) and that Core did not learn are dropped.
+  (`Confirmations.Told`), so the harvest stages only those. What members confirmed stands apart in `heard[set][key]`, of
+  the same shape: the views read it as confirmed (`Data.Confirmed`, `Data.ConfirmedParts`, `Unverified`), it is never sent
+  on, and the harvest never reads it. Whether the game's own word is kept and shared is decided by this client's own
+  alone (their `own` flag: `Data.Confirm`, the watchers' and `Check.lua`'s questions), so what members told never stands
+  in for the game's word here, nor confirms an entry whole through the play list. At the login, the confirmations of an
+  entry the set no longer lists unverified (a release took it in) and that Core did not learn (nor take from members)
+  are dropped.
 - **The watchers** (`Data/Watchers.lua`), never in a fight or while the game restricts addons, a hidden value passed
   over: a creature seen (the mouse, the target, a nameplate) confirms the spawn point (*Spawns*) it stands within
   `Watchers.NEAR` yards of (`C_Map.GetPlayerMapPosition`, `GetMapWorldSize`), the whole spawn once every point of it
@@ -979,29 +989,37 @@ the plan: `Doc/ideas/Data.md`, *Scans*). A running game reads no file, so this i
   at most `Relay.MOST` items, cut at `Relay.BYTES`. The wire's pace is one message a second, about 18 items a second, so a
   first scan of 6,000 items takes about six minutes and later ones far less. With nobody asking, one message is all there is.
 - **`ask`:** `Relay.LISTEN` seconds after the login, unless a transfer was heard: who has a scan of this house newer than mine? The holder
-  offers its last scan whole (`Prices.Lines`); holders that hear the offer stay quiet. What came from others is not passed on.
+  offers its last scan whole (`Prices.Lines`), once in `Relay.QUIET` per house, whoever asks (a whole scan is minutes of messages);
+  holders that hear the offer stay quiet. An account asks once in `Relay.QUIET` too, however often it reloads (`asked[house]` in its
+  auction file), and a member that asks again within it earns a strike. What came from others is not passed on.
 - **Taken in** (`Prices.Heard`): only from the guild, party and raid, never a whisper; every byte of a block by its strict shape, or
-  none of it; numbers within what the game can hold; an item the game does not know left out; only where this account's point is
-  older. A price more than five times off a point of the last `Prices.FRESH` days waits apart (`doubted`) for a second sender, one of
+  none of it (a key of a kind the game would not make is off it: gear's plain, a plain item's with a kind, a level, suffix or species
+  past any); numbers within what the game can hold; at most `Relay.MOST` lines in a block, and `Prices.KEYS` keys of a house standing
+  as one member's, the rest passed over; an item the game does not know left out; only where this account's point is older. A price more than five times off a point of the last `Prices.FRESH` days waits apart (`doubted`) for a second sender, one of
   the two of the guild, as a group can hold strangers.
 - **Kept apart:** a member's points stand over this account's in `book.index`, `book.shared` says whose, `book.under` holds what they
   stand over. In the saved file they are `heard[sender] = "key=at,low,market,units,auctions,sellers;..."`, never `index`, `days` or
   the whole scans, so they can be taken out again and nothing shared reaches the harvest. A scan of this account's, or what the game
   lists, replaces them.
-- **Strikes** (`strikes[sender] = { count, till }`, on this computer only, by the whole name): a block off its shape; a scan's time more
-  than `Relay.AHEAD` ahead; two scans of a sender closer than `Relay.SOONEST`, which the server cannot have allowed; more than
-  `Prices.DOUBTS` far-off prices in one scan. At `Relay.STRIKES` the sender is not heard for `Relay.IGNORED` (a week), and what it sent is
-  taken out again (`Prices.Forget(sender)`). A scan older than `Relay.OLD` is passed over, with no strike.
+- **Strikes** (`strikes[sender] = { count, till }`, on this computer only, by the whole name): a message or block off its shape (a time
+  that is no number, a block with no lines, a key of a kind the game would not make); a scan's or an offer's time more than
+  `Relay.AHEAD` ahead (an offer from the future would keep every member's scans of that house to itself); two scans of a sender closer
+  than `Relay.SOONEST`, which the server cannot have allowed; more than `Prices.DOUBTS` far-off prices in one scan; more lines or keys
+  than a member can have; a second ask within `Relay.QUIET`. At `Relay.STRIKES` the sender is not heard for `Relay.IGNORED` (a week),
+  and what it sent is taken out again (`Prices.Forget(sender)`). A scan older than `Relay.OLD`, or of a house this account does not
+  know, is passed over, with no strike.
 - **Forget shared prices:** a button on the page General, `/sane data forget` (`Relay.ForgetAll`): everything members sent, and what
   waits, taken out; this account's own points back as they were; strikes stay. `/sane data` says what stands and waits and who is not heard.
 - **The switch** *Share data with my guild and group* (`Core.general.shareData`, `Data.Sharing()`, page General, on): off, neither
   this nor the confirmed facts of `Confirm.lua` are sent or taken.
-- **Still to come (1f.4):** the same for the shared facts of `Confirm.lua`, which keep no sender.
+- **The shared facts of `Confirm.lua`** (*Messages*) earn the same strikes: a block of learned rows off its shape is one. They keep no
+  sender: a member's confirmation waits in session memory for `Bundle.SENDERS` members, then stands apart (`heard`), never sent on nor
+  harvested, as a member's row does (`taken`).
 
 ### Counts and discoveries shared *(Saneroki, 2026-10-30; Data-build 1f.3)*
 
 `Data/Bundle.lua`: every `Bundle.EVERY` seconds (15 minutes) a member that counted something tells the guild and the raid or else the
-party, in one bundle: what it counted, and the rows it learned of *Quests*, *NPCs*, *Vendors* and *Spells* (`Bundle.SETS`) with the
+party, in one bundle: what it counted, and the rows it learned of *Quests*, *NPCs*, *Vendors* and *Spells* (`SETS` in `Bundle.lua`) with the
 parts the game told. A member that counted nothing says nothing, so an account standing at the auction house costs no traffic.
 
 - **A bundle** is blocks of kind `B`: `id\031build\031at`, then lines cut by \029: `c\028key\028row` (a key's totals of this build) and
@@ -1012,17 +1030,23 @@ parts the game told. A member that counted nothing says nothing, so an account s
   newer total replaces the older, so nothing counts twice and two characters of an account are one voice. They go into the views
   only (`Drops.lua`), summed a way at a time: a member whose chance is far from everybody else's (`Drops.Z`, `Drops.LOOTS` loots both
   sides) is left out, and with `Drops.VOICES` voices or more none makes up more than `Drops.SHARE`. Never into the harvest.
-- **Facts:** wait in `facts` until `Bundle.SENDERS` (3) different members sent the same row, the stamp aside; then the row is taken like
-  `Data.LearnRow` with the parts told, so the harvest stages only those. What the player saw here always wins. What came from others
-  is not passed on. *Items* stay on their own way (`Confirm.lua`), checked by the game.
+- **Facts:** wait in `facts` until `Bundle.SENDERS` (3) different members sent the same row, the stamp aside; then the row is taken
+  (`Data.LearnRow`) apart from what was learned here (`SaneUIData_Learned`'s `taken`, at most `Confirm.KEPT` rows a set, the oldest
+  making room), its told parts as heard (`Confirm.Heard`): neither reaches the harvest, which reads `learned` and `confirmed` alone,
+  nor is passed on. What the player saw here always wins: a row of an entry learned here is not taken. *Items* stay on their own way
+  (`Confirm.lua`), checked by the game.
 - **The player's other accounts** count as the player (`Prices.Mine`): each account's auction file names its characters (`mine`), and every
   account reads every account's through the links (*Across accounts*). Their counts count whole and their facts are taken at once.
   Without the links nobody is.
-- **Not trusted:** a line off its shape, more drops than loots, a total that shrinks or grows faster than `Bundle.PACE`, a block from
-  the future or two bundles within `Bundle.SOONEST` seconds is a strike (`Relay.Strike`, the same strikes as a scan's);
-  three and the sender is not heard for a week and what it sent is gone. *Forget shared data* (`Data.ForgetShared`, `/sane data forget`)
+- **Not trusted:** a line off its shape, a row longer than `Bundle.LINE`, more drops than loots, a total that shrinks or grows faster
+  than `Bundle.PACE`, a block from the future, two bundles within `Bundle.SOONEST` seconds or more than `Bundle.IDS` block ids under
+  one name this build is a strike (`Relay.Strike`, the same strikes as a scan's); three and the sender is not heard for a week and
+  what it sent is gone. A block's id belongs to the member first heard with it: a block under it from another name (an account's
+  other character, or an impostor) is passed over without a strike, so nobody can plant counts under a member's id and make its
+  honest totals look false; an account's other character speaks through the one first heard. *Forget shared data* (`Data.ForgetShared`, `/sane data forget`)
   takes out all of it, a taken row at the next `/reload`.
-- **Limits:** `Bundle.KEYS` of one sender, `Bundle.ALL` in all, `Bundle.WAITING` facts waiting, `Bundle.BY` per sender, `Bundle.STALE` days.
+- **Limits:** `Bundle.KEYS` of one sender, `Bundle.ALL` in all, `Bundle.IDS` block ids of one sender a build, `Bundle.WAITING` facts
+  waiting, `Bundle.BY` per sender, `Bundle.STALE` days, `Confirm.KEPT` rows taken a set.
 
 ### The harvest
 
@@ -1031,7 +1055,8 @@ folders and `SaneUI.lua` files players sent (`--from`, each game version they ho
 `SaneUIData_Learned`.
 
 - **Learned rows** become the game's facts at their build and day, with only the fields the game told (a list only
-  once every member was told, over all files).
+  once every member was told, over all files). Only this client's own (`learned`, `confirmed`): what members sent
+  (`taken`, `heard`, and `SaneUIData_Shared`) the harvest never reads.
 - **Confirmations:** `*`, a boss's every item and ability, a spawn's every point, or every field of the play list the
   entry holds, over all files: staged as `confirmed`.
 - **The ledger** (`play.py`; kept outside the project where `~/.config/saneui/private.json` points, else in
@@ -1105,6 +1130,7 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
 | `Steps.Check()` | In a job: yields when the frame's budget is spent, else returns at once. Outside a job: nothing. |
 | `Steps.Fresh()` | In a job: waits for a frame of its own (no other work before it in that frame). |
 | `Steps.Spend()` | In a job: the frame's time is all used; nothing else runs in it. With `Fresh` before it: a step that cannot be cut runs alone in its frame. |
+| `Steps.Wait()` | In a job: waits for the next frame and leaves this one's time to the other jobs, for a step that has nothing to do until the game has answered (the scan's wait for an item's data). |
 | `Steps.Running(name)`, `Steps.Jobs()`, `Steps.Paused()` | Whether that job runs; the handles of the jobs running, in the order they were started; whether they wait now (a fight or a restriction). |
 
 - **The budget:** at most 5 ms a frame for all jobs together, and never more than a quarter of a frame at
@@ -1131,15 +1157,17 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
   them all into one file, `WTF/Account/<account>/SavedVariables/SaneUI.lua`.
 - **The auction data apart (`Data.APART`):** `SaneUIData_Market` and `SaneUIData_Scans` have files of their own (*The full auction
   scan*); `Data.Saved` hands over a part once its addon has loaded, after Core.
-- **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Characters["forever-beta"]`. Core
+- **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Characters["retail"]`. Core
   uses only its client's key; the others (a copied `WTF`) are left as they are.
 - **Core's** (`SaneUIDB.data[game]`) *(1c)*: `format` (1); `checked` (`[set] = build`, the patch check);
   `crawl` (`[kind] = place`).
 - **A saved variable of the data** (`SaneUIData_<Name>[game]`): `format` (1); `broken` (parts of a wrong
   shape, kept for the harvest); and what it holds: the characters, the guilds' records, `learned`
   (`SaneUIData_Learned`: `[set][key] = row`, a whole row in the set's format, *Learned*), with `confirmed`
-  (`[set][key] = "day\031build\031parts"`, *Verified*), `outbox` (what waits to be shared: `"V\031set\031key\031part"`,
-  `"L\031set\031key"`, at most `Confirm.OUTBOX`), `found` (the discoveries) and `builds` (`[build] = patch`);
+  (`[set][key] = "day\031build\031parts"`, *Verified*), `taken` and `heard` (the rows taken from members and what they
+  confirmed, the shapes of `learned` and `confirmed`, apart: never sent on, never harvested), `outbox` (what waits to be
+  shared: `"V\031set\031key\031part"`, `"L\031set\031key"`, at most `Confirm.OUTBOX`), `found` (the discoveries) and
+  `builds` (`[build] = patch`);
   `SaneUIData_Shared`, what members told, apart from the player's own and never read by the harvest: `counts`, `facts`, `taken`,
   `outgoing` (*Counts and discoveries shared*); `SaneUIData_Market`, the
   scans and prices per auction house, `houses["eu/1234/horde"]` (*The full auction scan*); *(1c)* the drop counts.
@@ -1229,10 +1257,16 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
   \029, at most `Confirm.ROWS`). Sent to the guild and the raid or else the party, `Confirm.GAP` seconds apart, never
   in a fight, while the game restricts addons, or inside an instance: they wait in the outbox (kept in the saved
   file) until the player is out and has somebody to tell. Taken from the guild, party, raid and instance channels
-  only (never a whisper): a confirmation of an entry or part this client has unverified (a part naming an item or a
-  spell the game does not know is dropped); a row only where it changes nothing but what play teaches
-  (`Confirm.SHARED`: an item's stats, armour, damage and speed; a new item where it names one). What was taken from
-  others is not passed on again.
+  only (never a whisper): a confirmation of an entry or part this client has unverified, once `Bundle.SENDERS` members
+  sent the same part, one of them on the guild's channel (a group can hold strangers), or this player's other account
+  did (`Prices.Mine`); a part must be one `Check.lua` would make of the entry as this client has it (a member of a
+  list it holds, a key of its map, a field told whole), at most `Confirm.MOST` of an entry from members and
+  `Confirm.WAITING` waiting with one member's name (a part naming an item or a spell the game does not know is
+  dropped); kept apart (`heard`). A row only where it changes nothing but what play teaches (`Confirm.SHARED`: an
+  item's stats, armour, damage and speed), or where the set lacks the item and the game knows it, never of an entry
+  learned here; kept apart (`taken`, at most `Confirm.KEPT` rows a set). A block off its shape (a key that is no
+  number, more than `Confirm.ROWS` rows) is a strike (`Relay.Strike`). What was taken from others is not passed on
+  again, nor harvested.
 - **The sender** is the one the server names (`CHAT_MSG_ADDON`'s sender), by its key (*Players*); a message
   never names its own sender.
 - **A message:** its kind (a letter), the protocol number, its game version's short sign, then its fields,
@@ -1338,13 +1372,13 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data check` | Checks the master (run by `dev/tests/run`). |
 | `dev/tools/data import <file> [--apply] [--take]` | Staging into the master, the report first. |
 | `dev/tools/data compile <dir> [--game <game version>]` | Core's set files into Core's addon folder, listed in its TOC (run by `dev/build`). |
-| `dev/tools/data game <game folder>` | The game version a game folder holds, by the product its `.flavor.info` names (`wowf`: `forever`; `wow_classic_beta`: `forever-beta` today); nothing for a product not known. `dev/build` installs that game version's set files. |
+| `dev/tools/data game <game folder>` | The game version a game folder holds, by the product its `.flavor.info` names (`PRODUCTS` in `dev/data/compile.py`: `wowf`: `forever`; `wow`: `retail`; `wowt`: `retail-ptr`; `wow_beta`: `retail-beta`; `wow_classic_beta`: `forever-beta`, the beta that is gone); nothing for a product not known. `dev/build` installs that game version's set files. |
 | `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the set files carry it. |
 | `dev/tools/data diff <set> [--patch 1.60.2] [--game <game version>]` | What a patch changed (the game version's newest when none is named): every entry new, changed (field from → to), gone or back at one of its builds. |
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
 | `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
-| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, Encounters, Races, Racials, Classes, Maps and Areas; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
+| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes; the beta is gone, so they and `base` are history) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, Encounters, Races, Racials, Classes, Maps and Areas; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests
 

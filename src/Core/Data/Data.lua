@@ -27,7 +27,8 @@ local Core = SaneUI.Core
 --  What Core keeps in the game of the data is in saved variables of Core's TOC, SaneUIData_<Name> (Data.SAVED;
 --  Characters is one), the auction house's in a file of its own (Data.APART). Core's own readers ask for one with
 --  Data.Saved(name, fn) and get its part of this client's game version. What Core learns in play (Data.Learn) is kept
---  in SaneUIData_Learned and read over the sets while it is newer than they are.
+--  in SaneUIData_Learned and read over the sets while it is newer than they are; what it takes of guild and group
+--  members' (Data.LearnRow) the same, but apart (taken), so that it is never shared on and never harvested.
 -------------------------------------------------------------------------------
 local Data = Core.Data -- made by Codec.lua
 local Codec, Steps = Data.Codec, Core.Steps
@@ -269,6 +270,8 @@ end
 -- and decided, whether it agrees or not), so a wrong fact cannot stand over the sets for ever. Only Core learns
 -- (Data.Learn, its watchers); the modules read the sets as ever.
 local learned -- this client's learned rows ({ [set name] = { [key] = row } }), once Core's saved variables are read
+local taken   -- the rows taken from guild and group members (Confirm.lua, Bundle.lua), the same shape, apart: laid over the
+              -- sets as learned rows are, never shared on, and never harvested (the harvest reads learned alone)
 local learnedPart -- its saved part: also builds[build] = the patch, for the harvest (dev/tools/data harvest)
 
 -- Notes the client's build with its patch (GetBuildInfo), so the harvest can name the build of what was kept.
@@ -304,13 +307,14 @@ local function Lay(set, key, row)
     set.rows[key], set.laid[key] = row, true
 end
 
--- A set's learned rows laid over its own; those the set is as new as, and what is no row, dropped.
-local function Overlay(set)
-    local rows = learned and learned[set.name]
-    if rows == nil then return end
+-- The rows of a set in kept (learned or taken) laid over its own; those the set is as new as, and what is no row,
+-- dropped. True when any was laid.
+local function Spread(kept, set)
+    local rows = kept and kept[set.name]
+    if rows == nil then return false end
     if type(rows) ~= "table" then
-        learned[set.name] = nil
-        return
+        kept[set.name] = nil
+        return false
     end
     local laid = false
     for key, row in pairs(rows) do
@@ -321,7 +325,14 @@ local function Overlay(set)
             laid = true
         end
     end
-    if next(rows) == nil then learned[set.name] = nil end
+    if next(rows) == nil then kept[set.name] = nil end
+    return laid
+end
+
+-- A set's learned rows laid over its own: the members' first, this client's own over them (what the player saw here wins).
+local function Overlay(set)
+    local laid = Spread(taken, set)
+    if Spread(learned, set) then laid = true end
     if laid then
         Forget(set)
         Moved(set)
@@ -347,40 +358,66 @@ function Data.Learn(name, key, record)
     Data.NoteBuild()
     if type(learned[name]) ~= "table" then learned[name] = {} end
     learned[name][key] = row
+    if type(taken[name]) == "table" then taken[name][key] = nil end -- what the player saw here wins over a member's row of it
     Lay(set, key, row)
     Forget(set)
     Moved(set)
     return true
 end
 
--- A row learned by somebody else's Sane UI (Confirm.lua, a guild or group member's): kept and read over the set's as one
--- learned here, when it can be read and accept(record, current) says so (current: the entry as this client has it, or
--- nil). False when it is not taken.
-function Data.LearnRow(name, key, row, accept)
+-- The key of the oldest of a set's rows taken from members, by its build and then its day: what makes room for a newer one.
+local function Oldest(rows)
+    local oldest, oldBuild, oldDay
+    for key, row in pairs(rows) do
+        local build, day = Stamped(row)
+        if not oldest or build < oldBuild or (build == oldBuild and day < oldDay) then oldest, oldBuild, oldDay = key, build, day end
+    end
+    return oldest
+end
+
+-- A row learned by somebody else's Sane UI (Confirm.lua, Bundle.lua: a guild or group member's): kept apart from what was
+-- learned here (taken, never shared on, never harvested) and read over the set's as one learned here, when it can be read,
+-- this client learned nothing of the entry itself (what the player saw here wins) and accept(record, current) says so
+-- (current: the entry as this client has it, or nil). most: rows of the set kept from members at most, the oldest making
+-- room. False when it is not taken.
+function Data.LearnRow(name, key, row, accept, most)
     local set = sets[name]
     if not (learned and set and set.ready and set.decode) or key == nil or not Stamped(row) then return false end
+    if type(learned[name]) == "table" and learned[name][key] ~= nil then return false end
     local ok, record = pcall(set.decode, row)
     if not ok or type(record) ~= "table" or record.gone then return false end
     if set.rows[key] and AsNew(set.rows[key], row) then return false end
     if type(accept) ~= "function" or not accept(record, Data.Set(name):Get(key)) then return false end
-    if type(learned[name]) ~= "table" then learned[name] = {} end
-    learned[name][key] = row
+    if type(taken[name]) ~= "table" then taken[name] = {} end
+    local rows = taken[name]
+    if most and rows[key] == nil then
+        local count = 0
+        for _ in pairs(rows) do count = count + 1 end
+        if count >= most then rows[Oldest(rows)] = nil end
+    end
+    rows[key] = row
     Lay(set, key, row)
     Forget(set)
     Moved(set)
     return true
 end
 
--- The row Core learned of an entry here, or nil (Confirm.lua shares it).
+-- The row Core learned of an entry here, or nil (Confirm.lua shares it). Never one taken from members (Data.Taken).
 function Data.Learned(name, key)
     local rows = learned and learned[name]
     return type(rows) == "table" and rows[key] or nil
 end
 
+-- The row taken of an entry from guild and group members, or nil.
+function Data.Taken(name, key)
+    local rows = taken and taken[name]
+    return type(rows) == "table" and rows[key] or nil
+end
+
 -- A row taken from somebody else taken back (Bundle.lua, Forget shared data): gone from the saved file, so from the sets at
--- the next /reload.
+-- the next /reload. Only the members' row (taken): what this client learned of the entry itself since stays its own.
 function Data.Unlearn(name, key)
-    local rows = learned and learned[name]
+    local rows = taken and taken[name]
     if type(rows) == "table" then rows[key] = nil end
 end
 
@@ -388,7 +425,8 @@ end
 -- run with Core's).
 Data.Saved("Learned", function(part)
     if type(part.learned) ~= "table" then part.learned = {} end
-    learned, learnedPart = part.learned, part
+    if type(part.taken) ~= "table" then part.taken = {} end
+    learned, taken, learnedPart = part.learned, part.taken, part
     for _, set in pairs(sets) do
         if set.ready then Overlay(set) end
     end
@@ -672,8 +710,9 @@ end
 -- Whether an entry (or a part of it: a boss's item "l17076", an ability "a8269") is not yet confirmed by the game:
 -- its newest version came from a batch alone (the set's file lists those, S.unverified; Doc/guides/data.md,
 -- *Verified*), and nothing confirmed it since in play, here or by a guild or group member (Data.Confirmed,
--- Confirm.lua). An entry learned in play is the game's. False for a set that is not ready, or an entry it lacks.
-function Handle:Unverified(key, part)
+-- Confirm.lua); own: not by the game here, what members told aside (Core's watchers ask so, before they confirm).
+-- An entry learned in play is the game's. False for a set that is not ready, or an entry it lacks.
+function Handle:Unverified(key, part, own)
     local set = sets[self.name]
     if not (set and set.ready) or key == nil or set.laid[key] then return false end
     local marks = set.marks
@@ -688,7 +727,7 @@ function Handle:Unverified(key, part)
     end
     if not marks[key] then return false end
     local confirmed = Data.Confirmed
-    return not (confirmed and confirmed(self.name, key, part))
+    return not (confirmed and confirmed(self.name, key, part, own))
 end
 
 -- Whether the set has a field of that name; false while it is not ready.

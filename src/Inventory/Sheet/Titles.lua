@@ -103,11 +103,6 @@ function Titles.Build(pane)
     list = ns.List.New(pane, { inset = Titles.INSET, extent = Extent, draw = Draw, paper = true })
 end
 
--- Whether there is a title to choose (the game's sidebar greys its tab out with only None).
-function Titles.Any()
-    return #Titles.Known() > 1
-end
-
 local later = Core.Later(function() ns.Safe("character", Titles.Refresh) end)
 
 function Titles.Show(on)

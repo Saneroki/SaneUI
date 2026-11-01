@@ -294,6 +294,8 @@ Core.Options(Core.name, {
       tip = "How Sane UI's windows move when they fill the screen from a screen edge and go back, and when they open while the mouse rests on them. Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. A window can have its own, in its section Expand window (Social: tab Appearance)." },
 }, function(key)
     if key == "units" then Core.GameClock() end
+    -- Sharing switched: what waited to be shared goes now (Data/Confirm.lua, read after this file)
+    if key == "shareData" and Core.Data and Core.Data.Confirmations then Core.Data.Confirmations.Switched() end
 end)
 
 -- Modules that were called otherwise once: [old name] = new name.

@@ -91,11 +91,8 @@ ns.COLOR = {
     BLACK = BLACK,
 }
 
--- A colour as it is written inside a text, after "|cff": "ff7f00". (The game's RGBToColorCode
--- writes the same, with the "|cff".)
-function ns.Hex(r, g, b)
-    return ("%02x%02x%02x"):format(math.floor(r * 255), math.floor(g * 255), math.floor(b * 255))
-end
+-- A colour as it is written inside a text, after "|cff": "FF8000" (Core's, Kit.lua).
+ns.Hex = SaneUI.Core.Hex
 
 -- Whether r, g, b is one of the game's colours (a line's white, gold or green): no part of it
 -- further from the colour's than LIKE. The game hands a font's colour back a little rounded.

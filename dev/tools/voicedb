@@ -231,6 +231,14 @@ def speakable(text, player_sex):
 
 NAMELIKE = re.compile(r"\b[A-Z][a-z]*'[A-Za-z]+\b|\b[A-Z][a-z]+[A-Z][a-z]+\b")   # Kel'Thuzad, VanCleef
 CONTRACTION = re.compile(r"(?i)'(?:s|m|d|ll|ve|re|t)$")
+
+
+def names_in(text, names):
+    """The names (names.md's) said in the text: whole words, with an 's after them, never inside another
+    name (Kael is not in Kael'thas)."""
+    return [w for w in names if re.search(rf"(?<![A-Za-z']){re.escape(w)}(?![A-Za-z])(?!'(?!s\b))", text)]
+
+
 SHORT = 60      # characters: a shorter part joins its neighbour, so the voice does not stop and start
 
 
@@ -460,7 +468,7 @@ def build(paths):
                 "hash": digest(part), "speaker": main, "speakers": keys,
                 "who": {k: v for k, v in sp.items() if k in ("name", "title", "race", "sex", "model", "type", "rank", "side", "roles", "class", "caster", "level")},
                 "presets": chosen, "why preset": why, "context": context, "analysis": a,
-                "names": [w for w in names if re.search(rf"(?<![A-Za-z']){re.escape(w)}(?![A-Za-z])(?!'(?!s\b))", text)],
+                "names": names_in(text, names),
                 "unknown names": unknown, "review": review,
                 "chars": chars * max(1, len(chosen)), "src": e["src"],
             })
@@ -470,9 +478,11 @@ def build(paths):
         if line["part"] < line["parts"]:
             line["next"] = lines[i + 1]["key"]
     os.makedirs(OUT, exist_ok=True)
-    with open(os.path.join(OUT, "lines.jsonl"), "w", encoding="utf-8") as fh:
+    path = os.path.join(OUT, "lines.jsonl")
+    with open(path + ".new", "w", encoding="utf-8") as fh:   # whole or not at all: every command reads it
         for line in lines:
             fh.write(json.dumps(line, ensure_ascii=False, sort_keys=True) + "\n")
+    os.replace(path + ".new", path)
     write_sqlite(lines, speakers, presets)
     used = collections.Counter(p for l in lines if l["voice"] for p in l["presets"])
     missing = sorted(p for p in used if p not in presets)

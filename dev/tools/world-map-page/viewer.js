@@ -31,6 +31,7 @@ function frame() {   // the place's box on the stage: a continent's grid, an ins
 }
 
 function fit() {
+  if (!place) return;
   if (!view.clientWidth || !view.clientHeight) { requestAnimationFrame(fit); return; }   // not laid out yet
   const [n, s, w, e] = frame(), width = w - e, height = n - s;
   scale = Math.min(view.clientWidth / width, view.clientHeight / height) * 0.96;
@@ -47,6 +48,7 @@ function levelFor(layer, perYard, visible) {
 }
 
 function render() {
+  if (!place) return;   // nothing shown yet (the world not built)
   stage.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
   const x0 = -panX / scale, y0 = -panY / scale, x1 = (view.clientWidth - panX) / scale, y1 = (view.clientHeight - panY) / scale;
   const perYard = scale * (window.devicePixelRatio || 1);
@@ -83,7 +85,7 @@ function render() {
 
 function drawLabels() {
   labels.innerHTML = "";
-  if (!document.getElementById("names").checked || place.kind !== "continent") return;
+  if (!place || !document.getElementById("names").checked || place.kind !== "continent") return;
   for (const zone of place.zones) {
     const [n, s, w, e] = zone.box, width = (w - e) * scale;
     if (width < 70 || width > view.clientWidth * 3) continue;
@@ -150,6 +152,7 @@ let drag = null;
 view.addEventListener("pointerdown", (ev) => { drag = [ev.clientX - panX, ev.clientY - panY]; view.classList.add("dragging");
                                               view.setPointerCapture(ev.pointerId); });
 view.addEventListener("pointermove", (ev) => {
+  if (!place) return;
   const r = view.getBoundingClientRect(), sx = (ev.clientX - r.left - panX) / scale, sy = (ev.clientY - r.top - panY) / scale;
   const x = world.half - sy, y = world.half - sx;
   const here = place.kind === "continent"
@@ -166,7 +169,12 @@ window.addEventListener("resize", render);
 document.getElementById("fit").addEventListener("click", fit);
 document.getElementById("names").addEventListener("change", drawLabels);
 
-fetch("world.json").then((r) => r.json()).then((data) => {
+function notBuilt() {   // world.json is made by saneui makeworldmap: without it the page says so instead of failing quietly
+  document.title = "World map: not built yet";
+  document.getElementById("title").textContent = "Not built yet: saneui makeworldmap";
+}
+
+fetch("world.json").then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status)))).then((data) => {
   world = data;
   const places = [
     ...world.continents.map((c) => ({ ...c, kind: "continent", key: "c" + c.id })),
@@ -192,4 +200,4 @@ fetch("world.json").then((r) => r.json()).then((data) => {
   const shown = places.filter((p) => !only || p.kind === only);
   if (only === "instance") document.title = document.querySelector("h1").textContent = "Instance Maps Offline";
   show(shown.find((p) => p.key === store.get("place", "c0")) || shown[0]);
-});
+}, notBuilt);

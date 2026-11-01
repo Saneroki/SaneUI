@@ -49,6 +49,19 @@ GossipFrame:Hide()   -- the game's windows are closed until a talk opens them
 QuestFrame:Hide()
 StaticPopup1:Hide()
 UIParent:SetAlpha(1)
+-- The game's own scripts on its windows, counted: each OnHide ends the talk with the game (the gossip's
+-- CloseGossip, QuestFrame_OnHide's CloseQuest), so neither may run while a window is held out of sight.
+local ran = { OnShow = 0, OnHide = 0 }
+local function Counted(script, close)
+    return function()
+        ran[script] = ran[script] + 1
+        if close then close() end
+    end
+end
+GossipFrame:SetScript("OnShow", Counted("OnShow"))
+GossipFrame:SetScript("OnHide", Counted("OnHide", function() C_GossipInfo.CloseGossip() end))
+QuestFrame:SetScript("OnShow", Counted("OnShow"))
+QuestFrame:SetScript("OnHide", Counted("OnHide", function() CloseQuest() end))
 
 -- The talk the game holds now, and what was asked of it.
 local said = {}
@@ -143,10 +156,20 @@ GetInventorySlotInfo = function(name)
     error("no such slot")
 end
 
--- Every override binding set and cleared.
+-- Every override binding set and cleared; in a fight the game refuses both (protected functions), so a call
+-- there is an error, as the stand-in's own doors give in combat.
 local bindings = {}
-SetOverrideBindingClick = function(owner, _, key, name) bindings[key] = name end
-ClearOverrideBindings = function() bindings = {} end
+local function Locked(what)
+    if W.combat then error(("ADDON_ACTION_BLOCKED: %s() in combat"):format(what), 3) end
+end
+SetOverrideBindingClick = function(owner, _, key, name)
+    Locked("SetOverrideBindingClick")
+    bindings[key] = name
+end
+ClearOverrideBindings = function()
+    Locked("ClearOverrideBindings")
+    bindings = {}
+end
 
 -- The frames' OnUpdate scripts run as time passes (a fade).
 local function Frames(seconds)
@@ -194,6 +217,7 @@ GossipFrame:Show()
 W.Fire("GOSSIP_SHOW")
 local talkRoot = ns.Look.Root()
 check(talkRoot:IsShown() and talkRoot._ignoreAlpha == true, "our talk shows, in sight over the interface")
+check(ran.OnShow == 0, "the game's window opened out of sight: its OnShow does not run")
 check(ns.Box.Frame():IsShown(), "the box shows")
 -- The answers' lines in the order they stand: each hangs under the one before it.
 local function Order()
@@ -252,6 +276,15 @@ Click(box, "LeftButton")
 check(words._text:find("The roads are dangerous."), "and then the next one")
 check(#said == 0, "a left click answers nothing")
 
+-- A height the game keeps secret (the 12.x client hides some values from addons) is read as none, never
+-- computed with: the box is fitted as before and the module stays up.
+local fit = box:GetHeight()
+words.GetStringHeight = function() return W.Secret() end
+Click(box, "LeftButton")
+check(not ns.off and words._text == "Hello there." and box:GetHeight() == fit,
+      "a secret height of the words counts as none: the box fits as before, nothing went wrong")
+words.GetStringHeight = nil
+
 -- A click on the offered quest selects it with the game's own call.
 for _, frame in ipairs(W.frames) do
     if frame.answer and frame.answer.text == "Wolves Across the Border" then frame._scripts.OnClick(frame) end
@@ -262,6 +295,7 @@ check(said[1] == "offered 33", "an offered quest is selected by its ID")
 --  It turns into a quest offered
 -------------------------------------------------------------------------------
 GossipFrame:Hide()
+check(ran.OnHide == 0 and said[#said] ~= "close gossip", "closed out of sight: no OnHide, the game's code does not end the talk")
 W.Fire("GOSSIP_CLOSED", true)
 quest.title, quest.text, quest.objectives = "Wolves Across the Border", "The wolves grow bold.", "Kill 8 wolves."
 quest.choices = {
@@ -555,10 +589,13 @@ W.Fire("QUEST_COMPLETE")
 -------------------------------------------------------------------------------
 --  A fight ends the talk; a talk in a fight is the game's own
 -------------------------------------------------------------------------------
+-- The game tells of the fight just before it locks (Doc/guides/windows.md), so the event first, the lock after;
+-- W.Combat(true) would lock first. From the lock on, an override binding touched is an error (Locked above).
 said = {}
 W.Fire("PLAYER_REGEN_DISABLED")
 check(said[1] == "close quest", "a fight closes the talk")
 check(not talkRoot:IsShown() and UIParent:GetAlpha() == 1, "the talk is gone and the interface back at once")
+check(bindings.SPACE == nil, "Space is given back as the game tells of the fight, before it locks")
 QuestFrame:Hide()
 W.Fire("QUEST_FINISHED")
 W.Wait(1)
@@ -567,19 +604,21 @@ W.combat = true
 QuestFrame:Show()
 W.Fire("QUEST_DETAIL", 0)
 check(not talkRoot:IsShown(), "a talk begun in a fight is the game's")
+check(bindings.SPACE == nil, "and no override binding of ours is set or cleared in the fight")
 QuestFrame:Hide()
 W.Fire("QUEST_FINISHED")
-W.combat = false
-W.Fire("PLAYER_REGEN_ENABLED")
+W.Combat(false)
 check(QuestFrame:GetParent() == holder, "held again after the fight")
 
 -- A held window the game shows for a talk ours leaves to it comes into sight at once.
 QuestIsFromAdventureMap = function() return true end
+local shows = ran.OnShow
 QuestFrame:Show()
 W.Fire("QUEST_DETAIL", 0)
 W.Wait(0.1)
 check(not talkRoot:IsShown(), "ours does not show that talk")
 check(QuestFrame:GetParent() == UIParent, "the game's window is given back into sight")
+check(ran.OnShow == shows + 1, "and its OnShow runs as it comes into sight, as the game's would")
 QuestIsFromAdventureMap = nil
 QuestFrame:Hide()
 W.Fire("QUEST_FINISHED")
@@ -600,6 +639,7 @@ gossip.options = { { name = "Let me browse your goods.", orderIndex = 1 } }
 gossip.available, gossip.active = {}, {}
 W.Fire("GOSSIP_SHOW")
 check(talkRoot:IsShown(), "a vendor's gossip shows")
+check(bindings.SPACE == ns.Keys.BUTTON, "Space bound again for the first talk after the fight")
 W.Fire("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", 5)
 Frames(1)
 check(not talkRoot:IsShown(), "the vendor's window ends ours")
@@ -719,12 +759,14 @@ check(#told == 0, "no problem was told on the way: " .. table.concat(told, " / "
 check(#(SaneUI.Core.errors or {}) == 0, "and none is in the error log")
 
 W.caught = {}
+shows = ran.OnShow
 ns.StandDown("a test")
 check(ns.off == true, "the module stood down")
 check(UIParent:GetAlpha() == 1 and StaticPopup1._ignoreAlpha == false, "the interface as it was")
 check(bindings.SPACE == nil, "no binding of ours")
 check(not talkRoot:IsShown(), "our talk hidden")
 check(GossipFrame:GetParent() == UIParent and GossipFrame:IsShown(), "the game's open gossip window back into sight")
+check(ran.OnShow == shows + 1, "its OnShow run as it came into sight")
 check(QuestFrame:GetParent() == UIParent, "the quest window the game's again")
 W.caught = nil
 

@@ -111,6 +111,8 @@ with Copy() as copy:
     before = copy.path("Gear/Gear.jsonl").read_text(encoding="utf-8")
     masters.write(master, "Gear", "forever", master.lines[("Gear", "forever")])
     check("written as read", copy.path("Gear/Gear.jsonl").read_text(encoding="utf-8"), before)
+    check("written whole, nothing left beside it", sorted(p.name for p in copy.path("Gear").iterdir()),
+          ["Gear.forever-beta.jsonl", "Gear.jsonl", "fixes.jsonl", "schema.toml"])
 
 # Every rule of the check --------------------------------------------------------------------------------
 G = "Gear/Gear.jsonl"
@@ -161,6 +163,8 @@ caught("an empty list", lambda c: c.replace(G, '"from":[1]', '"from":[]'), "is n
 caught("a tuple's unknown part", lambda c: c.replace(G, '"what":100', '"who":100'), "has no part")
 caught("a map's int key", lambda c: c.replace(G, '"7":2', '"seven":2'), "is no whole number")
 caught("a money below 0", lambda c: c.replace(G, '"sell":110', '"sell":-1'), "is no whole number from 0")
+caught("a money over its max", lambda c: c.replace("Gear/schema.toml", 'sell = { type = "money" }', 'sell = { type = "money", max = 100 }'),
+       "sell is over its max 100")
 caught("lines out of order", lambda c: c.append("Folk/Folk.jsonl", '{"key":2,"since":65000,"src":["game"],"title":"Fisher"}\n'), "out of order")
 caught("one build twice", lambda c: c.replace("Folk/Folk.jsonl", '"since":65100,"src":["game"],"gone":true', '"since":0,"src":["game"],"gone":true'), "a second line")
 caught("null in a first version", lambda c: c.replace("Folk/Folk.jsonl", '"title":"Smith"', '"title":null'), "cleared (null) in a first version")
@@ -363,6 +367,22 @@ check("import replaces: refused when the old entry is not there, or is itself",
        any("cannot replace itself" in text for text in listed(report, "refused"))), (True, True))
 report, after, files = taken({**GAME_LINE, "key": 102, "build": 65100, "replaces": 100, "fields": {"quality": 3}}, take=True)
 check("import replaces --take", (of(files, "Gear/Gear.jsonl", 102)[0]["replaces"], after.errors), (100, []))
+# Replaces a staged key that makes no entry (its only facts null, a confirmation, one refused itself): refused whole,
+# so the master keeps fitting; a chain of new entries that holds is written, whichever comes first
+report, after, files = taken({**GAME_LINE, "key": 107, "build": 65100, "fields": {"name": None}},
+                             {**GAME_LINE, "key": 108, "build": 65100, "replaces": 107, "fields": {"name": "After Null"}},
+                             {**GAME_LINE, "key": 109, "build": 65100, "replaces": 110, "fields": {"name": "First of a Chain"}},
+                             {**GAME_LINE, "key": 110, "build": 65100, "replaces": 100, "fields": {"name": "Second of a Chain"}},
+                             {**GAME_LINE, "key": 111, "build": 65100, "replaces": 112, "fields": {"name": "Behind a Refused One"}},
+                             {**GAME_LINE, "key": 112, "build": 65100, "replaces": 999, "fields": {"name": "X"}},
+                             {**GAME_LINE, "key": 113, "build": 0, "confirmed": "2026-10-20"},
+                             {**GAME_LINE, "key": 114, "build": 65100, "replaces": 113, "fields": {"name": "After a Confirmation"}})
+check("import replaces a key that makes no entry: refused whole, nothing of either written",
+      ([key for key in (107, 108, 111, 112, 113, 114) if of(files, "Gear/Gear.jsonl", key)],
+       sum("which forever does not have" in text for text in listed(report, "refused")), counts(report, "Gear", "forever")),
+      ([], 4, {"new": 2, "refused": 6}))
+check("import replaces in a chain of new entries: written, the master fits",
+      ([line["replaces"] for key in (109, 110) for line in of(files, "Gear/Gear.jsonl", key)], after.errors), ([110, 100], []))
 
 # Each game version on its own: a beta build makes a beta version only; live is taken in first
 report, after, files = taken({"set": "Folk", "game": "forever-beta", "key": 1, "build": 66000, "src": "game", "fields": {"title": "Master Smith"}},
@@ -636,6 +656,12 @@ with Copy() as copy:
     check("harvest: a build the master does not know, with its patch and first day",
           report["builds"], {"forever-beta": {66500: ("1.61.1", "2026-10-24")}})
     check("harvest: added to builds.toml", harvests.add_builds(master, report["builds"]), 1)
+    check("harvest: a patch number", [harvests.is_patch(v) for v in ("1.61.1", "1.61.1 beta", "x", 3, None)],
+          [True, False, False, False, False])
+    check("harvest: a patch that is no patch number is not written; builds.toml whole, nothing beside it",
+          (harvests.add_builds(master, {"forever-beta": {66600: ("1.61.1 (beta)", None), 66700: ("x", "2026-10-25")}}),
+           sorted(p.name for p in copy.root.iterdir()), loaded(copy.root).errors),
+          (0, ["Folk", "Gear", "Labels", "builds.toml", "sources.toml"], []))
     after = loaded(copy.root)
     check("harvest: builds.toml fits, the build known", (after.errors, 66500 in after.builds["forever-beta"]), ([], True))
     staging = Path(copy.folder) / "harvest.jsonl"
@@ -815,7 +841,7 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
             "Mounts", "TransmogSets", "PatchNotes", "Races", "Racials", "Classes", "Maps", "Areas"]
     check("every set of the plan has its schema", sorted(real.schemas), sorted(plan))
     report = importer.run(real, importer.read_staging(staging))
-    check("CVarLabels up to date with references/", (set(counts(report, "CVarLabels", "forever")), report.changed),
+    check("CVarLabels up to date with the newest export", (set(counts(report, "CVarLabels", "forever")), report.changed),
           ({"agreeing"}, set()))
 
 print(f"Data tools: {'all ' if not failed else ''}{checks_run - failed} of {checks_run} checks passed.")

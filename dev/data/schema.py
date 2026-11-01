@@ -317,7 +317,8 @@ def value_problem(field, value, key_types, refs, kind=None):
     elif kind == "enum":
         return None if value in field.values else f"is not one of {', '.join(field.values)}"
     elif kind in ("flags", "money"):
-        return None if _whole(value) and value >= 0 else "is no whole number from 0"
+        if not (_whole(value) and value >= 0):
+            return "is no whole number from 0"
     elif kind == "point":
         if not (isinstance(value, list) and len(value) == 3 and _whole(value[0]) and value[0] >= 0
                 and all(_number(v) and 0 <= v <= 100 for v in value[1:])):

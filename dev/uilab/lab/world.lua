@@ -65,11 +65,17 @@ return function(Lab)
 
     -- Loading a world -------------------------------------------------------------------------------------------------
     function World.Load(name)
+        -- A name only: a world is a file of dev/uilab/worlds/, never a path the page or a scene points elsewhere.
+        if type(name) ~= "string" or not name:match("^[%w_%-]+$") then
+            Lab.Note("error", "world: not a name: " .. tostring(name))
+            return
+        end
         local path = Lab.root .. "/dev/uilab/worlds/" .. name .. ".lua"
         local chunk, err = loadfile(path)
         if not chunk then Lab.Note("error", "world " .. name .. ": " .. tostring(err)) return end
-        local env = setmetatable({}, { __index = _G })
-        setfenv(chunk, env)
+        -- Under the lab's G, as a scene runs: the host's stdout is its protocol with the page, so a print in a world
+        -- file must go to the log (G's print), never to the real one, which would break that protocol.
+        setfenv(chunk, G)
         local ok, w = pcall(chunk)
         if not ok then Lab.Note("error", "world " .. name .. ": " .. tostring(w)) return end
         Lab.world = w or {}

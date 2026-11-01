@@ -29,12 +29,11 @@ local mode, target     -- "put" (target: a category's key) or "junk"; nil: none
 local over             -- the button under the mouse
 local lastX, lastY
 
--- The item button under the mouse now (one of the buttons drawn), nil: none.
+-- The item button under the mouse now (one of the buttons drawn, with an item in it), nil: none.
 local function Under()
-    for _, button in ipairs(ns.Cells.Each()) do
-        local record = ns.Cells.Record(button)
-        if record and record.item and button:IsVisible() and button:IsMouseOver() then return button end
-    end
+    local button = ns.Cells.Under()
+    local record = button and ns.Cells.Record(button)
+    if record and record.item then return button end
 end
 
 local function Light(button)

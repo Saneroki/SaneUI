@@ -104,28 +104,32 @@ local function Found()
     return options.foundCVars
 end
 
--- Each CVar of a list ours, where this client has it; what it had before kept first (once: not a value of ours).
--- Whether all those there are ours.
+-- Each CVar of a list ours, where this client has it; what it had before kept first (once, as it was first seen,
+-- also one already at our value: a value of the player's own, never a later value of ours). Whether all those
+-- there are ours.
 local function Ours(list)
     local found, done = Found(), true
     for name, value in pairs(list) do
         local now = Core.Ask(C_CVar.GetCVarInfo, name)
-        if now ~= nil and tostring(now) ~= value then
+        if now ~= nil then
             if found[name] == nil then found[name] = tostring(now) end
-            done = Put(name, value) and done
+            if tostring(now) ~= value then done = Put(name, value) and done end
         end
     end
     return done
 end
 
--- Each CVar of a list back to what it had before ours (the game's default for one of ours whose earlier value is
--- not known), and nothing kept any more: from now on they are the game's and the profiles' alone.
+-- Each CVar of a list back to what it had before ours, and nothing kept any more: from now on they are the game's
+-- and the profiles' alone.
 local function Restore(list)
     local found = Found()
     for name, value in pairs(list) do
         local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
         if now ~= nil then
-            local back = found[name] or (tostring(now) == value and default) or nil
+            -- What was found before ours (kept whether it equalled ours or not); a found table wiped meanwhile (a
+            -- reset of the settings, a profile moved) with the CVar still at ours: the game's default.
+            local back = found[name]
+            if back == nil and tostring(now) == tostring(value) then back = default end
             if back ~= nil and tostring(now) ~= tostring(back) then Put(name, tostring(back)) end
         end
         found[name] = nil

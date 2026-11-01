@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Tests of the image pipeline's tools without ComfyUI: dev/tools/imagegen reads its lists (include, the
 run's settings, before, style, ref) as Doc/guides/image-generation.md says, every recipe and set in
-dev/imagegen/ reads, and dev/tools/flipbook's grid, sizes and loops come out right. The workflows the
-recipes name are checked only where the ComfyUI folder is on this computer. Run by dev/tests/run."""
+dev/imagegen/ reads, its waiting for ComfyUI ends when a job is lost or the server falls silent, and
+dev/tools/flipbook's grid, sizes (dev/tools/art's) and loops come out right. The workflows the recipes
+name are checked only where the ComfyUI folder is on this computer. Run by dev/tests/run."""
 import contextlib
 import importlib.machinery
 import io
 import importlib.util
 import os
+import socket
 import sys
 import tempfile
 from pathlib import Path
@@ -25,7 +27,7 @@ def tool(name):
     return module
 
 
-ig, fb = tool("imagegen"), tool("flipbook")
+ig, fb, art = tool("imagegen"), tool("flipbook"), tool("art")
 ig.CHECK_FILES = False  # the anchors and chosen parts are local pictures, not in the repository
 checks = failed = 0
 
@@ -126,10 +128,67 @@ check("canvas: links", sorted(str(link[1:5]) for link in ui["links"]),
 check("canvas: left to right", nodes[1]["pos"][0] < nodes["3_4"]["pos"][0], True)
 check("canvas: an unknown node leaves it out", ig.ui_workflow({"1": {"class_type": "Nope", "inputs": {}}}, definitions), None)
 
-# Flipbook: frame sides as dev/tools/art sizes, power-of-two grids, loops
-check("side of 40 units", fb.side(40), 128)
-check("side of 24 units", fb.side(24), 64)
-check("side of 96 units", fb.side(96), 256)
+# A second prompt of one name is refused (its pictures would overwrite the first one's); seed 0 is a seed
+with tempfile.TemporaryDirectory() as folder:
+    folder = Path(folder)
+    (folder / "twice.txt").write_text("one: a star\ntwo: a ring\none: a moon\n")
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            ig.read_list(folder / "twice.txt")
+        check("a second prompt of one name is refused", "read", "refused")
+    except SystemExit:
+        check("a second prompt of one name is refused", "refused", "refused")
+    (folder / "flow.json").write_text('{"1": {"class_type": "Text", "inputs": {"text": "{prompt}", "seed": 5}}}')
+    (folder / "list.txt").write_text("seed: 0\ncount: 2\none: a star\n")
+
+    def dry(*options):
+        sys.argv = ["imagegen", str(folder / "flow.json"), str(folder / "list.txt"), "--dry-run", *options]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            ig.main()
+        return out.getvalue()
+
+    check("seed 0 is a seed", "seeds 0-1" in dry(), True)
+    check("--seed 0 too", "seeds 0-0" in dry("--seed", "0", "--count", "1"), True)
+
+# Waiting for a job: one still queued is waited for; one gone from the queue without a history entry fails
+ig.POLL = 0
+server = ig.Server("127.0.0.1:1")
+answers = {"/history/p1": [{}, {}, {"p1": {"status": {"status_str": "success"}}}],
+           "/queue": [{"queue_pending": [[0, "p1", {}, {}]]}, {"queue_pending": []}, {"queue_pending": []}]}
+server.call = lambda path, data=None, headers=None: ig.json.dumps(answers[path].pop(0)).encode()
+check("wait: a job still queued is waited for", server.wait("p1"), {"status": {"status_str": "success"}})
+check("wait: ... one look at a time", [len(a) for a in answers.values()], [0, 1])
+answers = {"/history/p2": [{}] * 3, "/queue": [{"queue_running": [[0, "p1", {}, {}]], "queue_pending": []}] * 3}
+try:
+    with contextlib.redirect_stderr(io.StringIO()):
+        server.wait("p2")
+    check("wait: a job gone from the queue fails", "waited", "failed")
+except SystemExit:
+    check("wait: a job gone from the queue fails", "failed", "failed")
+check("wait: ... after two looks", [len(a) for a in answers.values()], [1, 1])
+
+# A call does not wait for ever: a server that never answers is given up on after TIMEOUT
+deaf = socket.socket()
+deaf.bind(("127.0.0.1", 0))
+deaf.listen(1)
+ig.TIMEOUT = 0.2
+said = io.StringIO()
+try:
+    with contextlib.redirect_stderr(said):
+        ig.Server(f"127.0.0.1:{deaf.getsockname()[1]}").call("/queue")
+    check("call: a server that never answers is given up on", "answered", "given up")
+except SystemExit:
+    check("call: a server that never answers is given up on", "given up", "given up")
+check("call: ... and says so", "did not answer" in said.getvalue(), True)
+deaf.close()
+
+# Flipbook: frame sides as dev/tools/art sizes every texture (its cap for the sheet), power-of-two grids, loops
+check("side of 40 units", art.side(40), 128)
+check("side of 24 units", art.side(24), 64)
+check("side of 96 units", art.side(96), 256)
+check("side: at most 1024", art.side(1000), 1024)
+check("side: the flipbook's own cap", art.side(1000, fb.LARGEST), 2048)
 check("grid 30", fb.grid(30), (8, 4))
 check("grid 16", fb.grid(16), (4, 4))
 check("grid 20", fb.grid(20), (8, 4))

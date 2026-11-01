@@ -87,6 +87,8 @@ SEED_INPUTS = ("seed", "noise_seed")
 UPLOAD_FOLDER = ""        # ComfyUI's input folder itself: its Load Image offers only the pictures there, so a job opened there runs
 THUMB = 256               # side of a picture in contact.png and of a clip's preview
 CHECK_FILES = True        # reference pictures must exist (the tests read lists without them)
+TIMEOUT = 60              # seconds a call to ComfyUI may wait for its answer, or for the next part of a long one
+POLL = 1                  # seconds between looks at the history while a job runs
 
 
 def fail(message):
@@ -173,6 +175,8 @@ def read_list(path, run=None, jobs=None, state=None, inside=()):
         elif key == "flatten":
             run["flatten"] = colour(text, where) if text else None
         else:
+            if any(job["name"] == key for job in jobs):
+                fail(f"{where}: a second prompt called {key}: its pictures would overwrite the first one's")
             jobs.append({"name": key, "prompt": sentence(state["before"], text, state["style"]),
                          "refs": list(state["refs"])})
     return run, jobs
@@ -402,12 +406,15 @@ class Server:
     def call(self, path, data=None, headers=None):
         request = urllib.request.Request(self.url + path, data=data, headers=headers or {})
         try:
-            with urllib.request.urlopen(request) as response:
+            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
                 return response.read()
         except urllib.error.HTTPError as error:
             fail(f"ComfyUI refused {path}: {error.code}\n{error.read().decode(errors='replace')}")
-        except urllib.error.URLError as error:
-            fail(f"ComfyUI is not reachable at {self.url} ({error.reason}). Start it first: comfyui start")
+        except OSError as error:   # not there (a URLError), or no answer in time (bare while it reads)
+            reason = getattr(error, "reason", error)
+            if isinstance(reason, TimeoutError):
+                fail(f"ComfyUI did not answer {path.split('?')[0]} within {TIMEOUT} s")
+            fail(f"ComfyUI is not reachable at {self.url} ({reason}). Start it first: comfyui start")
 
     def upload(self, path, flatten=None):
         """Sends a reference picture into ComfyUI's input folder; returns what Load Image takes."""
@@ -460,13 +467,24 @@ class Server:
         self.call("/queue", json.dumps({"delete": [prompt_id]}).encode(), headers)
         self.call("/interrupt", json.dumps({"prompt_id": prompt_id}).encode(), headers)
 
+    def queued(self):
+        """The ids of the jobs in ComfyUI's queue: the one running and the ones pending."""
+        data = json.loads(self.call("/queue"))
+        return {item[1] for kind in ("queue_running", "queue_pending") for item in data.get(kind, [])}
+
     def wait(self, prompt_id):
-        """Waits until ComfyUI has run the job (a job is in the history once it is done, or failed)."""
+        """Waits until ComfyUI has run the job: in the history once it is done, or failed. A job that left the
+        queue without running (taken off in ComfyUI's window, ComfyUI restarted) never enters the history: gone
+        from both on two looks in a row (one look may fall between its end and its entry), it fails."""
+        gone = 0
         while True:
             entry = json.loads(self.call(f"/history/{prompt_id}")).get(prompt_id)
             if entry:
                 return entry
-            time.sleep(1)
+            gone = 0 if prompt_id in self.queued() else gone + 1
+            if gone >= 2:
+                fail(f"ComfyUI lost the job {prompt_id}: it left the queue without running (taken off there, or ComfyUI restarted).")
+            time.sleep(POLL)
 
     def pictures(self, entry):
         for output in entry.get("outputs", {}).values():
@@ -576,7 +594,11 @@ def main():
             run[key] = getattr(args, key)
     run["workflow"] = args.workflow or (args.files[0] if len(args.files) == 2 else run["workflow"])
     run["set"].update(setting(item, "--set") for item in args.set)
-    count, first, fps = run["count"] or 1, run["seed"] or 1, run["fps"] or 24
+    count = 1 if run["count"] is None else run["count"]
+    first = 1 if run["seed"] is None else run["seed"]   # seed 0 is a seed
+    fps = run["fps"] or 24
+    if count < 1:
+        fail("count wants at least 1 picture a prompt.")
     if not run["workflow"]:
         fail("No workflow: name one in the list (workflow: ...) or on the command line.")
     workflow = find_workflow(run["workflow"])

@@ -122,6 +122,34 @@ local Deals, Live, Trade, TEXT = ns.Deals, ns.Live, ns.Trade, ns.TEXT
 local function Coins(copper) return Core.Coins(copper) or ("%dc"):format(copper) end
 check(ns.options.dealsFirst == true, "the auction house opens on Deals at first")
 
+-- Core's steps run to the end (the lists are made in steps).
+local function Steps()
+    local frame = Core.Steps.frame
+    for _ = 1, 100 do
+        local update = frame._scripts.OnUpdate
+        if not update then return end
+        W.ms = (W.ms or 0) + 16
+        update(frame, 0.016)
+    end
+end
+
+-------------------------------------------------------------------------------
+--  The bags walked for what can be posted (before any price: the lists stay empty)
+-------------------------------------------------------------------------------
+-- The backpack and the bags, and in Retail the reagent bag after them (its constant; Forever has none).
+local walked = {}
+C_Container = { GetContainerNumSlots = function(bag) walked[#walked + 1] = bag return 0 end }
+Constants.InventoryConstants = { NumBagSlots = 4, NumReagentBagSlots = 1 }
+Deals.Refresh()
+Steps()
+check(#walked == 6 and walked[1] == 0 and walked[6] == 5, "Retail: the reagent bag (5) walked after the backpack and the four bags: " .. #walked)
+walked = {}
+Constants.InventoryConstants = nil
+Deals.Refresh()
+Steps()
+check(#walked == 5 and walked[5] == 4, "Forever, without the constant: the backpack and the four bags alone: " .. #walked)
+C_Container = nil
+
 -------------------------------------------------------------------------------
 --  Prices the scans left
 -------------------------------------------------------------------------------
@@ -217,10 +245,6 @@ AuctionHouseFrame.Tabs = { AuctionHouseFrame.AuctionsTab }
 function AuctionHouseFrame:SetDisplayMode(mode) self.mode = mode end
 function AuctionHouseFrame:SetTitle(title) self.title = title end
 function AuctionHouseFrame:UpdateTitle() self.title = "the game's" end
-hooksecurefunc = hooksecurefunc or function(frame, name, fn)
-    local game = frame[name]
-    frame[name] = function(...) game(...) fn(...) end
-end
 house.onSale, house.onSaleCount = 30000, 2
 W.Fire("AUCTION_HOUSE_SHOW")
 W.Wait(0.1)
@@ -246,15 +270,6 @@ check(AuctionHouseFrame.title == TEXT.tab, "and the window is called so")
 check(AuctionHouseFrame.Tabs[2] == nil, "the game's list of tabs is left alone")
 local total = corner.text:GetText()
 check(total == TEXT.onSale:format(Coins(30000)), "the gold on sale in the corner: " .. tostring(total))
-local function Steps()
-    local frame = Core.Steps.frame
-    for _ = 1, 100 do
-        local update = frame._scripts.OnUpdate
-        if not update then return end
-        W.ms = (W.ms or 0) + 16
-        update(frame, 0.016)
-    end
-end
 Steps()
 local buys = Deals.Buys()
 check(#buys == 2 and buys[1].key == "2589" and buys[2].key == "1000", "the lists are made in steps, the deal that brings the most in all first: " .. #buys)
@@ -276,6 +291,13 @@ items[1000] = { { auctionID = 77, buyoutAmount = 20000, quantity = 1, containsOw
     { auctionID = 78, buyoutAmount = 19000, quantity = 1, containsOwnerItem = true } }
 W.Fire("ITEM_SEARCH_RESULTS_UPDATED", { itemID = 1000, itemLevel = 0, itemSuffix = 0, battlePetSpeciesID = 0 })
 check(#Live.Offers("1000").offers == 1 and Live.Offers("1000").offers[1].auction == 77, "an item sold whole: your own auction left out")
+items[1000][3] = { auctionID = 79, buyoutAmount = W.Secret(), quantity = 1, containsOwnerItem = false }
+W.Fire("ITEM_SEARCH_RESULTS_UPDATED", { itemID = 1000, itemLevel = 0, itemSuffix = 0, battlePetSpeciesID = 0 })
+commodities[2589][4] = { unitPrice = 450, quantity = W.Secret(), numOwnerItems = 0 }
+W.Fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+check(#Live.Offers("1000").offers == 1 and Live.Offers("1000").offers[1].auction == 77 and #Live.Offers("2589").offers == 3 and not ns.off,
+    "an offer whose price or count the game hides (a secret value) is left out, never computed with")
+items[1000][3], commodities[2589][4] = nil, nil
 searches = {}
 Live.Want({ "4242", "4243" })
 check(#searches == 1 and searches[1].itemID == 4242, "(asked)")
@@ -302,6 +324,14 @@ local rows = Rows("buy")
 local wand, cloth = rows["1000"], rows["2589"]
 W.Wait(0.1)
 check(wand and wand.action:GetText() == TEXT.buy and not wand.action._disabled, "the server told an offer under the limit: the button is ready")
+W.items[1000] = { name = "Wand" }
+W.Fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589) -- any answer draws the lines anew
+local named = wand.name:GetText()
+W.items[1000] = { name = W.Secret() }
+W.Fire("COMMODITY_SEARCH_RESULTS_UPDATED", 2589)
+check(named == "Wand" and wand.name:GetText() == "?" and not ns.off,
+    "a name the game hides (a secret value) is drawn as ?, never computed with: " .. tostring(wand.name:GetText()))
+W.items[1000] = nil
 Click(wand.action)
 check(#calls == 1 and calls[1][1] == "PlaceBid" and calls[1][2] == 77 and calls[1][3] == 20000, "one click buys a thing sold whole: the offer the server told, at its price")
 W.Fire("AUCTION_HOUSE_PURCHASE_COMPLETED", 77)
@@ -389,6 +419,16 @@ house.onSale, house.onSaleCount, house.kept = 1000, 1, now + 5
 Prices.Changed()
 W.Wait(6)
 check(corner.text:GetText() == TEXT.onSale:format(Coins(1000)), "a new scan: its sum, what was posted here is in it: " .. tostring(corner.text:GetText()))
+
+-- A fight with the auction window open (the game keeps it open): the tab opens and the game gets its page back as ever,
+-- for none of our frames is protected, so there is nothing for the game to block.
+W.Combat(true)
+Click(tab)
+local opened = page:IsShown()
+AuctionHouseFrame:SetDisplayMode("the game\'s")
+check(opened and not page:IsShown() and not ns.off and not (page:IsProtected() or tab:IsProtected() or corner:IsProtected()),
+    "in a fight the tab opens and closes as ever: none of ours is a protected frame, nothing for the game to block")
+W.Combat(false)
 
 ns.StandDown("a test")
 check(ns.off and not tab:IsShown() and not corner:IsShown() and not page:IsShown(), "standing down: no tab, no page, no corner")

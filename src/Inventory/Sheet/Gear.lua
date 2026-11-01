@@ -211,12 +211,6 @@ function Gear.Refresh()
     save:SetEnabled(can and true or false)
 end
 
--- Whether the game offers the equipment manager (its sidebar greys the tab out otherwise).
-function Gear.Usable()
-    local lfg = rawget(_G, "C_LFGInfo")
-    return (Core.Ask(Sets().GetNumEquipmentSets) or 0) > 0 or (lfg and lfg.CanPlayerUseLFD and Core.Ask(lfg.CanPlayerUseLFD)) and true or false
-end
-
 -- A button drawn in pencil on the paper (the style's buttons on the paper): a pencil box, its word in Kalam,
 -- the box drawn stronger under the mouse, faded while it does nothing.
 local function Faded(button)

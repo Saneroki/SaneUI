@@ -118,14 +118,21 @@ local function HoldsMore(tooltip, model)
 end
 
 local Watching, Gate -- below: a panel's OnUpdate; whether the tooltips are seen
+-- A panel's live parts (a unit's health, its buffs: Live.lua) follow the unit's events while the panel
+-- is shown, and only then.
+local Started = ns.Guard(function(panel) ns.Live.Start(panel) end)
+local Stopped = ns.Guard(function(panel) ns.Live.Stop(panel) end)
 
 -- The tooltip's panel, made when it is first needed (not at login: most tooltips never are). The
--- panel only works while it is shown: an OnUpdate of its own, and none while hidden.
+-- panel only works while it is shown: an OnUpdate of its own, and none while hidden; its unit's
+-- events from its OnShow to its OnHide.
 local function PanelOf(tooltip)
     local panel = ns.Panel.All()[tooltip]
     if panel then return panel end
     panel = ns.Panel.Of(tooltip)
     panel:SetScript("OnUpdate", Watching)
+    panel:SetScript("OnShow", Started)
+    panel:SetScript("OnHide", Stopped)
     return panel
 end
 
@@ -174,13 +181,6 @@ local function Cleared(tooltip)
     if panel then panel.stale = true end
 end
 
-local function Hidden(tooltip)
-    local panel = ns.Panel.All()[tooltip]
-    if not panel then return end
-    panel.hiddenAt = GetTime()
-    ns.Host.Free(tooltip, panel)
-end
-
 local Filled -- below
 
 -- The tooltip was made visible, its alpha whole again. (A hidden one brought back by Show or
@@ -190,9 +190,9 @@ local function Reshown(tooltip)
     local panel = PanelOf(tooltip)
     if panel.pending then
         ns.Host.Keep(tooltip) -- filled and not drawn yet: it must not show through
-    elseif panel.stale or not panel:IsShown() then
+    elseif panel.stale or panel.hiding or not panel:IsShown() then
         -- Shown with lines nobody told us about (somebody wrote them in: a button's hint), or
-        -- shown again: drawn at the end of the frame too.
+        -- shown again (hidden this frame, or before): drawn at the end of the frame too.
         Filled(tooltip, (not panel.stale and panel.data) or false)
     else
         ns.Host.Seat(tooltip, panel)
@@ -206,16 +206,36 @@ end
 -- its panel would be laid out short and then long again every time.
 local queue, driver = {}, nil -- the tooltips that wait, and the frame whose OnUpdate draws them
 
+-- The game hid the tooltip. Its panel is not freed at once but at the end of the frame (Settle):
+-- the game hides a tooltip and fills it again in one go to refresh it (a unit frame's every 0.2 s,
+-- the auction house's rows: SetOwner hides it), and a panel hidden and shown again in between
+-- would blink, its 3D model start over (Filled: refreshed). Where the panel stands is noted
+-- meanwhile (Host.Hold keeps it there until the new picture is drawn).
+local function Hidden(tooltip)
+    local panel = ns.Panel.All()[tooltip]
+    if not panel then return end
+    panel.hiddenAt = GetTime()
+    ns.Host.Stood(panel)
+    if panel.hiding or panel.pending then return end -- waits for the end of the frame already
+    panel.hiding = true
+    queue[#queue + 1] = tooltip
+    driver:Show()
+end
+
 function Filled(tooltip, data)
     local panel = PanelOf(tooltip)
     panel.data, panel.stale = data, false
-    local refreshed = panel.drawn and not panel:IsShown() and panel.hiddenAt == GetTime()
+    -- Hidden this frame and filled again, as the game refreshes a tooltip: the panel is not freed at
+    -- the end of the frame (Hidden) but drawn anew; or it was freed since (Settle) and comes back as
+    -- it was. Either way the old picture stays, where it stood, until the new one is drawn, so
+    -- nothing blinks or jumps (Host.Hold).
+    local hiding = panel.hiding
+    panel.hiding = false
+    local refreshed = panel.drawn and (hiding or (not panel:IsShown() and panel.hiddenAt == GetTime()))
     -- Shown again after it was gone, not just refreshed: a main tooltip's comparisons are laid out
     -- anew (Host.lua); a refresh keeps their places
-    if not (refreshed or panel:IsShown()) then ns.Host.Forget(tooltip) end
+    if not refreshed and (hiding or not panel:IsShown()) then ns.Host.Forget(tooltip) end
     if refreshed then
-        -- Hidden and filled again in one go, as the game does to refresh: the old picture stays,
-        -- where it stood, until the new one is drawn, so nothing blinks or jumps (Host.Hold).
         panel:Show()
         ns.Host.Hold(tooltip, panel)
     elseif OnScreen(tooltip) then
@@ -227,12 +247,18 @@ function Filled(tooltip, data)
     end
     if panel.pending then return end
     panel.pending = true
+    if hiding then return end -- in the queue since Hidden
     queue[#queue + 1] = tooltip
     driver:Show()
 end
 
 local function Settle(tooltip)
     local panel = ns.Panel.All()[tooltip]
+    if panel.hiding then
+        -- Hidden this frame and not filled again: the panel goes, the tooltip is the game's own again
+        panel.hiding = false
+        ns.Host.Free(tooltip, panel)
+    end
     if not panel.pending then return end
     panel.pending = false
     if OnScreen(tooltip) then
@@ -290,7 +316,7 @@ local OnCleared = ns.Guard(Cleared)
 -- Once a frame while a panel is shown (see Watching).
 local function Watch(tooltip)
     local panel = ns.Panel.All()[tooltip]
-    if panel.pending then return end      -- Settle draws it this frame
+    if panel.pending or panel.hiding then return end -- Settle draws it this frame, or frees it
     if not OnScreen(tooltip) then
         ns.Host.Free(tooltip, panel) -- gone with what it stands on, or placed nowhere now
     elseif panel.stale then
@@ -306,14 +332,13 @@ local function Watch(tooltip)
         ns.Host.Keep(tooltip)
         ns.Host.Track(tooltip, panel) -- its comparisons follow it, once it has moved (Host.lua)
         ns.Panel.Stage(panel)         -- your character beside it while Alt is held (Panel.lua)
-        -- A unit's numbers are kept up to date; if it has got or lost a row (a target, its
+        -- A unit's numbers follow its events (Live.lua); if it has got or lost a row (a target, its
         -- buffs), the tooltip is read anew.
-        if ns.Live.Update(panel, panel.elapsed or 0) then Draw(tooltip, panel.data) end
+        if ns.Live.Update(panel) then Draw(tooltip, panel.data) end
     end
 end
 
-Watching = ns.Guard(function(panel, elapsed)
-    panel.elapsed = elapsed
+Watching = ns.Guard(function(panel)
     Watch(panel.tooltip)
 end)
 

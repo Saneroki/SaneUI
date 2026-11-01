@@ -5,6 +5,7 @@ Doc/guides/data.md, *The master*, is the reference. Reading never stops at a pro
 """
 import datetime
 import json
+import os
 import re
 import tomllib
 from pathlib import Path
@@ -478,7 +479,14 @@ def line_text(schema, line):
 
 def write(master, set_name, game, lines):
     """Writes a game version's lines of a set into its files, sorted: into the files it has (split by key
-    range), else into one new file."""
+    range), else into one new file. Each file is written whole beside its target, then moved over it (never
+    half a file); an import moves all of its files together (importer.apply)."""
+    move_over(write_beside(master, set_name, game, lines))
+
+
+def write_beside(master, set_name, game, lines):
+    """Writes a game version's lines of a set beside its files, each whole as <name>.tmp: [(temp, path)] for
+    move_over, the temp None for a file to remove (another game version with nothing left of its own)."""
     schema = master.schemas[set_name]
     files = master.files.get((set_name, game))
     if not files:
@@ -486,11 +494,24 @@ def write(master, set_name, game, lines):
         files = [(None, master.root / set_name / name)]
         master.files[(set_name, game)] = files
     ordered = sorted(lines, key=Line.order)
+    moves = []
     for number, (start, path) in enumerate(files):
         end = files[number + 1][0] if number + 1 < len(files) else None
         mine = [line for line in ordered if (start is None or line.key >= start) and (end is None or line.key < end)]
         if game != LIVE and not ordered:  # another game version with nothing left of its own has no file
-            path.unlink(missing_ok=True)
+            moves.append((None, path))
             continue
-        path.write_text("".join(line_text(schema, line) + "\n" for line in mine), encoding="utf-8")
+        temp = path.with_name(path.name + ".tmp")
+        temp.write_text("".join(line_text(schema, line) + "\n" for line in mine), encoding="utf-8")
+        moves.append((temp, path))
     master.lines[(set_name, game)] = ordered
+    return moves
+
+
+def move_over(moves):
+    """Moves the files write_beside wrote over their targets, and removes the ones it marked, all together."""
+    for temp, path in moves:
+        if temp is None:
+            path.unlink(missing_ok=True)
+        else:
+            os.replace(temp, path)

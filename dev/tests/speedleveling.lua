@@ -3,8 +3,8 @@
 -- to hand in to, a quest Core lacks by the game's own words), the macros of Find written into a chain for the 255
 -- character limit, whether the target and the thing in front of you are wanted, the header's snippet as the game runs
 -- it (which action each state puts on the key), the keys, the hint, the hearth and the quest items, the quest givers
--- (a guide's quests taken and handed in), the game's settings lent and put back, the switches, a fight, and standing
--- down.
+-- (a guide's quests taken and handed in), the game's settings lent and put back, the switches, a fight (the secure
+-- icons held in one, an aura the game hides), the guides window with the interface hidden and shown, and standing down.
 -- The guide format's words come from Core (Core.Neighbours.KNOWN.guide); the test names none of its own.
 -- Usage, from the project folder:  lua5.1 dev/tests/speedleveling.lua
 
@@ -80,17 +80,6 @@ UnitIsDead = function(unit) return units[unit] and units[unit].dead or false end
 UnitCanAttack = function(_, unit) return units[unit] and units[unit].foe or false end
 UnitIsFriend = function(_, unit) return units[unit] ~= nil and not units[unit].foe and not units[unit].neutral end
 UnitCanAssist = function(_, unit) return units[unit] ~= nil and not units[unit].foe and not units[unit].neutral end
-C_Timer.NewTicker = function(every, fn)
-    local ticker = { cancelled = false }
-    function ticker:Cancel() self.cancelled = true end
-    local function Tick()
-        if ticker.cancelled then return end
-        fn(ticker)
-        if not ticker.cancelled then C_Timer.After(every, Tick) end
-    end
-    C_Timer.After(every, Tick)
-    return ticker
-end
 -- Items: which reach a unit (a use with a range), whether the target is within it, the spell each casts.
 local reach = {} -- [item] = true (in reach), false (too far); nil: no range at all
 C_Item.ItemHasRange = function(id) return reach[id] ~= nil end
@@ -254,7 +243,12 @@ local GUIDE = table.concat({
     "#forever", "#" .. "name Test", "#" .. "group G", "step",
     L("friend", "Marshal McBride"), L("take", "40"), L("handin", "41,2"), L("foe", "Defias Thug"),
 }, "\n")
+-- A fight at the login: the key's start waits for its end, and meanwhile the module rests (no switch of its is on
+-- before the profile is); the profile then wakes it.
+W.combat = true
 W.Fire("PLAYER_LOGIN")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
 assert(Core.Profiles.Use("Speedleveling"), "the profile this module works on")
 ns.Guide.AddAll(ns.Format.Parts(GUIDE), false)
 local Key, Wanted, Items, Quests = ns.Key, ns.Wanted, ns.Items, ns.Quests
@@ -280,6 +274,8 @@ do
     SaveBindings = function(which) saved = which end
     GetCurrentBindingSet = function() return 1 end
     W.Wait(Key.SETTLE + 0.1)
+    check(not ns.off and #Core.log == 0, "its start put off by the fight into the rest: made at the wake, no error: "
+        .. tostring(Core.log[1] and Core.log[1].text))
     check(set[1] == "E>" .. Key.COMMAND and saved == 1 and ns.options.keyGiven == true and Printed("key is E"),
         "no key: it gets E, saved in the game's set in use, and the chat says so")
     ns.Key.firstLater()
@@ -414,6 +410,18 @@ check(overrides.E == "INTERACTTARGET", "a wanted NPC: talk")
 Core.Set(ns.name, "talk", false)
 check(overrides.E == FIND and not drivers[header].mode:find("near", 1, true), "Talk to NPCs off: Find, and no near state")
 Core.Set(ns.name, "talk", true)
+-- One refresh asks what is wanted once, for your target, the thing in front of you and Find alike, and tells the header
+-- only what changed: each attribute set runs its snippet anew.
+do
+    local names, setAttribute, asked, sets = Wanted.Names, methods.SetAttribute, 0, 0
+    Wanted.Names = function(...) asked = asked + 1 return names(...) end
+    Key.Refresh()
+    check(asked == 1, "a refresh asks what is wanted once: " .. asked)
+    function methods:SetAttribute(name, value) sets = sets + 1 return setAttribute(self, name, value) end
+    Key.Refresh()
+    check(sets == 0, "nothing changed: no attribute set anew: " .. sets)
+    Wanted.Names, methods.SetAttribute = names, setAttribute
+end
 
 -------------------------------------------------------------------------------
 --  The things of the world your quests want, in front of you
@@ -632,6 +640,16 @@ unusable[6000] = true
 check(not (Items.Pick(nil) or ""):find("6000"), "not usable: none")
 unusable[6000] = nil
 specials[2] = nil
+-- An aura of yours whose stacks and time the game hides (secret values, as the 12.x client hides them in a fight): it
+-- counts as there, with no stacks and no time left known; nothing is computed with what is hidden, no error.
+do
+    C_UnitAuras = { GetPlayerAuraBySpellID = function()
+        return { applications = W.Secret(), expirationTime = W.Secret(), duration = W.Secret() }
+    end }
+    local stacks, left = ns.Lines.Aura(2457)
+    check(stacks == 0 and left == 0 and #Core.log == 0, "an aura whose stacks and time the game hides: there, with none known")
+    C_UnitAuras = nil
+end
 
 -------------------------------------------------------------------------------
 --  The quest givers: a guide's quests taken and handed in
@@ -838,8 +856,9 @@ do
     local upgrade, container, new = Core.Upgrade, rawget(_G, "C_Container"), rawget(_G, "C_NewItems")
     local held = { "item:1:a", "item:2:b", "item:3:c" }
     local fresh, gains, equipped = { true, false, true }, { ["item:1:a"] = 16, ["item:2:b"] = 5 }, {}
+    local bagsAsked = {}
     C_Container = setmetatable({
-        GetContainerNumSlots = function(bag) return bag == 0 and #held or 0 end,
+        GetContainerNumSlots = function(bag) bagsAsked[bag] = true return bag == 0 and #held or 0 end,
         GetContainerItemLink = function(_, slot) return held[slot] end,
     }, { __index = container })
     C_NewItems = { IsNewItem = function(_, slot) return fresh[slot] end }
@@ -869,7 +888,35 @@ do
     W.Wait(ns.Errands.EQUIP)
     check(#equipped == 2, "Equip upgrades off: left in the bags")
     Core.Set(ns.name, "equipUpgrades", true)
+    -- The bags looked through (with nothing left to put on, all of them): the backpack and the four bags; in Retail
+    -- the reagent bag too.
+    check(bagsAsked[0] and bagsAsked[4] and not bagsAsked[5], "the backpack and the four bags looked through")
+    gains["item:3:c"] = nil
+    Constants.InventoryConstants = { NumBagSlots = 4, NumReagentBagSlots = 1 }
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(ns.Errands.EQUIP)
+    check(bagsAsked[5] and not bagsAsked[6], "and Retail's reagent bag")
+    Constants.InventoryConstants = nil
     Core.Upgrade, C_Container, C_NewItems, C_Item.EquipItemByName = upgrade, container, new, nil
+end
+
+-- The icons above the guide are Sane UI's own secure buttons, which the game holds in a fight: what is wanted changes
+-- in one, the row keeps what it shows and follows once the fight is over.
+do
+    local first, third = _G["SaneUISpeedLevelingIcon1"], _G["SaneUISpeedLevelingIcon3"]
+    specials[2] = 6000 -- a quest item comes with a quest of the log: the Torch, in the bags
+    W.Combat(true)
+    W.Fire("QUEST_LOG_UPDATE")
+    W.Wait(1)
+    local held = first:IsProtected() and first.entry.name == "Marshal McBride" and not third:IsShown()
+        and Core.Owed("speedleveling: icons") and #Core.log == 0
+    W.Combat(false)
+    check(held and first.entry.item == 6000 and first:GetAttribute("item") == "item:6000" and third:IsShown()
+        and not _G["SaneUISpeedLevelingIcon4"]:IsShown() and #Core.log == 0,
+        "in a fight the buttons stay as they are, owed for after it; then the quest item first, the NPC and the creature")
+    specials[2] = nil
+    W.Fire("QUEST_LOG_UPDATE")
+    W.Wait(Key.LOOK + Key.TICK) -- the row back to the two; the interact key's look around after the fight is over
 end
 
 -- Group rolls: each character on its own: Need on an upgrade, else Greed, and nobody Passes.
@@ -972,6 +1019,25 @@ do
     check(stopped == 1 and finished == 1, "Skip cinematics off: they play")
     Core.Set(ns.name, "cinematics", true)
     StopCinematic, CancelScene, CanCancelScene, MovieFrame = nil, nil, nil, nil
+end
+
+-- The guides window (a right click on the guide: the guides to choose from, a paste) is a panel of Core's that fills
+-- itself as it shows; the whole interface hidden and shown again (Alt+Z, a cinematic) shows it again with its parent,
+-- and it fills anew.
+do
+    local children = #UIParent._children
+    ns.Guides.Open()
+    local frame = UIParent._children[children + 1]
+    local kept, filled = ns.Guide.Kept, 0
+    ns.Guide.Kept = function(...) filled = filled + 1 return kept(...) end
+    UIParent:Hide()
+    local hidden = frame:IsShown() and not frame:IsVisible()
+    UIParent:Show()
+    check(frame._width == 660 and hidden and frame:IsVisible() and filled == 1 and #Core.log == 0,
+        "the guides window with the interface hidden and shown again: shown with its parent, its OnShow fills it anew; "
+        .. "no error: " .. tostring(Core.log[1] and Core.log[1].text))
+    ns.Guide.Kept = kept
+    ns.Guides.Open() -- closed again
 end
 
 -- Out of the profile Speedleveling all of the module rests, and comes back as it was.
@@ -1094,7 +1160,7 @@ local shown = {}
 local function Question(which)
     StaticPopupDialogs[which] = { OnAccept = function(_, data) answered[#answered + 1] = which .. ":" .. tostring(data) end }
 end
-for _, which in ipairs({ "LOOT_BIND", "OTHER_QUESTION" }) do Question(which) end
+for _, which in ipairs({ "LOOT_BIND", "EQUIP_BIND", "OTHER_QUESTION" }) do Question(which) end
 StaticPopup_FindVisible = function(which) return shown[which] end
 StaticPopup_Hide = function(which) hidden[#hidden + 1] = which; shown[which] = nil end
 local showPopup = StaticPopup_Show
@@ -1112,6 +1178,14 @@ Ask("LOOT_BIND", 3)
 check(answered[1] == "LOOT_BIND:3" and hidden[1] == "LOOT_BIND", "what binds when picked up: answered")
 Ask("OTHER_QUESTION", 1)
 check(#answered == 1 and #hidden == 1, "another question is the game's")
+-- A piece that binds when put on (the game asks before it puts on what Equip upgrades asked for); the switch off, the
+-- question is yours.
+Ask("EQUIP_BIND", 7)
+check(answered[2] == "EQUIP_BIND:7" and hidden[2] == "EQUIP_BIND", "what binds when put on: answered for Equip upgrades")
+Core.Set(ns.name, "equipUpgrades", false)
+Ask("EQUIP_BIND", 8)
+check(#answered == 2 and #hidden == 2, "Equip upgrades off: the question is yours")
+Core.Set(ns.name, "equipUpgrades", true)
 shown = {}
 
 -------------------------------------------------------------------------------

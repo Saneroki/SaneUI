@@ -22,25 +22,38 @@ local Core = SaneUI.Core
 --  whole entry), until the harvest takes them into the master (dev/tools/data harvest) and a release ships the entry
 --  verified; at the login those of an entry the set no longer lists unverified (and Core did not learn) are dropped.
 --  Handle:Unverified (Data.lua) asks Data.Confirmed. Of an entry Core learned, the parts the game told are kept too
---  (Confirm.Told), so the harvest takes only those of the row.
+--  (Confirm.Told), so the harvest takes only those of the row. What members confirmed stands apart in heard[set][key],
+--  of the same shape: the views read it as confirmed, it is never sent on, and the harvest never reads it. Whether the
+--  game's own word is kept and shared is decided by this client's own alone (Data.Confirmed's own, Unverified's), so
+--  what members told never stands in for the game's word here.
 --
 --  Shared (the wire's kind V: set, key, parts; learned rows as a block of kind L) with the guild and with the party or
 --  raid, whoever there has Sane UI: what one player confirms, the others take (an entry or a part they have unverified;
 --  a boss's item or ability only where the game knows that item or spell). Sent slowly, Confirm.GAP seconds apart, and
 --  never in a fight, while the game restricts addons, or inside an instance: what is found there waits in the outbox
---  (kept in the saved file, at most Confirm.OUTBOX) and goes once the player is out and has somebody to tell. A row
---  learned by somebody else is taken only where it changes nothing but what play teaches of it (Confirm.SHARED: an
---  item's stats, armour, damage and speed); a confirmation or row taken from others is not passed on again.
+--  (kept in the saved file, at most Confirm.OUTBOX) and goes once the player is out and has somebody to tell.
+--
+--  No message is trusted (Doc/ideas/Data.md, *Poisoning*). A member's confirmation waits in session memory until
+--  Bundle.SENDERS different members sent the same part, one of them on the guild's channel (a group can hold strangers),
+--  unless the sender is this player's other account (Prices.Mine); a part must be one Check.lua would make of the entry
+--  as this client has it, and an entry takes at most Confirm.MOST parts from members. A row learned by somebody else is
+--  taken only where it changes nothing but what play teaches of the thing (Confirm.SHARED: an item's stats, armour,
+--  damage and speed), or where the set lacks the item and the game knows it; a set keeps at most Confirm.KEPT such rows,
+--  apart from what was learned here (Data.LearnRow). A block off its shape (a key that is no number, more rows than
+--  Confirm.ROWS) is a strike (Relay.Strike). A confirmation or row taken from others is not passed on again.
 -------------------------------------------------------------------------------
 local Data, Wire, Codec = Core.Data, Core.Wire, Core.Data.Codec
 
 local Confirm = {}
 Data.Confirmations = Confirm
 Confirm.GAP = 2        -- seconds between two sends
-Confirm.WAIT = 10      -- seconds between two looks while the outbox waits (a fight, an instance, nobody to tell)
+Confirm.WAIT = 10      -- seconds before a send the wire had no room for is tried again
 Confirm.OUTBOX = 500   -- confirmations and rows waiting at most; the oldest go first
 Confirm.PARTS = 12     -- parts of one entry in one message at most
 Confirm.ROWS = 8       -- learned rows in one block at most
+Confirm.MOST = 60      -- parts of one entry taken from members at most
+Confirm.WAITING = 200  -- parts heard from one member that wait for the others at most
+Confirm.KEPT = 500     -- rows of one set taken from members at most; the oldest go first
 -- The fields a row learned by somebody else may change: what play teaches of the thing.
 Confirm.SHARED = { Items = { stats = true, armor = true, damageMin = true, damageMax = true, speed = true } }
 -- The kinds of parts, and how a part from somebody else is checked: the game must know the item or the spell.
@@ -61,8 +74,13 @@ local ENTRY, ROW = "\028", "\029" -- a block's rows: set, key and row cut by \02
 local HEARD = { GUILD = true, PARTY = true, RAID = true, INSTANCE_CHAT = true } -- taken from these channels only
 
 local confirmed      -- this client's confirmed[set][key] = packed, once Core's saved variables are read
+local heard          -- what members confirmed, heard[set][key] = packed, apart: never sent on, never harvested
 local outbox         -- what waits to be shared: "V\031set\031key\031part" or "L\031set\031key"
-local parsed = {}    -- [set][key] = { day, build, parts = { [part] = true } }, made from confirmed when first asked
+local parsed = {}    -- [set][key] = { day, build, parts = { [part] = true } (this client's and the members' together),
+                     -- own = { ... }, heard = { ... } }, made from the saved texts when first asked
+local voices = {}    -- ["set\031key\031part"] = { by = { [sender] = true }, count, guild }: a member's confirmation that
+                     -- waits for the others (session memory)
+local waiting = {}   -- [sender] = how many parts wait with its name
 local listeners = {}
 
 -- The server's day (days since 1970) and the client's build: when something was confirmed.
@@ -76,7 +94,25 @@ local function Build()
     return tonumber(number) or 0
 end
 
--- An entry's confirmations taken apart; nil when there are none (or the saved value is no packed text).
+-- Whether the sender is a character of this player's other account (Prices.lua, read after this file).
+local function Mine(sender)
+    local prices = Data.Series and Data.Series("Prices")
+    return prices ~= nil and prices.Mine(sender) == true
+end
+
+-- The parts of a packed text ("day\031build\031parts") into one of an entry's sets (own or heard), and into its parts;
+-- its day and build where newer.
+local function Unpack(entry, packed, into)
+    if type(packed) ~= "string" then return end
+    local fields = Codec.Cut(packed, PART)
+    entry.day, entry.build = math.max(entry.day, tonumber(fields[1]) or 0), math.max(entry.build, tonumber(fields[2]) or 0)
+    for _, part in ipairs(Codec.Cut(fields[3] or "", LIST)) do
+        if part ~= "" then into[part], entry.parts[part] = true, true end
+    end
+end
+
+-- An entry's confirmations taken apart, this client's own and the members' together; nil when there are none (or the
+-- saved values are no packed texts).
 local function Parsed(name, key)
     local list = parsed[name]
     if not list then
@@ -85,36 +121,47 @@ local function Parsed(name, key)
     end
     local entry = list[key]
     if entry ~= nil then return entry or nil end
-    local packed = confirmed and type(confirmed[name]) == "table" and confirmed[name][key]
-    if type(packed) ~= "string" then
+    local own = confirmed and type(confirmed[name]) == "table" and confirmed[name][key]
+    local told = heard and type(heard[name]) == "table" and heard[name][key]
+    if type(own) ~= "string" and type(told) ~= "string" then
         list[key] = false
         return nil
     end
-    local fields = Codec.Cut(packed, PART)
-    entry = { day = tonumber(fields[1]) or 0, build = tonumber(fields[2]) or 0, parts = {} }
-    for _, part in ipairs(Codec.Cut(fields[3] or "", LIST)) do
-        if part ~= "" then entry.parts[part] = true end
-    end
+    entry = { day = 0, build = 0, parts = {}, own = {}, heard = {} }
+    Unpack(entry, own, entry.own)
+    Unpack(entry, told, entry.heard)
     list[key] = entry
     return entry
 end
 
-function Data.Confirmed(name, key, part)
+-- Whether the whole entry, or that part, is confirmed: by the game here or by members (a view's question); own: by the
+-- game here alone, what members told aside (the question where this client's own confirming and sending are decided).
+function Data.Confirmed(name, key, part, own)
     local entry = Parsed(name, key)
     if not entry then return false end
-    return entry.parts[WHOLE] or (part ~= nil and entry.parts[part]) or false
+    local parts = own and entry.own or entry.parts
+    return parts[WHOLE] or (part ~= nil and parts[part]) or false
 end
 
-function Data.ConfirmedParts(name, key)
+-- A set of parts as a sorted list, the whole entry's mark left out.
+local function Listed(parts)
     local list = {}
-    local entry = Parsed(name, key)
-    if entry then
-        for part in pairs(entry.parts) do
-            if part ~= WHOLE then list[#list + 1] = part end
-        end
-        table.sort(list)
+    for part in pairs(parts or {}) do
+        if part ~= WHOLE then list[#list + 1] = part end
     end
+    table.sort(list)
     return list
+end
+
+-- The parts confirmed, sorted: by the game here or by members; own: the game's here alone (Check.lua's play list).
+function Data.ConfirmedParts(name, key, own)
+    local entry = Parsed(name, key)
+    return Listed(entry and (own and entry.own or entry.parts))
+end
+
+-- The parts the game told here, none of the members': what a learned row of this client's goes out with (Bundle.lua).
+function Confirm.ToldParts(name, key)
+    return Data.ConfirmedParts(name, key, true)
 end
 
 local Tell = Core.Later(function()
@@ -128,18 +175,31 @@ function Data.OnConfirm(fn)
     listeners[#listeners + 1] = fn
 end
 
--- Keeps a confirmation: the entry's packed text written anew with the part added, today's day and this build.
-local function Store(name, key, part)
-    if type(confirmed[name]) ~= "table" then confirmed[name] = {} end
-    local entry = Parsed(name, key) or { parts = {} }
-    entry.parts[part] = true
+-- A part's waiting voices forgotten: it was settled, here or by enough members.
+local function Settled(name, key, part)
+    local text = name .. PART .. tostring(key) .. PART .. part
+    local entry = voices[text]
+    if not entry then return end
+    for sender in pairs(entry.by) do waiting[sender] = waiting[sender] - 1 end
+    voices[text] = nil
+end
+
+-- Keeps a confirmation: the entry's packed text written anew with the part added, today's day and this build; a
+-- member's (others) apart, in heard, read together with this client's own.
+local function Store(name, key, part, others)
+    local where = others and heard or confirmed
+    if type(where[name]) ~= "table" then where[name] = {} end
+    local entry = Parsed(name, key) or { day = 0, build = 0, parts = {}, own = {}, heard = {} }
+    local kept = others and entry.heard or entry.own
+    kept[part], entry.parts[part] = true, true
     entry.day, entry.build = Today(), Build()
     local list = {}
-    for each in pairs(entry.parts) do list[#list + 1] = each end
+    for each in pairs(kept) do list[#list + 1] = each end
     table.sort(list)
-    confirmed[name][key] = entry.day .. PART .. entry.build .. PART .. table.concat(list, LIST)
+    where[name][key] = entry.day .. PART .. entry.build .. PART .. table.concat(list, LIST)
     Data.NoteBuild()
     parsed[name][key] = entry
+    Settled(name, key, part)
     Tell()
 end
 
@@ -200,10 +260,14 @@ local function Take()
     return first, taken, parts, rows
 end
 
+-- A send: the first of what waits with what goes along, on every channel there is somebody on. Nothing while sharing
+-- is held (a fight, a restriction, an instance, the switch off) or nobody is there: the events below and the switch
+-- (Confirm.Switched) ask again then; only a send the wire had no room for is tried again by itself, Confirm.WAIT
+-- seconds later.
 function Step()
-    if not outbox or #outbox == 0 then return end
-    local channels = not Held() and Channels() or {}
-    if #channels == 0 then return later() end
+    if not outbox or #outbox == 0 or Held() then return end
+    local channels = Channels()
+    if #channels == 0 then return end
     local first, taken, parts, rows = Take()
     local sent = true
     for _, channel in ipairs(channels) do
@@ -219,10 +283,16 @@ function Step()
     if #outbox > 0 then soon() end
 end
 
-for _, event in ipairs({ "PLAYER_REGEN_ENABLED", "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE", "PLAYER_GUILD_UPDATE" }) do
+for _, event in ipairs({ "PLAYER_REGEN_ENABLED", "ADDON_RESTRICTION_STATE_CHANGED", "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE",
+    "PLAYER_GUILD_UPDATE" }) do
     Core.On(event, function()
         if outbox and #outbox > 0 then soon() end
     end)
+end
+
+-- The switch Share data with my guild and group turned (Saved.lua, the general options' hook): what waited goes.
+function Confirm.Switched()
+    if outbox and #outbox > 0 then soon() end
 end
 
 -- A key as a message carries it, as the set has it: a number for a set keyed by numbers.
@@ -232,42 +302,105 @@ local function Key(name, text)
     return text
 end
 
--- A part of somebody else's: whole, a field the game told (or a member of one: "startNPCs=1234", Check.lua), or
--- one of a known kind whose item or spell the game knows.
-local function Known(name, part)
+-- A part of somebody else's: whole; a field the game told, as Check.lua names it (a field told whole, "startNPCs=1234"
+-- a member of a list the entry holds, "health=12" a key of a map it holds); or one of a known kind whose item or
+-- spell the game knows. Never a part the entry as this client has it could not have.
+local function Known(name, key, part)
     if part == WHOLE then return true end
-    local field = part:match("^(%a[%w]*)=") or part
-    if Data.Set(name):HasField(field) then return true end
-    local kind, id = part:match("^(%a)(%d+)$")
-    local check = kind and Confirm.KINDS[kind]
-    return check ~= nil and check(tonumber(id)) == true
+    local handle = Data.Set(name)
+    local field, value = part:match("^([%w_]+)=(.*)$")
+    if not field then
+        if handle:HasField(part) then
+            local how = Data.Checks.Spec(handle)[part]
+            return not (how and (how.member or how.map)) -- a list's or a map's part names its member
+        end
+        local kind, id = part:match("^(%a)(%d+)$")
+        local check = kind and Confirm.KINDS[kind]
+        return check ~= nil and check(tonumber(id)) == true
+    end
+    local how = handle:HasField(field) and Data.Checks.Spec(handle)[field]
+    local held = how and handle:Get(key, field)
+    if not (how and type(held) == "table") then return false end
+    if how.map then
+        for inner in pairs(held) do
+            if tostring(inner) == value then return true end
+        end
+        return false
+    end
+    if not how.member then return false end
+    for _, element in ipairs(held) do
+        local id = element
+        if how.by then id = type(element) == "table" and element[how.by] or nil end
+        if id ~= nil and tostring(id) == value then return true end
+    end
+    return false
 end
 
--- A confirmation from somebody else: kept where this client has the entry, or that part of it, unverified.
-Wire.Listen("V", function(_, fields, channel)
-    if not (confirmed and HEARD[channel] and Data.Sharing()) then return end
+-- Whether an entry holds as many parts as members may give it.
+local function Full(name, key)
+    local entry = Parsed(name, key)
+    if not entry then return false end
+    local count = 0
+    for _ in pairs(entry.parts) do count = count + 1 end
+    return count >= Confirm.MOST
+end
+
+-- A part a member confirmed: true once Bundle.SENDERS different members sent it, one of them on the guild's channel (a
+-- group can hold strangers); until then it waits in session memory, at most Confirm.WAITING parts with one member's name.
+local function Agreed(name, key, part, sender, channel)
+    local text = name .. PART .. tostring(key) .. PART .. part
+    local entry = voices[text]
+    if not (entry and entry.by[sender]) then
+        if (waiting[sender] or 0) >= Confirm.WAITING then return false end
+        if not entry then
+            entry = { by = {}, count = 0 }
+            voices[text] = entry
+        end
+        entry.by[sender], entry.count, waiting[sender] = true, entry.count + 1, (waiting[sender] or 0) + 1
+    end
+    if channel == "GUILD" then entry.guild = true end
+    return entry.count >= Data.Bundle.SENDERS and entry.guild == true
+end
+
+-- A confirmation from somebody else: kept apart where this client has the entry, or that part of it, unverified, once
+-- enough members said the same (Agreed), or this player's other account did.
+Wire.Listen("V", function(sender, fields, channel)
+    if not (heard and HEARD[channel] and Data.Sharing()) then return end
     local name, text = fields[1], fields[2]
     if type(name) ~= "string" or not Data.Set(name):Ready() or type(text) ~= "string" then return end
     local key = Key(name, text)
     if not Data.Set(name):Get(key) then return end
+    local mine = Mine(sender)
     for part in (fields[3] or ""):gmatch("[^,]+") do
         local asked = part ~= WHOLE and part or nil
-        if Known(name, part) and Data.Set(name):Unverified(key, asked) then Store(name, key, part) end
+        if Data.Set(name):Unverified(key, asked) and Known(name, key, part) and not Full(name, key)
+            and (mine or Agreed(name, key, part, sender, channel)) then
+            Store(name, key, part, true)
+        end
     end
 end)
 
--- Rows learned by somebody else: each taken where it changes only what play teaches of the thing (Confirm.SHARED).
-Wire.ListenBlock("L", function(_, text, channel)
+-- Rows learned by somebody else: each taken where it changes only what play teaches of the thing (Confirm.SHARED), or
+-- names an item the set lacks and the game knows; kept apart (Data.LearnRow). A key that is no number, or more rows
+-- than a block may hold, is off its shape: the rest of the block is passed over, and the sender earns a strike.
+Wire.ListenBlock("L", function(sender, text, channel)
     if not (HEARD[channel] and Data.Sharing()) or type(text) ~= "string" then return end
-    for _, item in ipairs(Codec.Cut(text, ROW)) do
-        local fields = Codec.Cut(item, ENTRY)
-        local name, row = fields[1], fields[3]
+    local rows = Codec.Cut(text, ROW)
+    local strike = #rows > Confirm.ROWS
+    for index = 1, math.min(#rows, Confirm.ROWS) do
+        local fields = Codec.Cut(rows[index], ENTRY)
+        local name, keyText, row = fields[1], fields[2], fields[3]
+        if not (keyText and keyText:match("^%d+$") and row) then
+            strike = true
+            break
+        end
         local open = name and Confirm.SHARED[name]
-        if open and row and fields[2] then
-            local key = tonumber(fields[2]) or fields[2]
+        if open then
+            local key = tonumber(keyText)
             local before = Data.Set(name):Get(key)
             local taken = Data.LearnRow(name, key, row, function(record, current)
-                if not current then return record.name ~= nil end
+                -- an item the set lacks: only one the game knows (Items is the one set shared this way)
+                if not current then return record.name ~= nil and Confirm.KINDS.l(key) == true end
                 for field, value in pairs(record) do
                     if not open[field] and field ~= "since" and field ~= "day" and field ~= "patch"
                         and not Core.Same(value, current[field]) then return false end
@@ -277,10 +410,11 @@ Wire.ListenBlock("L", function(_, text, channel)
                         and value ~= nil then return false end
                 end
                 return true
-            end)
+            end, Confirm.KEPT)
             if taken then Data.Discovered(name, key, before and "changed" or "new", nil, "shared") end
         end
     end
+    if strike then Data.Relay.Strike(sender) end
 end)
 
 -------------------------------------------------------------------------------
@@ -292,7 +426,8 @@ end)
 function Data.Confirm(name, key, part)
     if not confirmed or key == nil then return false end
     local handle = Data.Set(name)
-    if not handle:Get(key) or not handle:Unverified(key, part) then return false end
+    -- the game's own word, whatever members told of it (own): kept as this client's, and shared
+    if not handle:Get(key) or not handle:Unverified(key, part, true) then return false end
     part = part or WHOLE
     Store(name, key, part)
     Queue("V" .. PART .. name .. PART .. tostring(key) .. PART .. part)
@@ -304,8 +439,19 @@ end
 function Confirm.Told(name, key, part)
     if not confirmed or key == nil or type(part) ~= "string" then return false end
     local entry = Parsed(name, key)
-    if entry and entry.parts[part] then return true end
+    if entry and entry.own[part] then return true end
     Store(name, key, part)
+    return true
+end
+
+-- A part members told of an entry, with a row enough of them sent (Bundle.lua): kept apart as heard, where the entry as
+-- this client has it can hold it (Known). True when it is, or was, kept.
+function Confirm.Heard(name, key, part)
+    if not heard or key == nil or type(part) ~= "string" or not Data.Set(name):Ready() then return false end
+    local entry = Parsed(name, key)
+    if entry and entry.parts[part] then return true end
+    if not Known(name, key, part) or Full(name, key) then return false end
+    Store(name, key, part, true)
     return true
 end
 
@@ -317,8 +463,8 @@ function Data.Share(name, key)
 end
 
 -- What a release took in since: the confirmations of an entry the set no longer lists unverified, and that Core did
--- not learn, are dropped (the master has them); asked before this client's confirmations count, so only the set's
--- own marks answer.
+-- not learn (nor take from members), are dropped (the master has them); asked before this client's confirmations
+-- count, so only the set's own marks answer.
 local function Drop(list)
     for name, entries in pairs(list) do
         local handle = Data.Set(name)
@@ -327,7 +473,7 @@ local function Drop(list)
         elseif handle:Ready() then
             for key in pairs(entries) do
                 -- gone from the set too (nor learned): nothing left to confirm
-                local learnt = Data.Learned(name, key) ~= nil
+                local learnt = Data.Learned(name, key) ~= nil or Data.Taken(name, key) ~= nil
                 if not handle:Get(key) or (not learnt and not handle:Unverified(key)) then entries[key] = nil end
             end
             if next(entries) == nil then list[name] = nil end
@@ -336,10 +482,12 @@ local function Drop(list)
 end
 
 Data.Saved("Learned", function(part)
-    if type(part.confirmed) ~= "table" then part.confirmed = {} end
-    if type(part.outbox) ~= "table" then part.outbox = {} end
+    for _, name in ipairs({ "confirmed", "heard", "outbox" }) do
+        if type(part[name]) ~= "table" then part[name] = {} end
+    end
     Drop(part.confirmed)
-    confirmed, outbox, parsed = part.confirmed, part.outbox, {}
+    Drop(part.heard)
+    confirmed, heard, outbox, parsed = part.confirmed, part.heard, part.outbox, {}
     for index = #outbox, 1, -1 do
         if type(outbox[index]) ~= "string" then table.remove(outbox, index) end
     end

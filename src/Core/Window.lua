@@ -350,16 +350,26 @@ end
 
 local windows = {} -- every window made by New, in the order they were made (Edit Mode, the registry)
 
--- Where a window's top left corner stands, from the screen's lower left: docked, where its zone puts it;
--- free, where it was put. nil if that is not known.
+-- A frame's own units in the screen's (UIParent's): 1 for a window of the screen's scale, less for one scaled
+-- down (Combat's unit frames). What the frame says of itself (GetLeft, GetWidth) is in its own units.
+local function Scale(frame)
+    local own, screen = Core.Plain(frame:GetEffectiveScale()), Core.Plain(UIParent:GetEffectiveScale())
+    if type(own) == "number" and type(screen) == "number" and own > 0 and screen > 0 then return own / screen end
+    return 1
+end
+
+-- Where a window's top left corner stands, from the screen's lower left, in the screen's units: docked, where its
+-- zone puts it; free, where it was put. nil if that is not known.
 local function Corner(window)
     if window.zone then
         local width, height = window.frame:GetSize()
         local left, bottom = Core.Dock.Rect(window.zone, width, height, UIParent:GetWidth(), UIParent:GetHeight(), window.options.insets)
         return left, bottom + height
     end
-    if window.spotX then return window.spotX, window.spotY end
-    return window.frame:GetLeft(), window.frame:GetTop()
+    local scale = Scale(window.frame)
+    if window.spotX then return window.spotX * scale, window.spotY * scale end
+    local left, top = window.frame:GetLeft(), window.frame:GetTop()
+    return left and left * scale, top and top * scale
 end
 
 -- Whether another shown window of ours has its top left corner at that spot.
@@ -373,15 +383,17 @@ local function Taken(window, x, y)
     return false
 end
 
--- A spot clear of the others: the one given, else a step down and to the right of it while another window of
--- ours starts there; nil once that would leave the screen.
+-- A spot clear of the others: the one given (in the window's own units), else a step down and to the right of it
+-- while another window of ours starts there; nil once that would leave the screen.
 local function Clear(window, x, y)
+    local scale = Scale(window.frame)
     local width, height = window.frame:GetSize()
+    width, height, x, y = width * scale, height * scale, x * scale, y * scale
     while Taken(window, x, y) do
         x, y = x + Window.CASCADE, y - Window.CASCADE
         if x + width > UIParent:GetWidth() or y - height < 0 then return nil end
     end
-    return x, y
+    return x / scale, y / scale
 end
 
 -- A grip = "hover" outside Edit Mode: there to size the window while it rests in its zone (Edge keeps it out
@@ -390,7 +402,7 @@ local function Grip(window)
     local grip = window.grip
     if not grip or window.options.grip ~= "hover" or Core.EditMode.active then return end
     if window.edge and window.edge.away then return end
-    if window.options.usable and not window.options.usable() then return grip:Hide() end
+    if window.options.usable and not Core.Safe("window", window.options.usable) then return grip:Hide() end
     grip:Show()
     grip:SetAlpha((window.hovered or window.sizing or grip:IsMouseOver()) and 1 or 0)
 end
@@ -554,15 +566,18 @@ local function Line(low, high, middle, spacing)
 end
 
 -- A free place let go in Edit Mode, near a line of its grid: an edge (or the middle) of the window on that
--- line, as the game's own frames snap to it while its snapping is on. Returns the top left corner then.
+-- line, as the game's own frames snap to it while its snapping is on. Returns the top left corner then, in the
+-- window's own units: the grid is the screen's, so a scaled window is measured in the screen's units for it.
 local function Snap(window)
     local spacing, frame = Grid(), window.frame
     local left, top = frame:GetLeft(), frame:GetTop()
     if not (spacing and left and top) then return nil end
-    local width, height = frame:GetWidth(), frame:GetHeight()
+    local scale = Scale(frame)
+    local width, height = frame:GetWidth() * scale, frame:GetHeight() * scale
+    left, top = left * scale, top * scale
     local x = Line(left, left + width, UIParent:GetWidth() / 2, spacing) or 0
     local y = Line(top - height, top, UIParent:GetHeight() / 2, spacing) or 0
-    return left + x, top + y
+    return (left + x) / scale, (top + y) / scale
 end
 
 -- A drag of the box, or a sizing by the grip, is over (also when Edit Mode closes in the middle of it):
@@ -877,7 +892,7 @@ function methods:Refresh()
     local bar, buttons = Bar(self), Buttons(self)
     if not shown and bar.box:IsShown() then Search(self, false) end
     bar:SetShown(shown)
-    buttons:SetShown(not Core.EditMode.active and not (self.options.bare and self.options.bare()))
+    buttons:SetShown(not Core.EditMode.active and not (self.options.bare and Core.Safe("window", self.options.bare)))
     local full = self.full
     if full then
         full:SetShown(edge.settings.expand and not edge.off and true or false)
@@ -950,7 +965,7 @@ function methods:Draggable()
     if not self.options.titleBar or Core.EditMode.active or (self.edge and self.edge.away) or self:Locked() then return false end
     local zone = self.zone
     if zone and not Window.DRAG_ZONES[zone] and not self.options.dragDocked then return false end
-    return not self.options.usable or self.options.usable()
+    return not self.options.usable or Core.Safe("window", self.options.usable) or false
 end
 
 -- What the window was left as, kept with its place in the module's settings: full (it filled the screen),
@@ -981,7 +996,11 @@ function methods:Native(on)
     if not native then return end
     self:Remember("native", on)
     if self.holder then self.holder:Native(on) end
-    if on and native.show then native.show() elseif not on and native.back then native.back() end
+    if on and native.show then
+        Core.Safe("window", native.show)
+    elseif not on and native.back then
+        Core.Safe("window", native.back)
+    end
 end
 
 -- The game's own window back for good, as it was (a module that stands down): no more held (Holder.lua).
@@ -998,7 +1017,7 @@ function methods:Open()
     local place = held[key]
     local left = type(place) == "table" and place or {}
     if left.native and self.options.native then
-        if self.options.native.show then self.options.native.show() end
+        if self.options.native.show then Core.Safe("window", self.options.native.show) end
         return "native"
     end
     self.frame:Show()
@@ -1165,7 +1184,7 @@ function Window.New(frame, options)
         if not (Core.EditMode.active or window.unlocked) or (window.edge and window.edge.away) or window:Locked() then
             return false
         end
-        return not options.usable or options.usable()
+        return not options.usable or Core.Safe("window", options.usable) or false
     end
     if options.sizable then
         frame:SetResizable(true)
@@ -1174,7 +1193,7 @@ function Window.New(frame, options)
         local function sizable()
             if window.usable() then return true end
             if options.grip ~= "hover" or (window.edge and window.edge.away) or window:Locked() then return false end
-            return not options.usable or options.usable()
+            return not options.usable or Core.Safe("window", options.usable) or false
         end
         window.grip = Window.Sizer(frame, {
             minWidth = options.minWidth, minHeight = options.minHeight, usable = sizable,

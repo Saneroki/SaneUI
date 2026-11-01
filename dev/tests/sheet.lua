@@ -1,8 +1,8 @@
 -- Runs the Inventory module's character sheet against the stand-in client (wowstub.lua): its parts as windows of
 -- their own on the module's board (the paper doll fitting its window; the stats with the game's sidebar: gear sets,
 -- titles, the pet; reputation, skills, PvP, currency, statistics), each built when first shown and listening to
--- the game only while shown. The window, the board, the paper doll and the stats are tried in dev/tests/inventory.lua. The look can only
--- be judged in the game.
+-- the game only while shown; a level the game keeps secret, the stats in a fight. The window, the board, the paper
+-- doll and the stats are tried in dev/tests/inventory.lua. The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/sheet.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -243,18 +243,6 @@ C_MajorFactions = {
         return {}
     end,
 }
--- The game's ticker: a function every so many seconds until cancelled.
-C_Timer.NewTicker = function(seconds, fn)
-    local ticker = {}
-    function ticker:Cancel() self.cancelled = true end
-    local function Tick()
-        if ticker.cancelled then return end
-        fn()
-        C_Timer.After(seconds, Tick)
-    end
-    C_Timer.After(seconds, Tick)
-    return ticker
-end
 GetCurrentArenaSeason = function() return 2 end
 CooldownFrame_SetDisplayAsPercentage = function(_, share) ringShare = share end
 UnitFactionGroup = function() return "Alliance", "Alliance" end
@@ -764,6 +752,42 @@ Push()
 Stand()
 check(repPanel:IsShown() and statPanel:IsShown() and head:IsVisible() and repList.rows[2].name._text == "Stormwind Keep",
     "back: the windows of the layout as they were, drawn as the game has it now")
+
+-------------------------------------------------------------------------------
+--  A secret of the game's, and a fight
+-------------------------------------------------------------------------------
+-- The effective level a secret (as a 12.x client hands out what it hides): the level line takes it through
+-- Core.Plain and says the real level alone, as while the two are the same; the game's format on the secret itself
+-- would fail.
+local levelLine
+for _, widget in ipairs(W.frames) do
+    if widget._kind == "FontString" and Inside(widget, ns.Sheet.pane) and type(widget._text) == "string"
+        and widget._text:find("^Level ") then levelLine = widget end
+end
+UnitEffectiveLevel = function() return 5 end
+W.Fire("PLAYER_LEVEL_UP", 1)
+local apart = levelLine and levelLine._text
+UnitEffectiveLevel = function() return W.Secret() end
+W.Fire("PLAYER_LEVEL_UP", 1)
+check(apart and apart:find("^Level 5 %(1%) ") and levelLine._text:find("^Level 1 |c"),
+    "the effective level kept secret: through Core.Plain, the line says the real level alone: " .. tostring(levelLine and levelLine._text))
+UnitEffectiveLevel = function() return W.level end
+W.Fire("PLAYER_LEVEL_UP", 1)
+-- A fight: the stats wait for its end (Core.Restricted), as they were, while the sheet's other windows still come
+-- and go (no frame of the sheet's is protected); the game's word that it is over draws the stats anew.
+local function Health() return Stats.View().sections[1].rows[1].Value._text end
+W.Combat(true)
+statValues.HEALTH = 150
+W.Fire("UNIT_STATS", "player")
+W.Wait(0)
+Open("skills")
+local fought = skillPanel:IsShown()
+Close("skills")
+check(Stats.Owed() and Health() == "120" and fought and not skillPanel:IsShown(),
+    "in a fight the stats wait, as they were; the skills window came and went, nothing of the sheet's protected")
+W.Combat(false)
+W.Wait(0)
+check(not Stats.Owed() and Health() == "150" and not InCombatLockdown(), "the fight over: the stats drawn anew, at the game's word")
 
 -------------------------------------------------------------------------------
 --  Retail

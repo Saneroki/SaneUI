@@ -70,10 +70,11 @@ local function Part(field, how, value)
 end
 Check.Part = Part
 
--- Whether the game told every field of the play list that an entry holds (of a list, each member).
+-- Whether the game told every field of the play list that an entry holds (of a list, each member): told here, what
+-- members told aside (own), so this client never confirms an entry whole on their word.
 local function Covered(handle, key, record)
     local told = {}
-    for _, part in ipairs(Data.ConfirmedParts(handle.name, key)) do told[part] = true end
+    for _, part in ipairs(Data.ConfirmedParts(handle.name, key, true)) do told[part] = true end
     local any = false
     for field, how in pairs(Spec(handle)) do
         local value = record[field]
@@ -182,7 +183,7 @@ function Data.Check(name, key, told)
         for _, part in ipairs(agree) do Confirmations.Told(name, key, part) end
         return true
     end
-    if not handle:Unverified(key) then return false end
+    if not handle:Unverified(key, nil, true) then return false end -- not confirmed whole by the game here (members' word aside)
     local kept = false
     for _, part in ipairs(agree) do kept = Data.Confirm(name, key, part) or kept end
     if Covered(handle, key, record) then kept = Data.Confirm(name, key) or kept end

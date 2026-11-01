@@ -18,10 +18,11 @@ A new page is one line in PAGES, on no port of its own:
 - folders: the first that has a file answers, as it is;
 - a tool: a script with a function web(request), read at its first use and read again when its file changed (its
   stop(), if it has one, called first), so a tool's new code needs no restart:
-      def web(request):      # request.method, .path (under the page's place), .query, .json()
+      def web(request):      # request.method, .path (under the page's place), .query, .headers, .json()
           return 200, "text/html; charset=utf-8", body     # bytes, words, or a dict or list sent as JSON
+      (a fourth value, a dict, adds headers: an ETag, a Cache-Control of its own)
 A page's links are relative ("api/op", never "/api/op"). Every HTML page sent gets the same menu of them all
-(the ☰ button, Alt+M, dev/tools/web-nav.js).
+(the ☰ button, Alt+M, dev/tools/web-nav.js). A request's body is 16 MB at most.
 
 Usage:
   dev/tools/web-pages [list]       the pages and whether they are ready (saneui webpages)
@@ -62,6 +63,8 @@ MENU = b'<script src="/web-nav.js" defer></script>'
 LOCAL = ("127.0.0.1", "localhost")
 GENERATED = ROOT / "assets" / "generated"
 WORLD = [ROOT / "dev" / "tools" / "world-map-page", GENERATED / "world-map"]
+BODY_LIMIT = 16 << 20   # bytes a request may carry
+TOLD = set()   # the config's problems printed, each once
 
 
 class Tool:
@@ -89,13 +92,19 @@ class Tool:
 
 
 class Page:
-    def __init__(self, name, place, serves, link=""):
-        self.name, self.place, self.link = name, place, link
+    """A page by its place: a tool's script, or folders laid over each other; needs names the file a folder page
+    cannot do without (what its build makes)."""
+
+    def __init__(self, name, place, serves, link="", needs=None):
+        self.name, self.place, self.link, self.needs = name, place, link, needs
         self.tool = Tool(serves) if isinstance(serves, Path) else None
         self.folders = None if self.tool else serves
 
     def ready(self):
-        return self.tool.path.is_file() if self.tool else all(folder.is_dir() for folder in self.folders)
+        if self.tool:
+            return self.tool.path.is_file()
+        return all(folder.is_dir() for folder in self.folders) and (
+            not self.needs or any((folder / self.needs).is_file() for folder in self.folders))
 
     def href(self):
         return f"/{self.place}/{self.link}"
@@ -106,17 +115,27 @@ PAGES = [
     Page("interface lab", "lab", ROOT / "dev" / "tools" / "ui-lab"),
     Page("game art", "art", [GENERATED / "game-art"]),
     Page("interface pieces", "pieces", [GENERATED / "interface"]),
-    Page("maps compared", "maps", [ROOT / "dev" / "tools" / "map-compare-page", GENERATED / "map-layers" / "compare"]),
-    Page("world map", "world", WORLD, "?only=continent"),
-    Page("instance maps", "instances", WORLD, "?only=instance"),
+    Page("maps compared", "maps", [ROOT / "dev" / "tools" / "map-compare-page", GENERATED / "map-layers" / "compare"],
+         needs="maps.js"),
+    Page("world map", "world", WORLD, "?only=continent", needs="world.json"),
+    Page("instance maps", "instances", WORLD, "?only=instance", needs="world.json"),
 ]
 
 
 def pages():
+    """The project's pages, then the ones of the config; a config that cannot be read (its syntax, no "pages", an entry
+    without its folder) is said once, and the project's pages answer alone."""
     if not CONFIG.is_file():
         return PAGES
-    outside = json.loads(CONFIG.read_text())["pages"]
-    return PAGES + [Page(p["name"], p["place"], [Path(p["folder"]).expanduser()]) for p in outside]
+    try:
+        outside = json.loads(CONFIG.read_text())["pages"]
+        return PAGES + [Page(p["name"], p["place"], [Path(p["folder"]).expanduser()]) for p in outside]
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        problem = f"{CONFIG}: not read, only the project's own pages are served ({type(error).__name__}: {error})"
+        if problem not in TOLD:
+            TOLD.add(problem)
+            print(problem, file=sys.stderr, flush=True)
+        return PAGES
 
 
 def nav_script():
@@ -136,11 +155,12 @@ def home():
 
 
 class Request:
-    """What a tool's web() is given: the path is under the page's place, the query parsed."""
+    """What a tool's web() is given: the path is under the page's place, the query parsed, the headers as sent."""
 
-    def __init__(self, method, path, query, body):
+    def __init__(self, method, path, query, body, headers=None):
         self.method, self.path, self.body = method, path, body
         self.query = urllib.parse.parse_qs(query)
+        self.headers = headers if headers is not None else {}
 
     def json(self):
         return json.loads(self.body or b"{}")
@@ -150,7 +170,8 @@ class Site(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
-    def reply(self, code, kind, body):
+    def reply(self, code, kind, body, headers=None):
+        """The answer; headers (a tool's fourth value) add to or replace the usual ones."""
         if isinstance(body, (dict, list)):
             body = json.dumps(body, ensure_ascii=False).encode()
         elif isinstance(body, str):
@@ -158,10 +179,13 @@ class Site(http.server.SimpleHTTPRequestHandler):
         if kind == HTML:
             at = body.lower().rfind(b"</body>")
             body = body[:at] + MENU + body[at:] if at >= 0 else body + MENU
+        headers = {"Cache-Control": "max-age=3600" if kind.startswith("font/") else "no-store", **(headers or {})}
         self.send_response(code)
         self.send_header("Content-Type", kind)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "max-age=3600" if kind.startswith("font/") else "no-store")
+        if code != 304:   # "not modified" carries nothing, not even a length
+            self.send_header("Content-Length", str(len(body)))
+        for name, value in headers.items():
+            self.send_header(name, value)
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(body)
@@ -199,10 +223,21 @@ class Site(http.server.SimpleHTTPRequestHandler):
 
     def ask(self, tool, path, query):
         """A tool's answer; what goes wrong in it stays in that page."""
-        body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
         try:
-            answer = tool.load().web(Request(self.command, path, query, body))
-        except Exception:
+            length = int(self.headers.get("Content-Length") or 0)
+            if length < 0:
+                raise ValueError(length)
+        except ValueError:
+            return self.reply(400, TEXT, "Content-Length is not a number.")
+        if length > BODY_LIMIT:
+            return self.reply(413, TEXT, f"A request of {length} bytes: a page takes {BODY_LIMIT >> 20} MB at most.")
+        body = self.rfile.read(length)
+        try:
+            code, kind, content, *held = tool.load().web(Request(self.command, path, query, body, self.headers))
+            answer = code, kind, content, held[0] if held else None
+        except KeyboardInterrupt:
+            raise
+        except BaseException:   # also a sys.exit in the tool (the board without its folder): the page gets the message
             traceback.print_exc()
             answer = 500, TEXT, traceback.format_exc()
         self.reply(*answer)

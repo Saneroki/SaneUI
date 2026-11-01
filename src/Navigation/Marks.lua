@@ -28,6 +28,7 @@ Marks.GROUP = 0.25 -- seconds between two looks at where the party is
 
 local Coords, Live = ns.Coords, ns.Live
 local layer, holder, arrow, pin
+local pair         -- the arrow and the pin together, for Fit (made once with them: it runs every frame the player walks)
 local members = {} -- the members' textures, made as many as needed
 local nextGroup = 0
 
@@ -82,6 +83,7 @@ function Marks.Build(canvasHolder)
     pin:SetScript("OnEnter", ns.Guard(Tip))
     pin:SetScript("OnLeave", GameTooltip_Hide)
     pin:Hide()
+    pair = { arrow, pin }
 end
 
 -- The layer at that frame level (the canvas' order, Canvas.lua: over the game's minimap), the pin over it.
@@ -158,7 +160,7 @@ end
 function Marks.Fit()
     if not arrow then return end
     local Inside = ns.Canvas.Inside
-    for _, mark in ipairs({ arrow, pin }) do
+    for _, mark in ipairs(pair) do
         if mark.x then mark:SetShown(Inside(mark.x, mark.y, mark.half)) end
     end
     for _, texture in ipairs(members) do

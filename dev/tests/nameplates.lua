@@ -74,8 +74,10 @@ function Group:Finish() self._playing = false; self._OnFinished(self) end
 function methods:CreateAnimationGroup() return setmetatable({ _parent = self }, Group) end
 CombatFeedbackText = { MISS = "Miss", DODGE = "Dodge", BLOCK = "Block" }
 
--- A hidden value of the game's: a table here, never compared.
-issecretvalue = function(value) return type(value) == "table" and value.secret == true end
+-- A hidden value of the game's: a table here, never compared (the game's own functions may look into it: the test says
+-- what they see); the stand-in's own (W.Secret, which errors when compared or counted with) known as one too.
+local stubSecret = issecretvalue
+issecretvalue = function(value) return stubSecret(value) or (type(value) == "table" and value.secret == true) end
 local function Secret() return { secret = true } end
 
 -- The game's own colours and constants the module takes.
@@ -235,6 +237,32 @@ W.templates.CustomAuraContainerTemplate = function(widget)
     function widget:SetFlowLayoutGrowthDirection(across, up) self._growth = { across, up } end
 end
 
+-- The mouse on a widget, as the game's aura icons have it (their tooltip).
+function methods:EnableMouse(on) self._mouse = on end
+function methods:IsMouseEnabled() return self._mouse ~= false end
+
+-- The game's aura container of a unit frame: its icons from a pool, set out anew at each refresh (RefreshList, as the
+-- game's), one out already as the plate shows; and its loss of control icon, always there. Each takes the mouse.
+local function GameAuras(frame)
+    local auras = W.NewWidget("Frame", nil, frame)
+    local pool = { active = {} }
+    function pool:EnumerateActive() return pairs(self.active) end
+    function pool:Acquire()
+        local icon = W.NewWidget("Frame", nil, auras)
+        icon._mouse = true
+        self.active[icon] = true
+        auras.icons[#auras.icons + 1] = icon
+        return icon
+    end
+    auras.icons, auras.auraItemFramePool = {}, pool
+    function auras:RefreshList(count) for _ = 1, count do self.auraItemFramePool:Acquire() end end
+    auras.LossOfControlFrame = W.NewWidget("Frame", nil, auras)
+    auras.LossOfControlFrame.AuraItemFrame = W.NewWidget("Frame", nil, auras.LossOfControlFrame)
+    auras.LossOfControlFrame.AuraItemFrame._mouse = true
+    pool:Acquire()
+    return auras
+end
+
 -- One of the game's plates, with the parts of its unit frame the module reads.
 local function GamePlate()
     local plate = W.NewWidget("Frame", nil, UIParent)
@@ -242,9 +270,10 @@ local function GamePlate()
     frame.HealthBarsContainer = W.NewWidget("Frame", nil, frame)
     frame.HealthBarsContainer:SetSize(120, 20)
     frame.HealthBarsContainer.healthBar = W.NewWidget("StatusBar", nil, frame.HealthBarsContainer)
-    for _, key in ipairs({ "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame", "LevelFrame", "CastBarsContainer" }) do
+    for _, key in ipairs({ "RaidTargetFrame", "ClassificationFrame", "PlayerLevelDiffFrame", "LevelFrame", "CastBarsContainer" }) do
         frame[key] = W.NewWidget("Frame", nil, frame)
     end
+    frame.AurasFrame = GameAuras(frame)
     frame.name = W.NewWidget("FontString", nil, frame)
     plate.UnitFrame = frame
     return plate
@@ -436,6 +465,15 @@ check(dress.room.name == N(#units.nameplate1.name) and dress.name._width == dres
     "a long name: all of its room, the bar longer for it")
 units.nameplate1.name = "Young Wolf"
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
+-- A level hidden the stand-in's way (W.Secret: an error when compared or counted with, so it must go through Core's
+-- Plain): none shown, no room for it, the name first; said again: back in front of the name.
+units.nameplate1.level = W.Secret()
+W.Fire("UNIT_LEVEL", "nameplate1")
+check(Core.Secret(units.nameplate1.level) and dress.level._text == "" and dress.room.level == nil and X(dress.name) == I,
+    "a hidden level: none, no room for it, the name first")
+units.nameplate1.level = 22
+W.Fire("UNIT_LEVEL", "nameplate1")
+check(dress.level._text == "22" and dress.room.level == L(2) and X(dress.name) == I + L(2) + NEAR, "said again: back in front of the name")
 units.nameplate1.tapped = true
 W.Fire("UNIT_FLAGS", "nameplate1")
 check(dress.health._barColor[1] == Bar.TAPPED[1], "tapped by others: grey")
@@ -549,6 +587,14 @@ Core.Set(ns.name, "debuffs", true)
 Core.Set(ns.name, "control", false)
 check(not control:IsShown(), "crowd control off")
 Core.Set(ns.name, "control", true)
+-- The game's own aura icons under ours would take the mouse (their tooltip beside our bar): their mouse off, on the
+-- ones the game sets out anew as well; on again when its parts come back in sight (below, and at the stand-down).
+local gameAuras = plates.nameplate1.UnitFrame.AurasFrame
+check(not gameAuras.icons[1]:IsMouseEnabled() and not gameAuras.LossOfControlFrame.AuraItemFrame:IsMouseEnabled(),
+    "the game's aura icons under ours: their mouse off (the loss of control one too)")
+gameAuras:RefreshList(2)
+check(#gameAuras.icons == 3 and not gameAuras.icons[2]:IsMouseEnabled() and not gameAuras.icons[3]:IsMouseEnabled(),
+    "icons the game sets out anew: off as well")
 
 -------------------------------------------------------------------------------
 --  A friend shown by name only, players, the raid marker, the border lit
@@ -556,8 +602,11 @@ Core.Set(ns.name, "control", true)
 local bar = plates.nameplate1.UnitFrame.HealthBarsContainer.healthBar
 bar:Hide() -- the game shows the plate by name only now
 check(not dress:IsShown() and Faded(plates.nameplate1, 1), "the game's health bar gone: its own plate as it is, ours away")
+check(gameAuras.icons[1]:IsMouseEnabled() and gameAuras.icons[3]:IsMouseEnabled()
+    and gameAuras.LossOfControlFrame.AuraItemFrame:IsMouseEnabled(), "its aura icons with the mouse again")
 bar:Show()
 check(dress:IsShown() and Faded(plates.nameplate1, 0), "back")
+check(not gameAuras.icons[3]:IsMouseEnabled(), "its aura icons without the mouse again")
 
 units.nameplate2 = { name = "Bran", surname = "Stoneheart", player = true, class = "WARRIOR", friend = true, health = 10,
                      most = 10, raid = 8, party = true, level = 20 }
@@ -577,6 +626,25 @@ Core.Set(ns.name, "gear", false)
 check(friend.room.gear == nil and friend.gear._text == "", "the setting off: none, no room")
 Core.Set(ns.name, "gear", true)
 check(friend.gear._text == "i32", "on again: from what was kept")
+-- A player's plate appearing in a fight (W.Combat: the stand-in's own, with the game's events): dressed as any, but
+-- the game refuses the question then (Core.Inspect); asked once the fight ends, shown when the server answered.
+local asks = #inspected
+W.Combat(true)
+units.nameplate7 = { name = "Edda", surname = "Ironvale", player = true, class = "WARRIOR", friend = true, party = true,
+                     health = 10, most = 10, level = 20, gear = 41 }
+plates.nameplate7 = GamePlate()
+W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate7")
+local edda = DressOf(plates.nameplate7)
+W.Wait(Core.Inspect.GAP + 0.3)
+check(edda:IsShown() and Faded(plates.nameplate7, 0) and #inspected == asks and edda.room.gear == nil,
+    "a player's plate in a fight: dressed; the item level not asked for (the game refuses it then)")
+W.Combat(false)
+W.Wait(Core.Inspect.GAP + 0.3)
+check(#inspected == asks + 1 and inspected[#inspected] == "nameplate7", "the fight over: asked once")
+W.Fire("INSPECT_READY", "Player-nameplate7")
+check(edda.gear._text == "i41", "and shown when the server answered")
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
+units.nameplate7, plates.nameplate7 = nil, nil
 check(friend.level._color[1] == 0.3, "the level of someone you cannot attack in the game's colour for that")
 check(not friend.foes:IsShown() and friend.own:IsShown(), "no buffs on someone you cannot attack")
 check(friend.raid:IsShown() and friend.raid._cell[1] == 8 and friend.raid._cell[2] == 4 and friend.raid._cell[3] == 4,
@@ -1084,6 +1152,20 @@ check(CVar("nameplateMinAlpha") == "0.7", "and nothing of ours sets them again b
 Core.Set(ns.name, "distance", false)
 Core.Set(ns.name, "distance", true)
 check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
+-- A value of yours that is already ours (the selected plate not larger): found as it is, and yours again at the
+-- logout, not the game's default.
+ns.OnLogout()
+C_CVar.SetCVar("nameplateSelectedScale", "1") -- your own choice, the same as ours
+Core.Set(ns.name, "distance", false)
+Core.Set(ns.name, "distance", true)
+check(ns.options.foundCVars.nameplateSelectedScale == "1" and CVar("nameplateSelectedScale") == "1",
+    "a value of yours already at ours: found too")
+ns.OnLogout()
+check(CVar("nameplateSelectedScale") == "1", "and at the logout it stays yours, not the game's default")
+C_CVar.SetCVar("nameplateSelectedScale", "1.2")
+Core.Set(ns.name, "distance", false)
+Core.Set(ns.name, "distance", true) -- ours again, as at the next login, the game's own found
+check(CVar("nameplateSelectedScale") == "1" and ns.options.foundCVars.nameplateSelectedScale == "1.2", "(ours again)")
 
 -------------------------------------------------------------------------------
 --  Combat text over a plate and over your character
@@ -1212,6 +1294,17 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
     Core.Set(ns.name, "combatGame", false)
     check(CVar("floatingCombatTextCombatDamage_v2") == "0", "after that, switched off: left alone")
     Core.Set(ns.name, "combatGame", true)
+    -- A value of yours that is already ours (the numbers over units off): found as it is, and yours again at the
+    -- logout, not the game's default.
+    check(ns.options.combatFoundCVars.floatingCombatTextCombatDamage_v2 == "0", "ours again: a value of yours already at ours is found too")
+    ns.OnLogout()
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "1",
+        "at the logout it stays yours, not the game's default")
+    C_CVar.SetCVar("floatingCombatTextCombatDamage_v2", "1")
+    Core.Set(ns.name, "combatGame", false)
+    Core.Set(ns.name, "combatGame", true) -- ours again, as at the next login, the game's own found
+    check(CVar("floatingCombatTextCombatDamage_v2") == "0" and ns.options.combatFoundCVars.floatingCombatTextCombatDamage_v2 == "1",
+        "(ours again)")
     Core.Set(ns.name, "combatPictures", false)
 
     -- A school the game hides, as the game has it: written into a text it stays hidden, and nothing else works on it.
@@ -1256,6 +1349,14 @@ check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
     check(CombatText.Hued("%s", "9", Hidden(0)).value:find("^|cffff%x%x%x%x9|r$") ~= nil, "no school told: still a whole colour, not a broken one")
     W.Fire("UNIT_COMBAT", "nameplate1", Hidden("WOUND"), Hidden(""), Hidden("7"), Hidden(32))
     check(Written(dress) == "|cffff00007|r", "the kind hidden too, over a foe: damage, by its school")
+    -- The game raises on a boolean test of a hidden value; the stand-in cannot, but a hidden value that is false
+    -- shows one (an and/or would drop it for the physical school): the school goes on as it came.
+    local secret, hued, given = issecretvalue, CombatText.Hued, nil
+    issecretvalue = function(value) return value == false or secret(value) end
+    CombatText.Hued = function(form, value, school) given = school return hued(form, value, school) end
+    W.Fire("UNIT_COMBAT", "nameplate1", Hidden("WOUND"), Hidden(""), Hidden("7"), false)
+    issecretvalue, CombatText.Hued = secret, hued
+    check(given == false, "a hidden kind's school meets no boolean test: handed on as it came")
     local kept = units.nameplate1
     units.nameplate1 = { friend = true }
     CombatText.Clear(dress)
@@ -1347,6 +1448,21 @@ check(dress.border[2]._points[1][2] == dress and Near(dress.border[1].corners[1]
     "no cast: the outline around the bar alone again")
 check(dress.health._points[2][5] == Core.Pixels(dress, 1) and dress.caps[1]._texture == Core.Shape.CAP_LEFT,
     "and the bar a pixel inside it all round, round at both ends")
+-- Interrupted by someone with no unit token (not in your group): named by what the game knows of the player by GUID.
+casts.nameplate1 = { name = "Fireball", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+local playerInfo = rawget(_G, "GetPlayerInfoByGUID")
+GetPlayerInfoByGUID = function(guid)
+    if guid == "Player-far" then return "Mage", "MAGE", "Gnome", "Gnome", 2, "Fizzle", "Realm", 20 end
+end
+W.Fire("UNIT_SPELLCAST_INTERRUPTED", "nameplate1", "cast", 133, "Player-far")
+check(castBar.text._text == Cast.INTERRUPTED .. ": Fizzle", "interrupted by someone without a unit token: named by the game's player info")
+rawset(_G, "GetPlayerInfoByGUID", playerInfo)
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_STOP", "nameplate1")
+W.clock = W.clock + Cast.HOLD + 0.01
+castBar:GetScript("OnUpdate")(castBar, 1)
+check(not castBar:IsShown(), "(gone)")
 -- Stopped early by the game (cast done): stays half a second; failed: at once.
 casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
@@ -1378,12 +1494,30 @@ casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.cloc
 Core.Set(ns.name, "castBar", false)
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
 check(not castBar:IsShown() and gameCast._alpha == 1, "the setting off: the game's own cast bar")
+W.Fire("PLAYER_TARGET_CHANGED") -- every plate worn anew
+check(gameCast._alpha == 1, "and it stays in sight as the plates are worn anew (a change of target)")
 Core.Set(ns.name, "castBar", true)
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
 check(castBar:IsShown() and gameCast._alpha == 0, "on again: ours")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
 check(not castBar:IsShown(), "failed: gone")
+-- A cast beginning while the game shows the plate by name only (its bar gone, ours away): ours drawn under the hidden
+-- dress, where no OnShow runs (the game runs none under a hidden parent); the game's bar back: the dress shown runs
+-- the cast bar's OnShow with it, and the one outline goes around both.
+local shows, outlined = 0, dress.outlined
+castBar:HookScript("OnShow", function() shows = shows + 1 end)
+bar:Hide()
+casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+check(not dress:IsShown() and castBar:IsShown() and not castBar:IsVisible() and shows == 0 and dress.outlined == outlined,
+    "a cast while the plate is by name only: ours under the hidden dress, no OnShow, the outline as it was")
+bar:Show()
+check(dress:IsShown() and shows == 1 and dress.outlined == castBar and dress.border[2]._points[1][2] == castBar,
+    "the game's bar back: the dress shown runs the cast bar's OnShow with it, one outline around both")
+casts.nameplate1 = nil
+W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
+check(not castBar:IsShown() and dress.outlined == outlined, "failed: gone, the outline as before")
 
 -------------------------------------------------------------------------------
 --  Retail: what it lacks of Forever's hidden, a plate dressed and filled as in Forever
@@ -1436,6 +1570,10 @@ ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
     and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
+check(gameAuras.icons[1]:IsMouseEnabled() and gameAuras.icons[3]:IsMouseEnabled()
+    and gameAuras.LossOfControlFrame.AuraItemFrame:IsMouseEnabled(), "the game's aura icons with the mouse again")
+gameAuras:RefreshList(1)
+check(gameAuras.icons[4]:IsMouseEnabled(), "and the hook on the game's refresh does nothing any more")
 check(C_CVar.GetCVar("nameplateSelectedScale") == "1.2" and plates.nameplate1.UnitFrame._scale == 1,
     "the game's scaling by distance its own again, its unit frames at their own scale")
 check(C_CVar.GetCVar("floatingCombatTextCombatDamage_v2") == "1" and C_CVar.GetCVar("enableFloatingCombatText") == "1",

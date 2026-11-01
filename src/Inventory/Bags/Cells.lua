@@ -54,6 +54,7 @@ Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
 Cells.ARROW = 18                        -- the green arrow on an upgrade
 Cells.LEAST_SCALE = 0.72                -- the words and marks at their smallest, still to be read
 
+local Contents = ns.Contents
 local look = {}     -- [button] = what is ours on it (kept apart from the game's button)
 local recordOf = {} -- [button] = the record it draws now
 local fonts
@@ -317,7 +318,7 @@ function Pool:Draw(button, record, how)
     holder:SetID(record.bag)
     button:SetID(record.slot)
     recordOf[button] = record
-    local key = record.bag .. ":" .. record.slot
+    local key = record.key or Contents.Key(record.bag, record.slot) -- the alts' records have none of their own
     if not self.at[key] then self.at[key] = button end
     Game("ClearItemButtonOverlay", button)
     if not record.item then return Empty(button, mine) end
@@ -447,6 +448,14 @@ function Pool:Each()
     return list
 end
 
+-- The button of this drawing under the mouse now, nil: none (asked at every move of the mouse: no list made).
+function Pool:Under()
+    for index = 1, self.taken do
+        local button = self.buttons[index]
+        if button:IsVisible() and button:IsMouseOver() then return button end
+    end
+end
+
 -- The record a button of any pool draws now.
 function Cells.Record(button)
     return recordOf[button]
@@ -454,11 +463,11 @@ end
 
 -- The first button that draws a slot now, and whether one does.
 function Pool:Button(bag, slot)
-    return self.at[bag .. ":" .. slot]
+    return self.at[Contents.Key(bag, slot)]
 end
 
 function Pool:Shown(bag, slot)
-    local button = self.at[bag .. ":" .. slot]
+    local button = self.at[Contents.Key(bag, slot)]
     return button ~= nil and button:IsShown()
 end
 
@@ -477,8 +486,8 @@ function Pool:HideAll()
 end
 
 -- Cells' own functions are the bags' pool's.
-for _, name in ipairs({ "Take", "Draw", "Place", "Lock", "Cooldowns", "Light", "Begin", "Done", "Each", "Button",
-                        "Shown", "HideAll" }) do
+for _, name in ipairs({ "Take", "Draw", "Place", "Lock", "Cooldowns", "Light", "Begin", "Done", "Each", "Under",
+                        "Button", "Shown", "HideAll" }) do
     Cells[name] = function(...)
         local pool = Cells.bags
         if pool then return pool[name](pool, ...) end

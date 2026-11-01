@@ -70,14 +70,15 @@ function Walk.Known()
     return state == "ready" or state == "loading"
 end
 
--- A packed field of the set (a tile's block, its gates: Gates.lua) as the game unpacks it: base64, deflate, CBOR.
+-- A packed field of the set (a tile's block, its gates: Gates.lua) as the game unpacks it: base64, deflate, CBOR; nil
+-- for one the game cannot read (each step behind Core.Ask: a bad set file is no ground, no error).
 function Walk.Unpack(text)
     local util = rawget(_G, "C_EncodingUtil")
     if not util or type(text) ~= "string" then return nil end
-    local raw = util.DecodeBase64(text)
+    local raw = Core.Ask(util.DecodeBase64, text)
     local method = rawget(_G, "Enum") and Enum.CompressionMethod and Enum.CompressionMethod.Deflate or 0
-    local data = raw and util.DecompressString(raw, method)
-    return data and util.DeserializeCBOR(data)
+    local data = raw and Core.Ask(util.DecompressString, raw, method)
+    return data and Core.Ask(util.DeserializeCBOR, data)
 end
 
 -- An opening of a rectangle: { side, first, last, where, index }; side, first and last nil for one along the whole

@@ -351,7 +351,24 @@ function Face.Fill(face)
     Buffs(face, unit)
 end
 
-local function Heard(face, event)
+-- Whether an aura update (UNIT_AURA's info) may have changed which of your buffs the unit has: all of them anew, a
+-- helpful aura added (which one is not looked at), or any aura gone (what kind it was is not told); not one that only
+-- refreshed what is there (a stack, a duration). An answer the game hides counts as a change.
+local function Buffed(info)
+    if type(info) ~= "table" or Plain(info.isFullUpdate) ~= false then return true end
+    local removed = info.removedAuraInstanceIDs
+    if type(removed) == "table" and next(removed) ~= nil then return true end
+    local added = info.addedAuras
+    if type(added) == "table" then
+        for _, aura in ipairs(added) do
+            if type(aura) ~= "table" or Plain(aura.isHelpful) ~= false then return true end
+        end
+    end
+    return false
+end
+
+-- The face's unit's event (its unit, then the event's own: an aura update's info).
+local function Heard(face, event, _, info)
     local unit = face.unit
     if ns.off or not unit then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
@@ -369,7 +386,7 @@ local function Heard(face, event)
     elseif event == "INCOMING_RESURRECT_CHANGED" then
         Rez(face, unit)
     elseif event == "UNIT_AURA" then
-        if ns.GroupBuffs.Any() and not Core.Restricted() then Buffs(face, unit) end
+        if ns.GroupBuffs.Any() and not Core.Restricted() and Buffed(info) then Buffs(face, unit) end
     elseif event == "UNIT_NAME_UPDATE" then
         Name(face, unit)
     else -- gone offline, come back, dead or alive

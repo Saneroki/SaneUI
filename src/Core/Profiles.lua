@@ -203,7 +203,6 @@ local function Capture()
         if live[name] and described.capture then Core.Safe(name .. ": saving", described.capture) end
     end
 end
-Profiles.Capture = Capture
 
 -- Each module is told what differs between before and the settings it holds now.
 local function Tell(name, before)
@@ -220,7 +219,10 @@ local function Tell(name, before)
 end
 
 -- Puts the settings of every module in use into a table: each module's from values (a copy), made
--- right, the modules told; each module told it moved (moved) once all have theirs.
+-- right, the modules told; each module whose settings were put in told it moved (moved) once all have
+-- theirs. A module fill answers false for is left as it is (Reset leaves the game's own, Sync's), so it
+-- is not told it moved: told, Sync would write the game's settings anew, and the game's own in place of
+-- a part the profile holds nothing of.
 local function Fill(fill)
     local before = {}
     for _, name in ipairs(Core.optionOrder) do
@@ -239,7 +241,7 @@ local function Fill(fill)
         if before[name] then Tell(name, before[name]) end
     end
     for _, name in ipairs(Core.optionOrder) do
-        local moved = live[name] and Core.described[name].moved
+        local moved = before[name] and Core.described[name].moved
         if moved then Core.Safe(name .. ": settings", moved) end
     end
     if Core.Window then Core.Safe("profiles: windows", Core.Window.PlaceAll) end
@@ -603,7 +605,8 @@ end
 
 -- A profile from a text made by Export, under its own name or as; true and its name, or false and why.
 -- The text comes from another player: of the CVars it keeps by name (Sync's named), only the game's
--- options' stay, so using it sets nothing the game's options could not.
+-- options' stay, so using it sets nothing the game's options could not; the other player's addons and key
+-- bindings (Sync.PERSONAL) are not taken, so this character's stay as they are.
 function Profiles.Import(text, as)
     local value, why = Core.Serial.Read(text)
     if type(value) ~= "table" then return false, why or TEXT.notProfile end
@@ -621,6 +624,10 @@ function Profiles.Import(text, as)
         for name in pairs(named) do
             if type(name) ~= "string" or not cvars[name:lower()] then named[name] = nil end
         end
+    end
+    local taken = type(game) == "table" and game.taken
+    if type(taken) == "table" then
+        for id in pairs(Core.Sync.PERSONAL) do taken[id] = nil end
     end
     db.profiles[fresh] = settings
     Shown()

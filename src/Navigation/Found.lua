@@ -107,9 +107,10 @@ end
 -------------------------------------------------------------------------------
 local cx, cy, pixels -- the minimap's middle on the screen and its scale, for one frame's asks
 
--- The first herb or ore a tooltip's line names: its names without colours and pictures, one per line.
+-- The first herb or ore a tooltip's line names: its names one per line (|n), without colours, pictures and links
+-- (Core.Fuzzy.Plain).
 local function Named(text)
-    text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):gsub("|n", "\n")
+    text = Core.Fuzzy.Plain((text:gsub("|n", "\n")))
     for name in text:gmatch("[^\n]+") do
         local node = Nodes.Find(name:match("^%s*(.-)%s*$"))
         if node then return node end
@@ -198,6 +199,7 @@ local function Note(node, u, v, plane, near)
     end
     found[#found + 1] = { u = u, v = v, plane = plane, kind = node.kind, node = node, seen = now, swept = sweep.number }
     drawn.count = nil
+    if ns.Glints then ns.Glints.Found() end -- (the far ones' frame rests while nothing is found)
 end
 
 -- Whether a point of the plane lies in what the sweep covered around pu, pv (half: its half side in yards).

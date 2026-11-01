@@ -45,6 +45,7 @@ Weights.RETAIL_DPS = 2                  -- Retail: a physical fighter's weapon d
 
 local WARRIOR = "dps 7 ranged .5 str 1 ap .5 sta .6 agi .4 hit 1 crit .9 exp .8 haste .5 armor .01"
 local CASTER = "int 1 sp 1 dmg 1 sta .5 spi .5 hit .5 crit .5 haste .4 mp5 .4 armor .01 ranged 1"
+local FERAL = "str 1 agi 1 ap .5 sta .5 int .25 spi .25 hit 1 exp .9 crit 1 haste .6 dodge .5 def .5 dps .5 armor .02"
 
 Weights.FOREVER = {
     WARRIOR = {
@@ -56,7 +57,7 @@ Weights.FOREVER = {
     DRUID = {
         early = CASTER,
         balance = "int 1 sp 1 dmg 1 sta .5 spi .5 hit .9 crit .8 haste .6 mp5 .4 armor .01",
-        feral = "str 1 agi 1 ap .5 sta .5 int .25 spi .25 hit 1 exp .9 crit 1 haste .6 dodge .5 def .5 dps .5 armor .02",
+        feral = FERAL, ["feral combat"] = FERAL, -- WoW: Forever names the tree Feral Combat (GetSpecializationInfo)
         restoration = "int 1 heal 1 sp 1 sta .5 spi .6 mp5 .5 haste .5 crit .4 armor .01",
     },
     ROGUE = {

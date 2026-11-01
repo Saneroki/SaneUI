@@ -33,7 +33,6 @@ ns.TEXT = {
     neverSynced = "Not synced yet",
     settings = Core.Word("SETTINGS", "Settings"),
     online = "%d online",
-    members = "%d members",
     membersOnline = "%d members · %d online",
     -- The tabs and their views (Page.lua)
     overview = "Overview",
@@ -76,7 +75,6 @@ ns.TEXT = {
     newsLevel = "%s reached level %d",
     noLevels = "No levels known yet.",
     -- Roster
-    search = Core.Word("SEARCH", "Search"),
     searchRoster = "Name, note or zone",
     colName = Core.Word("NAME", "Name"),
     colLevel = Core.Word("LEVEL_ABBR", "Lvl"),
@@ -100,7 +98,6 @@ ns.TEXT = {
     inviteGuild = Core.Word("GUILD_INVITE", "Invite to Guild"),
     inviteAsk = "Name of the player to invite to the guild:",
     whisper = Core.Word("WHISPER", "Whisper"),
-    player = "Player",
     promote = Core.Word("GUILD_PROMOTE", "Promote"),
     demote = Core.Word("GUILD_DEMOTE", "Demote"),
     rankUp = "Up: %s",
@@ -116,7 +113,6 @@ ns.TEXT = {
     pickMember = "Choose a member in the list.",
     inFight = "Not in a fight: the game does not let addons do that now.",
     -- Equipment
-    characters = Core.Word("CHARACTER", "Characters"),
     searchCharacters = "Name",
     itemLevel = Core.Word("STAT_AVERAGE_ITEM_LEVEL", "Item Level"),
     slotsWorn = "%d of %d slots worn",

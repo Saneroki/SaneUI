@@ -49,34 +49,43 @@
 # Usage:  dev/tests/run
 set -euo pipefail
 
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then   # saneui help test
+    sed -n '2,/^# Usage/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+fi
+
 here="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 cd "$here/../.."
 
-command -v lua5.1 >/dev/null || { echo "lua5.1 is not installed: the tests cannot run." >&2; exit 1; }
+for tool in lua5.1 luac5.1; do
+    command -v "$tool" >/dev/null || { echo "$tool is not installed: the tests cannot run." >&2; exit 1; }
+done
+# Every Lua test under a memory cap: a test that loops must fail fast, not take the computer down (2 GB of address space).
+lua() { (ulimit -v 2000000; lua5.1 "$@"); }
 
 dev/tests/lint
-lua5.1 dev/tests/core.lua
-lua5.1 dev/tests/abilities.lua
-lua5.1 dev/tests/tooltips.lua
-lua5.1 dev/tests/social.lua
-lua5.1 dev/tests/navigation.lua
-lua5.1 dev/tests/inventory.lua
-lua5.1 dev/tests/sheet.lua
-lua5.1 dev/tests/bags.lua
-lua5.1 dev/tests/combat.lua
-lua5.1 dev/tests/book.lua
-lua5.1 dev/tests/talents.lua
-lua5.1 dev/tests/nameplates.lua
-lua5.1 dev/tests/loot.lua
-lua5.1 dev/tests/economy.lua
-lua5.1 dev/tests/speedleveling.lua
-lua5.1 dev/tests/speedguide.lua
-lua5.1 dev/tests/classquests.lua
-lua5.1 dev/tests/lore.lua
-lua5.1 dev/tests/guild.lua
-lua5.1 dev/tests/sync.lua
-lua5.1 dev/tests/window.lua
-lua5.1 dev/tests/data.lua
+lua dev/tests/core.lua
+lua dev/tests/abilities.lua
+lua dev/tests/tooltips.lua
+lua dev/tests/social.lua
+lua dev/tests/navigation.lua
+lua dev/tests/inventory.lua
+lua dev/tests/sheet.lua
+lua dev/tests/bags.lua
+lua dev/tests/combat.lua
+lua dev/tests/book.lua
+lua dev/tests/talents.lua
+lua dev/tests/nameplates.lua
+lua dev/tests/loot.lua
+lua dev/tests/economy.lua
+lua dev/tests/speedleveling.lua
+lua dev/tests/speedguide.lua
+lua dev/tests/classquests.lua
+lua dev/tests/lore.lua
+lua dev/tests/guild.lua
+lua dev/tests/sync.lua
+lua dev/tests/window.lua
+lua dev/tests/data.lua
 python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
 python3 -I dev/tests/uilab.py

@@ -170,6 +170,9 @@ check("parchment: the game maps' yellow-orange, red over green over blue",
 # --- The walking data -----------------------------------------------------------------------------
 
 import base64  # noqa: E402
+import contextlib  # noqa: E402
+import io  # noqa: E402
+import json  # noqa: E402
 import zlib  # noqa: E402
 
 
@@ -186,8 +189,9 @@ def encoded(value):
     return bytes([head << 5 | {1: 24, 2: 25, 4: 26, 8: 27}[width]]) + size.to_bytes(width, "big") + body
 
 
-check("cbor: numbers, a negative one and arrays read back",
-      ml.cbor(encoded([1, [200, -3, 70000], []]))[0], [1, [200, -3, 70000], []])
+check("cbor: numbers, a negative one and arrays read back (walk-data's reader, which the tool shares)",
+      ml.decode(encoded([1, [200, -3, 70000], []])), [1, [200, -3, 70000], []])
+check("cbor: the tool's writer is walk-data's too", ml.cbor([1, [200, -3, 70000], []]), encoded([1, [200, -3, 70000], []]))
 packed = zlib.compressobj(9, zlib.DEFLATED, -15)
 # one tile: its north half a floor of land, its south half water, a strip at its east edge where nobody walks
 data = packed.compress(encoded([1, [1, 1, 0, 1, 2, 0], [0, 0, 240, 128, 0, 0, 128, 240, 128, 0], []])) + packed.flush()
@@ -218,9 +222,25 @@ check("water check: the walking data's water painted where it is passes",
       ml.water_check(walk, wet)["lost"] <= ml.FAR_WATER[1] and ml.water_check(walk, wet)["added"] <= ml.FAR_WATER[0], True)
 check("water check: its water painted as land fails", ml.water_check(walk, dry)["lost"] > ml.FAR_WATER[1], True)
 
-# --- An instance floor's map art ------------------------------------------------------------------
+# --- The set's file, the checks file --------------------------------------------------------------
 
 import tempfile  # noqa: E402
+
+with tempfile.TemporaryDirectory() as folder:
+    lines = [{"key": 5, "block": "x"}, {"key": 6, "block": "y"}, {"key": 5, "gone": True}, {"key": 6, "block": "z"}]
+    (Path(folder) / "Walking.jsonl").write_text("".join(json.dumps(line) + "\n" for line in lines))
+    check("walking: the newest line of each tile, a tile gone left out", ml.Walking(Path(folder) / "Walking.jsonl").blocks, {6: "z"})
+    check("checks: none yet", ml.checks_of(Path(folder)), {})
+    ml.save_checks(Path(folder), {"close-1-2": {"seed": 1}})
+    check("checks: saved through a temp file beside it (none left) and read back",
+          (ml.checks_of(Path(folder)), sorted(p.name for p in Path(folder).iterdir())),
+          ({"close-1-2": {"seed": 1}}, ["Walking.jsonl", "checks.json"]))
+    (Path(folder) / "checks.json").write_text('{"close-1-2": {"se')   # cut short by a run killed while writing
+    with contextlib.redirect_stdout(io.StringIO()) as told:
+        found = ml.checks_of(Path(folder))
+    check("checks: a file cut short counts as empty, told", (found, "not JSON" in told.getvalue()), ({}, True))
+
+# --- An instance floor's map art ------------------------------------------------------------------
 
 with tempfile.TemporaryDirectory() as folder:
     art = Path(folder)

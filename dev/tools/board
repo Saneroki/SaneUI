@@ -8,7 +8,9 @@ The board is one file, board.json in the private folder (~/.config/saneui/privat
 dev/tools/private-folder), written under a lock by whoever changes it: the page through this tool's server, a
 session through the commands below. Each change also writes Backlog.md beside it, the same cards as text, so
 the board reads in a diff and in a new chat. A card holds its title, notes, priority (high, medium, low), area,
-column, who made and changed it, and a short log of its steps.
+column, who made and changed it, how often it changed (changes), and a short log of its steps. The page sends a
+card's changes back with an edit, a move or a delete: a card changed meanwhile (a session's newer notes) is not
+written over but refused; the command line sends none, and is never refused.
 
 Usage:
   dev/tools/board [list]  [--all] [--column C] [--area A]   the cards, by column (Finalized only with --all)
@@ -112,6 +114,7 @@ def priority(value):
 
 def note(card, by, text):
     card["updated"], card["by"] = now(), by
+    card["changes"] = card.get("changes", 0) + 1
     card["log"] = (card.get("log", []) + [[now(), by, text]])[-LOG_KEEP:]
 
 
@@ -149,6 +152,8 @@ def apply(board, op, by):
         note(card, by, f"made in {name_of(key)}")
         return card
     card = find(board, op["id"])
+    if op.get("changes") is not None and int(op["changes"]) != card.get("changes", 0):
+        raise ValueError(f"#{card['id']} was changed meanwhile: look at it again")
     if kind == "edit":
         changed = []
         for field in ("title", "notes", "area", "priority"):
@@ -180,8 +185,8 @@ def name_of(key):
 def markdown(board):
     """The board as text: Backlog.md, written with every change."""
     lines = ["# Backlog", "",
-             "Written by the task board with every change (`saneui board`, the page on 127.0.0.1 port 8775); "
-             "change the board, not this file.", ""]
+             "Written by the task board with every change (`saneui board`; the page `saneui showboard`, "
+             "127.0.0.1 port 8768, `/board/`); change the board, not this file.", ""]
     for key, name, means in COLUMNS:
         cards = [c for c in board["cards"] if c["column"] == key]
         lines += [f"## {name} ({len(cards)})", "", f"*{means}*", ""]

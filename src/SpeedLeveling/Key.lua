@@ -241,8 +241,9 @@ function Key.Macros(names, use)
 end
 
 -- Find's macros now: the hearth the guide's step wants (the switch Hearthstone), else the wanted names with one item
--- for when none is found (the switch Quest items). In a fight (fighting): the names alone.
-function Key.Find(fighting)
+-- for when none is found (the switch Quest items). In a fight (fighting): the names alone. names: what is wanted, where
+-- the caller asked for it already (Key.Refresh asks once for all it does).
+function Key.Find(fighting, names)
     local items, spells
     if ns.options.guide then items, spells = ns.Guide.Uses() end
     if not fighting and ns.options.hearth then
@@ -254,7 +255,7 @@ function Key.Find(fighting)
         end
     end
     local use = not fighting and ns.options.items and ns.Items.Pick(items) or nil
-    return Key.Macros((ns.Wanted.Names()), use)
+    return Key.Macros(names or (ns.Wanted.Names()), use)
 end
 
 -- The macro of Fight: your living foe marked (the switch) and attacked.
@@ -264,6 +265,11 @@ end
 
 local function Write(button, text)
     if button:GetAttribute("macrotext") ~= text then button:SetAttribute("macrotext", text) end
+end
+
+-- The header told only what changed: each attribute set runs its snippet, the bindings anew.
+local function Set(name, value)
+    if header:GetAttribute(name) ~= value then header:SetAttribute(name, value) end
 end
 
 local function WriteFind(texts)
@@ -416,13 +422,15 @@ function Key.Refresh()
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: refresh", Key.refreshLater) end
     local thing, target = soft or Core.Ask(UnitGUID, "softinteract"), Core.Ask(UnitGUID, "target")
     ns.Quests.Moved(thing, target)
-    header:SetAttribute("wanted", ns.Wanted.Unit("target") and not ns.Quests.Left(target, true))
-    header:SetAttribute("corpse", Walks() and Spoils("target") or false)
-    local left = looking ~= nil or ns.Quests.Left(thing, ns.Wanted.Unit("softinteract"))
-    header:SetAttribute("left", left)
-    header:SetAttribute("npc", not left and Talkable(thing))
-    header:SetAttribute("object", not looking and ns.options.objects and ns.Wanted.Object(thing) or false)
-    WriteFind(Key.Find())
+    -- What is wanted, asked once for all of it: your target, the thing in front of you and Find's macros.
+    local names, have = ns.Wanted.Names()
+    Set("wanted", ns.Wanted.Unit("target", have) and not ns.Quests.Left(target, true))
+    Set("corpse", Walks() and Spoils("target") or false)
+    local left = looking ~= nil or ns.Quests.Left(thing, ns.Wanted.Unit("softinteract", have))
+    Set("left", left)
+    Set("npc", not left and Talkable(thing))
+    Set("object", not looking and ns.options.objects and ns.Wanted.Object(thing) or false)
+    WriteFind(Key.Find(false, names))
     Aim()
 end
 Key.refreshLater = Later(Key.Refresh)
@@ -445,9 +453,9 @@ Key.keysLater = Later(Key.Keys)
 -- No key on the profile Speedleveling: it gets Key.FIRST, once, and the chat says so; one taken off again stays off,
 -- and the module says so at every login. The game keeps key bindings per account, so a new account starts without it,
 -- and a key may still be bound to a button that is gone (Saneroki, 2026-10-29: E did nothing). The other profiles have
--- key bindings of their own, without it (Saneroki, 2026-10-30).
+-- key bindings of their own, without it (Saneroki, 2026-10-30). Nothing until the keys were read (keys nil).
 local function FirstKey()
-    if not header or ns.off or #keys > 0 or not Core.Profiles.Leveling() then return end
+    if not header or ns.off or not keys or #keys > 0 or not Core.Profiles.Leveling() then return end
     if ns.options.keyGiven then return Core.Print(ns.TEXT.hint) end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: first key", Key.firstLater) end
     ns.options.keyGiven = true
@@ -467,7 +475,7 @@ function Key.Update()
     if ns.options.loot or ns.options.objects or ns.options.talk then Lend() else PutBack() end
     if not looking then Reach(false) end
     Write(fight, Attack())
-    header:SetAttribute("talk", ns.options.talk and true or false)
+    Set("talk", ns.options.talk and true or false)
     RegisterStateDriver(header, "mode", (ns.options.loot and LOOT or "") .. FIGHT .. (ns.options.talk and NEAR or "")
         .. REST)
     Key.Refresh()
@@ -568,9 +576,10 @@ function Key.GiveBack()
 end
 
 -- After a rest (no switch on, then one is): the header hears again, the settings lent, the action due put on the key's
--- keys anew.
+-- keys anew. A key never made is made now: its start waited for a fight's end at the login, and the module rested by
+-- then (a guarded step does nothing while it rests).
 function Key.Wake()
-    if not header then return end
+    if not header then return Key.Start() end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: wake", Key.wakeLater) end
     header:SetAttribute("_onattributechanged", ON_CHANGE)
     header:SetAttribute("keys", 0)

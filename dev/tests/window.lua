@@ -1251,7 +1251,6 @@ check(not plain:IsShown() and not plainWindow.edge.away and not plainBar:IsShown
 -- A window that holds the game's protected frames, in a fight ---------------------------------------
 wide:Hide() -- (they hold the left zone and the middle; a zone holds one window at a time)
 trader:Hide()
-function methods:IsProtected() return self._protected or false end
 local secure = CreateFrame("Frame", nil, UIParent)
 local secureStore = { place = { x = 0, y = 690, width = 400, height = 300, dock = "LEFT", full = true } }
 local secureWindow = Window.New(secure, {
@@ -1269,10 +1268,12 @@ check(secureWindow:Locked() and secureWindow.zone == "LEFT", "in a fight it is n
 check(not secureWindow:Draggable() and not secureWindow.usable(), "nor dragged, nor sized")
 secureWindow.edge:Fill(true)
 check(not secureWindow.edge.full, "nor does it fill the screen")
-secure:Hide()
+-- Hidden by the game's own key in the fight (secure code, which the game does not block; the stand-in blocks
+-- every call on a protected frame in one): the test lifts the fight around the game's own call.
+W.combat = false; secure:Hide(); W.combat = true
 check(secureWindow:Open() == "locked" and not secure:IsShown(), "asked for (the game's key), it says it may not be shown: the module lets the game's own")
-secure:Show()
 W.combat = false
+secure:Show()
 W.Fire("PLAYER_REGEN_ENABLED")
 check(secureWindow.zone == "CENTER", "the fight over, the placing it waited for is done")
 at(secure, 760, 390)
@@ -1393,6 +1394,12 @@ do
     local pickedWindow = Window.New(picked, { store = pickedStore, title = "Auction House", dock = true, sizable = true,
         first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
     pickedWindow:Place()
+    local small = CreateFrame("Frame", nil, UIParent)
+    small.GetEffectiveScale = function() return 0.5 end -- half the screen's scale (Combat's unit frames)
+    small:SetSize(200, 100)
+    local smallStore = {}
+    local smallWindow = Window.New(small, { store = smallStore, title = "Player", first = { point = "CENTER", x = 0, y = 0 } })
+    smallWindow:Place()
     EventRegistry:TriggerEvent("EditMode.Enter")
     local pickedBox = pickedWindow.box
     pickedBox:GetScript("OnMouseDown")(pickedBox)
@@ -1411,6 +1418,13 @@ do
     check(pickedStore.place.x == 110 and pickedStore.place.y == 690 and stands(picked, "TOPLEFT", 110, 690),
         "let go free near a line of Edit Mode's grid while the game snaps to it, its edges are put on the lines")
     check(panel.reset:IsEnabled(), "moved, the dialog can put it back")
+    -- A window of another scale than the screen's is snapped in the screen's units (its edges where they are on
+    -- the screen) and kept in its own: at 226, 994 of its own it stands at 113, 497 of the screen's
+    at(small, 226, 994)
+    smallWindow.box:GetScript("OnDragStart")(smallWindow.box)
+    smallWindow.box:GetScript("OnDragStop")(smallWindow.box)
+    check(smallStore.place.x == 220 and smallStore.place.y == 1080 and stands(small, "TOPLEFT", 220, 1080),
+        "a scaled window snaps where its edges are on the screen, and is kept in its own units")
     snapping = false
     at(picked, 113, 497)
     pickedBox:GetScript("OnDragStart")(pickedBox)
@@ -1427,6 +1441,7 @@ do
     check(not panel:IsShown() and selection.window == nil and talkWindow.box.Center._atlas == "editmode-actionbar-highlight",
         "Edit Mode closed, nothing is chosen and the dialog is gone")
     picked:Hide()
+    small:Hide()
     manager.IsSnapEnabled, manager.Grid = nil, nil
 end
 rawset(_G, "EditModeManagerFrame", nil)
@@ -1977,7 +1992,8 @@ do
     -- on it then brings nothing of ours.
     atlas.frame:Hide()
     gameMap:Show()
-    W.combat = true
+    W.Combat(true)
+    check(button:IsProtected(), "(the button is protected, by its template: the stand-in refuses every Show and Hide of it in the fight)")
     gameMap:Hide()
     check(button:IsShown() and button:GetAlpha() == 0, "in a fight the game's window closed: its button stays, clear")
     button:GetScript("PreClick")(button)
@@ -1989,8 +2005,7 @@ do
     gameMap:Hide() -- the secure click closes the game's window before ours comes
     button:GetScript("PostClick")(button)
     check(atlas.frame:IsShown(), "pressed while seen, ours comes, though the game's window is gone by then")
-    W.combat = false
-    W.Fire("PLAYER_REGEN_ENABLED")
+    W.Combat(false)
     check(not button:IsShown() and button:GetAlpha() == 1, "the fight over, it goes with the game's window, seen when it comes")
     atlas.frame:Hide()
     W.Wait(1)
@@ -2042,9 +2057,15 @@ end
         and told[#told - 1] == "own hidden" and told[#told] == "guest shown",
         "another window offered under that key: the one before is told it is hidden, the new one has a panel of its own")
     Core.Board.Withdraw("Boarded", "guild")
-    check(board.panels.guild.spec == own and board.panels.guild ~= second and not second:IsShown() and built[#built] == "own"
+    check(board.panels.guild == first and first:IsShown() and not second:IsShown() and built[#built] == "guest"
         and told[#told - 1] == "guest hidden" and told[#told] == "own shown",
-        "withdrawn, the board's own stands there again, in a panel built for it")
+        "withdrawn, the board's own stands there again, in the panel built for it before, not one built anew")
+    local builds = #built
+    Core.Board.Offer("Boarded", guest)
+    check(board.panels.guild == second and second:IsShown() and not first:IsShown() and #built == builds and told[#told] == "guest shown",
+        "offered again, the guest has its own panel again")
+    Core.Board.Withdraw("Boarded", "guild")
+    check(board.panels.guild == first and #built == builds, "two panels in all, however often the key changes hands")
 
     local strip, line = board.strips[1], board.strips[1].of
     local before, watching = #W.frames, nil
@@ -2059,6 +2080,25 @@ end
     Core.Board.Release(true)
     check(dragged ~= line[3] and strip._points[1][4] == line[3] and sized == laid,
         "a line let go as it was: only its strip goes back over the gap, nothing is laid out anew")
+    W.cursorX, W.cursorY = 0, 0
+
+    -- A head held: where it would go is looked for every frame, its shape drawn anew only when that changes (the
+    -- ghost's level is read from the board's inside each time it is drawn); let go in another window's middle, the two swap
+    local talksRect, looks, level = board.rects.talks, 0, handle.inside.GetFrameLevel
+    handle.inside.GetFrameLevel = function(self) looks = looks + 1 return level(self) end
+    board:Lift(board.panels.guild)
+    W.cursorX, W.cursorY = talksRect[1] + talksRect[3] * 0.9, -(talksRect[2] + talksRect[4] / 2)
+    watching:GetScript("OnUpdate")(watching)
+    watching:GetScript("OnUpdate")(watching)
+    check(looks == 1, "the shape of where a held window would go is drawn once while that stays the same")
+    W.cursorX = talksRect[1] + talksRect[3] / 2
+    watching:GetScript("OnUpdate")(watching)
+    check(looks == 2, "and anew when it changes")
+    handle.inside.GetFrameLevel = nil
+    Core.Board.Release(false)
+    local kept = store.layouts
+    local tree = kept.tabs[kept.chosen].tree
+    check(tree.parts[1].key == "talks" and tree.parts[2].key == "guild", "let go in the other window's middle, the two swap places")
     W.cursorX, W.cursorY = 0, 0
 
     store.layouts = { chosen = 2, tabs = { true, { name = 5, tree = { split = "x", parts = { "junk", { key = 7 }, { key = "guild" } } } } } }
@@ -2225,6 +2265,44 @@ do
     check(menus == 1, "a right click on the box: its menu")
     unlocked:Unlock(false)
     check(not box:IsShown() and not unlocked.usable(), "locked again")
+end
+
+-- A window that grows from its bottom left corner (Combat's group frames): what is kept is its top left corner, so
+-- that moves up by the growth and the bottom stays. Its height hidden from addons (a secret, through Core.Plain):
+-- the growth is taken from the height given, nothing of ours computes with the secret.
+do
+    local grown = CreateFrame("Frame", "GrownWindow", UIParent)
+    grown:SetSize(200, 100)
+    local grownStore = { place = { x = 100, y = 300 } }
+    local grownWindow = Window.New(grown, { store = grownStore, title = "Party", first = { point = "CENTER", x = 0, y = 0 } })
+    grownWindow:Place()
+    grownWindow:GrowFromBottom(200, 150)
+    check(grownStore.place.y == 350 and stands(grown, "TOPLEFT", 100, 350) and grown:GetHeight() == 150,
+        "grown from its bottom: its top left corner, the kept one, moves up by the growth, so its bottom stays")
+    grown.GetHeight = function() return W.Secret() end -- hidden from addons in a fight (a secret)
+    grownWindow:GrowFromBottom(200, 200)
+    check(grownStore.place.y == 350 and stands(grown, "TOPLEFT", 100, 350) and grown._height == 200,
+        "its height a secret, the growth is taken from the height given: nothing of ours computes with the secret")
+end
+
+-- The game hides its whole interface for a movie (UIParent): every window hears its OnHide with it, and the stand-in
+-- for Esc goes with it, still shown itself, so it closes nothing; the interface back, a window shown throughout
+-- hears its OnShow with its parent's and is Esc's again.
+do
+    local scene = CreateFrame("Frame", "MovieWindow", UIParent)
+    scene:SetSize(100, 100)
+    local closed = 0
+    local movie = Window.New(scene, { store = {}, key = "scene", title = "Scene", first = { point = "TOP", x = 0, y = 0 },
+                                      escape = "close", close = function() closed = closed + 1; scene:Hide() end })
+    movie:Place()
+    check(SaneUIEscape:IsShown(), "shown, the window is Esc's")
+    UIParent:Hide()
+    check(closed == 0 and scene:IsShown() and not SaneUIEscape:IsShown(),
+        "the game's interface hidden for a movie: the stand-in for Esc is hidden with its parent, not by Esc, and closes nothing")
+    UIParent:Show()
+    check(closed == 0 and scene:IsShown() and SaneUIEscape:IsShown(), "the interface back, the window is Esc's again")
+    SaneUIEscape:Hide()
+    check(closed == 1 and not scene:IsShown(), "and Esc closes it")
 end
 
 print = nil -- the stand-in's print; use the real one for the summary

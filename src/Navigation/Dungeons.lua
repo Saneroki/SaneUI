@@ -106,6 +106,8 @@ local walking     -- the walk's job while it runs
 local list        -- the dungeons, asked of the game once: { map = its first floor, name, floors = { { map, name } } }
 local shown       -- the floor shown, nil while the map is
 local floors      -- the floors of the dungeon shown (one at least)
+local kept        -- what the floor shown is drawn from, gathered once (Gather): its art, bosses, enemies and instance
+local NONE = {}
 local zoom, panX, panY = 1, 0, 0 -- the zoom (1: whole), the art's middle from the view's, in screen units
 local dragX, dragY -- where the cursor was at the last step of a drag
 
@@ -257,9 +259,10 @@ local function Fit(art)
     return math.min(width / art.width, height / art.height)
 end
 
--- The art where the zoom and the drag put it; never so far that it leaves the view's middle.
+-- The art where the zoom and the drag put it; never so far that it leaves the view's middle. Every frame of a drag:
+-- what it places was gathered once (kept), it only moves it.
 local function Place()
-    local art = shown and ArtOf(shown)
+    local art = kept and kept.art
     if not art then return end
     local scale = Fit(art) * zoom
     local halfX, halfY = art.width * scale / 2, art.height * scale / 2
@@ -274,7 +277,7 @@ end
 -- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's).
 local function Draw()
     for _, texture in ipairs(tiles) do texture:Hide() end
-    local art = ArtOf(shown)
+    local art = kept and kept.art
     if not art then return end
     content:SetSize(art.width, art.height)
     local index = 0
@@ -321,7 +324,7 @@ local updating = ns.Guard(Update) -- made once: set at every drag
 
 -- The wheel: nearer or farther around the point under the mouse, which stays where it is.
 local function Wheel(_, delta)
-    local art = shown and ArtOf(shown)
+    local art = kept and kept.art
     if not art then return end
     local was = zoom
     zoom = math.max(1, math.min(Dungeons.NEAR, zoom * ns.Camera.STEP ^ delta))
@@ -665,7 +668,7 @@ local function Stand(mark, display, x, y)
     return inside
 end
 
--- The bosses of the floor shown, as the set has them: { name, x, y } (0 to 1 on the floor's map), in their order.
+-- The bosses of a floor, as the set has them: { name, x, y } (0 to 1 on the floor's map), in their order.
 function Dungeons.Bosses(map)
     local _, floor = Entry(map)
     if not floor or not floor.data then return {} end
@@ -679,7 +682,7 @@ function Dungeons.Bosses(map)
     return found
 end
 
--- The enemies of the floor shown, as the set has them: { npc, x, y } (0 to 1 on the floor's map).
+-- The enemies of a floor, as the set has them: { npc, x, y } (0 to 1 on the floor's map).
 function Dungeons.Enemies(map)
     local _, floor = Entry(map)
     if not floor or not floor.data then return {} end
@@ -688,6 +691,15 @@ function Dungeons.Enemies(map)
         if enemy.floor == floor.data.floor and enemy.x and enemy.y then found[#found + 1] = enemy end
     end
     return found
+end
+
+-- What a floor is drawn from, gathered once as it is shown (Dungeons.Show; the set come since: Build) and kept until
+-- the view goes (Close): its art, its bosses and enemies as the set has them, and its instance (the enemies'
+-- tooltips). Each walks every dungeon's floors (Entry): not at every step of a drag (Place).
+local function Gather(map)
+    local _, floor = Entry(map)
+    return { art = ArtOf(map), bosses = Dungeons.Bosses(map), enemies = Dungeons.Enemies(map),
+             instance = floor and floor.instance }
 end
 
 local function FoeTip(foe)
@@ -719,13 +731,12 @@ end
 
 -- Each enemy's mark where it stands, as the bosses' are placed, under them; those of no enemy hidden.
 function Dungeons.PlaceEnemies(art, scale)
-    local enemies = shown and Dungeons.Enemies(shown) or {}
-    local _, floor = Entry(shown)
+    local enemies = kept and kept.enemies or NONE
     local base = over:GetFrameLevel()
     for index, enemy in ipairs(enemies) do
         local foe = foes[index] or Foe()
         foes[index] = foe
-        foe.npc, foe.instance = enemy.npc, floor and floor.instance
+        foe.npc, foe.instance = enemy.npc, kept.instance
         foe:ClearAllPoints()
         foe:SetPoint("CENTER", frame, "CENTER", panX + (enemy.x - 0.5) * art.width * scale,
             panY - (enemy.y - 0.5) * art.height * scale)
@@ -738,7 +749,7 @@ end
 -- Each boss's mark where it stands on the art as the zoom and the drag put it (scale: the art's), its model on
 -- it, the same size at every zoom; one lower on the screen in front of one behind it; the marks of no boss hidden.
 function Dungeons.PlaceBosses(art, scale)
-    local bosses = shown and Dungeons.Bosses(shown) or {}
+    local bosses = kept and kept.bosses or NONE
     local base = over:GetFrameLevel()
     for index, boss in ipairs(bosses) do
         local mark = marks[index] or Mark()
@@ -790,7 +801,10 @@ function Dungeons.Build(canvasFrame)
     SET:OnStamp(ns.Guard(function()
         fromData, list = nil, nil
         Walk()
-        if shown then Draw() end
+        if shown then
+            kept = Gather(shown)
+            Draw()
+        end
     end))
     return frame
 end
@@ -803,6 +817,7 @@ function Dungeons.Show(map)
     if not entry or not ArtOf(map) then return false end
     map = floor.map
     shown, floors = map, entry.floors
+    kept = Gather(map)
     zoom, panX, panY, dragX = 1, 0, 0, nil
     frame:SetFrameLevel(canvas:GetFrameLevel() + Dungeons.LEVEL)
     frame:Show()
@@ -814,7 +829,7 @@ end
 -- The map again: the dungeon's view goes (the window going small, a map chosen in the bar).
 function Dungeons.Close()
     if not frame or not shown then return end
-    shown, floors, dragX = nil, nil, nil
+    shown, floors, kept, dragX = nil, nil, nil, nil
     frame:SetScript("OnUpdate", nil)
     frame:Hide()
     for _, texture in ipairs(tiles) do texture:SetTexture(nil) end -- its files let go

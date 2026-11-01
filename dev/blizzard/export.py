@@ -272,8 +272,11 @@ def xml_signature(node):
 class Export:
     """An export read whole: its symbols, the names it mentions anywhere, its addons and files."""
 
-    def __init__(self, root, label=None, build=None, game=None):
+    def __init__(self, root, label=None, build=None, game=None, addons=None):
+        """addons: the names of the addon folders to read, for a tool that wants a few of them (their loaded files
+        and symbols; no file hashes, no documentation): a whole export takes seconds, two addons a moment."""
         self.root = Path(root)
+        self.only = set(addons) if addons else None
         self.interface = self.root / "Interface"
         self.build = build or build_of(self.root)
         self.game = game or game_of(self.root)
@@ -294,12 +297,15 @@ class Export:
         return path.relative_to(self.interface).as_posix()
 
     def _read(self):
-        for path in sorted(self.interface.rglob("*")):
-            if path.is_file():
-                # The same text with other line ends is the same file (the game writes CRLF).
-                self.files[self.rel(path)] = hashlib.sha1(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()[:16]
+        if self.only is None:
+            for path in sorted(self.interface.rglob("*")):
+                if path.is_file():
+                    # The same text with other line ends is the same file (the game writes CRLF).
+                    self.files[self.rel(path)] = hashlib.sha1(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()[:16]
         addons = self.interface / "AddOns"
         for folder in sorted(p for p in addons.iterdir() if p.is_dir()):
+            if self.only is not None and folder.name not in self.only:
+                continue
             if folder.name == DOCS:
                 self._documentation(folder)
                 continue

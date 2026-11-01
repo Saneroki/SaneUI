@@ -31,7 +31,6 @@ local Loot = {}
 Data.Loot = Loot
 Loot.CORPSE = 900   -- seconds a source looted is remembered (each corpse counts once)
 Loot.CAST = 3       -- seconds before the window within which the player's cast is what opened it
-Loot.blind = nil    -- true once the game showed it gives no source per slot: nothing counted
 
 local PICKPOCKET = { [921] = true } -- the game's spell Pick Pocket
 -- The casts that gather from a corpse or a node, by their names in the set Spells
@@ -45,13 +44,13 @@ local sources = {}  -- [GUID] = { at = GetTime() of its last count, hows = { [ho
 local cast          -- the player's last spell that went off: { spell, at }
 local aim           -- the player's last spell sent: { name = what it was aimed at, as the game says it }
 
-Core.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spell)
-    if unit ~= "player" then return end
+-- The player's casts alone (Core.OnUnit): the game sends these for every unit about, many times a second in a fight.
+Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", function(_, _, spell)
     cast = { spell = Core.Plain(spell), at = GetTime() }
 end)
 
-Core.On("UNIT_SPELLCAST_SENT", function(unit, target)
-    if unit == "player" then aim = { name = Core.Plain(target) } end
+Core.OnUnit("UNIT_SPELLCAST_SENT", "player", function(_, target)
+    aim = { name = Core.Plain(target) }
 end)
 
 -- The kind and ID a GUID names: "npc" for a creature, "object" for a thing; nil for anything else.
@@ -125,7 +124,6 @@ local function Slots(fishing)
     local count = Core.Ask(rawget(_G, "GetNumLootItems")) or 0
     local bySource, names, all, loose = {}, {}, {}, {}
     local sourceOf = rawget(_G, "GetLootSourceInfo")
-    if not sourceOf and not fishing then Loot.blind = true end
     for slot = 1, count do
         local link = Core.Ask(rawget(_G, "GetLootSlotLink"), slot)
         local item = type(link) == "string" and tonumber(link:match("item:(%d+)")) or nil

@@ -4,10 +4,13 @@
 
 The game's options name a CVar where they show it: a call Settings.SetupCVarCheckbox, SetupCVarSlider or
 SetupCVarDropdown (CVar, ..., label, tooltip) or Settings.RegisterCVarSetting (CVar, ..., label), in
-Blizzard_SettingsDefinitions_Frame and _Shared. This tool reads those calls and keeps, for each CVar, the
-names of the two global strings: the one that labels it and the one that explains it (AUTO_LOOT_DEFAULT_TEXT,
-OPTION_TOOLTIP_AUTO_LOOT_DEFAULT). Never the words themselves: the game has them, in its own language. A
-label the options build in code (a format, a function call) is not a global string and is skipped.
+Blizzard_SettingsDefinitions_Shared and _Frame. This tool reads those calls in the files of the two addons that
+this client loads, in their load order (dev/blizzard/export.py reads their TOCs with the client's load conditions:
+a file of another game's is left out), and keeps, for each CVar, the names of the two global strings: the one
+that labels it and the one that explains it (AUTO_LOOT_DEFAULT_TEXT, OPTION_TOOLTIP_AUTO_LOOT_DEFAULT). Never the
+words themselves: the game has them, in its own language. A label the options build in code (a format, a
+function call) is not a global string and is skipped. A CVar set up twice keeps the last call the client loads,
+as the game runs the last definition (a Camelot override's over a base file's).
 
 The file it writes is one table, keyed by the CVar's name in lower case, each entry with the fields
 label and tip (tip only where the options give one), sorted by key.
@@ -31,8 +34,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
 import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
 # BLIZZARD_CODE: another export than the newest (dev/tools/blizzard check reads another build's so).
-ADDONS = Path(os.environ.get("BLIZZARD_CODE") or exports.required("code")) / "Interface" / "AddOns"
-FOLDERS = ("Blizzard_SettingsDefinitions_Frame", "Blizzard_SettingsDefinitions_Shared")
+CODE = Path(os.environ.get("BLIZZARD_CODE") or exports.required("code"))
+ADDONS = CODE / "Interface" / "AddOns"
+# The two addons, in the order the game loads them (_Frame depends on _Shared).
+FOLDERS = ("Blizzard_SettingsDefinitions_Shared", "Blizzard_SettingsDefinitions_Frame")
 OUTPUT = ROOT / "src" / "Core" / "Settings" / "Data" / "CVarLabels.lua"
 STAGING = ROOT / "dev" / "data" / "staging" / "cvar-labels.jsonl"
 
@@ -71,24 +76,30 @@ def split_arguments(text, start):
     return parts
 
 
-def read_options():
-    """{ cvar in lower case: (label, tip or None) }; the first call that names a tip wins."""
-    found = {}
+def files(export):
+    """The Lua files of the two addons this client loads, in their load order: _Shared's, then _Frame's, each
+    addon's as the export read its TOC (the client's load conditions, the scripts its XML files name)."""
+    found = []
     for folder in FOLDERS:
-        for path in sorted((ADDONS / folder).rglob("*.lua")):
-            text = path.read_text(encoding="utf-8", errors="replace")
-            for call in CALL.finditer(text):
-                kind, cvar = call.group(1), call.group(2)
-                args = split_arguments(text, call.end())
-                at_label, at_tip = WHERE[kind]
-                label = args[at_label] if at_label < len(args) else ""
-                tip = args[at_tip] if at_tip is not None and at_tip < len(args) else ""
-                if not STRING_NAME.match(label):
-                    continue
-                tip = tip if STRING_NAME.match(tip) else None
-                key = cvar.lower()
-                if key not in found or (found[key][1] is None and tip):
-                    found[key] = (label, tip)
+        found += [export.interface / rel for rel in export.loaded
+                  if rel.startswith(f"AddOns/{folder}/") and rel.lower().endswith(".lua")]
+    return found
+
+
+def read_options(export):
+    """{ cvar in lower case: (label, tip or None) }; a CVar set up twice keeps the last call the client loads."""
+    found = {}
+    for path in files(export):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for call in CALL.finditer(text):
+            kind, cvar = call.group(1), call.group(2)
+            args = split_arguments(text, call.end())
+            at_label, at_tip = WHERE[kind]
+            label = args[at_label] if at_label < len(args) else ""
+            tip = args[at_tip] if at_tip is not None and at_tip < len(args) else ""
+            if not STRING_NAME.match(label):
+                continue
+            found[cvar.lower()] = (label, tip if STRING_NAME.match(tip) else None)
     return found
 
 
@@ -114,18 +125,25 @@ def write_staging(found, build):
     return "\n".join(lines) + "\n"
 
 
+def replace_text(path, text):
+    """Writes a file whole beside its target, then moves it over it: never half a file in the repository."""
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(text, encoding="utf-8")
+    os.replace(temp, path)
+
+
 def main():
     args = sys.argv[1:]
     check = "--check" in args
     if not ADDONS.is_dir():
-        sys.exit(f"Blizzard's code is not in {ADDONS.relative_to(ROOT)}: nothing to read.")
-    found = read_options()
+        sys.exit(f"Blizzard's code is not in {ADDONS}: nothing to read.")
+    found = read_options(exports.Export(CODE, addons=FOLDERS))
     if "--staging" in args:
         at = args.index("--staging")
         target = Path(args[at + 1]) if at + 1 < len(args) and not args[at + 1].startswith("--") else STAGING
         build = int(args[args.index("--build") + 1]) if "--build" in args else 0
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(write_staging(found, build), encoding="utf-8")
+        replace_text(target, write_staging(found, build))
         print(f"Wrote staging {target}: {len(found)} CVars.")
         return
     text = write_lua(found)
@@ -134,7 +152,7 @@ def main():
         print("up to date" if current == text else f"{OUTPUT.relative_to(ROOT)} would change")
         sys.exit(0 if current == text else 1)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(text, encoding="utf-8")
+    replace_text(OUTPUT, text)
     print(f"Wrote {OUTPUT.relative_to(ROOT)}: {len(found)} CVars.")
 
 

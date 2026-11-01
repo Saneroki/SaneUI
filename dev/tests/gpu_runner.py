@@ -37,8 +37,8 @@ def check(name, got, want):
 # --- The job list --------------------------------------------------------------------------------
 
 settings, jobs = runner.load_jobs(runner.JOBS)
-check("jobs.toml reads", isinstance(jobs, list), True)
-check("jobs.toml: its settings are the defaults", {k: settings[k] for k in runner.DEFAULTS}, runner.DEFAULTS)
+check("jobs.toml reads and names at least one job", isinstance(jobs, list) and len(jobs) > 0, True)
+check("jobs.toml: every job has a name and a command of words", all(j.get("name") and isinstance(j.get("command"), list) and j["command"] for j in jobs), True)
 
 listed = TEMP / "jobs.toml"
 listed.write_text("""hold = 30
@@ -74,9 +74,17 @@ state = {}
 half["name"] = "h"
 check("next: done by its status is finished", runner.next_job([done, half], state, 3)["name"], "h")
 check("next: ... and kept so", bool(state.get("d", {}).get("finished")), True)
+check("next: ... and written down", bool(runner.read_json(runner.STATE / "state.json", {}).get("d", {}).get("finished")), True)
+runner.write_state("h", {"failures": 1})
+check("state: one entry written, the others kept", sorted(runner.read_json(runner.STATE / "state.json", {})), ["d", "h"])
+runner.write_state("d", None)
+check("state: an entry taken out", runner.read_json(runner.STATE / "state.json", {}), {"h": {"failures": 1}})
+check("state: no passing file left", sorted(runner.STATE.glob("*.tmp")), [])
+(runner.STATE / "state.json").unlink()
 
 for bad, why in (('[[job]]\nname = "x"\n', "no command"),
-                 ('[[job]]\nname = "x"\ncommand = ["a"]\n[[job]]\nname = "x"\ncommand = ["b"]\n', "twice")):
+                 ('[[job]]\nname = "x"\ncommand = ["a"]\n[[job]]\nname = "x"\ncommand = ["b"]\n', "twice"),
+                 ('[[job]]\nname = "x"\ncommand = "dev/tools/atlas paint"\n', "a command as one string")):
     listed.write_text(bad)
     try:
         runner.load_jobs(listed)
@@ -130,6 +138,10 @@ looks["queue"] = None
 check("ComfyUI not there", watch.reasons(set()), [])
 looks["games"] = ["the game (WowB.exe, 7)"]
 check("the game", watch.reasons(set()), ["the game (WowB.exe, 7)"])
+check("the same card user with other numbers is no news",
+      runner.gist(["firefox (3) uses 61 % of the card", "WowB.exe (2) holds 3001 MiB of the card"]),
+      runner.gist(["firefox (3) uses 44 % of the card", "WowB.exe (2) holds 2999 MiB of the card"]))
+check("another user is news", runner.gist(["firefox (3) uses 61 % of the card"]) != runner.gist(["firefox (4) uses 61 % of the card"]), True)
 looks["games"] = []
 runner.STATE.mkdir(parents=True, exist_ok=True)
 runner.PAUSED.touch()
@@ -194,6 +206,11 @@ check("live: one switched to and finished ...", becomes(lambda: bool(runner.read
                                                                       .get("quick", {}).get("finished")), True), True)
 check("... is no longer first", becomes(lambda: runner.FIRST.exists(), False), False)
 check("... and the priorities go on", becomes(name, "new"), "new")
+listed.write_text(listed.read_text() + '[[job]]\nname = "typo"\npriority = 20\ncomfyui = false\ncommand = ["saneui-no-such-program"]\n')
+failures = lambda: runner.read_json(runner.STATE / "state.json", {}).get("typo", {}).get("failures")
+check("live: a job whose program is not there fails, tries times", becomes(failures, 3), 3)
+check("live: ... and is left, the others go on", becomes(name, "new"), "new")
+check("live: the runner survived it", thread.is_alive(), True)
 live.quit = True
 thread.join(5)
 live.shut()

@@ -67,6 +67,8 @@ local Core = SaneUI.Core
 --      board:Has(key)                     -- in the layout laid out last
 --      board:Forget(key)                  -- a window that is no more (a chat view removed): out of every layout
 --      board.panels[key]                  -- its panel, once made
+--      board.made[spec]                   -- every panel made, by the spec it was built for: one back under its
+--                                         -- key (Board.Offer, Withdraw) is its own again, not built anew
 -------------------------------------------------------------------------------
 local Board = {}
 Core.Board = Board
@@ -132,18 +134,6 @@ function Board.Holds(node, key)
         if Board.Holds(part, key) then return true end
     end
     return false
-end
-
--- The windows of a layout, in its order.
-function Board.Keys(node, keys)
-    keys = keys or {}
-    if type(node) ~= "table" then return keys end
-    if node.key then
-        keys[#keys + 1] = node.key
-    else
-        for _, part in ipairs(node.parts or {}) do Board.Keys(part, keys) end
-    end
-    return keys
 end
 
 -- Shares that make one together, each in proportion to what it was.
@@ -400,9 +390,10 @@ end
 -------------------------------------------------------------------------------
 --  Holding a line or a head
 -------------------------------------------------------------------------------
-local held       -- what is held: { board, line = ..., panel = ... }
+local held       -- what is held: { board, line = ..., strip = ... } or { board, panel = ..., onto = ..., side = ... }
 local watcher    -- runs while something is held
 local ghost      -- the tinted shape of where a window would go
+local room = {}  -- the room a held window would take: one table, filled anew at every look (Target)
 
 -- The mouse in the board's room: from the inside's top left, down.
 local function Pointer(board)
@@ -428,35 +419,43 @@ local function Shape(board, rect)
     ghost:Show()
 end
 
--- Where a window held by its head would go: { target key or nil, side or "swap" } and the room it would take;
--- nil: nowhere (on itself, between windows).
+local function Room(left, top, width, height)
+    room[1], room[2], room[3], room[4] = left, top, width, height
+    return room
+end
+
+-- Where a window held by its head would go: the window it is over (its key; nil at a side of the whole screen),
+-- the side of that one it would take (or "swap", in its middle) and the room it would take; nothing: nowhere (on
+-- itself, between windows). It runs every frame while a head is held: no table is made here but the one room.
 local function Target(board, key)
     local x, y = Pointer(board)
-    local width, height, near = board.width, board.height, Board.SCREEN
-    local edges = { left = x, right = width - x, top = y, bottom = height - y }
-    local side, distance
-    for name, off in pairs(edges) do
-        if off < near and (not distance or off < distance) then side, distance = name, off end
-    end
+    local width, height = board.width, board.height
+    local side, distance = nil, Board.SCREEN
+    if x < distance then side, distance = "left", x end
+    if width - x < distance then side, distance = "right", width - x end
+    if y < distance then side, distance = "top", y end
+    if height - y < distance then side, distance = "bottom", height - y end
     if side then
         local strip = math.floor((AXIS[side] == "x" and width or height) * Board.STRIP)
-        local rect = side == "left" and { 0, 0, strip, height } or side == "right" and { width - strip, 0, strip, height }
-            or side == "top" and { 0, 0, width, strip } or { 0, height - strip, width, strip }
-        return { nil, side }, rect
+        if side == "left" then return nil, side, Room(0, 0, strip, height) end
+        if side == "right" then return nil, side, Room(width - strip, 0, strip, height) end
+        if side == "top" then return nil, side, Room(0, 0, width, strip) end
+        return nil, side, Room(0, height - strip, width, strip)
     end
     for other, rect in pairs(board.rects) do
         if other ~= key and x >= rect[1] and x <= rect[1] + rect[3] and y >= rect[2] and y <= rect[2] + rect[4] then
             local fx, fy = (x - rect[1]) / rect[3], (y - rect[2]) / rect[4]
-            local sides = { left = fx, right = 1 - fx, top = fy, bottom = 1 - fy }
-            local best, least
-            for name, off in pairs(sides) do
-                if off < Board.SIDE and (not least or off < least) then best, least = name, off end
-            end
-            if not best then return { other, "swap" }, rect end
+            local best, least = nil, Board.SIDE
+            if fx < least then best, least = "left", fx end
+            if 1 - fx < least then best, least = "right", 1 - fx end
+            if fy < least then best, least = "top", fy end
+            if 1 - fy < least then best, least = "bottom", 1 - fy end
+            if not best then return other, "swap", rect end
             local l, t, w, h = rect[1], rect[2], rect[3], rect[4]
-            local room = best == "left" and { l, t, w / 2, h } or best == "right" and { l + w / 2, t, w / 2, h }
-                or best == "top" and { l, t, w, h / 2 } or { l, t + h / 2, w, h / 2 }
-            return { other, best }, room
+            if best == "left" then return other, best, Room(l, t, w / 2, h) end
+            if best == "right" then return other, best, Room(l + w / 2, t, w / 2, h) end
+            if best == "top" then return other, best, Room(l, t, w, h / 2) end
+            return other, best, Room(l, t + h / 2, w, h / 2)
         end
     end
     return nil
@@ -477,8 +476,9 @@ local function Watch()
             strip:SetPoint("TOPLEFT", board.inside, "TOPLEFT", line[3], -(line[4] + by))
         end
     else
-        local where, rect = Target(board, held.panel.key)
-        held.where = where
+        local onto, side, rect = Target(board, held.panel.key)
+        if held.looked and onto == held.onto and side == held.side then return end -- the same as at the last look: the shape stays
+        held.onto, held.side, held.looked = onto, side, true
         Shape(board, rect)
     end
 end
@@ -486,7 +486,16 @@ end
 local function Watching(on)
     if not watcher then
         watcher = CreateFrame("Frame")
-        watcher:SetScript("OnUpdate", function() Core.Safe("board", Watch) end)
+        -- An error here would come again every frame: the watcher stops, the shape goes, and what is held goes
+        -- back where it was when it is let go.
+        watcher:SetScript("OnUpdate", Core.Guard("board", function()
+            local ok, problem = xpcall(Watch, Core.Trace)
+            if ok then return end
+            watcher:Hide()
+            if held then held.onto, held.side, held.by = nil, nil, nil end
+            Shape(nil, nil)
+            Core.Report("board", problem)
+        end))
     end
     watcher:SetShown(on)
 end
@@ -519,13 +528,13 @@ local function Release(cancel)
         return
     end
     hand.panel:SetAlpha(1)
-    local where = hand.where
-    if cancel or not where or not board.standing then return end
+    local onto, side = hand.onto, hand.side
+    if cancel or not side or not board.standing then return end
     local key, tree = hand.panel.key, Copy(board.tree)
-    if where[2] == "swap" then
-        tree = Board.Swap(tree, key, where[1])
+    if side == "swap" then
+        tree = Board.Swap(tree, key, onto)
     else
-        tree = Board.Beside(Board.Without(tree, key), key, where[1], where[2])
+        tree = Board.Beside(Board.Without(tree, key), key, onto, side)
     end
     Keep(board, tree)
 end
@@ -623,15 +632,20 @@ local function Bare(board, panel, spec)
 end
 
 -- A window's panel in what the window holds: the dark plate, or the journal when its spec asks for it
--- (spec.dress); a head with its title and the X; under that, its body.
+-- (spec.dress); a head with its title and the X; under that, its body. Built once for a spec (board.made).
 local function Panel(board, spec)
     local panel = board.panels[spec.key]
     if panel and panel.spec == spec then return panel end
     -- Another window took that key (Board.Offer, Withdraw): the one before is told it is hidden, and what it built
-    -- goes out of sight with its panel; the new one gets a panel of its own, built for it.
+    -- goes out of sight with its panel; the new one has its own panel again if it had one, else one built for it.
     if panel and panel:IsShown() then
         panel:Hide()
         if panel.spec.show then Core.Safe(Label(board), panel.spec.show, panel, false) end
+    end
+    panel = board.made[spec]
+    if panel then
+        board.panels[spec.key] = panel
+        return panel
     end
     local inside = board.inside
     panel = CreateFrame("Frame", nil, inside)
@@ -646,7 +660,7 @@ local function Panel(board, spec)
     end
     panel.fade = Core.Motion.Fade(panel)
     panel:Hide()
-    board.panels[spec.key] = panel
+    board.panels[spec.key], board.made[spec] = panel, panel
     if spec.build then Core.Safe(Label(board), spec.build, panel) end
     return panel
 end
@@ -935,7 +949,8 @@ end
 local boards = {} -- [label] = the board made under that label
 
 function Board.New(window, options)
-    local board = setmetatable({ window = window, options = options, panels = {}, rects = {}, lines = {} }, meta)
+    local board = setmetatable({ window = window, options = options, panels = {}, rects = {}, lines = {},
+        made = {} }, meta) -- made[spec] = its panel, kept for the session: a spec that returns gets its panel back
     window.board = board -- the title bar ends its search box left of the dropdown (Window.lua)
     if type(options.label) == "string" then boards[options.label] = board end
     return board

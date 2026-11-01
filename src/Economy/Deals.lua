@@ -41,7 +41,6 @@ local CHEAP = 0.85      -- the share of its usual price under which an item is w
 local WEEK = 7          -- days of sales worth buying ahead
 local KEPT = 40         -- lines kept in each list
 local BOP, QUEST = 1, 4 -- the game's bind types that can never go to an auction house
-local BAGS = 4          -- the bags past the backpack
 local ACCOUNT = "account" -- the account's own bank, in the characters' data
 
 local buys, sells = {}, {}
@@ -133,11 +132,19 @@ function Deals.Sell(what)
     return what
 end
 
+-- The bags past the backpack, and Retail's reagent bag after them (as Core counts the bags carried; Forever, without
+-- the constant, has four).
+local function Bags()
+    local constants = rawget(_G, "Constants") and Constants.InventoryConstants
+    local bags = constants and constants.NumBagSlots or rawget(_G, "NUM_BAG_SLOTS") or 4
+    return bags + (constants and constants.NumReagentBagSlots or 0)
+end
+
 -- The bags of the character played, a slot at a time: its things are the ones that can be posted now.
 local function InBags(held)
     local bags = rawget(_G, "C_Container")
     if not bags then return end
-    for bag = 0, BAGS do
+    for bag = 0, Bags() do
         for slot = 1, Ask(bags.GetContainerNumSlots, bag) or 0 do
             local info = Plain(Ask(bags.GetContainerItemInfo, bag, slot))
             local id = type(info) == "table" and Plain(info.itemID)

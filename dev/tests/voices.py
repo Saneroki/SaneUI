@@ -63,8 +63,8 @@ check("hostile yell", v.analyse("You will die!", "yell", {"side": "hostile"})["t
 check("boss is all-out", v.analyse("You will die!", "yell", {"side": "hostile", "rank": "boss"})["intensity"], 5)
 check("archaic", v.analyse("Thou art welcome here.", "gossip", {})["register"], "archaic")
 
-# Names: whole words, with an 's after them, never inside another name
-has = lambda name, text: bool(__import__("re").search(rf"(?<![A-Za-z']){__import__("re").escape(name)}(?![A-Za-z])(?!'(?!s\b))", text))
+# Names: whole words, with an 's after them, never inside another name (the database's own match)
+has = lambda name, text: v.names_in(text, {name: {}}) == [name]
 check("name alone", has("Onyxia", "Onyxia is near."), True)
 check("name with 's", has("Onyxia", "Onyxia's Lair"), True)
 check("name inside another", has("Kael", "Kael'thas rules"), False)
@@ -113,6 +113,12 @@ newer = {**voices, "names": {"respellings": {"dictionary": "d", "version": "2"}}
 check("a new names list remakes nothing", g.body_of(r, cfg, newer, "newest", 1)[2], shape)
 check("a name in the line remakes it", g.body_of({**r, "names": {"Elwynn": "Elwin"}}, cfg, voices, "newest", 1)[2]
       != shape, True)
+todo, again, twins, missing = g.plan([r, {**r, "file": "b.ogg"}, {**r, "text": "Bye."}], cfg, voices, "newest", 1, {})
+check("the same line twice is sent once", (len(todo), sorted(len(t) for t in twins.values())), (2, [0, 1]))
+check("... its second file from that master", [t["file"] for t in twins[shape]], ["b.ogg"])
+check("no voice yet: left out, the preset named", g.plan([{**r, "preset": "crier"}], cfg, voices, "newest", 1, {})[::3],
+      ([], {"crier"}))
+check("... but counted in a dry run", len(g.plan([{**r, "preset": "crier"}], cfg, voices, "newest", 1, {}, dry=True)[0]), 1)
 rules = g.names_rules()
 check("every name respelled", len(rules["respellings"]), len(names))
 check("sounds where known", len(rules["sounds"]), sum(1 for n in names.values() if n["ipa"]))

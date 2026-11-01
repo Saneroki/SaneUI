@@ -47,7 +47,9 @@ local _, ns = ...
 --  and clicks, its border art and zoom buttons out of sight, rotation ignored
 --  while ours is north up, and the rest of the game's minimap cluster out of
 --  sight and without clicks. Each is kept first and given back exactly (GiveBack;
---  the switch Show the game's minimap; Core's StandDown).
+--  the switch Show the game's minimap; Core's StandDown): its parent, place, layer
+--  and showing, and the cluster's, border's and zoom buttons' alpha and clicks
+--  through Core.Lend; its mask, wheel, clicks, zoom and size by hand.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Hybrid = {}
@@ -128,18 +130,22 @@ end
 local function Take()
     local minimap, cluster, backdrop = Parts()
     if not minimap or not cluster or not canvas then return end
-    saved = {
-        parent = minimap:GetParent(), points = Core.Points(minimap), strata = minimap:GetFrameStrata(),
-        level = minimap:GetFrameLevel(), wheel = minimap:IsMouseWheelEnabled(), shown = minimap:IsShown(),
-        zoom = minimap:GetZoom(), clusterAlpha = cluster:GetAlpha(), clusterMouse = cluster:IsMouseEnabled(),
-        clicks = minimap:IsMouseClickEnabled(), backdropAlpha = backdrop and backdrop:GetAlpha(), mice = {}, buttons = {},
-    }
+    saved = { wheel = minimap:IsMouseWheelEnabled(), zoom = minimap:GetZoom(), clicks = minimap:IsMouseClickEnabled(),
+              mice = {}, lent = {} }
     saved.width, saved.height = minimap:GetSize()
     taken = true -- from here on GiveBack undoes it, whatever fails next
-    minimap:SetParent(canvas)
-    minimap:ClearAllPoints()
-    minimap:SetPoint("CENTER")
-    minimap:SetFrameLevel(canvas:GetFrameLevel() + Hybrid.LEVEL)
+    -- Lent (Core.Lend): each thing noted as it was and put back exactly by Give, the parent only if it is still ours
+    -- then. Hidden first (shown by Place, when a view follows at one of its steps), so its lend shows it last of all,
+    -- back in its place.
+    local lent = Core.Lend(minimap)
+    saved.lent[1] = lent
+    lent:SetShown(false)
+    lent:SetParent(canvas)
+    lent:SetPoints(function(frame)
+        frame:ClearAllPoints()
+        frame:SetPoint("CENTER")
+    end)
+    lent:SetLayer(nil, canvas:GetFrameLevel() + Hybrid.LEVEL)
     minimap:SetMaskTexture(Hybrid.MASK)
     cut = Hybrid.MASK
     minimap:EnableMouseWheel(false)
@@ -149,42 +155,37 @@ local function Take()
     for _, key in ipairs({ "ZoomIn", "ZoomOut" }) do
         local button = rawget(minimap, key)
         if button then
-            saved.buttons[button] = { button:GetAlpha(), button:IsMouseEnabled() }
-            button:SetAlpha(0)
-            button:EnableMouse(false)
+            local held = Core.Lend(button)
+            saved.lent[#saved.lent + 1] = held
+            held:SetAlpha(0)
+            held:SetMouse(false)
         end
     end
-    if backdrop then backdrop:SetAlpha(0) end
-    cluster:SetAlpha(0)
+    if backdrop then
+        local held = Core.Lend(backdrop)
+        saved.lent[#saved.lent + 1] = held
+        held:SetAlpha(0)
+    end
+    local held = Core.Lend(cluster)
+    saved.lent[#saved.lent + 1] = held
+    held:SetAlpha(0)
     Quiet(cluster, saved.mice)
     C_Minimap.SetIgnoreRotateMinimap(true)
     Ground(false) -- outdoors and in: its dots only, our map under them (but in an instance: Place)
     Survey()
-    minimap:Hide() -- shown by Place, when a view follows at one of its steps
 end
 
 local function Give()
-    local minimap, cluster, backdrop = Parts()
+    local minimap, cluster = Parts()
     taken = false
     minimap:SetMouseClickEnabled(saved.clicks)
     minimap:EnableMouseWheel(saved.wheel)
-    minimap:SetParent(saved.parent)
-    Core.Repoint(minimap, saved.points)
     minimap:SetSize(saved.width, saved.height)
-    minimap:SetFrameStrata(saved.strata)
-    minimap:SetFrameLevel(saved.level)
     minimap:SetZoom(saved.zoom)
     Ground(true)
     C_Minimap.SetIgnoreRotateMinimap(false)
     cut = nil
-    for button, was in pairs(saved.buttons) do
-        button:SetAlpha(was[1])
-        button:EnableMouse(was[2])
-    end
-    if backdrop and saved.backdropAlpha then backdrop:SetAlpha(saved.backdropAlpha) end
     for frame in pairs(saved.mice) do frame:EnableMouse(true) end
-    cluster:SetAlpha(saved.clusterAlpha)
-    cluster:EnableMouse(saved.clusterMouse)
     -- Its mask, frame art and sizes as the game sets them for the minimap's settings; where no code of the game sets
     -- its mask (Retail: the engine's own), that round one.
     if cluster.UpdateMinimapConfig then
@@ -192,10 +193,13 @@ local function Give()
     else
         minimap:SetMaskTexture(Hybrid.ROUND)
     end
-    -- Hidden first, so what follows its showing (Core's button Sane UI on it, Classic.lua) looks again.
+    -- Hidden first, so what follows its showing (Core's button Sane UI on it, Classic.lua) looks again: its lend shows
+    -- it last (each puts back in the reverse order of Take's changes, the minimap's after the cluster's, border's and
+    -- buttons').
     minimap:Hide()
-    minimap:SetShown(saved.shown)
+    local lent = saved.lent
     saved = nil
+    for index = #lent, 1, -1 do lent[index]:Return() end
 end
 
 -- Taken or given back as the switch says (Show the game's minimap), and given back once the module stood
@@ -242,9 +246,13 @@ local function Zoomed()
 end
 
 -- After every loading screen the game tells the minimap's radius anew (at login it may not yet): measured
--- again, and the small view at the player's step if it had none.
+-- again, and the small view at the player's step if it had none. Its ground and rotation set anew too: Retail's game
+-- switches its own hybrid minimap off at each loading screen once a zone had it (Blizzard_HybridMinimap's OnHide draws
+-- the ground again and follows the rotation), over what we set.
 local function Entered()
     if not taken then return end
+    ground = nil
+    C_Minimap.SetIgnoreRotateMinimap(true)
     wipe(radii[true])
     wipe(radii[false])
     Survey()
@@ -311,7 +319,9 @@ function Hybrid.Release(frame)
     return released
 end
 
--- Its size, layer and step for a view (mask: the one it is cut by).
+-- Its size, layer and step for a view (mask: the one it is cut by). The step is set within a layout: what the game
+-- says of it meanwhile is ours (as while measuring; Zoomed would lay the view out again, inside this layout), its
+-- radius learnt here.
 local function Set(minimap, size, step, mask)
     if mask ~= cut then
         minimap:SetMaskTexture(mask)
@@ -320,7 +330,12 @@ local function Set(minimap, size, step, mask)
     minimap:SetSize(size, size)
     minimap:SetFrameStrata(canvas:GetFrameStrata())
     minimap:SetFrameLevel(canvas:GetFrameLevel() + Hybrid.LEVEL)
-    if minimap:GetZoom() ~= step then minimap:SetZoom(step) end
+    if minimap:GetZoom() ~= step then
+        surveying = true
+        minimap:SetZoom(step)
+        Learn()
+        surveying = false
+    end
 end
 
 -- The full map (its camera, the canvas' size): the widest step whose square at the map's zoom fits in

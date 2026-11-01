@@ -122,10 +122,23 @@ def read_json(path, empty):
 
 
 def write_json(path, data):
+    """Written whole beside the file and put in its place: a reader sees the old file or the new one. The runner
+    and the commands write the same files, so each writer has a name of its own for the passing file."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(".tmp")
+    temp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     temp.write_text(json.dumps(data, indent=1))
     os.replace(temp, path)
+
+
+def write_state(name, mine):
+    """One job's entry of state.json, into the file as it is now (switch, reset and rebuild take entries out of
+    it while the runner runs, so nobody writes a whole copy back); None takes the entry out."""
+    state = read_json(STATE / "state.json", {})
+    if mine is None:
+        state.pop(name, None)
+    else:
+        state[name] = mine
+    write_json(STATE / "state.json", state)
 
 
 def alive(pid):
@@ -150,6 +163,10 @@ def load_jobs(path):
             raise SystemExit(f"{path}: every [[job]] needs a name and a command")
         if job["name"] in {j["name"] for j in jobs}:
             raise SystemExit(f"{path}: two jobs are called {job['name']}")
+        for key in ("command", "status", "rebuild"):   # run without a shell: a list of words, not one string
+            words = job.get(key)
+            if words is not None and not (isinstance(words, list) and all(isinstance(w, str) for w in words)):
+                raise SystemExit(f"{path}: {job['name']}: {key} must be a list of words, [\"dev/tools/atlas\", \"paint\"]")
         jobs.append({"priority": 0, "status": None, "done": None, "rebuild": None, **job, "at": at})
     jobs.sort(key=lambda j: (-j["priority"], j["at"]))
     return settings, jobs
@@ -186,6 +203,7 @@ def next_job(jobs, state, tries, holds=None):
             continue
         if progress(job)[1]:
             state[job["name"]] = {**mine, "finished": time.strftime("%Y-%m-%d %H:%M")}
+            write_state(job["name"], state[job["name"]])   # kept, or its status is asked again at every look
             say(f"{job['name']}: already finished")
             continue
         return job
@@ -304,6 +322,12 @@ def comm(pid):
         return "?"
 
 
+def gist(reasons):
+    """The reasons without their changing numbers (the MiB held, the percent used): the same program on the
+    card at the next look is no news for the log."""
+    return [re.sub(r"\d+ (?:MiB|%)", "", reason) for reason in reasons]
+
+
 def tree(pid):
     """A process and all under it."""
     found, todo = set(), [pid]
@@ -362,14 +386,21 @@ class Runner:
                 say("ComfyUI did not start: see comfyui log")
                 return
             self.started_comfy, self.watch.others_seen = True, False
-        self.job, self.stopping_job = job, False
         self.freed = not job.get("comfyui", True)   # a job without ComfyUI leaves its memory to whoever uses it
-        self.job_log = open(STATE / f"{job['name']}.log", "a")
-        self.job_log.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} {' '.join(job['command'])}\n")
-        self.job_log.flush()
+        log = open(STATE / f"{job['name']}.log", "a")
+        log.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} {' '.join(job['command'])}\n")
+        log.flush()
         env = {**os.environ, "IMAGEGEN_CLIENT": self.client, "PYTHONUNBUFFERED": "1"}
-        self.proc = subprocess.Popen(job["command"], cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
-                                     stdout=self.job_log, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            self.proc = subprocess.Popen(job["command"], cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
+                                         stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        except OSError as error:   # no such program (a typo in the list), or one that may not be run
+            log.write(f"did not start: {error}\n")
+            log.close()
+            self.failure(job["name"], f"did not start ({error})")
+            self.keep(job["name"])
+            return
+        self.job, self.job_log, self.stopping_job = job, log, False
         say(f"{job['name']}: started ({' '.join(job['command'])}), pid {self.proc.pid}")
 
     def stop_job(self, why):
@@ -408,17 +439,27 @@ class Runner:
         elif self.stopping_job:
             say(f"{name}: stopped" + (f" ({line})" if line else ""))
         else:  # an error, or it ended well without finishing (the Atlas ends so when ComfyUI went away)
-            mine["failures"] = mine.get("failures", 0) + 1
-            say(f"{name}: {'ended without finishing' if code == 0 else f'failed with {code}'}"
-                + (f" ({line})" if line else "") + f", {mine['failures']} of {self.settings['tries']} times;"
-                f" see {STATE / (name + '.log')}")
-        if (mine.get("finished") or mine.get("failures", 0) >= self.settings["tries"]) \
-                and read_json(FIRST, {}).get("name") == name:
-            FIRST.unlink(missing_ok=True)   # switched to and done with: the priorities again
-        write_json(STATE / "state.json", self.state)
+            self.failure(name, ("ended without finishing" if code == 0 else f"failed with {code}")
+                         + (f" ({line})" if line else ""))
+        self.keep(name)
         self.job_log.close()
         self.proc = self.job = self.job_log = None
         self.stopping_job = False
+
+    def failure(self, name, what):
+        """One more failure of the job in a row: after tries of them it is left until gpu-runner reset NAME."""
+        mine = self.state.setdefault(name, {})
+        mine["failures"] = mine.get("failures", 0) + 1
+        say(f"{name}: {what}, {mine['failures']} of {self.settings['tries']} times; see {STATE / (name + '.log')}")
+
+    def keep(self, name):
+        """Writes down what is kept of the job (its entry of state.json); switched to and done with (finished,
+        or failed too often): the priorities again."""
+        mine = self.state.get(name, {})
+        if (mine.get("finished") or mine.get("failures", 0) >= self.settings["tries"]) \
+                and read_json(FIRST, {}).get("name") == name:
+            FIRST.unlink(missing_ok=True)
+        write_state(name, mine)
 
     def free(self):
         """Gives the card back: ComfyUI stopped if the runner started it and nobody else uses it, else freed."""
@@ -481,9 +522,9 @@ class Runner:
                     self.stop_job("; ".join(reasons))
                 self.free()
                 new = "waiting"
-                if new != phase or reasons != self.told:
+                if new != phase or gist(reasons) != self.told:
                     say("waiting: " + "; ".join(reasons))
-                    self.told = reasons
+                    self.told = gist(reasons)
                 self.write_status("waiting", reasons)
             elif self.proc:
                 new = "working"
@@ -498,10 +539,10 @@ class Runner:
                     self.write_status("holding", note=f"going on in {int(left)} s")
                 else:
                     job = next_job(ordered(self.jobs, self.first), self.state, self.settings["tries"], self.holds)
-                    write_json(STATE / "state.json", self.state)
                     self.go_now = False
                     if job:
                         self.start_job(job)
+                    if self.job:   # started; one that did not start was counted a failure and the next look goes on
                         new = "working"
                         self.write_status("working")
                     else:
@@ -618,9 +659,7 @@ def switch(jobs_path, name):
     if name in holds:
         print(f"{name} was held ({holds.pop(name)}): let go")
         write_json(HOLDS, holds)
-    state = read_json(STATE / "state.json", {})
-    if state.pop(name, None):
-        write_json(STATE / "state.json", state)
+    write_state(name, None)   # finished or failed: let go
     write_json(FIRST, {"name": name, "at": time.time()})
     if PAUSED.exists():
         print("The runner is paused by hand: it runs once resumed (saneui resume gpurunner)")
@@ -660,9 +699,7 @@ def rebuild(jobs_path, name, then_start=False):
         print(f"{name}: {' '.join(job['rebuild'])}", flush=True)
         code = subprocess.run(job["rebuild"], cwd=ROOT).returncode
         if code == 0:
-            state = read_json(STATE / "state.json", {})
-            state.pop(name, None)
-            write_json(STATE / "state.json", state)
+            write_state(name, None)   # forgotten as done: it starts anew
     finally:
         holds = read_json(HOLDS, {})
         if before is None:
@@ -795,9 +832,7 @@ WantedBy=default.target
             (RUNTIME / "claims" / args.name).unlink(missing_ok=True)
             print(f"Released {args.name}.")
         else:
-            state = read_json(STATE / "state.json", {})
-            state.pop(args.name, None)
-            write_json(STATE / "state.json", state)
+            write_state(args.name, None)
             print(f"{args.name} runs again when its turn comes.")
 
 

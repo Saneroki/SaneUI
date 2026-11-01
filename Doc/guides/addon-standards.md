@@ -128,7 +128,7 @@ combat) the call is blocked and the player sees "action blocked by an addon". Ta
 ## 6. Secret values
 
 Since patch 12.0 the client hands some combat values (health, auras, cooldowns) to addon code as
-*secret values*. This client has them (`issecretvalue` is in the reference).
+*secret values*. This client has them (`issecretvalue` is in the newest export, `dev/tools/blizzard where`).
 
 - **Allowed:** store them, pass them on, concatenate or `format` them into text, and give them to
   widget methods that accept them from addon code: those whose entry in `Blizzard_APIDocumentationGenerated`
@@ -284,7 +284,7 @@ And so:
 - Small files with one job; no file that does everything. Comment why, not what.
 - No dead code, no options nobody asked for, no abstraction for one caller.
 - Tests for logic that can run outside the game (`dev/tests/`). Things that only the client can show
-  are tried in the game and noted as tried or not tried.
+  are tried in the game by Saneroki; the answer says only what the game needs to take the change (a `/reload`, or a restart).
 - Record every change in `Doc/Changed.md`.
 
 ## 13. Forever and Retail
