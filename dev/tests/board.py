@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/board on a board of its own: cards made, edited, moved before others and to a column's
 top, deleted; the log; a card's count of changes, and a change with an old count refused; Backlog.md as text; a
-ranked Markdown list read in. Run by dev/tests/run."""
+ranked Markdown list read in; Review and Finalized refused on the command line. Run by dev/tests/run."""
 import importlib.machinery
 import importlib.util
 import json
@@ -114,6 +114,17 @@ check("read: priority and area", [(c["priority"], c["area"]) for c in cards], [(
 check("read: a long item's notes", cards[1]["notes"], "And notes that wrap onto a second line.")
 check("read: ticked items are finalized", cards[2]["column"], "done")
 json.loads(path.read_text())
+
+before = path.read_text()
+for name, argv in (("review", ["review", "1"]), ("done", ["done", "1"]), ("move", ["move", "1", "Review"]),
+                   ("add", ["add", "new", "--column", "done"])):
+    try:
+        board.main(argv)
+        got = "went through"
+    except SystemExit as error:
+        got = str(error.code)
+    check(f"the command line refuses: {name}", got, "board: Review and Finalized are Saneroki's to move, on the board's page")
+check("nothing written by a refusal", path.read_text(), before)
 
 print(f"board: all {checks} checks passed." if not failed else f"board: {failed} of {checks} checks failed.")
 raise SystemExit(1 if failed else 0)

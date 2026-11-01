@@ -165,8 +165,8 @@ def session(game, old, new, analysis, folder, card, lookup):
                       "commit them with the fixes." if game == "forever" else
                       "The files made from Blizzard's code (CVarLabels, Pages) are Forever's: nothing to adopt."),
              "6. `saneui installdev` (the tests run each module as Retail too: `W.Play`, with `dev/tests/games.lua` "
-             "made anew by the patch), an entry in `Doc/Changed.md`, a commit; then "
-             + (f"`saneui board review {card}`." if card else "the card to Review."), "",
+             "made anew by the patch), an entry in `Doc/Changed.md`, a commit. The card stays In progress: Review is "
+             "Saneroki's to move.", "",
              "## The todo list's head", ""]
     count = 0
     for section in ("broken", "deprecated", "changed"):

@@ -4,6 +4,9 @@ Finalized, shared by Saneroki's page and the sessions' command line.
 
   Backlog -> Next up -> In progress -> Review -> Finalized
 
+A session takes a card as far as In progress: when a feature is ready for Review or Finalized is Saneroki's to
+decide (2026-11-01), so cards reach those two columns on the page and the command line refuses them.
+
 The board is one file, board.json in the private folder (~/.config/saneui/private.json, like
 dev/tools/private-folder), written under a lock by whoever changes it: the page through this tool's server, a
 session through the commands below. Each change also writes Backlog.md beside it, the same cards as text, so
@@ -17,8 +20,8 @@ Usage:
   dev/tools/board show ID                                    one card, its notes and log
   dev/tools/board add TITLE [--priority P] [--area A] [--notes N] [--column C]
   dev/tools/board edit ID [--title T] [--priority P] [--area A] [--notes N]
-  dev/tools/board move ID COLUMN [--top]                     e.g. move 12 doing; columns: backlog next doing review done
-  dev/tools/board start|review|done ID                       the same as move ID doing|review|done
+  dev/tools/board move ID COLUMN [--top]                     e.g. move 12 doing; columns: backlog next doing
+  dev/tools/board start ID                                   the same as move ID doing
   dev/tools/board delete ID
   dev/tools/board import FILE                                the cards of a Markdown list (## priority, ### area, - [ ])
 
@@ -49,6 +52,7 @@ COLUMNS = [   # key, name, what it means
     ("done", "Finalized", "tried and kept"),
 ]
 KEYS = [key for key, _, _ in COLUMNS]
+PAGE_ONLY = ("review", "done")   # moved to on Saneroki's page alone
 PRIORITIES = ["high", "medium", "low"]
 LOG_KEEP = 30   # a card's log keeps its newest steps only
 
@@ -332,6 +336,8 @@ def main(argv):
                 op = {"op": "delete", "id": args.id}
             else:
                 op = {"op": "move", "id": args.id, "column": {"start": "doing"}.get(args.cmd, args.cmd)}
+            if op.get("column") and column(op["column"]) in PAGE_ONLY:
+                raise ValueError("Review and Finalized are Saneroki's to move, on the board's page")
             with changing(path) as board:
                 card = apply(board, op, args.by)
             print(f"deleted #{args.id}" if card is None else f"{line(card).strip()}  ({name_of(card['column'])})")

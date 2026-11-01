@@ -6,6 +6,11 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### The board's last two columns are Saneroki's (Saneroki, 2026-11-01)
+Saneroki: "Never put cards on the board yourself to Review"; "It is my responsability to decide when a feature is review or finalized ready."
+- **`dev/tools/board`:** the command line takes a card as far as In progress and refuses Review and Finalized (`review`, `done`, `move`, `add --column`); the page moves cards as before. **`dev/tests/board.py`:** the refusals.
+- **`dev/blizzard/patch.py`:** a patch session's brief leaves its card In progress. **`Doc/agent/development.md`, `dev/saneui`:** the commands as they are now.
+
 ### The guide's dark shades round (Saneroki, 2026-11-01)
 Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corners, no borders?"
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.

@@ -113,7 +113,7 @@ GROUPS = {
         "makevoices": (["dev/tools/voicegen"], "voice overs and window sounds", None),
     },
     "Plans": {
-        "board": (["dev/tools/board"], "the task board: every todo as a card, backlog to finalized (list add move done)",
+        "board": (["dev/tools/board"], "the task board: every todo as a card, backlog to finalized (list add move start)",
                   "task board: list add move"),
         "showboard": (["dev/tools/web-pages", "open", "board"], "the task board in the browser: drag, create, edit, prioritize",
                       "task board in the browser"),
