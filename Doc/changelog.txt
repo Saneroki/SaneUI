@@ -45,7 +45,7 @@ The bigger changes of each version, newest first.
 - The game's experience, stance and bag bars and its quest tracker are
   gone from the screen, and its menu bar shows only under the mouse.
 - The buttons of your action bars touch: no space left between the
-  icons.
+  icons, and bars snapped together in Edit Mode touch as well.
 - Action Bar 1 stays on the page you chose: stances, forms and stealth
   no longer change it, only its arrows and your page keys do. Bars 6
   to 8 stand beside its pages, so every page and bar can hold buttons

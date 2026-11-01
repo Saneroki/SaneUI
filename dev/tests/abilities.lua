@@ -2150,6 +2150,21 @@ do
         bar.minButtonPadding, bar.buttonPadding, bar.isHorizontal, bar.addButtonsToRight, bar.addButtonsToTop = 2, 2, true, true, true
         for key, value in pairs(fields or {}) do bar[key] = value end
         function bar:UpdateGridLayout() end
+        -- Edit Mode on the bar: its SetPoint writes the game's fields and runs its manager (never ours to call), the
+        -- frame's own is SetPointBase; the layout takes the place a bar stands at, and gives a bar the layout's.
+        bar.SetPointBase = bar.SetPoint
+        bar.SetPoint = function() error("Edit Mode's SetPoint, from our code") end
+        function bar:OnSystemPositionChange()
+            local point, to, relative, x, y = self:GetPoint(1)
+            local scale = self:GetScale()
+            self.systemInfo = { anchorInfo = { point = point, relativeTo = to._name, relativePoint = relative,
+                offsetX = x * scale, offsetY = y * scale } }
+        end
+        function bar:ApplySystemAnchor()
+            local anchor, scale = self.systemInfo.anchorInfo, self:GetScale()
+            self:ClearAllPoints()
+            self:SetPointBase(anchor.point, _G[anchor.relativeTo], anchor.relativePoint, anchor.offsetX / scale, anchor.offsetY / scale)
+        end
         for index = 1, count do
             local frame = W.NewWidget("Frame", name .. "ButtonContainer" .. index, bar)
             local button = W.NewWidget("CheckButton", name .. "Button" .. index, frame)
@@ -2252,6 +2267,82 @@ do
     check(Row(main, 1, 12, 1), "switched on they touch again")
     local _, frame = main.actionButtons[3]:GetPoint(1)
     check(frame == main.shownButtonContainers[3], "(in their own frames)")
+
+    -- Bars snapped together touch. The game's snap puts the bar 4 away (a padding of 2 around each box), then the
+    -- layout takes that place.
+    local function Snap(bar, point, other, relative, x, y)
+        bar:ClearAllPoints()
+        bar:SetPointBase(point, other, relative, x, y)
+        bar:OnSystemPositionChange()
+    end
+    local function Stands(bar, x, y)
+        local _, _, _, nowX, nowY = bar:GetPoint(1)
+        return math.abs(nowX - x) < 0.001 and math.abs(nowY - y) < 0.001
+    end
+    sixth.buttonPadding = 2
+    sixth:UpdateGridLayout()
+    main:SetPointBase("BOTTOM", UIParent, "BOTTOM", 0, 40)
+    main:OnSystemPositionChange()
+    check(Stands(main, 0, 40), "a bar on the screen stands as the game put it")
+    Snap(sixth, "BOTTOM", main, "TOP", 0, 4)
+    check(Stands(sixth, 0, 0), "a bar snapped on top of another touches it")
+    check(sixth.systemInfo.anchorInfo.offsetY == 4, "and the layout keeps the game's place")
+    Snap(left, "BOTTOMLEFT", sixth, "TOPLEFT", 0, 4)
+    check(Stands(left, 0, 0), "a third, snapped by the corner, stands on the second")
+    Snap(two, "BOTTOM", left, "TOP", 0, 4)
+    check(Stands(two, 0, -1), "a bar of two rows comes down by what its closed rows left in its box")
+    Snap(right, "TOP", two, "BOTTOM", 0, -4)
+    check(Stands(right, 0, 12), "a vertical bar under it comes up by what its closed column left too")
+    Snap(stance, "LEFT", main, "RIGHT", 4, 0)
+    check(Stands(stance, -18, 0), "side by side the closed rows of both meet")
+    Snap(stance, "BOTTOMLEFT", main, "TOPLEFT", 0, 4)
+    check(Stands(stance, 4, 0), "by the corner, the first buttons of a short and a long bar stand in line")
+    for _, small in ipairs(sixth.shownButtonContainers) do small:SetScale(1.5) end
+    Snap(sixth, "LEFT", main, "RIGHT", 4, 0)
+    check(Stands(sixth, -27.5, 0), "the icon size counts")
+    sixth:SetScale(0.5)
+    Snap(sixth, "LEFT", main, "RIGHT", 8, 0)
+    check(Stands(sixth, -38.5, 0), "and a bar's own scale")
+    sixth:SetScale(1)
+    Snap(sixth, "BOTTOM", main, "TOP", 0, 4)
+    for _, small in ipairs(sixth.shownButtonContainers) do small:SetScale(1) end
+    Snap(stance, "LEFT", main, "RIGHT", 4, 0)
+    main.buttonPadding = 6
+    main:UpdateGridLayout()
+    check(Stands(stance, -40, 0), "a new padding of the bar it stands against counts at once")
+    main.buttonPadding = 2
+    main:UpdateGridLayout()
+    check(Stands(stance, -18, 0), "(and back)")
+
+    sixth:ClearAllPoints()
+    sixth:SetPointBase("TOPLEFT", UIParent, "TOPLEFT", 10, -10)
+    ns.Spacing.Apply()
+    check(Stands(sixth, 10, -10), "a bar in the mouse's hands stays there")
+    sixth:ApplySystemAnchor()
+    check(Stands(sixth, 0, 0), "a layout given to the bars again (a login, Revert) touches again")
+    sixth.systemInfo.isInDefaultPosition = true
+    sixth:ApplySystemAnchor()
+    check(Stands(sixth, 0, 4), "a bar in the game's own place is the game's")
+    sixth.systemInfo.isInDefaultPosition = nil
+    sixth:OnSystemPositionChange()
+    check(Stands(sixth, 0, 0), "(a place of its own again)")
+    Snap(sixth, "BOTTOM", UIParent, "BOTTOM", 0, 90)
+    check(Stands(sixth, 0, 90), "snapped to the screen it keeps what the game gave it")
+    Snap(sixth, "BOTTOM", main, "TOP", 0, 4)
+
+    sixth._protected = true
+    W.Combat(true)
+    ns.Spacing.Apply()
+    local waits = Core.Owed("Abilities: spacing")
+    W.Combat(false)
+    sixth._protected = nil
+    check(waits and not ns.off and Stands(sixth, 0, 0), "in a fight no bar moves: the fight's end pays it")
+
+    Core.Set(ns.name, "tightBars", false)
+    check(Stands(sixth, 0, 4) and Stands(two, 0, 4) and Stands(right, 0, -4) and Stands(stance, 4, 0),
+        "switched off every bar stands as the game has it")
+    Core.Set(ns.name, "tightBars", true)
+    check(Stands(sixth, 0, 0) and Stands(two, 0, -1) and Stands(right, 0, 12) and Stands(stance, -18, 0), "switched on they touch again")
     for _, name in ipairs({ "MultiBar5", "MultiBarRight", "MultiBarBottomLeft", "MultiBarBottomRight", "StanceBar" }) do _G[name] = nil end
 end
 

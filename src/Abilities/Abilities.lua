@@ -191,7 +191,7 @@ local OPTIONS = {
     { key = "holdPage", default = true, text = "Action Bar 1 keeps the page you chose",
       tip = "The game puts another row of buttons on Action Bar 1 in a stance, a form or stealth. On: the bar stays on its page, in a fight too, and only its arrows or your page keys change it. In a vehicle the game's own bar still takes its place." },
     { key = "tightBars", default = true, text = "Action bar buttons touch",
-      tip = "No space between the buttons of your action bars, side by side or between the rows of a bar: the icons stand directly against each other. Edit Mode's Icon Padding has no effect while this is on. It changes after the fight if you are in one." },
+      tip = "No space between the buttons of your action bars, side by side or between the rows of a bar: the icons stand directly against each other. Bars snapped together in Edit Mode touch as well. Edit Mode's Icon Padding has no effect while this is on. It changes after the fight if you are in one." },
 }
 
 -- The spellbook's switches (the first five) and the ranks are Forever's: in Retail they are kept with the settings,

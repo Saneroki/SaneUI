@@ -98,9 +98,10 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   the stance, pet and possess bars too, side by side or between the rows of a bar: the icons stand directly against
   each other, and the mouse has no gap to fall in. Edit Mode's *Icon Padding* stops at 2, so its slider does nothing
   while this is on. A row closes towards the middle of its bar, so a bar's box in Edit Mode is a little wider than
-  its row (padding 2: 22 wider on 12 buttons) and stays where it is. Bars that stand on top of each other are placed
-  in Edit Mode: their boxes are as high as the icons, so boxes that touch have icons that touch. Edit Mode's snapping
-  leaves 4 between two bars: its arrow keys move a selected bar by 1.
+  its row (padding 2: 22 wider on 12 buttons) and stays where it is. Bars snapped together in Edit Mode touch as well,
+  on top of each other or side by side, and bars snapped by a corner have their first buttons in line: drag a bar
+  against another and let go. Your layout keeps the game's place, so with the switch off they stand as the game
+  snaps them. Bars in the game's own places keep its spacing, and one moved by the arrow keys stays where you put it.
 - **Link a spell in chat:** Shift-click it (grey ones too).
 - **Visit your class trainer once.** Not needed for the list, but his window says which spellbook tab
   each spell belongs to. Until then a few new spells sit under *Other spells to learn* in the first class tab.
@@ -162,6 +163,14 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   `shownButtonContainers` in order (the stance and possess bars have no spacers). A hook after `UpdateGridLayout` looks
   again; the line of what a bar's places depend on (`Shape`) skips what has not changed. A button moves out of a fight
   (`Core.AfterCombat`). A ghost hangs on the same frame and covers the button (`SetAllPoints`), wherever it stands.
+- **Bars that touch (`Spacing.lua`).** `GetSelectionOffset` counts `SELECTION_PADDING` (2) around each box, so
+  `SnapToFrame` leaves 4 between two bars. The layout keeps that: a bar moves after the game, in hooks after
+  `OnSystemPositionChange` (the layout has taken the snap) and `ApplySystemAnchor` (a login, Revert, another layout).
+  `Snapped` takes a bar whose `systemInfo.anchorInfo` names another of the bars and that stands at that anchor now, so
+  not one in the mouse's hands or at `isInDefaultPosition`. `Stand` gives it the offset at which the buttons of both
+  meet, on each axis where the anchor names a side; `Insets` is what the closed lines leave inside a box. It goes
+  through `SetPointBase`, the frame's own `SetPoint`: `SetPointOverride` writes `snappedToFrame` and runs the manager,
+  which our taint must not reach. The game's link between the two stays, so dragging the lower bar takes the upper along.
 - **How the grey entries get into Blizzard's spellbook (`Book/Book.lua`).** The game's spell entries are
   never touched by addon code beyond *where they stand*:
   1. The first page's column is made 60000 high. The game then puts a whole tab on "page 1" and creates
@@ -360,7 +369,7 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `Presets.lua` | Save and load bar layouts |
 | `Bar1.lua` | Action Bar 1 keeps the page you chose; its buttons and the keys of Bar 6 under the game's own bars |
 | `FormBar.lua` | One character's Action Bar 7 follows its form |
-| `Spacing.lua` | The buttons of every action bar touch |
+| `Spacing.lua` | The buttons of every action bar touch, and bars snapped together |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
 | `Book/Item.lua` | One grey spellbook entry: look, the two marks, tooltip, link, menu |
 | `Book/Drag.lua` | Carrying a grey spell to a real action bar button |
@@ -371,6 +380,8 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-02 — Bars snapped together in Edit Mode touch, on top of each other or side by side: the 4 the game's snap
+  leaves is closed, and the layout keeps the game's place.
 - 2026-10-31 — The buttons of every action bar touch (switch *Action bar buttons touch*, on), the stance, pet and possess
   bars too. A bar that is off is named as its page of Bar 1 (the first try asked the wrong frame).
 - 2026-10-31 — Action Bar 1 keeps the page you chose (switch *Action Bar 1 keeps the page you chose*, on): no stance,
