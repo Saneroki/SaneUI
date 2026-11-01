@@ -167,8 +167,9 @@ check(W.menus[1] == nil, "a left click opens nothing")
 shield._scripts.OnMouseUp(shield, "RightButton")
 local menu = W.menus[1]
 check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.reminderCreate and menu[3].text == TEXT.auraImportant
-    and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraLists
-    and menu[7].title == TEXT.reminderCancel, "its menu: the spell, Create reminder, the marks, how to cancel it")
+    and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraFramesShow
+    and menu[7].text == TEXT.auraFramesHide and menu[8].text == TEXT.auraLists and menu[9].title == TEXT.reminderCancel,
+    "its menu: the spell, Create reminder, the marks, how to cancel it")
 menu[2].fn()
 local list = Reminders.List()
 local reminder = list[1]
@@ -207,6 +208,18 @@ on.player.Bear = { name = "Bear", spellId = 5487, icon = 1, auraInstanceID = 14,
 bear.auraType, bear.buttonInfo = "Buff", { index = 2, auraInstanceID = 14 }
 local function Rebuilt() BuffFrame:UpdateAuraButtons() end
 
+Line(thorns, TEXT.auraFramesHide).fn()
+check(ns.options.auraHide[782] and not Shield(thorns).glow._shown and thorns.Icon._alpha ~= List.FADED,
+    "Hide from unit frames: the list as it is, no fade")
+Line(thorns, TEXT.auraFramesHide).fn()
+Line(thorns, TEXT.auraFramesShow).fn()
+check(ns.options.auraShow[782] and not Shield(thorns).glow._shown, "Show on unit frames: no glow")
+Line(thorns, TEXT.auraImportant).fn()
+check(Shield(thorns).glow._shown and ns.options.auraShow[782], "a mark of how it looks beside it, each of its own")
+check(Line(thorns, TEXT.auraFramesShow).checked() == true and Line(thorns, TEXT.auraImportant).checked() == true, "both ticked")
+Line(thorns, TEXT.auraImportant).fn()
+Line(thorns, TEXT.auraFramesShow).fn()
+check(not ns.options.auraShow[782] and not Shield(thorns).glow._shown, "both off")
 Line(thorns, TEXT.auraImportant).fn()
 check(ns.options.auraWhite[782] == "Thorns" and Shield(thorns).glow._shown, "Important: on the list, and a glow in the game's list")
 check(Line(thorns, TEXT.auraImportant).checked() == true, "its line ticked")

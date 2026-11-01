@@ -70,13 +70,15 @@ ns.TEXT = {
     unitRest = "Hide the unit frames at rest",
     unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
     unitAuras = "Auras on the frames",
-    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with a yellow glow; those you mark Unimportant never show. Right click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
+    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with a yellow glow, and those you mark Show on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Right click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
     auraImportant = "Important",
     auraUnimportant = "Unimportant",
     auraHidden = "Hidden",
+    auraFramesShow = "Show on unit frames",
+    auraFramesHide = "Hide from unit frames",
     buffList = "Your buffs and debuffs",
     buffListOn = "Marks and menu on the game's list",
-    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Right click one, out of a fight, for its menu: Create reminder, Important (a yellow glow around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list). Shift + right click cancels a buff, and in a fight a right click does, as in the game. Off: the game's list as it is, a right click cancels.",
+    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Right click one, out of a fight, for its menu: Create reminder, Important (a yellow glow around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Show on unit frames (first there, no glow) and Hide from unit frames. Shift + right click cancels a buff, and in a fight a right click does, as in the game. Off: the game's list as it is, a right click cancels.",
     auraLists = "Aura lists...",
     auraFight = "In a fight the game keeps auras from addons: after it",
     listsTitle = "Aura lists",
@@ -84,7 +86,7 @@ ns.TEXT = {
     listsEmpty = "None yet.",
     listsPut = "%s: %s.",
     listsUnknown = "The game does not know that spell here by its name: type its number, or right click its icon on a unit frame.",
-    listsRule = "On the unit frames the game lets Important and Unimportant act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
+    listsRule = "On the unit frames the game lets these act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
     unitBarrier = "Barriers",
     unitBarrierTip = "What absorbs damage on a unit, in the game's shield art on its health bar: after the health while it fits, against the bar's right end when it does not. On your unit frames and your party and raid frames.",
     unitLost = "Lost maximum health",
@@ -224,6 +226,8 @@ local OPTIONS = {
     { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
     { key = "auraBlack", default = {} }, -- those never shown
     { key = "auraHidden", default = {} }, -- those out of sight in the game's list (Units/BuffList.lua)
+    { key = "auraShow", default = {} }, -- first on the unit frames, nothing else about them changed
+    { key = "auraHide", default = {} }, -- never on the unit frames, nothing else about them changed
     { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip, header = ns.TEXT.group },
     { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip },
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
@@ -297,7 +301,7 @@ function ns.OnLoad()
     ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
 end
 
-Core.Command("auras", "your aura lists: important, unimportant, hidden", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("auras", "your aura lists: how they look, and on the unit frames", function() ns.Guarded(ns.AuraLists.Toggle) end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.Guarded(ns.ReminderEditor.Toggle) end)
 

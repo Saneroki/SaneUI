@@ -3,13 +3,18 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Lists
 --  Your marks of auras, kept in the module's settings by the spell's number with
---  its name, three lists:
+--  its name, in two sides. How it looks:
 --      Important      on the unit frames shown in front of the rest, whoever cast
 --                     them, with a glow (Auras.lua); a glow in the game's list of
 --                     your buffs and debuffs (BuffList.lua)
 --      Unimportant    never on the unit frames, faded in that list
 --      Hidden         out of sight in that list, until the mouse is on it
---  A spell is on one of them at most: put on one, it leaves the others.
+--  And the unit frames alone, nothing changed in that list, over what the first
+--  side says of them:
+--      Show on unit frames      in front of the rest, without a glow
+--      Hide from unit frames    never there
+--  A spell has one mark of each side at most: put on one, it leaves the others
+--  of its side.
 --
 --  Filled from a right click on an aura (Lists.Entries, in either's menu), and in
 --  a window of its own (/sane auras, and the menu's Aura lists): a box to add a
@@ -23,18 +28,20 @@ local Plain = Core.Plain
 local Lists = {}
 ns.AuraLists = Lists
 
-Lists.WIDTH, Lists.HEIGHT = 740, 420
+Lists.WIDTH, Lists.HEIGHT = 1010, 420
 Lists.INSET = 12
 Lists.LINE = 24 -- a spell's line
 Lists.ICON = 18
 Lists.TOP = 62  -- from the window's top to the lists' titles, under the box
-Lists.KEYS = { white = "auraWhite", black = "auraBlack", hidden = "auraHidden" } -- the lists' settings
-Lists.ORDER = { "white", "black", "hidden" }
-Lists.WORDS = { white = "auraImportant", black = "auraUnimportant", hidden = "auraHidden" } -- their words in ns.TEXT
+Lists.KEYS = { white = "auraWhite", black = "auraBlack", hidden = "auraHidden", show = "auraShow", hide = "auraHide" } -- the lists' settings
+Lists.ORDER = { "white", "black", "hidden", "show", "hide" }
+Lists.WORDS = { white = "auraImportant", black = "auraUnimportant", hidden = "auraHidden",
+                show = "auraFramesShow", hide = "auraFramesHide" } -- their words in ns.TEXT
+Lists.SIDE = { white = "look", black = "look", hidden = "look", show = "frames", hide = "frames" }
 
 local frame, window, box, status
 local columns = {} -- [which] = { scroll, child, lines }
-local names        -- [a spell's name] = its list, made when asked after a change
+local names        -- [a side][a spell's name] = its list, made when asked after a change
 
 -- A list: { [spell number] = its name }.
 local function List(which)
@@ -78,22 +85,29 @@ local function Changed()
     Fill()
 end
 
--- The list of a spell by its name, any rank of it: "white", "black", "hidden" or nil.
-function Lists.Mark(name)
+-- The list of a spell on a side by its name, any rank of it; nil where it has none.
+local function Side(side, name)
     if not names then
-        names = {}
+        names = { look = {}, frames = {} }
         for _, which in ipairs(Lists.ORDER) do
-            for _, spell in pairs(List(which)) do names[spell] = which end
+            for _, spell in pairs(List(which)) do names[Lists.SIDE[which]][spell] = which end
         end
     end
-    return names[name]
+    return names[side][name]
 end
 
--- A spell on a list: off the others.
+-- How a spell looks in the game's list: "white", "black", "hidden" or nil.
+function Lists.Mark(name)
+    return Side("look", name)
+end
+
+-- A spell on a list: off the others of its side.
 function Lists.Put(which, spell)
     local id = tonumber(spell and spell.id)
     if not id then return end
-    for _, other in ipairs(Lists.ORDER) do List(other)[id] = nil end
+    for _, other in ipairs(Lists.ORDER) do
+        if Lists.SIDE[other] == Lists.SIDE[which] then List(other)[id] = nil end
+    end
     List(which)[id] = spell.name or tostring(id)
     Changed()
     if status then status:SetText(ns.TEXT.listsPut:format(spell.name or id, ns.TEXT[Lists.WORDS[which]])) end
@@ -104,12 +118,16 @@ function Lists.Take(which, id)
     Changed()
 end
 
--- A menu's lines for an aura: the three marks, one at most, a tick taken off again by a click; then the window.
+-- A menu's lines for an aura: the marks by side, one of each at most, a tick taken off again by a click; then the window.
 function Lists.Entries(root, spell)
+    local last
     for _, which in ipairs(Lists.ORDER) do
-        root:CreateCheckbox(ns.TEXT[Lists.WORDS[which]], ns.Guard(function() return Lists.Mark(spell.name) == which end),
+        local side = Lists.SIDE[which]
+        if last and last ~= side then root:CreateDivider() end
+        last = side
+        root:CreateCheckbox(ns.TEXT[Lists.WORDS[which]], ns.Guard(function() return Side(side, spell.name) == which end),
             ns.Guard(function()
-                if Lists.Mark(spell.name) ~= which then return Lists.Put(which, spell) end
+                if Side(side, spell.name) ~= which then return Lists.Put(which, spell) end
                 for id, name in pairs(List(which)) do
                     if name == spell.name then List(which)[id] = nil end
                 end
@@ -211,21 +229,21 @@ local function Build()
     label:SetPoint("TOPLEFT", I, -I)
     label:SetText(ns.TEXT.listsInput)
     box = CreateFrame("EditBox", nil, inside, "InputBoxTemplate")
-    box:SetSize(220, 22)
+    box:SetSize(180, 22)
     box:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 6, -4)
     box:SetAutoFocus(false)
     box:SetScript("OnEnterPressed", ns.Guard(function() Add("white") end))
     box:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
     local last = box
-    local third = (Lists.WIDTH - 2 * I) / #Lists.ORDER
+    local share = (Lists.WIDTH - 2 * I) / #Lists.ORDER
     for index, which in ipairs(Lists.ORDER) do
         local add = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
-        add:SetSize(120, 22)
+        add:SetSize(150, 22)
         add:SetPoint("LEFT", last, "RIGHT", index == 1 and 10 or 6, 0)
         add:SetText(ns.TEXT[Lists.WORDS[which]])
         add:SetScript("OnClick", ns.Guard(function() Add(which) end))
         last = add
-        Column(which, I + (index - 1) * third, I + index * third)
+        Column(which, I + (index - 1) * share, I + index * share)
     end
     local rule = inside:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     rule:SetPoint("BOTTOMLEFT", I, I)

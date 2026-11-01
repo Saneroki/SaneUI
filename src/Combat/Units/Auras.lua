@@ -18,6 +18,8 @@ local _, ns = ...
 --  And before them, in front of the rest and with a yellow glow, the ones you
 --  marked Important (what no longer fits a line goes up: the three stay clear of
 --  each other); never the ones marked Unimportant (Lists.lua keeps the lists).
+--  Your marks of the unit frames alone go over those: Show on unit frames in
+--  front of the rest without a glow, Hide from unit frames never.
 --
 --  All are the game's own aura containers (CustomAuraContainerTemplate), one
 --  per kind and frame, as the nameplates' are. The game fills them, in a fight
@@ -28,8 +30,8 @@ local _, ns = ...
 --  decides alone (the window says so).
 --
 --  A right click on an icon, out of a fight (in one the game keeps the icons
---  from addons), opens a menu: Create reminder (Reminders/), Important,
---  Unimportant, Hidden, Aura lists. Which spell
+--  from addons), opens a menu: Create reminder (Reminders/), your marks
+--  (Lists.Entries), Aura lists. Which spell
 --  it is: the icon's name (the game writes it into a text of ours, unseen),
 --  found among the unit's auras of its kind.
 -------------------------------------------------------------------------------
@@ -76,7 +78,21 @@ end
 
 local function Lists()
     local options = ns.options or {}
-    return options.auraWhite or {}, options.auraBlack or {}
+    return options.auraWhite or {}, options.auraBlack or {}, options.auraShow or {}, options.auraHide or {}
+end
+
+-- A set of Set's without what is in the other; nil where nothing is left.
+local function Without(set, other)
+    for id in pairs(set or {}) do
+        if other and other[id] then set[id] = nil end
+    end
+    return set and next(set) ~= nil and set or nil
+end
+
+-- A group of the spells it holds, off while there are none.
+local function Holds(container, key, spells)
+    container:SetAuraGroupCandidateFilters(key, spells and { includeSpellIDs = spells } or nil)
+    container:SetAuraGroupEnabled(key, spells ~= nil)
 end
 
 -- The spell an icon shows, out of a fight: its name as the game wrote it, found among the unit's auras of its kind.
@@ -186,7 +202,10 @@ local function Container(face, kind)
                  layout = { elementSpacing = Auras.GAP, lineSpacing = Auras.GAP },
                  sortMethod = sorts and sorts[sort] or nil, sortDirection = ways and ways.Normal or nil }
     end
-    if kind.listed then container:AddAuraGroup("listed", kind.listed, Options("Default", shining)) end
+    if kind.listed then
+        container:AddAuraGroup("listed", kind.listed, Options("Default", shining))
+        container:AddAuraGroup("shown", kind.listed, Options("Default", dressed))
+    end
     container:AddAuraGroup("auto", kind.friend, Options(kind.sort, dressed))
     container.kind = kind
     return container
@@ -203,22 +222,22 @@ function Auras.Make(face)
     Auras.Listed(face)
 end
 
--- The lists into a face's containers: the group of the important its spells (off while the list is empty), the rest
--- without them and without the unimportant; crowd control without the unimportant.
+-- The lists into a face's containers: the group of the important (glowing) and the one of Show on unit frames their
+-- spells, the rest without those and without what never shows; crowd control without what never shows. The marks of the
+-- unit frames alone go first: Hide takes an important one off, Show brings an unimportant one, without a glow.
 function Auras.Listed(face)
-    local white, black = Lists()
+    local white, black, shown, hide = Lists()
+    local first = Without(Set(white), Set(hide))
+    local second = Without(Set(shown), Set(white))
+    local never = Without(Set(black, hide), Set(shown))
     for _, container in pairs(face.auras or {}) do
-        local kind = container.kind
-        if kind.listed then
-            local include = Set(white)
-            container:SetAuraGroupCandidateFilters("listed", include and { includeSpellIDs = include } or nil)
-            container:SetAuraGroupEnabled("listed", include ~= nil)
-            local exclude = Set(white, black)
-            container:SetAuraGroupCandidateFilters("auto", exclude and { excludeSpellIDs = exclude } or nil)
-        else
-            local exclude = Set(black)
-            container:SetAuraGroupCandidateFilters("auto", exclude and { excludeSpellIDs = exclude } or nil)
+        local exclude = never
+        if container.kind.listed then
+            Holds(container, "listed", first)
+            Holds(container, "shown", second)
+            exclude = Set(first, second, never)
         end
+        container:SetAuraGroupCandidateFilters("auto", exclude and { excludeSpellIDs = exclude } or nil)
     end
 end
 

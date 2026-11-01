@@ -32,7 +32,8 @@ a thin bar each for threat, damage, healing and interrupts. No title bar and no 
 it; the mouse on it brings its buttons.
 
 Right click a buff or debuff and mark it: *Important* (a yellow glow, first on the unit frames), *Unimportant* (faded,
-never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it). Or choose *Create reminder*: its
+never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
+with no glow or fade, *Show on unit frames* or *Hide from unit frames*. Or choose *Create reminder*: its
 icon then shows on an invisible reminder bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
 shows on it, and you make as many bars as you like.
 
@@ -100,7 +101,7 @@ shows on it, and you make as many bars as you like.
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). **Right click** an icon, out of a fight, for its menu: *Important* (in front of the
-    rest, whoever cast it, with a yellow glow), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*) and *Aura lists...*, a window with the lists side by side: type a
+    rest, whoever cast it, with a yellow glow), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Show on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window with the lists side by side: type a
     spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
     `/sane auras` opens it too. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (and in a fight it keeps the icons from addons: their
@@ -220,6 +221,9 @@ shows on it, and you make as many bars as you like.
   - **Important:** a yellow glow around it; on the unit frames it comes first, with the same glow.
   - **Unimportant:** faded to 25% of its strength; never on the unit frames.
   - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
+  - **Show on unit frames**, **Hide from unit frames:** the unit frames alone: first there without a glow, or never there,
+    the list as it is. They go over the three above: *Important* + *Hide*: a glow in the list, not on the frames;
+    *Unimportant* + *Show*: faded in the list, first on the frames, no glow. Hidden can have either.
   - A mark goes by the aura's name, so any rank of it. Click the tick again to take it off, or use `/sane auras`.
   - **Cancelling a buff:** out of a fight **Shift + right click**, in a fight a right click, as in the game.
   - **In a fight** the game hides what a button shows: marks stay where it tells the aura's instance; where it does not, the
@@ -439,16 +443,16 @@ shows on it, and you make as many bars as you like.
     stays centred. `Auras.LINE` (three icons) is its widest line (`SetFlowLayoutMaximumLineSize`): what your list
     adds goes up, not sideways into the next kind. Groups of `Auras.MOST` (3): `listed` (the filter
     `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Important, off while that list is empty, its icons with a glow, so a
-    fight needs no telling which is which) and `auto` (the kind's
+    fight needs no telling which is which), `shown` (Show on unit frames, no glow) and `auto` (the kind's
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
-    `BigDefensive`, `excludeSpellIDs` = both lists; control only Unimportant). The game applies those candidate filters
+    `BigDefensive`, `excludeSpellIDs` = what those two hold and what never shows; control only what never shows: Unimportant and Hide, less Show). The game applies those candidate filters
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
     Each icon (`initializeFrame`, `Dress`): the picture cropped in a dark edge, the swipe, the count, its name into a
     text of ours at alpha 0 (`SetSpellName`), and an `OnMouseUp` hook: a right click, while not `Core.Restricted()`,
     finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
     context menu (`MenuUtil`). `Auras.Set` sets each container's unit (`none` while off), `UpdateAllAuras` at every fill.
-  - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden` (`{ [spell number] = name }`), one list at a
-    time per spell (`Put`, `Take`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; the window a `Core.Window` panel (`auraListsPlace`, not
+  - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden`, and `auraShow`, `auraHide` (`{ [spell number] = name }`), one list of
+    each side per spell (`Lists.SIDE`; `Put`, `Take`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; the window a `Core.Window` panel (`auraListsPlace`, not
     sizable, no full screen): the box (`InputBoxTemplate`; a number by `C_Spell.GetSpellName`, a name by
     `C_Spell.GetSpellInfo`), a button per list, the lists in scroll areas, each line with
     icon, name, number and the game's close button, the rule under them. `/sane auras` (`Core.Command`).
@@ -592,7 +596,7 @@ shows on it, and you make as many bars as you like.
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar, the power bars under it (a druid's mana and form), the row |
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the right click on an icon |
-| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden, the menus' lines for them, and their window (`/sane auras`) |
+| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Show on and Hide from unit frames; the menus' lines for them, and their window (`/sane auras`) |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: glow, fade, hidden last, the right click by a frame over each button |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
@@ -614,6 +618,7 @@ shows on it, and you make as many bars as you like.
 | `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
 
 ## History
+- **2026-11-01:** Show on and Hide from unit frames, apart from how an aura looks (Saneroki).
 - **2026-11-01:** Important, Unimportant, Hidden on the game's list of your buffs and on the unit frames (Saneroki); reminder bars made and deleted, one by default.
 - **2026-11-01:** reminders of buffs and debuffs on invisible bars (Saneroki), from a right click on an aura.
 - **2026-11-01:** the threat and damage meter (Saneroki), on the game's own meter and threat, with its pages and saved fights.

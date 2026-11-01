@@ -1366,8 +1366,9 @@ do
     local menu = W.menus[1]
     check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.reminderCreate
         and menu[3].text == ns.TEXT.auraImportant and menu[4].text == ns.TEXT.auraUnimportant
-        and menu[5].text == ns.TEXT.auraHidden and menu[6].text == ns.TEXT.auraLists,
-        "its menu: Create reminder, Important, Unimportant, Hidden, Aura lists")
+        and menu[5].text == ns.TEXT.auraHidden and menu[6].text == ns.TEXT.auraFramesShow
+        and menu[7].text == ns.TEXT.auraFramesHide and menu[8].text == ns.TEXT.auraLists,
+        "its menu: Create reminder, Important, Unimportant, Hidden, the unit frames alone, Aura lists")
     menu[3].fn()
     check(ns.options.auraWhite[7386] == "Sunder Armor" and debuffs._groups.listed.enabled
         and debuffs._groups.listed.candidates.includeSpellIDs[7386] and debuffs._groups.auto.candidates.excludeSpellIDs[7386]
@@ -1385,6 +1386,33 @@ do
     W.menus[1][4].fn()
     check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
         and control._groups.auto.candidates.excludeSpellIDs[7386], "Unimportant: off the other list, never shown")
+    -- Show and Hide, for the unit frames alone: over what the look says, and without a glow.
+    local groups = debuffs._groups
+    local function Tick(index)
+        W.menus = {}
+        icon._scripts.OnMouseUp(icon, "RightButton")
+        W.menus[1][index].fn()
+    end
+    Tick(6)
+    check(ns.options.auraShow[7386] and ns.options.auraBlack[7386], "Show on unit frames: a side of its own, the look stays")
+    check(groups.shown.enabled and groups.shown.candidates.includeSpellIDs[7386] and groups.auto.candidates.excludeSpellIDs[7386],
+        "first on the frame, over Unimportant, and not twice")
+    check(not (control._groups.auto.candidates and control._groups.auto.candidates.excludeSpellIDs),
+        "nothing left of it never showing")
+    check(Shines(groups.listed.icon) and not Shines(groups.shown.icon), "and no glow")
+    Tick(7)
+    check(ns.options.auraHide[7386] and not ns.options.auraShow[7386] and not groups.shown.enabled
+        and control._groups.auto.candidates.excludeSpellIDs[7386], "Hide from unit frames: off Show, never shown")
+    Tick(3)
+    check(ns.options.auraWhite[7386] and ns.options.auraHide[7386] and not groups.listed.enabled
+        and groups.auto.candidates.excludeSpellIDs[7386], "over Important too: glowing in your list, not on the frame")
+    Tick(6)
+    check(ns.options.auraShow[7386] and groups.listed.enabled and not groups.shown.enabled,
+        "Important and Show: once, with its glow, as you marked it important")
+    Tick(6)
+    Tick(4)
+    check(not ns.options.auraShow[7386] and ns.options.auraBlack[7386] and not ns.options.auraWhite[7386],
+        "taken off by its tick")
     W.combat = true
     W.menus = {}
     icon._scripts.OnMouseUp(icon, "RightButton")

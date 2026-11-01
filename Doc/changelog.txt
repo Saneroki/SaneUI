@@ -13,7 +13,9 @@ The bigger changes of each version, newest first.
   with a setting each.
 - Right click a buff or debuff to mark it Important (a yellow glow,
   first on your unit frames), Unimportant (faded, never on your unit
-  frames) or Hidden (out of the list until you mouse over it).
+  frames) or Hidden (out of the list until you mouse over it). Show
+  on unit frames and Hide from unit frames do that part alone, with
+  no glow or fade.
 - Reminders: right click a buff or debuff and choose Create reminder.
   Its icon shows on an invisible bar you place in Edit Mode: when it
   is missing or active, in or out of combat, not in cities if you

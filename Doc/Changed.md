@@ -28,6 +28,10 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.
 - **`dev/uilab/scenes/guide.lua`:** a stand-in for `ns.Run`, without which the wheel failed in the scene. **`dev/tests/speedguide.lua`:** the shades' corners, their size and no border.
 
+### Show on and hide from unit frames (Saneroki, 2026-11-01)
+Saneroki: "Sometimes I want auras to display normal but also make sure they don't show up on the unit frames or have priority over others to show on unit frames without fading or highlighting them with glows."
+- **`src/Combat/Units/Lists.lua`:** two lists more, `auraShow` and `auraHide`, a side of their own: a spell has one mark of how it looks and one of the unit frames. **`Units/Auras.lua`:** a group `shown` after the glowing `listed`, the second side over the first. A `/reload` takes it in.
+
 ### Important, unimportant, hidden auras; reminder bars made and deleted (Saneroki, 2026-11-01)
 Saneroki: "make buffs and debuffs as important or unimportant": important always or first on the unit frames with "a yellow glow border" in the list and on the unit frames, never on the reminder bars; unimportant "faded to 25% transparency" and never on the unit frames; hidden "don't show in the buff and debuff list unless I mouse over those"; "make more independent reminder bars", "By default there is only one", delete reminders and bars.
 - **`src/Combat/Units/BuffList.lua` (a game restart takes it in: Combat's TOC changed; `Reminders/Clicks.lua` is gone, into it):** the marks on the game's list, the right click on it, with an option of its own (*Marks and menu on the game's list*), so reminders switched off leave them.
