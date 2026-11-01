@@ -33,7 +33,7 @@ local look = { top = { 0.15, 0.15, 0.17 }, alpha = 1 } -- every bubble's fill (C
 local painted = 0 -- counts the changes of that look: a bubble drawn before one is painted again
 local brief = true -- the chats' names in short: "G" for "Guild"
 local ruler
-local parts = {} -- [row] = { body, ring, icon, name, meta, bubble, plate, text, painted }
+local parts = {} -- [row] = { body, ring, icon, name, meta, bubble, plate, text, clock, painted }
 
 -- The size of the text. The font stays the game's chat font (which differs by language); a font of
 -- ours takes it over and only changes the size, as the game does for its own chat windows (Core.Font).
@@ -181,6 +181,8 @@ local function Build(row)
     part.text:SetPoint("TOPLEFT", Layout.PAD_X, -Layout.PAD_Y)
     part.text:SetJustifyH("LEFT")
     part.text:SetNonSpaceWrap(true)
+    part.clock = part.bubble:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall") -- a note's time
+    part.clock:SetPoint("RIGHT", -Layout.PAD_X, 0)
 
     parts[row] = part
     return part
@@ -233,6 +235,13 @@ function Bubble.Init(row, entry, rowWidth)
         part.bubble:SetPoint("TOPRIGHT", 0, -Layout.HEAD)
     end
     local width, height = Layout.Bubble(fit[1], fit[2])
+    -- A note's time stands in its bubble, right of its text, which wraps as it was measured; a day's pill has none.
+    local time = note and entry.time ~= "" and entry.time
+    part.clock:SetShown(time and true or false)
+    if time then
+        part.clock:SetText(time)
+        width = width + Layout.GAP + math.ceil(part.clock:GetStringWidth())
+    end
     part.bubble:SetSize(width, height)
     if part.painted ~= painted then
         part.painted = painted

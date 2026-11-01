@@ -196,7 +196,7 @@ local OPTIONS = {
     { key = "fadeInTime", default = 0.4, min = 0, max = 2, step = 0.05, unit = "seconds", text = "Fade-in time", tab = LOOK, parent = "fadeInOn", inline = true,
       tip = "How long a message takes to fade in." },
     { key = "fade", default = true, text = "Fade out", tab = LOOK, parent = "animations",
-      tip = "Each message fades out a while after it came. Turn the mouse wheel over the window, or write, and all come back. Off: every message stays." },
+      tip = "Each message fades out a while after it came. Turn the mouse wheel over the window, or let it fill the screen, and all come back. Off: every message stays." },
     { key = "fadeOutTime", default = 1, min = 0, max = 2, step = 0.05, unit = "seconds", text = "Fade-out time", tab = LOOK, parent = "fade", inline = true,
       tip = "How long a message takes to fade out." },
     { key = "fadeAfter", default = 60, min = 5, max = 300, step = 5, unit = "seconds", text = "Fade messages after", tab = LOOK, parent = "fade",

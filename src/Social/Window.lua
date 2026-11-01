@@ -33,11 +33,11 @@ local _, ns = ...
 --  Few messages stand at the bottom, the newest lowest: the list gets as much
 --  empty room above them as they leave free (Settle).
 --
---  A message fades a while after it came, each by itself (Fade.lua). The
---  mouse over the window does not bring them back; the wheel does (Reveal), and
---  so does the line to write in: then all are there to read, until the mouse
---  leaves the window at the newest message, or the line closes. While the
---  window fills the screen none fades at all (FadeAfter).
+--  A message fades a while after it came, each by itself (Fade.lua). Neither
+--  the mouse over the window nor the line to write in brings them back; the
+--  wheel does (Reveal): then all are there to read, until the mouse leaves the
+--  window at the newest message. While the window fills the screen none fades
+--  at all (FadeAfter).
 --
 --  Nothing jumps: a new message fades in, and when the messages move up, for a
 --  new one or for the line to write in, they slide there (Slide). A scroll with
@@ -253,10 +253,10 @@ local function Fill()
 end
 
 -- After how many seconds a message fades right now; nil: it does not (fading out is off, or every
--- animation, or the messages are there to read: revealed, written to, or the window fills the screen).
+-- animation, or the messages are there to read: revealed, or the window fills the screen).
 local function FadeAfter()
     local options = ns.options
-    if revealed or writing or (handle.edge and handle.edge.full) or not (options.animations and options.fade) then return nil end
+    if revealed or (handle.edge and handle.edge.full) or not (options.animations and options.fade) then return nil end
     return options.fadeAfter
 end
 
@@ -447,7 +447,6 @@ local function Room(input)
     Bottom(input)
     Resettle()
     if stick then Slide((input and Layout.Input(input) or 0) - (was and Layout.Input(was) or 0)) end
-    if not was ~= not input then Window.Refade() end
     if input and not Shows() then ns.Safe("conversations", ns.Conversations.Chat) end
 end
 

@@ -153,10 +153,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   at once, at your target if you have one, as typing it would. While chat is locked down (a fight, a
   dungeon) the list offers no emotes and says so: the game refuses them to an addon then.
 - **The newest message is at the bottom.** A few messages stand at the bottom of the window, not at its top.
-- **Messages fade out,** each by itself, 60 seconds after it came. The mouse over the window leaves them
-  out of sight; turn the mouse wheel over it, or open the line to write in, and all of them fade back in
-  to read. They fade out again once the mouse has left at the newest message (scrolled up, they stay),
-  or the line has closed.
+- **Messages fade out,** each by itself, 60 seconds after it came. Neither the mouse over the window nor
+  the line to write in brings them back: turn the mouse wheel over it and all of them fade back in to
+  read. They fade out again once the mouse has left at the newest message (scrolled up, they stay). On
+  the full screen every message stays.
+- **A note shows its time:** a line of the game or of an addon, in the middle of the chat, has the time
+  it came in grey inside its bubble, right of its text (`Bubble.Init`, `clock`). Its text wraps as
+  before, and a day's pill in a conversation has no time.
 - **Nothing jumps:** a new message fades in quickly, and the others slide up to make room for it; they
   slide for the line to write in too, and the mouse wheel scrolls smoothly.
 - **A message cut by the window's top edge is not shown** until it fits whole.
@@ -504,7 +507,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   and every frame while one in view fades (`OnUpdate` on the window, removed once none does). No
   animation groups for fading.
 - **When** (`Window` `Refade`): every message is told where to go: in if fading is off, the list is
-  revealed or you write, otherwise in until `entry.at + fadeAfter`. One timer (`C_Timer.After`, a counter
+  revealed or the window is full, otherwise in until `entry.at + fadeAfter`. One timer (`C_Timer.After`, a counter
   makes older ones do nothing) looks again when the next message's time is over. Messages that came
   while the window was hidden are set at once when it is shown (`Refade(true)`).
   `Window` `Reveal`: a turn of the wheel (`HookScript` `OnMouseWheel` on the list, also at its end where

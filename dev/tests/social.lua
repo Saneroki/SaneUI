@@ -630,6 +630,18 @@ check(part(bubble(rows[3]), "Texture")._color[3] == FILL and part(bubble(rows[1]
 check(bubble(rows[4]):IsShown() and text(rows[4])._text == "You are now AFK." and bubble(rows[4])._points[1][1] == "TOP"
     and not meta(rows[4]):IsShown() and not icon(rows[4]):IsShown(), "a note is a bubble too, in the middle, with nothing above it")
 check(part(bubble(rows[4]), "Texture")._color[3] == FILL and text(rows[4])._color[3] == 0, "in the same fill, its text in the game's colour")
+do
+    local clock, note = part(bubble(rows[4]), "FontString", 2), box.provider.list[4]
+    check(clock:IsShown() and clock._text == note.time and clock._points[1][1] == "RIGHT" and text(rows[4])._points[1][1] == "TOPLEFT"
+        and bubble(rows[4])._width == math.ceil(text(rows[4]):GetStringWidth()) + 2 * Layout.PAD_X + Layout.GAP + clock:GetStringWidth(),
+        "its time stands in its bubble, right of its text, and the bubble is as much wider")
+    check(not part(bubble(rows[1]), "FontString", 2):IsShown() and not part(bubble(rows[3]), "FontString", 2):IsShown(),
+        "somebody's message and yours have theirs above the bubble, as before")
+    local width = Layout.RowWidth(window._width)
+    ns.Bubble.Init(rows[4], { side = "center", text = "Today", time = "", r = 1, g = 1, b = 1 }, width)
+    check(not clock:IsShown(), "a day's pill has no time, and shows none")
+    ns.Bubble.Init(rows[4], note, width)
+end
 check(box.ends >= 4, "at the newest message, the list follows each new one")
 
 box.atEnd, box.scrolls = false, true
@@ -1109,10 +1121,10 @@ check(seen(last) == 0, "back at the newest message, with the mouse gone, they fa
 box.scrolls = false
 open()
 step(Layout.APPEAR)
-check(seen(last) == 1, "while you write, every message is there too")
+check(seen(last) == 0 and seen(last + 2) == 1, "the line to write in brings none back: they stay as their age says")
 close()
 step(Layout.FADE)
-check(seen(last) == 0 and seen(last + 2) == 1, "and fades again afterwards")
+check(seen(last) == 0 and seen(last + 2) == 1, "nor does closing it")
 
 -- Nothing jumps: the others slide up, a thing apart from fading
 local slide = box.ScrollTarget._fade
