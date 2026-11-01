@@ -15,7 +15,7 @@ local _, ns = ...
 --                                  what you can dispel, a boss's)
 --  A container is as wide as what it holds (the game sizes it), so the middle
 --  one, standing by its bottom middle, stays centred however many it shows.
---  And before them, in front of the rest and with a yellow glow, the ones you
+--  And before them, in front of the rest and with the game's golden outline, the ones you
 --  marked Important (what no longer fits a line goes up: the three stay clear of
 --  each other); never the ones marked Unimportant (Lists.lua keeps the lists).
 --  Your marks of the unit frames alone go over those: Show on unit frames in
@@ -45,7 +45,6 @@ Auras.GAP = 2   -- between icons, and from the frame
 Auras.MOST = 3  -- of each kind, and of each list
 Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP) - Auras.GAP -- a container's widest line: what comes after goes up
 Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
-Auras.GLOW = 1.75 -- an important icon's glow against its size, as in the game's list (BuffList.lua)
 -- The kinds: their place on the frame's roof, the corner they grow from inside their container and which way, their
 -- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
 -- of the group of your important ones).
@@ -139,7 +138,7 @@ local OnClicked = ns.Guard(Clicked)
 
 -- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
 -- square in a dark edge, the swipe of the time gone, the stack count over it, its name unseen (for the menu); in the
--- group of your important ones a glow, so it needs no telling which an icon is, in a fight either.
+-- group of your important ones the game's outline (BuffList.lua), so it needs no telling which an icon is, in a fight either.
 local function Dress(frame, face, kind, glowing)
     local size = Auras.SIZE
     frame:SetSize(size, size)
@@ -163,14 +162,8 @@ local function Dress(frame, face, kind, glowing)
     local name = top:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     name:SetAlpha(0)
     name:SetPoint("CENTER")
-    if glowing then
-        local glow = top:CreateTexture(nil, "OVERLAY")
-        glow:SetTexture(ns.BuffList.GLOW)
-        glow:SetBlendMode("ADD")
-        glow:SetVertexColor(ns.BuffList.COLOUR[1], ns.BuffList.COLOUR[2], ns.BuffList.COLOUR[3])
-        glow:SetPoint("CENTER", frame, "CENTER", 0, 0)
-        glow:SetSize(size * Auras.GLOW, size * Auras.GLOW)
-    end
+    local alert = glowing and ns.BuffList.Alert(top, frame)
+    if alert then alert:Show() end
     frame:SetIcon(icon)
     frame:SetDurationCooldown(cooldown)
     frame:SetApplicationCount(count)

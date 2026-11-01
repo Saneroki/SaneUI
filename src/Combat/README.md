@@ -31,7 +31,7 @@ The threat and damage meter: your party or raid, you on top, each with their cla
 a thin bar each for threat, damage, healing and interrupts. No title bar and no background, and clicks go through
 it; the mouse on it brings its buttons.
 
-Right click a buff or debuff and mark it: *Important* (a yellow glow, first on the unit frames), *Unimportant* (faded,
+Right click a buff or debuff and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
 with no glow or fade, *Show on unit frames* or *Hide from unit frames*. Or choose *Create reminder*: its
 icon then shows on an invisible reminder bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
@@ -101,7 +101,7 @@ shows on it, and you make as many bars as you like.
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). **Right click** an icon, out of a fight, for its menu: *Important* (in front of the
-    rest, whoever cast it, with a yellow glow), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Show on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window with the lists side by side: type a
+    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Show on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window with the lists side by side: type a
     spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
     `/sane auras` opens it too. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (and in a fight it keeps the icons from addons: their
@@ -226,7 +226,7 @@ shows on it, and you make as many bars as you like.
     own list. On a boss it hides threat too: there you see the share alone, and threat is neither added up nor sorted.
 - **Your buffs and debuffs** (the page's tick *Marks and menu on the game's list*): the game's own lists at the top of the
   screen stay, with your marks on them. **Right click** one, out of a fight, for its menu: *Create reminder*, and a tick each:
-  - **Important:** a yellow glow around it; on the unit frames it comes first, with the same glow.
+  - **Important:** the game's golden animated outline around it, as on a spell it wants you to see; on the unit frames it comes first, with the same outline.
   - **Unimportant:** faded to 25% of its strength; never on the unit frames.
   - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
   - **Show on unit frames**, **Hide from unit frames:** the unit frames alone: first there without a glow, or never there,
@@ -576,8 +576,10 @@ shows on it, and you make as many bars as you like.
   `CancelAuraByInstanceID` and `CancelUnitBuff` are closed to addons, so a menu entry cannot cancel: a frame over each
   button, child of it, clicks only (`SetMouseMotionEnabled(false)`, so the tooltip stays), click-enabled only out of a
   restriction and Edit Mode, without Shift (`MODIFIER_STATE_CHANGED`) and on real auras (`Sync`, also after
-  `UpdateAuraButtons`: a button's `auraType` changes). Fields of the game's buttons are only read. The glow is on that
-  frame. The fade on the button's regions (`REGIONS`), as `AuraButtonMixin:OnUpdate` sets the button's own alpha every
+  `UpdateAuraButtons`: a button's `auraType` changes). Fields of the game's buttons are only read. The outline is on that
+  frame: `BuffList.Alert`, the game's `ActionButtonSpellAlertTemplate` made by us, 1.4 times the icon as the game's, only its loop;
+  not by `ActionButtonSpellAlertManager`, which would write our frames into its `activeAlerts` and fields, and made when first
+  needed. The template's own `OnShow` is never hooked up (and asks a field the manager never sets), so ours starts the loop. The fade on the button's regions (`REGIONS`), as `AuraButtonMixin:OnUpdate` sets the button's own alpha every
   frame for its warning flash. Hidden last: the game's list keeps a place for every button with `hasValidInfo`, written by
   it, so `Took` keeps each button's anchor after the game's layout (a hook on `AuraContainer:UpdateGridLayout`; the debuffs'
   list anchors valid buttons only, `doNotAnchorDisabledFrames`), `Arrange` deals those places out, seen first. The mouse:

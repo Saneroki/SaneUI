@@ -285,6 +285,16 @@ end
 
 -- The parts of the game's templates the addon reaches for.
 W.templates.UICheckButtonTemplate = function(widget) widget.Text = NewWidget("FontString", nil, widget) end
+-- The game's outline of a spell that wants attention: hidden at first, its animation asked to play or not.
+W.templates.ActionButtonSpellAlertTemplate = function(widget)
+    widget._shown = false
+    widget.ProcStartFlipbook = NewWidget("Texture", nil, widget)
+    local loop = {}
+    function loop:Play() self._playing = true end
+    function loop:Stop() self._playing = false end
+    function loop:IsPlaying() return self._playing or false end
+    widget.ProcLoop = loop
+end
 -- A window with a title (the feedback window), and a box to write several lines in.
 W.templates.ButtonFrameTemplate = function(widget)
     function widget:SetTitle(text) self._title = text end

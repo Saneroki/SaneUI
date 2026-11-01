@@ -14,11 +14,11 @@ The bigger changes of each version, newest first.
   fight and in a group, and the mouse on any action bar shows them
   all. The quest log on the screen does the same. All on by default,
   with a setting each.
-- Right click a buff or debuff to mark it Important (a yellow glow,
-  first on your unit frames), Unimportant (faded, never on your unit
-  frames) or Hidden (out of the list until you mouse over it). Show
-  on unit frames and Hide from unit frames do that part alone, with
-  no glow or fade.
+- Right click a buff or debuff to mark it Important (the game's
+  golden animated outline, first on your unit frames), Unimportant
+  (faded, never on your unit frames) or Hidden (out of the list until
+  you mouse over it). Show on unit frames and Hide from unit frames
+  do that part alone, with no outline or fade.
 - Reminders: right click a buff or debuff and choose Create reminder.
   Its icon shows on an invisible bar you place in Edit Mode: when it
   is missing or active, in or out of combat, not in cities if you

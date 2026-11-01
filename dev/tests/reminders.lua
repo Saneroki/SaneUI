@@ -198,6 +198,10 @@ local function Line(button, word)
         if item.text == word then return item end
     end
 end
+local function Glows(button)
+    local glow = Shield(button).glow
+    return glow ~= nil and glow:IsShown()
+end
 local bear = BuffFrame.auraFrames[3]
 local mid = BuffFrame.auraFrames[2]
 local slotOf = {}
@@ -209,23 +213,32 @@ bear.auraType, bear.buttonInfo = "Buff", { index = 2, auraInstanceID = 14 }
 local function Rebuilt() BuffFrame:UpdateAuraButtons() end
 
 Line(thorns, TEXT.auraFramesHide).fn()
-check(ns.options.auraHide[782] and not Shield(thorns).glow._shown and thorns.Icon._alpha ~= List.FADED,
+check(ns.options.auraHide[782] and not Glows(thorns) and thorns.Icon._alpha ~= List.FADED,
     "Hide from unit frames: the list as it is, no fade")
 Line(thorns, TEXT.auraFramesHide).fn()
 Line(thorns, TEXT.auraFramesShow).fn()
-check(ns.options.auraShow[782] and not Shield(thorns).glow._shown, "Show on unit frames: no glow")
+check(ns.options.auraShow[782] and not Glows(thorns), "Show on unit frames: no glow")
 Line(thorns, TEXT.auraImportant).fn()
-check(Shield(thorns).glow._shown and ns.options.auraShow[782], "a mark of how it looks beside it, each of its own")
+check(Glows(thorns) and ns.options.auraShow[782], "a mark of how it looks beside it, each of its own")
+local alert = Shield(thorns).glow
+check(alert._template == "ActionButtonSpellAlertTemplate" and alert:GetParent() == Shield(thorns),
+    "the game's own outline, on our frame over the button")
+check(alert._width == 42 and alert._height == 42 and alert._points[1][2] == thorns.Icon, "as big as the game makes it: 1.4 times the icon, around it")
+check(alert.ProcLoop:IsPlaying() and alert.ProcStartFlipbook._alpha == 0, "its loop runs, no burst")
+alert.ProcLoop:Stop()
+alert:Hide()
+alert:Show()
+check(alert.ProcLoop:IsPlaying(), "shown again, it runs again")
 check(Line(thorns, TEXT.auraFramesShow).checked() == true and Line(thorns, TEXT.auraImportant).checked() == true, "both ticked")
 Line(thorns, TEXT.auraImportant).fn()
 Line(thorns, TEXT.auraFramesShow).fn()
-check(not ns.options.auraShow[782] and not Shield(thorns).glow._shown, "both off")
+check(not ns.options.auraShow[782] and not Glows(thorns), "both off")
 Line(thorns, TEXT.auraImportant).fn()
-check(ns.options.auraWhite[782] == "Thorns" and Shield(thorns).glow._shown, "Important: on the list, and a glow in the game's list")
+check(ns.options.auraWhite[782] == "Thorns" and Glows(thorns), "Important: on the list, and a glow in the game's list")
 check(Line(thorns, TEXT.auraImportant).checked() == true, "its line ticked")
-check(thorns.Icon._alpha ~= 0.25 and not Shield(bear).glow._shown, "the others as they were")
+check(thorns.Icon._alpha ~= 0.25 and not Glows(bear), "the others as they were")
 Line(thorns, TEXT.auraUnimportant).fn()
-check(ns.options.auraBlack[782] and not ns.options.auraWhite[782] and not Shield(thorns).glow._shown,
+check(ns.options.auraBlack[782] and not ns.options.auraWhite[782] and not Glows(thorns),
     "Unimportant: off the other list, no glow")
 check(thorns.Icon._alpha == List.FADED and thorns.Count._alpha == List.FADED and thorns.Duration._alpha == List.FADED,
     "faded, in its parts: the button's own alpha is the game's warning flash")
@@ -421,7 +434,7 @@ Update()
 local rowTwo = Row(2)
 check(Row()._width == Bars.SIZE and rowTwo ~= nil and rowTwo._width == Bars.SIZE, "each bar holds its own, apart")
 for _, widget in ipairs(W.frames) do
-    check(not (widget._texture == List.GLOW and widget._parent and widget._parent._parent == rowTwo),
+    check(not (widget._template == List.ALERT and widget._parent and widget._parent._parent == rowTwo),
         "no glow on a reminder bar")
 end
 Reminders.TakeBar(second)

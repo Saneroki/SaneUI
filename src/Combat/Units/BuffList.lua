@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Combat - Units - Buff list
 --  The game's own lists of your buffs and debuffs at the top of the screen, with
 --  your marks of them (Lists.lua) on it:
---      Important      a yellow glow around it
+--      Important      the game's golden animated outline around it
 --      Unimportant    faded, BuffList.FADED of its strength
 --      Hidden         out of sight, and last in the list, so nothing leaves a
 --                     hole; shown while the mouse is on the list
@@ -34,9 +34,8 @@ ns.BuffList = BuffList
 
 BuffList.FADED = 0.25  -- an unimportant aura's strength
 BuffList.LINGER = 0.3  -- seconds the hidden stay after the mouse left, as the buttons have gaps between them
-BuffList.GLOW = "Interface\\Buttons\\UI-ActionButton-Border"
-BuffList.COLOUR = { 1, 0.82, 0 }
-BuffList.GROW = 1.75   -- the glow's size against the icon's: the picture has wide empty edges
+BuffList.ALERT = "ActionButtonSpellAlertTemplate" -- the game's outline of a spell that wants attention
+BuffList.GROW = 1.4    -- its size against the icon's, as the game gives it
 BuffList.REGIONS = { "Icon", "Duration", "Count", "Symbol", "DebuffBorder", "TempEnchantBorder" }
 
 local shields = {} -- [the game's aura button] = our frame over it
@@ -72,6 +71,21 @@ local function Mark(button)
     return mark
 end
 
+-- The game's own golden animated outline, as it has around a spell that wants attention: its template, sized as its
+-- spell alerts are, around that region. Its manager is not asked: that would write our frames into the game's table.
+-- The animation goes while the outline shows, and on when it shows again. nil where this client has no such template.
+function BuffList.Alert(parent, around)
+    local ok, alert = pcall(CreateFrame, "Frame", nil, parent, BuffList.ALERT)
+    if not (ok and alert and alert.ProcLoop and alert.ProcStartFlipbook) then return nil end
+    alert:SetSize(around:GetWidth() * BuffList.GROW, around:GetHeight() * BuffList.GROW)
+    alert:SetPoint("CENTER", around, "CENTER", 0, 0)
+    alert.ProcStartFlipbook:SetAlpha(0) -- its burst is for a proc's start: this one just stands
+    alert:HookScript("OnShow", ns.Guard(function(self)
+        if not self.ProcLoop:IsPlaying() then self.ProcLoop:Play() end
+    end))
+    return alert
+end
+
 local function Dress(button, mark, reveal)
     marks[button] = mark
     local alpha = (mark == "black" and BuffList.FADED) or (mark == "hidden" and not reveal and 0) or 1
@@ -82,7 +96,9 @@ local function Dress(button, mark, reveal)
             if region then region:SetAlpha(alpha) end
         end
     end
-    shields[button].glow:SetShown(mark == "white")
+    local shield = shields[button]
+    if mark == "white" and not shield.glow then shield.glow = BuffList.Alert(shield, button.Icon) end
+    if shield.glow then shield.glow:SetShown(mark == "white") end
 end
 
 -- The list's places: first what can be seen, in the game's order, then what is hidden.
@@ -179,15 +195,6 @@ local function Cover(frame)
             shield:SetScript("OnMouseUp", OnClicked)
             shield:SetMouseMotionEnabled(false)
             shield:SetMouseClickEnabled(false)
-            local icon = button.Icon
-            local glow = shield:CreateTexture(nil, "OVERLAY")
-            glow:SetTexture(BuffList.GLOW)
-            glow:SetBlendMode("ADD")
-            glow:SetVertexColor(BuffList.COLOUR[1], BuffList.COLOUR[2], BuffList.COLOUR[3])
-            glow:SetPoint("CENTER", icon, "CENTER", 0, 0)
-            glow:SetSize(icon:GetWidth() * BuffList.GROW, icon:GetHeight() * BuffList.GROW)
-            glow:Hide()
-            shield.glow = glow
             shields[button] = shield
             button:HookScript("OnEnter", ns.Guard(function() Over(frame, true) end))
             button:HookScript("OnLeave", ns.Guard(function() Over(frame, false) end))

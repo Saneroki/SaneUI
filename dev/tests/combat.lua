@@ -1376,7 +1376,9 @@ do
         "Important: shown in front of the rest (the game includes it there and leaves it out of the rest)")
     local function Shines(button)
         for _, widget in ipairs(W.frames) do
-            if widget._texture == ns.BuffList.GLOW and widget._parent and widget._parent._parent == button then return true end
+            if widget._template == ns.BuffList.ALERT and widget._parent and widget._parent._parent == button then
+                return widget:IsShown() and widget.ProcLoop:IsPlaying()
+            end
         end
     end
     check(Shines(debuffs._groups.listed.icon) and not Shines(debuffs._groups.auto.icon),

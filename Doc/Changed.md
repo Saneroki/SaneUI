@@ -61,6 +61,10 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.
 - **`dev/uilab/scenes/guide.lua`:** a stand-in for `ns.Run`, without which the wheel failed in the scene. **`dev/tests/speedguide.lua`:** the shades' corners, their size and no border.
 
+### The game's own golden outline for important auras (Saneroki, 2026-11-02)
+Saneroki: "The game client itself has a animated outline for spells that it needs to highlight or triggers etc. [...] Can you make sure that you use this already build in look for the highlights instead of a custom implementation of this"
+- **`src/Combat/Units/BuffList.lua`, `Units/Auras.lua`:** the yellow border is gone; `BuffList.Alert` makes the game's `ActionButtonSpellAlertTemplate` around an important aura, in the game's list and on the unit frames. Not through its manager, which would write our frames into its table. A `/reload` takes it in.
+
 ### All of a unit's buffs in its tooltip (Saneroki, 2026-11-02)
 Saneroki: "When I mouse over units, can I see all their buffs and debuffs in their tooltips without holding alt?"
 - **`src/Tooltips/Live.lua`, `Panel.lua`:** a unit's icons were one line, at most 16 and as many as fit its width; now all of them, in as many lines as they take (`Live.AuraLines`), the panel laid out anew when the lines change. Alt played no part in it. A `/reload` takes it in.
