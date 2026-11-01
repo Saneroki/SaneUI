@@ -62,6 +62,7 @@ class Schema:
         self.key = None
         self.learn = False
         self.history = True  # older versions go into the game's files
+        self.ship = True     # the set has a file in the game
         self.about = None
         self.fields = []
         self.byname = {}
@@ -146,17 +147,20 @@ def load(path, where=None):
         return None, [f"{where}: does not parse: {error}"]
     problems, schema = [], Schema()
     for word in data:
-        if word not in ("set", "key", "learn", "history", "about", "fields", "index", "play"):
+        if word not in ("set", "key", "learn", "history", "ship", "about", "fields", "index", "play"):
             problems.append(f"{where}: '{word}' is not part of a schema")
     schema.set, schema.key = data.get("set"), data.get("key")
     schema.learn, schema.about = data.get("learn", False), data.get("about")
     schema.history = data.get("history", True)
+    schema.ship = data.get("ship", True)
     if not (isinstance(schema.set, str) and NAME.match(schema.set)):
         problems.append(f"{where}: 'set' is the set's name (letters and digits, a capital first)")
     if schema.key not in ("int", "text"):
         problems.append(f"{where}: 'key' is \"int\" or \"text\"")
     if not isinstance(schema.history, bool):
         problems.append(f"{where}: 'history' is true or false")
+    if not isinstance(schema.ship, bool):
+        problems.append(f"{where}: 'ship' is true or false")
     if not isinstance(schema.learn, bool):
         problems.append(f"{where}: 'learn' is true or false")
     if not (isinstance(schema.about, str) and schema.about.strip()):

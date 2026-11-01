@@ -1,0 +1,538 @@
+#!/usr/bin/env python3
+"""Patch day: what a new game build needs beyond dev/tools/blizzard's patch (the export, the interface's notes, the todo
+list) and dev/tools/data (the master), for the skill /patchday (Doc/guides/blizzard-updates.md, *Patch day*). Each
+command works on a game's newest patch: its newest export against the one before it. Everything goes into the patch's
+folder under the reports' folder, patches/<game>-<old>-to-<new>/.
+
+Usage:  dev/tools/patchday check [--json]      which game's installed build is newer than its last export; how far the
+                                               newest patch of each game is. Exit 0 either way
+        dev/tools/patchday bump <game>         the new build into builds.toml, and BUILD of the data tools (Forever's)
+        dev/tools/patchday tables <game>       every client table against the build before: tables.tsv, tables/
+        dev/tools/patchday world <game>        the terrain and the map tables against the build before: world.md,
+                                               world.json (the walking data's maps, the Atlas' squares)
+        dev/tools/patchday draft <game>        what the master took from this build: facts.md, facts.json; an empty
+                                               patchnotes.json in Blizzard's layout, if there is none
+        dev/tools/patchday rerender <game> [--priority N]
+                                               the Atlas' squares and painted zones the world changed set aside, the
+                                               tiles' inputs moved to the new build, the job patch-<build> in the GPU
+                                               queue. Starts nothing: the runner takes it up when its turn comes
+        dev/tools/patchday paint <patch> [--status]
+                                               the job's own command: paints what rerender set aside
+        dev/tools/patchday page <game>         patchnotes.json checked, as patchnotes.md and patchnotes.html
+        dev/tools/patchday store <game>        patchnotes.json into the database: the set PatchNotes, key the build
+
+<game> is forever or retail. The folders come from ~/.config/saneui/blizzard.json: exports (each build's extract),
+tables (each build's client tables as CSV, a folder per build, <build>-laid with the hotfixes on), reports. The page of
+every patch's notes is /patchnotes/ on the tools' server, 127.0.0.1 port 8768.
+"""
+import argparse
+import importlib.machinery
+import importlib.util
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tomllib
+from collections import Counter
+from datetime import date
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+sys.path[:0] = [str(ROOT / "dev" / "blizzard"), str(ROOT / "dev" / "data")]
+
+import clienttables  # noqa: E402
+import export as exports  # noqa: E402
+import patchnotes  # noqa: E402
+import world as worlds  # noqa: E402
+
+BUILDS = ROOT / "assets" / "data" / "builds.toml"
+JOBS = ROOT / "dev" / "imagegen" / "jobs.toml"
+TILES = ROOT / "assets" / "generated" / "world-tiles"
+LAYERS = ROOT / "assets" / "generated" / "map-layers"
+STAGING = ROOT / "dev" / "data" / "staging"
+MAP_LAYERS = str(ROOT / "dev" / "tools" / "map-layers")
+DATA = str(ROOT / "dev" / "tools" / "data")
+BUILD_TOOLS = ("map-data", "travel-data", "walk-data", "walk-gates")   # the data tools' BUILD, Forever's
+COUNT_ONLY = {"Walking", "Tiles"}   # sets listed by their counts: an entry says nothing to a reader
+SHOWN = 80                          # characters of a value in facts
+PRIORITY = 11                       # above the world's tiles (10): the map tells what the game shows
+CLASSES = {1: "Warrior", 2: "Paladin", 3: "Hunter", 4: "Rogue", 5: "Priest", 6: "Death Knight", 7: "Shaman", 8: "Mage",
+           9: "Warlock", 10: "Monk", 11: "Druid", 12: "Demon Hunter", 13: "Evoker"}
+
+
+def fail(text):
+    print(text, file=sys.stderr)
+    sys.exit(1)
+
+
+def tool(name):
+    loader = importlib.machinery.SourceFileLoader(name.replace("-", "_") + "_tool", str(ROOT / "dev" / "tools" / name))
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
+    loader.exec_module(module)
+    return module
+
+
+def number(version):
+    return int(version.rsplit(".", 1)[1])
+
+
+def patch_number(version):
+    return version.rsplit(".", 1)[0]
+
+
+class Patch:
+    """A game's newest patch: its two newest exports and the patch's folder."""
+
+    def __init__(self, game, reports):
+        found = exports.all_exports(game)
+        if len(found) < 2:
+            fail(f"{game}: fewer than two exports: nothing to compare. Run saneui readpatch {game} first.")
+        self.game = game
+        (self.old, self.old_product, _), (self.new, self.product, _) = found[-2], found[-1]
+        self.build = number(self.new)
+        self.name = f"{game}-{self.old}-to-{self.new}"
+        self.folder = reports / "patches" / self.name
+
+    @property
+    def extract(self):
+        return exports.exports_folder() / f"{self.product}-{self.new}"
+
+
+def reports():
+    return Path(exports.setting("reports") or ROOT / "dev" / "blizzard" / "reports")
+
+
+def tables_folder():
+    folder = exports.setting("tables")
+    if not folder:
+        fail(f'No folder of client tables: name it in {exports.CONFIG} ({{"tables": "<folder>"}}).')
+    return Path(folder)
+
+
+def client_tables(product, version):
+    """A build's tables as CSV, the hotfixes laid on where that was done."""
+    base = tables_folder() / f"{product}-{version}"
+    return base.with_name(base.name + "-laid") if base.with_name(base.name + "-laid").is_dir() else base
+
+
+def earlier(patch, needs):
+    """The newest build before the patch's new one whose folder has what needs(folder) asks; (version, folder)."""
+    found = []
+    for folder in exports.exports_folder().iterdir():
+        product, _, version = folder.name.rpartition("-")
+        if product == patch.product and version and version[0].isdigit() and \
+                exports.version_key(version) < exports.version_key(patch.new) and needs(version, folder):
+            found.append((exports.version_key(version), version, folder))
+    return max(found)[1:] if found else (None, None)
+
+
+def master_builds(game):
+    return tomllib.loads(BUILDS.read_text(encoding="utf-8")).get(game, {})
+
+
+def stored(game, build):
+    name = "PatchNotes.jsonl" if game == "forever" else f"PatchNotes.{game}.jsonl"
+    path = ROOT / "assets" / "data" / "PatchNotes" / name
+    return path.is_file() and f'{{"key":{build},' in path.read_text(encoding="utf-8")
+
+
+def steps_of(patch):
+    """How far a patch is, read from what stands there, so a stopped run goes on where it was."""
+    folder = patch.folder
+    notes = patchnotes.load(folder / "patchnotes.json") if (folder / "patchnotes.json").is_file() else {}
+    world = json.loads((folder / "world.json").read_text(encoding="utf-8")) if (folder / "world.json").is_file() else None
+    return {"interface": (folder / "notes.md").is_file(),
+            "client tables": (tables_folder() / f"{patch.product}-{patch.new}").is_dir(),
+            "builds": str(patch.build) in master_builds(patch.game),
+            "tables": (folder / "tables.tsv").is_file(),
+            "world": world is not None,
+            "rerender": world is not None and (patch.game != "forever" or not (world["squares"] or world["zones"])
+                                               or (folder / "rerender.json").is_file()),
+            "draft": (folder / "facts.json").is_file(),
+            "points": bool(notes) and any(True for _ in patchnotes.points_of(notes)),
+            "crosschecked": bool(notes.get("crosschecked")),
+            "stored": stored(patch.game, patch.build),
+            "page": (folder / "patchnotes.html").is_file()}
+
+
+# --- check ----------------------------------------------------------------------------------------
+
+def run_check(args):
+    versions = tool("blizzard").installed()
+    place = reports()
+    out = []
+    for game in exports.GAMES:
+        product = next((p for p in exports.GAMES[game] if versions.get(p)), None)
+        found = exports.all_exports(game)
+        last = found[-1][0] if found else None
+        installed = versions.get(product) if product else None
+        newer = bool(installed and (last is None or exports.version_key(installed) > exports.version_key(last)))
+        entry = {"game": game, "installed": installed, "last_export": last, "new_build": newer, "open": [], "patch": None}
+        if len(found) >= 2:
+            patch = Patch(game, place)
+            if patch.folder.is_dir():
+                entry["patch"] = patch.name
+                entry["open"] = [step for step, done in steps_of(patch).items() if not done]
+        out.append(entry)
+    if args.json:
+        print(json.dumps(out, indent=1))
+        return
+    for entry in out:
+        title = patchnotes.GAMES[entry["game"]]
+        if entry["installed"] is None:
+            print(f"{title}: not installed.")
+        elif entry["new_build"]:
+            print(f"{title}: NEW BUILD {entry['installed']}, the last export is {entry['last_export']}.")
+        else:
+            print(f"{title}: {entry['installed']} is exported, no new build.")
+        if entry["open"]:
+            print(f"  {entry['patch']} still lacks: {', '.join(entry['open'])}")
+
+
+# --- bump -----------------------------------------------------------------------------------------
+
+def add_build(text, game, build, patch, day):
+    """builds.toml's text with a build's line at the end of its game's table."""
+    if re.search(rf"^{build} = ", text.split(f"[{game}]", 1)[1].split("\n[", 1)[0], re.M):
+        return text
+    lines = text.split("\n")
+    at = lines.index(f"[{game}]") + 1
+    while at < len(lines) and re.match(r"\d+ = ", lines[at]):
+        at += 1
+    lines.insert(at, f'{build} = {{ patch = "{patch}", day = "{day}" }}')
+    return "\n".join(lines)
+
+
+def run_bump(args):
+    patch = Patch(args.game, reports())
+    text = BUILDS.read_text(encoding="utf-8")
+    new = add_build(text, patch.game, patch.build, patch_number(patch.new), date.today().isoformat())
+    if new != text:
+        BUILDS.write_text(new, encoding="utf-8")
+    print(f"builds.toml: {patch.game} {patch.build}" + (" added." if new != text else " was there."))
+    if patch.game != "forever":
+        return
+    for name in BUILD_TOOLS:
+        path = ROOT / "dev" / "tools" / name
+        old = path.read_text(encoding="utf-8")
+        made, count = re.subn(r"^BUILD = \d+", f"BUILD = {patch.build}", old, count=1, flags=re.M)
+        if not count:
+            fail(f"{name}: no BUILD line.")
+        if made != old:
+            path.write_text(made, encoding="utf-8")   # in place: the file keeps its mode
+        print(f"{name}: BUILD {patch.build}")
+
+
+# --- tables and world -----------------------------------------------------------------------------
+
+def run_tables(args):
+    patch = Patch(args.game, reports())
+    new = client_tables(patch.product, patch.new)
+    if not new.is_dir():
+        fail(f"No client tables of {patch.new} yet.")
+    old_version, _ = earlier(patch, lambda version, _: client_tables(patch.product, version).is_dir())
+    if old_version is None:
+        fail(f"No client tables before {patch.new}.")
+    patch.folder.mkdir(parents=True, exist_ok=True)
+    found = clienttables.compare(client_tables(patch.product, old_version), new, patch.folder)
+    topics = Counter(row["topic"] for row in found)
+    print(f"{len(found)} tables changed against {old_version}: " + ", ".join(f"{n} {t}" for t, n in topics.most_common()))
+    print(f"{patch.folder / 'tables.tsv'}")
+
+
+def run_world(args):
+    patch = Patch(args.game, reports())
+    new_tables = client_tables(patch.product, patch.new)
+    old_version, old_folder = earlier(patch, lambda version, folder: (folder / "adt").is_dir()
+                                      and client_tables(patch.product, version).is_dir())
+    if old_version is None:     # a game whose terrain is not extracted (Retail's): its map tables alone
+        old_version, old_folder = earlier(patch, lambda version, _: client_tables(patch.product, version).is_dir())
+    if old_version is None:
+        fail(f"No build before {patch.new} to compare the world with.")
+    world = worlds.compare(old_folder, patch.extract, client_tables(patch.product, old_version), new_tables)
+    world.update(old=old_version, new=patch.new)
+    patch.folder.mkdir(parents=True, exist_ok=True)
+    (patch.folder / "world.json").write_text(json.dumps(world, ensure_ascii=False), encoding="utf-8")
+    (patch.folder / "world.md").write_text(worlds.report(world, f"{patchnotes.GAMES[patch.game]} {old_version} to {patch.new}"),
+                                           encoding="utf-8")
+    print(worlds.report(world, f"{patch.game} {old_version} to {patch.new}").split("\n\n## ")[0])
+    print(patch.folder / "world.md")
+
+
+# --- draft ----------------------------------------------------------------------------------------
+
+def short(value):
+    text = json.dumps(value, ensure_ascii=False, separators=(",", ":")) if not isinstance(value, str) else value
+    return text if len(text) <= SHOWN else text[:SHOWN - 1] + "…"
+
+
+def spell_classes(master, game):
+    """{spell: its class}, from the skill lines that hold a class's spells."""
+    found = {}
+    for versions in master.view("SkillLines", game).values():
+        fields = versions[-1].fields
+        if fields.get("class"):
+            for spell in fields.get("spells", ()):
+                found.setdefault(spell, fields["class"])
+    return found
+
+
+def facts_of(master, game, build):
+    """Everything the master took from the game at this build, set by set."""
+    classes = spell_classes(master, game)
+    sets = {}
+    for name in sorted(master.schemas):
+        if name == "PatchNotes":
+            continue
+        schema = master.schemas[name]
+        found = {"new": [], "changed": [], "gone": []}
+        view = master.view(name, game)
+        for key in sorted(view, key=lambda k: (isinstance(k, str), k)):
+            versions = view[key]
+            for index, version in enumerate(versions):
+                if version.since != build or version.line is None or "game" not in version.line.src:
+                    continue
+                before = versions[index - 1] if index else None
+                row = {"key": key}
+                named = version.fields.get("name") or (before.fields.get("name") if before else None)
+                if named:
+                    row["name"] = named
+                fields = version.fields or (before.fields if before else {})
+                klass = fields.get("class") or (classes.get(key) if name == "Spells" else None)
+                if klass:
+                    row["class"] = klass
+                if version.gone:
+                    found["gone"].append(row)
+                elif before is None or before.gone:
+                    found["new"].append(row)
+                else:
+                    row["changes"] = [{"field": field.name, "from": short(before.fields.get(field.name, "")),
+                                       "to": short(version.fields.get(field.name, ""))}
+                                      for field in schema.fields
+                                      if before.fields.get(field.name) != version.fields.get(field.name)]
+                    found["changed"].append(row)
+        counts = {how: len(rows) for how, rows in found.items()}
+        if any(counts.values()):
+            sets[name] = {"counts": counts, **({} if name in COUNT_ONLY else found)}
+    return {"build": build, "sets": sets}
+
+
+def facts_text(facts, title):
+    lines = [f"# What the database took from {title}", ""]
+    if not facts["sets"]:
+        lines.append("Nothing: the game's tables gave the master nothing new at this build.")
+    for name, found in facts["sets"].items():
+        lines += [f"## {name}: " + ", ".join(f"{n} {how}" for how, n in found["counts"].items() if n), ""]
+        for how in ("new", "changed", "gone"):
+            for row in found.get(how, ()):
+                what = "; ".join(f"{c['field']} {c['from']} → {c['to']}" for c in row.get("changes", ()))
+                klass = f" ({CLASSES.get(row['class'], row['class'])})" if row.get("class") else ""
+                lines.append(f"- {how} {row['key']} {row.get('name', '')}{klass}{': ' + what if what else ''}")
+        lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+def run_draft(args):
+    import master as masters
+    patch = Patch(args.game, reports())
+    master = masters.Master(masters.MASTER).load()
+    facts = facts_of(master, patch.game, patch.build)
+    patch.folder.mkdir(parents=True, exist_ok=True)
+    (patch.folder / "facts.json").write_text(json.dumps(facts, ensure_ascii=False), encoding="utf-8")
+    title = f"{patchnotes.GAMES[patch.game]} {patch.new}"
+    (patch.folder / "facts.md").write_text(facts_text(facts, title), encoding="utf-8")
+    notes = patch.folder / "patchnotes.json"
+    if not notes.is_file():
+        day = master_builds(patch.game).get(str(patch.build), {}).get("day") or date.today().isoformat()
+        made = patchnotes.skeleton(patch.game, patch.build, number(patch.old), patch_number(patch.new), day)
+        notes.write_text(json.dumps(made, ensure_ascii=False, indent=1), encoding="utf-8")
+    for name, found in facts["sets"].items():
+        print(f"{name}: " + ", ".join(f"{n} {how}" for how, n in found["counts"].items() if n))
+    print(f"{patch.folder / 'facts.md'}\n{notes}")
+
+
+# --- rerender and paint ---------------------------------------------------------------------------
+
+def layers_state():
+    path = LAYERS / "state.json"
+    return path, (json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None)
+
+
+def zone_subjects(world, state, tables):
+    """The painted zones a quarter of whose tiles changed, by the zones' names on the game's maps."""
+    named = {row["Name_lang"]: key for key, row in worlds.read_csv(tables, "UiMap").items() if row.get("Type") == "3"}
+    wanted = {f"zone-{named[z['zone']]}" for z in world["zones"]
+              if z["zone"] in named and z["of"] and z["tiles"] / z["of"] >= worlds.ZONE_SHARE and (z["ground"] or z["water"])}
+    wanted |= {f"instance-{key}" for key in world["instances"]}
+    return sorted(wanted & {subject["name"] for subject in state["subjects"]})
+
+
+def set_far_aside(name, into):
+    """A subject's far painting moved out, so that it is painted again; its tries with it, its checks forgotten."""
+    folder = LAYERS / name
+    for path in [folder / "far.png", *sorted(folder.glob("far-[0-9]*.png"))]:
+        if path.is_file():
+            (into / name).mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), into / name / path.name)
+    checks = folder / "checks.json"
+    if checks.is_file():
+        kept = {key: value for key, value in json.loads(checks.read_text(encoding="utf-8")).items()
+                if not key.startswith("far")}
+        checks.write_text(json.dumps(kept), encoding="utf-8")
+
+
+def job_text(name, patch, priority):
+    command = json.dumps(["dev/tools/patchday", "paint", patch])
+    status = json.dumps(["dev/tools/patchday", "paint", patch, "--status"])
+    return (f"\n# What {patch} changed of the world, painted again (dev/tools/patchday rerender).\n[[job]]\nname = \"{name}\"\n"
+            f"priority = {priority}\ncommand = {command}\nstatus = {status}\ndone = '^(\\d+) of \\1 squares painted'\n")
+
+
+def run_rerender(args):
+    patch = Patch(args.game, reports())
+    if patch.game != "forever":
+        print("The Atlas and the painted maps are Forever's: nothing to paint for Retail.")
+        return
+    path = patch.folder / "world.json"
+    if not path.is_file():
+        fail("No world.json: run patchday world first.")
+    if (patch.folder / "rerender.json").is_file():
+        print(f"{patch.name} is queued already.")
+        return
+    world = json.loads(path.read_text(encoding="utf-8"))
+    state_path, state = layers_state()
+    if state is None:
+        fail(f"{state_path} is not there: the painted maps have no plan on this computer.")
+    tables = client_tables(patch.product, patch.new)
+    aside = ROOT / "assets" / "generated" / "replaced" / str(patch.build)
+    squares = []
+    for square in world["squares"]:
+        continent, i, j = square.split("-")
+        painted = TILES / continent / f"sq-{i}-{j}.png"
+        if painted.is_file():
+            (aside / "world-tiles" / continent).mkdir(parents=True, exist_ok=True)
+            shutil.move(str(painted), aside / "world-tiles" / continent / painted.name)
+            squares.append(square)
+    subjects = zone_subjects(world, state, tables)
+    for name in subjects:
+        set_far_aside(name, aside / "map-layers")
+    new_paths = dict(continents=str(patch.extract / "adt"), tables=str(tables))
+    if (patch.extract / "minimap").is_dir():
+        new_paths["minimap"] = str(patch.extract / "minimap")
+    state["paths"].update(new_paths)
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+    if not squares and not subjects:
+        (patch.folder / "rerender.json").write_text(json.dumps({"squares": [], "subjects": []}), encoding="utf-8")
+        print("Nothing painted stands on what changed: no job. The maps' inputs now read the new build.")
+        return
+    (patch.folder / "rerender.json").write_text(json.dumps({"squares": squares, "subjects": subjects}), encoding="utf-8")
+    name = f"patch-{patch.build}"
+    text = JOBS.read_text(encoding="utf-8")
+    if f'name = "{name}"' not in text:
+        JOBS.write_text(text.rstrip("\n") + "\n" + job_text(name, patch.name, args.priority), encoding="utf-8")
+    print(f"{name}: {len(squares)} squares and {len(subjects)} paintings set aside in {aside}, the job queued at priority "
+          f"{args.priority}. The runner takes it up on its own; nothing was started.")
+
+
+def painted(plan):
+    squares = sum(1 for square in plan["squares"]
+                  if (TILES / square.split("-")[0] / f"sq-{square.split('-', 1)[1]}.png").is_file())
+    return squares + sum(1 for name in plan["subjects"] if (LAYERS / name / "far.png").is_file())
+
+
+def run_paint(args):
+    plan = json.loads((reports() / "patches" / args.patch / "rerender.json").read_text(encoding="utf-8"))
+    whole = len(plan["squares"]) + len(plan["subjects"])
+    if args.status:
+        made = painted(plan)
+        print(f"{made} of {whole} squares painted ({100 * made / max(1, whole):.1f} %)")
+        return
+    if plan["subjects"]:
+        zones = [name.split("-")[1] for name in plan["subjects"] if name.startswith("zone-")]
+        instances = [name.split("-")[1] for name in plan["subjects"] if name.startswith("instance-")]
+        inputs = [MAP_LAYERS, "inputs"] + (["--zones", ",".join(zones)] if zones else []) \
+            + (["--instances", ",".join(instances)] if instances else [])
+        subprocess.run(inputs, check=True)
+        subprocess.run([MAP_LAYERS, "paint", "--levels", "far", "--only", ",".join(plan["subjects"])], check=True)
+    for continent in sorted({square.split("-")[0] for square in plan["squares"]}):
+        here = [square.split("-", 1)[1] for square in plan["squares"] if square.startswith(f"{continent}-")]
+        subprocess.run([MAP_LAYERS, "tiles", "--maps", continent, "--only", ",".join(here)], check=True)
+
+
+# --- page and store -------------------------------------------------------------------------------
+
+def checked_notes(patch):
+    path = patch.folder / "patchnotes.json"
+    if not path.is_file():
+        fail("No patchnotes.json: run patchday draft first.")
+    notes = patchnotes.load(path)
+    found = patchnotes.problems(notes)
+    if found:
+        fail("patchnotes.json:\n  " + "\n  ".join(found))
+    return notes
+
+
+def run_page(args):
+    patch = Patch(args.game, reports())
+    notes = checked_notes(patch)
+    facts_path = patch.folder / "facts.json"
+    facts = json.loads(facts_path.read_text(encoding="utf-8")) if facts_path.is_file() else None
+    (patch.folder / "patchnotes.md").write_text(patchnotes.markdown(notes), encoding="utf-8")
+    (patch.folder / "patchnotes.html").write_text(patchnotes.fragment(notes, facts), encoding="utf-8")
+    print(f"{patch.folder / 'patchnotes.md'}\n{patch.folder / 'patchnotes.html'}")
+
+
+def run_store(args):
+    patch = Patch(args.game, reports())
+    notes = checked_notes(patch)
+    if not notes.get("crosschecked"):
+        fail("patchnotes.json is not crosschecked with Blizzard's notes yet (crosschecked: true, official: its pages, or [] "
+             "when Blizzard published none).")
+    if str(patch.build) not in master_builds(patch.game):
+        fail("The build is not in builds.toml: run patchday bump first.")
+    STAGING.mkdir(parents=True, exist_ok=True)
+    path = STAGING / f"patchnotes-{patch.game}-{patch.build}.jsonl"
+    line = {"set": "PatchNotes", "key": patch.build, "game": patch.game, "build": patch.build, "day": notes["day"], "src": "game",
+            "fields": patchnotes.fields(notes)}
+    path.write_text(json.dumps(line, ensure_ascii=False) + "\n", encoding="utf-8")
+    subprocess.run([DATA, "import", str(path), "--apply", "--take"], check=True)
+
+
+# --- the page of every patch ----------------------------------------------------------------------
+
+def web(request):
+    """/patchnotes/ on the tools' server: the patches that have notes, and each one's page."""
+    folder = reports() / "patches"
+    made = sorted(folder.glob("*/patchnotes.html"), key=lambda path: path.stat().st_mtime, reverse=True)
+    wanted = request.path.strip("/")
+    if wanted:
+        page = next((path for path in made if path.parent.name == wanted), None)
+        if page is None:
+            return 404, "text/plain; charset=utf-8", "No such patch."
+        return 200, "text/html; charset=utf-8", patchnotes.document(page.read_text(encoding="utf-8"))
+    rows = "".join(f'<li><a href="{patchnotes.e(path.parent.name)}/">{patchnotes.e(path.parent.name)}</a></li>' for path in made)
+    return 200, "text/html; charset=utf-8", patchnotes.document(
+        f"<title>Patch notes</title><h1>Patch notes</h1><ul>{rows or '<li>None yet.</li>'}</ul>")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("check").add_argument("--json", action="store_true")
+    for name in ("bump", "tables", "world", "draft", "page", "store"):
+        commands.add_parser(name).add_argument("game", choices=list(exports.GAMES))
+    command = commands.add_parser("rerender")
+    command.add_argument("game", choices=list(exports.GAMES))
+    command.add_argument("--priority", type=int, default=PRIORITY)
+    command = commands.add_parser("paint")
+    command.add_argument("patch")
+    command.add_argument("--status", action="store_true")
+    args = parser.parse_args()
+    {"check": run_check, "bump": run_bump, "tables": run_tables, "world": run_world, "draft": run_draft,
+     "rerender": run_rerender, "paint": run_paint, "page": run_page, "store": run_store}[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

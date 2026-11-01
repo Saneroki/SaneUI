@@ -291,6 +291,8 @@ def compile_sets(master, folder, game):
     target.mkdir(parents=True, exist_ok=True)
     made = []
     for name in sorted(master.schemas):
+        if not master.schemas[name].ship:   # kept in the master only (ship = false)
+            continue
         text, entries = set_file(master, master.schemas[name], game)
         if not entries:
             continue

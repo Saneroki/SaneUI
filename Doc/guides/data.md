@@ -141,6 +141,7 @@ set = "Items"
 key = "int"              # Blizzard's ID; "text" for a set keyed by a name (CVarLabels)
 learn = true             # the game may teach it in play (Learned, step 1c)
 history = false          # optional: the set files carry only the newest versions (a big set no view asks the past of)
+ship = false             # optional: the master keeps it and the game gets no set file (nothing in the game reads it yet)
 about = "Every item players can have: what the game says about it, with its history."
 
 [fields]
@@ -213,7 +214,7 @@ part of Core.
 | Characters | No sets: saved data only (*Characters*) |
 | Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
 | Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
-| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID) |
+| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID), PatchNotes (the build) |
 | Collections | Achievements (achievement ID), Mounts (mount ID), TransmogSets (transmog set ID) |
 
 - **A text key `<kind>:<ID>`** where one set holds things whose IDs overlap (a creature and an object can have

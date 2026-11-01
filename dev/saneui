@@ -104,6 +104,9 @@ GROUPS = {
         "fixpatch": (["dev/tools/blizzard", "fix"], "the session that makes Sane UI comply with the newest patch "
                      "(--print: the prompt only)", "the patch's fixing session"),
         "indexproject": (["dev/tools/project-index"], "the project map in Doc/agent", None),
+        "patchday": (["dev/tools/patchday"], "a new game build beyond its interface: the client's tables, the world, the "
+                     "patch notes, the map's repaint (the skill /patchday)", None),
+        "showpatchnotes": (["dev/tools/web-pages", "open", "patchnotes"], "every patch's notes in the browser", None),
         "showsections": (["dev/tools/doc-sections"], "a long document's headings with their size, or the sections named",
                          None),
     },

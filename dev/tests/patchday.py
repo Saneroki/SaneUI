@@ -1,0 +1,340 @@
+#!/usr/bin/env python3
+"""Tests of dev/tools/patchday without the game's files, on made-up terrain, tables and notes: a ground that moved
+against a chunk's base or outer ring baked anew, water, holes, areas and placements; which squares of the Atlas a
+change reaches; a client table compared, its noise left out; the patch notes checked and written as text, as a page and
+as the database's rows, which fit the real schema; a build added to builds.toml; what the master took from a build; the
+repaint: what is set aside, the job in the queue, how far it says it is; the page of patches. Run by dev/tests/run."""
+import csv
+import importlib.machinery
+import importlib.util
+import json
+import re
+import shutil
+import struct
+import sys
+import tempfile
+import tomllib
+from pathlib import Path
+from types import SimpleNamespace as Thing
+
+import numpy as np
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+sys.path[:0] = [str(ROOT / "dev" / "blizzard"), str(ROOT / "dev" / "data")]
+
+import clienttables  # noqa: E402
+import compile as compiler  # noqa: E402
+import master as masters  # noqa: E402
+import patchnotes  # noqa: E402
+import schema as schemas  # noqa: E402
+import world  # noqa: E402
+
+loader = importlib.machinery.SourceFileLoader("patchday", str(ROOT / "dev" / "tools" / "patchday"))
+pd = importlib.util.module_from_spec(importlib.util.spec_from_loader("patchday", loader))
+loader.exec_module(pd)
+checks = failed = 0
+
+
+def check(name, got, want):
+    global checks, failed
+    checks += 1
+    if got != want:
+        failed += 1
+        print(f"FAIL {name}: got {got!r}, want {want!r}")
+
+
+def piece(name, data):
+    return name[::-1] + struct.pack("<I", len(data)) + data
+
+
+def chunk(x, y, base=100.0, heights=None, area=12, holes=0):
+    """A map chunk: its header (x, y, area, coarse holes, base height) and its heights."""
+    head = bytearray(128)
+    struct.pack_into("<I", head, 0, 0)
+    struct.pack_into("<II", head, 4, x, y)
+    struct.pack_into("<I", head, 0x34, area)
+    struct.pack_into("<H", head, 0x3C, holes)
+    struct.pack_into("<f", head, 0x70, base)
+    values = list(heights) if heights is not None else [0.0] * 145
+    return piece(b"MCNK", bytes(head) + piece(b"MCVT", struct.pack("<145f", *values)))
+
+
+def tile(path, chunks, water=None):
+    data = b"".join(chunks)
+    if water is not None:   # one layer on chunk 0: its kind and level
+        kind, level = water
+        table = bytearray(256 * 12)
+        struct.pack_into("<III", table, 0, len(table), 1, 0)
+        layer = struct.pack("<HHffBBBBII", kind, 2, level, level, 0, 0, 8, 8, 0, 0)
+        data += piece(b"MH2O", bytes(table) + layer)
+    path.write_bytes(data)
+
+
+def placed(path, buildings=(), doodads=()):
+    modf = b"".join(struct.pack("<II3f3f6fHHHH", file, unique, x, 0, z, 0, 0, 0, x, 0, z, x + 10, 5, z + 10, 8, 0, 0, 1024)
+                    for file, unique, x, z in buildings)
+    mddf = b"".join(struct.pack("<II3f3fHH", file, unique, x, 0, z, 0, 0, 0, 1024, 0x40) for file, unique, x, z in doodads)
+    path.write_bytes(piece(b"MODF", modf) + piece(b"MDDF", mddf))
+
+
+def table(folder, name, rows):
+    with open(folder / f"{name}.csv", "w", encoding="utf-8", newline="") as out:
+        writer = csv.DictWriter(out, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def tree(folder):
+    for part in ("adt", "adt-obj0", "wmo", "m2", "wdt", "tables"):
+        (folder / part).mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+temp = Path(tempfile.mkdtemp(prefix="patchday-test-"))
+old, new = tree(temp / "wowf-1.60.1.1"), tree(temp / "wowf-1.60.1.2")
+
+# --- one tile at a time -------------------------------------------------------------------------------------------
+inner = world.INSIDE[0]
+ring = [0.0] * 145
+ring[0] = 500.0    # the chunk's corner: its outer ring
+moved_inside = [0.0] * 145
+moved_inside[inner] = 30.0
+small = [0.0] * 145
+small[inner] = 0.5
+
+
+def tile_change(before, after, water_before=None, water_after=None):
+    a, b = temp / "a.adt", temp / "b.adt"
+    tile(a, before, water_before)
+    tile(b, after, water_after)
+    return world.compare_tile(a, b)
+
+
+got = tile_change([chunk(0, 0, base=100)], [chunk(0, 0, base=100, heights=ring)])
+check("the outer ring baked anew is no ground", got["ground"], 0)
+got = tile_change([chunk(0, 0, base=100)], [chunk(0, 0, base=90, heights=[10.0] * 145)])
+check("a base baked anew is no ground", (got["ground"], got["chunks"]), (0, []))
+got = tile_change([chunk(0, 0)], [chunk(0, 0, heights=small)])
+check("half a yard is no ground", got["ground"], 0)
+got = tile_change([chunk(0, 0)], [chunk(0, 0, heights=moved_inside)])
+check("the ground moved", (got["ground"], got["most"], got["chunks"]), (1, 30.0, [(0, 0)]))
+got = tile_change([chunk(0, 0, holes=0)], [chunk(0, 0, holes=1)])
+check("a hole", (got["holes"], got["chunks"]), (1, [(0, 0)]))
+got = tile_change([chunk(0, 0, area=12)], [chunk(0, 0, area=13)])
+check("an area counts but touches no picture", (got["areas"], got["chunks"]), (1, []))
+got = tile_change([chunk(0, 0)], [chunk(0, 0)], (1, 5.0), (1, 9.0))
+check("the water", (got["water"], got["chunks"]), (1, [(0, 0)]))
+got = tile_change([chunk(0, 0)], [chunk(0, 0)], (1, 5.0), (1, 5.0))
+check("the same water", got["water"], 0)
+
+# --- the Atlas' squares -------------------------------------------------------------------------------------------
+check("the first chunk: one square", world.squares_of(*world.chunk_box(0, 0, (0, 0))), {(0, 0)})
+check("the overlap: two squares", sorted(world.squares_of(1800, 0, 1900, 100)), [(0, 0), (1, 0)])
+check("a chunk of the next tile's row", (0, 1) in world.squares_of(*world.chunk_box(1, 0, (0, 0))), True)
+
+# --- two builds -----------------------------------------------------------------------------------------------------
+key = 4096 + 30 * 64 + 40   # Kalimdor
+same, area_only = 4096 + 30 * 64 + 41, 2991 * 4096 + 5
+for folder, heights, area in ((old, None, 12), (new, moved_inside, 12)):
+    tile(folder / "adt" / f"{key}.adt", [chunk(0, 0, heights=heights, area=area)])
+    tile(folder / "adt" / f"{same}.adt", [chunk(0, 0)])
+tile(old / "adt" / f"{area_only}.adt", [chunk(0, 0, area=12)])
+tile(new / "adt" / f"{area_only}.adt", [chunk(0, 0, area=13)])
+placed(old / "adt-obj0" / f"{key}.adt", [(500, 1, 10.0, 20.0)], [(600, 2, 30.0, 40.0)])
+placed(new / "adt-obj0" / f"{key}.adt", [(500, 99, 10.0, 20.0)], [(600, 2, 300.0, 40.0)])   # renumbered; moved
+placed(old / "adt-obj0" / f"{same}.adt", [(700, 3, 1.0, 1.0)])
+placed(new / "adt-obj0" / f"{same}.adt", [(700, 3, 1.0, 1.0)])
+(old / "wmo" / "700.wmo").write_bytes(b"one")
+(new / "wmo" / "700.wmo").write_bytes(b"two")
+(old / "m2" / "extract.tsv").write_text("x")
+(new / "m2" / "extract.tsv").write_text("y")
+for folder, extra in ((old, []), (new, [{"ID": "3", "AreaName_lang": "New Crater", "ParentAreaID": "0"}])):
+    table(folder / "tables", "AreaTable", [{"ID": "12", "AreaName_lang": "Elwynn Forest", "ParentAreaID": "0"},
+                                           {"ID": "13", "AreaName_lang": "Goldshire", "ParentAreaID": "12"}] + extra)
+    table(folder / "tables", "Map", [{"ID": "0", "MapName_lang": "Eastern Kingdoms", "Directory": "Azeroth", "InstanceType": "0"}])
+    table(folder / "tables", "UiMap", [{"ID": "1429", "Name_lang": "Elwynn Forest", "Type": "3", "ParentUiMapID": "0"}])
+found = world.compare(old, new, old / "tables", new / "tables")
+tiles = {t["key"]: t for t in found["tiles"]}
+check("the tile that moved", (tiles[key]["ground"], tiles[key]["most"]), (1, 30.0))
+check("a building only renumbered is none, a doodad moved is", (tiles[key]["buildings"], tiles[key]["doodads"]), (0, 2))
+check("the tile that places a changed model", tiles[same]["models"], [700])
+check("the changed models", found["models"], {"buildings": [700], "doodads": []})
+check("a new area", [a["name"] for a in found["areas"]["new"]], ["New Crater"])
+check("a chunk's zone is the top of its parents", tiles[key]["zones"], ["Elwynn Forest"])
+check("the squares are the Atlas' continents' alone", found["squares"] and all(s.startswith("1-") for s in found["squares"]), True)
+check("an area alone asks for no walking data", found["walk_maps"], [1])
+check("the world moved", world.moved(found), True)
+text = world.report(found, "a test")
+check("the report", ("New Crater" in text, "| Elwynn Forest |" in text), (True, True))
+
+# --- the client's tables --------------------------------------------------------------------------------------------
+left, right, out = temp / "left", temp / "right", temp / "out"
+for folder in (left, right, out):
+    folder.mkdir()
+table(left, "ChrRaces", [{"ID": "1", "Name_lang": "Human", "FactionID": "5", "VerifiedBuild": "1"},
+                         {"ID": "2", "Name_lang": "Orc", "FactionID": "6", "VerifiedBuild": "1"},
+                         {"ID": "3", "Name_lang": "Gone", "FactionID": "6", "VerifiedBuild": "1"}])
+table(right, "ChrRaces", [{"ID": "1", "Name_lang": "Human", "FactionID": "7", "VerifiedBuild": "2"},
+                          {"ID": "2", "Name_lang": "Orc", "FactionID": "6", "VerifiedBuild": "2"},
+                          {"ID": "4", "Name_lang": "New", "FactionID": "8", "VerifiedBuild": "2"}])
+table(left, "SpellName", [{"ID": "1", "Name_lang": "Same"}])
+table(right, "SpellName", [{"ID": "1", "Name_lang": "Same"}])
+table(right, "BrandNew", [{"ID": "1"}])
+found = {row["table"]: row for row in clienttables.compare(left, right, out)}
+check("a table's counts", [found["ChrRaces"][k] for k in ("new", "gone", "changed", "columns")], [1, 1, 1, ["FactionID"]])
+check("its topic", found["ChrRaces"]["topic"], "Characters")
+check("an equal table is left out, a new one is said", sorted(found), ["BrandNew", "ChrRaces"])
+lines = (out / "tables" / "ChrRaces.tsv").read_text(encoding="utf-8").splitlines()
+check("a change names its row, column and values", "1\tHuman\tchanged\tFactionID\t5\t7" in lines, True)
+check("the build's own column is noise", any("VerifiedBuild" in line for line in lines), False)
+check("the list", (out / "tables.tsv").read_text(encoding="utf-8").count("\n"), 3)
+
+# --- the patch notes ------------------------------------------------------------------------------------------------
+notes = patchnotes.skeleton("forever", 70801, 70707, "1.60.2", "2026-11-12")
+check("Blizzard's sections, General first", (notes["sections"][0]["name"], notes["sections"][-1]["name"]), ("General", "Bug Fixes"))
+check("no points yet is a problem", "no point written yet" in patchnotes.problems(notes), True)
+classes = next(s for s in notes["sections"] if s["name"] == "Classes")
+classes["groups"] = [{"name": "Mage", "points": [{"text": "Blizzard <Blink> cost", "was": "25", "origin": "both", "link": "https://worldofwarcraft.blizzard.com/x",
+                                                  "extra": ["Its rank 2 too"], "note": "Hits low levels most"}],
+                      "groups": [{"name": "Frost", "points": [{"text": "Frostbolt faster", "origin": "client"}]}]}]
+next(s for s in notes["sections"] if s["name"] == "General")["points"] = [{"text": "A server rule", "origin": "blizzard"}]
+notes["sane"] = ["The bags follow the new window"]
+notes["official"], notes["crosschecked"] = [{"title": "Hotfixes", "url": "https://worldofwarcraft.blizzard.com/n"}], True
+check("good notes", patchnotes.problems(notes), [])
+broken = json.loads(json.dumps(notes))
+broken["sections"][0]["points"] = [{"text": "No origin"}, {"text": "a\ttab", "origin": "both"}, {"origin": "both"}]
+check("three problems", len(patchnotes.problems(broken)), 3)
+
+rows = patchnotes.rows(notes)
+check("a point's extra and note follow it", [r["kind"] for r in rows], ["point", "point", "extra", "note", "point"])
+check("where a point stands", (rows[1]["section"], rows[1]["group"], rows[4]["sub"]), ("Classes", "Mage", "Frost"))
+check("a part without value stays out", "was" in rows[0], False)
+master = masters.Master(masters.MASTER).load()
+schema = master.schemas["PatchNotes"]
+fields = patchnotes.fields(notes)
+values = [schemas.value_problem(next(f for f in schema.fields if f.name == name), value, {}, set()) for name, value in fields.items()]
+check("the database's entry fits the real schema", values, [None] * len(values))
+check("the set stays in the master", schema.ship, False)
+check("a set that does not ship has no file", compiler.compile_sets(Thing(schemas={"PatchNotes": schema}), temp / "core", "forever"), [])
+
+text = patchnotes.markdown(notes)
+check("text: a value before", "(was 25)" in text, True)
+check("text: what we found more", "- Also found: Its rank 2 too" in text, True)
+check("text: an empty section is left out", "## Quests" in text, False)
+page = patchnotes.fragment(notes, {"sets": {"Spells": {"counts": {"new": 1, "changed": 0, "gone": 0}, "new": [{"key": 7, "name": "Nova"}]},
+                                            "Walking": {"counts": {"new": 0, "changed": 9, "gone": 0}}}})
+check("the page has no document of its own", "<!doctype" in page.lower() or "<body" in page, False)
+check("the page has its name", "<title>Forever 1.60.2.70801 Patch Notes</title>" in page, True)
+check("the page folds", page.count("<details") >= 5, True)
+check("text is escaped", ("&lt;Blink&gt;" in page, "<Blink>" in page), (True, False))
+check("the origin's tag links to Blizzard", 'href="https://worldofwarcraft.blizzard.com/x"' in page, True)
+check("the day as Blizzard writes it", "November 12, 2026" in page, True)
+check("no empty section on the page", 'id="quests"' in page, False)
+check("every change stays closed", '<details class="section every" id="every">' in page, True)
+check("a set of counts alone", "9 changed" in page, True)
+check("it says it is no page of Blizzard's", "Not an official Blizzard page" in page, True)
+check("the whole document", patchnotes.document("x").startswith("<!doctype html>"), True)
+none = json.loads(json.dumps(notes))
+none["official"] = []
+check("no notes of Blizzard's is said", "published no notes" in patchnotes.fragment(none), True)
+
+# --- builds.toml ----------------------------------------------------------------------------------------------------
+sample = '# head\n[forever]\n70245 = { patch = "1.60.1" }\n70707 = { patch = "1.60.1", day = "2026-10-31" }\n\n[forever-ptr]\n\n[retail]\n\n[forever-beta]\n70425 = { patch = "1.60.1" }\n'
+made = pd.add_build(sample, "forever", 70801, "1.60.2", "2026-11-12")
+parsed = tomllib.loads(made)
+check("a build at its table's end", list(parsed["forever"]), ["70245", "70707", "70801"])
+check("its patch and day", parsed["forever"]["70801"], {"patch": "1.60.2", "day": "2026-11-12"})
+check("not twice", pd.add_build(made, "forever", 70801, "1.60.2", "2026-11-12"), made)
+made = pd.add_build(sample, "retail", 70688, "12.1.5", "2026-11-01")
+check("into an empty table", tomllib.loads(made)["retail"], {"70688": {"patch": "12.1.5", "day": "2026-11-01"}})
+check("the other tables stay", list(tomllib.loads(made)["forever-beta"]), ["70425"])
+
+# --- what the master took ---------------------------------------------------------------------------------------------
+game_line, batch_line = Thing(src=["game"]), Thing(src=[5])
+
+
+def version(since, fields, line=game_line, gone=False):
+    return Thing(since=since, fields=fields, line=line, gone=gone)
+
+
+class Master:
+    schemas = {"Spells": Thing(fields=[Thing(name="name"), Thing(name="cost")]), "SkillLines": Thing(fields=[]),
+               "Walking": Thing(fields=[Thing(name="block")]), "PatchNotes": Thing(fields=[])}
+    views = {"Spells": {1: [version(10, {"name": "Bolt", "cost": 5}), version(20, {"name": "Bolt", "cost": 7})],
+                        2: [version(20, {"name": "Nova"})],
+                        3: [version(10, {"name": "Old"}), version(20, {}, gone=True)],
+                        4: [version(10, {"name": "Batch"}), version(20, {"name": "Batch", "cost": 1}, batch_line)]},
+             "SkillLines": {7: [version(10, {"name": "Frost", "class": 8, "spells": [1]})]},
+             "Walking": {5: [version(10, {"block": "a"}), version(20, {"block": "b"})]}, "PatchNotes": {}}
+
+    def view(self, name, game):
+        return self.views[name]
+
+
+facts = pd.facts_of(Master(), "forever", 20)
+check("what is new, changed and gone", facts["sets"]["Spells"]["counts"], {"new": 1, "changed": 1, "gone": 1})
+check("a change, from and to", facts["sets"]["Spells"]["changed"][0]["changes"], [{"field": "cost", "from": "5", "to": "7"}])
+check("a spell's class", facts["sets"]["Spells"]["changed"][0]["class"], 8)
+check("a set of counts holds no rows", "changed" in facts["sets"]["Walking"], False)
+check("what facts say", "changed 1 Bolt (Mage): cost 5 → 7" in pd.facts_text(facts, "a build"), True)
+
+# --- the repaint ------------------------------------------------------------------------------------------------------
+reports = temp / "reports"
+folder = reports / "patches" / "forever-1-to-2"
+folder.mkdir(parents=True)
+pd.TILES, pd.LAYERS, pd.JOBS = temp / "tiles", temp / "layers", temp / "jobs.toml"
+pd.ROOT = temp
+(pd.TILES / "1").mkdir(parents=True)
+(pd.TILES / "1" / "sq-3-4.png").write_bytes(b"old")
+(pd.LAYERS / "zone-1429").mkdir(parents=True)
+(pd.LAYERS / "zone-1429" / "far.png").write_bytes(b"far")
+(pd.LAYERS / "zone-1429" / "far-2.png").write_bytes(b"try")
+(pd.LAYERS / "zone-1429" / "far-colours.png").write_bytes(b"input")
+(pd.LAYERS / "zone-1429" / "checks.json").write_text(json.dumps({"far-2": 1, "middle-1": 2}))
+(pd.LAYERS / "state.json").write_text(json.dumps({"paths": {"continents": "old", "tables": "old", "minimap": "keep"},
+                                                  "subjects": [{"name": "zone-1429"}, {"name": "zone-1"}]}))
+pd.JOBS.write_text('[[job]]\nname = "worldtiles"\npriority = 10\ncommand = ["x"]\n')
+world_facts = {"squares": ["1-3-4", "1-9-9"], "instances": [], "tiles": [], "maps": {}, "areas": {}, "uimaps": {},
+               "zones": [{"zone": "Elwynn Forest", "tiles": 5, "of": 10, "ground": 3, "water": 0},
+                         {"zone": "Elwynn Forest 2", "tiles": 1, "of": 10, "ground": 3, "water": 0}]}
+(folder / "world.json").write_text(json.dumps(world_facts))
+pd.reports = lambda: reports
+pd.client_tables = lambda product, version: new / "tables"
+pd.Patch = lambda game, place: Thing(game=game, name="forever-1-to-2", folder=folder, build=2, product="wowf", new="2", extract=new)
+pd.run_rerender(Thing(game="forever", priority=11))
+check("a painted square is set aside", (pd.TILES / "1" / "sq-3-4.png").is_file(), False)
+aside = temp / "assets" / "generated" / "replaced" / "2"
+check("its picture is kept", (aside / "world-tiles" / "1" / "sq-3-4.png").read_bytes(), b"old")
+check("the plan: what was painted", json.loads((folder / "rerender.json").read_text()), {"squares": ["1-3-4"], "subjects": ["zone-1429"]})
+check("a zone's far painting and tries go", sorted(p.name for p in (pd.LAYERS / "zone-1429").glob("far*")), ["far-colours.png"])
+check("its far checks are forgotten", json.loads((pd.LAYERS / "zone-1429" / "checks.json").read_text()), {"middle-1": 2})
+state = json.loads((pd.LAYERS / "state.json").read_text())
+check("the maps' inputs read the new build", state["paths"]["continents"], str(new / "adt"))
+check("a build without textures keeps the old ones", state["paths"]["minimap"], "keep")
+jobs = tomllib.loads(pd.JOBS.read_text())["job"]
+check("the job is queued behind the others", [j["name"] for j in jobs], ["worldtiles", "patch-2"])
+job = jobs[1]
+check("its priority", job["priority"], 11)
+check("its command", job["command"], ["dev/tools/patchday", "paint", "forever-1-to-2"])
+pd.run_rerender(Thing(game="forever", priority=11))
+check("queued once", len(tomllib.loads(pd.JOBS.read_text())["job"]), 2)
+plan = json.loads((folder / "rerender.json").read_text())
+check("nothing painted yet", pd.painted(plan), 0)
+(pd.TILES / "1" / "sq-3-4.png").write_bytes(b"new")
+(pd.LAYERS / "zone-1429" / "far.png").write_bytes(b"new")
+check("all painted", pd.painted(plan), 2)
+check("the runner's pattern reads the status", bool(re.search(job["done"], "2 of 2 squares painted (100.0 %)")), True)
+check("not while one is missing", bool(re.search(job["done"], "1 of 2 squares painted (50.0 %)")), False)
+
+# --- the page of patches ----------------------------------------------------------------------------------------------
+(folder / "patchnotes.html").write_text(patchnotes.fragment(notes), encoding="utf-8")
+status, kind, body = pd.web(Thing(path=""))
+check("the list of patches", (status, 'href="forever-1-to-2/"' in body), (200, True))
+status, kind, body = pd.web(Thing(path="forever-1-to-2/"))
+check("a patch's page", (status, "Mage" in body), (200, True))
+check("no other patch", pd.web(Thing(path="nothing/"))[0], 404)
+
+shutil.rmtree(temp, ignore_errors=True)
+print(f"patchday: {checks} checks, {failed} failed")
+sys.exit(1 if failed else 0)

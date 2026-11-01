@@ -91,7 +91,49 @@ world. For a new build of Forever, with its client tables as CSV (hotfixes laid 
 The settings (`~/.config/saneui/blizzard.json`): `exports` (the exports' folder), `install` (the game's World
 of Warcraft folder; the same default as `dev/build`), `extract` (the command that exports a product's build
 there), `reports` (where the patches' folders and the lookup go; without it `dev/blizzard/reports/`, not
-committed).
+committed), `tables` (each build's client tables as CSV, `<product>-<version>[-laid]`, for `saneui patchday`).
+
+## Patch day
+
+The skill `/patchday` takes a new build the whole way, for each game whose installed build is newer than its last export,
+Forever first: everything of *After a patch*, then the facts, the world, and patch notes in Blizzard's layout. Its steps
+stand in the skill; what they run beyond the tools above is `saneui patchday` (`dev/tools/patchday`, with
+`dev/blizzard/world.py`, `clienttables.py` and `patchnotes.py`, tested by `dev/tests/patchday.py`). Each command works on
+the game's newest patch and writes into its folder:
+
+| `saneui patchday` | Writes | Does |
+| --- | --- | --- |
+| `check [--json]` | nothing | Which game's installed build is newer than its last export; what the newest patch still lacks, read from what stands there, so a stopped run goes on where it was |
+| `bump <game>` | `builds.toml`, `BUILD` of the data tools | The new build's line; `BUILD` is Forever's alone |
+| `tables <game>` | `tables.tsv`, `tables/<Table>.tsv` | Every client table against the build before, by topic: what the master does not hold is seen too (a race's abilities) |
+| `world <game>` | `world.md`, `world.json` | The terrain and the map tables against the build before |
+| `draft <game>` | `facts.md`, `facts.json`, `patchnotes.json` | What the master took from the game at this build; empty notes in Blizzard's layout |
+| `rerender <game>` | `rerender.json`, `dev/imagegen/jobs.toml` | The repaint queued; below |
+| `paint <patch>` | the paintings | The job's own command |
+| `page <game>` | `patchnotes.md`, `patchnotes.html` | The notes checked, as text and as a page; `patchnotes.html` has no document around it, as the Artifact tool wants a page. `/patchnotes/` on the tools' server shows every patch's |
+| `store <game>` | the set `PatchNotes` | The notes into the database, key the build; refused until they are compared with Blizzard's |
+
+**What counts as moved:** the terrain is read as the game reads it, a file that only changed its bytes is no change. The
+ground counts by its heights with the base added, inside a chunk and from `GROUND` yards: the game bakes a chunk's base
+and its outer ring anew at times (a tile's edge on the deep sea floor jumped 500 yards while no ground moved). A placement
+counts without its number, which the game renumbers at will. `walk_maps` names the maps whose walking data is made anew:
+all a change reaches but an area alone. `squares` names the Atlas' squares to paint again: only what they are made from,
+the ground, holes, water and minimap textures; a building moved alters the walking data, not a painting, until its
+minimap texture changes.
+
+**The repaint:** `rerender` moves the painted squares and the far paintings of zones a quarter of whose tiles changed into
+`assets/generated/replaced/<build>/`, points the maps' `state.json` at the new build's terrain, and adds the job
+`patch-<build>` to the queue at priority 11, above the world's tiles. It starts nothing; the runner takes it up. A square
+of the list not painted yet stays the world's tiles' own. Long jobs go into the file on Saneroki's word: running the skill
+is that word. The Atlas' pack comes after the job, by Saneroki's choice.
+
+**The notes:** `patchnotes.json`, its form in `dev/blizzard/patchnotes.py`: Blizzard's sections, groups and subgroups, "(was
+X)" after what changed. Each point says where it stands: `both` (Blizzard says it and the client shows it), `client`, or
+`blizzard` (what the server holds). A point Blizzard lists takes its names, numbers and scope and links to its place;
+the sentence stays ours, and what we saw beyond it is its `extra`. The page's foot holds every change the master took, closed.
+
+**Retail:** its data waits (`.claude/rules/code.md`), so `tables`, `world` and the notes only read: nothing of its facts
+goes into the master, its terrain is not extracted and it has no routes or Atlas. Its notes do go into the set.
 
 ## The pipeline
 

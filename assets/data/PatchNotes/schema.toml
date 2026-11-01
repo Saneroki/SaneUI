@@ -1,0 +1,20 @@
+set = "PatchNotes"
+key = "int"              # the game's build these notes are of
+ship = false             # kept in the master; nothing in the game reads it yet, so no set file is made
+about = "What each build of the game changed: Sane UI's patch notes, laid out as Blizzard lays out its own, by build."
+
+[fields]
+patch    = { type = "text" }                    # the game's patch number: 1.60.2
+from     = { type = "int", min = 0 }            # the build before it
+official = { type = "list", of = "text" }       # the pages of Blizzard's the notes were compared with
+sane     = { type = "list", of = "text" }       # what changed in Sane UI for this build
+points   = { type = "list", of = "tuple", parts = [
+    { name = "section", type = "text" },        # Blizzard's section: Classes, Items and Rewards, ...
+    { name = "group",   type = "text" },        # a class, an instance
+    { name = "sub",     type = "text" },        # a specialization, a boss
+    { name = "kind",    type = "enum", values = ["point", "extra", "note"] },  # extra and note belong to the point before
+    { name = "text",    type = "text" },
+    { name = "was",     type = "text" },        # the value before: "(was X)"
+    { name = "origin",  type = "enum", values = ["both", "client", "blizzard"] },
+    { name = "link",    type = "text" },        # the place in Blizzard's page
+] }
