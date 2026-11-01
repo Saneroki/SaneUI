@@ -72,6 +72,11 @@ Units\GroupBuffs.lua
 Units\GroupFace.lua
 Units\GroupTools.lua
 Units\Group.lua
+# Reminders of buffs and debuffs: what shows when, the invisible bars, the right click on the game's auras, the window
+Reminders\Reminders.lua
+Reminders\Bars.lua
+Reminders\Clicks.lua
+Reminders\Editor.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua
 # The game's experience and stance bars out of sight, its menu bar on mouseover

@@ -28,7 +28,8 @@ local _, ns = ...
 --  decides alone (the window says so).
 --
 --  A right click on an icon, out of a fight (in one the game keeps the icons
---  from addons), opens a menu: Always show, Never show, Aura lists. Which spell
+--  from addons), opens a menu: Create reminder (Reminders/), Always show, Never
+--  show, Aura lists. Which spell
 --  it is: the icon's name (the game writes it into a text of ours, unseen),
 --  found among the unit's auras of its kind.
 -------------------------------------------------------------------------------
@@ -78,7 +79,7 @@ local function Lists()
 end
 
 -- The spell an icon shows, out of a fight: its name as the game wrote it, found among the unit's auras of its kind.
--- { id, name, icon }, or nil where it cannot be told now.
+-- { id, name, icon, harmful, unit }, or nil where it cannot be told now.
 local function Which(frame)
     local owner = owners[frame]
     if not owner or Core.Restricted() then return nil end
@@ -92,7 +93,7 @@ local function Which(frame)
         local data = Core.Ask(read, unit, index, owner.kind.harmful and "HARMFUL" or "HELPFUL")
         if type(data) ~= "table" then break end
         if Plain(data.name) == name and type(Plain(data.spellId)) == "number" then
-            return { id = data.spellId, name = name, icon = Plain(data.icon) }
+            return { id = data.spellId, name = name, icon = Plain(data.icon), harmful = owner.kind.harmful, unit = unit }
         end
     end
     return nil
@@ -104,6 +105,7 @@ local function Menu(frame)
     MenuUtil.CreateContextMenu(frame, ns.Guard(function(_, root)
         if spell then
             root:CreateTitle(spell.name)
+            ns.ReminderClicks.Entry(root, spell)
             root:CreateButton(ns.TEXT.auraAlways, ns.Guard(function() ns.AuraLists.Put("white", spell) end))
             root:CreateButton(ns.TEXT.auraNever, ns.Guard(function() ns.AuraLists.Put("black", spell) end))
         else

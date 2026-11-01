@@ -31,6 +31,9 @@ The threat and damage meter: your party or raid, you on top, each with their cla
 a thin bar each for threat, damage, healing and interrupts. No title bar and no background, and clicks go through
 it; the mouse on it brings its buttons.
 
+Reminders: right click a buff or debuff and choose *Create reminder*. Its icon then shows on one of five invisible
+reminder bars, placed in Edit Mode, while its settings want it; a bar is as wide as what shows on it.
+
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
 - **The full screen:** push the mouse against the bottom edge of the screen anywhere in its middle half
@@ -209,6 +212,21 @@ it; the mouse on it brings its buttons.
     shows its people as they were, until an arrow, *Back to the fights* or a new fight.
   - **In a fight** the game hides these numbers from addons: they show, but the list goes by the places on the game's
     own list. On a boss it hides threat too: there you see the share alone, and threat is neither added up nor sorted.
+- **Reminders** (the page's tick *Reminder bars*, `/sane reminders`):
+  - **Making one:** right click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame,
+    out of a fight, and choose *Create reminder*; the window opens on it. An aura with a reminder says *Edit reminder*.
+    On the game's buffs a right click no longer cancels out of a fight: **Shift + right click** does; in a fight a right
+    click cancels as ever.
+  - **Its settings**, each at once: which bar; *Display when missing*; *Display when active*; *Offset time*, with
+    missing: so many seconds before it runs out it shows already, with the seconds left on the icon; *Combat*: in and
+    out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting areas*. Never while you
+    are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on you or on the
+    unit it was made on (your target, your focus).
+  - **The bars:** five, invisible, only the icons of what shows now, side by side around the bar's middle. Placed in Edit
+    Mode, where each shows all it holds; a bar with no reminders is not there. Nothing on them takes the mouse.
+  - **In a fight** the game hides most auras from addons. What was on stays known: when it goes the reminder shows at once
+    and the offset counts on. What comes during a fight the game does not tell, except your own cast where it lets that
+    through; else a reminder that shows stays until the fight ends.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -502,6 +520,18 @@ it; the mouse on it brings its buttons.
   for (`Core.Inspect`); at rest only `Core.Later` after the game's events. A saved fight: `store.meterFights`, plain numbers.
   Hover: `Core.Hover` (motion only, so every click goes on); the wheel on the window while the list is longer than its room;
   the first line's `drag` frame shows only on hover, `window:DragBy` (Core).
+- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. `Reminders.Update` runs on a ticker every
+  `Reminders.EVERY` seconds, only while there are reminders and the setting is on: it looks at each aura
+  (`C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks) and hands each bar what shows. `Hidden` asks
+  `C_Secrets.ShouldAurasBeSecret` and `ShouldSpellAuraBeSecret`, `Core.Restricted` where they are not there. Hidden, `Look`
+  keeps the last plain look: `auraInstanceID` and the end; `GetAuraDuration` is not secret and fails on an instance gone
+  (*RequiresValidUnitAuraInstance*), which `Core.Ask` turns to `nil`: the aura went. Past its end and still there it was
+  renewed: on, time unknown. `UNIT_AURA`'s payload is secret there and is not used. The bars are plain frames, free to
+  change in a fight. **The right click (`Clicks.lua`):** the game's `AuraButtonMixin:OnClick` cancels a buff in secure code,
+  and `CancelAuraByInstanceID` and `CancelUnitBuff` are closed to addons, so a menu entry cannot cancel: a frame over each
+  button, child of it, clicks only (`SetMouseMotionEnabled(false)`, so the tooltip stays), click-enabled only out of a
+  restriction and Edit Mode, without Shift (`MODIFIER_STATE_CHANGED`) and on real auras (`Sync`, also after
+  `UpdateAuraButtons`: a button's `auraType` changes). Fields of the game's buttons are only read.
 
 ## Files
 
@@ -548,8 +578,13 @@ it; the mouse on it brings its buttons.
 | `Meter/Row.lua` | One character: their line and a bar per thing shown |
 | `Meter/Controls.lua` | The buttons at the end of the first line, and the flyouts |
 | `Meter/Meter.lua` | The window: its two places, the list, grown down or up, the game's meter out of sight, the looks in a fight |
+| `Reminders/Reminders.lua` | The reminders: kept per character, what is known of an aura, in a fight too, whether one shows, the looks |
+| `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
+| `Reminders/Clicks.lua` | The right click on the game's auras, by a frame over each button; the menu's line for an aura |
+| `Reminders/Editor.lua` | The window: your reminders and the settings of the one chosen |
 
 ## History
+- **2026-11-01:** reminders of buffs and debuffs on invisible bars (Saneroki), from a right click on an aura.
 - **2026-11-01:** the threat and damage meter (Saneroki), on the game's own meter and threat, with its pages and saved fights.
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.
 - **2026-10-20:** its window, docked at the bottom middle (Saneroki); the bottom edge's middle half fills the

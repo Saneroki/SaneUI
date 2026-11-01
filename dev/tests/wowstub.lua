@@ -1111,6 +1111,7 @@ function W.Install(env)
         return nil
     end
     env.InCombatLockdown = function() return W.combat end
+    env.IsShiftKeyDown = function() return false end
     env.debugprofilestop = function() return W.ms end
     env.GetFramerate = function() return W.fps end
     -- The game's restrictions on addons (combat, an encounter, a map, chat, ...): a test sets W.restrictions

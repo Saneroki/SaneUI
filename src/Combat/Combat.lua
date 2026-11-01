@@ -25,7 +25,7 @@ local ADDON, ns = ...
 --  clean, their buttons' icons alone (ActionBars.lua); its experience and stance bars gone, its menu bar on
 --  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
 --  game's two (Units/Group.lua). The threat and damage meter, a window on the screen and on the full screen
---  (Meter/). Each part falls back to the game's own when it fails
+--  (Meter/). Reminders of buffs and debuffs on bars of their own (Reminders/). Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
 --  Our spellbook and talents are made after WoW: Forever's, so in Retail
@@ -150,6 +150,25 @@ ns.TEXT = {
     meterSaveLater = "Your fight is saved as %s when it is over: the game hides its numbers until then.",
     meterLoad = "Load",
     meterBack = "Back to the fights",
+    reminders = "Reminders",
+    remindersOn = "Reminder bars",
+    remindersTip = "Right click a buff or debuff and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. On the game's buffs Shift + right click cancels a buff. /sane reminders opens the list. Off: no bars, and a right click on a buff cancels it, as in the game.",
+    reminderCreate = "Create reminder",
+    reminderEdit = "Edit reminder",
+    reminderCancel = "Shift + right click cancels it",
+    reminderBar = "Reminder bar %d",
+    reminderBarShort = "Bar %d",
+    reminderNone = "None yet. Right click a buff or debuff and choose Create reminder.",
+    reminderOnYou = "On you",
+    reminderOnOther = "On the unit it was made on",
+    reminderOnBar = "Bar",
+    reminderMissing = "Display when missing",
+    reminderActive = "Display when active",
+    reminderWhen = "Combat",
+    reminderCombat = { any = "In and out of combat", out = "Only show outside of combat", ["in"] = "Only show inside of combat" },
+    reminderRest = "Don't show in resting areas",
+    reminderEarly = "Offset time (seconds)",
+    reminderDelete = "Delete",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -174,7 +193,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = (ns.Serves()
     and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, a right click on a buff cancels it, no reminder bars"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -217,6 +236,7 @@ local OPTIONS = {
     { key = "meterInterrupts", default = true },
     { key = "meterReset", default = true },
     { key = "meterOrder", default = "dps" },
+    { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
 }
 if ns.Serves() then
     table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
@@ -236,6 +256,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
+    if key == "reminders" then ns.Guarded(ns.Reminders.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
@@ -253,6 +274,7 @@ function ns.GiveBack()
     ns.Safe("game bars", ns.GameBars.GiveBack)
     ns.Safe("mouse rings", ns.MouseRings.Hide)
     ns.Safe("meter", ns.Meter.GiveBack)
+    ns.Safe("reminders", ns.Reminders.GiveBack)
 end
 
 function ns.OnLoad()
@@ -261,6 +283,7 @@ end
 
 Core.Command("auras", "your aura lists for the unit frames: always and never shown", function() ns.Guarded(ns.AuraLists.Toggle) end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
+Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.Guarded(ns.ReminderEditor.Toggle) end)
 
 function ns.OnLogin()
     ns.Window.Build()
@@ -273,4 +296,5 @@ function ns.OnLogin()
     ns.GameBars.Start()
     ns.Safe("mouse rings", ns.MouseRings.Apply)
     ns.Meter.Build()
+    ns.Reminders.Start()
 end

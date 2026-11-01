@@ -183,7 +183,7 @@ if RETAIL then
         "the quest marks beside nameplates, as in Forever")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back",
+        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, a right click on a buff cancels it, no reminder bars",
         "standing down: the quest marks go, and what is told says so")
     check(PlayerFrame._mouse == true and TargetFrame._parent == UIParent and MainActionBar.BorderArt._alpha == 1,
         "and the game's unit frames and action bars are its own again")
@@ -1364,16 +1364,17 @@ do
     W.menus = {}
     icon._scripts.OnMouseUp(icon, "RightButton")
     local menu = W.menus[1]
-    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.auraAlways and menu[3].text == ns.TEXT.auraNever
-        and menu[4].text == ns.TEXT.auraLists, "its menu: Always show, Never show, Aura lists")
-    menu[2].fn()
+    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.reminderCreate
+        and menu[3].text == ns.TEXT.auraAlways and menu[4].text == ns.TEXT.auraNever
+        and menu[5].text == ns.TEXT.auraLists, "its menu: Create reminder, Always show, Never show, Aura lists")
+    menu[3].fn()
     check(ns.options.auraWhite[7386] == "Sunder Armor" and debuffs._groups.listed.enabled
         and debuffs._groups.listed.candidates.includeSpellIDs[7386] and debuffs._groups.auto.candidates.excludeSpellIDs[7386]
         and mine.buffs._groups.listed.candidates.includeSpellIDs[7386],
         "Always show: shown in front of the rest (the game includes it there and leaves it out of the rest)")
     W.menus = {}
     icon._scripts.OnMouseUp(icon, "RightButton")
-    W.menus[1][3].fn()
+    W.menus[1][4].fn()
     check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
         and control._groups.auto.candidates.excludeSpellIDs[7386], "Never show: off the other list, never shown")
     W.combat = true

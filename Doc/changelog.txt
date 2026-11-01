@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Reminders: right click a buff or debuff and choose Create reminder.
+  Its icon shows on an invisible bar you place in Edit Mode: when it
+  is missing or active, in or out of combat, not in cities if you
+  like, and with an offset some seconds before it runs out. Shift +
+  right click now cancels one of the game's buffs out of combat.
 - A threat and damage meter: your party or raid, you on top, with a
   bar each for threat, damage, healing and interrupts, no background,
   and clicks go through it. Mouse over it for its page arrows, the
