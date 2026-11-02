@@ -479,8 +479,9 @@ shows on it, and you make as many bars as you like.
   - `Auras.lua` (`ns.UnitAuras`): per frame and kind (`Auras.KINDS`: buffs, control, debuffs) a container of the
     game's (`CustomAuraContainerTemplate`, as the nameplates'), each on the frame's `roof` at its `point`
     (`BOTTOMLEFT`, `BOTTOM`, `BOTTOMRIGHT`): the game sizes a container to what it holds, so the one in the middle
-    stays centred. `Auras.LINE` (three icons) is its widest line (`SetFlowLayoutMaximumLineSize`): what your list
-    adds goes up, not sideways into the next kind. Groups of `Auras.MOST` (3): `listed` (the filter
+    stays centred. `Auras.LINE` (three icons and a gap to spare, each icon's size given to the layout: the game's sizes come
+    back rounded, and three at exactly the line's width lost the third) is its widest line (`SetFlowLayoutMaximumLineSize`):
+    what your list adds goes up, not sideways into the next kind. Groups of `Auras.MOST` (3): `listed` (the filter
     `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Important, off while that list is empty, its icons with a glow, so a
     fight needs no telling which is which), `shown` (Show on unit frames, no glow) and `auto` (the kind's
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or

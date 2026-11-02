@@ -7,10 +7,77 @@ for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", 
                         "OverlayPlayerCastingBarFrame", "MirrorTimerContainer" }) do
     CreateFrame("Frame", name, UIParent)
 end
--- The lab takes a status bar's atlas for a file: here the atlas on its fill.
 local create = CreateFrame
-CreateFrame = function(kind, ...)
-    local frame = create(kind, ...)
+-- The game's aura container for addons is not in the lab: a plain frame with what the module asks of it, its groups laid
+-- out by the game's own flow layout. Three of each kind show on every frame: LabAuras(buffs, control, debuffs) sets how many.
+local SAMPLES = {
+    buffs = { "Spell_Nature_Thorns", "Spell_Nature_Regeneration", "Spell_Holy_WordFortitude", "Spell_Nature_Thorns", "Spell_Nature_Regeneration" },
+    control = { "Spell_Nature_Polymorph", "Spell_Frost_FrostNova", "Ability_Gouge", "Spell_Nature_Slow" },
+    debuffs = { "Ability_Warrior_Sunder", "Spell_Shadow_ShadowWordPain", "Spell_Nature_Slow", "Spell_Frost_FrostNova" },
+}
+local showing = { buffs = 3, control = 3, debuffs = 3 }
+local containers = {}
+local function AuraContainer(parent)
+    local box = create("Frame", nil, parent)
+    local flow = AnchorUtil.CreateFlowLayout()
+    function flow:GetElementSize(_, element, group)
+        local width, height = element:GetSize()
+        return group.elementWidth or width, group.elementHeight or height
+    end
+    function flow:ApplyElementLayout(container, element, anchor, x, y)
+        element:ClearAllPoints()
+        element:SetPoint(anchor, container, anchor, x, y)
+    end
+    function flow:OnLayoutComplete(container, width, height) container:SetSize(width, height) end
+    box.groups, box.order = {}, {}
+    function box:SetFlowLayoutAnchorPoint(corner) flow:SetAnchorPoint(corner) end
+    function box:SetFlowLayoutGrowthDirection(across, up) flow:SetGrowthDirection(across, up) end
+    function box:SetFlowLayoutMaximumLineSize(line) flow:SetMaximumLineSize(line) end
+    function box:AddAuraGroup(key, _, options)
+        self.groups[key] = { options = options, frames = {} }
+        self.order[#self.order + 1] = key
+    end
+    function box:SetAuraGroupFilterString() end
+    function box:SetAuraGroupCandidateFilters() end
+    function box:SetAuraGroupEnabled() end
+    function box:SetUnit(unit) self.unit = unit end
+    function box:SetEnabled() end
+    function box:UpdateAllAuras()
+        local group = self.groups.auto
+        if not (group and self.kind) then return end -- Core's marks of what can be dispelled ask for one too
+        for index = 1, math.max(showing[self.kind.key], #group.frames) do
+            local icon = group.frames[index]
+            if not icon then
+                icon = create("Button", nil, self)
+                function icon:SetIcon(region) self.picture = region end
+                function icon:SetDurationCooldown(cooldown) self.cooldown = cooldown end
+                function icon:SetApplicationCount(count) self.count = count end
+                function icon:SetSpellName() end
+                group.options.initializeFrame(icon)
+                group.frames[index] = icon
+            end
+            icon:SetShown(index <= showing[self.kind.key])
+            icon.picture:SetTexture("Interface\\Icons\\" .. SAMPLES[self.kind.key][index])
+            icon.cooldown:SetCooldown(GetTime() - 10 * index, 60)
+        end
+        local elements = {}
+        for index = 1, showing[self.kind.key] do elements[index] = group.frames[index] end
+        local layout = group.options.layout
+        flow:Apply(self, { { elements = elements, elementSpacing = layout.elementSpacing, lineSpacing = layout.lineSpacing,
+                             elementWidth = layout.elementWidth, elementHeight = layout.elementHeight } })
+    end
+    containers[#containers + 1] = box
+    return box
+end
+function LabAuras(buffs, control, debuffs)
+    showing.buffs, showing.control, showing.debuffs = buffs, control, debuffs
+    for _, box in ipairs(containers) do box:UpdateAllAuras() end
+end
+
+-- The lab takes a status bar's atlas for a file: here the atlas on its fill.
+CreateFrame = function(kind, name, parent, ...)
+    if kind == "AuraContainer" then return AuraContainer(parent) end
+    local frame = create(kind, name, parent, ...)
     local fill = frame.SetStatusBarTexture
     if kind == "StatusBar" then
         frame.SetStatusBarTexture = function(self, asset)
@@ -67,7 +134,6 @@ UnitName = function(unit) if unit == "pet" then return "Wolf" end return unitNam
 
 Lab.TOC("src/Core/SaneUI.toc")
 LabCombat = Lab.TOC("src/Combat/SaneUI_Combat.toc")
-LabCombat.UnitAuras.missing = true -- the lab has no aura containers: the frames do without, as in a client without them
 Lab.OnLogin(function()
     SaneUI.Core.Set("Combat", "unitRest", false) -- the scene is to look at: never out of sight
     for _, timer in ipairs(timers) do Lab.Fire("MIRROR_TIMER_START", unpack(timer)) end

@@ -42,7 +42,9 @@ ns.UnitAuras = Auras
 Auras.SIZE = 22 -- an icon, square
 Auras.GAP = 2   -- between icons, and from the frame
 Auras.MOST = 3  -- of each kind, and of each list
-Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP) - Auras.GAP -- a container's widest line: what comes after goes up
+-- A container's widest line, a gap to spare: what comes after goes up. Exactly as wide as three icons would lose the third
+-- to a rounding of the game's in their sizes.
+Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP)
 Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
 -- The kinds: their place on the frame's roof, the corner they grow from inside their container and which way, their
 -- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
@@ -177,7 +179,8 @@ local function Container(face, kind)
     local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
     local function Options(sort, initialize)
         return { maxFrameCount = Auras.MOST, initializeFrame = initialize,
-                 layout = { elementSpacing = Auras.GAP, lineSpacing = Auras.GAP },
+                 layout = { elementSpacing = Auras.GAP, lineSpacing = Auras.GAP,
+                            elementWidth = Auras.SIZE, elementHeight = Auras.SIZE },
                  sortMethod = sorts and sorts[sort] or nil, sortDirection = ways and ways.Normal or nil }
     end
     if kind.listed then

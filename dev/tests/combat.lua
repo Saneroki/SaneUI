@@ -1499,8 +1499,9 @@ do
     check(buffs._flow.corner == "BOTTOMLEFT" and buffs._flow.across == "Right" and debuffs._flow.corner == "BOTTOMRIGHT"
         and debuffs._flow.across == "Left" and control._flow.corner == "BOTTOMLEFT" and control._flow.up == "Up",
         "buffs grow from the left edge, debuffs from the right; crowd control fills its own width, so it stays centred")
-    check(debuffs._flow.line == 70 and buffs._flow.line == 70 and control._flow.line == 70
-        and debuffs._groups.auto.options.layout.lineSpacing == ns.UnitAuras.GAP,
+    check(debuffs._flow.line == 72 and buffs._flow.line == 72 and control._flow.line == 72
+        and debuffs._groups.auto.options.layout.lineSpacing == ns.UnitAuras.GAP
+        and debuffs._groups.auto.options.layout.elementWidth == ns.UnitAuras.SIZE,
         "at most three in a line: what you marked Important goes up, not into the middle")
     check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
     -- The time left: the darkening over the icon, no numbers.
