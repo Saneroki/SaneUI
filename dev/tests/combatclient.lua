@@ -133,6 +133,7 @@ function Client.Install(W)
         function container:AddAuraGroup(key, filter, options)
             local icon = W.NewWidget("Button", nil, self)
             self._groups[key] = { filter = filter, options = options, enabled = true, icon = icon }
+            self._sizesItself = true
             if options.initializeFrame then options.initializeFrame(icon) end
         end
         function container:SetAuraGroupFilterString(key, filter) self._groups[key].filter = filter end
@@ -140,6 +141,22 @@ function Client.Install(W)
         function container:SetAuraGroupEnabled(key, on) self._groups[key].enabled = on end
         function container:SetUnit(unit) self._unit = unit end
         function container:UpdateAllAuras() self._updates = (self._updates or 0) + 1 end
+    end
+    -- A container with an aura group sizes itself by what it shows: the game refuses anything of an addon's anchored to it
+    -- (its forbidden aspect UntrustedLayoutScriptExecution); it may hang on anything itself.
+    local function Refused(frame, other)
+        if type(other) == "table" and other._sizesItself and not frame._sizesItself then
+            error("Anchoring disallowed as dependent object would inherit forbidden aspects: UntrustedLayoutScriptExecution", 3)
+        end
+    end
+    local SetPoint, SetAllPoints = methods.SetPoint, methods.SetAllPoints
+    function methods:SetPoint(point, relative, ...)
+        Refused(self, relative)
+        return SetPoint(self, point, relative, ...)
+    end
+    function methods:SetAllPoints(other)
+        Refused(self, other)
+        return SetAllPoints(self, other)
     end
     for _, name in ipairs({ "SetIcon", "SetDurationCooldown", "SetApplicationCount", "SetSpellName" }) do
         methods[name] = function(self, region) self["_" .. name] = region end

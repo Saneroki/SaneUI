@@ -331,8 +331,9 @@ local function Apply()
     RegisterStateDriver(live, "visibility", Group.SHOWN)
 end
 
+-- What fails here stands the module down: half made, nothing would show, the game's frames being away.
 function Group.Apply()
-    Core.AfterCombat("group frames", Apply)
+    Core.AfterCombat("group frames", ns.Guarded, Apply)
 end
 
 -- Every face read anew: a changed group, a marker, the end of a fight.

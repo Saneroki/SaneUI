@@ -355,12 +355,19 @@ do
                      power = 10, powerMost = 100 }
     UnitInRange = function() return true, true end
     UnitGroupRolesAssigned = function() return "NONE" end
+    local guarded, through = ns.Guarded, false
+    ns.Guarded = function(...)
+        through = true
+        return guarded(...)
+    end
     Group.Apply()
+    ns.Guarded = guarded
     local live
     for frame in pairs(W.drivers) do
         if W.drivers[frame].values == Group.SHOWN then live = frame end
     end
     check(live and W.drivers[live].state == "visibility", "the live frames show while you are in a group, by the game's state driver")
+    check(through, "made under the module's guard: what fails stands it down, so the game's frames come back")
     local headers = {}
     for _, widget in ipairs(W.frames) do
         if widget._template == "SecureGroupHeaderTemplate" then headers[#headers + 1] = widget end
@@ -521,9 +528,10 @@ do
     W.Fire("READY_CHECK", "player", 30)
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == second.face.big
         and second.face.ready._parent == second.face.floating, "a ready check: its picture, big, floating over the name")
-    check(second.face.ready._points[1][2] == second.face.marks.lead and second.face.rez._points[1][2] == second.face.ready
+    check(second.face.ready._points[1][2] == second.face.floating and second.face.rez._points[1][2] == second.face.ready
+        and second.face.marks.lead._points[1][2] == second.face.rez
         and second.face.raid._points[1][2] == second.face.level and first.face.cog._shown,
-        "from the left dispel, ready check, resurrection; the raid marker stays where it is; your own slot keeps its cog")
+        "from the left ready check, resurrection, dispel; the raid marker stays where it is; your own slot keeps its cog")
     W.Fire("READY_CHECK_FINISHED")
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.notready, "it ended: who did not answer is not ready")
     W.ready.party1 = nil

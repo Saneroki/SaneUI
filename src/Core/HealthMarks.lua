@@ -29,8 +29,10 @@ local Core = SaneUI.Core
 --  filled by the game, in a fight too. Its one frame shows nothing but a dispel
 --  type texture in the game's Icon style, which the game sets and shows itself.
 --  It floats over the words. In a fight addons cannot tell whether it is there,
---  but the container takes the size of what it shows: empty it has no width, so
---  whatever is anchored to its right (marks.lead) steps aside for it by itself.
+--  and the game refuses anything of an addon's anchored to the container once
+--  it has an aura group (its forbidden aspect UntrustedLayoutScriptExecution:
+--  it sizes itself by what it shows), so nothing can step aside for it: what
+--  shares its line stands before it, and it stands by that (marks:Place).
 --  No mouse on any of it: the unit's button under it keeps clicks and @mouseover.
 --
 --      local marks = Core.HealthMarks.New(host, health, {
@@ -45,7 +47,6 @@ local Core = SaneUI.Core
 --      marks:Switch(barrier, lost, dispel)
 --      marks:Place(point, relative, relativePoint, x, y)   -- where the icon stands
 --      marks:Resize(size)            -- the icon's size anew
---      marks.lead                    -- what to anchor to its right
 --      marks:Sample({ barrier = share, lost = share, dispel = "Magic" })  -- made up, without a unit
 -------------------------------------------------------------------------------
 local Plain = Core.Plain

@@ -169,9 +169,8 @@ shows on it, and you make as many bars as you like.
   column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it in play: only the
   unit frames show; in Edit Mode it has the box every window has. Each unit: the raid marker and the name on the left with as much room as
   there is; a tiny mark of a tank's or healer's role in the top left corner, a shield or a plus without a ring, centred on the raid marker's place, in front of the bar and
-  behind the name and raid marker (by the role the game was told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the type icon of a
-  dispellable debuff (the game's, a green drop for poison and so on), the ready check while one runs and its result for a while after, the
-  game's icon of a resurrection on its way, each moving aside for the one before it; how much health is left on the right ("85%";
+  behind the name and raid marker (by the role the game was told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the ready check while one runs and its result for a while after, the
+  game's icon of a resurrection on its way, the type icon of a dispellable debuff (the game's, a green drop for poison and so on), each moving aside for the one before it; how much health is left on the right ("85%";
   nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
   one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
   tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
@@ -558,9 +557,9 @@ shows on it, and you make as many bars as you like.
   plain frames, `Roll` once per count. The game's `PartyFrame` (which holds `CompactPartyFrame`), `CompactRaidFrameContainer` and
   `CompactRaidFrameManager` stand in a hidden frame (`Core.Lend`). A ready check's result stays `Face.READY_HOLD` seconds (the game's
   `CUF_READY_CHECK_DECAY_TIME`) after `READY_CHECK_FINISHED`; who has not answered is not ready, as the game has it.
-- **What floats on the left (`Units/GroupFace.lua`):** `face.floating`, over the words: `marks.lead`, `ready`, `rez`, each anchored to the last's
-  right, an empty one as wide as nothing. The dispel icon's container takes the size of what it holds (the game's `OnLayoutComplete`, its numbers
-  hidden in a fight), so what follows it moves by itself where addons cannot tell whether it shows. They are the frame's height less
+- **What floats on the left (`Units/GroupFace.lua`):** `face.floating`, over the words: `ready`, `rez`, the dispel icon, each anchored to the last's
+  right, an empty one as wide as nothing. The dispel icon's container comes last because nothing of ours may be anchored to it: it sizes itself by
+  what it holds, so once it has an aura group it has the forbidden aspect `UntrustedLayoutScriptExecution`, and the game refuses the anchor of whatever lacks that (`CustomAuraContainerSharedMixin`). It may hang on anything of ours (`marks:Place`). They are the frame's height less
   `Face.BIG_OFF`. On the line under them `level`, `raid` and `name` hang on each other; `name` ends at the health's room.
 - **The group's tools (`Units/GroupTools.lua`):** nearly all a raid manager does is `HasRestrictions`, off limits to addon code (markers,
   `DoReadyCheck`, `DoCountdown`, `SetEveryoneIsAssistant`, converting), so nothing of that is called: `SecureActionButtonTemplate`s of the types
@@ -573,7 +572,7 @@ shows on it, and you make as many bars as you like.
   `UnitText.MakeLine`, `Raid`, `Mark`, `Name`, `Health`, `Sample`), without the glow's plates: forty frames stay light. `Face.Unit` follows
   the button's `unit` attribute (`OnAttributeChanged`, in a fight too) and registers that unit's events. `face.compact` and `face.bare`
   are told to `UnitText.Health`; `MakeLine` takes its tighter inset and gap; `face.floating`, a frame over the words, holds the icons, and
-  `face.roomed` places them and the dispel icon after each layout.
+  `face.roomed` places your buffs' icons after each layout.
 - **Your buffs (`Units/GroupBuffs.lua`):** `Buffs.CLASSES`, families of names (English clients), found as yours by `C_Spell.GetSpellInfo`
   of a name. `Buffs.Missing` reads `C_UnitAuras.GetAuraDataBySpellName`, out of a fight only (`Core.Restricted`): `nil` there, and
   everyone is read again at `PLAYER_REGEN_ENABLED`.

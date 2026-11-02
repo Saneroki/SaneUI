@@ -15,10 +15,10 @@ local _, ns = ...
 --            that as well (Face.BARE), so the name gets it; Dead or Offline always
 --    over it an icon for each of your buffs the unit is missing (GroupBuffs.lua),
 --            from the health leftwards; from the left, big so they are easy to
---            see (Face.Big), the type icon of a dispellable debuff (Core's
---            HealthMarks.lua), the ready check while one runs and its result for
---            a while after it (Face.READY_HOLD), and the game's icon of an
---            incoming resurrection, each stepping aside for the one before it.
+--            see (Face.Big), the ready check while one runs and its result for
+--            a while after it (Face.READY_HOLD), the game's icon of an incoming
+--            resurrection and the type icon of a dispellable debuff (Core's
+--            HealthMarks.lua), each stepping aside for the one before it.
 --            All float over the name and the raid marker, which stay where they
 --            are and go on behind them
 --    bottom  the mana of a tank or healer, a line inside the bar as on a
@@ -148,14 +148,15 @@ function Face.Make(parent, sample)
         masks = health.ends, size = Face.ICON, sample = sample, above = level + 8, fit = function() Face.Fit(face) end })
     Text.MakeLine(face, Face.INSET, Face.GAP)
     face.compact = true
-    -- Over the words, what floats on them: from the left the dispel icon, then the ready check, the resurrection.
+    -- Over the words, what floats on them: from the left the ready check, the resurrection, then the dispel icon, last
+    -- because it stands by them: the game lets nothing of ours stand by its container (HealthMarks.lua).
     face.floating = CreateFrame("Frame", nil, face)
     face.floating:SetAllPoints(face)
     face.floating:SetFrameLevel(level + 7)
     face.big = Face.ICON
     local ready = face.floating:CreateTexture(nil, "OVERLAY")
     ready:SetSize(NONE, face.big)
-    ready:SetPoint("LEFT", face.marks.lead, "RIGHT", 0, 0)
+    ready:SetPoint("LEFT", face.floating, "LEFT", Face.INSET, 0)
     ready:Hide()
     local rez = face.floating:CreateTexture(nil, "OVERLAY")
     rez:SetSize(NONE, face.big)
@@ -163,6 +164,7 @@ function Face.Make(parent, sample)
     rez:SetAtlas(Face.REZ)
     rez:Hide()
     face.ready, face.rez = ready, rez
+    face.marks:Place("LEFT", rez, "RIGHT", 0, 0)
     -- Your own slot's cog, at its far right.
     local cog = face.floating:CreateTexture(nil, "OVERLAY")
     cog:SetSize(Face.ICON, Face.ICON)
