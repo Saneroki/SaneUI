@@ -143,6 +143,24 @@ function Client.Install(W)
     for _, name in ipairs({ "SetIcon", "SetDurationCooldown", "SetApplicationCount", "SetSpellName" }) do
         methods[name] = function(self, region) self["_" .. name] = region end
     end
+    function methods:SetDurationText(region, options) self._SetDurationText, self._textOptions = region, options end
+    function methods:SetHideCountdownNumbers(hide) self._hideNumbers = hide end
+    -- The game's numeric rule formatter: the last breakpoint reached, its first component, rounded up, as written.
+    Enum.NumericRuleFormatRounding = { Nearest = 0, Up = 1, Down = 2 }
+    C_StringUtil = rawget(_G, "C_StringUtil") or {}
+    C_StringUtil.CreateNumericRuleFormatter = function()
+        local formatter = {}
+        function formatter:SetBreakpoints(rules) self.rules = rules end
+        function formatter:FormatNumber(number)
+            local rule
+            for _, each in ipairs(self.rules) do
+                if number >= each.threshold then rule = each end
+            end
+            local part = rule.components and rule.components[1]
+            return rule.format:format(math.ceil(number / (part and part.div or 1)))
+        end
+        return formatter
+    end
     W.auras = {}
     C_UnitAuras = rawget(_G, "C_UnitAuras") or {}
     C_UnitAuras.GetAuraDataByIndex = function(unit, index, filter)

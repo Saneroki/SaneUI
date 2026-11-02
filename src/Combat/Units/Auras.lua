@@ -44,6 +44,8 @@ Auras.GAP = 2   -- between icons, and from the frame
 Auras.MOST = 3  -- of each kind, and of each list
 Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP) - Auras.GAP -- a container's widest line: what comes after goes up
 Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
+Auras.CLOCK = 9        -- the size of the time left on an icon
+Auras.CLOCK_ALPHA = 0.5 -- and how strong: the icon stays seen under it
 -- The kinds: their place on the frame's roof, the corner they grow from inside their container and which way, their
 -- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
 -- of the group of your important ones).
@@ -119,8 +121,40 @@ local function Clicked(frame, button)
 end
 local OnClicked = ns.Guard(Clicked)
 
+-- The time left as a bare number, rounded up: seconds up to a minute, then minutes, then hours. The game's own rule
+-- formatter, as it writes the time in a fight too; each way of writing the number is tried, as the export does not
+-- show which it takes. nil where this client does not write it so: the game's own words then ("5 s").
+local function Written(format)
+    local up = Enum.NumericRuleFormatRounding.Up
+    local formatter = C_StringUtil.CreateNumericRuleFormatter()
+    formatter:SetBreakpoints({
+        { threshold = 0, step = 1, rounding = up, format = format },
+        { threshold = 60, format = format, components = { { div = 60, step = 1, rounding = up } } },
+        { threshold = 3600, format = format, components = { { div = 3600, step = 1, rounding = up } } },
+    })
+    return formatter:FormatNumber(65) == "2" and formatter or nil
+end
+
+local function Bare()
+    if Auras.bare == nil then
+        Auras.bare = false
+        local strings, rounding = rawget(_G, "C_StringUtil"), rawget(_G, "Enum") and Enum.NumericRuleFormatRounding
+        if strings and strings.CreateNumericRuleFormatter and rounding then
+            for _, format in ipairs({ "%d", "%.0f" }) do
+                local ok, formatter = pcall(Written, format)
+                if ok and formatter then
+                    Auras.bare = formatter
+                    break
+                end
+            end
+        end
+    end
+    return Auras.bare or nil
+end
+
 -- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
--- square in a dark edge, the swipe of the time gone, the stack count over it, its name unseen (for the menu); in the
+-- square in a dark edge, the swipe of the time gone, the time left small and faint, in place of the widget's own big
+-- numbers, the stack count over it, its name unseen (for the menu); in the
 -- group of your important ones the game's outline (BuffList.lua), so it needs no telling which an icon is, in a fight either.
 local function Dress(frame, face, kind, glowing)
     local size = Auras.SIZE
@@ -142,6 +176,11 @@ local function Dress(frame, face, kind, glowing)
     local count = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     count:SetJustifyH("RIGHT")
     count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 2, -1)
+    local clock = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    local file, _, flags = clock:GetFont()
+    if file then clock:SetFont(file, Auras.CLOCK, flags) end
+    clock:SetAlpha(Auras.CLOCK_ALPHA)
+    clock:SetPoint("CENTER", frame, "CENTER", 0, 0)
     local name = top:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     name:SetAlpha(0)
     name:SetPoint("CENTER")
@@ -149,6 +188,11 @@ local function Dress(frame, face, kind, glowing)
     if alert then alert:Show() end
     frame:SetIcon(icon)
     frame:SetDurationCooldown(cooldown)
+    if pcall(frame.SetDurationText, frame, clock, { textFormatter = Bare() }) then
+        cooldown:SetHideCountdownNumbers(true)
+    else
+        clock:Hide()
+    end
     frame:SetApplicationCount(count)
     frame:SetSpellName(name)
     pcall(frame.HookScript, frame, "OnMouseUp", OnClicked) -- a client that keeps the icons' scripts: no menu, no harm

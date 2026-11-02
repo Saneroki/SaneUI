@@ -104,7 +104,7 @@ shows on it, and you make as many bars as you like.
   gold one; the frame glows red while you have the unit's aggro (your own: while anything is after you) or while
   it is a player who may attack you. Every frame is the same width, whatever it shows: 240 at 100 % (*Unit frame
   size* scales all three alike); only the glow reaches beyond its edge.
-  - **Auras:** the three that matter most of each kind, in one line above the frame: buffs on the left, from its
+  - **Auras:** the three that matter most of each kind, in one line above the frame, each with the time left, small and half see-through, only the number (*45* seconds, then *25* minutes, then *2* hours): buffs on the left, from its
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). **Click** an icon, out of a fight, for its menu: *Important* (in front of the
@@ -486,7 +486,9 @@ shows on it, and you make as many bars as you like.
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
     `BigDefensive`, `excludeSpellIDs` = what those two hold and what never shows; control only what never shows: Unimportant and Hide, less Show). The game applies those candidate filters
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
-    Each icon (`initializeFrame`, `Dress`): the picture cropped in a dark edge, the swipe, the count, its name into a
+    Each icon (`initializeFrame`, `Dress`): the picture cropped in a dark edge, the swipe, the time left (`SetDurationText`
+    with a `NumericRuleFormatter` of ours, `Bare`, as its default and the cooldown's numbers add a unit; so the widget's
+    numbers are off, `SetHideCountdownNumbers`; the game writes it in a fight too), the count, its name into a
     text of ours at alpha 0 (`SetSpellName`), and an `OnMouseUp` hook: a left click, while not `Core.Restricted()`,
     finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
     context menu (`MenuUtil`). `Auras.Set` sets each container's unit (`none` while off), `UpdateAllAuras` at every fill.

@@ -25,6 +25,8 @@ local function near(a, b) return math.abs(a - b) < 1e-6 end
 -------------------------------------------------------------------------------
 local methods = W.methods
 UIParent._width, UIParent._height = 1920, 1080
+function methods:GetFont() return self._font and self._font[1] or "font", self._font and self._font[2] or 11, "OUTLINE" end
+function methods:SetFont(file, size, flags) self._font = { file, size, flags } end
 function methods:GetLeft() return self._left end
 function methods:GetBottom() return self._bottom end
 function methods:GetTop() return self._bottom and self._bottom + self._height end
@@ -1503,6 +1505,13 @@ do
         and debuffs._groups.auto.options.layout.lineSpacing == ns.UnitAuras.GAP,
         "at most three in a line: what you marked Important goes up, not into the middle")
     check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
+    -- The time left: the widget's big numbers gone, small and faint, a bare number.
+    local time = debuffs._groups.auto.icon._SetDurationText
+    check(time ~= nil and debuffs._groups.auto.icon._SetDurationCooldown._hideNumbers == true, "the widget's own numbers are off")
+    check(time._alpha == 0.5 and time._font[2] == ns.UnitAuras.CLOCK, "the time left small and half see-through")
+    local bare = debuffs._groups.auto.icon._textOptions.textFormatter
+    check(bare:FormatNumber(44.2) == "45" and bare:FormatNumber(65) == "2" and bare:FormatNumber(1500) == "25"
+        and bare:FormatNumber(7200) == "2", "seconds, minutes, hours, each only the number")
     -- A right click on an icon, out of a fight: the spell on a list.
     local icon = debuffs._groups.auto.icon
     icon._SetSpellName._text = "Sunder Armor"
