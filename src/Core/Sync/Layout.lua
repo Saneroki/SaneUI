@@ -26,6 +26,8 @@ local Sync = Core.Sync -- Sync.lua
 
 local ID = "hudLayout"
 local RELOAD = "the Edit Mode layout"
+local SET = "%s set: it is number %d, Edit Mode's manager had %s, the game said %s" -- for the error log (Sync.OfferReload)
+local ADDED = "%s added: this character's list did not have it"
 local TYPES = rawget(_G, "Enum") and Enum.EditModeLayoutType or {}
 local PRESET, ACCOUNT, CHARACTER = TYPES.Preset or 0, TYPES.Account or 1, TYPES.Character or 2
 
@@ -94,12 +96,16 @@ local function Choose(want)
         if type(layout) == "table" and layout.layoutName == want.name and layout.layoutType == want.kind then
             seen, missing = { name = want.name, kind = want.kind, text = want.text }, nil
             if index == info.activeLayout then return true, false end
+            local own = Core.Ask(C_EditMode.GetLayouts)
+            Sync.said = SET:format(want.name, index, tostring(info.activeLayout),
+                tostring(type(own) == "table" and own.activeLayout or nil))
             C_EditMode.SetActiveLayout(index)
             return true, true
         end
     end
     if Add(want, info) then
         seen, missing = { name = want.name, kind = want.kind, text = want.text }, nil
+        Sync.said = ADDED:format(want.name)
         return true, true
     end
     missing = { name = want.name, kind = want.kind, text = want.text }

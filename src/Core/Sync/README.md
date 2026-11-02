@@ -106,7 +106,10 @@ the game's own chat channels on every character is the Social module's.)
   chat windows of its own, so another game's (a game folder's saved settings copied into the other's) are neither
   written nor handed out (`Sync.Taken`), and this game's take their place at the next reading. Your own channels are joined before the chat windows are
   written (a join puts a channel into the first window). One reload dialog per writing (`Sync.OfferReload`,
-  through `Core.AskReload`) names what the game shows only after one.
+  through `Core.AskReload`) names what the game shows only after one. The same words as the session before are
+  not offered again on that character (`chars[key].asked`, read at `Sync.Began`): that `/reload` settled nothing.
+  What happened goes to the error log instead, *Sync: a /reload settled nothing*, for a layout with what the
+  manager and the game said (`Sync.said`). Another profile brought in that session is new and offered as ever.
 - **Through the game's stored settings, never its frames** (no taint):
   - CVars with `C_CVar.SetCVar` (`Sync.SetCVar`), only one the game lets addons set: not locked, not read
     only, a secure one not in a fight. One it does not take is noted once in the error log (`/sane errors`,

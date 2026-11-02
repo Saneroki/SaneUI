@@ -862,6 +862,33 @@ W.cvars.autoLootDefault = "1" -- the player set it on meanwhile, in the game's o
 Sync.Return("autoLootDefault")
 check(W.cvars.autoLootDefault == "1", "changed meanwhile: left as the player set it")
 
+-- A /reload that settled nothing is not offered again ---------------------------------------------------
+-- The next login, with the game on that layout at the time of the writing.
+local function Login(active)
+    Sync.Began()
+    game.active = active
+    local before = #W.popups
+    Sync.Give()
+    return #W.popups - before
+end
+Sync.options.taken.hudLayout = { name = "Mine", kind = 1 }
+check(Login(3) == 0, "a login with nothing to change, after all that went before")
+check(Login(1) == 1 and game.active == 3, "the kept layout set at a login: a /reload is offered")
+check(W.popups[#W.popups].data.text_arg1 == "the Edit Mode layout", "for that alone")
+check(Login(1) == 0 and game.active == 3, "the game on its own one again at the next: set again, the same /reload, which settled nothing, not offered")
+local settled = Core.errors["Sync: a /reload settled nothing"]
+check(settled and settled.text == "the Edit Mode layout: Mine set: it is number 3, Edit Mode's manager had 1, the game said nil",
+    "the error log says so, with what the game said")
+Core.errors["Sync: a /reload settled nothing"] = nil
+check(Login(1) == 0, "nor at the one after")
+Core.errors["Sync: a /reload settled nothing"] = nil
+check(Login(3) == 0 and Login(1) == 1, "a login with nothing to change ends that: the next one is new")
+Sync.Began()
+game.active = 1
+local popups = #W.popups
+Sync.Moved()
+check(#W.popups == popups + 1, "another profile's writing is new too, whatever the login before offered")
+
 local problems = {}
 for label, problem in pairs(Core.errors) do problems[#problems + 1] = label .. ": " .. tostring(problem.text) end
 check(#problems == 0, "nothing went wrong on the way: " .. table.concat(problems, "; "))

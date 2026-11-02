@@ -33,6 +33,7 @@ BuffList.FADED = 0.25  -- an unimportant aura's strength
 BuffList.LINGER = 0.3  -- seconds the hidden stay after the mouse left, as the buttons have gaps between them
 BuffList.ALERT = "ActionButtonSpellAlertTemplate" -- the game's outline of a spell that wants attention
 BuffList.GROW = 1.4    -- its size against the icon's, as the game gives it
+BuffList.ICON = 30     -- the game's aura icon, where it hides the size of one: a fight it showed in does that, past its end
 BuffList.REGIONS = { "Icon", "Duration", "Count", "Symbol", "DebuffBorder", "TempEnchantBorder" }
 
 local covered = {} -- [the game's aura button] = true
@@ -80,11 +81,12 @@ end
 function BuffList.Alert(parent, around)
     local ok, alert = pcall(CreateFrame, "Frame", nil, parent, BuffList.ALERT)
     if not (ok and alert and alert.ProcLoop and alert.ProcStartFlipbook) then return nil end
-    alert:SetSize(around:GetWidth() * BuffList.GROW, around:GetHeight() * BuffList.GROW)
+    alert:SetSize((Plain(around:GetWidth()) or BuffList.ICON) * BuffList.GROW,
+        (Plain(around:GetHeight()) or BuffList.ICON) * BuffList.GROW)
     alert:SetPoint("CENTER", around, "CENTER", 0, 0)
     alert.ProcStartFlipbook:SetAlpha(0) -- its burst is for a proc's start: this one just stands
     alert:HookScript("OnShow", ns.Guard(function(self)
-        if not self.ProcLoop:IsPlaying() then self.ProcLoop:Play() end
+        if not Plain(self.ProcLoop:IsPlaying()) then self.ProcLoop:Play() end
     end))
     return alert
 end

@@ -23,7 +23,9 @@ local ADDON = ...
 --
 --  Only the game's stored settings are touched (CVars, its chat window and
 --  action bar settings, C_EditMode, the modifier keys), never its frames. Where
---  the game shows a change only after a /reload, one is offered once. A CVar a
+--  the game shows a change only after a /reload, one is offered once; for the
+--  same thing at the next login too, it is not offered again: that /reload
+--  settled nothing, which goes to the error log (Sync.OfferReload). A CVar a
 --  module lends (Sync.Lend, Game.lua) is left to it: kept as the player's own.
 --
 --  Files: Data/Pages.lua (what each options page sets, made from Blizzard's
@@ -87,6 +89,8 @@ local function Ours()
     return Sync.options.from == Core.GAME
 end
 
+local AGAIN = "Sync: a /reload settled nothing" -- in the error log (Sync.OfferReload)
+
 -- What a part took last (to keep when the game cannot say now); nothing of another game's.
 function Sync.Taken(id)
     if not Ours() then return nil end
@@ -108,6 +112,8 @@ local offered -- a /reload was offered for this writing
 local left    -- what the last capture read: the game's settings the character may be turning away from
 local leftNamed -- and the CVars kept by name then
 local arrived   -- the settings in use just came from elsewhere: a part they hold nothing of goes to the game's own
+local last      -- what the session before offered a /reload for (Sync.Began)
+local turned    -- another profile came into use this session: what that changes is new, whatever was offered before
 
 -------------------------------------------------------------------------------
 --  Single CVars kept by name (Settings/CVars.lua)
@@ -170,11 +176,26 @@ function Sync.Capture()
 end
 
 -- Offers a /reload for what the game shows only after one: once per writing (a layout set later
--- by Layout.lua shares it), so a profile loaded afterwards gets its own.
+-- by Layout.lua shares it), so a profile loaded afterwards gets its own. The same as the session before
+-- is not offered: that /reload settled nothing, and another would not either. It is noted, with what
+-- Sync.said (Layout.lua: what the game said then).
 function Sync.OfferReload(names)
     if offered or #names == 0 or not Core.AskReload then return end
     offered = true
+    local what = table.concat(names, ", ")
+    Core.Character(Sync.name).asked = what
+    if what == last and not turned then
+        Core.NoteError(AGAIN, Sync.said and (what .. ": " .. Sync.said) or what)
+        return
+    end
     Core.AskReload(names)
+end
+
+-- A session's first writing: what the session before offered counts now, and no more after this one. A session
+-- that offers nothing so leaves nothing, and the next time is new.
+function Sync.Began()
+    local character = Core.Character(Sync.name)
+    last, character.asked, turned = character.asked, nil, false
 end
 
 -- Writes the kept parts of the settings in use into the game; in a fight, once it is over. Another game's are
@@ -239,6 +260,7 @@ end
 function Sync.Moved()
     if not On() then return Sync.Safe("defaults", ToDefaults) end
     if not settled then return end
+    turned = true
     local options = Sync.options
     arrived = left == nil or not Core.Same(left, options.taken) or not Core.Same(leftNamed, options.named)
     Sync.Safe("writing", Sync.Give)
@@ -270,6 +292,7 @@ local entered, late
 local function GiveSoon()
     C_Timer.After(SETTLE, Core.Guard("sync", function()
         settled = true
+        Sync.Safe("beginning", Sync.Began)
         Sync.Safe("writing", Sync.Give)
     end))
 end

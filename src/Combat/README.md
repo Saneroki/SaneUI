@@ -608,7 +608,8 @@ shows on it, and you make as many bars as you like.
   (`CancelAuraByInstanceID`, `CancelUnitBuff`), so the right click stays the game's, and the left is a `HookScript`: after the
   game's, so nothing of ours runs on its way to the cancel. Not that callback: it runs before the cancel, in the same click.
   Fields of the game's buttons are only read. The outline is a child of the button:
-  `BuffList.Alert`, the game's `ActionButtonSpellAlertTemplate` made by us, 1.4 times the icon as the game's, only its loop;
+  `BuffList.Alert`, the game's `ActionButtonSpellAlertTemplate` made by us, 1.4 times the icon as the game's (its size through
+  `Core.Plain`: a fight the icon showed in hides that, past its end, so `BuffList.ICON` stands in), only its loop;
   not by `ActionButtonSpellAlertManager`, which would write our frames into its `activeAlerts` and fields, and made when first
   needed. The template's own `OnShow` is never hooked up (and asks a field the manager never sets), so ours starts the loop. The fade on the button's regions (`REGIONS`), as `AuraButtonMixin:OnUpdate` sets the button's own alpha every
   frame for its warning flash. Hidden last: the game's list keeps a place for every button with `hasValidInfo`, written by

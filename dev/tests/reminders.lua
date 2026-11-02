@@ -214,6 +214,14 @@ Line(thorns, TEXT.auraImportant).fn()
 check(ns.options.auraWhite[782] == "Thorns" and Glows(thorns), "Important: on the list, and a glow in the game's list")
 check(Line(thorns, TEXT.auraImportant).checked() == true, "its line ticked")
 check(thorns.Icon._alpha ~= 0.25 and not Glows(bear), "the others as they were")
+-- A fight the icon showed in hides its size, past the fight's end: the first outline of a Victorious after a fight.
+local bearWidth, bearHeight = bear.Icon._width, bear.Icon._height
+bear.Icon._width, bear.Icon._height = W.Secret(), W.Secret()
+Line(bear, TEXT.auraImportant).fn()
+check(not ns.off and Glows(bear) and Alert(bear)._width == 42 and Alert(bear)._height == 42,
+    "an icon whose size the game hides gets its outline at the size of the game's icons, and Combat stays on")
+Line(bear, TEXT.auraImportant).fn()
+bear.Icon._width, bear.Icon._height = bearWidth, bearHeight
 Line(thorns, TEXT.auraUnimportant).fn()
 check(ns.options.auraBlack[782] and not ns.options.auraWhite[782] and not Glows(thorns),
     "Unimportant: off the other list, no glow")
