@@ -20,7 +20,9 @@ local _, ns = ...
 --  pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own map, 0 to 1),
 --  atlas or texture, size, name, role (an NPC's: what it is, its tooltip's heading in place of its name: Bowyer,
 --  Warrior Trainer), doubt (the thing is not yet confirmed by the game: the red ! before its name), unverified (its
---  tooltip shows something not yet confirmed: it, or one of its quests), lines (its tooltip's further lines), and by kind: quest (its ID), complete,
+--  tooltip shows something not yet confirmed: it, or one of its quests), lines (its tooltip's further lines; one of an
+--  objective: { quest, index }, its words asked of the game when the tooltip shows), goals (a pin of what a quest of
+--  yours asks for, Goals.lua: { { quest, index }, ... }), and by kind: quest (its ID), complete,
 --  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), grey
 --  (a quest too low), tint (its icon's colour: a quest for later, a flight point not yet found), order (drawn over
 --  a lower one).
@@ -41,12 +43,12 @@ Pins.KINDS = ns.KINDS
 Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true } -- kinds shown past a zone
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
 Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
-Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, flight = 18, travel = 22, entrance = 22,
+Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, flight = 18, travel = 22, entrance = 22,
               place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18,
               foundHerb = 14, foundOre = 14 } -- (the found ones are drawn by Found.lua)
 
 -- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker (its icon).
-local ORDER = { log = 10, quest = 9, rare = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
+local ORDER = { log = 10, quest = 9, rare = 8, goal = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
                 later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
@@ -131,8 +133,8 @@ local Map = Core.Data.Map()
 local live = { quests = {}, flights = {}, vignettes = {}, points = {} }
 local joined = {} -- [uiMapID] = its live pins of every part in one list (For reads one a map), until a part was read anew
 -- [part][uiMapID] = its pins of Core's data of that part, until what they follow changes: the NPCs' (their quests),
--- the objects' (herbs, ore, chests...), the places' and ways'.
-local data = { npc = {}, object = {}, way = {} }
+-- the objects' (herbs, ore, chests...), the places' and ways', the spawns of your quests' open objectives.
+local data = { npc = {}, object = {}, way = {}, goal = {} }
 local PARTS = { npc = "npc", object = "object", place = "way", travel = "way" } -- a place's part, by its kind
 local faction    -- the player's side, asked once
 
@@ -280,6 +282,7 @@ end
 local QUESTS = Core.Data.Set("Quests")
 -- The sets a place of Core's data comes from, for whether the game has confirmed it (Unverified).
 local SPAWNS, NPC_FACTS, OBJECT_FACTS = Core.Data.Set("Spawns"), Core.Data.Set("NPCs"), Core.Data.Set("Objects")
+local CREATURES = Core.Data.Set("CreatureSpawns")
 local PLACE_FACTS, WAYS_SET = Core.Data.Set("Places"), Core.Data.Set("Travel")
 local function QuestName(id)
     return QUESTS:Get(id, "name") or ("#" .. tostring(id))
@@ -382,7 +385,9 @@ end
 -- confirmed in play since, here or by the guild or the group: Data.Confirm).
 local function Unverified(place)
     local kind = place.kind
-    if kind == "npc" then return SPAWNS:Unverified(place.key) or NPC_FACTS:Unverified(place.id) end
+    if kind == "npc" then
+        return SPAWNS:Unverified(place.key) or CREATURES:Unverified(place.id) or NPC_FACTS:Unverified(place.id)
+    end
     if kind == "object" then return SPAWNS:Unverified(place.key) or OBJECT_FACTS:Unverified(place.id) end
     if kind == "place" then return PLACE_FACTS:Unverified(place.id) end
     if kind == "travel" then return WAYS_SET:Unverified(place.id) end
@@ -519,11 +524,43 @@ local function FromData(place)
     return pin
 end
 
--- A map's pins of Core's data of one part (PARTS). A thing with several points there (a herb's every spawn, a
--- wanderer's places) has a pin at each: its key the thing's and its point's, the thing's own kept as its thing.
+-- A map's pins of what your quests still ask for (Goals.lua): one at each point a thing stands, in the picture of what
+-- to do there, the quests it is for in its tooltip. A click leads to its first quest, as a click on the quest's own pin.
+local function GoalsOn(map)
+    local list = {}
+    for thing, wanted in pairs(ns.Goals.Wanted()) do
+        local points = ns.Goals.Spots(thing)[map]
+        if points then
+            local kind, id = thing:match("^(%a+):(%d+)$")
+            id = tonumber(id)
+            local doubt = Unverified({ kind = kind, key = thing, id = id }) or nil
+            local lines, unverified = {}, doubt
+            for _, goal in ipairs(wanted.goals) do
+                if QuestLines(lines, goal.quest) then unverified = true end
+                lines[#lines + 1] = goal
+            end
+            local name = (kind == "npc" and NPC_FACTS or OBJECT_FACTS):Get(id, "name")
+            for index, point in ipairs(points) do
+                Add(list, { kind = "goal", key = "goal:" .. thing .. "@" .. map .. ":" .. index, thing = thing, name = name,
+                            texture = wanted.texture, goals = wanted.goals, quest = wanted.goals[1].quest, click = "quest",
+                            lines = lines, doubt = doubt, unverified = unverified }, map, point.x / 100, point.y / 100)
+            end
+        end
+    end
+    return list
+end
+
+-- A map's pins of Core's data of one part (PARTS, and the objectives'). A thing with several points there (a herb's
+-- every spawn, a wanderer's places) has a pin at each: its key the thing's and its point's, the thing's own kept as its
+-- thing.
 local function DataOn(map, part)
     local list = data[part][map]
     if list then return list end
+    if part == "goal" then
+        list = GoalsOn(map)
+        data.goal[map] = list
+        return list
+    end
     local places = Map:On(map)
     if not places then return {} end -- being read: asked again once they are (OnChange)
     list = {}
@@ -581,13 +618,14 @@ for _, entry in ipairs(Pins.KINDS) do SMALL[entry[1]] = entry.small end
 
 -- The parts of Core's pins a view reads: at a zone's level all, further out the places' and ways' alone (no NPC or
 -- object is of a kind shown past a zone, Pins.CONTINENT).
-local ZONE_PARTS, FAR_PARTS = { "npc", "object", "way" }, { "way" }
+local ZONE_PARTS, FAR_PARTS = { "npc", "object", "way", "goal" }, { "way" }
 
 -- The gather's grid (Gather): a cell's number, its column times ROW plus its row (no plane's rows reach ROW at any
 -- zoom). Herbs and ore are a zone's thousands of places: of each kind, at most one in a cell of it goes on to be
--- sorted and gathered, the others there ride with it (its with), so its marker still counts and names them all.
+-- sorted and gathered, the others there ride with it (its with), so its marker still counts and names them all. So
+-- too a creature's many spawns.
 local ROW = 2 ^ 20
-local MANY = { herb = 1, ore = 2 }
+local MANY = { herb = 1, ore = 2, goal = 3 }
 local firsts = {}           -- [cell and kind] = the first herb or ore in it (scratch)
 local rides, rode = {}, 0   -- the lists of those that ride with one, used again
 
@@ -601,7 +639,10 @@ function Pins.For(view, small, pu, pv)
     wipe(shown)
     rode = 0
     Me()
+    if ns.Goals.Read() then wipe(data.goal) end
     local continentLevel = view.level ~= "zone"
+    -- What a quest of yours asks for stands as that, not as what else it is (a rare, a herb); a quest it offers aside.
+    local goals = not continentLevel and Shows("goal") and ns.Goals.Wanted() or NONE
     local parts = continentLevel and FAR_PARTS or ZONE_PARTS
     local floor, k, size = math.floor, view.k, Pins.GATHER
     local left, right, top, bottom = view.left, view.right, view.top, view.bottom
@@ -623,7 +664,8 @@ function Pins.For(view, small, pu, pv)
                     shown[kind] = wanted
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
-                if wanted and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]) then
+                if wanted and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]
+                               and (kind == "goal" or kind == "quest" or not goals[pin.thing])) then
                     local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
                     local near = not (small and pin.service) or (pu and (u - pu) ^ 2 + (v - pv) ^ 2 <= Pins.NEAR ^ 2)
                     if near and u >= left and u <= right and v <= top and v >= bottom then
@@ -660,12 +702,13 @@ function Pins.For(view, small, pu, pv)
 end
 
 -- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
--- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near.
+-- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near;
+-- the quests' objectives only among themselves (goalCells), so none vanishes into a marker of other things.
 -- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
 -- pu, pv, key }); a herb or ore with others riding with it (For) is a marker of them all.
 -- The grid's cells by number (ROW), each a list of the spots { x, y, pin, index } that stand in it, n of them; the
 -- lists and the spots are kept to be used again.
-local cells, lists, spots = {}, {}, {}
+local cells, goalCells, lists, spots = {}, {}, {}, {}
 
 -- A pin into a spot's marker, made at the spot's first pin, each with what rides with it.
 local function Join(spot, pin, out)
@@ -686,6 +729,7 @@ end
 
 function Pins.Gather(list, k)
     wipe(cells)
+    wipe(goalCells)
     local out, used, made = {}, 0, 0
     local size = Pins.GATHER
     for _, pin in ipairs(list) do
@@ -694,10 +738,11 @@ function Pins.Gather(list, k)
         else
             local x, y = pin.pu * k, pin.pv * k
             local cx, cy = math.floor(x / size), math.floor(y / size)
+            local grid = pin.kind == "goal" and goalCells or cells
             local into
             for dx = -1, 1 do
                 for dy = -1, 1 do
-                    local cell = not into and cells[(cx + dx) * ROW + cy + dy]
+                    local cell = not into and grid[(cx + dx) * ROW + cy + dy]
                     if cell then
                         for index = 1, cell.n do
                             local spot = cell[index]
@@ -711,12 +756,12 @@ function Pins.Gather(list, k)
             else
                 out[#out + 1] = pin
                 local key = cx * ROW + cy
-                local cell = cells[key]
+                local cell = grid[key]
                 if not cell then
                     used = used + 1
                     cell = lists[used] or {}
                     lists[used], cell.n = cell, 0
-                    cells[key] = cell
+                    grid[key] = cell
                 end
                 made = made + 1
                 local spot = spots[made] or {}
@@ -742,8 +787,8 @@ local LIVE = { quests = "quests", waypoint = "quests", flights = "flights", vign
 
 -- What the game tells changed: that part of every map's live pins is read again at the next layout, the other parts
 -- kept (a continent's level asks the game for some twenty maps, several questions each); the quests or the level
--- changed, the NPCs' of Core's data too (what this character can take follows its quests and level), not its
--- objects', places' and ways'.
+-- changed, the NPCs' of Core's data too (what this character can take follows its quests and level), and what the
+-- quests ask for is looked at again, not its objects', places' and ways'.
 function Pins.Changed(what)
     local part = what == nil and true or LIVE[what]
     if not part then return false end
@@ -755,8 +800,10 @@ function Pins.Changed(what)
     wipe(joined)
     if what == nil then
         for _, lists in pairs(data) do wipe(lists) end
+        ns.Goals.Stale()
     elseif what == "quests" or what == "level" then
         wipe(data.npc)
+        ns.Goals.Stale()
     end
     return true
 end
@@ -764,6 +811,7 @@ end
 -- Core's places changed: every map's data pins are read again.
 function Pins.DataChanged()
     for _, part in pairs(data) do wipe(part) end
+    ns.Goals.Forget()
 end
 
 Map:OnChange(function()

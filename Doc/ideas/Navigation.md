@@ -455,6 +455,10 @@ When the window fills the screen:
   map). A single click is a pin's own (a quest's text, a giver's quests, a gathered marker zoomed in), else the
   map's: a ping there.
 - **Rares:** Blizzard's own rare marker, and on a click the area where the rare can spawn.
+- **The exact places of quest objectives (Saneroki, 2026-11-02; built):** the game's question mark and area say only
+  roughly where. A pin at every spawn Core's data knows of what a quest's open objectives ask for, for every quest in
+  the log. No glow around the pins at rest. "When you mouse over a quest in the questlog it will make the map icons
+  glow a little so you know which pins tie to which quests." The question mark and the area stay (`Goals.lua`).
 - **One pin per thing (Saneroki, 2026-10-16):** the same quest, NPC or place can be known several ways
   (our shipped data, learned in play, shared by the guild, the game live). One pin is kept for it, not
   several (*One pin per thing*).

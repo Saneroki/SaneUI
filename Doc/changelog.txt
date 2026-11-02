@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The map now shows exactly where your quests' objectives are: a pin
+  at every place a creature to kill, something to loot or someone to
+  speak to can be found, for the quests in your log. Move the mouse
+  over a quest in the quest log and its pins glow a little. The pin
+  filter has a switch for them.
 - Combat's full screen now holds Sane Macros and your action bars as
   windows of their own, so nothing lies over the bars, and you can
   drag a macro straight onto a bar there.

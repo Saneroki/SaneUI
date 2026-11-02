@@ -23,6 +23,8 @@ Live.lua
 Ping.lua
 # The pins as plain records: the game's and Core's data, one per thing, filtered, gathered. Knows no frames
 Pins.lua
+# What your quests still ask of the world and where exactly it stands, from Core's data. Knows no frames
+Goals.lua
 # Herbs and ore: what one is by its name, its picture, the game's finders switched silently and in turn. Knows no frames
 Nodes.lua
 # Where a player can walk: Core's walking data, unpacked per tile when first needed. Knows no frames

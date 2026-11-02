@@ -537,6 +537,8 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
   Every map point of them is placed by map-data's `Placer`: on the zone map of the area the game gives the
   position (the building part it stands in, else the terrain's map chunk), on the smallest map box only where
   neither tells; *Places*' numbers by its `PlaceKeys`.
+- **What your quests ask for** is no place of `Data.Map`: Navigation's `Goals.lua` reads a creature's or an object's
+  points from *Spawns* and *CreatureSpawns* by its key as it is wanted, and what gives an item from `Drops:From`.
 - **Read** as walks of the scheduler (`Each`), one set after the other, `MapReader.REREAD` seconds after a set it
   reads arrives or changes, so that a burst of changes (the stamps of NPCs and Quests move in play, with every row
   learned) is one walk. A change of the facts alone (NPCs, Objects, Quests) is first looked through, a job of its own:

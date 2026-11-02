@@ -21,7 +21,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    minimap buttons are held for the satchel (`Strays.lua`, `Satchel.lua`); all given back exactly.
 4. Pins (`Pins.lua`, no frames; `PinView.lua` draws them): the game's answers (`Live.lua`) and Core's data
    (`Data.Map():On`: Spawns, Places, Travel; the sets Quests, NPCs, Objects), one per thing, the game's word wins;
-   filtered by the setting `pins` (multi) and the pin filter.
+   filtered by the setting `pins` (multi) and the pin filter. The kind `goal` (`Goals.lua`): the exact spawns of the
+   open objectives of the quests in the log, from Core's data; the mouse on a quest in the log makes its pins glow.
 5. The map pin and the route (`Planner.lua`, `Search.lua`, `Walk.lua`, `Gates.lua`, `Lifts.lua`; `Route.lua` draws the
    golden pulsing line, always from the player): on foot over Core's set *Walking*, by the flights the character knows,
    boats, zeppelins, the tram, lifts, portals, the hearthstone and the teleports it has (Core's set *Travel*,

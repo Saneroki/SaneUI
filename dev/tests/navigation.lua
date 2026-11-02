@@ -2363,6 +2363,159 @@ check(GameTooltip._text == "|A:innkeeper:16:16|a " .. Core.UNCONFIRMED_MARK .. "
         "a gathered marker: what a herb gives inset under its name")
     W.methods.AddDoubleLine, C_Item.GetItemInfo = nil, itemInfo
 end)()
+-- What your quests still ask for, at every spawn Core knows of it; no glow until the mouse is on the quest in the log
+;(function()
+    local Quests, Spawns, Creatures, Drops = Core.Data.Set("Quests"), Core.Data.Set("Spawns"), Core.Data.Set("CreatureSpawns"),
+                                             Core.Data.Drops()
+    local Facts, Goals, PinView, QuestLog = Core.Data.Set("NPCs"), ns.Goals, ns.PinView, ns.QuestLog
+    local get, spawned, name, from, objectives = Quests.Get, Spawns.Get, Facts.Get, Drops.From, C_QuestLog.GetQuestObjectives
+    local unverified, read = Creatures.Unverified, Quests.Ready
+    local asked = {
+        { index = 1, kind = "kill", what = 900 },  -- at two far points of CreatureSpawns, nothing in Spawns
+        { index = 2, kind = "loot", what = 5000 }, -- from a likely creature, an unlikely one, one of no known chance, an object
+        { index = 3, kind = "talk", what = 904 },
+        { index = 4, kind = "kill", what = 75 },   -- a trainer of Spawns, with a pin of its own
+        { index = 5, kind = "explore", what = 44 },
+        { index = 6, kind = "kill", what = 905 },  -- finished
+    }
+    local open = { { text = "Boars slain: 2/9" }, { text = "Tusks: 0/4" }, { text = "Speak with him" }, { text = "The teacher" },
+                   { text = "Find it" }, { text = "Done: 1/1", finished = true } }
+    Quests.Get = function(self, id, field)
+        if id == 7 and not field then return { objectives = asked } end
+        return get(self, id, field)
+    end
+    local PLACES = { [900] = { { map = 1429, x = 20, y = 80 }, { map = 1429, x = 90, y = 90 } }, [901] = { { map = 1429, x = 70, y = 30 } },
+                     [902] = { { map = 1429, x = 30, y = 15 } }, [903] = { { map = 1429, x = 15, y = 40 } },
+                     [904] = { { map = 1429, x = 65, y = 75 } }, [905] = { { map = 1429, x = 5, y = 5 } } }
+    Creatures.Get = function(self, id, field) return field == "points" and PLACES[id] or nil end
+    Creatures.Unverified = function(self, id) return id == 900 end
+    Spawns.Get = function(self, key, field)
+        if key == "object:1618" and field == "points" then return { { map = 1429, x = 45, y = 92 } } end
+        return spawned(self, key, field)
+    end
+    Facts.Get = function(self, id, field)
+        if id == 900 and field == "name" then return "Boar" end
+        return name(self, id, field)
+    end
+    Drops.From = function(self, item)
+        if item ~= 5000 then return from(self, item) end
+        return { { key = "npc:901", how = "loot", rate = 80 }, { key = "npc:902", how = "loot", rate = 10 },
+                 { key = "zone:1429", how = "fish", rate = 9 }, { key = "npc:906", how = "skin", rate = 8 },
+                 { key = "npc:903", how = "loot", rate = 0 }, { key = "object:1618", how = "gather", rate = 0 } }
+    end
+    C_QuestLog.GetQuestObjectives = function(quest) return quest == 7 and open or objectives(quest) end
+    local function Buttons(thing)
+        local list = {}
+        for _, widget in ipairs(W.frames) do
+            local pin = widget._kind == "Button" and widget._shown and widget.pin
+            if pin and pin.kind == "goal" and pin.thing == thing then list[#list + 1] = widget end
+        end
+        return list
+    end
+    local function Again()
+        Pins.Changed("quests")
+        Canvas.Layout()
+    end
+    Pins.DataChanged()
+    Canvas.Layout()
+    local boars, spot = Buttons("npc:900"), Buttons("npc:901")[1]
+    check(#boars == 2 and boars[1].pin.key ~= boars[2].pin.key and boars[1].pin.key:find("^goal:npc:900@1429:")
+        and boars[1].icon._texture == QuestLog.SWORD and boars[1]._width == Pins.SIZE.goal,
+        "a creature to kill: a pin at each of its spawns, from CreatureSpawns, the quest log's sword")
+    check(spot and spot.icon._texture == QuestLog.SACK and #Buttons("object:1618") == 1 and #Buttons("npc:903") == 1,
+        "an item to loot: the sack on what gives it; what gives it where no chance is known kept too")
+    check(#Buttons("npc:902") == 0 and #Buttons("npc:906") == 0,
+        "not what gives it far less often than the likeliest, nor what gives it another way (a skin)")
+    check(Buttons("npc:904")[1] and Buttons("npc:904")[1].icon._texture == Goals.SPEAK, "a creature to speak to: the speech bubble")
+    check(#Buttons("npc:905") == 0, "an objective done: no pin")
+    check(not boars[1].glow._shown and not spot.glow._shown and not pins["quest:7"].glow._shown or pins["quest:7"].pin.focused,
+        "no glow at rest")
+    check(#Buttons("npc:75") == 1, "what your quest asks for that is more besides: the sword at its spawn")
+    for _, widget in ipairs(W.frames) do
+        local pin = widget._kind == "Button" and widget._shown and widget.pin
+        check(not (pin and pin.kind == "service" and pin.thing == "npc:75"), "and not its own pin as well")
+    end
+    -- The mouse on the quest in the log: its pins glow a little, the others do not; off it, none
+    local other = pins["flight:2"]
+    PinView.Light(7)
+    check(boars[1].glow._shown and spot.glow._shown and boars[1].glow._alpha == PinView.LIT_ALPHA
+        and boars[1].glow._width == Pins.SIZE.goal * PinView.LIT, "the mouse on its quest: its pins glow a little")
+    check(pins["quest:7"].glow._shown and not other.glow._shown, "the quest's own mark too, no other pin")
+    Pins.Changed("quests")
+    Canvas.Layout()
+    check(Buttons("npc:900")[1].glow._shown, "and through a new layout, while the mouse stays")
+    PinView.Light(nil)
+    check(not boars[1].glow._shown and not spot.glow._shown, "off it: none")
+    -- A tooltip: what stands there, its quests, the game's words now; unconfirmed
+    GameTooltip._lines = nil
+    boars[1]._scripts.OnEnter(boars[1])
+    local lines = table.concat(GameTooltip._lines or {}, "\n")
+    check(GameTooltip._text:find("Boar", 1, true) and GameTooltip._text:find(Core.UNCONFIRMED_MARK, 1, true)
+        and lines:find("- Boars slain: 2/9", 1, true) and lines:find(Pins.TEXT.open, 1, true)
+        and GameTooltip._lines[#GameTooltip._lines] == Pins.TEXT.unverified,
+        "its tooltip: the thing with its red !, the quest, the objective in the game's words, Unconfirmed Data")
+    boars[1]._scripts.OnLeave(boars[1])
+    -- A count going up changes no pin; an objective done takes its own away
+    local same = Buttons("npc:900")[1].pin
+    open[1].text = "Boars slain: 3/9"
+    Again()
+    check(Buttons("npc:900")[1].pin == same, "a kill counted: the same pins, not made again")
+    GameTooltip._lines = nil
+    boars[1]._scripts.OnEnter(boars[1])
+    check(table.concat(GameTooltip._lines or {}, "\n"):find("- Boars slain: 3/9", 1, true), "but the tooltip says it")
+    boars[1]._scripts.OnLeave(boars[1])
+    open[1].finished = true
+    Again()
+    check(#Buttons("npc:900") == 0 and #Buttons("npc:901") == 1, "an objective done: its pins go, the others stay")
+    open[1].finished = nil
+    -- Near each other: gathered among themselves, in their own picture, never into a marker of other things
+    PLACES[900] = { { map = 1429, x = 70, y = 30 }, { map = 1429, x = 70.3, y = 30 }, { map = 1429, x = 25.2, y = 55 } }
+    PLACES[901] = { { map = 1429, x = 70.1, y = 30 } }
+    Pins.DataChanged()
+    Canvas.Layout()
+    local marker
+    for _, widget in ipairs(W.frames) do
+        local pin = widget._kind == "Button" and widget._shown and widget.pin
+        if pin and pin.gathered and pin.gathered[1].kind == "goal" then marker = marker or widget end
+        if pin and pin.gathered then
+            local goals, others = 0, 0
+            for _, each in ipairs(pin.gathered) do
+                if each.kind == "goal" then goals = goals + 1 else others = others + 1 end
+            end
+            check(goals == 0 or others == 0, "objectives gather among themselves alone")
+        end
+    end
+    check(marker and #marker.pin.gathered >= 3 and marker.icon._texture == marker.pin.gathered[1].texture
+        and marker.plus == false, "a creature's and an item's spawns close together: one marker in a picture of theirs, not the plus")
+    PinView.Light(7)
+    check(marker.glow._shown, "a marker holding the quest's pins glows with them")
+    PinView.Light(nil)
+    GameTooltip._lines = nil
+    marker._scripts.OnEnter(marker)
+    check(table.concat(GameTooltip._lines or {}, "\n"):find("- Boars slain: 3/9", 1, true), "its tooltip says what they are for")
+    marker._scripts.OnLeave(marker)
+    -- The filter's switch; on a save from before there was one, on
+    ns.SwitchPin("goal")
+    Canvas.Layout()
+    check(not Pins.Shows("goal") and #Buttons("npc:904") == 0, "switched off in the pin filter: no objectives' pins")
+    local own
+    for _, widget in ipairs(W.frames) do
+        local pin = widget._kind == "Button" and widget._shown and widget.pin
+        own = own or pin and pin.kind == "service" and pin.thing == "npc:75"
+    end
+    check(own, "the thing's own pin back")
+    ns.SwitchPin("goal")
+    check(Core.Settle(ns.name, { pins = { quest = true } }).pins.goal, "settings saved before they came: on")
+    -- A game without Core's quests: none
+    Quests.Ready = function() return false end
+    Pins.DataChanged()
+    Canvas.Layout()
+    check(#Buttons("npc:904") == 0 and next(Goals.Wanted()) == nil, "without Core's quests no objectives' pins")
+    Quests.Ready, Quests.Get, Spawns.Get, Creatures.Get, Facts.Get, Drops.From = read, get, spawned, nil, name, from
+    Creatures.Unverified, C_QuestLog.GetQuestObjectives = unverified, objectives
+    Pins.DataChanged()
+    Canvas.Layout()
+end)()
 check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,

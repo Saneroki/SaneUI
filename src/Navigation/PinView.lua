@@ -14,6 +14,10 @@ local _, ns = ...
 --                  (QuestLog.lua). A quest giver of Core's data: the yellow exclamation mark, grey for a quest too
 --                  low, a red question mark for one for later; on the full map a click shows its quests in the
 --                  quest log as previews (QuestLog.Preview)
+--      an objective  where a quest of your log needs you, at each spawn Core's data knows (Goals.lua): the quest log's
+--                  sword or sack, or the game's speech bubble; no glow of its own. The tooltip what stands there, the
+--                  quests it is for and the game's words of what is open; a click on the full map as on the quest's pin
+--      the mouse on a quest in the quest log  that quest's pins glow a little (Light)
 --      gathered    pins that would cover each other: one marker, in their icon where all have the same one (two
 --                  trainers: the trainer's), else the game's plus (PinView.PLUS; Saneroki, 2026-10-23); its
 --                  tooltip what is there, each with its own pin's icon before its name; a click zooms in, a double
@@ -43,6 +47,7 @@ ns.PinView = PinView
 
 PinView.GLOW = "UI-QuestPoi-OuterGlow" -- behind the quest the game's arrow leads to
 PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
+PinView.LIT, PinView.LIT_ALPHA = 1.9, 0.75 -- a pin of the quest under the mouse: its glow's size over the pin's, how strong
 PinView.PLUS = "Garr_Building-AddFollowerPlus" -- a gathered marker of pins with different icons: the game's round plus
 PinView.TIP_ICON = 16 -- a pin's icon before its name in a gathered marker's tooltip
 PinView.DROPS = 8     -- what a thing gives, lines of a tooltip at most (a gathered marker's, over all its pins)
@@ -51,7 +56,7 @@ PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true } -- 
 -- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
 -- stands over a lower one. Kinds that share a level are those Pins.Gather gathers where they would cover each other
 -- (the game's own marks nearby aside); at most PinView.LEVELS, all under the marks (Canvas.LEVELS).
-PinView.TIERS = { log = 6, quest = 5, rare = 4, entrance = 3, flight = 3, travel = 3, place = 3, treasure = 2,
+PinView.TIERS = { log = 6, quest = 5, rare = 4, goal = 4, entrance = 3, flight = 3, travel = 3, place = 3, treasure = 2,
                   service = 1 }
 PinView.LEVELS = 6
 PinView.MODEL_WIDTH, PinView.MODEL_HEIGHT = 170, 210 -- a rare's model beside its tooltip (Alt held)
@@ -62,6 +67,7 @@ local layer, holder, view
 local used, free = {}, {} -- [key] = button while in view; buttons let go
 local hovered             -- the pin's button the mouse is on (Tip), for the rare's model
 local tipped              -- the pin's button whose tooltip was drawn last: again when an item it asked for has come
+local lit                 -- the quest under the mouse in the quest log: its pins glow (Light)
 local stage               -- the rare's model frame, once made; false where the client has none
 local Model               -- below
 
@@ -79,6 +85,7 @@ end
 local function Iconed(pin, words)
     local size = PinView.TIP_ICON
     if pin.doubt then words = Core.UNCONFIRMED_MARK .. words end
+    if pin.texture then return ("|T%s:%d:%d|t %s"):format(pin.texture, size, size, words) end
     if not pin.atlas then return words end
     local tint = pin.tint or (pin.grey or pin.dim) and { 0.6, 0.6, 0.6 } or nil
     if tint then
@@ -149,6 +156,22 @@ local function Dropper(pin)
     return type(key) == "string" and key:find("^%a+:%d+$") and key or nil
 end
 
+-- A pin's further lines: words, words in their colour { words, r, g, b }, or an objective: the game's words of it now.
+local function Lines(pin)
+    for _, line in ipairs(pin.lines or {}) do
+        if type(line) ~= "table" then
+            Say(line, 1, 1, 1, true)
+        elseif line.quest then
+            local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, line.quest)
+            local objective = type(objectives) == "table" and objectives[line.index]
+            local words = type(objective) == "table" and Core.Plain(objective.text)
+            if words and words ~= "" then Say("- " .. words, 1, 1, 1, true) end
+        else
+            Say(line[1], line[2], line[3], line[4], true)
+        end
+    end
+end
+
 local function Tip(button)
     local pin = button.pin
     if not pin then return end
@@ -158,12 +181,13 @@ local function Tip(button)
     if pin.gathered then
         -- What is there, one under the other, each with its own pin's icon: the first as the heading; Unconfirmed Data
         -- under them where one is not yet confirmed; what each gives inset under its name, while there is room
-        local doubt, room = false, PinView.DROPS
+        local doubt, room, names = false, PinView.DROPS, 0
         for index, each in ipairs(pin.gathered) do
-            if each.doubt then doubt = true end
-            if index > 12 then break end
+            if each.doubt or each.unverified then doubt = true end
             local words = each.role or each.name or "?"
             local new = not said[words]
+            if new then names = names + 1 end
+            if names > 12 then break end
             if index == 1 then
                 said[words] = true
                 GameTooltip:SetText(Iconed(each, words), 1, 1, 1)
@@ -171,6 +195,7 @@ local function Tip(button)
                 said[words] = true
                 GameTooltip:AddLine(Iconed(each, words), 1, 0.82, 0)
             end
+            if new and each.kind == "goal" then Lines(each) end
             local key = new and room > 0 and Dropper(each)
             if key then
                 local shown, unsure = PinView.Drops(key, room, true)
@@ -195,11 +220,8 @@ local function Tip(button)
         GameTooltip:AddLine(Pins.TEXT.open, 0.5, 0.5, 0.5)
     else
         if pin.offer then Say(Pins.TEXT.offered, 1, 0.82, 0) end
-        for _, line in ipairs(pin.lines or {}) do
-            -- A line in its own colour: { words, r, g, b }.
-            if type(line) == "table" then Say(line[1], line[2], line[3], line[4], true)
-            else Say(line, 1, 1, 1, true) end
-        end
+        Lines(pin)
+        if pin.kind == "goal" then Say(Pins.TEXT.open, 0.5, 0.5, 0.5) end
         local key, unsure = Dropper(pin), false
         if key then
             local _
@@ -350,6 +372,7 @@ end
 -- Whether the pins of a gathered marker all have the same icon (atlas and colour): then it shows that one.
 local function Alike(gathered)
     local first = gathered[1]
+    if first.kind == "goal" then return true end -- never the plus: the first's picture, what stands there in the tooltip
     for index = 2, #gathered do
         local each = gathered[index]
         if each.atlas ~= first.atlas or each.tint ~= first.tint or (each.grey or each.dim) ~= (first.grey or first.dim) then
@@ -360,19 +383,33 @@ local function Alike(gathered)
 end
 PinView.Alike = Alike
 
+-- Whether a pin, or one in a gathered marker, belongs to a quest: the quest's own, or one of what it asks for.
+local function Tied(pin, quest)
+    if pin.quest == quest then return true end
+    for _, goal in ipairs(pin.goals or {}) do
+        if goal.quest == quest then return true end
+    end
+    for _, each in ipairs(pin.gathered or {}) do
+        if Tied(each, quest) then return true end
+    end
+    return false
+end
+
 -- A button's look for its pin: its icon, whatever its kind (a gathered marker: its pins' where all have the same, else
 -- the game's plus, PinView.PLUS), at its kind's size from the pin filter's slider. A grey quest without its colour, a tinted one in its
 -- colour (a quest for later: red; a flight point not found yet: its colour taken out first, then red), the quest the
 -- game's arrow leads to with a glow
--- behind it. Not made again while it is the same (the same first pin, size and glow: a pin's record is made anew
--- whenever what it shows changes).
+-- behind it, a pin of the quest under the mouse in the quest log with a fainter one. Not made again while it is the
+-- same (the same first pin, size and glow: a pin's record is made anew whenever what it shows changes).
 local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
     local size = (Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
     local glowing = first.focused and not pin.gathered and true or false
     local plus = pin.gathered and not Alike(pin.gathered) or false
-    if button.first == first and button.size == size and button.glowing == glowing and button.plus == plus then return end
-    button.first, button.size, button.glowing, button.plus = first, size, glowing, plus
+    local shining = lit ~= nil and Tied(pin, lit)
+    if button.first == first and button.size == size and button.glowing == glowing and button.plus == plus
+        and button.shining == shining then return end
+    button.first, button.size, button.glowing, button.plus, button.shining = first, size, glowing, plus, shining
     button:SetSize(size, size)
     button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
     local icon, glow = button.icon, button.glow
@@ -381,15 +418,35 @@ local function Look(button, pin)
     icon:SetDesaturated(grey and true or false)
     if tint then icon:SetVertexColor(tint[1], tint[2], tint[3], 1)
     else icon:SetVertexColor(1, 1, 1, grey and PinView.GREY or 1) end
-    local atlas = plus and PinView.PLUS or first.atlas or Pins.ICONS.offer
-    icon:SetAtlas(atlas)
-    button.light:SetAtlas(atlas)
+    local atlas = plus and PinView.PLUS or first.atlas or not first.texture and Pins.ICONS.offer
+    if atlas then
+        icon:SetAtlas(atlas)
+        button.light:SetAtlas(atlas)
+    else
+        -- A picture of its own: the whole of it, whatever atlas the button showed before
+        icon:SetTexture(first.texture)
+        icon:SetTexCoord(0, 1, 0, 1)
+        button.light:SetTexture(first.texture)
+        button.light:SetTexCoord(0, 1, 0, 1)
+    end
     glow:Hide()
-    if glowing then
-        glow:SetSize(size * 1.6, size * 1.6)
+    if glowing or shining then
+        local reach = glowing and 1.6 or PinView.LIT
+        glow:SetSize(size * reach, size * reach)
         glow:SetPoint("CENTER")
+        glow:SetAlpha(glowing and 1 or PinView.LIT_ALPHA)
         glow:Show()
-        button.half = size * 0.8
+    end
+    if glowing then button.half = size * 0.8 end
+end
+
+-- The quest the mouse is on in the quest log (nil: off it): its pins glow a little while it is there, each drawn again
+-- only if that changes it.
+function PinView.Light(quest)
+    if lit == quest then return end
+    lit = quest
+    for _, button in pairs(used) do
+        if button.pin then Look(button, button.pin) end
     end
 end
 

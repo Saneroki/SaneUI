@@ -598,14 +598,20 @@ local function Clicked(element, mouse)
     Pressed(quest)
 end
 
+-- The quest the mouse is on (nil: off it), shown on the map: its area, and its pins glow.
+local function Point(quest)
+    ns.Areas.Hover(quest)
+    ns.PinView.Light(quest)
+end
+
 local function Entered(element)
     Hover()
     local row = element.row
-    if row and row.quest then ns.Areas.Hover(row.quest) end
+    if row and row.quest then Point(row.quest) end
 end
 
 local function Left()
-    ns.Areas.Hover(nil)
+    Point(nil)
 end
 
 -- A preview's mark at its row's start: the game's exclamation mark in red, whatever its giver's pin shows on the map:
@@ -1550,7 +1556,7 @@ function QuestLog.Lay(on)
     QuestLog.Tracker()
     if shown and stale then QuestLog.Refresh() end
     if not shown then
-        ns.Areas.Hover(nil)
+        Point(nil)
         Tick(false)
     end
     seat()

@@ -92,7 +92,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   with its icon large before its words, in sections under their titles: *Around you* (the route, the minimap's
   dots, the party and raid), *Quests*, *Travel*, *Towns and services*, *Rares and treasures*, *Gathering*; it
   scrolls on a screen lower than it. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
-  experience for you any more), *Quests for later* (once you meet what they ask) and *Done quests*. Its
+  experience for you any more), *Quests for later* (once you meet what they ask), *Done quests*, *Quest areas* and *Quest objectives*. Its
   first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
   shows around you (players, tracked herbs and ore, quest areas), on the small map and on the full map too, there
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
@@ -157,6 +157,16 @@ is small, and the maps of the dungeons and raids. The plan is in
   the right button. They never touch the map pin.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
+- **Quest objectives:** where your quests' open objectives really are, not only their area: of each quest in your log
+  that Sane UI's data holds, a pin at every spawn it knows of what is asked: the quest log's sword on a creature to
+  kill, its sack on what gives an item to loot and on an object to use, the game's speech bubble on someone to speak
+  to. They stand without a glow; **with the mouse on a quest in the quest log its pins glow a little**, its question
+  mark too, so you see which pins are whose. An item many creatures may drop: only those that give it often, twelve
+  at most. A pin's tooltip says what stands there, the quests it is for and what is left of the objective in the
+  game's words; a click on the full map shows the quest in the log, as on its question mark. An objective done takes
+  its pins away. What a quest asks for stands as that, not as the rare or the herb it is as well. Near each other they
+  are one marker, as other pins are, but only with each other, so the plus never hides one. A quest the data does not
+  hold has the game's question mark and area alone, and so has every quest in Retail until its data comes.
 - **The quest log**, a window over the full map and on the screen while the map is small (**the button *Quest Log* on
   the full map's bar turns it on or off, in both**; no pin, no close button; drag its title bar to move it, dock it at
   a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker, which
@@ -407,6 +417,18 @@ is small, and the maps of the dungeons and raids. The plan is in
   other), all under the marks; a kept button's look made again only when its pin's changed, its shown state told the
   game only when it changed. A press on a pin is the map's (a drag moves the map,
   `Canvas.Press`/`Release`); a plain click is the pin's. Tooltips with a quest's objectives as the game tells them.
+- **Goals** (`Goals.lua`): what the quests in the log still ask of the world: Core's set *Quests* (`objectives`) says
+  what, the game (`C_QuestLog.GetQuestObjectives`, by `index`) which are open: a creature to kill or speak to, an object,
+  or for an item to loot what gives it (`Drops:From`: the likeliest first, `Goals.GIVERS` at most, those under
+  `Goals.UNLIKELY` of the likeliest left out, those of no known chance kept). A thing's points from *Spawns*, else
+  *CreatureSpawns*, kept until Core's places change. Read when the log said it changed, the pins made again only when
+  the open objectives did: a count going up is no such change, the tooltip asks the game for the words. `Pins.lua` makes
+  them pins of the kind `goal` (the part `goal` of `data`; keys of their own, `goal:npc:69@1429:3`; in the cells of `MANY`,
+  so a creature's hundred spawns cost what a herb's do). Core's own pin of a thing wanted stands aside, a quest offer's
+  not, and the game's pins hide them as any data's. `Pins.Gather` gathers them among themselves (`goalCells`).
+  `PinView.Light`, told by the log with `Areas.Hover` (`QuestLog.lua`, `Point`): a pin tied to the quest under the
+  mouse, by its `quest` or its `goals`, or a marker with such a pin in it, has the fainter glow (`LIT`, `LIT_ALPHA`).
+  No frames but those of the pins. A new kind of the filter, so `version` 5 of the settings puts it on.
 - **Areas** (`Areas.lua`): the game's quest area frame (`QuestPOIFrame`, which the engine draws a quest's area
   into) over each zone in view, as large as its box, for the quest under the mouse in the log or the one the
   arrow leads to. Placed at once, drawn on the next frame: the engine shades into the frame's rectangle as it
@@ -857,6 +879,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
+| `Goals.lua` | What your quests still ask of the world and where exactly it stands: the open objectives' things at every spawn Core's data knows. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
 | `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
@@ -892,6 +915,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-02, pins at the exact spawns of your quests' objectives:** Saneroki wanted the places themselves on the
+  map, not only the question mark and the area, with no glow at rest; "when you mouse over a quest in the questlog it
+  will make the map icons glow a little so you know which pins tie to which quests". Built from Core's *Quests*,
+  *Spawns*, *CreatureSpawns* and *Drops* (`Goals.lua`), in the quest log's own pictures, a row of its own in the pin
+  filter. The game's question mark and the area stay beside them.
 - **2026-11-02, the golden line on Retail's small map:** Saneroki saw it on the full map only. Where our map has no
   land (`Terrain.Possible`: Retail, until its data comes) the game's minimap keeps its own ground in the small view,
   and at its level (10) that covered the line (8). The route now stands at `Canvas.OVER_GROUND` (11) there, over that
