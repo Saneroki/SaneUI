@@ -7,7 +7,7 @@ section), `saneui showsections FILE words` (the sections named).
 
 ## The addons
 
-Sixteen addons in `src/`, one folder each with its TOC and its README (a *TL;DR* first, then *How to use*, the technical
+Seventeen addons in `src/`, one folder each with its TOC and its README (a *TL;DR* first, then *How to use*, the technical
 sections, *Files*; most keep a *History*). Version 0.3.0, `## Interface: 16001, 120105` (Forever and Retail).
 Core is the library every module depends on and the only one needed; every module is independent of the others.
 
@@ -23,6 +23,7 @@ Core is the library every module depends on and the only one needed; every modul
 | Inventory (`SaneUI_Inventory`) | The bottom right corner: the character sheet, the bags (categories, bank, vendor, make room), the alts' things; stat weights decide upgrades | `Doc/ideas/Inventory.md`; tests `inventory.lua`, `sheet.lua`, `bags.lua` |
 | Loot (`SaneUI_Loot`) | Stands in for the loot window and the roll frames: a line a thing at the mouse, kinds taken at once, the master looter's menu, room made when the bags are full, roll cards, a feed | tests `loot.lua` |
 | Lore (`SaneUI_Lore`) | NPC talks as a scene over the world, the interface faded out, each reward read for you; books, voice overs and the library to come | `Doc/ideas/Dialogue.md`, `Doc/ideas/Lore.md`; tests `lore.lua` |
+| Macros (`SaneUI_Macros`) | Sane Macros, in the game's macro window's stead: macros and sequences as lists of steps, no slots, every condition explained behind a + button, a key or a normal action bar button, checks on what would not work | `src/Macros/README.md`; tests `macros.lua` |
 | Nameplates (`SaneUI_Nameplates`) | The game's plates in our dress: one line in a round-cornered bar, power and combo points, auras in three groups, borders by rank, smaller far away, the combat text | tests `nameplates.lua` |
 | Navigation (`SaneUI_Navigation`) | The minimap and the world map in one window, drawn from the game's tiles and art: pins from Core's data and the game, the quest log, routes by walking data with flights and ships, found herbs and ore, the satchel of minimap buttons, dungeon maps | `Doc/ideas/Navigation.md`; [navigation.md](navigation.md); tests `navigation.lua` |
 | Social (`SaneUI_Social`) | The messenger-style chat window that stands in for the game's chat, its full screen with conversations, friends and the guild, the game's channels joined or left by its ticks | `Doc/ideas/Social.md`; [social.md](social.md); tests `social.lua` |
@@ -40,7 +41,7 @@ the tests: [development.md](development.md). What is not built yet stands in eac
   `SaneUIData_Shared`, `SaneUIData_Market`, `SaneUIData_Scans` (`Doc/guides/data.md`, *Saved variables*).
 - `/sane` (`/saneui`) lists the modules and their commands. Core: `errors`, `options` (`config`, `settings`),
   `window`, `profile`, `data`, `feedback`, `arrange`; Abilities `abilities`; Social `social`; Combat `auras`, `meter`, `reminders`;
-  Guild `guild`; Loot `loot`; Navigation `map`; Nameplates `range`; Speed Leveling `guides`, `key`
+  Guild `guild`; Loot `loot`; Macros `macros`; Navigation `map`; Nameplates `range`; Speed Leveling `guides`, `key`
   (`rg -n 'Core.Command\(' src`).
 - Art ships from `assets/optimized/<Module>/Art/` (`dev/build` puts it into the addon's `Art/`); `src/` holds no
   pictures or sounds. XML only for templates and key bindings (`Bindings.xml`, `Core/Settings/*.xml`,

@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Sane Macros, a new macro window. A macro is a list of steps, as long
+  as you like, with no limit of 30: one step for a normal macro, more
+  for a sequence that goes on with each press. Every condition of the
+  game's macros is one click away behind a + button, explained. Put a
+  macro on a key or on a normal action bar button. It marks what would
+  not work. Open it with /macro.
 - The satchel on the small map closes when the mouse leaves it, until
   you press its button again. Your times, FPS and ping stand at its
   top in four boxes with big numbers.

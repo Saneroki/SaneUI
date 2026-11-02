@@ -28,6 +28,8 @@
 #                   the account, the steps at hand, the view over the world, the arrow and the icons
 #   lore.lua        the Lore module: talks as a scene, the game's talk windows held, the rewards read for you,
 #                   the interface faded out with its tooltips kept, Space going on
+#   macros.lua      the Macros module: macros and steps, a macro written out, the checks, the press and its snippet, keys and bar
+#                   buttons, the window, standing down
 #   guild.lua       Core's wire and the guild's records, and the Guild module: its window on Social's board, its page, views, key
 #   sync.lua        Core's Sync: the game's own settings kept with Sane UI's
 #   window.lua      what Core gives every window: moving, sizing, docking, opening under the mouse; what rests out of sight
@@ -87,6 +89,7 @@ lua dev/tests/speedleveling.lua
 lua dev/tests/speedguide.lua
 lua dev/tests/classquests.lua
 lua dev/tests/lore.lua
+lua dev/tests/macros.lua
 lua dev/tests/guild.lua
 lua dev/tests/sync.lua
 lua dev/tests/window.lua

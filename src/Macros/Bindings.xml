@@ -1,0 +1,7 @@
+<Bindings>
+	<!-- The key of Sane Macros' window, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua;
+	     its words in Macros.lua); the game reads this file from the addon's folder by itself. -->
+	<Binding name="SANEUI_MACROS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Macros.Safe("keys", SaneUI.Macros.Editor.Toggle)
+	</Binding>
+</Bindings>
