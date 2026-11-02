@@ -221,8 +221,9 @@ local function Rests(kind, face)
                                  hold = function() return Running(face) end })
     rest:Hot(kind.button)
     rest:Hot(kind.row.button)
-    for _, container in pairs(face.auras) do rest:Area(container) end -- the game's aura containers take no mouse
+    rest:Area(face.aurasArea) -- the game's aura containers take no mouse, and it may hide their size
     kind.rest, face.rest = rest, rest
+    ns.UnitAuras.Doors(face)
 end
 
 -- A frame: the game's secure unit button, our face on it (as high as the health bar, the rest hanging under it), a
@@ -445,6 +446,7 @@ end
 
 function Units.Start()
     ns.UnitTimers.Start()
+    ns.UnitAuras.Start()
     ns.On("PLAYER_TARGET_CHANGED", function() Changed("target") end)
     ns.On("PLAYER_FOCUS_CHANGED", function() Changed("focus") end)
     ns.On("UNIT_TARGET", function(unit) Changed(unit, true) end)

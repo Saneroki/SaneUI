@@ -1511,9 +1511,35 @@ do
     -- A right click on an icon, out of a fight: the spell on a list.
     local icon = debuffs._groups.auto.icon
     icon._SetSpellName._text = "Sunder Armor"
-    W.auras.target = { HARMFUL = { { name = "Rend", spellId = 772 }, { name = "Sunder Armor", spellId = 7386, icon = 132363 } } }
+    W.auras.target = { HARMFUL = { { name = "Rend", spellId = 772 },
+                                   { name = "Sunder Armor", spellId = 7386, icon = 132363, auraInstanceID = 31 } } }
+    local function Top(button)
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == button and widget._scripts.OnMouseUp then return widget end
+        end
+    end
+    local top = Top(icon)
+    check(top ~= nil and top._mouse and top._motion ~= false and icon._scripts.OnMouseUp == nil,
+        "a frame of ours takes the mouse: the game runs no script of an addon on its icons")
+    local asked
+    GameTooltip.SetUnitAuraByAuraInstanceID = function(_, unit, instance) asked = { unit, instance } end
+    top._scripts.OnEnter(top)
+    check(asked and asked[1] == "target" and asked[2] == 31 and GameTooltip:IsOwned(top),
+        "the mouse on it: the aura in GameTooltip, as the game's list of your buffs asks, which is the one Tooltips draws")
+    top._scripts.OnLeave(top)
+    W.Combat(true)
+    W.Fire("PLAYER_REGEN_DISABLED")
+    check(top._motion == false, "in a fight the mouse's coming goes to the game's icon, its own tooltip")
+    W.Combat(false)
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(top._motion == true, "after it ours again")
     W.menus = {}
-    icon._scripts.OnMouseUp(icon, "LeftButton")
+    top._scripts.OnMouseUp(top, "RightButton")
+    check(W.menus[1] and W.menus[1][1].title == "Sunder Armor", "a right click opens the menu too")
+    top._scripts.OnMouseUp(top, "MiddleButton")
+    check(#W.menus == 1, "no other button")
+    W.menus = {}
+    top._scripts.OnMouseUp(top, "LeftButton")
     local menu = W.menus[1]
     check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.reminderCreate
         and menu[3].text == ns.TEXT.auraImportant and menu[4].text == ns.TEXT.auraUnimportant
@@ -1535,7 +1561,7 @@ do
     check(Shines(debuffs._groups.listed.icon) and not Shines(debuffs._groups.auto.icon),
         "the important ones glow on the frame, the group's own icons in a fight too; the rest do not")
     W.menus = {}
-    icon._scripts.OnMouseUp(icon, "LeftButton")
+    top._scripts.OnMouseUp(top, "LeftButton")
     W.menus[1][4].fn()
     check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
         and control._groups.auto.candidates.excludeSpellIDs[7386], "Unimportant: off the other list, never shown")
@@ -1543,7 +1569,7 @@ do
     local groups = debuffs._groups
     local function Tick(index)
         W.menus = {}
-        icon._scripts.OnMouseUp(icon, "LeftButton")
+        top._scripts.OnMouseUp(top, "LeftButton")
         W.menus[1][index].fn()
     end
     Tick(6)
@@ -1568,7 +1594,7 @@ do
         "taken off by its tick")
     W.combat = true
     W.menus = {}
-    icon._scripts.OnMouseUp(icon, "LeftButton")
+    top._scripts.OnMouseUp(top, "LeftButton")
     check(W.menus[1][1].title == ns.TEXT.auraFight and W.menus[1][2].text == ns.TEXT.auraLists,
         "in a fight the game keeps the icons from addons: only the lists' window")
     W.combat = false
@@ -1755,6 +1781,19 @@ do
     foe.row.button:GetScript("OnLeave")(foe.row.button)
     Look(foe.rest)
     check(Rested(), "and off it")
+    local door
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == you.button.face.auras.buffs._groups.auto.icon and widget._scripts.OnMouseUp then door = widget end
+    end
+    door._scripts.OnEnter(door)
+    check(you.button._alpha == 1 and foe.button._alpha == 0, "the mouse on an aura icon of a frame at rest: that frame")
+    door._scripts.OnLeave(door)
+    you.button.face.aurasArea._mouseOver = true
+    Look(you.rest)
+    check(you.button._alpha == 1, "between the icons, over their row, it stays")
+    you.button.face.aurasArea._mouseOver = false
+    Look(you.rest)
+    check(Rested(), "and off the row it goes")
 
     -- What a frame has to show, and what holds the bars.
     W.cast = { name = "Fireball", icon = 135812, starts = W.clock * 1000, ends = (W.clock + 2.5) * 1000, id = 1, spell = 133 }

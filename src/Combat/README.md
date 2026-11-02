@@ -107,7 +107,7 @@ shows on it, and you make as many bars as you like.
   - **Auras:** those that matter most, in one line above the frame: four buffs, two crowd control, four debuffs, each kind a block of icons that touch, no borders, the time gone darkening the icon as it passes, no numbers on them: buffs on the left, from its
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
-    friend or you any, what you can dispel and a boss's first). **Click** an icon, out of a fight, for its menu: *Important* (in front of the
+    friend or you any, what you can dispel and a boss's first). The mouse on an icon shows your own tooltip of the aura (in a fight the game's) and keeps the frame in sight at rest. **Left or right click** an icon, out of a fight, for its menu: *Important* (in front of the
     rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Show on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window with the lists side by side: type a
     spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
     `/sane auras` opens it too. The game lets the lists act here on the buffs of you, your group and friendly units and
@@ -489,7 +489,12 @@ shows on it, and you make as many bars as you like.
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
     Each icon (`initializeFrame`, `Dress`): the picture cropped, no edge, the swipe (`SetReverse`: dark over the time gone, driven by the
     game in a fight too), its numbers off (`SetHideCountdownNumbers`), the count, its name into a
-    text of ours at alpha 0 (`SetSpellName`), and an `OnMouseUp` hook: a left click, while not `Core.Restricted()`,
+    text of ours at alpha 0 (`SetSpellName`). The game's icons forbid an addon's scripts (`AuraButton`'s `UntrustedScriptExecution`),
+    so the frame of ours on each (`top`) takes the mouse; passing it on (`SetPropagateMouseClicks`) is closed to addons, so a
+    right click cannot reach the game's cancel, and the game's own tooltip is ours to replace: `OnEnter` asks
+    `GameTooltip:SetUnitAuraByAuraInstanceID`, as the game's list does, for Tooltips to draw; in a restriction `Motion` hands the
+    mouse's coming back to the icon and its tooltip. `OnEnter` is also a door of the frame's `Core.Rest`, `face.aurasArea` its
+    area over the row. A click, while not `Core.Restricted()`,
     finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
     context menu (`MenuUtil`). `Auras.Set` sets each container's unit (`none` while off), `UpdateAllAuras` at every fill.
   - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden`, and `auraShow`, `auraHide` (`{ [spell number] = name }`), one list of
@@ -514,7 +519,7 @@ shows on it, and you make as many bars as you like.
   it shows. In Edit Mode it shows, to be placed.
 - **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first): what
   shows when, and why your health is told from its changes, stands in `src/Core/Rest.lua`. Your frames are a set each
-  (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura containers shows that frame alone, and a cast
+  (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
   or a timer on it does too (`Running`; `Bar.Fit` looks again as they come and go), since nothing else shows them and
   you need your breath under water. The action bars are one set (`ActionBars.lua`): `Bars.BARS`, each hot, each of
   their buttons a door, so the mouse on one shows them all; held in a vehicle (`HasVehicleActionBar`,

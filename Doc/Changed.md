@@ -152,6 +152,11 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.
 - **`dev/uilab/scenes/guide.lua`:** a stand-in for `ns.Run`, without which the wheel failed in the scene. **`dev/tests/speedguide.lua`:** the shades' corners, their size and no border.
 
+### The unit frames' aura icons take the mouse: hover, menu, your tooltip (Saneroki, 2026-11-02)
+Saneroki: "left click the spell icons even on the unit frames [...] is it possible to extend the hover over a little more so hovering over the icons will also keep the unit frame visible and let me leftor rightclick them?"; "hovering over the spells in the unit frames should show my custom tooltips like in the buffs window not the native tooltips".
+- **`src/Combat/Units/Auras.lua`:** the game forbids an addon's scripts on its aura icons, so the click's hook there came to nothing: the frame of ours on each icon now takes the mouse. Either button opens the menu; out of a fight its `OnEnter` shows the aura through `GameTooltip`, which Tooltips draws, and in a fight the mouse's coming goes back to the game's icon.
+- **`src/Combat/Units/Units.lua`:** at rest those frames are doors of the frame's set, and an area of ours over the row holds it between the icons, as the containers' size may be hidden. A `/reload` takes it in.
+
 ### Four buffs, two crowd control, four debuffs, touching (Saneroki, 2026-11-02)
 Saneroki, after looking at it in the lab: 4 buffs, 2 crowd control and 4 debuffs, "remove the borders and gaps from the items inside groups".
 - **`src/Combat/Units/Auras.lua`:** each kind its own `most`, its line from it (`Auras.Line`), no spacing, no dark edge, the stack count inside the icon; the outline of an important one stands above the icons beside it. **`dev/uilab/scenes/unitframes.lua`:** as the module has it. A `/reload` takes it in.

@@ -30,8 +30,14 @@ local _, ns = ...
 --  you, your group and friendly units, and on the debuffs of foes; elsewhere it
 --  decides alone (the window says so).
 --
---  A left click on an icon opens the aura's menu (Lists.Menu), out of a fight
---  (in one the game keeps the icons from addons: the menu says so). Which spell
+--  The game lets no script of an addon run on its icons, so each holds a frame of
+--  ours that takes the mouse: a left or right click opens the aura's menu
+--  (Lists.Menu), and out of a fight the mouse on it shows the aura's tooltip through
+--  the game's GameTooltip, which is the one the module Tooltips draws, and shows
+--  the unit frame at rest (a door of its Core.Rest; Auras.Make's area holds it
+--  over the gaps). In a fight the game keeps the icons from addons: the menu says
+--  so, and our frame leaves the mouse's coming to the game's icon, its own tooltip.
+--  Which spell
 --  it is: the icon's name (the game writes it into a text of ours, unseen),
 --  found among the unit's auras of its kind.
 -------------------------------------------------------------------------------
@@ -61,7 +67,7 @@ Auras.KINDS = {
       foe = "HARMFUL|PLAYER|!CROWD_CONTROL", friend = "HARMFUL|!CROWD_CONTROL", listed = "HARMFUL" },
 }
 
-local owners = setmetatable({}, { __mode = "k" }) -- [an icon the game made] = { face, kind }
+local owners = setmetatable({}, { __mode = "k" }) -- [our frame on an icon] = { face, kind, name }
 local faces = {}                                   -- every face with containers
 
 -- The two lists as the game's candidate filters take them: { [spell] = true }; nil where empty.
@@ -99,7 +105,7 @@ local function Holds(container, key, spells)
 end
 
 -- The spell an icon shows, out of a fight: its name as the game wrote it, found among the unit's auras of its kind.
--- { id, name, icon, harmful, unit }, or nil where it cannot be told now.
+-- { id, name, icon, harmful, unit, instance }, or nil where it cannot be told now.
 local function Which(frame)
     local owner = owners[frame]
     if not owner or Core.Restricted() then return nil end
@@ -113,16 +119,36 @@ local function Which(frame)
         local data = Core.Ask(read, unit, index, owner.kind.harmful and "HARMFUL" or "HELPFUL")
         if type(data) ~= "table" then break end
         if Plain(data.name) == name and type(Plain(data.spellId)) == "number" then
-            return { id = data.spellId, name = name, icon = Plain(data.icon), harmful = owner.kind.harmful, unit = unit }
+            return { id = data.spellId, name = name, icon = Plain(data.icon), harmful = owner.kind.harmful, unit = unit,
+                     instance = Plain(data.auraInstanceID) }
         end
     end
     return nil
 end
 
 local function Clicked(frame, button)
-    if button == "LeftButton" then ns.AuraLists.Menu(frame, Which(frame)) end
+    if button == "LeftButton" or button == "RightButton" then ns.AuraLists.Menu(frame, Which(frame)) end
 end
 local OnClicked = ns.Guard(Clicked)
+
+-- The aura's tooltip, the same way the game's list of your buffs asks for it, so the module Tooltips draws it.
+local function Entered(frame)
+    local spell = Which(frame)
+    if not (spell and spell.instance) then return end
+    GameTooltip:SetOwner(frame, "ANCHOR_TOP")
+    GameTooltip:SetUnitAuraByAuraInstanceID(spell.unit, spell.instance)
+    GameTooltip:Show()
+end
+local OnEntered = ns.Guard(Entered)
+local OnLeft = ns.Guard(function(frame)
+    if GameTooltip:IsOwned(frame) then GameTooltip:Hide() end
+end)
+
+-- Our frames' take the mouse's coming out of a fight; in one it is left to the game's icons.
+local function Motion()
+    local open = not Core.Restricted()
+    for frame in pairs(owners) do frame:SetMouseMotionEnabled(open) end
+end
 
 -- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
 -- square, the swipe darkening the time gone (it alone tells the time: no numbers), the stack count over
@@ -157,8 +183,15 @@ local function Dress(frame, face, kind, glowing)
     cooldown:SetHideCountdownNumbers(true) -- the darkening alone tells the time
     frame:SetApplicationCount(count)
     frame:SetSpellName(name)
-    pcall(frame.HookScript, frame, "OnMouseUp", OnClicked) -- a client that keeps the icons' scripts: no menu, no harm
-    owners[frame] = { face = face, kind = kind, name = name }
+    top:EnableMouse(true)
+    top:SetMouseMotionEnabled(not Core.Restricted())
+    top:SetScript("OnMouseUp", OnClicked)
+    top:SetScript("OnEnter", OnEntered)
+    top:SetScript("OnLeave", OnLeft)
+    owners[top] = { face = face, kind = kind, name = name }
+    face.doors = face.doors or {}
+    face.doors[#face.doors + 1] = top
+    if face.rest then face.rest:Door(top) end
 end
 
 -- A container of the game's for one kind on the face: the group of your important ones first (where the lists act
@@ -200,8 +233,24 @@ function Auras.Make(face)
         face.auras[kind.key] = container
         if container then container:SetPoint(kind.point, face.roof, kind.point, 0, Auras.GAP) end
     end
+    -- Over the row above the frame and one more: at rest what keeps the frame in sight between the icons. It takes no mouse.
+    face.aurasArea = CreateFrame("Frame", nil, face)
+    face.aurasArea:SetPoint("BOTTOMLEFT", face.roof, "BOTTOMLEFT", 0, 0)
+    face.aurasArea:SetPoint("BOTTOMRIGHT", face.roof, "BOTTOMRIGHT", 0, 0)
+    face.aurasArea:SetHeight(2 * Auras.SIZE + Auras.GAP)
     faces[#faces + 1] = face
     Auras.Listed(face)
+end
+
+-- A frame's set at rest (Units.lua) takes the icons made so far as doors, and the ones to come in Dress.
+function Auras.Doors(face)
+    for _, frame in ipairs(face.doors or {}) do face.rest:Door(frame) end
+end
+
+function Auras.Start()
+    Core.On("PLAYER_REGEN_DISABLED", Motion)
+    Core.On("PLAYER_REGEN_ENABLED", Motion)
+    Core.On("ADDON_RESTRICTION_STATE_CHANGED", Motion)
 end
 
 -- The lists into a face's containers: the group of the important (glowing) and the one of Show on unit frames their
