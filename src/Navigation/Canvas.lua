@@ -18,7 +18,7 @@ local _, ns = ...
 --       │    ├─ pins      the pins of the game and of Core's data (PinView.lua)
 --       │    └─ marks     the party, the player's arrow, the map pin (Marks.lua)
 --       └─ the game's minimap, between the route and the pins, while it shows (Hybrid.lua): small, in the
---          middle; full, around the player
+--          middle; full, around the player; under the route where it keeps its own ground (Stack)
 --  Whatever the view, what stands on the map (areas, route, pins, marks) is always over the map's own
 --  layers: their frame levels follow the canvas' at every layout (Canvas.LEVELS), so a window raised to the
 --  full screen and put back, which leaves its frames' levels as they come, never puts the map over them.
@@ -95,6 +95,7 @@ Canvas.HOME = 400    -- yards across the view's shorter side a middle click come
 Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, indoors = 5, light = 6, areas = 7, route = 8, pins = 12,
                   marks = 20, satchel = 30 }
 Canvas.MAP = 6 -- the highest level of the map itself: what stands on it is above this
+Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own ground: over that, under the pins (Stack)
 
 local frame, holder, camera, tracker, layers, hover, ground
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
@@ -340,11 +341,13 @@ local function Native()
     ns.Guarded(ns.Hybrid.Follow, holder, Here(map, u, v))
 end
 
--- The layers' frame levels from the canvas' own.
+-- The layers' frame levels from the canvas' own. Where our map has no land the game's minimap keeps its own ground
+-- (Hybrid.Place), and that hides what stands under it: the route stands over it there.
 local function Stack()
     local base = frame:GetFrameLevel()
     holder:SetFrameLevel(base + Canvas.LEVELS.holder)
     for name, layer in pairs(layers) do layer:SetFrameLevel(base + Canvas.LEVELS[name]) end
+    if not ns.Terrain.Possible() then layers.route:SetFrameLevel(base + Canvas.OVER_GROUND) end
     ns.PinView.Stack(base + Canvas.LEVELS.pins)
     ns.Marks.Stack(base + Canvas.LEVELS.marks)
     ns.Satchel.Stack(base + Canvas.LEVELS.satchel)

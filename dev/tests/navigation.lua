@@ -3679,8 +3679,8 @@ local lines = {}
 for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then lines[#lines + 1] = widget end end
 check(#lines == 6 and lines[1]._start and near(lines[1]._end[1] - lines[1]._start[1], -500 * full.k),
     "the way drawn: each leg's segments as lines (an edge, the gold, its glint), the second leg reaching into view too")
-check(lines[1]._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.route and Canvas.LEVELS.route < Canvas.LEVELS.pins,
-    "the line over the map, under the pins")
+check(lines[1]._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.route and Canvas.LEVELS.route < Hybrid.LEVEL
+    and Canvas.LEVELS.route < Canvas.LEVELS.pins, "the line over the map, under the game's dots and the pins")
 check(lines[3]._group and lines[3]._group.template == ns.Route.GLINT_PULSE and lines[3]._group.playing
     and not lines[1]._group, "the glint pulses by the template of Route.xml (the game makes that animation only from XML)")
 ns.Route.Show(nil)
@@ -6420,6 +6420,18 @@ end)()
     small.follow, small.native = true, 2
     Hybrid.Place(small, 200, 200, true, false)
     check(Hybrid.Taken() and ground == true, "the small view: the game's minimap with its own ground, the land as it lies")
+    -- That ground would cover the golden line: the line stands over it, under the pins.
+    local at = Canvas.view
+    ns.Route.Show({ legs = { { kind = "walk", points = { { map = at.map, u = at.u, v = at.v },
+                                                         { map = at.map, u = at.u + 40, v = at.v + 40 } } } } })
+    local line
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Line" and widget._shown and widget._parent._parent._parent == Canvas.frame then line = widget end
+    end
+    check(line and line._parent._level > minimap._level
+        and line._parent._level < Canvas.frame:GetFrameLevel() + Canvas.LEVELS.pins,
+        "the golden line over the game's own ground, under the pins")
+    ns.Route.Show(nil)
     Hybrid.Place(full, 1600, 866, true, false)
     check(ground == false, "the full map: its dots only")
 

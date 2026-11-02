@@ -818,8 +818,9 @@ is small, and the maps of the dungeons and raids. The plan is in
     a view not offered falls back to Scrying or, without it, to Parchment (`ns.Fallback`), the game's own map
     art (one map at a time, above; no stitched map, no outlines: `Outlines.lua` and `Coasts.lua` are Forever's
     world, left out of Retail by their TOC lines). In the small view at the game's
-    minimap's steps the game's minimap keeps its own ground there, the land as it lies (`Hybrid.Place`); past
-    them, and on the full map, Parchment with its dots;
+    minimap's steps the game's minimap keeps its own ground there, the land as it lies (`Hybrid.Place`), the
+    golden line over it (`Canvas.OVER_GROUND`; in Forever the line lies under the game's dots); past them, and on
+    the full map, Parchment with its dots;
   - the game's minimap given back round where the game's code sets no mask (Retail: `Hybrid.ROUND`, the engine's
     own; Forever's `UpdateMinimapConfig` sets it there);
   - the continents beside the world map, under the map over it (Retail's Outland, Draenor, the Shadowlands:
@@ -891,6 +892,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-02, the golden line on Retail's small map:** Saneroki saw it on the full map only. Where our map has no
+  land (`Terrain.Possible`: Retail, until its data comes) the game's minimap keeps its own ground in the small view,
+  and at its level (10) that covered the line (8). The route now stands at `Canvas.OVER_GROUND` (11) there, over that
+  ground, under the pins; with land the game's dots stay over the line, as its ground is off.
 - **2026-11-02, the satchel goes with the mouse, its numbers in boxes:** as Saneroki asked, the satchel closes the
   first time the mouse leaves it, until its button is pressed again; and the times, the frames per second and the
   ping stand at its top in four boxes, a big number over its word, low rectangles rather than squares so they take

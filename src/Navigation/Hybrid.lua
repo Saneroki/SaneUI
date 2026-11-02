@@ -34,8 +34,9 @@ local _, ns = ...
 --                   step (the game's own while the view has none), whatever the pin filter says; our
 --                   layers hold nothing meanwhile (Canvas.lua); its ground off again once a place is known
 --      no land      where Core's terrain is not there (Retail, until its data comes: Terrain.Possible) the
---                   small view keeps the game's own ground at its steps, the land as it lies; our map
---                   (Parchment) shows past them, and the full map has its dots only
+--                   small view keeps the game's own ground at its steps, the land as it lies, the route
+--                   over it (Canvas.OVER_GROUND); our map (Parchment) shows past them, and the full map
+--                   has its dots only
 --
 --  The full map (Wide): around the player at the map's own scale, so its dots stand where they are
 --  on our map: square, at its widest step whose square takes at most Hybrid.ROOM of the canvas'
