@@ -21,8 +21,10 @@ The bigger changes of each version, newest first.
   you press its button again. Your times, FPS and ping stand at its
   top in four boxes with big numbers.
 - Group rolls look like the loot window now: one bar for the thing,
-  with the game's icons for Need, Greed and Pass inside it and the
-  time left along its foot, running down from green to red.
+  with the game's icons for Need, Greed and Pass on it and the time
+  left along its foot, running down from green to red, the seconds
+  on it. Once you have chosen it fades until the roll is over, then
+  it shows for a few seconds who got the thing.
 - The threat and damage meter hides out of a fight and when you are
   not in a group, and comes back with the mouse on its place. Right
   click a name to give one character bars of their own.

@@ -98,6 +98,8 @@ ns.TEXT = {
     disenchant = Word("ROLL_DISENCHANT", "Disenchant"),
     transmog = Word("TRANSMOGRIFY", "Transmog"),
     chose = "Chose %s:",
+    you = Word("YOU", "You"),
+    allPassed = "Everyone passed",
     -- /sane loot
     about = "the loot window's list (/sane loot list), a try of the roll cards and the feed (/sane loot try)",
     -- the options' tabs
@@ -148,7 +150,7 @@ ns.TEXT = {
     itemsForgetTip = "Takes the things you gave no word on off this list (until you loot them again).",
     rollsHeader = "Group rolls",
     rolls = "Sane UI's roll cards",
-    rollsTip = "When your group rolls for a thing: a line as in the loot window with its picture and name, in it the game's icons for Need, Greed and Pass (Disenchant or Transmog when the game offers them), over its foot the time left, running down from green to red. Placed in Edit Mode. Off: the game's own roll frames.",
+    rollsTip = "When your group rolls for a thing: a line as in the loot window with its picture and name, on it the game's icons for Need, Greed and Pass (Disenchant or Transmog when the game offers them), over its foot the time left, running down from green to red, the seconds on it. Your part done, it fades until the roll is over, then shows for a few seconds who got the thing. Placed in Edit Mode. Off: the game's own roll frames.",
     tally = "Who chose what",
     tallyTip = "On each choice of a card, how many of your group took it; the mouse on it names them. Read from the game's own lines about the rolls.",
     feedHeader = "Loot feed",
@@ -182,7 +184,8 @@ ns.SIZE = {
     room = 0.6,     -- the most of the screen's height the window's lines take; more scroll
     seen = 60,      -- the things met in loot kept for the tab Your items, the newest first
     burst = 4,      -- slots taken at once in one frame; the rest in the frames after
-    choice = 24,    -- a choice's icon on a roll card
+    roll = 360,     -- a roll card: wider than the window, its icons take room
+    choice = 34,    -- a choice's icon on a roll card: nearly its bar's height
     time = 12,      -- the time left over a roll card's foot: a third of its bar, as a nameplate's resource
     feed = 300,     -- the feed's lines
     feedLine = 24,  -- a line of the feed

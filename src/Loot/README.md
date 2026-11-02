@@ -1,6 +1,6 @@
 # Sane UI: Loot
 
-**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot as bare words), things taken at once by your own switches as soon as the loot is ready (coins, currencies, quest items and junk at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, a line of the same make for each of your group's rolls, with the game's icons, the time left and who chose what, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot as bare words), things taken at once by your own switches as soon as the loot is ready (coins, currencies, quest items and junk at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, a line of the same make for each of your group's rolls, with the game's icons, the seconds left, who chose what and who got the thing, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Stands in for the game's loot window and its roll frames. What a corpse, a chest or a catch holds stands at the
@@ -10,8 +10,9 @@ comes under the mouse. What is taken at once, as soon as the loot is ready, is y
 items and junk at first, in every profile; everything or more kinds (trade goods, gear, consumables) by a switch; and
 over them your word on an item (its A, or the options' list *Your items*). As master looter a click gives the thing away from a
 menu. With your bags full, two lines of the same make beside the window weigh the thing against the cheapest thing you carry. Your
-group's rolls are lines of the same make: inside the bar the game's icons for Need, Greed and Pass with how many
-chose each, over its foot the time left, running down from green to red. What you and your group receive
+group's rolls are lines of the same make: on the bar the game's icons for Need, Greed and Pass with how many
+chose each, over its foot the time left, running down from green to red, the seconds on it. Your part done, the line
+fades until the roll is over, then shows for a few seconds who got the thing. What you and your group receive
 rises over the world, also what was taken at once: that is how you see what you looted. When it fails, the game's own loot window, its Auto Loot and its roll frames are back.
 
 ## How to use
@@ -79,13 +80,19 @@ rises over the world, also what was taken at once: that is how you see what you 
   - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, the green arrow on an
     upgrade (its tooltip says which), its name. No A, and no line under the name: the time has its place. The mouse on
     it shows the thing's tooltip; a modified click links it or tries it on.
-  - **The choices** inside the bar at its right end, the game's own icons with no words (*Need*, *Greed* or *Transmog*,
+  - **The choices** at the bar's right end, nearly as tall as all of it and over the time, the game's own icons with no words (*Need*, *Greed* or *Transmog*,
     *Disenchant* where offered, *Pass*), lit by the mouse as the game's are; its tooltip names the choice. A choice the
     game refuses is faint and grey, its reason in the tooltip. *Who chose what* (on): a number on each icon says how
     many chose it; the mouse on it names them.
   - **The time left** lies over the bar's foot, from the picture to the right end, a third of its height, as a
     nameplate's resource lies on its health: green at first, yellow half way, red at the end, on a dark shade so it
-    stands out on a green thing's bar too; where the time is spent the bar is seen through it.
+    stands out on a green thing's bar too; where the time is spent the bar is seen through it. On it, under the name,
+    the seconds left.
+  - **Your part done** (you chose, or your time ran out) the line fades to a quarter, so you know you can ignore it:
+    nothing more is asked of you. Your choice stays lit in it, the time runs on while the others choose.
+  - **The roll over:** the line is whole again for a few seconds, the icons and the time gone, and where the icons were
+    stands who got the thing (*You*, in gold), or *Everyone passed*. If the game says nothing, the line goes a moment
+    after its time.
   - The lines stack up from their place, as near as the window's (Edit Mode, *Group rolls*). Off: the game's own roll
     frames.
 - **Loot feed** (*What you receive*, on, in every profile): each thing you receive rises over the world for a few
@@ -173,7 +180,10 @@ rises over the world, also what was taken at once: that is how you see what you 
   `GetLootRollTimeLeft` every 0.1 s while a card shows, `RollOnLoot` with the game's roll kinds (Pass 0, Need 1, Greed
   2, Disenchant 3, Transmog 4). Switched on, the rolls already open get cards (`GetActiveLootRollIDs`,
   `C_Loot.GetLootRollDuration`). Who chose what from `CHAT_MSG_LOOT` (`Chat.Rolled`), on the card of that item whose
-  chooser has not chosen yet. A card holds a `Row.New`: a roll is a line of `Row.Set` (`roll` set: no A; `row.room`
+  chooser has not chosen yet. `CANCEL_LOOT_ROLL` ends only the player's part (the game's own frame goes then, right
+  after a click), so a card stays closed and at alpha 0.25 (`WAITING`), its time on its own clock (`card.ends`), until
+  `Chat.Rolled` says "won" or "none" on the first card of that item with no end yet; then 5 s (`HOLD`), or gone 5 s
+  after its time (`LATE`) if no line comes. `CANCEL_ALL_LOOT_ROLLS` takes all away at once. A card holds a `Row.New`: a roll is a line of `Row.Set` (`roll` set: no A; `row.room`
   keeps the icons' part of the bar free; its facts by `Slots.Facts` from the roll's link, so the arrow is the window's),
   the card itself takes no mouse. An item the game does not know yet is dressed again on `GET_ITEM_INFO_RECEIVED`. The
   choices are `Button`s on the row with the game's atlases `lootroll-toast-icon-<word>-up`, `-down`, `-highlight`
@@ -193,7 +203,8 @@ rises over the world, also what was taken at once: that is how you see what you 
   `YOU_LOOT_MONEY`, `GOLD_AMOUNT`, `CURRENCY_GAINED`...) made once into a pattern: its `%s` and `%d` (and `%1$s`)
   marked, the rest made plain, the marks made captures. A string the client lacks is left out. Many of a roll's
   sentences begin with a link to the roll's history, a `%d` of its own (Retail's for your own choice ends with a
-  second): `Chat.Rolled` finds those numbers and gives back only the words.
+  second): `Chat.Rolled` finds those numbers and gives back only the words. Who got a thing comes as `LOOT_ROLL_WON`,
+  `LOOT_ROLL_YOU_WON`, `LOOT_ROLL_ALL_PASSED` or a `LOOT_ROLL_WON_NO_SPAM_*` with the roll in it.
 - **Settings** (`Loot.lua`, `Core.Options`, in tabs): `window`, `atMouse`, `notes`, `full`; `takeAll`,
   `takeCoins`, `takeCurrency`, `takeQuest`, `takeTrade`, `takeGear`, `takeConsumable`, `takeJunk` (`takeCoins`,
   `takeCurrency`, `takeQuest`, `takeJunk` on at first, Loot's own defaults, no profile sets them; `notes` and the rest
@@ -217,10 +228,14 @@ rises over the world, also what was taken at once: that is how you see what you 
 | `Items.lua` | The options' tab *Your items* |
 | `Master.lua` | The master looter's menu |
 | `Full.lua` | The lines beside the window that make room when the bags are full |
-| `Rolls.lua` | The roll cards: a line, the game's icons inside it, the time left over its foot |
+| `Rolls.lua` | The roll cards: a line, the game's icons on it, the time left over its foot, who got the thing |
 | `Feed.lua` | What you and your group receive, over the world |
 
 ## History
+- 2026-11-02 — The rolls' icons nearly as tall as the bar and over the time; the seconds left on it; "when the rolling
+  is finished on an item leave it there a few seconds and shows who got the item anchored to the right where the
+  buttons have been"; "all the way down to 25% transparent until it shows the result. so I know when i can ignore it"
+  (Saneroki): taken as a quarter showing. As wide as 360 now: the icons take room.
 - 2026-11-02 — "Can we make all the loot window and the group rolls have rounded edges like our nameplates have? And
   shade them equally styled so they have the same style philosophy" (Saneroki): the lines and the rolls were of the
   nameplates' make already (the interface lab drew them square until now, and now draws masks as the game does). What

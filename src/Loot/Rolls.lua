@@ -6,19 +6,28 @@ local _, ns = ...
 --  line of the loot window (Row.lua; Saneroki, 2026-11-02: the same design): a
 --  bar as the nameplates' in the thing's quality colour, its picture at the
 --  bar's end, the green arrow on an upgrade, its name; no A, no line under the
---  name. Inside the bar at its right end the choices the game offers, the
---  game's own icons with no words (Need; Greed, or Transmog where the game
---  offers that; Disenchant where it does; Pass), a choice the game refuses
---  faint and grey with its reason in the tooltip. Over the bar's foot the time
---  left, a line as a nameplate's resource on its health, running down, green
---  at first and redder towards nothing. The cards stack up from where Edit
---  Mode placed them, the oldest at the foot, as near as the window's lines.
+--  name. At the bar's right end, nearly as tall as all of it and over the time,
+--  the choices the game offers, its own icons with no words (Need; Greed, or
+--  Transmog where the game offers that; Disenchant where it does; Pass), a
+--  choice the game refuses faint and grey with its reason in the tooltip. Over
+--  the bar's foot the time left, a line as a nameplate's resource on its
+--  health, running down, green at first and redder towards nothing, with the
+--  seconds left on it. The cards stack up from where Edit Mode placed them, the
+--  oldest at the foot, as near as the window's lines.
 --
 --  Who chose what: the game says it in its own lines (Chat.Rolled); each
 --  choice counts them, a number on its icon; the mouse on it says the choice
---  and names them. A choice made, the game takes the card away
---  (CANCEL_LOOT_ROLL); a choice of the game's to confirm (one that binds) is
---  its own question.
+--  and names them. A choice of the game's to confirm (one that binds) is its
+--  own question.
+--
+--  A card's three stages: open; closed, the player's part over (CANCEL_LOOT_ROLL:
+--  chosen, or out of time) while the others may still choose: the whole card
+--  faded to WAITING, so it can be ignored (Saneroki, 2026-11-02), the icons
+--  faint but the one chosen, the time running on by the card's own clock;
+--  gone-to-be, the game has said who got the thing (Chat.Rolled, "won" or
+--  "none"): whole again, the icons and the time away, the winner at the bar's
+--  right end for HOLD seconds. Said by nobody, a card goes LATE seconds after
+--  its time.
 --
 --      Rolls.Start(), Rolls.Refresh()   -- the cards as the game's rolls are now
 --      Rolls.Try()                      -- a card to look at (/sane loot try)
@@ -35,6 +44,9 @@ local BY_WORD = {}
 for kind, word in pairs(WORDS) do BY_WORD[word] = kind end
 local TRY = 20 -- seconds a tried card stands
 local TICK = 0.1
+local HOLD = 5 -- seconds a card stands with who got the thing
+local LATE = 5 -- seconds after its time a card waits for the game to say it; then it goes
+local WAITING = 0.25 -- how much of a card shows while nothing is asked of the player
 local FAINT = 0.35 -- a refused choice, as the game's (GroupLootFrame_DisableLootButton)
 local ICON = "lootroll-toast-icon-%s-%s" -- the game's roll buttons: its atlases by the word of WORDS
 
@@ -46,6 +58,13 @@ local since = 0
 -- An item's own part of its link, to tell one thing's lines from another's.
 local function Key(link)
     return type(link) == "string" and link:match("item[%-?%d:]+") or link
+end
+
+-- Each icon on show of a card.
+local function Icons(card, fn)
+    for _, button in ipairs(card.choices) do
+        if button:IsShown() then fn(button) end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -70,7 +89,7 @@ end
 
 local function Choose(button)
     local card = button.card
-    if button.reason or card.sample or not card.rollID then return end
+    if button.reason or card.closed or card.sample or not card.rollID then return end
     RollOnLoot(card.rollID, button.kind)
 end
 
@@ -78,34 +97,37 @@ end
 local function Choice(card)
     local button = CreateFrame("Button", nil, card.row)
     button:SetSize(S.choice, S.choice)
+    button:SetFrameLevel(card.time:GetFrameLevel() + 1) -- over the time
     button:SetMotionScriptsWhileDisabled(true)
     button.card = card
     button.count = button:CreateFontString(nil, "OVERLAY")
-    ns.Row.Font(button.count, 11)
+    ns.Row.Font(button.count, 16)
     button.count:SetTextColor(1, 1, 1)
-    button.count:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
+    button.count:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 1)
     button:SetScript("OnClick", ns.Guard(Choose))
     button:SetScript("OnEnter", ns.Guard(ChoiceTip))
     button:SetScript("OnLeave", GameTooltip_Hide)
     return button
 end
 
--- The choice's icon, as the game shows its buttons: pushed and lit by the mouse; refused, faint and grey.
+-- The choice's icon, as the game shows its buttons: pushed and lit by the mouse; refused, faint and grey, and so
+-- every one but the player's own once the player's part is over.
 local function Icon(button)
-    local word = WORDS[button.kind]
+    local card, word = button.card, WORDS[button.kind]
+    local off = button.reason or (card.closed and button.kind ~= card.picked)
     button:SetNormalAtlas(ICON:format(word, "up"))
     button:SetPushedAtlas(ICON:format(word, "down"))
     button:SetHighlightAtlas(ICON:format(word, "highlight"), "ADD")
-    button:SetEnabled(not button.reason)
-    button:SetAlpha(button.reason and FAINT or 1)
-    button:GetNormalTexture():SetDesaturated(button.reason and true or false)
+    button:SetEnabled(not (button.reason or card.closed))
+    button:SetAlpha(off and FAINT or 1)
+    button:GetNormalTexture():SetDesaturated(off and true or false)
 end
 
 local function ThingTip(row)
     local card = row.card
     row.bar:SetLit(true)
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
-    if card.rollID and not card.sample and GameTooltip.SetLootRollItem then
+    if card.rollID and not card.sample and not card.closed and GameTooltip.SetLootRollItem then
         GameTooltip:SetLootRollItem(card.rollID)
     elseif card.link then
         GameTooltip:SetHyperlink(card.link)
@@ -129,7 +151,7 @@ end
 
 local function NewCard()
     local card = CreateFrame("Frame", nil, holder)
-    card:SetSize(S.width, S.row)
+    card:SetSize(S.roll, S.row)
     card.row = ns.Row.New(card)
     card.row.card, card.row.noAuto = card, true
     card.row:SetPoint("TOPLEFT", card, "TOPLEFT")
@@ -138,6 +160,9 @@ local function NewCard()
     card.row:SetScript("OnLeave", ns.Guard(ThingUntip))
     card.row:SetScript("OnClick", ns.Guard(ThingClick))
     card.time = ns.Row.Time(card.row)
+    card.winner = card.row:CreateFontString(nil, "OVERLAY")
+    ns.Row.Font(card.winner, 18)
+    card.winner:SetPoint("RIGHT", card.row, "RIGHT", -S.row / 4, 0)
     card.choices = {}
     card.chose = {}
     return card
@@ -168,7 +193,7 @@ end
 local function Dress(card, info)
     local offered = Offered(info)
     local step = S.choice + S.rowGap
-    card.row.room = #offered * step
+    card.row.room, card.row.lift = #offered * step, S.time / 2
     ns.Row.Set(card.row, info, false, false)
     card.link = info.link
     for index, entry in ipairs(offered) do
@@ -177,7 +202,7 @@ local function Dress(card, info)
         button.kind, button.word, button.reason = entry[1], entry[2], entry[3]
         if button.reason == "" then button.reason = ns.TEXT.locked end
         button:ClearAllPoints()
-        button:SetPoint("RIGHT", card.row, "RIGHT", -S.pad - (#offered - index) * step, card.row.lift)
+        button:SetPoint("RIGHT", card.row, "RIGHT", -S.pad - (#offered - index) * step, 0)
         Icon(button)
         Count(button)
         button:Show()
@@ -195,24 +220,46 @@ local function Stack()
     end
 end
 
--- The time left on each card, its bar as long as the share of it.
+-- The roll is over: the choices and the time go, and who got the thing stands at the bar's right end for a while.
+local function Finish(card, who, own)
+    card.closed, card.gone = true, GetTime() + HOLD
+    card:SetAlpha(1)
+    card.time:Hide()
+    for _, button in ipairs(card.choices) do button:Hide() end
+    card.winner:SetText(who)
+    if own then card.winner:SetTextColor(ns.Row.Gold()) else card.winner:SetTextColor(1, 1, 1) end
+    card.winner:Show()
+    card.row.room, card.row.lift = (tonumber(card.winner:GetStringWidth()) or 0) + S.gap, 0
+    ns.Row.Set(card.row, card.row.line, false, false)
+end
+
+-- The seconds left on a card: the game's while the roll is the player's, then by the card's own clock.
+local function Left(card, now)
+    local left = not card.sample and not card.closed and Plain(GetLootRollTimeLeft(card.rollID))
+    if left then card.ends = now + left / 1000 end
+    return math.max(0, card.ends - now)
+end
+
+-- The time left on each card, its bar as long as the share of it; a card whose time has come goes (a tried one says
+-- who got it first, and stands while Edit Mode is open).
 local function Tick(_, elapsed)
     since = since + elapsed
     if since < TICK then return end
     since = 0
     local now = GetTime()
-    for _, card in ipairs(cards) do
-        local left, total
-        if card.sample then
-            left, total = math.max(0, card.ends - now) * 1000, TRY * 1000
-        else
-            left, total = Plain(GetLootRollTimeLeft(card.rollID)) or 0, card.total
-        end
-        card.time:Left(total and total > 0 and math.min(1, math.max(0, left / total)) or 0)
-    end
     for index = #cards, 1, -1 do
         local card = cards[index]
-        if card.sample and now >= card.ends and not Core.EditMode.active then Rolls.Remove(card.rollID, card) end
+        if not card.gone then
+            local left = Left(card, now)
+            card.time:Left(card.total > 0 and math.min(1, left * 1000 / card.total) or 0, left)
+        end
+        if not (card.sample and Core.EditMode.active) then
+            if card.sample and not card.gone and now >= card.ends then
+                Finish(card, "Saneroki", true)
+            elseif now >= (card.gone or card.ends + LATE) then
+                Rolls.Remove(nil, card)
+            end
+        end
     end
 end
 
@@ -220,6 +267,10 @@ local function Card()
     local card = table.remove(spare) or NewCard()
     wipe(card.chose)
     card.sample, card.rollID, card.total, card.ends = nil, nil, nil, nil
+    card.closed, card.picked, card.gone = nil, nil, nil
+    card:SetAlpha(1)
+    card.time:Show()
+    card.winner:Hide()
     cards[#cards + 1] = card
     card:Show()
     holder:Show()
@@ -256,6 +307,7 @@ function Rolls.Add(rollID, total)
     if not info then return end
     local card = Card()
     card.rollID, card.total = rollID, Plain(total) or 60000
+    card.ends = GetTime() + card.total / 1000
     Dress(card, info)
     since = TICK
 end
@@ -278,24 +330,51 @@ local function RemoveAll()
     for index = #cards, 1, -1 do Rolls.Remove(nil, cards[index]) end
 end
 
--- The game's line about a choice: counted on the card of that thing (the first whose chooser has not chosen yet).
+-- The player's part is over (chosen, or out of time): the card waits for the others.
+local function Over(rollID)
+    local _, card = Find(rollID)
+    if not card or card.closed then return end
+    card.closed = true
+    card:SetAlpha(WAITING)
+    Icons(card, Icon)
+end
+
+-- The first card of that thing that has not been told its end, and that fits.
+local function First(key, fits)
+    for _, card in ipairs(cards) do
+        if Key(card.link) == key and not card.gone and fits(card) then return card end
+    end
+    return nil
+end
+
+-- The game's line about a roll, on the card of that thing. Who got it, or everyone passed: the card shows it. The
+-- player's own choice: its icon stays lit. Another's: counted, on the first card whose chooser has not chosen yet.
 local function Heard(text)
     local found, who, choice, link = ns.Chat.Rolled(text)
-    if not found or not who or not BY_WORD[choice] then return end
-    local key = Key(link)
-    for _, card in ipairs(cards) do
-        if Key(card.link) == key then
-            local already = false
-            for _, names in pairs(card.chose) do already = already or names[who] end
-            if not already then
-                local kind = BY_WORD[choice]
-                card.chose[kind] = card.chose[kind] or {}
-                card.chose[kind][who] = true
-                for _, button in ipairs(card.choices) do
-                    if button:IsShown() then Count(button) end
-                end
-                return
+    if not found then return end
+    local key, kind = Key(link), BY_WORD[choice]
+    local own = who == nil or who == ns.TEXT.you
+    if choice == "won" or choice == "none" then
+        local card = First(key, function() return true end)
+        if card and choice == "none" then Finish(card, ns.TEXT.allPassed)
+        elseif card then Finish(card, who or ns.TEXT.you, own) end
+    elseif kind and own then
+        local card = First(key, function(candidate) return candidate.picked == nil end)
+        if card then
+            card.picked = kind
+            Icons(card, Icon)
+        end
+    elseif kind then
+        local card = First(key, function(candidate)
+            for _, names in pairs(candidate.chose) do
+                if names[who] then return false end
             end
+            return true
+        end)
+        if card then
+            card.chose[kind] = card.chose[kind] or {}
+            card.chose[kind][who] = true
+            Icons(card, Count)
         end
     end
 end
@@ -303,7 +382,7 @@ end
 -- The game has told an item: a card that waited on it gets what it lacked (the green arrow, the line under the name).
 local function Told()
     for _, card in ipairs(cards) do
-        if not card.sample and not card.row.line.known then
+        if not card.sample and not card.closed and not card.row.line.known then
             local info = Info(card.rollID)
             if info and info.known then Dress(card, info) end
         end
@@ -325,13 +404,11 @@ end
 function Rolls.Try()
     if not holder then return end
     local card = Card()
-    card.sample, card.rollID, card.ends = true, -#cards, GetTime() + TRY
+    card.sample, card.rollID, card.total, card.ends = true, -#cards, TRY * 1000, GetTime() + TRY
     Dress(card, { kind = "item", icon = "Interface\\Icons\\INV_Misc_QuestionMark",
                   name = ns.TEXT.rollsView, quality = 3, locked = false, canNeed = true, canGreed = true, known = true })
     card.chose[GREED] = { ["Saneroki"] = true }
-    for _, button in ipairs(card.choices) do
-        if button:IsShown() then Count(button) end
-    end
+    Icons(card, Count)
     since = TICK
 end
 
@@ -345,7 +422,7 @@ end
 
 function Rolls.Start()
     holder = CreateFrame("Frame", nil, UIParent)
-    holder:SetSize(S.width, S.row)
+    holder:SetSize(S.roll, S.row)
     holder:SetFrameStrata("MEDIUM")
     holder:Hide()
     holder:SetScript("OnUpdate", ns.Guard(Tick))
@@ -353,7 +430,7 @@ function Rolls.Start()
                                         first = { point = "BOTTOM", x = 0, y = 330 } })
     placed:Place()
     ns.On("START_LOOT_ROLL", ns.Guard(Rolls.Add))
-    ns.On("CANCEL_LOOT_ROLL", ns.Guard(function(rollID) Rolls.Remove(rollID) end))
+    ns.On("CANCEL_LOOT_ROLL", ns.Guard(Over))
     ns.On("CANCEL_ALL_LOOT_ROLLS", ns.Guard(RemoveAll))
     ns.On("CHAT_MSG_LOOT", ns.Guard(Heard))
     ns.On("GET_ITEM_INFO_RECEIVED", ns.Guard(Told))

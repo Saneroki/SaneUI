@@ -9,7 +9,8 @@ local _, ns = ...
 --
 --      Chat.Received(text)  -- who (nil: you), the item's link, how many
 --      Chat.Rolled(text)    -- who (nil: you), the choice ("need", "greed",
---                           -- "disenchant", "transmog", "pass", "won"), the link
+--                           -- "disenchant", "transmog", "pass"), "won", or
+--                           -- "none" (everyone passed), the link
 --      Chat.Money(text)     -- the copper in a line about money you looted
 --      Chat.Currency(text)  -- a currency's link and how many, received
 --  A line the game hides from addons (a secret value) reads as nothing.
@@ -45,11 +46,14 @@ local ROLLED = {
     { "LOOT_ROLL_NEED_SELF", "need" }, { "LOOT_ROLL_GREED_SELF", "greed" },
     { "LOOT_ROLL_DISENCHANT_SELF", "disenchant" }, { "LOOT_ROLL_TRANSMOG_SELF", "transmog" },
     { "LOOT_ROLL_PASSED_SELF_AUTO", "pass" }, { "LOOT_ROLL_PASSED_SELF", "pass" },
-    { "LOOT_ROLL_YOU_WON", "won" },
+    { "LOOT_ROLL_YOU_WON", "won" }, { "LOOT_ROLL_ALL_PASSED", "none" },
     { "LOOT_ROLL_NEED", "need", other = true }, { "LOOT_ROLL_GREED", "greed", other = true },
     { "LOOT_ROLL_DISENCHANT", "disenchant", other = true }, { "LOOT_ROLL_TRANSMOG", "transmog", other = true },
     { "LOOT_ROLL_PASSED_AUTO", "pass", other = true }, { "LOOT_ROLL_PASSED_AUTO_FEMALE", "pass", other = true },
     { "LOOT_ROLL_PASSED", "pass", other = true }, { "LOOT_ROLL_WON", "won", other = true },
+    { "LOOT_ROLL_WON_NO_SPAM_NEED", "won", other = true }, { "LOOT_ROLL_WON_NO_SPAM_NEED_OFF_SPEC", "won", other = true },
+    { "LOOT_ROLL_WON_NO_SPAM_GREED", "won", other = true }, { "LOOT_ROLL_WON_NO_SPAM_DE", "won", other = true },
+    { "LOOT_ROLL_WON_NO_SPAM_TRANSMOGRIFICATION", "won", other = true },
 }
 local MONEY = { "YOU_LOOT_MONEY_GUILD", "YOU_LOOT_MONEY", "LOOT_MONEY_SPLIT_GUILD", "LOOT_MONEY_SPLIT" }
 local COINS = { { "GOLD_AMOUNT", 10000 }, { "SILVER_AMOUNT", 100 }, { "COPPER_AMOUNT", 1 } }

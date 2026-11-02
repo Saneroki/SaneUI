@@ -57,7 +57,11 @@ LOOT_ROLL_GREED = "|HlootHistory:%d|h[Loot]|h: %s has selected Greed for: %s"
 LOOT_ROLL_PASSED = "|HlootHistory:%d|h[Loot]|h: %s passed on: %s"
 LOOT_ROLL_NEED_SELF = "|HlootHistory:%d|h[Loot]|h: You have selected Need for: %s |HlootHistory:%d|h[View Loot Rolls]|h" -- Retail's
 LOOT_ROLL_DISENCHANT = "%s has selected Disenchant for: %s"
+LOOT_ROLL_GREED_SELF = "|HlootHistory:%d|h[Loot]|h: You have selected Greed for: %s"
 LOOT_ROLL_WON = "%s won: %s"
+LOOT_ROLL_YOU_WON = "|HlootHistory:%d|h[Loot]|h: You won: %s"
+LOOT_ROLL_ALL_PASSED = "|HlootHistory:%d|h[Loot]|h: Everyone passed on: %s"
+LOOT_ROLL_WON_NO_SPAM_GREED = "|HlootHistory:%d|h[Loot]|h: %s (Greed - %d) Won: %s"
 YOU_LOOT_MONEY = "You loot %s"
 LOOT_MONEY_SPLIT = "Your share of the loot is %s."
 GOLD_AMOUNT, SILVER_AMOUNT, COPPER_AMOUNT = "%d Gold", "%d Silver", "%d Copper"
@@ -273,6 +277,12 @@ found, chooser, choice, rolledLink = Chat.Rolled(Said(LOOT_ROLL_NEED_SELF, ROBE,
 check(found and chooser == nil and choice == "need" and rolledLink == ROBE, "your own choice, a link to the history on each side")
 found, chooser, choice = Chat.Rolled("Brute won: " .. ROBE)
 check(found and chooser == "Brute" and choice == "won", "who won")
+found, chooser, choice, rolledLink = Chat.Rolled(Said(LOOT_ROLL_WON_NO_SPAM_GREED, "Brute", 87, ROBE))
+check(found and chooser == "Brute" and choice == "won" and rolledLink == ROBE, "who won, the roll in the sentence")
+found, chooser, choice, rolledLink = Chat.Rolled(Said(LOOT_ROLL_YOU_WON, ROBE))
+check(found and chooser == nil and choice == "won" and rolledLink == ROBE, "you won")
+found, chooser, choice, rolledLink = Chat.Rolled(Said(LOOT_ROLL_ALL_PASSED, ROBE))
+check(found and chooser == nil and choice == "none" and rolledLink == ROBE, "everyone passed")
 check(Chat.Money("You loot 1 Gold, 2 Silver, 3 Copper") == 10203, "money looted, in copper")
 check(Chat.Money("Your share of the loot is 45 Copper.") == 45, "a share of the money")
 local cLink, cCount = Chat.Currency("You receive currency: |Hcurrency:1792|h[Honor]|h x12.")
@@ -802,8 +812,9 @@ check(choices[1]._atlas == "lootroll-toast-icon-need-up" and choices[2]._atlas =
       and choices[3]._atlas == "lootroll-toast-icon-pass-up", "the game's icons")
 for _, button in ipairs(choices) do
     check(button._parent == line and button._points[1][1] == "RIGHT" and button._points[1][2] == line
-          and button._height == ns.SIZE.choice and button._points[1][5] == ns.SIZE.time / 2, "an icon inside the bar, over the time")
+          and button._height == ns.SIZE.choice and button._points[1][5] == 0, "an icon inside the bar, centred on all of it")
 end
+check(ns.SIZE.choice >= ns.SIZE.row - 4, "nearly as tall as the bar, time and all")
 check(choices[1]._points[1][4] < choices[2]._points[1][4] and choices[2]._points[1][4] < choices[3]._points[1][4], "side by side")
 check(line.name._points[2][4] <= -3 * (ns.SIZE.choice + ns.SIZE.rowGap), "the name stops before them")
 check(choices[1]:GetNormalTexture()._desaturated == true and choices[1]._disabled == true, "a refused icon grey and off")
@@ -818,6 +829,7 @@ check(choices[3].count:GetText() == "1", "a pass counted")
 check(choices[1].count:GetText() == "", "none chose it: no number")
 cards[1]:GetParent()._scripts.OnUpdate(cards[1]:GetParent(), 1)
 check(time:GetValue() == 0.5, "the time line half long at half the time")
+check(time.seconds:GetText() == "30", "with the seconds left on it")
 check(table.concat(time._barColor, ",") == "1,1,0", "and painted for that share")
 local function TimeColor(share) return table.concat({ ns.Row.TimeColor(share) }, ",") end
 check(TimeColor(1) == "0,1,0" and TimeColor(0.5) == "1,1,0" and TimeColor(0.25) == "1,0.5,0" and TimeColor(0) == "1,0,0",
@@ -837,9 +849,39 @@ for _, button in ipairs(Choices(Cards()[2])) do words[#words + 1] = button.word 
 check(table.concat(words, ",") == "Need,Transmog,Disenchant,Pass", "Transmog for Greed, Disenchant where offered")
 check(Choices(Cards()[2])[2]._atlas == "lootroll-toast-icon-transmog-up" and Choices(Cards()[2])[3]._atlas == "lootroll-toast-icon-disenchant-up",
       "each with its own icon")
+-- the player's part over: the card stands while the others choose, the player's icon lit, the time running on
+local function Tock()
+    local stack = Cards()[1]:GetParent()
+    stack._scripts.OnUpdate(stack, 1)
+end
+Tock() -- the last the game says of its time: 30 seconds
+W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_GREED_SELF, ROBE))
 W.Fire("CANCEL_LOOT_ROLL", 7)
 rolls[7] = nil
-check(#Cards() == 1 and Cards()[1].row.name:GetText() == "Shiny Gem", "a roll over: its card goes")
+check(#Cards() == 2, "your part over: the card stands while the others choose")
+check(cards[1]:GetAlpha() == 0.25, "faded: nothing is asked of you now")
+check(choices[2]:GetAlpha() == 1 and not choices[2]:GetNormalTexture()._desaturated
+      and choices[3]:GetAlpha() < 1 and choices[3]:GetNormalTexture()._desaturated, "your choice lit, the others faint")
+choices[3]._scripts.OnClick(choices[3])
+check(#rolled == 1 and choices[3]._disabled, "nothing more to choose")
+W.clock = W.clock + 6
+Tock()
+check(time.seconds:GetText() == "24" and math.abs(time:GetValue() - 0.4) < 0.001, "the time runs on by the card's own clock")
+-- the game says who got it: the time and the choices go, the winner at the right end, for a few seconds
+local finished = cards[1]
+W.Fire("CHAT_MSG_LOOT", "Brute won: " .. ROBE)
+check(finished.winner._shown and finished.winner:GetText() == "Brute" and finished.winner._points[1][1] == "RIGHT"
+      and finished.winner._points[1][2] == line, "who got it, at the bar's right end")
+check(finished:GetAlpha() == 1, "whole again for the result")
+check(not time._shown and not choices[1]._shown and not choices[2]._shown, "the time and the choices away")
+check(line.name._points[1][5] == 0, "the name back in the bar's middle")
+check(line.name._points[2][4] <= -finished.winner:GetStringWidth(), "and stops before who got it")
+W.clock = W.clock + 4
+Tock()
+check(#Cards() == 2, "it stands a few seconds")
+W.clock = W.clock + 2
+Tock()
+check(#Cards() == 1 and Cards()[1].row.name:GetText() == "Shiny Gem", "then its card goes")
 options.rolls = false
 ns.Game.Update()
 check(#Cards() == 0 and GroupLootContainer:GetParent() == UIParent, "off: the game's roll frames are back")
@@ -849,6 +891,47 @@ check(#Cards() == 1 and GroupLootContainer:GetParent() ~= UIParent, "on again: a
 W.Fire("CANCEL_ALL_LOOT_ROLLS")
 rolls = {}
 check(#Cards() == 0, "all rolls over")
+local function Roll(id, link, name)
+    rolls[id] = { name = name, link = link, quality = 2, canNeed = true, canGreed = true, left = 60000 }
+    W.Fire("START_LOOT_ROLL", id, 60000)
+end
+local function Card(name)
+    for _, card in ipairs(Cards()) do
+        if card.row.line and card.row.name:GetText() == name and not card.gone then return card end
+    end
+end
+Roll(11, ROBE, "Apprentice Robe")
+local reused = Cards()[1]
+check(reused:GetAlpha() == 1 and reused.time._shown and not reused.winner._shown and reused.row.lift == ns.SIZE.time / 2 and Choices(reused)[1]:GetAlpha() == 1,
+      "a card used again is a new roll's")
+W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_YOU_WON, ROBE))
+check(reused.winner:GetText() == ns.TEXT.you and select(3, reused.winner:GetTextColor()) < 1, "you got it: in gold")
+Roll(12, ROBE, "Apprentice Robe")
+local second = Card("Apprentice Robe")
+W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_WON_NO_SPAM_GREED, "Mira", 87, ROBE))
+check(second and second ~= reused and second.winner:GetText() == "Mira" and reused.winner:GetText() == ns.TEXT.you,
+      "two of a thing: the next card is told, the roll in the sentence")
+Roll(13, GEM, "Shiny Gem")
+local nobody = Card("Shiny Gem")
+W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_ALL_PASSED, GEM))
+check(nobody.winner:GetText() == ns.TEXT.allPassed and select(3, nobody.winner:GetTextColor()) == 1, "everyone passed: it says so")
+W.Fire("CHAT_MSG_LOOT", "Brute won: " .. TUSK)
+check(#Cards() == 3, "a thing with no card: nothing")
+W.clock = W.clock + 6
+Tock()
+check(#Cards() == 0, "they go")
+-- the game never says who got it: the card goes a moment after its time, and a roll out of time waits as well
+Roll(14, RING, "Bound Ring")
+W.Fire("CANCEL_LOOT_ROLL", 14)
+rolls[14] = nil
+W.clock = W.clock + 64
+Tock()
+check(#Cards() == 1, "said by nobody it waits a moment after its time")
+W.clock = W.clock + 2
+Tock()
+check(#Cards() == 0, "then it goes")
+W.Fire("CANCEL_ALL_LOOT_ROLLS")
+rolls = {}
 -- an item the game does not know yet: the card comes at once, what it lacked when the game tells it
 local LATE = Item(6100, "Late Tabard", 2, 50, 2, "INVTYPE_CHEST")
 local told = items[LATE]
@@ -987,7 +1070,10 @@ EventRegistry:TriggerEvent("EditMode.Exit")
 check(not Window.frame:IsShown(), "Edit Mode closed: the window goes")
 options.atMouse = true
 W.clock = W.clock + 60
-Cards()[1]:GetParent()._scripts.OnUpdate(Cards()[1]:GetParent(), 1)
+Tock()
+check(#Cards() == 1 and Cards()[1].winner:GetText() == "Saneroki", "the tried card shows who got it")
+W.clock = W.clock + 6
+Tock()
 Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 1)
 check(#Cards() == 0 and #Feed() == 0, "the tried card and lines go")
 W.printed = {}
@@ -1000,7 +1086,9 @@ options.kept[6000] = nil
 SlashCmdList.SANEUI("loot try")
 check(#Cards() == 1 and #Feed() == 3, "/sane loot try: a card and the feed to look at")
 W.clock = W.clock + 60
-Cards()[1]:GetParent()._scripts.OnUpdate(Cards()[1]:GetParent(), 1)
+Tock()
+W.clock = W.clock + 6
+Tock()
 Feed()[1]:GetParent()._scripts.OnUpdate(Feed()[1]:GetParent(), 1)
 
 -------------------------------------------------------------------------------

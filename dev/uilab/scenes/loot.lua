@@ -4,7 +4,8 @@
 -- on your list after the loot opens, to show the A lit. The module's table is LabLoot in the console:
 -- LabLoot.Window.Close() closes it, LabLoot.Open() opens the loot again with every slot back. Beside it your group's
 -- rolls, a line each: the last runs down and starts again, the others stand at a share of their time to show the time
--- line's colours; LabLoot.Roll() brings them back. Your bags are full, so the lines that make room stand beside the
+-- line's colours; LabLoot.Roll() brings them back, a click on a choice waits for the others, and LabLoot.Won(id, "Mirabel")
+-- says who got that roll's thing (no name: you; false: everyone passed). Your bags are full, so the lines that make room stand beside the
 -- window: LabLoot.BagsFull(false) makes room, LabLoot.BagsFull(true) fills them again.
 
 -- The game's own loot window and roll frames, as Loot's Game.lua finds them (the lab loads neither).
@@ -83,8 +84,12 @@ GetActiveLootRollIDs = function()
     for id in pairs(open) do ids[#ids + 1] = id end
     return ids
 end
-RollOnLoot = function(id)
+RollOnLoot = function(id, kind)
+    local link = GetLootRollItemLink(id)
     open[id] = nil
+    if link and kind == 2 then Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_GREED_SELF:format(id, link)) end
+    if link and kind == 1 then Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_NEED_SELF:format(id, link)) end
+    if link and kind == 0 then Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_PASSED_SELF:format(id, link)) end
     Lab.Fire("CANCEL_LOOT_ROLL", id)
 end
 C_Loot = C_Loot or {}
@@ -144,6 +149,16 @@ end
 function ns.BagsFull(on)
     bagsFull = on
     ns.Window.Fill()
+end
+
+-- The game's line about who got a roll's thing.
+function ns.Won(id, who)
+    local _, link = C_Item.GetItemInfo(ROLLS[id].item)
+    open[id] = nil
+    Lab.Fire("CANCEL_LOOT_ROLL", id)
+    if who == false then Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_ALL_PASSED:format(id, link))
+    elseif who then Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_WON:format(id, who, link))
+    else Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_YOU_WON:format(id, link)) end
 end
 
 -- The rolls open as the game opens them; who chose what, on the game's lines.

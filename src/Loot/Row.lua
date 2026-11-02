@@ -164,8 +164,8 @@ end
 -- The time left as a line over the bar's foot, as a nameplate's resource lies on its health (Nameplates' Bar.lua: the
 -- same fill, the bar's own round at its right end), from the picture on, the picture kept clear. Under it a dark
 -- shade: the bar is still seen where the time is spent, and the line stands out on a bar of its own colour (green on
--- an uncommon thing's). The words stand over it (row.lift).
---      line:Left(share)   how much is left, 0 to 1: so long, in its colour
+-- an uncommon thing's). The words stand over it (row.lift); on it, at the name's left edge, the seconds left.
+--      line:Left(share, seconds)   how much is left, 0 to 1: so long, in its colour; the seconds as a whole number
 function Row.Time(row)
     local bar = row.bar
     local line = CreateFrame("StatusBar", nil, row)
@@ -180,9 +180,14 @@ function Row.Time(row)
     shade:SetAllPoints(line)
     Caps(line:GetStatusBarTexture(), bar.fill, bar.inner)
     Caps(shade, bar.fill, bar.inner)
-    function line.Left(_, share)
+    line.seconds = line:CreateFontString(nil, "OVERLAY")
+    Row.Font(line.seconds, 16)
+    line.seconds:SetTextColor(1, 1, 1)
+    line.seconds:SetPoint("LEFT", line, "LEFT", S.gap, 0)
+    function line.Left(_, share, seconds)
         line:SetValue(share)
         line:SetStatusBarColor(Row.TimeColor(share))
+        line.seconds:SetText(seconds and tostring(math.ceil(seconds)) or "")
     end
     line:Left(1)
     row.lift = S.time / 2
@@ -217,7 +222,7 @@ function Row.New(parent)
     row.upgrade:SetSize(S.arrow, S.arrow)
     row.upgrade:Hide()
     row.count = row.holder:CreateFontString(nil, "OVERLAY")
-    Row.Font(row.count, 11)
+    Row.Font(row.count, 13)
     row.count:SetTextColor(1, 1, 1)
     row.count:SetPoint("BOTTOMRIGHT", row.holder, "BOTTOMRIGHT", -2, 1)
 
@@ -226,22 +231,22 @@ function Row.New(parent)
     row.auto:SetSize(S.auto, S.auto)
     row.auto.bar = Row.Bar(row.auto, S.auto)
     row.auto.text = row.auto:CreateFontString(nil, "OVERLAY")
-    Row.Font(row.auto.text, 11)
+    Row.Font(row.auto.text, 13)
     row.auto.text:SetPoint("CENTER", 0, 0)
     row.auto.text:SetText(ns.TEXT.auto)
 
     row.name = row:CreateFontString(nil, "ARTWORK")
-    Row.Font(row.name, 14)
+    Row.Font(row.name, 18)
     row.name:SetTextColor(1, 1, 1)
     row.name:SetJustifyH("LEFT")
     row.name:SetWordWrap(false)
     row.note = row:CreateFontString(nil, "ARTWORK")
-    Row.Font(row.note, 11)
+    Row.Font(row.note, 13)
     row.note:SetTextColor(SOFT[1], SOFT[2], SOFT[3])
     row.note:SetJustifyH("LEFT")
     row.note:SetWordWrap(false)
     row.worth = row:CreateFontString(nil, "ARTWORK")
-    Row.Font(row.worth, 11)
+    Row.Font(row.worth, 13)
     row.worth:SetTextColor(1, 1, 1)
     row.worth:SetJustifyH("RIGHT")
     return row
