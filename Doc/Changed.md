@@ -150,7 +150,7 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 ### Three auras of each kind in one line (Saneroki, 2026-11-02)
 Saneroki: "when I had more then 2 the 3rd buff went above the 2. I thought we had 3 in one row."
 - **`src/Combat/Units/Auras.lua`:** the line was exactly as wide as three icons, and the game reads a frame's size back rounded, so the third could go over it. The layout now gets the icons' size, and the line a gap to spare; a fourth still goes up. A `/reload` takes it in.
-- **`dev/uilab/scenes/unitframes.lua`:** a stand-in for the game's aura container, laid out by its own `AnchorUtil.ApplyFlowLayout`, three of each kind on the frames.
+- **`dev/uilab/scenes/unitframes.lua`:** a stand-in for the game's aura container, laid out by its own `AnchorUtil.ApplyFlowLayout`, three of each kind on the frames; `LabAuras` tries other numbers and line widths.
 
 ### No numbers on the unit frames' auras (Saneroki, 2026-11-02)
 Saneroki: "we don't need the numbers on the unit frame buffs, debuffs and cc": the darkening going around the icon tells the time.

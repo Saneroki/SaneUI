@@ -9,11 +9,11 @@ for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", 
 end
 local create = CreateFrame
 -- The game's aura container for addons is not in the lab: a plain frame with what the module asks of it, its groups laid
--- out by the game's own flow layout. Three of each kind show on every frame: LabAuras(buffs, control, debuffs) sets how many.
+-- out by the game's own flow layout. Three of each kind show on every frame: LabAuras(buffs, control, debuffs, line) sets how many.
 local SAMPLES = {
-    buffs = { "Spell_Nature_Thorns", "Spell_Nature_Regeneration", "Spell_Holy_WordFortitude", "Spell_Nature_Thorns", "Spell_Nature_Regeneration" },
+    buffs = { "Spell_Nature_Thorns", "Spell_Nature_Regeneration", "Spell_Holy_WordFortitude", "Spell_Holy_PowerWordShield", "Spell_Nature_Rejuvenation" },
     control = { "Spell_Nature_Polymorph", "Spell_Frost_FrostNova", "Ability_Gouge", "Spell_Nature_Slow" },
-    debuffs = { "Ability_Warrior_Sunder", "Spell_Shadow_ShadowWordPain", "Spell_Nature_Slow", "Spell_Frost_FrostNova" },
+    debuffs = { "Ability_Warrior_Sunder", "Spell_Shadow_ShadowWordPain", "Spell_Nature_Slow", "Spell_Shadow_CurseOfSargeras" },
 }
 local showing = { buffs = 3, control = 3, debuffs = 3 }
 local containers = {}
@@ -69,9 +69,13 @@ local function AuraContainer(parent)
     containers[#containers + 1] = box
     return box
 end
-function LabAuras(buffs, control, debuffs)
+-- line (optional): each container's widest line, to try another than the module's.
+function LabAuras(buffs, control, debuffs, line)
     showing.buffs, showing.control, showing.debuffs = buffs, control, debuffs
-    for _, box in ipairs(containers) do box:UpdateAllAuras() end
+    for _, box in ipairs(containers) do
+        if line and box.kind then box:SetFlowLayoutMaximumLineSize(line) end
+        box:UpdateAllAuras()
+    end
 end
 
 -- The lab takes a status bar's atlas for a file: here the atlas on its fill.
