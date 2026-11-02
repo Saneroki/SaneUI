@@ -361,7 +361,7 @@ shows on it, and you make as many bars as you like.
   login or when its addon is first there: while its panel is on the layout, the full screen comes.
 - **Mouse rings** (`MouseRings.lua`): a hidden holder at the `TOOLTIP` strata with two `Cooldown` widgets, their swipes Core's rings
   (`Shape.RING`, `RING_WIDE`) in `Rings.ALPHA`, both turned by `Rings.TURN` so they start and end on the line from their centre to the cursor's tip
-  (the widget turns clockwise, a texture the other way). Above them a frame with the leading line and its glow, the game's cast bar spark twice, added
+  (the widget turns as a texture does, counter-clockwise). Above them a frame with the leading line and its glow, the game's cast bar spark twice, added
   to what lies under it, placed on the band's middle each frame from the cast's plain start and end, none where those are hidden. The holder comes
   out when a ring starts, follows
   `GetCursorPosition` on its `OnUpdate` and goes when neither ring is shown, so nothing runs at rest. Where it stands: the game's cursor hangs from its

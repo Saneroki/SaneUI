@@ -1879,7 +1879,7 @@ do
     check(Rings.spark._blend == "ADD" and Rings.glow._blend == "ADD" and Rings.glow._alpha == Rings.GLOW_ALPHA,
         "the leading line and its softer glow add light")
     local toTip = math.sqrt(Rings.MIDDLE[1] ^ 2 + Rings.MIDDLE[2] ^ 2)
-    check(near(cooldown._rotation, -Rings.TURN) and near(casting._rotation, -Rings.TURN)
+    check(near(cooldown._rotation, Rings.TURN) and near(casting._rotation, Rings.TURN)
         and near(math.cos(math.pi / 2 + Rings.TURN) * toTip, -Rings.MIDDLE[1])
         and near(math.sin(math.pi / 2 + Rings.TURN) * toTip, Rings.MIDDLE[2]),
         "both rings start and end on the line to the cursor's tip, not straight up")
@@ -1951,8 +1951,8 @@ do
     W.Wait(0.75)
     Follow()
     local orbit = casting._width / 2 * (1 + Rings.HOLE) / 2
-    local line, turned = Rings.spark._points[1], Rings.TURN - math.pi / 2
-    check(Rings.sparks._shown and near(line[4], orbit * math.cos(Rings.TURN)) and near(line[5], orbit * math.sin(Rings.TURN))
+    local line, turned = Rings.spark._points[1], casting._rotation - math.pi / 2 -- from the ring's own start, turned as a texture is
+    check(Rings.sparks._shown and near(line[4], orbit * math.cos(casting._rotation)) and near(line[5], orbit * math.sin(casting._rotation))
         and near(Rings.spark._rotation, turned) and near(Rings.glow._rotation, turned) and Rings.glow._width > Rings.spark._width,
         "a quarter of the way: the line and its glow at the sweep's head, across the ring's band")
     W.Fire("UNIT_SPELLCAST_FAILED", "player", "ring-2", 116)

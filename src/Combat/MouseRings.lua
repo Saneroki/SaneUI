@@ -190,7 +190,7 @@ local function Ring(art, r, g, b)
     ring:SetDrawBling(false)
     ring:SetHideCountdownNumbers(true)
     ring:SetReverse(true)
-    ring:SetRotation(-Rings.TURN) -- the widget turns clockwise, textures the other way
+    ring:SetRotation(Rings.TURN) -- the widget turns as textures do, counter-clockwise
     ring:SetScript("OnCooldownDone", OnDone)
     ring:Hide()
     return ring
