@@ -119,7 +119,8 @@ function Client.Install(W)
         or { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
     SystemFont_NamePlate_Outlined = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 14, "OUTLINE" end }
     -- The game's aura containers for addons (CustomAuraContainerTemplate): their groups as given, one icon made for
-    -- each group (its initializeFrame), what they are set to. The unit's auras by index (W.auras[unit][filter]).
+    -- each group (its initializeFrame), what they are set to. The unit's auras by index (W.auras[unit][filter]), and by
+    -- a whole filter, its crowd control told apart (an aura's control).
     AnchorUtil = { FlowDirection = { Left = "Left", Right = "Right", Up = "Up", Down = "Down" } }
     AuraContainerSortMethod = { Default = 0, BigDefensive = 1, UnitFrameDebuff = 2 }
     AuraContainerSortDirection = { Normal = 0, Reverse = 1 }
@@ -149,6 +150,15 @@ function Client.Install(W)
     C_UnitAuras.GetAuraDataByIndex = function(unit, index, filter)
         local list = W.auras[unit] and W.auras[unit][filter]
         return list and list[index]
+    end
+    C_UnitAuras.GetUnitAuras = function(unit, filter)
+        local found = {}
+        for _, aura in ipairs(W.auras[unit] and W.auras[unit][filter:match("^%a+")] or {}) do
+            local control = filter:find("|CROWD_CONTROL", 1, true) ~= nil
+            local rest = filter:find("!CROWD_CONTROL", 1, true) ~= nil
+            if (not control or aura.control) and (not rest or not aura.control) then found[#found + 1] = aura end
+        end
+        return found
     end
     -- The game's unit watch (RegisterUnitWatch): a watched frame is shown while its unit is there and hidden while it
     -- is not, as it is registered and at every tick of the watch, in a fight too (the game's own secure code does it).

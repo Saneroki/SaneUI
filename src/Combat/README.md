@@ -107,12 +107,11 @@ shows on it, and you make as many bars as you like.
   - **Auras:** those that matter most, in one line above the frame: four buffs, two crowd control, four debuffs, each kind a block of icons that touch, no borders, the time gone darkening the icon as it passes, no numbers on them: buffs on the left, from its
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
-    friend or you any, what you can dispel and a boss's first). The mouse on an icon shows your own tooltip of the aura (in a fight the game's) and keeps the frame in sight at rest. **Left or right click** an icon, out of a fight, for its menu: *Important* (in front of the
+    friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
     rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Show on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window with the lists side by side: type a
     spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
     `/sane auras` opens it too. The game lets the lists act here on the buffs of you, your group and friendly units and
-    on the debuffs of foes; on the rest it decides itself (and in a fight it keeps the icons from addons: their
-    menu comes after it).
+    on the debuffs of foes; on the rest it decides itself (in a fight, that is; out of one your marks act on all of them).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health, in the light yellow the nameplates give a neutral creature, and its
     name alone in the middle; the same under your focus's frame for your focus's target, and under your own frame
@@ -489,14 +488,16 @@ shows on it, and you make as many bars as you like.
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
     Each icon (`initializeFrame`, `Dress`): the picture cropped, no edge, the swipe (`SetReverse`: dark over the time gone, driven by the
     game in a fight too), its numbers off (`SetHideCountdownNumbers`), the count, its name into a
-    text of ours at alpha 0 (`SetSpellName`). The game's icons forbid an addon's scripts (`AuraButton`'s `UntrustedScriptExecution`),
-    so the frame of ours on each (`top`) takes the mouse; passing it on (`SetPropagateMouseClicks`) is closed to addons, so a
-    right click cannot reach the game's cancel, and the game's own tooltip is ours to replace: `OnEnter` asks
-    `GameTooltip:SetUnitAuraByAuraInstanceID`, as the game's list does, for Tooltips to draw; in a restriction `Motion` hands the
-    mouse's coming back to the icon and its tooltip. `OnEnter` is also a door of the frame's `Core.Rest`, `face.aurasArea` its
-    area over the row. A click, while not `Core.Restricted()`,
-    finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
-    context menu (`MenuUtil`). `Auras.Set` sets each container's unit (`none` while off), `UpdateAllAuras` at every fill.
+    the outline's loop started by hand. Those are the game's icons, in a fight. **Out of a fight our own row** (`AuraRow.lua`, `Auras.Set`
+    picks by `Row.Open`): the game runs no script of an addon on its icons, and that goes for every child of one
+    (`AuraButton`'s `UntrustedScriptExecution`, which propagates by hierarchy); their regions' secret aspects hide what they show
+    at all times, the owned frames (`GetAuraGroupFrame`) come in the pool's order, and the tooltip they open is forbidden. So
+    the row reads the same filters itself (`C_UnitAuras.GetUnitAuras`, `Auras.Sets` for your marks, by the spell's number), and
+    each icon, a frame of ours on `face`, knows its aura: `OnEnter` asks `GameTooltip:SetUnitAuraByAuraInstanceID`, as the game's
+    list does, for Tooltips to draw, and is a door of the frame's `Core.Rest` (`face.aurasArea` its area over the row, no
+    mouse); `OnMouseUp` opens `Lists.Menu`, left or right. Places on `face.roof`, `Place`. `UNIT_AURA` of you, your target and
+    focus fills it a frame later; `PLAYER_REGEN_*` and `ADDON_RESTRICTION_STATE_CHANGED` swap row and containers
+    (`Auras.Set` at `face.auraAsked`). `Auras.Set` sets each container's unit (`none` while ours show), `UpdateAllAuras` at every fill.
   - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden`, and `auraShow`, `auraHide` (`{ [spell number] = name }`), one list of
     each side per spell (`Lists.SIDE`; `Put`, `Take`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; the window a `Core.Window` panel (`auraListsPlace`, not
     sizable, no full screen): the box (`InputBoxTemplate`; a number by `C_Spell.GetSpellName`, a name by
@@ -653,7 +654,8 @@ shows on it, and you make as many bars as you like.
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar, the power bars under it (a druid's mana and form), the row |
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
-| `Units/Auras.lua` | The auras that matter most around a frame, in the game's own aura containers; the click on an icon |
+| `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
+| `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
 | `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Show on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and their window (`/sane auras`) |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: the game's outline, fade, hidden last, the left click |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
@@ -680,6 +682,7 @@ shows on it, and you make as many bars as you like.
 | `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
 
 ## History
+- **2026-11-02:** the unit frames' auras out of a fight on icons of ours, as the game runs no addon's script on its own (Saneroki: tooltip and clicks).
 - **2026-11-02:** the unit frames' auras four, two and four, in blocks of icons that touch, no borders (Saneroki).
 - **2026-11-02:** the aura's menu on a left click, in a fight where the game tells which aura it is, and on a right click in the spellbook (Saneroki).
 - **2026-11-01:** Show on and Hide from unit frames, apart from how an aura looks (Saneroki).

@@ -60,6 +60,8 @@ Units\Bar.lua
 Units\Text.lua
 # The auras that matter most around them, in the game's own aura containers; the right click on an icon
 Units\Auras.lua
+# Those auras out of a fight, on icons of ours the mouse can reach: your tooltip, the menu, a frame at rest shown
+Units\AuraRow.lua
 # Your marks of auras: Important, Unimportant, Hidden, and their window (/sane auras)
 Units\Lists.lua
 # The game's list of your buffs and debuffs with those marks on it; the right click on it

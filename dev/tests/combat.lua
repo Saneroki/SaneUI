@@ -1483,7 +1483,7 @@ do
         and debuffs._groups.auto.options.maxFrameCount == 4 and buffs._groups.auto.options.maxFrameCount == 4
         and control._groups.auto.options.maxFrameCount == 2, "three containers of the game's: four buffs, two crowd control, four debuffs")
     check(debuffs._groups.auto.filter == "HARMFUL|PLAYER|!CROWD_CONTROL" and buffs._groups.auto.filter == "HELPFUL|INCLUDE_NAME_PLATE_ONLY"
-        and control._groups.auto.filter == "HARMFUL|CROWD_CONTROL" and debuffs._unit == "target",
+        and control._groups.auto.filter == "HARMFUL|CROWD_CONTROL",
         "on a foe: your debuffs, its buffs as the game shows them on plates, crowd control")
     check(debuffs._groups.auto.options.sortMethod == AuraContainerSortMethod.UnitFrameDebuff
         and buffs._groups.auto.options.sortMethod == AuraContainerSortMethod.BigDefensive,
@@ -1508,31 +1508,62 @@ do
     -- The time left: the darkening over the icon, no numbers.
     check(debuffs._groups.auto.icon._SetDurationCooldown._hideNumbers == true and control._groups.auto.icon._SetDurationCooldown._hideNumbers == true
         and buffs._groups.auto.icon._SetDurationCooldown._hideNumbers == true, "buffs, debuffs and crowd control: no numbers on the icons")
-    -- A right click on an icon, out of a fight: the spell on a list.
-    local icon = debuffs._groups.auto.icon
-    icon._SetSpellName._text = "Sunder Armor"
-    W.auras.target = { HARMFUL = { { name = "Rend", spellId = 772 },
-                                   { name = "Sunder Armor", spellId = 7386, icon = 132363, auraInstanceID = 31 } } }
-    local function Top(button)
-        for _, widget in ipairs(W.frames) do
-            if widget._parent == button and widget._scripts.OnMouseUp then return widget end
+    -- Out of a fight our row shows the auras, in the kinds' places; the game's containers stand down.
+    check(debuffs._unit == "none" and not debuffs._shown, "out of a fight the game's containers rest")
+    local function Told(unit)
+        W.Fire("UNIT_AURA", unit, {})
+        W.Wait(0)
+    end
+    local function Numbered(count, from, extra)
+        local list = {}
+        for index = 1, count do
+            list[index] = { name = "Aura " .. from + index, spellId = from + index, icon = from + index, control = extra }
+        end
+        return list
+    end
+    local harmful = Numbered(5, 200)
+    for _, aura in ipairs(Numbered(3, 300, true)) do harmful[#harmful + 1] = aura end
+    W.auras.target = { HELPFUL = Numbered(5, 100), HARMFUL = harmful }
+    Told("target")
+    local row = target.face.rowIcons
+    local function Where(number)
+        for _, each in ipairs(row) do
+            if each:IsShown() and each.spell.id == number then return each._points[1] end
         end
     end
-    local top = Top(icon)
-    check(top ~= nil and top._mouse and top._motion ~= false and icon._scripts.OnMouseUp == nil,
-        "a frame of ours takes the mouse: the game runs no script of an addon on its icons")
+    local at = Where(101)
+    check(at[1] == "BOTTOMLEFT" and at[2] == roof and at[4] == 0 and at[5] == ns.UnitAuras.GAP, "the first buff at the left end of the roof")
+    check(Where(104)[4] == 3 * ns.UnitAuras.SIZE and Where(105) == nil, "four buffs, touching, no fifth")
+    check(Where(201)[1] == "BOTTOMRIGHT" and Where(201)[4] == 0 and Where(204)[4] == -3 * ns.UnitAuras.SIZE and Where(205) == nil,
+        "four debuffs from the right end")
+    check(Where(301)[1] == "BOTTOM" and Where(301)[4] == -ns.UnitAuras.SIZE / 2 and Where(302)[4] == ns.UnitAuras.SIZE / 2
+        and Where(303) == nil, "two crowd control around the middle")
+    -- On those the mouse works: the game runs no script of an addon on its own icons.
+    W.auras.target = { HARMFUL = { { name = "Rend", spellId = 772, icon = 1, auraInstanceID = 30 },
+                                   { name = "Sunder Armor", spellId = 7386, icon = 132363, auraInstanceID = 31, duration = 30,
+                                     expirationTime = W.clock + 20, applications = 3 } } }
+    Told("target")
+    local top
+    for _, each in ipairs(row) do
+        if each:IsShown() and each.spell.name == "Sunder Armor" then top = each end
+    end
+    local spell = top.spell
+    check(top._parent == target.face and top.parts.count._text == 3 and top.parts.picture._texture == 132363
+        and top.parts.cooldown._hideNumbers == true, "an icon of ours: the aura's picture, its stacks, no numbers")
+    check(spell.id == 7386 and spell.harmful and spell.unit == "target", "it knows its aura")
     local asked
     GameTooltip.SetUnitAuraByAuraInstanceID = function(_, unit, instance) asked = { unit, instance } end
     top._scripts.OnEnter(top)
     check(asked and asked[1] == "target" and asked[2] == 31 and GameTooltip:IsOwned(top),
         "the mouse on it: the aura in GameTooltip, as the game's list of your buffs asks, which is the one Tooltips draws")
     top._scripts.OnLeave(top)
+    check(not GameTooltip:IsOwned(top) or not GameTooltip:IsShown(), "off it, gone")
     W.Combat(true)
     W.Fire("PLAYER_REGEN_DISABLED")
-    check(top._motion == false, "in a fight the mouse's coming goes to the game's icon, its own tooltip")
+    check(not top:IsShown() and debuffs._unit == "target" and debuffs._shown, "in a fight the game's icons take over: only they show")
     W.Combat(false)
     W.Fire("PLAYER_REGEN_ENABLED")
-    check(top._motion == true, "after it ours again")
+    check(top:IsShown() and debuffs._unit == "none" and not debuffs._shown, "after it ours again")
     W.menus = {}
     top._scripts.OnMouseUp(top, "RightButton")
     check(W.menus[1] and W.menus[1][1].title == "Sunder Armor", "a right click opens the menu too")
@@ -1547,6 +1578,14 @@ do
         and menu[7].text == ns.TEXT.auraFramesHide and menu[8].text == ns.TEXT.auraLists,
         "its menu: Create reminder, Important, Unimportant, Hidden, the unit frames alone, Aura lists")
     menu[3].fn()
+    local shining
+    for _, each in ipairs(row) do
+        if each:IsShown() and each.spell.id == 7386 then shining = each end
+    end
+    check(shining.alert and shining.alert:IsShown() and shining.alert.ProcLoop:IsPlaying(), "Important: first, with the game's outline on our icon")
+    for _, each in ipairs(row) do
+        check(each == shining or not (each.alert and each.alert:IsShown()), "the others without it")
+    end
     check(ns.options.auraWhite[7386] == "Sunder Armor" and debuffs._groups.listed.enabled
         and debuffs._groups.listed.candidates.includeSpellIDs[7386] and debuffs._groups.auto.candidates.excludeSpellIDs[7386]
         and mine.buffs._groups.listed.candidates.includeSpellIDs[7386],
@@ -1560,16 +1599,21 @@ do
     end
     check(Shines(debuffs._groups.listed.icon) and not Shines(debuffs._groups.auto.icon),
         "the important ones glow on the frame, the group's own icons in a fight too; the rest do not")
-    W.menus = {}
-    top._scripts.OnMouseUp(top, "LeftButton")
+    local function Open()
+        W.menus = {}
+        ns.AuraLists.Menu(top, spell) -- an aura marked away leaves the row: its menu stands for the game's list's
+    end
+    Open()
     W.menus[1][4].fn()
+    for _, each in ipairs(row) do
+        check(not (each:IsShown() and each.spell.id == 7386), "Unimportant: gone from our row")
+    end
     check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
         and control._groups.auto.candidates.excludeSpellIDs[7386], "Unimportant: off the other list, never shown")
     -- Show and Hide, for the unit frames alone: over what the look says, and without a glow.
     local groups = debuffs._groups
     local function Tick(index)
-        W.menus = {}
-        top._scripts.OnMouseUp(top, "LeftButton")
+        Open()
         W.menus[1][index].fn()
     end
     Tick(6)
@@ -1592,12 +1636,10 @@ do
     Tick(4)
     check(not ns.options.auraShow[7386] and ns.options.auraBlack[7386] and not ns.options.auraWhite[7386],
         "taken off by its tick")
-    W.combat = true
     W.menus = {}
-    top._scripts.OnMouseUp(top, "LeftButton")
+    ns.AuraLists.Menu(top, nil)
     check(W.menus[1][1].title == ns.TEXT.auraFight and W.menus[1][2].text == ns.TEXT.auraLists,
-        "in a fight the game keeps the icons from addons: only the lists' window")
-    W.combat = false
+        "an aura the game keeps from addons: only the lists' window")
     -- The window: the lists side by side, a spell added by its number, taken off by its X.
     W.menus[1][2].fn()
     local lists = ns.AuraLists
@@ -1621,9 +1663,10 @@ do
     check(next(ns.options.auraWhite) == nil and next(ns.options.auraBlack) == nil and debuffs._groups.auto.candidates == nil,
         "taken off: no lists again")
     Core.Set(ns.name, "unitAuras", false)
-    check(not debuffs._shown and debuffs._unit == "none", "Auras on the frames off: none")
+    check(not debuffs._shown and debuffs._unit == "none" and not row[1]:IsShown(), "Auras on the frames off: none")
     Core.Set(ns.name, "unitAuras", true)
-    check(debuffs._shown and debuffs._unit == "target" and not ns.off, "on again")
+    check(row[1]:IsShown() and not ns.off, "on again")
+    W.auras.target = nil
     units.target = nil
 end
 
@@ -1781,10 +1824,10 @@ do
     foe.row.button:GetScript("OnLeave")(foe.row.button)
     Look(foe.rest)
     check(Rested(), "and off it")
-    local door
-    for _, widget in ipairs(W.frames) do
-        if widget._parent == you.button.face.auras.buffs._groups.auto.icon and widget._scripts.OnMouseUp then door = widget end
-    end
+    W.auras.player = { HELPFUL = { { name = "Thorns", spellId = 782, icon = 1, auraInstanceID = 41 } } }
+    W.Fire("UNIT_AURA", "player", {})
+    W.Wait(0)
+    local door = you.button.face.rowIcons[1]
     door._scripts.OnEnter(door)
     check(you.button._alpha == 1 and foe.button._alpha == 0, "the mouse on an aura icon of a frame at rest: that frame")
     door._scripts.OnLeave(door)
@@ -1794,6 +1837,9 @@ do
     you.button.face.aurasArea._mouseOver = false
     Look(you.rest)
     check(Rested(), "and off the row it goes")
+    W.auras.player = nil
+    W.Fire("UNIT_AURA", "player", {})
+    W.Wait(0)
 
     -- What a frame has to show, and what holds the bars.
     W.cast = { name = "Fireball", icon = 135812, starts = W.clock * 1000, ends = (W.clock + 2.5) * 1000, id = 1, spell = 133 }

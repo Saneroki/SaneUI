@@ -22,27 +22,16 @@ local _, ns = ...
 --  Your marks of the unit frames alone go over those: Show on unit frames in
 --  front of the rest without a glow, Hide from unit frames never.
 --
---  All are the game's own aura containers (CustomAuraContainerTemplate), one
---  per kind and frame, as the nameplates' are. The game fills them, in a fight
---  too, where aura data is hidden from addons, and applies the lists itself
+--  Out of a fight ours show them (AuraRow.lua), which the mouse can reach. In a
+--  fight the game's own aura containers do (CustomAuraContainerTemplate), one
+--  per kind and frame, as the nameplates' are. The game fills them, where aura
+--  data is hidden from addons, and applies the lists itself
 --  (an aura group's candidate filters: the spells to include, to exclude). It
 --  lets the lists act where it lets addons tell spells apart: on the buffs of
 --  you, your group and friendly units, and on the debuffs of foes; elsewhere it
 --  decides alone (the window says so).
---
---  The game lets no script of an addon run on its icons, so each holds a frame of
---  ours that takes the mouse: a left or right click opens the aura's menu
---  (Lists.Menu), and out of a fight the mouse on it shows the aura's tooltip through
---  the game's GameTooltip, which is the one the module Tooltips draws, and shows
---  the unit frame at rest (a door of its Core.Rest; Auras.Make's area holds it
---  over the gaps). In a fight the game keeps the icons from addons: the menu says
---  so, and our frame leaves the mouse's coming to the game's icon, its own tooltip.
---  Which spell
---  it is: the icon's name (the game writes it into a text of ours, unseen),
---  found among the unit's auras of its kind.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Plain = Core.Plain
 local Auras = {}
 ns.UnitAuras = Auras
 
@@ -67,7 +56,6 @@ Auras.KINDS = {
       foe = "HARMFUL|PLAYER|!CROWD_CONTROL", friend = "HARMFUL|!CROWD_CONTROL", listed = "HARMFUL" },
 }
 
-local owners = setmetatable({}, { __mode = "k" }) -- [our frame on an icon] = { face, kind, name }
 local faces = {}                                   -- every face with containers
 
 -- The two lists as the game's candidate filters take them: { [spell] = true }; nil where empty.
@@ -104,59 +92,9 @@ local function Holds(container, key, spells)
     container:SetAuraGroupEnabled(key, spells ~= nil)
 end
 
--- The spell an icon shows, out of a fight: its name as the game wrote it, found among the unit's auras of its kind.
--- { id, name, icon, harmful, unit, instance }, or nil where it cannot be told now.
-local function Which(frame)
-    local owner = owners[frame]
-    if not owner or Core.Restricted() then return nil end
-    local ok, name = pcall(owner.name.GetText, owner.name)
-    name = ok and Plain(name) or nil
-    if type(name) ~= "string" or name == "" then return nil end
-    local auras = rawget(_G, "C_UnitAuras")
-    local read = auras and auras.GetAuraDataByIndex
-    local unit = owner.face.sample and "player" or owner.face.unit
-    for index = 1, 40 do
-        local data = Core.Ask(read, unit, index, owner.kind.harmful and "HARMFUL" or "HELPFUL")
-        if type(data) ~= "table" then break end
-        if Plain(data.name) == name and type(Plain(data.spellId)) == "number" then
-            return { id = data.spellId, name = name, icon = Plain(data.icon), harmful = owner.kind.harmful, unit = unit,
-                     instance = Plain(data.auraInstanceID) }
-        end
-    end
-    return nil
-end
-
-local function Clicked(frame, button)
-    if button == "LeftButton" or button == "RightButton" then ns.AuraLists.Menu(frame, Which(frame)) end
-end
-local OnClicked = ns.Guard(Clicked)
-
--- The aura's tooltip, the same way the game's list of your buffs asks for it, so the module Tooltips draws it.
-local function Entered(frame)
-    local spell = Which(frame)
-    if not (spell and spell.instance) then return end
-    GameTooltip:SetOwner(frame, "ANCHOR_TOP")
-    GameTooltip:SetUnitAuraByAuraInstanceID(spell.unit, spell.instance)
-    GameTooltip:Show()
-end
-local OnEntered = ns.Guard(Entered)
-local OnLeft = ns.Guard(function(frame)
-    if GameTooltip:IsOwned(frame) then GameTooltip:Hide() end
-end)
-
--- Our frames' take the mouse's coming out of a fight; in one it is left to the game's icons.
-local function Motion()
-    local open = not Core.Restricted()
-    for frame in pairs(owners) do frame:SetMouseMotionEnabled(open) end
-end
-
--- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
--- square, the swipe darkening the time gone (it alone tells the time: no numbers), the stack count over
--- it, its name unseen (for the menu); in the
--- group of your important ones the game's outline (BuffList.lua), so it needs no telling which an icon is, in a fight either.
-local function Dress(frame, face, kind, glowing)
-    local size = Auras.SIZE
-    frame:SetSize(size, size)
+-- What an icon is made of, on a frame of the game's or ours: the picture cropped square, the swipe darkening the time gone
+-- (it alone tells the time: no numbers), the stack count over it.
+function Auras.Paint(frame)
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints(frame)
     icon:SetTexCoord(Auras.CROP[1], Auras.CROP[2], Auras.CROP[3], Auras.CROP[4])
@@ -170,28 +108,25 @@ local function Dress(frame, face, kind, glowing)
     local count = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     count:SetJustifyH("RIGHT")
     count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    local name = top:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    name:SetAlpha(0)
-    name:SetPoint("CENTER")
-    local alert = glowing and ns.BuffList.Alert(top, frame)
-    if alert then
-        alert:SetFrameLevel(top:GetFrameLevel() + 3) -- it reaches over the icons beside it, which touch
-        alert:Show()
-    end
-    frame:SetIcon(icon)
-    frame:SetDurationCooldown(cooldown)
     cooldown:SetHideCountdownNumbers(true) -- the darkening alone tells the time
-    frame:SetApplicationCount(count)
-    frame:SetSpellName(name)
-    top:EnableMouse(true)
-    top:SetMouseMotionEnabled(not Core.Restricted())
-    top:SetScript("OnMouseUp", OnClicked)
-    top:SetScript("OnEnter", OnEntered)
-    top:SetScript("OnLeave", OnLeft)
-    owners[top] = { face = face, kind = kind, name = name }
-    face.doors = face.doors or {}
-    face.doors[#face.doors + 1] = top
-    if face.rest then face.rest:Door(top) end
+    return { picture = icon, cooldown = cooldown, top = top, count = count }
+end
+
+-- One of the game's icons, in a frame its container makes (once per frame; the container keeps them); in the group of your
+-- important ones the game's outline (BuffList.lua), so it needs no telling which an icon is in a fight. No script of ours
+-- runs on it, nor on what stands in it: the outline's animation is started here.
+local function Dress(frame, glowing)
+    frame:SetSize(Auras.SIZE, Auras.SIZE)
+    local parts = Auras.Paint(frame)
+    local alert = glowing and ns.BuffList.Alert(parts.top, frame)
+    if alert then
+        alert:SetFrameLevel(parts.top:GetFrameLevel() + 3) -- it reaches over the icons beside it, which touch
+        alert:Show()
+        alert.ProcLoop:Play()
+    end
+    frame:SetIcon(parts.picture)
+    frame:SetDurationCooldown(parts.cooldown)
+    frame:SetApplicationCount(parts.count)
 end
 
 -- A container of the game's for one kind on the face: the group of your important ones first (where the lists act
@@ -209,8 +144,8 @@ local function Container(face, kind)
     container:SetFlowLayoutGrowthDirection(flow[kind.growth], flow.Up)
     container:SetFlowLayoutMaximumLineSize(Auras.Line(kind.most))
     -- guarded: the game calls these per icon
-    local dressed = ns.Guard(function(frame) Dress(frame, face, kind) end)
-    local shining = ns.Guard(function(frame) Dress(frame, face, kind, true) end)
+    local dressed = ns.Guard(function(frame) Dress(frame) end)
+    local shining = ns.Guard(function(frame) Dress(frame, true) end)
     local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
     local function Options(sort, initialize)
         return { maxFrameCount = kind.most, initializeFrame = initialize,
@@ -242,25 +177,22 @@ function Auras.Make(face)
     Auras.Listed(face)
 end
 
--- A frame's set at rest (Units.lua) takes the icons made so far as doors, and the ones to come in Dress.
-function Auras.Doors(face)
-    for _, frame in ipairs(face.doors or {}) do face.rest:Door(frame) end
+-- Every face with auras.
+function Auras.Each(fn)
+    for _, face in ipairs(faces) do ns.Safe("unit frame auras", fn, face) end
 end
 
-function Auras.Start()
-    Core.On("PLAYER_REGEN_DISABLED", Motion)
-    Core.On("PLAYER_REGEN_ENABLED", Motion)
-    Core.On("ADDON_RESTRICTION_STATE_CHANGED", Motion)
-end
-
--- The lists into a face's containers: the group of the important (glowing) and the one of Show on unit frames their
--- spells, the rest without those and without what never shows; crowd control without what never shows. The marks of the
--- unit frames alone go first: Hide takes an important one off, Show brings an unimportant one, without a glow.
-function Auras.Listed(face)
+-- What your marks say of the unit frames: the important (glowing), those of Show on unit frames, what never shows. The
+-- marks of the unit frames alone go first: Hide takes an important one off, Show brings an unimportant one, no glow.
+function Auras.Sets()
     local white, black, shown, hide = Lists()
-    local first = Without(Set(white), Set(hide))
-    local second = Without(Set(shown), Set(white))
-    local never = Without(Set(black, hide), Set(shown))
+    return Without(Set(white), Set(hide)), Without(Set(shown), Set(white)), Without(Set(black, hide), Set(shown))
+end
+
+-- The lists into a face's containers: those groups their spells, the rest without those and without what never shows;
+-- crowd control without what never shows.
+function Auras.Listed(face)
+    local first, second, never = Auras.Sets()
     for _, container in pairs(face.auras or {}) do
         local exclude = never
         if container.kind.listed then
@@ -272,25 +204,30 @@ function Auras.Listed(face)
     end
 end
 
--- Every face's containers anew (a list changed).
+-- Every face's auras anew (a list changed).
 function Auras.Refresh()
-    for _, face in ipairs(faces) do ns.Safe("unit frame auras", Auras.Listed, face) end
+    Auras.Each(Auras.Listed)
+    Auras.Each(ns.AuraRow.Fill)
 end
 
--- The containers set for the face's unit (or none, nil: out of sight): the filters of a foe or a friend, the game
--- asked to read its auras again (another unit behind the same token: a new target).
+-- A face's auras for its unit (or none, nil: out of sight): our row while the game tells them (AuraRow.lua), else its
+-- containers, with the filters of a foe or a friend, asked to read the auras again (another unit behind the same
+-- token: a new target).
 function Auras.Set(face, unit)
     local on = unit ~= nil and not ns.off and (ns.options or {}).unitAuras ~= false
     local foe = on and Core.Ask(UnitCanAttack, "player", unit) == true
+    local game = on and not ns.AuraRow.Open()
+    face.auraAsked, face.auraUnit, face.auraFoe = unit, on and unit or nil, foe
     for _, container in pairs(face.auras or {}) do
-        if on then
-            container:SetAuraGroupFilterString("auto", foe and container.kind.foe or container.kind.friend)
+        if on then container:SetAuraGroupFilterString("auto", foe and container.kind.foe or container.kind.friend) end
+        if game then
             container:SetUnit(unit)
             container:UpdateAllAuras()
         else
             container:SetUnit("none")
         end
-        container:SetEnabled(on)
-        container:SetShown(on)
+        container:SetEnabled(game)
+        container:SetShown(game)
     end
+    ns.AuraRow.Fill(face)
 end
