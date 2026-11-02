@@ -1,7 +1,8 @@
 -- The satchel: the button on the small map and its page of the addons' buttons, the pins and the game's tracking
 -- (Satchel.lua, Strays.lua). The rest of Navigation stands in: a small map in the top right corner, the game's minimap
 -- with a pretend addon's button on it, the game's addon compartment with two addons, a few kinds of pin and tracking
--- entries. In the console, LabSatchel.pins holds which kinds show and LabSatchel.tracking the game's entries.
+-- entries. In the console, LabSatchel.pins holds which kinds show, LabSatchel.tracking the game's entries and
+-- LabSatchel.Satchel the module's table. The page opens by itself here, so it waits for the mouse to come first.
 Lab.TOC("src/Core/SaneUI.toc")
 local Core = SaneUI.Core
 local ns = Lab.Addon("SaneUI_Navigation")
@@ -136,4 +137,5 @@ Lab.OnLogin(function()
     ns.Strays.Start()
     ns.Satchel.Place(true)
     ns.Satchel.Open()
+    lab.Satchel = ns.Satchel
 end)

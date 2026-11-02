@@ -82,6 +82,10 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
 - **The minimap's other parts in the satchel too** (Saneroki, 2026-10-25): the calendar, the zone's name, the local
   and the server's time, the frame rate, the local and world latency, the time of day, the game's clock with its
   alarm and its stopwatch. Built: the satchel's first section (the zone, its lines, Calendar, Clock, Stopwatch).
+- **It goes with the mouse, its numbers in boxes** (Saneroki, 2026-11-02): the first time the mouse leaves the
+  satchel it closes, until its button is pressed again; the local and the server's time, the frame rate and the ping
+  in four boxes, the number highlighted, its word under it: rectangles rather than squares, so they take less height.
+  Built: `Satchel.lua` (`Gone`, `Boxes`).
 
 ## One map, two views
 

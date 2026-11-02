@@ -99,6 +99,16 @@ function Core.Ask(fn, ...)
     return Answer(pcall(fn, ...))
 end
 
+-- Whether a menu is open: the game's own kind, or the older dropdown list addons still open. For a view that goes
+-- when the mouse leaves it and stays for a menu it opened, which lies outside it.
+function Core.MenuOpen()
+    local menus = rawget(_G, "Menu")
+    local manager = menus and menus.GetManager and Core.Ask(menus.GetManager)
+    if manager ~= nil and Core.Ask(manager.IsAnyMenuOpen, manager) == true then return true end
+    local list = rawget(_G, "DropDownList1")
+    return list ~= nil and Plain(list:IsShown()) == true
+end
+
 -- Whether this client names a player by a first name and a surname, the two together unique across the
 -- region (WoW: Forever, "Droopy Fairwind": two players can share the first name, or the surname), rather
 -- than by one name unique on its realm (Retail, "Thrall-Draenor").

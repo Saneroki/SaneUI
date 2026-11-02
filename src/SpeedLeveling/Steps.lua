@@ -151,16 +151,9 @@ local function Part(list, n, make)
     return list[n]
 end
 
--- Whether a menu of the game's is open: a row's, which the mouse left the view for.
-local function MenuOpen()
-    local menus = rawget(_G, "Menu")
-    local manager = menus and menus.GetManager and Core.Ask(menus.GetManager)
-    return manager ~= nil and Core.Ask(manager.IsAnyMenuOpen, manager) == true
-end
-
--- Whether the mouse is on the view, on what shows with it, or in a menu it opened.
+-- Whether the mouse is on the view, on what shows with it, or in a menu it opened (a row's).
 local function Over()
-    return frame:IsMouseOver() or (seen and header:IsMouseOver()) or ns.Icons.Over() or MenuOpen()
+    return frame:IsMouseOver() or (seen and header:IsMouseOver()) or ns.Icons.Over() or Core.MenuOpen()
 end
 
 -- The head and the icons in sight or out of it.

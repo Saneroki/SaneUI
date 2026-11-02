@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The satchel on the small map closes when the mouse leaves it, until
+  you press its button again. Your times, FPS and ping stand at its
+  top in four boxes with big numbers.
 - Group rolls look like the loot window now: one bar for the thing,
   with the game's icons for Need, Greed and Pass inside it and the
   time left along its foot, running down from green to red.

@@ -1494,10 +1494,18 @@ end)()
     local r, g = Core.Journal.Ink(0.1, 1, 0.1)
     check(title and near(title._color[1], r) and near(title._color[2], g),
         "the satchel's first section: the zone and subzone you are in, in the friendly colour on the paper")
-    check(texts[Satchel.TEXT.localTime] and texts["17:05"] and texts[Satchel.TEXT.framerate] and texts["60 fps"]
-        and texts[Satchel.TEXT.latency] and texts["35 ms home, 41 world"] and texts["Mirabel, Tobin"],
-        "under it the local and the realm's time, the frame rate, the latency home and to the world on one line, "
-        .. "who sent new mail")
+    check(texts[Satchel.TEXT.localTime] and texts["17:05"] and texts[Satchel.TEXT.framerate] and texts["60"]
+        and texts[Satchel.TEXT.latency] and texts["41"] and texts["Mirabel, Tobin"],
+        "under it four boxes: the local and the realm's time, the frame rate, the ping to the world; under them who "
+        .. "sent new mail")
+    local box = texts["41"]:GetParent()
+    check(texts["17:05"]:GetParent() ~= box and box._width == Satchel.BOX[1] and box._height == Satchel.BOX[2]
+        and box._height < box._width and box.word == texts[Satchel.TEXT.latency] and texts["17:05"]:GetParent().tip == nil,
+        "a box, wider than it is high: its number, its word under it")
+    box._scripts.OnEnter(box)
+    check(GameTooltip._owner == box and GameTooltip._text == "35 ms home, 41 world",
+        "the ping's box tells home and world on one line")
+    box._scripts.OnLeave(box)
     check(cells[Satchel.TEXT.calendar] and cells[Satchel.TEXT.clock] and cells[Satchel.TEXT.stopwatch]
         and Satchel.calendar._attributes.type == "click" and Satchel.calendar._attributes.clickbutton == W.gameButton,
         "the game's calendar, clock and stopwatch; the calendar's secure button clicks the game's own")
@@ -1537,6 +1545,68 @@ end)()
     for name in pairs(game) do rawset(_G, name, nil) end
     rawset(_G, "HasNewMail", nil)
     game.StopwatchFrame:Hide()
+end)()
+
+-- The satchel goes the first time the mouse leaves it, its button counting as the page: the way between the two is
+-- free, a menu one of its cells opened holds it, and a page the mouse has not come to yet waits.
+;(function()
+    local Satchel = ns.Satchel
+    local button = Satchel.button
+    local function Tick(seconds) Satchel.frame._scripts.OnUpdate(Satchel.frame, seconds) end
+    local function Over(frame, on)
+        frame._mouseOver = on
+        Tick(0.01)
+    end
+    button._scripts.OnClick(button, "LeftButton")
+    local page = Satchel.frame
+    Tick(Satchel.LEAVE * 4)
+    check(Satchel.Shown(), "the mouse not on it yet: the satchel waits")
+    Over(button, true)
+    button._mouseOver = false
+    Tick(Satchel.LEAVE * 0.8)
+    Over(page, true)
+    check(Satchel.Shown(), "from its button to the page: the way between them is free")
+    page._mouseOver = false
+    Tick(Satchel.LEAVE * 0.8)
+    Over(page, true)
+    page._mouseOver = false
+    Tick(Satchel.LEAVE * 0.8)
+    check(Satchel.Shown(), "back on it in time: the count starts anew")
+    Tick(Satchel.LEAVE * 0.2)
+    check(not Satchel.Shown(), "the mouse off it: gone")
+    button._scripts.OnClick(button, "LeftButton")
+    check(Satchel.Shown(), "the button opens it again")
+    Over(button, true)
+    Tick(Satchel.LEAVE * 4)
+    check(Satchel.Shown(), "the mouse resting on the button holds it")
+    button._mouseOver = false
+    Tick(Satchel.LEAVE)
+    check(not Satchel.Shown(), "off the button without coming to the page: gone too")
+    -- A menu lies outside the page: the game's own kind and the older dropdown list hold it.
+    button._scripts.OnClick(button, "LeftButton")
+    Over(page, true)
+    page._mouseOver = false
+    local menu, open = rawget(_G, "Menu"), true
+    rawset(_G, "Menu", { GetManager = function() return { IsAnyMenuOpen = function() return open end } end })
+    Tick(Satchel.LEAVE * 2)
+    check(Satchel.Shown(), "a menu open: it stays")
+    open = false
+    rawset(_G, "DropDownList1", W.NewWidget("Frame", "DropDownList1", UIParent))
+    Tick(Satchel.LEAVE * 2)
+    check(Satchel.Shown(), "an addon's dropdown list open: it stays")
+    DropDownList1:Hide()
+    Tick(Satchel.LEAVE)
+    check(not Satchel.Shown(), "the menus closed: gone")
+    rawset(_G, "Menu", menu)
+    rawset(_G, "DropDownList1", nil)
+    -- A hidden answer of the game's (IsMouseOver may give one) reads as off the page, never as an error.
+    button._scripts.OnClick(button, "LeftButton")
+    Over(page, true)
+    page.IsMouseOver = function() return W.Secret() end
+    Tick(Satchel.LEAVE)
+    check(not Satchel.Shown() and not ns.off, "a hidden answer: off the page")
+    page.IsMouseOver = nil
+    page._mouseOver = false
 end)()
 
 -- The satchel's Sane UI section: the quick switches the modules offer (Core.Offer), a click their module's own; and

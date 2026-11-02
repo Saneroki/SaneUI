@@ -288,6 +288,7 @@ but for a window to try those with (`/sane window`).
 | `Core.Later(fn, delay, label)` | Returns a function that asks `fn` to run once, `delay` seconds later (none: the next frame); `fn` runs guarded, its error told under `label` (none: "later") |
 | `Core.Plain(value)`, `Core.Secret(value)` | Secret values (see above) |
 | `Core.Ask(fn, ...)` | `fn(...)`'s first three answers, each nil when hidden; all nil when `fn` is missing or fails |
+| `Core.MenuOpen()` | Whether a menu is open, the game's own kind or the older dropdown list: for a view that goes when the mouse leaves it and stays for a menu it opened |
 | `Core.FullName(unit)` | A unit's whole name as the game shows it: a Forever character's first name and surname (`UnitName` gives both), joined by the game's separator; nil when hidden. Use it wherever a player's name is shown |
 | `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` | A player's key, the one name that tells players apart: on Forever first name and surname as one (`Droopy Fairwind`, any realm dropped: the whole name is unique across the region), elsewhere `Name-Realm`; nil for a name that is not whole (a first name alone). Use it wherever a player is kept, counted, compared or shared ([Doc/guides/data.md](../../Doc/guides/data.md), *Players*) |
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |

@@ -10,11 +10,12 @@ local _, ns = ...
 --  that are easy to hit:
 --
 --      the zone  its title the zone and subzone you are in, in the colour the game's minimap
---                gives them (friendly, hostile, contested, a sanctuary); under it in two
---                columns your local time and the realm's, the frame rate, the latency home and
---                to the world on one line (Saneroki, 2026-10-26), the time of day (Forever: C_DateAndTime.IsDayTime), new mail
---                and from whom, the calendar's invitations; looked at again every second while
---                the page is open. Then the game's Calendar (a secure button of ours over its
+--                gives them (friendly, hostile, contested, a sanctuary); under it four low boxes,
+--                a big number over its word (Saneroki, 2026-11-02): your local time, the
+--                realm's, the frame rate and the ping (to the world; home and world on the
+--                box's tooltip); under them in two columns the time of day (Forever:
+--                C_DateAndTime.IsDayTime), new mail and from whom, the calendar's invitations;
+--                looked at again every second while the page is open. Then the game's Calendar (a secure button of ours over its
 --                cell clicks the game's own calendar button, so the game opens its panel as
 --                its own code: out of a fight only), Clock (the game's clock window: its alarm
 --                and settings; while the alarm sounds, a click stops it) and Stopwatch (the
@@ -37,9 +38,11 @@ local _, ns = ...
 --                (Nodes.lua)
 --
 --  A cell switched on shows its picture whole with a pencil tick, one switched
---  off faint and grey. Closed by its X, Esc, the button again, or the window
---  going to the full screen. Where the screen is lower than the page, the wheel
---  scrolls it. Only on the small view, while the window is the minimap.
+--  off faint and grey. Closed the first time the mouse leaves the page (Saneroki,
+--  2026-11-02), its button counting as the page, a menu one of its cells opened
+--  holding it; and by its X, Esc, the button again, or the window going to the
+--  full screen. Where the screen is lower than the page, the wheel scrolls it.
+--  Only on the small view, while the window is the minimap.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Journal = Core.Journal
@@ -50,6 +53,7 @@ Satchel.SIZE = 28          -- the button's ring across, in units
 Satchel.INSET = 4          -- the button from the window's corner
 Satchel.BAG = 133628       -- its picture: a leather satchel (INV_Misc_Bag_07, in both games)
 Satchel.GAP = 6            -- between the window and the satchel
+Satchel.LEAVE = 0.25       -- seconds off the page and its button before it closes: the way between the two is free
 Satchel.COLUMNS = 6
 Satchel.CELL = { 72, 58 }  -- a cell's width and height: compact (Saneroki, 2026-10-25)
 Satchel.ICON = 28          -- a cell's picture, on the paper as it is (no pencil slot round it)
@@ -63,7 +67,12 @@ Satchel.SPELL = { 0.0625, 0.9 } -- a tracking spell's icon cut inside its frame,
 Satchel.TICK = "\226\136\154"   -- the pencil tick: Kalam's root sign
 Satchel.ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask" -- an addon's picture cut round by it
 Satchel.TRIM = 0.08        -- of an addon's picture cut off at each side: an icon's own frame
-Satchel.LINE = 16          -- a line under the zone's title
+Satchel.BOX = { 102, 54 }  -- a box of the times, frame rate and ping: across (four fill the page's width) and high
+Satchel.BOX_GAP = 8        -- between two boxes, and under them
+Satchel.NUMBER = 40        -- a box's number and its word (Journal.Font's sizes)
+Satchel.WORD = 15
+Satchel.NUMBER_ROOM = 92   -- the number's widest: a longer one (a 12-hour clock's) comes out smaller
+Satchel.LINE = 16          -- a line under the boxes
 Satchel.LABEL = 76         -- a line's words before its value
 Satchel.EVERY = 1          -- seconds between two looks at the lines while the page is open
 Satchel.CLOCK = 134376     -- the clock's picture (INV_Misc_PocketWatch_01) and the stopwatch's (Spell_Nature_TimeStop)
@@ -84,11 +93,9 @@ Satchel.TEXT = {
     tracking = Core.Word("TRACKING", "Tracking"),
     localTime = "Local time",
     realmTime = "Realm time",
-    framerate = "Frame rate",
-    fps = "%d fps",
-    latency = "Latency",
-    homeWorld = "%d ms home, %d world", -- home and world on one line (Saneroki, 2026-10-26)
-    ms = "%d ms",
+    framerate = "FPS",
+    latency = "Ping (ms)",
+    homeWorld = "%d ms home, %d world", -- home and world on one line (Saneroki, 2026-10-26): the box's tooltip now
     switches = "Sane UI",
     dayTime = "Time of day",
     day = "Day",
@@ -110,12 +117,15 @@ Satchel.TEXT = {
 local button          -- the button on the small map
 local panel, look, scroll, sheet
 local cells, heads = {}, {} -- the cells and the sections' titles made so far, used again at each fill
-local rows = {}       -- the lines under the zone's title: { label, value } font strings, used again
-local shown = { lines = 0 } -- what the page shows of what changes: its lines' count, whether the alarm sounds
+local boxes = {}    -- the boxes made so far, used again
+local rows = {}       -- the lines under the boxes: { label, value } font strings, used again
+local shown = { figures = 0, lines = 0 } -- what the page shows of what changes: how many boxes and lines, whether the alarm sounds
 local calendar        -- the secure button over the Calendar's cell (Cover)
 local since = 0       -- seconds since the lines were last looked at
 local predicted = {}  -- [tracking index] = on: switched here, until the game's tracking says so too (a spell's cast)
 local small = false   -- the window stands small and is the minimap: the button shows
+local came = false    -- the mouse has been on the page or its button since it opened (Gone)
+local away = 0        -- seconds the mouse has been off them
 
 -------------------------------------------------------------------------------
 --  What it holds
@@ -138,25 +148,32 @@ local function Zone()
     return title, { r, g, b }
 end
 
--- The lines under the zone's title, as the game tells them now: { words, value }.
-local function Lines()
+-- The boxes under the zone's title, as the game tells them now: { number, word, tip }.
+local function Figures()
     local list = {}
-    local function Add(label, value) if value then list[#list + 1] = { label, value } end end
-    Add(Satchel.TEXT.localTime, Core.ClockAt())
+    local function Add(number, word, tip) if number then list[#list + 1] = { number, word, tip } end end
+    Add(Core.ClockAt(), Satchel.TEXT.localTime)
     local hour, minute = Core.Ask(Game("GetGameTime"))
-    if hour and minute then Add(Satchel.TEXT.realmTime, Core.Clock(hour, minute)) end
+    if hour and minute then Add(Core.Clock(hour, minute), Satchel.TEXT.realmTime) end
     local rate = Core.Plain(Core.Ask(Game("GetFramerate")))
-    if type(rate) == "number" then Add(Satchel.TEXT.framerate, Satchel.TEXT.fps:format(math.floor(rate + 0.5))) end
+    if type(rate) == "number" then Add(tostring(math.floor(rate + 0.5)), Satchel.TEXT.framerate) end
     local stats = Game("GetNetStats")
     if stats then
         local _, _, home, world = stats()
         home, world = Core.Plain(home), Core.Plain(world)
-        if type(home) == "number" and type(world) == "number" then
-            Add(Satchel.TEXT.latency, Satchel.TEXT.homeWorld:format(home, world))
-        elseif type(home) == "number" or type(world) == "number" then
-            Add(Satchel.TEXT.latency, Satchel.TEXT.ms:format(home or world))
+        local ping = type(world) == "number" and world or home -- the world's: what your actions wait for
+        if type(ping) == "number" then
+            local both = type(home) == "number" and type(world) == "number"
+            Add(tostring(ping), Satchel.TEXT.latency, both and Satchel.TEXT.homeWorld:format(home, world) or nil)
         end
     end
+    return list
+end
+
+-- The lines under the boxes, as the game tells them now: { words, value }.
+local function Lines()
+    local list = {}
+    local function Add(label, value) if value then list[#list + 1] = { label, value } end end
     local times = rawget(_G, "C_DateAndTime")
     if times and times.IsDayTime then
         Add(Satchel.TEXT.dayTime, Core.Ask(times.IsDayTime) and Satchel.TEXT.day or Satchel.TEXT.night)
@@ -373,7 +390,7 @@ local function Picture(texture, art)
     end
 end
 
--- An addon's picture round (cut round, on), or square as it is (off).
+-- An addon's picture round (cut round, on), or box as it is (off).
 local function Round(cell, on)
     if (cell.rounded or false) == on then return end
     cell.rounded = on
@@ -480,8 +497,62 @@ local function Head(index, title, y, note, colour)
     end
 end
 
--- The lines under the zone's title from y on, in two columns: each its words faint, its value in graphite. Returns
--- where the sheet goes on.
+local function BoxEntered(box)
+    if box.tip then Tip(box, box.tip) end
+end
+
+local function BoxLeft(box)
+    if box.tip then GameTooltip:Hide() end
+end
+
+local function Box(index)
+    local box = boxes[index]
+    if box then return box end
+    box = CreateFrame("Frame", nil, sheet)
+    box:SetSize(Satchel.BOX[1], Satchel.BOX[2])
+    box:EnableMouse(true)
+    Journal.Box(box, 0.5)
+    box.number = box:CreateFontString(nil, "OVERLAY")
+    Journal.Font(box.number, Satchel.NUMBER, true, Journal.INK)
+    box.number:SetPoint("CENTER", 0, 5)
+    box.word = box:CreateFontString(nil, "OVERLAY")
+    Journal.Font(box.word, Satchel.WORD, false, Journal.FAINT)
+    box.word:SetPoint("CENTER", 0, -14)
+    box:SetScript("OnEnter", ns.Guard(BoxEntered))
+    box:SetScript("OnLeave", ns.Guard(BoxLeft))
+    boxes[index] = box
+    return box
+end
+
+-- A box's words as the game tells them now.
+local function Tell(box, figure)
+    local number = box.number
+    Journal.Font(number, Satchel.NUMBER, true, Journal.INK)
+    number:SetText(figure[1])
+    local wide = number:GetStringWidth() or 0
+    if wide > Satchel.NUMBER_ROOM then
+        Journal.Font(number, Satchel.NUMBER * Satchel.NUMBER_ROOM / wide, true, Journal.INK)
+    end
+    box.word:SetText(figure[2])
+    box.tip = figure[3]
+end
+
+-- The boxes from y on, side by side. Returns where the sheet goes on.
+local function Boxes(figures, y)
+    for index, figure in ipairs(figures) do
+        local box = Box(index)
+        box:ClearAllPoints()
+        box:SetPoint("TOPLEFT", sheet, "TOPLEFT", (index - 1) * (Satchel.BOX[1] + Satchel.BOX_GAP), -y)
+        Tell(box, figure)
+        box:Show()
+    end
+    for index = #figures + 1, #boxes do boxes[index]:Hide() end
+    shown.figures = #figures
+    return y + (#figures > 0 and Satchel.BOX[2] + Satchel.BOX_GAP or 0)
+end
+
+-- The lines under the boxes from y on, in two columns: each its words faint, its value in graphite. Returns where
+-- the sheet goes on.
 local function Rows(lines, y)
     local column = Satchel.COLUMNS * Satchel.CELL[1] / 2
     for index, line in ipairs(lines) do
@@ -559,14 +630,31 @@ local function Wheel(_, delta)
     Cover(CalendarCell())
 end
 
--- Every Satchel.EVERY seconds while the page is open: its lines as the game tells them now; the page laid out anew
--- where a line came or went, or the alarm began or stopped.
+-- Whether the mouse is on the page or its button, or in a menu a cell opened (an addon's, a switch's: outside the page).
+local function Held()
+    return Core.Plain(panel:IsMouseOver()) or Core.Plain(button:IsMouseOver()) or Core.MenuOpen()
+end
+
+-- Whether the mouse has left: been on the page or its button since it opened, and off them for Satchel.LEAVE seconds.
+local function Gone(elapsed)
+    if Held() then
+        came, away = true, 0
+    elseif came then
+        away = away + elapsed
+    end
+    return away >= Satchel.LEAVE
+end
+
+-- Each frame while the page is open: closed once the mouse has left. Every Satchel.EVERY seconds: its boxes and
+-- lines as the game tells them now; the page laid out anew where one came or went, or the alarm began or stopped.
 local function Look(_, elapsed)
+    if Gone(elapsed) then return Satchel.Close() end
     since = since + elapsed
     if since < Satchel.EVERY then return end
     since = 0
-    local lines = Lines()
-    if #lines ~= shown.lines or Alarm() ~= shown.alarm then return Satchel.Fill() end
+    local figures, lines = Figures(), Lines()
+    if #figures ~= shown.figures or #lines ~= shown.lines or Alarm() ~= shown.alarm then return Satchel.Fill() end
+    for index, figure in ipairs(figures) do Tell(boxes[index], figure) end
     for index, line in ipairs(lines) do rows[index].value:SetText(line[2]) end
     if calendar and not calendar.cell then Cover(CalendarCell()) end -- its cell's place not known at the layout
 end
@@ -600,10 +688,10 @@ end
 function Satchel.Fill()
     if not panel or not panel:IsShown() then return end
     -- Each: its title, what it holds, the line while it holds nothing, its pictures' size and its rows' height; the
-    -- zone's its colour and its lines too.
+    -- zone's its colour, its boxes and its lines too.
     local zone, colour = Zone()
     local sections = {
-        { zone, Tools(), nil, Satchel.ICON, Satchel.CELL[2], colour = colour, lines = Lines() },
+        { zone, Tools(), nil, Satchel.ICON, Satchel.CELL[2], colour = colour, figures = Figures(), lines = Lines() },
         { Satchel.TEXT.switches, Switches(), nil, Satchel.ICON, Satchel.CELL[2] },
         -- Only while other addons have buttons for it (Saneroki, 2026-10-26).
         { Satchel.TEXT.addons, ns.Strays.List(), nil, Satchel.ADDON[1], Satchel.ADDON[2] },
@@ -623,6 +711,7 @@ function Satchel.Fill()
             titled = titled + 1
             Head(titled, section[1], y, #items == 0 and section[3] or nil, section.colour)
             y = y + Satchel.HEAD
+            if section.figures then y = Boxes(section.figures, y) end
             if section.lines then y = Rows(section.lines, y) end
             if #items == 0 and section[3] then y = y + Satchel.NOTE end
             for index, item in ipairs(items) do
@@ -650,6 +739,7 @@ end
 function Satchel.Open()
     if not small then return end
     if not panel then Build() end
+    came, away = false, 0
     ns.Strays.Look()
     Anchor()
     panel:Show()

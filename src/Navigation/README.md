@@ -101,9 +101,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
   the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
   - **the zone you are in** (its title, with the subzone, in the colour the game's minimap gives it: friendly,
-    hostile, contested, a sanctuary), under it your local time and the realm's, the frame rate, the latency home and
-    to the world on one line, the time of day (in WoW: Forever), new mail and from whom, the calendar's invitations, looked at
-    again every second; then the game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
+    hostile, contested, a sanctuary); under it four low boxes, a big number over its word: your local time, the realm's,
+    the frames per second and the ping to the world (home and world on its tooltip); under them the time of day (in
+    WoW: Forever), new mail and from whom, the calendar's invitations, all looked at again every second; then the
+    game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
     click stops it) and **Stopwatch** (on the screen), each ticked while open. The calendar opens out of a fight
     only, as the game opens it only so for an addon;
   - **Sane UI:** the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the same as the box at
@@ -120,8 +121,10 @@ is small, and the maps of the dungeons and raids. The plan is in
     *Found fishing pools*.
 
   Compact: six cells a row, each picture straight on the paper (no pencil slot), the addons' twice as large. A cell that is on shows its
-  picture whole with a pencil tick, one that is off faint and grey. The button
-  again, its X or Esc closes it, and so does the map filling the screen; the wheel scrolls it on a low screen.
+  picture whole with a pencil tick, one that is off faint and grey. It goes the first time the mouse leaves it,
+  until the button is pressed again: the button counts as the page, the short way between the two is free, and a
+  menu one of its cells opened holds it. The button again, its X or Esc closes it too, and so does the map filling
+  the screen; the wheel scrolls it on a low screen.
 - **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): the herbs and ore the game's minimap
   shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in a round
   ring of stitched leather (the far herbs and ore below wear it with a point), grey while your skill is too low for it; on our small map and on the game's
@@ -562,20 +565,25 @@ is small, and the maps of the dungeons and raids. The plan is in
   agrees (a spell's takes its cast); `MINIMAP_UPDATE_TRACKING` and a change of the setting *Pins on the map* fill it
   anew while it is open. Its first section, the zone's (`Zone`, `Lines`, `Tools`): its title the zone and subzone
   (`GetZoneText`, `GetSubZoneText`) in the minimap's colour for `C_PvP.GetZonePVPInfo` (`Satchel.ZONE`, made
-  readable on the paper by `Journal.Ink`); its lines in two columns, each a label and a value, from
-  `GameTime_GetLocalTime` and `GameTime_GetGameTime` (the game's own time format), `GetFramerate`, `GetNetStats`
-  (home and world on one line),
+  readable on the paper by `Journal.Ink`); its boxes (`Figures`, `Boxes`: `Satchel.BOX`, four filling the page's width,
+  low to keep the page short, a `Journal.Box` with a bold number over a faint word; a number wider than
+  `Satchel.NUMBER_ROOM`, a 12-hour clock's, comes out smaller) from `Core.ClockAt`, `GetGameTime` by `Core.Clock`,
+  `GetFramerate` and `GetNetStats` (the world's latency, else home's; both on the box's tooltip); its lines in
+  two columns, each a label and a value, from
   `C_DateAndTime.IsDayTime` (Forever only), `HasNewMail` with `GetLatestThreeSenders`, and
   `C_Calendar.GetNumPendingInvites`, each only where the client has it; looked at again every `Satchel.EVERY`
-  second while the page shows (its `OnUpdate`), the page laid out anew where a line comes or goes or the alarm
-  starts or stops, and at each zone change. Then its cells: *Calendar* (the game's day-of-month atlas), covered out
+  second while the page shows (its `OnUpdate`), the page laid out anew where a box or a line comes or goes or the
+  alarm starts or stops, and at each zone change. Then its cells: *Calendar* (the game's day-of-month atlas), covered out
   of a fight by a secure button of ours on `UIParent` (`SecureActionButtonTemplate`, `type` *click* on the game's
   `GameTimeFrame`, out of sight with the cluster but there), so the game opens its calendar panel as its own code
   (`Cover`: placed and shown only while its cell lies wholly in the page's view; at `PLAYER_REGEN_DISABLED` it lets
   go, so the page moves freely in a fight, where the cell's own click does nothing); *Clock* (the game's
   `TimeManager_Toggle`, a plain show, the satchel closing out of its way; while `TimeManager_IsAlarmFiring`,
   `TimeManager_TurnOffAlarm`); *Stopwatch* (`Stopwatch_Toggle`). The clock's and the stopwatch's cells only once
-  the game has loaded its clock (never loaded by our code: that would taint it).
+  the game has loaded its clock (never loaded by our code: that would taint it). The same `OnUpdate` closes the page
+  each frame the mouse has left it (`Gone`): by `IsMouseOver`, not `OnLeave`, which also fires on the way into a cell
+  (`Held`: the page, its button, or a menu by `Core.MenuOpen`); only once the mouse has been on them since it opened,
+  and after `Satchel.LEAVE` seconds off them, so the way from the button to the page is free.
 - **Following again:** the tracker follows again where `Again` says, never with a mouse button held. Where the game
   tells no place of the player (an instance) the small view does at once, ticked or not, so the game's minimap is the
   map there. Else only with *Follow me* ticked: the small view as soon as the player moved since the last look; the
@@ -881,6 +889,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-02, the satchel goes with the mouse, its numbers in boxes:** as Saneroki asked, the satchel closes the
+  first time the mouse leaves it, until its button is pressed again; and the times, the frames per second and the
+  ping stand at its top in four boxes, a big number over its word, low rectangles rather than squares so they take
+  little of the page's height (`Satchel.lua`).
 - **2026-11-01, the quests' items rechecked:** as Saneroki asked, the click run through the game's own code of both
   games: every mouse button and modifier uses the item once, in and out of a fight. The tooltip is now what you carry,
   as on the game's tracker; a click acts on the release; with the chat's box open Shift and a click links the item and
