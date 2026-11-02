@@ -9,7 +9,8 @@ local _, ns = ...
 --  a page of the journal (Core.Journal) with, under their titles, large cells
 --  that are easy to hit:
 --
---      the zone  its title the zone and subzone you are in, in the colour the game's minimap
+--      the zone  its title the zone and subzone you are in, as big as the boxes' numbers and
+--                centred, without a rule (Saneroki, 2026-11-02), in the colour the game's minimap
 --                gives them (friendly, hostile, contested, a sanctuary); under it four low boxes,
 --                a big number over its word (Saneroki, 2026-11-02): your local time, the
 --                realm's, the frame rate and the ping (to the world; home and world on the
@@ -59,6 +60,7 @@ Satchel.CELL = { 72, 58 }  -- a cell's width and height: compact (Saneroki, 2026
 Satchel.ICON = 28          -- a cell's picture, on the paper as it is (no pencil slot round it)
 Satchel.ADDON = { 56, 84 } -- an addon's picture, twice the others' (Saneroki, 2026-10-25), and its row's height
 Satchel.HEAD = 22          -- a section's title and its rule
+Satchel.TITLE = 32         -- the zone's title over the boxes: as big as their numbers, no rule
 Satchel.NOTE = 18          -- the line under an empty section's title
 Satchel.AFTER = 6          -- room under a section
 Satchel.ROOM = 0.8         -- the page takes at most so much of the screen's height; the wheel scrolls the rest
@@ -72,6 +74,8 @@ Satchel.BOX_GAP = 8        -- between two boxes, and under them
 Satchel.NUMBER = 40        -- a box's number and its word (Journal.Font's sizes)
 Satchel.WORD = 15
 Satchel.NUMBER_ROOM = 92   -- the number's widest: a longer one (a 12-hour clock's) comes out smaller
+Satchel.NUMBER_AT = 2      -- the number's and the word's middles from the box's: the word a pixel or two under the
+Satchel.WORD_AT = -13      -- digits, the two together in the box's middle (Saneroki, 2026-11-02)
 Satchel.LINE = 16          -- a line under the boxes
 Satchel.LABEL = 76         -- a line's words before its value
 Satchel.EVERY = 1          -- seconds between two looks at the lines while the page is open
@@ -117,6 +121,7 @@ Satchel.TEXT = {
 local button          -- the button on the small map
 local panel, look, scroll, sheet
 local cells, heads = {}, {} -- the cells and the sections' titles made so far, used again at each fill
+local heading         -- the zone's title
 local boxes = {}    -- the boxes made so far, used again
 local rows = {}       -- the lines under the boxes: { label, value } font strings, used again
 local shown = { figures = 0, lines = 0 } -- what the page shows of what changes: how many boxes and lines, whether the alarm sounds
@@ -497,6 +502,24 @@ local function Head(index, title, y, note, colour)
     end
 end
 
+-- Words in bold at size, smaller where they are wider than room.
+local function Fit(text, words, size, room, colour)
+    Journal.Font(text, size, true, colour)
+    text:SetText(words)
+    local wide = text:GetStringWidth() or 0
+    if wide > room then Journal.Font(text, size * room / wide, true, colour) end
+end
+
+-- The zone's title at the sheet's top, as big as the boxes' numbers, in its colour. Returns where the sheet goes on.
+local function Title(words, colour)
+    if not heading then
+        heading = sheet:CreateFontString(nil, "OVERLAY")
+        heading:SetPoint("TOP", sheet, "TOP", 0, 0)
+    end
+    Fit(heading, words, Satchel.NUMBER, Satchel.COLUMNS * Satchel.CELL[1] - 8, colour)
+    return Satchel.TITLE
+end
+
 local function BoxEntered(box)
     if box.tip then Tip(box, box.tip) end
 end
@@ -514,10 +537,10 @@ local function Box(index)
     Journal.Box(box, 0.5)
     box.number = box:CreateFontString(nil, "OVERLAY")
     Journal.Font(box.number, Satchel.NUMBER, true, Journal.INK)
-    box.number:SetPoint("CENTER", 0, 5)
+    box.number:SetPoint("CENTER", 0, Satchel.NUMBER_AT)
     box.word = box:CreateFontString(nil, "OVERLAY")
     Journal.Font(box.word, Satchel.WORD, false, Journal.FAINT)
-    box.word:SetPoint("CENTER", 0, -14)
+    box.word:SetPoint("CENTER", 0, Satchel.WORD_AT)
     box:SetScript("OnEnter", ns.Guard(BoxEntered))
     box:SetScript("OnLeave", ns.Guard(BoxLeft))
     boxes[index] = box
@@ -526,13 +549,7 @@ end
 
 -- A box's words as the game tells them now.
 local function Tell(box, figure)
-    local number = box.number
-    Journal.Font(number, Satchel.NUMBER, true, Journal.INK)
-    number:SetText(figure[1])
-    local wide = number:GetStringWidth() or 0
-    if wide > Satchel.NUMBER_ROOM then
-        Journal.Font(number, Satchel.NUMBER * Satchel.NUMBER_ROOM / wide, true, Journal.INK)
-    end
+    Fit(box.number, figure[1], Satchel.NUMBER, Satchel.NUMBER_ROOM)
     box.word:SetText(figure[2])
     box.tip = figure[3]
 end
@@ -708,10 +725,13 @@ function Satchel.Fill()
     for _, section in ipairs(sections) do
         local items, size, height = section[2], section[4], section[5]
         if #items > 0 or section[3] or section.lines then
-            titled = titled + 1
-            Head(titled, section[1], y, #items == 0 and section[3] or nil, section.colour)
-            y = y + Satchel.HEAD
-            if section.figures then y = Boxes(section.figures, y) end
+            if section.figures then
+                y = Boxes(section.figures, Title(section[1], section.colour))
+            else
+                titled = titled + 1
+                Head(titled, section[1], y, #items == 0 and section[3] or nil, section.colour)
+                y = y + Satchel.HEAD
+            end
             if section.lines then y = Rows(section.lines, y) end
             if #items == 0 and section[3] then y = y + Satchel.NOTE end
             for index, item in ipairs(items) do

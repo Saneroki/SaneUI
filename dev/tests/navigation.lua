@@ -1494,6 +1494,22 @@ end)()
     local r, g = Core.Journal.Ink(0.1, 1, 0.1)
     check(title and near(title._color[1], r) and near(title._color[2], g),
         "the satchel's first section: the zone and subzone you are in, in the friendly colour on the paper")
+    check(title._points[1][1] == "TOP" and title._points[1][3] == "TOP", "centred over the boxes")
+    ;(function()
+        local sizes = {}
+        title.SetFont = function(_, _, size) sizes[#sizes + 1] = size end
+        title.GetStringWidth = function() return Satchel.COLUMNS * Satchel.CELL[1] * 2 end
+        Satchel.Fill()
+        title.SetFont, title.GetStringWidth = nil, nil
+        check(near(sizes[1], Satchel.NUMBER * Core.Journal.PX) and sizes[2] < sizes[1] / 2 and sizes[2] > sizes[1] / 2.1,
+            "as big as the boxes' numbers; a long name comes out smaller, on one line")
+        Satchel.Fill()
+    end)()
+    for _, widget in ipairs(W.frames) do
+        if widget._shown and widget._parent == title._parent and widget._texture and widget._kind == "Texture" then
+            check(-widget._points[1][5] > Satchel.TITLE + Satchel.BOX[2], "no rule between the title and the boxes")
+        end
+    end
     check(texts[Satchel.TEXT.localTime] and texts["17:05"] and texts[Satchel.TEXT.framerate] and texts["60"]
         and texts[Satchel.TEXT.latency] and texts["41"] and texts["Mirabel, Tobin"],
         "under it four boxes: the local and the realm's time, the frame rate, the ping to the world; under them who "

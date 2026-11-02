@@ -100,8 +100,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
 - **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
   the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
-  - **the zone you are in** (its title, with the subzone, in the colour the game's minimap gives it: friendly,
-    hostile, contested, a sanctuary); under it four low boxes, a big number over its word: your local time, the realm's,
+  - **the zone you are in** (its title, with the subzone, as big as the numbers under it and centred, without a
+    rule, in the colour the game's minimap gives it: friendly, hostile, contested, a sanctuary; a long one comes out
+    smaller, on one line); under it four low boxes, a big number over its word: your local time, the realm's,
     the frames per second and the ping to the world (home and world on its tooltip); under them the time of day (in
     WoW: Forever), new mail and from whom, the calendar's invitations, all looked at again every second; then the
     game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
@@ -553,8 +554,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   corner `Satchel.Place` picks from where the window stands, shown only while the window stands small and is the
   minimap. The page is a frame of its own (strata `DIALOG`) in Core's journal (`Core.Journal.Dress`: paper, leather
   top, its X), beside the window toward the screen's middle, a scroll frame in it no higher than
-  `Satchel.ROOM` of the screen. Its sections, each a title over a pencil rule and a grid of `Satchel.COLUMNS`
-  cells, a section with no cells left out: *Sane UI* (`Core.Switches`, the modules' quick switches as offered; a
+  `Satchel.ROOM` of the screen. Its sections, each a title over a pencil rule (the zone's: none, `Title`) and a grid
+  of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (`Core.Switches`, the modules' quick switches as offered; a
   click its module's `Click` with the mouse button and the cell; filled anew when `Core.OnSwitches` tells a change),
   *AddOns* (`Strays.List`, A to Z), *Pins* (`ns.KINDS` offered here, in the
   pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (`C_Minimap.GetTrackingInfo`, the
@@ -566,7 +567,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   anew while it is open. Its first section, the zone's (`Zone`, `Lines`, `Tools`): its title the zone and subzone
   (`GetZoneText`, `GetSubZoneText`) in the minimap's colour for `C_PvP.GetZonePVPInfo` (`Satchel.ZONE`, made
   readable on the paper by `Journal.Ink`); its boxes (`Figures`, `Boxes`: `Satchel.BOX`, four filling the page's width,
-  low to keep the page short, a `Journal.Box` with a bold number over a faint word; a number wider than
+  low to keep the page short, a `Journal.Box` with a bold number and a faint word a pixel or two under its digits, the two together in the box's
+  middle by `Satchel.NUMBER_AT` and `Satchel.WORD_AT`; a number wider than
   `Satchel.NUMBER_ROOM`, a 12-hour clock's, comes out smaller) from `Core.ClockAt`, `GetGameTime` by `Core.Clock`,
   `GetFramerate` and `GetNetStats` (the world's latency, else home's; both on the box's tooltip); its lines in
   two columns, each a label and a value, from
@@ -892,7 +894,8 @@ Tests: `dev/tests/navigation.lua`.
 - **2026-11-02, the satchel goes with the mouse, its numbers in boxes:** as Saneroki asked, the satchel closes the
   first time the mouse leaves it, until its button is pressed again; and the times, the frames per second and the
   ping stand at its top in four boxes, a big number over its word, low rectangles rather than squares so they take
-  little of the page's height (`Satchel.lua`).
+  little of the page's height (`Satchel.lua`). Then each number and its word together in the middle of the box, the
+  word right under the digits, and the zone's name as big as the numbers, centred, with no lines under it.
 - **2026-11-01, the quests' items rechecked:** as Saneroki asked, the click run through the game's own code of both
   games: every mouse button and modifier uses the item once, in and out of a fight. The tooltip is now what you carry,
   as on the game's tracker; a click acts on the release; with the chat's box open Shift and a click links the item and

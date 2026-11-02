@@ -240,7 +240,8 @@ colour.
 - **Figures that matter at a glance (Saneroki, 2026-11-02):** in boxes side by side, not in lines, each a big number
   with "the descriptor text underneath the numbers". Low rectangles, not squares, "so they don't need so much vertical
   space which is wasted realestate". On the journal's pages a small pencil box, a bold number, a faint word (the
-  satchel's top).
+  satchel's top). The number and its word stand balanced in the middle of the box, "maybe just a pixel or 2" between
+  them. What they belong to stands over them as big as the numbers, centred, without the section's rule.
 
 ### Combat text
 

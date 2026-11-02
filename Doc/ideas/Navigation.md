@@ -85,7 +85,8 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
 - **It goes with the mouse, its numbers in boxes** (Saneroki, 2026-11-02): the first time the mouse leaves the
   satchel it closes, until its button is pressed again; the local and the server's time, the frame rate and the ping
   in four boxes, the number highlighted, its word under it: rectangles rather than squares, so they take less height.
-  Built: `Satchel.lua` (`Gone`, `Boxes`).
+  The number and word balanced in the middle of the box, a pixel or two between them; no rule over the boxes; the
+  location as big as the numbers, centred. Built: `Satchel.lua` (`Gone`, `Boxes`, `Title`).
 
 ## One map, two views
 
