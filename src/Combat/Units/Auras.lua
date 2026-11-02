@@ -4,7 +4,8 @@ local _, ns = ...
 --  Sane UI - Combat - Units - Auras
 --  Above a unit frame, in one line over what stands on the frame now (its cast:
 --  the containers stand on its roof, Bar.Fit), the auras that matter most,
---  Auras.MOST of each kind at most (Saneroki, 2026-10-31):
+--  four buffs, two crowd control and four debuffs at most, each kind a block of
+--  icons that touch, no borders (Saneroki, 2026-10-31, 2026-11-02):
 --    on the left, from its edge    buffs: on a foe those the game shows on its
 --                                  own plates, on a friend (and you) any, big
 --                                  defensives first
@@ -16,7 +17,7 @@ local _, ns = ...
 --  A container is as wide as what it holds (the game sizes it), so the middle
 --  one, standing by its bottom middle, stays centred however many it shows.
 --  And before them, in front of the rest and with the game's golden outline, the ones you
---  marked Important (what no longer fits a line goes up: the three stay clear of
+--  marked Important (what no longer fits a line goes up: the kinds stay clear of
 --  each other); never the ones marked Unimportant (Lists.lua keeps the lists).
 --  Your marks of the unit frames alone go over those: Show on unit frames in
 --  front of the rest without a glow, Hide from unit frames never.
@@ -40,21 +41,23 @@ local Auras = {}
 ns.UnitAuras = Auras
 
 Auras.SIZE = 22 -- an icon, square
-Auras.GAP = 2   -- between icons, and from the frame
-Auras.MOST = 3  -- of each kind, and of each list
--- A container's widest line, a gap to spare: what comes after goes up. Exactly as wide as three icons would lose the third
--- to a rounding of the game's in their sizes.
-Auras.LINE = Auras.MOST * (Auras.SIZE + Auras.GAP)
+Auras.GAP = 2   -- from the frame
+-- A container's widest line for so many icons, a pixel to spare: what comes after goes up. Exactly as wide as they are would
+-- lose the last to a rounding of the game's.
+function Auras.Line(most)
+    return most * Auras.SIZE + 1
+end
 Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
--- The kinds: their place on the frame's roof, the corner they grow from inside their container and which way, their
+-- The kinds: how many at most (of each list too), their place on the frame's roof, the corner they grow from inside their
+-- container and which way, their
 -- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
 -- of the group of your important ones).
 Auras.KINDS = {
-    { key = "buffs", harmful = false, point = "BOTTOMLEFT", corner = "BOTTOMLEFT", growth = "Right", sort = "BigDefensive",
+    { key = "buffs", most = 4, harmful = false, point = "BOTTOMLEFT", corner = "BOTTOMLEFT", growth = "Right", sort = "BigDefensive",
       foe = "HELPFUL|INCLUDE_NAME_PLATE_ONLY", friend = "HELPFUL", listed = "HELPFUL" },
-    { key = "control", harmful = true, point = "BOTTOM", corner = "BOTTOMLEFT", growth = "Right", sort = "Default",
+    { key = "control", most = 2, harmful = true, point = "BOTTOM", corner = "BOTTOMLEFT", growth = "Right", sort = "Default",
       foe = "HARMFUL|CROWD_CONTROL", friend = "HARMFUL|CROWD_CONTROL" },
-    { key = "debuffs", harmful = true, point = "BOTTOMRIGHT", corner = "BOTTOMRIGHT", growth = "Left", sort = "UnitFrameDebuff",
+    { key = "debuffs", most = 4, harmful = true, point = "BOTTOMRIGHT", corner = "BOTTOMRIGHT", growth = "Left", sort = "UnitFrameDebuff",
       foe = "HARMFUL|PLAYER|!CROWD_CONTROL", friend = "HARMFUL|!CROWD_CONTROL", listed = "HARMFUL" },
 }
 
@@ -122,18 +125,14 @@ end
 local OnClicked = ns.Guard(Clicked)
 
 -- One icon, drawn into a frame the container makes (once per frame; the container keeps them): the icon cropped
--- square in a dark edge, the swipe darkening the time gone (it alone tells the time: no numbers), the stack count over
+-- square, the swipe darkening the time gone (it alone tells the time: no numbers), the stack count over
 -- it, its name unseen (for the menu); in the
 -- group of your important ones the game's outline (BuffList.lua), so it needs no telling which an icon is, in a fight either.
 local function Dress(frame, face, kind, glowing)
     local size = Auras.SIZE
     frame:SetSize(size, size)
-    local edge = frame:CreateTexture(nil, "BACKGROUND")
-    edge:SetAllPoints(frame)
-    edge:SetColorTexture(0, 0, 0, 0.9)
     local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
-    icon:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+    icon:SetAllPoints(frame)
     icon:SetTexCoord(Auras.CROP[1], Auras.CROP[2], Auras.CROP[3], Auras.CROP[4])
     local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
     cooldown:SetAllPoints(icon)
@@ -144,12 +143,15 @@ local function Dress(frame, face, kind, glowing)
     top:SetFrameLevel(cooldown:GetFrameLevel() + 1)
     local count = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     count:SetJustifyH("RIGHT")
-    count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 2, -1)
+    count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
     local name = top:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     name:SetAlpha(0)
     name:SetPoint("CENTER")
     local alert = glowing and ns.BuffList.Alert(top, frame)
-    if alert then alert:Show() end
+    if alert then
+        alert:SetFrameLevel(top:GetFrameLevel() + 3) -- it reaches over the icons beside it, which touch
+        alert:Show()
+    end
     frame:SetIcon(icon)
     frame:SetDurationCooldown(cooldown)
     cooldown:SetHideCountdownNumbers(true) -- the darkening alone tells the time
@@ -172,15 +174,14 @@ local function Container(face, kind)
     end
     container:SetFlowLayoutAnchorPoint(kind.corner)
     container:SetFlowLayoutGrowthDirection(flow[kind.growth], flow.Up)
-    container:SetFlowLayoutMaximumLineSize(Auras.LINE)
+    container:SetFlowLayoutMaximumLineSize(Auras.Line(kind.most))
     -- guarded: the game calls these per icon
     local dressed = ns.Guard(function(frame) Dress(frame, face, kind) end)
     local shining = ns.Guard(function(frame) Dress(frame, face, kind, true) end)
     local sorts, ways = rawget(_G, "AuraContainerSortMethod"), rawget(_G, "AuraContainerSortDirection")
     local function Options(sort, initialize)
-        return { maxFrameCount = Auras.MOST, initializeFrame = initialize,
-                 layout = { elementSpacing = Auras.GAP, lineSpacing = Auras.GAP,
-                            elementWidth = Auras.SIZE, elementHeight = Auras.SIZE },
+        return { maxFrameCount = kind.most, initializeFrame = initialize,
+                 layout = { elementSpacing = 0, lineSpacing = 0, elementWidth = Auras.SIZE, elementHeight = Auras.SIZE },
                  sortMethod = sorts and sorts[sort] or nil, sortDirection = ways and ways.Normal or nil }
     end
     if kind.listed then

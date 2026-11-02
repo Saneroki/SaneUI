@@ -104,7 +104,7 @@ shows on it, and you make as many bars as you like.
   gold one; the frame glows red while you have the unit's aggro (your own: while anything is after you) or while
   it is a player who may attack you. Every frame is the same width, whatever it shows: 240 at 100 % (*Unit frame
   size* scales all three alike); only the glow reaches beyond its edge.
-  - **Auras:** the three that matter most of each kind, in one line above the frame, the time gone darkening the icon as it passes, no numbers on them: buffs on the left, from its
+  - **Auras:** those that matter most, in one line above the frame: four buffs, two crowd control, four debuffs, each kind a block of icons that touch, no borders, the time gone darkening the icon as it passes, no numbers on them: buffs on the left, from its
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). **Click** an icon, out of a fight, for its menu: *Important* (in front of the
@@ -479,15 +479,15 @@ shows on it, and you make as many bars as you like.
   - `Auras.lua` (`ns.UnitAuras`): per frame and kind (`Auras.KINDS`: buffs, control, debuffs) a container of the
     game's (`CustomAuraContainerTemplate`, as the nameplates'), each on the frame's `roof` at its `point`
     (`BOTTOMLEFT`, `BOTTOM`, `BOTTOMRIGHT`): the game sizes a container to what it holds, so the one in the middle
-    stays centred. `Auras.LINE` (three icons and a gap to spare, each icon's size given to the layout: the game's sizes come
-    back rounded, and three at exactly the line's width lost the third) is its widest line (`SetFlowLayoutMaximumLineSize`):
-    what your list adds goes up, not sideways into the next kind. Groups of `Auras.MOST` (3): `listed` (the filter
+    stays centred. `Auras.Line` (the kind's `most` icons and a pixel to spare, each icon's size given to the layout: the game's sizes
+    come back rounded, and icons at exactly the line's width lost the last) is its widest line (`SetFlowLayoutMaximumLineSize`):
+    what your list adds goes up, not sideways into the next kind. Groups of the kind's `most`, without spacing: `listed` (the filter
     `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Important, off while that list is empty, its icons with a glow, so a
     fight needs no telling which is which), `shown` (Show on unit frames, no glow) and `auto` (the kind's
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
     `BigDefensive`, `excludeSpellIDs` = what those two hold and what never shows; control only what never shows: Unimportant and Hide, less Show). The game applies those candidate filters
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
-    Each icon (`initializeFrame`, `Dress`): the picture cropped in a dark edge, the swipe (`SetReverse`: dark over the time gone, driven by the
+    Each icon (`initializeFrame`, `Dress`): the picture cropped, no edge, the swipe (`SetReverse`: dark over the time gone, driven by the
     game in a fight too), its numbers off (`SetHideCountdownNumbers`), the count, its name into a
     text of ours at alpha 0 (`SetSpellName`), and an `OnMouseUp` hook: a left click, while not `Core.Restricted()`,
     finds the spell by that name among the unit's auras (`C_UnitAuras.GetAuraDataByIndex`) and opens the game's
@@ -675,6 +675,7 @@ shows on it, and you make as many bars as you like.
 | `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
 
 ## History
+- **2026-11-02:** the unit frames' auras four, two and four, in blocks of icons that touch, no borders (Saneroki).
 - **2026-11-02:** the aura's menu on a left click, in a fight where the game tells which aura it is, and on a right click in the spellbook (Saneroki).
 - **2026-11-01:** Show on and Hide from unit frames, apart from how an aura looks (Saneroki).
 - **2026-11-01:** Important, Unimportant, Hidden on the game's list of your buffs and on the unit frames (Saneroki); reminder bars made and deleted, one by default.

@@ -1480,8 +1480,8 @@ do
     local auras = target.face.auras
     local debuffs, buffs, control = auras.debuffs, auras.buffs, auras.control
     check(debuffs and buffs and control and debuffs._template == "CustomAuraContainerTemplate"
-        and debuffs._groups.auto.options.maxFrameCount == 3 and buffs._groups.auto.options.maxFrameCount == 3
-        and control._groups.auto.options.maxFrameCount == 3, "three containers of the game's, three auras of each kind")
+        and debuffs._groups.auto.options.maxFrameCount == 4 and buffs._groups.auto.options.maxFrameCount == 4
+        and control._groups.auto.options.maxFrameCount == 2, "three containers of the game's: four buffs, two crowd control, four debuffs")
     check(debuffs._groups.auto.filter == "HARMFUL|PLAYER|!CROWD_CONTROL" and buffs._groups.auto.filter == "HELPFUL|INCLUDE_NAME_PLATE_ONLY"
         and control._groups.auto.filter == "HARMFUL|CROWD_CONTROL" and debuffs._unit == "target",
         "on a foe: your debuffs, its buffs as the game shows them on plates, crowd control")
@@ -1499,10 +1499,11 @@ do
     check(buffs._flow.corner == "BOTTOMLEFT" and buffs._flow.across == "Right" and debuffs._flow.corner == "BOTTOMRIGHT"
         and debuffs._flow.across == "Left" and control._flow.corner == "BOTTOMLEFT" and control._flow.up == "Up",
         "buffs grow from the left edge, debuffs from the right; crowd control fills its own width, so it stays centred")
-    check(debuffs._flow.line == 72 and buffs._flow.line == 72 and control._flow.line == 72
-        and debuffs._groups.auto.options.layout.lineSpacing == ns.UnitAuras.GAP
+    check(debuffs._flow.line == 89 and buffs._flow.line == 89 and control._flow.line == 45
+        and debuffs._groups.auto.options.layout.lineSpacing == 0 and debuffs._groups.auto.options.layout.elementSpacing == 0
         and debuffs._groups.auto.options.layout.elementWidth == ns.UnitAuras.SIZE,
-        "at most three in a line: what you marked Important goes up, not into the middle")
+        "at most four, two and four in a line, touching: what you marked Important goes up, not into the middle")
+    check(2 * ns.UnitAuras.Line(4) + ns.UnitAuras.Line(2) + 16 <= ns.Units.WIDTH, "all ten fit a frame's width, the kinds clear of each other")
     check(not debuffs._groups.listed.enabled and debuffs._groups.auto.candidates == nil, "no lists yet: nothing filtered")
     -- The time left: the darkening over the icon, no numbers.
     check(debuffs._groups.auto.icon._SetDurationCooldown._hideNumbers == true and control._groups.auto.icon._SetDurationCooldown._hideNumbers == true
