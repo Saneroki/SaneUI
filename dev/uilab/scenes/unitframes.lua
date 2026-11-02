@@ -9,13 +9,14 @@ for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", 
 end
 local create = CreateFrame
 -- The game's aura container for addons is not in the lab: a plain frame with what the module asks of it, its groups laid
--- out by the game's own flow layout. Three of each kind show on every frame: LabAuras(buffs, control, debuffs, line) sets how many.
+-- out by the game's own flow layout. Three of each kind show on every frame: LabAuras(buffs, control, debuffs, line, plain) sets how many.
 local SAMPLES = {
     buffs = { "Spell_Nature_Thorns", "Spell_Nature_Regeneration", "Spell_Holy_WordFortitude", "Spell_Holy_PowerWordShield", "Spell_Nature_Rejuvenation" },
     control = { "Spell_Nature_Polymorph", "Spell_Frost_FrostNova", "Ability_Gouge", "Spell_Nature_Slow" },
     debuffs = { "Ability_Warrior_Sunder", "Spell_Shadow_ShadowWordPain", "Spell_Nature_Slow", "Spell_Shadow_CurseOfSargeras" },
 }
 local showing = { buffs = 3, control = 3, debuffs = 3 }
+local bare = false -- to try icons without their dark edge and the gaps between them
 local containers = {}
 local function AuraContainer(parent)
     local box = create("Frame", nil, parent)
@@ -58,20 +59,28 @@ local function AuraContainer(parent)
             end
             icon:SetShown(index <= showing[self.kind.key])
             icon.picture:SetTexture("Interface\\Icons\\" .. SAMPLES[self.kind.key][index])
+            if bare then
+                for _, region in ipairs({ icon:GetRegions() }) do
+                    if region ~= icon.picture then region:Hide() end
+                end
+                icon.picture:ClearAllPoints()
+                icon.picture:SetAllPoints(icon)
+            end
             icon.cooldown:SetCooldown(GetTime() - 10 * index, 60)
         end
         local elements = {}
         for index = 1, showing[self.kind.key] do elements[index] = group.frames[index] end
         local layout = group.options.layout
-        flow:Apply(self, { { elements = elements, elementSpacing = layout.elementSpacing, lineSpacing = layout.lineSpacing,
+        flow:Apply(self, { { elements = elements, elementSpacing = not bare and layout.elementSpacing or 0, lineSpacing = layout.lineSpacing,
                              elementWidth = layout.elementWidth, elementHeight = layout.elementHeight } })
     end
     containers[#containers + 1] = box
     return box
 end
--- line (optional): each container's widest line, to try another than the module's.
-function LabAuras(buffs, control, debuffs, line)
+-- line (optional): each container's widest line, to try another than the module's; plain: true for no edges and no gaps.
+function LabAuras(buffs, control, debuffs, line, plain)
     showing.buffs, showing.control, showing.debuffs = buffs, control, debuffs
+    bare = plain or false
     for _, box in ipairs(containers) do
         if line and box.kind then box:SetFlowLayoutMaximumLineSize(line) end
         box:UpdateAllAuras()
