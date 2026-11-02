@@ -83,6 +83,12 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.
 - **`dev/uilab/scenes/guide.lua`:** a stand-in for `ns.Run`, without which the wheel failed in the scene. **`dev/tests/speedguide.lua`:** the shades' corners, their size and no border.
 
+### The aura's menu on a left click, in a fight, in the spellbook (Saneroki, 2026-11-02)
+Saneroki: "lets make the rightclick trigger on leftclick instead. So clicking a aura will show the menu. Is it possible to see this menu in combat and can we make this also appear in the spellbook so we can setup the auras from the spellbook as well?"
+- **`src/Combat/Units/BuffList.lua`:** the frames over the game's buttons are gone: the game's left click does nothing, so its `OnClick` is hooked, and a right click cancels as ever, Shift no longer needed. The outline is a child of the button.
+- **In a fight:** the menu opens for what the game still tells (a never-secret spell) or what was on before the fight by its instance (`known` now holds the spell); else it says the game keeps it.
+- **`src/Combat/Units/Lists.lua`:** `Lists.Menu`, the one menu for aura and spell. **`src/Combat/Book/`:** a right click on a spell opens it (`Item.Menu`, `C_Spell.IsSpellHarmful` for buff or debuff; `type2` empty, so it no longer casts); a pet's ability keeps its autocast. The two windows at `DIALOG`, over the full screen. A `/reload` takes it in.
+
 ### The game's own golden outline for important auras (Saneroki, 2026-11-02)
 Saneroki: "The game client itself has a animated outline for spells that it needs to highlight or triggers etc. [...] Can you make sure that you use this already build in look for the highlights instead of a custom implementation of this"
 - **`src/Combat/Units/BuffList.lua`, `Units/Auras.lua`:** the yellow border is gone; `BuffList.Alert` makes the game's `ActionButtonSpellAlertTemplate` around an important aura, in the game's list and on the unit frames. Not through its manager, which would write our frames into its table. A `/reload` takes it in.

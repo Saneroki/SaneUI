@@ -8,7 +8,8 @@ local _, ns = ...
 --  ability), casting it as the game's entry does (SpellBookItemMixin:
 --  OnIconClick): a spell by its ID (the rank it is), the self-cast modifier
 --  casting on yourself, a pet's ability by its name, a right click on one the
---  pet may autocast switching its autocast. The game's modified clicks that
+--  pet may autocast switching its autocast. A right click on a spell casts
+--  nothing: it opens the spell's menu (Item.Menu). The game's modified clicks that
 --  cast nothing (the link in chat, the pickup) cast nothing here either: the
 --  entry under it does them (Item.Modified), as it does the tooltip, the
 --  highlight and the drag to an action bar.
@@ -42,8 +43,11 @@ local OnLeave = ns.Guard(function(button) if under[button] then Item.Leave(under
 local OnDragStart = ns.Guard(function(button) if under[button] then Item.Drag(under[button]) end end)
 local OnMouseDown = ns.Guard(function(button) if under[button] then Item.Press(under[button], true) end end)
 local OnMouseUp = ns.Guard(function(button) if under[button] then Item.Press(under[button], false) end end)
--- After the game's own click (the cast, or nothing for a modified click): the link or the pickup.
-local PostClick = ns.Guard(function(button) if under[button] then Item.Modified(under[button]) end end)
+-- After the game's own click (the cast, or nothing for a modified click): the link or the pickup, or a spell's menu.
+local PostClick = ns.Guard(function(button, mouse)
+    local item = under[button]
+    if item and not Item.Modified(item) and mouse == "RightButton" then Item.Menu(item) end
+end)
 
 local function Make()
     local button = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
@@ -82,7 +86,7 @@ local function Set(button, item)
         button:SetAttribute("spell", nil)
     else
         button:SetAttribute("type1", "spell")
-        button:SetAttribute("type2", "spell")
+        button:SetAttribute("type2", "")
         button:SetAttribute("spell", info.spellID)
         button:SetAttribute("macrotext1", nil)
         button:SetAttribute("macrotext2", nil)

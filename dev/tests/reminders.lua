@@ -128,78 +128,55 @@ local Reminders, Bars = ns.Reminders, ns.ReminderBars
 local Update = Reminders.Update
 local TEXT = ns.TEXT
 
-local function Shield(button)
+local function Click(button, mouse)
+    W.menus = {}
+    button._scripts.OnClick(button, mouse or "LeftButton")
+    return W.menus[1]
+end
+local function Alert(button)
     for _, widget in ipairs(W.frames) do
-        if widget._parent == button and widget._scripts and widget._scripts.OnMouseUp then return widget end
+        if widget._parent == button and widget._template == ns.BuffList.ALERT then return widget end
     end
 end
 local thorns = BuffFrame.auraFrames[1]
-local shield = Shield(thorns)
-check(shield ~= nil and shield._motion == false, "a frame over each button: the mouse's coming stays the game's, its tooltip")
-check(Shield(DebuffFrame.auraFrames[1]) ~= nil, "over the debuffs too")
 
 -------------------------------------------------------------------------------
---  The right click on the game's own auras
+--  The click on the game's own auras
 -------------------------------------------------------------------------------
 on.player.Thorns = THORNS
 thorns.auraType, thorns.buttonInfo = "Buff", { index = 1, auraInstanceID = 11 }
 BuffFrame.auraFrames[2].auraType = "TempEnchant"
 DebuffFrame.auraFrames[1].auraType = "Debuff"
-ns.BuffList.Sync()
-check(shield._mouse == true, "out of a fight it takes the right click: the game's button would cancel the buff")
-check(Shield(BuffFrame.auraFrames[2])._mouse == false, "a weapon enchant stays the game's: no aura, nothing to remind of")
-shift = true
-W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
-check(shield._mouse == false, "with Shift the click goes through: Shift + right click cancels, as addons cannot")
-shift = false
-W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
-check(shield._mouse == true, "and takes it again")
-W.Combat(true)
-W.Fire("PLAYER_REGEN_DISABLED")
-check(shield._mouse == false, "in a fight the right click is the game's, as ever")
-W.Combat(false)
-W.Fire("PLAYER_REGEN_ENABLED")
-check(shield._mouse == true, "after it ours again")
-
-W.menus = {}
-shield._scripts.OnMouseUp(shield, "LeftButton")
-check(W.menus[1] == nil, "a left click opens nothing")
-shield._scripts.OnMouseUp(shield, "RightButton")
-local menu = W.menus[1]
+check(Click(thorns, "RightButton") == nil, "a right click is the game's alone: it cancels")
+check(Click(BuffFrame.auraFrames[2]) == nil, "a weapon enchant is no aura: no menu")
+local menu = Click(thorns)
 check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.reminderCreate and menu[3].text == TEXT.auraImportant
     and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraFramesShow
-    and menu[7].text == TEXT.auraFramesHide and menu[8].text == TEXT.auraLists and menu[9].title == TEXT.reminderCancel,
-    "its menu: the spell, Create reminder, the marks, how to cancel it")
+    and menu[7].text == TEXT.auraFramesHide and menu[8].text == TEXT.auraLists,
+    "a left click: its menu, the spell, Create reminder, the marks")
 menu[2].fn()
 local list = Reminders.List()
 local reminder = list[1]
 check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player" and reminder.bar == 1,
     "the reminder is made, on bar 1, of your own aura")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
-W.menus = {}
-shield._scripts.OnMouseUp(shield, "RightButton")
-check(W.menus[1][2].text == TEXT.reminderEdit and W.menus[1][3].text == TEXT.reminderDelete,
+menu = Click(thorns)
+check(menu[2].text == TEXT.reminderEdit and menu[3].text == TEXT.reminderDelete,
     "made once: the menu then opens it, or deletes it")
-W.menus[1][2].fn()
+menu[2].fn()
 check(#Reminders.List() == 1, "and makes no other")
 
 -------------------------------------------------------------------------------
 --  The marks on the game's list
 -------------------------------------------------------------------------------
 local List = ns.BuffList
-local function Menu(button)
-    W.menus = {}
-    local own = Shield(button)
-    own._scripts.OnMouseUp(own, "RightButton")
-    return W.menus[1]
-end
 local function Line(button, word)
-    for _, item in ipairs(Menu(button)) do
+    for _, item in ipairs(Click(button)) do
         if item.text == word then return item end
     end
 end
 local function Glows(button)
-    local glow = Shield(button).glow
+    local glow = Alert(button)
     return glow ~= nil and glow:IsShown()
 end
 local bear = BuffFrame.auraFrames[3]
@@ -220,9 +197,9 @@ Line(thorns, TEXT.auraFramesShow).fn()
 check(ns.options.auraShow[782] and not Glows(thorns), "Show on unit frames: no glow")
 Line(thorns, TEXT.auraImportant).fn()
 check(Glows(thorns) and ns.options.auraShow[782], "a mark of how it looks beside it, each of its own")
-local alert = Shield(thorns).glow
-check(alert._template == "ActionButtonSpellAlertTemplate" and alert:GetParent() == Shield(thorns),
-    "the game's own outline, on our frame over the button")
+local alert = Alert(thorns)
+check(alert._template == "ActionButtonSpellAlertTemplate" and alert:GetParent() == thorns,
+    "the game's own outline, a frame of ours in the button")
 check(alert._width == 42 and alert._height == 42 and alert._points[1][2] == thorns.Icon, "as big as the game makes it: 1.4 times the icon, around it")
 check(alert.ProcLoop:IsPlaying() and alert.ProcStartFlipbook._alpha == 0, "its loop runs, no burst")
 alert.ProcLoop:Stop()
@@ -266,11 +243,20 @@ W.Combat(true)
 secret = true
 Rebuilt()
 check(thorns.Icon._alpha == 0, "in a fight it stays by its instance")
+local inFight = Click(thorns)
+check(inFight[1].title == "Thorns" and inFight[2].text == TEXT.reminderEdit, "and its menu opens: it was on before the fight")
+inFight = Click(bear)
+inFight[3].fn()
+check(ns.options.auraWhite[5487] == "Bear" and Glows(bear), "and marks it in the fight")
+inFight = Click(bear)
+inFight[3].fn()
 local info = thorns.buttonInfo
 thorns.buttonInfo = { index = 1, auraInstanceID = W.Secret() }
 Rebuilt()
 check(thorns.Icon._alpha == 1 and mid._points[1][4] == slotOf[2] and thorns._points[1][4] == slotOf[1],
     "the instance hidden too: the list as the game has it, as a mark on the wrong aura is worse than none")
+inFight = Click(thorns)
+check(inFight[1].title == TEXT.auraFight and inFight[2].text == TEXT.auraLists, "and the menu says the game keeps it")
 thorns.buttonInfo = info
 secret = false
 W.Combat(false)
@@ -279,9 +265,9 @@ check(thorns.Icon._alpha == 0, "marked again after the fight")
 Line(thorns, TEXT.auraHidden).fn()
 check(thorns._points[1][4] == slotOf[1] and thorns.Icon._alpha == 1, "no mark: back in its place")
 Core.Set("Combat", "buffList", false)
-check(Shield(thorns)._mouse == false, "off: the game's list as it is")
+check(Click(thorns) == nil, "off: the game's list as it is")
 Core.Set("Combat", "buffList", true)
-check(Shield(thorns)._mouse == true, "on again")
+check(Click(thorns) ~= nil, "on again")
 
 -------------------------------------------------------------------------------
 --  What shows on a bar
@@ -503,14 +489,14 @@ check(row:GetParent() and row._width == Bars.SIZE, "shown again")
 Core.Set("Combat", "reminders", false)
 check(not row:IsVisible(), "off: no bars")
 on.player.Thorns = THORNS
-check(Menu(thorns)[2].text == TEXT.auraImportant, "and no reminder in the menu; the marks stay")
+check(Click(thorns)[2].text == TEXT.auraImportant, "and no reminder in the menu; the marks stay")
 on.player.Thorns = nil
 Core.Set("Combat", "reminders", true)
 check(row:IsVisible(), "on again")
 on.player.Thorns = THORNS
 Line(thorns, TEXT.auraUnimportant).fn()
 ns.StandDown("a test")
-check(shield._mouse == false and thorns.Icon._alpha == 1, "standing down: the game's list as it is, its right click the game's")
+check(Click(thorns) == nil and thorns.Icon._alpha == 1, "standing down: the game's list as it is")
 
 if RETAIL then
     io.write(("Reminders in Retail: all %d checks passed.\n"):format(passed))

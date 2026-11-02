@@ -19,6 +19,9 @@ local _, ns = ...
 --  a drag to an action bar, a link in chat or the pickup with the game's
 --  modified clicks. In a fight, where the secure buttons are away, a click
 --  says that the book casts again after the fight; the drag still works.
+--  A right click on a spell opens its menu of a reminder and your marks of its
+--  aura (Item.Menu, Units/Lists.lua), in a fight too, as the book knows its
+--  spells; on a pet's ability it stays the autocast.
 --
 --      local item = Item.Make(parent)
 --      Item.Set(item, entry)            -- entry = { slot, bank, status }: drawn for it
@@ -132,10 +135,28 @@ function Item.Modified(item)
     return false
 end
 
--- A click on the entry's own icon: what is under no secure button (a fight; a spell still to learn).
-local function Clicked(button)
+-- The aura a spell of the book gives, as far as the book can tell: what hurts a debuff on your target, else a buff on
+-- you, by the spell's name and so any rank of it in the game's list.
+local function Spell(item)
+    local info = item.info
+    local id, name = info and Plain(info.spellID), info and Plain(info.name)
+    if not (id and name) or item.entry.bank == select(2, Data.Banks()) then return nil end
+    local spells = rawget(_G, "C_Spell")
+    local harmful = spells and Core.Ask(spells.IsSpellHarmful, id) == true or false
+    return { id = id, name = name, icon = Plain(info.iconID), harmful = harmful, unit = harmful and "target" or "player" }
+end
+
+-- A right click: the spell's menu. A pet's ability has none.
+function Item.Menu(item)
+    local spell = Spell(item)
+    if spell then ns.AuraLists.Menu(item.Button, spell) end
+end
+
+-- A click on the entry's own icon: what is under no secure button (a fight; a spell still to learn; a passive).
+local function Clicked(button, mouse)
     local item = button:GetParent()
     if Item.Modified(item) then return end
+    if mouse == "RightButton" then return Item.Menu(item) end
     if Item.Castable(item) and InCombatLockdown() then
         local errors = rawget(_G, "UIErrorsFrame")
         if errors then errors:AddMessage(Item.TEXT.fight, 1, 0.1, 0.1) end

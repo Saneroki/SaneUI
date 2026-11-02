@@ -70,7 +70,7 @@ ns.TEXT = {
     unitRest = "Hide the unit frames at rest",
     unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
     unitAuras = "Auras on the frames",
-    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Show on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Right click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
+    unitAurasTip = "The auras that matter most, three of each kind, above a frame: buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Show on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
     auraImportant = "Important",
     auraUnimportant = "Unimportant",
     auraHidden = "Hidden",
@@ -78,14 +78,14 @@ ns.TEXT = {
     auraFramesHide = "Hide from unit frames",
     buffList = "Your buffs and debuffs",
     buffListOn = "Marks and menu on the game's list",
-    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Right click one, out of a fight, for its menu: Create reminder, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Show on unit frames (first there, no glow) and Hide from unit frames. Shift + right click cancels a buff, and in a fight a right click does, as in the game. Off: the game's list as it is, a right click cancels.",
+    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Create reminder, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Show on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
     auraLists = "Aura lists...",
-    auraFight = "In a fight the game keeps auras from addons: after it",
+    auraFight = "In a fight the game keeps this aura from addons: after it",
     listsTitle = "Aura lists",
     listsInput = "A spell's number, or its name (one of your own):",
     listsEmpty = "None yet.",
     listsPut = "%s: %s.",
-    listsUnknown = "The game does not know that spell here by its name: type its number, or right click its icon on a unit frame.",
+    listsUnknown = "The game does not know that spell here by its name: type its number, or click its icon.",
     listsRule = "On the unit frames the game lets these act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
     unitBarrier = "Barriers",
     unitBarrierTip = "What absorbs damage on a unit, in the game's shield art on its health bar: after the health while it fits, against the bar's right end when it does not. On your unit frames and your party and raid frames.",
@@ -166,14 +166,13 @@ ns.TEXT = {
     meterBack = "Back to the fights",
     reminders = "Reminders",
     remindersOn = "Reminder bars",
-    remindersTip = "Right click a buff or debuff and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. /sane reminders opens the list, with your bars: make as many as you like, and give each spell its bar. Off: no bars.",
+    remindersTip = "Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. /sane reminders opens the list, with your bars: make as many as you like, and give each spell its bar. Off: no bars.",
     reminderCreate = "Create reminder",
     reminderEdit = "Edit reminder",
-    reminderCancel = "Shift + right click cancels it",
     reminderBar = "Reminder bar %d",
     reminderNewBar = "New bar",
     reminderDeleteBar = "Delete bar",
-    reminderNone = "None yet. Right click a buff or debuff and choose Create reminder.",
+    reminderNone = "None yet. Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder.",
     reminderOnYou = "On you",
     reminderOnOther = "On the unit it was made on",
     reminderOnBar = "Bar",
@@ -208,7 +207,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = (ns.Serves()
     and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, a right click on a buff cancels it, no reminder bars"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -280,7 +279,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
-    if key == "buffList" then ns.Guarded(ns.BuffList.Apply) end
+    if key == "buffList" then ns.Guarded(ns.BuffList.Style) end
     if key == "reminders" then ns.Guarded(ns.Reminders.Apply) end
 end })
 
@@ -300,7 +299,7 @@ function ns.GiveBack()
     ns.Safe("mouse rings", ns.MouseRings.Hide)
     ns.Safe("meter", ns.Meter.GiveBack)
     ns.Safe("reminders", ns.Reminders.GiveBack)
-    ns.Safe("buff list", ns.BuffList.Apply)
+    ns.Safe("buff list", ns.BuffList.Style)
 end
 
 function ns.OnLoad()

@@ -184,6 +184,7 @@ end
 local function Build()
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Editor.WIDTH, Editor.HEIGHT)
+    frame:SetFrameStrata("DIALOG") -- over the full screen, opened from the spellbook there
     frame:Hide()
     window = Core.Window.New(frame, {
         kind = "panel", store = ns.store, key = "remindersPlace", title = ns.TEXT.reminders, edge = false,

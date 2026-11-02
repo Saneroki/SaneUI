@@ -281,9 +281,14 @@ local function Covers()
 end
 local covers = Covers()
 check(#covers == 2 and covers[1]._parent == UIParent and covers[1]._attributes.type1 == "spell"
-    and covers[1]._attributes["shift-type1"] == "" and covers[1]._attributes.useOnKeyDown == false
+    and covers[1]._attributes.type2 == "" and covers[1]._attributes["shift-type1"] == "" and covers[1]._attributes.useOnKeyDown == false
     and covers[1]._strata == "HIGH" and covers[1]._level == 510 + Book.LEVEL,
     "a secure button over each learned spell's icon, on UIParent above the panel; none over one still to learn")
+W.menus = {}
+covers[1]._scripts.PostClick(covers[1], "LeftButton")
+check(W.menus[1] == nil, "a left click casts, no menu")
+covers[1]._scripts.PostClick(covers[1], "RightButton")
+check(W.menus[1] and W.menus[1][2].text == ns.TEXT.reminderCreate, "a right click casts nothing and opens the spell's menu")
 local spellsCovered = { [covers[1]._attributes.spell] = true, [covers[2]._attributes.spell] = true }
 check(spellsCovered[205] and spellsCovered[122], "each casts its spell by its ID (the rank it is)")
 -- The game locks the secure buttons only after PLAYER_REGEN_DISABLED's handlers ran (the buttons' last chance to
@@ -299,6 +304,31 @@ W.errors = {}
 for _, item in ipairs(Entries()) do if item.Name._text == "Frost Nova" then nova = item end end
 nova.Button:GetScript("OnClick")(nova.Button, "LeftButton")
 check(W.errors[1] == Item.TEXT.fight, "a click in a fight says the book casts again after it")
+W.menus = {}
+nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
+check(W.menus[1] and W.menus[1][1].title == "Frost Nova" and W.menus[1][2].text == ns.TEXT.reminderCreate
+    and W.menus[1][3].text == ns.TEXT.auraImportant, "a right click opens the spell's menu, in a fight too: the book knows its spells")
+W.menus[1][3].fn()
+check(ns.options.auraWhite[nova.info.spellID] == "Frost Nova", "and marks it there")
+W.menus = {}
+nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
+W.menus[1][3].fn()
+check(next(ns.options.auraWhite) == nil, "the tick off again")
+W.menus = {}
+nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
+W.menus[1][2].fn()
+local made = ns.Reminders.List()[1]
+check(made and made.name == "Frost Nova" and made.unit == "player" and not made.harmful, "a reminder of it: a buff on you")
+ns.Reminders.Take(made)
+C_Spell.IsSpellHarmful = function() return true end
+W.menus = {}
+nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
+W.menus[1][2].fn()
+made = ns.Reminders.List()[1]
+check(made.harmful and made.unit == "target" and made.missing, "a spell that hurts: a debuff on your target")
+ns.Reminders.Take(made)
+ns.ReminderEditor.Hide()
+C_Spell.IsSpellHarmful = nil
 nova.Button:GetScript("OnDragStart")(nova.Button)
 check(picked and picked[1] == 5 and picked[2] == 0, "a drag still picks the spell up, for an action bar")
 -- The module standing down in the fight (the board's Part.Leave): the secure buttons are the game's to lock, so

@@ -183,7 +183,7 @@ if RETAIL then
         "the quest marks beside nameplates, as in Forever")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, a right click on a buff cancels it, no reminder bars",
+        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars",
         "standing down: the quest marks go, and what is told says so")
     check(PlayerFrame._mouse == true and TargetFrame._parent == UIParent and MainActionBar.BorderArt._alpha == 1,
         "and the game's unit frames and action bars are its own again")
@@ -1362,7 +1362,7 @@ do
     icon._SetSpellName._text = "Sunder Armor"
     W.auras.target = { HARMFUL = { { name = "Rend", spellId = 772 }, { name = "Sunder Armor", spellId = 7386, icon = 132363 } } }
     W.menus = {}
-    icon._scripts.OnMouseUp(icon, "RightButton")
+    icon._scripts.OnMouseUp(icon, "LeftButton")
     local menu = W.menus[1]
     check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.reminderCreate
         and menu[3].text == ns.TEXT.auraImportant and menu[4].text == ns.TEXT.auraUnimportant
@@ -1384,7 +1384,7 @@ do
     check(Shines(debuffs._groups.listed.icon) and not Shines(debuffs._groups.auto.icon),
         "the important ones glow on the frame, the group's own icons in a fight too; the rest do not")
     W.menus = {}
-    icon._scripts.OnMouseUp(icon, "RightButton")
+    icon._scripts.OnMouseUp(icon, "LeftButton")
     W.menus[1][4].fn()
     check(ns.options.auraBlack[7386] and not ns.options.auraWhite[7386] and not debuffs._groups.listed.enabled
         and control._groups.auto.candidates.excludeSpellIDs[7386], "Unimportant: off the other list, never shown")
@@ -1392,7 +1392,7 @@ do
     local groups = debuffs._groups
     local function Tick(index)
         W.menus = {}
-        icon._scripts.OnMouseUp(icon, "RightButton")
+        icon._scripts.OnMouseUp(icon, "LeftButton")
         W.menus[1][index].fn()
     end
     Tick(6)
@@ -1417,7 +1417,7 @@ do
         "taken off by its tick")
     W.combat = true
     W.menus = {}
-    icon._scripts.OnMouseUp(icon, "RightButton")
+    icon._scripts.OnMouseUp(icon, "LeftButton")
     check(W.menus[1][1].title == ns.TEXT.auraFight and W.menus[1][2].text == ns.TEXT.auraLists,
         "in a fight the game keeps the icons from addons: only the lists' window")
     W.combat = false

@@ -9,23 +9,20 @@ local _, ns = ...
 --      Hidden         out of sight, and last in the list, so nothing leaves a
 --                     hole; shown while the mouse is on the list
 --
---  A right click on one, out of a fight, opens a menu: Create reminder and the
---  marks. The game's button cancels a buff on a right click, in its own secure
---  code that addons cannot stop or do themselves (CancelAuraByInstanceID is
---  closed to them). So a frame of ours lies over each button and takes the
---  clicks alone, the mouse's coming stays the button's (its tooltip), and it
---  lets the click through, to the game, whenever a menu cannot serve: with Shift
---  held (so Shift + right click cancels), in a fight (a right click cancels as
---  ever), in Edit Mode, and on a weapon enchant, which is no aura.
+--  A left click on one opens a menu: Create reminder and the marks. It does
+--  nothing of the game's: its left click only tells a callback nobody listens
+--  to, so the button's click is merely hooked. A right click cancels a buff, as
+--  in the game.
 --
---  In a fight the game hides what a button shows. What was marked before stays
---  so by the aura's instance where the game tells that; where it does not, a
---  change of the list in a fight shows everything plain until the fight ends,
---  as a mark on the wrong aura would be worse than none.
+--  In a fight the game hides what a button shows. What was on before stays known
+--  by the aura's instance where the game tells that, with its mark and its menu;
+--  what it hides and came in the fight, the menu says so. Where it does not tell
+--  the instance, a change of the list in a fight shows everything plain until
+--  the fight ends, as a mark on the wrong aura would be worse than none.
 --
---  Nothing is written into the game's buttons: the glow is on our frame, the fade
---  on the button's regions (the button's own alpha is the game's, for its warning
---  flash), the order in anchors the game gave them.
+--  Nothing is written into the game's buttons: the outline is a frame of ours in
+--  it, the fade on the button's regions (the button's own alpha is the game's, for
+--  its warning flash), the order in anchors the game gave them.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -38,37 +35,43 @@ BuffList.ALERT = "ActionButtonSpellAlertTemplate" -- the game's outline of a spe
 BuffList.GROW = 1.4    -- its size against the icon's, as the game gives it
 BuffList.REGIONS = { "Icon", "Duration", "Count", "Symbol", "DebuffBorder", "TempEnchantBorder" }
 
-local shields = {} -- [the game's aura button] = our frame over it
+local covered = {} -- [the game's aura button] = true
+local alerts = {}  -- [button] = its outline, made when first needed
 local marks = {}   -- [button] = its mark now
 local shown = {}   -- [button] = the strength its regions have
 local natural = {} -- [button] = its anchor as the game gave it
 local placed = {}  -- [button] = the anchor it stands by
-local known = {}   -- [an aura's instance] = its mark, from before the fight
+local known = {}   -- [an aura's instance] = the spell it is, from before the fight
 local hovered, soon = {}, {} -- [the game's list]: the mouse on it; what looks again after it left
 local lists = {}   -- the game's lists we cover
 
--- The aura a button of the game's shows, out of a fight: { id, name, icon, harmful, unit }.
+-- Whether a button holds an aura (a weapon enchant is none).
+local function HoldsAura(button)
+    local kind = Plain(button.auraType)
+    return type(button.buttonInfo) == "table" and (kind == "Buff" or kind == "Debuff")
+end
+
+-- The aura a button of the game's shows: { id, name, icon, harmful, unit }, read where the game tells it (never-secret
+-- spells in a fight too), else as known from before the fight; nil where it cannot be told.
 local function Which(button)
-    local info, kind = button.buttonInfo, Plain(button.auraType)
-    if type(info) ~= "table" or (kind ~= "Buff" and kind ~= "Debuff") or Core.Restricted() then return nil end
-    local harmful = kind == "Debuff"
+    if not HoldsAura(button) then return nil end
+    local info, harmful = button.buttonInfo, Plain(button.auraType) == "Debuff"
     local auras = C_UnitAuras
-    local data = Core.Ask(auras.GetAuraDataByAuraInstanceID, "player", Plain(info.auraInstanceID))
+    local instance = Plain(info.auraInstanceID)
+    local data = Core.Ask(auras.GetAuraDataByAuraInstanceID, "player", instance)
         or Core.Ask(auras.GetAuraDataByIndex, "player", Plain(info.index), harmful and "HARMFUL" or "HELPFUL")
     local id, name = type(data) == "table" and Plain(data.spellId), type(data) == "table" and Plain(data.name)
-    if not (id and name) then return nil end
-    return { id = id, name = name, icon = Plain(data.icon), harmful = harmful, unit = "player" }
+    if not (id and name) then return instance and known[instance] or nil end
+    local spell = { id = id, name = name, icon = Plain(data.icon), harmful = harmful, unit = "player" }
+    if instance then known[instance] = spell end
+    return spell
 end
 
 -- The mark of the aura a button shows now.
 local function Mark(button)
     if not button.hasValidInfo or button.isExample then return nil end
-    local instance = type(button.buttonInfo) == "table" and Plain(button.buttonInfo.auraInstanceID) or nil
-    if Core.Restricted() then return instance and known[instance] or nil end
     local spell = Which(button)
-    local mark = spell and ns.AuraLists.Mark(spell.name) or nil
-    if instance then known[instance] = mark end
-    return mark
+    return spell and ns.AuraLists.Mark(spell.name) or nil
 end
 
 -- The game's own golden animated outline, as it has around a spell that wants attention: its template, sized as its
@@ -96,16 +99,15 @@ local function Dress(button, mark, reveal)
             if region then region:SetAlpha(alpha) end
         end
     end
-    local shield = shields[button]
-    if mark == "white" and not shield.glow then shield.glow = BuffList.Alert(shield, button.Icon) end
-    if shield.glow then shield.glow:SetShown(mark == "white") end
+    if mark == "white" and not alerts[button] then alerts[button] = BuffList.Alert(button, button.Icon) end
+    if alerts[button] then alerts[button]:SetShown(mark == "white") end
 end
 
 -- The list's places: first what can be seen, in the game's order, then what is hidden.
 local function Arrange(frame)
     local slots, order, last = {}, {}, {}
     for _, button in ipairs(frame.auraFrames) do
-        if shields[button] and button.hasValidInfo then
+        if covered[button] and button.hasValidInfo then
             if not natural[button] then return end
             slots[#slots + 1] = natural[button]
             local line = marks[button] == "hidden" and last or order
@@ -130,40 +132,19 @@ end
 local function Style(frame)
     local on = Marked()
     for _, button in ipairs(frame.auraFrames) do
-        if shields[button] then Dress(button, on and Mark(button) or nil, hovered[frame]) end
+        if covered[button] then Dress(button, on and Mark(button) or nil, hovered[frame]) end
     end
     Arrange(frame)
 end
 
+-- Everything anew: a mark, the setting, Edit Mode, standing down.
 function BuffList.Style()
     for _, frame in ipairs(lists) do Style(frame) end
 end
 
--- Which frames of ours take the click now.
-function BuffList.Sync()
-    local open = Marked() and not Core.Restricted() and not IsShiftKeyDown()
-    for button, shield in pairs(shields) do
-        local kind = Plain(button.auraType)
-        shield:SetMouseClickEnabled(open and (kind == "Buff" or kind == "Debuff") or false)
-    end
-end
-
--- Everything anew: the setting, Edit Mode, standing down.
-function BuffList.Apply()
-    BuffList.Sync()
-    BuffList.Style()
-end
-
-local function Clicked(shield, mouse)
-    if mouse ~= "RightButton" then return end
-    local spell = Which(shield:GetParent())
-    if not spell then return end
-    MenuUtil.CreateContextMenu(shield, ns.Guard(function(_, root)
-        root:CreateTitle(spell.name)
-        ns.Reminders.Entry(root, spell)
-        ns.AuraLists.Entries(root, spell)
-        if not spell.harmful then root:CreateTitle(ns.TEXT.reminderCancel) end
-    end))
+-- A click on a button, after the game's: a left click opens the aura's menu.
+local function Clicked(button, mouse)
+    if mouse == "LeftButton" and Marked() and HoldsAura(button) then ns.AuraLists.Menu(button, Which(button)) end
 end
 local OnClicked = ns.Guard(Clicked)
 
@@ -171,7 +152,7 @@ local OnClicked = ns.Guard(Clicked)
 local function Took(frame)
     local all = not frame.doNotAnchorDisabledFrames
     for _, button in ipairs(frame.auraFrames) do
-        if shields[button] and (all or button.hasValidInfo) then
+        if covered[button] and (all or button.hasValidInfo) then
             natural[button] = { button:GetPoint(1) }
             placed[button] = natural[button]
         end
@@ -190,21 +171,14 @@ local function Cover(frame)
     soon[frame] = Core.Later(function() if not hovered[frame] then Style(frame) end end, BuffList.LINGER, "buff list")
     for _, button in ipairs(frame.auraFrames) do
         if not button.isAuraAnchor then
-            local shield = CreateFrame("Frame", nil, button)
-            shield:SetAllPoints(button)
-            shield:SetScript("OnMouseUp", OnClicked)
-            shield:SetMouseMotionEnabled(false)
-            shield:SetMouseClickEnabled(false)
-            shields[button] = shield
+            covered[button] = true
+            button:HookScript("OnClick", OnClicked)
             button:HookScript("OnEnter", ns.Guard(function() Over(frame, true) end))
             button:HookScript("OnLeave", ns.Guard(function() Over(frame, false) end))
         end
     end
     Took(frame)
-    hooksecurefunc(frame, "UpdateAuraButtons", ns.Guard(function()
-        BuffList.Sync()
-        Style(frame)
-    end))
+    hooksecurefunc(frame, "UpdateAuraButtons", ns.Guard(function() Style(frame) end))
     if type(frame.AuraContainer) == "table" then
         hooksecurefunc(frame.AuraContainer, "UpdateGridLayout", ns.Guard(function() Took(frame) end))
     end
@@ -213,14 +187,10 @@ end
 function BuffList.Start()
     Cover(rawget(_G, "BuffFrame"))
     Cover(rawget(_G, "DebuffFrame"))
-    for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "MODIFIER_STATE_CHANGED",
-                             "ADDON_RESTRICTION_STATE_CHANGED" }) do
-        Core.On(event, BuffList.Sync)
-    end
     Core.On("PLAYER_REGEN_ENABLED", function()
         wipe(known)
         BuffList.Style()
     end)
-    Core.EditMode.Watch(ns.Guard(BuffList.Apply))
-    BuffList.Apply()
+    Core.EditMode.Watch(ns.Guard(BuffList.Style))
+    BuffList.Style()
 end

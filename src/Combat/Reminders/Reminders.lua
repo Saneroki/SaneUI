@@ -12,7 +12,8 @@ local _, ns = ...
 --      early     with missing: seconds before it runs out to show it already
 --      combat    "any", "out" (only out of a fight), "in" (only in one)
 --      noRest    not shown in resting areas (cities, inns)
---  Made by a right click on an aura (Units/BuffList.lua, Units/Auras.lua), set in the
+--  Made from the menu of a click on an aura or a spell of the spellbook
+--  (Units/Lists.lua), set in the
 --  window (Editor.lua, /sane reminders).
 --
 --  In a fight the game hides most auras from addons (ShouldSpellAuraBeSecret;

@@ -29,9 +29,8 @@ local _, ns = ...
 --  you, your group and friendly units, and on the debuffs of foes; elsewhere it
 --  decides alone (the window says so).
 --
---  A right click on an icon, out of a fight (in one the game keeps the icons
---  from addons), opens a menu: Create reminder (Reminders/), your marks
---  (Lists.Entries), Aura lists. Which spell
+--  A left click on an icon opens the aura's menu (Lists.Menu), out of a fight
+--  (in one the game keeps the icons from addons: the menu says so). Which spell
 --  it is: the icon's name (the game writes it into a text of ours, unseen),
 --  found among the unit's auras of its kind.
 -------------------------------------------------------------------------------
@@ -115,24 +114,8 @@ local function Which(frame)
     return nil
 end
 
--- The menu of a right click on an icon: a reminder, its mark, or the lists' window.
-local function Menu(frame)
-    local spell = Which(frame)
-    MenuUtil.CreateContextMenu(frame, ns.Guard(function(_, root)
-        if spell then
-            root:CreateTitle(spell.name)
-            ns.Reminders.Entry(root, spell)
-            ns.AuraLists.Entries(root, spell)
-        else
-            root:CreateTitle(ns.TEXT.auraFight)
-            root:CreateDivider()
-            root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() ns.AuraLists.Open() end))
-        end
-    end))
-end
-
 local function Clicked(frame, button)
-    if button == "RightButton" then Menu(frame) end
+    if button == "LeftButton" then ns.AuraLists.Menu(frame, Which(frame)) end
 end
 local OnClicked = ns.Guard(Clicked)
 

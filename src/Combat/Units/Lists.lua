@@ -16,8 +16,8 @@ local _, ns = ...
 --  A spell has one mark of each side at most: put on one, it leaves the others
 --  of its side.
 --
---  Filled from a right click on an aura (Lists.Entries, in either's menu), and in
---  a window of its own (/sane auras, and the menu's Aura lists): a box to add a
+--  Filled from the menu of a click on an aura or a spell of the spellbook
+--  (Lists.Menu), and in a window of its own (/sane auras, and the menu's Aura lists): a box to add a
 --  spell by its number or its name (a name only where the game knows the
 --  spell by it: one of yours), the lists side by side, each spell with its
 --  icon, name and number and an X to take it off. Under them, what the game
@@ -138,6 +138,22 @@ function Lists.Entries(root, spell)
     root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() Lists.Open() end))
 end
 
+-- The menu of an aura or a spell ({ id, name, icon, harmful, unit }): a reminder, the marks, the window. Without one (the
+-- game hides which aura it is, in a fight) it says so, and offers the window.
+function Lists.Menu(owner, spell)
+    MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
+        if spell then
+            root:CreateTitle(spell.name)
+            ns.Reminders.Entry(root, spell)
+            Lists.Entries(root, spell)
+        else
+            root:CreateTitle(ns.TEXT.auraFight)
+            root:CreateDivider()
+            root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() Lists.Open() end))
+        end
+    end))
+end
+
 -- The spell typed into the box: by its number, or by its name where the game knows it so.
 local function Typed()
     local text = (box:GetText() or ""):match("^%s*(.-)%s*$")
@@ -218,6 +234,7 @@ end
 local function Build()
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Lists.WIDTH, Lists.HEIGHT)
+    frame:SetFrameStrata("DIALOG") -- over the full screen, opened from the spellbook there
     frame:Hide()
     window = Core.Window.New(frame, {
         kind = "panel", store = ns.store, key = "auraListsPlace", title = ns.TEXT.listsTitle, edge = false,
