@@ -75,10 +75,10 @@ local function Classic()
     return list
 end
 
--- Made at the login, where this game has a window of ours for its full screen (Combat.lua, ns.Serves): in Retail,
--- without our spellbook and talents, there is no window, and the bottom edge stays the game's.
+-- Made at the login, in both games: in Retail, without our spellbook and talents (Combat.lua, ns.Serves), its full
+-- screen holds the game's own window (GameWindow.lua).
 function Window.Build()
-    if frame or not ns.Serves() then return end
+    if frame then return end
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Window.WIDTH, Window.HEIGHT) -- not sizable: its size is ours, not kept
     handle = Core.Window.New(frame, {
@@ -99,6 +99,12 @@ end
 -- Whether it fills the screen now (or is on its way there).
 function Window.Full()
     return handle and handle.edge and handle.edge.full or false
+end
+
+-- Back to its size, if it fills the screen (the game's window it held closed: GameWindow.lua).
+function Window.Back()
+    local edge = handle and handle.edge
+    if edge and edge.full then edge:Fill(false) end
 end
 
 -- The full screen, asked for by a window that opened (the game's spellbook, the planner): true if it fills

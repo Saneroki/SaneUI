@@ -45,6 +45,8 @@ Book\Item.lua
 Book\Casts.lua
 # The book itself: its pages, tabs, the game's paging controls and settings
 Book\Book.lua
+# The game's own spellbook and talents on the full screen, in a game where ours are not
+GameWindow.lua
 # Your spellbook, pet book and talents keys opening ours (the game's override bindings; our keys: Bindings.xml)
 Keys.lua
 # A mark beside a creature's nameplate while it belongs to an objective of your quests still to do

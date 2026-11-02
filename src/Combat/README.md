@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); rings around the mouse for the global cooldown and your cast (built); the threat and damage meter (built); in Retail all but our spellbook and talents (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); rings around the mouse for the global cooldown and your cast (built); the threat and damage meter (built); in Retail all of it, the game's own spellbook and talents window standing on the full screen in place of ours (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -149,10 +149,14 @@ shows on it, and you make as many bars as you like.
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
 - **In Retail:** our spellbook and talents are made after WoW: Forever's, which Retail has not, so neither is
-  there: the bottom edge fills no screen, your spellbook, pet book and talents keys open the game's own windows,
-  and the settings are the unit frames, the action bars and *Quest marks on nameplates*. Those work as in Forever
-  (Retail's names have no surname: a player's name alone). Combat's own keys still stand in the game's key
-  bindings (the game reads `Bindings.xml` in both games) and do nothing there.
+  there, and the full screen holds the game's own window of both, with its own tabs (Saneroki, 2026-11-02: Retail is
+  only the testing platform until Forever's launch, nothing new is built for it alone). Your spellbook and talents
+  keys and the micro menu open it as always, and the full screen comes with it; closed, the full screen goes back.
+  The bottom edge brings the full screen, and a click on its panel, or the key, opens the window: a push is no
+  click, and only a click or a key lets the game open its window as its own. Pushed back, the window stays open at
+  its own place. There is no switch *keys* there. The rest works as in Forever (Retail's names have no surname: a
+  player's name alone). Combat's own keys still stand in the game's key bindings (the game reads `Bindings.xml` in
+  both games) and do nothing there.
 
 - **Your party and raid:** one frame of ours for both, in place of the game's party and raid frames (*Party and raid
   frames*, off: the game's). It fills from its bottom left corner: you and your party going up, five to a column, then a
@@ -380,8 +384,16 @@ shows on it, and you make as many bars as you like.
   are Forever's only. A window that is not there is no part's `Present()` (`Talents.Present`, `Book.Part.Present`):
   not in the dropdown *Windows*, not in the first layout (`Board.FIRST`, those present), not in *Classic windows*
   (the entries' `window`), and its keys stay the game's (`Keys.Bind`, `Keys.Taken(action)`, `Keys.Press`). With
-  neither (`ns.Serves()`), no window is made (`Window.Build`), the switch *keys* and the sections *Expand window*
-  and *Window corners* are not described, and `GIVEN_BACK` says only the quest marks go.
+  neither (`ns.Serves()`), the switch *keys* is not described, and the board's window is the part `game`.
+- **The game's own window on the full screen** (`GameWindow.lua`, the part `game`, present where `ns.Serves()` is
+  false): `PlayerSpellsFrame` seated in the panel's body (`Core.Seat`), never shown or hidden by our code (its
+  `OnShow` and `OnHide` set the action bars' grids, its book writes which spell each entry casts:
+  `Doc/guides/windows.md`, *Taint*). The game's registry event `PlayerSpellsFrame.OpenFrame` says it opened, by any
+  way: `Window.Open("game")` brings the full screen, or the panel if full. Closed while seated, the seat's `gone` is
+  `Window.Back`. The closed panel says the key and holds a secure click (`SecureActionButtonTemplate`, `type = "click"`
+  on `PlayerSpellsMicroButton`) on UIParent, placed in numbers over its body, not in our window: made, placed,
+  shown and hidden out of a fight, gone at `PLAYER_REGEN_DISABLED`, back after. A secure snippet cannot do that
+  on a push: the restricted frames have no `Click`, and `CallMethod` runs `forceinsecure()`.
 - **The unit frames** (`Units/`): each of `Units.KINDS` (player, target, focus) is the game's
   `SecureUnitButtonTemplate` (`Units.WIDTH` x `Units.HEIGHT`, 240 x 26, scaled by `unitSize`; attributes `unit`,
   `*type1` `target`, `*type2` `togglemenu`; `RegisterUnitWatch`), its look a plain frame on it (`button.face`) that
@@ -612,6 +624,7 @@ shows on it, and you make as many bars as you like.
 | `Talents/Commit.lua` | The commit's and the switch's cast over the trees, on a cast bar of ours from the game's template |
 | `Talents/Changes.lua` | Buying, refunding, applying, undoing and resetting, where the game allows it |
 | `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
+| `GameWindow.lua` | The game's own spellbook and talents window seated on the full screen, in a game where ours are not |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |

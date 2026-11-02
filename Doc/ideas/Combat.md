@@ -51,6 +51,11 @@ Decided (Saneroki, 2026-10-16):
     (out of a fight, as the game allows).
   - **The talent planner** Sane UI knows becomes a window of its own on the board (in the dropdown Windows),
     no longer the Talents panel.
+- **In Retail the game's own window on the full screen** (Saneroki, 2026-11-02; built): "the fullscreen does still
+  open but it just shows its native spell window, talent windows etc on it instead but keeps the functionality of
+  our fullscreens. We don't try to build complete new things that are just for Retail." Where neither of ours is
+  (`ns.Serves`), `PlayerSpellsFrame` stands in a panel as it did on 2026-10-20, opened by the game only: its keys and
+  micro menu bring the full screen with it; a push brings the full screen and the panel is a secure click from it.
 - **Party style** (the game's raid style or classic party frames) and **click casting** are decided during
   development.
 - **Unit frames like the nameplates** (Saneroki, 2026-10-29; built, `src/Combat/README.md`): your frame, your

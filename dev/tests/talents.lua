@@ -827,9 +827,9 @@ buttons[2]:GetScript("OnClick")(buttons[2], "LeftButton")
 check(#calls == 0, "and its nodes do nothing")
 
 -- In Retail, whose talents are not those of two specializations ours are made after (Combat.lua, ns.Serves): ours
--- are not there, the game's talents stay (nor is our spellbook: no first layout at all).
+-- are not there, the game's talents stay (nor is our spellbook: the first layout is the game's own window).
 W.Play("retail")
-check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default() == nil,
+check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default().key == "game",
     "in Retail our talents are not there: the game's stay")
 W.Play("forever")
 check(Talents.Present(), "in Forever they are")

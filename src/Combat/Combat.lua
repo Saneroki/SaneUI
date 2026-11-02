@@ -30,7 +30,8 @@ local ADDON, ns = ...
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
 --  Our spellbook and talents are made after WoW: Forever's, so in Retail
---  neither is there (ns.Serves): no full screen there, the quest marks only.
+--  neither is there (ns.Serves): its full screen holds the game's own window
+--  there (GameWindow.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Combat", ns)
@@ -42,6 +43,12 @@ ns.TEXT = {
     spellbook = Core.Word("SPELLBOOK", "Spellbook"),
     planner = "Talent planner",
     book = "Spellbook and talents",
+    -- The panel of the game's own window while it is closed (GameWindow.lua).
+    gameClick = "Click here or press %s to open it here.",
+    gameClickNoKey = "Click here to open it here.",
+    gameFight = "Press %s to open it here. A click here works again after the fight.",
+    gameFightNoKey = "A click here opens it again after the fight.",
+    gameNotYet = "Not available yet.",
     keys = "Your spellbook and talents keys open ours",
     keysTip = "The keys you gave the game's spellbook, pet spellbook and talents open our own windows on Combat's full screen, and close them again. Off: they open the game's own windows, as before. Your key bindings stay as they are either way.",
     nameplates = "Nameplates",
@@ -190,7 +197,7 @@ ns.TEXT = {
 -- (C_SpellBook.IsSpellBookItemLooseFlyoutMember), the talents after its talents of two specializations, each with a
 -- config of its own (C_SpecializationInfo.GetCombatConfigIDForSpecGroup). In a game without that (Retail) ours is
 -- not there and the game's own stays: no window of it on the full screen, its key the game's (Board.Present); with
--- neither, no full screen at all (Window.lua), nor its settings.
+-- neither, the full screen holds the game's own window (GameWindow.lua).
 local NEEDS = {
     spellbook = { "C_SpellBook", "IsSpellBookItemLooseFlyoutMember" },
     talents = { "C_SpecializationInfo", "GetCombatConfigIDForSpecGroup" },
@@ -205,8 +212,8 @@ function ns.Serves(key)
 end
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = (ns.Serves()
-    and "the bottom edge no longer fills the screen; your talents and spellbook keys open the game's own again; "
+ns.GIVEN_BACK = "the bottom edge no longer fills the screen; " .. (ns.Serves()
+    and "your talents and spellbook keys open the game's own again; "
     or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars"
 
 local OPTIONS = {
@@ -263,9 +270,9 @@ local OPTIONS = {
 }
 if ns.Serves() then
     table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
-    -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
-    Core.Edge.Options(OPTIONS, 1)
 end
+-- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
+Core.Edge.Options(OPTIONS, 1)
 -- Core's window takes the section in by itself (Edge.lua); the keys bound anew, the quest marks looked at again,
 -- the unit frames and action bars as the settings say.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
@@ -313,6 +320,7 @@ Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.G
 function ns.OnLogin()
     ns.Window.Build()
     ns.Board.Follow()
+    ns.GameWindow.Start()
     ns.Keys.Start()
     ns.QuestMarks.Start()
     ns.Units.Start()

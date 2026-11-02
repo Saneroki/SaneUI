@@ -148,15 +148,14 @@ check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
 local Board, Edge = ns.Board, Core.Edge
 
 -------------------------------------------------------------------------------
---  In Retail: neither our spellbook nor our talents, so no full screen and the game's keys its own; the quest marks
+--  In Retail: neither our spellbook nor our talents, so the game's own window on the full screen and the game's keys
+--  its own; the quest marks
 -------------------------------------------------------------------------------
 if RETAIL then
-    check(Core.RETAIL and not ns.Serves() and not Board.Present("spellbook") and not Board.Present("talents"),
-        "Retail has not the spellbook and talents ours are made after: neither of ours is there")
+    check(Core.RETAIL and not ns.Serves() and not Board.Present("spellbook") and not Board.Present("talents")
+        and Board.Present("game"), "Retail has not the spellbook and talents ours are made after: neither of ours is there, the game's own window is")
     check(ns.MouseRings.SPELL == 61304 and ns.MouseRings.holder and ns.MouseRings.holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN"),
         "the rings around the mouse stand in Retail too, on that game's own spell for the global cooldown")
-    check(ns.Window.handle == nil and not ns.Window.Full() and not ns.Window.Fill(),
-        "no window: the bottom edge fills no screen")
     check(next(W.overrides) == nil and not ns.Keys.Taken() and not ns.Keys.Taken("TOGGLETALENTS"),
         "no key of the game's runs ours: its spellbook and talents keys open its own windows")
     ns.Keys.Press("spellbook")
@@ -165,7 +164,119 @@ if RETAIL then
     local listed = {}
     for _, option in ipairs(Core.described[ns.name].list) do listed[option.key] = true end
     check(listed.questMarks and listed.unitPlayer and listed.unitSize and listed.cleanBars and not listed.keys
-        and not listed.expand, "its settings: the unit frames, the action bars and the quest marks")
+        and listed.expand, "its settings: the unit frames, the action bars, the quest marks and the full screen's")
+
+    -- The full screen, as in Forever, around the game's own window: seated in a panel, opened by the game only.
+    local handle, layouts = ns.Window.handle, Board.layouts
+    local frame, strip, inside = handle.frame, handle.edge.strips.bottom, handle.inside
+    check(handle.zone == "BOTTOM" and strip and strip:IsShown() and strip._width == 1920 * ns.Window.STRIP,
+        "its window is at the bottom middle, and the middle half of the bottom edge fills the screen")
+    local first, windows = layouts.options.default(), layouts.options.windows()
+    check(first and first.key == "game" and #windows == 1 and windows[1].key == "game" and windows[1].title == ns.TEXT.book
+        and Core.Classic.List(handle) == nil, "its one window is the game's own of both; no Classic windows of Combat's")
+    frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+    inside._left, inside._bottom, inside._height = 0, 0, 1080 - Core.Window.BAR
+    inside._strata, inside._level = "HIGH", 501
+    GetBindingKey = function(action) return action == "TOGGLETALENTS" and "N" or nil end
+    local micro = W.NewWidget("Button", "PlayerSpellsMicroButton", UIParent)
+    PlayerSpellsMicroButton = micro
+    local game = W.NewWidget("Frame", "PlayerSpellsFrame", UIParent)
+    game._width, game._height, game._scale = 1618, 883, 1
+    game:SetPoint("TOP", UIParent, "TOP", 0, -41)
+    game:Hide()
+    PlayerSpellsFrame = game
+    local function Push()
+        W.Wait(1) -- a while after the strip came under the mouse
+        strip:GetScript("OnEnter")(strip)
+        W.cursorX, W.cursorY = 960, 500 -- the mouse goes away again: the next push counts
+        W.Wait(Edge.LOOK)
+    end
+    local function Stand()
+        frame._group:Run(1)
+        W.Wait(0)
+    end
+    local function Back()
+        frame._group:Run(1)
+        handle:Place()
+        frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+    end
+    -- Opened by the game, as its own code does it (its key, its micro menu button): its OnShow tells the game's registry.
+    local function Opens()
+        game:Show()
+        EventRegistry:TriggerEvent("PlayerSpellsFrame.OpenFrame")
+        W.Wait(0)
+    end
+    local function Click()
+        for _, widget in ipairs(W.frames) do
+            if widget.GetAttribute and widget:GetAttribute("clickbutton") == micro then return widget end
+        end
+    end
+
+    Push()
+    check(handle.edge.full, "the mouse pushed against the bottom edge fills the screen")
+    Stand()
+    local panel = layouts.panels.game
+    check(layouts.standing and panel and panel:IsShown() and panel.title._text == ns.TEXT.book, "standing, the board holds its panel")
+    -- Its body where the board put it (the stand-in knows no anchors).
+    panel.body._left, panel.body._bottom, panel.body._width, panel.body._height = 100, 100, 800, 500
+    panel.body._strata, panel.body._level = "HIGH", 510
+    ns.Window.Reboard()
+    W.Wait(0)
+    local click = Click()
+    check(not game:IsShown() and panel.hint._shown and panel.hint._text == ns.TEXT.gameClick:format("N"),
+        "our code leaves the game's window closed, and the panel says what opens it")
+    check(click and click._shown and click._parent == UIParent and click:GetAttribute("type") == "click"
+        and click._strata == "HIGH" and click._level == 510 + ns.GameWindow.LEVEL and click._points[1][1] == "TOPLEFT"
+        and click._points[1][2] == UIParent and click._width == 800 and click._height == 500,
+        "over its body, on UIParent and not in our window, a secure click on the game's own micro menu button")
+    Opens()
+    check(Core.Lent(game) and near(game._scale, math.min(800 / 1618, 500 / 883)) and game._parent == UIParent
+        and game._strata == "HIGH" and game._level == 510 + ns.GameWindow.LEVEL and not panel.hint._shown and not click._shown,
+        "opened by the game, it is seated in the panel at the scale that fits, and the click and the words go")
+    game:Hide()
+    check(not Core.Lent(game) and not handle.edge.full, "closed by the game (its key, its X): given back, and the full screen goes back with it")
+    Back()
+    check(game._scale == 1 and game._points[1][1] == "TOP", "with its place and scale as they were")
+    Opens()
+    check(handle.edge.full and game:IsShown(), "opened at its size, by its key: the full screen comes with it")
+    Stand()
+    W.Wait(0)
+    check(Core.Lent(game) and not click._shown, "and it is seated there")
+    Push()
+    check(not handle.edge.full and game:IsShown() and not Core.Lent(game), "pushed back: our code does not close it, it stands at its own place")
+    Back()
+    Push()
+    Stand()
+    W.Wait(0)
+    check(Core.Lent(game), "open already, the next push seats it")
+    game:Hide()
+    Back()
+    Push()
+    Stand()
+    W.Wait(0)
+    W.Combat(true)
+    W.Wait(0)
+    check(not click._shown and panel.hint._text == ns.TEXT.gameFight:format("N"), "in a fight the click is gone and the panel says the key")
+    Opens()
+    check(Core.Lent(game), "the game's key opens it in a fight too, and it is seated")
+    game:Hide()
+    Back()
+    Push()
+    Stand()
+    W.Wait(0)
+    W.Combat(false)
+    W.Wait(0)
+    check(click._shown and panel.hint._text == ns.TEXT.gameClick:format("N"), "after it the click is back")
+    micro._enabled = false
+    micro.IsEnabled = function() return false end
+    ns.Window.Reboard()
+    W.Wait(0)
+    check(not click._shown and panel.hint._text == ns.TEXT.gameNotYet, "with its micro menu button off the game has it closed to you: no click")
+    micro.IsEnabled = function() return true end
+    ns.Window.Reboard()
+    W.Wait(0)
+    check(click._shown, "and back once the game gives it")
+
     local player = ns.Units.KINDS[1].button
     check(player and watched[player] and player.face.level._text == "20" and PlayerFrame._mouse == false
         and TargetFrame._parent ~= UIParent and ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 0,
@@ -181,10 +292,14 @@ if RETAIL then
     for _, widget in ipairs(W.frames) do if widget._parent == plate and widget.icon then mark = widget end end
     check(mark and mark._shown and mark.icon._texture == ns.QuestMarks.ICONS.kill and mark.count._text == "3/8",
         "the quest marks beside nameplates, as in Forever")
+    Opens()
+    check(Core.Lent(game), "(the game's window seated as the module stands down)")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars",
+        and ns.GIVEN_BACK == "the bottom edge no longer fills the screen; no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars",
         "standing down: the quest marks go, and what is told says so")
+    check(not Core.Lent(game) and game:IsShown() and not click._shown and not frame._shown,
+        "the game's window given back, open, the click and the window gone")
     check(PlayerFrame._mouse == true and TargetFrame._parent == UIParent and MainActionBar.BorderArt._alpha == 1,
         "and the game's unit frames and action bars are its own again")
     io.write(("Combat in Retail: all %d checks passed.\n"):format(passed))
@@ -657,6 +772,7 @@ if hasTalents then
         "the first layout: the talents at the left, the spellbook at the right, each as wide as its share of the game's sizes")
 end
 check(not Board.Present("planner"), "without a talent planner Sane UI knows, there is no planner's window to add")
+check(not Board.Present("game") and not layouts.panels.game, "with ours there, the game's own window stands on no panel")
 Push()
 check(not handle.edge.full, "back to its size")
 Back()

@@ -9,6 +9,8 @@ local _, ns = ...
 --  the dropdown Windows adds one). The module's windows, in this order:
 --      talents    your talents: our own window, as the game's (Talents/)
 --      spellbook  your spellbook: our own window, as the game's (Book/)
+--      game       in a game without those two (Retail): the game's own window of
+--                 both, seated in its panel (GameWindow.lua)
 --      planner    the window of a talent planner Sane UI knows (Core.Neighbours),
 --                 while that addon is installed: seated in its panel (Core.Seat:
 --                 its place, scale and layer lent), opened with its panel and
@@ -38,9 +40,10 @@ ns.Board = Board
 Board.ICONS = {
     talents = "Interface/ICONS/Ability_Marksmanship",
     spellbook = "Interface/ICONS/INV_Misc_Book_09",
+    game = "Interface/ICONS/INV_Misc_Book_09",
 }
-Board.ORDER = { "talents", "spellbook", "planner" }
-Board.FIRST = { "talents", "spellbook" }
+Board.ORDER = { "talents", "spellbook", "game", "planner" }
+Board.FIRST = { "talents", "spellbook", "game" }
 
 local layouts    -- Core's board, once the window is there (Board.Take)
 local parts = {} -- [key] = { part, spec }: registered by the parts' files
