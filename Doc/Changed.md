@@ -147,6 +147,10 @@ Saneroki: "The darker backgrounds of the Guide, can we have it have rounded corn
 - **`src/SpeedLeveling/Steps.lua`:** the shades behind the steps at hand and behind the list are Core's `Shape` of one radius (`Steps.ROUND`, 6) with no trim, as dark as before; the list's on a frame of its own under its lines. The list's padding is that radius (`Steps.LIST_PAD`, 3 before), so a gold band at its top or bottom stays clear of the corners.
 - **`dev/uilab/scenes/guide.lua`:** a stand-in for `ns.Run`, without which the wheel failed in the scene. **`dev/tests/speedguide.lua`:** the shades' corners, their size and no border.
 
+### No numbers on the unit frames' auras (Saneroki, 2026-11-02)
+Saneroki: "we don't need the numbers on the unit frame buffs, debuffs and cc": the darkening going around the icon tells the time.
+- **`src/Combat/Units/Auras.lua`:** the text of the time left and its formatter are gone again; the cooldown widget's numbers stay off, its swipe alone tells the time. A `/reload` takes it in.
+
 ### The time on the unit frames' auras small and bare (Saneroki, 2026-11-02)
 Saneroki: "on the unit frames the buffs and debuffs can have big numbers on them that are even bigger then the icons. make them smaller, remove the s or m, just show the number and make the number 50% transparent"
 - **`src/Combat/Units/Auras.lua`:** the cooldown widget's own numbers off; the aura button's `SetDurationText` on a text of ours, 9 high, alpha 0.5, with a numeric rule formatter that writes only the number, so it runs in a fight too. A `/reload` takes it in.
