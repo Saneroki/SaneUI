@@ -169,10 +169,64 @@ function mix(a, b, alpha) {
   return `rgba(${m(16)},${m(8)},${m(0)},${alpha == null ? 1 : alpha})`;
 }
 
+// Masks wrapped with CLAMPTOWHITE show everything beyond their rectangle, which CSS has no word for: they are drawn
+// together onto a canvas as large as the region, and that picture is one mask. Pictures load first: until then none
+// of these masks applies, then ready() draws the region's masks again. Twice the region's pixels, for the rounds, and
+// on whole pixels, so a mask at the region's edge ends on the canvas's and leaves no sliver.
+const clamped = new Map();  // key -> data URL
+const clampedLoading = new Set();
+function clampedMask(it, list, ready) {
+  const key = JSON.stringify([it.w, it.h, list]);
+  if (clamped.has(key)) return clamped.get(key);
+  if (clampedLoading.has(key)) return null;
+  clampedLoading.add(key);
+  const pictures = list.map((m) => new Promise((done, failed) => {
+    const img = new Image();
+    img.onload = () => done(img);
+    img.onerror = failed;
+    img.src = texUrl(m.f);
+  }));
+  Promise.all(pictures).then((imgs) => {
+    const W = Math.max(1, Math.ceil(it.w * 2)), H = Math.max(1, Math.ceil(it.h * 2));
+    const kx = W / it.w, ky = H / it.h;
+    const sheet = () => {
+      const c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      const g = c.getContext("2d");
+      g.fillStyle = "#fff";
+      g.fillRect(0, 0, W, H);
+      return [c, g];
+    };
+    const [all, allG] = sheet();
+    list.forEach((m, i) => {
+      const [one, oneG] = sheet();
+      const x = Math.round(m.x * kx), y = Math.round(m.y * ky);
+      const w = Math.round((m.x + m.w) * kx) - x, h = Math.round((m.y + m.h) * ky) - y;
+      oneG.clearRect(x, y, w, h);
+      oneG.drawImage(imgs[i], x, y, w, h);
+      allG.globalCompositeOperation = "destination-in";
+      allG.drawImage(one, 0, 0);
+    });
+    if (clamped.size > 2000) clamped.clear();
+    clamped.set(key, all.toDataURL("image/png"));
+    clampedLoading.delete(key);
+    ready();
+  }).catch(() => clampedLoading.delete(key));
+  return null;
+}
+
 // The region's masks (mask textures), plus the texture's own alpha where a colour is multiplied into it.
 function masks(st, it, extra) {
   const list = extra.slice();
-  for (const m of it.m || []) list.push({ url: texUrl(m.f), x: m.x, y: m.y, w: m.w, h: m.h });
+  const wrapped = [];
+  for (const m of it.m || []) {
+    if (m.cw) wrapped.push(m);
+    else list.push({ url: texUrl(m.f), x: m.x, y: m.y, w: m.w, h: m.h });
+  }
+  if (wrapped.length) {
+    const url = clampedMask(it, wrapped, () => masks(st, it, extra));
+    if (url) list.push({ url, pos: "0 0", size: "100% 100%" });
+  }
   if (!list.length) return;
   st.maskImage = st.webkitMaskImage = list.map((m) => `url("${m.url}")`).join(",");
   st.maskPosition = st.webkitMaskPosition = list.map((m) => m.pos || `${m.x}px ${m.y}px`).join(",");

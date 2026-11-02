@@ -24,15 +24,16 @@ local _, ns = ...
 --      Row.Set(row, line, notes, onList)    -- shows a line of Slots (notes: the line under the name)
 --      Row.Auto(row, onList)                -- the A as the player's word stands
 --      Row.Color(quality), Row.Gold()       -- a quality's colour, the game's gold
---      Row.Font(fontString, size)           -- the game's outlined font of its nameplates, that size
+--      Row.Font(fontString, size)           -- the game's outlined font of its nameplates, that size, as theirs
+--      Row.OFF_WHITE                        -- the colour of bare words (Link, Close, the bags-full page's)
 --      Row.Bar(frame, height)               -- a bar of that make behind a frame (the line's, the A's)
 --      Row.Time(row)                        -- the time left, a line over the bar's foot (a roll card's)
 --      Row.TimeColor(share)                 -- its colour with that share left: green, through yellow, to red
 --      Row.Upgrade(line)                    -- the tooltip's line about an upgrade
 --      Row.Width(row)                       -- how wide its parts run
---  A line of a roll (Rolls.lua) has no A; row.room keeps that much of the
---  bar's right end free for its choices. The clicks and the tooltips are the
---  window's (Window.lua) and the roll cards'.
+--  row.noAuto: a line with no A (a roll's, the bags-full page's); row.room keeps
+--  that much of the bar's right end free (a roll's choices). The clicks and the
+--  tooltips are those of the window (Window.lua), the rolls and the bags-full page.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local J = Core.Journal
@@ -51,7 +52,8 @@ local HOVER = { 0.5, 0.5, 0.5, 1 }
 local FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate" }
 local DARK = { 0.16, 0.16, 0.18 } -- a bar of no thing (the A)
 local SOFT = { 0.88, 0.88, 0.88 } -- the line under the name
-local SHADE = 0.6 -- the dark under the time left
+local SHADE = { 0.07, 0.07, 0.09, 0.6 } -- under the time left: a nameplate's dark where health is missing, the bar seen through
+Row.OFF_WHITE = { 238 / 255, 229 / 255, 208 / 255 }
 
 function Row.Color(quality)
     local colors = rawget(_G, "ITEM_QUALITY_COLORS")
@@ -76,7 +78,7 @@ local function Face()
         local file, _, flags
         if type(object) == "table" and object.GetFont then file, _, flags = object:GetFont() end
         if type(file) == "string" then
-            face = { file = file, flags = (flags and flags ~= "") and flags or "OUTLINE" }
+            face = { name = name, file = file, flags = (flags and flags ~= "") and flags or "OUTLINE" }
             return face
         end
     end
@@ -84,12 +86,12 @@ local function Face()
     return face
 end
 
--- size: in 1080p pixels, as Sane UI's other words.
+-- size: in 1080p pixels, as Sane UI's other words. On the game's font object, as Nameplates' Text.lua: its shadow is
+-- the game's, none of ours.
 function Row.Font(fs, size)
     local look = Face()
+    if look.name then fs:SetFontObject(look.name) end
     fs:SetFont(look.file, size * J.PX, look.flags)
-    fs:SetShadowOffset(1, -1)
-    fs:SetShadowColor(0, 0, 0, 0.6)
 end
 
 -- A bar behind a frame of that height, as the nameplates make theirs:
@@ -174,7 +176,7 @@ function Row.Time(row)
     line:SetMinMaxValues(0, 1)
     local shade = line:CreateTexture(nil, "BACKGROUND")
     shade:SetTexture(WHITE)
-    shade:SetVertexColor(0, 0, 0, SHADE)
+    shade:SetVertexColor(SHADE[1], SHADE[2], SHADE[3], SHADE[4])
     shade:SetAllPoints(line)
     Caps(line:GetStatusBarTexture(), bar.fill, bar.inner)
     Caps(shade, bar.fill, bar.inner)
@@ -301,7 +303,7 @@ function Row.Set(row, line, notes, onList)
     row.note:SetText(note)
     local worth = notes and Worth(line) or ""
     row.worth:SetText(worth)
-    row.auto:SetShown(line.kind == "item" and line.id ~= nil and not line.roll)
+    row.auto:SetShown(line.kind == "item" and line.id ~= nil and not row.noAuto)
     Row.Auto(row, onList)
     Lay(row, note ~= "" or worth ~= "", worth ~= "")
     row.bar:SetLit(false)

@@ -4,21 +4,8 @@
 -- on your list after the loot opens, to show the A lit. The module's table is LabLoot in the console:
 -- LabLoot.Window.Close() closes it, LabLoot.Open() opens the loot again with every slot back. Beside it your group's
 -- rolls, a line each: the last runs down and starts again, the others stand at a share of their time to show the time
--- line's colours; LabLoot.Roll() brings them back.
-
--- The lab hides what lies beyond a mask's rectangle, where the game's CLAMPTOWHITE shows it: here masks without a
--- picture, so the bars are seen (square at their ends; round in the game).
-local create = CreateFrame
-CreateFrame = function(kind, ...)
-    local frame = create(kind, ...)
-    local mask = frame.CreateMaskTexture
-    frame.CreateMaskTexture = function(self, ...)
-        local made = mask(self, ...)
-        made.SetTexture = function() end
-        return made
-    end
-    return frame
-end
+-- line's colours; LabLoot.Roll() brings them back. Your bags are full, so the lines that make room stand beside the
+-- window: LabLoot.BagsFull(false) makes room, LabLoot.BagsFull(true) fills them again.
 
 -- The game's own loot window and roll frames, as Loot's Game.lua finds them (the lab loads neither).
 CreateFrame("Frame", "LootFrame", UIParent):RegisterEvent("LOOT_OPENED")
@@ -103,6 +90,10 @@ end
 C_Loot = C_Loot or {}
 C_Loot.GetLootRollDuration = function() return ROLL_TIME * 1000 end
 
+-- Bags full at the scene's word: no room, and the world's bags hold what they hold.
+local bagsFull = true
+C_Container.GetContainerNumFreeSlots = function() return bagsFull and 0 or 8, 0 end
+
 -- Money in the game's coins, as the game writes it (the lab lacks it): each kind its number and picture, none of 0.
 C_CurrencyInfo = C_CurrencyInfo or {}
 C_CurrencyInfo.GetCoinTextureString = function(copper)
@@ -146,8 +137,13 @@ function ns.Open()
     local frame = ns.Window.frame
     if frame then
         frame:ClearAllPoints()
-        frame:SetPoint("RIGHT", UIParent, "CENTER", -200, 40)
+        frame:SetPoint("RIGHT", UIParent, "CENTER", -440, 40)
     end
+end
+
+function ns.BagsFull(on)
+    bagsFull = on
+    ns.Window.Fill()
 end
 
 -- The rolls open as the game opens them; who chose what, on the game's lines.

@@ -342,7 +342,8 @@ local function Shown() return Window.frame and Window.frame:IsShown() end
 local function Rows()
     local list = {}
     for _, row in ipairs(W.frames) do
-        if row.line and row._shown and row._parent and row._parent._parent and row.SetScript and row.holder and not row.card then
+        if row.line and row._shown and row.holder and row._parent and row._parent._parent
+            and row._parent._parent._kind == "ScrollFrame" then
             list[#list + 1] = row
         end
     end
@@ -698,9 +699,10 @@ Open()
 local page = ns.Full
 local pageFrame
 for _, frame in ipairs(W.frames) do
-    if frame._parent == Window.frame and frame.head and frame.rule then pageFrame = frame end
+    if frame._parent == Window.frame and frame.head and frame.thisLabel then pageFrame = frame end
 end
 check(pageFrame and pageFrame:IsShown(), "bags full: the page beside the window")
+check(not pageFrame._mouse, "no paper under it: only its lines and arrows take the mouse")
 local texts = {}
 for _, frame in ipairs(W.frames) do
     if frame._parent == pageFrame and frame.name and frame.worth and frame._shown then
@@ -708,11 +710,17 @@ for _, frame in ipairs(W.frames) do
     end
 end
 table.sort(texts)
-check(texts[1] == "Apprentice Robe / Worth 120c" and texts[2] == "Boar Tusk / Worth 10c", "the thing's worth, the cheapest of yours")
+check(texts[1] == "Apprentice Robe / 120c" and texts[2] == "Boar Tusk / 10c", "the thing's worth, the cheapest of yours")
 local room
 for _, frame in ipairs(W.frames) do
     if frame._parent == pageFrame and frame.name and frame.name:GetText() == "Boar Tusk" then room = frame end
 end
+check(room.bar and room.bar.halves and room.bar.fill and room.icon._masks and #room.icon._masks == 2, "a line of the window, its bar and round picture")
+check(not room.auto._shown and #room.bar.colour == 3, "with no A, in its quality's colour")
+room._scripts.OnEnter(room)
+check(room.bar.lit, "grey under the mouse, as a line of the window")
+room._scripts.OnLeave(room)
+check(not room.bar.lit, "and back")
 room._scripts.OnClick(room)
 check(picked and picked[1] == 2 and picked[2] == 3, "a click picks it up")
 bags[2][3] = nil

@@ -371,8 +371,12 @@ of the name):
   is one line of the window, as wide as the window at its widest, with no A and no line under the name. Inside the bar
   at its right end the game's own icons, no words, a refused one faint and grey, how many chose it a number on it.
   Over the bar's foot, from the picture on, the time left, a third of the bar's height as a nameplate's resource, in
-  the game's blend for a health bar (green, yellow half way, red at nothing; `Row.TimeColor`), on a dark shade so it
-  stands out on a green thing's bar.
+  the game's blend for a health bar (green, yellow half way, red at nothing; `Row.TimeColor`), on a shade of the
+  nameplates' dark so it stands out on a green thing's bar.
+- **All of it the nameplates' make** (Saneroki, 2026-11-02: "rounded edges like our nameplates", "shade them equally
+  styled so they have the same style philosophy"): the lines beside the window with the bags full are lines of the
+  window too (`src/Loot/Full.lua`): no paper, no pencil, bare words in off white, **<** and **>** small dark bars as
+  the A. Words on the game's font object as the nameplates', with no shadow of ours.
 
 ### Unit frames and action bars
 

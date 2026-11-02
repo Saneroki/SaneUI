@@ -7,17 +7,11 @@ for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", 
                         "OverlayPlayerCastingBarFrame", "MirrorTimerContainer" }) do
     CreateFrame("Frame", name, UIParent)
 end
--- The lab hides what lies beyond a mask's rectangle, where the game's CLAMPTOWHITE shows it, and takes a status bar's
--- atlas for a file: here masks without a picture, so the bars are seen (square at their ends), and the atlas on its fill.
+-- The lab takes a status bar's atlas for a file: here the atlas on its fill.
 local create = CreateFrame
 CreateFrame = function(kind, ...)
     local frame = create(kind, ...)
-    local mask, fill = frame.CreateMaskTexture, frame.SetStatusBarTexture
-    frame.CreateMaskTexture = function(self, ...)
-        local made = mask(self, ...)
-        made.SetTexture = function() end
-        return made
-    end
+    local fill = frame.SetStatusBarTexture
     if kind == "StatusBar" then
         frame.SetStatusBarTexture = function(self, asset)
             local art = type(asset) == "string" and asset:find("^ui%-")

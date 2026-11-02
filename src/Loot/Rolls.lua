@@ -131,7 +131,7 @@ local function NewCard()
     local card = CreateFrame("Frame", nil, holder)
     card:SetSize(S.width, S.row)
     card.row = ns.Row.New(card)
-    card.row.card = card
+    card.row.card, card.row.noAuto = card, true
     card.row:SetPoint("TOPLEFT", card, "TOPLEFT")
     card.row:SetPoint("TOPRIGHT", card, "TOPRIGHT")
     card.row:SetScript("OnEnter", ns.Guard(ThingTip))
@@ -234,7 +234,7 @@ local function Info(rollID)
         GetLootRollItemInfo(rollID)
     name = Plain(name)
     if not name then return nil end
-    local line = { kind = "item", roll = rollID, icon = Plain(icon), name = name, count = Plain(count) or 1,
+    local line = { kind = "item", icon = Plain(icon), name = name, count = Plain(count) or 1,
                    quality = Plain(quality) or 1, locked = false, canNeed = Plain(canNeed), canGreed = Plain(canGreed),
                    canDisenchant = Plain(canDisenchant), canTransmog = Plain(canTransmog),
                    reasonNeed = Plain(reasonNeed), reasonGreed = Plain(reasonGreed),
@@ -326,7 +326,7 @@ function Rolls.Try()
     if not holder then return end
     local card = Card()
     card.sample, card.rollID, card.ends = true, -#cards, GetTime() + TRY
-    Dress(card, { kind = "item", roll = card.rollID, icon = "Interface\\Icons\\INV_Misc_QuestionMark",
+    Dress(card, { kind = "item", icon = "Interface\\Icons\\INV_Misc_QuestionMark",
                   name = ns.TEXT.rollsView, quality = 3, locked = false, canNeed = true, canGreed = true, known = true })
     card.chose[GREED] = { ["Saneroki"] = true }
     for _, button in ipairs(card.choices) do

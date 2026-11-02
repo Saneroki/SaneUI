@@ -29,7 +29,7 @@ local ADDON, ns = ...
 --    Items.lua   the options' tab Your items: the things met in loot, ticked
 --                where they are taken at once
 --    Master.lua  the master looter's menu on a thing: who may have it, a roll
---    Full.lua    your bags full: a page beside the window with what the thing
+--    Full.lua    your bags full: lines beside the window with what the thing
 --                is worth and the least worth thing of yours, to make room
 --    Rolls.lua   a card for each roll of your group: a line as the loot
 --                window's with the game's icons for Need, Greed, Pass (and what
@@ -82,15 +82,15 @@ ns.TEXT = {
     give = "Give to",
     rollFor = Word("REQUEST_ROLL", "Request Roll"),
     rollForTip = "Every one of the group may roll for it; you give it to the winner afterwards.",
-    -- the page beside the window with the bags full
+    -- the lines beside the window with the bags full
     fullTitle = "Bags full",
     fullThis = "This one",
     fullRoom = "Make room",
-    fullWorth = "Worth %s",
-    fullNoWorth = "Sells for nothing",
     fullNone = "Nothing in your bags you could do without.",
     fullHow = "Click it to pick it up, then drop it on the world: the game asks before it is gone.",
     fullOf = "%d of %d",
+    fullBack = "<",
+    fullAhead = ">",
     -- the roll cards
     need = Word("NEED", "Need"),
     greed = Word("GREED", "Greed"),
@@ -162,7 +162,7 @@ ns.TEXT = {
     feedQualityTip = "The least quality of the group's things shown.",
     fullHeader = "Bags full",
     full = "Make room for loot",
-    fullTip = "With your bags full while the loot window is open, a page beside it shows what the thing is worth, and the thing of yours worth the least at a vendor (arrows go through the others). Click it to pick it up; drop it on the world to get rid of it. And one slot of your bags stays free: your cheapest junk is destroyed at your next key press, with a warning on the screen when there is no junk. Also a box at the foot of the bags.",
+    fullTip = "With your bags full while the loot window is open, two lines beside it show what the thing is worth, and the thing of yours worth the least at a vendor (arrows go through the others). Click it to pick it up; drop it on the world to get rid of it. And one slot of your bags stays free: your cheapest junk is destroyed at your next key press, with a warning on the screen when there is no junk. Also a box at the foot of the bags.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -174,12 +174,11 @@ ns.SIZE = {
     least = 190,    -- and at its narrowest: room for Link and Close
     row = 38,       -- a line of the loot window
     rowGap = 2,     -- between its lines
-    icon = 30,      -- a thing's picture on the page beside the window with the bags full
     pad = 4,        -- over and under a line's words inside its bar
     auto = 16,      -- the A of a line
     foot = 22,      -- the buttons Link and Close
     arrow = 14,     -- the green arrow of an upgrade, in front of its name
-    gap = 6,        -- between a picture and its words, and round the page's parts
+    gap = 6,        -- between a picture and its words, and between the parts beside the window
     room = 0.6,     -- the most of the screen's height the window's lines take; more scroll
     seen = 60,      -- the things met in loot kept for the tab Your items, the newest first
     burst = 4,      -- slots taken at once in one frame; the rest in the frames after
@@ -187,7 +186,7 @@ ns.SIZE = {
     time = 12,      -- the time left over a roll card's foot: a third of its bar, as a nameplate's resource
     feed = 300,     -- the feed's lines
     feedLine = 24,  -- a line of the feed
-    full = 196,     -- the page beside the window with the bags full
+    full = 240,     -- the lines beside the window with the bags full
 }
 
 -- The qualities a choice lists, Poor to Legendary, as the game names them.

@@ -49,7 +49,7 @@ local S = ns.SIZE
 local Window = {}
 ns.Window = Window
 
-local OFF_WHITE = { 238 / 255, 229 / 255, 208 / 255 } -- the buttons' words; gold under the mouse
+local OFF_WHITE = ns.Row.OFF_WHITE -- the buttons' words; gold under the mouse
 local CHAT_SHOWN, CHAT_BYTES = 250, 1270 -- what the game's chat box holds: 255 letters on show, 1280 bytes with links
 local STEP = S.row + S.rowGap
 local LOOSEN = 1 -- seconds the game gets to clear a thing the rules asked for (from that ask); then its line shows again

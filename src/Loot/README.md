@@ -9,7 +9,7 @@ its picture, its name and an A; Link and Close, two words in off white, at the f
 comes under the mouse. What is taken at once, as soon as the loot is ready, is yours to say: coins, currencies, quest
 items and junk at first, in every profile; everything or more kinds (trade goods, gear, consumables) by a switch; and
 over them your word on an item (its A, or the options' list *Your items*). As master looter a click gives the thing away from a
-menu. With your bags full a page beside the window weighs the thing against the cheapest thing you carry. Your
+menu. With your bags full, two lines of the same make beside the window weigh the thing against the cheapest thing you carry. Your
 group's rolls are lines of the same make: inside the bar the game's icons for Need, Greed and Pass with how many
 chose each, over its foot the time left, running down from green to red. What you and your group receive
 rises over the world, also what was taken at once: that is how you see what you looted. When it fails, the game's own loot window, its Auto Loot and its roll frames are back.
@@ -68,11 +68,12 @@ rises over the world, also what was taken at once: that is how you see what you 
 - **Master looter:** a thing of the group's quality or better is yours to give, not to take: a click opens a menu
   beside its line with the thing, *Give to* and everybody who may have it (in a raid under their classes, each name
   in its class's colour), and *Request Roll*. A name chosen, the game asks yes or no, then gives it.
-- **Bags full** (*Make room for loot*, on): with your bags full while the loot window holds a thing, a page of paper
-  stands at the right of the window's lines: *This one*, the thing with what a vendor pays for it, and *Make room*, the
-  thing of yours worth the least at a vendor; the pencil arrows go through the next cheapest ("2 of 9"). Click it
-  (or drag it) to pick it up, then drop it on the world: the game asks before it is gone. Never offered: what a vendor
-  will not take, a quest's things, epics and better. The page goes once there is room.
+- **Bags full** (*Make room for loot*, on): with your bags full while the loot window holds a thing, the window's own
+  lines stand at its right, no paper and no frame, with bare words in off white: *This one*, the thing, and *Make room*,
+  the thing of yours worth the least at a vendor; each a line of the window with no A, under the name what it is, at
+  the right what a vendor pays for all of it. The small dark **<** and **>** go through the next cheapest ("2 of 9").
+  Click it (or drag it) to pick it up, then drop it on the world: the game asks before it is gone. Never offered: what
+  a vendor will not take, a quest's things, epics and better. They go once there is room.
 - **Group rolls** (*Sane UI's roll cards*, on): when your group rolls for a thing, one line of the loot window on the
   world, no paper and no frame.
   - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, the green arrow on an
@@ -122,7 +123,8 @@ rises over the world, also what was taken at once: that is how you see what you 
   border of two halves (`WHITE8X8`, black at 0.9, grey under the mouse) round at their corners by Core's
   `Shape.CORNER` masks, the fill's ends by `Shape.CAP_LEFT`/`CAP_RIGHT`, both a quarter of the height; the fill in
   `ITEM_QUALITY_COLORS`, the game's gold `NORMAL_FONT_COLOR` for a quest's thing (`Slots.Quest`). The words in the
-  face and outline of the game's `SystemFont_NamePlate_Outlined`, white. The picture bare at the bar's left end, a
+  face and outline of the game's `SystemFont_NamePlate_Outlined`, white, on that font object as Nameplates' are, so
+  the shadow is the game's. The picture bare at the bar's left end, a
   screen pixel inside, as tall as the fill and rounded by the same caps; the game's atlas `bags-greenarrow` in front of
   an upgrade's name; the worth by `Core.Coins` (vendor price times the count); the A a small dark bar
   of the same make. Link and Close are only their words, off white (238, 229, 208), gold under the mouse. As wide as its widest line (`SIZE.least` to `SIZE.width`). Placed by
@@ -159,7 +161,9 @@ rises over the world, also what was taken at once: that is how you see what you 
   raid's index of the looter), `GetLootThreshold`, `GetMasterLootCandidate(slot, i)`; the game's menu
   (`MenuUtil.CreateContextMenu`), `Core.Confirm`, `GiveMasterLoot`, `DoMasterLootRoll`. The thing is not
   `LootSlot`ted, so the game's own master loot list (`OPEN_MASTER_LOOT_LIST`) does not come.
-- **Bags full** (`Full.lua`): free room only in bags for any thing (`C_Container.GetContainerNumFreeSlots`, its
+- **Bags full** (`Full.lua`): the window's own parts: `Row.New` with `row.noAuto`, `Row.Set` with the line under the
+  name (a thing of the bags made a line by `Slots.Facts`), `Row.Bar` for **<** and **>**, `Row.Font` and
+  `Row.OFF_WHITE` for the words; only they take the mouse. Free room only in bags for any thing (`C_Container.GetContainerNumFreeSlots`, its
   family 0); the bags' things from `C_Container.GetContainerItemInfo` and `GetContainerItemQuestInfo`, the vendor
   price from `C_Item.GetItemInfo`; `Full.Rank` the cheapest stack first. A click picks the thing up
   (`C_Container.PickupContainerItem`, nothing while the cursor holds a thing); Sane UI destroys nothing:
@@ -176,7 +180,8 @@ rises over the world, also what was taken at once: that is how you see what you 
   (`SetNormalAtlas` and so on; all five in both games' atlas tables), refused as the game's `GroupLootFrame_DisableLootButton`: off, alpha 0.35, desaturated, its motion scripts on
   for the reason. The time left (`Row.Time`) is a `StatusBar` on the row as Nameplates' `dress.power`: the same fill, a
   third of the bar's height (`SIZE.time`), the bar's caps; not `Core.Bar`, the art of the game's experience bar, which
-  takes no colour. Under it a dark shade (`WHITE8X8`, black at 0.6). Its colour is the game's blend for a health bar
+  takes no colour. Under it a dark shade (`WHITE8X8`, a nameplate's dark where health is missing, at 0.6). Its colour
+  is the game's blend for a health bar
   (`HealthBar_OnValueChanged`, smooth): `Row.TimeColor`. Placed by `Core.Window.New` (key `rollsPlace`).
 - **The feed** (`Feed.lua`): `CHAT_MSG_LOOT` (`Chat.Received`), `CHAT_MSG_MONEY` (`Chat.Money`), `CHAT_MSG_CURRENCY`
   (`Chat.Currency`, `C_CurrencyInfo.GetCurrencyInfoFromLink`, else the name in the line); how many carried by
@@ -211,11 +216,16 @@ rises over the world, also what was taken at once: that is how you see what you 
 | `Window.lua` | The loot window; the rules' things taken as the loot is ready |
 | `Items.lua` | The options' tab *Your items* |
 | `Master.lua` | The master looter's menu |
-| `Full.lua` | The page that makes room when the bags are full |
+| `Full.lua` | The lines beside the window that make room when the bags are full |
 | `Rolls.lua` | The roll cards: a line, the game's icons inside it, the time left over its foot |
 | `Feed.lua` | What you and your group receive, over the world |
 
 ## History
+- 2026-11-02 — "Can we make all the loot window and the group rolls have rounded edges like our nameplates have? And
+  shade them equally styled so they have the same style philosophy" (Saneroki): the lines and the rolls were of the
+  nameplates' make already (the interface lab drew them square until now, and now draws masks as the game does). What
+  was not: the bags-full page, paper and pencil until now, is two lines of the window with bare words; the words in the
+  game's font object as Nameplates', no shadow of ours; the shade under a roll's time in the nameplates' dark.
 - 2026-11-02 — The roll cards in the loot window's look (Saneroki: "the same design philosophy", a progress bar that
   goes down, "starts green but becomes more red"; then "The need, greed and Pass should be just icons and be inside the
   bars and the timer should be a overlay of the item bar like a classresource is on the nameplates healthbar"): one

@@ -79,7 +79,7 @@ prints its log.
   ```
 
   The scenes: `groupframes` (Core and Combat from their TOCs: Edit Mode open with the party and raid frame chosen and forty made-up
-  units; `LabPreview(10)`, `LabSize(600, 140, 120)`, `LabChoose()` for its dialog in the console; the game's secure headers are not in the lab), `loot` (Core and Loot from their TOCs: the group's roll cards at a share of their time, one running down, `LabLoot.Roll()`; the loot window over the world with a thing of every quality,
+  units; `LabPreview(10)`, `LabSize(600, 140, 120)`, `LabChoose()` for its dialog in the console; the game's secure headers are not in the lab), `loot` (Core and Loot from their TOCs: the group's roll cards at a share of their time, one running down, `LabLoot.Roll()`; your bags full, so the lines that make room stand beside the window, `LabLoot.BagsFull(false)`; the loot window over the world with a thing of every quality,
   a quest's item and coins; the game's loot functions stand in for a corpse, a click takes a thing, `LabLoot.Open()`
   in the console opens it again), `far-sparkles` (Navigation's marks of far herbs and ore, `Glints.lua`, and a minimap's stand-in with the
   found ones as `Found.lua` rings them, the rest of Navigation standing in, over a screenshot of the world: any texture path not under `Interface\` is a file of the project,
@@ -89,7 +89,7 @@ prints its log.
   and the game's quest log standing in, a quest unfolded with its text and big reward icons, two ghosts on top; `LabOnScreen()` shows its look
   on the screen alone, `LabRight()` moves it to the right half, `LabQuestLog` in the console), `unitframes` (Core and Combat from their TOCs, your frame with its cast, your three timers
   and your pet, your target's and focus's frames, the game's cast and timer functions standing in; `LabCast("Fireball")` casts, `LabCombat`
-  in the console; masks without their pictures, as the lab does not draw what lies beyond a mask), `guide` (Core from its TOC and Speed Leveling's view, `Steps.lua`, alone, a made-up guide over a screenshot of the world; `LabWheel(-1)` in the console turns the wheel over it, `LabGround(0.9)` reads it on snow, `LabGuide` is the module), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
+  in the console), `guide` (Core from its TOC and Speed Leveling's view, `Steps.lua`, alone, a made-up guide over a screenshot of the world; `LabWheel(-1)` in the console turns the wheel over it, `LabGround(0.9)` reads it on snow, `LabGuide` is the module), `levelup` (Core and Inventory from their TOCs: the toast of a new level over the world, staying up; `LabLevel(23, 18, 20, 1, 0, 2)`
   says another), `auctionscan` (the game's auction house window from its own files and Core from its TOC: the full scan's bar
   under it through its phases, the game's scan calls standing in; `LabScan.Answer()` in the console is the server's answer),
   `deals` (the game's auction house window from its own files, Core, its auction data and Economy from their TOCs: the tab Deals on
@@ -178,10 +178,8 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
   hold) is a magenta box.
 - No 3D: a model frame is a dashed box.
 - Not the game's renderer: the page draws with the browser. Texts use the font files' widths without kerning.
-  Masks, blend modes and texture coordinates follow the game's rules, but sub-pixel edges can differ, a status bar's
-  atlas is taken for a file, and what lies beyond a mask's rectangle is hidden, where the game's `CLAMPTOWHITE` shows
-  it (so a bar rounded by corner masks does not show: the scene `unitframes` goes without them). Judge the final look
-  in the game.
+  Masks (`CLAMPTOWHITE` too: the page draws those onto a canvas), blend modes and texture coordinates follow the game's
+  rules, but sub-pixel edges can differ, and a status bar's atlas is taken for a file. Judge the final look in the game.
 - The pieces repeat by drawing one texture per tile with their texture coordinates, so the art can go into the
   game in power-of-two textures, `SetTexCoord` taking the part in use (`Doc/guides/images.md`).
 - Next: Core's own windows (`Window`, `Board`, `Views`) built in scenes of their own, and the modules from their

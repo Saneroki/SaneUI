@@ -22,8 +22,7 @@ local _, ns = ...
 --  equipped, 3 when used, 4 a quest's), class (the game's Enum.ItemClass),
 --  kind's words (what, where), worth (a vendor's price for one), upgrade (it
 --  would make the character better: Core.Upgrade; "empty", "better" or nil),
---  uncollected (a look the character could collect and has not); on a roll's
---  card roll (its roll: Rolls.lua).
+--  uncollected (a look the character could collect and has not).
 --
 --  The rules (the options Taken at once; coins, currencies, quest items and
 --  junk on at first, each its own switch, in every profile): Everything, else a

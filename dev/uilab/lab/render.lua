@@ -86,7 +86,8 @@ return function(Lab)
             local ml, mb, mw, mh = Lab.Rect(m)
             if ml and ms.file then
                 out = out or {}
-                out[#out + 1] = { f = ms.file, x = r2((ml - l) * P), y = r2(((b + h) - (mb + mh)) * P), w = r2(mw * P), h = r2(mh * P) }
+                out[#out + 1] = { f = ms.file, x = r2((ml - l) * P), y = r2(((b + h) - (mb + mh)) * P), w = r2(mw * P), h = r2(mh * P),
+                    cw = ms.wrapH == "CLAMPTOWHITE" and ms.wrapV == "CLAMPTOWHITE" and 1 or nil }
             end
         end
         return out
