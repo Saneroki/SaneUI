@@ -5,20 +5,25 @@ local _, ns = ...
 --  When your group rolls for a thing (START_LOOT_ROLL), a card that is one
 --  line of the loot window (Row.lua; Saneroki, 2026-11-02: the same design): a
 --  bar as the nameplates' in the thing's quality colour, its picture at the
---  bar's end, the green arrow on an upgrade, its name; no A, no line under the
---  name. At the bar's right end, nearly as tall as all of it and over the time,
---  the choices the game offers, its own icons with no words (Need; Greed, or
---  Transmog where the game offers that; Disenchant where it does; Pass), a
---  choice the game refuses faint and grey with its reason in the tooltip. Over
+--  bar's end, its name; no A, no line under the name. At the bar's right end,
+--  nearly as tall as all of it and over the time, the choices the game offers,
+--  its own icons with no words (Need; Greed, or Transmog where the game offers
+--  that; Disenchant where it does; Pass), a choice the game refuses faint and
+--  grey with its reason in the tooltip; in front of them, as tall, the game's
+--  green arrow on an upgrade (Saneroki, 2026-11-02: Core.Upgrade, the window's
+--  small arrow made big, which it stands in for here). Over
 --  the bar's foot the time left, a line as a nameplate's resource on its
 --  health, running down, green at first and redder towards nothing, with the
 --  seconds left on it. The cards stack up from where Edit Mode placed them, the
 --  oldest at the foot, as near as the window's lines.
 --
 --  Who chose what: the game says it in its own lines (Chat.Rolled); each
---  choice counts them, a number on its icon; the mouse on it says the choice
---  and names them. A choice of the game's to confirm (one that binds) is its
---  own question.
+--  choice counts them, a number on its icon. The mouse on the line or on an
+--  icon lists them by choice and who of the group has still to roll (Saneroki,
+--  2026-11-02), the list as it is now while the mouse stays. Those the game
+--  tells apart only by its lines: everyone online counts as still to roll,
+--  also one too far away to be asked. A choice of the game's to confirm (one
+--  that binds) is its own question.
 --
 --  A card's three stages: open; closed, the player's part over (CANCEL_LOOT_ROLL:
 --  chosen, or out of time) while the others may still choose: the whole card
@@ -40,6 +45,7 @@ ns.Rolls = Rolls
 
 local PASS, NEED, GREED, DISENCHANT, TRANSMOG = 0, 1, 2, 3, 4
 local WORDS = { [PASS] = "pass", [NEED] = "need", [GREED] = "greed", [DISENCHANT] = "disenchant", [TRANSMOG] = "transmog" }
+local ORDER = { NEED, GREED, TRANSMOG, DISENCHANT, PASS } -- as the choices stand on a card
 local BY_WORD = {}
 for kind, word in pairs(WORDS) do BY_WORD[word] = kind end
 local TRY = 20 -- seconds a tried card stands
@@ -49,6 +55,7 @@ local LATE = 5 -- seconds after its time a card waits for the game to say it; th
 local WAITING = 0.25 -- how much of a card shows while nothing is asked of the player
 local FAINT = 0.35 -- a refused choice, as the game's (GroupLootFrame_DisableLootButton)
 local ICON = "lootroll-toast-icon-%s-%s" -- the game's roll buttons: its atlases by the word of WORDS
+local BETTER = S.better * 20 / 22 -- the big green arrow's width: the game's atlas is 20 by 22
 
 local holder, placed
 local cards = {}   -- shown, the oldest first
@@ -70,20 +77,62 @@ end
 -------------------------------------------------------------------------------
 --  A card
 -------------------------------------------------------------------------------
+-- Whether a name as the game's line gives it is that player's: the whole name (two players can share a first name),
+-- with a realm ("Thrall-Draenor"), or only the first name.
+local function Named(who, full, first)
+    local bare = who:match("^[^%-]+") or who
+    return who == full or bare == full or bare == first
+end
+
+-- The group's units, the player among them (a raid's list holds the player, a party's does not).
+local function Group()
+    local raid = IsInRaid()
+    local units = raid and {} or { "player" }
+    local count = Plain(raid and GetNumGroupMembers() or GetNumSubgroupMembers()) or 0
+    for index = 1, count do units[#units + 1] = (raid and "raid" or "party") .. index end
+    return units
+end
+
+-- Who of the group, online, has no line about this roll yet, by name.
+local function Waiting(card)
+    local names = {}
+    for _, unit in ipairs(Group()) do
+        local full, first = Core.FullName(unit), Core.Ask(UnitName, unit)
+        local waits = full ~= nil and Plain(UnitIsConnected(unit))
+        for _, chosen in pairs(card.chose) do
+            for who in pairs(chosen) do
+                if waits and Named(who, full, first) then waits = false end
+            end
+        end
+        if waits then names[#names + 1] = full end
+    end
+    return names
+end
+
+-- One group of names in a tooltip: its word and how many, then the names; nothing when there are none.
+local function Names(word, names)
+    if #names == 0 then return end
+    table.sort(names)
+    GameTooltip:AddLine(("%s (%d)"):format(word, #names), 1, 1, 1)
+    GameTooltip:AddLine(table.concat(names, ", "), 0.85, 0.85, 0.85, true)
+end
+
+-- Who chose what, then who has still to roll (nobody, once the roll is over).
+local function Who(card)
+    if not ns.options.tally then return end
+    for _, kind in ipairs(ORDER) do
+        local names = {}
+        for name in pairs(card.chose[kind] or {}) do names[#names + 1] = name end
+        Names(ns.TEXT[WORDS[kind]], names)
+    end
+    if not card.gone then Names(ns.TEXT.stillToRoll, Waiting(card)) end
+end
+
 local function ChoiceTip(button)
-    local card = button.card
     GameTooltip:SetOwner(button, "ANCHOR_TOP")
     GameTooltip:SetText(button.word)
     if button.reason then GameTooltip:AddLine(button.reason, 1, 0.3, 0.3, true) end
-    if ns.options.tally then
-        local names = {}
-        for name in pairs(card.chose[button.kind] or {}) do names[#names + 1] = name end
-        table.sort(names)
-        if #names > 0 then
-            GameTooltip:AddLine(ns.TEXT.chose:format(button.word), 1, 1, 1)
-            for _, name in ipairs(names) do GameTooltip:AddLine(name, 0.85, 0.85, 0.85) end
-        end
-    end
+    Who(button.card)
     GameTooltip:Show()
 end
 
@@ -135,7 +184,16 @@ local function ThingTip(row)
         GameTooltip:SetText(row.name:GetText() or "")
     end
     if row.line then ns.Row.Upgrade(row.line) end
+    Who(card)
     GameTooltip:Show()
+end
+
+-- A tooltip of this card on show again, as the roll is now.
+local function Retip(card)
+    if GameTooltip:IsOwned(card.row) then return ThingTip(card.row) end
+    for _, button in ipairs(card.choices) do
+        if GameTooltip:IsOwned(button) then return ChoiceTip(button) end
+    end
 end
 
 local function ThingUntip(row)
@@ -153,13 +211,17 @@ local function NewCard()
     local card = CreateFrame("Frame", nil, holder)
     card:SetSize(S.roll, S.row)
     card.row = ns.Row.New(card)
-    card.row.card, card.row.noAuto = card, true
+    card.row.card, card.row.noAuto, card.row.noArrow = card, true, true
     card.row:SetPoint("TOPLEFT", card, "TOPLEFT")
     card.row:SetPoint("TOPRIGHT", card, "TOPRIGHT")
     card.row:SetScript("OnEnter", ns.Guard(ThingTip))
     card.row:SetScript("OnLeave", ns.Guard(ThingUntip))
     card.row:SetScript("OnClick", ns.Guard(ThingClick))
     card.time = ns.Row.Time(card.row)
+    -- on the time's frame: over the time as the icons are, and gone with it when the result shows
+    card.better = card.time:CreateTexture(nil, "OVERLAY")
+    card.better:SetAtlas("bags-greenarrow")
+    card.better:SetSize(BETTER, S.better)
     card.winner = card.row:CreateFontString(nil, "OVERLAY")
     ns.Row.Font(card.winner, 18)
     card.winner:SetPoint("RIGHT", card.row, "RIGHT", -S.row / 4, 0)
@@ -193,7 +255,11 @@ end
 local function Dress(card, info)
     local offered = Offered(info)
     local step = S.choice + S.rowGap
-    card.row.room, card.row.lift = #offered * step, S.time / 2
+    card.better:SetShown(info.upgrade ~= nil)
+    card.better:ClearAllPoints()
+    card.better:SetPoint("RIGHT", card.row, "RIGHT", -S.pad - #offered * step, 0)
+    card.row.room = #offered * step + (info.upgrade and BETTER + S.rowGap or 0)
+    card.row.lift = S.lift
     ns.Row.Set(card.row, info, false, false)
     card.link = info.link
     for index, entry in ipairs(offered) do
@@ -347,36 +413,43 @@ local function First(key, fits)
     return nil
 end
 
+-- A chooser on a card.
+local function Chose(card, kind, who)
+    card.chose[kind] = card.chose[kind] or {}
+    card.chose[kind][who] = true
+    Icons(card, Count)
+end
+
 -- The game's line about a roll, on the card of that thing. Who got it, or everyone passed: the card shows it. The
--- player's own choice: its icon stays lit. Another's: counted, on the first card whose chooser has not chosen yet.
+-- player's own choice: counted, its icon stays lit. Another's: counted, on the first card whose chooser has not
+-- chosen yet.
 local function Heard(text)
     local found, who, choice, link = ns.Chat.Rolled(text)
     if not found then return end
     local key, kind = Key(link), BY_WORD[choice]
     local own = who == nil or who == ns.TEXT.you
+    local card
     if choice == "won" or choice == "none" then
-        local card = First(key, function() return true end)
+        card = First(key, function() return true end)
         if card and choice == "none" then Finish(card, ns.TEXT.allPassed)
         elseif card then Finish(card, who or ns.TEXT.you, own) end
     elseif kind and own then
-        local card = First(key, function(candidate) return candidate.picked == nil end)
+        card = First(key, function(candidate) return candidate.picked == nil end)
         if card then
             card.picked = kind
+            Chose(card, kind, Core.FullName("player") or ns.TEXT.you)
             Icons(card, Icon)
         end
     elseif kind then
-        local card = First(key, function(candidate)
+        card = First(key, function(candidate)
             for _, names in pairs(candidate.chose) do
                 if names[who] then return false end
             end
             return true
         end)
-        if card then
-            card.chose[kind] = card.chose[kind] or {}
-            card.chose[kind][who] = true
-            Icons(card, Count)
-        end
+        if card then Chose(card, kind, who) end
     end
+    if card then Retip(card) end
 end
 
 -- The game has told an item: a card that waited on it gets what it lacked (the green arrow, the line under the name).
@@ -406,7 +479,8 @@ function Rolls.Try()
     local card = Card()
     card.sample, card.rollID, card.total, card.ends = true, -#cards, TRY * 1000, GetTime() + TRY
     Dress(card, { kind = "item", icon = "Interface\\Icons\\INV_Misc_QuestionMark",
-                  name = ns.TEXT.rollsView, quality = 3, locked = false, canNeed = true, canGreed = true, known = true })
+                  name = ns.TEXT.rollsView, quality = 3, locked = false, canNeed = true, canGreed = true, known = true,
+                  upgrade = "better" })
     card.chose[GREED] = { ["Saneroki"] = true }
     Icons(card, Count)
     since = TICK

@@ -31,9 +31,12 @@ local _, ns = ...
 --      Row.TimeColor(share)                 -- its colour with that share left: green, through yellow, to red
 --      Row.Upgrade(line)                    -- the tooltip's line about an upgrade
 --      Row.Width(row)                       -- how wide its parts run
---  row.noAuto: a line with no A (a roll's, the bags-full page's); row.room keeps
---  that much of the bar's right end free (a roll's choices). The clicks and the
---  tooltips are those of the window (Window.lua), the rolls and the bags-full page.
+--  row.noAuto: a line with no A (a roll's, the bags-full page's); row.noArrow:
+--  none of the small green arrow (a roll has a big one); row.room keeps that
+--  much of the bar's right end free (a roll's choices); row.lift stands the
+--  name that much over the bar's middle (over a roll's time). The clicks and
+--  the tooltips are those of the window (Window.lua), the rolls and the
+--  bags-full page.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local J = Core.Journal
@@ -190,7 +193,6 @@ function Row.Time(row)
         line.seconds:SetText(seconds and tostring(math.ceil(seconds)) or "")
     end
     line:Left(1)
-    row.lift = S.time / 2
     return line
 end
 
@@ -298,7 +300,7 @@ function Row.Set(row, line, notes, onList)
     row.line = line
     row.icon:SetTexture(line.icon)
     row.icon:SetDesaturated(line.locked)
-    row.upgrade:SetShown(line.upgrade ~= nil)
+    row.upgrade:SetShown(line.upgrade ~= nil and not row.noArrow)
     row.count:SetText(line.count and line.count > 1 and line.count or "")
     row.name:SetText(line.name)
     local r, g, b

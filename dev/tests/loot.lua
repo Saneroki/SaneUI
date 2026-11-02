@@ -793,14 +793,19 @@ local line = cards[1].row
 local robeR, robeG, robeB = ns.Row.Color(2)
 check(line.bar.colour[1] == robeR and line.bar.colour[2] == robeG and line.bar.colour[3] == robeB, "its bar in the thing's quality colour")
 check(line.line.link == ROBE and line.line.id == 6000 and not line.auto._shown, "no A on a roll's line")
-check(line.upgrade._shown and line.line.upgrade == "empty", "the green arrow on an upgrade")
+-- an upgrade: the game's green arrow, big, in front of the icons, in place of the small one before the name
+local better = cards[1].better
+check(line.line.upgrade == "empty" and better._shown and better._atlas == "bags-greenarrow" and not line.upgrade._shown,
+      "the big green arrow on an upgrade, the small one not")
+check(better._height == ns.SIZE.better and better._parent == cards[1].time and better._points[1][1] == "RIGHT"
+      and better._points[1][2] == line and better._points[1][5] == 0, "as tall as the icons, centred on the bar, over the time")
 check(not cards[1]._mouse, "the card itself is not in the mouse's way")
 -- the time a line over the bar's foot, as a nameplate's resource on its health: no background, the bar's own round
 local time = cards[1].time
 check(time._parent == line and time._height == ns.SIZE.time and time._points[1][1] == "BOTTOMLEFT" and time._points[1][2] == line.holder
       and time._points[2][1] == "BOTTOMRIGHT", "the time lies over the bar's foot, from the picture on")
 check(#time:GetStatusBarTexture()._masks == 2 and time:GetStatusBarTexture()._masks[1]._points[1][2] == line.bar.fill, "round as the bar is")
-check(line.name._points[1][5] == ns.SIZE.time / 2, "the name stands over it")
+check(line.name._points[1][5] == ns.SIZE.lift and ns.SIZE.lift > ns.SIZE.time / 2, "the name stands well over it")
 local choices = Choices(cards[1])
 check(#choices == 3, "Need, Greed and Pass")
 local words = {}
@@ -816,7 +821,8 @@ for _, button in ipairs(choices) do
 end
 check(ns.SIZE.choice >= ns.SIZE.row - 4, "nearly as tall as the bar, time and all")
 check(choices[1]._points[1][4] < choices[2]._points[1][4] and choices[2]._points[1][4] < choices[3]._points[1][4], "side by side")
-check(line.name._points[2][4] <= -3 * (ns.SIZE.choice + ns.SIZE.rowGap), "the name stops before them")
+check(better._points[1][4] == -ns.SIZE.pad - 3 * (ns.SIZE.choice + ns.SIZE.rowGap), "the arrow in front of them")
+check(line.name._points[2][4] <= better._points[1][4] - ns.SIZE.better * 20 / 22, "the name stops before the arrow")
 check(choices[1]:GetNormalTexture()._desaturated == true and choices[1]._disabled == true, "a refused icon grey and off")
 check(choices[2]:GetNormalTexture()._desaturated == false and not choices[2]._disabled and choices[2]:GetAlpha() == 1, "the others as the game draws them")
 choices[1]._scripts.OnClick(choices[1])
@@ -856,6 +862,7 @@ local function Tock()
 end
 Tock() -- the last the game says of its time: 30 seconds
 W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_GREED_SELF, ROBE))
+check(choices[2].count:GetText() == "2", "your own choice counts too")
 W.Fire("CANCEL_LOOT_ROLL", 7)
 rolls[7] = nil
 check(#Cards() == 2, "your part over: the card stands while the others choose")
@@ -873,7 +880,7 @@ W.Fire("CHAT_MSG_LOOT", "Brute won: " .. ROBE)
 check(finished.winner._shown and finished.winner:GetText() == "Brute" and finished.winner._points[1][1] == "RIGHT"
       and finished.winner._points[1][2] == line, "who got it, at the bar's right end")
 check(finished:GetAlpha() == 1, "whole again for the result")
-check(not time._shown and not choices[1]._shown and not choices[2]._shown, "the time and the choices away")
+check(not time._shown and not choices[1]._shown and not choices[2]._shown, "the time, the arrow on it and the choices away")
 check(line.name._points[1][5] == 0, "the name back in the bar's middle")
 check(line.name._points[2][4] <= -finished.winner:GetStringWidth(), "and stops before who got it")
 W.clock = W.clock + 4
@@ -902,7 +909,7 @@ local function Card(name)
 end
 Roll(11, ROBE, "Apprentice Robe")
 local reused = Cards()[1]
-check(reused:GetAlpha() == 1 and reused.time._shown and not reused.winner._shown and reused.row.lift == ns.SIZE.time / 2 and Choices(reused)[1]:GetAlpha() == 1,
+check(reused:GetAlpha() == 1 and reused.time._shown and not reused.winner._shown and reused.row.lift == ns.SIZE.lift and Choices(reused)[1]:GetAlpha() == 1,
       "a card used again is a new roll's")
 W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_YOU_WON, ROBE))
 check(reused.winner:GetText() == ns.TEXT.you and select(3, reused.winner:GetTextColor()) < 1, "you got it: in gold")
@@ -913,6 +920,7 @@ check(second and second ~= reused and second.winner:GetText() == "Mira" and reus
       "two of a thing: the next card is told, the roll in the sentence")
 Roll(13, GEM, "Shiny Gem")
 local nobody = Card("Shiny Gem")
+check(not nobody.better._shown, "no arrow on what is no upgrade, also on a card used again")
 W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_ALL_PASSED, GEM))
 check(nobody.winner:GetText() == ns.TEXT.allPassed and select(3, nobody.winner:GetTextColor()) == 1, "everyone passed: it says so")
 W.Fire("CHAT_MSG_LOOT", "Brute won: " .. TUSK)
@@ -920,6 +928,60 @@ check(#Cards() == 3, "a thing with no card: nothing")
 W.clock = W.clock + 6
 Tock()
 check(#Cards() == 0, "they go")
+-- the mouse on a card or a choice: who chose what, who has still to roll, as it is now while the mouse stays
+do
+    local names = { party1 = "Brute", party2 = "Mira", party3 = "Away", party4 = "Rivers" }
+    local unitName, addLine, setOwner, setText = UnitName, GameTooltip.AddLine, GameTooltip.SetOwner, GameTooltip.SetText
+    local isOwned = GameTooltip.IsOwned
+    local tip = {}
+    GetNumSubgroupMembers = function() return 4 end
+    UnitIsConnected = function(unit) return unit ~= "party3" end
+    UnitName = function(unit)
+        if names[unit] then return names[unit], unit == "party4" and "Fairwind" or nil end
+        return "Tester", "Stub"
+    end
+    GameTooltip.SetOwner = function() wipe(tip) end
+    GameTooltip.SetText = function(_, text) tip[#tip + 1] = text end
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Roll(15, ROBE, "Apprentice Robe")
+    local card = Card("Apprentice Robe")
+    W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_NEED, "Brute", ROBE))
+    W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_GREED_SELF, ROBE))
+    card.row._scripts.OnEnter(card.row)
+    local shown = table.concat(tip, "|")
+    check(shown:find("Need (1)|Brute", 1, true) and shown:find("Greed (1)|Tester Stub", 1, true),
+          "the mouse on the line: who chose what")
+    check(shown:find("Still to roll (2)|Mira, Rivers Fairwind", 1, true), "and who has still to roll, the whole name")
+    check(not shown:find("Away", 1, true), "one offline is not waited for")
+    check(not shown:find("Pass", 1, true), "a choice nobody took is not listed")
+    -- live: a line comes while the mouse stays
+    GameTooltip.IsOwned = function(_, frame) return frame == card.row end
+    W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_PASSED, "Mira", ROBE))
+    shown = table.concat(tip, "|")
+    check(shown:find("Pass (1)|Mira", 1, true) and shown:find("Still to roll (1)|Rivers Fairwind", 1, true), "the list as it is now")
+    W.Fire("CHAT_MSG_LOOT", Said(LOOT_ROLL_GREED, "Rivers-Draenor", ROBE))
+    shown = table.concat(tip, "|")
+    check(shown:find("Greed (2)", 1, true) and not shown:find("Still to roll", 1, true),
+          "a name with a realm is the player's: nobody left")
+    GameTooltip.IsOwned = isOwned
+    card.row._scripts.OnLeave(card.row)
+    local button = Choices(card)[1]
+    button._scripts.OnEnter(button)
+    shown = table.concat(tip, "|")
+    check(tip[1] == "Need" and shown:find("Greed (2)", 1, true), "on an icon too, under the choice's word")
+    options.tally = false
+    button._scripts.OnEnter(button)
+    check(#tip == 1, "the switch off: the word alone")
+    options.tally = true
+    W.Fire("CHAT_MSG_LOOT", "Brute won: " .. ROBE)
+    card.row._scripts.OnEnter(card.row)
+    shown = table.concat(tip, "|")
+    check(shown:find("Need (1)", 1, true) and not shown:find("Still to roll", 1, true), "the roll over: nobody is waited for")
+    card.row._scripts.OnLeave(card.row)
+    UnitName, GameTooltip.AddLine, GameTooltip.SetOwner, GameTooltip.SetText = unitName, addLine, setOwner, setText
+    W.clock = W.clock + 6
+    Tock()
+end
 -- the game never says who got it: the card goes a moment after its time, and a roll out of time waits as well
 Roll(14, RING, "Bound Ring")
 W.Fire("CANCEL_LOOT_ROLL", 14)
@@ -939,12 +1001,12 @@ items[LATE] = nil
 rolls[9] = { name = "Late Tabard", link = LATE, quality = 2, canNeed = true, canGreed = true, left = 60000 }
 W.Fire("START_LOOT_ROLL", 9, 60000)
 local late = Cards()[1]
-check(late.row.line.known == false and not late.row.upgrade._shown, "a card before the game knows the item")
+check(late.row.line.known == false and not late.better._shown, "a card before the game knows the item")
 W.Fire("GET_ITEM_INFO_RECEIVED", 1, true)
 check(late.row.line.known == false, "another item told: it still waits")
 items[LATE] = told
 W.Fire("GET_ITEM_INFO_RECEIVED", 6100, true)
-check(late.row.line.known == true and late.row.upgrade._shown and #Choices(late) == 3, "told: the green arrow, the choices as they were")
+check(late.row.line.known == true and late.better._shown and #Choices(late) == 3, "told: the green arrow, the choices as they were")
 W.Fire("CANCEL_ALL_LOOT_ROLLS")
 rolls = {}
 
@@ -1056,7 +1118,7 @@ for _, frame in ipairs(W.frames) do
     end
 end
 check(samples == 2, "two lines as they will look")
-check(#Cards() == 1 and Cards()[1].row.name:GetText() == ns.TEXT.rollsView, "a roll card to place")
+check(#Cards() == 1 and Cards()[1].row.name:GetText() == ns.TEXT.rollsView and Cards()[1].better._shown, "a roll card to place")
 check(#Feed() == 3, "feed lines to place")
 W.clock = W.clock + 60
 Cards()[1]:GetParent()._scripts.OnUpdate(Cards()[1]:GetParent(), 1)

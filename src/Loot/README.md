@@ -77,13 +77,18 @@ rises over the world, also what was taken at once: that is how you see what you 
   a vendor will not take, a quest's things, epics and better. They go once there is room.
 - **Group rolls** (*Sane UI's roll cards*, on): when your group rolls for a thing, one line of the loot window on the
   world, no paper and no frame.
-  - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, the green arrow on an
-    upgrade (its tooltip says which), its name. No A, and no line under the name: the time has its place. The mouse on
+  - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, its name, a little over
+    the middle. No A, and no line under the name: the time has its place. The mouse on
     it shows the thing's tooltip; a modified click links it or tries it on.
   - **The choices** at the bar's right end, nearly as tall as all of it and over the time, the game's own icons with no words (*Need*, *Greed* or *Transmog*,
     *Disenchant* where offered, *Pass*), lit by the mouse as the game's are; its tooltip names the choice. A choice the
     game refuses is faint and grey, its reason in the tooltip. *Who chose what* (on): a number on each icon says how
-    many chose it; the mouse on it names them.
+    many chose it; the mouse on the line or on an icon lists who chose *Need*, *Greed* and the rest, and who is *Still to
+    roll*, as it is now while the mouse stays. Those are the group's members online with no word about this roll yet:
+    one too far away to be asked counts as well.
+  - **The big green arrow** in front of those icons, as tall as they are: the thing would make your character better.
+    It is the game's arrow and the same judgement as the small one in the loot window (stat weights and all), which
+    a roll does not show as well; the line's tooltip says which.
   - **The time left** lies over the bar's foot, from the picture to the right end, a third of its height, as a
     nameplate's resource lies on its health: green at first, yellow half way, red at the end, on a dark shade so it
     stands out on a green thing's bar too; where the time is spent the bar is seen through it. On it, under the name,
@@ -180,11 +185,14 @@ rises over the world, also what was taken at once: that is how you see what you 
   `GetLootRollTimeLeft` every 0.1 s while a card shows, `RollOnLoot` with the game's roll kinds (Pass 0, Need 1, Greed
   2, Disenchant 3, Transmog 4). Switched on, the rolls already open get cards (`GetActiveLootRollIDs`,
   `C_Loot.GetLootRollDuration`). Who chose what from `CHAT_MSG_LOOT` (`Chat.Rolled`), on the card of that item whose
-  chooser has not chosen yet. `CANCEL_LOOT_ROLL` ends only the player's part (the game's own frame goes then, right
+  chooser has not chosen yet; yours too, under your whole name. *Still to roll*: the group (`IsInRaid`,
+  `GetNumGroupMembers`, `GetNumSubgroupMembers`, `UnitIsConnected`), by `Core.FullName`, a chooser matched whole, with
+  a realm or by the first name alone. `CANCEL_LOOT_ROLL` ends only the player's part (the game's own frame goes then, right
   after a click), so a card stays closed and at alpha 0.25 (`WAITING`), its time on its own clock (`card.ends`), until
   `Chat.Rolled` says "won" or "none" on the first card of that item with no end yet; then 5 s (`HOLD`), or gone 5 s
   after its time (`LATE`) if no line comes. `CANCEL_ALL_LOOT_ROLLS` takes all away at once. A card holds a `Row.New`: a roll is a line of `Row.Set` (`roll` set: no A; `row.room`
-  keeps the icons' part of the bar free; its facts by `Slots.Facts` from the roll's link, so the arrow is the window's),
+  keeps the icons' part of the bar free; its facts by `Slots.Facts` from the roll's link, so the judgement of the
+  arrow is the window's: `line.upgrade` from `Core.Upgrade` shows the atlas `bags-greenarrow` 34 high, not `row.upgrade`),
   the card itself takes no mouse. An item the game does not know yet is dressed again on `GET_ITEM_INFO_RECEIVED`. The
   choices are `Button`s on the row with the game's atlases `lootroll-toast-icon-<word>-up`, `-down`, `-highlight`
   (`SetNormalAtlas` and so on; all five in both games' atlas tables), refused as the game's `GroupLootFrame_DisableLootButton`: off, alpha 0.35, desaturated, its motion scripts on
@@ -228,14 +236,16 @@ rises over the world, also what was taken at once: that is how you see what you 
 | `Items.lua` | The options' tab *Your items* |
 | `Master.lua` | The master looter's menu |
 | `Full.lua` | The lines beside the window that make room when the bags are full |
-| `Rolls.lua` | The roll cards: a line, the game's icons on it, the time left over its foot, who got the thing |
+| `Rolls.lua` | The roll cards: a line, the game's icons on it, the time left over its foot, who chose what, who is left, who got the thing |
 | `Feed.lua` | What you and your group receive, over the world |
 
 ## History
 - 2026-11-02 — The rolls' icons nearly as tall as the bar and over the time; the seconds left on it; "when the rolling
   is finished on an item leave it there a few seconds and shows who got the item anchored to the right where the
   buttons have been"; "all the way down to 25% transparent until it shows the result. so I know when i can ignore it"
-  (Saneroki): taken as a quarter showing. As wide as 360 now: the icons take room.
+  (Saneroki): taken as a quarter showing. As wide as 380 now: the icons take room. "a big green up arrow in front of
+  the other big icons when the item is an upgrade", the same judgement as the window's; the name a little higher. "a
+  tooltip on them to see who rolled what? Like who rolled Need, greed, pass and who still needs to roll".
 - 2026-11-02 — "Can we make all the loot window and the group rolls have rounded edges like our nameplates have? And
   shade them equally styled so they have the same style philosophy" (Saneroki): the lines and the rolls were of the
   nameplates' make already (the interface lab drew them square until now, and now draws masks as the game does). What

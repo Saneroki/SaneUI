@@ -373,9 +373,10 @@ of the name):
 - **The roll cards** (`src/Loot/Rolls.lua`; Saneroki, 2026-11-02: the same design as the window, "a progress bar that
   goes down, starts green but becomes more red"; then "The need, greed and Pass should be just icons and be inside the
   bars and the timer should be a overlay of the item bar like a classresource is on the nameplates healthbar"): a roll
-  is one line of the window, wider than the window (360), with no A and no line under the name. At the bar's right end
-  the game's own icons, no words, nearly as tall as all of it and over the time, a refused one faint and grey, how many
-  chose it a number on it. Your part done the line fades to a quarter until the result (so you know you can ignore
+  is one line of the window, wider than the window (380), with no A and no line under the name, the name a little over
+  the middle. At the bar's right end the game's own icons, no words, nearly as tall as all of it and over the time, a
+  refused one faint and grey, how many chose it a number on it; in front of them on an upgrade the game's green arrow,
+  as big as they are, in place of the small one before a name. Your part done the line fades to a quarter until the result (so you know you can ignore
   it); the result stands whole for a few seconds, who got the thing where the icons were, and goes.
   Over the bar's foot, from the picture on, the time left, a third of the bar's height as a nameplate's resource, in
   the game's blend for a health bar (green, yellow half way, red at nothing; `Row.TimeColor`), on a shade of the

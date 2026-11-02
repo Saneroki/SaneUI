@@ -56,12 +56,24 @@ IsFishingLoot = function() return false end
 -- the words the game would say of who chose what, on the chat's line.
 local ROLL_TIME = 60
 local ROLLS = {
-    { item = 12784, share = 0.1 },
+    { item = 12784, share = 0.1, chose = "Need" },
     { item = 873, share = 0.35, disenchant = true, need = false },
     { item = 6411, share = 0.7, chose = "Greed" },
     { item = 13262 },
 }
 local open = {}
+
+-- Your group: three more, one of them offline.
+local PARTY = { party1 = { "Mirabel", "Ashgrove" }, party2 = { "Torvald", "Reed" }, party3 = { "Isolde", "Vane" } }
+local unitName = UnitName
+UnitName = function(unit)
+    local who = PARTY[unit]
+    if who then return who[1], who[2] end
+    return unitName(unit)
+end
+GetNumSubgroupMembers = function() return 3 end
+UnitIsConnected = function(unit) return unit ~= "party3" end
+IsInRaid = function() return false end
 
 GetLootRollItemInfo = function(id)
     local roll = open[id] and ROLLS[id]
@@ -127,6 +139,13 @@ Lab.TOC("src/Core/SaneUI.toc")
 local ns = Lab.TOC("src/Loot/SaneUI_Loot.toc")
 LabLoot = ns
 
+-- Two of the things would make you better (the lab's character can weigh none).
+local weigh = SaneUI.Core.Upgrade
+SaneUI.Core.Upgrade = function(link, id)
+    if id == 12784 or id == 6411 then return "better" end
+    return weigh(link, id)
+end
+
 -- The loot opened as the game opens it, every slot back; the window in the middle of the screen.
 function ns.Open()
     Lab.Fire("LOOT_CLOSED")
@@ -168,7 +187,8 @@ function ns.Roll()
         open[id] = true
         Lab.Fire("START_LOOT_ROLL", id, ROLL_TIME * 1000)
         if roll.chose then
-            Lab.Fire("CHAT_MSG_LOOT", LOOT_ROLL_GREED:format(id, "Mirabel", GetLootRollItemLink(id)))
+            local sentence = roll.chose == "Need" and LOOT_ROLL_NEED or LOOT_ROLL_GREED
+            Lab.Fire("CHAT_MSG_LOOT", sentence:format(id, "Mirabel Ashgrove", GetLootRollItemLink(id)))
         end
     end
 end
