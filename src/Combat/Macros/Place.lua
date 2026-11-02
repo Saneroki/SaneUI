@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Place
+--  Sane UI - Combat - Macros - Place
 --  Choosing a bar button with the mouse: for a moment a plain square lies over
 --  every button of every bar that shows, also over the empty ones and bars at
 --  rest, and the one clicked, or under the mouse when a drag ends, is the place.
@@ -9,7 +10,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Place = {}
-ns.Place = Place
+Macros.Place = Place
 
 local squares = {}
 Place.squares = squares
@@ -54,9 +55,9 @@ end
 -- Squares over every button of the bars that show.
 local function Lay()
     local index = 0
-    local page = ns.Reach.Page()
-    for _, bar in ipairs(ns.Reach.BARS) do
-        for button = 1, ns.Reach.BUTTONS do
+    local page = Macros.Reach.Page()
+    for _, bar in ipairs(Macros.Reach.BARS) do
+        for button = 1, Macros.Reach.BUTTONS do
             local slot = rawget(_G, bar.prefix .. button)
             local parent = slot and slot:GetParent()
             if parent and Core.Plain(parent:IsVisible()) then
@@ -64,7 +65,7 @@ local function Lay()
                 local square = Square(index)
                 square:ClearAllPoints()
                 square:SetAllPoints(slot)
-                square.place = ns.Reach.PlaceOf(bar, button, page)
+                square.place = Macros.Reach.PlaceOf(bar, button, page)
                 square:Show()
             end
         end
@@ -74,7 +75,7 @@ end
 
 -- Begins choosing; done(place) once one is chosen. Out of a fight.
 function Place.Start(done)
-    if InCombatLockdown() then return ns.Print(ns.TEXT.noCombat) end
+    if InCombatLockdown() then return ns.Print(Macros.TEXT.noCombat) end
     Stop()
     if not Lay() then return end
     wanted = done

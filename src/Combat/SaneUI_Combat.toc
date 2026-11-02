@@ -82,6 +82,36 @@ Reminders\Bars.lua
 Reminders\Editor.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua
+# The action bars as a window of the full screen, so that nothing lies over them
+BarsWindow.lua
+# The game's red error text off, by a switch
+ErrorText.lua
+# Sane Macros: macros and sequences, in the game's macro window's stead, on the full screen
+Macros\Macros.lua
+# The game's macro conditions in plain words, each with its explanation
+Macros\Conditions.lua
+# Your macros and steps: what is saved, for the account, and each character's keys and bar buttons
+Macros\Book.lua
+# A macro written out into what one press may do: its lines, conditions and turns
+Macros\Write.lua
+# The checks: what would not work as it stands, flagged on the step
+Macros\Check.lua
+# The secure button of a macro and the snippet that runs on each press
+Macros\Press.lua
+# Our button lying over a bar button, the look a macro has there
+Macros\Face.lua
+# How a press reaches a macro: keys, and bar buttons by page
+Macros\Reach.lua
+# Choosing a bar button with the mouse
+Macros\Place.lua
+# The list of conditions behind the + button, for a step and for macro text
+Macros\Picker.lua
+# The list of a macro's steps, and dragging them
+Macros\Steps.lua
+# The chosen step's settings
+Macros\Detail.lua
+# Sane Macros on the full screen, and its own window
+Macros\Editor.lua
 # The game's experience and stance bars out of sight, its menu bar on mouseover
 GameBars.lua
 # The threat and damage meter: threat added up, what the game tells of a fight, which bars a character has, the fights and

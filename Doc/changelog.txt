@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Combat's full screen now holds Sane Macros and your action bars as
+  windows of their own, so nothing lies over the bars, and you can
+  drag a macro straight onto a bar there.
+- The game's red error text at the top of the screen is hidden, with a
+  switch in Combat's settings to bring it back.
 - Sane Macros, a new macro window. A macro is a list of steps, as long
   as you like, with no limit of 30: one step for a normal macro, more
   for a sequence that goes on with each press. Every condition of the

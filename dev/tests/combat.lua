@@ -134,6 +134,9 @@ end
 for _, button in ipairs(MainActionBar.actionButtons) do button.Update, button.UpdateButtonArt = function() end, function() end end
 units.player = { name = "Droopy", surname = "Fairwind", player = true, class = "WARRIOR", level = 20, health = 850,
                  most = 1000, power = 30, powerMost = 100 }
+UIErrorsFrame = W.NewWidget("Frame", "UIErrorsFrame", UIParent)
+UIErrorsFrame:RegisterEvent("UI_ERROR_MESSAGE")
+UIErrorsFrame:RegisterEvent("UI_INFO_MESSAGE")
 W.actions[1] = { kind = "spell", id = 6603 } -- the main bar's first button holds an action, its second is empty
 if RETAIL then W.Play("retail") end
 RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
@@ -172,8 +175,10 @@ if RETAIL then
     check(handle.zone == "BOTTOM" and strip and strip:IsShown() and strip._width == 1920 * ns.Window.STRIP,
         "its window is at the bottom middle, and the middle half of the bottom edge fills the screen")
     local first, windows = layouts.options.default(), layouts.options.windows()
-    check(first and first.key == "game" and #windows == 1 and windows[1].key == "game" and windows[1].title == ns.TEXT.book
-        and Core.Classic.List(handle) == nil, "its one window is the game's own of both; no Classic windows of Combat's")
+    check(first and first.split == "y" and first.parts[1].parts[1].key == "game" and first.parts[2].key == "bars" and #windows == 3
+        and windows[1].key == "game" and windows[1].title == ns.TEXT.book and windows[2].key == "macros" and windows[3].key == "bars"
+        and Core.Classic.List(handle) == nil,
+        "its windows are the game's own of both, Sane Macros and the action bars; no Classic windows of Combat's")
     frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
     inside._left, inside._bottom, inside._height = 0, 0, 1080 - Core.Window.BAR
     inside._strata, inside._level = "HIGH", 501
@@ -765,11 +770,36 @@ check(book.title._text == ns.TEXT.spellbook and (not hasTalents or talents.title
     "each panel is headed with its name")
 if hasTalents then
     local rects = layouts.rects
-    local room = 1920 - 3 * pad
-    local talentsWidth = math.floor(room * 1218 / (1218 + ns.Book.WIDE) + 0.5)
-    check(rects.talents[1] == pad and rects.talents[3] == talentsWidth and rects.spellbook[1] == 2 * pad + talentsWidth
-        and rects.spellbook[3] == room - talentsWidth and rects.talents[4] == top - 2 * pad,
-        "the first layout: the talents at the left, the spellbook at the right, each as wide as its share of the game's sizes")
+    check(rects.talents[1] == pad and rects.spellbook[1] == 2 * pad + rects.talents[3]
+        and math.abs(rects.talents[3] / rects.spellbook[3] - 1218 / ns.Book.WIDE) < 0.01,
+        "the first layout: the talents at the left, the spellbook beside them, each as wide as its share of the game's sizes")
+    check(rects.macros and rects.macros[1] == 3 * pad + rects.talents[3] + rects.spellbook[3]
+        and rects.macros[1] + rects.macros[3] == 1920 - pad and math.abs(rects.macros[3] - ns.Macros.Editor.LEAST[1]) < 40,
+        "Sane Macros at the right, as wide as it needs")
+    check(rects.bars and rects.bars[1] == pad and rects.bars[3] == 1920 - 2 * pad
+        and rects.bars[2] >= rects.talents[2] + rects.talents[4] and rects.bars[2] + rects.bars[4] == top - pad,
+        "the action bars are a window along the foot, under the others and clear of them")
+end
+check(layouts.panels.bars and layouts.panels.bars:IsShown() and layouts.panels.bars.title._text == ns.TEXT.barsWindow,
+      "with its own panel")
+do
+    -- How the bars stand in their panel: the wide ones in lines, the tall ones side by side at the right.
+    local Room = ns.BarsWindow
+    local gap = Room.GAP
+    local wide = { { width = 500, height = 40 }, { width = 500, height = 40 }, { width = 500, height = 40 } }
+    local high, fits = Room.Flow(wide, 1100, 1)
+    check(fits and high == 2 * 40 + gap, "as high as their lines")
+    check(wide[1].x == 0 and wide[2].x == 500 + gap and wide[2].y == 0 and wide[3].x == 0 and wide[3].y == 40 + gap,
+          "bars in lines from the left")
+    check(Room.Fit(wide, 1100, 300) == 1, "at their own size where that fits")
+    local scale = Room.Fit(wide, 1100, 30)
+    check(scale < 1 and scale >= Room.SMALLEST and Room.Flow(wide, 1100, scale) <= 30, "smaller where it does not")
+    check(Room.Fit(wide, 1100, 10) == Room.SMALLEST, "and never smaller than the least")
+    check(select(2, Room.Flow({ { width = 500, height = 40 } }, 400, 1)) == false, "a bar wider than the room is told")
+    local tallOnes = { { width = 40, height = 480 }, { width = 40, height = 480 } }
+    check(Room.Fit(tallOnes, 90, 600) == 1 and tallOnes[2].x == 40 + gap and tallOnes[2].y == 0,
+          "tall bars side by side in their own window, at their own size")
+    check(not Board.Present("sidebars"), "that window only where a tall bar shows")
 end
 check(not Board.Present("planner"), "without a talent planner Sane UI knows, there is no planner's window to add")
 check(not Board.Present("game") and not layouts.panels.game, "with ours there, the game's own window stands on no panel")
@@ -1567,6 +1597,20 @@ do
 end
 
 -------------------------------------------------------------------------------
+--  The game's red error text
+-------------------------------------------------------------------------------
+do
+    local text = UIErrorsFrame
+    local event = ns.ErrorText.EVENT
+    check(ns.options.hideErrors == true and not text:IsEventRegistered(event) and text:IsEventRegistered("UI_INFO_MESSAGE"),
+          "the red error text is hidden at first, the yellow lines stay")
+    Core.Set(ns.name, "hideErrors", false)
+    check(text:IsEventRegistered(event), "the switch brings it back")
+    Core.Set(ns.name, "hideErrors", true)
+    check(not text:IsEventRegistered(event), "and hides it again")
+end
+
+-------------------------------------------------------------------------------
 --  The action bars, clean: only the buttons that hold something, each its icon alone
 -------------------------------------------------------------------------------
 do
@@ -1584,6 +1628,8 @@ do
         "its icon square and cropped, the cooldown over all of it")
     check(full:GetHighlightTexture()._colour and full:GetHighlightTexture()._blend == "ADD"
         and full:GetPushedTexture()._colour, "the mouse over it and a press: a flat wash")
+    check(empty._alpha == 1, "on the full screen an empty button shows, to drop something on")
+    ns.ActionBars.Seated(false)
     check(full._alpha == 1 and empty._alpha == 0, "a button that holds something shows; an empty one does not")
     W.Fire("ACTIONBAR_SHOWGRID")
     local slot
@@ -1762,8 +1808,9 @@ do
     check(#entries == 1 and entries[1].window == "spellbook", "Classic windows: the game's spellbook, not its talents")
     local first, listed = layouts.options.default(), {}
     for _, spec in ipairs(layouts.options.windows()) do listed[spec.key] = true end
-    check(first and first.key == "spellbook" and listed.spellbook and not listed.talents,
-        "the first layout is the spellbook alone, and the dropdown Windows has no talents")
+    check(first and first.split == "y" and first.parts[1].parts[1].key == "spellbook" and first.parts[1].parts[2].key == "macros"
+        and first.parts[2].key == "bars" and listed.spellbook and listed.bars and not listed.talents,
+        "the first layout is the spellbook and Sane Macros over the action bars, and the dropdown Windows has no talents")
     W.Play("retail")
     ns.Keys.Bind()
     check(not ns.Serves() and W.overrides[owner] == nil and not ns.Keys.Taken() and Core.Classic.List(handle) == nil,
@@ -1982,6 +2029,7 @@ W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
 check(not questMark._shown, "a plate the game shows after it gets no quest mark")
 
+check(UIErrorsFrame:IsEventRegistered(ns.ErrorText.EVENT), "the red error text is the game's again")
 check(not ns.MouseRings.holder._shown and not ns.MouseRings.holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN")
     and not ns.MouseRings.holder:IsEventRegistered("UNIT_SPELLCAST_START"), "and no ring around the mouse, none to come")
 

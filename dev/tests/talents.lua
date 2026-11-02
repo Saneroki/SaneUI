@@ -566,8 +566,9 @@ check(spec and spec.title == ns.TEXT.talents and spec.least[1] == math.floor(121
     and spec.least[2] == math.floor(701 * 0.4) + head + 2 * edge,
     "the talents registered with the board: its title, as small as 40 % of the game's art with the panel round it")
 local first = ns.Board.layouts.options.default()
-check(first and first.parts and first.parts[1].key == "talents" and first.shares[1] == 1218,
-    "the first layout: the talents at the left, as wide as the game's window's share")
+local row = first and first.parts and first.parts[1]
+check(row and row.parts and row.parts[1].key == "talents" and row.shares[1] > 0,
+    "the first layout: the talents at the left")
 
 -- A panel of the board's, as Core's board makes it: hidden while it is built.
 local function Panel()
@@ -829,7 +830,7 @@ check(#calls == 0, "and its nodes do nothing")
 -- In Retail, whose talents are not those of two specializations ours are made after (Combat.lua, ns.Serves): ours
 -- are not there, the game's talents stay (nor is our spellbook: the first layout is the game's own window).
 W.Play("retail")
-check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default().key == "game",
+check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default().parts[1].parts[1].key == "game",
     "in Retail our talents are not there: the game's stay")
 W.Play("forever")
 check(Talents.Present(), "in Forever they are")

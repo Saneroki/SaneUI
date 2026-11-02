@@ -15,10 +15,14 @@ local _, ns = ...
 --                 while that addon is installed: seated in its panel (Core.Seat:
 --                 its place, scale and layer lent), opened with its panel and
 --                 closed when the panel goes
+--      bars       the game's wide action bars, seated in their panel (BarsWindow.lua)
+--      sidebars   its tall ones, while there are any, in a narrow panel of their own
+--      macros     Sane Macros (Macros/)
 --  Each is a part, in files of its own listed after this one in the TOC, that
 --  registers itself (Board.Part); the board lists the parts that are there.
 --  The first layout puts the talents and the spellbook side by side, each as
---  wide as its share of the two windows' own widths.
+--  wide as its share of the two windows' own widths, Sane Macros beside them,
+--  the wide action bars in a strip along the foot, the tall ones down the right.
 --
 --  A panel is Core's (a plate in Sane UI's look, a head with its title and the
 --  X, the body under it); what is in it is its part's. A part runs apart from
@@ -41,8 +45,11 @@ Board.ICONS = {
     talents = "Interface/ICONS/Ability_Marksmanship",
     spellbook = "Interface/ICONS/INV_Misc_Book_09",
     game = "Interface/ICONS/INV_Misc_Book_09",
+    bars = "Interface/ICONS/INV_Misc_Gear_01",
+    sidebars = "Interface/ICONS/INV_Misc_Gear_02",
+    macros = "Interface/ICONS/INV_Misc_Note_06",
 }
-Board.ORDER = { "talents", "spellbook", "game", "planner" }
+Board.ORDER = { "talents", "spellbook", "game", "planner", "macros", "bars", "sidebars" }
 Board.FIRST = { "talents", "spellbook", "game" }
 
 local layouts    -- Core's board, once the window is there (Board.Take)
@@ -87,10 +94,26 @@ local function Least(spec)
     return least
 end
 
+-- Sane Macros beside the row of nodes: its least width of that row, the others sharing the rest as they did.
+local function Macros(nodes, shares, width)
+    if not Board.Present("macros") then return end
+    local wanted = Least(parts.macros.spec)[1]
+    local others = 0
+    for _, share in ipairs(shares) do others = others + share end
+    if others > 0 and width and width > wanted then
+        local rest = (width - wanted) / others
+        for index, share in ipairs(shares) do shares[index] = share * rest end
+    end
+    nodes[#nodes + 1] = { key = "macros" }
+    shares[#shares + 1] = wanted
+end
+
 -- The first layout: the talents and the spellbook side by side, each as wide as its share of their own widths (those
--- of the two this game has: Combat.lua, ns.Serves).
-local function Default()
+-- of the two this game has: Combat.lua, ns.Serves); Sane Macros beside them; the action bars along the foot.
+local function Default(width, height)
     local nodes, shares = {}, {}
+    local side = Board.Present("sidebars") and ns.BarsWindow.Side() or nil
+    if width and side then width = width - side end
     for _, key in ipairs(Board.FIRST) do
         local entry = parts[key]
         if entry and Board.Present(key) then
@@ -98,9 +121,13 @@ local function Default()
             shares[#shares + 1] = (entry.wants or Least(entry.spec))[1]
         end
     end
-    if #nodes == 0 then return nil end
-    if #nodes == 1 then return nodes[1] end
-    return { split = "x", parts = nodes, shares = shares }
+    Macros(nodes, shares, width)
+    local row = #nodes > 1 and { split = "x", parts = nodes, shares = shares } or nodes[1]
+    local strip = ns.BarsWindow.Wants(width, height)
+    local left = row and { split = "y", parts = { row, { key = "bars" } },
+                           shares = { math.max((height or 700) - strip, strip), strip } } or { key = "bars" }
+    if not side then return left end
+    return { split = "x", parts = { left, { key = "sidebars" } }, shares = { width or 1000, side } }
 end
 
 -- Core's window is made (Window.lua): its full screen is Core's board.
@@ -108,7 +135,7 @@ function Board.Take(window)
     layouts = Core.Board.New(window, {
         store = ns.store, key = "board", label = ns.name,
         windows = Windows,
-        default = function() return ns.Safe("board", Default) end,
+        default = function(width, height) return ns.Safe("board", Default, width, height) end,
         changed = function() ns.Guarded(ns.Window.Reboard) end,
     })
     Board.layouts = layouts

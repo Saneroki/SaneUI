@@ -28,8 +28,9 @@ local _, ns = ...
 --  Out of sight at rest (Core.Rest, the setting Hide the action bars at rest;
 --  Saneroki, 2026-11-01), the bars as one set, by their alpha: the mouse on any
 --  bar shows them all, their buttons take it as ever and their keys work. They
---  stay in sight in a vehicle (its actions stand on them) and while something is
---  dragged or your keys are set (the game's Quick Keybind mode), whatever goes on.
+--  stay in sight in a vehicle (its actions stand on them), on the full screen
+--  (BarsWindow.lua, Seated) and while something is dragged or your keys are set
+--  (the game's Quick Keybind mode), whatever goes on.
 --  This goes for how they look or as the game has them alike.
 --
 --  Hooks after the game's own (each button's Update and UpdateButtonArt, a
@@ -45,6 +46,8 @@ ns.ActionBars = Bars
 -- The game's bars by their globals: the main bar, the extra bars, the stance, pet and possess bars.
 Bars.BARS = { "MainActionBar", "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft",
               "MultiBar5", "MultiBar6", "MultiBar7", "StanceBar", "PetActionBar", "PossessActionBar" }
+Bars.SEATS = { "MainActionBar", "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft",
+               "MultiBar5", "MultiBar6", "MultiBar7" } -- those that stand on the full screen (BarsWindow.lua)
 Bars.ART = { "BorderArt", "EndCaps" } -- a bar's own art (the main bar's page number and arrows stay)
 Bars.BUTTON_ART = { "NormalTexture", "SlotArt", "SlotBackground", "Border" } -- a button's own art
 Bars.COOLDOWNS = { "cooldown", "lossOfControlCooldown", "chargeCooldown" }    -- over the whole icon
@@ -63,6 +66,7 @@ local HasAction = (rawget(_G, "C_ActionBar") and C_ActionBar.HasAction) or rawge
 local on = false      -- the bars are clean now
 local dragging = false -- the game shows its grid: something is dragged onto the bars
 local binding = false  -- the game's Quick Keybind mode: every button shows, to take a key
+local seated = false   -- the bars stand on the full screen: every button shows, to drop something on
 local rest            -- the bars as one set, out of sight at rest (Core.Rest)
 local bars = {}       -- the game's bars found, each once
 local dressed = {}    -- [the game's button] = what we changed on it: its lends, the looks it had
@@ -85,7 +89,7 @@ end
 local function Empty(button)
     local own = dressed[button]
     if not on or not own then return end
-    local showing = dragging or binding or Core.EditMode.active
+    local showing = dragging or binding or seated or Core.EditMode.active
     slots[button]:SetShown(showing)
     button:SetAlpha((showing or Holds(button)) and 1 or 0)
 end
@@ -286,7 +290,7 @@ end
 
 -- What keeps the bars in sight at rest.
 local function Held()
-    return dragging or binding or Ridden()
+    return dragging or binding or seated or Ridden()
 end
 
 -- The bars as one set: any of them, or a button on one, under the mouse shows them all.
@@ -304,6 +308,22 @@ local function Rests()
             Grid(dragging)
         end), Bars)
     end
+end
+
+-- The bars on the full screen, or no longer.
+function Bars.Seated(on)
+    seated = on and true or false
+    Grid(dragging)
+end
+
+-- The bars that stand on the full screen, as far as this game has them.
+function Bars.Frames()
+    local frames = {}
+    for _, name in ipairs(Bars.SEATS) do
+        local bar = rawget(_G, name)
+        if type(bar) == "table" then frames[#frames + 1] = bar end
+    end
+    return frames
 end
 
 function Bars.Start()

@@ -1,7 +1,7 @@
-# Sane UI: Macros
+# Sane UI: Combat: Sane Macros
 
-**Status:** built · **Since:** 2026-11-02 · **Addon:** `SaneUI_Macros` · **Game:** WoW: Forever and Retail · **Tests:**
-`dev/tests/macros.lua`; the lab's scene `macros`.
+**Status:** built · **Since:** 2026-11-02 · **Part of:** the module Combat (`SaneUI_Combat`, `src/Combat/Macros/`) · **Game:** WoW:
+Forever and Retail · **Tests:** `dev/tests/macros.lua`; the lab's scene `combat-full`.
 
 ## TL;DR
 *Sane Macros* stands in for the game's macro window. A macro is a list of steps, as long as you like, and there are no
@@ -11,12 +11,14 @@ of your normal action bar buttons. The macros are your account's, on every chara
 
 ## How to use
 - **Open it:** `/macro`, the game menu's *Macros*, `/sane macros`, or the key *Open or close Sane Macros* (Sane UI, in
-  the game's key bindings). The first button in its title bar goes to the game's own macro window, and that window has a
-  button back. The game's macros stay as they are.
+  the game's key bindings). It opens on Combat's full screen, beside your action bars; where that cannot come (Edit Mode, the
+  full screen switched off) as a window of its own, whose first title bar button goes to the game's own macro window. The
+  game's macros stay as they are.
 - **New macro:** *New* makes an empty one, or takes one over from the game's macros as macro text. *Copy*, *Delete*.
 - **Its key:** *Set key*, then press the key, with Shift, Ctrl or Alt if you like, or a mouse's extra button. Esc leaves it
   as it was; a right click takes it away. For this character, and it stays out of the game's own key settings.
-- **Its bar button:** *Place on bar*, or drag the macro's picture, and choose a button on your action bars. It works and
+- **Its bar button:** drag the macro from the list, or its picture, onto a button of your action bars, or click *Place on
+  bar* and choose one. It works and
   looks like a normal button, with that button's keys, on that page of Bar 1. What the button holds stays underneath and is
   back when the macro is taken off (a right click on the same button in the window). One button a macro, for this character.
 - **Order:**
@@ -29,7 +31,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **Only when:** the **+** lists the conditions by group, each explained. Click a condition for its opposite, right click
   to take it away. A step whose conditions do not hold is skipped in that same press. In macro text the **+** beside the box
   writes the condition where the cursor stands.
-- **Back to the first step after a fight:** a tick, on at first.
+- **Start over after a fight:** a tick, on at first.
 - **The checks:** a red **!** on a macro or a step says something would not work as it stands; the mouse on it says what. The
   switch *Check macros*.
 - **What it cannot do:** the game keeps rage, cooldowns and auras from anything that decides a press. So a step is never
@@ -61,10 +63,15 @@ of your normal action bar buttons. The macros are your account's, on every chara
   macro text.
 - **The checks** (`Check.lua`) run at an edit, on opening, and at `SPELLS_CHANGED` and `BAG_UPDATE_DELAYED` while the window shows.
   They say what can be known ahead; a clean check does not mean a spell is ready.
-- **Saved.** Macros in `Core.Store` (the account, every profile); keys and places in `Core.Character`.
+- **On the full screen.** The part `macros` of Combat's board (`Board.Part`). One page, made once, goes where it is shown: the panel's
+  body or the window of its own (`Into`), and takes the room it has (`Editor.Size`, `Steps.Width`, `Detail.Width`). Opening the window
+  of its own tries the full screen first (`ToBoard`), and it shuts unseen.
+- **Saved.** Macros in `Core.Store("Macros")` (the account, every profile), keys and places in `Core.Character("Macros")`: apart
+  from Combat's own, so that their names cannot meet. The switches are Combat's (`macroChecks`, `macroDim`, `macroKey`). Its parts
+  stand in `ns.Macros`, as Combat already has a `Book`, a `Face` and a `Press`-like name or two.
 - **The game's window** is held by Core (`native.hold`, `Blizzard_MacroUI`), so the frame is made at login, empty; what it
   holds is made when first shown. A hub is made only for a macro with a key or a place.
-- **Standing down** (`ns.GiveBack`): no key and no bar button of ours, the game's macro window back.
+- **Standing down** (`Macros.GiveBack`, from Combat's): no key and no bar button of ours, the game's macro window back.
 - **Tried in the game:** one step a press, 5,000 attributes on one button, a button over a bar slot with paging and left
   and right click, on Retail. A plain macro stopped at its first `/cast` line on Retail 12.1.5, cast or refused, so a step should
   hold one `/cast` (the check says so).
@@ -72,7 +79,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 ## Files
 | File | What it does |
 | --- | --- |
-| `Macros.lua` | The module's table, words, switches, the plain button (`ns.Button`), standing down |
+| `Macros.lua` | Its table (`ns.Macros`), words, the plain button (`Macros.Button`), its start and standing down |
 | `Conditions.lua` | The game's conditions in plain words; the words the game knows |
 | `Book.lua` | Macros and steps as data: cleaned, made, copied, moved, deleted; keys and places looked up |
 | `Write.lua` | A macro as lines, conditions and turns |
@@ -85,4 +92,3 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
 | `Detail.lua` | The chosen step's settings |
 | `Editor.lua` | The window, the macros' list, its head, the key's capture |
-| `Bindings.xml` | The window's key |

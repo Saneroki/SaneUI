@@ -1,15 +1,12 @@
-local ADDON, ns = ...
+local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros
---  The module's own table (ns in all its files), its words, its switches and
---  how it stands down. An addon of its own (SaneUI_Macros): it needs Core and
---  nothing else, and is switched on and off in the game's addon list.
---
---  Sane Macros stands in for the game's macro window. A macro is a list of
---  steps, as long as you like; one step is what a normal macro is. There are no
---  macro slots to run out of: a macro lives in Sane UI's saved settings, for the
---  whole account, and reaches the game by a key or a bar button of the character.
+--  Sane UI - Combat - Macros
+--  Sane Macros, a part of Combat: in the game's macro window's stead, on Combat's
+--  full screen beside the action bars. A macro is a list of steps, as long as you
+--  like; one step is what a normal macro is. There are no macro slots to run out
+--  of: a macro lives in Sane UI's saved settings, for the whole account, and
+--  reaches the game by a key or a bar button of the character.
 --    Conditions.lua  the game's macro conditions in plain words, explained
 --    Book.lua        your macros and steps, and each character's keys and places
 --    Write.lua       a macro written out into what one press may do
@@ -21,25 +18,26 @@ local ADDON, ns = ...
 --    Picker.lua      the list of conditions behind the + button
 --    Steps.lua       a macro's steps in a list
 --    Detail.lua      the chosen step's settings
---    Editor.lua      the window
+--    Editor.lua      the page, its panel on the full screen, its own window
 --
 --  What the game allows sets the shape. On a press, secure code may rewrite the
 --  button it runs on, in a fight too, and may ask the game's macro conditions.
 --  It cannot read rage, cooldowns or auras, and neither can it be told by other
 --  code in a fight. So a step that cannot be cast costs that press and nothing
 --  else, and only conditions can skip a step. Standing down, every key and bar
---  button is the game's again (GiveBack).
+--  button is the game's again (Macros.GiveBack).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-Core.NewModule(ADDON, "Macros", ns)
+local Macros = {}
+ns.Macros = Macros
+
+-- Where macros are kept: under this name, apart from Combat's own settings.
+Macros.STORE = "Macros"
 
 local function Word(name, fallback) return Core.Word(name, fallback) end
 
--- Its words in the game's key bindings.
-BINDING_NAME_SANEUI_MACROS = "Open or close Sane Macros"
-
--- Every word the module shows, but the conditions' (Conditions.lua); the game's own where it has one.
-ns.TEXT = {
+-- Every word it shows, but the conditions' (Conditions.lua); the game's own where it has one.
+Macros.TEXT = {
     title = "Sane Macros",
     about = "Sane Macros, the window of your macros and sequences",
     macros = "Your macros",
@@ -81,7 +79,7 @@ ns.TEXT = {
     orderTurnTip = "A sequence. Every press goes on to the next step and comes round again. A step the game refuses costs that one press, so keep pressing: what can be cast gets its turn. Conditions skip a step without costing a press.",
     orderTop = "Every press starts at the top",
     orderTopTip = "A normal macro. Every press takes the first step whose conditions hold. Use conditions to choose between steps; a step without conditions ends the list.",
-    fresh = "Back to the first step after a fight",
+    fresh = "Start over after a fight",
     freshTip = "When a fight ends, the next press starts at the first step again.",
 
     steps = "Steps",
@@ -157,15 +155,7 @@ ns.TEXT = {
 
     noCombat = "Not in a fight: this changes the game's secure buttons.",
 
-    checks = "Check macros",
-    checksTip = "Looks over your macros when they change, and when you learn something new while the window is open, and marks what would not work.",
-    usable = "Dim what cannot be used",
-    usableTip = "A macro on a bar button is dimmed while its next step cannot be used, as the game does.",
-    keyText = "Show the key on the button",
-    keyTextTip = "A macro on a bar button shows that button's key.",
 }
-
-ns.GIVEN_BACK = "your bar buttons and keys are the game's again"
 
 -- A button of this window: dark, with a thin bronze edge, as no red button is wanted and no metal one is picked yet.
 local PLATE, EDGE, LIT = { 0.09, 0.08, 0.07 }, { 0.62, 0.5, 0.3 }, { 0.2, 0.17, 0.12 }
@@ -174,7 +164,7 @@ local function Light(button, colour)
     button:SetBackdropColor(colour[1], colour[2], colour[3], 0.95)
 end
 
-function ns.Button(parent, text, width, height)
+function Macros.Button(parent, text, width, height)
     local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
     button:SetSize(width, height or 22)
     button:EnableMouse(true)
@@ -191,40 +181,30 @@ function ns.Button(parent, text, width, height)
     return button
 end
 
-local OPTIONS = {
-    { key = "checks", default = true, text = ns.TEXT.checks, tip = ns.TEXT.checksTip },
-    { key = "usable", default = true, text = ns.TEXT.usable, tip = ns.TEXT.usableTip },
-    { key = "keyText", default = true, text = ns.TEXT.keyText, tip = ns.TEXT.keyTextTip },
-}
-Core.Options(ns.name, OPTIONS, {
-    changed = function(key)
-        if key == "checks" then
-            ns.Safe("checks", ns.Editor.Refresh)
-        else
-            ns.Safe("faces", ns.Face.Paint)
-        end
-    end,
-})
 
--- Standing down: every key and bar button is the game's again.
-function ns.GiveBack()
-    ns.Safe("give back", ns.Place.Stop)
-    ns.Safe("give back", ns.Reach.GiveBack)
-    ns.Safe("give back", ns.Editor.GiveBack)
+function Macros.Load()
+    Macros.store = Core.Store(Macros.STORE)
+    Macros.Book.Clean()
 end
 
-function ns.OnLoad()
-    ns.options = Core.Settings(ns.name)
-    ns.store = Core.Store(ns.name)
-    ns.Book.Clean()
-    Core.Command("macros", ns.TEXT.about, ns.Guard(function() ns.Editor.Toggle() end), "macro")
+function Macros.Start()
+    Macros.own = Core.Character(Macros.STORE)
+    Macros.Book.CleanOwn()
+    Macros.Editor.Prepare()
+    Macros.Reach.Start()
 end
 
-function ns.OnLogin()
-    ns.own = Core.Character(ns.name)
-    ns.Book.CleanOwn()
-    ns.Editor.Prepare()
-    ns.Reach.Start()
+function Macros.GiveBack()
+    ns.Safe("macros", Macros.Place.Stop)
+    ns.Safe("macros", Macros.Reach.GiveBack)
+    ns.Safe("macros", Macros.Editor.GiveBack)
 end
 
-SaneUI.Macros = ns
+-- A switch of its own changed.
+function Macros.Changed(key)
+    if key == "macroChecks" then
+        ns.Safe("macros", Macros.Editor.Refresh)
+    else
+        ns.Safe("macros", Macros.Face.Paint)
+    end
+end

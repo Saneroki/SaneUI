@@ -1,4 +1,4 @@
--- Runs the Macros module against the stand-in client (wowstub.lua): macros and steps kept and cleaned, a macro written
+-- Runs Sane Macros, a part of the Combat module, against the stand-in client (wowstub.lua): macros and steps kept and cleaned, a macro written
 -- out into its lines, conditions and turns, the checks, the snippet that runs on a press (a turn a press, conditions that
 -- skip in that press, the top of the list, nothing true, a bar button on the same hub, a fight), keys and bar buttons by
 -- page, the window with its + list, a game's macro taken over, Retail's path, and standing down.
@@ -9,6 +9,8 @@ local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
+local fight = require("combatclient").Install(W)
+local units = fight.units
 
 local passed = 0
 local function check(condition, what)
@@ -20,6 +22,99 @@ end
 --  What the module needs of the client
 -------------------------------------------------------------------------------
 local methods = W.methods
+UIParent._width, UIParent._height = 1920, 1080
+function methods:GetFrameStrata() return self._strata or "MEDIUM" end
+function methods:SetFrameStrata(strata) self._strata = strata end
+function methods:SetClampedToScreen(on) self._clamped = on end
+function methods:EnableMouse(on) self._mouse, self._motion = on, on end
+function methods:SetMouseMotionEnabled(on) self._motion = on end
+function methods:SetMouseClickEnabled(on) self._mouse = on end
+function methods:IsMouseClickEnabled() return self._mouse or false end
+function methods:IsMouseMotionEnabled() return self._motion or false end
+function methods:IsMouseEnabled() return self._mouse or false end
+function methods:EnableMouseWheel(on) self._wheel = on end
+function methods:GetFrameLevel() return self._level or 1 end
+function methods:RegisterForClicks(...) self._clicks = { ... } end
+function methods:IsProtected() return self._protected or false end
+function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
+function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
+function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
+function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
+local function noop() end
+function methods:CreateAnimationGroup()
+    local group = setmetatable({}, { __index = function() return noop end })
+    function group:CreateAnimation() return setmetatable({}, { __index = function() return noop end }) end
+    return group
+end
+W.templates.PagingControlsHorizontalTemplate = function(controls)
+    controls.PageText = W.NewWidget("FontString", nil, controls)
+    function controls:GetCurrentPage() return 1 end
+end
+function methods:GetLeft() return self._left end
+function methods:GetBottom() return self._bottom end
+function methods:GetTop() return self._bottom and self._bottom + self._height end
+function methods:GetCenter()
+    return self._left and self._left + self._width / 2, self._bottom and self._bottom + self._height / 2
+end
+EasingUtil = { OutQuartic = function(p) return 1 - (1 - p) ^ 4 end }
+IsMouseButtonDown = function() return false end
+GetCursorPosition = function() return 0, 0 end
+GetBindingKey, GetBindingText = function() end, function(key) return key end
+EventUtil = { ContinueOnAddOnLoaded = function() end }
+TalentMicroButton, SpellbookMicroButton = W.NewWidget("Button", "TalentMicroButton"), W.NewWidget("Button", "SpellbookMicroButton")
+ClearOverrideBindings, SetOverrideBinding = function() end, function() end
+C_SpellBook.IsSpellBookItemLooseFlyoutMember = function() return false end
+C_SpecializationInfo = { GetCombatConfigIDForSpecGroup = function(group) return 100 + group end }
+for _, bar in ipairs({ MainActionBar, StanceBar }) do
+    bar.UpdateDividers, bar.Update, bar.UpdateState = function() end, function() end, function() end
+end
+for _, button in ipairs(MainActionBar.actionButtons) do button.Update, button.UpdateButtonArt = function() end, function() end end
+units.player = { name = "Droopy", surname = "Fairwind", player = true, class = "DRUID", level = 60, health = 850, most = 1000,
+                 power = 30, powerMost = 100 }
+
+-- The auras on you and your target, by name; the game's two frames of aura buttons.
+local on = { player = {}, target = {} }
+local THORNS = { name = "Thorns", spellId = 782, icon = 136104, auraInstanceID = 11, expirationTime = 0 }
+local MARK = { name = "Mark of the Wild", spellId = 1126, icon = 136078, auraInstanceID = 12, expirationTime = 0 }
+local SHADE = { name = "Weakened Soul", spellId = 6788, icon = 136000, auraInstanceID = 13, expirationTime = 0 }
+local secret, plainSpells = false, {}
+C_Secrets = { ShouldAurasBeSecret = function() return secret end,
+              ShouldSpellAuraBeSecret = function(id) return secret and not plainSpells[id] end }
+local function Secret(data, spell)
+    if secret and not plainSpells[spell or (data and data.spellId)] then return data and W.Secret() end
+    return data
+end
+C_UnitAuras.GetAuraDataBySpellName = function(unit, name) return Secret((on[unit] or {})[name]) end
+C_UnitAuras.GetAuraDataByAuraInstanceID = function(unit, id)
+    for _, data in pairs(on[unit] or {}) do
+        if data.auraInstanceID == id then return Secret(data) end
+    end
+end
+C_UnitAuras.GetAuraDuration = function(unit, id) -- the game fails on an instance that is gone
+    for _, data in pairs(on[unit] or {}) do
+        if data.auraInstanceID == id then return {} end
+    end
+    error("invalid aura instance")
+end
+local resting, shift = false, false
+IsResting = function() return resting end
+IsShiftKeyDown = function() return shift end
+local function Buttons(count)
+    local frame = { auraFrames = {}, UpdateAuraButtons = function() end, AuraContainer = { UpdateGridLayout = function() end } }
+    for index = 1, count do
+        local button = W.NewWidget("Button", nil, UIParent)
+        button:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -35 * index, 0)
+        for _, key in ipairs({ "Icon", "Duration", "Count", "Symbol", "DebuffBorder", "TempEnchantBorder" }) do
+            rawset(button, key, W.NewWidget("Frame", nil, button))
+        end
+        rawget(button, "Icon"):SetSize(30, 30)
+        frame.auraFrames[index] = button
+    end
+    return frame
+end
+BuffFrame, DebuffFrame = Buttons(3), Buttons(1)
+BuffFrame.auraFrames[4] = { isAuraAnchor = true }
+
 function methods:WrapScript(_, script, snippet)
     self._wraps = self._wraps or {}
     self._wraps[script] = assert(loadstring("return function(self, button, down) " .. snippet .. "\nend"))()
@@ -111,23 +206,28 @@ SetOverrideBindingClick = function(owner, _, key, name, mouse)
     overrides[owner] = overrides[owner] or {}
     overrides[owner][key] = name .. ":" .. mouse
 end
-RegisterStateDriver = function(frame, state_, words) drivers[frame] = { state_, words } end
-UnregisterStateDriver = function(frame) drivers[frame] = nil end
+local register, unregister = RegisterStateDriver, UnregisterStateDriver
+RegisterStateDriver = function(frame, state_, words)
+    if state_ == "slot" then drivers[frame] = { state_, words } elseif register then register(frame, state_, words) end
+end
+UnregisterStateDriver = function(frame, state_)
+    if state_ == "slot" then drivers[frame] = nil elseif unregister then unregister(frame, state_) end
+end
 MenuUtil = MenuUtil or {}
 GameTooltip_SetTitle, GameTooltip_AddNormalLine = function() end, function() end
 
 W.LoadCore(root)
+local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = W.LoadAddon(root, "Macros", "SaneUI_Macros")
+local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
 -- What the saved files may hold: rubbish among a good macro.
-SaneUIDB = SaneUIDB or {}
-local store = SaneUI.Core.Store("Macros")
+local store = Core.Store("Macros")
 store.macros = { "rubbish", { id = 5, name = 7, steps = { { kind = "nothing" }, { kind = "spell", what = "Slam", often = 99, when = { 3, { word = "harm" } } } } } }
-W.Fire("ADDON_LOADED", "SaneUI_Macros")
+W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
 W.Fire("PLAYER_ENTERING_WORLD")
-local Core = SaneUI.Core
-local Book, Write, Check, Press, Face, Reach, Editor, TEXT = ns.Book, ns.Write, ns.Check, ns.Press, ns.Face, ns.Reach, ns.Editor, ns.TEXT
+local Macros = ns.Macros
+local Book, Write, Check, Press, Face, Reach, Editor, TEXT = Macros.Book, Macros.Write, Macros.Check, Macros.Press, Macros.Face, Macros.Reach, Macros.Editor, Macros.TEXT
 
 -------------------------------------------------------------------------------
 --  The book
@@ -286,7 +386,7 @@ check(hub:GetAttribute("at") == 2, "unless it should not")
 -------------------------------------------------------------------------------
 --  Keys and bar buttons
 -------------------------------------------------------------------------------
-check(ns.own.keys ~= nil, "the character's keys")
+check(Macros.own.keys ~= nil, "the character's keys")
 local keyed = Macro(Spell("Slam"))
 local other = Macro(Spell("Rend"))
 Reach.SetKey(keyed, "F")
@@ -308,8 +408,8 @@ check(Reach.PlaceOf(Reach.BARS[6], 3, 2) == "MultiBar5Button3", "no other bar ha
 local bar, button, page = Reach.Parts("ActionButton3:2")
 check(bar == Reach.BARS[1] and button == 3 and page == 2, "read back")
 check(Reach.Parts("MultiBar5Button12") == Reach.BARS[6], "a bar with a digit in its name")
-local bars = CreateFrame("Frame", "MainActionBar", UIParent)
-local slot = CreateFrame("Button", "ActionButton3", bars)
+local bars = MainActionBar
+local slot = rawget(_G, "ActionButton3") or CreateFrame("Button", "ActionButton3", bars)
 check(Reach.Page() == 1, "the page by the game's conditions")
 state["bar:4"] = true
 check(Reach.Page() == 4, "another page")
@@ -317,7 +417,7 @@ state["bar:4"] = nil
 
 Reach.SetPlace(keyed, "ActionButton3:2")
 local face = _G.SaneUIMacroFace_ActionButton3_2
-check(face ~= nil and face:GetParent() == bars, "our button stands in the bar's frame, so it goes with the bar")
+check(face ~= nil and face:GetParent() == slot:GetParent(), "our button stands in the bar's frame, so it goes with the bar")
 check(face:GetFrameRef("hub") == Press.Hub(keyed), "and reads the macro's hub")
 local header, driven
 for frame, driver in pairs(drivers) do header, driven = frame, driver end
@@ -329,10 +429,10 @@ check(face.icon:GetTexture() == 1000 + 1464, "the next step's picture")
 Face.Paint()
 check(face.cooldown._duration == "duration of Slam", "the swirl from the game's duration object")
 check(face.key:GetText() == "3", "the key shows")
-ns.options.keyText = false
+ns.options.macroKey = false
 Face.Paint()
 check(face.key:GetText() == "", "unless it should not")
-ns.options.keyText = true
+ns.options.macroKey = true
 
 Reach.SetPlace(keyed, "ActionButton3:3")
 check(Book.PlaceOf(keyed) == "ActionButton3:3", "one bar button a macro")
@@ -340,9 +440,9 @@ Reach.TakePlace(keyed)
 check(next(drivers) == nil, "taken off, the game's button is the game's")
 
 -- Deleted on another character: its key and place fall away here at the login.
-ns.own.keys.Z, ns.own.places["ActionButton3:1"] = 9999, 9999
+Macros.own.keys.Z, Macros.own.places["ActionButton3:1"] = 9999, 9999
 Reach.Update()
-check(ns.own.keys.Z == nil and ns.own.places["ActionButton3:1"] == nil, "what is gone from the book is gone here")
+check(Macros.own.keys.Z == nil and Macros.own.places["ActionButton3:1"] == nil, "what is gone from the book is gone here")
 
 -- Waiting out a fight.
 W.Combat(true)
@@ -354,15 +454,20 @@ Reach.TakeKey(other)
 -- Choosing a bar button.
 slot:Show()
 local chosenPlace
-ns.Place.Start(function(place) chosenPlace = place end)
-local square = ns.Place.squares[1]
+Macros.Place.Start(function(place) chosenPlace = place end)
+local function Square()
+    for _, each in ipairs(Macros.Place.squares) do
+        if each.place == "ActionButton3:1" then return each end
+    end
+end
+local square = Square()
 check(square and square.place == "ActionButton3:1", "a square over the button")
 square._scripts.OnClick(square, "RightButton")
 check(chosenPlace == nil and not square:IsShown(), "a right click cancels")
-ns.Place.Start(function(place) chosenPlace = place end)
+Macros.Place.Start(function(place) chosenPlace = place end)
 square._scripts.OnClick(square, "LeftButton")
 check(chosenPlace == "ActionButton3:1", "a click chooses")
-ns.Place.Start(function(place) chosenPlace = place end)
+Macros.Place.Start(function(place) chosenPlace = place end)
 W.Combat(true)
 check(not square:IsShown(), "a fight ends it")
 W.Combat(false)
@@ -371,10 +476,13 @@ W.Combat(false)
 --  The window
 -------------------------------------------------------------------------------
 for _, macro in ipairs({ unpack(Book.All()) }) do Book.Delete(macro) end
+-- The full screen cannot come here: the window of its own.
+local open, full = ns.Window.Open, ns.Window.Full
+ns.Window.Open, ns.Window.Full = function() end, function() return false end
 Editor.Toggle()
 local inner = Book.New("First")
 Editor.Choose(inner)
-check(ns.Press.Picture(nil) == Press.ICON, "a macro with no step has the question mark")
+check(Press.Picture(nil) == Press.ICON, "a macro with no step has the question mark")
 Editor.AddStep(Book.Step("spell", "Slam"))
 Editor.AddStep(Book.Step("spell", "Rend"))
 check(#inner.steps == 2 and inner.steps[2].what == "Rend", "a step goes after the one chosen")
@@ -384,28 +492,69 @@ Editor.TakeStep(1)
 check(#inner.steps == 2 and inner.steps[1].what == "Slam", "taken away")
 
 -- The + list: every group, every line with its explanation.
-local groups = ns.Conditions.Groups()
+local groups = Macros.Conditions.Groups()
 check(#groups >= 8, "the conditions by group")
 for _, group in ipairs(groups) do
     for _, entry in ipairs(group.items) do check(entry.tip and entry.on and entry.off, "words for " .. entry.word) end
 end
 local menus = #W.menus
 local picked
-ns.Picker.Open(UIParent, function(word, value) picked = word .. tostring(value) end)
+Macros.Picker.Open(UIParent, function(word, value) picked = word .. tostring(value) end)
 check(#W.menus == menus + 1, "the + opens a list")
 local function HasSpec()
-    for _, group in ipairs(ns.Conditions.Groups()) do
+    for _, group in ipairs(Macros.Conditions.Groups()) do
         for _, entry in ipairs(group.items) do
             if entry.word == "spec" then return true end
         end
     end
 end
 check(not HasSpec(), "what only Retail has stays out of Forever's list")
-check(ns.Conditions.Text({ word = "mod:shift", no = true }) == "nomod:shift", "the opposite in the game's words")
-check(ns.Conditions.Text({ word = "stance", value = "2" }) == "stance:2", "with its value")
-check((ns.Conditions.Words({ word = "combat", no = true })) == "Out of a fight", "and in plain ones")
-check((ns.Conditions.Words({ word = "stance", value = "2" })):find(": 2", 1, true), "a value shows")
-check((ns.Conditions.Words({ word = "odd" })) == "odd", "a word not in the list shows as it is")
+check(Macros.Conditions.Text({ word = "mod:shift", no = true }) == "nomod:shift", "the opposite in the game's words")
+check(Macros.Conditions.Text({ word = "stance", value = "2" }) == "stance:2", "with its value")
+check((Macros.Conditions.Words({ word = "combat", no = true })) == "Out of a fight", "and in plain ones")
+check((Macros.Conditions.Words({ word = "stance", value = "2" })):find(": 2", 1, true), "a value shows")
+check((Macros.Conditions.Words({ word = "odd" })) == "odd", "a word not in the list shows as it is")
+
+-- On Combat's full screen: the same page, in the panel's body, and no window of its own.
+local spec
+for _, each in ipairs(ns.Board.layouts.options.windows()) do if each.key == "macros" then spec = each end end
+check(spec and spec.title == TEXT.title and spec.least[1] >= 700 and spec.icon, "a window of Combat's board")
+Editor.Toggle()
+check(not Editor.Shown(), "the window of its own closed")
+local panel = W.NewWidget("Frame", nil, UIParent)
+panel.body = W.NewWidget("Frame", nil, panel)
+panel.body._width = 900
+spec.build(panel)
+spec.show(panel, true)
+check(Editor.Page():GetParent() == panel.body, "the page goes into the panel")
+spec.size(panel, 760, 600)
+Editor.Choose(inner)
+local back = ns.Window.Back
+local wentBack = false
+ns.Window.Back = function() wentBack = true end
+Editor.Toggle()
+check(wentBack, "its key takes the full screen back while it stands there")
+ns.Window.Back = back
+spec.show(panel, false)
+ns.Window.Full = function() return true end
+ns.Window.Open = function(key) panel.opened = key end
+Editor.Toggle()
+check(panel.opened == "macros" and not Editor.Shown(), "opened, it goes to the full screen where that can come")
+ns.Window.Full = function() return false end
+ns.Window.Open = function() end
+
+-- Dragging a macro from the list: the same squares, the macro chosen first.
+local dragged = Book.New("Dragged")
+Editor.Choose(dragged)
+Editor.DragToBar()
+check(square:IsShown(), "a drag lays the squares over the bar buttons")
+square._over = true
+Macros.Place.Drop()
+square._over = nil
+check(Book.PlaceOf(dragged) == "ActionButton3:1" and not square:IsShown(), "and let go on one it stands there")
+Reach.TakePlace(dragged)
+Book.Delete(dragged)
+Editor.Choose(inner)
 
 -- A game's macro taken over.
 local taken = Book.FromGame("Mount", "/use Horse")
@@ -413,16 +562,16 @@ check(taken.top and taken.steps[1].kind == "text" and taken.steps[1].what == "/u
 
 -- What can be let go on the list.
 GetCursorInfo = function() return "spell", 3, "spell", 772 end
-local dropped = ns.Steps.FromCursor()
+local dropped = Macros.Steps.FromCursor()
 check(dropped.kind == "spell" and dropped.what == "Rend" and dropped.id == 772, "a spell")
 GetCursorInfo = function() return "item", 6948, "link" end
-dropped = ns.Steps.FromCursor()
+dropped = Macros.Steps.FromCursor()
 check(dropped.kind == "item" and dropped.what == "Hearthstone" and dropped.id == 6948, "an item")
 GetCursorInfo = function() return "macro", 1 end
-dropped = ns.Steps.FromCursor()
+dropped = Macros.Steps.FromCursor()
 check(dropped.kind == "text" and dropped.what == "/use Horse", "a game's macro")
 GetCursorInfo = function() return "money", 5 end
-check(ns.Steps.FromCursor() == nil, "nothing else")
+check(Macros.Steps.FromCursor() == nil, "nothing else")
 
 Editor.Toggle()
 

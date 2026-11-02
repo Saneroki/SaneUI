@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Book
+--  Sane UI - Combat - Macros - Book
 --  Your macros, in plain data; nothing here knows a frame.
 --
 --  A macro (the account's: Core.Store):
@@ -22,7 +23,7 @@ local _, ns = ...
 --  places["ActionButton1:2"] = macro id: a bar's prefix, a button, Bar 1's page.
 -------------------------------------------------------------------------------
 local Book = {}
-ns.Book = Book
+Macros.Book = Book
 
 Book.KINDS = { spell = true, item = true, text = true }
 Book.MOST_OFTEN = 5
@@ -49,7 +50,7 @@ end
 
 local function CleanMacro(macro)
     if type(macro) ~= "table" or type(macro.id) ~= "number" then return nil end
-    macro.name = type(macro.name) == "string" and macro.name or ns.TEXT.firstName
+    macro.name = type(macro.name) == "string" and macro.name or Macros.TEXT.firstName
     macro.top = macro.top and true or nil
     macro.fresh = macro.fresh ~= false
     local steps = {}
@@ -62,7 +63,7 @@ end
 
 -- At load: what the saved files hold, in the shape this version reads.
 function Book.Clean()
-    local store = ns.store
+    local store = Macros.store
     local macros, highest = {}, 0
     for _, macro in ipairs(type(store.macros) == "table" and store.macros or {}) do
         local clean = CleanMacro(macro)
@@ -77,17 +78,17 @@ end
 
 -- At login: this character's keys and places.
 function Book.CleanOwn()
-    local own = ns.own
+    local own = Macros.own
     own.keys = type(own.keys) == "table" and own.keys or {}
     own.places = type(own.places) == "table" and own.places or {}
 end
 
 function Book.All()
-    return ns.store.macros
+    return Macros.store.macros
 end
 
 function Book.Find(id)
-    for _, macro in ipairs(ns.store.macros) do
+    for _, macro in ipairs(Macros.store.macros) do
         if macro.id == id then return macro end
     end
     return nil
@@ -98,8 +99,8 @@ function Book.Step(kind, what, id)
 end
 
 function Book.New(name)
-    local store = ns.store
-    local macro = { id = store.nextId, name = name or ns.TEXT.firstName, fresh = true, steps = {} }
+    local store = Macros.store
+    local macro = { id = store.nextId, name = name or Macros.TEXT.firstName, fresh = true, steps = {} }
     store.nextId = store.nextId + 1
     store.macros[#store.macros + 1] = macro
     return macro
@@ -107,7 +108,7 @@ end
 
 -- A copy under a new name: plain data, step by step, with its own number.
 function Book.Copy(macro)
-    local copy = Book.New(ns.TEXT.copyOf:format(macro.name))
+    local copy = Book.New(Macros.TEXT.copyOf:format(macro.name))
     copy.top, copy.fresh = macro.top, macro.fresh
     for index, step in ipairs(macro.steps) do
         local new = Book.Step(step.kind, step.what, step.id)
@@ -122,17 +123,17 @@ end
 
 -- Gone from the account. Other characters' keys and places to it fall away at their next login, by Reach.
 function Book.Delete(macro)
-    for index, candidate in ipairs(ns.store.macros) do
+    for index, candidate in ipairs(Macros.store.macros) do
         if candidate == macro then
-            table.remove(ns.store.macros, index)
+            table.remove(Macros.store.macros, index)
             break
         end
     end
-    for key, id in pairs(ns.own.keys) do
-        if id == macro.id then ns.own.keys[key] = nil end
+    for key, id in pairs(Macros.own.keys) do
+        if id == macro.id then Macros.own.keys[key] = nil end
     end
-    for place, id in pairs(ns.own.places) do
-        if id == macro.id then ns.own.places[place] = nil end
+    for place, id in pairs(Macros.own.places) do
+        if id == macro.id then Macros.own.places[place] = nil end
     end
 end
 
@@ -154,7 +155,7 @@ end
 
 -- This character's key of a macro, or nil.
 function Book.KeyOf(macro)
-    for key, id in pairs(ns.own.keys) do
+    for key, id in pairs(Macros.own.keys) do
         if id == macro.id then return key end
     end
     return nil
@@ -162,7 +163,7 @@ end
 
 -- This character's bar button of a macro, or nil.
 function Book.PlaceOf(macro)
-    for place, id in pairs(ns.own.places) do
+    for place, id in pairs(Macros.own.places) do
         if id == macro.id then return place end
     end
     return nil

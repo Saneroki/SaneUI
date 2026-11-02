@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Write
+--  Sane UI - Combat - Macros - Write
 --  A macro written out into what one press may do: a list of turns, each with
 --  its macro line and the condition that lets it run. Plain text, nothing here
 --  knows a frame, and only out of a fight does it reach a button (Press.lua).
@@ -12,13 +13,13 @@ local _, ns = ...
 --  stay spread out whatever the numbers are.
 -------------------------------------------------------------------------------
 local Write = {}
-ns.Write = Write
+Macros.Write = Write
 
 -- The words between a step's brackets: who it is for, then its conditions. "" when there are none.
 function Write.Words(step)
     local words = {}
     if step.unit then words[1] = "@" .. step.unit end
-    for _, condition in ipairs(step.when) do words[#words + 1] = ns.Conditions.Text(condition) end
+    for _, condition in ipairs(step.when) do words[#words + 1] = Macros.Conditions.Text(condition) end
     return table.concat(words, ",")
 end
 

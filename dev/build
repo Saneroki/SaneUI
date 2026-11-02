@@ -250,7 +250,7 @@ into() {
     fi
     # Our own old names (a module renamed, the data packs now in Core): those folders are ours, and would load
     # next to the new one.
-    for old in SaneUI_Chat SaneUI_Spellbook $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
+    for old in SaneUI_Chat SaneUI_Spellbook SaneUI_Macros $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
         if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
             rm -rf "${addons:?}/$old"
             echo "Removed from the game, an old folder of ours: $addons/$old"

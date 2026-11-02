@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Press
+--  Sane UI - Combat - Macros - Press
 --  A macro's secure button, the hub: it holds the macro's turns and where the
 --  macro stands, in numbered attributes, and a key clicks it. A bar button of
 --  the macro (Face.lua) is a button of its own that reads the same hub.
@@ -20,7 +21,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Press = {}
-ns.Press = Press
+Macros.Press = Press
 
 Press.PREFIX = "SaneUIMacro"
 Press.ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
@@ -48,7 +49,7 @@ local plainParse -- the game's parser, asked for what shows
 
 -- A press: what shows moves on. Runs before the cast, for the look only.
 local function Pressed()
-    ns.Face.Paint()
+    Macros.Face.Paint()
 end
 
 -- A button that presses a macro: one edge only, or a press would be two turns.
@@ -83,7 +84,7 @@ end
 -- The macro's turns onto its hub. Out of a fight.
 function Press.Load(macro)
     local hub = Press.Hub(macro)
-    local turns = ns.Write.Turns(macro)
+    local turns = Macros.Write.Turns(macro)
     for index = 1, math.max(hub:GetAttribute("count") or 0, #turns) do
         local turn = turns[index]
         hub:SetAttribute("m" .. index, turn and turn.line or nil)
@@ -100,7 +101,7 @@ function Press.Update(macro)
     if not hubs[macro.id] then return end
     Core.AfterCombat("Macros: " .. macro.id, function()
         Press.Load(macro)
-        ns.Face.Paint()
+        Macros.Face.Paint()
     end)
 end
 
@@ -117,10 +118,10 @@ end
 -- A fight's end: the macros that start over do.
 function Press.Fresh()
     for id, hub in pairs(hubs) do
-        local macro = ns.Book.Find(id)
+        local macro = Macros.Book.Find(id)
         if macro and macro.fresh then hub:SetAttribute("at", 1) end
     end
-    ns.Face.Paint()
+    Macros.Face.Paint()
 end
 
 -- The key-down setting changed: every button takes it.

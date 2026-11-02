@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Conditions
+--  Sane UI - Combat - Macros - Conditions
 --  The game's macro conditions in plain words. The game judges them: Sane Macros
 --  only writes them, as the words between a macro's square brackets. Each entry
 --  says what it means, and its opposite (the game's word with "no" before it).
@@ -14,7 +15,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Conditions = {}
-ns.Conditions = Conditions
+Macros.Conditions = Conditions
 
 Conditions.GROUPS = {
     { name = "Fight", items = {

@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Reach
+--  Sane UI - Combat - Macros - Reach
 --  How a press reaches a macro, on this character. Nothing of this goes into the
 --  game's own key settings or action slots, so taking it away leaves them as
 --  they were.
@@ -13,7 +14,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Reach = {}
-ns.Reach = Reach
+Macros.Reach = Reach
 
 -- The game's bars: the buttons' frames and the names of their keys.
 Reach.BARS = {
@@ -75,7 +76,7 @@ function Reach.Words(place)
     local bar, button = Reach.Parts(place)
     if not bar then return "" end
     local _, index = Bar(bar.prefix)
-    return ns.TEXT.bars[index], button
+    return Macros.TEXT.bars[index], button
 end
 
 -- The page Bar 1 shows, as the game's conditions say: the same word in both games.
@@ -107,9 +108,9 @@ local function SetSlot(place, macro)
     if not slot then return end
     local first, second = GetBindingKey(bar.binding .. button)
     local name = "SaneUIMacroFace_" .. place:gsub(":", "_")
-    local face = ns.Face.Get(place, slot, name)
-    ns.Press.Load(macro)
-    ns.Face.Show(face, macro, Short(first))
+    local face = Macros.Face.Get(place, slot, name)
+    Macros.Press.Load(macro)
+    Macros.Face.Show(face, macro, Short(first))
     local header = headers[place]
     if not header then
         header = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
@@ -128,9 +129,9 @@ end
 -- Every bar button of this character stands as saved. Out of a fight.
 local function Slots()
     for place in pairs(headers) do ClearSlot(place) end
-    for place, id in pairs(ns.own.places) do
-        local macro = ns.Book.Find(id)
-        if macro then SetSlot(place, macro) else ns.own.places[place] = nil end
+    for place, id in pairs(Macros.own.places) do
+        local macro = Macros.Book.Find(id)
+        if macro then SetSlot(place, macro) else Macros.own.places[place] = nil end
     end
 end
 
@@ -138,13 +139,13 @@ end
 local function Keys()
     owner = owner or CreateFrame("Frame")
     ClearOverrideBindings(owner)
-    for key, id in pairs(ns.own.keys) do
-        local macro = ns.Book.Find(id)
+    for key, id in pairs(Macros.own.keys) do
+        local macro = Macros.Book.Find(id)
         if macro then
-            ns.Press.Load(macro)
-            SetOverrideBindingClick(owner, true, key, ns.Press.Name(macro), "LeftButton")
+            Macros.Press.Load(macro)
+            SetOverrideBindingClick(owner, true, key, Macros.Press.Name(macro), "LeftButton")
         else
-            ns.own.keys[key] = nil
+            Macros.own.keys[key] = nil
         end
     end
 end
@@ -168,8 +169,8 @@ end
 local function Edges(name)
     if name ~= "ActionButtonUseKeyDown" then return end
     Core.AfterCombat("Macros: edges", function()
-        ns.Press.Edges()
-        ns.Face.Edges()
+        Macros.Press.Edges()
+        Macros.Face.Edges()
     end)
 end
 
@@ -177,38 +178,38 @@ function Reach.Start()
     if started then return end
     started = true
     Reach.Update()
-    ns.On("PLAYER_REGEN_ENABLED", ns.Press.Fresh)
+    ns.On("PLAYER_REGEN_ENABLED", Macros.Press.Fresh)
     ns.On("UPDATE_BINDINGS", Bindings)
     ns.On("CVAR_UPDATE", Edges)
 end
 
 -- A macro's key. Returns the macro that held that key before, if another did.
 function Reach.SetKey(macro, key)
-    local had = ns.Book.Find(ns.own.keys[key] or 0)
-    local old = ns.Book.KeyOf(macro)
-    if old then ns.own.keys[old] = nil end
-    ns.own.keys[key] = macro.id
+    local had = Macros.Book.Find(Macros.own.keys[key] or 0)
+    local old = Macros.Book.KeyOf(macro)
+    if old then Macros.own.keys[old] = nil end
+    Macros.own.keys[key] = macro.id
     Reach.Update()
     return had ~= macro and had or nil
 end
 
 function Reach.TakeKey(macro)
-    local old = ns.Book.KeyOf(macro)
-    if old then ns.own.keys[old] = nil end
+    local old = Macros.Book.KeyOf(macro)
+    if old then Macros.own.keys[old] = nil end
     Reach.Update()
 end
 
 -- A macro's bar button. One button a macro.
 function Reach.SetPlace(macro, place)
-    local old = ns.Book.PlaceOf(macro)
-    if old then ns.own.places[old] = nil end
-    ns.own.places[place] = macro.id
+    local old = Macros.Book.PlaceOf(macro)
+    if old then Macros.own.places[old] = nil end
+    Macros.own.places[place] = macro.id
     Reach.Update()
 end
 
 function Reach.TakePlace(macro)
-    local old = ns.Book.PlaceOf(macro)
-    if old then ns.own.places[old] = nil end
+    local old = Macros.Book.PlaceOf(macro)
+    if old then Macros.own.places[old] = nil end
     Reach.Update()
 end
 

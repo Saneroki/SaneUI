@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Picker
+--  Sane UI - Combat - Macros - Picker
 --  The list behind the + button: the game's conditions by group, each with its
 --  explanation. The same list serves a step's conditions and macro text. A
 --  condition that needs a word more asks for it: a number from a short list, a
@@ -9,7 +10,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Picker = {}
-ns.Picker = Picker
+Macros.Picker = Picker
 
 Picker.NUMBERS = { stance = { 0, 1, 2, 3, 4, 5, 6 }, spec = { 1, 2, 3, 4 }, bar = { 1, 2, 3, 4, 5, 6 } }
 
@@ -22,7 +23,7 @@ end
 
 -- A word in a box, once the line is clicked.
 local function Ask(item, chosen)
-    Core.AskText(ns.TEXT.whenAsk, item.on, nil, nil, function(text)
+    Core.AskText(Macros.TEXT.whenAsk, item.on, nil, nil, function(text)
         local value = text and text:match("^%s*(.-)%s*$")
         if value and value ~= "" then chosen(item.word, value) end
     end)
@@ -47,8 +48,8 @@ end
 -- Opens the list at owner; chosen(word, value) with what was picked.
 function Picker.Open(owner, chosen)
     MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
-        root:CreateTitle(ns.TEXT.whenAdd)
-        for _, group in ipairs(ns.Conditions.Groups()) do
+        root:CreateTitle(Macros.TEXT.whenAdd)
+        for _, group in ipairs(Macros.Conditions.Groups()) do
             local line = root:CreateButton(group.name)
             for _, item in ipairs(group.items) do Line(line, item, chosen) end
         end

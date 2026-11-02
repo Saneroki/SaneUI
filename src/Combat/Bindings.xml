@@ -11,4 +11,7 @@
 	<Binding name="SANEUI_COMBAT_TALENTS" category="BINDING_HEADER_SANEUI">
 		SaneUI.Combat.Safe("keys", SaneUI.Combat.Keys.Press, "talents")
 	</Binding>
+	<Binding name="SANEUI_COMBAT_MACROS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Combat.Safe("keys", SaneUI.Combat.Macros.Editor.Toggle)
+	</Binding>
 </Bindings>

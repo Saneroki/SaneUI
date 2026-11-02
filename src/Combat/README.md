@@ -77,6 +77,13 @@ shows on it, and you make as many bars as you like.
   above, below or beside it; drag the gap between them to share the room anew; the X takes a window off, the
   dropdown *Windows* puts it back. Layouts are tabs after the title: *+* makes one, a right click renames it,
   resets the first or deletes another.
+- **The red error text:** the switch *Hide the red error text* (on at first): the game's red line at the top of the screen and
+  its sound are gone, always. Yellow lines stay.
+- **The action bars on the full screen:** the window *Action bars* along the foot, and *Side bars* down the right while a
+  tall bar shows. Your bars stand in them, so no other window lies over them; they work as ever, and every button shows, an
+  empty one too. Drag a macro of Sane Macros onto one. A layout of your own takes them from the dropdown *Windows*.
+- **Sane Macros:** macros and sequences with no limit of 30, on the full screen beside your bars: `/macro`, `/sane macros` or its key.
+  See [Macros/README.md](Macros/README.md). Its switches: *Check macros*, *Dim what cannot be used*, *Show the key on the button*.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*: the
   full screen goes back and what opens the game's is said: its key, or, while your keys open ours, its button
   in the micro menu (our code does not open the game's spellbook). The game's spellbook has the button *Sane UI*
@@ -385,6 +392,14 @@ shows on it, and you make as many bars as you like.
   not in the dropdown *Windows*, not in the first layout (`Board.FIRST`, those present), not in *Classic windows*
   (the entries' `window`), and its keys stay the game's (`Keys.Bind`, `Keys.Taken(action)`, `Keys.Press`). With
   neither (`ns.Serves()`), the switch *keys* is not described, and the board's window is the part `game`.
+- **The red error text** (`ErrorText.lua`). No CVar does this. `UIErrorsFrame` hears `UI_ERROR_MESSAGE`; the game's own `/uierrorsoff`
+  stops that and mutes every sound effect (`Sound_EnableSFX`). Here the event alone, given back at standing down.
+- **The action bars on the full screen** (`BarsWindow.lua`, the parts `bars` and `sidebars`): `Bars.SEATS` that show, each seated
+  in its panel's body (`Core.Seat`), wide ones in one, tall ones in the other (present while there are any): in one they would
+  shrink to nothing. Lines from the left at the largest scale at which all fit. `ActionBars.Seated`: every button shows and the bars
+  stay in sight at rest. The game's stance and pet bars are left out. In a fight nothing moves; bars seated go back after it.
+  The first layout (`Default`) gives the wide ones a strip of at most `MOST_SHARE` of the height, and Sane Macros (the part `macros`,
+  [Macros/README.md](Macros/README.md)) its least width beside the others.
 - **The game's own window on the full screen** (`GameWindow.lua`, the part `game`, present where `ns.Serves()` is
   false): `PlayerSpellsFrame` seated in the panel's body (`Core.Seat`), never shown or hidden by our code (its
   `OnShow` and `OnHide` set the action bars' grids, its book writes which spell each entry casts:
@@ -640,6 +655,9 @@ shows on it, and you make as many bars as you like.
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, sizes, Edit Mode's settings and preview |
+| `BarsWindow.lua` | The action bars as windows of the full screen, seated, so that nothing lies over them |
+| `ErrorText.lua` | The game's red error text off, by a switch |
+| `Macros/` | Sane Macros: macros and sequences, keys and bar buttons, the + list, the checks ([its README](Macros/README.md)) |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone; out of sight at rest, as one set |
 | `GameBars.lua` | The game's experience and stance bars out of sight, its menu bar on mouseover |
 | `Meter/Threat.lua` | The meter's threat: every member's share of the mob, its gains added up per fight |

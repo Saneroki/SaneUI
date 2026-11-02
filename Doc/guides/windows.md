@@ -267,8 +267,8 @@ planner Sane UI knows). The rules:
 - **Going back** from the full screen gives it back to its place, open: our code does not close the game's
   window. Esc closes it with the full screen.
 - **Where it stands today:** the game's window of talents and spellbook in Combat's panel in Retail, where ours are
-  not (`src/Combat/GameWindow.lua`, with that secure button over the closed panel), Social's guild window, a talent
-  planner.
+  not (`src/Combat/GameWindow.lua`, with that secure button over the closed panel), the game's action bars in Combat's panels
+  (`src/Combat/BarsWindow.lua`), Social's guild window, a talent planner.
 
 ### The board: a module's full screen of windows (`Board.lua`)
 

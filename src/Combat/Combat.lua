@@ -42,6 +42,8 @@ ns.TEXT = {
     talents = Core.Word("TALENTS", "Talents"),
     spellbook = Core.Word("SPELLBOOK", "Spellbook"),
     planner = "Talent planner",
+    barsWindow = "Action bars",
+    sideBarsWindow = "Side bars",
     book = "Spellbook and talents",
     -- The panel of the game's own window while it is closed (GameWindow.lua).
     gameClick = "Click here or press %s to open it here.",
@@ -129,6 +131,15 @@ ns.TEXT = {
     actionBars = "Action bars",
     cleanBars = "Clean action bars",
     cleanBarsTip = "The game's action bars without their borders, decorations and backgrounds: only the buttons that hold something, each its icon alone. Empty buttons show while you drag something onto the bars, and in Edit Mode. Off: the game's own look.",
+    macros = "Sane Macros",
+    macroChecks = "Check macros",
+    macroChecksTip = "Looks over your macros when they change, and when you learn something new while the window is open, and marks what would not work.",
+    macroDim = "Dim what cannot be used",
+    macroDimTip = "A macro on a bar button is dimmed while its next step cannot be used, as the game does.",
+    macroKey = "Show the key on the button",
+    macroKeyTip = "A macro on a bar button shows that button's key.",
+    hideErrors = "Hide the red error text",
+    hideErrorsTip = "The game's red line at the top of the screen, like Spell is not ready yet or Not enough rage, and its sound. Yellow lines, like a quest's progress, stay.",
     barsRest = "Hide the action bars at rest",
     barsRestTip = "The game's action bars are out of sight while nothing goes on. The mouse on any of them shows them all, and they show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group, in a vehicle, while something is dragged onto them, while you set your keys and in Edit Mode. Out of sight they still take the mouse, and their keys work. Off: always in sight.",
     hideTracking = "Hide the game's experience and reputation bars",
@@ -246,6 +257,10 @@ local OPTIONS = {
     { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
     { key = "barsRest", default = true, text = ns.TEXT.barsRest, tip = ns.TEXT.barsRestTip },
+    { key = "hideErrors", default = true, text = ns.TEXT.hideErrors, tip = ns.TEXT.hideErrorsTip },
+    { key = "macroChecks", default = true, text = ns.TEXT.macroChecks, header = ns.TEXT.macros, tip = ns.TEXT.macroChecksTip },
+    { key = "macroDim", default = true, text = ns.TEXT.macroDim, tip = ns.TEXT.macroDimTip },
+    { key = "macroKey", default = true, text = ns.TEXT.macroKey, tip = ns.TEXT.macroKeyTip },
     { key = "hideTracking", default = true, text = ns.TEXT.hideTracking, tip = ns.TEXT.hideTrackingTip },
     { key = "hideStance", default = true, text = ns.TEXT.hideStance, tip = ns.TEXT.hideStanceTip },
     { key = "menuHover", default = true, text = ns.TEXT.menuHover, tip = ns.TEXT.menuHoverTip },
@@ -283,6 +298,8 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
         ns.Guarded(ns.Group.Apply)
     end
     if key == "cleanBars" or key == "barsRest" then ns.Guarded(ns.ActionBars.Apply) end
+    if key == "hideErrors" then ns.Guarded(ns.ErrorText.Apply) end
+    if key:find("^macro") then ns.Macros.Changed(key) end
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
@@ -302,19 +319,23 @@ function ns.GiveBack()
     ns.Safe("group frames", ns.Group.GiveBack)
     ns.Safe("aura lists", ns.AuraLists.Hide)
     ns.Safe("action bars", ns.ActionBars.GiveBack)
+    ns.Safe("error text", ns.ErrorText.GiveBack)
     ns.Safe("game bars", ns.GameBars.GiveBack)
     ns.Safe("mouse rings", ns.MouseRings.Hide)
     ns.Safe("meter", ns.Meter.GiveBack)
     ns.Safe("reminders", ns.Reminders.GiveBack)
     ns.Safe("buff list", ns.BuffList.Style)
+    ns.Macros.GiveBack()
 end
 
 function ns.OnLoad()
     ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
+    ns.Macros.Load()
 end
 
 Core.Command("auras", "your aura lists: how they look, and on the unit frames", function() ns.Guarded(ns.AuraLists.Toggle) end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
+Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
 Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.Guarded(ns.ReminderEditor.Toggle) end)
 
 function ns.OnLogin()
@@ -326,9 +347,11 @@ function ns.OnLogin()
     ns.Units.Start()
     ns.Group.Start()
     ns.ActionBars.Start()
+    ns.ErrorText.Apply()
     ns.GameBars.Start()
     ns.Safe("mouse rings", ns.MouseRings.Apply)
     ns.Meter.Build()
     ns.BuffList.Start()
     ns.Reminders.Start()
+    ns.Macros.Start()
 end

@@ -34,6 +34,7 @@ Keys.WINDOWS = { spellbook = "spellbook", pet = "spellbook", talents = "talents"
 BINDING_NAME_SANEUI_COMBAT_SPELLBOOK = "Open the spellbook on Combat's full screen"
 BINDING_NAME_SANEUI_COMBAT_PETBOOK = "Open the pet's spells on Combat's full screen"
 BINDING_NAME_SANEUI_COMBAT_TALENTS = "Open the talents on Combat's full screen"
+BINDING_NAME_SANEUI_COMBAT_MACROS = "Open or close Sane Macros"
 
 local owner       -- the frame our override bindings belong to
 local bound = nil -- the keys of those actions when they were last bound ("P|N|..."): rebound only when they change

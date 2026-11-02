@@ -1,24 +1,26 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Detail
+--  Sane UI - Combat - Macros - Detail
 --  The chosen step's settings, under the list: its kind, what it does, who it is
 --  cast on, how often it comes up, when it runs, and the line the game gets.
 --  Only what the step's kind uses shows.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Detail = {}
-ns.Detail = Detail
+Macros.Detail = Detail
 
 Detail.HEIGHT = 196
 Detail.WORD = 74    -- the width of a setting's word
 Detail.GAP = 4
-Detail.FIELD = 540  -- the width of a line to fill in
+Detail.BESIDE = 90  -- of the panel's width, what is not a line to fill in
 
 local panel, kindMenu, unitMenu, unitWord, oftenMenu, oftenWord, what, whatWord, area, letters, insert, plus
 local whenWord, writes, writesWord
 local chips = {}
 local macro, step
+local field = 540   -- the width of a line to fill in
 
 local function Word(text, tip)
     local word = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -47,30 +49,30 @@ local function Radio(root, text, key, value, tip)
     local radio = root:CreateRadio(text, ns.Guard(function() return step ~= nil and step[key] == value end),
                                    ns.Guard(function()
                                        step[key] = value
-                                       ns.Editor.Changed()
+                                       Macros.Editor.Changed()
                                    end))
     if tip then radio:SetTooltip(ns.Guard(function(tooltip) GameTooltip_AddNormalLine(tooltip, tip) end)) end
 end
 
 local function Kinds(root)
     for _, kind in ipairs({ "spell", "item", "text" }) do
-        root:CreateRadio(ns.TEXT.kinds[kind], ns.Guard(function() return step ~= nil and step.kind == kind end),
+        root:CreateRadio(Macros.TEXT.kinds[kind], ns.Guard(function() return step ~= nil and step.kind == kind end),
                          ns.Guard(function()
                              if step.kind ~= kind then step.id, step.unit = nil, nil end
                              step.kind = kind
-                             ns.Editor.Changed()
+                             Macros.Editor.Changed()
                          end))
     end
 end
 
 local function Units(root)
-    for _, target in ipairs(ns.TEXT.targets) do
+    for _, target in ipairs(Macros.TEXT.targets) do
         Radio(root, target[2], "unit", target[1] ~= "" and target[1] or nil, target[3])
     end
 end
 
 local function Oftens(root)
-    for count = 1, ns.Book.MOST_OFTEN do Radio(root, ns.TEXT.oftenWord:format(count), "often", count) end
+    for count = 1, Macros.Book.MOST_OFTEN do Radio(root, Macros.TEXT.oftenWord:format(count), "often", count) end
 end
 
 -- What was typed, or dropped on the box.
@@ -78,7 +80,7 @@ local function Typed(box, typed)
     if not typed or not step then return end
     step.what = box:GetText()
     step.id = nil
-    ns.Editor.Changed()
+    Macros.Editor.Changed()
 end
 
 local function Dropped()
@@ -93,13 +95,13 @@ local function Dropped()
     end
     ClearCursor()
     what:SetText(step.what)
-    ns.Editor.Changed()
+    Macros.Editor.Changed()
 end
 
 local function Added(word, value)
     if not step then return end
     step.when[#step.when + 1] = { word = word, value = value }
-    ns.Editor.Changed()
+    Macros.Editor.Changed()
 end
 
 -- A chip: click for its opposite, right click to take it away.
@@ -111,17 +113,17 @@ local function ChipClick(chip, mouse)
         condition.no = not condition.no or nil
     end
     Core.HideTip()
-    ns.Editor.Changed()
+    Macros.Editor.Changed()
 end
 
 local function ChipEnter(chip)
     local condition = step.when[chip.index]
-    local words, tip = ns.Conditions.Words(condition)
-    Core.ShowTip(chip, words, (tip and tip .. "\n" or "") .. ns.TEXT.whenFlip)
+    local words, tip = Macros.Conditions.Words(condition)
+    Core.ShowTip(chip, words, (tip and tip .. "\n" or "") .. Macros.TEXT.whenFlip)
 end
 
 local function Chip(index)
-    local chip = ns.Button(panel, "", 60, 20)
+    local chip = Macros.Button(panel, "", 60, 20)
     chip.index = index
     chip:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     chip:SetScript("OnClick", ns.Guard(ChipClick))
@@ -133,11 +135,11 @@ end
 
 -- The conditions, in lines beside their word, the + after them.
 local function Chips()
-    local width = Detail.FIELD - 34
+    local width = field - 34
     local x, y = 0, 0
     for index, condition in ipairs(step.when) do
         local chip = chips[index] or Chip(index)
-        chip:SetText((ns.Conditions.Words(condition)))
+        chip:SetText((Macros.Conditions.Words(condition)))
         local wide = chip.label:GetStringWidth() + 18
         if x > 0 and x + wide > width then x, y = 0, y - 22 end
         chip:SetWidth(wide)
@@ -172,37 +174,47 @@ function Detail.Fill(chosenMacro, chosenStep)
     writesWord:SetShown(not text)
     if text then
         if not area.EditBox:HasFocus() then area.EditBox:SetText(step.what) end
-        letters:SetText(ns.TEXT.letters:format(#step.what))
+        letters:SetText(Macros.TEXT.letters:format(#step.what))
     else
-        whatWord:SetText(ns.TEXT[step.kind])
+        whatWord:SetText(Macros.TEXT[step.kind])
         if not what:HasFocus() then what:SetText(step.what) end
-        writes:SetText(ns.Write.Line(step))
+        writes:SetText(Macros.Write.Line(step))
     end
     Chips()
+end
+
+-- The panel is that wide now.
+function Detail.Width(wide)
+    field = wide - Detail.BESIDE
+    what:SetWidth(field)
+    area:SetWidth(field + 40)
+    area.EditBox:SetWidth(field + 22)
+    writes:SetWidth(field)
 end
 
 function Detail.Build(parent)
     panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
-    local kindWord = Word(ns.TEXT.kind, ns.TEXT.kindTip)
+    local kindWord = Word(Macros.TEXT.kind, Macros.TEXT.kindTip)
     kindWord:SetPoint("TOPLEFT", 0, -6)
-    kindMenu = Menu(120, Kinds)
+    kindWord:SetWidth(40)
+    kindMenu = Menu(100, Kinds)
     kindMenu:SetPoint("LEFT", kindWord, "RIGHT", 0, 0)
-    unitWord = Word(ns.TEXT.target, ns.TEXT.targetTip)
-    unitWord:SetPoint("LEFT", kindMenu, "RIGHT", 14, 0)
-    unitWord:SetWidth(52)
-    unitMenu = Menu(150, Units)
+    unitWord = Word(Macros.TEXT.target, Macros.TEXT.targetTip)
+    unitWord:SetPoint("LEFT", kindMenu, "RIGHT", 10, 0)
+    unitWord:SetWidth(50)
+    unitMenu = Menu(130, Units)
     unitMenu:SetPoint("LEFT", unitWord, "RIGHT", 0, 0)
-    oftenWord = Word(ns.TEXT.often, ns.TEXT.oftenTip)
-    oftenWord:SetPoint("LEFT", unitMenu, "RIGHT", 14, 0)
-    oftenWord:SetWidth(62)
-    oftenMenu = Menu(100, Oftens)
+    oftenWord = Word(Macros.TEXT.often, Macros.TEXT.oftenTip)
+    oftenWord:SetPoint("LEFT", unitMenu, "RIGHT", 10, 0)
+    oftenWord:SetWidth(60)
+    oftenMenu = Menu(90, Oftens)
     oftenMenu:SetPoint("LEFT", oftenWord, "RIGHT", 0, 0)
 
-    whatWord = Word(ns.TEXT.spell, ns.TEXT.spellTip)
+    whatWord = Word(Macros.TEXT.spell, Macros.TEXT.spellTip)
     whatWord:SetPoint("TOPLEFT", 0, -40)
     what = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
-    what:SetSize(Detail.FIELD, 22)
+    what:SetSize(field, 22)
     what:SetPoint("LEFT", whatWord, "RIGHT", 6, 0)
     what:SetAutoFocus(false)
     what:SetScript("OnTextChanged", ns.Guard(Typed))
@@ -213,41 +225,41 @@ function Detail.Build(parent)
 
     area = CreateFrame("ScrollFrame", nil, panel, "InputScrollFrameTemplate")
     area:SetPoint("TOPLEFT", 4, -36)
-    area:SetSize(Detail.FIELD, 72)
+    area:SetSize(field + 40, 72)
     area.hideCharCount = true
     if area.CharCount then area.CharCount:Hide() end
     area.EditBox:SetMaxLetters(0)
-    area.EditBox:SetWidth(Detail.FIELD - 18)
+    area.EditBox:SetWidth(field + 22)
     area.EditBox:HookScript("OnTextChanged", ns.Guard(Typed))
     area.EditBox:HookScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
-    Core.Tip(area.EditBox, ns.TEXT.text, ns.TEXT.textTip)
-    insert = ns.Button(panel, "+", 24, 22)
+    Core.Tip(area.EditBox, Macros.TEXT.text, Macros.TEXT.textTip)
+    insert = Macros.Button(panel, "+", 24, 22)
     insert:SetPoint("TOPLEFT", area, "TOPRIGHT", 10, 2)
     insert:SetScript("OnClick", ns.Guard(function(self)
         Core.HideTip()
-        ns.Picker.Open(self, function(word, value)
+        Macros.Picker.Open(self, function(word, value)
             area.EditBox:SetFocus()
             area.EditBox:Insert("[" .. word .. (value and ":" .. value or "") .. "] ")
         end)
     end))
-    Core.Tip(insert, ns.TEXT.whenAdd, ns.TEXT.textTip)
+    Core.Tip(insert, Macros.TEXT.whenAdd, Macros.TEXT.textTip)
     letters = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     letters:SetPoint("TOPLEFT", insert, "BOTTOMLEFT", 0, -6)
 
-    whenWord = Word(ns.TEXT.when, ns.TEXT.whenTip)
+    whenWord = Word(Macros.TEXT.when, Macros.TEXT.whenTip)
     whenWord:SetPoint("TOPLEFT", 0, -118)
-    plus = ns.Button(panel, "+", 24, 20)
+    plus = Macros.Button(panel, "+", 24, 20)
     plus:SetScript("OnClick", ns.Guard(function(self)
         Core.HideTip()
-        ns.Picker.Open(self, Added)
+        Macros.Picker.Open(self, Added)
     end))
-    Core.Tip(plus, ns.TEXT.whenAdd, ns.TEXT.whenTip)
+    Core.Tip(plus, Macros.TEXT.whenAdd, Macros.TEXT.whenTip)
 
-    writesWord = Word(ns.TEXT.writes, ns.TEXT.writesTip)
+    writesWord = Word(Macros.TEXT.writes, Macros.TEXT.writesTip)
     writesWord:SetPoint("TOPLEFT", 0, -172)
     writes = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     writes:SetPoint("LEFT", writesWord, "RIGHT", 6, 0)
-    writes:SetWidth(Detail.FIELD)
+    writes:SetWidth(field)
     writes:SetJustifyH("LEFT")
     writes:SetWordWrap(false)
 end

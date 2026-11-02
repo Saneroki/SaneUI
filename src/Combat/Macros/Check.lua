@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Check
+--  Sane UI - Combat - Macros - Check
 --  What would not work as it stands, found out of a fight, when a macro changes
 --  or the character learns something. It says what can be known ahead: whether
 --  a spell is ready at a given moment stays the game's to say on the press.
@@ -10,12 +11,12 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Check = {}
-ns.Check = Check
+Macros.Check = Check
 
 Check.MOST_LETTERS = 255
 
 local function Spell(step, out)
-    local words = ns.TEXT.check
+    local words = Macros.TEXT.check
     local name = step.what
     if rawget(_G, "C_Spell") and C_Spell.DoesSpellExist and not Core.Ask(C_Spell.DoesSpellExist, name) then
         out[#out + 1] = words.noSpell
@@ -29,7 +30,7 @@ local function Spell(step, out)
 end
 
 local function Item(step, out)
-    local words = ns.TEXT.check
+    local words = Macros.TEXT.check
     local items = rawget(_G, "C_Item")
     if not items then return end
     local wanted = step.id or step.what
@@ -42,18 +43,18 @@ end
 
 -- Conditions that can never hold together.
 local function Conditions(step, out)
-    local words = ns.TEXT.check
+    local words = Macros.TEXT.check
     for first, one in ipairs(step.when) do
         for second = first + 1, #step.when do
             local other = step.when[second]
             if one.word == other.word and one.value == other.value and (one.no and true) ~= (other.no and true) then
-                out[#out + 1] = words.contradiction:format(ns.Conditions.Words(one), (ns.Conditions.Words(other)))
+                out[#out + 1] = words.contradiction:format(Macros.Conditions.Words(one), (Macros.Conditions.Words(other)))
             end
         end
-        for _, apart in ipairs(ns.Conditions.APART) do
+        for _, apart in ipairs(Macros.Conditions.APART) do
             for _, other in ipairs(step.when) do
                 if one.word == apart[1] and other.word == apart[2] and not one.no and not other.no then
-                    out[#out + 1] = words.contradiction:format(ns.Conditions.Words(one), (ns.Conditions.Words(other)))
+                    out[#out + 1] = words.contradiction:format(Macros.Conditions.Words(one), (Macros.Conditions.Words(other)))
                 end
             end
         end
@@ -62,14 +63,14 @@ end
 
 -- The words between one line's brackets, each known to the game or told.
 local function Brackets(line, out)
-    local words = ns.TEXT.check
+    local words = Macros.TEXT.check
     local open, shut = select(2, line:gsub("%[", "")), select(2, line:gsub("%]", ""))
     if open ~= shut then out[#out + 1] = words.brackets:format(line) end
     for inner in line:gmatch("%[(.-)%]") do
         for word in inner:gmatch("[^,]+") do
             local trimmed = word:match("^%s*(.-)%s*$")
             local target = trimmed:sub(1, 1) == "@" or trimmed:lower():sub(1, 7) == "target="
-            if trimmed ~= "" and not target and not ns.Conditions.WORDS[(ns.Conditions.Stem(trimmed))] then
+            if trimmed ~= "" and not target and not Macros.Conditions.WORDS[(Macros.Conditions.Stem(trimmed))] then
                 out[#out + 1] = words.unknownWord:format(trimmed)
             end
         end
@@ -84,7 +85,7 @@ local function Clauses(line, out)
     for clause in (rest .. ";"):gmatch("([^;]*);") do
         local trimmed = clause:match("^%s*(.-)%s*$")
         if open and trimmed ~= "" then
-            out[#out + 1] = ns.TEXT.check.afterOpen:format(line)
+            out[#out + 1] = Macros.TEXT.check.afterOpen:format(line)
             return
         end
         if trimmed:sub(1, 1) ~= "[" then open = true end
@@ -92,7 +93,7 @@ local function Clauses(line, out)
 end
 
 local function Text(step, out)
-    local words = ns.TEXT.check
+    local words = Macros.TEXT.check
     if #step.what > Check.MOST_LETTERS then out[#out + 1] = words.tooLong end
     local casts = 0
     for raw in step.what:gmatch("[^\n]+") do
@@ -116,7 +117,7 @@ end
 function Check.Step(step)
     local out = {}
     if step.what == "" then
-        out[1] = ns.TEXT.check.empty
+        out[1] = Macros.TEXT.check.empty
         return out
     end
     if step.kind == "spell" then
@@ -132,7 +133,7 @@ end
 
 function Check.Macro(macro)
     local found = { macro = {}, count = 0 }
-    local words = ns.TEXT.check
+    local words = Macros.TEXT.check
     if not macro.steps[1] then found.macro[1] = words.noSteps end
     local live, ended = false, false
     for _, step in ipairs(macro.steps) do
@@ -140,7 +141,7 @@ function Check.Macro(macro)
             live = true
             local problems = Check.Step(step)
             if macro.top and ended then problems[#problems + 1] = words.unreachable end
-            if ns.Write.When(step) == nil then ended = true end
+            if Macros.Write.When(step) == nil then ended = true end
             if problems[1] then
                 found[step] = problems
                 found.count = found.count + #problems

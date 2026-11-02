@@ -1,7 +1,8 @@
 local _, ns = ...
+local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Macros - Face
+--  Sane UI - Combat - Macros - Face
 --  Our button lying over a bar button: the macro's look there and its own press
 --  (the same hub, Press.lua). It sits in the bar's frame, so it comes and goes
 --  with the bar, at rest too, and it never touches the game's button, which
@@ -11,7 +12,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Face = {}
-ns.Face = Face
+Macros.Face = Face
 
 local CROP = 0.08
 local faces = {}      -- [place] = its frame
@@ -32,18 +33,18 @@ end
 
 local function PaintOne(face)
     local macro = face.macro
-    local turn = macro and ns.Press.Next(macro)
+    local turn = macro and Macros.Press.Next(macro)
     local step = turn and turn.step or (macro and macro.steps[1])
-    face.icon:SetTexture(ns.Press.Picture(step))
-    local spell = step and ns.Press.SpellOf(step)
+    face.icon:SetTexture(Macros.Press.Picture(step))
+    local spell = step and Macros.Press.SpellOf(step)
     local dim = false
-    if ns.options.usable and spell then
+    if ns.options.macroDim and spell then
         local spells = rawget(_G, "C_Spell")
         dim = spells and Core.Plain(Core.Ask(spells.IsSpellUsable, spell)) == false
     end
     face.icon:SetVertexColor(dim and 0.4 or 1, dim and 0.4 or 1, dim and 0.4 or 1)
     Cooldown(face, spell)
-    face.key:SetText(ns.options.keyText and face.keyText or "")
+    face.key:SetText(ns.options.macroKey and face.keyText or "")
 end
 
 -- Every face, or the one given.
@@ -57,7 +58,7 @@ local function Enter(face)
     if not (tip and macro) then return end
     tip:SetOwner(face, "ANCHOR_RIGHT")
     tip:SetText(macro.name, 1, 0.82, 0)
-    local turn = ns.Press.Next(macro)
+    local turn = Macros.Press.Next(macro)
     if turn then tip:AddLine(turn.line, 1, 1, 1, true) end
     tip:Show()
 end
@@ -91,7 +92,7 @@ function Face.Get(place, slot, name)
         face:SetScript("OnLeave", ns.Guard(Core.HideTip))
         face:Hide()
         faces[place] = face
-        ns.Press.Ready(face)
+        Macros.Press.Ready(face)
         Listen()
     end
     face:SetAllPoints(slot)
@@ -102,10 +103,10 @@ end
 -- A face's macro: its hub is what its press reads.
 function Face.Show(face, macro, keyText)
     face.macro, face.keyText = macro, keyText or ""
-    face:SetFrameRef("hub", ns.Press.Hub(macro))
+    face:SetFrameRef("hub", Macros.Press.Hub(macro))
     PaintOne(face)
 end
 
 function Face.Edges()
-    for _, face in pairs(faces) do ns.Press.Ready(face) end
+    for _, face in pairs(faces) do Macros.Press.Ready(face) end
 end
