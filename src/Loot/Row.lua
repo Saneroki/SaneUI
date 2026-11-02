@@ -260,6 +260,8 @@ end
 local function Lay(row, second, worth)
     local left, right = row.bar.pixel + row.bar.inner + S.gap, S.row * CAP + (row.room or 0)
     local named = left + (row.upgrade:IsShown() and S.arrow + S.gap / 2 or 0) -- the name after the green arrow
+    -- on both of the name's sides: of two heights the game takes the right side's, the interface lab the left's
+    local lift = not second and row.lift or 0
     for _, part in ipairs({ row.name, row.note, row.worth, row.auto, row.upgrade }) do part:ClearAllPoints() end
     row.upgrade:SetPoint("RIGHT", row.name, "LEFT", -S.gap / 2, 0)
     if second then
@@ -274,12 +276,12 @@ local function Lay(row, second, worth)
         end
     else
         row.auto:SetPoint("RIGHT", row, "RIGHT", -right, 0)
-        row.name:SetPoint("LEFT", row, "LEFT", named, row.lift or 0)
+        row.name:SetPoint("LEFT", row, "LEFT", named, lift)
     end
     if row.auto:IsShown() then
-        row.name:SetPoint("RIGHT", row.auto, "LEFT", -S.gap / 2, 0)
+        row.name:SetPoint("RIGHT", row.auto, "LEFT", -S.gap / 2, lift)
     else
-        row.name:SetPoint("RIGHT", row, "RIGHT", -right, 0)
+        row.name:SetPoint("RIGHT", row, "RIGHT", -right, lift)
     end
 end
 

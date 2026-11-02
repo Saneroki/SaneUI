@@ -5,7 +5,9 @@ local _, ns = ...
 --  When your group rolls for a thing (START_LOOT_ROLL), a card that is one
 --  line of the loot window (Row.lua; Saneroki, 2026-11-02: the same design): a
 --  bar as the nameplates' in the thing's quality colour, its picture at the
---  bar's end, its name; no A, no line under the name. At the bar's right end,
+--  bar's end, its name; no A, no line under the name. While the time runs the
+--  name stands in the middle of the bar's part over the time, then in the
+--  middle of the bar. At the bar's right end,
 --  nearly as tall as all of it and over the time, the choices the game offers,
 --  its own icons with no words (Need; Greed, or Transmog where the game offers
 --  that; Disenchant where it does; Pass), a choice the game refuses faint and

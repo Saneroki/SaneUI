@@ -180,7 +180,9 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
 - No 3D: a model frame is a dashed box.
 - Not the game's renderer: the page draws with the browser. Texts use the font files' widths without kerning.
   Masks (`CLAMPTOWHITE` too: the page draws those onto a canvas), blend modes and texture coordinates follow the game's
-  rules, but sub-pixel edges can differ, and a status bar's atlas is taken for a file. Judge the final look in the game.
+  rules, but sub-pixel edges can differ, and a status bar's atlas is taken for a file. Two anchors that disagree on a
+  height (`LEFT` and `RIGHT` with different y) stand at the first's in the lab and at the right side's in the game: give
+  both the same. Judge the final look in the game.
 - The pieces repeat by drawing one texture per tile with their texture coordinates, so the art can go into the
   game in power-of-two textures, `SetTexCoord` taking the part in use (`Doc/guides/images.md`).
 - Next: Core's own windows (`Window`, `Board`, `Views`) built in scenes of their own, and the modules from their

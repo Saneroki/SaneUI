@@ -77,8 +77,9 @@ rises over the world, also what was taken at once: that is how you see what you 
   a vendor will not take, a quest's things, epics and better. They go once there is room.
 - **Group rolls** (*Sane UI's roll cards*, on): when your group rolls for a thing, one line of the loot window on the
   world, no paper and no frame.
-  - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, its name, a little over
-    the middle. No A, and no line under the name: the time has its place. The mouse on
+  - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, its name: while the time
+    runs in the middle of the bar's part over the time, then in the middle of the bar. No A, and no line under the name:
+    the time has its place. The mouse on
     it shows the thing's tooltip; a modified click links it or tries it on.
   - **The choices** at the bar's right end, nearly as tall as all of it and over the time, the game's own icons with no words (*Need*, *Greed* or *Transmog*,
     *Disenchant* where offered, *Pass*), lit by the mouse as the game's are; its tooltip names the choice. A choice the
@@ -244,8 +245,9 @@ rises over the world, also what was taken at once: that is how you see what you 
   is finished on an item leave it there a few seconds and shows who got the item anchored to the right where the
   buttons have been"; "all the way down to 25% transparent until it shows the result. so I know when i can ignore it"
   (Saneroki): taken as a quarter showing. As wide as 380 now: the icons take room. "a big green up arrow in front of
-  the other big icons when the item is an upgrade", the same judgement as the window's; the name a little higher. "a
-  tooltip on them to see who rolled what? Like who rolled Need, greed, pass and who still needs to roll".
+  the other big icons when the item is an upgrade", the same judgement as the window's. "a tooltip on them to see who
+  rolled what? Like who rolled Need, greed, pass and who still needs to roll". The name "centered in the rectangle
+  ekskluding the timeout bar" while it runs: it had stood on the time line, only its left side lifted.
 - 2026-11-02 — "Can we make all the loot window and the group rolls have rounded edges like our nameplates have? And
   shade them equally styled so they have the same style philosophy" (Saneroki): the lines and the rolls were of the
   nameplates' make already (the interface lab drew them square until now, and now draws masks as the game does). What

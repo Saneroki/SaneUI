@@ -805,7 +805,9 @@ local time = cards[1].time
 check(time._parent == line and time._height == ns.SIZE.time and time._points[1][1] == "BOTTOMLEFT" and time._points[1][2] == line.holder
       and time._points[2][1] == "BOTTOMRIGHT", "the time lies over the bar's foot, from the picture on")
 check(#time:GetStatusBarTexture()._masks == 2 and time:GetStatusBarTexture()._masks[1]._points[1][2] == line.bar.fill, "round as the bar is")
-check(line.name._points[1][5] == ns.SIZE.lift and ns.SIZE.lift > ns.SIZE.time / 2, "the name stands well over it")
+check(line.name._points[1][5] == ns.SIZE.lift and line.name._points[2][1] == "RIGHT" and line.name._points[2][5] == ns.SIZE.lift,
+      "the name stands over it, on both its sides: of two heights the game takes the right side's")
+check(ns.SIZE.lift == (ns.SIZE.time + 1) / 2, "in the middle of the bar's part over the time")
 local choices = Choices(cards[1])
 check(#choices == 3, "Need, Greed and Pass")
 local words = {}
@@ -881,7 +883,7 @@ check(finished.winner._shown and finished.winner:GetText() == "Brute" and finish
       and finished.winner._points[1][2] == line, "who got it, at the bar's right end")
 check(finished:GetAlpha() == 1, "whole again for the result")
 check(not time._shown and not choices[1]._shown and not choices[2]._shown, "the time, the arrow on it and the choices away")
-check(line.name._points[1][5] == 0, "the name back in the bar's middle")
+check(line.name._points[1][5] == 0 and line.name._points[2][5] == 0, "the name back in the bar's middle, on both its sides")
 check(line.name._points[2][4] <= -finished.winner:GetStringWidth(), "and stops before who got it")
 W.clock = W.clock + 4
 Tock()

@@ -187,7 +187,8 @@ ns.SIZE = {
     roll = 380,     -- a roll card: wider than the window, its icons take room
     choice = 34,    -- a choice's icon on a roll card: nearly its bar's height
     better = 34,    -- the big green arrow of an upgrade, in front of a roll's icons: as tall as they are
-    lift = 8,       -- how far a roll's name stands over its bar's middle: over the time
+    lift = 6.5,     -- how far a roll's name stands over its bar's middle while the time runs: the middle of the
+                    -- bar's part over the time (half the time and its border)
     time = 12,      -- the time left over a roll card's foot: a third of its bar, as a nameplate's resource
     feed = 300,     -- the feed's lines
     feedLine = 24,  -- a line of the feed
