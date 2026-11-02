@@ -34,6 +34,11 @@ BOTTOMLEFT     BOTTOM       BOTTOMRIGHT
 
 Plus the **middle of the screen** (`CENTER`, Saneroki 2026-10-16), below.
 
+**Left and right archived (Saneroki, 2026-11-02):** the middle of the left edge and of the right edge get no
+window and no hot corner; should more hot corners be wanted one day, they are built again then. That leaves six:
+the four corners, the top middle and the bottom middle. Core's zones `LEFT` and `RIGHT` stay in `Dock.lua`, where
+they only catch a window let go at that edge; nothing stands there at first.
+
 The quarter places along the top and the bottom are gone (Core's `TOP1`, `TOP3`, `BOTTOM1`, `BOTTOM3`);
 the middle ones are now Core's `TOP` and `BOTTOM` (were `TOP2`, `BOTTOM2`). A window still saved in an
 old place needs nothing: Core's `Window` ignores a zone it does not know and puts the window at its
@@ -228,19 +233,17 @@ game's screen. These calls are fine on our own frames, which are not protected.
 
 | Place | Window | Views in it | Blizzard windows it stands for (to confirm) |
 | --- | --- | --- | --- |
-| Top left | Party and raid (tentative, "I think"; module **Combat**, `Doc/ideas/Combat.md`) | Party and raid | Party and raid frames (`Blizzard_CompactRaidFrames`, `Blizzard_RaidFrame`) |
-| Top middle | Journal and progress (working name) | Journal, information, XP, reputation, honor, PvP info, library, journey | Adventure Guide with its Journeys (`Blizzard_EncounterJournal`), reputation, honor and PvP (`Blizzard_PVPUI`) |
+| Top left | Journal (Saneroki, 2026-11-02; was Journal and progress, at the top middle) | Journal, information, XP, library, journey | Adventure Guide with its Journeys (`Blizzard_EncounterJournal`) |
+| Top middle | Raiding (Saneroki, 2026-11-02; was Party and raid, at the top left; module **Combat**, `Doc/ideas/Combat.md`) | Party and raid | Party and raid frames (`Blizzard_CompactRaidFrames`, `Blizzard_RaidFrame`) |
 | Top right | **Navigation** | Minimap; full screen: map and quest log | Minimap, world map and quest log |
-| Left | to be decided | | |
-| Right | to be decided | | |
 | Bottom left | **Social** (was **Chat**) | Chat, more chat views, guild, group finder, friends list (`Doc/ideas/Social.md`) | Chat, Communities and guild, Group Finder, Friends list |
-| Bottom middle | **Combat** (Saneroki, 2026-10-20; was Abilities) | Small: nothing yet; full screen: talents and spellbook (built), a talent planner Sane UI knows as the talents | `Blizzard_PlayerSpells` (spellbook and talents), action bars, `Blizzard_LegacySystem` |
-| Bottom right | Character and bags (working name) | Character sheet, bags | Character frame, bags |
+| Bottom middle | **Combat** (Saneroki, 2026-10-20; was Abilities) | Small: nothing yet; full screen: talents and spellbook (built), a talent planner Sane UI knows as the talents; to come: the action bar editor, the sequence and macro editor, the legacy tree | `Blizzard_PlayerSpells` (spellbook and talents), action bars, `Blizzard_LegacySystem` |
+| Bottom right | **Inventory** (was Character and bags) | Character sheet with its reputation, honor and PvP tabs (`Doc/ideas/Inventory.md`), bags, the alts' things | Character frame, bags, reputation, honor and PvP (`Blizzard_PVPUI`) |
 
 Small, docked, the window shows its everyday part (the minimap, the chat); full screen it shows all its
 views. A window's first place is its zone (Core's `first.dock`, 2026-10-17): Social starts docked bottom
-left, a talk window in the middle. Bold names are modules that exist (Social, Abilities, Combat) or are planned (Navigation); the others have
-no module yet.
+left, a talk window in the middle. Bold names are modules that exist (Social, Combat, Navigation, Inventory); the
+others have no module yet, so their places do nothing so far (*Full screen only where a window is docked*).
 
 ## Edit Mode
 
@@ -321,8 +324,9 @@ Notes for building it (from `references/`):
   - The window look keeps Sane UI's dark fill and bronze trim (`Doc/guides/gui-development.md`: bronze is
     Sane UI's one colour of its own). One of Blizzard's own panel backgrounds (its dark stone, its
     parchment) wanted as a choice of *Background texture*?
-- Party and raid at the top left is not final.
-- What goes to the left and the right place.
+- What Raiding holds besides party and raid, and whose module it is. Proposed 2026-11-02, not decided: the raid
+  manager (board #75), lockouts and weekly resets (#126), the calendar (#54), the threat and damage meter (on
+  Combat's full screen for now, with its own kept place).
 - Where a window may go: any of the nine places (and free), or only its own place? (One window to a place
   at a time: decided, above.)
 - How the views of one window are switched: tabs like Blizzard's, in a row at the top of what the window

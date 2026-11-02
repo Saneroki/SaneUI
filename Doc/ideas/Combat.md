@@ -209,8 +209,9 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
   changed, not a full scan; pools of reused frames; no `OnUpdate` except a cast bar while it runs; nothing
   rebuilt in combat.
 - **Core's windows** (decided): each part's frames are Core windows, moved and sized in Blizzard's Edit
-  Mode (`Doc/ideas/Windows.md`, *Edit Mode*); unit frames and buffs without a title bar. The party and raid
-  sit in the top left place of the screen layout (tentative, `Doc/ideas/Windows.md`).
+  Mode (`Doc/ideas/Windows.md`, *Edit Mode*); unit frames and buffs without a title bar. The window Raiding
+  has the top middle place of the screen layout (Saneroki, 2026-11-02, `Doc/ideas/Windows.md`, *Default places*;
+  not built yet). The party and raid frame itself stands at the left, over the chat (`Units/Group.lua`).
 - **Options:** one page *Combat*, a tab per part (Core's tabbed pages, `Core.Tabbed`), each tab with the
   part's switch on top.
 
@@ -244,5 +245,4 @@ Each step is built plain first, tried in the game, then given its look (`blizzar
   classic party frames?
 - **The loss-of-control alert:** Combat's too?
 - **On demand:** how each part loads and wakes, in detail.
-- **Where each part stands** besides party and raid (top left): the screen layout has places still to
-  decide (`Doc/ideas/Windows.md`).
+- **Where each part stands** besides Raiding (top middle): `Doc/ideas/Windows.md`, *Default places*.
