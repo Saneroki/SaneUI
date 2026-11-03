@@ -54,7 +54,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MASTER = ROOT / "assets" / "data" / "Walking" / "Walking.jsonl"
 STAGING = ROOT / "dev" / "data" / "staging" / "walking-gates.jsonl"
-BUILD = 70707          # the client build of the walking data (dev/tools/walk-data's)
+BUILD = 70755          # the client build of the walking data (dev/tools/walk-data's)
 FORMAT = 1             # the field's format, as Navigation's Gates.lua reads it
 
 GRID = 64              # tiles along each side of a continent

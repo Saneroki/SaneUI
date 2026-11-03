@@ -178,6 +178,7 @@
 {"key":"showtargetoftarget","since":0,"src":["game"],"label":"SHOW_TARGET_OF_TARGET_TEXT","tip":"OPTION_TOOLTIP_SHOW_TARGET_OF_TARGET"}
 {"key":"showtimestamps","since":0,"src":["game"],"label":"TIMESTAMPS_LABEL","tip":"OPTION_TOOLTIP_TIMESTAMPS"}
 {"key":"showtoastbroadcast","since":0,"src":["game"],"label":"SHOW_TOAST_BROADCAST_TEXT","tip":"OPTION_TOOLTIP_SHOW_TOAST_BROADCAST"}
+{"key":"showtoastbroadcast","since":70755,"day":"2026-11-03","src":["game"],"gone":true}
 {"key":"showtoastfriendrequest","since":0,"src":["game"],"label":"SHOW_TOAST_FRIEND_REQUEST_TEXT","tip":"OPTION_TOOLTIP_SHOW_TOAST_FRIEND_REQUEST"}
 {"key":"showtoastoffline","since":0,"src":["game"],"label":"SHOW_TOAST_OFFLINE_TEXT","tip":"OPTION_TOOLTIP_SHOW_TOAST_OFFLINE"}
 {"key":"showtoastonline","since":0,"src":["game"],"label":"SHOW_TOAST_ONLINE_TEXT","tip":"OPTION_TOOLTIP_SHOW_TOAST_ONLINE"}

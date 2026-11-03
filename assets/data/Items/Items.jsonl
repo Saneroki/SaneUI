@@ -8998,7 +8998,7 @@
 {"key":14171,"since":0,"src":[7,"game"],"name":"Buccaneer's Pants","quality":2,"itemLevel":22,"minLevel":17,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":2,"icon":134586,"sell":738}
 {"key":14172,"since":0,"src":[7,"game"],"name":"Buccaneer's Robes","quality":2,"itemLevel":23,"minLevel":18,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":2,"icon":132659,"sell":837}
 {"key":14173,"since":0,"src":[7,"game"],"name":"Buccaneer's Cord","quality":2,"itemLevel":20,"minLevel":15,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"icon":132511,"sell":281}
-{"key":14174,"since":0,"src":[7],"name":"Buccaneer's Boots","quality":2,"itemLevel":19,"minLevel":14,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":2,"icon":132539,"sell":368}
+{"key":14174,"since":0,"src":[7,"game"],"name":"Buccaneer's Boots","quality":2,"itemLevel":19,"minLevel":14,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":2,"icon":132539,"sell":368}
 {"key":14175,"since":0,"src":[7],"name":"Buccaneer's Vest","quality":2,"itemLevel":23,"minLevel":18,"class":4,"subclass":1,"slot":"INVTYPE_CHEST","stack":1,"bind":2,"icon":135012,"sell":847}
 {"key":14176,"since":0,"src":[7],"name":"Watcher's Boots","quality":2,"itemLevel":26,"minLevel":21,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":2,"icon":132539,"sell":920}
 {"key":14177,"since":0,"src":[7],"name":"Watcher's Cuffs","quality":2,"itemLevel":26,"minLevel":21,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":2,"icon":132605,"sell":631}
@@ -15690,6 +15690,7 @@
 {"key":221319,"since":70245,"src":["game"],"name":"Blackrock Leycryst","quality":1,"itemLevel":50,"minLevel":1,"class":0,"subclass":8,"stack":1,"bind":1,"icon":237192,"effects":[{"trigger":"use","spell":446454,"text":"Use 4 leycrysts to attune with Azeroth and learn a new ability."}],"unique":1}
 {"key":221320,"since":70245,"src":["game"],"name":"Hinterlands Leycryst","quality":1,"itemLevel":50,"minLevel":1,"class":0,"subclass":8,"stack":1,"bind":1,"icon":237191,"effects":[{"trigger":"use","spell":446454,"text":"Use 4 leycrysts to attune with Azeroth and learn a new ability."}],"unique":1}
 {"key":221324,"since":70245,"src":["game"],"name":"Brittle Key","quality":1,"itemLevel":1,"class":13,"subclass":0,"stack":1,"bind":1,"icon":134242,"effects":[{"trigger":"use","spell":3366}],"description":"Attaching this crumbling key to your keyring would be impossible.","unique":1}
+{"key":221324,"since":70755,"day":"2026-11-03","src":["game"],"sell":17}
 {"key":221325,"since":70245,"src":["game"],"name":"EZ-Splode Blasting Charge","quality":1,"itemLevel":40,"class":7,"subclass":2,"stack":10,"bind":1,"icon":134514,"sell":900,"effects":[{"trigger":"use","spell":446504,"text":"Blasts open difficult locked doors."}],"description":"The slow-burning fuse is already lit!"}
 {"key":221326,"since":70245,"src":["game"],"name":"Sacred Stag Heart","quality":1,"itemLevel":1,"minLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":134338,"effects":[{"trigger":"use","spell":446509,"text":"Present as an offering at the Shrine of the Beast."}]}
 {"key":221336,"since":70245,"src":["game"],"name":"Schematic: Goblin Mining Helmet","quality":2,"itemLevel":38,"class":9,"subclass":3,"stack":1,"bind":1,"icon":134942,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":12717}],"description":"Teaches you how to craft Goblin Mining Helmet."}
@@ -22428,17 +22429,21 @@
 {"key":281330,"since":70245,"src":["game"],"name":"Message from the Supreme Magister","quality":1,"itemLevel":35,"minLevel":30,"class":12,"subclass":0,"stack":1,"bind":1,"icon":133469,"unique":1}
 {"key":281331,"since":70245,"src":["game"],"name":"Windshaper Ritual Dagger","quality":1,"itemLevel":35,"minLevel":30,"class":12,"subclass":0,"stack":1,"bind":1,"icon":2175564,"unique":1}
 {"key":281347,"since":70245,"src":["game"],"name":"Torn Page","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":5,"bind":1,"icon":134329,"sell":170}
+{"key":281347,"since":70755,"day":"2026-11-03","src":["game"],"unique":1}
 {"key":281348,"since":70245,"src":["game"],"name":"Parchment of Chaos","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":5,"bind":1,"icon":237449,"sell":170}
 {"key":281348,"since":70707,"day":"2026-10-31","src":["game"],"stack":1,"unique":1}
 {"key":281349,"since":70245,"src":["game"],"name":"Parchment of Darkness","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":5,"bind":1,"icon":254305,"sell":170}
 {"key":281349,"since":70707,"day":"2026-10-31","src":["game"],"stack":1,"unique":1}
 {"key":281350,"since":70245,"src":["game"],"name":"Keystone Fragment","quality":2,"itemLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":135249,"sell":170,"effects":[{"trigger":"use","spell":3366}],"unique":1}
+{"key":281350,"since":70755,"day":"2026-11-03","src":["game"],"class":13}
 {"key":281352,"since":70245,"src":["game"],"name":"Ancient Runestone","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":5,"bind":1,"icon":134378,"sell":170}
 {"key":281352,"since":70707,"day":"2026-10-31","src":["game"],"stack":1,"unique":1}
+{"key":281352,"since":70755,"day":"2026-11-03","src":["game"],"class":13}
 {"key":281356,"since":70245,"src":["game"],"name":"Burnt Page","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":5,"bind":1,"icon":463554,"sell":170}
 {"key":281356,"since":70707,"day":"2026-10-31","src":["game"],"unique":1}
 {"key":281358,"since":70245,"src":["game"],"name":"Stone Key","quality":1,"itemLevel":1,"class":13,"subclass":0,"stack":5,"bind":1,"icon":134458,"sell":170,"effects":[{"trigger":"use","spell":3366}],"unique":1}
 {"key":281359,"since":70245,"src":["game"],"name":"Dormant Runestone","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":5,"bind":1,"icon":134378,"sell":170}
+{"key":281359,"since":70755,"day":"2026-11-03","src":["game"],"class":13,"icon":134456,"unique":1}
 {"key":281371,"since":70245,"src":["game"],"name":"Elemental Attractor","quality":2,"itemLevel":61,"class":15,"subclass":4,"stack":1,"bind":1,"icon":893777,"effects":[{"trigger":"use","spell":1297774,"text":"Suffuse yourself with magical energy, allowing the detection and acquisition of Motes of Unstable Magic from certain spellcasters and powerful enemies."}],"unique":1}
 {"key":281473,"since":70245,"src":["game"],"name":"Guild Charter","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":133473,"unique":1}
 {"key":281538,"since":70245,"src":["game"],"name":"Matriarch's Mantle","quality":2,"itemLevel":59,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":20,"bind":1}
@@ -22949,6 +22954,7 @@
 {"key":287071,"since":0,"src":[7],"name":"Goblin Switchblade","quality":2,"itemLevel":41,"minLevel":1,"class":2,"subclass":16,"slot":"INVTYPE_THROWN","stack":1,"bind":1,"icon":135653,"sell":8932,"speed":1.5}
 {"key":287090,"since":70245,"src":["game"],"name":"Sharpened Letter Opener","quality":1,"itemLevel":17,"minLevel":2,"class":4,"subclass":0,"slot":"INVTYPE_HOLDABLE","stack":1,"bind":1,"icon":135656,"sell":38,"unique":1}
 {"key":287090,"since":70707,"day":"2026-10-31","src":["game"],"name":"Letter Opener"}
+{"key":287090,"since":70755,"day":"2026-11-03","src":["game"],"sell":170}
 {"key":287416,"since":70245,"src":["game"],"name":"Truskis' Cheesecake Slice","quality":1,"itemLevel":10,"minLevel":1,"class":0,"subclass":5,"stack":20,"icon":237359,"sell":1,"effects":[{"trigger":"use","spell":1322587,"text":"Cheesecake makes you happy."}]}
 {"key":287505,"since":70245,"src":["game"],"name":"Tender Strider Meat","quality":1,"itemLevel":1,"class":12,"subclass":0,"stack":1,"bind":4,"icon":134028,"effects":[{"trigger":"use","spell":1323075,"text":"Serves Kyle his lunch!"}],"description":"Kyle would delight in taking a bite out of this succulent treat!","unique":1}
 {"key":287620,"since":0,"src":[7,"game"],"name":"Rugged Totemic Backpack","quality":3,"itemLevel":1,"minLevel":1,"class":4,"subclass":5,"slot":"INVTYPE_CLOAK","stack":1,"bind":1,"icon":8392824,"sell":2}
@@ -23013,5 +23019,6 @@
 {"key":289329,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Growth","quality":1,"itemLevel":30,"minLevel":1,"class":0,"subclass":2,"stack":20,"icon":134721,"sell":95,"effects":[{"trigger":"use","spell":1328118}]}
 {"key":289330,"since":70707,"day":"2026-10-31","src":["game"],"name":"Scroll of Endless Speed","quality":1,"itemLevel":30,"minLevel":1,"class":0,"subclass":4,"stack":20,"icon":134938,"sell":100,"effects":[{"trigger":"use","spell":1328119}]}
 {"key":289334,"since":70707,"day":"2026-10-31","src":["game"],"name":"Elixir of Endless Experience","quality":1,"itemLevel":30,"minLevel":1,"class":0,"subclass":2,"stack":20,"icon":134803,"sell":95,"effects":[{"trigger":"use","spell":1328127}]}
+{"key":289439,"since":70755,"day":"2026-11-03","src":["game"],"name":"Pouch of Violet Dust","quality":3,"itemLevel":1,"minLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":5931149,"effects":[{"trigger":"use","spell":1328348,"text":"Throw a handful into the campfire, transforming its flames.\r\n|cFFffffffRequires WoW: Forever Launch Celebration |r"}],"description":"Many gathered. Many watched.","toy":true}
 {"key":289559,"since":70707,"day":"2026-10-31","src":["game"],"name":"Enchant Boots - Speed","quality":1,"itemLevel":1,"minLevel":1,"class":0,"subclass":6,"stack":20,"icon":463531,"effects":[{"trigger":"use","spell":1328948}]}
 {"key":289560,"since":70707,"day":"2026-10-31","src":["game"],"name":"Formula: Enchant Boots - Speed","quality":2,"itemLevel":50,"class":9,"subclass":8,"stack":1,"icon":134327,"sell":1550,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":1328948}],"description":"Teaches you how to permanently enchant boots to increase movement speed by 8%."}

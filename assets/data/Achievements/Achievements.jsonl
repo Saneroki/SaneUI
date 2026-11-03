@@ -142,3 +142,4 @@
 {"key":64158,"since":70245,"src":["game"],"name":"Hidden: BETA Survey - Level 30 - Priest","points":0,"category":15607,"icon":136243}
 {"key":64159,"since":70245,"src":["game"],"name":"Hidden: BETA Survey - Level 30 - Paladin","points":0,"category":15607,"icon":136243}
 {"key":64283,"since":0,"src":[7,"game"],"name":"Played in the WoW: Forever Beta","description":"Granted for playing in the World of Warcraft: Forever Beta. Thanks for testing!","points":0,"category":15596,"icon":134140,"reward":"Earn 16 Legacy Points."}
+{"key":64283,"since":70755,"day":"2026-11-03","src":["game"],"gone":true}
