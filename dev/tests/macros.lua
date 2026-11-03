@@ -559,6 +559,52 @@ Editor.Choose(inner)
 -- A game's macro taken over.
 local taken = Book.FromGame("Mount", "/use Horse")
 check(taken.top and taken.steps[1].kind == "text" and taken.steps[1].what == "/use Horse", "as macro text, from the top")
+Book.Delete(taken)
+
+-- The way in for other code: a macro of macro text by its name, made once.
+local added, new = Macros.Add("Sit", "/sit")
+check(new and added.top and added.steps[1].what == "/sit", "a macro added by its name")
+local again, newAgain = Macros.Add("Sit", "/stand")
+check(again == added and not newAgain and added.steps[1].what == "/sit", "one of that name is left as it is")
+check(Macros.Add("", "/sit") == nil and Macros.Add("Odd", nil) == nil, "nothing without a name and a text")
+Book.Delete(added)
+
+-- The game's macros under ours, marked W (Saneroki, 2026-11-03): a click opens the game's window on it, a drag takes
+-- it up as the game's, a right click makes a Sane Macro of it.
+local opened, tabbed, pickedUp = 0, nil, nil
+MacroFrame = W.NewWidget("Frame", "MacroFrame", UIParent)
+MacroFrame:Hide()
+MacroFrame.ChangeTab = function(_, tab) tabbed = tab end
+MacroFrame.SelectMacro = function(self, at) self.at = at end
+ShowMacroFrame = function() opened = opened + 1 MacroFrame:Show() end
+PickupMacro = function(index) pickedUp = index end
+Editor.Refresh()
+local ours = #Book.All()
+local first, second = Editor.Line(ours + 1), Editor.Line(ours + 2)
+check(first.game and first.game.index == 1 and first.name:GetText() == "Mount" and second.game.index == 121
+    and first.badge:IsShown() and not Editor.Line(1).badge:IsShown(), "the game's macros under ours, marked")
+check(not Editor.Line(ours + 3) or not Editor.Line(ours + 3):IsShown(), "and no more")
+second:GetScript("OnClick")(second, "LeftButton")
+check(opened == 1 and tabbed == 2 and MacroFrame.at == 1, "a click opens the game's window on that macro, a character's on its tab")
+MacroFrame:Hide()
+first:GetScript("OnClick")(first, "LeftButton")
+check(opened == 2 and tabbed == 1 and MacroFrame.at == 1, "an account's on the first tab")
+MacroFrame:Hide()
+first:GetScript("OnDragStart")(first)
+check(pickedUp == 1, "a drag takes it up as the game's macro")
+first:GetScript("OnClick")(first, "RightButton")
+local menu = W.menus[#W.menus]
+local take
+for _, item in ipairs(menu) do if item.text == TEXT.gameTake then take = item end end
+check(menu[1].title == "Mount" and take, "a right click: its menu")
+local count = #Book.All()
+take.fn()
+check(#Book.All() == count + 1 and Book.All()[count + 1].name == "Mount", "a Sane Macro made of it")
+Book.Delete(Book.All()[count + 1])
+Editor.gameButton:GetScript("OnClick")(Editor.gameButton)
+check(opened == 3 and MacroFrame:IsShown(), "the button Game macros opens the game's window")
+MacroFrame:Hide()
+Editor.Choose(inner)
 
 -- What can be let go on the list.
 GetCursorInfo = function() return "spell", 3, "spell", 772 end

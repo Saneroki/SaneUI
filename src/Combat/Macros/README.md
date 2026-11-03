@@ -15,6 +15,10 @@ of your normal action bar buttons. The macros are your account's, on every chara
   full screen switched off) as a window of its own, whose first title bar button goes to the game's own macro window. The
   game's macros stay as they are.
 - **New macro:** *New* makes an empty one, or takes one over from the game's macros as macro text. *Copy*, *Delete*.
+- **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, marked with a gold **W**. A click opens it in the
+  game's own macro window, on that macro; a drag puts it on an action bar as the game's macro; a right click makes a Sane
+  Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *Sane UI*
+  brings Sane Macros back. Until then `/macro` opens the game's.
 - **Its key:** *Set key*, then press the key, with Shift, Ctrl or Alt if you like, or a mouse's extra button. Esc leaves it
   as it was; a right click takes it away. For this character, and it stays out of the game's own key settings.
 - **Its bar button:** drag the macro from the list, or its picture, onto a button of your action bars, or click *Place on
@@ -37,7 +41,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **What it cannot do:** the game keeps rage, cooldowns and auras from anything that decides a press. So a step is never
   skipped because a spell is on cooldown. The game refuses it, that press is spent, and the next press goes on: keep pressing
   and what can be cast gets its turn. "If no Rend on the target, cast Rend" is not possible in any addon.
-- **Game macros to bars:** nothing here touches them. Sane Macros needs no macro slots.
+- **Game macros to bars:** nothing here changes them. Sane Macros needs no macro slots.
 
 ## Technical details
 - **The press** (`Press.lua`). Every macro with a key or a bar button has a hub, a secure button holding its turns in
@@ -70,7 +74,11 @@ of your normal action bar buttons. The macros are your account's, on every chara
   from Combat's own, so that their names cannot meet. The switches are Combat's (`macroChecks`, `macroDim`, `macroKey`). Its parts
   stand in `ns.Macros`, as Combat already has a `Book`, a `Face` and a `Press`-like name or two.
 - **The game's window** is held by Core (`native.hold`, `Blizzard_MacroUI`), so the frame is made at login, empty; what it
-  holds is made when first shown. A hub is made only for a macro with a key or a place.
+  holds is made when first shown. A hub is made only for a macro with a key or a place. `Editor.OpenGame` brings the game's
+  (`window:Native(true)`, the full screen left first) and chooses a macro there by the game's own `ChangeTab` and
+  `SelectMacro`, where the client has them; the list reads the game's macros again at `UPDATE_MACROS`.
+- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body)` makes a normal macro of macro text under that name,
+  once; one of that name already there is left as it is (a setup addon, a script).
 - **Standing down** (`Macros.GiveBack`, from Combat's): no key and no bar button of ours, the game's macro window back.
 - **Tried in the game:** one step a press, 5,000 attributes on one button, a button over a bar slot with paging and left
   and right click, on Retail. A plain macro stopped at its first `/cast` line on Retail 12.1.5, cast or refused, so a step should
@@ -91,4 +99,4 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Picker.lua` | The list behind the + |
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
 | `Detail.lua` | The chosen step's settings |
-| `Editor.lua` | The window, the macros' list, its head, the key's capture |
+| `Editor.lua` | The window, the macros' list (yours, then the game's marked W), its head, the key's capture, the game's window |

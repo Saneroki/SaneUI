@@ -4,10 +4,11 @@ local Macros = ns.Macros
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Macros - Editor
 --  Sane Macros, in the game's macro window's stead (/macro, the game menu, /sane
---  macros, its key): on the left your macros, on the right the one chosen: its
---  name, key and bar button, its order, its steps, and under them the chosen
---  step's settings. Every change counts at once; in a fight it waits for the
---  fight's end.
+--  macros, its key): on the left your macros, and under them the game's own,
+--  marked W (Saneroki, 2026-11-03), on the right the one chosen: its name, key and
+--  bar button, its order, its steps, and under them the chosen step's settings.
+--  Every change counts at once; in a fight it waits for the fight's end. A game's
+--  macro opens in the game's macro window, as the button Game macros does.
 --
 --  It stands on the full screen, beside the action bars (the part macros of the
 --  board), and opening it brings that screen. Where that cannot come (Edit Mode,
@@ -37,6 +38,25 @@ local chosen     -- the macro shown
 local step       -- the step chosen
 
 local Fill
+
+-- Where the game's character macros start: after the account's.
+local function AccountMax()
+    local consts = rawget(_G, "Constants") and Constants.MacroConsts
+    return consts and consts.MAX_ACCOUNT_MACROS or 120
+end
+
+-- The game's macros, the account's then the character's: { index, name } each.
+local function GameList()
+    local list = {}
+    local account, own = Core.Ask(GetNumMacros)
+    local function Add(index)
+        local title = Core.Ask(GetMacroInfo, index)
+        if title then list[#list + 1] = { index = index, name = title } end
+    end
+    for index = 1, account or 0 do Add(index) end
+    for index = AccountMax() + 1, AccountMax() + (own or 0) do Add(index) end
+    return list
+end
 
 local function Index(wanted)
     for index, candidate in ipairs(chosen and chosen.steps or {}) do
@@ -78,12 +98,15 @@ function Editor.TakeStep(index)
     Editor.Changed()
 end
 
+local GameClick
+
 local function Line(index)
     local line = CreateFrame("Button", nil, child)
     line:SetHeight(Editor.LINE)
     line:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -(index - 1) * Editor.LINE)
     line:SetPoint("RIGHT", child, "RIGHT", 0, 0)
     line:EnableMouse(true)
+    line:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     line:RegisterForDrag(Editor.DRAG)
     line.mark = line:CreateTexture(nil, "BACKGROUND")
     line.mark:SetAllPoints()
@@ -93,35 +116,56 @@ local function Line(index)
     line.flag:SetText("!")
     line.key = line:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     line.key:SetPoint("RIGHT", line.flag, "LEFT", -4, 0)
+    line.badge = line:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall") -- a game's macro: gold W
+    line.badge:SetPoint("LEFT", 4, 0)
+    line.badge:SetText(Macros.TEXT.gameMark)
     line.name = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    line.name:SetPoint("LEFT", 4, 0)
     line.name:SetPoint("RIGHT", line.key, "LEFT", -4, 0)
     line.name:SetJustifyH("LEFT")
     line.name:SetWordWrap(false)
-    line:SetScript("OnClick", ns.Guard(function() Editor.Choose(line.macro) end))
+    line:SetScript("OnClick", ns.Guard(function(_, mouse)
+        if line.game then return GameClick(line, mouse) end
+        Editor.Choose(line.macro)
+    end))
     line:SetScript("OnDragStart", ns.Guard(function()
+        if line.game then return Core.Ask(rawget(_G, "PickupMacro"), line.game.index) end
         Editor.Choose(line.macro)
         Editor.DragToBar()
     end))
-    line:SetScript("OnDragStop", ns.Guard(Macros.Place.Drop))
+    line:SetScript("OnDragStop", ns.Guard(function() if not line.game then Macros.Place.Drop() end end))
+    line:SetScript("OnEnter", ns.Guard(function()
+        if line.game then Core.ShowTip(line, Macros.TEXT.gameLine, Macros.TEXT.gameLineTip) end
+    end))
+    line:SetScript("OnLeave", ns.Guard(Core.HideTip))
     lines[index] = line
     return line
 end
 
+-- A line of the list: one of ours (macro) or one of the game's (game, marked W).
+local function Dress(line, macro, game)
+    line.macro, line.game = macro, game
+    line.badge:SetShown(game ~= nil)
+    line.name:SetPoint("LEFT", game and 18 or 4, 0)
+    line.name:SetText(macro and macro.name or game.name)
+    line.mark:SetShown(macro ~= nil and macro == chosen)
+    line.key:SetText(macro and Macros.Book.KeyOf(macro) or "")
+    line.flag:SetShown(macro ~= nil and ns.options.macroChecks and Macros.Check.Macro(macro).count > 0)
+    line:Show()
+end
+
 local function Lines()
-    local macros = Macros.Book.All()
-    for index, macro in ipairs(macros) do
-        local line = lines[index] or Line(index)
-        line.macro = macro
-        line.name:SetText(macro.name)
-        line.mark:SetShown(macro == chosen)
-        line.key:SetText(Macros.Book.KeyOf(macro) or "")
-        line.flag:SetShown(ns.options.macroChecks and Macros.Check.Macro(macro).count > 0)
-        line:Show()
+    local count = 0
+    for _, macro in ipairs(Macros.Book.All()) do
+        count = count + 1
+        Dress(lines[count] or Line(count), macro, nil)
     end
-    for index = #macros + 1, #lines do lines[index]:Hide() end
-    empty:SetShown(macros[1] == nil)
-    child:SetHeight(math.max(#macros * Editor.LINE, 1))
+    for _, game in ipairs(GameList()) do
+        count = count + 1
+        Dress(lines[count] or Line(count), nil, game)
+    end
+    for index = count + 1, #lines do lines[index]:Hide() end
+    empty:SetShown(count == 0)
+    child:SetHeight(math.max(count * Editor.LINE, 1))
 end
 
 local function Head()
@@ -284,19 +328,37 @@ end
 
 -- The game's macros, the account's then the character's, as lines of a menu.
 local function GameMacros(line)
-    local account, own = Core.Ask(GetNumMacros)
-    local first = rawget(_G, "Constants") and Constants.MacroConsts and Constants.MacroConsts.MAX_ACCOUNT_MACROS or 120
-    local any = false
-    local function Add(index)
-        local title = Core.Ask(GetMacroInfo, index)
-        if title then
-            any = true
-            line:CreateButton(title, ns.Guard(function() NewFromGame(index) end))
-        end
+    local list = GameList()
+    for _, game in ipairs(list) do
+        line:CreateButton(game.name, ns.Guard(function() NewFromGame(game.index) end))
     end
-    for index = 1, account or 0 do Add(index) end
-    for index = first + 1, first + (own or 0) do Add(index) end
-    if not any then line:CreateTitle(Macros.TEXT.newFromNone) end
+    if not list[1] then line:CreateTitle(Macros.TEXT.newFromNone) end
+end
+
+-- The game's own macro window (the button Game macros, a game's macro clicked), with that macro chosen there: ours
+-- goes, the full screen too, and the game's comes (window:Native, Holder.lua). Its button Sane UI brings ours back.
+function Editor.OpenGame(index)
+    if not window then return end
+    if onBoard then ns.Window.Back() end
+    window:Native(true)
+    local game = rawget(_G, "MacroFrame")
+    if not (game and game:IsShown()) then Core.Ask(rawget(_G, "ShowMacroFrame")) end
+    game = rawget(_G, "MacroFrame")
+    if not (index and game and type(game.ChangeTab) == "function" and type(game.SelectMacro) == "function") then return end
+    local tab, at = 1, index
+    if index > AccountMax() then tab, at = 2, index - AccountMax() end
+    Core.Ask(game.ChangeTab, game, tab)
+    Core.Ask(game.SelectMacro, game, at, true)
+end
+
+function GameClick(line, mouse)
+    local game = line.game
+    if mouse ~= "RightButton" then return Editor.OpenGame(game.index) end
+    MenuUtil.CreateContextMenu(line, ns.Guard(function(_, root)
+        root:CreateTitle(game.name)
+        root:CreateButton(Macros.TEXT.gameOpen, ns.Guard(function() Editor.OpenGame(game.index) end))
+        root:CreateButton(Macros.TEXT.gameTake, ns.Guard(function() NewFromGame(game.index) end))
+    end))
 end
 
 local function NewClick(self)
@@ -340,6 +402,11 @@ local function Left(inside, I)
     empty:SetWidth(Editor.LIST - 32)
     empty:SetJustifyH("LEFT")
     empty:SetText(Macros.TEXT.none)
+    local game = Macros.Button(inside, Macros.TEXT.gameWindow, 90, 18)
+    game:SetPoint("TOPRIGHT", inside, "TOPLEFT", I + Editor.LIST - 24, -I + 2)
+    game:SetScript("OnClick", ns.Guard(function() Editor.OpenGame() end))
+    Core.Tip(game, Macros.TEXT.gameWindow, Macros.TEXT.gameWindowTip)
+    Editor.gameButton = game
     local new = Button(inside, Macros.TEXT.new, 66, NewClick, Macros.TEXT.new, Macros.TEXT.newTip)
     new:SetPoint("BOTTOMLEFT", I, I)
     copy = Button(inside, Macros.TEXT.copy, 66, function() if chosen then Editor.Choose(Macros.Book.Copy(chosen)) end end,
@@ -509,9 +576,9 @@ end
 
 ns.Board.Part(KEY, Macros.TEXT.title, Editor.LEAST, Part)
 
--- Something the checks read has changed: while the window shows, they look again.
+-- Something the checks or the game's macros read has changed: while the page shows, they look again.
 local function Look()
-    if frame and frame:IsShown() then Fill() end
+    if (frame and frame:IsShown()) or onBoard then Fill() end
 end
 
 -- Made at login, empty: it stands for the game's macro window from the start.
@@ -530,7 +597,7 @@ function Editor.Prepare()
     frame:HookScript("OnShow", ns.Guard(Shown))
     frame:HookScript("OnHide", ns.Guard(Hidden))
     window:Place()
-    for _, event in ipairs({ "SPELLS_CHANGED", "BAG_UPDATE_DELAYED" }) do ns.On(event, Look) end
+    for _, event in ipairs({ "SPELLS_CHANGED", "BAG_UPDATE_DELAYED", "UPDATE_MACROS" }) do ns.On(event, Look) end
 end
 
 function Editor.Toggle()
@@ -547,6 +614,10 @@ end
 
 function Editor.Page()
     return page
+end
+
+function Editor.Line(index)
+    return lines[index]
 end
 
 -- A switch of the module changed.

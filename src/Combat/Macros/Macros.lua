@@ -47,6 +47,13 @@ Macros.TEXT = {
     newEmpty = "An empty macro",
     newFrom = "From the game's macros",
     newFromNone = "The game has no macros here.",
+    gameWindow = "Game macros",
+    gameWindowTip = "Opens the game's own macro window. The button Sane UI on it brings Sane Macros back.",
+    gameMark = "W",
+    gameLine = "One of the game's macros",
+    gameLineTip = "Click: opens it in the game's macro window. Drag: onto an action bar, as a macro of the game's. Right click: make a Sane Macro of it.",
+    gameOpen = "Open in the game's macro window",
+    gameTake = "Make a Sane Macro of it",
     copy = "Copy",
     copyTip = "A copy of this macro, under a new name.",
     delete = Word("DELETE", "Delete"),
@@ -181,6 +188,18 @@ function Macros.Button(parent, text, width, height)
     return button
 end
 
+
+-- The way in for other code (SaneUI.Combat.Macros.Add, a setup addon or a script): a normal macro of macro text
+-- under its name, made once; one of that name already there is left as it is. Returns the macro and whether it is new.
+function Macros.Add(name, body)
+    if type(name) ~= "string" or name == "" or type(body) ~= "string" or not Macros.store then return nil end
+    for _, macro in ipairs(Macros.Book.All()) do
+        if macro.name == name then return macro, false end
+    end
+    local macro = Macros.Book.FromGame(name, body)
+    ns.Safe("macros", Macros.Editor.Refresh)
+    return macro, true
+end
 
 function Macros.Load()
     Macros.store = Core.Store(Macros.STORE)
