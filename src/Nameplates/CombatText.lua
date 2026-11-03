@@ -287,7 +287,9 @@ local function Took(host, mine, kind, flags, amount, school)
         if foe then hue = school end
         Damage(host, "%s", Amount(amount), hue, 1)
     elseif kind == "WOUND" then
-        if plain == 0 then
+        -- Forever hides the amount since build 70755 and a hidden one cannot be told from 0: then the flags say a
+        -- blow taken whole (a part blocked is BLOCK_REDUCED).
+        if plain == 0 or (plain == nil and CombatText.NOTHING[flags]) then
             CombatText.Nothing(host, CombatText.NOTHING[flags] and flags or "MISS")
             return
         end

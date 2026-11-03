@@ -1222,6 +1222,15 @@ check(CVar("nameplateSelectedScale") == "1" and ns.options.foundCVars.nameplateS
         and not dress.numbers[1].picture:IsShown(), "a heal: green, with a plus, no picture left from before")
     W.Fire("UNIT_COMBAT", "nameplate1", Secret(), Secret(), Secret(), Secret())
     check(#dress.numbers == 2 and dress.numbers[2].text._color[3] == 1, "a hidden hit: written as it is, white, nothing compared")
+    -- Forever's own amount hidden (since 70755), the kind and flags plain: W.Secret errors when compared.
+    local blow = W.Secret()
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", blow, 1)
+    check(#dress.numbers == 3 and dress.numbers[3].text._text[1].abbreviated == blow, "a hidden amount: the game's abbreviation of it, never compared")
+    W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "BLOCK", W.Secret(), 1)
+    check(#dress.numbers == 4 and dress.numbers[4].picture._texture == CombatText.ART .. "block",
+        "a hidden amount blocked whole: the shield, no number")
+    dress.numbers[4].motion:Finish()
+    dress.numbers[3].motion:Finish()
     W.Fire("UNIT_COMBAT", "nameplate1", "ENERGIZE", "", 10, 0)
     check(#dress.numbers == 2, "power gained: nothing")
     local first = dress.numbers[1]

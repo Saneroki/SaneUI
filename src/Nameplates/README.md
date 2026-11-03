@@ -71,7 +71,8 @@ fails, every plate is the game's own again.
   unit, with the time each has left and its stacks, as many as fit over the bar (eight on the game's medium
   plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
   picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
-  anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
+  anyone; your own show there, not twice. Hover one for its tooltip (the game's aura container gives it; Forever's own
+  plates dropped theirs in build 70755).
 - **Cast bar:** under the bar, inside the plate's one outline (the border, the rank's line and the glow go around the
   bar and the cast bar together while a cast shows, around the bar alone otherwise), as wide and as high as the bar,
   in the game's own cast bar art: the spell's icon at its left end with the

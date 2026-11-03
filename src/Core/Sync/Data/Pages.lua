@@ -63,8 +63,8 @@ Sync.PAGES = {
       cvars = { "autoAcceptQuickJoinRequests", "blockChannelInvites", "blockTrades", "chatStyle",
           "discordDisplayName", "enableConnectToPhotoSharing", "excludedCensorSources",
           "guildMemberNotify", "profanityFilter", "restrictCalendarInvites", "showTimestamps",
-          "showToastBroadcast", "showToastFriendRequest", "showToastOffline", "showToastOnline",
-          "showToastWindow", "whisperMode" },
+          "showToastFriendRequest", "showToastOffline", "showToastOnline", "showToastWindow",
+          "whisperMode" },
       flags = {
           { "GetAutoDeclineGuildInvites", "SetAutoDeclineGuildInvites" },
           { "GetAllowRecentAlliesSeeLocation", "SetAllowRecentAlliesSeeLocation" },

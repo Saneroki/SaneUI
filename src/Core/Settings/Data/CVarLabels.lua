@@ -175,7 +175,6 @@ Config.CVAR_LABELS = {
     showswingtimer = { label = "ENABLE_SWING_TIMER", tip = "ENABLE_SWING_TIMER_TOOLTIP" },
     showtargetoftarget = { label = "SHOW_TARGET_OF_TARGET_TEXT", tip = "OPTION_TOOLTIP_SHOW_TARGET_OF_TARGET" },
     showtimestamps = { label = "TIMESTAMPS_LABEL", tip = "OPTION_TOOLTIP_TIMESTAMPS" },
-    showtoastbroadcast = { label = "SHOW_TOAST_BROADCAST_TEXT", tip = "OPTION_TOOLTIP_SHOW_TOAST_BROADCAST" },
     showtoastfriendrequest = { label = "SHOW_TOAST_FRIEND_REQUEST_TEXT", tip = "OPTION_TOOLTIP_SHOW_TOAST_FRIEND_REQUEST" },
     showtoastoffline = { label = "SHOW_TOAST_OFFLINE_TEXT", tip = "OPTION_TOOLTIP_SHOW_TOAST_OFFLINE" },
     showtoastonline = { label = "SHOW_TOAST_ONLINE_TEXT", tip = "OPTION_TOOLTIP_SHOW_TOAST_ONLINE" },

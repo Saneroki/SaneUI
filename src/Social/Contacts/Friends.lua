@@ -296,12 +296,13 @@ end
 --  Rows
 -------------------------------------------------------------------------------
 
--- The icon of the game a Battle.net friend plays, as the game's list shows it.
-local function Game(texture, client)
+-- The icon of the game a Battle.net friend plays, as the game's list shows it. Forever's game account names
+-- a sub icon too (which of its projects); Retail's has none, and nil asks for the plain icon.
+local function Game(texture, client, subIcon)
     local textures = rawget(_G, "C_Texture")
     local set = textures and textures.SetTitleIconTexture
     local version = Enum and Enum.TitleIconVersion and Enum.TitleIconVersion.Medium
-    if set and version and pcall(set, texture, client, version) then return end
+    if set and version and pcall(set, texture, client, version, subIcon) then return end
     texture:SetAtlas("Battlenet-ClientIcon-" .. client)
 end
 
@@ -340,7 +341,7 @@ local function Draw(row, friend)
     row.side:SetPoint("RIGHT", -(Layout.INVITE + 4), 0)
     row.side:SetShown(friend.client ~= nil)
     if friend.client then
-        Game(row.side, friend.client)
+        Game(row.side, friend.client, friend.game and friend.game.subIcon)
         row.side:SetAlpha(friend.otherProject and 0.6 or 1)
     end
     local button = InviteButton(row)

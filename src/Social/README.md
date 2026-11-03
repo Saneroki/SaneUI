@@ -796,7 +796,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
 | `Friends.lua` | The friends list's panel: you on Battle.net at its head, its tabs, the search box and the filter, the list of the tab chosen |
 | `Contacts/Contacts.lua` | What the lists share: the game's colours and status icons, a status, how long ago, the filter by status, a whisper, a player's name to add, ignore or group |
-| `Contacts/Account.lua` | The head: your status, your BattleTag, how many friends are online, the contacts menu (broadcast, ignore list) |
+| `Contacts/Account.lua` | The head: your status, your BattleTag, how many friends are online, the contacts menu (broadcast in Retail alone, ignore list) |
 | `Contacts/Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
 | `Contacts/Requests.lua` | Friend requests (Accept, Decline, Block Invites where the game offers it) and the line to add a friend |
 | `Contacts/Ignored.lua` | The players ignored and the accounts whose invites are blocked, in the friends list's place |

@@ -7,7 +7,8 @@ local _, ns = ...
 --  (Available, Away, Busy: the game's dropdown with its status icons), then
 --  your BattleTag (its number dimmed, as the game writes it), at the right how
 --  many friends are online and the game's contacts menu: your broadcast, the
---  message every friend sees in their list, and the ignore list.
+--  message every friend sees in their list (Retail's alone: Forever's menu
+--  took it out), and the ignore list.
 --
 --  Without Battle.net (disconnected) the head says so, and only the ignore
 --  list is in the menu. The status and the broadcast are set by the game's own
@@ -110,9 +111,10 @@ local function Broadcast()
     end, 127)
 end
 
+-- Forever's contacts menu no longer offers your broadcast (build 70755), Retail's still does: ours follows.
 local function Contents(_, root)
     root:CreateTitle(Core.Word("CONTACTS_MENU_NAME", "Contacts Menu"))
-    if Me() then root:CreateButton(Core.Word("CONTACTS_MENU_BROADCAST_BUTTON_NAME", "Broadcast"), function() ns.Safe("broadcast", Broadcast) end) end
+    if Core.RETAIL and Me() then root:CreateButton(Core.Word("CONTACTS_MENU_BROADCAST_BUTTON_NAME", "Broadcast"), function() ns.Safe("broadcast", Broadcast) end) end
     root:CreateButton(Core.Word("CONTACTS_MENU_IGNORE_BUTTON_NAME", "Ignore List"), ns.Guard(function() ns.Friends.Open("Ignored") end))
 end
 

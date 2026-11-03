@@ -1,6 +1,6 @@
 -- What Retail lacks of Forever's interface, for the tests' stand-in (wowstub.lua, W.Play): globals,
 -- Table.Field, Enum.X.Y, Constants.X.Y and events (event:NAME), from the newest exports of the two games
--- (Forever 1.60.1.70707, Retail 12.1.5.70688). Made by dev/tools/blizzard games; do not edit by hand.
+-- (Forever 1.60.1.70755, Retail 12.1.5.70688). Made by dev/tools/blizzard games; do not edit by hand.
 return {
     retail = [[
 ACTION_BARS_RELATIVE_TO_BASE_POSITIONING
@@ -29,6 +29,7 @@ ActionButtonUtil.GetMkbActionBarsForPetAction
 ActionButtonUtil.GetMkbActionBarsForSpell
 ActionButtonUtil.IsExtraActionButtonDisabled
 ActionButtonUtil.IsSpellOnAnyActiveMkbActionBar
+ActionButtonUtil.OverrideStatusForUnplacedSpell
 AuctionHouseUtil.GetItemKeyDisplayLevel
 AuctionHouse_ShouldUseRequiredLevel
 AudioOverrides.HasPetBattleMusic
@@ -62,6 +63,7 @@ CHARACTER_FRAME_TAB.Skills
 CHARACTER_FRAME_TAB.Statistics
 CHARACTER_FRAME_WIDTH
 COMMUNITIES_FRAME_DISPLAY_MODES.GUILD_PREFERRED_PLAY_SETTINGS
+C_ActionBar.IsHighestSpellRank
 C_ActionBar.ShouldShowKeyring
 C_AuctionHouse.GetItemKeySampleLink
 C_AutoLoot.SetUseAutoLootToggle
@@ -709,6 +711,7 @@ Enum.SpecGroup.Primary
 Enum.SpecGroup.Secondary
 Enum.SpecializationSpellsFlag
 Enum.SpecializationSpellsFlag.DevOnly
+Enum.SubscriptionInterstitialType.SubscriptionPeriod
 Enum.TieredEntranceTierFlag.DisableTraitSystem
 Enum.TieredEntranceTierFlag.None
 Enum.TrainerType
@@ -1901,6 +1904,7 @@ StatisticsFrameMixin
 StatisticsHeaderMixin
 StatisticsSubHeaderMixin
 StatisticsSubHeaderToggleCollapseButtonMixin
+SubscriptionInterstitial_ShowSubscriptionPeriod
 SwingTimerManagerMixin
 SwingTimerMixin
 TalentButtonArtMixin.ArtSet.LegacySquare

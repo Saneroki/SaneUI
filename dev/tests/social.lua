@@ -1962,11 +1962,17 @@ do
     check(asks[#asks] == "afk true", "Away chosen, Battle.net is told")
     status._items[1].fn(status._items[1].data)
     check(asks[#asks - 1] == "afk false" and asks[#asks] == "dnd false", "Available: neither away nor busy")
-    check(contacts and contacts._items[2].text == "Broadcast" and contacts._items[3].text == "Ignore List",
-        "the contacts menu: your broadcast and the ignore list")
+    check(contacts and #contacts._items == 2 and contacts._items[2].text == "Ignore List",
+        "Forever: the contacts menu holds the ignore list, no broadcast (its own took it out)")
+    W.Play("retail")
+    contacts:GenerateMenu()
+    check(contacts._items[2].text == "Broadcast" and contacts._items[3].text == "Ignore List",
+        "Retail: the contacts menu: your broadcast and the ignore list")
     contacts._items[2].fn()
     W.popups[#W.popups].data.callback("raid tonight")
     check(asks[#asks] == "broadcast raid tonight", "a broadcast written is sent to Battle.net")
+    W.Play("forever")
+    contacts:GenerateMenu()
     -- The tabs: the game's, a count where something waits.
     check(tabs.Friends._text == nil and tabs.Friends.Text._text == "Friends" and tabs.Allies.Text._text == "Recent Allies"
         and tabs.Requests.Text._text == "Requests (2)" and tabs.Raid.Text._text == "Raid" and tabs.Quick.Text._text == "Quick Join (1)"
@@ -2029,7 +2035,7 @@ do
     check(#friends.provider.list == 6, "unticked, all again")
     -- The ignore list, from the contacts menu, in the friends list's place.
     contacts:GenerateMenu()
-    contacts._items[3].fn()
+    contacts._items[2].fn()
     local ignored = list(panels.friends)
     check(ignored ~= friends and named(ignored) == "Ignored, Gamon, Blocked Invites, Spammer", "the ignore list: players ignored, invites blocked")
     local remove = foot(panels.friends, "Remove")
