@@ -175,7 +175,9 @@ Threat (`UnitThreatSituation`, `UnitDetailedThreatSituation`) is plain for you, 
 one unit. Combat text comes from `COMBAT_TEXT_UPDATE`, and what happened from
 `C_CombatText.GetCurrentEventInfo`, whose answers are secret: written into a text as they come, never added
 up or compared. The combat log is restricted, so combat text can't be built from it. Each unit's own `UNIT_COMBAT`
-is open: the combat text is built on it, in the Nameplates module (`src/Nameplates/CombatText.lua`, 2026-10-23).
+is open: the combat text is built on it, in the Nameplates module (`src/Nameplates/CombatText.lua`, 2026-10-23). Since
+Forever's build 70755 its amount is secret there (its kind and flags stay plain): written as it comes, a blow taken whole
+told by its flags.
 
 **Damage, healing, interrupts:** the game's own meter, in both games: `C_DamageMeter` keeps the fights (sessions) and each
 one's lists of sources, best first, `SecretWhenInCombat`: built on it 2026-11-01 (`src/Combat/Meter/`, Saneroki), threat by
