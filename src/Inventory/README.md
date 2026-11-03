@@ -710,7 +710,8 @@ Speed Leveling's rewards, Equip upgrades and its group rolls all judge the same 
 decide. One line per specialization, the numbers a leveling character goes by, the stat it builds on at 1 so that two
 classes' gains can be held against each other; `early` for a character without a specialization yet.
 - **Forever** (`Weights.FOREVER`): pairs of a stat and its worth, by the game's rules where they say (a warrior's Strength is
-  2 Attack Power, 14 Attack Power 1 damage per second, so `str 1 ap .5 dps 7`).
+  2 Attack Power, 14 Attack Power 1 damage per second, so `str 1 ap .5 dps 7`; a feral druid's the same, its forms
+  swinging the equipped weapon in WoW: Forever, unlike Classic's).
 - **Retail** (`Weights.RETAIL`): the main stat, then the secondaries best first down `Weights.LADDER`; Stamina and a
   physical fighter's weapon damage the same for all.
 - `dps` is a melee weapon's or staff's damage per second, `ranged` a bow's, gun's, thrown weapon's or wand's.

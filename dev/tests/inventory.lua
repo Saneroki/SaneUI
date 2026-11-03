@@ -1315,6 +1315,28 @@ do
     check(Weights.For("forever", "DRUID", "feral combat") == Weights.For("forever", "DRUID", "feral")
         and Weights.For("forever", "DRUID", "feral").ITEM_MOD_AGILITY_SHORT == 1,
         "a druid of the tree WoW: Forever names Feral Combat: the feral line, not its class's first")
+    local feral = Weights.For("forever", "DRUID", "feral")
+    check(feral.ITEM_MOD_DAMAGE_PER_SECOND_SHORT == 7 * feral.ITEM_MOD_STRENGTH_SHORT,
+        "a feral druid of WoW: Forever: forms swing the weapon, so its damage per second by the warrior's rule")
+    -- As Speed Leveling's rewards judge, through Core.Upgrade: the mace worn of 10.1 damage per second and 3 Strength
+    -- more, one offered of 13.6; a feral druid takes the one that hits harder.
+    local maces = {
+        ["item:5001"] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 10.1, ITEM_MOD_STRENGTH_SHORT = 4, ITEM_MOD_STAMINA_SHORT = 2 },
+        ["item:5002"] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 13.6, ITEM_MOD_STRENGTH_SHORT = 1, ITEM_MOD_STAMINA_SHORT = 1 },
+    }
+    local stats, mainHand, info = rawget(_G, "GetItemStats"), rawget(_G, "INVSLOT_MAINHAND"), C_Item.GetItemInfo
+    INVSLOT_MAINHAND, worn[16] = 16, { link = "item:5001" }
+    GetItemStats = function(link) return maces[link] end
+    C_Item.GetItemInfo = function(link)
+        if maces[link] then return "Mace", link, 2, 22, 1, "Weapon", "One-Handed Maces", 1, "INVTYPE_WEAPON", 1, 1, 2, 4 end
+    end
+    Core.WeighWith(function() return feral end)
+    local kind, gain = Core.Upgrade("item:5002")
+    check(kind == "better" and gain > 20, "a feral druid of WoW: Forever: the mace that hits harder, though of less Strength")
+    Core.WeighWith(function() return Weights.For("forever", "DRUID", "balance") end)
+    check(Core.Upgrade("item:5002") == nil, "a balance druid, who weighs no weapon damage: the worn one stays")
+    Core.WeighWith(Weights.Now)
+    GetItemStats, INVSLOT_MAINHAND, worn[16], C_Item.GetItemInfo = stats, mainHand, nil, info
 end
 
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

@@ -45,7 +45,10 @@ Weights.RETAIL_DPS = 2                  -- Retail: a physical fighter's weapon d
 
 local WARRIOR = "dps 7 ranged .5 str 1 ap .5 sta .6 agi .4 hit 1 crit .9 exp .8 haste .5 armor .01"
 local CASTER = "int 1 sp 1 dmg 1 sta .5 spi .5 hit .5 crit .5 haste .4 mp5 .4 armor .01 ranged 1"
-local FERAL = "str 1 agi 1 ap .5 sta .5 int .25 spi .25 hit 1 exp .9 crit 1 haste .6 dodge .5 def .5 dps .5 armor .02"
+-- In WoW: Forever, Cat, Bear and Dire Bear Form swing the equipped weapon: their attacks deal its damage per second
+-- (unlike Classic, where forms ignored it). A druid's Strength is 2 Attack Power, in forms and out, so as a warrior's:
+-- dps 7 where Strength is 1.
+local FERAL = "str 1 agi 1 ap .5 sta .5 int .25 spi .25 hit 1 exp .9 crit 1 haste .6 dodge .5 def .5 dps 7 armor .02"
 
 Weights.FOREVER = {
     WARRIOR = {
