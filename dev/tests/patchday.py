@@ -288,13 +288,15 @@ def version(since, fields, line=game_line, gone=False):
 
 class Master:
     schemas = {"Spells": Thing(fields=[Thing(name="name"), Thing(name="cost")]), "SkillLines": Thing(fields=[]),
-               "Walking": Thing(fields=[Thing(name="block")]), "PatchNotes": Thing(fields=[])}
+               "Walking": Thing(fields=[Thing(name="block")]), "PatchNotes": Thing(fields=[]),
+               "Items": Thing(fields=[Thing(name="sell")])}
     views = {"Spells": {1: [version(10, {"name": "Bolt", "cost": 5}), version(20, {"name": "Bolt", "cost": 7})],
                         2: [version(20, {"name": "Nova"})],
                         3: [version(10, {"name": "Old"}), version(20, {}, gone=True)],
                         4: [version(10, {"name": "Batch"}), version(20, {"name": "Batch", "cost": 1}, batch_line)]},
              "SkillLines": {7: [version(10, {"name": "Frost", "class": 8, "spells": [1]})]},
-             "Walking": {5: [version(10, {"block": "a"}), version(20, {"block": "b"})]}, "PatchNotes": {}}
+             "Walking": {5: [version(10, {"block": "a"}), version(20, {"block": "b"})]}, "PatchNotes": {},
+             "Items": {6: [version(10, {"name": "Brittle Key", "class": 13, "sell": 0}), version(20, {"sell": 17})]}}
 
     def view(self, name, game):
         return self.views[name]
@@ -304,6 +306,7 @@ facts = pd.facts_of(Master(), "forever", 20)
 check("what is new, changed and gone", facts["sets"]["Spells"]["counts"], {"new": 1, "changed": 1, "gone": 1})
 check("a change, from and to", facts["sets"]["Spells"]["changed"][0]["changes"], [{"field": "cost", "from": "5", "to": "7"}])
 check("a spell's class", facts["sets"]["Spells"]["changed"][0]["class"], 8)
+check("an item's class is no player's (13 a key, not Evoker)", "class" in facts["sets"]["Items"]["changed"][0], False)
 check("a set of counts holds no rows", "changed" in facts["sets"]["Walking"], False)
 check("what facts say", "changed 1 Bolt (Mage): cost 5 → 7" in pd.facts_text(facts, "a build"), True)
 

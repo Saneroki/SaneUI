@@ -57,6 +57,7 @@ MAP_LAYERS = str(ROOT / "dev" / "tools" / "map-layers")
 DATA = str(ROOT / "dev" / "tools" / "data")
 BUILD_TOOLS = ("map-data", "travel-data", "walk-data", "walk-gates")   # the data tools' BUILD, Forever's
 COUNT_ONLY = {"Walking", "Tiles"}   # sets listed by their counts: an entry says nothing to a reader
+ITEM_CLASS = {"Items", "Disenchants"}  # sets whose field class is an item's class (Enum.ItemClass), no player's class
 SHOWN = 80                          # characters of a value in facts
 PRIORITY = 11                       # above the world's tiles (10): the map tells what the game shows
 
@@ -299,7 +300,7 @@ def facts_of(master, game, build):
                 if named:
                     row["name"] = named
                 fields = version.fields or (before.fields if before else {})
-                klass = fields.get("class") or (classes.get(key) if name == "Spells" else None)
+                klass = (None if name in ITEM_CLASS else fields.get("class")) or (classes.get(key) if name == "Spells" else None)
                 if klass:
                     row["class"] = klass
                 if fields.get("race"):
