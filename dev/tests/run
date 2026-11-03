@@ -24,6 +24,7 @@
 #                      state, the hearth and quest items, the quest givers, the game's settings
 #   classquests.lua Speed Leveling's class quests over the guide, by class, race, side and level
 #   classquests.py  the set ClassQuests against the master: every chain can be followed, every Forever character has chains
+#   encoding.lua    the tests' stand-ins for the bit library and C_EncodingUtil against the game's definitions
 #   speedguide.lua  Speed Leveling's guide: a guide read from text and run by our own engine, bought guides opened for
 #                   the account, the steps at hand, the view over the world, the arrow and the icons
 #   lore.lua        the Lore module: talks as a scene, the game's talk windows held, the rewards read for you,
@@ -88,6 +89,7 @@ lua dev/tests/economy.lua
 lua dev/tests/speedleveling.lua
 lua dev/tests/speedguide.lua
 lua dev/tests/classquests.lua
+lua dev/tests/encoding.lua
 lua dev/tests/lore.lua
 lua dev/tests/macros.lua
 lua dev/tests/guild.lua

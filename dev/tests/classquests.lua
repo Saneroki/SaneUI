@@ -1,7 +1,7 @@
 -- Runs Speed Leveling's class quests against the stand-in client (wowstub.lua): which chains are a character's by class,
 -- race and side, the step that comes up at its level over the guide with the guide's own steps untouched, the way
 -- through a quest (to take, what it asks, to hand in), what the guide does itself, a chain left and brought back, the
--- switch, and what the arrow, the key and the view make of it.
+-- switch, what the arrow, the key and the view make of it, and the key in a fight.
 -- Usage, from the project folder:  lua5.1 dev/tests/classquests.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -24,11 +24,6 @@ end
 local methods = W.methods
 function methods:GetStringHeight() return self._text and self._text ~= "" and 14 or 0 end
 function methods:GetStringWidth() return #(self._text or "") * 6 end
-function methods:SetAttribute(name, value)
-    self._attributes = self._attributes or {}
-    self._attributes[name] = value
-end
-function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 function RegisterStateDriver() end
 function UnregisterStateDriver() end
 function ClearOverrideBindings() end
@@ -207,6 +202,15 @@ check(Check() == true and Words():find("Quest 70", 1, true), "and at 30 a warrio
 me.class, me.race, me.side, me.level = DRUID, NIGHTELF, "Alliance", 10
 Fresh()
 
+-- A map's name the game hides (a secret value): the giver's name alone, nothing made of it. The name is a field of
+-- the game's table, which only the module's own Core.Plain reaches.
+local mapInfo = C_Map.GetMapInfo
+C_Map.GetMapInfo = function(map) return { name = W.Secret(), mapType = 3 } end
+Fresh()
+check(Words():find("Talk to Mathrengyl", 1, true) and not Words():find(" in ", 1, true), "a zone the game hides: the name alone")
+C_Map.GetMapInfo = mapInfo
+Fresh()
+
 -------------------------------------------------------------------------------
 --  Through a quest
 -------------------------------------------------------------------------------
@@ -340,6 +344,31 @@ do
     Fresh()
     check(Words():find("Talk to Mathrengyl", 1, true), "and one for the other side is not yours")
     Run.Distance = distance
+end
+
+-------------------------------------------------------------------------------
+--  In a fight
+-------------------------------------------------------------------------------
+-- The key's buttons are the game's secure ones: in a fight they stay as they were, whatever the chain's step comes
+-- to meanwhile, and what it wants on them follows once the fight is over (the module's own check, by its timer).
+do
+    local find = rawget(_G, ns.Key.FIND)
+    Reset()
+    Fresh()
+    Guide.CheckSoon()
+    W.Wait(1)
+    local before = find:GetAttribute("macrotext")
+    W.Combat(true)
+    quests.on[10], quests.ready[10] = true, true
+    Guide.CheckSoon()
+    W.Wait(1)
+    check(before:find("Mathrengyl", 1, true) and Words():find("Talk to Dendrite", 1, true)
+        and find:GetAttribute("macrotext") == before and Core.Owed("Speed Leveling: refresh"),
+        "in a fight the chain goes on, the key's buttons stay the game's: what they want waits")
+    W.Combat(false)
+    local macro = find:GetAttribute("macrotext")
+    check(macro:find("Dendrite", 1, true) and not macro:find("Mathrengyl", 1, true), "and follows once it is over")
+    Reset()
 end
 
 Run.Use(nil)

@@ -12,6 +12,20 @@ package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
 require("combatclient").Install(W) -- what the module's unit frames and action bars need of the client
+-- The game's bars the stand-in has, with what the module hooks of theirs as the game's have it: the main bar's
+-- UpdateDividers (MainActionBarMixin), the stance bar's Update and UpdateState (StanceBarMixin), a button's Update
+-- and UpdateButtonArt (ActionBarActionButtonMixin, BaseActionButtonMixin). The stand-in's hooksecurefunc takes only
+-- a function that is there, never the catch-all it answers for any other name, so what a bar has not is marked so
+-- (false): the module's probe of it finds no function, as in the game.
+function MainActionBar:UpdateDividers() end
+MainActionBar.Update, MainActionBar.UpdateState = false, false
+function StanceBar:Update() end
+function StanceBar:UpdateState() end
+StanceBar.UpdateDividers = false
+for _, button in ipairs(MainActionBar.actionButtons) do
+    function button:Update() end
+    function button:UpdateButtonArt() end
+end
 
 local passed = 0
 local function check(condition, what)
@@ -40,12 +54,8 @@ function methods:SetAtlas(atlas, own) self._atlas, self._own = atlas, own end
 function methods:SetBlendMode(mode) self._blend = mode end
 function methods:SetDesaturated(on) self._desaturated = on end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
-function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
-function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 function methods:RegisterForClicks(...) self._clicks = { ... } end
 function methods:RegisterForDrag(...) self._drag = { ... } end
-function methods:UnregisterAllEvents() self._events = {} end
-function methods:IsProtected() return false end
 function methods:SetFont(file, size, flags) self._font = { file, size, flags } end
 function methods:GetFont() return "font", 16, "" end
 function methods:AddMaskTexture(mask) self._masks = self._masks or {}; self._masks[#self._masks + 1] = mask end
@@ -619,21 +629,22 @@ spec.size(panel, 700, 500)
 check(near(Talents.holder._scale, math.min((700 - 2 * edge) / 1212, (500 - head - 2 * edge) / 701)),
     "a small panel: as large as fits in its body")
 
--- Shown: the panel comes, the frame's OnShow runs (the stand-in knows no parent's show).
+-- Shown and hidden as Core's board does it (Board.lua): the panel, then the part told. The frame, a shown child of
+-- the panel, gets its OnShow and OnHide with its parent's, as in the game.
 local function Open()
     panel:Show()
     spec.show(panel, true)
-    frame._shown = false
-    frame:Show()
 end
 local function Close()
-    frame:Hide()
     panel:Hide()
     spec.show(panel, false)
 end
-Open()
+panel:Show()
+check(frame.loads == 1 and frame:IsVisible() and frame._events.TRAIT_NODE_CHANGED,
+    "the panel shown: the frame's OnShow ran with its parent's, the tree loaded, the game's events heard")
+spec.show(panel, true)
 local buttons = frame.buttons
-check(buttons[1] and buttons[5] and not buttons[6] and frame.loads >= 1, "shown: the tree loaded, every node but a hero talent's")
+check(buttons[1] and buttons[5] and not buttons[6] and frame.loads == 1, "shown: the tree loaded once, every node but a hero talent's")
 check(frame._events.TRAIT_NODE_CHANGED and frame._events.TRAIT_CONFIG_UPDATED and frame._events.PLAYER_REGEN_DISABLED
     and frame._events.UNIT_AURA and frame._units.UNIT_AURA[1] == "player", "shown: the game's events heard, the player's")
 
@@ -710,6 +721,9 @@ bar:Show()
 check(not frame.CommitSpinner:IsShown(), "the cast shows: the spinner goes")
 foot.apply:GetScript("OnClick")(foot.apply, "LeftButton")
 check(#calls == 1, "nothing applied twice while it runs")
+W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", W.Secret())
+check(frame:IsCommitInProgress() and frame.DisabledOverlay:IsShown() and bar.unit == "player" and #Core.log == 0,
+    "a cast whose spell the game hides (a secret value): not taken for the commit's, nothing computed with it")
 W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 384255)
 check(not frame.DisabledOverlay:IsShown() and bar.unit == nil and not bar:IsShown(), "the cast done: the grey and the bar go")
 W.Fire("TRAIT_CONFIG_UPDATED", 101)
@@ -747,8 +761,9 @@ buttons[2]:GetScript("OnClick")(buttons[2], "LeftButton")
 check(#calls == 0, "a click in a fight changes nothing")
 W.combat = true
 W.Fire("PLAYER_REGEN_ENABLED")
-W.combat = false
-W.Fire("PLAYER_REGEN_ENABLED")
+check(frame:IsLocked() and buttons[2].visualState == State.Locked,
+    "the fight's end told while the game's lockdown still holds: locked still")
+W.Combat(false)
 check(not frame:IsLocked() and buttons[2].visualState == State.Selectable, "the fight over: they take changes again")
 W.Fire("UNIT_AURA", "player")
 W.Wait(0)

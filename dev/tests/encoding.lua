@@ -1,5 +1,7 @@
 -- Stand-ins for the game's bit library and C_EncodingUtil, in plain Lua, for the tests: bit's band and bxor; base64
 -- both ways; zlib and deflate "packing" as stored blocks (no compression), unpacked both ways, the Adler-32 checked.
+-- Required by a test it only hands the stand-ins over; run on its own it checks itself against the game's definitions.
+-- Usage, from the project folder:  lua5.1 dev/tests/encoding.lua
 local E = {}
 
 local function Bits(a, b, both)
@@ -139,5 +141,67 @@ function E.Lock(tag, texts, recipe)
     end
     return #texts .. "|" .. table.concat(pieces) .. "|" .. recipe.version
 end
+
+if ... then return E end -- required by a test (the name comes in): the stand-ins alone, no check run
+
+-------------------------------------------------------------------------------
+--  Run on its own: the stand-ins against the game's definitions (the newest export's EncodingUtilDocumentation.lua):
+--  Enum.CompressionMethod is Deflate 0 (the default), Zlib 1; base64 is RFC 4648's, padded; every function of
+--  C_EncodingUtil refuses a secret value from an addon (SecretArguments "AllowedWhenUntainted"), which is why the
+--  modules call it through Core.Ask.
+-------------------------------------------------------------------------------
+local root = arg[0]:match("^(.*)/dev/tests/") or "."
+package.path = root .. "/dev/tests/?.lua;" .. package.path
+local W = require("wowstub")
+
+local passed = 0
+local function check(condition, what)
+    if not condition then error("FAILED: " .. what, 2) end
+    passed = passed + 1
+end
+
+check(E.bit.band(0xF0, 0x3C) == 0x30 and E.bit.bxor(0xF0, 0x3C) == 0xCC and E.bit.bxor(7, 7) == 0, "band and bxor")
+
+check(E.Encode64("Man") == "TWFu" and E.Encode64("Ma") == "TWE=" and E.Encode64("M") == "TQ==" and E.Encode64("") == "",
+      "base64 written as RFC 4648 has it, padded")
+check(E.Decode64("TWFu") == "Man" and E.Decode64("TWE=") == "Ma" and E.Decode64("TQ==") == "M" and E.Decode64("TW\nFu") == "Man",
+      "base64 read back, line breaks skipped")
+local bytes = {}
+for value = 0, 255 do bytes[#bytes + 1] = string.char(value) end
+local all = table.concat(bytes)
+for cut = 0, 2 do -- 256, 255 and 254 bytes: each remainder of three
+    local text = all:sub(1, 256 - cut)
+    check(E.Decode64(E.Encode64(text)) == text, "every byte survives base64 at " .. #text .. " bytes")
+end
+
+check(E.Adler("") == 1 and E.Adler("Wikipedia") == 300286872, "Adler-32 as zlib counts it")
+
+local util = E.C_EncodingUtil
+local long = all:rep(300) -- 76800 bytes: more than one stored block holds
+local packed = util.CompressString(long, 1)
+check(packed:sub(1, 2) == "\120\1" and packed:byte(3) == 0 and packed:byte(3 + 5 + 65535) == 1
+      and #packed == #long + 2 + 2 * 5 + 4, "zlib: its head, stored blocks of at most 65535 bytes, the last one marked")
+check(util.DecompressString(packed, 1) == long, "zlib unpacked, its sum checked")
+check(util.DecompressString(util.CompressString(long, 0), 0) == long and util.DecompressString(util.CompressString(all)) == all
+      and util.CompressString(all, 0):byte(1) == 1, "deflate, the game's default method: the stored blocks alone")
+local hurt = packed:sub(1, 10) .. string.char((packed:byte(11) + 1) % 256) .. packed:sub(12)
+check(not pcall(util.DecompressString, hurt, 1) and not pcall(util.DecompressString, "no zlib", 1),
+      "a damaged zlib body and a text that is none are refused")
+
+check(util.EncodeBase64(all) == E.Encode64(all) and util.DecodeBase64(E.Encode64(all)) == all,
+      "C_EncodingUtil's base64 is the same")
+
+-- The stand-in refuses a secret as the game refuses an addon's: the modules ask through Core.Ask and get nil.
+local secret = W.Secret()
+check(not pcall(util.EncodeBase64, secret) and not pcall(util.DecodeBase64, secret)
+      and not pcall(util.CompressString, secret, 1) and not pcall(util.DecompressString, secret, 1),
+      "a secret value is refused by every function")
+
+local recipe = { width = 8, taps = { 1, 3 }, mark = "#", close = ";", version = 7 }
+local locked = E.Lock("Tester#4242", { "a guide", "another" }, recipe)
+check(locked:match("^2|%d+#[%w+/=]+;%d+#[%w+/=]+;|7$") and locked ~= E.Lock("Other#1", { "a guide", "another" }, recipe),
+      "an import string: the count, each guide's sum, mark, body and close, the version; another tag another body")
+
+print(("Encoding stand-in: all %d checks passed."):format(passed))
 
 return E
