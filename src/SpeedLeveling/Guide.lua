@@ -384,7 +384,11 @@ local function Read(key)
     local text = Unpack(kept)
     if not text then return nil end
     local guide = ns.Format.Read(text, Who())
-    if guide then guide.key = key end
+    if guide then
+        guide.key = key
+        -- No dungeon quests in a normal guide: also those Core's data knows where its text does not mark them.
+        ns.Format.NoDungeonQuests(guide, ns.Lines.InDungeon)
+    end
     return guide
 end
 

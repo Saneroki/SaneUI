@@ -323,7 +323,11 @@ Without Core's data (Retail, for now) there are none.
 ## How a guide is run
 **Dungeons** (Saneroki, 2026-10-31): a normal guide has none: a step marked for a dungeon is left out as the guide is read,
 and one marked for skipping that dungeon stays. Only a guide of a dungeon group runs them, and the other way round
-(`Format.DungeonStep`).
+(`Format.DungeonStep`). A normal guide's text may still take a dungeon quest without marking it, to hand in should you
+do the dungeon anyway (Saneroki, 2026-11-03): Core's data knows those (a quest it files under a dungeon or a raid,
+`Lines.InDungeon`), so each line that takes, works on or hands one in is left out too, and a step left without a quest
+of its own goes with them (`Format.NoDungeonQuests`). The breadcrumbs that lead to a dungeon go as well: your quest log
+holds no dungeon's quest unless you follow a dungeon guide. Without Core's data (Retail, for now) only the marks count.
 
 `Run.lua` runs a guide read from text (`Format.lua`) for the character, asking the game what each line's thing is done
 through `Lines.lua`:

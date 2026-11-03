@@ -273,7 +273,31 @@ do
     local plain, read = Marks("A Guide")
     check(plain == "2 3" and read.labels.gone == nil, "a normal guide: no step of a dungeon, its name gone with it")
     check(Marks("A Dungeon Guide") == "1 2", "a dungeon guide: the dungeon's steps, not those for skipping it")
+    -- Dungeon quests the text does not mark (quest 7 is one): out of a normal guide, a step with nothing left of its
+    -- own with them, its name too; a step that keeps a quest of its own stays without the line.
+    local function Unmarked(group)
+        local text = table.concat({ "#group " .. group, "step", "    #label walk", Line("place", "1411/0,100,100,10"),
+            Line("goal", "7,1"), "step", Line("take", "2"), Line("take", "7"), "step", "    #label words",
+            Line("friend", "Someone", "Talk to Someone"), "step", Line("handin", "7") }, "\n")
+        local read = Format.NoDungeonQuests(Format.Read(text, orc), function(quest) return quest == 7 end)
+        local shape = {}
+        for _, step in ipairs(read.steps) do
+            local quests = {}
+            for _, line in ipairs(step.lines) do quests[#quests + 1] = line.quest or line.what end
+            shape[#shape + 1] = table.concat(quests, "+")
+        end
+        return table.concat(shape, " "), read
+    end
+    local plain, read = Unmarked("A Guide")
+    check(plain == "2 say" and read.labels.walk == nil and read.labels.words == 2,
+        "a normal guide: a dungeon quest out, also unmarked, and a step with nothing else of its own")
+    check(Unmarked("A Dungeon Guide") == "arrive+7 2+7 say 7", "a dungeon guide keeps its dungeon quests")
+    check(Format.NoDungeonQuests(Format.Read("step\n" .. Line("take", "7"), orc), nil).steps[1] ~= nil,
+        "no test: the guide as it was read")
 end
+local slip = Format.Read("step\n" .. Line("place", "1411/1,-623.92.00,-4214.45") .. "\nstep\n" .. Line("place", "1411,43.73,39.43s"), orc)
+check(slip.steps[1].lines[1].x == -623.92 and slip.steps[2].lines[1].y == 39.43,
+    "a coordinate with a slip of the pen after it: the number it starts with")
 local level = Format.Read("step\n" .. Line("level", "10-1475") .. "\n" .. Line("level", "<10.5,1"), orc).steps[1]
 check(level.lines[1].points == -1475 and level.lines[1].level == 10, "so many points short of a level")
 check(level.unless[1].what == "reached" and level.unless[1].share == 0.5 and level.unless[1].below, "a level that passes a step by")

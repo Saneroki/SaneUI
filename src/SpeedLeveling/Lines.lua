@@ -15,6 +15,7 @@ local _, ns = ...
 --      Lines.Objective(quest, goal)   finished, have, need, text, kind of a quest's objective; nil for none
 --      Lines.Objectives(quest)        how many objectives the game gives for it
 --      Lines.Brief(quest)             what a quest in your log asks, in the game's words; nil where it gives none
+--      Lines.InDungeon(quest)         whether Core's data files a quest under a dungeon or a raid
 --      Lines.Count(item, bank), Lines.Worn(slot)
 --      Lines.Known(spell), Lines.Skill(name, max), Lines.Aura(spell)
 --      Lines.Cooldown(kind, id)       seconds left, 0 when ready; nil when the game does not say
@@ -93,6 +94,15 @@ function Lines.Brief(quest)
     local _, asks = Core.Ask(rawget(_G, "GetQuestLogQuestText"), index)
     asks = Plain(asks)
     return type(asks) == "string" and asks ~= "" and asks or nil
+end
+
+-- Whether Core's data files a quest under a dungeon or a raid (its tags); false where it does not say, as in a game
+-- without data.
+function Lines.InDungeon(quest)
+    for _, tag in pairs(QUESTS:Get(quest, "tags") or EMPTY) do
+        if tag == "dungeon" or tag == "raid" then return true end
+    end
+    return false
 end
 
 -------------------------------------------------------------------------------

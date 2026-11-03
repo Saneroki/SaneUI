@@ -30,6 +30,8 @@ local _, ns = ...
 --      who     { side = "Horde", race = "Orc", class = "WARRIOR", level = 7, game = "forever" }
 --  A step marked for a dungeon stands only in a guide of a dungeon group
 --  (Format.DungeonStep), one marked for doing without it only in the others.
+--  Format.NoDungeonQuests(guide, inDungeon) then takes out of a normal guide
+--  the quests the caller's test names, also those its text does not mark.
 --      guide   { name, title, group, subgroup, after = { { name, only } }, defaultFor, only, games = { game },
 --                part, divider, mine, steps = { step }, labels = { [label] = index } }
 --                -- mine: it is for this character; part: reached only as another's next; divider: no guide
@@ -123,12 +125,17 @@ end
 -------------------------------------------------------------------------------
 --  The commands, by our word for each
 -------------------------------------------------------------------------------
+-- A coordinate: the number its value starts with, so a slip of the pen after it ("-623.92.00", "39.43s") costs no place.
+local function Coordinate(value)
+    return tonumber(value) or tonumber((tostring(value or ""):match("^%-?%d+%.?%d*")))
+end
+
 -- A place: "Zone,x,y", "uiMapID,x,y" (shares of 100 of that map), or "uiMapID/continent,a,b" (the world's yards on
 -- that continent, west first then north, as the format writes them), then how near counts as reached; a further value
 -- makes it a point on the way, never a thing to do. Without a map the last one named stands.
 local function Place(values, last)
     local map = values[1] and values[1] ~= "" and values[1] or last
-    local x, y = tonumber(values[2]), tonumber(values[3])
+    local x, y = Coordinate(values[2]), Coordinate(values[3])
     if not (map and x and y) then return nil end
     local place = { x = x, y = y, near = tonumber(values[4]), way = values[5] ~= nil }
     local id, continent = tostring(map):match("^(%d+)/(%d+)$")
@@ -549,13 +556,48 @@ function Format.Read(text, who)
     return guide, problems
 end
 
+-- Whether a guide is one of a dungeon group: the one kind that runs dungeons.
+local function OfDungeons(guide)
+    return tostring(guide.group or ""):lower():find("dungeon", 1, true) ~= nil
+end
+
 -- Whether a step marked for a dungeon ("WC") or for doing without it ("!WC") is for this guide (Saneroki, 2026-10-31: "i
 -- don't want to have dungeon quests in the normal guide. For that there is the dungeon guide."): a guide of a dungeon
 -- group runs them all, every other guide none.
 function Format.DungeonStep(guide, value)
-    local inDungeons = tostring(guide.group or ""):lower():find("dungeon", 1, true) ~= nil
     local without = tostring(value or ""):find("^%s*!") ~= nil
-    return inDungeons ~= without
+    return OfDungeons(guide) ~= without
+end
+
+-- The lines that name a quest of their own: to take, to work on, to carry for, to hand in.
+local QUEST_LINES = { take = true, goal = true, carry = true, handin = true }
+
+-- A normal guide without dungeon quests, also where its text does not mark them (Saneroki, 2026-11-03: the guides'
+-- newer texts take some in a normal guide, to hand in if you happen to do the dungeon): each line about a quest
+-- inDungeon(quest) names is left out, and so is a step that had such lines and keeps no quest line of its own (a walk
+-- to that quest's place, its words). Names follow their steps. A guide of a dungeon group keeps them all.
+function Format.NoDungeonQuests(guide, inDungeon)
+    if type(guide) ~= "table" or type(inDungeon) ~= "function" or OfDungeons(guide) then return guide end
+    local steps, labels = {}, {}
+    for _, step in ipairs(guide.steps) do
+        local lines, named, kept = {}, false, false
+        for _, line in ipairs(step.lines) do
+            local quest = QUEST_LINES[line.what] and line.quest or nil
+            if quest and inDungeon(quest) then
+                named = true
+            else
+                lines[#lines + 1] = line
+                kept = kept or quest ~= nil
+            end
+        end
+        if kept or not named then
+            step.lines = lines
+            steps[#steps + 1] = step
+            if step.label then labels[step.label] = #steps end
+        end
+    end
+    guide.steps, guide.labels = steps, labels
+    return guide
 end
 
 -- Whether a step mark drops the step for the game played: a phase or an experience rate Sane UI's games are not at.
