@@ -826,6 +826,12 @@ Saneroki (2026-10-16): what the auction house gave during the beta is no market 
 prompt: in the repository's master and in Sane UI's own saved files in the game's `WTF` folder. It is no
 function of the addon, so nothing in the game or the tools checks the date.
 
+Done on 2026-11-03, the day before launch, by Saneroki's prompt: Forever's `WTF` held Sane UI's auction
+history only in the first account's `SaneUI.lua` (Tooltips' old `prices` and `seen`, 2,184 items each),
+removed from it and from the game's `.bak` copy; no account had `SaneUI_AuctionData` or
+`SaneUI_AuctionScans` files, and the master holds no auction data. Other addons' saved files and Retail's
+history were left alone.
+
 ## Characters
 
 Saneroki (2026-10-16): Sane UI keeps what each of the player's characters has: bank and bags, and what they
