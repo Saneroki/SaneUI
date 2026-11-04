@@ -78,7 +78,8 @@ end (`dev/build`, from `assets/data/`).
 | `Sync/Sync.lua` | `Core.Sync`: `GROUPS`, `Part`/`parts`, `PartKept`/`KeepPart`, `Kept`/`Keep`, `Capture`/`Give`/`Moved`, `OfferReload` ([sync.md](sync.md)) |
 | `Sync/Data/Pages.lua` | `Sync.PAGES`, made by `dev/tools/sync-pages` |
 | `Sync/Layout.lua`, `Addons.lua`, `Keys.lua`, `Chat.lua` | The parts `hudLayout`, `addons`, `keyBindings`, `ownChannels`/`chatFrames` |
-| `Sync/Game.lua` | The page parts, Graphics/Audio/per-character CVars; `Sync.SetCVar`, `Lend`/`Return`/`Value`/`Settable` |
+| `Sync/Game.lua` | The page parts, Graphics/Audio/per-character CVars; `Sync.SetCVar`, `Lend`/`Return`/`Value`/`Settable`, `Leave` (a CVar another part keeps) |
+| `Audio.lua` | Sound profiles per game account (`SaneUIDB.modules.Core.audio`), the last one set at each login: `Core.Audio.KINDS`/`Kinds`/`Names`/`Current`/`Use`/`Get`/`Set`/`Changed`/`Save`/`Load`/`New`/`Delete`/`Watch`; its CVars `Sync.Leave`'s |
 | `Settings/Settings.lua` | `Core.Config`: `Fill`/`Open`/`Show`/`Refresh`/`RefreshSoon`, `Kind`/`Hidden`/`Free`/`Getter`/`Setter`/`Enabled`; `Core.pages`, `Core.frames`, `Core.Tabbed`; `/sane options`; the compartment click |
 | `Settings/Panel.lua` | Canvas parts from the game's templates: `Config.Panel.Header`/`Tabs`/`TabbedFrame`/`Scroll`/`Box`/`Check`/…, `Page`/`Refresh` |
 | `Settings/Tabbed.lua` | A module's page in tabs from its descriptions: `Config.BuildTabbed(page, name, onPage, title)`; its own search (`Core.Fuzzy`) and *Defaults* |

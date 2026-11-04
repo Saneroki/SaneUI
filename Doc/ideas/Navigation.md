@@ -87,6 +87,13 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
   in four boxes, the number highlighted, its word under it: rectangles rather than squares, so they take less height.
   The number and word balanced in the middle of the box, a pixel or two between them; no rule over the boxes; the
   location as big as the numbers, centred. Built: `Satchel.lua` (`Gone`, `Boxes`, `Title`).
+- **Sound profiles in the satchel** (Saneroki, 2026-11-04): two clients of one installation played at once, each
+  heard or not as chosen. One compact line, `Sound: <dropdown of profiles, the one in use first> <cogwheel>`; the
+  cogwheel a small flyout with a checkbox and a slider each for All sound, Music, SFX, Dialogue and Ambience, and
+  Save, Load, New and Delete for the profile in use. Choosing a profile sets it at once; each client remembers its
+  last one and sets it again at its login. At first: *All sound on*, *Music off*, *Music and Ambience off*. Built:
+  Core's `Audio.lua` (per game account; Sync leaves its CVars alone), the line `AudioLine.lua`, first in the section
+  *Sane UI*; the flyout is the game's own menu under the cogwheel, as the pin filter's sliders are.
 
 ## One map, two views
 

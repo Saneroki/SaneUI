@@ -1,5 +1,5 @@
--- The satchel: the button on the small map and its page of the addons' buttons, the pins and the game's tracking
--- (Satchel.lua, Strays.lua). The rest of Navigation stands in: a small map in the top right corner, the game's minimap
+-- The satchel: the button on the small map and its page of the sound line, the addons' buttons, the pins and the
+-- game's tracking (Satchel.lua, Strays.lua, AudioLine.lua). The rest of Navigation stands in: a small map in the top right corner, the game's minimap
 -- with a pretend addon's button on it, the game's addon compartment with two addons, a few kinds of pin and tracking
 -- entries. In the console, LabSatchel.pins holds which kinds show, LabSatchel.tracking the game's entries and
 -- LabSatchel.Satchel the module's table. The page opens by itself here, so it waits for the mouse to come first.
@@ -115,7 +115,14 @@ Stopwatch_Toggle = function() StopwatchFrame:SetShown(not StopwatchFrame:IsShown
 TimeManager_IsAlarmFiring = function() return false end
 TimeManager_TurnOffAlarm = function() end
 
-Lab.Addon("SaneUI_Navigation", "src/Navigation/Found.lua", "src/Navigation/Strays.lua", "src/Navigation/Satchel.lua")
+-- The game's five sounds, for the sound line (AudioLine.lua, Core's sound profiles): music low, the rest at full.
+for _, kind in ipairs(Core.Audio.KINDS) do
+    C_CVar.SetCVar(kind.on, "1")
+    C_CVar.SetCVar(kind.volume, kind.key == "music" and "0.4" or "1")
+end
+
+Lab.Addon("SaneUI_Navigation", "src/Navigation/Found.lua", "src/Navigation/Strays.lua", "src/Navigation/Satchel.lua",
+    "src/Navigation/AudioLine.lua")
 
 -- The small map's stand-in in the top right corner: a terrain picture, as large as the window.
 local function Small()

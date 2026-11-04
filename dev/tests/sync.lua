@@ -32,6 +32,7 @@ local function Fresh()
         graphicsQuality = { default = "5", category = 1 },
         gxMonitor = { default = "0", category = 1 },
         Sound_MasterVolume = { default = "1", category = 7 },
+        Sound_EnableReverb = { default = "1", category = 7 },
         debugThing = { default = "0", category = 0 },
         graphicsFixed = { default = "1", category = 1, readOnly = true }, -- the game does not let these be set
         soundLocked = { default = "1", category = 7, locked = true },
@@ -213,8 +214,11 @@ local function Has(id, name)
     local data = Sync.part[id].Read()
     return type(data) == "table" and type(data.cvars) == "table" and data.cvars[name] ~= nil
 end
-check(Has("GRAPHICS_LABEL", "graphicsQuality") and not Has("GRAPHICS_LABEL", "gxMonitor") and Has("AUDIO_LABEL", "Sound_MasterVolume"),
+check(Has("GRAPHICS_LABEL", "graphicsQuality") and not Has("GRAPHICS_LABEL", "gxMonitor") and Has("AUDIO_LABEL", "Sound_EnableReverb"),
     "graphics and sound: the game's own kinds, but not the hardware")
+check(not Has("AUDIO_LABEL", "Sound_MasterVolume") and not Sync.SetCVar("Sound_MasterVolume", "0.5")
+    and W.cvars.Sound_MasterVolume == nil,
+    "nor the settings of the sound profiles (Core's Audio.lua, Sync.Leave): Sync neither reads nor writes them")
 check(not Has("GRAPHICS_LABEL", "graphicsFixed") and not Has("AUDIO_LABEL", "soundLocked") and not Has("perCharacter", "secureNote"),
     "nor a CVar the game does not let us set: read only, locked, secure")
 check(not Core.Steps.Running(FINDING), "found once a session")

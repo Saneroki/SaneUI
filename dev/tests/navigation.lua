@@ -1460,6 +1460,119 @@ end)()
         "the button again closes it: the addon's button waits out of sight again")
 end)()
 
+-- The satchel's sound line (AudioLine.lua): first in its section Sane UI, Core's sound profile in use in a dropdown,
+-- the game's sound settings and the profile's buttons under a cogwheel.
+;(function()
+    local Satchel, Line, Audio = ns.Satchel, ns.AudioLine, Core.Audio
+    local button = Satchel.button
+    button._scripts.OnClick(button, "LeftButton")
+    check(Satchel.Shown() and not (Line.line and Line.line._shown), "a client without the game's sound settings: no line")
+    Satchel.Close()
+    local added = {}
+    for _, kind in ipairs(Audio.KINDS) do
+        for _, name in ipairs({ kind.on, kind.volume }) do
+            if not W.cvarInfo[name] then W.cvarInfo[name], added[#added + 1] = { default = "1", category = 7 }, name end
+        end
+    end
+    W.cvars.Sound_MusicVolume = "0.4"
+    MinimalSliderWithSteppersMixin = { Label = { Right = 3 }, Event = { OnValueChanged = "OnValueChanged" } }
+    button._scripts.OnClick(button, "LeftButton")
+    local line, profiles, cog = Line.line, Line.profiles, Line.cog
+    local head
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._shown and widget._text == Satchel.TEXT.switches then head = widget end
+    end
+    check(line and line._shown and head and near(-line._points[1][5], -head._points[1][5] + Satchel.HEAD)
+        and profiles.label._text == "All sound on" and cog.icon._atlas == nil and cog.icon._texture == Line.COG_FILE,
+        "the line under the title Sane UI: the profile in use, the first of the account's; a cogwheel beside it")
+
+    profiles:GenerateMenu()
+    local names = {}
+    for index, item in ipairs(profiles._items) do names[index] = item.text end
+    check(table.concat(names, ", ") == "All sound on, Music off, Music and Ambience off" and profiles._items[1].checked("All sound on"),
+        "its dropdown: the profiles, the one in use first and chosen")
+    profiles._items[2].fn(profiles._items[2].data)
+    W.Wait(0)
+    profiles:GenerateMenu()
+    check(W.cvars.Sound_EnableMusic == "0" and profiles.label._text == "Music off" and profiles._items[1].text == "Music off"
+        and profiles._items[2].text == "All sound on", "one chosen: set at once, named on the line, first in the list now")
+
+    cog:GenerateMenu()
+    local rows, buttons = {}, {}
+    for _, item in ipairs(cog._items) do
+        if item.checked then rows[item.data] = item elseif item.fn then buttons[item.text] = item end
+    end
+    check(cog._items[1].title == "Music off" and rows.all and rows.music and rows.sfx and rows.dialog and rows.ambience
+        and rows.music.text == "Music" and rows.all.checked(rows.all.data) and not rows.music.checked(rows.music.data)
+        and buttons.Save and buttons.Load and buttons.New and buttons.Delete and not buttons.Delete.disabled,
+        "the cogwheel: the profile's name, a checkbox per sound as the game has it now, then Save, Load, New and Delete")
+    local slider = { points = {} }
+    function slider:SetWidth(width) self.width = width end
+    function slider:ClearAllPoints() self.points = {} end
+    function slider:SetPoint(...) self.points[#self.points + 1] = { ... } end
+    function slider:Init(value, low, high, steps, labels) self.value, self.low, self.high, self.steps, self.labels = value, low, high, steps, labels end
+    function slider:RegisterCallback(_, fn, owner) self.fn, self.owner = fn, owner end
+    function slider:UnregisterCallback(_, owner) if self.owner == owner then self.fn, self.owner = nil, nil end end
+    local row = { fontString = { GetUnboundedStringWidth = function() return 40 end } }
+    function row:AttachTemplate(template) self.template = template return slider end
+    local width, height = rows.music.inits[1](row)
+    check(row.template == "MinimalSliderWithSteppersTemplate" and near(slider.value, 40) and slider.low == 0 and slider.high == 100
+        and slider.steps == Line.STEPS and slider.labels[3](40) == "40%" and width > 40 + slider.width and height == Line.ROW,
+        "each sound's slider at its right: its volume now, 0 to 100 % in the game's steps")
+    slider.fn(nil, 65)
+    rows.music.fn(rows.music.data)
+    W.Wait(0)
+    check(W.cvars.Sound_MusicVolume == "0.65" and W.cvars.Sound_EnableMusic == "1"
+        and profiles.label._text:find("Music off", 1, true) and profiles.label._text:find(Line.TEXT.changed, 1, true),
+        "moved and ticked: the game's sound at once; the line says the profile in use differs now")
+    check(buttons.Load.fn() == MenuResponse.Refresh and W.cvars.Sound_EnableMusic == "0" and W.cvars.Sound_MusicVolume == "0.4",
+        "Load: the profile set again, the menu stays open with its rows read anew")
+    W.Wait(0)
+    check(profiles.label._text == "Music off", "and the line names it plainly again")
+    slider.fn(nil, 20)
+    check(buttons.Save.fn() == MenuResponse.Refresh and not Audio.Changed(), "Save: the settings now kept in the profile")
+
+    buttons.New.fn()
+    local dialog = W.popups[#W.popups]
+    function dialog:IsShown() return not self.closed end
+    dialog.data.callback("Quiet raid")
+    W.Wait(0)
+    check(dialog.which == "GENERIC_INPUT_BOX" and Audio.Current() == "Quiet raid" and profiles.label._text == "Quiet raid",
+        "New: a name asked in the game's dialog; the new profile in use")
+    local page = Satchel.frame
+    local function Away() return false end
+    local pageMouse, buttonMouse = page.IsMouseOver, button.IsMouseOver
+    page.IsMouseOver, button.IsMouseOver = Away, Away
+    page._scripts.OnUpdate(page, Satchel.LEAVE * 4)
+    check(Satchel.Shown(), "while that dialog shows, the satchel stays open")
+    dialog.closed = true
+    page._scripts.OnUpdate(page, Satchel.LEAVE * 4)
+    page._scripts.OnUpdate(page, Satchel.LEAVE * 4)
+    check(not Satchel.Shown(), "closed: the mouse away, the satchel goes as ever")
+    page.IsMouseOver, button.IsMouseOver = pageMouse, buttonMouse
+
+    button._scripts.OnClick(button, "LeftButton")
+    cog:GenerateMenu()
+    for _, item in ipairs(cog._items) do if item.text == Line.TEXT.delete then buttons.Delete = item end end
+    buttons.Delete.fn()
+    dialog = W.popups[#W.popups]
+    check(dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Quiet raid", "Delete asks first, naming the profile")
+    dialog.data.callback()
+    W.Wait(0)
+    check(Audio.Current() == "All sound on" and profiles.label._text == "All sound on" and #Audio.Names() == 3,
+        "deleted: the first profile in use")
+    while #Audio.Names() > 1 do Audio.Delete() end
+    cog:GenerateMenu()
+    for _, item in ipairs(cog._items) do if item.text == Line.TEXT.delete then buttons.Delete = item end end
+    check(buttons.Delete.disabled, "the last profile: Delete is off")
+    Satchel.Close()
+
+    for _, name in ipairs(added) do W.cvarInfo[name], W.cvars[name] = nil, nil end
+    W.cvars.Sound_MusicVolume, W.cvars.Sound_EnableMusic = nil, nil
+    MinimalSliderWithSteppersMixin = nil
+    Core.Store(Core.name).audio = nil
+end)()
+
 -- The satchel's first section: the zone you are in, under it your times, the frame rate, the latency, new mail; the
 -- game's calendar (a secure button of ours clicks the game's own), clock and stopwatch.
 ;(function()

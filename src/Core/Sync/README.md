@@ -153,6 +153,11 @@ the game's own chat channels on every character is the Social module's.)
       kept until a layout is picked in this session: a character that does not have it does not give its
       own to the others at its logout, and the character that has it finds it again.
 - **Left out, and why:**
+  - The settings of Core's sound profiles (`Audio.lua`): the five sounds' switches and volumes (`Sound_EnableAllSound`,
+    `Sound_MasterVolume`, ... `Sound_AmbienceVolume`). The profiles keep them per game account and set them at each
+    login; a profile's Sync writing them 2 seconds later would undo that. `Sync.Leave(name)` hands a CVar to another
+    part of Sane UI: no part of Sync, nor a CVar kept by name, reads or writes it (`ReadCVars`, `Sync.SetCVar`). The
+    other sound settings (reverb, sound in the background, ...) stay in the part Audio.
   - The game's System pages Languages, Network and Mac: they belong to one computer or installation.
   - Edit Mode per specialization, screen-resolution settings, import and export.
   - The zone map's place, the damage meter's windows, chat tab protection: they write into the game's own
@@ -172,6 +177,8 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-04 — The sound profiles' CVars left to Core's `Audio.lua` (`Sync.Leave`): per game account, set at each
+  login, never written by a profile's Sync.
 - 2026-10-25 — Per game (Saneroki): what was read in one game is written only there (`from`), never Forever's
   settings into Retail.
 - 2026-10-17 — In the profile in use only (Saneroki): with *Accountwide settings* off Sync keeps, reads and writes nothing. The tab is *Game settings*; each profile keeps its own ticks. Written again when another profile comes into use (`moved`).

@@ -21,8 +21,10 @@ local _, ns = ...
 --                its own code: out of a fight only), Clock (the game's clock window: its alarm
 --                and settings; while the alarm sounds, a click stops it) and Stopwatch (the
 --                game's, on the screen), each ticked while open (Saneroki, 2026-10-25)
---      Sane UI   the quick switches Sane UI's modules offer (Core.Switches; Saneroki,
---                2026-10-26): Speed Leveling on or off. A click is the module's own
+--      Sane UI   first the line of Core's sound profiles (AudioLine.lua; Saneroki, 2026-11-04):
+--                Sound, the profile in use in a dropdown, a cogwheel with the game's sound
+--                settings; then the quick switches Sane UI's modules offer (Core.Switches;
+--                Saneroki, 2026-10-26): Speed Leveling on or off. A click is the module's own
 --      AddOns    only while there are any (Saneroki, 2026-10-26): the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
 --                title, A to Z, twice as large as the rest: its picture round,
@@ -91,7 +93,7 @@ Satchel.OPTIONAL = { "Banker", "Auctioneer", "Barber", "TrainerProfession", "Acc
                      "Transmogrifier", "Mailbox" }
 Satchel.TEXT = {
     title = Core.Word("MINIMAP_LABEL", "Minimap"),
-    tip = "Addons, pins and tracking",
+    tip = "Sound, addons, pins and tracking",
     addons = Core.Word("ADDONS", "AddOns"),
     pins = "Pins",
     tracking = Core.Word("TRACKING", "Tracking"),
@@ -647,9 +649,10 @@ local function Wheel(_, delta)
     Cover(CalendarCell())
 end
 
--- Whether the mouse is on the page or its button, or in a menu a cell opened (an addon's, a switch's: outside the page).
+-- Whether the mouse is on the page or its button, or in a menu a cell opened (an addon's, a switch's: outside the page),
+-- or a dialog of the sound line shows.
 local function Held()
-    return Core.Plain(panel:IsMouseOver()) or Core.Plain(button:IsMouseOver()) or Core.MenuOpen()
+    return Core.Plain(panel:IsMouseOver()) or Core.Plain(button:IsMouseOver()) or Core.MenuOpen() or ns.AudioLine.Held()
 end
 
 -- Whether the mouse has left: been on the page or its button since it opened, and off them for Satchel.LEAVE seconds.
@@ -705,11 +708,11 @@ end
 function Satchel.Fill()
     if not panel or not panel:IsShown() then return end
     -- Each: its title, what it holds, the line while it holds nothing, its pictures' size and its rows' height; the
-    -- zone's its colour, its boxes and its lines too.
+    -- zone's its colour, its boxes and its lines too; Sane UI's the sound line first.
     local zone, colour = Zone()
     local sections = {
         { zone, Tools(), nil, Satchel.ICON, Satchel.CELL[2], colour = colour, figures = Figures(), lines = Lines() },
-        { Satchel.TEXT.switches, Switches(), nil, Satchel.ICON, Satchel.CELL[2] },
+        { Satchel.TEXT.switches, Switches(), nil, Satchel.ICON, Satchel.CELL[2], audio = ns.AudioLine.Offered() },
         -- Only while other addons have buttons for it (Saneroki, 2026-10-26).
         { Satchel.TEXT.addons, ns.Strays.List(), nil, Satchel.ADDON[1], Satchel.ADDON[2] },
         { Satchel.TEXT.pins, Pins(), nil, Satchel.ICON, Satchel.CELL[2] },
@@ -721,10 +724,11 @@ function Satchel.Fill()
         head.rule:Hide()
         head.note:Hide()
     end
+    ns.AudioLine.Hide()
     local y, used, titled = 0, 0, 0
     for _, section in ipairs(sections) do
         local items, size, height = section[2], section[4], section[5]
-        if #items > 0 or section[3] or section.lines then
+        if #items > 0 or section[3] or section.lines or section.audio then
             if section.figures then
                 y = Boxes(section.figures, Title(section[1], section.colour))
             else
@@ -733,6 +737,7 @@ function Satchel.Fill()
                 y = y + Satchel.HEAD
             end
             if section.lines then y = Rows(section.lines, y) end
+            if section.audio then y = ns.AudioLine.Place(sheet, y) end
             if #items == 0 and section[3] then y = y + Satchel.NOTE end
             for index, item in ipairs(items) do
                 used = used + 1

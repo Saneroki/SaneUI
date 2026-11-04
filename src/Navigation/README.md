@@ -108,8 +108,15 @@ is small, and the maps of the dungeons and raids. The plan is in
     game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
     click stops it) and **Stopwatch** (on the screen), each ticked while open. The calendar opens out of a fight
     only, as the game opens it only so for an addon;
-  - **Sane UI:** the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the same as the box at
-    the foot of the bags; on is ticked, off is faint. Only while a module offers one;
+  - **Sane UI:** first the line **Sound:** with the sound profile in use in a dropdown and a cogwheel beside it
+    (Core's sound profiles: each game account keeps its own and sets its last one again at each login). The
+    dropdown lists the profiles, the one in use first; choosing one sets it at once. *(changed)* after its name:
+    the game's sound settings differ from it now. The cogwheel opens a menu with the game's sound settings: a
+    checkbox and a slider for each of *All sound*, *Music*, *SFX*, *Dialogue* and *Ambience*, working at once (the
+    profile keeps them only when saved), then **Save** (the settings now into the profile), **Load** (the profile
+    set again), **New** (a profile of the settings now, its name asked) and **Delete** (the profile in use, asked
+    first; not the last one). Then the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the
+    same as the box at the foot of the bags; on is ticked, off is faint;
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
     minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
     the golden ring round it, with its addon's name under it, its clicks and tooltip its addon's; and the addons the game's addon compartment lists
@@ -577,7 +584,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   minimap. The page is a frame of its own (strata `DIALOG`) in Core's journal (`Core.Journal.Dress`: paper, leather
   top, its X), beside the window toward the screen's middle, a scroll frame in it no higher than
   `Satchel.ROOM` of the screen. Its sections, each a title over a pencil rule (the zone's: none, `Title`) and a grid
-  of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (`Core.Switches`, the modules' quick switches as offered; a
+  of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (first the sound line, `AudioLine.Place`,
+  while the client has the game's sound settings, `AudioLine.Offered`; then `Core.Switches`, the modules' quick switches as offered; a
   click its module's `Click` with the mouse button and the cell; filled anew when `Core.OnSwitches` tells a change),
   *AddOns* (`Strays.List`, A to Z), *Pins* (`ns.KINDS` offered here, in the
   pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (`C_Minimap.GetTrackingInfo`, the
@@ -606,8 +614,17 @@ is small, and the maps of the dungeons and raids. The plan is in
   `TimeManager_TurnOffAlarm`); *Stopwatch* (`Stopwatch_Toggle`). The clock's and the stopwatch's cells only once
   the game has loaded its clock (never loaded by our code: that would taint it). The same `OnUpdate` closes the page
   each frame the mouse has left it (`Gone`): by `IsMouseOver`, not `OnLeave`, which also fires on the way into a cell
-  (`Held`: the page, its button, or a menu by `Core.MenuOpen`); only once the mouse has been on them since it opened,
-  and after `Satchel.LEAVE` seconds off them, so the way from the button to the page is free.
+  (`Held`: the page, its button, or a menu by `Core.MenuOpen`, or a dialog of the sound line, `AudioLine.Held`); only
+  once the mouse has been on them since it opened, and after `Satchel.LEAVE` seconds off them, so the way from the
+  button to the page is free.
+- **The sound line** (`AudioLine.lua`, over Core's `Core.Audio`): the word, a dropdown and a cogwheel, game
+  `DropdownButton`s in pencil boxes (`Journal.Box`) whose menus are the game's own (`SetupMenu`): the profiles as
+  radios, the one in use first (`Audio.Use`); the cogwheel's a title (the profile's name), a checkbox per sound this
+  client has (`Audio.Kinds`, `Audio.Set`) with the game's `MinimalSliderWithSteppersTemplate` lent to its row as in the
+  pin filter (0 to 100 % in `AudioLine.STEPS`, the game's 5 %), and the buttons Save and Load (the menu stays open,
+  its rows read anew: `MenuResponse.Refresh`), New (`Core.AskText`) and Delete (`Core.Confirm`; off for the last
+  profile). The gear is the game's silver atlas `GM-icon-settings` as it draws it, else the icon `INV_Misc_Gear_01`. The
+  dropdown's words follow `Audio.Watch`, *(changed)* while `Audio.Changed`.
 - **Following again:** the tracker follows again where `Again` says, never with a mouse button held. Where the game
   tells no place of the player (an instance) the small view does at once, ticked or not, so the game's minimap is the
   map there. Else only with *Follow me* ticked: the small view as soon as the player moved since the last look; the
@@ -900,7 +917,8 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
-| `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
+| `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
+| `AudioLine.lua` | The satchel's sound line: Core's sound profile in use in a dropdown, a cogwheel with the game's five sounds (checkbox and slider) and the profile's Save, Load, New and Delete |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
@@ -915,6 +933,12 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-04, sound profiles in the satchel:** Saneroki plays two clients of one installation at once and
+  wants to hear one, the other or neither, the recording keeping the chosen one's sound. The game keeps its sound
+  settings in one file for both, so the profiles are Core's, per game account, the last one set again at each
+  login (`Core.Audio`); the satchel's section *Sane UI* starts with their line, `Sound: <profile> <cogwheel>`
+  (`AudioLine.lua`), as asked: the profile in use first, the cogwheel with the game's five sounds and Save,
+  Load, New and Delete.
 - **2026-11-02, pins at the exact spawns of your quests' objectives:** Saneroki wanted the places themselves on the
   map, not only the question mark and the area, with no glow at rest; "when you mouse over a quest in the questlog it
   will make the map icons glow a little so you know which pins tie to which quests". Built from Core's *Quests*,

@@ -136,6 +136,9 @@ Sync\Addons.lua
 Sync\Keys.lua
 Sync\Chat.lua
 Sync\Game.lua
+# Sound profiles: the game's five sounds on or off with their volumes, under a name; each game account's last one set
+# again at its login (the game keeps them in one file for the whole installation). After Sync, which leaves them alone
+Audio.lua
 # Settings: the options, last: they show what everything above describes. The pages are put up
 # at login, their controls made when the options are first opened.
 Settings\Settings.lua

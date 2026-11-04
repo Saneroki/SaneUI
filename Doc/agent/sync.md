@@ -10,7 +10,7 @@
 | `Addons.lua` | The addons switched on (`addons`, 2026-10-30): read from `C_AddOns` for this character; written only for addons this client has, Sane UI itself never switched off; a /reload offered |
 | `Keys.lua` | The key bindings (`keyBindings`, 2026-10-30): every command of the game's list with its keys, other addons' too; written out of a fight into the binding set in use (`SaveBindings`); a command this client does not list keeps its keys |
 | `Chat.lua` | Own channels (`ownChannels`, registered before windows) and chat windows with places and chat colours (`chatFrames`) |
-| `Game.lua` | Page parts from `Sync.PAGES`; Graphics/Audio by console category; `perCharacter` (CVars stored per character, on no page); `Sync.SetCVar(name, value)`, every CVar write of Sync; `Sync.Lend`/`Return` |
+| `Game.lua` | Page parts from `Sync.PAGES`; Graphics/Audio by console category; `perCharacter` (CVars stored per character, on no page); `Sync.SetCVar(name, value)`, every CVar write of Sync; `Sync.Lend`/`Return`; `Sync.Leave` (the sound profiles' CVars, Core's `Audio.lua`: never read nor written) |
 
 ## Contracts
 

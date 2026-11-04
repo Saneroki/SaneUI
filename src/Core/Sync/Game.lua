@@ -62,10 +62,21 @@ end
 -------------------------------------------------------------------------------
 --  CVars by name
 -------------------------------------------------------------------------------
--- [name] = value of those of the list this client has (a lent one: the player's own, Sync.Value).
+-- CVars another part of Sane UI keeps its own way (Core's sound profiles, Audio.lua: per game account, set at each
+-- login): Sync neither reads nor writes them, whichever part or name holds them (Sync.Leave(name)).
+local left = {} -- [lower-case name] = true
+
+function Sync.Leave(name)
+    if type(name) == "string" then left[name:lower()] = true end
+end
+
+-- [name] = value of those of the list this client has (a lent one: the player's own, Sync.Value); none left to
+-- another part.
 local function ReadCVars(list)
     local values = {}
-    for _, name in ipairs(list) do values[name] = Sync.Value(name) end
+    for _, name in ipairs(list) do
+        if not left[name:lower()] then values[name] = Sync.Value(name) end
+    end
     return values
 end
 
@@ -125,9 +136,11 @@ end
 
 -- Sets a CVar this client has to a value (text) that differs, if the game lets us (Settable). One the game
 -- does not take (an error, or it holds its old value) is noted once, quietly, and left alone for the session.
--- True when it was set.
+-- One left to another part (Sync.Leave) is not set. True when it was set.
 function Sync.SetCVar(name, value)
-    if type(name) ~= "string" or type(value) ~= "string" or refused[name:lower()] then return false end
+    if type(name) ~= "string" or type(value) ~= "string" or refused[name:lower()] or left[name:lower()] then
+        return false
+    end
     local entry = lent[name:lower()]
     if entry then -- lent: what is written is the player's own value, for when it is given back
         entry.own = value

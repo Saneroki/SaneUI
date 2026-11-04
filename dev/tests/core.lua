@@ -1933,5 +1933,94 @@ do
     check(true, "a size beyond reason lays out without running on")
 end
 
+-------------------------------------------------------------------------------
+--  Sound profiles (Audio.lua): the game's five sounds under a name, the account's last one set again at each login
+-------------------------------------------------------------------------------
+do
+    local Audio = Core.Audio
+    W.cvarInfo, W.cvars = {}, {}
+    for _, kind in ipairs(Audio.KINDS) do
+        W.cvarInfo[kind.on] = { default = "1", category = 7 }
+        W.cvarInfo[kind.volume] = { default = "1", category = 7 }
+    end
+    W.cvars.Sound_MasterVolume, W.cvars.Sound_MusicVolume, W.cvars.Sound_AmbienceVolume = "0.6", "0.3", "0.25"
+    local store = Core.Store(Core.name)
+    store.audio = nil
+    local told = 0
+    Audio.Watch(function() told = told + 1 end)
+    local function Saved(name)
+        for _, profile in ipairs(store.audio.profiles) do if profile.name == name then return profile.sounds end end
+    end
+    check(table.concat(Audio.Names(), ", ") == "All sound on, Music off, Music and Ambience off"
+        and Audio.Current() == "All sound on" and #Audio.Kinds() == 5,
+        "an account without profiles gets the three first ones; the first is in use")
+    local both = Saved("Music and Ambience off")
+    check(both.music.on == false and both.ambience.on == false and both.all.on and both.sfx.on and both.dialog.on
+        and both.all.volume == 0.6 and both.music.volume == 0.3 and Saved("Music off").ambience.on
+        and Saved("All sound on").music.on, "each with every sound on but those its name says, at the game's volumes")
+
+    check(Audio.Use("Music off") and Audio.Current() == "Music off" and W.cvars.Sound_EnableMusic == "0"
+        and W.cvars.Sound_EnableAmbience == nil and W.cvars.Sound_MasterVolume == "0.6" and not Audio.Changed(),
+        "a profile chosen is set at once, only what differs; it is the account's then")
+    W.Wait(0)
+    check(told == 1, "and the views are told, once, on the next frame")
+    Audio.Set("sfx", nil, 0.421)
+    check(W.cvars.Sound_SFXVolume == "0.42" and Audio.Changed() and Saved("Music off").sfx.volume == 1,
+        "a slider moved: the game's volume (to the hundredth), not the profile's; the game's now differs from it")
+    Audio.Save()
+    check(not Audio.Changed() and Saved("Music off").sfx.volume == 0.42, "saved: the profile holds the game's now")
+    Audio.Set("music", true)
+    check(W.cvars.Sound_EnableMusic == "1" and Audio.Changed(), "a checkbox: the game's sound on, the profile still has it off")
+    Audio.Load()
+    check(W.cvars.Sound_EnableMusic == "0" and not Audio.Changed(), "loaded: the profile set again")
+    check(not Audio.Use("Nothing") and Audio.Current() == "Music off", "a name that is no profile changes nothing")
+
+    check(Audio.New("  Raid  ") and Audio.Current() == "Raid" and Saved("Raid").sfx.volume == 0.42
+        and Saved("Raid").music.on == false and #Audio.Names() == 4,
+        "New: a profile of the game's now, its name without spaces at its ends, in use")
+    local ok, why = Audio.New("raid")
+    check(not ok and why:find("raid") and #Audio.Names() == 4, "not a second one of the same name, in any case of letters")
+    ok, why = Audio.New("   ")
+    check(not ok and why == Audio.TEXT.empty, "nor one without a name")
+    check(Audio.New(("x"):rep(50)) and Audio.Current() == ("x"):rep(Audio.LETTERS), "a long name is cut")
+    check(Audio.Delete() and Audio.Current() == "All sound on" and W.cvars.Sound_EnableMusic == "1"
+        and #Audio.Names() == 4, "Delete: the profile in use gone, the first one in use and set")
+
+    -- The other client closed last and wrote its settings into the game's one file: this login sets this account's.
+    Audio.Use("Music off")
+    W.cvars.Sound_EnableAllSound, W.cvars.Sound_EnableMusic, W.cvars.Sound_SFXVolume = "0", "1", "0.9"
+    W.Fire("PLAYER_ENTERING_WORLD", false, true)
+    check(W.cvars.Sound_EnableAllSound == "0", "a /reload sets nothing: the client still holds its own")
+    W.Fire("PLAYER_ENTERING_WORLD", false, false)
+    check(W.cvars.Sound_EnableAllSound == "0", "nor another loading screen")
+    W.Fire("PLAYER_ENTERING_WORLD", true, false)
+    check(W.cvars.Sound_EnableAllSound == "1" and W.cvars.Sound_EnableMusic == "0" and W.cvars.Sound_SFXVolume == "0.42",
+        "a login: the account's profile set again, whatever the file held")
+
+    W.Wait(0)
+    told = 0
+    W.Fire("CVAR_UPDATE", "sound_musicvolume", "0.5")
+    W.Fire("CVAR_UPDATE", "Sound_EnableMusic", "1")
+    W.Fire("CVAR_UPDATE", "nameplateSize", "2")
+    W.Wait(0)
+    check(told == 1, "the game's options changing a profile's setting: the views told once; another CVar: not")
+
+    while #Audio.Names() > 1 do Audio.Delete() end
+    ok, why = Audio.Delete()
+    check(not ok and why == Audio.TEXT.last and #Audio.Names() == 1, "the last profile is not deleted")
+
+    -- Saved data of an older shape or edited by hand: what is spoiled is made right, not trusted.
+    store.audio = { profiles = { { name = " Odd ", sounds = { all = { on = "yes", volume = 3 }, music = { on = false, volume = 2 } } },
+        { name = "odd" }, "x", { name = "" } }, current = "Gone" }
+    check(table.concat(Audio.Names(), ", ") == "Odd" and Audio.Current() == "Odd" and Saved("Odd").all.on == true
+        and Saved("Odd").music.on == false and Saved("Odd").music.volume == 1 and Saved("Odd").sfx.volume == 0.42,
+        "spoiled profiles: a double and a nameless one dropped, a wrong sound the game's now, a volume at most 1")
+    W.cvarInfo.Sound_EnableAmbience, W.cvarInfo.Sound_AmbienceVolume = nil, nil
+    check(#Audio.Kinds() == 4 and Audio.Get("ambience") == nil and Audio.Use("Odd"),
+        "a client without one of the sounds: the others alone, nothing fails")
+    store.audio = nil
+    W.cvarInfo, W.cvars = {}, {}
+end
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Core: all %d checks passed.\n"):format(passed))

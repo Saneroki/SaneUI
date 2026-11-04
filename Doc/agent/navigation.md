@@ -18,7 +18,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    Atlas (`Painted.lua`: the module `SaneUI_Atlas`, loaded when first drawn); the map starts in the view that can be
    drawn here (`ns.FIRST`, `FirstView`, `Several`).
 3. The game's `Minimap` lies over our ground in the small view (`Hybrid.lua`), so its live dots stay; other addons'
-   minimap buttons are held for the satchel (`Strays.lua`, `Satchel.lua`); all given back exactly.
+   minimap buttons are held for the satchel (`Strays.lua`, `Satchel.lua`); all given back exactly. The satchel's
+   section Sane UI starts with the line of Core's sound profiles (`AudioLine.lua`, `Core.Audio`).
 4. Pins (`Pins.lua`, no frames; `PinView.lua` draws them): the game's answers (`Live.lua`) and Core's data
    (`Data.Map():On`: Spawns, Places, Travel; the sets Quests, NPCs, Objects), one per thing, the game's word wins;
    filtered by the setting `pins` (multi) and the pin filter. The kind `goal` (`Goals.lua`): the exact spawns of the
@@ -40,7 +41,7 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 
 The file list with a line each: `src/Navigation/README.md`, section *Files* (line 828). The groups: the window and its
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
-`Painted`, `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`); pins and marks
+`Painted`, `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`); the routes (`Walk`, `Gates`, `Search`, `Lifts`, `Planner`,
 `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
