@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Social: messages fade after 10 seconds, in and up in half a second (Saneroki, 2026-11-04)
+- **`src/Social/Social.lua`:** the tab Appearance's defaults: *Fade messages after* 10 seconds (was 60), *Fade-in time* 0.5 seconds (0.4), *Slide time* 0.5 seconds (0.3); `Layout.APPEAR` 0.5 with them. A new profile takes them; the profiles already saved were set to them by hand.
+- **`dev/tests/social.lua`:** the new defaults; the fading steps set a minute first, as they are timed for one. `src/Social/README.md`, `Doc/agent/social.md`. Card #342.
+
 ### Speed Leveling: a shield waits for a one-hander (Saneroki, 2026-11-04)
 Found planning the duo warrior's gear along the guide: the first Protection point at level 10 makes the warrior a shield build, the two-hander held counts as nothing, and the route's Crag Buckler (quest 938) comes before the Pruning Knife (923). *Equip upgrades* put the shield on, which took the two-hander off and left the main hand empty until the one-hander came.
 - **`src/SpeedLeveling/Errands.lua`:** nothing goes into the off hand while a two-hander is held; the item stays in the bags, still new, and goes on right after a one-hander does. Rewards and group rolls are unchanged (the shield is still the reward taken).

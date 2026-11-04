@@ -153,7 +153,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   at once, at your target if you have one, as typing it would. While chat is locked down (a fight, a
   dungeon) the list offers no emotes and says so: the game refuses them to an addon then.
 - **The newest message is at the bottom.** A few messages stand at the bottom of the window, not at its top.
-- **Messages fade out,** each by itself, 60 seconds after it came. Neither the mouse over the window nor
+- **Messages fade out,** each by itself, 10 seconds after it came. Neither the mouse over the window nor
   the line to write in brings them back: turn the mouse wheel over it and all of them fade back in to
   read. They fade out again once the mouse has left at the newest message (scrolled up, they stay). On
   the full screen every message stays.
@@ -192,11 +192,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     | Line | At first |
     | --- | --- |
     | [x] All animations and fades (off: nothing fades, slides or springs, every message stays, the window fills the screen at once; all below greyed out) | on |
-    | [x] Fade in, slider *Fade-in time* 0 to 2 seconds | on, 0.40 seconds |
+    | [x] Fade in, slider *Fade-in time* 0 to 2 seconds | on, 0.50 seconds |
     | [x] Fade out, slider *Fade-out time* 0 to 2 seconds (off: every message stays) | on, 1.00 seconds |
-    | Fade messages after, slider 5 to 300 seconds | 60 seconds |
+    | Fade messages after, slider 5 to 300 seconds | 10 seconds |
     | [ ] Opacity, slider 5 to 95 %: how visible a faded message stays | off, 30 % |
-    | [x] Slide up, slider *Slide time* 0 to 2 seconds | on, 0.30 seconds |
+    | [x] Slide up, slider *Slide time* 0 to 2 seconds | on, 0.50 seconds |
 
     A speed is the time a whole fade (out of sight to all there, or back) or a slide takes. A line under one
     that is off is greyed out.
@@ -501,7 +501,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   lays them out, and a fade kept on a row was cut off or begun anew by a new message, a scroll or a
   slide. `Fade.Alpha(entry, now)` follows from those four alone (eased on the game's curve `InOutQuadratic`,
   `Fade.CURVE`, through `Core.Motion.Ease`: slow at both ends); a fade that
-  turns back starts from where it is and takes only the time for the rest of the way. In 0.4 s
+  turns back starts from where it is and takes only the time for the rest of the way. In 0.5 s
   (`Layout.APPEAR`), out 1 s (`Layout.FADE`). A new message enters from nothing (`Fade.Enter`).
 - **Painting** (`Window` `Paint`): every row shows its message's alpha, when it is drawn (`DrawRow`)
   and every frame while one in view fades (`OnUpdate` on the window, removed once none does). No
@@ -518,8 +518,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Sliding** (`Window` `Slide`): when the messages move up at once (a new one at the newest, the line to
   write in opening or growing), the list's `ScrollTarget` slides (`Core.Motion.Slide`: two Translation
   animations together, as the game's own do: one of no time back down by the move, one of the slide time,
-  0.3 s at first, smoothed, up by it). A slide still going on adds what it had left (`GetSmoothProgress`). The list clips its children,
-  so a new row slides in from its bottom edge, fading in on its way (0.4 s, so most of it is seen). Wheel scrolling is the list's own interpolation
+  0.5 s at first, smoothed, up by it). A slide still going on adds what it had left (`GetSmoothProgress`). The list clips its children,
+  so a new row slides in from its bottom edge, fading in on its way (0.5 s, so most of it is seen). Wheel scrolling is the list's own interpolation
   (`SetInterpolateScroll` on list and scroll bar). The slide moves the list's content and touches no
   alpha; the fades touch no position: neither knows the other.
 - **The list of chats** (`Channels.lua`, no frames) is built when the label is clicked: `IsInGroup`,

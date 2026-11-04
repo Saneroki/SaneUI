@@ -71,7 +71,7 @@ Rows need height before creation: one invisible ruler measures wrapping, caches 
 and rendering uses that same width. Rewrap after resizing ends, not every drag tick. Bottom padding
 keeps newest messages low; following new messages stops when the user scrolls up.
 A fade is kept on the message (`Fade.lua`: from/to/since/span, `Fade.Alpha`) and drawn by an `OnUpdate` that
-runs only while a row fades; fade in 0.4 s, fade out 1 s (options, 0..2 s). Only the list's slide is an
+runs only while a row fades; fade in 0.5 s, fade out 1 s (options, 0..2 s). Only the list's slide is an
 animation group (`Core.Motion.Slide`). The mouse wheel or writing reveals messages, the mouse's coming does
 not (it only shows the button for the line); the window takes mouse motion only
 (clicks go through): `Core.Hover` starts at its `OnEnter` and looks every 0.2 s until the mouse has gone
@@ -96,7 +96,7 @@ Saved `modules.Social` (moved from `modules.Chat` once, Core `Saved.lua`): `opti
 `place={x,y,width,height,dock,full,native}` (`native` true exactly while `options.window` is off: `Window.Follow`); per character
 (`chars[key]`) `history`, `historyVersion`.
 Defaults: history on (100 messages kept); system/creature/addon messages on, channel joins off; fade on,
-after 60 s (5..300), out 1 s, in 0.4 s, floor off (30%); slide 0.3 s; text 14 (10..24); bubble
+after 10 s (5..300), out 1 s, in 0.5 s, floor off (30%); slide 0.5 s; text 14 (10..24); bubble
 transparency 50% (0..100), solid 26262B or a game tile; every game channel left to the game (no wish);
 short names on; **the game's chat is hidden while ours is open (`showNative` off by default; it keeps every line)**.
 `/sane social` (or `/sane chat`) and the key toggle; `reset` shows it and puts it back at its first place and size.

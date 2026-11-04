@@ -1047,7 +1047,8 @@ local function step(seconds)
 end
 local function seen(index) return rows[index]._alpha end
 local function entry(index) return box.provider.list[index] end
-check(options.fade == true and options.fadeAfter == 60, "fading is on at first, after 60 seconds")
+check(options.fade == true and options.fadeAfter == 10, "fading is on at first, after 10 seconds")
+Core.Set("Social", "fadeAfter", 60) -- the steps below are timed for a minute
 step(Layout.APPEAR) -- (the messages before are in)
 say("fresh")
 local last = #box.provider.list
@@ -1209,9 +1210,9 @@ local all, fadeIn, fadeOut = control("All animations and fades"), control("Fade 
 local fadeInSpeed, fadeOutSpeed = control("Fade-in time"), control("Fade-out time")
 local floor, floorValue = control("Faded messages stay visible"), control("Opacity of faded messages")
 local slides, slideTime = control("Slide up"), control("Slide time")
-check(all.setting:GetValue() == true and fadeIn.setting:GetValue() == true and fadeInSpeed.setting:GetValue() == 0.4 and fadeOutSpeed.setting:GetValue() == 1
-    and floor.setting:GetValue() == false and floorValue.setting:GetValue() == 30 and slides.setting:GetValue() == true and slideTime.setting:GetValue() == 0.3,
-    "all on at first: 0.4 seconds in, 1 out, faded messages gone (30 % when switched on), sliding in 0.3 seconds")
+check(all.setting:GetValue() == true and fadeIn.setting:GetValue() == true and fadeInSpeed.setting:GetValue() == 0.5 and fadeOutSpeed.setting:GetValue() == 1
+    and floor.setting:GetValue() == false and floorValue.setting:GetValue() == 30 and slides.setting:GetValue() == true and slideTime.setting:GetValue() == 0.5,
+    "all on at first: 0.5 seconds in, 1 out, faded messages gone (30 % when switched on), sliding in 0.5 seconds")
 check(fadeInSpeed.widget._points[1][2] == fadeIn.widget:GetParent() and fadeInSpeed.widget._points[1][5] == fadeIn.widget._points[1][5], "a speed on its switch's line, in the same box")
 fadeInSpeed.setting:SetValue(1)
 say("slowly in")
@@ -1223,7 +1224,7 @@ fadeIn.setting:SetValue(false)
 say("in at once")
 check(seen(#box.provider.list) == 1 and not floorValue.predicate(), "fading in off: a new message is there at once")
 fadeIn.setting:SetValue(true)
-fadeInSpeed.setting:SetValue(0.4)
+fadeInSpeed.setting:SetValue(0.5)
 fadeOutSpeed.setting:SetValue(0.5)
 floor.setting:SetValue(true)
 check(floorValue.predicate(), "the opacity switched on, its slider can be moved")
@@ -1232,7 +1233,7 @@ check(seen(last) == 0.3, "faded messages stay at the opacity set")
 floor.setting:SetValue(false)
 step(0.5)
 check(seen(last) == 0, "switched off, they go out of sight")
-check(slide.moves[2].duration == 0.3, "a slide takes its time")
+check(slide.moves[2].duration == 0.5, "a slide takes its time")
 slideTime.setting:SetValue(0.6)
 check(slide.moves[2].duration == 0.6, "and the time set")
 slides.setting:SetValue(false)
@@ -1253,7 +1254,7 @@ W.Wait(61)
 check(seen(#box.provider.list) == 1, "and still there when its time is over")
 all.setting:SetValue(true)
 fadeOutSpeed.setting:SetValue(1)
-slideTime.setting:SetValue(0.3)
+slideTime.setting:SetValue(0.5)
 step(1)
 
 -- The text's size
