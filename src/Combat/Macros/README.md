@@ -77,8 +77,10 @@ of your normal action bar buttons. The macros are your account's, on every chara
   holds is made when first shown. A hub is made only for a macro with a key or a place. `Editor.OpenGame` brings the game's
   (`window:Native(true)`, the full screen left first) and chooses a macro there by the game's own `ChangeTab` and
   `SelectMacro`, where the client has them; the list reads the game's macros again at `UPDATE_MACROS`.
-- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body)` makes a normal macro of macro text under that name,
-  once; one of that name already there is left as it is (a setup addon, a script).
+- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body)` makes a macro under that name, once: of macro
+  text a normal macro, of a table `{ top, fresh, steps = { step, ... } }` a macro of those steps, each step in the shape
+  `Book.lua` saves (`kind`, `what`, `unit`, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
+  (`Book.FromSteps`). One of that name already there is left as it is (a setup addon, a script).
 - **Standing down** (`Macros.GiveBack`, from Combat's): no key and no bar button of ours, the game's macro window back.
 - **Tried in the game:** one step a press, 5,000 attributes on one button, a button over a bar slot with paging and left
   and right click, on Retail. A plain macro stopped at its first `/cast` line on Retail 12.1.5, cast or refused, so a step should

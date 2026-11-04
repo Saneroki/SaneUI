@@ -153,6 +153,22 @@ function Book.FromGame(name, body)
     return macro
 end
 
+-- A macro of steps from other code (Macros.Add): { top, fresh, steps = { a step as above, ... } }, each step kept only in
+-- the shape read here, as one saved; a step that is no step is left out.
+function Book.FromSteps(name, spec)
+    local macro = Book.New(name)
+    macro.top = spec.top and true or nil
+    macro.fresh = spec.fresh ~= false
+    for _, given in ipairs(type(spec.steps) == "table" and spec.steps or {}) do
+        local copy = {}
+        if type(given) == "table" then
+            for key, value in pairs(given) do copy[key] = value end
+        end
+        macro.steps[#macro.steps + 1] = CleanStep(copy)
+    end
+    return macro
+end
+
 -- This character's key of a macro, or nil.
 function Book.KeyOf(macro)
     for key, id in pairs(Macros.own.keys) do

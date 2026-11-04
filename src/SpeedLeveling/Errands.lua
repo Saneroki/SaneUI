@@ -88,6 +88,19 @@ local function BagCount()
     return bags + (constants and constants.NumReagentBagSlots or 0)
 end
 
+-- Whether putting something on in this place would leave the main hand empty: the off hand while a two-hander is
+-- held (Saneroki, 2026-11-04: a shield build's shield took the two-hander off before any one-hander had come; it waits
+-- in the bags, still new, and goes on after the one-hander).
+local function EmptiesMainHand(place)
+    local offHand, mainHand = rawget(_G, "INVSLOT_OFFHAND"), rawget(_G, "INVSLOT_MAINHAND")
+    if not offHand or place ~= offHand then return false end
+    local held = Core.Ask(rawget(_G, "GetInventoryItemLink"), "player", mainHand)
+    local info = rawget(_G, "C_Item") and C_Item.GetItemInfoInstant
+    if type(held) ~= "string" or type(info) ~= "function" then return false end
+    local ok, _, _, _, where = pcall(info, held) -- its fourth answer: Core.Ask gives three
+    return ok and Core.Plain(where) == "INVTYPE_2HWEAPON"
+end
+
 -- The first new item in your bags that is an upgrade, and the place it goes.
 local function NewUpgrade()
     local bags, new = rawget(_G, "C_Container"), rawget(_G, "C_NewItems")
@@ -98,7 +111,7 @@ local function NewUpgrade()
                 local link = Core.Ask(bags.GetContainerItemLink, bag, slot)
                 if type(link) == "string" and not tried[link] then
                     local kind, _, place = Core.Upgrade(link)
-                    if kind then return link, place end
+                    if kind and not EmptiesMainHand(place) then return link, place end
                 end
             end
         end

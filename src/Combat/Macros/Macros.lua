@@ -190,13 +190,16 @@ end
 
 
 -- The way in for other code (SaneUI.Combat.Macros.Add, a setup addon or a script): a normal macro of macro text
--- under its name, made once; one of that name already there is left as it is. Returns the macro and whether it is new.
+-- under its name, or a macro of steps ({ top, fresh, steps }, as Book.FromSteps reads it; Saneroki, 2026-11-04: a
+-- setup addon's rotations), made once; one of that name already there is left as it is. Returns the macro and
+-- whether it is new.
 function Macros.Add(name, body)
-    if type(name) ~= "string" or name == "" or type(body) ~= "string" or not Macros.store then return nil end
+    if type(name) ~= "string" or name == "" or not Macros.store then return nil end
+    if type(body) ~= "string" and not (type(body) == "table" and type(body.steps) == "table") then return nil end
     for _, macro in ipairs(Macros.Book.All()) do
         if macro.name == name then return macro, false end
     end
-    local macro = Macros.Book.FromGame(name, body)
+    local macro = type(body) == "string" and Macros.Book.FromGame(name, body) or Macros.Book.FromSteps(name, body)
     ns.Safe("macros", Macros.Editor.Refresh)
     return macro, true
 end

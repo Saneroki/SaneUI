@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 83 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips' and Abilities' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Speed Leveling: a shield waits for a one-hander (Saneroki, 2026-11-04)
+Found planning the duo warrior's gear along the guide: the first Protection point at level 10 makes the warrior a shield build, the two-hander held counts as nothing, and the route's Crag Buckler (quest 938) comes before the Pruning Knife (923). *Equip upgrades* put the shield on, which took the two-hander off and left the main hand empty until the one-hander came.
+- **`src/SpeedLeveling/Errands.lua`:** nothing goes into the off hand while a two-hander is held; the item stays in the bags, still new, and goes on right after a one-hander does. Rewards and group rolls are unchanged (the shield is still the reward taken).
+- **`dev/tests/speedleveling.lua`:** a shield waits while a two-hander is held; the one-hander first, then the shield. `src/SpeedLeveling/README.md`, *Equip upgrades*.
+
+### Sane Macros: other code may add a macro of steps (Saneroki, 2026-11-04)
+For a setup addon's rotation macros: `SaneUI.Combat.Macros.Add(name, body)` took macro text only.
+- **`src/Combat/Macros/Macros.lua`:** `Add` takes macro text as before, or a table `{ top, fresh, steps }`; anything else is refused. A macro of that name already there is still left as it is.
+- **`src/Combat/Macros/Book.lua`:** `Book.FromSteps` makes the macro of such a table, each step copied and cleaned as a saved one is (kind, name, unit, conditions, how often at most 5); a step that is no step is left out.
+- **`dev/tests/macros.lua`:** a macro of steps through `Add`, its conditions kept, odd steps dropped, `often` capped, `top` and `fresh`. `src/Combat/Macros/README.md`, *The way in for other code*. Card #341.
+
 ### Inventory: a warrior on a shield build takes one-handers and shields (Saneroki, 2026-11-04)
 For Saneroki's duo warrior (Protection straight to Shield Slam at 40, then Fury), whose talents work only with a shield: `Core.Upgrade` weighed a two-hander against both hands by a weapon damage of 5 to 7, so a two-hander always won: the route's rewards would have been Heavehammer, Whirlwind Axe and Beastslayer.
 - **`src/Inventory/Weights.lua`:** a warrior's weights say `shield` on a shield build: the game's primary talent tree is Protection (`Weights.SHIELD`, `C_SpecializationInfo.GetSpecialization`, the tree WoW: Forever's own character sheet names), or a talent with a rank whose spell's tooltip asks for a shield in the game's words (`SPELL_EQUIPPED_ITEM` and its name for shields; the client's tables have Shield Slam, Bastion and Defiance so). Asked anew when the talents change (`TRAIT_CONFIG_UPDATED` too). In both games; druids and the other classes untouched.

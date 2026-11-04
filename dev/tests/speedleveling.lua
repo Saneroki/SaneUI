@@ -897,6 +897,31 @@ do
     W.Wait(ns.Errands.EQUIP)
     check(bagsAsked[5] and not bagsAsked[6], "and Retail's reagent bag")
     Constants.InventoryConstants = nil
+    -- A shield build's shield waits while a two-hander is held (it would leave the main hand empty), and goes on after
+    -- the one-hander does (Saneroki, 2026-11-04).
+    local kept = { rawget(_G, "INVSLOT_MAINHAND"), rawget(_G, "INVSLOT_OFFHAND"), rawget(_G, "GetInventoryItemLink"),
+                   C_Item.GetItemInfoInstant }
+    INVSLOT_MAINHAND, INVSLOT_OFFHAND = 16, 17
+    local hand = "item:20:staff"
+    GetInventoryItemLink = function(_, slot) return slot == 16 and hand or nil end
+    C_Item.GetItemInfoInstant = function(link)
+        return 1, nil, nil, link == "item:20:staff" and "INVTYPE_2HWEAPON" or "INVTYPE_WEAPON"
+    end
+    held[4], held[5], fresh[4], fresh[5] = "item:30:shield", "item:31:sword", true, true
+    gains["item:30:shield"] = 17
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(ns.Errands.EQUIP * 2)
+    check(#equipped == 2, "a shield waits while a two-hander is held")
+    gains["item:31:sword"] = 16
+    local put = C_Item.EquipItemByName
+    C_Item.EquipItemByName = function(link, place)
+        put(link, place)
+        if place == 16 then hand = link end
+    end
+    W.Fire("BAG_UPDATE_DELAYED")
+    W.Wait(ns.Errands.EQUIP * 3)
+    check(equipped[3] == "item:31:sword>16" and equipped[4] == "item:30:shield>17", "the one-hander first, then the shield")
+    INVSLOT_MAINHAND, INVSLOT_OFFHAND, GetInventoryItemLink, C_Item.GetItemInfoInstant = kept[1], kept[2], kept[3], kept[4]
     Core.Upgrade, C_Container, C_NewItems, C_Item.EquipItemByName = upgrade, container, new, nil
 end
 

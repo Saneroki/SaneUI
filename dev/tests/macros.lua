@@ -569,6 +569,23 @@ check(again == added and not newAgain and added.steps[1].what == "/sit", "one of
 check(Macros.Add("", "/sit") == nil and Macros.Add("Odd", nil) == nil, "nothing without a name and a text")
 Book.Delete(added)
 
+-- A macro of steps from other code (Saneroki, 2026-11-04: Launch Setup's rotations): conditions kept, a step that is
+-- no step left out, the order and the start after a fight as given.
+local rotation, newRotation = Macros.Add("Fight", { top = true, fresh = false, steps = {
+    { kind = "spell", what = "Shield Slam", when = { { word = "known", value = "Shield Slam" } } },
+    { kind = "spell", what = "Revenge", often = 9 },
+    { kind = "nonsense", what = "x" },
+    "not a step",
+    { kind = "text", what = "/cast [stance:2] Shield Block" } } })
+check(newRotation and rotation.top and rotation.fresh == false and #rotation.steps == 3, "a macro of steps, the odd ones left out")
+check(rotation.steps[1].when[1].word == "known" and rotation.steps[1].when[1].value == "Shield Slam", "a step's conditions kept")
+check(rotation.steps[2].often == Book.MOST_OFTEN and rotation.steps[3].kind == "text", "steps cleaned as saved ones are")
+check(Macros.Add("Odd", { top = true }) == nil, "a table without steps is no macro")
+local sequence = Macros.Add("Builder", { steps = { { kind = "spell", what = "Shred" } } })
+check(not sequence.top and sequence.fresh, "without top each press goes on; back to the start after a fight")
+Book.Delete(rotation)
+Book.Delete(sequence)
+
 -- The game's macros under ours, marked W (Saneroki, 2026-11-03): a click opens the game's window on it, a drag takes
 -- it up as the game's, a right click makes a Sane Macro of it.
 local opened, tabbed, pickedUp = 0, nil, nil
