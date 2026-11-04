@@ -106,12 +106,8 @@ end
 
 local GameClick
 
--- A macro's picture in the list: its first step switched on.
 local function Picture(macro)
-    for _, each in ipairs(macro.steps) do
-        if not each.off then return Macros.Press.Picture(each) end
-    end
-    return Macros.Press.ICON
+    return Macros.Press.MacroPicture(macro)
 end
 
 local function Short(key)
@@ -245,7 +241,7 @@ local function Lines()
 end
 
 local function Head()
-    picture.icon:SetTexture(Macros.Press.Picture(chosen.steps[1]))
+    picture.icon:SetTexture(Picture(chosen))
     if not name:HasFocus() then name:SetText(chosen.name) end
     keyButton:SetText(Macros.Book.KeyOf(chosen) or Macros.TEXT.keyNone)
     local place = Macros.Book.PlaceOf(chosen)
@@ -398,8 +394,8 @@ local function Order(root)
 end
 
 local function NewFromGame(index)
-    local title, _, body = Core.Ask(GetMacroInfo, index)
-    if title then Editor.Choose(Macros.Book.FromGame(title, body)) end
+    local title, icon, body = Core.Ask(GetMacroInfo, index)
+    if title then Editor.Choose(Macros.Book.FromGame(title, body, icon)) end
 end
 
 -- The game's macros, the account's then the character's, as lines of a menu.

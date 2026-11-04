@@ -35,7 +35,7 @@ local function PaintOne(face)
     local macro = face.macro
     local turn = macro and Macros.Press.Next(macro)
     local step = turn and turn.step or (macro and macro.steps[1])
-    face.icon:SetTexture(Macros.Press.Picture(step))
+    face.icon:SetTexture(Macros.Press.Picture(step, macro))
     local spell = step and Macros.Press.SpellOf(step)
     local dim = false
     if ns.options.macroDim and spell then

@@ -11,6 +11,7 @@ local Macros = ns.Macros
 --    top       true: every press starts at the top; else each press goes on
 --    fresh     back to the first step when a fight ends
 --    steps     its steps, in order
+--    icon      its own picture (a texture's path or number); nil: its steps' (Press.MacroPicture)
 --  A step:
 --    kind      "spell", "item" or "text"
 --    what      the spell's or item's name; the macro text
@@ -48,9 +49,18 @@ local function CleanStep(step)
     return step
 end
 
+-- A picture as kept: a texture's path or number, never the question mark (that is no picture of its own).
+function Book.Icon(picture)
+    if type(picture) == "string" and picture ~= "" and picture:lower() ~= Macros.Press.ICON:lower() then return picture end
+    if type(picture) == "number" and picture > 0 and picture ~= Book.QUESTION then return picture end
+    return nil
+end
+Book.QUESTION = 134400 -- the question mark's file number, the picture the game gives a macro without one
+
 local function CleanMacro(macro)
     if type(macro) ~= "table" or type(macro.id) ~= "number" then return nil end
     macro.name = type(macro.name) == "string" and macro.name or Macros.TEXT.firstName
+    macro.icon = Book.Icon(macro.icon)
     macro.top = macro.top and true or nil
     macro.fresh = macro.fresh ~= false
     local steps = {}
@@ -109,7 +119,7 @@ end
 -- A copy under a new name: plain data, step by step, with its own number.
 function Book.Copy(macro)
     local copy = Book.New(Macros.TEXT.copyOf:format(macro.name))
-    copy.top, copy.fresh = macro.top, macro.fresh
+    copy.top, copy.fresh, copy.icon = macro.top, macro.fresh, macro.icon
     for index, step in ipairs(macro.steps) do
         local new = Book.Step(step.kind, step.what, step.id)
         new.unit, new.often, new.off = step.unit, step.often, step.off
@@ -145,9 +155,10 @@ function Book.Move(macro, from, to)
     return true
 end
 
--- A macro of the game's, taken over as a step of macro text under its name.
-function Book.FromGame(name, body)
+-- A macro of the game's, taken over as a step of macro text under its name, with its picture.
+function Book.FromGame(name, body, icon)
     local macro = Book.New(name)
+    macro.icon = Book.Icon(icon)
     macro.top = true
     macro.steps[1] = Book.Step("text", body or "")
     return macro

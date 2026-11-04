@@ -81,7 +81,7 @@ Macros.TEXT = {
     placed = "On a bar",
     placedTip = "On %s, button %d. Click to choose another. Right click takes it off.",
     placeAsk = "Click the action bar button for %s. Esc or a right click cancels.",
-    picture = "The picture of the step that comes next. Drag it onto an action bar to place the macro.",
+    picture = "The macro's picture. Drag it onto an action bar to place the macro. There it shows the step that comes next.",
     bars = { "Bar 1", "Bar 2", "Bar 3", "Bar 4", "Bar 5", "Bar 6", "Bar 7", "Bar 8" },
 
     order = "Order",
@@ -194,15 +194,16 @@ end
 
 -- The way in for other code (SaneUI.Combat.Macros.Add, a setup addon or a script): a normal macro of macro text
 -- under its name, or a macro of steps ({ top, fresh, steps }, as Book.FromSteps reads it; Saneroki, 2026-11-04: a
--- setup addon's rotations), made once; one of that name already there is left as it is. Returns the macro and
--- whether it is new.
-function Macros.Add(name, body)
+-- setup addon's rotations), with its own picture where one is given (a texture's path or number), made once; one of
+-- that name already there is left as it is. Returns the macro and whether it is new.
+function Macros.Add(name, body, picture)
     if type(name) ~= "string" or name == "" or not Macros.store then return nil end
     if type(body) ~= "string" and not (type(body) == "table" and type(body.steps) == "table") then return nil end
     for _, macro in ipairs(Macros.Book.All()) do
         if macro.name == name then return macro, false end
     end
     local macro = type(body) == "string" and Macros.Book.FromGame(name, body) or Macros.Book.FromSteps(name, body)
+    macro.icon = Macros.Book.Icon(picture)
     ns.Safe("macros", Macros.Editor.Refresh)
     return macro, true
 end

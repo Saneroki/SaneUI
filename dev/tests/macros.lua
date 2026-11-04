@@ -426,6 +426,10 @@ check(header:GetAttribute("key1") == "3" and header:GetAttribute("key2") == "SHI
 check(Hit(face) == "/cast Slam", "a press there runs the macro")
 check(Press.Hub(keyed):GetAttribute("at") == 1, "with a single step the ring is round")
 check(face.icon:GetTexture() == 1000 + 1464, "the next step's picture")
+keyed.icon = "Interface\\Icons\\INV_Sword_04"
+Face.Paint()
+check(face.icon:GetTexture() == 1000 + 1464, "a step with a spell shows the spell's, the macro's own picture or not")
+keyed.icon = nil
 Face.Paint()
 check(face.cooldown._duration == "duration of Slam", "the swirl from the game's duration object")
 check(face.key:GetText() == "3", "the key shows")
@@ -578,12 +582,37 @@ local taken = Book.FromGame("Mount", "/use Horse")
 check(taken.top and taken.steps[1].kind == "text" and taken.steps[1].what == "/use Horse", "as macro text, from the top")
 Book.Delete(taken)
 
+-- A macro's own picture (Saneroki, 2026-11-04: "sensible usefull icons instead of all having the questionmark").
+local HORSE = "Interface\\Icons\\Ability_Mount_RidingHorse"
+taken = Book.FromGame("Mount", "/use Horse", 132261)
+check(taken.icon == 132261 and Press.MacroPicture(taken) == 132261, "a game's macro taken over keeps its picture")
+Book.Delete(taken)
+taken = Book.FromGame("Odd", "/say hi", Book.QUESTION)
+check(taken.icon == nil and Press.MacroPicture(taken) == Press.ICON, "the question mark is no picture of its own")
+check(Press.Picture(taken.steps[1], taken) == Press.ICON, "and the step's picture stays the question mark")
+taken.icon = HORSE
+check(Press.Picture(taken.steps[1], taken) == HORSE and Press.MacroPicture(taken) == HORSE,
+      "macro text with no spell shows the macro's picture, in the list and on its bar button")
+check(Press.Picture(keyed.steps[1], taken) == Press.Picture(keyed.steps[1]), "a step with a spell shows the spell's")
+local copied = Book.Copy(taken)
+check(copied.icon == HORSE, "a copy keeps it")
+Book.Delete(copied)
+taken.icon = { "odd" }
+Macros.Book.Clean()
+check(taken.icon == nil, "a picture that is none is dropped when the saved macros are read")
+Book.Delete(taken)
+
 -- The way in for other code: a macro of macro text by its name, made once.
 local added, new = Macros.Add("Sit", "/sit")
 check(new and added.top and added.steps[1].what == "/sit", "a macro added by its name")
 local again, newAgain = Macros.Add("Sit", "/stand")
 check(again == added and not newAgain and added.steps[1].what == "/sit", "one of that name is left as it is")
 check(Macros.Add("", "/sit") == nil and Macros.Add("Odd", nil) == nil, "nothing without a name and a text")
+Book.Delete(added)
+added = Macros.Add("Sit", "/sit", "Interface\\Icons\\INV_FISHINGCHAIR")
+check(added.icon == "Interface\\Icons\\INV_FISHINGCHAIR", "with the picture given")
+again = Macros.Add("Sit", "/stand", "Interface\\Icons\\Spell_Nature_Sleep")
+check(again == added and added.icon == "Interface\\Icons\\INV_FISHINGCHAIR", "one there keeps its own")
 Book.Delete(added)
 
 -- A macro of steps from other code (Saneroki, 2026-11-04: Launch Setup's rotations): conditions kept, a step that is

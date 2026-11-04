@@ -159,15 +159,31 @@ function Press.SpellOf(step)
     return nil
 end
 
--- A step's picture.
-function Press.Picture(step)
-    if not step then return Press.ICON end
+-- The picture of a step's spell or item, where the game gives one.
+local function Own(step)
+    if not step then return nil end
     if step.kind == "item" then
         local items = rawget(_G, "C_Item")
         local picture = items and step.id and Core.Ask(items.GetItemIconByID, step.id)
-        return picture or (items and Core.Ask(items.GetItemIconByID, step.what)) or Press.ICON
+        return picture or (items and Core.Ask(items.GetItemIconByID, step.what)) or nil
     end
     local spell = Press.SpellOf(step)
     local spells = rawget(_G, "C_Spell")
-    return spell and spells and Core.Ask(spells.GetSpellTexture, spell) or Press.ICON
+    return spell and spells and Core.Ask(spells.GetSpellTexture, spell) or nil
+end
+
+-- A step's picture; where it has none (macro text without /cast, a spell not known), the macro's own (macro given),
+-- else the question mark.
+function Press.Picture(step, macro)
+    return Own(step) or (macro and macro.icon) or Press.ICON
+end
+
+-- A macro's picture, in the list and its head (Saneroki, 2026-11-04: "sensible usefull icons instead of all having
+-- the questionmark"): its own, else that of its first step switched on.
+function Press.MacroPicture(macro)
+    if macro.icon then return macro.icon end
+    for _, step in ipairs(macro.steps) do
+        if not step.off then return Press.Picture(step) end
+    end
+    return Press.ICON
 end

@@ -17,8 +17,9 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **New macro:** *New* makes an empty one, or takes one over from the game's macros as macro text. *Copy*, *Delete*.
 - **The list** (Saneroki, 2026-11-04): as the game's macro window shows its macros, squares of their pictures with the names
   under them, yours first, the one chosen lit in gold; a key shows at the picture's corner as on a bar button, a red **!** where
-  the checks found something. A macro's picture is that of its first step switched on; macro text with no spell shows the
-  question mark.
+  the checks found something. A macro's picture is its own where it has one (Saneroki, 2026-11-04), else that of its first
+  step switched on; macro text with no spell shows the question mark. A game's macro taken over keeps its picture. On its bar
+  button the step that comes next shows, and the macro's own picture where that step has none (macro text, a spell not known).
 - **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, under their own line and marked with a gold **W**. A click opens it in the
   game's own macro window, on that macro; a drag puts it on an action bar as the game's macro; a right click makes a Sane
   Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *Sane UI*
@@ -85,7 +86,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
   holds is made when first shown. A hub is made only for a macro with a key or a place. `Editor.OpenGame` brings the game's
   (`window:Native(true)`, the full screen left first) and chooses a macro there by the game's own `ChangeTab` and
   `SelectMacro`, where the client has them; the list reads the game's macros again at `UPDATE_MACROS`.
-- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body)` makes a macro under that name, once: of macro
+- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body, picture)` makes a macro under that name, once, with that
+  picture where one is given (a texture's path or number; `Book.Icon` keeps no question mark): of macro
   text a normal macro, of a table `{ top, fresh, steps = { step, ... } }` a macro of those steps, each step in the shape
   `Book.lua` saves (`kind`, `what`, `unit`, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
   (`Book.FromSteps`). One of that name already there is left as it is (a setup addon, a script).
