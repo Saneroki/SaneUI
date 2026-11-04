@@ -30,13 +30,18 @@ local _, ns = ...
 --  up, the head and the icons over them. The game's map pin goes with the view
 --  (Pin.lua); the arrow is a part of its own (Arrow.lua). Both follow this view:
 --  shown with it, drawn anew with it.
---  A click on a step at hand skips it (one the game knows is done, or one you
---  looked back at, only goes on, back to your place); a right click goes back
---  one, your place kept; a right click on a listed step opens its menu (Go to
---  step, the guides); a right click on the zone opens the menu of the guides kept (choose the one to follow, Paste
---  a guide, the class quests you left brought back). Edit Mode moves its place
---  (Core.Window), a box of one size, at first at the screen's right, a little
---  down: the steps hang from its top or stand on its bottom, so that edge stays.
+--  A click on a step at hand pauses it (Saneroki, 2026-11-04): it stays, faint,
+--  the game's pause button by its number, and the guide goes on past it, the
+--  arrow, the map pin and the key by the next step; a click on it again takes it
+--  up, a step gone to. A right click skips it (one the game knows is done, or one
+--  you looked back at, only goes on, back to your place). Back to an earlier step:
+--  a double click on it in the list, or its menu, a right click on it there (Go to
+--  step, the guides). In the list a paused step bears the pause button for its
+--  number, and it and a step on hold are faint. A right click on the zone opens
+--  the menu of the guides kept (choose the one to follow, Paste a guide, the class
+--  quests you left brought back). Edit Mode moves its place (Core.Window), a box
+--  of one size, at first at the screen's right, a little down: the steps hang from
+--  its top or stand on its bottom, so that edge stays.
 --
 --      Steps.Update()   shown or hidden and drawn anew, as the switches and the guide are now
 --      Steps.Frame()    the view's frame while it is shown: the steps
@@ -66,10 +71,12 @@ Steps.CLOSE = 16      -- the cross that takes the list away, wide and high
 Steps.CROSS = "Interface\\RaidFrame\\ReadyCheck-NotReady" -- the game's ready check's red cross
 Steps.LINGER = 10     -- seconds without the mouse on the view before the steps come back
 Steps.DONE = 0.7      -- a thing done, so faint
+Steps.RESTING = 0.5   -- a paused step, so faint; in the list a step on hold too
 Steps.BESIDE = 8      -- between the step's number and the first words beside it
 Steps.MENU = 520      -- a group's menu of guides, high at most: a longer one scrolls
 Steps.FONT = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Fonts\\Expressway.ttf"
 Steps.TICK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t" -- the game's ready check's tick
+Steps.PAUSE = "|TInterface\\TimeManager\\PauseButton:12:12|t" -- the game's pause button (its stopwatch's)
 
 -- The fonts, by part: size in UI units.
 local FONTS = {
@@ -138,8 +145,9 @@ local function Card()
     card.label = Text(card, "label")
     card.label:SetJustifyH("RIGHT")
     card.texts, card.marks = {}, {}
+    -- A click pauses the step, or takes a paused one up again; a right click skips it (Saneroki, 2026-11-04).
     card:SetScript("OnClick", ns.Guard(function(self, button)
-        if button == "RightButton" then ns.Guide.Back() else ns.Guide.Skip(self.number) end
+        if button == "RightButton" then ns.Guide.Skip(self.number) else ns.Guide.Pause(self.number) end
     end))
     TakesWheel(card)
     return card
@@ -439,8 +447,10 @@ local function DrawCard(card, step, y, warn)
     card.number = step.number
     card.label:ClearAllPoints()
     card.label:SetPoint("TOPRIGHT", card, "TOPRIGHT", -P, -P)
-    card.label:SetText((step.chain or ns.TEXT.step:format(step.shown)) .. (step.done and (" " .. Steps.TICK) or ""))
+    card.label:SetText((step.chain or ns.TEXT.step:format(step.shown)) .. (step.done and (" " .. Steps.TICK) or "")
+                       .. (step.paused and (" " .. Steps.PAUSE) or ""))
     card.label:SetTextColor(unpack(SOFT))
+    card:SetAlpha(step.paused and Steps.RESTING or 1)
     -- The first words stand beside the number; a long name (a chain's) has the top to itself.
     local cy, beside = -P, inner - card.label:GetStringWidth() - Steps.BESIDE
     if beside < inner / 2 then cy, beside = cy - card.label:GetStringHeight() - 2, inner end
@@ -585,7 +595,7 @@ function Steps.Update()
 
     -- The list, as far as the wheel took it: a tick for the number of a step done, those at hand on their gold band.
     local here = {}
-    for _, step in ipairs(picture.hand) do here[step.number] = true end
+    for _, step in ipairs(picture.hand) do here[step.number] = not step.paused end
     local shown = browsing and math.min(Shows(), #list - top + 1) or 0
     local listTop = y
     if shown > 0 then y = y - Steps.LIST_PAD end
@@ -599,7 +609,7 @@ function Steps.Update()
         row:SetWidth(Steps.WIDTH)
         row.number:ClearAllPoints()
         row.number:SetPoint("TOPRIGHT", row, "TOPLEFT", Steps.NUMBERS - 6, -1)
-        row.number:SetText(line.done and Steps.TICK or line.shown)
+        row.number:SetText(line.done and Steps.TICK or line.paused and Steps.PAUSE or line.shown)
         row.number:SetTextColor(Steps.LIST * 0.85, Steps.LIST * 0.85, Steps.LIST * 0.85)
         row.text:ClearAllPoints()
         row.text:SetPoint("TOPLEFT", row, "TOPLEFT", Steps.NUMBERS, 0)
@@ -610,6 +620,7 @@ function Steps.Update()
         row.text:SetTextColor(light, light, light)
         row.band:SetShown(active)
         row.mark:SetShown(active)
+        row:SetAlpha((line.paused or line.onHold) and Steps.RESTING or 1)
         local height = row.text:GetStringHeight() + 3
         row:SetHeight(height)
         row:Show()

@@ -244,6 +244,25 @@ function Macros.Add(name, body, picture, owner)
     return macro, true
 end
 
+-- For other code too (Saneroki, 2026-11-04: a setup addon keeps a potion macro on the best potion held): the macro of
+-- that name and owner, as Add finds it, made anew from body (macro text, or { top, fresh, steps }); its number, picture,
+-- keys and places stay, its button takes it at once or at a fight's end. Whether there was one to change.
+function Macros.Set(name, body, owner)
+    if type(name) ~= "string" or not Macros.store then return false end
+    if type(body) ~= "string" and not (type(body) == "table" and type(body.steps) == "table") then return false end
+    local whose = {}
+    Macros.Book.SetOwner(whose, owner)
+    for _, macro in ipairs(Macros.Book.All()) do
+        if macro.name == name and macro.class == whose.class and macro.char == whose.char then
+            Macros.Book.Fill(macro, body)
+            Macros.Press.Update(macro)
+            ns.Safe("macros", Macros.Editor.Refresh)
+            return true
+        end
+    end
+    return false
+end
+
 -- For other code too (Saneroki, 2026-11-04: a setup addon puts the macros on his keys and changes them as spells are
 -- learned): the macro of that name this character uses (Book.Named) on a bar button, by its place ("MultiBar5Button4",
 -- "ActionButton1:1"), for this character; one button a macro, one macro a button. It stands there at once, or at a

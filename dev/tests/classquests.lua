@@ -356,6 +356,66 @@ Core.Set(ns.name, "classQuests", true)
 Check()
 check(Step() ~= nil, "on: back")
 
+-------------------------------------------------------------------------------
+--  Paused and taken up again (Saneroki, 2026-11-04)
+-------------------------------------------------------------------------------
+-- A click pauses the chain: its step stays in sight, marked, but the guide's step is the one at hand, the arrow, the key
+-- and the quest givers go by it, and what the guide does with the chain's quests waits with it.
+do
+    local PAUSED = ClassQuests.PAUSED
+    local PLACE = table.concat({ "#forever", "#name Paused", "#group G",
+        "step", L("place", "1411,70,70"), L("take", "1"),
+        "step", L("handin", "11"),
+        "step", L("take", "2") }, "\n")
+    local function Has(list, value)
+        for _, each in ipairs(list) do if each == value then return true end end
+        return false
+    end
+    Reset()
+    me.level = 10
+    Fresh(PLACE)
+    check(Run.Hand()[1] == STEP and Run.Target().x == 10 and Run.Quests().take[10], "the chain's step on top, the arrow to it")
+    Guide.Pause(STEP)
+    check(not Has(Run.Hand(), STEP) and Run.Hand()[1] == 1, "paused: the guide's step is the one at hand")
+    check(Run.Target() and Run.Target().x == 70, "the arrow and the map pin go to the guide's place")
+    check(not Run.Quests().take[10] and Run.Quests().take[1], "the quest givers by the guide alone")
+    local picture = Guide.Picture()
+    check(picture.hand[1].number == PAUSED and picture.hand[1].paused and picture.hand[1].chain == "Bear Form: 1 of 3"
+        and picture.hand[2].number == 1 and not picture.hand[2].paused, "its step still in sight, marked paused")
+    check(Run.OnHold(2) and Run.At() == 1, "the guide's step with the chain's quest waits with it")
+    check(Core.Character(ns.name).classPaused[1101] and ClassQuests.Left() == 0, "kept for the character, not left")
+    Fresh(PLACE)
+    check(Step() == nil and Guide.Picture().hand[1].number == PAUSED, "and over a /reload")
+    quests.on[10] = true
+    quests.objectives[10] = { { finished = false, numFulfilled = 0, numRequired = 1, text = "Lunaclaw defeated: 0/1", type = "monster" } }
+    Check()
+    check(Step() == nil and Words(PAUSED):find("Lunaclaw", 1, true) and Run.Hand()[1] == 1,
+        "its quest taken: still paused, not back on top by itself at its next part")
+    quests.on[10] = nil
+    Check()
+    me.level = 16
+    Check()
+    check(Words():find("Quest 40", 1, true) and Guide.Picture().hand[1].number == STEP
+        and Guide.Picture().hand[2].number == PAUSED, "the next chain that is due comes up meanwhile, over the paused one")
+    -- A click on it again: on top, before the chain that came up meanwhile; nothing waits any more.
+    Guide.Pause(PAUSED)
+    check(Words():find("Quest 10", 1, true) and Run.Hand()[1] == STEP and Run.Target().x == 10 and not Run.Guide().steps[PAUSED],
+        "a click again: on top again, the arrow to it")
+    check(not Run.OnHold(2) and not Core.Character(ns.name).classPaused[1101], "nothing of the guide waits any more")
+    -- A right click leaves the chain, paused or not.
+    Guide.Skip(STEP)
+    check(ClassQuests.Left() == 1 and Words():find("Quest 40", 1, true), "a right click leaves it; the next chain on top")
+    Guide.Pause(STEP)
+    check(Step() == nil and Words(PAUSED):find("Quest 40", 1, true), "that one paused")
+    Guide.Skip(PAUSED)
+    check(ClassQuests.Left() == 2 and not Run.Guide().steps[PAUSED] and not Core.Character(ns.name).classPaused[1104],
+        "a right click on a paused one leaves it too")
+    ClassQuests.Back()
+    Reset()
+    me.level = 10
+    Fresh()
+end
+
 -- Several givers: the one nearest you.
 do
     local distance = Run.Distance

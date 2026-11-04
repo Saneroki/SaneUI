@@ -6,7 +6,8 @@
 One key for questing, pressed again and again, and your leveling guide over the world, run by Sane UI itself. It
 needs no other addon: it reads leveling guides written as text (the guides that come for each game in its guide
 pack, the guides you bought, opened for your own account, and guides you paste) and runs them with an engine of its
-own. A right click on the guide's zone chooses the one to follow.
+own. A right click on the guide's zone chooses the one to follow. A click on a step pauses it (it stays in sight, the
+guide goes on with the next, and what depends on it waits), a click again takes it up, a right click skips it.
 
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
@@ -153,12 +154,16 @@ name for different characters stand apart, and the guide named next is the one f
     (what to do), its things to do, each with its count once, before its words (*2/4 Mottled Boar slain*, the game's
     tick once done), its other words a little smaller, *!* before a warning, *i* before the rest; what is done is a little
     faint.
+  - a step you paused (Saneroki, 2026-11-04) stays among them in the guide's order, the whole card faint and the game's
+    own pause button (its stopwatch's) after *Step 12*: it counts for nothing until you take it up again (*The mouse*).
+    Three at most, those nearest your place (`Run.PAUSED`); the rest of them are in the list.
 - **The list of steps** comes with the wheel, nothing stands under the steps at hand (Saneroki, 2026-10-31: "I need to
   focus on the steps"). A turn of the wheel anywhere over the view puts the list of the whole guide in their place, on the
   same shade, the step you are at in its middle (Saneroki, 2026-11-01): a line each with its number, those at hand white
   on a gold band with a gold line at its left, the rest a little grey, a tick for the number of a step done as the game
-  knows it, wherever it stands (*How a guide is run*). The wheel scrolls it a line at a time from the guide's first step
-  to its last (`Guide.Listed`, every step it can show). The steps come back at the red cross in the top right corner, or
+  knows it, wherever it stands (*How a guide is run*), the pause button for that of a step you paused, which is faint,
+  and so is a step on hold. The wheel scrolls it a line at a time from the guide's first step to its last
+  (`Guide.Listed`, every step it can show). The steps come back at the red cross in the top right corner, or
   after 10 seconds without the mouse on the view or a menu of a line open (`Steps.LINGER`).
 - **Names in colour,** as the guide's words mark them, in the game's own font colours: NPCs green, creatures red,
   things to loot light blue, things to pick up orange, things to buy light yellow, warnings gold.
@@ -175,11 +180,22 @@ name for different characters stand apart, and the guide named next is the one f
   or game) and its head with the mouse on it; a click on that line opens *Guides*.
 - **Paused** (*Your guide*): a line saying so, its head with the mouse on it; a click on the line goes on. Off: nothing
   is shown.
-- **The mouse:** a click on a step at hand skips it (one the game knows is done, or one you went back to, only goes
-  on), a right click goes back one step, your place kept. A double click on a listed step goes to it; a right click on
-  it opens its menu (*Go to step*, the guides);
-  a right click on the zone chooses the guide to follow: the guides for this character by group, each group a menu of
-  its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
+- **The mouse** (Saneroki, 2026-11-04: "leftclick will pause / resume the steps still showing them but ignores of the
+  process and rightclick skip them"):
+  - a click on a step at hand **pauses** it: it stays in sight, faint, but the guide goes on past it as past a done step
+    (it is not ticked), and the arrow, Navigation's route, the map pin, the guide's targets and things for the key and
+    Find, the quest givers, the icons and the Hearthstone go by the next step (what the key finds for the quests in
+    your log stays as ever). Kept for the character, over a `/reload` and the next
+    login. It stays until you take it up again, or until the game knows it is done (then it goes, as any done step).
+    What waits on it is on hold (*How a guide is run*);
+  - a click on a paused step **takes it up again** and goes to it: it is the step at hand, as a step you went back to;
+  - a **right click skips** a step at hand, paused or not (one the game knows is done, or one you went back to, only
+    goes on, back to your place), and ticks a thing marked to do by hand;
+  - **back to an earlier step:** a double click on it in the list (the wheel), or a right click on it there, *Go to
+    step*;
+  - a detour's step (*Professions along the way*) is left by either click;
+  - a right click on the zone chooses the guide to follow: the guides for this character by group, each group a menu of
+    its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
 ### The arrow
 A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide, at first where the travel overlay stands
@@ -221,8 +237,8 @@ where the guide put it; a pin of yours stays. A place the game takes no pin on (
 ### Professions along the way
 Your professions level up where the guide takes you anyway (Saneroki, 2026-10-29; as steps of the guide 2026-10-30; where
 the guide passes the nodes, detours and cloth 2026-10-31). All of it is worked out by itself, for any race and any
-professions: the steps are the same for every character, and each is passed by unless it is yours. A click skips any of
-them, the switch off takes them all away.
+professions: the steps are the same for every character, and each is passed by unless it is yours. A right click skips
+any of them, a click pauses it, the switch off takes them all away.
 
 **Mining and Herbalism, where it costs least** (`Gathering.lua`). As a guide is taken up (`Run.Use`, `Gathering.Weave`) it
 is walked once, with the guides after it (`Guide.After`, `Gathering.AHEAD`). A zone counts where the guide spends
@@ -317,8 +333,15 @@ Horde paladins' and Alliance shamans' too. Nothing is set up: the class, race, s
   shows from there on. So does what a guide further on your way does (`Guide.Later`, the guides its heads name, each
   text looked over by `Format.Quests`; Saneroki, 2026-11-04): a druid's Trial of the Sea Lion, taken at 16, waits for
   the guide that does it at 24 instead of pulling you off your way before.
-- **A click leaves the chain** for this character (`Core.Character`, its `classLeft`), and your guide goes on; take one
-  of its quests yourself and it is back; a right click on the zone brings back all you left. The switch *Class quests*.
+- **A click pauses the chain** (Saneroki, 2026-11-04: "I can put class quests to later to do them when I feel ready"):
+  its step stays in sight, faint, after the one that is due (`ClassQuests.PAUSED`), whatever part of the chain it comes
+  to, but the arrow, the map pin and the key go by your guide, the next chain that is due comes up meanwhile, and the
+  steps of your guide that have to do with its quests wait with it, on hold (*How a guide is run*; `ClassQuests.Holds`:
+  its quests from where it is, in your log too, until handed in). Kept per character and chain (`classPaused`). **A
+  click on it again** takes it up: on top again, before a chain that came up meanwhile.
+- **A right click leaves the chain** for this character (`Core.Character`, its `classLeft`), paused or not, and your
+  guide goes on; take one of its quests yourself and it is back; a right click on the zone brings back all you left. The
+  switch *Class quests*.
 
 Without Core's data (Retail, for now) there are none.
 
@@ -338,10 +361,10 @@ through `Lines.lua`:
   quest's items, a quest handed in, a level (or so many points short of one), a spell learnt, a skill reached, a
   zone or subzone reached, a place reached (when its line gives a reach), a home bound, a hearth, a flight path, a
   flight, a vendor's or trainer's window, the spirit healer, a spell cast, an aura, an item worn or thrown away; a
-  thing marked to do by hand only by a click. A step with nothing to do is done at once.
+  thing marked to do by hand only by a right click. A step with nothing to do is done at once.
 - **A step is passed by** while one of its tests says it is not for now: on a quest or not, a quest ready, handed in
   or open, money, an item count, a zone or subzone, a level, a cooldown, an aura, a skill, a group or solo, the level
-  it is over; or when it needs a step you skipped.
+  it is over; or while it is on hold (below).
 - **The steps at hand:** the one you are at, and before it a step that stays until done (`#sticky`), and one that
   goes along with the next step or up to a named one (`#completewith`). You go on past each step done, and past one
   that only goes along.
@@ -352,18 +375,34 @@ through `Lines.lua`:
   a thing to tick by hand, an item carried for no quest) it tells only as it happens, so such a step waits for you,
   until a step after it is known done by a quest line the guide had not asked before: you came that way, so the step
   lies behind you. A level or a spell proves no such thing (they can be had ahead of the guide), nor does a line the
-  guide asks a second time, nor a step that only goes along. A click still does any step by hand. A quest line the
+  guide asks a second time, nor a step that only goes along. A right click still does any step by hand. A quest line the
   guide marks to tick by hand counts as done once the game says its quest is handed in, so a place worked out again
   (a guide picked partway, a place the game did not save) goes past it.
 - **The ticks** are what the game knows, wherever a step stands: ahead of your place a step shows as done once every
   thing to do of it is done (or you skipped it; one with nothing to do is not done, only easy); behind your place it
   does unless the game says it is open (a quest you abandoned, a step you jumped over).
-- **Going back** (right click, *Go to step*, a double click on an earlier step) looks, and keeps your place: the step
+- **Going back** (*Go to step*, a double click on an earlier step in the list) looks, and keeps your place: the step
   is shown and held, the arrow and the key follow it, the head still says how far you are. Done as it is, it stays for
-  you to read; with something left, you can do it again. Once what was left is done, or a click goes on, you are back
-  at your place and on past whatever got done meanwhile; the click marks nothing on a step the game knows is done.
-  A `/reload` comes back to your place.
-- **Going to a step after your place** makes it your place; what you jumped over stays open.
+  you to read; with something left, you can do it again. Once what was left is done, or a click goes on (a click
+  pauses it again, a right click skips it), you are back at your place and on past whatever got done meanwhile; the
+  click marks nothing on a step the game knows is done. A `/reload` comes back to your place.
+- **Going to a step after your place** makes it your place; what you jumped over stays open. Going to a step you paused
+  or skipped takes it up again.
+- **Paused** (Saneroki, 2026-11-04; a click, *The mouse*): you are moved on past it as past a done step, it is no step
+  at hand (`Run.Hand`; the view's `Run.Shown` has it), and nothing that happens counts for it, until you take it up
+  again (`Run.Pause`, then as `Run.Go`) or the game knows it is done. Kept per character and guide (`paused`).
+- **On hold** (Saneroki, 2026-11-04: "if I pause the start of a class quest that all following steps that require the
+  start will also be skipped and the next step that is not depending on that step is resumed there"): what a step you
+  paused or skipped takes is on hold while it is not taken, with what a class chain you paused has still to do (*Class
+  quests*), and so, down the chain, is each quest your guide takes that Core's *Quests* says needs one of those done
+  first (its `requires`: one it needs done, or every one of those of which it needs one; not one it is closed by). A line
+  about a quest on hold (to take it, work on it, carry its items, hand it in) drops out of what its step asks; a step with
+  nothing else to do with quests is on hold itself, as is one that needs (`#requires`) a step you skipped or paused: it is
+  passed by, not done, not at hand, not shown, faint in the list. So the step at hand is the next one that does not
+  depend on it. Once the game knows a quest on hold is taken (you took it anyway), or the step that held it is taken up
+  again or done, what waited is free at once: the guide goes back to each step of it you were moved past, one by one as
+  each is done, your place kept (`parked`, per character and guide), and then on from your place. Without Core's data
+  (Retail, for now) only the quest itself and `#requires` count.
 - **The cost:** a check reads the step you are at, and only while the game cannot judge it the way ahead, a step at a
   time to the first one it can, at most `Run.PROOF` steps; the list asks only for the steps it shows. The whole guide
   is read only when it is picked or loaded.
@@ -439,7 +478,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Unlock.lua` | The import string of bought guides, opened for the account you play (`Unlock.Open`, over frames) |
 | `Format.lua` | A guide written as text read into our shape (`Format.Head`, `Format.Read`, `Format.For`, `Format.Plays`) |
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
-| `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, skip, back, go, the places, the quest givers' wants |
+| `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, pause, skip, back, go, what is on hold, the places, the quest givers' wants |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
 | `Gathering.lua` | The steps of your professions woven into the guide, where it passes the most nodes and before each harder zone (Core's *Objects* and *Spawns*) |
 | `Grind.lua` | Cloth: a step to kill on after the guide's humanoids, while it pays (Core's *Quests*, *NPCs*, *Drops*) |

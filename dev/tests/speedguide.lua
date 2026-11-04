@@ -3,7 +3,8 @@
 -- which games it is for), the import string of bought guides opened for the account (Unlock), the guide run (moving
 -- on past done steps, the steps at hand, skipping, going back and being held there, what the game tells as it
 -- happens, places, tests that pass a step by, the next guide), what the game knows done by itself (at a guide picked
--- partway, past steps it cannot judge, after a click back, your place kept), the guides kept (packed, chosen), the
+-- partway, past steps it cannot judge, after a click back, your place kept), steps paused and taken up again, skipped,
+-- and what waits on them on hold (down a quest chain by Core's requires), the guides kept (packed, chosen), the
 -- picture over the world (drawn, clicked, scrolled, hidden), the arrow (a facing the game hides), the icons (only what
 -- can be used; secure: held in a fight), what the game hides (secret values), and standing down.
 -- The guide format's own words come from Core (Core.Neighbours.KNOWN.guide): the test names none of its own.
@@ -144,7 +145,26 @@ local function Line(command, values, words, only)
 end
 local function Mark(mark, value) return "#" .. M[mark] .. (value and (" " .. value) or "") end
 
+-- Core's set Quests as the module reads it, with what a quest needs done first (requires) where the test says; the
+-- rest is Core's own.
+local requires = {}
+local realSet = Core.Data.Set
+Core.Data.Set = function(name)
+    local handle = realSet(name)
+    if name ~= "Quests" then return handle end
+    local proxy = setmetatable({}, { __index = function(_, key)
+        local value = handle[key]
+        if type(value) ~= "function" then return value end
+        return function(_, ...) return value(handle, ...) end
+    end })
+    function proxy:Get(key, field)
+        if field == "requires" then return requires[key] end
+        return handle:Get(key, field)
+    end
+    return proxy
+end
 local ns = W.LoadAddon(root, "SpeedLeveling", "SaneUI_SpeedLeveling")
+Core.Data.Set = realSet
 W.Fire("ADDON_LOADED", "SaneUI_SpeedLeveling")
 W.Fire("PLAYER_LOGIN")
 local Format, Run, Guide, Steps, Unlock = ns.Format, ns.Run, ns.Guide, ns.Steps, ns.Unlock
@@ -810,15 +830,15 @@ end)()
 pos.x, pos.y = 0.455, 0.622
 check(Run.Distance({ map = 1411, x = 45.5, y = 62.2 }) < 2, "the distance on a map, in yards")
 
--- Going to a step holds you there; a click skips it and moves on; a right click goes back.
+-- Going to a step holds you there; a skip (a right click) moves on; back one goes back.
 Run.Go(3)
 check(Run.At() == 3, "go to a step and be held there")
 local was = Run.At()
 Guide.Skip(3)
-check(Run.At() > was, "a click skips the step at hand and moves on")
+check(Run.At() > was, "a skip of the step at hand moves on")
 local after = Run.At()
 Guide.Back()
-check(Run.At() < after, "a right click goes back")
+check(Run.At() < after, "back one goes back")
 
 -- A test passes a step by: step 5 is skipped while not on quest 11, held once on it.
 Run.Go(5)
@@ -1109,6 +1129,190 @@ check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part fr
     local asks = Asks(Run.Check)
     check(Run.At() == 1 and asks <= Run.PROOF + 2, "a step it cannot judge: the way ahead read so far and no further: " .. asks)
     W.level = 5
+end)()
+
+-------------------------------------------------------------------------------
+--  Paused, skipped, and what waits on them on hold (Saneroki, 2026-11-04)
+-------------------------------------------------------------------------------
+;(function()
+    local function Follow(name, steps)
+        local text = { "#forever", "<< Horde", Mark("name", name), Mark("group", "Made Up") }
+        for _, lines in ipairs(steps) do
+            text[#text + 1] = "step"
+            for _, line in ipairs(lines) do text[#text + 1] = "    " .. line end
+        end
+        Guide.AddAll({ table.concat(text, "\n") })
+        local key = "Made Up\\" .. name .. " << Horde"
+        Guide.Choose(key)
+        check(Guide.Chosen() == key, "follows the made-up guide " .. name)
+        return key
+    end
+    -- A step's card in the view, drawn anew; a click on it.
+    local function Card(number)
+        Steps.Update()
+        for _, widget in ipairs(W.frames) do
+            if widget.number == number and widget.label and widget._shown then return widget end
+        end
+    end
+    local function Click(number, button)
+        local card = Card(number)
+        check(card ~= nil, "a card for step " .. number)
+        card._scripts.OnClick(card, button or "LeftButton")
+    end
+    local function Has(list, value)
+        for _, each in ipairs(list or {}) do if each == value then return true end end
+        return false
+    end
+    local take, hand = function(q) return Line("take", tostring(q)) end, function(q) return Line("handin", tostring(q)) end
+    local function Near(x) return Line("place", "1411," .. x .. "," .. x) end
+
+    -- A click pauses the step: still shown, but on past it as past a done one; the arrow, the key and the quest givers
+    -- by the next.
+    local key = Follow("Made Pause", {
+        { Near(20), take(1501), Line("friend", "Grull"), Line("use", "6948") }, -- 1
+        { Near(30), take(1502), Line("friend", "Brak") },   -- 2
+        { Near(40), take(1503) },                           -- 3
+        { take(1504) }, { take(1505) }, { take(1506) }, { take(1507) }, { take(1508) }, -- 4 to 8
+    })
+    check(Run.At() == 1 and Run.Target().x == 20, "at the first step, the arrow to it")
+    Click(1)
+    check(Run.At() == 2 and Run.Place() == 2 and not Has(Run.Hand(), 1), "a click pauses it: on past it, not at hand")
+    local picture = Guide.Picture()
+    check(picture.hand[1].number == 1 and picture.hand[1].paused and picture.hand[2].number == 2 and not picture.hand[2].paused,
+        "still shown, in the guide's order, marked paused")
+    check(Run.Target().x == 30, "the arrow and the map pin go by the next step")
+    local foes, friends = Guide.Targets()
+    check(Has(friends, "Brak") and not Has(friends, "Grull"), "and so does the key")
+    check(not Guide.Quests().take[1501] and Guide.Quests().take[1502], "and the quest givers")
+    check(not Has(Guide.Uses(), 6948), "and the items to use, the icons'")
+    check(not Run.Ticked(1) and Guide.Line(1).paused and not Guide.Line(1).done, "not done; marked so in the list too")
+    local card = Card(1)
+    check(card and card.label._text == ns.TEXT.step:format(1) .. " " .. Steps.PAUSE and card._alpha == Steps.RESTING,
+        "its card faint, the game's pause button by its number")
+    check(Card(2)._alpha == 1, "the next step's card as ever")
+    check(Core.Character(ns.name).paused[key][1], "kept for the character")
+    Run.Use(Run.Guide())
+    check(Run.At() == 2 and Run.Paused(1) and Guide.Picture().hand[1].paused, "and over a /reload")
+
+    -- A click on it again: taken up and gone to, your place kept; done, back to your place.
+    Click(1)
+    check(Run.At() == 1 and Run.Place() == 2 and not Run.Paused(1) and Run.Target().x == 20, "a click again: taken up, gone to")
+    foes, friends = Guide.Targets()
+    check(Has(friends, "Grull") and Guide.Quests().take[1501] and Has(Guide.Uses(), 6948),
+        "the key, the quest givers and the icons follow it")
+    check(Card(1)._alpha == 1 and Card(1).label._text == ns.TEXT.step:format(1), "its card as any step's")
+    quests.on[1501] = true
+    check(Run.Check() and Run.At() == 2 and Run.Place() == 2, "done: back to your place")
+
+    -- Paused, then done as the game knows it: it goes, as any done step.
+    Click(2)
+    check(Run.At() == 3 and Run.Paused(2), "paused")
+    quests.on[1502] = true
+    Run.Check()
+    check(not Run.Paused(2) and not Has(Run.Shown(), 2) and Run.Ticked(2), "done meanwhile: gone from sight, ticked")
+
+    -- A right click skips the step at hand.
+    Click(3, "RightButton")
+    check(Run.At() == 4 and Core.Character(ns.name).skipped[key][3] and not Has(Run.Shown(), 3), "a right click skips it")
+
+    -- No flood: of many paused, only those nearest your place are in sight; all are marked in the list.
+    for number = 4, 7 do Click(number) end
+    local shown = Run.Shown()
+    check(Run.At() == 8 and #shown == Run.PAUSED + 1 and shown[1] == 5 and shown[#shown] == 8 and not Has(shown, 4),
+        "four paused: the three nearest your place in sight, with the step at hand")
+    check(Guide.Line(4).paused, "the one out of sight still marked in the list")
+    -- The list: a paused step's number is the pause button, it is faint; a double click goes to it, taken up.
+    view._mouseOver = true
+    view._scripts.OnMouseWheel(view, -1)
+    local row
+    for _, widget in ipairs(W.frames) do
+        if widget.step == 4 and widget._shown then row = widget end
+    end
+    check(row and row.number._text == Steps.PAUSE and row._alpha == Steps.RESTING and not row.band._shown,
+        "in the list: the pause button for its number, faint, no gold band")
+    row._scripts.OnDoubleClick(row, "LeftButton")
+    check(Run.At() == 4 and Run.Place() == 8 and not Run.Paused(4), "a double click there goes to it, taken up")
+    view._mouseOver = false
+    Steps.Update()
+
+    -- What waits on a step paused or skipped is on hold: its quest and, down the chain, a quest that needs it done first
+    -- (Core's requires: one it needs, or each of those of which it needs one; not one it closes). Passed by, not done,
+    -- not at hand: the next step free of it is the one at hand. A step with a line free of it stays, asking that alone.
+    local function Chain(name, base)
+        requires[base + 2] = { { kind = "done", quest = base + 1 } }
+        requires[base + 3] = { { kind = "one", quest = base + 1 }, { kind = "one", quest = base + 99 } }
+        requires[base + 4] = { { kind = "closed", quest = base + 1 } }
+        local key = Follow(name, {
+            { Near(20), take(base + 1), Line("friend", "Giver") },        -- 1  paused or skipped
+            { Near(25), Line("goal", (base + 1) .. ",1"), Line("foe", "Wolf") }, -- 2  works on its quest: on hold
+            { Near(30), take(base + 20), Line("friend", "Free") },        -- 3  free of it
+            { hand(base + 1) },                                           -- 4  on hold
+            { take(base + 2) },                                           -- 5  needs it done first: on hold
+            { Line("goal", (base + 2) .. ",1") },                         -- 6  down the chain: on hold
+            { hand(base + 20), Line("goal", (base + 1) .. ",1") },        -- 7  a line free of it: stays
+            { take(base + 3), take(base + 4) },                           -- 8  one of two; one it closes: free
+        })
+        check(Run.At() == 1 and Run.Target().x == 20, "at the step that takes the chain's first quest")
+        return key
+    end
+    local base = 1600
+    key = Chain("Made Hold", base)
+    Click(1)
+    check(Run.At() == 3, "paused: on past it and past what works on its quest, to the next step free of it: " .. Run.At())
+    check(Run.OnHold(2) and Run.OnHold(4) and Run.OnHold(5) and Run.OnHold(6), "what waits on it is on hold, down the chain")
+    check(not Run.OnHold(1) and not Run.OnHold(3) and not Run.OnHold(7) and not Run.OnHold(8), "the rest is not")
+    check(Run.Target().x == 30 and not Has(Run.Shown(), 2), "the arrow to the free step; a step on hold is not in sight")
+    foes, friends = Guide.Targets()
+    check(Has(friends, "Free") and not Has(foes, "Wolf") and not Has(friends, "Giver"), "the key goes by it")
+    check(not Run.Ticked(2) and Guide.Line(2).onHold and not Guide.Line(2).done, "on hold: not done, marked in the list")
+    quests.on[base + 20] = true
+    check(Run.Check() and Run.At() == 7, "the free step done: on past those on hold, to one with a line free: " .. Run.At())
+    local seven = Guide.Picture().hand
+    seven = seven[#seven]
+    check(seven.number == 7 and #seven.lines == 1 and Run.Lines(7)[2].onHold, "it asks only the free line")
+    check(Guide.Quests().handin[base + 20] and not Guide.Quests().handin[base + 1], "the quest givers alike")
+    Run.Use(Run.Guide())
+    check(Run.At() == 7 and Run.OnHold(2) and Run.Paused(1), "all kept over a /reload")
+
+    -- Taken up again: gone to; once its quest is taken, the guide goes back to what waited on it, one by one, your place
+    -- kept, then back to your place.
+    Click(1)
+    check(Run.At() == 1 and Run.Place() == 7 and not Run.OnHold(2) and not Run.OnHold(5), "taken up: nothing waits any more")
+    quests.on[base + 1] = true
+    check(Run.Check() and Run.At() == 2 and Run.Place() == 7, "its quest taken: back to what works on it, your place kept")
+    foes = Guide.Targets()
+    check(Run.Target().x == 25 and Has(foes, "Wolf"), "the arrow and the key follow it")
+    quests.objectives[base + 1] = { { finished = true, numFulfilled = 1, numRequired = 1 } }
+    check(Run.Check() and Run.At() == 4, "done: on to the next that waited")
+    quests.on[base + 1], quests.done[base + 1] = nil, true
+    check(Run.Check() and Run.At() == 5, "and the next, down the chain")
+    quests.on[base + 2] = true
+    quests.objectives[base + 2] = { { finished = true, numFulfilled = 1, numRequired = 1 } }
+    check(Run.Check() and Run.At() == 7 and Run.Place() == 7 and #Guide.Picture().hand[1].lines == 2,
+        "all done: back at your place, the step asking both its lines again: " .. Run.At())
+
+    -- The quest taken anyway while its step is paused: what waited on it is free, the guide goes back to it.
+    base = 1700
+    key = Chain("Made Anyway", base)
+    Click(1)
+    check(Run.At() == 3 and Run.OnHold(2), "paused, what waits on it on hold")
+    quests.on[base + 1] = true
+    check(Run.Check() and Run.At() == 2 and Run.Place() == 3 and not Run.Paused(1) and not Has(Run.Shown(), 1),
+        "its quest taken anyway: the paused step done and gone, back to what waited")
+
+    -- A skip puts what waits on it on hold just the same; going to it again frees it.
+    base = 1800
+    key = Chain("Made Skip", base)
+    Click(1, "RightButton")
+    check(Run.At() == 3 and Run.OnHold(2) and Run.OnHold(5) and Run.OnHold(6) and not Run.OnHold(8),
+        "skipped: on hold alike, down the chain: " .. Run.At())
+    check(not Has(Run.Shown(), 1) and Guide.Quests().take[base + 2] == nil, "nothing of it in sight or for the quest givers")
+    Run.Go(1)
+    check(Run.At() == 1 and Run.Place() == 3 and not Run.OnHold(2), "gone to again: not skipped, nothing waits")
+    for number = base + 2, base + 4 do requires[number] = nil end
+    for _, number in ipairs({ 1600, 1700 }) do
+        for each = number + 2, number + 4 do requires[each] = nil end
+    end
 end)()
 
 -------------------------------------------------------------------------------

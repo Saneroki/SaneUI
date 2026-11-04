@@ -118,7 +118,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
   text a normal macro, of a table `{ top, fresh, steps = { step, ... } }` a macro of those steps, each step in the shape
   `Book.lua` saves (`kind`, `what`, `unit`, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
   (`Book.FromSteps`). `owner`: nil every character's, `"class"` this character's class's, `"character"` its own. One of that
-  name and owner already there is left as it is (a setup addon, a script). `Macros.PlaceOn(name, place)` puts the macro of
+  name and owner already there is left as it is (a setup addon, a script). `Macros.Set(name, body, owner)` makes that macro anew from a body as Add takes it, its number, picture, keys and places kept, its button taking it at once or after a fight (Saneroki, 2026-11-04: a potion macro kept on the best potion held). `Macros.PlaceOn(name, place)` puts the macro of
   that name this character uses (its own or its class's before a general one) on a bar button by its place
   (`"MultiBar5Button4"`, `"ActionButton1:1"`), `Macros.TakeOff(place)` takes it off, `Macros.On(place)` names the one there
   (Saneroki, 2026-11-04: a setup addon puts his macros on his keys and changes them as spells are learned).

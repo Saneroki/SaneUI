@@ -11,14 +11,15 @@ local _, ns = ...
 --
 --      Guide.Picture()    nil (no guide), or { title, levels, at, place, total, hand = { step } }: at: the step shown,
 --                         place: your place in the guide as it is numbered for you (they differ while you look back)
---                         step = { number, shown, chain, done, lines = { { text, done, have, need, count } } }
+--                         step = { number, shown, chain, done, paused, lines = { { text, done, have, need, count } } }
 --                         (shown: the number to show; chain: a class quest's name and how far, in place of its number;
---                         text in our colours; count: a thing to do, its have and need when it has a number)
+--                         paused: shown, but the guide goes by the others (Run.Shown); text in our colours; count: a
+--                         thing to do, its have and need when it has a number; a line on hold left out)
 --      Guide.Listed()     every step of the guide the list shows, in order, by number, and where in that the step you
 --                         are at stands
---      Guide.Line(number) a listed step as the list says it: { number, shown, text, done } (done: Run.Ticked, as the
---                         game knows it)
---      Guide.Skip(number), Guide.Back(), Guide.Go(number)
+--      Guide.Line(number) a listed step as the list says it: { number, shown, text, done, paused, onHold } (done:
+--                         Run.Ticked, as the game knows it)
+--      Guide.Pause(number), Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
 --      Guide.Things()     the things of the world the steps at hand name to pick up or use (names)
 --      Guide.UseOn()      the items the steps at hand name to use, with their lines' words: { { item, words } }
@@ -163,7 +164,7 @@ local function OurLines(index)
     local lines = {}
     for _, state in ipairs(ns.Run.Lines(index)) do
         local line = state.line
-        local words = ns.Run.Words(line)
+        local words = not state.onHold and ns.Run.Words(line)
         if words and (line.what ~= "place" or line.words) then
             lines[#lines + 1] = { text = Paint(words), done = state.done, count = ns.Format.DOING[line.what] or false,
                                   have = state.have, need = state.need, what = line.what,
@@ -187,9 +188,10 @@ function Guide.Picture()
     local picture = { title = title, levels = levels, at = math.min(ns.Run.At(), #guide.steps),
                       place = Shown(guide, math.min(ns.Run.Place(), #guide.steps)), total = guide.total or #guide.steps,
                       hand = {} }
-    for _, index in ipairs(ns.Run.Hand()) do
+    for _, index in ipairs(ns.Run.Shown()) do
         picture.hand[#picture.hand + 1] = { number = index, shown = Shown(guide, index), chain = guide.steps[index].chain,
-                                            done = ns.Run.Ticked(index), lines = OurLines(index) }
+                                            done = ns.Run.Ticked(index), paused = ns.Run.Paused(index),
+                                            lines = OurLines(index) }
     end
     return picture
 end
@@ -218,7 +220,7 @@ end
 function Guide.Line(number)
     local lines = OurLines(number)
     return { number = number, shown = Shown(ns.Run.Guide(), number), text = lines[1] and lines[1].text or "",
-             done = ns.Run.Ticked(number) }
+             done = ns.Run.Ticked(number), paused = ns.Run.Paused(number), onHold = ns.Run.OnHold(number) }
 end
 
 -- What a step asks you to do, in our words for the arrow's picture: "take", "handin" (a quest), "talk", "buy",
@@ -275,9 +277,15 @@ function Guide.Back()
     Changed()
 end
 
--- A step at hand skipped: it counts as done, whichever of the steps at hand it is.
+-- A step at hand skipped (a right click): it counts as done, whichever of the steps at hand it is.
 function Guide.Skip(number)
     ns.Run.Skip(number)
+    Changed()
+end
+
+-- A step at hand paused (a click), or a paused one taken up again (Saneroki, 2026-11-04).
+function Guide.Pause(number)
+    ns.Run.Pause(number)
     Changed()
 end
 
@@ -315,7 +323,7 @@ function Guide.Things()
     for _, index in ipairs(ns.Run.Hand()) do
         for _, name in ipairs(steps[index].things or EMPTY) do names[#names + 1] = name end
         for _, state in ipairs(ns.Run.Lines(index)) do
-            if not state.done then Picked(ns.Run.Words(state.line), names) end
+            if not (state.done or state.onHold) then Picked(ns.Run.Words(state.line), names) end
         end
     end
     return names

@@ -221,10 +221,20 @@ end
 -- A macro of steps from other code (Macros.Add): { top, fresh, steps = { a step as above, ... } }, each step kept only in
 -- the shape read here, as one saved; a step that is no step is left out.
 function Book.FromSteps(name, spec)
-    local macro = Book.New(name)
-    macro.top = spec.top and true or nil
-    macro.fresh = spec.fresh ~= false
-    for _, given in ipairs(type(spec.steps) == "table" and spec.steps or {}) do
+    return Book.Fill(Book.New(name), spec)
+end
+
+-- A macro's steps made anew (Macros.Set): of macro text one step of it, from the top; of { top, fresh, steps } those
+-- steps, as FromSteps takes them. Its number, name, picture and whose it is stay.
+function Book.Fill(macro, body)
+    if type(body) == "string" then
+        macro.top, macro.fresh, macro.steps = true, true, { Book.Step("text", body) }
+        return macro
+    end
+    macro.top = body.top and true or nil
+    macro.fresh = body.fresh ~= false
+    macro.steps = {}
+    for _, given in ipairs(type(body.steps) == "table" and body.steps or {}) do
         local copy = {}
         if type(given) == "table" then
             for key, value in pairs(given) do copy[key] = value end

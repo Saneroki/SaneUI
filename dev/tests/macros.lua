@@ -697,6 +697,28 @@ check(not sequence.top and sequence.fresh, "without top each press goes on; back
 Book.Delete(rotation)
 Book.Delete(sequence)
 
+-- A macro made anew by other code (Saneroki, 2026-11-04: a potion macro kept on the best potion held): the same macro,
+-- its number, picture and place kept, its button taking the new steps.
+do
+    state["bar:1"] = true
+    local potion = Macros.Add("HP Potion", "/use Minor Healing Potion", "Interface\\Icons\\INV_Potion_51")
+    Reach.SetPlace(potion, "ActionButton3:1")
+    local id = potion.id
+    check(Macros.Set("HP Potion", { top = true, steps = { { kind = "item", what = "Healing Potion", id = 929 } } }),
+        "a macro there made anew")
+    check(potion.id == id and potion.icon == "Interface\\Icons\\INV_Potion_51" and #potion.steps == 1
+        and potion.steps[1].kind == "item" and potion.steps[1].id == 929 and Book.PlaceOf(potion) == "ActionButton3:1",
+        "its number, picture and place kept, its steps the new ones")
+    check(Hit(Press.Hub(potion)) == "/use item:929" or Hit(Press.Hub(potion)):find("Healing Potion", 1, true),
+        "its button presses the new step: " .. tostring(Press.Hub(potion):GetAttribute("macrotext")))
+    check(Macros.Set("HP Potion", "/use Lesser Healing Potion") and potion.steps[1].kind == "text" and potion.top,
+        "or of macro text, one step from the top")
+    check(not Macros.Set("No such", "/sit") and not Macros.Set("HP Potion", nil), "none of that name, or no body: nothing")
+    Reach.TakePlace(potion)
+    Book.Delete(potion)
+    state["bar:1"] = nil
+end
+
 -- The game's macros under ours, marked W (Saneroki, 2026-11-03): a click opens the game's window on it, a drag takes
 -- it up as the game's, a right click makes a Sane Macro of it.
 local opened, tabbed, pickedUp = 0, nil, nil

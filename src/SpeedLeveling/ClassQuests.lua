@@ -22,14 +22,23 @@ local _, ns = ...
 --  now and finished levels later waits for that guide, off your way no sooner.
 --  A chain it leaves open meanwhile waits, and the next one that is due comes up.
 --
---  A click on the step leaves the chain for this character: its quests are yours
---  to take or not, and if you take one, it comes back. ClassQuests.Back() brings back
---  every chain you left. Without Core's data (Retail, for now) there are no chains.
+--  A click on the step pauses its chain for this character (Saneroki, 2026-11-04:
+--  "I can put class quests to later to do them when I feel ready"): its step stays
+--  in sight, at ClassQuests.PAUSED, but the arrow, the map pin and the key go by
+--  your guide, the next chain that is due comes up meanwhile, and what of your
+--  guide has to do with its quests waits with it (ClassQuests.Holds, Run.lua). A
+--  click on it again takes the chain up: on top again. A right click leaves the
+--  chain: its quests are yours to take or not, and if you take one, it comes back.
+--  ClassQuests.Back() brings back every chain you left. Without Core's data (Retail,
+--  for now) there are no chains.
 --
 --      ClassQuests.Use(guide)    the chains of this character, for a guide just taken up
---      ClassQuests.Check()       the step anew, as the game says now: true when it changed
+--      ClassQuests.Check()       the steps anew, as the game says now: true when one changed
 --      ClassQuests.Hand()        the step that is due: { ClassQuests.STEP } or nothing
---      ClassQuests.Leave()       leaves the chain of the step that is due
+--      ClassQuests.Shelved()     that of a chain you paused: { ClassQuests.PAUSED } or nothing
+--      ClassQuests.Pause(index)  the chain of that step paused, or a paused one taken up again
+--      ClassQuests.Leave(index)  leaves the chain of that step (the one that is due without one)
+--      ClassQuests.Holds(hold)   the quests of the chains you paused put on hold: hold[quest] = true
 --      ClassQuests.Left(), ClassQuests.Back()   how many chains were left; all brought back
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -37,7 +46,8 @@ local Plain = Core.Plain
 local ClassQuests = {}
 ns.ClassQuests = ClassQuests
 
-ClassQuests.STEP = -1 -- where the step stands in guide.steps: outside the guide's own numbers
+ClassQuests.STEP = -1   -- where the step stands in guide.steps: outside the guide's own numbers
+ClassQuests.PAUSED = -3 -- and that of a chain you paused (Detours.STEP is -2)
 
 local Lines = ns.Lines
 local CHAINS, QUESTS, SPAWNS, OBJECTS, DROPS = Core.Data.Set("ClassQuests"), Core.Data.Set("Quests"),
@@ -46,15 +56,18 @@ local EMPTY = {}
 local TAKE, WORK, HANDIN = "take", "work", "handin" -- how far a quest is
 
 local guide     -- the guide run
-local chains    -- this character's, the lowest level first: { key, name, level, quests, also }
+local chains    -- this character's, the lowest level first (one taken up again first): { key, name, level, quests, also }
 local asked     -- what the guide does itself: { take = { [quest] = true }, handin = { [quest] = true } }
 local later     -- what the guides after it do, the same way
-local due       -- the step that is due: its chain, quest and stage; nil for none
+local due = {}  -- [ClassQuests.STEP] the step that is due, [ClassQuests.PAUSED] that of a chain you paused: its chain,
+                -- quest and stage
 
-local function Notes()
+-- This character's notes of the chains: "classLeft" or "classPaused". [chain's key] = true
+local function Notes(kind)
     local notes = Core.Character(ns.name)
-    if type(notes.classLeft) ~= "table" then notes.classLeft = {} end
-    return notes.classLeft
+    kind = kind or "classLeft"
+    if type(notes[kind]) ~= "table" then notes[kind] = {} end
+    return notes[kind]
 end
 
 local function Side()
@@ -103,8 +116,8 @@ local function Asked(steps)
 end
 
 function ClassQuests.Use(read)
-    guide, due = read, nil
-    if guide then guide.steps[ClassQuests.STEP] = nil end
+    guide, due = read, {}
+    if guide then guide.steps[ClassQuests.STEP], guide.steps[ClassQuests.PAUSED] = nil, nil end
     chains = guide and Mine() or nil
     asked = guide and Asked(guide.steps) or nil
     later = guide and ns.Guide and ns.Guide.Later and ns.Guide.Later(guide) or { take = {}, handin = {} }
@@ -165,11 +178,11 @@ local function Gone(chain)
     return true
 end
 
--- The step that is due: the first chain, by level, with a step for you now.
-local function Due()
+-- The step that is due: the first chain, by level, with a step for you now; paused: of the chains you paused.
+local function Due(paused)
     if not (chains and ns.options.classQuests) then return nil end
     for _, chain in ipairs(chains) do
-        if not Gone(chain) then
+        if not Gone(chain) and (Notes("classPaused")[chain.key] == true) == paused then
             local number, stage = Stage(chain)
             local quest = number and QuestOf(chain, number)
             if quest and Allowed(chain, quest) and not Guides(quest, stage) then return chain, number, quest, stage end
@@ -312,9 +325,9 @@ local function Near(record)
     return giver and Spot("npc:" .. giver.npc) or nil
 end
 
-local function Build(chain, number, quest, stage)
+local function Build(slot, chain, number, quest, stage)
     local record = QUESTS:Get(quest) or EMPTY
-    due = { key = chain.key, quest = quest, stage = stage }
+    due[slot] = { key = chain.key, quest = quest, stage = stage }
     local step = { lines = {}, chain = ns.TEXT.classStep:format(chain.name, number, #chain.quests) }
     local near = Near(record)
     if stage == TAKE then
@@ -324,28 +337,75 @@ local function Build(chain, number, quest, stage)
     else
         HandIn(step, record, quest, near, chain.quests[number + 1])
     end
-    guide.steps[ClassQuests.STEP] = step
+    guide.steps[slot] = step
+end
+
+-- The step of a slot (ClassQuests.STEP, PAUSED) anew, as the game says now: true when it changed.
+local function Fill(slot)
+    local chain, number, quest, stage = Due(slot == ClassQuests.PAUSED)
+    local had = due[slot]
+    if not chain then
+        due[slot], guide.steps[slot] = nil, nil
+        return had ~= nil
+    end
+    if had and had.key == chain.key and had.quest == quest and had.stage == stage then return false end
+    Build(slot, chain, number, quest, stage)
+    return true
 end
 
 function ClassQuests.Check()
     if not guide then return false end
-    local chain, number, quest, stage = Due()
-    if not chain then
-        local had = due ~= nil
-        due, guide.steps[ClassQuests.STEP] = nil, nil
-        return had
-    end
-    if due and due.key == chain.key and due.quest == quest and due.stage == stage then return false end
-    Build(chain, number, quest, stage)
-    return true
+    local changed = Fill(ClassQuests.STEP)
+    return Fill(ClassQuests.PAUSED) or changed
 end
 
 function ClassQuests.Hand()
-    return due and { ClassQuests.STEP } or EMPTY
+    return due[ClassQuests.STEP] and { ClassQuests.STEP } or EMPTY
 end
 
-function ClassQuests.Leave()
-    if due then Notes()[due.key] = true end
+function ClassQuests.Shelved()
+    return due[ClassQuests.PAUSED] and { ClassQuests.PAUSED } or EMPTY
+end
+
+-- A click on a step: the chain that is due paused, or the paused one taken up again, first of all chains (on top).
+function ClassQuests.Pause(index)
+    local step = due[index]
+    if not step then return end
+    if index ~= ClassQuests.PAUSED then
+        Notes("classPaused")[step.key] = true
+        return
+    end
+    Notes("classPaused")[step.key] = nil
+    for position, chain in ipairs(chains or EMPTY) do
+        if chain.key == step.key then
+            table.insert(chains, 1, table.remove(chains, position))
+            break
+        end
+    end
+end
+
+function ClassQuests.Leave(index)
+    local step = due[index or ClassQuests.STEP]
+    if not step then return end
+    Notes()[step.key] = true
+    Notes("classPaused")[step.key] = nil
+end
+
+-- A chain you paused waits whole: its quests from where it is, in your log too, until handed in. Not one your guide
+-- leads by now (it shows no step then).
+function ClassQuests.Holds(hold)
+    if not (chains and ns.options.classQuests) then return end
+    local paused = Notes("classPaused")
+    for _, chain in ipairs(chains) do
+        local number, stage
+        if paused[chain.key] and not Gone(chain) then number, stage = Stage(chain) end
+        if number and not Guides(QuestOf(chain, number), stage) then
+            for each = number, #chain.quests do
+                local quest = QuestOf(chain, each)
+                if not Lines.HandedIn(quest) then hold[quest] = true end
+            end
+        end
+    end
 end
 
 function ClassQuests.Left()
