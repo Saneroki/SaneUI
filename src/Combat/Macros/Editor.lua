@@ -9,6 +9,9 @@ local Macros = ns.Macros
 --  under them, as the game's window shows its macros (Saneroki, 2026-11-04); on
 --  the right the one chosen: its name, key and
 --  bar button, its order, its steps, and under them the chosen step's settings.
+--  A filter over the list (Saneroki, 2026-11-04: "a dropdown that is show all ...,
+--  a general one ... and a per character one") shows this character's macros, the
+--  general ones or all of the account's; a right click on one says whose it is.
 --  Every change counts at once; in a fight it waits for the fight's end. A game's
 --  macro opens in the game's macro window, as the button Game macros does.
 --
@@ -38,6 +41,7 @@ Editor.BESIDE = 306  -- of the right side's width, what is not the name's box
 local KEY = "macros"
 local frame, window, built, page, onBoard
 local list, child, empty, gameHead, right, picture, name, keyButton, placeButton, orderMenu, fresh, freshWord, flags, copy, delete
+local filterMenu
 local catcher
 local lines = {}
 local chosen     -- the macro shown
@@ -51,16 +55,29 @@ local function AccountMax()
     return consts and consts.MAX_ACCOUNT_MACROS or 120
 end
 
--- The game's macros, the account's then the character's: { index, name, icon } each.
-local function GameList()
+-- What the list shows: this character's macros ("own"), the general ones or all (Book.FILTERS), as this character
+-- chose it last.
+local function Filter()
+    local filter = Macros.own and Macros.own.filter
+    return Macros.Book.FILTER_WORDS[filter] and filter or "own"
+end
+
+-- The game's macros, the account's then the character's: { index, name, icon } each. With menu, all of them;
+-- else as the filter says: its account macros are general ones, its character macros this character's.
+local function GameList(menu)
     local list = {}
     local account, own = Core.Ask(GetNumMacros)
+    local filter = menu and "all" or Filter()
     local function Add(index)
         local title, icon = Core.Ask(GetMacroInfo, index)
         if title then list[#list + 1] = { index = index, name = title, icon = icon } end
     end
-    for index = 1, account or 0 do Add(index) end
-    for index = AccountMax() + 1, AccountMax() + (own or 0) do Add(index) end
+    if filter ~= "own" then
+        for index = 1, account or 0 do Add(index) end
+    end
+    if filter ~= "general" then
+        for index = AccountMax() + 1, AccountMax() + (own or 0) do Add(index) end
+    end
     return list
 end
 
@@ -168,6 +185,7 @@ local function Line(index)
     line:SetScript("OnClick", ns.Guard(function(_, mouse)
         if line.game then return GameClick(line, mouse) end
         Editor.Choose(line.macro)
+        if mouse == "RightButton" then Editor.Whose(line) end
     end))
     line:SetScript("OnDragStart", ns.Guard(function()
         Core.HideTip()
@@ -215,7 +233,8 @@ end
 -- Yours in rows, then a line and the game's.
 local function Lines()
     local count, top = 0, 4
-    local own = Macros.Book.All()
+    local own = Macros.Book.Shown(Filter())
+    empty:SetText(Macros.Book.All()[1] and Macros.TEXT.noneHere or Macros.TEXT.none)
     empty:SetShown(own[1] == nil)
     if not own[1] then top = top + 34 end
     for at, macro in ipairs(own) do
@@ -403,14 +422,20 @@ local function Order(root)
     Radio(Macros.TEXT.orderTop, Macros.TEXT.orderTopTip, true)
 end
 
+-- Whose a new macro is: as the filter shows, this character's own or a general one.
+local function Owned(macro)
+    Macros.Book.SetOwner(macro, Filter() == "own" and "character" or "general")
+    return macro
+end
+
 local function NewFromGame(index)
     local title, icon, body = Core.Ask(GetMacroInfo, index)
-    if title then Editor.Choose(Macros.Book.FromGame(title, body, icon)) end
+    if title then Editor.Choose(Owned(Macros.Book.FromGame(title, body, icon))) end
 end
 
 -- The game's macros, the account's then the character's, as lines of a menu.
 local function GameMacros(line)
-    local list = GameList()
+    local list = GameList(true)
     for _, game in ipairs(list) do
         line:CreateButton(game.name, ns.Guard(function() NewFromGame(game.index) end))
     end
@@ -445,7 +470,7 @@ end
 
 local function NewClick(self)
     MenuUtil.CreateContextMenu(self, ns.Guard(function(_, root)
-        root:CreateButton(Macros.TEXT.newEmpty, ns.Guard(function() Editor.Choose(Macros.Book.New()) end))
+        root:CreateButton(Macros.TEXT.newEmpty, ns.Guard(function() Editor.Choose(Owned(Macros.Book.New())) end))
         GameMacros(root:CreateButton(Macros.TEXT.newFrom))
     end))
 end
@@ -457,8 +482,57 @@ local function DeleteClick()
         Macros.Book.Delete(macro)
         Macros.Press.Drop(macro)
         Macros.Reach.Update()
-        if chosen == macro then Editor.Choose(Macros.Book.All()[1]) end
+        if chosen == macro then Editor.Choose(Macros.Book.Shown(Filter())[1]) end
     end, true)
+end
+
+-- The filter changed: the list shows those, and the one chosen stays where it is still in it.
+local function SetFilter(filter)
+    Macros.own.filter = filter
+    filterMenu:GenerateMenu()
+    local shown = Macros.Book.Shown(filter)
+    for _, macro in ipairs(shown) do
+        if macro == chosen then return Fill() end
+    end
+    Editor.Choose(shown[1])
+end
+
+local function FilterWord(filter)
+    if filter == "general" then return Macros.TEXT.filterGeneral end
+    if filter == "all" then return Macros.TEXT.filterAll end
+    return Macros.TEXT.filterOwn
+end
+
+local function FilterMenu(_, root)
+    for _, filter in ipairs(Macros.Book.FILTERS) do
+        root:CreateRadio(FilterWord(filter), ns.Guard(function() return Filter() == filter end),
+                         ns.Guard(function() SetFilter(filter) end))
+    end
+end
+
+-- A right click on a macro of the list: whose it is, every character's, this character's class's or its own.
+function Editor.Whose(line)
+    local macro = line.macro
+    if not macro then return end
+    local names = rawget(_G, "LOCALIZED_CLASS_NAMES_MALE")
+    local choices = {
+        { "general", Macros.TEXT.whoseGeneral },
+        { "class", Macros.TEXT.whoseClass:format(names and names[Core.class] or Core.class or "") },
+        { "character", Macros.TEXT.whoseCharacter:format(Core.charName or "") },
+    }
+    MenuUtil.CreateContextMenu(line, ns.Guard(function(_, root)
+        root:CreateTitle(Macros.TEXT.whose)
+        if not Macros.Book.Mine(macro) then root:CreateTitle(Macros.TEXT.whoseOther) end
+        for _, choice in ipairs(choices) do
+            local radio = root:CreateRadio(choice[2],
+                ns.Guard(function() return Macros.Book.Mine(macro) and Macros.Book.Owner(macro) == choice[1] end),
+                ns.Guard(function()
+                    Macros.Book.SetOwner(macro, choice[1])
+                    Fill()
+                end))
+            radio:SetTooltip(ns.Guard(function(tooltip) GameTooltip_AddNormalLine(tooltip, Macros.TEXT.whoseTip) end))
+        end
+    end))
 end
 
 local function Button(parent, text, width, click, tip, tipText)
@@ -469,11 +543,14 @@ local function Button(parent, text, width, click, tip, tipText)
 end
 
 local function Left(inside, I)
-    local head = inside:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    head:SetPoint("TOPLEFT", I, -I)
-    head:SetText(Macros.TEXT.macros)
+    filterMenu = CreateFrame("DropdownButton", nil, inside, "WowStyle1DropdownTemplate")
+    filterMenu:SetWidth(Editor.LIST - 24 - 90 - 8)
+    filterMenu:SetPoint("TOPLEFT", I, -I + 4)
+    filterMenu:SetupMenu(ns.Guard(FilterMenu))
+    Core.Tip(filterMenu, Macros.TEXT.macros, Macros.TEXT.filterTip)
+    Editor.filterMenu = filterMenu -- for the test
     list = CreateFrame("ScrollFrame", nil, inside, "UIPanelScrollFrameTemplate")
-    list:SetPoint("TOPLEFT", inside, "TOPLEFT", I, -I - 20)
+    list:SetPoint("TOPLEFT", inside, "TOPLEFT", I, -I - 26)
     list:SetPoint("BOTTOM", inside, "BOTTOM", 0, I + 28)
     list:SetWidth(Editor.LIST - 24)
     child = CreateFrame("Frame", nil, list)
@@ -614,7 +691,7 @@ local function Into(parent, width)
     page:SetAllPoints(parent)
     page:Show()
     Editor.Size(width)
-    if not chosen then Editor.Choose(Macros.Book.All()[1]) else Fill() end
+    if not chosen then Editor.Choose(Macros.Book.Shown(Filter())[1]) else Fill() end
 end
 
 -- Whether its place is on the full screen now: it was brought there, or stands there already.

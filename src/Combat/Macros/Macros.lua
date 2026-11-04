@@ -52,7 +52,18 @@ Macros.TEXT = {
     gameWindowTip = "Opens the game's own macro window. The button Sane UI on it brings Sane Macros back.",
     gameMark = "W",
     gameMacros = "The game's macros",
-    lineTip = "Click: choose it. Drag it onto a button of your action bars to place it there.",
+    lineTip = "Click: choose it. Right click: whose it is. Drag it onto a button of your action bars to place it there.",
+    filterOwn = "This character",
+    filterGeneral = "General",
+    filterAll = "Show all",
+    filterTip = "Which macros the list shows: this character's (its class's and its own), the general ones every character has, or all of your account's. The game's macros below follow it: its general ones are the account's, its character ones this character's.",
+    noneHere = "None here. The filter above shows the others.",
+    whose = "Whose it is",
+    whoseGeneral = "Every character's",
+    whoseClass = "Every %s's",
+    whoseCharacter = "%s's alone",
+    whoseOther = "Now another class's or character's",
+    whoseTip = "Which characters have it in their list: every one, those of a class, or one alone. Every character can still press it from a key or a bar button it was put on.",
     lineKey = "Key: %s",
     gameLine = "One of the game's macros",
     gameLineTip = "Click: opens it in the game's macro window. Drag: onto an action bar, as a macro of the game's. Right click: make a Sane Macro of it.",
@@ -216,17 +227,50 @@ end
 -- The way in for other code (SaneUI.Combat.Macros.Add, a setup addon or a script): a normal macro of macro text
 -- under its name, or a macro of steps ({ top, fresh, steps }, as Book.FromSteps reads it; Saneroki, 2026-11-04: a
 -- setup addon's rotations), with its own picture where one is given (a texture's path or number), made once; one of
--- that name already there is left as it is. Returns the macro and whether it is new.
-function Macros.Add(name, body, picture)
+-- that name and owner already there is left as it is. owner: nil or "general" every character's, "class" this
+-- character's class's, "character" this character's alone (Book.SetOwner). Returns the macro and whether it is new.
+function Macros.Add(name, body, picture, owner)
     if type(name) ~= "string" or name == "" or not Macros.store then return nil end
     if type(body) ~= "string" and not (type(body) == "table" and type(body.steps) == "table") then return nil end
+    local whose = {}
+    Macros.Book.SetOwner(whose, owner)
     for _, macro in ipairs(Macros.Book.All()) do
-        if macro.name == name then return macro, false end
+        if macro.name == name and macro.class == whose.class and macro.char == whose.char then return macro, false end
     end
     local macro = type(body) == "string" and Macros.Book.FromGame(name, body) or Macros.Book.FromSteps(name, body)
     macro.icon = Macros.Book.Icon(picture)
+    macro.class, macro.char = whose.class, whose.char
     ns.Safe("macros", Macros.Editor.Refresh)
     return macro, true
+end
+
+-- For other code too (Saneroki, 2026-11-04: a setup addon puts the macros on his keys and changes them as spells are
+-- learned): the macro of that name this character uses (Book.Named) on a bar button, by its place ("MultiBar5Button4",
+-- "ActionButton1:1"), for this character; one button a macro, one macro a button. It stands there at once, or at a
+-- fight's end. Whether it was put there.
+function Macros.PlaceOn(name, place)
+    if not Macros.own or type(place) ~= "string" then return false end
+    local bar, button = Macros.Reach.Parts(place)
+    local macro = Macros.Book.Named(name)
+    if not (bar and button and button >= 1 and button <= Macros.Reach.BUTTONS and macro) then return false end
+    Macros.Reach.SetPlace(macro, place)
+    ns.Safe("macros", Macros.Editor.Refresh)
+    return true
+end
+
+-- The macro on a bar button comes off it: the button holds again what it held. Whether one was there.
+function Macros.TakeOff(place)
+    if not (Macros.own and Macros.own.places[place]) then return false end
+    Macros.own.places[place] = nil
+    Macros.Reach.Update()
+    ns.Safe("macros", Macros.Editor.Refresh)
+    return true
+end
+
+-- The name of the macro on a bar button, or nil.
+function Macros.On(place)
+    local macro = Macros.own and Macros.Book.Find(Macros.own.places[place] or 0)
+    return macro and macro.name or nil
 end
 
 function Macros.Load()

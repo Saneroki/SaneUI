@@ -12,6 +12,10 @@ local Macros = ns.Macros
 --    fresh     back to the first step when a fight ends
 --    steps     its steps, in order
 --    icon      its own picture (a texture's path or number); nil: its steps' (Press.MacroPicture)
+--    class     a class's file name ("WARRIOR"): the macro is that class's characters'
+--    char      a character's key (Core.charKey): the macro is that character's
+--              neither: every character's, a general one (Saneroki, 2026-11-04: "only the
+--              relevant ones for each class", the list filtered by whose they are)
 --  A step:
 --    kind      "spell", "item" or "text"
 --    what      the spell's or item's name; the macro text
@@ -21,8 +25,10 @@ local Macros = ns.Macros
 --    often     how many times it comes up in a round
 --    off       switched off
 --  The character's (Core.Character): keys[key] = macro id, and
---  places["ActionButton1:2"] = macro id: a bar's prefix, a button, Bar 1's page.
+--  places["ActionButton1:2"] = macro id: a bar's prefix, a button, Bar 1's page;
+--  filter: what the list shows ("own", "general", "all").
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Book = {}
 Macros.Book = Book
 
@@ -63,6 +69,8 @@ local function CleanMacro(macro)
     macro.icon = Book.Icon(macro.icon)
     macro.top = macro.top and true or nil
     macro.fresh = macro.fresh ~= false
+    macro.class = type(macro.class) == "string" and macro.class:match("^%u+$") or nil
+    macro.char = type(macro.char) == "string" and macro.char ~= "" and macro.char or nil
     local steps = {}
     for _, step in ipairs(type(macro.steps) == "table" and macro.steps or {}) do
         steps[#steps + 1] = CleanStep(step)
@@ -91,10 +99,56 @@ function Book.CleanOwn()
     local own = Macros.own
     own.keys = type(own.keys) == "table" and own.keys or {}
     own.places = type(own.places) == "table" and own.places or {}
+    if not Book.FILTER_WORDS[own.filter] then own.filter = nil end
 end
 
 function Book.All()
     return Macros.store.macros
+end
+
+-- Whose a macro is: "general" (every character's), "class" (a class's), "character" (one character's).
+function Book.Owner(macro)
+    if macro.char then return "character" end
+    if macro.class then return "class" end
+    return "general"
+end
+
+-- It becomes every character's, this character's class's or this character's own.
+function Book.SetOwner(macro, owner)
+    macro.class = owner == "class" and Core.class or nil
+    macro.char = owner == "character" and Core.charKey or nil
+end
+
+-- Whether this character uses it: a general one, its class's or its own.
+function Book.Mine(macro)
+    return (not macro.class or macro.class == Core.class) and (not macro.char or macro.char == Core.charKey)
+end
+
+-- The list's filters: this character's (its class's and its own), the general ones, every one of the account's.
+Book.FILTERS = { "own", "general", "all" }
+Book.FILTER_WORDS = { own = true, general = true, all = true }
+
+function Book.Shown(filter)
+    local shown = {}
+    for _, macro in ipairs(Macros.store.macros) do
+        local general = Book.Owner(macro) == "general"
+        if filter == "all" or (filter == "general" and general) or (filter == "own" and not general and Book.Mine(macro)) then
+            shown[#shown + 1] = macro
+        end
+    end
+    return shown
+end
+
+-- The macro of that name this character uses: its own or its class's before a general one; nil if none.
+function Book.Named(name)
+    local found
+    for _, macro in ipairs(Macros.store.macros) do
+        if macro.name == name and Book.Mine(macro) then
+            if Book.Owner(macro) ~= "general" then return macro end
+            found = found or macro
+        end
+    end
+    return found
 end
 
 function Book.Find(id)
@@ -119,7 +173,7 @@ end
 -- A copy under a new name: plain data, step by step, with its own number.
 function Book.Copy(macro)
     local copy = Book.New(Macros.TEXT.copyOf:format(macro.name))
-    copy.top, copy.fresh, copy.icon = macro.top, macro.fresh, macro.icon
+    copy.top, copy.fresh, copy.icon, copy.class, copy.char = macro.top, macro.fresh, macro.icon, macro.class, macro.char
     for index, step in ipairs(macro.steps) do
         local new = Book.Step(step.kind, step.what, step.id)
         new.unit, new.often, new.off = step.unit, step.often, step.off

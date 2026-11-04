@@ -641,6 +641,7 @@ MacroFrame.ChangeTab = function(_, tab) tabbed = tab end
 MacroFrame.SelectMacro = function(self, at) self.at = at end
 ShowMacroFrame = function() opened = opened + 1 MacroFrame:Show() end
 PickupMacro = function(index) pickedUp = index end
+Macros.own.filter = "all" -- every macro of the account, and all of the game's (the filter: below)
 Editor.Refresh()
 local ours = #Book.All()
 local first, second = Editor.Line(ours + 1), Editor.Line(ours + 2)
@@ -807,6 +808,108 @@ do
     Editor.ChoosePicture()
     check(Icons.Shown() and Icons.Frame():GetFrameStrata() == "FULLSCREEN_DIALOG", "open again, over the full screen")
     Book.Delete(macro)
+    Editor.Choose(inner)
+end
+
+-------------------------------------------------------------------------------
+--  Whose a macro is, the list's filter, and bar buttons set by other code
+--  (Saneroki, 2026-11-04: "only the relevant ones for each class", "a dropdown
+--  that is show all ..., a general one ... and a per character one")
+-------------------------------------------------------------------------------
+do
+    local class, key = Core.class, Core.charKey
+    local otherClass = class == "DRUID" and "WARRIOR" or "DRUID"
+    local general = Macros.Add("Everyone's", "/sit")
+    local mine = Macros.Add("Mine", "/wave", nil, "class")
+    local own = Macros.Add("Own", "/cheer", nil, "character")
+    local theirs = Book.New("Theirs")
+    theirs.class = otherClass
+    local twin, twinNew = Macros.Add("Mine", "/bow", nil, "general")
+    check(mine.class == class and not mine.char and own.char == key and not own.class and not general.class
+        and not general.char, "an owner given: this character's class's or its own")
+    check(twinNew and twin ~= mine and Macros.Add("Mine", "/kneel", nil, "class") == mine,
+        "the same name of another owner is another macro; of the same owner it is left as it is")
+    local function Has(list, macro)
+        for _, candidate in ipairs(list) do if candidate == macro then return true end end
+        return false
+    end
+    local mineShown, generalShown, allShown = Book.Shown("own"), Book.Shown("general"), Book.Shown("all")
+    check(Has(mineShown, mine) and Has(mineShown, own) and not Has(mineShown, general) and not Has(mineShown, theirs),
+        "this character's: its class's and its own")
+    check(Has(generalShown, general) and Has(generalShown, twin) and not Has(generalShown, mine), "the general ones")
+    check(Has(allShown, theirs) and Has(allShown, mine) and Has(allShown, general), "all of the account's")
+    check(Book.Named("Mine") == mine and Book.Named("Theirs") == nil, "by name: its own before a general one, never another's")
+    local copy = Book.Copy(mine)
+    check(copy.class == class, "a copy keeps whose it is")
+    Book.Delete(copy)
+
+    -- Saved odd ones are read as general.
+    local odd = Book.New("Odd")
+    odd.class, odd.char = "warrior!", ""
+    Book.Clean()
+    check(odd.class == nil and odd.char == nil, "an owner that is none is dropped when the saved macros are read")
+    Book.Delete(odd)
+
+    -- The filter over the list, as this character chose it last.
+    local menu = Editor.filterMenu
+    menu:GenerateMenu()
+    check(#menu._items == 3 and menu._items[1].text == TEXT.filterOwn and menu._items[2].text == TEXT.filterGeneral
+        and menu._items[3].text == TEXT.filterAll and menu._items[3].checked(), "three filters, all chosen as above")
+    local function Listed()
+        local names, games = {}, {}
+        for index = 1, 60 do
+            local line = Editor.Line(index)
+            if line and line:IsShown() then
+                if line.macro then names[line.macro.name] = true elseif line.game then games[line.game.index] = true end
+            end
+        end
+        return names, games
+    end
+    menu._items[1].fn()
+    local names, games = Listed()
+    check(Macros.own.filter == "own" and names.Mine and names.Own and not names["Everyone's"] and not names.Theirs,
+        "this character's in the list")
+    check(games[121] and not games[1], "of the game's, its character macros")
+    menu._items[2].fn()
+    names, games = Listed()
+    check(names["Everyone's"] and not names.Own and games[1] and not games[121], "the general ones, the game's account macros")
+    menu._items[3].fn()
+    names, games = Listed()
+    check(names.Theirs and names.Own and games[1] and games[121], "all of them")
+    menu._items[1].fn()
+
+    -- A right click on one: whose it is.
+    local line
+    for index = 1, 60 do
+        local candidate = Editor.Line(index)
+        if candidate and candidate:IsShown() and candidate.macro == own then line = candidate end
+    end
+    line:GetScript("OnClick")(line, "RightButton")
+    local whose = W.menus[#W.menus]
+    local radios = {}
+    for _, item in ipairs(whose) do if item.fn then radios[#radios + 1] = item end end
+    check(#radios == 3 and radios[3].checked() and not radios[1].checked(), "whose it is: this character's alone")
+    radios[1].fn()
+    check(Book.Owner(own) == "general" and own.char == nil, "made everyone's")
+    radios[2].fn()
+    check(own.class == class and Book.Owner(own) == "class", "made the class's")
+    names = Listed()
+    check(names.Own, "still in this character's list")
+
+    -- Other code puts a macro on a bar button and takes it off (Launch Setup's keys).
+    check(Macros.PlaceOn("Mine", "MultiBar5Button4") and Macros.On("MultiBar5Button4") == "Mine"
+        and Book.PlaceOf(mine) == "MultiBar5Button4", "a macro by its name on a bar button")
+    check(not Macros.PlaceOn("Theirs", "MultiBar5Button5") and not Macros.PlaceOn("Mine", "Nowhere1")
+        and not Macros.PlaceOn("Mine", "MultiBar5Button13") and not Macros.PlaceOn("Nobody", "MultiBar5Button5"),
+        "never another's, a place that is none or a name that is none")
+    check(Macros.PlaceOn("Mine", "ActionButton1:1") and Macros.On("MultiBar5Button4") == nil
+        and Macros.On("ActionButton1:1") == "Mine", "one button a macro")
+    check(Macros.PlaceOn("Own", "ActionButton1:1") and Macros.On("ActionButton1:1") == "Own" and Book.PlaceOf(mine) == nil,
+        "one macro a button")
+    check(Macros.TakeOff("ActionButton1:1") and Macros.On("ActionButton1:1") == nil and not Macros.TakeOff("ActionButton1:1"),
+        "taken off, once")
+    for _, macro in ipairs({ general, mine, own, theirs, twin }) do Book.Delete(macro) end
+    Macros.own.filter = "all"
     Editor.Choose(inner)
 end
 

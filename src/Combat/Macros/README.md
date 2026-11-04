@@ -15,6 +15,13 @@ of your normal action bar buttons. The macros are your account's, on every chara
   full screen switched off) as a window of its own, whose first title bar button goes to the game's own macro window. The
   game's macros stay as they are.
 - **New macro:** *New* makes an empty one, or takes one over from the game's macros as macro text. *Copy*, *Delete*.
+- **Whose it is and the filter** (Saneroki, 2026-11-04: "only the relevant ones for each class ... a dropdown that is show all
+  ..., a general one ... and a per character one"): a macro is every character's (a general one: Sit, Follow, the potions),
+  a class's (every warrior's) or one character's. The dropdown over the list shows *This character* (its class's and its
+  own), *General* or *Show all* (every one of the account's), as the character chose it last; the game's macros under them
+  follow it (its account macros are general ones, its character macros this character's). A right click on a macro says
+  whose it is and changes it. A new macro is this character's under *This character*, else a general one; a copy keeps whose
+  it is. A key or a bar button works whoever's the macro is.
 - **The list** (Saneroki, 2026-11-04): as the game's macro window shows its macros, squares of their pictures with the names
   under them, yours first, the one chosen lit in gold; a key shows at the picture's corner as on a bar button, a red **!** where
   the checks found something. A macro's picture is its own where it has one (Saneroki, 2026-11-04), else that of its first
@@ -96,18 +103,23 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **On the full screen.** The part `macros` of Combat's board (`Board.Part`). One page, made once, goes where it is shown: the panel's
   body or the window of its own (`Into`), and takes the room it has (`Editor.Size`, `Steps.Width`, `Detail.Width`). Opening the window
   of its own tries the full screen first (`ToBoard`), and it shuts unseen.
-- **Saved.** Macros in `Core.Store("Macros")` (the account, every profile), keys and places in `Core.Character("Macros")`: apart
+- **Saved.** Macros in `Core.Store("Macros")` (the account, every profile; whose: `class`, `char`), keys, places and the list's
+  filter in `Core.Character("Macros")`: apart
   from Combat's own, so that their names cannot meet. The switches are Combat's (`macroChecks`, `macroDim`, `macroKey`). Its parts
   stand in `ns.Macros`, as Combat already has a `Book`, a `Face` and a `Press`-like name or two.
 - **The game's window** is held by Core (`native.hold`, `Blizzard_MacroUI`), so the frame is made at login, empty; what it
   holds is made when first shown. A hub is made only for a macro with a key or a place. `Editor.OpenGame` brings the game's
   (`window:Native(true)`, the full screen left first) and chooses a macro there by the game's own `ChangeTab` and
   `SelectMacro`, where the client has them; the list reads the game's macros again at `UPDATE_MACROS`.
-- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body, picture)` makes a macro under that name, once, with that
+- **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body, picture, owner)` makes a macro under that name, once, with that
   picture where one is given (a texture's path or number; `Book.Icon` keeps no question mark): of macro
   text a normal macro, of a table `{ top, fresh, steps = { step, ... } }` a macro of those steps, each step in the shape
   `Book.lua` saves (`kind`, `what`, `unit`, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
-  (`Book.FromSteps`). One of that name already there is left as it is (a setup addon, a script).
+  (`Book.FromSteps`). `owner`: nil every character's, `"class"` this character's class's, `"character"` its own. One of that
+  name and owner already there is left as it is (a setup addon, a script). `Macros.PlaceOn(name, place)` puts the macro of
+  that name this character uses (its own or its class's before a general one) on a bar button by its place
+  (`"MultiBar5Button4"`, `"ActionButton1:1"`), `Macros.TakeOff(place)` takes it off, `Macros.On(place)` names the one there
+  (Saneroki, 2026-11-04: a setup addon puts his macros on his keys and changes them as spells are learned).
 - **Standing down** (`Macros.GiveBack`, from Combat's): no key and no bar button of ours, the game's macro window back.
 - **Tried in the game:** one step a press, 5,000 attributes on one button, a button over a bar slot with paging and left
   and right click, on Retail. A plain macro stopped at its first `/cast` line on Retail 12.1.5, cast or refused, so a step should
