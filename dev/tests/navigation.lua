@@ -1489,7 +1489,7 @@ end)()
     profiles:GenerateMenu()
     local names = {}
     for index, item in ipairs(profiles._items) do names[index] = item.text end
-    check(table.concat(names, ", ") == "All sound on, Music off, Music and Ambience off" and profiles._items[1].checked("All sound on"),
+    check(table.concat(names, ", ") == "All sound on, Music off, Music and Ambience off, All sound off" and profiles._items[1].checked("All sound on"),
         "its dropdown: the profiles, the one in use first and chosen")
     profiles._items[2].fn(profiles._items[2].data)
     W.Wait(0)
@@ -1559,7 +1559,7 @@ end)()
     check(dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Quiet raid", "Delete asks first, naming the profile")
     dialog.data.callback()
     W.Wait(0)
-    check(Audio.Current() == "All sound on" and profiles.label._text == "All sound on" and #Audio.Names() == 3,
+    check(Audio.Current() == "All sound on" and profiles.label._text == "All sound on" and #Audio.Names() == 4,
         "deleted: the first profile in use")
     while #Audio.Names() > 1 do Audio.Delete() end
     cog:GenerateMenu()

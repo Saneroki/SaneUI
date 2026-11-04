@@ -1951,13 +1951,15 @@ do
     local function Saved(name)
         for _, profile in ipairs(store.audio.profiles) do if profile.name == name then return profile.sounds end end
     end
-    check(table.concat(Audio.Names(), ", ") == "All sound on, Music off, Music and Ambience off"
+    check(table.concat(Audio.Names(), ", ") == "All sound on, Music off, Music and Ambience off, All sound off"
         and Audio.Current() == "All sound on" and #Audio.Kinds() == 5,
-        "an account without profiles gets the three first ones; the first is in use")
+        "an account without profiles gets the four first ones; the first is in use")
     local both = Saved("Music and Ambience off")
     check(both.music.on == false and both.ambience.on == false and both.all.on and both.sfx.on and both.dialog.on
         and both.all.volume == 0.6 and both.music.volume == 0.3 and Saved("Music off").ambience.on
         and Saved("All sound on").music.on, "each with every sound on but those its name says, at the game's volumes")
+    check(Saved("All sound off").all.on == false and Saved("All sound off").music.on and Saved("All sound off").all.volume == 0.6,
+        "All sound off: the game's switch of all sound off (Saneroki, 2026-11-04)")
 
     check(Audio.Use("Music off") and Audio.Current() == "Music off" and W.cvars.Sound_EnableMusic == "0"
         and W.cvars.Sound_EnableAmbience == nil and W.cvars.Sound_MasterVolume == "0.6" and not Audio.Changed(),
@@ -1976,15 +1978,22 @@ do
     check(not Audio.Use("Nothing") and Audio.Current() == "Music off", "a name that is no profile changes nothing")
 
     check(Audio.New("  Raid  ") and Audio.Current() == "Raid" and Saved("Raid").sfx.volume == 0.42
-        and Saved("Raid").music.on == false and #Audio.Names() == 4,
+        and Saved("Raid").music.on == false and #Audio.Names() == 5,
         "New: a profile of the game's now, its name without spaces at its ends, in use")
     local ok, why = Audio.New("raid")
-    check(not ok and why:find("raid") and #Audio.Names() == 4, "not a second one of the same name, in any case of letters")
+    check(not ok and why:find("raid") and #Audio.Names() == 5, "not a second one of the same name, in any case of letters")
     ok, why = Audio.New("   ")
     check(not ok and why == Audio.TEXT.empty, "nor one without a name")
     check(Audio.New(("x"):rep(50)) and Audio.Current() == ("x"):rep(Audio.LETTERS), "a long name is cut")
     check(Audio.Delete() and Audio.Current() == "All sound on" and W.cvars.Sound_EnableMusic == "1"
-        and #Audio.Names() == 4, "Delete: the profile in use gone, the first one in use and set")
+        and #Audio.Names() == 5, "Delete: the profile in use gone, the first one in use and set")
+    -- Add, for other code (Saneroki, 2026-11-04: a setup addon's profiles): every sound on but those named, not in use.
+    check(Audio.Add(" Quiet ", { all = true, ambience = true }) and Audio.Current() == "All sound on"
+        and Saved("Quiet").all.on == false and Saved("Quiet").ambience.on == false and Saved("Quiet").music.on
+        and #Audio.Names() == 6 and W.cvars.Sound_EnableAllSound ~= "0", "Add: a profile of those sounds off, not put in use")
+    ok, why = Audio.Add("quiet", {})
+    check(not ok and why:find("quiet") and not Audio.Add("  ") and #Audio.Names() == 6, "not a name taken, nor none")
+    check(Audio.Use("Quiet") and W.cvars.Sound_EnableAllSound == "0" and Audio.Delete(), "it is used as any other")
 
     -- The other client closed last and wrote its settings into the game's one file: this login sets this account's.
     Audio.Use("Music off")

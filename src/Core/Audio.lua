@@ -29,6 +29,9 @@ local Core = SaneUI.Core
 --      Core.Audio.Save()                the game's now into the profile in use
 --      Core.Audio.Load()                the profile in use set again
 --      Core.Audio.New(name)             a profile of the game's now, in use; false, why when not
+--      Core.Audio.Add(name, off)        a profile of every sound on but those in off ({ [key] = true }), at the
+--                                       game's volumes now, not put in use; false, why when not (other code: a
+--                                       setup addon)
 --      Core.Audio.Delete()              the profile in use gone, the first one in use; false, why for the last
 --      Core.Audio.Watch(fn)             fn() on the next frame after a change: a profile, the game's settings
 -------------------------------------------------------------------------------
@@ -43,11 +46,13 @@ Audio.KINDS = {
     { key = "ambience", text = "Ambience", on = "Sound_EnableAmbience", volume = "Sound_AmbienceVolume" },
 }
 -- The profiles every account starts with (Saneroki, 2026-11-04): every sound on but those named off, at the volumes
--- the game had then.
+-- the game had then. All sound off (Saneroki, 2026-11-04: "make it standard in the 3 default installed sound
+-- profiles"): the game's switch of all sound off, the rest as they are.
 Audio.DEFAULTS = {
     { name = "All sound on" },
     { name = "Music off", off = { music = true } },
     { name = "Music and Ambience off", off = { music = true, ambience = true } },
+    { name = "All sound off", off = { all = true } },
 }
 Audio.LETTERS = 32    -- a profile's name at most
 Audio.EXACT = 0.005   -- two volumes this close are the same (the game's slider steps by 0.05)
@@ -171,6 +176,15 @@ local function Settle(sounds)
     return settled
 end
 
+-- Every sound on but those in off, at the game's volumes now.
+local function Made(off)
+    local sounds = {}
+    for key, entry in pairs(Now()) do
+        sounds[key] = { on = not (type(off) == "table" and off[key]), volume = entry.volume }
+    end
+    return sounds
+end
+
 -- The account's: { profiles = { { name, sounds = { [key] = { on, volume } } } }, current = name }, made right the
 -- first time it is asked in a session; an account without any gets Audio.DEFAULTS.
 local function Kept()
@@ -186,13 +200,8 @@ local function Kept()
         if name and not double then profiles[#profiles + 1] = { name = name, sounds = Settle(profile.sounds) } end
     end
     if #profiles == 0 then
-        local now = Now()
         for _, default in ipairs(Audio.DEFAULTS) do
-            local sounds = {}
-            for key, entry in pairs(now) do
-                sounds[key] = { on = not (default.off and default.off[key]), volume = entry.volume }
-            end
-            profiles[#profiles + 1] = { name = default.name, sounds = sounds }
+            profiles[#profiles + 1] = { name = default.name, sounds = Made(default.off) }
         end
     end
     kept.profiles = profiles
@@ -254,6 +263,16 @@ function Audio.New(name)
     if Taken(name) then return false, Audio.TEXT.taken:format(name) end
     kept.profiles[#kept.profiles + 1] = { name = name, sounds = Now() }
     kept.current = name
+    Tell()
+    return true
+end
+
+function Audio.Add(name, off)
+    Kept()
+    name = Clean(name)
+    if not name then return false, Audio.TEXT.empty end
+    if Taken(name) then return false, Audio.TEXT.taken:format(name) end
+    kept.profiles[#kept.profiles + 1] = { name = name, sounds = Made(off) }
     Tell()
     return true
 end

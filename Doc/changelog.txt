@@ -17,7 +17,8 @@ The bigger changes of each version, newest first.
   the button under it lights up in gold. On Combat's full screen the
   action bars stand under Sane Macros, stacked as on your screen.
 - The minimap's satchel has a Sound line: pick a sound profile (All
-  sound on, Music off, Music and Ambience off, or your own), and the
+  sound on, Music off, Music and Ambience off, All sound off, or your
+  own), and the
   cogwheel beside it holds the game's sound switches and sliders with
   Save, Load, New and Delete. Each game account remembers its last
   profile and sets it again when you log in, so two accounts played at
