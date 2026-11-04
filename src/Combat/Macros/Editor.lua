@@ -56,10 +56,10 @@ local function AccountMax()
 end
 
 -- What the list shows: this character's macros ("own"), the general ones or all (Book.FILTERS), as this character
--- chose it last.
+-- chose it last; all of them at first (Saneroki, 2026-11-04: "The filter should by default be on show all").
 local function Filter()
     local filter = Macros.own and Macros.own.filter
-    return Macros.Book.FILTER_WORDS[filter] and filter or "own"
+    return Macros.Book.FILTER_WORDS[filter] and filter or "all"
 end
 
 -- The game's macros, the account's then the character's: { index, name, icon } each. With menu, all of them;

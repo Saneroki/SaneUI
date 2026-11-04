@@ -18,8 +18,9 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **Whose it is and the filter** (Saneroki, 2026-11-04: "only the relevant ones for each class ... a dropdown that is show all
   ..., a general one ... and a per character one"): a macro is every character's (a general one: Sit, Follow, the potions),
   a class's (every warrior's) or one character's. The dropdown over the list shows *This character* (its class's and its
-  own), *General* or *Show all* (every one of the account's), as the character chose it last; the game's macros under them
-  follow it (its account macros are general ones, its character macros this character's). A right click on a macro says
+  own), *General* or *Show all* (every one of the account's), as the character chose it last, *Show all* at first; the
+  game's macros under them follow it (its account macros are general ones, its character macros this character's). A
+  right click on a macro says
   whose it is and changes it. A new macro is this character's under *This character*, else a general one; a copy keeps whose
   it is. A key or a bar button works whoever's the macro is.
 - **The list** (Saneroki, 2026-11-04): as the game's macro window shows its macros, squares of their pictures with the names

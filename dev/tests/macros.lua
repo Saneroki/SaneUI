@@ -850,8 +850,12 @@ do
     check(odd.class == nil and odd.char == nil, "an owner that is none is dropped when the saved macros are read")
     Book.Delete(odd)
 
-    -- The filter over the list, as this character chose it last.
+    -- The filter over the list, as this character chose it last; Show all at first (Saneroki, 2026-11-04).
     local menu = Editor.filterMenu
+    Macros.own.filter = nil
+    menu:GenerateMenu()
+    check(menu._items[3].checked() and not menu._items[1].checked(), "a character that chose none shows all")
+    Macros.own.filter = "all"
     menu:GenerateMenu()
     check(#menu._items == 3 and menu._items[1].text == TEXT.filterOwn and menu._items[2].text == TEXT.filterGeneral
         and menu._items[3].text == TEXT.filterAll and menu._items[3].checked(), "three filters, all chosen as above")
