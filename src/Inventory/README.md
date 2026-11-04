@@ -199,8 +199,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 
 ### A new level
 
-At a new level the middle of the screen says it, for a few seconds, in place of the game's toast and its lines in the
-chat: the level, what it brought (your health and mana, your stats, a talent point) and how long you played on the
+At a new level the top of the screen says it, right of its middle beside the guide's arrow, for a few seconds, in place
+of the game's toast and its lines in the chat: the level, what it brought (your health and mana, your stats, a talent point) and how long you played on the
 level before.
 
 ```
@@ -695,8 +695,10 @@ the world's entry and each `PLAYER_XP_UPDATE`: the game adds the events again wh
 shows. The game's toast is `EventToastManagerFrame`, a toast of `Enum.EventToastEventType.LevelUp` in it; it must run on,
 since its animations end it and bring the next toast, and they stop on a hidden frame, and its alpha would be its fade's
 during those. So at `DisplayToast` (hooked) it is lent under a frame of ours at alpha 0, and back at the next toast or
-at the end of them: every other toast shows as ever. `ns.GiveBack` gives both back. While it shows, Speed Leveling's arrow makes way (`Core.TellsAtTop`). Its height is `Core.TOAST_TOP`, as
-the travel overlay's. Its look:
+at the end of them: every other toast shows as ever. `ns.GiveBack` gives both back. Its height is `Core.TOAST_TOP`, as
+the travel overlay's, `LevelUp.RIGHT` (340) right of the middle (Saneroki, 2026-11-04: Speed Leveling's arrow, 240
+wide, stands in the middle there and stays in sight; the shade's fading left edge ends beside it), so it takes no
+place at the top (`Core.TellsAtTop`). Its look:
 `Doc/guides/interface-style.md`, *A new level over the world*.
 
 ## Stat weights

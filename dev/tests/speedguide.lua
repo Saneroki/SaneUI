@@ -708,7 +708,7 @@ check(line and line.map == 1411 and idx == 3, "the arrow points to the step's pl
         and math.abs(aimed[3] - 0.622) < 1e-6, "the arrow asks the way to the guide's place, on the game's map")
     local point, _, relative, _, y = frame:GetPoint(1)
     check(point == "TOP" and relative == "TOP" and y == -Core.TOAST_TOP,
-        "at first where the toast of a new level and the travel overlay stand")
+        "at first where the travel overlay stands, the toast of a new level beside it")
     local ring, picture, texts = nil, nil, {}
     for _, widget in ipairs(W.frames) do
         if widget._texture == Arrow.RING then ring = widget end
@@ -750,7 +750,7 @@ check(line and line.map == 1411 and idx == 3, "the arrow points to the step's pl
     Core.TellsAtTop(toast)
     check(not Core.TopTaken() and frame._shown, "nothing at the toast's place: the arrow there")
     toast:Show()
-    check(Core.TopTaken() and not frame._shown, "the toast or the travel overlay comes: the arrow makes way")
+    check(Core.TopTaken() and not frame._shown, "the travel overlay comes: the arrow makes way")
     Arrow.Update(true)
     check(not frame._shown, "and stays away as the guide goes on")
     toast:Hide()

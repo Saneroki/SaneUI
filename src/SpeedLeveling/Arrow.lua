@@ -20,9 +20,10 @@ local _, ns = ...
 --  until it has found the way, straight to the place.
 --
 --  A part of its own, placed in Edit Mode apart from the guide (Core.Window), at
---  first where the toast of a new level and the travel overlay stand
---  (Core.TOAST_TOP), making way for them while they show (Core.TopTaken); shown
---  while the guide is and it has a place to go to (the switch Show the arrow).
+--  first where the travel overlay stands (Core.TOAST_TOP), making way for it
+--  while it shows (Core.TopTaken); the toast of a new level stands beside it and
+--  it stays (Saneroki, 2026-11-04). Shown while the guide is and it has a place
+--  to go to (the switch Show the arrow).
 --
 --      Arrow.Update(shown)   shown or not with the guide, drawn anew; Steps.GiveBack hides it with the guide
 -------------------------------------------------------------------------------
@@ -246,5 +247,5 @@ function Arrow.Update(shown)
     Tell()
 end
 
--- The toast of a new level or the travel overlay came or went at the arrow's place.
+-- The travel overlay came or went at the arrow's place.
 Core.OnTopTaken(ns.Guard(function() Arrow.Update(following) end))

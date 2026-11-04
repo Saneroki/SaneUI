@@ -27,7 +27,7 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 
 -- How far below the screen's top what tells something over the world stands: where the game's own toast stands. The
--- toast of a new level (Inventory) and the travel overlay (Navigation) keep this height.
+-- toast of a new level (Inventory, right of the middle) and the travel overlay (Navigation) keep this height.
 Core.TOAST_TOP = 190
 
 -- What tells something at that height for a while (Core.TellsAtTop(frame), each once): while one of them shows,

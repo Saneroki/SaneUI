@@ -2,8 +2,9 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - LevelUp
---  A new level, told once in the middle of the screen, in place of the game's
---  toast and its lines in the chat (Saneroki, 2026-10-30):
+--  A new level, told once below the screen's top, right of its middle beside
+--  the guide's arrow (Saneroki, 2026-11-04), in place of the game's toast and
+--  its lines in the chat (Saneroki, 2026-10-30):
 --
 --      Level 22!
 --      HP +18
@@ -37,6 +38,8 @@ ns.LevelUp = LevelUp
 LevelUp.WIDTH = 240     -- its shade, without the edges that fade out
 LevelUp.EDGE = 90
 LevelUp.PAD = 12
+LevelUp.RIGHT = 340     -- right of the screen's middle (Saneroki, 2026-11-04): the guide's arrow, 240 wide, stands in the
+                        -- middle at this height and stays in sight; the shade's fading left edge ends beside it
 LevelUp.TITLE = 34      -- the level's font size, its line's height with some air
 LevelUp.TITLE_HEIGHT = 42
 LevelUp.LINE = 19       -- the lines under it
@@ -177,12 +180,11 @@ end
 local function Build()
     view = CreateFrame("Frame", nil, UIParent)
     view:SetFrameStrata("HIGH")
-    view:SetPoint("TOP", UIParent, "TOP", 0, -Core.TOAST_TOP)
+    view:SetPoint("TOP", UIParent, "TOP", LevelUp.RIGHT, -Core.TOAST_TOP)
     view:SetWidth(LevelUp.WIDTH)
     -- In sight while Lore fades the interface out for a talk: a quest handed in is where most levels come.
     if view.SetIgnoreParentAlpha then view:SetIgnoreParentAlpha(true) end
     view:Hide()
-    Core.TellsAtTop(view)
     fade = Core.Motion.Fade(view)
 
     local middle, left, right = Shade(view, LevelUp.DARK, LevelUp.DARK), Shade(view, 0, LevelUp.DARK), Shade(view, LevelUp.DARK, 0)

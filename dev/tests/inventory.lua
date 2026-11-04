@@ -1240,9 +1240,11 @@ do
     check(Said() == "Level 22!/HP |cff6fe06f+18|r/Mana |cff6fe06f+20|r/Str |cff6fe06f+2|r/Stam |cff6fe06f+1|r/Talent |cff6fe06f+1|r/Leveled 7h 0m",
         "the level, what it brought, how long it took (" .. Said() .. ")")
     check(view._shown and not (W.chatHeard or {}).PLAYER_LEVEL_UP, "in the middle of the screen, nothing in the chat")
-    check(Core.TopTaken(), "it takes the toast's place: what only stands there makes way")
+    local point, _, relative, x, y = view:GetPoint(1)
+    check(point == "TOP" and relative == "TOP" and x == LevelUp.RIGHT and x >= 120 + LevelUp.EDGE + LevelUp.WIDTH / 2
+        and y == -Core.TOAST_TOP, "at the toast's height, right of the middle: beside the guide's arrow (240 wide)")
+    check(not Core.TopTaken(), "it leaves the middle free: the guide's arrow there stays")
     W.Wait(LevelUp.FADE_IN + LevelUp.HOLD + LevelUp.FADE_OUT + 0.1)
-    check(not Core.TopTaken(), "gone: the toast's place free")
     check(not view._shown, "and it goes by itself")
 
     W.Fire("PLAYER_LEVEL_UP", 23, 18, 0, 0, 0, 0, 0, 0, 0)

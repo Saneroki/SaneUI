@@ -480,7 +480,8 @@ moves to its own heading here once it is decided, with its picture.
 ### A new level over the world
 
 Inventory's toast of a new level (`src/Inventory/LevelUp.lua`; Saneroki, 2026-10-30), in the place of the game's: below
-the screen's top, in its middle, no window, no paper.
+the screen's top, no window, no paper; right of the middle (Saneroki, 2026-11-04: "move the level up toast to the
+right so it doesn't cover the arrow"), so the guide's arrow in the middle stays in sight beside it.
 
 - **Words in Expressway** with a thin dark outline, as the guide and the talk over the world, on a faint dark shade whose
   sides fade out into the world.

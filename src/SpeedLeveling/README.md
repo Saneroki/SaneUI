@@ -182,9 +182,9 @@ name for different characters stand apart, and the guide named next is the one f
   its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
 ### The arrow
-A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide, at first where the toast of a new level and
-the travel overlay stand (`Core.TOAST_TOP`), out of sight while one of those shows (`Core.TopTaken`); shown while the
-guide is and has a place to go to:
+A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide, at first where the travel overlay stands
+(`Core.TOAST_TOP`), out of sight while it shows (`Core.TopTaken`); the toast of a new level stands right of it and the
+arrow stays in sight (Saneroki, 2026-11-04). Shown while the guide is and has a place to go to:
 
 - **Sane UI's leather ring that runs out into a point** (the far herbs' mark, `Art/mark-pointed`), turned the way to
   go (up: ahead), a step every 0.05 s.
