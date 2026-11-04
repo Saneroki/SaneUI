@@ -350,7 +350,9 @@ through `Lines.lua`:
   a thing to tick by hand, an item carried for no quest) it tells only as it happens, so such a step waits for you,
   until a step after it is known done by a quest line the guide had not asked before: you came that way, so the step
   lies behind you. A level or a spell proves no such thing (they can be had ahead of the guide), nor does a line the
-  guide asks a second time, nor a step that only goes along. A click still does any step by hand.
+  guide asks a second time, nor a step that only goes along. A click still does any step by hand. A quest line the
+  guide marks to tick by hand counts as done once the game says its quest is handed in, so a place worked out again
+  (a guide picked partway, a place the game did not save) goes past it.
 - **The ticks** are what the game knows, wherever a step stands: ahead of your place a step shows as done once every
   thing to do of it is done (or you skipped it; one with nothing to do is not done, only easy); behind your place it
   does unless the game says it is open (a quest you abandoned, a step you jumped over).
@@ -363,7 +365,10 @@ through `Lines.lua`:
 - **The cost:** a check reads the step you are at, and only while the game cannot judge it the way ahead, a step at a
   time to the first one it can, at most `Run.PROOF` steps; the list asks only for the steps it shows. The whole guide
   is read only when it is picked or loaded.
-- **Through:** on to the guide its head names next (`#next`), the first one kept that is for you.
+- **Through:** on to the guide its head names next (`#next`), the first one kept that is for you. A bare name is looked
+  for in the guide's own group first: one there for somebody else (a hunter's) sends it on to the next name, never to
+  another group's guide of that name, so a normal guide never leads into the dungeon guide (Saneroki, 2026-11-04).
+  Another group's guide comes by its group's name ("Group\Name"), or where the guide's own group has none of that name.
 - What the game tells only as it happens (a hearth, a flight, a vendor's window, the spirit healer, a spell cast)
   counts for the steps at hand while it happens; a place is looked at once a second while a step waits for one.
 

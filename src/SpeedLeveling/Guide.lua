@@ -486,8 +486,10 @@ function Guide.Remove(key)
     Changed()
 end
 
--- A guide by a name a guide's head gives ("Group\Name", or a name), kept or a pack's: its key. Of several, the one
--- for this character first, then one of the same group; a kept one before a pack's.
+-- A guide by a name a guide's head gives ("Group\Name", or a name), kept or a pack's: its key. Of several, one of the
+-- same group first, then the one for this character; a kept one before a pack's. A bare name stays in its group: one
+-- there for somebody else is found, so After goes on to the next name (a normal guide's "35-36 Desolace" for hunters
+-- never leads a warrior into the dungeon group's guide of that name).
 local function Find(name, group, who)
     if Entry(name) then return name end
     local found, rank
@@ -495,7 +497,7 @@ local function Find(name, group, who)
         for key, kept in pairs(guides) do
             local named = type(kept) == "table" and Text(kept.name)
             if named and (named == name or KeyOf(kept.group, named) == name) then
-                local this = (Mine(kept, who) and 0 or 2) + ((kept.group or "") == (group or "") and 0 or 1)
+                local this = ((kept.group or "") == (group or "") and 0 or 2) + (Mine(kept, who) and 0 or 1)
                 if not rank or this < rank then found, rank = key, this end
             end
         end

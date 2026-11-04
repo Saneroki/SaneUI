@@ -260,7 +260,9 @@ local DONE = {
         local distance = Run.Distance(line)
         return distance ~= nil and distance <= (line.near or ns.Format.FAR)
     end,
-    manual = function() return false end,
+    -- A thing to tick by hand: your click (Passed), or its quest handed in, so a place worked out again (a guide picked
+    -- partway, a place not saved) goes past it.
+    manual = function(line) return line.quest ~= nil and Lines.HandedIn(line.quest) end,
 }
 -- Those the game tells only as they happen.
 for _, what in ipairs({ "hearth", "flightpath", "revive", "shop", "trainer", "stable", "tame" }) do

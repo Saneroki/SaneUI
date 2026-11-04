@@ -868,6 +868,22 @@ check(twins == 2 and mineTwins == 1, "guides of one name for different character
     check(found and after and after.key == "Our Group\\Odd", "and found as the guide after another: " .. tostring(after))
     guides["Our Group\\Odd"], guides[42] = nil, nil
 end)()
+-- A bare name after a guide stays in its group: one there for somebody else sends it on to the next name, never to
+-- another group's guide of that name (a normal guide's next never leads into the dungeon guide).
+;(function()
+    local guides = Core.Store(ns.name).guides
+    guides["Our Group\\Fork << Alliance"] = { name = "Fork", group = "Our Group", only = "Alliance",
+                                              text = "<< Alliance\nstep\n" .. Line("take", "1") }
+    guides["Our Dungeons\\Fork"] = { name = "Fork", group = "Our Dungeons", text = "step\n" .. Line("take", "1") }
+    guides["Our Group\\Fork Too"] = { name = "Fork Too", group = "Our Group", text = "step\n" .. Line("take", "1") }
+    local after = Guide.After({ after = { { name = "Fork" }, { name = "Fork Too" } }, group = "Our Group" })
+    check(after and after.key == "Our Group\\Fork Too", "the next guide stays in its group: " .. tostring(after and after.key))
+    local named = Guide.After({ after = { { name = "Our Dungeons\\Fork" } }, group = "Our Group" })
+    check(named and named.key == "Our Dungeons\\Fork", "another group's guide by its group's name")
+    local away = Guide.After({ after = { { name = "Fork" } }, group = "Elsewhere" })
+    check(away and away.key == "Our Dungeons\\Fork", "a name not in its group: the one for this character elsewhere")
+    guides["Our Group\\Fork << Alliance"], guides["Our Dungeons\\Fork"], guides["Our Group\\Fork Too"] = nil, nil, nil
+end)()
 
 -------------------------------------------------------------------------------
 --  Guide packs, and the view's menu
@@ -1059,6 +1075,19 @@ check(Guide.Chosen() == "Packed\\Pack Part", "through: on to its next, a part fr
     check(Run.At() == 1, "a step that only goes along is no proof")
     quests.done[612] = true
     check(Run.Check() and Run.Through(), "a step of its own is, and that was the guide's last")
+
+    -- A quest line the format marks to tick by hand: its quest handed in, it lies behind you, so a place worked out
+    -- again (a guide picked partway, a place not saved) goes past it; while its quest is open it waits for your click.
+    quests.done[620], quests.done[621] = true, true
+    Follow("Made Ticks", {
+        { take(620) },                                      -- 1  handed in
+        { Line("manualOnly", ""), Line("goal", "621,1") },  -- 2  to tick by hand, its quest handed in
+        { Line("manualOnly", ""), Line("goal", "622,1") },  -- 3  to tick by hand, its quest still open
+        { hand(620) },                                      -- 4
+        { hand(621) },                                      -- 5
+    })
+    check(Run.At() == 3, "a line to tick by hand: passed once its quest is handed in, an open one waits: " .. Run.At())
+    quests.done[620], quests.done[621] = nil, nil
 
     -- The cost: a check reads the step you are at and at most Run.PROOF more, however long the guide.
     local function Asks(fn)
