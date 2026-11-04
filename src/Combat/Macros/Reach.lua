@@ -92,6 +92,9 @@ local function ClearSlot(place)
     local header = headers[place]
     if not header then return end
     UnregisterStateDriver(header, "slot")
+    -- The game's driver sets a state only when it changes (SecureStateDriver.lua): forgotten here, so the driver set
+    -- again shows our button again, or every macro but the one placed last stays hidden.
+    header:SetAttribute("state-slot", nil)
     ClearOverrideBindings(header)
     header.face:Hide()
     active[place] = nil

@@ -11,6 +11,11 @@ Saneroki: "create the same all sound off profile there as well and make it stand
 - **`src/Core/Audio.lua`:** a fourth default, *All sound off* (the game's switch of all sound off, the rest as it is), for every account new to the profiles. `Core.Audio.Add(name, off)`: a profile of every sound on but those named off, at the game's volumes, not put in use (a setup addon: the druid's account on All sound off, the warrior's on Music off).
 - **`dev/tests/core.lua`**, **`dev/tests/navigation.lua`:** the four defaults, `Add`. `src/Core/README.md`, `Doc/agent/core.md`, `Doc/changelog.txt`.
 
+### Sane Macros: every macro on the bars stays (Saneroki, 2026-11-04)
+Saneroki: "When I move a macro to the action bar, the last macro i had placed disapears ... it never should remove any other then when i pull them out of the actionbar or overwrite it"; "putting a macro fx on alt 7 nothing happens". Each change (a place, a key, the game's key settings) laid every bar button anew: hidden, its driver set again. The game's state driver sets a state only when it changes (`SecureStateDriver.lua`, `resolveDriver`), so a button whose state stayed "ours" was never shown again: only the one placed last stood, and a macro dropped on a button that already held one (Alt 7) not at all.
+- **`src/Combat/Macros/Reach.lua`:** a button taken down forgets its state (`state-slot`), so its driver set again shows it.
+- **`dev/tests/macros.lua`:** the state driver stood in as the game's (the state only when it changes, then the header's snippet with its bindings); three macros on the bars at once through a new place, a key and one taken off; a macro dropped on a taken button.
+
 ### The toast of a new level right of the guide's arrow; the arrow stays in sight (Saneroki, 2026-11-04)
 Saneroki: "The guide arrow, can you make it stay visible when the level up appears and move the level up toast to the right so it doesn't cover the arrow?" Both stood in the middle at `Core.TOAST_TOP`, so the arrow made way for each level.
 - **`src/Inventory/LevelUp.lua`:** the toast stands `LevelUp.RIGHT` (340) right of the middle, at the same height: the arrow's part is 240 wide in the middle, the toast 240 with fading edges of 90, so the edge ends beside the arrow. It no longer takes the top's place (`Core.TellsAtTop`), so the arrow stays; the travel overlay still sends it away.

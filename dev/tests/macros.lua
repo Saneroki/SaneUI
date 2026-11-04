@@ -207,8 +207,32 @@ SetOverrideBindingClick = function(owner, _, key, name, mouse)
     overrides[owner][key] = name .. ":" .. mouse
 end
 local register, unregister = RegisterStateDriver, UnregisterStateDriver
+-- The game's driver (SecureStateDriver.lua, resolveDriver) sets the state only when it changes; the header's snippet
+-- (_onstate-slot) then runs, secure, with the bindings it may set its own.
+local function Resolve(frame, words)
+    local value = SecureCmdOptionParse(words)
+    if value == nil or value == frame:GetAttribute("state-slot") then return end
+    frame:SetAttribute("state-slot", value)
+    local handle = setmetatable({
+        ClearBindings = function() overrides[frame] = nil end,
+        SetBindingClick = function(_, _, key, name, mouse)
+            overrides[frame] = overrides[frame] or {}
+            overrides[frame][key] = name .. ":" .. mouse
+        end,
+    }, { __index = function(_, name)
+        local method = frame[name]
+        if type(method) == "function" then return function(_, ...) return method(frame, ...) end end
+        return method
+    end })
+    W.AsGame(function() assert(loadstring("local self, stateid, newstate = ...\n" .. frame:GetAttribute("_onstate-slot")))(handle, "slot", value) end)
+end
 RegisterStateDriver = function(frame, state_, words)
-    if state_ == "slot" then drivers[frame] = { state_, words } elseif register then register(frame, state_, words) end
+    if state_ == "slot" then
+        drivers[frame] = { state_, words }
+        Resolve(frame, words)
+    elseif register then
+        register(frame, state_, words)
+    end
 end
 UnregisterStateDriver = function(frame, state_)
     if state_ == "slot" then drivers[frame] = nil elseif unregister then unregister(frame, state_) end
@@ -442,6 +466,39 @@ Reach.SetPlace(keyed, "ActionButton3:3")
 check(Book.PlaceOf(keyed) == "ActionButton3:3", "one bar button a macro")
 Reach.TakePlace(keyed)
 check(next(drivers) == nil, "taken off, the game's button is the game's")
+
+-- Many macros on the bars at once (Saneroki, 2026-11-04: "When I move a macro to the action bar, the last macro i had
+-- placed disapears"): a new place, a key or the game's key settings changed leave the others standing, with their keys.
+;(function()
+    state["bar:1"] = true
+    local fourth = rawget(_G, "MultiBar5Button4") or CreateFrame("Button", "MultiBar5Button4", bars)
+    local fifth = rawget(_G, "MultiBar5Button5") or CreateFrame("Button", "MultiBar5Button5", bars)
+    local rend, block = Macro(Spell("Rend")), Macro(Spell("Shield Block"))
+    Reach.SetPlace(keyed, "ActionButton3:1")
+    local first = _G.SaneUIMacroFace_ActionButton3_1
+    check(first._shown and overrides[next(drivers)] ~= nil, "one on Bar 1: shown, with the button's keys")
+    Reach.SetPlace(rend, "MultiBar5Button4")
+    Reach.SetPlace(block, "MultiBar5Button5")
+    local second, third = _G.SaneUIMacroFace_MultiBar5Button4, _G.SaneUIMacroFace_MultiBar5Button5
+    check(first._shown and second._shown and third._shown, "three macros on the bars: every one stands")
+    local keyed1
+    for frame, driver in pairs(drivers) do if driver[2]:find("[bar:1]", 1, true) then keyed1 = frame end end
+    check(keyed1 and overrides[keyed1] and overrides[keyed1]["3"], "the first keeps its keys")
+    Reach.SetKey(rend, "K")
+    check(first._shown and second._shown and third._shown, "a key set: they all still stand")
+    Reach.TakePlace(rend)
+    check(first._shown and not second._shown and third._shown, "one taken off: only that one goes")
+    -- Another macro dropped where one stands (Saneroki: "putting a macro on alt 7 nothing happens"): it stands there.
+    Reach.SetPlace(rend, "ActionButton3:1")
+    check(Book.PlaceOf(keyed) == nil and first._shown and first:GetFrameRef("hub") == Press.Hub(rend) and third._shown,
+        "a macro dropped on a taken button: shown there, the one before off it")
+    Reach.SetPlace(keyed, "ActionButton3:1")
+    Reach.TakePlace(keyed)
+    Reach.TakePlace(block)
+    Reach.TakeKey(rend)
+    check(next(drivers) == nil and not first._shown and not third._shown, "all taken off")
+    state["bar:1"] = nil
+end)()
 
 -- Deleted on another character: its key and place fall away here at the login.
 Macros.own.keys.Z, Macros.own.places["ActionButton3:1"] = 9999, 9999
