@@ -1,5 +1,6 @@
 -- Combat's full screen with Sane Macros and the action bars as windows: Core and Combat from their TOCs, the game's
--- action bars standing in (the lab has none), two wide and a tall one. Drag a macro from the list onto a bar.
+-- action bars standing in (the lab has none), four wide ones stacked and touching and a tall one. Drag a macro from
+-- the list onto a bar.
 -- In the console LabMacros is the module's table, LabBars.Full() brings the full screen again.
 for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "PlayerCastingBarFrame",
                         "OverlayPlayerCastingBarFrame", "MirrorTimerContainer", "PartyFrame", "CompactRaidFrameContainer" }) do
@@ -37,8 +38,17 @@ local function Bar(name, prefix, across, rows, x, y)
     return bar
 end
 Bar("MainActionBar", "ActionButton", 12, 1, 0, 8)
-Bar("MultiBarBottomLeft", "MultiBarBottomLeftButton", 12, 1, 0, 50)
+Bar("MultiBar7", "MultiBar7Button", 12, 1, 0, 48)
+Bar("MultiBar6", "MultiBar6Button", 12, 1, 0, 88)
+Bar("MultiBar5", "MultiBar5Button", 12, 1, 0, 128)
 Bar("MultiBarRight", "MultiBarRightButton", 1, 12, 600, 100)
+
+-- Two of the game's macros, marked W under yours.
+GetNumMacros = function() return 2, 0 end
+GetMacroInfo = function(index)
+    if index == 1 then return "Mount", 132261, "/use Horse" end
+    if index == 2 then return "Hearth", 134414, "/use Hearthstone" end
+end
 
 Lab.TOC("src/Core/SaneUI.toc")
 local combat = Lab.TOC("src/Combat/SaneUI_Combat.toc")
@@ -59,6 +69,7 @@ Lab.OnLogin(function()
             tank.steps[#tank.steps + 1] = Book.Step("spell", name)
         end
         Book.New("Mouse heal")
+        for _, name in ipairs({ "Hi", "Thanks", "Sit", "Follow", "HP Potion" }) do Book.FromGame(name, "/" .. name:lower()) end
     end
     combat.Window.Fill()
 end)

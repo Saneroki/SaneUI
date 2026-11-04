@@ -15,14 +15,18 @@ of your normal action bar buttons. The macros are your account's, on every chara
   full screen switched off) as a window of its own, whose first title bar button goes to the game's own macro window. The
   game's macros stay as they are.
 - **New macro:** *New* makes an empty one, or takes one over from the game's macros as macro text. *Copy*, *Delete*.
-- **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, marked with a gold **W**. A click opens it in the
+- **The list** (Saneroki, 2026-11-04): as the game's macro window shows its macros, squares of their pictures with the names
+  under them, yours first, the one chosen lit in gold; a key shows at the picture's corner as on a bar button, a red **!** where
+  the checks found something. A macro's picture is that of its first step switched on; macro text with no spell shows the
+  question mark.
+- **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, under their own line and marked with a gold **W**. A click opens it in the
   game's own macro window, on that macro; a drag puts it on an action bar as the game's macro; a right click makes a Sane
   Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *Sane UI*
   brings Sane Macros back. Until then `/macro` opens the game's.
 - **Its key:** *Set key*, then press the key, with Shift, Ctrl or Alt if you like, or a mouse's extra button. Esc leaves it
   as it was; a right click takes it away. For this character, and it stays out of the game's own key settings.
 - **Its bar button:** drag the macro from the list, or its picture, onto a button of your action bars, or click *Place on
-  bar* and choose one. It works and
+  bar* and choose one. Its picture follows the mouse and the button under it gets a gold frame; the bars stay clear. It works and
   looks like a normal button, with that button's keys, on that page of Bar 1. What the button holds stays underneath and is
   back when the macro is taken off (a right click on the same button in the window). One button a macro, for this character.
 - **Order:**
@@ -59,6 +63,10 @@ of your normal action bar buttons. The macros are your account's, on every chara
   button is never touched. A state driver per place says `ours` while the bar shows that button; a snippet then shows ours
   and takes the button's keys by override bindings, and gives them back on another page of Bar 1, in a vehicle or on a bar the
   game puts in place of yours, in a fight too. Keys read from the game's bindings; `UPDATE_BINDINGS` takes a change.
+- **Choosing a bar button** (`Place.lua`). An unseen square over every button of every bar that shows takes the click, so a click
+  casts nothing; nothing is drawn over the bars (Saneroki, 2026-11-04: a gold wash over every button hid them). The button under
+  the mouse comes from the frames the game says are under it (`GetMouseFoci`), only then from each square's `IsMouseOver`: a
+  square hangs on the game's button, and where the game keeps that button's place to itself the answer is hidden (`Core.Plain`: no).
 - **What shows.** The picture of the turn the next press would take (`Press.Next`, the game's parser answers plainly in a fight),
   its cooldown by the game's duration object (a hidden value is taken as it is), dimmed by `C_Spell.IsSpellUsable` (plain in a
   fight). `isActive` of a cooldown is true during the GCD too.
@@ -97,8 +105,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Press.lua` | The hub, the snippet, loading a macro, the turn that comes next, a step's picture |
 | `Face.lua` | Our button over a bar button: picture, swirl, dimming, key |
 | `Reach.lua` | Keys and bar buttons, the state drivers, what is given back |
-| `Place.lua` | Choosing a bar button with the mouse |
+| `Place.lua` | Choosing a bar button with the mouse: unseen squares, the picture at the mouse, the gold frame |
 | `Picker.lua` | The list behind the + |
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
 | `Detail.lua` | The chosen step's settings |
-| `Editor.lua` | The window, the macros' list (yours, then the game's marked W), its head, the key's capture, the game's window |
+| `Editor.lua` | The window, the macros' list as squares (yours, then the game's marked W), its head, the key's capture, the game's window |

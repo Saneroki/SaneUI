@@ -175,7 +175,8 @@ if RETAIL then
     check(handle.zone == "BOTTOM" and strip and strip:IsShown() and strip._width == 1920 * ns.Window.STRIP,
         "its window is at the bottom middle, and the middle half of the bottom edge fills the screen")
     local first, windows = layouts.options.default(), layouts.options.windows()
-    check(first and first.split == "y" and first.parts[1].parts[1].key == "game" and first.parts[2].key == "bars" and #windows == 3
+    check(first and first.split == "x" and first.parts[1].key == "game" and first.parts[2].split == "y"
+        and first.parts[2].parts[1].key == "macros" and first.parts[2].parts[2].key == "bars" and #windows == 3
         and windows[1].key == "game" and windows[1].title == ns.TEXT.book and windows[2].key == "macros" and windows[3].key == "bars"
         and Core.Classic.List(handle) == nil,
         "its windows are the game's own of both, Sane Macros and the action bars; no Classic windows of Combat's")
@@ -784,9 +785,11 @@ if hasTalents then
     check(rects.macros and rects.macros[1] == 3 * pad + rects.talents[3] + rects.spellbook[3]
         and rects.macros[1] + rects.macros[3] == 1920 - pad and math.abs(rects.macros[3] - ns.Macros.Editor.LEAST[1]) < 40,
         "Sane Macros at the right, as wide as it needs")
-    check(rects.bars and rects.bars[1] == pad and rects.bars[3] == 1920 - 2 * pad
-        and rects.bars[2] >= rects.talents[2] + rects.talents[4] and rects.bars[2] + rects.bars[4] == top - pad,
-        "the action bars are a window along the foot, under the others and clear of them")
+    check(rects.bars and rects.bars[1] == rects.macros[1] and rects.bars[3] == rects.macros[3]
+        and rects.bars[2] >= rects.macros[2] + rects.macros[4] and rects.bars[2] + rects.bars[4] == top - pad,
+        "the action bars are a window under Sane Macros, as wide as it (Saneroki, 2026-11-04)")
+    check(rects.talents[2] + rects.talents[4] == top - pad and rects.macros[4] >= ns.Macros.Editor.LEAST[2],
+        "the talents and the spellbook reach the foot, Sane Macros keeps its least height")
 end
 check(layouts.panels.bars and layouts.panels.bars:IsShown() and layouts.panels.bars.title._text == ns.TEXT.barsWindow,
       "with its own panel")
@@ -804,6 +807,16 @@ do
     check(scale < 1 and scale >= Room.SMALLEST and Room.Flow(wide, 1100, scale) <= 30, "smaller where it does not")
     check(Room.Fit(wide, 1100, 10) == Room.SMALLEST, "and never smaller than the least")
     check(select(2, Room.Flow({ { width = 500, height = 40 } }, 400, 1)) == false, "a bar wider than the room is told")
+    -- The wide ones as they stand on the screen (Saneroki, 2026-11-04: "directly stacked"): four rows touching, the
+    -- whole in the room's middle, smaller where it does not fit; in lines where a bar's place is not known.
+    local stacked = {}
+    for row = 1, 4 do stacked[row] = { width = 540, height = 45, home = { 690, 45 * (5 - row) } } end
+    check(Room.Arrange(stacked, 800, 300) == 1 and stacked[1].x == 130 and stacked[1].y == 60
+        and stacked[2].y == 105 and stacked[4].y == 195 and stacked[4].x == 130, "stacked as on the screen, touching, in the middle")
+    check(Room.Arrange(stacked, 800, 90) == 0.5 and stacked[1].y == 0 and stacked[2].y == 22.5 and stacked[1].x == 265,
+          "the whole smaller where it does not fit")
+    stacked[3].home = nil
+    check(Room.Arrange(stacked, 800, 300) == nil, "a bar whose place is not known: none stands so")
     local tallOnes = { { width = 40, height = 480 }, { width = 40, height = 480 } }
     check(Room.Fit(tallOnes, 90, 600) == 1 and tallOnes[2].x == 40 + gap and tallOnes[2].y == 0,
           "tall bars side by side in their own window, at their own size")
@@ -1906,8 +1919,8 @@ do
     check(#entries == 1 and entries[1].window == "spellbook", "Classic windows: the game's spellbook, not its talents")
     local first, listed = layouts.options.default(), {}
     for _, spec in ipairs(layouts.options.windows()) do listed[spec.key] = true end
-    check(first and first.split == "y" and first.parts[1].parts[1].key == "spellbook" and first.parts[1].parts[2].key == "macros"
-        and first.parts[2].key == "bars" and listed.spellbook and listed.bars and not listed.talents,
+    check(first and first.split == "x" and first.parts[1].key == "spellbook" and first.parts[2].parts[1].key == "macros"
+        and first.parts[2].parts[2].key == "bars" and listed.spellbook and listed.bars and not listed.talents,
         "the first layout is the spellbook and Sane Macros over the action bars, and the dropdown Windows has no talents")
     W.Play("retail")
     ns.Keys.Bind()

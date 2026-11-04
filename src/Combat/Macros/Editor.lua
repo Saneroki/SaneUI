@@ -5,7 +5,9 @@ local Macros = ns.Macros
 --  Sane UI - Combat - Macros - Editor
 --  Sane Macros, in the game's macro window's stead (/macro, the game menu, /sane
 --  macros, its key): on the left your macros, and under them the game's own,
---  marked W (Saneroki, 2026-11-03), on the right the one chosen: its name, key and
+--  marked W (Saneroki, 2026-11-03), as squares of their pictures with their names
+--  under them, as the game's window shows its macros (Saneroki, 2026-11-04); on
+--  the right the one chosen: its name, key and
 --  bar button, its order, its steps, and under them the chosen step's settings.
 --  Every change counts at once; in a fight it waits for the fight's end. A game's
 --  macro opens in the game's macro window, as the button Game macros does.
@@ -20,18 +22,22 @@ local Core = SaneUI.Core
 local Editor = {}
 Macros.Editor = Editor
 
-Editor.WIDTH, Editor.HEIGHT = 880, 640
-Editor.LEAST = { 760, 480 } -- the panel on the full screen at least this large
+Editor.WIDTH, Editor.HEIGHT = 920, 640
+Editor.LEAST = { 800, 480 } -- the panel on the full screen at least this large
 Editor.INSET = 12
-Editor.LIST = 210    -- the macros' list
-Editor.LINE = 24     -- a macro's line
+Editor.LIST = 250    -- the macros' list, its scroll bar too
+Editor.SQUARE = 44   -- a macro's picture in the list (the game's window: 36)
+Editor.CELL = 52     -- a macro's room in the list: its picture, its name under it
+Editor.ROW = 68      -- from one row of the list to the next
+Editor.GAP = 6       -- between two macros in a row
+Editor.HEAD = 22     -- the line over the game's macros
 Editor.ICON = 36     -- the macro's picture
 Editor.DRAG = "LeftButton"
 Editor.BESIDE = 306  -- of the right side's width, what is not the name's box
 
 local KEY = "macros"
 local frame, window, built, page, onBoard
-local list, child, empty, right, picture, name, keyButton, placeButton, orderMenu, fresh, freshWord, flags, copy, delete
+local list, child, empty, gameHead, right, picture, name, keyButton, placeButton, orderMenu, fresh, freshWord, flags, copy, delete
 local catcher
 local lines = {}
 local chosen     -- the macro shown
@@ -45,13 +51,13 @@ local function AccountMax()
     return consts and consts.MAX_ACCOUNT_MACROS or 120
 end
 
--- The game's macros, the account's then the character's: { index, name } each.
+-- The game's macros, the account's then the character's: { index, name, icon } each.
 local function GameList()
     local list = {}
     local account, own = Core.Ask(GetNumMacros)
     local function Add(index)
-        local title = Core.Ask(GetMacroInfo, index)
-        if title then list[#list + 1] = { index = index, name = title } end
+        local title, icon = Core.Ask(GetMacroInfo, index)
+        if title then list[#list + 1] = { index = index, name = title, icon = icon } end
     end
     for index = 1, account or 0 do Add(index) end
     for index = AccountMax() + 1, AccountMax() + (own or 0) do Add(index) end
@@ -100,72 +106,142 @@ end
 
 local GameClick
 
+-- A macro's picture in the list: its first step switched on.
+local function Picture(macro)
+    for _, each in ipairs(macro.steps) do
+        if not each.off then return Macros.Press.Picture(each) end
+    end
+    return Macros.Press.ICON
+end
+
+local function Short(key)
+    return key and Macros.Reach.Short(key) or ""
+end
+
+local function MacroTip(line)
+    if line.game then return Core.ShowTip(line, Macros.TEXT.gameLine, Macros.TEXT.gameLineTip) end
+    local key = Macros.Book.KeyOf(line.macro)
+    local text = Macros.TEXT.lineTip
+    if key then text = Macros.TEXT.lineKey:format(Short(key)) .. "\n" .. text end
+    Core.ShowTip(line, line.macro.name, text)
+end
+
+-- A macro in the list, as the game's window shows one: its picture on an empty slot, its name under it, the
+-- game's light under the mouse and its gold light on the one chosen; a game's macro marked W, a key at the
+-- picture's corner as on a bar button, and a red ! where the checks found something.
 local function Line(index)
     local line = CreateFrame("Button", nil, child)
-    line:SetHeight(Editor.LINE)
-    line:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -(index - 1) * Editor.LINE)
-    line:SetPoint("RIGHT", child, "RIGHT", 0, 0)
+    line:SetSize(Editor.CELL, Editor.SQUARE + 18)
     line:EnableMouse(true)
     line:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     line:RegisterForDrag(Editor.DRAG)
-    line.mark = line:CreateTexture(nil, "BACKGROUND")
-    line.mark:SetAllPoints()
-    line.mark:SetColorTexture(1, 1, 1, 0.1)
-    line.flag = line:CreateFontString(nil, "OVERLAY", "GameFontRed")
-    line.flag:SetPoint("RIGHT", -3, 0)
-    line.flag:SetText("!")
-    line.key = line:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    line.key:SetPoint("RIGHT", line.flag, "LEFT", -4, 0)
-    line.badge = line:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall") -- a game's macro: gold W
-    line.badge:SetPoint("LEFT", 4, 0)
+    local square = Editor.SQUARE
+    line.slot = line:CreateTexture(nil, "BACKGROUND")
+    line.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot-Disabled")
+    line.slot:SetTexCoord(0.140625, 0.84375, 0.140625, 0.84375)
+    line.slot:SetSize(square * 45 / 36, square * 45 / 36)
+    line.slot:SetPoint("TOP", 0, square * 9 / 72)
+    line.icon = line:CreateTexture(nil, "ARTWORK")
+    line.icon:SetSize(square, square)
+    line.icon:SetPoint("TOP")
+    line.icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
+    local lit = line:CreateTexture(nil, "HIGHLIGHT")
+    lit:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+    lit:SetBlendMode("ADD")
+    lit:SetAllPoints(line.icon)
+    line.mark = line:CreateTexture(nil, "OVERLAY")
+    line.mark:SetTexture("Interface\\Buttons\\CheckButtonHilight")
+    line.mark:SetBlendMode("ADD")
+    line.mark:SetAllPoints(line.icon)
+    line.badge = line:CreateFontString(nil, "OVERLAY", "GameFontNormalSmallOutline") -- a game's macro: gold W
+    line.badge:SetPoint("TOPLEFT", line.icon, "TOPLEFT", 3, -3)
     line.badge:SetText(Macros.TEXT.gameMark)
-    line.name = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    line.name:SetPoint("RIGHT", line.key, "LEFT", -4, 0)
-    line.name:SetJustifyH("LEFT")
+    line.flag = line:CreateFontString(nil, "OVERLAY", "GameFontRed")
+    line.flag:SetPoint("TOPLEFT", line.icon, "TOPLEFT", 4, -2)
+    line.flag:SetText("!")
+    line.key = line:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmallGray")
+    line.key:SetPoint("TOPRIGHT", line.icon, "TOPRIGHT", -2, -3)
+    line.key:SetJustifyH("RIGHT")
+    line.key:SetWidth(square - 6)
+    line.key:SetWordWrap(false)
+    line.name = line:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    line.name:SetPoint("TOP", line.icon, "BOTTOM", 0, -3)
+    line.name:SetWidth(Editor.CELL)
+    line.name:SetJustifyH("CENTER")
     line.name:SetWordWrap(false)
     line:SetScript("OnClick", ns.Guard(function(_, mouse)
         if line.game then return GameClick(line, mouse) end
         Editor.Choose(line.macro)
     end))
     line:SetScript("OnDragStart", ns.Guard(function()
+        Core.HideTip()
         if line.game then return Core.Ask(rawget(_G, "PickupMacro"), line.game.index) end
         Editor.Choose(line.macro)
         Editor.DragToBar()
     end))
     line:SetScript("OnDragStop", ns.Guard(function() if not line.game then Macros.Place.Drop() end end))
-    line:SetScript("OnEnter", ns.Guard(function()
-        if line.game then Core.ShowTip(line, Macros.TEXT.gameLine, Macros.TEXT.gameLineTip) end
-    end))
+    line:SetScript("OnEnter", ns.Guard(MacroTip))
     line:SetScript("OnLeave", ns.Guard(Core.HideTip))
     lines[index] = line
     return line
 end
 
--- A line of the list: one of ours (macro) or one of the game's (game, marked W).
+-- A macro of the list: one of ours (macro) or one of the game's (game, marked W).
 local function Dress(line, macro, game)
     line.macro, line.game = macro, game
     line.badge:SetShown(game ~= nil)
-    line.name:SetPoint("LEFT", game and 18 or 4, 0)
+    line.icon:SetTexture(macro and Picture(macro) or game.icon or Macros.Press.ICON)
     line.name:SetText(macro and macro.name or game.name)
     line.mark:SetShown(macro ~= nil and macro == chosen)
-    line.key:SetText(macro and Macros.Book.KeyOf(macro) or "")
+    line.key:SetText(macro and Short(Macros.Book.KeyOf(macro)) or "")
     line.flag:SetShown(macro ~= nil and ns.options.macroChecks and Macros.Check.Macro(macro).count > 0)
     line:Show()
 end
 
+-- How many macros stand in a row of the list.
+local function Across()
+    local wide = Editor.LIST - 24
+    return math.max(1, math.floor((wide + Editor.GAP) / (Editor.CELL + Editor.GAP)))
+end
+
+-- The macro at that place of its group, from the group's top.
+local function Put(line, at, top)
+    local across = Across()
+    local column, row = (at - 1) % across, math.floor((at - 1) / across)
+    line:ClearAllPoints()
+    line:SetPoint("TOPLEFT", child, "TOPLEFT", column * (Editor.CELL + Editor.GAP), -(top + row * Editor.ROW))
+end
+
+local function Rows(count)
+    return math.ceil(count / Across())
+end
+
+-- Yours in rows, then a line and the game's.
 local function Lines()
-    local count = 0
-    for _, macro in ipairs(Macros.Book.All()) do
+    local count, top = 0, 4
+    local own = Macros.Book.All()
+    empty:SetShown(own[1] == nil)
+    if not own[1] then top = top + 34 end
+    for at, macro in ipairs(own) do
         count = count + 1
-        Dress(lines[count] or Line(count), macro, nil)
+        local line = lines[count] or Line(count)
+        Dress(line, macro, nil)
+        Put(line, at, top)
     end
-    for _, game in ipairs(GameList()) do
+    top = top + Rows(#own) * Editor.ROW
+    local games = GameList()
+    gameHead:SetShown(games[1] ~= nil)
+    gameHead:SetPoint("TOPLEFT", child, "TOPLEFT", 2, -top)
+    if games[1] then top = top + Editor.HEAD end
+    for at, game in ipairs(games) do
         count = count + 1
-        Dress(lines[count] or Line(count), nil, game)
+        local line = lines[count] or Line(count)
+        Dress(line, nil, game)
+        Put(line, at, top)
     end
+    top = top + Rows(#games) * Editor.ROW
     for index = count + 1, #lines do lines[index]:Hide() end
-    empty:SetShown(count == 0)
-    child:SetHeight(math.max(count * Editor.LINE, 1))
+    child:SetHeight(math.max(top, 1))
 end
 
 local function Head()
@@ -271,13 +347,13 @@ end
 
 -- A drag begins: the bar buttons take it.
 function Editor.DragToBar()
-    if chosen then Macros.Place.Start(Placed) end
+    if chosen then Macros.Place.Start(Placed, Picture(chosen)) end
 end
 
 local function BeginPlacing()
     if not chosen then return end
     ns.Print(Macros.TEXT.placeAsk:format(chosen.name))
-    Macros.Place.Start(Placed)
+    Macros.Place.Start(Placed, Picture(chosen))
 end
 
 local function PlaceClick(_, mouse)
@@ -402,6 +478,8 @@ local function Left(inside, I)
     empty:SetWidth(Editor.LIST - 32)
     empty:SetJustifyH("LEFT")
     empty:SetText(Macros.TEXT.none)
+    gameHead = child:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    gameHead:SetText(Macros.TEXT.gameMacros)
     local game = Macros.Button(inside, Macros.TEXT.gameWindow, 90, 18)
     game:SetPoint("TOPRIGHT", inside, "TOPLEFT", I + Editor.LIST - 24, -I + 2)
     game:SetScript("OnClick", ns.Guard(function() Editor.OpenGame() end))

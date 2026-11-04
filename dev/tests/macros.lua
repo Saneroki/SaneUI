@@ -552,6 +552,23 @@ square._over = true
 Macros.Place.Drop()
 square._over = nil
 check(Book.PlaceOf(dragged) == "ActionButton3:1" and not square:IsShown(), "and let go on one it stands there")
+-- The bars stay clear (Saneroki, 2026-11-04): nothing over a button but an unseen square; the picture follows the
+-- mouse, the button under it gets a gold frame; the game's frames under the mouse say which, as a square's
+-- IsMouseOver may answer no where the game keeps a button's place to itself.
+Reach.TakePlace(dragged)
+Editor.DragToBar()
+local carried = Macros.Place.Carried()
+check(#square._children == 0 and carried:IsShown() and carried.icon:GetTexture() == Macros.Press.ICON, "no wash over the buttons, the picture at the mouse")
+W.foci = { square }
+carried:GetScript("OnUpdate")(carried, 0.01)
+check(Macros.Place.Over() == square and carried.hint:IsShown(), "the button under the mouse in a gold frame")
+Macros.Place.Drop()
+W.foci = {}
+check(Book.PlaceOf(dragged) == "ActionButton3:1" and not carried:IsShown() and not carried.hint:IsShown(),
+      "let go there, by the frames under the mouse: it stands there")
+Editor.DragToBar()
+Macros.Place.Drop()
+check(Book.PlaceOf(dragged) == "ActionButton3:1" and not square:IsShown(), "let go on no button: nothing changes")
 Reach.TakePlace(dragged)
 Book.Delete(dragged)
 Editor.Choose(inner)
@@ -601,6 +618,31 @@ local first, second = Editor.Line(ours + 1), Editor.Line(ours + 2)
 check(first.game and first.game.index == 1 and first.name:GetText() == "Mount" and second.game.index == 121
     and first.badge:IsShown() and not Editor.Line(1).badge:IsShown(), "the game's macros under ours, marked")
 check(not Editor.Line(ours + 3) or not Editor.Line(ours + 3):IsShown(), "and no more")
+-- As the game's window shows them (Saneroki, 2026-11-04): squares of their pictures in rows, the names under them,
+-- the game's under a line of their own.
+do
+    local across = math.floor((Editor.LIST - 24 + Editor.GAP) / (Editor.CELL + Editor.GAP))
+    local function At(line) return line._points[1][4], line._points[1][5] end
+    local extra = ours < 2 and Book.New("Second") or nil
+    Editor.Refresh()
+    ours = #Book.All()
+    first = Editor.Line(ours + 1)
+    check(across >= 4 and ours >= 2, "four macros or more a row")
+    local x1, y1 = At(Editor.Line(1))
+    local x2, y2 = At(Editor.Line(2))
+    check(x1 == 0 and y2 == y1 and x2 == Editor.CELL + Editor.GAP, "yours side by side in a row")
+    check(Editor.Line(1).icon:GetTexture() == Macros.Press.Picture(Book.All()[1].steps[1]) and first.icon:GetTexture() == 1,
+          "each with its picture, a game's with the one the game gives it")
+    local gx, gy = At(first)
+    check(gx == 0 and gy < y1 - math.ceil(ours / across) * Editor.ROW + 1, "the game's on a row of their own, under yours")
+    Editor.Choose(Book.All()[1])
+    check(Editor.Line(1).name:GetText() == Book.All()[1].name and Editor.Line(1).mark:IsShown() and not Editor.Line(2).mark:IsShown(),
+          "its name under it, the one chosen lit")
+    if extra then Book.Delete(extra) end
+    Editor.Refresh()
+    ours = #Book.All()
+    first, second = Editor.Line(ours + 1), Editor.Line(ours + 2)
+end
 second:GetScript("OnClick")(second, "LeftButton")
 check(opened == 1 and tabbed == 2 and MacroFrame.at == 1, "a click opens the game's window on that macro, a character's on its tab")
 MacroFrame:Hide()

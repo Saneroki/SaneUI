@@ -8,8 +8,12 @@ local _, ns = ...
 --  tall bar in a strip would be too small to drop on). Each bar that shows is
 --  seated in its panel's body (Core.Seat: its place, scale and layer lent, given
 --  back when the full screen goes): the bars stay the game's own, their keys and
---  buttons work as ever. They stand in lines from the left at the largest scale,
---  at most their own, at which all of them fit.
+--  buttons work as ever. The wide ones stand as they stand on the screen, stacked
+--  as you put them (Saneroki, 2026-11-04: "directly stacked like they are in the
+--  not fullscreen view"), the whole in the panel's middle; the tall ones side by
+--  side, and the wide ones too where a bar's place on the screen is not known: in
+--  lines from the left. Either at the largest scale, at most their own, at which
+--  all of them fit.
 --
 --  While seated every button shows, an empty one too (ActionBars.lua, Seated). In
 --  a fight nothing is moved: bars seated stay, and go back when it is over.
@@ -28,6 +32,7 @@ Room.LEAST = { 300, 100 }
 Room.LEAST_SIDE = { 90, 240 }
 
 local seats = {}      -- [the game's bar] = its seat, once made
+local homes = {}      -- [seat] = { left, top }: where its bar stands on the screen, read while it is not seated
 local panels = {}     -- [the part's key] = { body, shown, tall, relay }
 
 local function SeatOf(frame, relay)
@@ -40,7 +45,21 @@ local function SeatOf(frame, relay)
     return seat
 end
 
--- The bars that show of one kind (tall or wide), with their sizes in UIParent's units.
+-- Where a bar stands on the screen, its top left in UIParent's units: read while it is not seated, kept while it is.
+local function Home(seat)
+    if seat.held then return homes[seat] end
+    local frame = seat.frame
+    local left, top = Core.Plain(frame:GetLeft()), Core.Plain(frame:GetTop())
+    if not (left and top) then
+        homes[seat] = nil
+        return nil
+    end
+    local ratio = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    homes[seat] = { left * ratio, top * ratio }
+    return homes[seat]
+end
+
+-- The bars that show of one kind (tall or wide), with their sizes and places on the screen in UIParent's units.
 local function Entries(tall, relay)
     local list = {}
     for _, frame in ipairs(ns.ActionBars.Frames()) do
@@ -48,11 +67,41 @@ local function Entries(tall, relay)
             local seat = SeatOf(frame, relay)
             local width, height = seat:Size()
             if width > 0 and height > 0 and (height > width) == tall then
-                list[#list + 1] = { seat = seat, width = width, height = height }
+                list[#list + 1] = { seat = seat, width = width, height = height, home = Home(seat) }
             end
         end
     end
     return list
+end
+
+-- The room the bars take as they stand on the screen: its left and top, width and height; nil where a bar's place
+-- is not known.
+local function Box(list)
+    local left, top, right, bottom
+    for _, entry in ipairs(list) do
+        local home = entry.home
+        if not home then return nil end
+        left, top = math.min(left or home[1], home[1]), math.max(top or home[2], home[2])
+        right = math.max(right or home[1] + entry.width, home[1] + entry.width)
+        bottom = math.min(bottom or home[2] - entry.height, home[2] - entry.height)
+    end
+    if not left then return nil end
+    return left, top, right - left, top - bottom
+end
+
+-- Where each bar stands as on the screen, the whole at the largest scale at which it fits (at most 1, at least the
+-- least), in the room's middle: entry.x, entry.y from the room's top left. Returns the scale, or nil where a bar's
+-- place on the screen is not known.
+local function Arrange(list, across, high)
+    local left, top, wide, tall = Box(list)
+    if not left or wide <= 0 or tall <= 0 then return nil end
+    local scale = math.max(math.min(1, across / wide, high / tall), Room.SMALLEST)
+    local x, y = math.max((across - wide * scale) / 2, 0), math.max((high - tall * scale) / 2, 0)
+    for _, entry in ipairs(list) do
+        entry.x = x + (entry.home[1] - left) * scale
+        entry.y = y + (top - entry.home[2]) * scale
+    end
+    return scale
 end
 
 -- Where each bar stands at that scale in a room that wide: entry.x, entry.y from its top left, in lines. Returns how
@@ -91,7 +140,8 @@ local function Lay(panel)
     local ratio = body:GetEffectiveScale() / UIParent:GetEffectiveScale()
     left, top = left * ratio, top * ratio
     local list = Entries(panel.tall, panel.relay)
-    local scale = Fit(list, body:GetWidth() * ratio, body:GetHeight() * ratio)
+    local across, high = body:GetWidth() * ratio, body:GetHeight() * ratio
+    local scale = not panel.tall and Arrange(list, across, high) or Fit(list, across, high)
     local strata, level = body:GetFrameStrata(), body:GetFrameLevel() + Room.LEVEL
     for _, entry in ipairs(list) do
         entry.seat:Hold(left + entry.x, top - entry.y, entry.width * scale, entry.height * scale, strata, level)
@@ -107,11 +157,14 @@ local function Freed()
     return true
 end
 
--- How high the wide bars' window wants to be on a screen that wide and high, for the first layout.
-function Room.Wants(width, height)
+-- How high the wide bars' window wants to be on a screen that wide and high, for the first layout; at most most
+-- (else its share of the screen's height).
+function Room.Wants(width, height, most)
     local edge, head = Core.Board.EDGE, Core.Board.HEAD
-    local wanted = Flow(Entries(false, panels.bars.relay), (width or 1000) - 2 * edge, 1) + head + 2 * edge
-    return math.max(math.min(wanted, (height or 700) * Room.MOST_SHARE), Room.FIRST)
+    local list = Entries(false, panels.bars.relay)
+    local _, _, _, tall = Box(list)
+    local wanted = (tall or Flow(list, (width or 1000) - 2 * edge, 1)) + head + 2 * edge
+    return math.max(math.min(wanted, most or (height or 700) * Room.MOST_SHARE), Room.FIRST)
 end
 
 -- How wide the tall bars' window wants to be, for the first layout.
@@ -154,7 +207,7 @@ local function Part(key, title, least, tall)
 end
 
 -- For the test.
-Room.Fit, Room.Flow = Fit, Flow
+Room.Fit, Room.Flow, Room.Arrange = Fit, Flow, Arrange
 
 Part("bars", ns.TEXT.barsWindow, Room.LEAST, false)
 Part("sidebars", ns.TEXT.sideBarsWindow, Room.LEAST_SIDE, true)

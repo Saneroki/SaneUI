@@ -21,8 +21,10 @@ local _, ns = ...
 --  Each is a part, in files of its own listed after this one in the TOC, that
 --  registers itself (Board.Part); the board lists the parts that are there.
 --  The first layout puts the talents and the spellbook side by side, each as
---  wide as its share of the two windows' own widths, Sane Macros beside them,
---  the wide action bars in a strip along the foot, the tall ones down the right.
+--  wide as its share of the two windows' own widths, Sane Macros beside them
+--  with the wide action bars under it, stacked as on the screen (Saneroki,
+--  2026-11-04; without Sane Macros in a strip along the foot), the tall ones
+--  down the right.
 --
 --  A panel is Core's (a plate in Sane UI's look, a head with its title and the
 --  X, the body under it); what is in it is its part's. A part runs apart from
@@ -94,8 +96,9 @@ local function Least(spec)
     return least
 end
 
--- Sane Macros beside the row of nodes: its least width of that row, the others sharing the rest as they did.
-local function Macros(nodes, shares, width)
+-- Sane Macros beside the row of nodes (node: it with what stands under it): its least width of that row, the others
+-- sharing the rest as they did.
+local function Macros(nodes, shares, width, node)
     if not Board.Present("macros") then return end
     local wanted = Least(parts.macros.spec)[1]
     local others = 0
@@ -104,12 +107,13 @@ local function Macros(nodes, shares, width)
         local rest = (width - wanted) / others
         for index, share in ipairs(shares) do shares[index] = share * rest end
     end
-    nodes[#nodes + 1] = { key = "macros" }
+    nodes[#nodes + 1] = node or { key = "macros" }
     shares[#shares + 1] = wanted
 end
 
 -- The first layout: the talents and the spellbook side by side, each as wide as its share of their own widths (those
--- of the two this game has: Combat.lua, ns.Serves); Sane Macros beside them; the action bars along the foot.
+-- of the two this game has: Combat.lua, ns.Serves); Sane Macros beside them, the action bars under it (without it,
+-- along the foot).
 local function Default(width, height)
     local nodes, shares = {}, {}
     local side = Board.Present("sidebars") and ns.BarsWindow.Side() or nil
@@ -121,11 +125,19 @@ local function Default(width, height)
             shares[#shares + 1] = (entry.wants or Least(entry.spec))[1]
         end
     end
-    Macros(nodes, shares, width)
+    local high = height or 700
+    local column
+    if Board.Present("macros") then
+        local strip = ns.BarsWindow.Wants(width, height, high - Least(parts.macros.spec)[2])
+        column = { split = "y", parts = { { key = "macros" }, { key = "bars" } }, shares = { math.max(high - strip, strip), strip } }
+    end
+    Macros(nodes, shares, width, column)
     local row = #nodes > 1 and { split = "x", parts = nodes, shares = shares } or nodes[1]
-    local strip = ns.BarsWindow.Wants(width, height)
-    local left = row and { split = "y", parts = { row, { key = "bars" } },
-                           shares = { math.max((height or 700) - strip, strip), strip } } or { key = "bars" }
+    local left = row or { key = "bars" }
+    if not column then
+        local strip = ns.BarsWindow.Wants(width, height)
+        left = row and { split = "y", parts = { row, { key = "bars" } }, shares = { math.max(high - strip, strip), strip } } or left
+    end
     if not side then return left end
     return { split = "x", parts = { left, { key = "sidebars" } }, shares = { width or 1000, side } }
 end

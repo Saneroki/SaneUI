@@ -79,9 +79,10 @@ shows on it, and you make as many bars as you like.
   resets the first or deletes another.
 - **The red error text:** the switch *Hide the red error text* (on at first): the game's red line at the top of the screen and
   its sound are gone, always. Yellow lines stay.
-- **The action bars on the full screen:** the window *Action bars* along the foot, and *Side bars* down the right while a
-  tall bar shows. Your bars stand in them, so no other window lies over them; they work as ever, and every button shows, an
-  empty one too. Drag a macro of Sane Macros onto one. A layout of your own takes them from the dropdown *Windows*.
+- **The action bars on the full screen:** the window *Action bars* under Sane Macros (Saneroki, 2026-11-04; along the foot
+  where Sane Macros is not there), and *Side bars* down the right while a tall bar shows. Your bars stand in them as they
+  stand on your screen, stacked as you put them, so no other window lies over them; they work as ever, and every button
+  shows, an empty one too. Drag a macro of Sane Macros onto one. A layout of your own takes them from the dropdown *Windows*.
 - **Sane Macros:** macros and sequences with no limit of 30, on the full screen beside your bars: `/macro`, `/sane macros` or its key.
   See [Macros/README.md](Macros/README.md). Its switches: *Check macros*, *Dim what cannot be used*, *Show the key on the button*.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*: the
@@ -394,10 +395,14 @@ shows on it, and you make as many bars as you like.
   stops that and mutes every sound effect (`Sound_EnableSFX`). Here the event alone, given back at standing down.
 - **The action bars on the full screen** (`BarsWindow.lua`, the parts `bars` and `sidebars`): `Bars.SEATS` that show, each seated
   in its panel's body (`Core.Seat`), wide ones in one, tall ones in the other (present while there are any): in one they would
-  shrink to nothing. Lines from the left at the largest scale at which all fit. `ActionBars.Seated`: every button shows and the bars
+  shrink to nothing. The wide ones as they stand on the screen (`Arrange`: each bar's top left read while it is not seated, kept
+  while it is; Saneroki, 2026-11-04: "directly stacked like they are in the not fullscreen view"), the whole in the panel's
+  middle; the tall ones, and the wide ones where a bar's place is not plain, in lines from the left (`Flow`). Either at the
+  largest scale, at most 1, at which all fit. `ActionBars.Seated`: every button shows and the bars
   stay in sight at rest. The game's stance and pet bars are left out. In a fight nothing moves; bars seated go back after it.
-  The first layout (`Default`) gives the wide ones a strip of at most `MOST_SHARE` of the height, and Sane Macros (the part `macros`,
-  [Macros/README.md](Macros/README.md)) its least width beside the others.
+  The first layout (`Default`): Sane Macros (the part `macros`, [Macros/README.md](Macros/README.md)) its least width beside the
+  others, the wide bars under it as high as they stand on the screen (at most what Sane Macros' least height leaves); without it, a
+  strip along the foot of at most `MOST_SHARE` of the height.
 - **The game's own window on the full screen** (`GameWindow.lua`, the part `game`, present where `ns.Serves()` is
   false): `PlayerSpellsFrame` seated in the panel's body (`Core.Seat`), never shown or hidden by our code (its
   `OnShow` and `OnHide` set the action bars' grids, its book writes which spell each entry casts:

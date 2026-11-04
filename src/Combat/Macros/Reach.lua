@@ -101,6 +101,7 @@ local function Short(key)
     local text = rawget(_G, "GetBindingText")
     return key and (text and Core.Ask(text, key, 1) or key) or ""
 end
+Reach.Short = Short -- a key as a bar button writes it
 
 local function SetSlot(place, macro)
     local bar, button, page = Reach.Parts(place)

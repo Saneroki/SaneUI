@@ -576,7 +576,8 @@ check(spec and spec.title == ns.TEXT.talents and spec.least[1] == math.floor(121
     and spec.least[2] == math.floor(701 * 0.4) + head + 2 * edge,
     "the talents registered with the board: its title, as small as 40 % of the game's art with the panel round it")
 local first = ns.Board.layouts.options.default()
-local row = first and first.parts and first.parts[1]
+-- The row is the layout itself (Sane Macros' column holds the action bars), or its left part beside the tall bars.
+local row = first and first.parts and (first.parts[1].key and first or first.parts[1])
 check(row and row.parts and row.parts[1].key == "talents" and row.shares[1] > 0,
     "the first layout: the talents at the left")
 
@@ -845,7 +846,7 @@ check(#calls == 0, "and its nodes do nothing")
 -- In Retail, whose talents are not those of two specializations ours are made after (Combat.lua, ns.Serves): ours
 -- are not there, the game's talents stay (nor is our spellbook: the first layout is the game's own window).
 W.Play("retail")
-check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default().parts[1].parts[1].key == "game",
+check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default().parts[1].key == "game",
     "in Retail our talents are not there: the game's stay")
 W.Play("forever")
 check(Talents.Present(), "in Forever they are")
