@@ -13,12 +13,18 @@ local Core = SaneUI.Core
 --  its item level. Never armour of a lighter kind than the one worn there
 --  (cloth over mail), nor an off hand while a two-handed weapon is held.
 --  Shirts, tabards and bags are no gear here.
+--  A shield build (the weights say shield; Saneroki, 2026-11-04: a warrior
+--  whose talents work only with a shield) fights with a one-handed weapon and
+--  a shield: a two-hander is never an upgrade, and one held counts as nothing
+--  in either hand; a one-hander goes against the main hand alone, a shield
+--  against the off hand, which takes nothing else.
 --
 --      Core.Upgrade(link, id)   "empty" (nothing worn there) or "better", what it brings (its worth or what it gains
 --                               on what is worn) and the place it goes (of two the empty or the weaker one); nil: no
 --                               upgrade. id: the item's, read from the link without it
 --      Core.WeighWith(fn)       fn() gives the character's weights: { [the game's stat key] = worth, ranged = worth
---                               of a ranged weapon's damage per second }, nil for none
+--                               of a ranged weapon's damage per second, shield = true on a shield build }, nil for
+--                               none
 -------------------------------------------------------------------------------
 local Plain = Core.Plain
 
@@ -120,15 +126,18 @@ function Core.Upgrade(link, id)
     local facts = Facts(link)
     local places = facts and PLACES[facts.where]
     if not places or not Wearable(id or tonumber(link:match("item:(%d+)")), facts) then return nil end
+    local shield = weights and weights.shield -- Facts asked for the weights just now
+    if shield and (TWO_HANDS[facts.where] or OFF_HAND[places[1]] and facts.where ~= "INVTYPE_SHIELD") then return nil end
     local weakest, at
     for _, name in ipairs(places) do
         local place = Place(name)
         if not place then return nil end
-        if OFF_HAND[name] then
+        if OFF_HAND[name] and not shield then
             local held = Facts(Core.Ask(GetInventoryItemLink, "player", Place("INVSLOT_MAINHAND")))
             if held and TWO_HANDS[held.where] then return nil end -- both hands hold one weapon
         end
         local worn = Facts(Core.Ask(GetInventoryItemLink, "player", place))
+        if worn and shield and TWO_HANDS[worn.where] then worn = nil end -- no weapon of a shield build's
         if not worn then return "empty", Value(facts), place end
         if not weakest or Value(worn) < Value(weakest) then weakest, at = worn, place end
     end

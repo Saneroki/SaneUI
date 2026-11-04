@@ -715,6 +715,14 @@ classes' gains can be held against each other; `early` for a character without a
 - **Retail** (`Weights.RETAIL`): the main stat, then the secondaries best first down `Weights.LADDER`; Stamina and a
   physical fighter's weapon damage the same for all.
 - `dps` is a melee weapon's or staff's damage per second, `ranged` a bow's, gun's, thrown weapon's or wand's.
+- **A shield build** (Saneroki, 2026-11-04): a warrior whose talents work only with a shield gets its weights with
+  `shield`, and `Core.Upgrade` then takes no two-hander (one held counts as nothing in either hand), judges a one-hander
+  against the main hand alone and lets only a shield into the off hand (its armour, block value and stats). A shield
+  build is the game's primary talent tree being Protection (`Weights.SHIELD`, `C_SpecializationInfo.GetSpecialization`),
+  or a talent with a rank whose spell's tooltip asks for a shield (the game's `SPELL_EQUIPPED_ITEM` with its name for
+  shields; in WoW: Forever Shield Slam, Bastion and Defiance). Asked anew when the talents change. No setting: before the
+  first talent point (level 10) nothing of the warrior's needs a shield and a two-hander's damage leads; from it on the
+  talents say. Druids and the other classes are not touched.
 
 ## Files
 

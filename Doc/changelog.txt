@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A warrior whose talents need a shield (Protection, Shield Slam and the
+  like) now picks one-handed weapons and shields, never a two-hander, for
+  quest rewards, group rolls and the upgrade arrows.
 - The map now shows exactly where your quests' objectives are: a pin
   at every place a creature to kill, something to loot or someone to
   speak to can be found, for the quests in your log. Move the mouse

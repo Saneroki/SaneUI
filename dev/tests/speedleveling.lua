@@ -993,6 +993,63 @@ do
     ConfirmLootRoll, StaticPopup_Hide = nil, nil
 end
 
+-- A warrior on a shield build (Inventory's weights say shield), through Core.Upgrade itself: the quest's reward and
+-- the group roll take the mace and the shield, never the two-hander, though it hits twice as hard and sells for more.
+-- An Arms warrior's weights, without shield, take the two-hander as before.
+do
+    local gear = { -- where it is worn, the item class and kind, a vendor's price, its stats
+        ["item:6001:x"] = { "INVTYPE_WEAPON", 2, 4, 100, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 10, ITEM_MOD_STRENGTH_SHORT = 3 } },
+        ["item:6002:x"] = { "INVTYPE_SHIELD", 4, 6, 100, { RESISTANCE0_NAME = 500, ITEM_MOD_STAMINA_SHORT = 2 } },
+        ["item:6003:x"] = { "INVTYPE_2HWEAPON", 2, 5, 900, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 20, ITEM_MOD_STRENGTH_SHORT = 8 } },
+        ["item:6004:x"] = { "INVTYPE_WEAPON", 2, 4, 200, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 12, ITEM_MOD_STRENGTH_SHORT = 3 } },
+        ["item:6005:x"] = { "INVTYPE_SHIELD", 4, 6, 200, { RESISTANCE0_NAME = 700, ITEM_MOD_BLOCK_VALUE_SHORT = 12, ITEM_MOD_STAMINA_SHORT = 3 } },
+    }
+    local worn = { [16] = "item:6001:x", [17] = "item:6002:x" }
+    local shield = { shield = true, ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 5, ITEM_MOD_STRENGTH_SHORT = 0.8, ITEM_MOD_STAMINA_SHORT = 1,
+                     ITEM_MOD_BLOCK_VALUE_SHORT = 0.3, RESISTANCE0_NAME = 0.02 }
+    local arms = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 7, ITEM_MOD_STRENGTH_SHORT = 1, ITEM_MOD_STAMINA_SHORT = 0.6, RESISTANCE0_NAME = 0.01 }
+    local weights = shield
+    local kept = { rawget(_G, "INVSLOT_MAINHAND"), rawget(_G, "INVSLOT_OFFHAND"), rawget(_G, "GetInventoryItemLink"),
+                   rawget(_G, "GetItemStats"), C_Item.GetItemInfo }
+    INVSLOT_MAINHAND, INVSLOT_OFFHAND = 16, 17
+    GetInventoryItemLink = function(_, slot) return worn[slot] end
+    GetItemStats = function(link) return gear[link] and gear[link][5] end
+    C_Item.GetItemInfo = function(link)
+        local item = gear[link]
+        if item then return "Gear", link, 2, 30, 1, "", "", 1, item[1], 1, item[4], item[2], item[3], 2 end
+    end
+    Core.WeighWith(function() return weights end)
+    local offered = { "item:6003:x", "item:6004:x", "item:6005:x" }
+    GetQuestItemLink = function(_, index) return offered[index] end
+    GetQuestItemInfo = function() return "Gear", 1, 1 end
+    check(ns.Rewards.Best(nil, 3) == 2, "a shield build offered a two-hander, a mace and a shield: the mace, the biggest gain")
+    offered = { "item:6003:x", "item:6005:x" }
+    check(ns.Rewards.Best(nil, 2) == 2, "a two-hander or a shield: the shield")
+    weights = arms
+    offered = { "item:6003:x", "item:6004:x", "item:6005:x" }
+    check(ns.Rewards.Best(nil, 3) == 1, "an Arms warrior: the two-hander, against both hands, as before")
+    -- The rolls: Need on what is an upgrade, else Greed.
+    local rolled, link = {}, nil
+    GetLootRollItemLink = function() return link end
+    GetLootRollItemInfo = function() return 1, "Gear", 1, 2, false, true, true end
+    GetLootRollTimeLeft = function() return 60000 end
+    RollOnLoot = function(id, choice) rolled[id] = choice end
+    weights = shield
+    link = "item:6003:x"
+    W.Fire("START_LOOT_ROLL", 101, 60000)
+    link = "item:6005:x"
+    W.Fire("START_LOOT_ROLL", 102, 60000)
+    weights = arms
+    link = "item:6003:x"
+    W.Fire("START_LOOT_ROLL", 103, 60000)
+    check(rolled[101] == 2 and rolled[102] == 1 and rolled[103] == 1,
+        "the rolls: a shield build Greeds the two-hander and Needs the shield; an Arms warrior Needs the two-hander")
+    Core.WeighWith(nil)
+    INVSLOT_MAINHAND, INVSLOT_OFFHAND, GetInventoryItemLink, GetItemStats, C_Item.GetItemInfo = kept[1], kept[2], kept[3], kept[4], kept[5]
+    GetQuestItemLink, GetQuestItemInfo = nil, nil
+    GetLootRollItemLink, GetLootRollItemInfo, GetLootRollTimeLeft, RollOnLoot = nil, nil, nil, nil
+end
+
 -- Skip cinematics: a cinematic stopped as it starts, a scene only where the game lets you leave it, a movie finished.
 do
     local stopped, cancelled, finished, leave = 0, 0, 0, false

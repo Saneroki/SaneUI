@@ -1339,4 +1339,129 @@ do
     GetItemStats, INVSLOT_MAINHAND, worn[16], C_Item.GetItemInfo = stats, mainHand, nil, info
 end
 
+-- A shield build: a warrior whose talents work only with a shield. Protection the game's primary talent tree, or a
+-- talent with a rank whose spell's tooltip asks for a shield in the game's words; a druid never.
+do
+    local Weights, class, specs = ns.Weights, UnitClass, rawget(_G, "C_SpecializationInfo")
+    local traits, talents, tips = rawget(_G, "C_Traits"), rawget(_G, "C_ClassTalents"), rawget(_G, "C_TooltipInfo")
+    local subclass, form = C_Item.GetItemSubClassInfo, rawget(_G, "SPELL_EQUIPPED_ITEM")
+    local tree
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    C_SpecializationInfo = { GetSpecialization = function() return tree and 1 or nil end,
+                             GetSpecializationInfo = function() return 0, tree end }
+    tree = "Arms"
+    W.Fire("PLAYER_TALENT_UPDATE")
+    check(Weights.Now() == Weights.For("forever", "WARRIOR", "arms") and not Weights.Now().shield, "an Arms warrior: no shield build")
+    tree = "Protection"
+    W.Fire("PLAYER_SPECIALIZATION_CHANGED")
+    local prot, line = Weights.Now(), Weights.For("forever", "WARRIOR", "protection")
+    check(prot.shield and not line.shield and prot.ITEM_MOD_DAMAGE_PER_SECOND_SHORT == line.ITEM_MOD_DAMAGE_PER_SECOND_SHORT
+        and prot.ITEM_MOD_BLOCK_VALUE_SHORT == line.ITEM_MOD_BLOCK_VALUE_SHORT, "Protection, the primary talent tree: the protection line, on a shield build")
+    W.Fire("PLAYER_TALENT_UPDATE")
+    check(Weights.Now() == prot, "asked anew: the same table, made once (the scores kept)")
+    -- The talents: one with three ranks, one with none; the game's tooltip of each one's spell.
+    local lines = {}
+    SPELL_EQUIPPED_ITEM = "Requires %s"
+    C_Item.GetItemSubClassInfo = function(itemClass, kind) if itemClass == 4 and kind == 6 then return "Shields", false end end
+    C_ClassTalents = { GetActiveConfigID = function() return 7 end }
+    C_Traits = {
+        GetConfigInfo = function(config) return config == 7 and { treeIDs = { 1117 } } or nil end,
+        GetTreeNodes = function(id) return id == 1117 and { 1, 2 } or {} end,
+        GetNodeInfo = function(_, node)
+            return { activeRank = node == 1 and 3 or 0, activeEntry = { entryID = node * 10, rank = node == 1 and 3 or 0 } }
+        end,
+        GetEntryInfo = function(_, entry) return { definitionID = entry + 1 } end,
+        GetDefinitionInfo = function(definition) return { spellID = definition * 100 } end,
+    }
+    C_TooltipInfo = { GetSpellByID = function(spell) return { lines = lines[spell] or {} } end }
+    tree = "Arms"
+    lines[1100] = { { leftText = "Two-Handed Weapon Specialization" }, { leftText = "Requires Two-Handed Swords" } }
+    lines[2100] = { { leftText = "Defiance" }, { leftText = "Requires Shield" } }
+    W.Fire("TRAIT_CONFIG_UPDATED")
+    check(not Weights.Now().shield, "an Arms warrior: a talent asking for a two-hander, one asking for a shield without a rank: none")
+    lines[1100] = { { leftText = "Defiance" }, { leftText = "Requires Shield" } }
+    W.Fire("TRAIT_CONFIG_UPDATED")
+    check(Weights.Now().shield and Weights.Now().ITEM_MOD_DAMAGE_PER_SECOND_SHORT == 7,
+        "a talent with a rank whose tooltip asks for a shield (the game writes Shield or Shields): a shield build, on the Arms line")
+    lines[1100] = { { leftText = "Shield Slam" }, { leftText = "Requires Shields" } }
+    W.Fire("TRAIT_CONFIG_UPDATED")
+    check(Weights.Now().shield, "Requires Shields, the game's name for the kind")
+    UnitClass, tree = function() return "Druid", "DRUID", 11 end, "Feral Combat"
+    W.Fire("TRAIT_CONFIG_UPDATED")
+    check(Weights.Now() == Weights.For("forever", "DRUID", "feral"), "a druid: never a shield build, whatever its talents' words")
+    W.Play("retail")
+    UnitClass, tree = function() return "Warrior", "WARRIOR", 1 end, "Protection"
+    lines[1100] = nil
+    W.Fire("PLAYER_TALENT_UPDATE")
+    check(Weights.Now().shield and Weights.Now().ITEM_MOD_STRENGTH_SHORT == 1, "Retail: a Protection warrior on a shield build too, on Retail's line")
+    W.Play("forever")
+    tree = "Protection"
+    W.Fire("PLAYER_TALENT_UPDATE")
+    check(Weights.Now() == prot, "back in WoW: Forever: the shield build's weights as before")
+
+    -- Through Core.Upgrade, as Speed Leveling's rewards and rolls and the bags' arrows judge. Worn: a mace and a shield.
+    local gear = {
+        ["item:6001"] = { "INVTYPE_WEAPON", 2, 4, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 10, ITEM_MOD_STRENGTH_SHORT = 3 } },
+        ["item:6002"] = { "INVTYPE_SHIELD", 4, 6, { RESISTANCE0_NAME = 500, ITEM_MOD_STAMINA_SHORT = 2 } },
+        ["item:6003"] = { "INVTYPE_2HWEAPON", 2, 5, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 20, ITEM_MOD_STRENGTH_SHORT = 8 } },
+        ["item:6004"] = { "INVTYPE_WEAPON", 2, 4, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 12, ITEM_MOD_STRENGTH_SHORT = 3 } },
+        ["item:6005"] = { "INVTYPE_SHIELD", 4, 6, { RESISTANCE0_NAME = 700, ITEM_MOD_BLOCK_VALUE_SHORT = 12, ITEM_MOD_STAMINA_SHORT = 3 } },
+        ["item:6006"] = { "INVTYPE_WEAPONOFFHAND", 2, 15, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 8 } },
+        ["item:6007"] = { "INVTYPE_2HWEAPON", 2, 5, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 18, ITEM_MOD_STRENGTH_SHORT = 6 } },
+    }
+    local stats, mainHand, offHand, info = rawget(_G, "GetItemStats"), rawget(_G, "INVSLOT_MAINHAND"), rawget(_G, "INVSLOT_OFFHAND"), C_Item.GetItemInfo
+    INVSLOT_MAINHAND, INVSLOT_OFFHAND = 16, 17
+    GetItemStats = function(link) return gear[link] and gear[link][4] end
+    C_Item.GetItemInfo = function(link)
+        local item = gear[link]
+        if item then return "Gear", link, 2, 30, 1, "", "", 1, item[1], 1, 1, item[2], item[3] end
+    end
+    -- The reward Speed Leveling takes: the biggest gain (Rewards.Best).
+    local function Pick()
+        local best, most
+        for _, link in ipairs({ "item:6003", "item:6004", "item:6005" }) do
+            local _, gain = Core.Upgrade(link)
+            if gain and gain > (most or 0) then best, most = link, gain end
+        end
+        return best
+    end
+    local function Near(a, b) return type(a) == "number" and math.abs(a - b) < 1e-6 end
+    worn[16], worn[17] = { link = "item:6001" }, { link = "item:6002" }
+    check(Core.Upgrade("item:6003") == nil, "Protection: a two-hander of twice the damage is no upgrade over the mace and the shield")
+    local kind, gain, place = Core.Upgrade("item:6004")
+    check(kind == "better" and Near(gain, 5 * 2) and place == 16, "a mace that hits harder: against the main hand alone")
+    kind, gain, place = Core.Upgrade("item:6005")
+    check(kind == "better" and Near(gain, 0.02 * 200 + 0.3 * 12 + 1) and place == 17, "a better shield: in the off hand, by armour, block value and stats")
+    check(Core.Upgrade("item:6006") == nil, "an off-hand weapon: the off hand is the shield's")
+    check(Pick() == "item:6004", "of a two-hander, a mace and a shield offered: the mace")
+    -- From before the talents: a two-hander worn. It counts as nothing: a mace and a shield take both hands.
+    worn[16], worn[17] = { link = "item:6007" }, nil
+    kind, gain, place = Core.Upgrade("item:6004")
+    check(kind == "empty" and Near(gain, 5 * 12 + 0.8 * 3) and place == 16, "a two-hander worn: the mace goes into the main hand")
+    kind, gain, place = Core.Upgrade("item:6005")
+    check(kind == "empty" and place == 17, "and the shield into the off hand")
+    check(Core.Upgrade("item:6003") == nil, "a two-hander for a two-hander: none")
+    -- An Arms warrior keeps today's way: a two-hander against both hands, by its damage.
+    tree = "Arms"
+    lines[1100] = nil
+    W.Fire("PLAYER_TALENT_UPDATE")
+    check(not Weights.Now().shield, "Arms again: no shield build")
+    kind, gain = Core.Upgrade("item:6003")
+    check(kind == "better" and Near(gain, 7 * 2 + 2), "Arms, a two-hander worn: the harder hitting two-hander")
+    check(Core.Upgrade("item:6004") == nil and Core.Upgrade("item:6005") == nil,
+        "Arms, a two-hander worn: a mace is worth less, a shield cannot go with it")
+    worn[16], worn[17] = { link = "item:6001" }, { link = "item:6002" }
+    kind, gain = Core.Upgrade("item:6003")
+    check(kind == "better" and Near(gain, 7 * 20 + 8 - (7 * 10 + 3) - (0.01 * 500 + 0.6 * 2)),
+        "Arms, a mace and a shield worn: the two-hander against both hands")
+    check(Core.Upgrade("item:6006") ~= nil, "Arms: an off-hand weapon in place of a weaker shield, as before")
+    check(Pick() == "item:6003", "of a two-hander, a mace and a shield offered: the two-hander")
+
+    worn[16], worn[17] = nil, nil
+    GetItemStats, INVSLOT_MAINHAND, INVSLOT_OFFHAND, C_Item.GetItemInfo = stats, mainHand, offHand, info
+    UnitClass, C_SpecializationInfo, C_Traits, C_ClassTalents, C_TooltipInfo = class, specs, traits, talents, tips
+    C_Item.GetItemSubClassInfo, SPELL_EQUIPPED_ITEM = subclass, form
+    W.Fire("PLAYER_TALENT_UPDATE")
+end
+
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

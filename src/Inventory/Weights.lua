@@ -18,11 +18,21 @@ local _, ns = ...
 --    Retail   the main stat, then the secondary stats best first; gear there
 --             scales, so the rest is the same for all (Weights.LADDER, sta, dps).
 --
---      Weights.Now()               the character's weights: { [the game's stat key] = worth, ranged = worth }
+--  A shield build (Saneroki, 2026-11-04): a warrior whose talents work only
+--  with a shield fights with a one-handed weapon and a shield, however much
+--  more a two-hander's damage would weigh. So Core.Upgrade is told (shield):
+--  no two-hander, the off hand the shield's. A shield build is the game's
+--  primary talent tree being Protection (Weights.SHIELD), or a talent whose
+--  spell the game's tooltip says asks for a shield. Before the first talent
+--  (level 10) nothing asks for one, and the two-hander's damage leads.
+--
+--      Weights.Now()               the character's weights: { [the game's stat key] = worth, ranged = worth,
+--                                  shield = true on a shield build }
 --      Weights.For(game, class, spec)   the same for any: "forever" or "retail", the game's class token, spec in small
 --                                  letters; a class's early line for a spec it has no line for
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
+local Plain = Core.Plain
 local Weights = {}
 ns.Weights = Weights
 
@@ -39,6 +49,9 @@ Weights.STATS = {
     mastery = "ITEM_MOD_MASTERY_RATING_SHORT", vers = "ITEM_MOD_VERSATILITY",
     dps = "ITEM_MOD_DAMAGE_PER_SECOND_SHORT", ranged = "ranged",
 }
+-- The classes that may fight with a shield by their talents, and the specialization (the game's primary talent tree)
+-- that always does: in both games a warrior's Protection.
+Weights.SHIELD = { WARRIOR = "protection" }
 Weights.LADDER = { 0.7, 0.6, 0.5, 0.4 } -- Retail: the secondary stats, best first
 Weights.RETAIL_STA = 0.3                -- Retail: Stamina, to stay alive
 Weights.RETAIL_DPS = 2                  -- Retail: a physical fighter's weapon damage per second
@@ -179,10 +192,56 @@ local function Spec()
     return type(name) == "string" and name:lower() or nil
 end
 
+local ARMOR, SHIELDS = 4, 6 -- the game's item class of armour and its kind for shields (Enum.ItemClass, ItemArmorSubclass)
+
+-- Whether a tooltip's line asks for a shield, in the game's words for a spell's equipped item (SPELL_EQUIPPED_ITEM,
+-- "Requires %s") and its name for the kind (Shield or Shields, the game writes either).
+local function AsksShield(text, lead, shields)
+    if type(text) ~= "string" or text:sub(1, #lead) ~= lead then return false end
+    local rest = text:sub(#lead + 1)
+    return rest ~= "" and (rest:find(shields, 1, true) ~= nil or shields:find(rest, 1, true) ~= nil)
+end
+
+-- Whether a talent the character has asks for a shield: the tooltip of its spell, as the game writes it (in WoW:
+-- Forever Shield Slam, Bastion, Defiance). The active configuration's nodes with a rank (C_Traits).
+local function ShieldTalent()
+    local traits, talents, tips = rawget(_G, "C_Traits"), rawget(_G, "C_ClassTalents"), rawget(_G, "C_TooltipInfo")
+    local items, form = rawget(_G, "C_Item"), rawget(_G, "SPELL_EQUIPPED_ITEM")
+    if not (traits and talents and tips and items and type(form) == "string") then return false end
+    local lead, shields = form:match("^(.-)%%s"), Plain(Core.Ask(items.GetItemSubClassInfo, ARMOR, SHIELDS))
+    local config = Plain(Core.Ask(talents.GetActiveConfigID))
+    local info = lead and type(shields) == "string" and shields ~= "" and config and Core.Ask(traits.GetConfigInfo, config)
+    for _, tree in ipairs(type(info) == "table" and type(info.treeIDs) == "table" and info.treeIDs or {}) do
+        for _, id in ipairs(Core.Ask(traits.GetTreeNodes, tree) or {}) do
+            local node = Core.Ask(traits.GetNodeInfo, config, id)
+            local active = type(node) == "table" and (Plain(node.activeRank) or 0) > 0 and node.activeEntry
+            local entry = type(active) == "table" and Core.Ask(traits.GetEntryInfo, config, active.entryID)
+            local definition = type(entry) == "table" and entry.definitionID and Core.Ask(traits.GetDefinitionInfo, entry.definitionID)
+            local spell = type(definition) == "table" and Plain(definition.spellID)
+            local tip = spell and Core.Ask(tips.GetSpellByID, spell)
+            for _, line in ipairs(type(tip) == "table" and type(tip.lines) == "table" and tip.lines or {}) do
+                if AsksShield(Plain(line.leftText), lead, shields) then return true end
+            end
+        end
+    end
+    return false
+end
+
+local shielded = {} -- [weights] = the same with shield, made once
+
 function Weights.Now()
     if now == nil then
         local _, class = Core.Ask(UnitClass, "player")
-        now = Weights.For(Core.FOREVER and "forever" or "retail", class, Spec()) or false
+        local spec = Spec()
+        now = Weights.For(Core.FOREVER and "forever" or "retail", class, spec) or false
+        if now and Weights.SHIELD[class] and (spec == Weights.SHIELD[class] or ShieldTalent()) then
+            if not shielded[now] then
+                local copy = { shield = true }
+                for stat, worth in pairs(now) do copy[stat] = worth end
+                shielded[now] = copy
+            end
+            now = shielded[now]
+        end
     end
     return now or nil
 end
@@ -190,7 +249,8 @@ end
 local function Changed() now = nil end
 
 function Weights.Start()
-    for _, event in ipairs({ "PLAYER_SPECIALIZATION_CHANGED", "PLAYER_TALENT_UPDATE", "ACTIVE_TALENT_GROUP_CHANGED" }) do
+    for _, event in ipairs({ "PLAYER_SPECIALIZATION_CHANGED", "PLAYER_TALENT_UPDATE", "ACTIVE_TALENT_GROUP_CHANGED",
+                             "TRAIT_CONFIG_UPDATED" }) do
         ns.On(event, Changed)
     end
     Core.WeighWith(Weights.Now)
