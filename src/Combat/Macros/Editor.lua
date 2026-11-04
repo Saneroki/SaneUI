@@ -193,7 +193,10 @@ local function Line(index)
         Editor.Choose(line.macro)
         Editor.DragToBar()
     end))
-    line:SetScript("OnDragStop", ns.Guard(function() if not line.game then Macros.Place.Drop() end end))
+    line:SetScript("OnDragStop", ns.Guard(function()
+        if line.game then return Editor.DropGame() end
+        Macros.Place.Drop()
+    end))
     line:SetScript("OnEnter", ns.Guard(MacroTip))
     line:SetScript("OnLeave", ns.Guard(Core.HideTip))
     lines[index] = line
@@ -368,6 +371,22 @@ function Editor.ChoosePicture()
         macro.icon = Macros.Book.Icon(picture)
         if chosen == macro then Editor.Changed() else Macros.Press.Update(macro) end
     end)
+end
+
+-- A game's macro let go over a bar button that has not taken it itself (Saneroki, 2026-11-04: the full screen's bars
+-- took none, spells they did): the game's own PlaceAction puts it on the button under the mouse. A button that took it
+-- left the cursor empty, and nothing more happens. Out of a fight.
+function Editor.DropGame()
+    if InCombatLockdown() or Core.Ask(rawget(_G, "GetCursorInfo")) ~= "macro" then return end
+    local foci = (GetMouseFoci and GetMouseFoci()) or (GetMouseFocus and { GetMouseFocus() }) or {}
+    for _, frame in ipairs(foci) do
+        local action = type(frame) == "table" and Core.Plain(rawget(frame, "action"))
+        if type(action) == "number" then
+            Core.Ask(rawget(_G, "PlaceAction"), action)
+            Core.Ask(rawget(_G, "ClearCursor"))
+            return
+        end
+    end
 end
 
 -- A drag begins: the bar buttons take it.

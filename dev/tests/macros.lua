@@ -809,6 +809,27 @@ check(opened == 2 and tabbed == 1 and MacroFrame.at == 1, "an account's on the f
 MacroFrame:Hide()
 first:GetScript("OnDragStart")(first)
 check(pickedUp == 1, "a drag takes it up as the game's macro")
+-- Let go over a bar button that did not take it: put there by the game's PlaceAction; over nothing, or taken already:
+-- nothing more.
+do
+    local cursor, placed, foci = "macro", nil, {}
+    GetCursorInfo = function() return cursor end
+    PlaceAction = function(slot) placed = slot end
+    ClearCursor = function() cursor = nil end
+    GetMouseFoci = function() return foci end
+    local slot = CreateFrame("CheckButton", "MultiBar5Button9", bars)
+    slot.action = 153
+    foci = { slot }
+    first:GetScript("OnDragStop")(first)
+    check(placed == 153 and cursor == nil, "let go over a bar button: placed on its action")
+    placed, cursor, foci = nil, "macro", {}
+    first:GetScript("OnDragStop")(first)
+    check(placed == nil and cursor == "macro", "over nothing: the cursor keeps it")
+    placed, cursor, foci = nil, nil, { slot }
+    first:GetScript("OnDragStop")(first)
+    check(placed == nil, "the button took it itself: nothing more")
+    GetCursorInfo, PlaceAction, ClearCursor, GetMouseFoci = nil, nil, nil, nil
+end
 first:GetScript("OnClick")(first, "RightButton")
 local menu = W.menus[#W.menus]
 local take
