@@ -103,7 +103,7 @@ the rest.
 | `SaneUI_Data_Talents` | Talents (the class trees), Legacy (the three Legacy trees, their challenges and reward track) | Tooltips, later a talent window | first talent looked at |
 | `SaneUI_Data_Collections` | Achievements, Mounts (the journal's mounts, by their spells), TransmogSets (Saneroki, 2026-10-20) | Tooltips, later a collections window | first asked for |
 | `SaneUI_Data_Market` | Vendors; Prices (a series) | Economy, Tooltips | auction house, vendor, first price shown |
-| `SaneUI_Data_Game` | CVarLabels, Currencies, Factions, Holidays, other tables from the game's own code | Settings | options first opened |
+| `SaneUI_Data_Game` | CVarLabels, Currencies, Factions, Holidays, Icons (every icon of the client's, its name and what shows it, for Sane Macros' picture window; Saneroki, 2026-11-04), other tables from the game's own code | Settings | options first opened |
 | `SaneUI_Data_Characters` | No shipped data: the characters' own data (*Characters*) | Tooltips (counts on alts), Economy, later bags and a character sheet | soon after every login |
 
 - A set's name is unique across packs: a module asks for `"Items"`, never for a pack.
@@ -678,7 +678,8 @@ two differ, the difference is learned for the next release.
 - **From the client's files** (Saneroki, 2026-10-20): `dev/tools/game-data` reads a build's client tables, and
   a beta's hotfixes, into staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy,
   Currencies, QuestAreas (the game's own areas), Achievements, Mounts, TransmogSets, Enchantments, Holidays,
-  Factions and Encounters, so these sets are filled before the crawl is built. What the client works out itself (an item's
+  Factions and Encounters, so these sets are filled before the crawl is built. `dev/tools/icon-data` reads the newest
+  export's list of icon files into staging for Icons (Saneroki, 2026-11-04), in both games. What the client works out itself (an item's
   stats, armour and weapon damage; texts with `$` the game fills in) is left to the crawl. What only the beta's
   server sent is live's base as a batch (decision 27), unverified there.
 

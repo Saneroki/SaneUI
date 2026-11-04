@@ -215,7 +215,7 @@ part of Core.
 | Characters | No sets: saved data only (*Characters*) |
 | Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
 | Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
-| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID), Races (race ID), Racials (the game's ability ID), Classes (class ID), Maps (map ID), Areas (area ID), PatchNotes (the build) |
+| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID), Races (race ID), Racials (the game's ability ID), Classes (class ID), Maps (map ID), Areas (area ID), PatchNotes (the build), Icons (the icon's file number) |
 | Collections | Achievements (achievement ID), Mounts (mount ID), TransmogSets (transmog set ID) |
 
 - **A text key `<kind>:<ID>`** where one set holds things whose IDs overlap (a creature and an object can have
@@ -229,6 +229,18 @@ part of Core.
   some of them.
 - **A quest a requirement names** (`requires.quest`) is the game's quest ID, also of a quest the set does not
   hold: the game tells whether it is done.
+
+### The icons
+
+`Icons` (Saneroki, 2026-11-04, for Sane Macros' picture window) holds every icon the client of each game holds, by its
+file number (what a texture is set to, the same number for one file in both games): its `name` (the file's, without
+`.blp`, as the client spells it) and, in Forever, what of the game shows it: `classes` (whose class lines' spells),
+`spells` (the first rank of a few players' spells), `items` (a few items, the best first) and `itemClasses` (of every item
+that shows it); indexes `byClass` and `byItemClass`; `history = false`. `dev/tools/icon-data` (`saneui readicons`) stages it
+from the newest export's art list (`files.tsv`, the files of `Interface/ICONS` the client holds whole) and the master's
+Spells, SkillLines and Items, source `game`: one line per icon for each game, `icons-<game version>.jsonl`, an icon
+the newest export no longer holds gone. Retail has the set too, as PatchNotes, with the names alone: its spells and items
+wait. About 30,000 icons a game, some 1.8 MB of set file each.
 
 ### The patch notes
 
@@ -1380,6 +1392,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
 | `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
+| `dev/tools/icon-data` | The game's icons as staging for the set *Icons*, both games (*The icons*): `icons-forever.jsonl`, `icons-retail.jsonl`. |
 | `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes; the beta is gone, so they and `base` are history) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, Encounters, Races, Racials, Classes, Maps and Areas; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests

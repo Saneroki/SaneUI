@@ -92,6 +92,7 @@ GROUPS = {
         "data": (["dev/tools/data"], "Core's data framework: check, compile, import, harvest", 'check · import · harvest'),
         "auctiondatabase": (["dev/tools/auction-database"], "every account reads every account's auction data: link · status", None),
         "readgamedata": (["dev/tools/game-data"], "the game's facts from its client tables", None),
+        "readicons": (["dev/tools/icon-data"], "the game's icons: names, and what of the game shows each", None),
         "readmapdata": (["dev/tools/map-data"], "the facts of Navigation's map", None),
         "readtraveldata": (["dev/tools/travel-data"], "flights, boats, zeppelins, the tram and lifts", None),
         "makewalkdata": (["dev/tools/walk-data"], "the walking data of Navigation's routes", None),

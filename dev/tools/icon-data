@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""The game's icons, as staging for Core's set Icons: every icon the client of each game holds, by its file
+number, with its name, and in Forever what of the game uses it (Saneroki, 2026-11-04: Sane Macros' picture
+window, "sorted into categories like different classes like warrior, druid etc or gear or general").
+
+  dev/data/staging/icons-<game version>.jsonl   one line per icon, the source "game"
+
+- The icons: the files of Interface/ICONS in the newest export of each game's interface art (its list
+  files.tsv, made from the client by the private interface-files tool), each by its file number. Only files
+  the client holds whole (status ok): not those it lists without having them, nor encrypted ones.
+- name: the file's name without .blp, as the client spells it.
+- In Forever, from the master's sets of the game's own facts: classes (the classes whose class lines hold a
+  spell with this icon), spells (the first rank of up to SPELLS players' spells showing it, by name),
+  items (up to ITEMS items showing it, the best first) and itemClasses (the item classes of all items
+  showing it). Retail's spells and items wait (its data comes later): its icons have their names alone.
+- An icon the newest export no longer holds is gone.
+
+Usage:  dev/tools/icon-data            both games, then: dev/tools/data import <file> --apply
+"""
+import json
+import re
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+STAGING = ROOT / "dev" / "data" / "staging"
+sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
+sys.path.insert(0, str(ROOT / "dev" / "data"))
+import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
+import master as masters  # noqa: E402
+
+SPELLS = 6  # spells named in an icon's line, at most
+ITEMS = 6
+ICON = re.compile(r"^interface/icons/([^/]+)\.blp$", re.IGNORECASE)
+
+
+def icons_of(game):
+    """{file number: name} of a game's newest export, and its build."""
+    folder = exports.newest("art", game)
+    if folder is None:
+        sys.exit(f"No export of {game}'s interface art: dev/tools/blizzard where")
+    found = re.search(r"-(\d+(?:\.\d+)+)(?:/|$)", str(folder))
+    build = int(found.group(1).split(".")[-1]) if found else 0
+    icons = {}
+    with open(Path(folder) / "files.tsv", encoding="utf-8") as file:
+        next(file)
+        for row in file:
+            parts = row.rstrip("\n").split("\t")
+            if len(parts) < 5 or parts[4] != "ok" or not parts[1].isdigit():
+                continue
+            match = ICON.match(parts[0])
+            if match:
+                icons[int(parts[1])] = match.group(1)
+    return icons, build
+
+
+def newest(master, set_name, game):
+    """{key: fields} of each entry's newest version, gone ones left out."""
+    out = {}
+    for key, versions in master.view(set_name, game).items():
+        if versions and not versions[-1].gone:
+            out[key] = versions[-1].fields
+    return out
+
+
+def uses(master, game):
+    """{icon: {classes, spells, items, itemClasses}} from the master's spells, class lines and items."""
+    spells = newest(master, "Spells", game)
+    lines = newest(master, "SkillLines", game)
+    items = newest(master, "Items", game)
+    class_of = defaultdict(set)
+    for line in lines.values():
+        if line.get("kind") == "class" and line.get("class"):
+            for spell in line.get("spells", []):
+                class_of[spell].add(line["class"])
+    found = defaultdict(lambda: {"classes": set(), "spells": {}, "items": [], "itemClasses": set()})
+    for key in sorted(spells):
+        fields = spells[key]
+        icon, name = fields.get("icon"), fields.get("name")
+        if not icon or not name:
+            continue
+        use = found[icon]
+        use["classes"] |= class_of.get(key, set())
+        use["spells"].setdefault(name, key)  # the lowest ID of a name: its first rank, as a rule
+    for key in sorted(items):
+        fields = items[key]
+        icon = fields.get("icon")
+        if not icon:
+            continue
+        use = found[icon]
+        use["items"].append((-(fields.get("quality") or 0), key))
+        if fields.get("class") is not None:
+            use["itemClasses"].add(fields["class"])
+    out = {}
+    for icon, use in found.items():
+        out[icon] = {
+            "classes": sorted(use["classes"]),
+            "spells": sorted(use["spells"].values())[:SPELLS],
+            "items": [key for _, key in sorted(use["items"])[:ITEMS]],
+            "itemClasses": sorted(use["itemClasses"]),
+        }
+    return out
+
+
+def stage(master, game, icons, build, used):
+    lines = []
+    for key in sorted(icons):
+        fields = {"name": icons[key]}
+        for name, value in (used.get(key) or {}).items():
+            if value:
+                fields[name] = value
+        lines.append({"set": "Icons", "key": key, "game": game, "build": build, "src": "game", "fields": fields})
+    for key, versions in master.view("Icons", game).items():
+        if key not in icons and versions and not versions[-1].gone:
+            lines.append({"set": "Icons", "key": key, "game": game, "build": build, "src": "game", "gone": True})
+    out = STAGING / f"icons-{game}.jsonl"
+    STAGING.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as file:
+        for line in lines:
+            file.write(json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n")
+    named = sum(1 for key in icons if used.get(key))
+    print(f"{out.relative_to(ROOT)}: {len(icons)} icons at build {build}, {named} with what uses them")
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit(__doc__.split("Usage:")[1])
+    master = masters.Master()
+    master.load()
+    for game in ("forever", "retail"):
+        icons, build = icons_of(game)
+        stage(master, game, icons, build, uses(master, game) if game == masters.LIVE else {})
+
+
+if __name__ == "__main__":
+    main()

@@ -20,6 +20,11 @@ of your normal action bar buttons. The macros are your account's, on every chara
   the checks found something. A macro's picture is its own where it has one (Saneroki, 2026-11-04), else that of its first
   step switched on; macro text with no spell shows the question mark. A game's macro taken over keeps its picture. On its bar
   button the step that comes next shows, and the macro's own picture where that step has none (macro text, a spell not known).
+- **Its picture** (Saneroki, 2026-11-04): click the picture at the top of the macro. A large window opens over everything,
+  the full screen too: on the left the groups (All, In the game, each class, Weapons, Armor, Consumables, Trade goods,
+  Other items, Spells and abilities, Mounts and pets, Achievements, Other), at the top a search box over the names and
+  groups, then every icon of the game's. The mouse on one names it and says which spells and items show it. A click
+  gives the macro that picture; *Steps' picture* takes its own away. Esc closes it.
 - **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, under their own line and marked with a gold **W**. A click opens it in the
   game's own macro window, on that macro; a drag puts it on an action bar as the game's macro; a right click makes a Sane
   Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *Sane UI*
@@ -68,6 +73,18 @@ of your normal action bar buttons. The macros are your account's, on every chara
   casts nothing; nothing is drawn over the bars (Saneroki, 2026-11-04: a gold wash over every button hid them). The button under
   the mouse comes from the frames the game says are under it (`GetMouseFoci`), only then from each square's `IsMouseOver`: a
   square hangs on the game's button, and where the game keeps that button's place to itself the answer is hidden (`Core.Plain`: no).
+- **The picture window** (`Icons.lua`). A Core window of kind panel at `FULLSCREEN_DIALOG` (over the full screen, HIGH,
+  and its meter, DIALOG; tooltips above), most of the screen up to 1180 x 820, made at its first opening, with a dark
+  ground under Core's plate. The icons are Core's set `Icons` (`Doc/guides/data.md`, *The icons*), read once a part per
+  frame (`Data` `Each`), sorted by name whatever the case. Groups: a class's where its spells show the icon (`classes`)
+  or the name begins `Ability_<class>_`, `Spell_<class>_` or `ClassIcon_<class>`; an item group where items of that class
+  show it (`itemClasses`) or its name begins as such icons do (`Icons.ITEMS`); then by name (`Icons.NAMED`), the first that
+  fits; *Other* for none; *In the game* for an icon a spell or item of the set shows. Only groups with icons are listed.
+  The grid is the game's scroll box grid (`CreateScrollBoxListGridView`, its buttons handed round); the search is
+  `Core.Fuzzy.Filter` over the name (underscores as spaces) and the groups' words, a moment after the last key, in the
+  group chosen. A tooltip's spells and items by the game's names (`C_Spell.GetSpellName`, `C_Item.GetItemNameByID`;
+  an item not read yet is asked for). Without the set (refused), the game's own lists (`GetMacroIcons`,
+  `GetMacroItemIcons`) stand in, by file number. It closes when Sane Macros goes, at Esc, and at standing down.
 - **What shows.** The picture of the turn the next press would take (`Press.Next`, the game's parser answers plainly in a fight),
   its cooldown by the game's duration object (a hidden value is taken as it is), dimmed by `C_Spell.IsSpellUsable` (plain in a
   fight). `isActive` of a cooldown is true during the GCD too.
@@ -108,6 +125,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Face.lua` | Our button over a bar button: picture, swirl, dimming, key |
 | `Reach.lua` | Keys and bar buttons, the state drivers, what is given back |
 | `Place.lua` | Choosing a bar button with the mouse: unseen squares, the picture at the mouse, the gold frame |
+| `Icons.lua` | The picture window: the game's icons by group, searched, a macro's picture chosen |
 | `Picker.lua` | The list behind the + |
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
 | `Detail.lua` | The chosen step's settings |

@@ -15,6 +15,7 @@ local _, ns = ...
 --    Face.lua        our button lying over a bar button, its picture and swirl
 --    Reach.lua       keys and bar buttons
 --    Place.lua       choosing a bar button with the mouse
+--    Icons.lua       the picture window: the game's icons by group, searched
 --    Picker.lua      the list of conditions behind the + button
 --    Steps.lua       a macro's steps in a list
 --    Detail.lua      the chosen step's settings
@@ -81,7 +82,27 @@ Macros.TEXT = {
     placed = "On a bar",
     placedTip = "On %s, button %d. Click to choose another. Right click takes it off.",
     placeAsk = "Click the action bar button for %s. Esc or a right click cancels.",
-    picture = "The macro's picture. Drag it onto an action bar to place the macro. There it shows the step that comes next.",
+    picture = "The macro's picture. Click: choose another. Drag it onto an action bar to place the macro; there it shows the step that comes next.",
+
+    iconTitle = "Choose a picture",
+    iconSearch = "Search the pictures",
+    iconCount = "%s pictures",
+    iconReading = "Reading the game's pictures...",
+    iconNone = "No picture found.",
+    iconClear = "Steps' picture",
+    iconClearTip = "No picture of its own: the macro shows the picture of its first step.",
+    iconSpells = "Spells: %s",
+    iconItems = "Items: %s",
+    iconMore = "and %d more",
+    iconFile = "File %d",
+    iconNumber = "Picture %d",
+    iconChosen = "The macro's picture now",
+    iconClick = "Click: the macro's picture.",
+    iconGroups = {
+        all = "All", game = "In the game", weapons = "Weapons", armor = "Armor", consumables = "Consumables",
+        goods = "Trade goods", items = "Other items", spells = "Spells and abilities", mounts = "Mounts and pets",
+        achievements = "Achievements", other = "Other",
+    },
     bars = { "Bar 1", "Bar 2", "Bar 3", "Bar 4", "Bar 5", "Bar 6", "Bar 7", "Bar 8" },
 
     order = "Order",
@@ -221,6 +242,7 @@ function Macros.Start()
 end
 
 function Macros.GiveBack()
+    ns.Safe("macros", Macros.Icons.Close)
     ns.Safe("macros", Macros.Place.Stop)
     ns.Safe("macros", Macros.Reach.GiveBack)
     ns.Safe("macros", Macros.Editor.GiveBack)

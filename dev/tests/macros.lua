@@ -710,6 +710,107 @@ check(Macros.Steps.FromCursor() == nil, "nothing else")
 Editor.Toggle()
 
 -------------------------------------------------------------------------------
+--  The picture window (Saneroki, 2026-11-04): over everything, the game's icons by group, searched
+-------------------------------------------------------------------------------
+do
+    local Icons = Macros.Icons
+    -- The game's grid of a scroll box, as far as the window uses it; the box (combatclient) dresses every icon it has.
+    CreateScrollBoxListGridView = function()
+        local grid = {}
+        function grid:SetElementSize(width, height) self.size = { width, height } end
+        function grid:SetStrideExtent(extent) self.stride = extent end
+        function grid:SetElementInitializer(_, init) self.init = init end
+        return grid
+    end
+    GetNumClasses = function() return 11 end
+    GetClassInfo = function(id)
+        if id == 1 then return "Warrior", "WARRIOR", 1 end
+        if id == 11 then return "Druid", "DRUID", 11 end
+    end
+    -- Core's set Icons as the compiler writes it: Charge of the warrior's, a sword an item shows, a picture only
+    -- its name sorts, one of nothing.
+    local file = os.tmpname() .. "-Icons.lua"
+    local out = assert(io.open(file, "w"))
+    out:write('local S = SaneUI.Core.Data.Add(1, "Icons", { game = "forever", hash = "00000001", build = 70755, key = "int", '
+        .. 'fields = { "name", "classes", "spells", "items", "itemClasses" }, types = { "text", "list int", "list int", '
+        .. '"list int", "list int" }, patches = {} })\nif not S then return end\n'
+        .. 'S.rows[132337] = "0\\t\\tAbility_Warrior_Charge\\t1\\t100"\n'
+        .. 'S.rows[135274] = "0\\t\\tINV_Sword_04\\t\\t\\t6948\\t2"\n'
+        .. 'S.rows[136090] = "0\\t\\tSpell_Nature_Sleep"\n'
+        .. 'S.rows[999999] = "0\\t\\tWorld_Thing"\n')
+    out:close()
+    W.AddSets(file)
+    os.remove(file)
+    local function Frames()
+        for _ = 1, 30 do
+            local steps = Core.Steps.frame
+            local run = steps:GetScript("OnUpdate")
+            if run then run(steps, 0.02) end
+            W.Wait(0.05)
+        end
+    end
+    Frames()
+    check(Core.Data.Set("Icons"):Get(135274, "name") == "INV_Sword_04", "the set of the game's icons is there: "
+          .. table.concat({ Core.Data.Set("Icons"):State() }, " ") .. " " .. table.concat(W.fileErrors or {}, "; "))
+
+    local macro = Book.New("Pictured")
+    macro.steps[1] = Book.Step("text", "/wave")
+    Editor.Choose(macro)
+    Editor.ChoosePicture()
+    check(Icons.Shown(), "a click on the macro's picture opens the window")
+    Frames()
+    local keys = {}
+    for _, group in ipairs(Icons.Groups() or {}) do keys[group.key] = #group.list end
+    check(keys.all == 4 and keys.game == 2 and keys.class1 == 1 and keys.class11 == nil, "all, those the game shows, a class with any")
+    check(keys.weapons == 1 and keys.spells == 1 and keys.other == 1 and keys.items == nil, "the sword with the weapons, the sleep with the spells")
+    local box = Icons.Box()
+    check(#box.lines == 4 and box.lines[1].name == "Ability_Warrior_Charge" and box.rows[2].icon:GetTexture() == 135274,
+          "every icon in the grid, by name, each its picture")
+    -- The groups' lines: Weapons alone.
+    local weapons
+    for index = 1, 20 do
+        local line = Icons.GroupLine(index)
+        if line and line.key == "weapons" then weapons = line end
+    end
+    weapons:GetScript("OnClick")(weapons)
+    check(#box.lines == 1 and box.lines[1].key == 135274, "a group chosen: its icons")
+    -- The search: what is typed, a moment after the last key, in the group chosen; the groups' words count too.
+    local search = Icons.Search()
+    search:SetText("sleep")
+    search:GetScript("OnTextChanged")(search, true)
+    Frames()
+    check(#box.lines == 0, "searched in the group chosen: nothing there")
+    Icons.GroupLine(1):GetScript("OnClick")(Icons.GroupLine(1))
+    check(#box.lines == 1 and box.lines[1].name == "Spell_Nature_Sleep", "in all: the sleep")
+    search:SetText("warrior")
+    search:GetScript("OnTextChanged")(search, true)
+    Frames()
+    check(#box.lines == 1 and box.lines[1].key == 132337, "a class's name finds its icons")
+    search:SetText("")
+    search:GetScript("OnTextChanged")(search, true)
+    Frames()
+    -- The mouse on an icon: its name, groups, what shows it, its file.
+    local sword = box.rows[2]
+    sword:GetScript("OnEnter")(sword)
+    local said = table.concat(GameTooltip._lines or {}, "|")
+    check(GameTooltip._text == "INV Sword 04" and said:find("Weapons", 1, true) and said:find("Hearthstone", 1, true)
+          and said:find("File 135274", 1, true), "its tooltip: name, group, item, file: " .. said)
+    GameTooltip._lines = nil
+    -- A click: the macro's picture, the window closed.
+    sword:GetScript("OnClick")(sword)
+    check(macro.icon == 135274 and not Icons.Shown() and Press.MacroPicture(macro) == 135274, "clicked: the macro's picture")
+    Editor.ChoosePicture()
+    Frames()
+    check(box.rows[2].mark:IsShown() and not box.rows[1].mark:IsShown(), "the picture it has is marked")
+    Icons.Clear():GetScript("OnClick")(Icons.Clear())
+    check(macro.icon == nil and not Icons.Shown(), "Steps' picture: none of its own")
+    Editor.ChoosePicture()
+    check(Icons.Shown() and Icons.Frame():GetFrameStrata() == "FULLSCREEN_DIALOG", "open again, over the full screen")
+    Book.Delete(macro)
+    Editor.Choose(inner)
+end
+
+-------------------------------------------------------------------------------
 --  Retail, and standing down
 -------------------------------------------------------------------------------
 W.Play("retail")
@@ -722,5 +823,6 @@ check(Bound("J") ~= nil and next(drivers) ~= nil, "a key and a bar button stand"
 ns.StandDown("a test")
 check(ns.off, "stood down")
 check(Bound("J") == nil and next(drivers) == nil, "every key and bar button is the game's again")
+check(not Macros.Icons.Shown(), "and the picture window is closed")
 
 io.write(("Macros: all %d checks passed.\n"):format(passed))

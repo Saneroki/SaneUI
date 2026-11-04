@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Sane Macros: click a macro's picture to choose another. A large window
+  shows every icon of the game, sorted into groups (each class, weapons,
+  armor, consumables, trade goods, spells, mounts, achievements and more)
+  with a search box; the mouse on an icon names it and says which spells
+  and items use it.
 - Sane Macros shows your macros as squares of their pictures with their
   names under them, as the game's macro window does. Dragging one onto
   an action bar keeps the bars clear: its picture follows the mouse and

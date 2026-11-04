@@ -1,0 +1,15 @@
+set = "Icons"
+key = "int"              # the icon's file number: what a texture is set to, in both games the same for one file
+history = false          # only the newest versions in the set files: no view asks an icon's past
+about = "The game's icons: every one its client holds, by its file number, with its name and what of the game shows it (Sane Macros' picture window)."
+
+[fields]
+name        = { type = "text" }                     # the file's name without .blp, as the client spells it
+classes     = { type = "list", of = "ref", set = "Classes" } # the classes whose spells show it
+spells      = { type = "list", of = "ref", set = "Spells" }  # players' spells that show it: the first rank of each name, a few
+items       = { type = "list", of = "ref", set = "Items" }   # items that show it, the best first, a few
+itemClasses = { type = "list", of = "int", min = 0 }         # the item classes (Enum.ItemClass) of all items that show it
+
+[index]
+byClass = "classes"
+byItemClass = "itemClasses"

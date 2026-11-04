@@ -341,6 +341,16 @@ local function Placed(place)
     Fill()
 end
 
+-- The picture window for the macro chosen (Icons.lua): the picture clicked is its own, Steps' picture none.
+function Editor.ChoosePicture()
+    local macro = chosen
+    if not macro then return end
+    Macros.Icons.Open(macro, function(picture)
+        macro.icon = Macros.Book.Icon(picture)
+        if chosen == macro then Editor.Changed() else Macros.Press.Update(macro) end
+    end)
+end
+
 -- A drag begins: the bar buttons take it.
 function Editor.DragToBar()
     if chosen then Macros.Place.Start(Placed, Picture(chosen)) end
@@ -498,9 +508,16 @@ local function Top()
     picture.icon:SetAllPoints()
     picture.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     picture:RegisterForDrag(Editor.DRAG)
+    picture:RegisterForClicks("LeftButtonUp")
     picture:SetScript("OnDragStart", ns.Guard(Editor.DragToBar))
     picture:SetScript("OnDragStop", ns.Guard(Macros.Place.Drop))
-    Core.Tip(picture, Macros.TEXT.place, Macros.TEXT.picture)
+    picture:SetScript("OnClick", ns.Guard(Editor.ChoosePicture))
+    -- The game's light under the mouse: it can be clicked.
+    local lit = picture:CreateTexture(nil, "HIGHLIGHT")
+    lit:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+    lit:SetBlendMode("ADD")
+    lit:SetAllPoints()
+    Core.Tip(picture, Macros.TEXT.iconTitle, Macros.TEXT.picture)
 
     name = CreateFrame("EditBox", nil, right, "InputBoxTemplate")
     name:SetSize(Editor.WIDTH - 3 * Editor.INSET - Editor.LIST - Editor.BESIDE, 22)
@@ -617,6 +634,7 @@ local function Shown()
 end
 
 local function Hidden()
+    Macros.Icons.Close()
     Macros.Place.Stop()
     StopKey()
     if frame.moved then
@@ -640,6 +658,7 @@ function Part.Show(on)
         if frame and frame:IsShown() then frame:Hide() end
         return Into(body, body:GetWidth())
     end
+    Macros.Icons.Close()
     Macros.Place.Stop()
     StopKey()
 end
