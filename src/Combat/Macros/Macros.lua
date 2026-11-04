@@ -193,6 +193,7 @@ Macros.TEXT = {
         notCommand = "This line has no / and would be sent to chat: %s",
         afterOpen = "Never reached: after a ; with no condition, nothing more can be picked: %s",
         secondCast = "Only the first /cast of a step is sure to run. Make the second one a step of its own: %s",
+        heldCasting = "The game's Press and Hold Casting is on (Options, Gameplay, Combat): a cast of this macro stops when you let go of the key. Turn it off.",
     },
 
     noCombat = "Not in a fight: this changes the game's secure buttons.",

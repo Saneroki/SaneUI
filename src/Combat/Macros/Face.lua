@@ -92,7 +92,7 @@ function Face.Get(place, slot, name)
         face:SetScript("OnLeave", ns.Guard(Core.HideTip))
         face:Hide()
         faces[place] = face
-        Macros.Press.Ready(face)
+        Macros.Press.Ready(face, true)
         Listen()
     end
     face:SetAllPoints(slot)
@@ -108,5 +108,5 @@ function Face.Show(face, macro, keyText)
 end
 
 function Face.Edges()
-    for _, face in pairs(faces) do Macros.Press.Ready(face) end
+    for _, face in pairs(faces) do Macros.Press.Ready(face, true) end
 end

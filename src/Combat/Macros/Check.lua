@@ -131,10 +131,25 @@ function Check.Step(step)
     return out
 end
 
+-- Whether a macro casts: a spell's step, or text with a /cast, switched on.
+local function Casts(macro)
+    for _, step in ipairs(macro.steps) do
+        if not step.off and (step.kind == "spell" or (step.kind == "text" and step.what:find("/cast", 1, true))) then
+            return true
+        end
+    end
+    return false
+end
+
 function Check.Macro(macro)
     local found = { macro = {}, count = 0 }
     local words = Macros.TEXT.check
     if not macro.steps[1] then found.macro[1] = words.noSteps end
+    -- The game's Press and Hold Casting stops a cast at the key's release; it hands that release to its own buttons
+    -- only (Saneroki, 2026-11-04: a Sane Macro's Wrath began and stopped at once).
+    if Casts(macro) and Core.Ask(rawget(_G, "GetCVarBool"), "ActionButtonUseKeyHeldSpell") then
+        found.macro[#found.macro + 1] = words.heldCasting
+    end
     local live, ended = false, false
     for _, step in ipairs(macro.steps) do
         if not step.off then

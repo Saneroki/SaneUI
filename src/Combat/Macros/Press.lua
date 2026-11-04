@@ -52,9 +52,11 @@ local function Pressed()
     Macros.Face.Paint()
 end
 
--- A button that presses a macro: one edge only, or a press would be two turns.
-function Press.Ready(button)
-    local down = GetCVarBool("ActionButtonUseKeyDown") and true or false
+-- A button that presses a macro: one edge only, or a press would be two turns. A key's: the edge the game's key-down
+-- setting says. A mouse's (mouse, a bar button): the release, the only edge the game acts on for a click of the mouse
+-- on a secure button (SecureActionButton_OnClick: a mouse press never uses key down).
+function Press.Ready(button, mouse)
+    local down = not mouse and GetCVarBool("ActionButtonUseKeyDown") and true or false
     button:RegisterForClicks(down and "AnyDown" or "AnyUp")
     button:SetAttribute("useOnKeyDown", down)
     button:SetAttribute("type", "macro")

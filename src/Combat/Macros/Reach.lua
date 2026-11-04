@@ -120,10 +120,11 @@ local function SetSlot(place, macro)
         header = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
         header.face = face
         header:SetFrameRef("face", face)
-        header:SetAttribute("button", name)
         header:SetAttribute("_onstate-slot", Reach.SLOT)
         headers[place] = header
     end
+    -- The button's keys press the macro's hub, a key's button; our button over the slot is the mouse's.
+    header:SetAttribute("button", Macros.Press.Name(macro))
     header:SetAttribute("key1", first)
     header:SetAttribute("key2", second)
     active[place] = (first or "") .. "," .. (second or "")

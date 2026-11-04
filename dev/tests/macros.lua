@@ -719,6 +719,47 @@ do
     state["bar:1"] = nil
 end
 
+-- The game's Press and Hold Casting stops our casts at the key's release (Saneroki, 2026-11-04: a Wrath began and
+-- stopped at once): a macro that casts says so while it is on; one casting nothing does not.
+do
+    local cvar = GetCVarBool
+    GetCVarBool = function(name) return name == "ActionButtonUseKeyDown" or name == "ActionButtonUseKeyHeldSpell" end
+    local casts, waves = Macro(Spell("Slam")), Macro(Book.Step("text", "/wave"))
+    local found = Check.Macro(casts)
+    check(found.macro[1] == C.heldCasting and found.count == 1, "Press and Hold Casting on: a macro that casts says so")
+    check(Check.Macro(waves).count == 0, "a macro that casts nothing: nothing to say")
+    GetCVarBool = cvar
+    check(Check.Macro(casts).count == 0, "off: nothing")
+    Book.Delete(casts)
+    Book.Delete(waves)
+end
+
+-- Our button over a bar slot is the mouse's: it acts on the release, the edge the game acts on for a mouse's click of a
+-- secure button; the slot's keys press the macro's hub, a key's button.
+do
+    local registered, register = {}, W.methods.RegisterForClicks
+    W.methods.RegisterForClicks = function(self, ...)
+        registered[self] = table.concat({ ... }, ",")
+        if register then return register(self, ...) end
+    end
+    state["bar:1"] = true
+    local clicked = Macro(Spell("Slam"))
+    Reach.SetPlace(clicked, "ActionButton3:1")
+    local face = _G.SaneUIMacroFace_ActionButton3_1
+    Face.Edges()
+    check(registered[face] == "AnyUp" and face:GetAttribute("useOnKeyDown") == false, "the bar button: the mouse's release")
+    local header
+    for frame, driver in pairs(drivers) do if driver[2]:find("[bar:1]", 1, true) then header = frame end end
+    check(header:GetAttribute("button") == Press.Name(clicked) and overrides[header]["3"] == Press.Name(clicked) .. ":LeftButton",
+        "its keys press the macro's hub")
+    Press.Edges()
+    check(registered[Press.Hub(clicked)] == "AnyDown", "the hub: the key's edge, the game's key-down setting")
+    Reach.TakePlace(clicked)
+    Book.Delete(clicked)
+    state["bar:1"] = nil
+    W.methods.RegisterForClicks = register
+end
+
 -- The game's macros under ours, marked W (Saneroki, 2026-11-03): a click opens the game's window on it, a drag takes
 -- it up as the game's, a right click makes a Sane Macro of it.
 local opened, tabbed, pickedUp = 0, nil, nil

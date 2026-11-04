@@ -18,6 +18,12 @@ Saneroki: "create the same all sound off profile there as well and make it stand
 - **`src/Core/Audio.lua`:** a fourth default, *All sound off* (the game's switch of all sound off, the rest as it is), for every account new to the profiles. `Core.Audio.Add(name, off)`: a profile of every sound on but those named off, at the game's volumes, not put in use (a setup addon: the druid's account on All sound off, the warrior's on Music off).
 - **`dev/tests/core.lua`**, **`dev/tests/navigation.lua`:** the four defaults, `Add`. `src/Core/README.md`, `Doc/agent/core.md`, `Doc/changelog.txt`.
 
+### Sane Macros: casts that the game's Press and Hold Casting stopped; a bar button clicked with the mouse (Saneroki, 2026-11-04)
+Saneroki: "the native macro /cast [@mouseover] Wrath works fine. Sane Macros doesn't ... it starts casting and interrupts imidiatly"; with the game's Press and Hold Casting off "it casts then". The game ties a cast to the key and hands the key's release to its own buttons only (`typerelease`, `ReleaseAction`); a Sane Macro's cast stopped at the release.
+- **`src/Combat/Macros/Check.lua`**, **`Macros.lua`:** while `ActionButtonUseKeyHeldSpell` is on, a macro that casts (a spell's step, text with a /cast) says so, a red **!**: turn it off in the game's Combat options.
+- **`src/Combat/Macros/Press.lua`**, **`Face.lua`**, **`Reach.lua`:** our button over a bar slot is the mouse's and acts on the release (`Press.Ready(button, mouse)`): the game acts on a mouse's click of a secure button only there (`SecureActionButton_OnClick`), so a click on it did nothing; the slot's keys press the macro's hub, on the edge of the key-down setting.
+- **`dev/tests/macros.lua`:** the check on and off, a macro casting nothing; the bar button's edge, its keys on the hub, the hub's edge. `src/Combat/Macros/README.md`.
+
 ### Sane Macros: Macros.Set, a macro made anew by other code (Saneroki, 2026-11-04)
 For a setup addon that keeps a potion macro on the best potion held.
 - **`src/Combat/Macros/Macros.lua`**, **`Book.lua`:** `Macros.Set(name, body, owner)` finds the macro as `Add` does and makes it anew from macro text or steps (`Book.Fill`, which `Book.FromSteps` now uses too); its number, picture, keys and places stay, its button takes it at once or after a fight.

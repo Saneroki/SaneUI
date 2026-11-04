@@ -67,8 +67,12 @@ of your normal action bar buttons. The macros are your account's, on every chara
   numbered attributes (`m<n>` the line, `c<n>` the condition). A key clicks the hub. The snippet, wrapped on `OnClick`, runs before the
   button's action, in a fight too: it walks from where the macro stands (`at`, or 1 with `top`) past every turn whose condition
   fails, by `SecureCmdOptionParse`, sets the first that holds as the button's `macrotext`, and moves on. Nothing true: no text, and
-  the game runs nothing. A press is one edge only (`Press.Ready`, the game's key-down setting): the snippet runs on every edge
-  registered. Numbered attributes keep a snippet's text free of the game's bans (no closure's keyword, no brace) whatever a step says.
+  the game runs nothing. A press is one edge only (`Press.Ready`): the snippet runs on every edge registered. A key's
+  button, the hub, acts on the edge of the game's key-down setting; our bar button is the mouse's and acts on the release,
+  the only edge the game acts on for a mouse's click of a secure button (`SecureActionButton_OnClick`); the bar slot's keys
+  press the hub (Saneroki, 2026-11-04). The game's Press and Hold Casting (`ActionButtonUseKeyHeldSpell`) stops a cast at
+  the key's release, which it hands to its own buttons only (`typerelease`): while it is on, a macro that casts says so
+  (`Check.lua`, a red **!**); Speed Leveling's profile has it off. Numbered attributes keep a snippet's text free of the game's bans (no closure's keyword, no brace) whatever a step says.
 - **What secure code can do.** On a press it may rewrite its own button in a fight. It cannot read rage, cooldowns, auras or
   the clock, and addon code cannot write to it then. An addon's change waits for `Core.AfterCombat`.
 - **Written out** (`Write.lua`). Plain text, testable alone. How often: each turn of a step gets a mark at its share of a
