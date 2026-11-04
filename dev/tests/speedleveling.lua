@@ -292,11 +292,12 @@ do
 end
 check(_G[Key.LINK .. 2] and _G[Key.LINK .. (Key.LINKS + 1)], "the chain's buttons are made")
 
-local conditions = drivers[header].mode
-check(conditions:find("^%[@softinteract,exists,dead%] loot; "), "loot comes first while Loot first is on")
-check(conditions:find("%[@target,harm,nodead,combat%] fight; %[@softinteract,exists,help,nodead%] near; "
-    .. "%[@target,harm,nodead%] foe; %[@target,noharm,nodead%] friend; %[@target,exists,dead%] corpse; find$"),
-    "then a foe in a fight, an NPC in front of you, a foe, a friend, a corpse, else find: " .. conditions)
+local front, conditions = drivers[header].front, drivers[header].mode
+check(front == "[@softinteract,exists,dead] loot; [@softinteract,exists,help,nodead] near; none",
+    "in front of you: loot while Loot first is on, else an NPC: " .. tostring(front))
+check(conditions == "[@target,harm,nodead,combat] fight; [@target,harm,nodead] foe; [@target,noharm,nodead] friend; "
+    .. "[@target,exists,dead] corpse; find", "your target, apart: a foe in a fight, a foe, a friend, a corpse, else find: "
+    .. conditions)
 check(W.cvars.softTargetInteract == "3", "Loot first: the interact key on")
 check(ns.options.foundCVars.softTargetInteract.was == "2", "what the interact key was is kept")
 check(fight:GetAttribute("macrotext") == "/tm [harm,nodead] !8\n/startattack [harm,nodead]", "Fight marks and attacks")
@@ -390,25 +391,28 @@ bound[FIND] = { "E", "SHIFT-E" }
 W.Fire("UPDATE_BINDINGS")
 check(header:GetAttribute("keys") == 2 and header:GetAttribute("key1") == "E", "the key's keys onto the header")
 
-header:SetAttribute("state-mode", "loot")
+header:SetAttribute("state-front", "loot")
 check(overrides.E == "INTERACTTARGET" and overrides["SHIFT-E"] == "INTERACTTARGET", "a corpse with loot: Interact With Target")
-header:SetAttribute("state-mode", "near")
+header:SetAttribute("state-front", "near")
 check(overrides.E == "INTERACTTARGET", "an NPC in front of you: talk at once")
 units.target = { name = "Young Wolf" }
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "foe")
 check(header:GetAttribute("wanted") == false and overrides.E == FIND, "a foe nobody wants: Find")
 units.target = { name = "Kobold Laborer" }
 W.Fire("PLAYER_TARGET_CHANGED")
 check(header:GetAttribute("wanted") == true and overrides.E == FIGHT, "a wanted foe: Fight")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "fight")
 check(overrides.E == FIGHT, "in a fight any living foe: Fight")
 units.target = { name = "Marshal McBride" }
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "friend")
 check(overrides.E == "INTERACTTARGET", "a wanted NPC: talk")
 Core.Set(ns.name, "talk", false)
-check(overrides.E == FIND and not drivers[header].mode:find("near", 1, true), "Talk to NPCs off: Find, and no near state")
+check(overrides.E == FIND and not drivers[header].front:find("near", 1, true), "Talk to NPCs off: Find, and no near state")
 Core.Set(ns.name, "talk", true)
 -- One refresh asks what is wanted once, for your target, the thing in front of you and Find alike, and tells the header
 -- only what changed: each attribute set runs its snippet anew.
@@ -434,6 +438,7 @@ check(not Wanted.Object(Thing(9999)) and not Wanted.Object("Creature-0-1-0-12-70
 
 units.target = nil
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "find")
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "", Thing(7001))
 check(header:GetAttribute("object") == true and overrides.E == "INTERACTTARGET", "a wanted thing in front of you: Interact")
@@ -491,6 +496,7 @@ reach[7001], reach[7002], reach[7003], reach[7004] = true, true, false, true -- 
 -- A living foe the words name: the item, before fighting it.
 units.target = { name = "Worg Pup", foe = true, guid = "Creature-0-1-0-1-111-01" }
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "foe")
 check(header:GetAttribute("use") == true and overrides.E == USE, "a foe the step's words name: Use, before fighting")
 check(useButton:GetAttribute("macrotext") == "/use item:7001", "Use uses that step's item")
@@ -509,6 +515,7 @@ check(header:GetAttribute("use") == true, "another of that kind: tried anew")
 -- A corpse the words speak of, of a creature the step wants: the item on it.
 units.target = { name = "Kobold Vermin", foe = true, dead = true, guid = "Creature-0-1-0-1-333-01" }
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "corpse")
 check(header:GetAttribute("use") == true and useButton:GetAttribute("macrotext") == "/use item:7004"
     and overrides.E == USE, "a wanted corpse the words speak of: its item on it")
@@ -519,6 +526,7 @@ check(header:GetAttribute("use") == false and overrides.E == FIND, "a corpse nob
 -- A friendly NPC the words name, too far for the item: the game's Click-to-Move lent, the key talks (walks there).
 units.target = { name = "Wounded Guard", guid = "Creature-0-1-0-1-555-01" }
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "friend")
 check(header:GetAttribute("use") == false and overrides.E == "INTERACTTARGET", "too far for the item: talk, which walks")
 check(W.cvars.autointeract == "1" and ns.options.foundCVars.autointeract.was == "0", "Click-to-Move lent, what it was kept")
@@ -527,6 +535,7 @@ local carcass = "Creature-0-1-0-1-666-01"
 units.target = { name = "Young Wolf", foe = true, dead = true, guid = carcass }
 spoils[carcass] = true
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "corpse")
 check(header:GetAttribute("corpse") == true and overrides.E == "INTERACTTARGET" and W.cvars.autointeract == "1",
     "your target's corpse with loot: walked to and opened")
@@ -542,6 +551,7 @@ spoils[carcass] = nil
 -- A fight over: the interact key looks all around for a moment, at its corpses only; on while it finds them, then back.
 units.target = nil
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "find")
 W.cvars.SoftTargetInteractArc, W.cvars.SoftTargetInteractRange = "0", "10"
 local behind = "Creature-0-1-0-1-777-01"
@@ -565,6 +575,7 @@ check(W.cvars.SoftTargetInteractArc == "0", "a new fight: back at once")
 W.Wait(Key.LOOK + Key.TICK)
 units.target = { name = "Wounded Guard", guid = "Creature-0-1-0-1-555-01" }
 W.Fire("PLAYER_TARGET_CHANGED")
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "friend")
 -- Within the item's reach now: looked at again a few times a second; the item, Click-to-Move given back.
 reach[7003] = true
@@ -685,7 +696,7 @@ local giver = "Creature-0-1-0-1-888-01"
 units.npc, units.softinteract = { name = "Some Farmer", guid = giver }, { name = "Some Farmer", guid = giver }
 GetQuestID, AcceptQuest = function() return 40 end, function() end
 W.Wait(Key.LOOK + Key.TICK) -- what the fights above left: the interact key's look around is over
-header:SetAttribute("state-mode", "near")
+header:SetAttribute("state-front", "near")
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, giver)
 check(overrides.E == "INTERACTTARGET", "before the talk: talk")
 W.Fire("QUEST_DETAIL")
@@ -721,7 +732,36 @@ W.Fire("PLAYER_SOFT_INTERACT_CHANGED", giver, "Creature-0-1-0-1-889-01")
 check(header:GetAttribute("left") == false, "another NPC: the first forgotten")
 units.npc, units.softinteract = nil, nil
 W.Fire("PLAYER_SOFT_INTERACT_CHANGED", "Creature-0-1-0-1-889-01", nil)
+header:SetAttribute("state-front", "none")
 header:SetAttribute("state-mode", "find")
+
+-- Through with an NPC your guide wants by name, in front of you (Saneroki, 2026-11-04: at a quest hub a press found that
+-- NPC again each time): Find leaves its name out, and your target still gets its due.
+do
+    local marshal = "Creature-0-1-0-1-777-01"
+    Key.Refresh()
+    check(find:GetAttribute("macrotext"):find("Marshal McBride", 1, true), "the guide's NPC is one Find looks for")
+    units.npc, units.softinteract = { name = "Marshal McBride", guid = marshal }, { name = "Marshal McBride", guid = marshal }
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, marshal)
+    header:SetAttribute("state-front", "near")
+    gossip.available, gossip.active, gossip.options = {}, {}, { { gossipOptionID = 5 } }
+    W.Fire("GOSSIP_SHOW")
+    W.Wait(0.1)
+    check(header:GetAttribute("left") == true, "a talk with nothing for the guide: through with that NPC")
+    check(not find:GetAttribute("macrotext"):find("Marshal McBride", 1, true), "Find no longer targets it")
+    units.target = { name = "Kobold Laborer" }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    header:SetAttribute("state-mode", "foe")
+    check(overrides.E == FIGHT, "that NPC in front of you, your wanted foe: Fight")
+    ns.Quests.Forget()
+    check(find:GetAttribute("macrotext"):find("Marshal McBride", 1, true), "forgotten: looked for again")
+    gossip.options = {}
+    units.npc, units.softinteract, units.target = nil, nil, nil
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", marshal, nil)
+    W.Fire("PLAYER_TARGET_CHANGED")
+    header:SetAttribute("state-front", "none")
+    header:SetAttribute("state-mode", "find")
+end
 
 -- Two of the guide's quests at one NPC: both taken, the key not through with it before; one it does not know ignored.
 do
@@ -733,7 +773,7 @@ do
     local talker = "Creature-0-1-0-1-890-01"
     units.npc, units.softinteract = { name = "Two Quests", guid = talker }, { name = "Two Quests", guid = talker }
     W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, talker)
-    header:SetAttribute("state-mode", "near")
+    header:SetAttribute("state-front", "near")
     gossip.active, gossip.options, gossip.available = {}, {}, { { questID = 40 }, { questID = 42 }, { questID = 99 } }
     gossip.chosenAvailable = nil
     W.Fire("GOSSIP_SHOW")
@@ -789,6 +829,7 @@ do
     ns.Guide.Quests = quests
     units.npc, units.softinteract = nil, nil
     W.Fire("PLAYER_SOFT_INTERACT_CHANGED", next, nil)
+    header:SetAttribute("state-front", "none")
     header:SetAttribute("state-mode", "find")
     GetQuestID, AcceptQuest, CloseQuest, GetNumQuestChoices, GetQuestReward = nil, nil, nil, nil, nil
     gossip.available, gossip.chosenAvailable = {}, nil
@@ -1125,10 +1166,10 @@ end
 -- Out of the profile Speedleveling all of the module rests, and comes back as it was.
 do
     W.Wait(Key.LOOK + Key.TICK)
-    header:SetAttribute("state-mode", "loot")
+    header:SetAttribute("state-front", "loot")
     check(overrides.E == "INTERACTTARGET", "before the rest: the key's action on its key")
     Core.Profiles.SetLeveling(false)
-    check(ns.off and next(overrides) == nil and drivers[header].mode == nil, "Speed Leveling off: no action on the key, the driver stopped")
+    check(ns.off and next(overrides) == nil and drivers[header].mode == nil and drivers[header].front == nil, "Speed Leveling off: no action on the key, the drivers stopped")
     check(ns.options.take == false and ns.options.follow == "off", "every switch off on Accountwide")
     Core.Set(ns.name, "cinematics", true)
     check(not ns.off, "one switch ticked there: the module wakes for it")
@@ -1137,6 +1178,7 @@ do
     Core.Profiles.SetLeveling(true)
     check(not ns.off and drivers[header].mode ~= nil and ns.options.take == true, "Speed Leveling on: the module back")
     check(next(overrides) ~= nil, "the key's action back on its key")
+    header:SetAttribute("state-front", "none")
     header:SetAttribute("state-mode", "find")
 end
 

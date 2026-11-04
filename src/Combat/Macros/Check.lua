@@ -144,7 +144,11 @@ function Check.Macro(macro)
             if Macros.Write.When(step) == nil then ended = true end
             if problems[1] then
                 found[step] = problems
-                found.count = found.count + #problems
+                for _, problem in ipairs(problems) do
+                    -- A spell not learnt yet, an item none of is held: so it is for now, nothing wrong with the macro.
+                    -- Said at the step, not counted, so no red mark in the list (Saneroki, 2026-11-04: "many have red !").
+                    if problem ~= words.notKnown and problem ~= words.noneHeld then found.count = found.count + 1 end
+                end
             end
         end
     end

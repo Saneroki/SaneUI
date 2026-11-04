@@ -314,7 +314,9 @@ Horde paladins' and Alliance shamans' too. Nothing is set up: the class, race, s
   the next chain that is due comes up meanwhile. Of several NPCs who give a quest, the nearest. Where a chain's first
   quest can be had from others too (a priest's spells, a warlock's Felsteed; the set's `also`), any one of them will do.
 - **What your guide does itself stays your guide's:** a quest it hands in shows nothing here, and one it only takes
-  shows from there on.
+  shows from there on. So does what a guide further on your way does (`Guide.Later`, the guides its heads name, each
+  text looked over by `Format.Quests`; Saneroki, 2026-11-04): a druid's Trial of the Sea Lion, taken at 16, waits for
+  the guide that does it at 24 instead of pulling you off your way before.
 - **A click leaves the chain** for this character (`Core.Character`, its `classLeft`), and your guide goes on; take one
   of its quests yourself and it is back; a right click on the zone brings back all you left. The switch *Class quests*.
 
@@ -376,9 +378,10 @@ through `Lines.lua`:
 An addon may target, mark, attack, interact and use items only by the game's secure ways and on a key press, so every
 choice is made by those, in a fight too (`Key.lua`):
 
-- **A state driver** (the game's `RegisterStateDriver`) reads the macro conditions five times a second: a corpse with
-  loot, a living foe in a fight, a living friendly NPC right in front of you, a living foe, a living target that is
-  no foe (`noharm`), or none of these. Not `help`: it holds only for one your spells could help, which many quest
+- **Two state drivers** (the game's `RegisterStateDriver`) read the macro conditions five times a second, apart (Saneroki,
+  2026-11-04: an NPC in front of you the key was through with hid your target): what is in front of you (`front`: a
+  corpse with loot, a living friendly NPC, or none) and your target (`mode`: a living foe in a fight, a living foe, a
+  living target that is no foe (`noharm`), a corpse, or none of these); the snippet weighs them in the order above. Not `help`: it holds only for one your spells could help, which many quest
   givers are not (Saneroki, 2026-10-26: in Retail the key talked to none). So the module tells the header out of a
   fight whether the interact key's pick is an NPC to talk to (the attribute `npc`: a creature, alive, no foe).
 - **The header** (`SaneUISpeedLevelingKey`, `SecureHandlerAttributeTemplate`) then puts that state's action on the
@@ -413,7 +416,8 @@ choice is made by those, in a fight too (`Key.lua`):
   the NPC's GUID): nothing more is accepted, handed in, chosen or closed until the talk is over, `Quests.OVER` seconds
   after a window closed with no NPC left (the game closes the gossip window for a quest's, which is the same talk). An
   NPC you did a quest at, or whose talk had nothing for your guide,
-  is one you are through with (`Quests.Left`): the key leaves it alone (the attribute `left`) until the interact key
+  is one you are through with (`Quests.Left`): the key leaves it alone (the attribute `left`), and Find leaves its name
+  out where the guide wants it by name and its talk had nothing (`Quests.LeftName`), until the interact key
   picks something else, the quest log changes after the quest has settled, or `Quests.LEFT` seconds are over. An NPC
   with two of the guide's quests: both are taken, by the talk that opens again or by the next press (its list showed
   more, so the key is not through with it). After a hand-in, while the guide still wants a quest to take or a finished

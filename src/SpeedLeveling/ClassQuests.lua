@@ -17,8 +17,10 @@ local _, ns = ...
 --  log or handed in, and the quests before it lie behind you.
 --
 --  What your guide does itself stays your guide's: a quest it hands in shows
---  nothing here, a quest it takes shows from there on. A chain it leaves open
---  meanwhile waits, and the next one that is due comes up.
+--  nothing here, a quest it takes shows from there on. So does what a guide
+--  further on your way does (Guide.Later; Saneroki, 2026-11-04): a quest taken
+--  now and finished levels later waits for that guide, off your way no sooner.
+--  A chain it leaves open meanwhile waits, and the next one that is due comes up.
 --
 --  A click on the step leaves the chain for this character: its quests are yours
 --  to take or not, and if you take one, it comes back. ClassQuests.Back() brings back
@@ -46,6 +48,7 @@ local TAKE, WORK, HANDIN = "take", "work", "handin" -- how far a quest is
 local guide     -- the guide run
 local chains    -- this character's, the lowest level first: { key, name, level, quests, also }
 local asked     -- what the guide does itself: { take = { [quest] = true }, handin = { [quest] = true } }
+local later     -- what the guides after it do, the same way
 local due       -- the step that is due: its chain, quest and stage; nil for none
 
 local function Notes()
@@ -104,6 +107,7 @@ function ClassQuests.Use(read)
     if guide then guide.steps[ClassQuests.STEP] = nil end
     chains = guide and Mine() or nil
     asked = guide and Asked(guide.steps) or nil
+    later = guide and ns.Guide and ns.Guide.Later and ns.Guide.Later(guide) or { take = {}, handin = {} }
 end
 
 -------------------------------------------------------------------------------
@@ -140,9 +144,10 @@ local function Stage(chain)
     return 1, TAKE
 end
 
--- Whether a quest of a chain, this far, is the guide's to lead: a quest it hands in, or one it takes that is still to take.
+-- Whether a quest of a chain, this far, is the guide's to lead: a quest it or a guide after it hands in, or one they
+-- take that is still to take.
 local function Guides(quest, stage)
-    return asked.handin[quest] or (stage == TAKE and asked.take[quest])
+    return asked.handin[quest] or later.handin[quest] or (stage == TAKE and (asked.take[quest] or later.take[quest]))
 end
 
 -- Whether your level lets the chain go on with that quest.

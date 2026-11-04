@@ -45,8 +45,9 @@ local _, ns = ...
 --            skull and starts the attack on a foe, and when it found none,
 --            uses one quest item (Items.lua)
 --
---  A state driver of the game reads loot, a foe in a fight, an NPC in front of
---  you, a foe, a friend from the macro conditions; the header's snippet then
+--  Two state drivers of the game read the macro conditions: what is in front of
+--  you (loot, an NPC) and your target (a foe in a fight, a foe, a friend, a
+--  corpse), apart, so that one never hides the other; the header's snippet then
 --  puts that action on the key's keys as override bindings of its own (above
 --  other overrides). "Friend" is any living target that is no foe (noharm):
 --  the condition help holds only for one your spells could help, which many
@@ -87,24 +88,26 @@ Key.COMMAND = "CLICK " .. Key.FIND .. ":LeftButton" -- the key's own binding (Bi
 -- Its words in the game's key bindings.
 _G["BINDING_NAME_" .. Key.COMMAND] = ns.TEXT.binding
 
--- What the macro conditions tell the state driver: the first that holds.
+-- What the macro conditions tell the state drivers, each the first that holds: what is in front of you (front), and
+-- your target (mode). Apart, so that an NPC in front of you the key is through with leaves your target its due
+-- (Saneroki, 2026-11-04: a press found again instead of fighting or walking on).
 local LOOT = "[@softinteract,exists,dead] loot; "
-local FIGHT = "[@target,harm,nodead,combat] fight; "
 local NEAR = "[@softinteract,exists,help,nodead] near; "
+local FIGHT = "[@target,harm,nodead,combat] fight; "
 local REST = "[@target,harm,nodead] foe; [@target,noharm,nodead] friend; [@target,exists,dead] corpse; find"
 
 -- The header's snippets, which the game runs in its restricted environment, in a fight too. A change of the state
 -- or of what decides it: the action due on each of the key's keys.
 local ON_CHANGE = [[
-    if name == "state-mode" or name == "wanted" or name == "object" or name == "talk" or name == "keys"
-        or name == "use" or name == "npc" or name == "left" or name == "corpse" then
+    if name == "state-mode" or name == "state-front" or name == "wanted" or name == "object" or name == "talk"
+        or name == "keys" or name == "use" or name == "npc" or name == "left" or name == "corpse" then
         self:RunAttribute("_bind")
     end
 ]]
 local BIND = [[
-    local state = self:GetAttribute("state-mode")
+    local front, state = self:GetAttribute("state-front"), self:GetAttribute("state-mode")
     local action = "find"
-    if state == "loot" then
+    if front == "loot" then
         action = "interact"
     elseif state == "fight" then
         action = "fight"
@@ -112,7 +115,7 @@ local BIND = [[
         action = "use"
     elseif state == "corpse" and self:GetAttribute("corpse") then
         action = "interact"
-    elseif (state == "near" and not self:GetAttribute("left")) or self:GetAttribute("npc") then
+    elseif (front == "near" and not self:GetAttribute("left")) or self:GetAttribute("npc") then
         action = "interact"
     elseif self:GetAttribute("object") then
         action = "interact"
@@ -255,7 +258,17 @@ function Key.Find(fighting, names)
         end
     end
     local use = not fighting and ns.options.items and ns.Items.Pick(items) or nil
-    return Key.Macros(names or (ns.Wanted.Names()), use)
+    names = names or (ns.Wanted.Names())
+    -- Not the NPC the key is through with: Find would target it again on every press.
+    local through = ns.Quests.LeftName()
+    if through then
+        local others = {}
+        for _, name in ipairs(names) do
+            if name ~= through then others[#others + 1] = name end
+        end
+        names = others
+    end
+    return Key.Macros(names, use)
 end
 
 -- The macro of Fight: your living foe marked (the switch) and attacked.
@@ -476,8 +489,8 @@ function Key.Update()
     if not looking then Reach(false) end
     Write(fight, Attack())
     Set("talk", ns.options.talk and true or false)
-    RegisterStateDriver(header, "mode", (ns.options.loot and LOOT or "") .. FIGHT .. (ns.options.talk and NEAR or "")
-        .. REST)
+    RegisterStateDriver(header, "front", (ns.options.loot and LOOT or "") .. (ns.options.talk and NEAR or "") .. "none")
+    RegisterStateDriver(header, "mode", FIGHT .. REST)
     Key.Refresh()
 end
 Key.updateLater = Later(Key.Update)
@@ -542,7 +555,8 @@ function Key.Check()
     else
         local guide = ns.Run.Guide()
         lines = {
-            ns.TEXT.keyState:format(tostring(header:GetAttribute("state-mode")), tostring(header:GetAttribute("action")),
+            ns.TEXT.keyState:format(tostring(header:GetAttribute("state-front")) .. ", " .. tostring(header:GetAttribute("state-mode")),
+                tostring(header:GetAttribute("action")),
                 keys and keys[1] and table.concat(keys, ", ") or ns.TEXT.keyNoKey),
             ns.TEXT.keyFront:format(Seen("softinteract"), tostring(header:GetAttribute("npc")),
                 tostring(header:GetAttribute("object"))),
@@ -563,6 +577,7 @@ function Key.GiveBack()
     if not header then return PutBack() end
     if InCombatLockdown() then return Core.AfterCombat("Speed Leveling: give back", Key.GiveBack) end
     if not ns.off then return end -- woken up in the same fight
+    UnregisterStateDriver(header, "front")
     UnregisterStateDriver(header, "mode")
     header:SetAttribute("_onattributechanged", nil)
     ClearOverrideBindings(header)

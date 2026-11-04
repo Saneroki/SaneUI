@@ -109,11 +109,20 @@ function Quests.Left(guid, wanted)
     return left.looked or not (wanted or Owed(left.sure))
 end
 
+-- The name of the NPC the key leaves alone even where your guide wants it by name (a talk that found nothing to do),
+-- so that Find does not target it again (Saneroki, 2026-11-04: a press at a quest hub found that NPC each time); nil:
+-- none.
+function Quests.LeftName()
+    if not (left.guid and left.name and Quests.Left(left.guid, true)) then return nil end
+    return left.name
+end
+
 local ForgetSoon = Core.Later(function() ns.Guarded(Quests.Forget) end, Quests.LEFT)
 
 local function Through(guid, looked, sure)
     if type(guid) ~= "string" then return end
     left.guid, left.when, left.looked, left.sure = guid, GetTime(), looked, sure
+    left.name = guid == Talking() and Core.Plain(Core.Ask(UnitName, "npc")) or nil
     ForgetSoon()
     ns.Guarded(ns.Key.Refresh)
 end

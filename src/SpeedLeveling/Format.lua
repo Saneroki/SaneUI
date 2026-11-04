@@ -461,6 +461,19 @@ function Format.Head(text)
     return head
 end
 
+-- The quests a guide's text takes and hands in, by a quick look at its command lines (no step read, nobody's lines
+-- left out): what a guide further on sees to. { take = { [quest] = true }, handin = { [quest] = true } }
+function Format.Quests(text)
+    words = words or Core.Neighbours.Format("guide")
+    local found = { take = {}, handin = {} }
+    if not words or type(text) ~= "string" then return found end
+    for command, quest in ("\n" .. text):gmatch("\n%s*%.(%S+)%s+(%d+)") do
+        local ours = words.commands[command]
+        if found[ours] then found[ours][tonumber(quest)] = true end
+    end
+    return found
+end
+
 -- One guide's text, read for that character.
 function Format.Read(text, who)
     words = words or Core.Neighbours.Format("guide")

@@ -298,6 +298,31 @@ quests.on[10] = true
 Check()
 check(Step() ~= nil and Words():find("Quest 10", 1, true), "and shown from there on, as it does not hand it in")
 Reset()
+-- A guide further on the way that hands it in (Saneroki, 2026-11-04: a druid's Trial of the Sea Lion, taken at 16, is
+-- done by the guide at 24): left to that guide, no pull off the way before it; with none, shown as before.
+do
+    local M = {}
+    for theirs, ours in pairs(known.marks) do M[ours] = theirs end
+    local function Guide_(name, after, ...)
+        local text = { "#forever", "#name " .. name, "#group Way" }
+        if after then text[#text + 1] = "#" .. M.after .. " " .. after end
+        for _, line in ipairs({ ... }) do text[#text + 1] = "step" text[#text + 1] = line end
+        return table.concat(text, "\n")
+    end
+    ns.Guide.AddAll({ Guide_("First", "Between", L("take", "10"), L("take", "1")), Guide_("Between", "Last", L("take", "2")),
+                      Guide_("Last", nil, L("handin", "10")), Guide_("Alone", nil, L("take", "10"), L("take", "1")) }, false)
+    check(ns.Format.Quests(Guide_("Last", nil, L("handin", "10"), L("take", "3"))).handin[10]
+        and ns.Format.Quests(Guide_("Last", nil, L("take", "3"))).take[3], "a guide's quests at a quick look")
+    Guide.Choose("Way\\First")
+    quests.on[10] = true
+    Check()
+    check(Run.Guide().name == "First" and Step() == nil, "taken here, handed in two guides on: the guide's")
+    Guide.Choose("Way\\Alone")
+    Check()
+    check(Step() ~= nil and Words():find("Quest 10", 1, true), "no guide on the way hands it in: shown")
+    Reset()
+    Fresh()
+end
 Fresh()
 
 -------------------------------------------------------------------------------

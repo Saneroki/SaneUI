@@ -323,6 +323,14 @@ check(Finds(Spell("Rend"), C.notKnown), "a spell this character has not")
 check(Finds(Book.Step("item", "Hearthstoen"), "no item"), "an item the game does not know")
 check(not Finds(Book.Step("item", "Hearthstone", 6948), C.noneHeld), "an item you hold")
 check(Finds(Book.Step("item", "Hearthstone", 7), C.noneHeld), "an item you have none of")
+-- Not learnt yet, none held: said at the step, no red mark in the list; a spell the game does not know still counts.
+do
+    local later = Macro(Spell("Rend"), Book.Step("item", "Hearthstone", 7))
+    local found = Check.Macro(later)
+    check(found.count == 0 and found[later.steps[1]][1] == C.notKnown, "a spell to learn yet, an item to get: not counted")
+    check(Check.Macro(Macro(Spell("Sllam"))).count == 1, "a spell the game does not know: counted")
+    Book.Delete(later)
+end
 check(Finds(Spell("Slam", { { word = "combat" }, { word = "combat", no = true } }), "can never run"), "both sides of a word")
 check(Finds(Spell("Slam", { { word = "help" }, { word = "harm" } }), "can never run"), "friend and enemy")
 check(not Finds(Spell("Slam", { { word = "help", no = true }, { word = "harm" } }), "can never run"), "not a friend and an enemy can hold")

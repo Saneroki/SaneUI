@@ -72,6 +72,7 @@ local COLOURS = {
 }
 
 local watchers = {}
+local later = {}   -- [guide's key] = what the guides after it take and hand in (Guide.Later), for the session
 local Changed
 
 local function Store()
@@ -473,6 +474,7 @@ function Guide.AddAll(texts, bought)
             end
         end
     end
+    later = {} -- the way after a guide may run through those kept now
     -- A character without a guide yet takes the first one for it.
     if first and not ns.Run.Guide() then Guide.Choose(first) end
     Changed()
@@ -482,6 +484,7 @@ end
 -- A kept guide forgotten (a pack's stays: the pack holds it).
 function Guide.Remove(key)
     Store()[key] = nil
+    later = {}
     if Guide.Chosen() == key then ns.Run.Use(nil) end
     Changed()
 end
@@ -583,6 +586,37 @@ function Guide.After(guide)
         if Runs(next) then return next end
     end
     return nil
+end
+
+-- What the guides after one take and hand in, all along the way their heads name (as Guide.After goes, by the heads
+-- alone, each text only looked over: Format.Quests): a class quest a guide further on sees to is left to it
+-- (ClassQuests.lua; Saneroki, 2026-11-04: a druid's Trial of the Sea Lion, taken at 16, is done by the guide at 24).
+-- Kept per guide for the session. { take = { [quest] = true }, handin = { [quest] = true } }
+function Guide.Later(guide)
+    local key = guide and guide.key
+    if not key then return { take = {}, handin = {} } end
+    if later[key] then return later[key] end
+    local found, who, seen = { take = {}, handin = {} }, Who(), { [key] = true }
+    local names, group = guide.after, guide.group
+    while names do
+        local next
+        for _, after in ipairs(names) do
+            local name = Find(after.name, group, who)
+            local entry = name and not seen[name] and Entry(name)
+            if entry and Mine(entry, who) and (not after.only or ns.Format.For(who, after.only)) then
+                next = entry
+                seen[name] = true
+                break
+            end
+        end
+        if not next then break end
+        for what, quests in pairs(ns.Format.Quests(Unpack(next))) do
+            for quest in pairs(quests) do found[what][quest] = true end
+        end
+        names, group = next.after, next.group
+    end
+    later[key] = found
+    return found
 end
 
 -- The guide run here is through: on to the one after it.

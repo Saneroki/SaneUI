@@ -55,7 +55,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
   writes the condition where the cursor stands.
 - **Start over after a fight:** a tick, on at first.
 - **The checks:** a red **!** on a macro or a step says something would not work as it stands; the mouse on it says what. The
-  switch *Check macros*.
+  switch *Check macros*. A spell not learnt yet or an item none of is held is said at its step but marks nothing in the
+  list (Saneroki, 2026-11-04: "many have red !"): so it is for now, nothing is wrong with the macro.
 - **What it cannot do:** the game keeps rage, cooldowns and auras from anything that decides a press. So a step is never
   skipped because a spell is on cooldown. The game refuses it, that press is spent, and the next press goes on: keep pressing
   and what can be cast gets its turn. "If no Rend on the target, cast Rend" is not possible in any addon.
