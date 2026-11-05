@@ -22,7 +22,7 @@ local ADDON, ns = ...
 --    Format.lua  a guide written as text, read into our own shape
 --    Lines.lua   what each line of a guide asks, and whether it is done
 --    Run.lua     a guide run for the character: where you are, what is at hand
---    Party.lua   the party on one guide: who is through with a step waits for the rest
+--    Party.lua   the party on one guide, read together: who is through with a step waits for the rest
 --    Guide.lua   the guide shown, its picture, the guides kept
 --    ClassQuests.lua  your class's quest chains over the guide, by your level
 --    Gathering.lua, Grind.lua, Detours.lua  your professions along the guide
@@ -118,9 +118,11 @@ ns.TEXT = {
     followPaused = "Paused",
     followOff = "Off",
     paused = "Paused. Click here to go on with the guide.",
-    party = "Wait for the party",
-    partyTip = "In a group, those of you who follow the same guide stay on the same step: whoever is through with a step first waits on it, its targets still wanted, until the others are through with it too, and then all of you go on together. A step only some of you have (a class's training) is waited for at the step before it. Only members with Sane UI who follow that guide count, while they are online. A right click on the step you wait on goes on without them.",
+    party = "Together with the party",
+    partyTip = "In a group, those of you who follow the same guide follow it as one: the same steps by the same numbers for each of you, every step of any of your classes, and the quests the guide gives only some classes, while others see to their own, for all of you. What only one class does (its trainer, its class quests) only that one does: the others go past it, faint in the list, to the next step you share and wait there. Whoever is through with a step first waits on it, its targets still wanted, until the others are through with it too, and then all of you go on together; one busy with its class quests is waited for as well. Your company is remembered for this character while the others are offline. Only members with Sane UI who follow that guide count. A right click on the step you wait on goes on without them.",
     waitFor = "Waiting for %s",
+    onChain = "%s (class quests)",
+    theirs = "%s: %s",
     switchTitle = "Speed Leveling",
     switchTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     showGuide = "Show the guide",
@@ -327,7 +329,10 @@ Core.Options(ns.name, OPTIONS, { moved = Moved, changed = function(key)
         ns.Guarded(ns.Steps.Update)
     elseif key == "lootAll" then
         ns.Guarded(ns.Errands.Update)
-    elseif key == "gather" or key == "classQuests" or key == "party" then
+    elseif key == "party" then
+        ns.Guarded(ns.Guide.Reread) -- read together with the party or alone: its steps numbered anew
+        ns.Guarded(ns.Guide.CheckSoon)
+    elseif key == "gather" or key == "classQuests" then
         ns.Guarded(ns.Guide.CheckSoon) -- the steps of the professions or a class quest come or go: the view with them
     elseif key == "guide" or key == "follow" then
         -- On, paused or off: what the key wants follows, the view is drawn anew, the satchel's switch told.

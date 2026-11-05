@@ -19,7 +19,8 @@ local _, ns = ...
 --      Guide.Listed()     every step of the guide the list shows, in order, by number, and where in that the step you
 --                         are at stands
 --      Guide.Line(number) a listed step as the list says it: { number, shown, text, done, paused, onHold } (done:
---                         Run.Ticked, as the game knows it)
+--                         Run.Ticked, as the game knows it; a step of another class's of the party alone faint, as
+--                         on hold, its class before its words)
 --      Guide.Pause(number), Guide.Skip(number), Guide.Back(), Guide.Go(number)
 --      Guide.Targets(), Guide.Uses()  what the steps at hand want found and used; nil without a guide
 --      Guide.Things()     the things of the world the steps at hand name to pick up or use (names)
@@ -34,6 +35,7 @@ local _, ns = ...
 --                         to follow for this character is not kept): names, problems
 --      Guide.LoadPacks()  the guide packs of this game loaded (at the start); each hands its guides to Guide.Take
 --      Guide.Remove(key), Guide.Choose(key), Guide.Chosen()
+--      Guide.Reread()     the guide followed read anew, for other company (Party.lua), your place kept
 --      Guide.Empty()      while no guide is followed, the view's words for why (none kept, none for you); else nil
 --      Guide.State()      "on", "paused" or "off": your setting, and off wherever Speed Leveling is off
 --      Guide.Following()  whether the guide is followed now: one chosen, and on (not paused, not off)
@@ -83,11 +85,19 @@ local function Store()
     return store.guides
 end
 
+-- Who reads: this character, and the others of the party it reads its guide together with (Party.With), each of the
+-- same side, level and game.
 local function Who()
     local _, race = Core.Ask(UnitRace, "player")
     local _, class = Core.Ask(UnitClass, "player")
-    return { side = Plain(Core.Ask(UnitFactionGroup, "player")), race = Plain(race), class = Plain(class),
-             level = Plain(Core.Ask(UnitLevel, "player")) or 1, game = Core.GAME }
+    local who = { side = Plain(Core.Ask(UnitFactionGroup, "player")), race = Plain(race), class = Plain(class),
+                  level = Plain(Core.Ask(UnitLevel, "player")) or 1, game = Core.GAME }
+    for _, other in ipairs(ns.Party.With() or EMPTY) do
+        who.with = who.with or {}
+        who.with[#who.with + 1] = { side = who.side, race = other.race, class = other.class, level = who.level,
+                                    game = who.game }
+    end
+    return who
 end
 
 -------------------------------------------------------------------------------
@@ -224,10 +234,22 @@ function Guide.Listed()
     return list, at
 end
 
+-- The classes of a step of the others of the party alone, in the game's words ("Druid"); nil: yours.
+local function Whose(number)
+    local classes = ns.Run.Theirs(number)
+    if not classes then return nil end
+    local names, game = {}, rawget(_G, "LOCALIZED_CLASS_NAMES_MALE") or EMPTY
+    for _, class in ipairs(classes) do names[#names + 1] = game[class] or class end
+    return table.concat(names, ", ")
+end
+
+-- A step of another class's alone shows faint, its class before its words.
 function Guide.Line(number)
     local lines = OurLines(number)
-    return { number = number, shown = Shown(ns.Run.Guide(), number), text = lines[1] and lines[1].text or "",
-             done = ns.Run.Ticked(number), paused = ns.Run.Paused(number), onHold = ns.Run.OnHold(number) }
+    local text, whose = lines[1] and lines[1].text or "", Whose(number)
+    if whose then text = ns.TEXT.theirs:format(whose, text) end
+    return { number = number, shown = Shown(ns.Run.Guide(), number), text = text, done = ns.Run.Ticked(number),
+             paused = ns.Run.Paused(number), onHold = ns.Run.OnHold(number) or whose ~= nil }
 end
 
 -- What a step asks you to do, in our words for the arrow's picture: "take", "handin" (a quest), "talk", "buy",
@@ -393,17 +415,25 @@ local function Entry(key)
     return shipped[key]
 end
 
--- A guide read for this character; nil for one not there or that cannot be read.
+-- A guide read for this character; nil for one not there or that cannot be read. Read together with others of the
+-- party (Party.With), the same steps for each of you, kept under a key of its own (its steps are numbered otherwise).
 local function Read(key)
     local kept = Entry(key)
     if not kept then return nil end
     local text = Unpack(kept)
     if not text then return nil end
-    local guide = ns.Format.Read(text, Who())
+    local who = Who()
+    local guide = ns.Format.Read(text, who)
     if guide then
         guide.key = key
         -- No dungeon quests in a normal guide: also those Core's data knows where its text does not mark them.
         ns.Format.NoDungeonQuests(guide, ns.Lines.InDungeon)
+        if who.with then
+            ns.Format.Together(guide, ns.Lines.Open)
+            local with = {}
+            for _, other in ipairs(who.with) do with[#with + 1] = other.class .. " " .. other.race end
+            guide.notes = key .. " + " .. table.concat(with, ", ")
+        end
     end
     return guide
 end
@@ -456,6 +486,16 @@ end
 function Guide.Choose(key)
     local guide = key and Read(key)
     ns.Run.Use(Runs(guide) and guide or nil)
+    Changed()
+end
+
+-- The guide followed read anew: who you follow it with changed (Party.lua), or the switch Together with the party.
+-- Your place goes with you (Run.Use).
+function Guide.Reread()
+    local key = Guide.Chosen()
+    if not key then return end
+    local guide = Read(key)
+    if Runs(guide) then ns.Run.Use(guide) end
     Changed()
 end
 

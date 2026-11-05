@@ -50,7 +50,14 @@ local _, ns = ...
 --  party are synced with the quest order"): you are not moved on past a step you
 --  are through with while a member on the same guide is not through with it yet
 --  (Party.lua): you wait on it, its foes still wanted (its NPCs no more), and all
---  go on together. Not at a step you paused, skipped or passed by.
+--  go on together. Not at a step you paused, skipped or passed by. Read together
+--  with the party (Format.Together: the same steps for all), a step of another
+--  class's alone is passed by, and you wait at the next one you share; a line of
+--  the others' way about a quest you never took asks nothing of you; read anew
+--  for other company, your place and marks go with you by the steps' rows. At a
+--  step you share, not through with it yet, you wait before it for those busy
+--  with their class's own (a step of theirs, a class quest on top): then you do
+--  it together.
 --
 --  What the game tells only as it happens (a hearth, a flight, a vendor's or
 --  trainer's window, the spirit healer, a spell cast, a home bound) counts for
@@ -67,8 +74,11 @@ local _, ns = ...
 --      Run.Paused(index), Run.OnHold(index)   whether a step is paused (still shown), on hold (passed by)
 --      Run.Pause(index)      a step paused, or a paused one taken up again; Run.Skip(index), Run.Back(), Run.Go(index)
 --      Run.Check()           the game changed: moved on as far as done steps go; true when anything moved
---      Run.Waiting()         the names of the party you wait for at the step you are at; nil: none
---      Run.Spot()            where you are for the party: the guide's key, your place's row, whether you wait there
+--      Run.Waiting()         the names of the party you wait for at the step you are at, and whether before it (not
+--                            through with it: they are busy with their class's own); nil: none
+--      Run.Spot()            where you are for the party: the guide's key, your place's row, whether you wait there,
+--                            whether a class quest of yours is on top
+--      Run.Theirs(index)     a step of the others of the party alone: their classes; nil: yours
 --      Run.Through()         the guide is at its end (on to the one it names next)
 --      Run.Saw(what), Run.Watch(changed), Run.Stop()
 --      Run.Way(place)        how far from a place, in yards, and which way; Run.Distance
@@ -106,6 +116,7 @@ local seen = {} -- [step index] = { [what] = true }: what happened while it was 
 local needing = {} -- the guide's quests to take that need others done first: { quest, done = { quest }, one = { quest } }
 local onHold   -- [quest] = true: the quests on hold (Holds); nil: to be worked out anew
 local waitFor  -- the names of the party you wait for at the step you are at (Party.lua); nil: none
+local byRow = {} -- [row of the guide's text] = the step that begins there
 local ticker
 
 local function Notes()
@@ -118,10 +129,14 @@ local function Notes()
     return mine
 end
 
+-- What a guide's place and marks are kept under: its key, or for a guide read together with the party its own
+-- (Guide.lua), since its steps are numbered otherwise.
+local function KeptAs(read) return read.notes or read.key or read.name end
+
 -- The steps of the guide run marked so for this character: "skipped", "paused" or "parked". [index] = true
 local function Marked(kind)
     local notes = Notes()
-    local key = guide.key or guide.name
+    local key = KeptAs(guide)
     local list = notes[kind][key]
     if type(list) ~= "table" then
         list = {}
@@ -453,6 +468,24 @@ local function Holds()
     return hold
 end
 
+-- Whether a line of the others' way through a guide read together (route, Format.Together) asks nothing of you: one
+-- about a quest you never took, to work on or hand in; to take, one that needs a quest done first that is neither
+-- done nor in your log (by Core's set Quests). It drops out of what its step asks.
+local function Spare(line)
+    local quest = line.route and line.quest
+    if not quest or Lines.HandedIn(quest) or Lines.OnQuest(quest) then return false end
+    if line.what ~= "take" then return true end
+    local rules, anyOne, oneDone = QUESTS:Get(quest, "requires"), false, false
+    for _, rule in ipairs(type(rules) == "table" and rules or EMPTY) do
+        if type(rule) == "table" and type(rule.quest) == "number" then
+            local had = Taken(rule.quest)
+            if rule.kind == "done" and not had then return true end
+            if rule.kind == "one" then anyOne, oneDone = true, oneDone or had end
+        end
+    end
+    return anyOne and not oneDone
+end
+
 -- Whether a line of a guide's step is about a quest on hold: it drops out of what the step asks. Not the lines of the
 -- step you paused or skipped itself.
 local function LineOnHold(line, index)
@@ -477,20 +510,23 @@ local function OnHold(index)
     return any
 end
 
--- Whether a step is passed by: skipped, not yours, on hold, or one its tests rule out.
+-- Whether a step is passed by: skipped, not yours (a profession's, or another class's of the party, Format.Together),
+-- on hold, or one its tests rule out.
 local function Passed(index)
     local step = guide.steps[index]
-    if Skipped()[index] or NotYours(step) or OnHold(index) then return true end
+    if step.theirs or Skipped()[index] or NotYours(step) or OnHold(index) then return true end
     for _, test in ipairs(step.unless or EMPTY) do
         if TESTS[test.what] and TESTS[test.what](test) then return true end
     end
     return false
 end
 
--- Whether each thing to do of a step is done (a step with none: yes); a line on hold asks nothing.
+-- Whether each thing to do of a step is done (a step with none: yes); a line on hold, or spare, asks nothing.
 local function AllDone(index)
     for _, line in ipairs(guide.steps[index].lines) do
-        if ns.Format.DOING[line.what] and not LineOnHold(line, index) and not Done(line, index) then return false end
+        if ns.Format.DOING[line.what] and not LineOnHold(line, index) and not Spare(line) and not Done(line, index) then
+            return false
+        end
     end
     return true
 end
@@ -510,7 +546,7 @@ local LASTING = { level = true, learn = true, skill = true }
 local function FirstAsked()
     local first = {}
     for index, step in ipairs(guide.steps) do
-        for _, line in ipairs(step.lines) do
+        for _, line in ipairs(step.theirs and EMPTY or step.lines) do
             if line.quest and ns.Format.DOING[line.what] then
                 local key = line.what .. line.quest .. "/" .. (line.goal or 0)
                 first[key] = first[key] or index
@@ -554,7 +590,7 @@ local function Known(index, since)
     if Passed(index) then return true, 0, false end
     local unsure, done, proof = false, 0, false
     for _, line in ipairs(guide.steps[index].lines) do
-        if ns.Format.DOING[line.what] and not LineOnHold(line, index) then
+        if ns.Format.DOING[line.what] and not LineOnHold(line, index) and not Spare(line) then
             if Done(line, index) then
                 done, proof = done + 1, proof or (line.first or 0) > (since or index)
             elseif line.quest or LASTING[line.what] then
@@ -595,7 +631,15 @@ end
 --  Moving through the guide
 -------------------------------------------------------------------------------
 local function Keep()
-    Notes().at[guide.key or guide.name] = place or at
+    Notes().at[KeptAs(guide)] = place or at
+end
+
+-- The row of the guide's text a step stands at: its own, or a profession's by the guide's step before it.
+local function RowOf(read, index)
+    for back = math.min(index, #read.steps), 1, -1 do
+        if read.steps[back].row then return read.steps[back].row end
+    end
+    return 0
 end
 
 -- Whether you wait at a step for the party (Party.lua): you are through with it, and a member on this guide is not
@@ -678,22 +722,39 @@ end
 function Run.Guide() return guide end
 function Run.At() return at end
 function Run.Place() return place or at end
-function Run.Waiting() return guide and not place and waitFor or nil end
+-- Those of the party you wait for at the step you are at: through with it, those not through with it yet (Waits); not
+-- through with it yet yourself, at a step you share with them, those busy with what only their class does before it
+-- (a step of theirs, Format.Together, or a quest of their class's on top, ClassQuests.lua; Saneroki, 2026-11-05: "they
+-- need to wait until the class quest chain is completed ... and then both continue on the same steps again"), so you
+-- do it together. The names, and whether you wait before it (not through with it); nil: nobody.
+function Run.Waiting()
+    if not guide or place then return nil end
+    if waitFor then return waitFor, false end
+    local step = guide.steps[at]
+    if not step or step.alone or Pauses()[at] then return nil end
+    local names = ns.Party.Busy(guide.key or guide.name, RowOf(guide, at), function(row)
+        local index = byRow[row]
+        return index ~= nil and guide.steps[index].theirs ~= nil
+    end)
+    if names then return names, true end
+    return nil
+end
 
 -- Where you are for the party (Party.lua): the guide's key; the row of your place's step (a profession's by the guide's
--- step before it, past the guide's end the row after its last); and whether you are through with it, waiting for them.
+-- step before it, past the guide's end the row after its last); whether you are through with it, waiting for them; and
+-- whether a quest of your class's is on top of it (ClassQuests.lua).
 function Run.Spot()
     if not guide then return nil end
-    local index = math.min(place or at, #guide.steps)
-    local row = 0
-    for back = index, 1, -1 do
-        if guide.steps[back].row then
-            row = guide.steps[back].row
-            break
-        end
-    end
-    if (place or at) > #guide.steps then return guide.key or guide.name, row + 1, false end
-    return guide.key or guide.name, row, Run.Waiting() ~= nil
+    local row = RowOf(guide, place or at)
+    local chain = ns.ClassQuests.Hand()[1] ~= nil
+    if (place or at) > #guide.steps then return guide.key or guide.name, row + 1, false, chain end
+    return guide.key or guide.name, row, waitFor ~= nil and not place, chain
+end
+
+-- A step of the others of the party alone (Format.Together): their classes, else nil.
+function Run.Theirs(index)
+    local step = guide and guide.steps[index]
+    return step and step.theirs or nil
 end
 
 -- The steps at hand, what the arrow, the map pin and the key go by: a detour, a class quest that is due, those that go
@@ -768,7 +829,8 @@ function Run.Lines(index)
     local step = guide and guide.steps[index]
     for _, line in ipairs(step and step.lines or EMPTY) do
         local done, have, need = Done(line, index)
-        lines[#lines + 1] = { line = line, done = done, have = have, need = need, onHold = LineOnHold(line, index) or nil }
+        lines[#lines + 1] = { line = line, done = done, have = have, need = need,
+                              onHold = LineOnHold(line, index) or Spare(line) or nil }
     end
     return lines
 end
@@ -915,7 +977,36 @@ function Run.Stop()
     ticker = nil
 end
 
+-- The same guide read anew for other company (Party.lua, Format.Together: steps numbered otherwise): your place and
+-- the steps you skipped, paused or passed by on hold carried over to it by their rows, the same in every reading.
+local function Carry(was, from)
+    local notes = Notes()
+    for _, kind in ipairs({ "skipped", "paused", "parked" }) do
+        local marks, moved = notes[kind][KeptAs(was)], {}
+        for old in pairs(type(marks) == "table" and marks or EMPTY) do
+            local step = was.steps[old]
+            local new = step and step.row and byRow[step.row]
+            if new then moved[new] = true end
+        end
+        notes[kind][KeptAs(guide)] = moved
+    end
+    if from > #was.steps then
+        notes.at[KeptAs(guide)] = #guide.steps + 1
+        return
+    end
+    -- Your place: the step of the text it stands at, or the first one after it this reading has.
+    local row = RowOf(was, from)
+    for number, step in ipairs(guide.steps) do
+        if step.row and step.row >= row then
+            notes.at[KeptAs(guide)] = number
+            return
+        end
+    end
+    notes.at[KeptAs(guide)] = #guide.steps + 1
+end
+
 function Run.Use(read)
+    local was, from = guide, place or at
     guide, held, at, place, onHold = read, nil, 1, nil, nil
     wipe(seen)
     ns.Detours.Use(guide)
@@ -927,9 +1018,14 @@ function Run.Use(read)
     ns.Gathering.Weave(guide)
     FirstAsked()
     Needing()
+    wipe(byRow)
+    for number, step in ipairs(guide.steps) do
+        if step.row and not byRow[step.row] then byRow[step.row] = number end
+    end
     local notes = Notes()
+    if was and was.key == guide.key and KeptAs(was) ~= KeptAs(guide) then Carry(was, from) end
     notes.guide = guide.key or guide.name
-    local kept = tonumber(notes.at[guide.key or guide.name])
+    local kept = tonumber(notes.at[KeptAs(guide)])
     at = kept and math.max(1, math.min(kept, #guide.steps + 1)) or 1
     MoveOn()
     ns.ClassQuests.Check()
@@ -952,12 +1048,14 @@ function Run.Targets()
             end
         end
     end
-    local waiting = Run.Waiting() and at
+    local waits, before = Run.Waiting()
+    local waiting = waits and at
     for _, index in ipairs(Run.Hand()) do
         local step = guide.steps[index]
-        -- At the step you wait on for the party, you are through with its NPCs; its creatures still help them.
+        -- At the step you wait on for the party, you are through with its NPCs; its creatures still help them. Waiting
+        -- before it, for those busy with their class's own, nothing of it yet.
         if index ~= waiting then Add(friends, step.friends) end
-        Add(foes, step.foes)
+        if not (before and index == waiting) then Add(foes, step.foes) end
         -- A step with a revive line wants the Spirit Healer, while you are dead.
         for _, line in ipairs(step.lines) do
             if line.what == "revive" and Lines.Dead() and not Done(line, index) then Add(friends, { "Spirit Healer" }) end

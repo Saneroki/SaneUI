@@ -27,7 +27,9 @@ local _, ns = ...
 --      local head = Format.Head(text)                  -- the head alone: name, group, games, ... (the list needs no read)
 --      local plays = Format.Plays(who, head.games)     -- whether its games include the one played
 --      local guide, problems = Format.Read(text, who)  -- one guide's, for that character; nil while Core knows no format
---      who     { side = "Horde", race = "Orc", class = "WARRIOR", level = 7, game = "forever" }
+--      who     { side = "Horde", race = "Orc", class = "WARRIOR", level = 7, game = "forever", with = { who } }
+--              -- with: others of the party it is read together with, the same steps for all (Format.Together)
+--      Format.Together(guide, open)  -- of a guide read together, what of the others' is yours too: open(quest)
 --  A step marked for a dungeon stands only in a guide of a dungeon group
 --  (Format.DungeonStep), one marked for doing without it only in the others.
 --  Format.NoDungeonQuests(guide, inDungeon) then takes out of a normal guide
@@ -35,10 +37,12 @@ local _, ns = ...
 --      guide   { name, title, group, subgroup, after = { { name, only } }, defaultFor, only, games = { game },
 --                part, divider, mine, steps = { step }, labels = { [label] = index } }
 --                -- mine: it is for this character; part: reached only as another's next; divider: no guide
---      step    { lines = { line }, row (the text's line it begins at), label, together ("next" or a label), stays,
+--      step    { lines = { line }, row (the text's line it begins at), theirs (read together: the others' classes
+--                whose step alone it is), alone (read together: yours alone), label, together ("next" or a label), stays,
 --                needs (a label), aside, loop, hidden, map, arrowText, unless = { test }, friends, foes, items, spells,
 --                uses = { { item, words } } }
---      line    { what = a word of Format.DOING or Format.WORDS, words, ... what the command gave }
+--      line    { what = a word of Format.DOING or Format.WORDS, words, route (read together: of the others' way,
+--                yours too), ... what the command gave }
 --      test    { what = a word of Format.TESTS, ... }: the step is passed by while it holds
 --  problems: "line N: ..." for each command line that could not be read; that line is left out.
 -------------------------------------------------------------------------------
@@ -475,14 +479,69 @@ function Format.Quests(text)
     return found
 end
 
--- One guide's text, read for that character.
+-- The lines that name a quest of their own: to take, to work on, to carry for, to hand in.
+local QUEST_LINES = { take = true, goal = true, carry = true, handin = true }
+
+-- Whom of the party a line's "<<" holds for, among those a step is kept for: [n] = true (1: the character read for).
+local function Holders(party, alive, only, mine)
+    local holders = {}
+    for n in pairs(alive) do
+        if n == 1 then holders[1] = mine or nil else holders[n] = not only or Format.For(party[n], only) or nil end
+    end
+    return holders
+end
+
+-- Whether a step read together is for the one read for alone, none of the others (Run.lua: run side by side).
+local function Alone(party, alive)
+    if not party[2] or not alive[1] then return nil end
+    for n in pairs(alive) do
+        if n ~= 1 then return nil end
+    end
+    return true
+end
+
+-- A step for others of the party only: their classes (Format.Together, the list's words); nil: yours.
+local function Theirs(party, alive)
+    if alive[1] then return nil end
+    local classes, seen = {}, {}
+    for n in pairs(alive) do
+        local class = party[n].class
+        if class and not seen[class] then
+            seen[class] = true
+            classes[#classes + 1] = class
+        end
+    end
+    table.sort(classes)
+    return classes
+end
+
+-- One guide's text, read for that character. Read together with others of the party (who.with, each a who of its
+-- own; Saneroki, 2026-11-05: "Make one merged guide"), a step is kept for each of them it is for, so every member
+-- reads the same steps: one for the others only is theirs (step.theirs, their classes), and in a step of yours a line
+-- for the others only keeps nothing but a quest to take, work on or hand in (line.theirs). Format.Together then
+-- decides what of theirs is yours too.
 function Format.Read(text, who)
     words = words or Core.Neighbours.Format("guide")
     if not words then return nil, {} end
     local guide = { steps = {}, labels = {}, after = {}, games = {}, mine = true }
     local problems = {}
-    local step, skipping, lastMap, manualOnly
+    local party = { who }
+    for _, other in ipairs(type(who.with) == "table" and who.with or {}) do party[#party + 1] = other end
+    local step, skipping, manualOnly
+    local alive = {} -- the step's: [n] = true for each of the party it is kept for
+    local maps = {}  -- [n] = the map last named in the lines read for that one
     local number = 0
+    -- The step out again for those a line holds for (a game mode, a dungeon); gone when it is for nobody else.
+    local function Drop(holders)
+        for n in pairs(holders) do alive[n] = nil end
+        if next(alive) then
+            step.theirs, step.alone = Theirs(party, alive), Alone(party, alive)
+            return
+        end
+        guide.steps[#guide.steps] = nil
+        if step.label then guide.labels[step.label] = nil end
+        skipping = true
+    end
     for raw in (tostring(text) .. "\n"):gmatch("(.-)\r?\n") do
         number = number + 1
         local line = Trim(raw)
@@ -498,13 +557,26 @@ function Format.Read(text, who)
                 guide.only = Trim(only)
                 guide.mine = guide.mine and mine
             elseif body:lower() == "step" then
-                -- A new step; one not for this character is read past. Its row: the line of the text it begins at,
+                -- A new step; one for nobody of the party is read past. Its row: the line of the text it begins at,
                 -- the same for every character whatever steps they keep (Party.lua).
-                step, skipping, manualOnly = { lines = {}, row = number }, not mine, nil
-                if mine then guide.steps[#guide.steps + 1] = step end
-            elseif mine and not skipping then
+                alive = {}
+                for n, member in ipairs(party) do
+                    local holds = mine
+                    if n > 1 then holds = not only or Format.For(member, only) end
+                    alive[n] = holds or nil
+                end
+                skipping, manualOnly = next(alive) == nil, nil
+                step = { lines = {}, row = number, theirs = Theirs(party, alive), alone = Alone(party, alive) }
+                if not skipping then guide.steps[#guide.steps + 1] = step end
+            elseif not skipping then
+                -- Whom of those the step is for a line holds for: kept where it holds for the one read for, or in a
+                -- step of theirs for one of them; for others only, in a step of yours, a quest line at most.
+                local holders = step and Holders(party, alive, only, mine)
+                local keep = not step and mine or step and (holders[1] or step.theirs and next(holders) ~= nil)
+                local others = step and not keep and next(holders) ~= nil
+                local from = holders and (holders[1] and 1 or next(holders)) or 1
                 local mark, value = body:match("^#(%S+)%s*(.-)$")
-                if mark then
+                if mark and (keep or others) then
                     value = Uncommented(value)
                     if words.gameTags[mark:lower()] then
                         if not step then guide.games[#guide.games + 1] = words.gameTags[mark:lower()] end
@@ -512,13 +584,11 @@ function Format.Read(text, who)
                         Head(guide, words.marks[mark], value)
                     elseif words.modes[mark] or Format.Dropped(mark, value, who) then
                         -- A step for a game mode or a phase Sane UI's games do not play: out again, its name too.
-                        guide.steps[#guide.steps] = nil
-                        if step.label then guide.labels[step.label] = nil end
-                        skipping = true
-                    else
+                        Drop(holders)
+                    elseif keep then
                         Mark(guide, step, words.marks[mark], value)
                     end
-                elseif step then
+                elseif step and (keep or others) then
                     local command, rest = body:match("^%.(%S+)%s*(.-)$")
                     local head, said = (rest or body):match("^(.-)%s*>>%s*(.*)$")
                     if head then rest = head end
@@ -528,15 +598,21 @@ function Format.Read(text, who)
                         local read = ours and COMMANDS[ours]
                         if ours == "dungeon" and not Format.DungeonStep(guide, rest) then
                             -- A step of a dungeon in a normal guide, or for those who skip one in a dungeon guide: out.
-                            guide.steps[#guide.steps] = nil
-                            if step.label then guide.labels[step.label] = nil end
-                            skipping = true
+                            Drop(holders)
                             read = nil
                         end
                         local made, map
-                        if read and not skipping then made, map = read(Values(rest), said, lastMap) end
-                        if map then lastMap = map end
-                        if made then
+                        if read and not skipping then made, map = read(Values(rest), said, maps[from]) end
+                        if map then
+                            for n in pairs(holders) do maps[n] = map end
+                        end
+                        if others then
+                            -- For others of the party only: their quest, the one thing of it that may be yours too.
+                            if made and QUEST_LINES[made.what] and made.quest then
+                                made.words, made.theirs = said, true
+                                step.lines[#step.lines + 1] = made
+                            end
+                        elseif made then
                             if not Command(step, made, said, manualOnly) and said == nil then
                                 -- Nothing of it could be used and it had no words: let it go.
                             end
@@ -555,6 +631,8 @@ function Format.Read(text, who)
                             -- A command Sane UI does not know: its words still stand.
                             step.lines[#step.lines + 1] = { what = "say", words = said }
                         end
+                    elseif others then
+                        -- Words of the others' way only: not yours.
                     elseif body:find("^%+") then
                         step.lines[#step.lines + 1] = { what = "manual", words = Trim(body:sub(2)) }
                     elseif body:find("^%*") then
@@ -584,9 +662,6 @@ function Format.DungeonStep(guide, value)
     return OfDungeons(guide) ~= without
 end
 
--- The lines that name a quest of their own: to take, to work on, to carry for, to hand in.
-local QUEST_LINES = { take = true, goal = true, carry = true, handin = true }
-
 -- A normal guide without dungeon quests, also where its text does not mark them (Saneroki, 2026-11-03: the guides'
 -- newer texts take some in a normal guide, to hand in if you happen to do the dungeon): each line about a quest
 -- inDungeon(quest) names is left out, and so is a step that had such lines and keeps no quest line of its own (a walk
@@ -612,6 +687,57 @@ function Format.NoDungeonQuests(guide, inDungeon)
         end
     end
     guide.steps, guide.labels = steps, labels
+    return guide
+end
+
+-- What only a class does: its trainer, its spells, a hunter's pets. Never yours from another's step.
+local OWN = { trainer = true, learn = true, cast = true, tame = true, stable = true }
+
+-- Whether a step names a quest open(quest) says is open to you: in a line, or in a test.
+local function Names(step, open)
+    for _, line in ipairs(step.lines) do
+        if QUEST_LINES[line.what] and line.quest and open(line.quest) then return true end
+    end
+    for _, test in ipairs(step.unless or {}) do
+        for _, quest in ipairs(test.quests or {}) do
+            if open(quest) then return true end
+        end
+    end
+    return false
+end
+
+-- A guide read together with others of the party (Format.Read, who.with): what of theirs is yours too (Saneroki,
+-- 2026-11-05: "each step of both the warrior and the druid have the exact same thing to do at each step"). A step of
+-- theirs that names a quest open(quest) says you may do (no class or race of the quest's own shuts you out: one the
+-- guide gives the others while you were busy with your class's) is yours too, all its lines but what only a class
+-- does and the quests not open to you; so is such a quest's line in a step of yours. Those lines are marked route:
+-- one about a quest you never took asks nothing of you (Run.lua). What stays theirs is their class's own (its
+-- trainer, its class quests, its way there): you go past it. No step is dropped, so all of you keep the same steps.
+function Format.Together(guide, open)
+    if type(guide) ~= "table" or type(open) ~= "function" then return guide end
+    for _, step in ipairs(guide.steps) do
+        local ours = not step.theirs or Names(step, open)
+        local lines = {}
+        for _, line in ipairs(step.lines) do
+            local quest = QUEST_LINES[line.what] and line.quest or nil
+            if step.theirs and ours then
+                -- Theirs, now yours too: what only a class does left out, a quest only if open to you.
+                if quest and open(quest) then
+                    line.route = true
+                    lines[#lines + 1] = line
+                elseif not quest and not OWN[line.what] then
+                    lines[#lines + 1] = line
+                end
+            elseif not line.theirs or step.theirs then
+                lines[#lines + 1] = line
+            elseif quest and open(quest) then
+                line.theirs, line.route = nil, true
+                lines[#lines + 1] = line
+            end
+        end
+        step.lines = lines
+        if ours then step.theirs = nil end
+    end
     return guide
 end
 

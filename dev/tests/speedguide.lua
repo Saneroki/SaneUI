@@ -145,9 +145,9 @@ local function Line(command, values, words, only)
 end
 local function Mark(mark, value) return "#" .. M[mark] .. (value and (" " .. value) or "") end
 
--- Core's set Quests as the module reads it, with what a quest needs done first (requires) where the test says; the
--- rest is Core's own.
-local requires = {}
+-- Core's set Quests as the module reads it, with what a quest needs done first (requires) and whole records (records)
+-- where the test says; the rest is Core's own.
+local requires, records = {}, {}
 local realSet = Core.Data.Set
 Core.Data.Set = function(name)
     local handle = realSet(name)
@@ -159,6 +159,7 @@ Core.Data.Set = function(name)
     end })
     function proxy:Get(key, field)
         if field == "requires" then return requires[key] end
+        if records[key] then return field and records[key][field] or not field and records[key] or nil end
         return handle:Get(key, field)
     end
     return proxy
@@ -1332,7 +1333,7 @@ end)()
     Guide.AddAll({ table.concat(text, "\n") })
     local key = "Made Up\\Made Party << Horde"
     Guide.Choose(key)
-    check(Guide.Chosen() == key and ns.options.party == true, "follows the party's guide; Wait for the party on in Speedleveling")
+    check(Guide.Chosen() == key and ns.options.party == true, "follows the party's guide; Together with the party on in Speedleveling")
     local steps = Run.Guide().steps
     check(#steps == 3 and steps[1].row == 5 and steps[2].row == 9 and steps[3].row == 11,
         "each step knows the line of the text it begins at, the mage's step left out: "
@@ -1389,7 +1390,7 @@ end)()
     W.Wait(1)
     check(Run.Through() == false and Run.At() == 3 and Run.Waiting(), "behind you he holds you at the last step")
     Core.Set(ns.name, "party", false)
-    check(ns.Party.Holding(key, 11) == nil, "Wait for the party off: nobody holds you")
+    check(ns.Party.Holding(key, 11) == nil, "Together with the party off: nobody holds you")
     W.Wait(1)
     check(Run.Through() and Told() and Told().fields[1] == "", "on through the guide, the party told you follow along no more")
     Core.Set(ns.name, "party", true)
@@ -1401,6 +1402,145 @@ end)()
 
     UnitName, GetNumGroupMembers, Core.Wire.Send = name, groupSize, send
     for quest = 2001, 2004 do quests.on[quest] = nil end
+end)()
+
+-------------------------------------------------------------------------------
+--  One guide for the party, read together (Saneroki, 2026-11-05: "Make one merged guide")
+-------------------------------------------------------------------------------
+;(function()
+    -- An orc warrior and an orc mage. 3101 for all; 3102 a mage's class quest; 3103 a quest the guide gives mages only,
+    -- open to anyone; a warrior's trainer; a step for both with a mage's line of an open quest (3104) and one of a
+    -- mage's class quest (3105); a step for all but mages (3106).
+    local mage = { side = "Horde", race = "Orc", class = "MAGE", level = 5, game = "forever" }
+    local text = table.concat({ "#forever", "<< Horde", Mark("name", "Made Together"), Mark("group", "Made Up"),
+        "step", "    " .. Line("take", "3101"),
+        "step << Mage", "    " .. Line("take", "3102"),
+        "step << Mage", "    " .. Line("take", "3103"),
+        "step << Warrior", "    " .. Line("trainer", "", "Train your class spells"),
+        "step", "    " .. Line("take", "3104", nil, "Mage"), "    " .. Line("take", "3105", nil, "Mage"),
+        "    " .. Line("handin", "3101"),
+        "step << !Mage", "    " .. Line("take", "3106"),
+        "step", "    " .. Line("handin", "3104") }, "\n")
+    for _, quest in ipairs({ 3101, 3103, 3104, 3106 }) do records[quest] = {} end
+    records[3102], records[3105] = { classes = { 8 } }, { classes = { 8 } }
+    local function Open(class)
+        return function(quest)
+            local record = records[quest]
+            return record ~= nil and (not record.classes or record.classes[1] == class)
+        end
+    end
+    local function Rows(guide)
+        local rows = {}
+        for _, step in ipairs(guide.steps) do rows[#rows + 1] = step.row end
+        return table.concat(rows, ",")
+    end
+    local warrior = { side = "Horde", race = "Orc", class = "WARRIOR", level = 5, game = "forever", with = { mage } }
+    local withWarrior = { side = "Horde", race = "Orc", class = "MAGE", level = 5, game = "forever", with = { orc } }
+    local mine = Format.Together(Format.Read(text, warrior), Open(1))
+    local theirs = Format.Together(Format.Read(text, withWarrior), Open(8))
+    check(Rows(Format.Read(text, orc)) == "5,11,13,17,19" and Rows(Format.Read(text, mage)) == "5,7,9,13,19",
+        "alone, each keeps steps of its own: " .. Rows(Format.Read(text, orc)))
+    check(Rows(mine) == "5,7,9,11,13,17,19" and Rows(theirs) == Rows(mine),
+        "read together, the same steps for both, every step of either class: " .. Rows(mine))
+    check(mine.steps[2].theirs and mine.steps[2].theirs[1] == "MAGE" and not mine.steps[3].theirs
+        and mine.steps[3].lines[1].route, "the mage's class quest stays his; the quest the guide gives mages is yours too")
+    check(theirs.steps[4].theirs and theirs.steps[4].theirs[1] == "WARRIOR" and not theirs.steps[6].theirs
+        and theirs.steps[6].lines[1].route, "and the other way round: the warrior's trainer his, all but mages' the mage's too")
+    check(mine.steps[4].alone and not mine.steps[1].alone and not mine.steps[3].alone and not Format.Read(text, orc).steps[1].alone,
+        "your trainer yours alone, run beside his; a step you share, or one read alone, not")
+    local quests5 = {}
+    for _, line in ipairs(mine.steps[5].lines) do quests5[#quests5 + 1] = line.quest .. (line.route and "*" or "") end
+    check(table.concat(quests5, ",") == "3104*,3101", "in a step for both, of the mage's lines his open quest only: "
+        .. table.concat(quests5, ","))
+
+    -- In the game: Buddy Stub, an orc mage, in your party, on your guide.
+    local name, groupSize, class, sent = UnitName, GetNumGroupMembers, UnitClass, {}
+    UnitName = function(unit) if unit == "party1" then return "Buddy", "Stub" end return name(unit) end
+    UnitClass = function(unit) if unit == "party1" then return "Mage", "MAGE", 8 end return class(unit) end
+    GetNumGroupMembers = function() return 2 end
+    LOCALIZED_CLASS_NAMES_MALE = { MAGE = "Mage", WARRIOR = "Warrior" }
+    local send = Core.Wire.Send
+    Core.Wire.Send = function(kind, fields, channel) sent[#sent + 1] = { kind = kind, fields = fields, channel = channel } end
+    local function Told() return sent[#sent] and sent[#sent].kind == "S" and sent[#sent] or nil end
+    Guide.AddAll({ text })
+    local key = "Made Up\\Made Together << Horde"
+    Guide.Choose(key)
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(1)
+    check(Guide.Chosen() == key and #Run.Guide().steps == 5 and not Run.Guide().notes, "alone: the warrior's own steps")
+    local function Says(row, letters)
+        Core.Wire.Take(Core.Wire.Text("S", { key, row, letters or "", n = 3 }), "PARTY", "Buddy Stub")
+        W.Wait(1)
+    end
+    Says(13)
+    local notes = Core.Character(ns.name)
+    check(type(notes.with) == "table" and notes.with[1] == "MAGE Orc" and not notes.with[2],
+        "he tells where he is on your guide: his class and race kept for this character")
+    check(#Run.Guide().steps == 7 and Run.Guide().notes == key .. " + MAGE Orc" and Run.At() == 1,
+        "the guide read together with him, kept apart, your place where it was: " .. Run.At())
+    local line = Guide.Line(2)
+    check(Run.Theirs(2)[1] == "MAGE" and line.onHold and line.text:find("^Mage: ") ~= nil,
+        "his class's step in your list: faint, his class before its words: " .. line.text)
+    quests.on[3101] = true
+    W.Fire("QUEST_ACCEPTED", 3101)
+    W.Wait(1)
+    check(Run.At() == 3 and not Run.Waiting(), "past his class's step, on to the quest the guide gives mages: yours too: "
+        .. Run.At())
+    -- He is on his class's own step before it: you wait before the step you share, nothing of it for the key yet.
+    Run.Guide().steps[3].friends, Run.Guide().steps[3].foes = { "Kaltunk" }, { "Mottled Boar" }
+    Says(7)
+    local waits, before = Run.Waiting()
+    local foes, friends = Guide.Targets()
+    check(waits and waits[1] == "Buddy Stub" and before and not foes[1] and not friends[1],
+        "he is busy with his class's step: you wait before the next step you share, its targets not yet wanted")
+    Says(9)
+    foes = Guide.Targets()
+    check(not Run.Waiting() and foes[1] == "Mottled Boar", "he is at it too: you do it together")
+    Run.Guide().steps[3].friends, Run.Guide().steps[3].foes = nil, nil
+    Says(13)
+    requires[3103] = { { kind = "done", quest = 3190 } }
+    Run.Check()
+    check(Run.At() == 4, "a quest of his way that needs one you never did asks nothing of you: " .. Run.At())
+    requires[3103] = nil
+    W.Fire("TRAINER_SHOW")
+    W.Wait(1)
+    check(Run.At() == 5 and #Run.Guide().steps[5].lines == 2, "your trainer, then the step for both, without his class quest")
+
+    -- He is busy with his class's quests: you wait for him, told so, also while not through with your step.
+    Says(13, "c")
+    local waiting = Run.Waiting()
+    check(waiting and waiting[1] == ns.TEXT.onChain:format("Buddy Stub") and not Told().fields[3]:find("w"),
+        "he is on his class quests: you wait for him, the party not told you are through")
+    quests.done[3101], quests.on[3101], quests.on[3104] = true, nil, true
+    W.Fire("QUEST_TURNED_IN", 3101)
+    W.Wait(1)
+    check(Run.At() == 5 and Run.Waiting() and Told().fields[3]:find("w"), "through with it: you wait there for him")
+    Says(17)
+    check(Run.At() == 6 and not Run.Waiting(), "he is through and on: you too: " .. Run.At())
+    local hand = ns.ClassQuests.Hand
+    ns.ClassQuests.Hand = function() return { ns.ClassQuests.STEP } end
+    check(select(4, Run.Spot()) == true, "a class quest of yours on top: the party is told so")
+    ns.ClassQuests.Hand = hand
+
+    -- The switch off: alone again, your place by its row; on: together again.
+    Core.Set(ns.name, "party", false)
+    W.Wait(1)
+    check(not Run.Guide().notes and #Run.Guide().steps == 5 and Run.Guide().steps[Run.At()].row == 17,
+        "Together with the party off: your own steps, at the same step of the text: " .. Run.At())
+    Core.Set(ns.name, "party", true)
+    W.Wait(1)
+    check(Run.Guide().notes and #Run.Guide().steps == 7 and Run.Guide().steps[Run.At()].row == 17,
+        "on again: together, at that step still: " .. Run.At())
+    GetNumGroupMembers = function() return 0 end
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(1)
+    check(Run.Guide().notes and notes.with[1] == "MAGE Orc", "out of the group: he is kept, the guide stays one for you both")
+
+    notes.with = nil
+    Guide.Reread()
+    UnitName, UnitClass, GetNumGroupMembers, Core.Wire.Send = name, class, groupSize, send
+    LOCALIZED_CLASS_NAMES_MALE = nil
+    for quest = 3101, 3106 do quests.on[quest], quests.done[quest], records[quest] = nil, nil, nil end
 end)()
 
 -------------------------------------------------------------------------------

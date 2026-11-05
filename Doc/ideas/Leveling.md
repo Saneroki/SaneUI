@@ -106,7 +106,16 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
 - **Decision (Saneroki, 2026-11-05): two characters in a party on the same step.** "Can you make sure that the 2
   characters in the party are synced with the quest order?": whoever is through with a step first waits on it until
   the others on that guide are too, told over Core's wire to the party; a step known by its line in the guide's text,
-  the same for every class. Built: `Party.lua`, *In a party* in the module's README, the switch *Wait for the party*.
+  the same for every class. Built: `Party.lua`, *In a party* in the module's README, the switch *Wait for the party*
+  (now *Together with the party*).
+- **Decision (Saneroki, 2026-11-05): one merged guide for the party.** "I need them both to follow the same steps ...
+  Make one merged guide. Include the class quests but since they are different classes, they need to wait until the
+  class quest chain is completed for that level bracket and then both continue on the same steps again": in a party
+  the guide, and each one after it to 60, is read together for all the members' classes (kept for the character while
+  they are offline): the same steps by the same numbers; a class's own steps (its trainer, its class quests, its way
+  there) only for it while the others wait at the next step they share; the quests the guide gives one class while the
+  other is busy, by Core's *Quests* open to both, for both. Built: `Format.Together`, `Party.With`, `Guide.Reread`,
+  *One guide for the party* in the module's README, the switch *Together with the party*.
 - **Not yet:** the routes and their planner (below).
 
 - **The arrow by the route (Saneroki, 2026-10-31; built):** the arrow goes by Navigation's routes to the guide's place,

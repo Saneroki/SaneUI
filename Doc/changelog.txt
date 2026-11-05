@@ -6,11 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Speed Leveling in a party: two of you on the same guide now stay on
-  the same step. Whoever is through with a step first waits on it (its
-  card says for whom) and keeps killing what it asks, until the other is
-  through with it too; then you go on together. A class's own step holds
-  the other at the step before it. Switch: Wait for the party.
+- Speed Leveling in a party: one guide for all of you. Two of you on the
+  same guide now get the same steps by the same numbers, every quest of
+  the guide for both, whatever your classes. A class's own steps (its
+  trainer, its class quests) are that class's alone: the other sees them
+  faint and waits at the next step you share. Whoever is through with a
+  step first waits on it (its card says for whom) and keeps killing what
+  it asks, until the other is through with it too; then you go on
+  together. Switch: Together with the party.
 - Speed Leveling no longer adds steps for your professions by itself;
   tick Professions along the way to have them again.
 - Sane Macros: click a macro's picture to choose another. A large window

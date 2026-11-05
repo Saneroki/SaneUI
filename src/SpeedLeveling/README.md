@@ -8,7 +8,8 @@ needs no other addon: it reads leveling guides written as text (the guides that 
 pack, the guides you bought, opened for your own account, and guides you paste) and runs them with an engine of its
 own. A right click on the guide's zone chooses the one to follow. A click on a step pauses it (it stays in sight, the
 guide goes on with the next, and what depends on it waits), a click again takes it up, a right click skips it. In a
-party, those of you on the same guide stay on the same step: whoever is through with it first waits for the others.
+party, those of you on the same guide follow it as one: the same steps by the same numbers for each, read for all your
+classes, a class's own steps only for it, and whoever is through with a step first waits for the others.
 
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
@@ -84,7 +85,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Skip cinematics | on | The game's cinematics and movies stopped as they start (`StopCinematic`, `CancelScene`, `MovieFrame:FinishMovie`), but one the game does not let you leave |
 | Equip upgrades | on | Gear that comes into your bags, looted or a quest's reward, and is an upgrade (`Core.Upgrade`: anything you can wear for a place with nothing in it, else one worth more by your class's and specialization's weights, Inventory's `Weights.lua`, else a higher item level) is put on, one at a time, out of a fight; the chat says what. Only what the game flags as new (`C_NewItems`), so what you took off yourself stays off, and an item the game refused is not tried again. Nothing goes into the off hand while a two-hander is held: a shield build's shield waits, still new, and goes on after a one-hander (Saneroki, 2026-11-04) |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
-| Wait for the party | on | In a group, those who follow the same guide stay on the same step: whoever is through with a step first waits on it, its creatures still wanted (its NPCs no more), and its card says for whom, until the others are through with it too; then all go on together. A right click on it goes on without them (*In a party*, below) |
+| Together with the party | on | In a group, those who follow the same guide follow it as one: the same steps by the same numbers for each, read for all your classes (a class's own steps only for it, faint in the others' list); whoever is through with a step first waits on it, its creatures still wanted (its NPCs no more), and its card says for whom, until the others are through with it too; then all go on together. A right click on it goes on without them (*In a party*, below) |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Professions along the way | off | Your professions level up where the guide takes you anyway: where it passes the most nodes, a check before a harder zone, a detour to a node close to your way, a little more killing for cloth (*Professions along the way*, below). Off in *Speedleveling* too (Saneroki, 2026-11-05: "don't do the profession steps") |
 | Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
@@ -418,8 +419,32 @@ through `Lines.lua`:
   each: a druid's training a warrior lacks holds the warrior at the step before it. Not waited on: a step you paused
   or skipped, one passed by, one that only goes along, a profession's (it counts as the guide's step before it). Only
   members who follow that guide count, while they are online and in the group; one whose guide is paused or off, or
-  whose Speed Leveling rests, tells the others so, and nobody waits for them. The switch *Wait for the party*; a right
-  click on the step you wait on goes on without them. The wire sends nothing in a fight: a place told after it.
+  whose Speed Leveling rests, tells the others so, and nobody waits for them. The switch *Together with the party*; a
+  right click on the step you wait on goes on without them. The wire sends nothing in a fight: a place told after it.
+- **One guide for the party** (Saneroki, 2026-11-05: "I need them both to follow the same steps. So each step of both
+  the warrior and the druid have the exact same thing to do at each step ... Make one merged guide. Include the class
+  quests but since they are different classes, they need to wait until the class quest chain is completed for that
+  level bracket and then both continue on the same steps again"): the guide keeps steps of its own for each class, so
+  a druid and a warrior had different steps under different numbers. Now the classes and races of the members on your
+  guide are kept for the character (`Core.Character`, its `with`: learned from the party, `Party.Learn`, kept while
+  they are offline or apart, made anew when other members are on your guide), and the guide, and each guide after it
+  to the last, is read together with them (`Format.Read` with `who.with`, then `Format.Together`): every step of any
+  of your classes, the same steps by the same numbers for each of you, kept under a key of its own (the guide's and
+  the company's). What of the others' is yours too: a step that names a quest Core's *Quests* has open to your class
+  and race (the quests the guide gives the others while you were busy with your class's: a warrior's *The Great Tree
+  Provides* while the druid goes to Moonglade, the druid's *Eyes of the Sentinels* while the warrior does his own),
+  without what only a class does (its trainer, spells, a hunter's pets) and the quests not open to you; and in a step
+  for all of you, such a quest's line the guide writes for the others only. A line of the others' way about a quest
+  you never took asks nothing of you (to take one, while one it needs done first is neither done nor in your log).
+  What stays theirs is their class's own (its trainer, its class quests, its way there and back): passed by, never at
+  hand, faint in your list with its class before its words (*Druid: Talk to Mathrengyl Bearwalker*). While they do
+  it you wait before the next step you share, not yet through with it: its card says *Waiting for* and their names,
+  the key leaves it alone (`Run.Waiting`, `Party.Busy`), and once they are at it too you do it together. So too for
+  one busy with a quest of its class's on top of the guide (*Class quests*; the wire's letter `c`), named *(class
+  quests)*. Steps of your own class alone (`step.alone`) run beside theirs: nobody waits before those. Read anew for other company, or with the switch, your place and what you skipped, paused or passed
+  by on hold go with you by the steps' rows (`Run.Use`, `Guide.Reread`). Without Core's data (Retail, for now) none of
+  the others' is yours: their steps are theirs. Checked on the real guides from Shadowglen to 60 for a night elf
+  warrior and druid: the same steps, row for row, in each.
 - **The cost:** a check reads the step you are at, and only while the game cannot judge it the way ahead, a step at a
   time to the first one it can, at most `Run.PROOF` steps; the list asks only for the steps it shows. The whole guide
   is read only when it is picked or loaded.
@@ -493,10 +518,10 @@ choice is made by those, in a fight too (`Key.lua`):
 | --- | --- |
 | `SpeedLeveling.lua` | The module's table, words, settings (`Core.Options`), standing down, `/sane guides` |
 | `Unlock.lua` | The import string of bought guides, opened for the account you play (`Unlock.Open`, over frames) |
-| `Format.lua` | A guide written as text read into our shape (`Format.Head`, `Format.Read`, `Format.For`, `Format.Plays`) |
+| `Format.lua` | A guide written as text read into our shape (`Format.Head`, `Format.Read`, `Format.For`, `Format.Plays`), also together with the party (`Format.Together`) |
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
 | `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, pause, skip, back, go, what is on hold, waiting for the party, the places, the quest givers' wants |
-| `Party.lua` | The party on one guide: where each member is (Core's wire, kind `S`), who holds you at a step you are through with (`Party.Holding`) |
+| `Party.lua` | The party on one guide: where each member is (Core's wire, kind `S`), who holds you at a step you are through with (`Party.Holding`), who you read the guide together with (`Party.With`) |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
 | `Gathering.lua` | The steps of your professions woven into the guide, where it passes the most nodes and before each harder zone (Core's *Objects* and *Spawns*) |
 | `Grind.lua` | Cloth: a step to kill on after the guide's humanoids, while it pays (Core's *Quests*, *NPCs*, *Drops*) |

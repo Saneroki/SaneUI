@@ -16,6 +16,7 @@ local _, ns = ...
 --      Lines.Objectives(quest)        how many objectives the game gives for it
 --      Lines.Brief(quest)             what a quest in your log asks, in the game's words; nil where it gives none
 --      Lines.InDungeon(quest)         whether Core's data files a quest under a dungeon or a raid
+--      Lines.Open(quest)              whether Core's data knows a quest and has it open to your class and race
 --      Lines.Count(item, bank), Lines.Worn(slot)
 --      Lines.Known(spell), Lines.Skill(name, max), Lines.Aura(spell)
 --      Lines.Cooldown(kind, id)       seconds left, 0 when ready; nil when the game does not say
@@ -103,6 +104,26 @@ function Lines.InDungeon(quest)
         if tag == "dungeon" or tag == "raid" then return true end
     end
     return false
+end
+
+local function Contains(list, value)
+    for _, each in ipairs(list) do
+        if each == value then return true end
+    end
+    return false
+end
+
+-- Whether Core's data knows a quest and has it open to this character: no class or race of its own shuts it out (a
+-- guide read together with the party, Format.Together). false for a quest it does not know, as in a game without data.
+function Lines.Open(quest)
+    local record = QUESTS:Get(quest)
+    if type(record) ~= "table" then return false end
+    local _, _, class = Core.Ask(UnitClass, "player")
+    local _, _, race = Core.Ask(UnitRace, "player")
+    class, race = Plain(class), Plain(race)
+    if type(record.classes) == "table" and not Contains(record.classes, class) then return false end
+    if type(record.races) == "table" and not Contains(record.races, race) then return false end
+    return true
 end
 
 -------------------------------------------------------------------------------

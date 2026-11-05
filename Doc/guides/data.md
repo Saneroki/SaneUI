@@ -1267,8 +1267,8 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
 - **Auction scans** *(Saneroki, 2026-10-30)*: kind `A` (`have`, `want`, `ask`, each with house and time) and its blocks: *Scans shared*.
 - **Counts and discoveries** *(Saneroki, 2026-10-30)*: blocks of kind `B`: *Counts and discoveries shared*.
 - **Speed Leveling's place in a guide** *(Saneroki, 2026-11-05)*: kind `S` (the guide's key, at most 180 bytes of it;
-  the row of the step's first line in the guide's text; letters: `w` waiting there, `a` asking for the others' places),
-  to the party or the raid only, as the place changes, nothing when it follows no guide (an empty key: forget me). Not
+  the row of the step's first line in the guide's text; letters: `w` waiting there, `c` busy with a class quest on top
+  of it, `a` asking for the others' places), to the party or the raid only, as the place changes, nothing when it follows no guide (an empty key: forget me). Not
   data and never kept: it lives while the group does (`src/SpeedLeveling/Party.lua`, its README's *In a party*).
 - **What was confirmed and learned** *(Saneroki, 2026-10-23)*: kind `V` (set, key, the parts cut by commas, `*` the
   whole entry), one message per entry; learned rows as a block of kind `L` (`set\028key\028row`, the rows cut by
