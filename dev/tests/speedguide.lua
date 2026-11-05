@@ -1316,6 +1316,94 @@ end)()
 end)()
 
 -------------------------------------------------------------------------------
+--  The party on one guide (Saneroki, 2026-11-05): whoever is through with a step first waits for the others
+-------------------------------------------------------------------------------
+;(function()
+    -- In a party with Buddy Stub, a mage: the guide's mage step is his alone.
+    local name, groupSize, sent = UnitName, GetNumGroupMembers, {}
+    UnitName = function(unit) if unit == "party1" then return "Buddy", "Stub" end return name(unit) end
+    GetNumGroupMembers = function() return 2 end
+    local send = Core.Wire.Send
+    Core.Wire.Send = function(kind, fields, channel) sent[#sent + 1] = { kind = kind, fields = fields, channel = channel } end
+    local function Told() return sent[#sent] and sent[#sent].kind == "S" and sent[#sent] or nil end
+    local text = { "#forever", "<< Horde", Mark("name", "Made Party"), Mark("group", "Made Up"),
+                   "step", "    " .. Line("take", "2001"), "step << Mage", "    " .. Line("take", "2002"),
+                   "step", "    " .. Line("take", "2003"), "step", "    " .. Line("take", "2004") }
+    Guide.AddAll({ table.concat(text, "\n") })
+    local key = "Made Up\\Made Party << Horde"
+    Guide.Choose(key)
+    check(Guide.Chosen() == key and ns.options.party == true, "follows the party's guide; Wait for the party on in Speedleveling")
+    local steps = Run.Guide().steps
+    check(#steps == 3 and steps[1].row == 5 and steps[2].row == 9 and steps[3].row == 11,
+        "each step knows the line of the text it begins at, the mage's step left out: "
+        .. tostring(steps[2] and steps[2].row))
+    local function Says(row, letters)
+        Core.Wire.Take(Core.Wire.Text("S", { key, row, letters or "", n = 3 }), "PARTY", "Buddy Stub")
+        W.Wait(1)
+    end
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(1)
+    local told = Told()
+    check(told and told.channel == "PARTY" and told.fields[1] == key and told.fields[2] == 5 and told.fields[3] == "a",
+        "joined: where you are told to the party, asking theirs")
+
+    -- Buddy at the first step too; you take its quest first: you wait on it.
+    Says(5)
+    quests.on[2001] = true
+    W.Fire("QUEST_ACCEPTED", 2001)
+    W.Wait(1)
+    local waiting = Run.Waiting()
+    check(Run.At() == 1 and waiting and waiting[1] == "Buddy Stub", "through with it first: you wait on it for Buddy: "
+        .. Run.At())
+    local lines = Guide.Picture().hand[1].lines
+    check(lines[#lines].text == ns.TEXT.waitFor:format("Buddy Stub") and not lines[#lines].done,
+        "the step says who you wait for")
+    told = Told()
+    check(told.fields[2] == 5 and told.fields[3] == "w", "and the party is told you wait there")
+    steps[1].friends, steps[1].foes = { "Kaltunk" }, { "Mottled Boar" }
+    local foes, friends = Guide.Targets()
+    check(foes[1] == "Mottled Boar" and friends[1] == nil, "while you wait its creatures are wanted, its NPCs no more")
+    steps[1].friends, steps[1].foes = nil, nil
+
+    -- Buddy through with it, on his mage step: you go on to the next step of yours, and wait at it once done.
+    Says(7)
+    check(Run.At() == 2 and not Run.Waiting(), "Buddy on: you too, past the step he has and you have not: " .. Run.At())
+    quests.on[2003] = true
+    W.Fire("QUEST_ACCEPTED", 2003)
+    W.Wait(1)
+    check(Run.At() == 2 and Run.Waiting(), "through with the next step while he is on his own: you wait for him there")
+    Says(9)
+    check(Run.At() == 2 and Run.Waiting(), "he is at your step, not through with it: you still wait")
+    Says(9, "w")
+    check(Run.At() == 3 and not Run.Waiting(), "he waits there for you: you are both through with it, on together")
+    told = Told()
+    check(told.fields[2] == 11 and told.fields[3] == "", "told where you are now")
+
+    -- Asked, you answer; a step you skip is not waited on; out of the group nobody holds you.
+    local count = #sent
+    Says(11, "a")
+    check(#sent == count + 1 and Told().fields[2] == 11, "asked by one who came back: answered")
+    Says(9)
+    quests.on[2004] = true
+    W.Fire("QUEST_ACCEPTED", 2004)
+    W.Wait(1)
+    check(Run.Through() == false and Run.At() == 3 and Run.Waiting(), "behind you he holds you at the last step")
+    Core.Set(ns.name, "party", false)
+    check(ns.Party.Holding(key, 11) == nil, "Wait for the party off: nobody holds you")
+    W.Wait(1)
+    check(Run.Through() and Told() and Told().fields[1] == "", "on through the guide, the party told you follow along no more")
+    Core.Set(ns.name, "party", true)
+    check((ns.Party.Holding(key, 11) or {})[1] == "Buddy Stub", "on again: he would hold you")
+    GetNumGroupMembers = function() return 0 end
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(1)
+    check(ns.Party.Holding(key, 11) == nil, "out of the group: nobody holds you")
+
+    UnitName, GetNumGroupMembers, Core.Wire.Send = name, groupSize, send
+    for quest = 2001, 2004 do quests.on[quest] = nil end
+end)()
+
+-------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
 check(not ns.off and #Core.log == 0, "no error stood the module down along the way: "

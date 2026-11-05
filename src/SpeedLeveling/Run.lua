@@ -46,6 +46,12 @@ local _, ns = ...
 --  not at hand. Once its quest is taken, or the step that held it is taken up
 --  again, the guide goes back to it as to a step gone to, then on to your place.
 --
+--  In a party (Saneroki, 2026-11-05: "make sure that the 2 characters in the
+--  party are synced with the quest order"): you are not moved on past a step you
+--  are through with while a member on the same guide is not through with it yet
+--  (Party.lua): you wait on it, its foes still wanted (its NPCs no more), and all
+--  go on together. Not at a step you paused, skipped or passed by.
+--
 --  What the game tells only as it happens (a hearth, a flight, a vendor's or
 --  trainer's window, the spirit healer, a spell cast, a home bound) counts for
 --  the steps at hand while it happens; a place counts once you are near it,
@@ -61,6 +67,8 @@ local _, ns = ...
 --      Run.Paused(index), Run.OnHold(index)   whether a step is paused (still shown), on hold (passed by)
 --      Run.Pause(index)      a step paused, or a paused one taken up again; Run.Skip(index), Run.Back(), Run.Go(index)
 --      Run.Check()           the game changed: moved on as far as done steps go; true when anything moved
+--      Run.Waiting()         the names of the party you wait for at the step you are at; nil: none
+--      Run.Spot()            where you are for the party: the guide's key, your place's row, whether you wait there
 --      Run.Through()         the guide is at its end (on to the one it names next)
 --      Run.Saw(what), Run.Watch(changed), Run.Stop()
 --      Run.Way(place)        how far from a place, in yards, and which way; Run.Distance
@@ -97,6 +105,7 @@ local heldDone -- whether it was done when it was gone to
 local seen = {} -- [step index] = { [what] = true }: what happened while it was at hand
 local needing = {} -- the guide's quests to take that need others done first: { quest, done = { quest }, one = { quest } }
 local onHold   -- [quest] = true: the quests on hold (Holds); nil: to be worked out anew
+local waitFor  -- the names of the party you wait for at the step you are at (Party.lua); nil: none
 local ticker
 
 local function Notes()
@@ -589,6 +598,17 @@ local function Keep()
     Notes().at[guide.key or guide.name] = place or at
 end
 
+-- Whether you wait at a step for the party (Party.lua): you are through with it, and a member on this guide is not
+-- yet. Only a step of the guide's text that you did: not one you paused or skipped, one passed by (on hold, a test, a
+-- profession's), one that only goes along. The names waited for, else nil.
+local function Waits(index)
+    local step = guide.steps[index]
+    if not step.row or step.together or step.stays or Pauses()[index] then return nil end
+    local names = ns.Party.Holding(guide.key or guide.name, step.row)
+    if not names or Passed(index) or not AllDone(index) then return nil end
+    return names
+end
+
 -- The first step behind you passed by on hold that is free again and not done: the guide goes back to it; nil: none.
 -- One done meanwhile, or gone, is forgotten.
 local function Freed()
@@ -605,6 +625,7 @@ end
 
 local function MoveOn()
     local from = at
+    waitFor = nil
     if at == held then
         -- A step gone to stays until you go on, or until what was left of it is done: then back to your place.
         if heldDone or not Finished(at) then return false end
@@ -628,6 +649,9 @@ local function MoveOn()
             behind = (known == nil or step.woven) and Proof(at) or nil
             if not behind then break end
         end
+        -- Through with it, but somebody of the party is not: you wait on it with them.
+        waitFor = Waits(at)
+        if waitFor then break end
         if not (step.together or step.stays) and OnHold(at) then parked[at] = true end
         at = at + 1
     end
@@ -654,6 +678,23 @@ end
 function Run.Guide() return guide end
 function Run.At() return at end
 function Run.Place() return place or at end
+function Run.Waiting() return guide and not place and waitFor or nil end
+
+-- Where you are for the party (Party.lua): the guide's key; the row of your place's step (a profession's by the guide's
+-- step before it, past the guide's end the row after its last); and whether you are through with it, waiting for them.
+function Run.Spot()
+    if not guide then return nil end
+    local index = math.min(place or at, #guide.steps)
+    local row = 0
+    for back = index, 1, -1 do
+        if guide.steps[back].row then
+            row = guide.steps[back].row
+            break
+        end
+    end
+    if (place or at) > #guide.steps then return guide.key or guide.name, row + 1, false end
+    return guide.key or guide.name, row, Run.Waiting() ~= nil
+end
 
 -- The steps at hand, what the arrow, the map pin and the key go by: a detour, a class quest that is due, those that go
 -- along, the step you are at; never one you paused.
@@ -911,9 +952,11 @@ function Run.Targets()
             end
         end
     end
+    local waiting = Run.Waiting() and at
     for _, index in ipairs(Run.Hand()) do
         local step = guide.steps[index]
-        Add(friends, step.friends)
+        -- At the step you wait on for the party, you are through with its NPCs; its creatures still help them.
+        if index ~= waiting then Add(friends, step.friends) end
         Add(foes, step.foes)
         -- A step with a revive line wants the Spirit Healer, while you are dead.
         for _, line in ipairs(step.lines) do

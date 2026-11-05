@@ -1326,7 +1326,10 @@ check(W.cvars.softTargetInteract == "3", "on again: the interact key on")
 --  Professions before the next zone
 -------------------------------------------------------------------------------
 -- The guide goes from here (1411) to the next zone (1413), where half the herbs need 115, the ore 125, and back to a
--- zone that asks less. Alchemy 92 and Blacksmithing 130 are yours, Engineering is not learnt.
+-- zone that asks less. Alchemy 92 and Blacksmithing 130 are yours, Engineering is not learnt. The switch is off in
+-- Speedleveling too (Saneroki, 2026-11-05: "don't do the profession steps"): ticked here for them.
+check(not ns.options.gather, "Professions along the way: off in the profile Speedleveling")
+Core.Set(ns.name, "gather", true)
 ns.Gathering.STAY = 2
 local skills = { { name = "Alchemy", rank = 92 }, { name = "Blacksmithing", rank = 130 } }
 C_SkillInfo = { GetNumSkillLines = function() return #skills end, GetSkillLineInfo = function(index) return skills[index] end }

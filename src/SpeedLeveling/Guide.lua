@@ -14,7 +14,8 @@ local _, ns = ...
 --                         step = { number, shown, chain, done, paused, lines = { { text, done, have, need, count } } }
 --                         (shown: the number to show; chain: a class quest's name and how far, in place of its number;
 --                         paused: shown, but the guide goes by the others (Run.Shown); text in our colours; count: a
---                         thing to do, its have and need when it has a number; a line on hold left out)
+--                         thing to do, its have and need when it has a number; a line on hold left out; a last line
+--                         naming the party you wait for there, Run.Waiting)
 --      Guide.Listed()     every step of the guide the list shows, in order, by number, and where in that the step you
 --                         are at stands
 --      Guide.Line(number) a listed step as the list says it: { number, shown, text, done, paused, onHold } (done:
@@ -188,10 +189,16 @@ function Guide.Picture()
     local picture = { title = title, levels = levels, at = math.min(ns.Run.At(), #guide.steps),
                       place = Shown(guide, math.min(ns.Run.Place(), #guide.steps)), total = guide.total or #guide.steps,
                       hand = {} }
+    local waiting = ns.Run.Waiting()
     for _, index in ipairs(ns.Run.Shown()) do
+        local lines = OurLines(index)
+        if waiting and index == ns.Run.At() then
+            -- Through with it, the party not yet (Party.lua): who you wait for.
+            lines[#lines + 1] = { text = ns.TEXT.waitFor:format(table.concat(waiting, ", ")), done = false, count = false,
+                                  what = "wait" }
+        end
         picture.hand[#picture.hand + 1] = { number = index, shown = Shown(guide, index), chain = guide.steps[index].chain,
-                                            done = ns.Run.Ticked(index), paused = ns.Run.Paused(index),
-                                            lines = OurLines(index) }
+                                            done = ns.Run.Ticked(index), paused = ns.Run.Paused(index), lines = lines }
     end
     return picture
 end
@@ -647,7 +654,10 @@ Changed = Core.Later(Tell)
 
 -- The game changed: the guide moves on as far as done steps go, and on to the next guide once it is through.
 local function Check()
-    if not Guide.Following() then return ns.Run.Stop() end -- paused or off: it holds where it is, no place watched
+    if not Guide.Following() then
+        ns.Party.Tell() -- paused or off: nobody of the party waits for you
+        return ns.Run.Stop() -- it holds where it is, no place watched
+    end
     ns.Run.Check()
     if ns.Run.Through() then Onward() end
     ns.Run.Watch(Changed)

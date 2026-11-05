@@ -101,6 +101,12 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   to a harder zone, a normal step of the guide for each profession you have that is lower than that zone asks, gathering,
   crafting and secondary alike, worked out from Core's herbs, ore and their spawns (half of a zone's spawns gathered); the
   crafts go by what they work with. Built.
+- **Decision (Saneroki, 2026-11-05): no profession steps.** "Also don't do the profession steps": *Professions along
+  the way* is off in every profile, *Speedleveling* too; built as it was, there to tick.
+- **Decision (Saneroki, 2026-11-05): two characters in a party on the same step.** "Can you make sure that the 2
+  characters in the party are synced with the quest order?": whoever is through with a step first waits on it until
+  the others on that guide are too, told over Core's wire to the party; a step known by its line in the guide's text,
+  the same for every class. Built: `Party.lua`, *In a party* in the module's README, the switch *Wait for the party*.
 - **Not yet:** the routes and their planner (below).
 
 - **The arrow by the route (Saneroki, 2026-10-31; built):** the arrow goes by Navigation's routes to the guide's place,

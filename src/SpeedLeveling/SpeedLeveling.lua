@@ -22,6 +22,7 @@ local ADDON, ns = ...
 --    Format.lua  a guide written as text, read into our own shape
 --    Lines.lua   what each line of a guide asks, and whether it is done
 --    Run.lua     a guide run for the character: where you are, what is at hand
+--    Party.lua   the party on one guide: who is through with a step waits for the rest
 --    Guide.lua   the guide shown, its picture, the guides kept
 --    ClassQuests.lua  your class's quest chains over the guide, by your level
 --    Gathering.lua, Grind.lua, Detours.lua  your professions along the guide
@@ -117,6 +118,9 @@ ns.TEXT = {
     followPaused = "Paused",
     followOff = "Off",
     paused = "Paused. Click here to go on with the guide.",
+    party = "Wait for the party",
+    partyTip = "In a group, those of you who follow the same guide stay on the same step: whoever is through with a step first waits on it, its targets still wanted, until the others are through with it too, and then all of you go on together. A step only some of you have (a class's training) is waited for at the step before it. Only members with Sane UI who follow that guide count, while they are online. A right click on the step you wait on goes on without them.",
+    waitFor = "Waiting for %s",
     switchTitle = "Speed Leveling",
     switchTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     showGuide = "Show the guide",
@@ -256,6 +260,7 @@ local OPTIONS = {
     { key = "follow", default = "off", text = ns.TEXT.follow, tip = ns.TEXT.followTip,
       choices = { { "on", ns.TEXT.followOn }, { "paused", ns.TEXT.followPaused }, { "off", ns.TEXT.followOff } },
       header = ns.TEXT.guideHeader, headerTip = ns.TEXT.guideHeaderTip },
+    { key = "party", default = false, text = ns.TEXT.party, tip = ns.TEXT.partyTip },
     { key = "showGuide", default = false, text = ns.TEXT.showGuide, tip = ns.TEXT.showGuideTip },
     { key = "gather", default = false, text = ns.TEXT.gather, tip = ns.TEXT.gatherTip },
     { key = "classQuests", default = false, text = ns.TEXT.classQuests, tip = ns.TEXT.classQuestsTip },
@@ -294,6 +299,7 @@ local function Rest(on)
         ns.Steps.GiveBack()
         ns.Guides.GiveBack()
         ns.Key.GiveBack()
+        ns.Party.GiveBack()
         ns.Errands.Update()
     else
         ns.off = nil
@@ -321,7 +327,7 @@ Core.Options(ns.name, OPTIONS, { moved = Moved, changed = function(key)
         ns.Guarded(ns.Steps.Update)
     elseif key == "lootAll" then
         ns.Guarded(ns.Errands.Update)
-    elseif key == "gather" or key == "classQuests" then
+    elseif key == "gather" or key == "classQuests" or key == "party" then
         ns.Guarded(ns.Guide.CheckSoon) -- the steps of the professions or a class quest come or go: the view with them
     elseif key == "guide" or key == "follow" then
         -- On, paused or off: what the key wants follows, the view is drawn anew, the satchel's switch told.
@@ -341,6 +347,7 @@ function ns.GiveBack()
     ns.Steps.GiveBack()
     ns.Guides.GiveBack()
     ns.Key.GiveBack()
+    ns.Party.GiveBack()
     ns.Errands.Update()
 end
 
@@ -356,9 +363,11 @@ function ns.OnLogin()
     ns.Quests.Start()
     ns.Errands.Start()
     ns.Rolls.Start()
-    -- A change of the guide: drawn anew; what the key wants follows.
+    ns.Party.Start()
+    -- A change of the guide: drawn anew; what the key wants follows; the party told where you are.
     ns.Guide.Watch(ns.Steps.Update)
     ns.Guide.Watch(ns.Key.Refresh)
+    ns.Guide.Watch(ns.Party.Tell)
     ns.Steps.Update()
     if Idle() then Rest(true) end
 end

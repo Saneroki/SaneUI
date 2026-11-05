@@ -7,7 +7,8 @@ One key for questing, pressed again and again, and your leveling guide over the 
 needs no other addon: it reads leveling guides written as text (the guides that come for each game in its guide
 pack, the guides you bought, opened for your own account, and guides you paste) and runs them with an engine of its
 own. A right click on the guide's zone chooses the one to follow. A click on a step pauses it (it stays in sight, the
-guide goes on with the next, and what depends on it waits), a click again takes it up, a right click skips it.
+guide goes on with the next, and what depends on it waits), a click again takes it up, a right click skips it. In a
+party, those of you on the same guide stay on the same step: whoever is through with it first waits for the others.
 
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
@@ -83,8 +84,9 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Skip cinematics | on | The game's cinematics and movies stopped as they start (`StopCinematic`, `CancelScene`, `MovieFrame:FinishMovie`), but one the game does not let you leave |
 | Equip upgrades | on | Gear that comes into your bags, looted or a quest's reward, and is an upgrade (`Core.Upgrade`: anything you can wear for a place with nothing in it, else one worth more by your class's and specialization's weights, Inventory's `Weights.lua`, else a higher item level) is put on, one at a time, out of a fight; the chat says what. Only what the game flags as new (`C_NewItems`), so what you took off yourself stays off, and an item the game refused is not tried again. Nothing goes into the off hand while a two-hander is held: a shield build's shield waits, still new, and goes on after a one-hander (Saneroki, 2026-11-04) |
 | *Guide:* Your guide | On | On: the guide shows and moves on as you play, the key and the quest givers follow it. Paused: it holds where it is and its view says so (a click there goes on); nothing is done for it, and what you did meanwhile counts once it goes on. Off: no guide is followed. Also the switch *Leveling guide* in the minimap's satchel |
+| Wait for the party | on | In a group, those who follow the same guide stay on the same step: whoever is through with a step first waits on it, its creatures still wanted (its NPCs no more), and its card says for whom, until the others are through with it too; then all go on together. A right click on it goes on without them (*In a party*, below) |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
-| Professions along the way | on | Your professions level up where the guide takes you anyway: where it passes the most nodes, a check before a harder zone, a detour to a node close to your way, a little more killing for cloth (*Professions along the way*, below). |
+| Professions along the way | off | Your professions level up where the guide takes you anyway: where it passes the most nodes, a check before a harder zone, a detour to a node close to your way, a little more killing for cloth (*Professions along the way*, below). Off in *Speedleveling* too (Saneroki, 2026-11-05: "don't do the profession steps") |
 | Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items with the guide | off | The items the steps want used and the names to target, as icons past the guide's head, with the mouse on the guide (*The icons*) |
@@ -236,7 +238,8 @@ where the guide put it; a pin of yours stays. A place the game takes no pin on (
 
 ### Professions along the way
 Your professions level up where the guide takes you anyway (Saneroki, 2026-10-29; as steps of the guide 2026-10-30; where
-the guide passes the nodes, detours and cloth 2026-10-31). All of it is worked out by itself, for any race and any
+the guide passes the nodes, detours and cloth 2026-10-31), once you tick the switch: it is off in every profile
+(Saneroki, 2026-11-05: "Also don't do the profession steps"). All of it is worked out by itself, for any race and any
 professions: the steps are the same for every character, and each is passed by unless it is yours. A right click skips
 any of them, a click pauses it, the switch off takes them all away.
 
@@ -403,6 +406,20 @@ through `Lines.lua`:
   again or done, what waited is free at once: the guide goes back to each step of it you were moved past, one by one as
   each is done, your place kept (`parked`, per character and guide), and then on from your place. Without Core's data
   (Retail, for now) only the quest itself and `#requires` count.
+- **In a party** (Saneroki, 2026-11-05: "I play on 2 characters and the order in which they choose the next quest is a
+  little random. Can you make sure that the 2 characters in the party are synced with the quest order?"; `Party.lua`):
+  each character runs the guide by its own quest log, so the one whose drop came first was on to the next quest. Now
+  each tells the others of the party or raid where it is in the guide it follows (Core's wire, kind `S`: the guide's
+  key, the step's row, `w` waiting there, `a` asking for theirs after a login, a `/reload` or joining), and you are not
+  moved on past a step you are through with while a member on the same guide is not (`Run.Waiting`, `Party.Holding`):
+  you wait on it, ticked, with a last line *Waiting for* and their names; its creatures stay wanted for the key, so you
+  help them, its NPCs no more. Once they are through with it too, all go on together. A step is known by the line of
+  the guide's text it begins at (`step.row`), the same for every class and race whatever steps the guide keeps for
+  each: a druid's training a warrior lacks holds the warrior at the step before it. Not waited on: a step you paused
+  or skipped, one passed by, one that only goes along, a profession's (it counts as the guide's step before it). Only
+  members who follow that guide count, while they are online and in the group; one whose guide is paused or off, or
+  whose Speed Leveling rests, tells the others so, and nobody waits for them. The switch *Wait for the party*; a right
+  click on the step you wait on goes on without them. The wire sends nothing in a fight: a place told after it.
 - **The cost:** a check reads the step you are at, and only while the game cannot judge it the way ahead, a step at a
   time to the first one it can, at most `Run.PROOF` steps; the list asks only for the steps it shows. The whole guide
   is read only when it is picked or loaded.
@@ -478,7 +495,8 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Unlock.lua` | The import string of bought guides, opened for the account you play (`Unlock.Open`, over frames) |
 | `Format.lua` | A guide written as text read into our shape (`Format.Head`, `Format.Read`, `Format.For`, `Format.Plays`) |
 | `Lines.lua` | What the game says about the things a guide's lines ask (quests, items, spells, skills, auras, the level, where you are) |
-| `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, pause, skip, back, go, what is on hold, the places, the quest givers' wants |
+| `Run.lua` | A guide run for the character: the steps at hand, what is done and what the game knows of each step, pause, skip, back, go, what is on hold, waiting for the party, the places, the quest givers' wants |
+| `Party.lua` | The party on one guide: where each member is (Core's wire, kind `S`), who holds you at a step you are through with (`Party.Holding`) |
 | `Guide.lua` | The guide shown: its picture, the player's ways, the guides kept (packed) and the guide pack's, what the steps want for the key |
 | `Gathering.lua` | The steps of your professions woven into the guide, where it passes the most nodes and before each harder zone (Core's *Objects* and *Spawns*) |
 | `Grind.lua` | Cloth: a step to kill on after the guide's humanoids, while it pays (Core's *Quests*, *NPCs*, *Drops*) |

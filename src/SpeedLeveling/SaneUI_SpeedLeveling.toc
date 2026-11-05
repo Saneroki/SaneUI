@@ -17,6 +17,8 @@ Unlock.lua
 Format.lua
 Lines.lua
 Run.lua
+# The party on one guide: whoever is through with a step first waits for the others
+Party.lua
 # The guide shown and followed; what its steps at hand want for the key and the quest givers
 Guide.lua
 # The steps of your professions woven into the guide, where it passes the most nodes and before each harder zone

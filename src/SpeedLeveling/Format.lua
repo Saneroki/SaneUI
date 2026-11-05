@@ -35,8 +35,9 @@ local _, ns = ...
 --      guide   { name, title, group, subgroup, after = { { name, only } }, defaultFor, only, games = { game },
 --                part, divider, mine, steps = { step }, labels = { [label] = index } }
 --                -- mine: it is for this character; part: reached only as another's next; divider: no guide
---      step    { lines = { line }, label, together ("next" or a label), stays, needs (a label), aside, loop, hidden,
---                map, arrowText, unless = { test }, friends, foes, items, spells, uses = { { item, words } } }
+--      step    { lines = { line }, row (the text's line it begins at), label, together ("next" or a label), stays,
+--                needs (a label), aside, loop, hidden, map, arrowText, unless = { test }, friends, foes, items, spells,
+--                uses = { { item, words } } }
 --      line    { what = a word of Format.DOING or Format.WORDS, words, ... what the command gave }
 --      test    { what = a word of Format.TESTS, ... }: the step is passed by while it holds
 --  problems: "line N: ..." for each command line that could not be read; that line is left out.
@@ -497,8 +498,9 @@ function Format.Read(text, who)
                 guide.only = Trim(only)
                 guide.mine = guide.mine and mine
             elseif body:lower() == "step" then
-                -- A new step; one not for this character is read past.
-                step, skipping, manualOnly = { lines = {} }, not mine, nil
+                -- A new step; one not for this character is read past. Its row: the line of the text it begins at,
+                -- the same for every character whatever steps they keep (Party.lua).
+                step, skipping, manualOnly = { lines = {}, row = number }, not mine, nil
                 if mine then guide.steps[#guide.steps + 1] = step end
             elseif mine and not skipping then
                 local mark, value = body:match("^#(%S+)%s*(.-)$")
