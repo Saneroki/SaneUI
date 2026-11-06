@@ -1122,6 +1122,11 @@ check(frame.Status._text:find("secureThing") and frame.Status._text:find("fight"
     "the row shows what the game kept, and under the list it says why")
 W.combat = false
 check(CVars.Set("secureThing", "0") == "0", "but out of it")
+W.cvarInfo.waterDetail, W.cvars.waterDetail = { default = "2", category = 1 }, "2"
+now, why = CVars.Set("waterDetail", "3")
+check(now == "2" and W.cvars.waterDetail == "2" and why:find("game's own graphics menu"),
+    "water detail is never set here either: it crashed Forever's client (card #377)")
+W.cvarInfo.waterDetail, W.cvars.waterDetail = nil, nil
 W.cvars.cameraSavedDistance = "30"
 row:Init(CVars.All()[3])
 check(row.Reset:IsShown(), "one away from its default has the undo arrow")
@@ -1690,6 +1695,7 @@ do
     for _, name in ipairs(Core.Presets.WORLD) do drawn = drawn or wide.named[name] or fast.named[name] end
     check(#Core.Presets.WORLD == 5 and drawn == nil and wide.named.shadowMode == "4" and fast.named.groundEffectDensity == "256",
         "the world's grass, shadows and water, but not how far it shows nor how it loads: those stay the game's")
+    check(wide.named.waterDetail == nil and fast.named.waterDetail == nil, "no water detail: Sane UI never sets it")
     check(wide.named.ffxDeath == "1" and fast.named.ffxDeath == "0" and fast.named.maxFPS == "115" and fast.solo == nil,
         "where they differ Accountwide names the game's own value: a character on it is not left with Speedleveling's")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,

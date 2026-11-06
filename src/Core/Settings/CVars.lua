@@ -49,6 +49,7 @@ local TEXT = {
     account = "The game keeps it for your account.",
     computer = "The game keeps it on this computer.",
     fixed = "It cannot be changed.",
+    barred = "Sane UI leaves it to the game's own graphics menu.",
     secure = "Not in a fight.",
     inCombat = "The game does not let this one change in a fight.",
     heldAt = "The game keeps it at %s.",
@@ -144,7 +145,7 @@ end
 function CVars.Set(name, value)
     local now, free, why = Core.Sync.Settable(name)
     if now == nil then return nil end
-    if not free then return now, why == "fight" and TEXT.inCombat or TEXT.fixed end
+    if not free then return now, why == "fight" and TEXT.inCombat or why == "barred" and TEXT.barred or TEXT.fixed end
     pcall(C_CVar.SetCVar, name, value)
     now = Plain(C_CVar.GetCVar(name))
     if now ~= value and not (tonumber(now) and tonumber(now) == tonumber(value)) then
@@ -292,7 +293,13 @@ end
 local function Details(name)
     local _, default, account, character, locked, secure, readOnly = CVars.Info(name)
     local lines = { TEXT.defaultIs:format(default or "?"), character and TEXT.character or account and TEXT.account or TEXT.computer }
-    if locked or readOnly then lines[#lines + 1] = TEXT.fixed elseif secure then lines[#lines + 1] = TEXT.secure end
+    if Core.Sync.Barred(name) then
+        lines[#lines + 1] = TEXT.barred
+    elseif locked or readOnly then
+        lines[#lines + 1] = TEXT.fixed
+    elseif secure then
+        lines[#lines + 1] = TEXT.secure
+    end
     return lines
 end
 

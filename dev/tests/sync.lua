@@ -725,6 +725,27 @@ do
     for _, name in ipairs({ "huntThing", "keptThing" }) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
 end
 
+-- Water detail: never set, read back or kept (card #377) ----------------------------------------------
+do
+    for _, name in ipairs({ "waterDetail", "graphicsLiquidDetail" }) do W.cvarInfo[name], W.cvars[name] = { default = "2" }, "2" end
+    options.named.waterDetail = "3"
+    check(Sync.Barred("WATERDETAIL") and Sync.Barred("RAIDWaterDetail") and Sync.Barred("graphicsLiquidDetail")
+        and Sync.Barred("raidGraphicsLiquidDetail") and not Sync.Barred("shadowMode"), "water detail and the Liquid Detail behind it are barred")
+    local now, free, why = Sync.Settable("waterDetail")
+    check(now == "2" and free == false and why == "barred", "the game's value shown, not to be set")
+    check(not Sync.SetCVar("waterDetail", "3") and W.cvars.waterDetail == "2", "never set")
+    Sync.Give()
+    Sync.part.GRAPHICS_LABEL.Write({ cvars = { graphicsLiquidDetail = "3" } })
+    check(W.cvars.waterDetail == "2" and W.cvars.graphicsLiquidDetail == "2", "not by name, not by a part, even if a profile holds it")
+    Sync.Capture()
+    check(options.named.waterDetail == nil, "never saved: a profile that holds it loses it at the next capture")
+    check(type(options.taken.GRAPHICS_LABEL) ~= "table" or type(options.taken.GRAPHICS_LABEL.cvars) ~= "table"
+        or options.taken.GRAPHICS_LABEL.cvars.graphicsLiquidDetail == nil, "nor read into a part")
+    Sync.Keep("waterDetail", true)
+    check(options.named.waterDetail == nil, "nor kept by name when ticked")
+    for _, name in ipairs({ "waterDetail", "graphicsLiquidDetail" }) do W.cvarInfo[name], W.cvars[name] = nil, nil end
+end
+
 -- Profiles read and write the game's settings too ------------------------------------------------
 local Profiles = Core.Profiles
 W.cvars.nameplateSize = "3"

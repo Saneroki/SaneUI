@@ -35,7 +35,7 @@ local RECOMMENDED = {
     shadowMode = "4",                -- the finest shadows
     shadowTextureSize = "2048",      -- without jagged edges
     SSAO = "4",                      -- the most ambient occlusion
-    waterDetail = "3",               -- the finest water
+    -- No water detail: Sane UI never sets it (Sync.Barred).
     -- The frame rate, in front, behind and aimed at.
     maxFPS = "115", useMaxFPS = "1",
     maxFPSBk = "115", useMaxFPSBk = "1",

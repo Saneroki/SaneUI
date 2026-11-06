@@ -74,6 +74,21 @@ function Sync.Left(name)
     return type(name) == "string" and left[name:lower()] == true
 end
 
+-- CVars Sane UI never sets, reads back or keeps: in no part, not by name, not in the options' CVar list. Water
+-- detail, and the game's Liquid Detail that sets it: water 3 crashed Forever's client in the Ruins of Lordaeron the
+-- moment Sync wrote it (card #377; Saneroki, 2026-11-06: "don't let SaneUI edit or save or load that setting").
+-- The game's own graphics menu still sets it.
+local BARRED = { "waterDetail", "RAIDWaterDetail", "graphicsLiquidDetail", "raidGraphicsLiquidDetail" }
+local barred = {}
+for _, name in ipairs(BARRED) do
+    barred[name:lower()] = true
+    Sync.Leave(name)
+end
+
+function Sync.Barred(name)
+    return type(name) == "string" and barred[name:lower()] == true
+end
+
 -- [name] = value of those of the list this client has (a lent one: the player's own, Sync.Value); none left to
 -- another part.
 local function ReadCVars(list)
@@ -133,6 +148,7 @@ function Sync.Settable(name)
     local ok, now, _, _, _, locked, secure, readOnly = pcall(C_CVar.GetCVarInfo, name)
     now = ok and Plain(now)
     if type(now) ~= "string" then return nil end
+    if Sync.Barred(name) then return now, false, "barred" end
     if locked or readOnly then return now, false, "fixed" end
     if secure and InCombatLockdown() then return now, false, "fight" end
     return now, true

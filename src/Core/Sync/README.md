@@ -158,6 +158,12 @@ the game's own chat channels on every character is the Social module's.)
     login; a profile's Sync writing them 2 seconds later would undo that. `Sync.Leave(name)` hands a CVar to another
     part of Sane UI: no part of Sync, nor a CVar kept by name, reads or writes it (`ReadCVars`, `Sync.SetCVar`). The
     other sound settings (reverb, sound in the background, ...) stay in the part Audio.
+  - Water detail (`waterDetail`, `RAIDWaterDetail`) and the game's Liquid Detail that sets it (`graphicsLiquidDetail`,
+    `raidGraphicsLiquidDetail`): water 3 crashed Forever's client in the Ruins of Lordaeron the moment Sync wrote it
+    (card #377; Saneroki, 2026-11-06: "don't let SaneUI edit or save or load that setting"). Barred in `Game.lua`
+    (`Sync.Barred`): left like the sound profiles' (`Sync.Leave`), never kept by name (`Sync.Keep`, and a profile
+    that holds it loses it at the next capture), and the options' tab *CVars* does not set it (`Sync.Settable`:
+    "barred"). The game's own graphics menu still does.
   - The game's System pages Languages, Network and Mac: they belong to one computer or installation.
   - Edit Mode per specialization, screen-resolution settings, import and export.
   - The zone map's place, the damage meter's windows, chat tab protection: they write into the game's own

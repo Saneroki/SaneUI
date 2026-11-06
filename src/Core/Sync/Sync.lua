@@ -125,6 +125,7 @@ end
 
 function Sync.Keep(name, on)
     local named = Sync.options.named
+    if on and Sync.Barred(name) then return end
     if on then
         named[name] = Sync.Value(name) or named[name] or false
     else
@@ -133,10 +134,15 @@ function Sync.Keep(name, on)
 end
 
 -- A name that is no text (a hand-edited file) is left as it is, and one left to another part (Sync.Leave) too.
+-- A barred one (Game.lua) goes: it is never saved.
 local function ReadNamed(named)
     for name in pairs(named) do
         local value = type(name) == "string" and not Sync.Left(name) and Core.Ask(Sync.Value, name)
-        if type(value) == "string" then named[name] = value end
+        if Sync.Barred(name) then
+            named[name] = nil
+        elseif type(value) == "string" then
+            named[name] = value
+        end
     end
 end
 
