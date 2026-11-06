@@ -1300,6 +1300,20 @@ do
     IsIndoors = function() return false end
     Canvas.Layout()
     check(not Picture("Indoors\\500001-1"), "outdoors: no indoor map")
+    -- A hall the game counts as outdoors (one may ride there: Ironforge's, the Undercity), where its minimap shows the
+    -- indoor plan all the same (its view's radius one of the indoor steps'): the indoor map there too.
+    ;(function()
+        local step = minimap._zoom
+        local was = radii[step]
+        radii[step] = ns.Live.OUTDOORS[step] * 0.6
+        Canvas.Layout()
+        check(ns.Live.Indoors() and Picture("Indoors\\500001-1"),
+            "a hall the game counts as outdoors (Ironforge's), its minimap showing its indoor plan: the indoor map over the zone")
+        radii[step] = was
+        Canvas.Layout()
+        check(not ns.Live.Indoors() and not Picture("Indoors\\500001-1"),
+            "out of it, the minimap showing the ground again: no indoor map")
+    end)()
     UnitPosition = before
 end
 IsIndoors = function() return false end

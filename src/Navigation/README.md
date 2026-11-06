@@ -148,7 +148,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   names it, a click pings it to your group and a double click puts the game's map pin where it is, so the game's
   arrow leads there.
 - **Indoor maps:** inside a building or a cave, its indoor map lies over the map at the floor you stand on (the
-  game's own indoor pictures, without their black). Only inside buildings and caves, never on a street: Stormwind's
+  game's own indoor pictures, without their black), in every view: in the halls one may ride through too, which the
+  game counts as outdoors (Ironforge's under its mountain, the Undercity, Timbermaw Hold, Booty Bay's tunnel), as its
+  minimap shows their plan. Only inside buildings and caves, never on a street: Stormwind's
   and Orgrimmar's streets and squares keep the city's own map, though the game counts each city as one building.
 - **Sparkles** (the setting *Sparkles on herbs and ore*, on at first): gold sparkles in the world on the herb or
   ore your interact key would gather now, hanging from the game's plate on it, so you see it among the grass and
@@ -784,7 +786,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   it; without a pin that leg alone.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
-- **Indoors** (`Indoors.lua`): inside a building or a cave (the game's `IsIndoors`) the indoor map of the building
+- **Indoors** (`Indoors.lua`): inside a building or a cave (`Live.Indoors`: the game's `IsIndoors`, or its minimap
+  showing its indoor plan, its view's radius under `Live.PLAN` of its step's outdoors, `Live.OUTDOORS`: the halls one
+  may ride through, which the game's `WMOAreaTable` counts as outdoors, so `IsIndoors` says no there; Ironforge's
+  35 halls, the Undercity's 191 parts, 358 of 23 buildings) the indoor map of the building
   you stand in lies over the map: the game's own indoor pictures with their black taken out (`Art/Indoors/`, made
   by `dev/tools/indoor-art` from the game's files), placed by Core's set *Indoors* (each part's picture, where it lies
   in the building, the building's place, turn and scale). The building: the one whose part holds your place
@@ -802,7 +807,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   it empty, no dots and no arrow); above the map's
   layers and under our marks (its layer and level set again each time it is placed), its ground off (as Blizzard's hybrid minimap does), so only its
   live dots and their tooltips show, indoors too (its own indoor plan on black stays off; our own indoor
-  maps are to come). Its
+  maps lie under its dots, `Indoors.lua`). Its
   clicks go through to our map (`SetMouseClickEnabled(false)`: its pass-through buttons the game blocks for addons); its border, zoom buttons and the rest of the game's minimap
   cluster are out of sight and take no clicks (Edit Mode's selection keeps its). Each step's radius is read
   from the game. Taken out of combat, every part kept first and given back exactly. On the full map it stands
@@ -933,6 +938,13 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-06, indoor maps in Ironforge and the Undercity:** Saneroki: inside Ironforge the map showed the zone,
+  "just the top of the mountain", not its halls; "Maps that are indoor including ironforge need to always show the
+  indoor map ontop the zonemap". The indoor layer went by the game's `IsIndoors`, which is false wherever one may ride
+  (the game's `WMOAreaTable` marks those halls outdoors), though the game's minimap shows their plan. Now the layer
+  goes by `Live.Indoors`: `IsIndoors`, or the minimap's view at its indoor radius. The game's minimap's measured
+  steps (`Hybrid.lua`) and the floor the route guesses under you (`Planner.lua`: a building's lowest, not the
+  mountain over the city) go by it too.
 - **2026-11-04, sound profiles in the satchel:** Saneroki plays two clients of one installation at once and
   wants to hear one, the other or neither, the recording keeping the chosen one's sound. The game keeps its sound
   settings in one file for both, so the profiles are Core's, per game account, the last one set again at each

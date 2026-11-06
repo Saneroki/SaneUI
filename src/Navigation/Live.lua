@@ -5,6 +5,7 @@ local _, ns = ...
 --  What the game tells while playing, read for the map. Knows no frames.
 --
 --      Live.Player()           the plane's map, the point in its plane, the facing (nil: not known; Coords.Player)
+--      Live.Indoors()          inside a building or a cave: IsIndoors, or the game's minimap showing its indoor plan
 --      Live.Waypoint()         the game's map pin: its map, x, y (nil: none)
 --      Live.SetWaypoint(map, x, y), Live.ClearWaypoint(), Live.Tracked()
 --      Live.Group(map)         party and raid members on a map: { unit, x, y } each
@@ -68,6 +69,24 @@ function Live.Player()
     if not u then return map end
     local facing = Core.Plain(Core.Ask(GetPlayerFacing))
     return map, u, v, facing
+end
+
+-- The game's minimap's radius at each zoom step (0, its widest, first) while it shows the ground, yards. Where it
+-- shows the indoor plan of a building or a cave instead, every step's is at most two thirds of that.
+Live.OUTDOORS = { [0] = 233.33, 200, 166.67, 133.33, 100, 66.67 }
+Live.PLAN = 0.7 -- a radius under this share of its step's: the minimap shows its indoor plan
+
+-- Whether the player is inside a building or a cave, as the game has it: IsIndoors (no riding here), or its minimap
+-- showing the indoor plan of the part they stand in (Saneroki, 2026-11-06). The game counts the halls one may ride
+-- through as outdoors (its table WMOAreaTable: Ironforge's halls, the Undercity, Timbermaw Hold, Booty Bay's tunnel),
+-- and IsIndoors says no there; its minimap goes by the part itself.
+function Live.Indoors()
+    if Core.Ask(IsIndoors) == true then return true end
+    local minimap, map = rawget(_G, "Minimap"), rawget(_G, "C_Minimap")
+    if not (minimap and minimap.GetZoom and map) then return false end
+    local outdoors = Live.OUTDOORS[Core.Ask(minimap.GetZoom, minimap)]
+    local radius = Core.Ask(map.GetViewRadius)
+    return outdoors ~= nil and type(radius) == "number" and radius > 0 and radius < outdoors * Live.PLAN
 end
 
 function Live.Waypoint()

@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Indoor maps now show in Ironforge's halls, the Undercity and the other
+  halls and tunnels you may ride through, over the zone's map, instead of
+  the mountain or the ruins above them.
 - A druid's Action Bar 6 swaps with your form: Bar 9 in Bear Form, Bar 10
   in Cat, Aquatic and Travel Form, Bar 6 itself as a human. Beside it, as
   beside Action Bar 1, the number of the bar it shows, arrows up and down

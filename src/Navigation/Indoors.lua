@@ -2,8 +2,10 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Indoors
---  Inside a building or a cave (the game's IsIndoors), its indoor map over our
---  map: the game's own indoor pictures with their black taken out (made by
+--  Inside a building or a cave (Live.Indoors: the game's IsIndoors, or its
+--  minimap showing its indoor plan, as in Ironforge's halls and the Undercity,
+--  which the game counts as outdoors), its indoor map over our map, whatever
+--  the view: the game's own indoor pictures with their black taken out (made by
 --  dev/tools/indoor-art into Art/Indoors/), placed by Core's set Indoors (where
 --  each part's picture lies in the building, where each building stands, its
 --  turn and scale; the set's schema has the formula).
@@ -110,7 +112,7 @@ end
 -- The building the player stands in on the view's continent, and the parts to draw: placed, parts (in drawing
 -- order, the one on top last), or nil outdoors, off the data, on another continent, or in none of its buildings.
 function Indoors.Inside(continent)
-    if not Core.Ask(IsIndoors) or not SET:Ready() then return nil end
+    if not ns.Live.Indoors() or not SET:Ready() then return nil end
     local x, y, z, instance = Here()
     if not x or (instance and instance ~= continent) then return nil end
     local column, row = Coords.Tile(-y, x)
@@ -194,7 +196,7 @@ end
 function Indoors.Place(view)
     wipe(seen)
     shown = nil
-    if view.continent and Core.Ask(IsIndoors) and not SET:Ready() then Core.Data.Prepare("Indoors") end
+    if view.continent and not SET:Ready() and ns.Live.Indoors() then Core.Data.Prepare("Indoors") end
     local placed, parts, building
     if view.continent then placed, parts, building = Indoors.Inside(view.continent) end
     if placed then

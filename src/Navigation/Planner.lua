@@ -650,7 +650,7 @@ local function Footing(map, u, v, now)
     end
     local guess = footing and footing.guess or nil
     if not tile then
-        tile, index = Walk.Floor(map, u, v, Core.Ask(IsIndoors) == true, Search.REACH)
+        tile, index = Walk.Floor(map, u, v, Live.Indoors(), Search.REACH)
         guess = #Walk.Under(map, u, v) ~= 1 or nil
     end
     footing = tile and { tile.key, index, map = map, u = u, v = v, z = select(5, Walk.Rect(tile, index)), guess = guess }

@@ -269,6 +269,11 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Indoor maps only inside buildings and caves (Saneroki, 2026-10-21):** the world map's indoor maps lie over the
   map inside a building or a cave, never on a street; Stormwind's and Orgrimmar's streets and squares (each city is
   one building to the game) keep the city's own map.
+- **Indoor maps always over the zone, Ironforge too (Saneroki, 2026-11-06):** "Maps that are indoor including
+  ironforge need to always show the indoor map ontop the zonemap": inside the halls one may ride through, which the
+  game counts as outdoors (Ironforge under its mountain, the Undercity, Timbermaw Hold, Booty Bay's tunnel), the
+  indoor map lies over the zone's map as in any building, never the mountain or the ruins over them. Told by the
+  game's minimap, which shows its indoor plan there (`Live.Indoors`).
 - **Soft zone edges, exact inside (Saneroki, 2026-10-21):** the close terrain view stays as accurate as planned,
   down to the tiniest walkable places. Only the outermost outline of a zone, and only where the player cannot
   go (the mountains between zones, the edge of the world), is blended into a natural transition instead of the

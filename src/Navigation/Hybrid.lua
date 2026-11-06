@@ -53,6 +53,7 @@ local _, ns = ...
 --  through Core.Lend; its mask, wheel, clicks, zoom and size by hand.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
+local Live = ns.Live
 local Hybrid = {}
 ns.Hybrid = Hybrid
 
@@ -66,7 +67,7 @@ local WAIT = "navigation: minimap" -- what waits for the fight's end
 
 local taken, saved, canvas, hooked
 local surveying -- the steps are being measured: what the game says meanwhile is ours
-local radii = { [true] = {}, [false] = {} } -- [indoors][zoom step] = the view's radius in yards
+local radii = { [true] = {}, [false] = {} } -- [indoors (Live.Indoors)][zoom step] = the view's radius in yards
 local cut -- the mask it is cut by now
 local wide -- on the full map: { side, x, y (the player's place in the holder's units), holder }
 local ground -- whether the game's minimap draws its own ground now, as last set (nil: not set by us yet)
@@ -89,7 +90,7 @@ end
 local function Learn()
     local minimap = Parts()
     local radius = Core.Plain(Core.Ask(C_Minimap.GetViewRadius))
-    if minimap and radius and radius > 0 then radii[IsIndoors() and true or false][minimap:GetZoom()] = radius end
+    if minimap and radius and radius > 0 then radii[Live.Indoors()][minimap:GetZoom()] = radius end
 end
 
 -- Every step's radius: each step set once and read (the game answers at once), then the step as it was.
@@ -114,7 +115,7 @@ end
 
 -- The zoom a step gives a view of that size (units per yard), or nil while its radius is not known.
 function Hybrid.Zoom(step, size)
-    local radius = radii[IsIndoors() and true or false][step]
+    local radius = radii[Live.Indoors()][step]
     return radius and size / 2 / radius or nil
 end
 
@@ -242,7 +243,7 @@ local resetting = ns.Guard(Reset) -- made once
 -- first time indoors, or outdoors, every step is measured.
 local function Zoomed()
     if not taken or surveying then return end
-    if not next(radii[IsIndoors() and true or false]) then Survey() else Learn() end
+    if not next(radii[Live.Indoors()]) then Survey() else Learn() end
     ns.Canvas.Refresh()
 end
 
@@ -293,7 +294,7 @@ end
 -- game's minimap showing; the full map where that step's square takes Hybrid.ROOM of its shorter side (Wide shows
 -- it there). False while the game's minimap is not ours, or that step is not measured yet.
 function Hybrid.Home(camera, width, height)
-    local radius = taken and radii[IsIndoors() and true or false][Hybrid.HOME]
+    local radius = taken and radii[Live.Indoors()][Hybrid.HOME]
     if not radius then return false end
     if camera == ns.Window.full then
         camera.native, camera.k = nil, math.min(width, height) * Hybrid.ROOM / (2 * radius) * (1 - 1e-6)
@@ -342,7 +343,7 @@ end
 -- The full map (its camera, the canvas' size): the widest step whose square at the map's zoom fits in
 -- Hybrid.ROOM of the canvas' shorter side; placed on the player by Follow.
 local function Wide(minimap, camera, width, height, known)
-    local room, indoors = math.min(width, height) * Hybrid.ROOM, IsIndoors() and true or false
+    local room, indoors = math.min(width, height) * Hybrid.ROOM, Live.Indoors()
     local step, side
     for each = 0, minimap:GetZoomLevels() - 1 do
         local radius = radii[indoors][each]
@@ -478,7 +479,7 @@ function Hybrid.PingAt(right, up)
     local step, radius = was, Core.Plain(Core.Ask(C_Minimap.GetViewRadius))
     if type(radius) ~= "number" or radius <= 0 or far > radius then
         step, radius = nil, nil
-        for each, reach in pairs(radii[IsIndoors() and true or false]) do
+        for each, reach in pairs(radii[Live.Indoors()]) do
             if reach >= far and (not radius or reach < radius) then step, radius = each, reach end
         end
         if not step then return false end
