@@ -244,6 +244,75 @@ function Sync.Give()
     Sync.OfferReload(later)
 end
 
+-- /sane hunt (the bug hunt, temporary): writes what it names of the profile's game settings into the game at once,
+-- where the player stands, while SaneUIDB.hunt = true holds Sync's own writing back. A word is a CVar kept by name,
+-- a part's id (Sync.part), named (every CVar kept by name) or parts (every kept part). Without one: the CVars kept
+-- by name that differ from the game's. What it writes is not read back into the profile (Capture waits).
+local HUNT = {
+    about = "the bug hunt: /sane hunt shadowMode writes that CVar of the profile at once (also named, parts, a part's id)",
+    differs = "Bug hunt: %s is %s, the profile has %s.",
+    none = "Bug hunt: every CVar kept by name is as the profile has it.",
+    set = "Bug hunt: %s set to %s (was %s).",
+    same = "Bug hunt: %s is %s already.",
+    refused = "Bug hunt: the game did not take %s = %s.",
+    held = "Bug hunt: %s is held back by the list in SaneUIDB.hunt.",
+    part = "Bug hunt: the part %s written.",
+    unknown = "Bug hunt: %s is neither kept by name nor a part.",
+}
+
+local function HuntCVar(name, value)
+    local before = Plain(Core.Ask(C_CVar.GetCVar, name))
+    if before == value then return Core.Print(HUNT.same:format(name, value)) end
+    if Sync.Left(name) then return Core.Print(HUNT.held:format(name)) end
+    Core.Print((Sync.SetCVar(name, value) and HUNT.set or HUNT.refused):format(name, value, tostring(before)))
+end
+
+local function HuntPart(part)
+    local data = Sync.options.taken[part.id]
+    if type(data) ~= "table" then return end
+    if part.Prepare then Sync.Safe("preparing " .. part.id, part.Prepare) end
+    Sync.Safe("writing " .. part.id, part.Write, data)
+    Core.Print(HUNT.part:format(part.id))
+end
+
+Core.Command("hunt", HUNT.about, function(rest)
+    local named, names, byLower = Sync.options.named, {}, {}
+    for name, value in pairs(named) do
+        if type(name) == "string" and type(value) == "string" then
+            names[#names + 1], byLower[name:lower()] = name, name
+        end
+    end
+    table.sort(names)
+    if rest == "" then
+        local any = false
+        for _, name in ipairs(names) do
+            local now = Plain(Core.Ask(C_CVar.GetCVar, name))
+            if now ~= named[name] then
+                any = true
+                Core.Print(HUNT.differs:format(name, tostring(now), named[name]))
+            end
+        end
+        if not any then Core.Print(HUNT.none) end
+        return
+    end
+    for word in rest:gmatch("%S+") do
+        local lower = word:lower()
+        if lower == "named" then
+            for _, name in ipairs(names) do HuntCVar(name, named[name]) end
+        elseif lower == "parts" then
+            for _, part in ipairs(Sync.parts) do
+                if Sync.PartKept(part.id) then HuntPart(part) end
+            end
+        elseif byLower[lower] then
+            HuntCVar(byLower[lower], named[byLower[lower]])
+        elseif Sync.part[word] then
+            HuntPart(Sync.part[word])
+        else
+            Core.Print(HUNT.unknown:format(word))
+        end
+    end
+end)
+
 local settled -- the character is in the world, and its first writing came due (GiveSoon)
 
 local function ToDefault(name)

@@ -696,6 +696,31 @@ do
     W.cvars.keptThing = "5"
     Sync.Capture()
     check(options.named.huntThing == "4" and options.named.keptThing == "5", "the held one is not read back either")
+    -- /sane hunt: one setting of the profile at a time, where the player stands.
+    options.named.shownThing, W.cvarInfo.shownThing, W.cvars.shownThing = "4", { default = "x" }, "3"
+    SaneUIDB.hunt = true
+    local function Said(text)
+        for _, line in ipairs(W.printed) do if line:find(text, 1, true) then return true end end
+        return false
+    end
+    W.printed = {}
+    SlashCmdList.SANEUI("hunt")
+    check(Said("shownThing is 3, the profile has 4") and not Said("keptThing is"), "/sane hunt: the CVars kept by name the game differs in")
+    W.printed = {}
+    SlashCmdList.SANEUI("hunt SHOWNTHING")
+    check(W.cvars.shownThing == "4" and W.cvars.keptThing == "5" and Said("shownThing set to 4 (was 3)"),
+        "/sane hunt shownThing: that one written at once, in any letter case, the rest left")
+    W.printed = {}
+    SlashCmdList.SANEUI("hunt shownThing nothingKept huntThing")
+    check(Said("shownThing is 4 already") and Said("nothingKept is neither kept by name nor a part")
+        and Said("huntThing is held back by the list") and W.cvars.huntThing == "2",
+        "one as the profile has it, one unknown, one held by a list earlier: said, and the held one stays")
+    W.cvars.shownThing = "3"
+    SlashCmdList.SANEUI("hunt named")
+    Sync.Capture()
+    check(W.cvars.shownThing == "4" and options.named.shownThing == "4" and options.named.keptThing == "5",
+        "named: every CVar kept by name; nothing read back while the hunt holds Sync")
+    options.named.shownThing, W.cvarInfo.shownThing, W.cvars.shownThing = nil, nil, nil
     SaneUIDB.hunt = nil
     for _, name in ipairs({ "huntThing", "keptThing" }) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
 end
