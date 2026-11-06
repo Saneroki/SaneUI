@@ -1684,9 +1684,13 @@ do
         "a character seen before stays where it was")
     Profiles.Use("Speedleveling")
     local wide, fast = SaneUIDB.profiles.Accountwide.Sync, SaneUIDB.profiles.Speedleveling.Sync
-    check(wide.named.farclip == "10000" and wide.named.targetFPS == "115" and wide.named.worldPreloadNonCritical == "0"
+    check(wide.named.targetFPS == "115" and wide.named.screenshotQuality == "10"
         and wide.from == Core.GAME and fast.from == Core.GAME, "both hold our recommended CVars, as this game's")
-    check(wide.named.ffxDeath == "1" and fast.named.ffxDeath == "0" and fast.named.farclip == "10000" and fast.solo == nil,
+    local drawn
+    for _, name in ipairs(Core.Presets.WORLD) do drawn = drawn or wide.named[name] or fast.named[name] end
+    check(#Core.Presets.WORLD == 13 and drawn == nil,
+        "but none that draws or loads the world: those stay the game's (they crashed Forever's client)")
+    check(wide.named.ffxDeath == "1" and fast.named.ffxDeath == "0" and fast.named.maxFPS == "115" and fast.solo == nil,
         "where they differ Accountwide names the game's own value: a character on it is not left with Speedleveling's")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,
         "Character specific can be what new characters start with")
@@ -1713,9 +1717,9 @@ do
         "an account with settings: Speedleveling starts as a copy of them, the old switch is gone")
     NextSession({ version = 2, profiles = { Accountwide = { Sync = { named = { farclip = "5000" }, from = "other" } } } }, {})
     local kept = SaneUIDB.profiles.Accountwide.Sync
-    check(kept.named.farclip == "5000" and kept.named.shadowMode == "4" and kept.from == "other",
+    check(kept.named.farclip == "5000" and kept.named.screenshotQuality == "10" and kept.from == "other",
         "given to a profile with settings, the presets add only what it lacks: the player's word stays")
-    kept.named.shadowMode = nil
+    kept.named.screenshotQuality = nil
     NextSession(SaneUIDB, {})
     local presets, game = Core.Presets, Core.GAME
     check(presets.profiles.Accountwide.Social == nil, "Forever has no Newcomer Chat to leave")
@@ -1724,7 +1728,7 @@ do
     check(Core.Presets.profiles.Accountwide.Social.presence["Newcomer Chat"] == false
         and Core.Presets.profiles.Speedleveling.Social.presence["Newcomer Chat"] == false, "in Retail both profiles leave it")
     Core.GAME, Core.Presets = game, presets
-    check(SaneUIDB.profiles.Accountwide.Sync.named.shadowMode == nil and SaneUIDB.presets.Accountwide == Core.Presets.VERSION,
+    check(SaneUIDB.profiles.Accountwide.Sync.named.screenshotQuality == nil and SaneUIDB.presets.Accountwide == Core.Presets.VERSION,
         "and only once: one the player unticked stays out, until a new version brings what is new")
     UnitGUID = guid
     NextSession(SaneUIDB, {})

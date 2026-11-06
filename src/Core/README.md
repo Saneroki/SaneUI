@@ -107,9 +107,11 @@ but for a window to try those with (`/sane window`).
       settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
       (they stay in the profile it left).
   - **What the two shared standard profiles set** (`Presets.lua`, Saneroki, 2026-10-30): the game's CVars as single
-    CVars of Sync's (`named`, ticked in the tab *CVars*), written last at the login. How far the world shows, its
-    grass, weather, shadows and water at their finest, 115 frames a second in front, behind and as a target, loading
-    screens that do not wait for what is not needed at once, the camera out as far as it goes. Speedleveling also
+    CVars of Sync's (`named`, ticked in the tab *CVars*), written last at the login. 115 frames a second in front,
+    behind and as a target, the camera out as far as it goes, the finest screenshots. None that draws or loads the
+    world (`Presets.WORLD`: view distance, horizon, grass, weather, shadows, ambient occlusion, water, world preload):
+    those stay the game's, as its graphics menu sets them, since ours crashed Forever's client in the Ruins of
+    Lordaeron (Saneroki, 2026-11-06). Speedleveling also
     takes off the grey blur at death, the tutorials, the quest text word by word and the voice on errors, and takes
     you down when you cast in the air; Accountwide names the game's own values for those, so that a character on it
     is not left with what one on Speedleveling set. A CVar one of the two games lacks is passed over. Given once for

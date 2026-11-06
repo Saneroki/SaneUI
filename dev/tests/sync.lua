@@ -670,11 +670,11 @@ do
     end
     check(written and W.cvars.instantQuestText == nil and Core.errors["Sync: setting CVars"] == nil,
         "written at the first login, none of its parts read yet; one this game lacks is passed over, quietly")
-    W.cvars.farclip = "5000"
+    W.cvars.maxFPS = "60"
     Sync.Capture()
-    W.cvars.farclip = "1"
+    W.cvars.maxFPS = "30"
     Sync.Give()
-    check(options.named.farclip == "5000" and W.cvars.farclip == "5000" and options.named.instantQuestText == preset.instantQuestText,
+    check(options.named.maxFPS == "60" and W.cvars.maxFPS == "60" and options.named.instantQuestText == preset.instantQuestText,
         "what the player sets afterwards is the profile's; the other game's stays for that game")
     for name in pairs(preset) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
 end
