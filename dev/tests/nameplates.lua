@@ -774,6 +774,67 @@ W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate6")
 check(plates.nameplate6.UnitFrame._alpha == 1, "taken back: the game's own again")
 units.nameplate6, plates.nameplate6 = nil, nil
 
+-- A player's pet: out of sight with its stranger's plate, shown with a known one's, your target's or one you can fight.
+UnitOwnerGUID = function(unit) return Unit(unit).owner end
+UnitTokenFromGUID = function(guid)
+    local token = type(guid) == "string" and guid:match("^Player%-(nameplate%d+)$")
+    return token and plates[token] and token or nil
+end
+units.nameplate8 = { name = "Wolf", creature = 1, health = 50, most = 50, friend = true, reaction = 5, level = 20,
+                     owner = "Player-nameplate7" }
+plates.nameplate8 = GamePlate()
+W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate8")
+local wolf = DressOf(plates.nameplate8)
+check(wolf:IsShown() and plates.nameplate8.UnitFrame._alpha == 1, "a pet before its player's plate came: shown")
+units.nameplate7 = { name = "Odo", player = true, class = "WARRIOR", friend = true, health = 90, most = 90, level = 20 }
+plates.nameplate7 = GamePlate()
+W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate7")
+check(not DressOf(plates.nameplate7):IsShown() and not wolf:IsShown() and plates.nameplate8.UnitFrame._alpha == 0,
+    "its player a stranger: both out of sight once the player's plate came")
+units.nameplate7.guild = true
+Roster("GUILD_ROSTER_UPDATE")
+check(wolf:IsShown() and plates.nameplate8.UnitFrame._alpha == 1 and wolf.border[1]._vertex[1] == 0,
+    "its player in your guild: shown, its border no kin's")
+units.nameplate7.guild = false
+Roster("GUILD_ROSTER_UPDATE")
+check(not wolf:IsShown(), "not any more: gone with its player")
+local before, beforePlate = units.target, plates.target
+units.target, plates.target = units.nameplate7, plates.nameplate7
+W.Fire("PLAYER_TARGET_CHANGED")
+check(wolf:IsShown(), "its player your target: shown too")
+units.target, plates.target = units.nameplate8, plates.nameplate8
+W.Fire("PLAYER_TARGET_CHANGED")
+check(wolf:IsShown(), "the pet your target: shown")
+units.target, plates.target = before, beforePlate
+W.Fire("PLAYER_TARGET_CHANGED")
+check(not wolf:IsShown(), "neither: gone")
+units.nameplate8.friend = false
+W.Fire("UNIT_FACTION", "nameplate8")
+check(wolf:IsShown(), "a pet you may attack: shown")
+units.nameplate8.friend = true
+W.Fire("UNIT_FACTION", "nameplate8")
+Core.Set(ns.name, "players", false)
+check(wolf:IsShown(), "the setting off: every pet's plate")
+Core.Set(ns.name, "players", true)
+check(not wolf:IsShown(), "on again: gone")
+units.nameplate8.owner = "Player-player"
+check(ns.Plate.Wanted("nameplate8"), "your own pet: shown")
+units.nameplate8.owner = Secret()
+check(ns.Plate.Wanted("nameplate8"), "where the game hides its owner: shown")
+units.nameplate8.owner = "Creature-0-1-2-3-4-5"
+check(ns.Plate.Wanted("nameplate8"), "a creature's guardian: shown as any creature")
+units.nameplate8.owner, units.nameplate8.creature = "Player-nameplate7", 12
+Core.Set(ns.name, "critters", true)
+check(ns.Plate.Wanted("nameplate8"), "a stranger's companion with critters shown: a critter, shown")
+Core.Set(ns.name, "critters", false)
+units.nameplate7.guild = true
+check(not ns.Plate.Wanted("nameplate8"), "a guild member's companion with critters hidden: a critter, hidden")
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate8")
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
+check(plates.nameplate8.UnitFrame._alpha == 1 and plates.nameplate7.UnitFrame._alpha == 1, "both taken back")
+units.nameplate7, plates.nameplate7, units.nameplate8, plates.nameplate8 = nil, nil, nil, nil
+UnitTokenFromGUID = nil
+
 -------------------------------------------------------------------------------
 --  Combo points under the bar of the unit you have them on
 -------------------------------------------------------------------------------

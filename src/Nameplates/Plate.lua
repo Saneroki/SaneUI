@@ -27,9 +27,10 @@ local _, ns = ...
 --  player may attack you, or you the player) or while the player is in your
 --  group, your guild or on your friends list, or is your target; any other
 --  player's is out of sight altogether (the game's unit frame on it at alpha
---  0). So is a critter's (wild and companion pets too), and
---  with it its name, unless it is your target or wanted for a quest of yours,
---  or the setting shows them.
+--  0), and so is their pet's, guardian's or totem's, unless a fight with it
+--  can start or it is your target. So is a critter's (wild and companion pets
+--  too), and with it its name, unless it is your target or wanted for a quest
+--  of yours, or the setting shows them.
 --
 --  One dress per plate, made the first time the game shows it and kept: the
 --  game hands its plates out again for other units, and takes its unit frames
@@ -131,23 +132,50 @@ function Plate.Kin(unit)
     return nil
 end
 
+-- The player a pet, guardian, totem or charmed creature is under (UnitOwnerGUID): a unit token of theirs ("player" for
+-- your own; their plate, your group, your target) and their GUID; only the GUID where the player has no token now (no
+-- plate of theirs yet); nil for a unit no player owns, and where the game does not say.
+function Plate.Owner(unit)
+    local guid = Core.Ask(rawget(_G, "UnitOwnerGUID"), unit)
+    if type(guid) ~= "string" or not guid:find("^Player%-") then return nil end
+    if guid == Core.Ask(UnitGUID, "player") then return "player", guid end
+    return Core.Ask(rawget(_G, "UnitTokenFromGUID"), guid), guid
+end
+
+-- Whether a fight with a unit can start: it may attack you, or you it. Where the game does not say, it can.
+local function Fight(unit)
+    return Core.Ask(UnitCanAttack, "player", unit) ~= false or Core.Ask(UnitCanAttack, unit, "player") == true
+end
+
 -- Whether a unit's plate shows: every plate but that of a player who is a stranger to you (not in your guild, group
 -- or raid, not a friend: Plate.Kin; not your target) and with whom no fight can start (who may not attack you, nor
--- you them), and that of a critter (not your target, not one your quest wants: the dress's quest piece) unless the
--- setting shows them. Where the game does not say, it shows. A dress's player as Wear last found it (dress.kin).
+-- you them), that of such a player's pet, guardian or totem (Plate.Owner) with which no fight can start either and
+-- which is not your target, and that of a critter (not your target, not one your quest wants: the dress's quest
+-- piece) unless the setting shows them. Where the game does not say, it shows; so does a pet whose player has no
+-- token yet, noted on its dress (dress.stray, worn anew when that player's plate comes: Strays). A dress's player as
+-- Wear last found it (dress.kin).
 function Plate.Wanted(unit, dress)
     local options = ns.options or {}
-    if Plain(UnitIsPlayer(unit)) ~= true then
-        if options.critters or not Critter(unit) or (dress and dress.room.quest) then return true end
+    local player = Plain(UnitIsPlayer(unit)) == true
+    local critter = not player and Critter(unit)
+    local owner, guid
+    if not player and not critter then owner, guid = Plate.Owner(unit) end
+    if not player and not guid then -- a creature
+        if options.critters or not critter or (dress and dress.room.quest) then return true end
         return Plain(UnitIsUnit(unit, "target")) ~= false
     end
-    if options.players == false then return true end
-    if Core.Ask(UnitCanAttack, "player", unit) ~= false or Core.Ask(UnitCanAttack, unit, "player") == true then
+    if options.players == false or Fight(unit) or Plain(UnitIsUnit(unit, "target")) ~= false then return true end
+    if player then
+        if dress then return dress.kin ~= nil end
+        return Plate.Kin(unit) ~= nil
+    end
+    -- A player's pet: shown where its player's plate is (yours always).
+    if owner == "player" then return true end
+    if not owner then
+        if dress then dress.stray = guid end
         return true
     end
-    if Plain(UnitIsUnit(unit, "target")) ~= false then return true end
-    if dress then return dress.kin ~= nil end
-    return Plate.Kin(unit) ~= nil
+    return Fight(owner) or Plain(UnitIsUnit(owner, "target")) ~= false or Plate.Kin(owner) ~= nil
 end
 
 -- The game's aura icons on a unit frame as it shows them now (its container's pooled items, its loss of control one)
@@ -212,6 +240,7 @@ local function Wear(dress)
     local relit = kin ~= dress.kin
     dress.kin = kin
     if relit then Plate.Light(dress) end
+    dress.stray = nil -- found anew by Plate.Wanted
     local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit, dress)
     local on = wanted and not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
     if frame then
@@ -348,7 +377,7 @@ local function Off(dress)
     if dress.unit and shown[dress.unit] == dress then shown[dress.unit] = nil end
     dress:UnregisterAllEvents()
     ns.Safe("scale", ns.Scale.Leave, dress) -- the game's unit frame at its own scale, before it is let go
-    dress.out, dress.kin = nil, nil -- the next unit's reach and kin are its own
+    dress.out, dress.kin, dress.stray = nil, nil, nil -- the next unit's reach, kin and owner are its own
     local frame = dress.frame
     dress.unit, dress.frame, dress.away = nil, nil, nil
     dress:Hide()
@@ -363,6 +392,14 @@ local function Off(dress)
     ns.Safe("combo points", ns.Resource.Leave, dress)
     ns.Safe("combat text", ns.CombatText.Clear, dress)
     ns.Safe("cast", ns.Cast.Update, dress, nil)
+end
+
+-- A player's plate came: the plates of their pets that came before it (dress.stray: no token of theirs then) worn anew.
+local function Strays(guid)
+    if not guid then return end
+    for _, dress in pairs(shown) do
+        if dress.stray == guid then Wear(dress) end
+    end
 end
 
 local function Added(unit)
@@ -388,7 +425,10 @@ local function Added(unit)
     Wear(dress)
     ns.Scale.Born(dress) -- it grows in
     ns.Resource.Again()
-    if dress.room.gear == nil and Plain(UnitIsPlayer(unit)) then gear() end
+    if Plain(UnitIsPlayer(unit)) then
+        if dress.room.gear == nil then gear() end
+        Strays(Core.Ask(UnitGUID, unit))
+    end
 end
 
 local function Removed(unit)

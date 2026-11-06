@@ -25,7 +25,8 @@ fails, every plate is the game's own again.
 - **Players:** dressed exactly like the creatures: the bar, the power line, the line inside it, auras, cast bar. A
   player's plate shows while a fight with the player can start (the player may attack you, or you the player), and
   while the player is in your party or raid, your guild, on your friends list (or a friend of your account), or your
-  target; every other player's plate is out of sight altogether. Players who may attack you glow red. Whether
+  target; every other player's plate is out of sight altogether, and with it the plates of their pets, guardians and
+  totems (unless one may attack you or you it, or it is your target). Players who may attack you glow red. Whether
   friendly players have plates at all is the game's own setting (*Friendly player nameplates*, its key).
 - **Critters:** critters, wild pets and companion pets (rabbits, rats, deer, someone's pet) have no plate, and so no
   name over them, unless one is your target or a quest of yours wants it (its plate then shows the count). Setting
@@ -148,6 +149,12 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
+- **Strangers' pets** (`Plate.Wanted`, `Plate.Owner`): a unit that is no player and no critter whose owner
+  (`UnitOwnerGUID`) is a player: a pet, guardian, totem or charmed creature. You cannot attack it nor it you, it is
+  not your target: it shows where its player's plate would (its player found by `UnitTokenFromGUID`: you, a plate,
+  your group; may fight you, is your target, is someone you know), out of sight otherwise. A pet whose player has no
+  token yet (its plate came first) shows, noted on its dress (`dress.stray`), and is worn anew when that player's
+  plate comes (`Strays`). Its border keeps no kin colour of its own.
 - **Critters' plates** (`Plate.Wanted`, setting `critters` off): a unit that is no player whose creature type
   (`UnitCreatureType`'s ID, not its word) is in `Plate.CRITTERS` (8 Critter, 12 Non-combat Pet, 14 Wild Pet: the
   client's CreatureType table, the same in both games), not your target, without a quest piece on its dress
@@ -388,6 +395,8 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-06:** strangers' pets, guardians and totems hidden with their players' plates (Saneroki): a pet follows
+  its owner's plate, unless it may attack you or you it, or it is your target.
 - **2026-10-30:** barriers, lost maximum health and dispellable auras on the plates (Saneroki), each its own switch
   (Core's `HealthMarks.lua`).
 - **2026-10-20:** made a module of its own (Saneroki: nameplates are not Combat's): the game's plates with a
