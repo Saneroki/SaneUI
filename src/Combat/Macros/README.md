@@ -47,6 +47,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
   onto it, or click one onto it, and that takes its place (the macro comes off; what the button held underneath goes onto
   your cursor, as when two buttons swap). Drag the macro itself with the pick-up key (Shift) held, or with the bars
   unlocked: let go on another button and it stands there, on no button and it is off the bars. Out of a fight.
+  On a druid's Bar 6, which swaps with the form (Abilities), a macro is on the bar it showed when placed, as a spell is
+  (Saneroki, 2026-11-06): put there while it shows Bar 9, it is Bar 9's, shows in Bear Form alone and says *Bar 9*.
 - **Order:**
   - *Each press takes the next step:* a sequence. Every press goes on to the next step and comes round again.
   - *Every press starts at the top:* a normal macro. A press takes the first step whose conditions hold.
@@ -86,6 +88,12 @@ of your normal action bar buttons. The macros are your account's, on every chara
   button is never touched. A state driver per place says `ours` while the bar shows that button; a snippet then shows ours
   and takes the button's keys by override bindings, and gives them back on another page of Bar 1, in a vehicle or on a bar the
   game puts in place of yours, in a fight too. Keys read from the game's bindings; `UPDATE_BINDINGS` takes a change.
+  A button of Bars 2 to 8 that holds a row of its own says so by its own `actionpage` (a druid's Bar 6 holds 9 or 10 in
+  a form, Abilities' `FormBar.lua`; the game's bars set theirs on the bar, never on a button): a place made there names
+  it (`MultiBar5Button4:9`, `Reach.Row`, `Reach.PlaceOf`). The game's secure code turns the row, in a fight too, so a
+  wrap of the button's `OnAttributeChanged` (`SecureHandlerWrapScript`, `Reach.ROW`; the button is explicitly protected,
+  so it runs in a fight) sets the place's frame's `state-row`; one snippet (`Reach.SLOT`) runs for `slot` and `row` and
+  shows ours while `slot` is `ours` and the row is the place's (0 the bar's own). The wrap is made once a place and stays.
 - **A bar button, as the game's** (`Face.lua`). Something on the game's cursor (`GetCursorInfo`) let go on our button
   (`OnReceiveDrag`) or clicked onto it (`OnMouseDown`, left: the button hides at once, so the click runs no step) takes the
   macro off (`Macros.TakeOff`), and the game's own `PlaceAction` puts it on the game's button beneath, by that button's
@@ -135,7 +143,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
   (`Book.FromSteps`). `owner`: nil every character's, `"class"` this character's class's, `"character"` its own. One of that
   name and owner already there is left as it is (a setup addon, a script). `Macros.Set(name, body, owner)` makes that macro anew from a body as Add takes it, its number, picture, keys and places kept, its button taking it at once or after a fight (Saneroki, 2026-11-04: a potion macro kept on the best potion held). `Macros.PlaceOn(name, place)` puts the macro of
   that name this character uses (its own or its class's before a general one) on a bar button by its place
-  (`"MultiBar5Button4"`, `"ActionButton1:1"`), `Macros.TakeOff(place)` takes it off, `Macros.On(place)` names the one there
+  (`"MultiBar5Button4"`, `"ActionButton1:1"`, a druid's Bar 9 on Bar 6 `"MultiBar5Button4:9"`), `Macros.TakeOff(place)` takes it off, `Macros.On(place)` names the one there
   (Saneroki, 2026-11-04: a setup addon puts his macros on his keys and changes them as spells are learned).
 - **Standing down** (`Macros.GiveBack`, from Combat's): no key and no bar button of ours, the game's macro window back.
 - **Tried in the game:** one step a press, 5,000 attributes on one button, a button over a bar slot with paging and left

@@ -116,6 +116,7 @@ Macros.TEXT = {
         achievements = "Achievements", other = "Other",
     },
     bars = { "Bar 1", "Bar 2", "Bar 3", "Bar 4", "Bar 5", "Bar 6", "Bar 7", "Bar 8" },
+    barNumber = "Bar %d", -- a row a bar's button shows, such as Bar 9 on a druid's Bar 6 in Bear Form
 
     order = "Order",
     orderTurn = "Each press takes the next step",

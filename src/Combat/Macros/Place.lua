@@ -132,7 +132,7 @@ local function Lay()
                 local square = Square(index)
                 square:ClearAllPoints()
                 square:SetAllPoints(slot)
-                square.place = Macros.Reach.PlaceOf(bar, button, page)
+                square.place = Macros.Reach.PlaceOf(bar, button, bar.paged and page or Macros.Reach.Row(slot))
                 square:Show()
             end
         end

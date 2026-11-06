@@ -99,7 +99,8 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   form's bar again; not ticked, the bar stays on the one the arrows show. The checkbox is this druid's alone (another
   character on the same profile keeps its own) and changes out of a fight; also the line *Action Bar 6 swaps with this
   druid's form* in the spellbook's menu, or `/sane ab formbar on` / `off`. Drag to a button of Bar 9 or 10 while it
-  shows, reserve and save them in a layout, as on any bar; in chat they are *Bar 9, button 3*. Other classes keep a
+  shows, reserve and save them in a layout, as on any bar; in chat they are *Bar 9, button 3*. A Sane Macro put on Bar 6
+  while it shows Bar 9 or 10 is that bar's and swaps with it too (Combat's Sane Macros). Other classes keep a
   plain Bar 6, and the rows of Bar 1's other forms (Cat Form's 73–84, Prowl's 85–96) stay out of sight.
 - **Buttons that touch** (switch *Action bar buttons touch*, on). No space between the buttons of any action bar,
   the stance, pet and possess bars too, side by side or between the rows of a bar: the icons stand directly against

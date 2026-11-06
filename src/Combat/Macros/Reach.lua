@@ -11,6 +11,16 @@ local Macros = ns.Macros
 --                 button the button's own keys, by the game's state driver: on
 --                 another page of Bar 1, in a vehicle or on a bar the game puts
 --                 in place of yours the key is the game's again, in a fight too
+--
+--  A macro lies on the row the button showed when it was placed, as a spell
+--  does (Saneroki, 2026-11-06: a druid's Bar 6 swapped with the form, but the
+--  macros on it stayed): a button that holds a row of its own, as a druid's Bar
+--  6 holds Bar 9 or 10 in a form (Abilities), says so by its own "actionpage",
+--  which the game's bars never set on a button of Bars 2 to 8. A place there
+--  names that bar ("MultiBar5Button4:9"); our button shows only while the
+--  button shows that row. The game's secure code turns the row, in a fight too,
+--  so a wrap of the button's OnAttributeChanged (Reach.ROW, the game's own way
+--  for that) tells the place's frame; the button's own handler runs as before.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Reach = {}
@@ -32,11 +42,12 @@ Reach.PAGES = 6
 
 local NOT_YOURS = "[overridebar][vehicleui][possessbar] game; "
 
--- Runs when the state changes: our button and the keys, or neither. Its text follows Press.SNIPPET's rules.
+-- Runs when the state changes and when the row the button shows does: our button and the keys while the bar is yours
+-- and shows the macro's row (0 a bar's own), or neither. Its text follows Press.SNIPPET's rules.
 Reach.SLOT = [[
     local face = self:GetFrameRef("face")
     self:ClearBindings()
-    if newstate == "ours" then
+    if self:GetAttribute("state-slot") == "ours" and (self:GetAttribute("state-row") or 0) == (self:GetAttribute("row") or 0) then
         face:Show()
         local name = self:GetAttribute("button")
         local first, second = self:GetAttribute("key1"), self:GetAttribute("key2")
@@ -45,6 +56,11 @@ Reach.SLOT = [[
     else
         face:Hide()
     end
+]]
+
+-- Run in the place's frame (owner) when an attribute of the game's button changes: the row it shows now.
+Reach.ROW = [[
+    if name == "actionpage" then owner:SetAttribute("state-row", tonumber(value) or 0) end
 ]]
 
 local owner              -- the frame our keys belong to
@@ -60,22 +76,31 @@ local function Bar(prefix)
     return nil
 end
 
--- A place's parts: "ActionButton3:2" is Bar 1's third button on page 2.
+-- A place's parts: "ActionButton3:2" is Bar 1's third button on page 2, "MultiBar5Button3:9" Bar 6's third while it
+-- shows Bar 9.
 function Reach.Parts(place)
     local prefix, button, page = place:match("^(.-Button)(%d+):?(%d*)$")
     if not prefix then return nil end
     return Bar(prefix), tonumber(button), tonumber(page)
 end
 
+-- Bar 1's page, or the row another bar's button shows (nil for the bar's own).
 function Reach.PlaceOf(bar, button, page)
-    return bar.prefix .. button .. (bar.paged and ":" .. (page or 1) or "")
+    if bar.paged then return bar.prefix .. button .. ":" .. (page or 1) end
+    return bar.prefix .. button .. (page and ":" .. page or "")
 end
 
--- A place in words.
+-- The row a button of Bars 2 to 8 shows: the bar's number of its own "actionpage", nil for the bar's own.
+function Reach.Row(slot)
+    return tonumber(Core.Plain(slot:GetAttribute("actionpage")))
+end
+
+-- A place in words: a row by its own bar's number.
 function Reach.Words(place)
-    local bar, button = Reach.Parts(place)
+    local bar, button, page = Reach.Parts(place)
     if not bar then return "" end
     local _, index = Bar(bar.prefix)
+    if page and not bar.paged then return Macros.TEXT.barNumber:format(page), button end
     return Macros.TEXT.bars[index], button
 end
 
@@ -121,7 +146,15 @@ local function SetSlot(place, macro)
         header.face = face
         header:SetFrameRef("face", face)
         header:SetAttribute("_onstate-slot", Reach.SLOT)
+        header:SetAttribute("_onstate-row", Reach.SLOT)
         headers[place] = header
+        -- Made once a place, its wrap with it: while the place is empty its snippet keeps ours hidden (no state-slot).
+        local wrap = rawget(_G, "SecureHandlerWrapScript")
+        if not bar.paged and wrap then wrap(slot, "OnAttributeChanged", header, Reach.ROW) end
+    end
+    if not bar.paged then
+        header:SetAttribute("row", page)
+        header:SetAttribute("state-row", Reach.Row(slot) or 0)
     end
     -- The button's keys press the macro's hub, a key's button; our button over the slot is the mouse's.
     header:SetAttribute("button", Macros.Press.Name(macro))

@@ -16,7 +16,8 @@ The bigger changes of each version, newest first.
   in Cat, Aquatic and Travel Form, Bar 6 itself as a human. Beside it, as
   beside Action Bar 1, the number of the bar it shows, arrows up and down
   to show Bars 6, 9 and 10 without shifting (to fill them, say), and a
-  checkbox whether it swaps with your form.
+  checkbox whether it swaps with your form. A Sane Macro put on Bar 9 or
+  10 swaps with it too.
 - Sane Macros on your action bars act like any button: drop a spell or an
   item on one to put that there instead, or drag the macro with Shift to
   another button or off the bars.

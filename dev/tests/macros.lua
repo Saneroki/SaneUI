@@ -1,7 +1,7 @@
 -- Runs Sane Macros, a part of the Combat module, against the stand-in client (wowstub.lua): macros and steps kept and cleaned, a macro written
 -- out into its lines, conditions and turns, the checks, the snippet that runs on a press (a turn a press, conditions that
 -- skip in that press, the top of the list, nothing true, a bar button on the same hub, a fight), keys and bar buttons by
--- page, the window with its + list, a game's macro taken over, Retail's path, and standing down.
+-- page and by the row a druid's Bar 6 shows, the window with its + list, a game's macro taken over, Retail's path, and standing down.
 -- The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/macros.lua
 
@@ -207,13 +207,9 @@ SetOverrideBindingClick = function(owner, _, key, name, mouse)
     overrides[owner][key] = name .. ":" .. mouse
 end
 local register, unregister = RegisterStateDriver, UnregisterStateDriver
--- The game's driver (SecureStateDriver.lua, resolveDriver) sets the state only when it changes; the header's snippet
--- (_onstate-slot) then runs, secure, with the bindings it may set its own.
-local function Resolve(frame, words)
-    local value = SecureCmdOptionParse(words)
-    if value == nil or value == frame:GetAttribute("state-slot") then return end
-    frame:SetAttribute("state-slot", value)
-    local handle = setmetatable({
+-- A frame's handle as the game's snippets get one: its own methods, and the bindings it may set its own.
+local function Handle(frame)
+    return setmetatable({
         ClearBindings = function() overrides[frame] = nil end,
         SetBindingClick = function(_, _, key, name, mouse)
             overrides[frame] = overrides[frame] or {}
@@ -224,7 +220,35 @@ local function Resolve(frame, words)
         if type(method) == "function" then return function(_, ...) return method(frame, ...) end end
         return method
     end })
-    W.AsGame(function() assert(loadstring("local self, stateid, newstate = ...\n" .. frame:GetAttribute("_onstate-slot")))(handle, "slot", value) end)
+end
+-- A header runs a state's snippet, secure, whenever that state is set (SecureHandler_StateOnAttributeChanged).
+W.templates.SecureHandlerStateTemplate = function(header)
+    function header:SetAttribute(name, value)
+        methods.SetAttribute(self, name, value)
+        local state = name:match("^state%-(.+)")
+        local body = state and self:GetAttribute("_onstate-" .. state)
+        if body then
+            W.AsGame(function() assert(loadstring("local self, stateid, newstate = ...\n" .. body))(Handle(self), state, value) end)
+        end
+    end
+end
+-- The game's driver (SecureStateDriver.lua, resolveDriver) sets the state only when it changes.
+local function Resolve(frame, words)
+    local value = SecureCmdOptionParse(words)
+    if value == nil or value == frame:GetAttribute("state-slot") then return end
+    frame:SetAttribute("state-slot", value)
+end
+-- A wrap of a frame's OnAttributeChanged (SecureHandlers.lua, Wrapped_Attribute): at each attribute set but one of "_",
+-- its snippet runs in the header's environment, the header as owner.
+SecureHandlerWrapScript = function(frame, script, header, body)
+    assert(script == "OnAttributeChanged", "only that script is wrapped here")
+    local set = frame.SetAttribute
+    local run = assert(loadstring("local self, name, value = ...\n" .. body))
+    setfenv(run, { owner = Handle(header), tonumber = tonumber })
+    function frame:SetAttribute(name, value)
+        set(self, name, value)
+        if not name:match("^_") then W.AsGame(run, Handle(self), name, value) end
+    end
 end
 RegisterStateDriver = function(frame, state_, words)
     if state_ == "slot" then
@@ -436,7 +460,10 @@ Reach.TakeKey(other)
 check(Bound("G") == nil, "and the last one taken away")
 
 check(Reach.PlaceOf(Reach.BARS[1], 3, 2) == "ActionButton3:2", "a place on Bar 1 names its page")
-check(Reach.PlaceOf(Reach.BARS[6], 3, 2) == "MultiBar5Button3", "no other bar has pages")
+check(Reach.PlaceOf(Reach.BARS[6], 3) == "MultiBar5Button3", "no other bar has pages")
+check(Reach.PlaceOf(Reach.BARS[6], 3, 9) == "MultiBar5Button3:9" and select(3, Reach.Parts("MultiBar5Button3:9")) == 9,
+    "but a row its button shows (a druid's Bar 9 on Bar 6)")
+check(Reach.Words("MultiBar5Button3:9") == "Bar 9" and Reach.Words("MultiBar5Button3") == "Bar 6", "said by the row's number")
 local bar, button, page = Reach.Parts("ActionButton3:2")
 check(bar == Reach.BARS[1] and button == 3 and page == 2, "read back")
 check(Reach.Parts("MultiBar5Button12") == Reach.BARS[6], "a bar with a digit in its name")
@@ -506,6 +533,63 @@ check(next(drivers) == nil, "taken off, the game's button is the game's")
     Reach.TakeKey(rend)
     check(next(drivers) == nil and not first._shown and not third._shown, "all taken off")
     state["bar:1"] = nil
+end)()
+
+-- A druid's Bar 6 swaps with the form (Abilities): a macro lies on the row the button showed when it was placed, Bar 6's
+-- own, 9 or 10, and shows there alone, with the button's key, in a fight too (Saneroki, 2026-11-06: "the macro
+-- placements don't carry over per bar swap. They are fixed").
+;(function()
+    local fourth = rawget(_G, "MultiBar5Button4") or CreateFrame("Button", "MultiBar5Button4", bars)
+    fourth:Show()
+    local keyOf = GetBindingKey
+    GetBindingKey = function(name) if name == "MULTIACTIONBAR5BUTTON4" then return "4" end return keyOf(name) end
+    -- Abilities' snippet as the game runs it: the row on the button's own "actionpage", none for the bar's own.
+    local function Turn(row) W.AsGame(function() fourth:SetAttribute("actionpage", row) end) end
+    Turn(9)
+    Macros.Place.Start(function() end)
+    local laid
+    for _, each in ipairs(Macros.Place.squares) do
+        if each:IsShown() and each.place:find("^MultiBar5Button4") then laid = each.place end
+    end
+    Macros.Place.Stop()
+    check(laid == "MultiBar5Button4:9", "Bar 6 showing Bar 9: a macro put there is Bar 9's: " .. tostring(laid))
+    local own, bear, cat = Macro(Spell("Slam")), Macro(Spell("Rend")), Macro(Spell("Shield Block"))
+    Reach.SetPlace(own, "MultiBar5Button4")
+    Reach.SetPlace(bear, "MultiBar5Button4:9")
+    Reach.SetPlace(cat, "MultiBar5Button4:10")
+    local faces = { _G.SaneUIMacroFace_MultiBar5Button4, _G.SaneUIMacroFace_MultiBar5Button4_9, _G.SaneUIMacroFace_MultiBar5Button4_10 }
+    local function Shown()
+        local shown = {}
+        for index, row in ipairs({ "6", "9", "10" }) do
+            if faces[index]._shown then shown[#shown + 1] = row end
+        end
+        return table.concat(shown, " ")
+    end
+    local function Keyed(macro)
+        for header in pairs(drivers) do
+            local keys = overrides[header]
+            if keys and keys["4"] then return keys["4"] == Press.Name(macro) .. ":LeftButton" end
+        end
+        return false
+    end
+    check(Shown() == "9" and Keyed(bear), "Bear Form: Bar 9's macro alone, on the button's key")
+    W.Combat(true)
+    Turn(10)
+    check(Shown() == "10" and Keyed(cat), "Cat Form in a fight: Bar 10's")
+    Turn(nil)
+    check(Shown() == "6" and Keyed(own), "a human again: Bar 6's own")
+    W.Combat(false)
+    Turn(9)
+    Reach.Update()
+    check(Shown() == "9" and Keyed(bear), "set again as saved, the row the button shows now")
+    Reach.TakePlace(bear)
+    check(Shown() == "" and not Keyed(bear), "taken off Bar 9: none there, the game's own button")
+    Turn(nil)
+    check(Shown() == "6", "and Bar 6's still on its own")
+    Reach.TakePlace(own)
+    Reach.TakePlace(cat)
+    check(next(drivers) == nil and Shown() == "", "all taken off")
+    GetBindingKey = keyOf
 end)()
 
 -- Deleted on another character: its key and place fall away here at the login.
