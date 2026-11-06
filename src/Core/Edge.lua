@@ -91,7 +91,9 @@ local Core = SaneUI.Core
 --  has to come anew. One push is one change: after it the strip counts again
 --  only once the mouse has gone some way from that edge or corner (the window's
 --  motion moves the strip from under the mouse and back, which is no new push);
---  meanwhile a look a few times a second sees whether it has gone.
+--  meanwhile a look a few times a second sees whether it has gone. A held
+--  button stops it, unless the cursor carries something (an item dragged out
+--  of the full bags goes to the corner, the bags go back, it goes on the bars).
 --
 --  With Hotcorner requires leftclick (the section's expandClick, each window's
 --  own: the bags may want a click while the map does not) the mouse's coming does nothing: a left click in the strip or the square
@@ -477,11 +479,14 @@ end
 
 -- The mouse came into a strip (key: its side, or "corner"): it is at the screen's edge where the window
 -- touches it, or in its corner. Once a visit: not again before the mouse has gone from there. Not if the
--- window was placed under it a moment ago, nor while a button is held (a drag), nor in Edit Mode, where
--- windows are arranged.
+-- window was placed under it a moment ago, nor while a button is held with nothing on the cursor (a
+-- window moved, the camera turned), nor in Edit Mode, where windows are arranged. Held with something
+-- on the cursor (an item, a spell, a macro), it is carried to be dropped: the full window goes back so
+-- it can go onto the action bars, and fills the screen again for a drop into it.
 function methods:Pushed(key)
     if self.pushed or Clicks(self) then return end
-    if GetTime() < self.quiet or IsMouseButtonDown() or Core.EditMode.active then return end
+    if GetTime() < self.quiet or Core.EditMode.active then return end
+    if IsMouseButtonDown() and not GetCursorInfo() then return end
     local usable = self.window.options.usable
     if usable and not usable() then return end
     self.pushed = key or "corner"

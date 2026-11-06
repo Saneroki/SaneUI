@@ -469,7 +469,9 @@ but for a window to try those with (`/sane window`).
     of `Edge.CORNER` (4) pixels in that corner, so a corner's two edges do not set it off. Strata `DIALOG`,
     fixed, it only takes the mouse's
     coming (`SetMouseMotionEnabled`): its `OnEnter` is the push. Not within `Edge.QUIET` (0.25 s) after the
-    window was placed (a window let go at the edge, under the mouse), not while a button is held, not while
+    window was placed (a window let go at the edge, under the mouse), not while a button is held with nothing
+    on the cursor (a window moved, the camera turned; with an item, spell or macro on it, `GetCursorInfo`, it
+    is a drag to drop it: the full bags go back for the action bars), not while
     `usable` says no. Then size and place go, frame by frame, from where the window is to the whole screen
     (anchored to it at the end, `SetAllPoints(UIParent)`) or back to `Dock.Rect` of its zone at the size it
     had (then `window:Place()`). One window fills the screen at a time: as one begins to, every other shown

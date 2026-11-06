@@ -689,7 +689,7 @@ check(not edge.full, "a strip that came under the mouse a moment ago does nothin
 W.Wait(1)
 W.held = true
 strip:GetScript("OnEnter")(strip)
-check(not edge.full, "nor while a button is held: something is dragged")
+check(not edge.full, "nor while a button is held with nothing on the cursor: a window is moved")
 W.held = false
 strip:GetScript("OnEnter")(strip)
 local clock = wide._group
@@ -743,9 +743,11 @@ check(menu._items[1].checked == nil and type(menu._items[2].checked) == "functio
     "a kept choice is a checkbox, not ticked while ours is the one")
 
 at(wide, 0, 0)
+W.held, W.cursor = true, { kind = "item", id = 159 }
 strip:GetScript("OnEnter")(strip)
+W.held, W.cursor = false, nil
 check(not edge.full and edge.away and fills[2] == false and clock.playing and edge.to[3] == 380 and edge.to[2] == 410,
-    "pushed there again, it goes back to its size in its zone")
+    "pushed there again with an item dragged out of it (a button held, the item on the cursor), it goes back to its size in its zone: the bars are free for the drop")
 clock:Run(0.5)
 local midway = wide._width
 W.Wait(Edge.LOOK)
