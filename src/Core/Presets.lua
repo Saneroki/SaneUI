@@ -19,15 +19,16 @@ local Core = SaneUI.Core
 --      Core.Presets.VERSION
 --      Core.Presets.profiles[name]   { [module] = { [switch] = value } }
 -------------------------------------------------------------------------------
-local Presets = { VERSION = 4, profiles = {} }
+local Presets = { VERSION = 5, profiles = {} }
 Core.Presets = Presets
 
--- What both Accountwide and Speedleveling hold. Not the view distance, the horizon or the world preload: those
--- stay the game's, as its graphics menu sets them. With ours too (farclip and horizonClip 10000, horizonStart 6000,
--- preload off) Forever's client crashed in the Ruins of Lordaeron, written at the login or already in Config.wtf,
--- the addon off (Saneroki, 2026-11-06); the rest came back to find out whether it was these.
+-- What both Accountwide and Speedleveling hold. No water detail: its 3 crashed Forever's client in the Ruins of
+-- Lordaeron, and Sane UI never sets it (Sync.Barred; Saneroki, 2026-11-06).
 local RECOMMENDED = {
-    -- How much the world shows.
+    -- How far and how much the world shows.
+    farclip = "10000",               -- terrain and buildings out to the engine's ceiling
+    horizonClip = "10000",           -- the sky's geometry out to that terrain
+    horizonStart = "6000",           -- the horizon's fog far off, far mountains clear
     groundEffectDensity = "256",     -- the most grass and flowers
     groundEffectDist = "500",        -- out to 500 yards round you
     groundEffectFade = "500",        -- and fading out only at that edge
@@ -35,18 +36,17 @@ local RECOMMENDED = {
     shadowMode = "4",                -- the finest shadows
     shadowTextureSize = "2048",      -- without jagged edges
     SSAO = "4",                      -- the most ambient occlusion
-    -- No water detail: Sane UI never sets it (Sync.Barred).
     -- The frame rate, in front, behind and aimed at.
     maxFPS = "115", useMaxFPS = "1",
     maxFPSBk = "115", useMaxFPSBk = "1",
     targetFPS = "115", useTargetFPS = "1",
+    -- Loading screens: the game does not wait for what is not needed at once.
+    worldPreloadNonCritical = "0",
+    worldPreloadHighResTextures = "0",
     -- A little more room.
     cameraDistanceMaxZoomFactor = "2.6", -- the camera out as far as the game lets it
     screenshotQuality = "10",
 }
-
--- The CVars of how far the world shows and how it loads: never in a preset (dev/tests/core.lua holds it).
-Presets.WORLD = { "farclip", "horizonClip", "horizonStart", "worldPreloadNonCritical", "worldPreloadHighResTextures" }
 
 -- Where the two differ Accountwide names the game's own value: several of these are kept by the computer, not the
 -- character, and a character on it must not be left with what one on Speedleveling set.

@@ -6,6 +6,11 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 150 (Inventory), 128 (sheet), 349 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: the presets' view distance, horizon and world preload back (Saneroki, 2026-11-06)
+Saneroki: "Yes, bring them back". Water detail was the crash in the Ruins of Lordaeron, not these.
+- **`src/Core/Presets.lua`:** farclip and horizonClip 10000, horizonStart 6000, worldPreloadNonCritical and worldPreloadHighResTextures 0 back in `RECOMMENDED`; `Presets.WORLD` gone. `VERSION` 5: a profile that lacks them gets them at the next login, what it holds stays (his four saves lost them on card #377).
+- **Tests:** `dev/tests/core.lua`. `src/Core/README.md`, `Doc/changelog.txt`, card #377.
+
 ### Core: water detail barred; it crashed Forever's client in the Ruins of Lordaeron (Saneroki, 2026-11-06)
 The bug hunt found it: standing in the Ruins, `/sane hunt shadowMode` (4) and `/sane hunt SSAO` (4) held; `/sane hunt waterDetail` wrote 3 at 21:52:04.426 and the client crashed the same second (ERROR #132, as all thirteen before). Saneroki: "Set that everywhere you can to game default and don't let SaneUI edit or save or load that setting."
 - **`src/Core/Sync/Game.lua`:** `BARRED`: waterDetail, RAIDWaterDetail and the game's Liquid Detail that sets them (graphicsLiquidDetail, raidGraphicsLiquidDetail), each `Sync.Leave`d (no part, no CVar kept by name writes or reads it); `Sync.Barred(name)`; `Sync.Settable` answers "barred".
