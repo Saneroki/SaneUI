@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Quest timers: a timed quest's time left counts down at the top of the
+  quest log, and stays in sight while the log is hidden at rest or
+  switched off.
 - Atlas: the painted map shows the whole of the Eastern Kingdoms and
   most of Kalimdor, painted from straight above; Kalimdor's south
   follows.

@@ -184,6 +184,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, on at first): it
   shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
   group (`Core.Rest`, the tray of its items with it). Over the full map it always shows.
+  **A timed quest's time left stands at its top,** under its title bar and over the list, a line for each, the soonest
+  first: *2:05  Wolves Across the Border*, counting down, red in its last minute. It stays in sight while the rest of
+  the log rests out of sight, is folded or switched off, so you always know a timer runs (the game's own timers go with
+  its quest tracker).
   Its title bar says how many quests you have of how many you may, and how they are sorted:
   *Proximity* (the nearest first, at first), *Level*, *Zone* (the game's own, under its zones) or *Type* (under
   Elite, Group, Dungeon and the like; the rest Normal; a quest always shows under its zone, however the game's own log
@@ -533,6 +537,15 @@ is small, and the maps of the dungeons and raids. The plan is in
   `PreClick` and links in `PostClick`, out of a fight only (locked, a click does both). The tooltip is the tracker's
   `SetQuestLogSpecialItem`, by the log's index of the quest now, `SetItemByID` once it left the log. The game sends no
   event for an item's charges: `BAG_UPDATE_DELAYED` compares `Special` with the rows.
+  **The quest timers** (`Timers`, `Timed`, `Count`): a frame of their own on `UIParent` (not in `Core.Rest`'s set, so
+  they stay seen while the log rests at alpha 0, is folded or hidden), at the panel's top between its margins, in the
+  log's layer and above it (`QuestLog.OVER`), the list's top moved down by their height (`room`, `Room`). Read at every
+  `QuestLog.Refresh`, the log shown or not, as the game's own read them: Forever's Quest Timers panel
+  `C_QuestLog.GetQuestTimers` (the seconds left), else, as Retail's tracker, `C_QuestLog.GetTimeAllowed` of each quest
+  neither done nor failed; kept as the `GetTime` each runs out. Shown only while the game's tracker is lent away
+  (`lent`), so never beside the game's own (Edit Mode, *Show the game's map*, the module stood down). Counted down by a
+  ticker of `QuestLog.CLOCK` seconds while they show (`DockWatch.Clock`), the last `QuestLog.HURRY` in Failed's red;
+  the line mirrored with the log (the time at the screen's edge).
   A quest's text from `GetQuestLogQuestText`, its rewards by the quest's ID (`GetQuestLogRewardXP`,
   `GetQuestLogRewardMoney`, `GetNumQuestLogRewards`, `GetQuestLogRewardInfo`, `GetNumQuestLogChoices`,
   `GetQuestLogChoiceInfo`, `C_QuestInfoSystem`'s currencies and spells: no quest chosen for them), read only while the
@@ -949,6 +962,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-06, quest timers always in sight:** Saneroki asked whether the quest log shows a timed quest's time. It
+  showed none, and it hides the game's quest tracker, on which Forever's own Quest Timers panel stands, so no timer
+  showed anywhere until *Failed*. His word: "The timer should always show even when the quest tracker / log is hidden.
+  Because I like things hidden unless moused over. But i need to know when i have a timer". Now a strip at the log's
+  top counts each down, in sight while the log rests, is folded or switched off.
 - **2026-11-06, a button made at the login in the satchel:** Saneroki found no button of the guild addon Sane UI knows
   in the satchel. That addon makes its button only at the login, and another addon of his gathers minimap buttons
   into a bar of its own a second after the login; the satchel looked again only after three seconds (its 2 seconds

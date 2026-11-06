@@ -74,7 +74,8 @@ local _, ns = ...
 --  it shows with the mouse on its words, title bar or items, and as your unit frames and action bars do while something
 --  goes on. Its items' tray goes with it.
 --  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker),
---  but in Edit Mode, where it is the game's to place.
+--  but in Edit Mode, where it is the game's to place. Its quest timers with it: ours stand at the top of the log, over
+--  the list, in sight while one runs, the log at rest, folded or off (The quest timers; Saneroki, 2026-11-06).
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -89,6 +90,10 @@ QuestLog.FIRST = { x = 12, y = -84 } -- its first place, from the screen's top l
 QuestLog.FIRST_SMALL = { x = 0, y = 0 } -- on the screen alone: the screen's top left corner
 QuestLog.SORTS = { "proximity", "level", "zone", "type" } -- a click on its title: the next of them, round
 QuestLog.RESORT = 2       -- sorted by proximity: the order looked at again every so many seconds while in sight
+QuestLog.CLOCK = 1        -- the quest timers counted down every so many seconds while they show (The quest timers)
+QuestLog.HURRY = 60       -- a timer's last seconds: in Failed's red
+QuestLog.TIMER = 18       -- a line of the quest timers
+QuestLog.TIMERS_ROOM = 4  -- under them, over the list
 QuestLog.REFLOW = 0.1     -- seconds after the last step of a size change that an open quest's text is wrapped anew
 QuestLog.BACK = 0.88      -- its background's opacity over the full map (on the screen alone: none)
 QuestLog.EDGE = 10        -- room inside its edges
@@ -121,6 +126,7 @@ QuestLog.TEXT = {
     ready = Core.Word("QUEST_WATCH_QUEST_READY", "Ready for turn-in"),
     empty = "No quests. Quests you accept are listed here.",
     failed = Core.Word("FAILED", "Failed"),
+    timer = "%s  %s", -- a quest timer's line: its time left, then the quest (mirrored: the other way round)
     watch = Core.Word("TRACK_QUEST", "Track Quest"), unwatch = Core.Word("UNTRACK_QUEST", "Untrack Quest"),
     details = Core.Word("QUEST_DETAILS", "Quest Details"),
     share = Core.Word("SHARE_QUEST", "Share Quest"),
@@ -165,6 +171,12 @@ local stale = true -- the log changed while out of sight
 local order = ""   -- the quests in the order shown (Proximity: drawn anew once it changes)
 local heading      -- the title bar's words now
 local ticker       -- sorted by proximity and in sight: the order looked at again (Tick)
+local ends = {}    -- [quest] = the game's time (GetTime) a timed quest runs out at (Timers)
+local timed = {}   -- the timed quests the strip shows, soonest first, each { quest, name } (Timed)
+local timers       -- their strip at the top of the log, in sight while one runs (The quest timers)
+local room = 0     -- how high it is: the list stands under it (Room)
+local countdown    -- its ticker while it shows
+local Timed        -- the strip drawn anew from the game's timers (The quest timers)
 local away, lent   -- the hidden frame the game's quest tracker is lent to (QuestLog.Tracker)
 local rest         -- on the screen alone, out of sight at rest (Core.Rest; QuestLog.Rested)
 local doors = false -- the title bar is a way in for the mouse (Doors)
@@ -1289,6 +1301,7 @@ function QuestLog.Tracker()
         lent = nil
         was:Return()
     end
+    Timed() -- where the game's tracker is back, its own timers show
 end
 Core.EditMode.Watch(ns.Guard(QuestLog.Tracker))
 
@@ -1339,11 +1352,15 @@ local function Margin(side)
     return (not full and (side == "RIGHT") == mirrored) and QuestLog.EDGE_SMALL or QuestLog.EDGE
 end
 
--- The list and its title at the side it stands at (Margin), its words from there inwards.
+-- The list and its title at the side it stands at (Margin), its words from there inwards; the quest timers over the
+-- list, which stands under them.
 local function Room()
     local left, right = Margin("LEFT"), Margin("RIGHT")
-    box:SetPoint("TOPLEFT", left, 0)
+    box:SetPoint("TOPLEFT", left, -room)
     box:SetPoint("BOTTOMRIGHT", -right, QuestLog.EDGE)
+    timers:SetPoint("TOPLEFT", panel, "TOPLEFT", left, 0)
+    timers:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -right, 0)
+    for _, line in ipairs(timers.lines) do line:SetJustifyH(mirrored and "RIGHT" or "LEFT") end
     panel.empty:SetPoint("TOPLEFT", left, 0)
     panel.empty:SetPoint("TOPRIGHT", -right, 0)
     panel.empty:SetJustifyH(mirrored and "RIGHT" or "LEFT")
@@ -1359,6 +1376,99 @@ local function Sided()
     Room()
     if changed then QuestLog.Refresh() end
     seat()
+end
+
+-------------------------------------------------------------------------------
+--  The quest timers
+-------------------------------------------------------------------------------
+--  A timed quest's time left (Saneroki, 2026-11-06): "The timer should always show even when the quest tracker / log
+--  is hidden ... i need to know when i have a timer". A strip with a line for each at the top of the log, under its
+--  title bar and over the list, the soonest first: the time left at the side the log stands at, then the quest
+--  (2:05  Wolves Across the Border), its last QuestLog.HURRY seconds in Failed's red. A frame of its own, not the
+--  log's: in sight while a timer runs, whether the log rests out of sight, is folded, switched off or in sight, in a
+--  fight too; counted down every QuestLog.CLOCK seconds while it shows. Only while the game's quest tracker is out of
+--  sight (lent, QuestLog.Tracker): where the game's is back, its own timers show on it.
+--  Read as the game's own read them: Forever's Quest Timers panel C_QuestLog.GetQuestTimers (each quest with its
+--  seconds left); Retail's tracker, which has no such list, C_QuestLog.GetTimeAllowed of each quest still to do (its
+--  time, and how much of it went by).
+local function Timers()
+    wipe(ends)
+    local now = GetTime()
+    if C_QuestLog.GetQuestTimers then
+        local list = Core.Ask(C_QuestLog.GetQuestTimers)
+        for _, timer in ipairs(type(list) == "table" and list or {}) do
+            local quest, left = Plain(timer.questID), Plain(timer.questTimer)
+            if type(quest) == "number" and type(left) == "number" and left > 0 then ends[quest] = now + left end
+        end
+        return
+    end
+    for index = 1, Plain(Core.Ask(C_QuestLog.GetNumQuestLogEntries)) or 0 do
+        local info = Core.Ask(C_QuestLog.GetInfo, index)
+        local quest = type(info) == "table" and not info.isHeader and info.questID
+        if quest and not Core.Ask(C_QuestLog.IsComplete, quest) and not Core.Ask(C_QuestLog.IsFailed, quest) then
+            local total, gone = Core.Ask(C_QuestLog.GetTimeAllowed, quest)
+            if type(total) == "number" and type(gone) == "number" and gone < total then ends[quest] = now + total - gone end
+        end
+    end
+end
+
+local function Sooner(a, b)
+    return ends[a.quest] < ends[b.quest]
+end
+
+-- Its lines' words now: each quest's time left, as the game's clock writes it (1:05; DockWatch.Clock), and its name.
+local function Count()
+    local now = GetTime()
+    for index, each in ipairs(timed) do
+        local left = math.max(0, ends[each.quest] - now)
+        local clock = (left <= QuestLog.HURRY and "|cffff3333%s|r" or "|cffffffff%s|r"):format(ns.DockWatch.Clock(left))
+        local line = mirrored and QuestLog.TEXT.timer:format(each.name, clock) or QuestLog.TEXT.timer:format(clock, each.name)
+        timers.lines[index]:SetText(line)
+    end
+end
+
+-- Counted down while it shows, else not.
+local function Counting(on)
+    if on and not countdown then
+        countdown = C_Timer.NewTicker(QuestLog.CLOCK, ns.Guard(function() Count() end))
+    elseif not on and countdown then
+        countdown:Cancel()
+        countdown = nil
+    end
+end
+
+-- The strip drawn anew from the game's timers, as the log changes or the game's tracker comes or goes: a line for
+-- each, shown or not, the list moved under it.
+function Timed()
+    if not timers then return end
+    Timers()
+    wipe(timed)
+    if lent and not ns.off then
+        for quest in pairs(ends) do
+            timed[#timed + 1] = { quest = quest, name = Core.Ask(C_QuestLog.GetTitleForQuestID, quest) or ("#" .. quest) }
+        end
+        table.sort(timed, Sooner)
+    end
+    for index = #timers.lines + 1, #timed do
+        local line = timers:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        line:SetPoint("TOPLEFT", 0, -(index - 1) * QuestLog.TIMER)
+        line:SetPoint("TOPRIGHT", 0, -(index - 1) * QuestLog.TIMER)
+        line:SetHeight(QuestLog.TIMER)
+        line:SetWordWrap(false)
+        line:SetJustifyH(mirrored and "RIGHT" or "LEFT")
+        timers.lines[index] = line
+    end
+    for index, line in ipairs(timers.lines) do line:SetShown(index <= #timed) end
+    local high = #timed > 0 and #timed * QuestLog.TIMER + QuestLog.TIMERS_ROOM or 0
+    timers:SetHeight(math.max(high, 1))
+    timers:SetShown(high > 0)
+    if high ~= room then
+        room = high
+        Room()
+        seat()
+    end
+    Count()
+    Counting(high > 0)
 end
 
 -- The sorting after this one (QuestLog.SORTS, round).
@@ -1457,6 +1567,10 @@ function QuestLog.Build()
     view:SetElementInitializer("Button", function(element, row) ns.Safe("quest log", Draw, element, row) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
     box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(function() seat() end), QuestLog)
+    -- The quest timers: a frame of their own over the list, which rests and goes with the log, they do not.
+    timers = CreateFrame("Frame", nil, UIParent)
+    timers:Hide()
+    timers.lines = {}
 
     -- What a quest's text will take in the list: as its row draws it (Draw), not to be seen.
     measure = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -1492,6 +1606,7 @@ end
 -- The list drawn anew from the game's log, if it is in sight; else once it is. The title bar says how many quests
 -- of how many and how they are sorted.
 function QuestLog.Refresh()
+    Timed()
     if not frame or not frame:IsShown() then
         stale = true
         return
@@ -1540,6 +1655,8 @@ local function Dress(on)
     full = on
     Body()
     frame:SetFrameStrata(on and "DIALOG" or "LOW") -- the full map stands in the layer HIGH (Core's Edge)
+    timers:SetFrameStrata(frame:GetFrameStrata())
+    timers:SetFrameLevel(frame:GetFrameLevel() + QuestLog.OVER)
     handle:Use(KEY[on], FIRST[on])
     handle:Refresh()
     Doors()

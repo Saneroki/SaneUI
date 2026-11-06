@@ -387,6 +387,11 @@ When the window fills the screen:
 - **On the screen alone at rest out of sight** (Saneroki, 2026-11-01; built): "the same for the Questlog as option which
   also can be turned on by default": as the unit frames and action bars (`Doc/ideas/Combat.md`, `Core.Rest`). Over the
   full map it stays, opened to be seen.
+- **Quest timers always in sight (Saneroki, 2026-11-06; built):** a timed quest's time left, counted down: "The timer
+  should always show even when the quest tracker / log is hidden. Because I like things hidden unless moused over. But
+  i need to know when i have a timer". A strip at the top of the log, over the list, a line a quest (`2:05  Wolves
+  Across the Border`), the soonest first, its last minute red; in sight while the log rests out of sight, is folded or
+  switched off. Our log hides the game's tracker, and Forever's own timers (its Quest Timers panel) stand on it.
 - **The quest log as Saneroki asked it (Saneroki, 2026-10-21):**
   - **No scroll bar:** the mouse over the list and its wheel scroll it. Only while the list is longer than fits
     and the mouse is on it, a scroll bar shows, on the side the window is docked to (at the left edge: its left).

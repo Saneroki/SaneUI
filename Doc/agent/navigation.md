@@ -9,7 +9,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 
 1. One window, docked `TOPRIGHT`, strata LOW like the game's minimap (`Window.lua`). Small: the minimap. Full screen
    (the corner filled by Core's Edge, Esc back): the map, the quest log beside it (`QuestLog.lua`; pinned on the screen
-   while the map is small too, in place of the game's tracker) and a top bar (`TopBar.lua`: the log's button, the
+   while the map is small too, in place of the game's tracker; its quest timers at its top, in sight while it rests or
+   is off) and a top bar (`TopBar.lua`: the log's button, the
    views, the map selector, the dungeons, *Follow me*, the pin filter).
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the

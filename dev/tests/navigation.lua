@@ -3983,6 +3983,79 @@ end)()
     box._width = nil
 end)()
 
+-- The quest timers (Saneroki, 2026-11-06): a strip at the top of the log, over the list, a line for each timed quest,
+-- the soonest first, counted down, red in its last minute; in sight while the log rests out of sight, is folded or
+-- switched off; gone where the game's tracker is back. Forever's read from C_QuestLog.GetQuestTimers, Retail's from
+-- C_QuestLog.GetTimeAllowed.
+;(function()
+    local QuestLog, log, game = ns.QuestLog, ns.QuestLog.handle, W.retailRun and "retail" or "forever"
+    local box, strip
+    for _, widget in ipairs(W.frames) do
+        if widget.provider and widget.view and widget.Draw then box = widget end
+        if widget.lines and widget._parent == UIParent then strip = widget end
+    end
+    local function Top()
+        for _, each in ipairs(box._points) do if each[1] == "TOPLEFT" then return each[5] end end
+    end
+    local function Running()
+        local count = 0
+        for _, ticker in ipairs(W.tickers) do if not ticker._cancelled then count = count + 1 end end
+        return count
+    end
+    local function Changed()
+        W.Fire("QUEST_LOG_UPDATE")
+        W.Wait(0)
+    end
+    check(strip and not strip._shown and Top() == 0, "no timed quest: no timers, the list right under the title bar")
+    W.Play("forever")
+    local running, idle = { { questID = 7, questTimer = 125 }, { questID = 8, questTimer = 61 } }, Running()
+    C_QuestLog.GetQuestTimers = function() return running end
+    Changed()
+    local lines = strip.lines
+    check(strip._shown and strip._strata == "DIALOG" and lines[1]._shown and lines[2]._shown
+        and lines[1]._text == "|cffffffff1:01|r  Kobold Camp Cleanup"
+        and lines[2]._text == "|cffffffff2:05|r  Wolves Across the Border",
+        "Forever: a line for each of the game's timers, the soonest first, its time left, then the quest")
+    check(Top() == -(2 * QuestLog.TIMER + QuestLog.TIMERS_ROOM) and Running() == idle + 1,
+        "the list under them; counted down")
+    W.Wait(QuestLog.CLOCK)
+    check(lines[1]._text == "|cffff33331:00|r  Kobold Camp Cleanup" and lines[2]._text == "|cffffffff2:04|r  Wolves Across the Border",
+        "a second later one second less, the last minute in Failed's red")
+    QuestLog.Fold(true)
+    check(strip._shown, "the list folded away: the timers stay")
+    QuestLog.Fold(false)
+    W.SmallAndBack(function()
+        local general, animations = Core.general, Core.general.animations
+        general.animations = false
+        Core.Set(ns.name, "questLogRest", false)
+        Core.Set(ns.name, "questLogRest", true)
+        check(log.frame._alpha == 0 and strip._shown and strip._alpha ~= 0 and strip._strata == "LOW",
+            "the log at rest out of sight on the screen alone: its timers in sight")
+        general.animations = animations
+        EventRegistry:TriggerEvent("EditMode.Enter")
+        check(not strip._shown, "Edit Mode: the game's quest tracker back, with its own timers; ours gone")
+        EventRegistry:TriggerEvent("EditMode.Exit")
+        check(strip._shown, "and back as it closes")
+    end)
+    local switch
+    for _, widget in ipairs(W.frames) do if widget._text == ns.TopBar.TEXT.questLog then switch = widget end end
+    switch._scripts.OnClick(switch)
+    check(not log.frame._shown and strip._shown, "the log switched off: its timers stay")
+    switch._scripts.OnClick(switch)
+    check(log.frame._shown and strip._shown, "and on again")
+    W.Play("retail")
+    C_QuestLog.GetTimeAllowed = function(quest) if quest == 7 then return 300, 100 end end
+    Changed()
+    check(not C_QuestLog.GetQuestTimers and strip._shown and lines[1]._text == "|cffffffff3:20|r  Wolves Across the Border"
+        and not lines[2]._shown and Top() == -(QuestLog.TIMER + QuestLog.TIMERS_ROOM),
+        "Retail: from each quest's time allowed and how much of it went by; one line, the list under it")
+    W.Play(game)
+    wipe(running)
+    C_QuestLog.GetQuestTimers, C_QuestLog.GetTimeAllowed = nil, nil
+    Changed()
+    check(not strip._shown and Top() == 0 and Running() == idle, "no timer left: the strip gone, the list up again, no counting")
+end)()
+
 -- The route's golden line: the parts in view, under the pins.
 ns.Route.Show({ legs = { { kind = "walk", points = { { map = 1415, u = 500, v = -8950 }, { map = 1415, u = 0, v = -9250 } } },
                          { kind = "boat", points = { { map = 1415, u = 0, v = -9250 }, { map = 1415, u = 50000, v = 0 } } } } })
