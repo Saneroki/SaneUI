@@ -679,6 +679,27 @@ do
     for name in pairs(preset) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
 end
 
+-- The bug hunt (card #377): SaneUIDB.hunt holds Sync's writing back ---------------------------------
+do
+    for _, name in ipairs({ "huntThing", "keptThing" }) do
+        options.named[name], W.cvarInfo[name], W.cvars[name] = "4", { default = "x" }, "3"
+    end
+    SaneUIDB.hunt = true
+    Sync.Give()
+    W.cvars.huntThing = "2"
+    Sync.Capture()
+    check(W.cvars.huntThing == "2" and W.cvars.keptThing == "3", "true: Sync writes none of the game's settings")
+    check(options.named.huntThing == "4", "and reads nothing back: the profile keeps what it holds")
+    SaneUIDB.hunt = { "huntThing" }
+    Sync.Give()
+    check(W.cvars.huntThing == "2" and W.cvars.keptThing == "4", "a list: those CVars alone are held, the rest written")
+    W.cvars.keptThing = "5"
+    Sync.Capture()
+    check(options.named.huntThing == "4" and options.named.keptThing == "5", "the held one is not read back either")
+    SaneUIDB.hunt = nil
+    for _, name in ipairs({ "huntThing", "keptThing" }) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
+end
+
 -- Profiles read and write the game's settings too ------------------------------------------------
 local Profiles = Core.Profiles
 W.cvars.nameplateSize = "3"

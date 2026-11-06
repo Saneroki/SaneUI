@@ -132,10 +132,10 @@ function Sync.Keep(name, on)
     end
 end
 
--- A name that is no text (a hand-edited file) is left as it is.
+-- A name that is no text (a hand-edited file) is left as it is, and one left to another part (Sync.Leave) too.
 local function ReadNamed(named)
     for name in pairs(named) do
-        local value = type(name) == "string" and Core.Ask(Sync.Value, name)
+        local value = type(name) == "string" and not Sync.Left(name) and Core.Ask(Sync.Value, name)
         if type(value) == "string" then named[name] = value end
     end
 end
@@ -144,6 +144,19 @@ end
 -- not take is noted once, and the others are written all the same.
 local function WriteNamed(named)
     for name, value in pairs(named) do Sync.SetCVar(name, value) end
+end
+
+-------------------------------------------------------------------------------
+--  The bug hunt (card #377, Saneroki, 2026-11-06; temporary): which of what Sync writes crashes Forever's client
+--  in the Ruins of Lordaeron. SaneUIDB.hunt, set by hand in the saved file while the game is closed:
+--      true        Sync writes nothing into the game and reads nothing back: the profile stays as it is
+--      { names }   those CVars alone are held (Sync.Leave, at the first writing): neither written nor read,
+--                  the rest as always
+--  Told in chat at the login, so it is not left on by mistake.
+-------------------------------------------------------------------------------
+local function Hunt()
+    local hunt = type(SaneUIDB) == "table" and SaneUIDB.hunt
+    return (hunt == true or type(hunt) == "table") and hunt or nil
 end
 
 -------------------------------------------------------------------------------
@@ -158,7 +171,7 @@ end
 -- dropped. Core calls it before Sane UI's settings are saved anywhere. Not while a writing waits for
 -- a fight to end: the game still holds the old settings then (a profile just loaded would be lost).
 function Sync.Capture()
-    if not On() or not given or waiting then return end
+    if not On() or not given or waiting or Hunt() == true then return end
     local options, taken = Sync.options, {}
     for _, part in ipairs(Sync.parts) do
         if Sync.PartKept(part.id) then
@@ -201,7 +214,9 @@ end
 -- Writes the kept parts of the settings in use into the game; in a fight, once it is over. Another game's are
 -- not written: from now on this game's are read in their place.
 function Sync.Give()
-    if not On() then return end
+    local hunt = Hunt()
+    if not On() or hunt == true then return end
+    for _, cvar in ipairs(hunt or {}) do Sync.Leave(cvar) end
     for _, part in ipairs(Sync.parts) do
         if part.Prepare and Sync.PartKept(part.id) then Sync.Safe("preparing " .. part.id, part.Prepare) end
     end
@@ -283,7 +298,16 @@ Core.Options(Sync.name, {
 -- Core's saved settings are there, and in use where they should come from (Saved.lua and
 -- Profiles.lua listen before this file: they come first in the TOC).
 Core.On("ADDON_LOADED", function(name)
-    if name == ADDON then Sync.options = Core.Settings(Sync.name) end
+    if name ~= ADDON then return end
+    Sync.options = Core.Settings(Sync.name)
+    local hunt = Hunt()
+    if hunt == true then
+        Core.Print("Bug hunt: Sync writes none of the game's settings this session.")
+    elseif hunt then
+        local held = {}
+        for _, cvar in ipairs(hunt) do held[#held + 1] = tostring(cvar) end
+        Core.Print("Bug hunt: Sync holds back " .. (#held > 0 and table.concat(held, ", ") or "nothing") .. ".")
+    end
 end)
 
 local SETTLE = 2 -- seconds after the character is in the world and the game has its own settings

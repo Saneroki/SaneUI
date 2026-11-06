@@ -70,6 +70,10 @@ function Sync.Leave(name)
     if type(name) == "string" then left[name:lower()] = true end
 end
 
+function Sync.Left(name)
+    return type(name) == "string" and left[name:lower()] == true
+end
+
 -- [name] = value of those of the list this client has (a lent one: the player's own, Sync.Value); none left to
 -- another part.
 local function ReadCVars(list)
