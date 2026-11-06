@@ -193,8 +193,8 @@ it, so its size is about the memory it takes:
 | 1024 x 512 | 684 KB | 2 MB |
 | 1024 x 1024 | 1.3 MB | 4 MB |
 
-`assets/optimized/` holds about 250 MB (`du -sh assets/optimized`): most of it the Atlas' test pack (`Atlas/`) and
-Navigation's map sets (`Navigation/Art/Terrain/`, `Zones/`, `Sketches/`, `Coasts/`, `Indoors/`), then Core's
+`assets/optimized/` holds about 3.6 GB (`du -sh assets/optimized`): most of it the Atlas' pack (`Atlas/`, 3.4 GB), then
+Navigation's map sets (`Navigation/Art/Terrain/`, `Zones/`, `Sketches/`, `Coasts/`, `Indoors/`), Core's
 `Journal/`, caps and corners, Inventory's `Categories/`, the Nameplates', Social's, SpeedLeveling's and Tooltips' art,
 the `Fonts/` folders (Core, Lore, SpeedLeveling) and loose banners, icons, CombatText and FarMarks shapes at its root.
 What a module ships is its `assets/optimized/<Module>/Art/` (and `Fonts/`, `Sounds/`), put in with its code by

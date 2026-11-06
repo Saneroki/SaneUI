@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Atlas: the painted map shows the whole of the Eastern Kingdoms and
+  most of Kalimdor, painted from straight above; Kalimdor's south
+  follows.
 - Routes never use your hearthstone. When it would get you to the
   map pin sooner, the chat tells you once, with the minutes it saves.
 - Party frames: beside each member of a party their combat pet, or what

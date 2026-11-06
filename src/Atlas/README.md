@@ -1,6 +1,6 @@
 # Sane UI: Atlas
 
-**Status:** the code is there; the painted map is being made, and until it is, the module is not built · **Since:** 2026-10-19 · **Addon:** `SaneUI_Atlas` · **Game:** WoW: Forever only (`X-SaneUI-Games: forever`: its painted world is Forever's; interface 16001, 120105)
+**Status:** built with the world's tiles painted so far (2026-11-06: the Eastern Kingdoms whole, Kalimdor down to the row of squares 45; the rest shows the terrain until the job `worldtiles` has painted it and the pack is made again); not yet chosen art · **Since:** 2026-10-19 · **Addon:** `SaneUI_Atlas` · **Game:** WoW: Forever only (`X-SaneUI-Games: forever`: its painted world is Forever's; interface 16001, 120105)
 
 ## TL;DR
 The painted map of the whole world for Navigation: both continents painted as one map, every road, building and
@@ -41,10 +41,15 @@ the world (both continents, never one alone) a realistic render far out; no pins
   Navigation draws it): `Ready()`, `Levels()`, `Span(level)`, `Cells(level)`, `Cell(level, x, y)` (row,
   column), `Corner(level, row, column)` (x, y of the north-west corner), `Key(continent, level, row, column)`,
   `Has(key)`, `File(continent, level, row, column)`, `PIXELS`.
-- **Where the art lives:** `dev/tools/atlas` paints the map and writes the blocks and the index into
-  `assets/optimized/Atlas/` (`Art/`, `Index.lua`), never into `src/`: this folder holds the code only. `dev/build`
-  makes the addon from both (`BUILD/SaneUI_Atlas/`), and only once the index is there; rsync copies only what
-  changed.
+- **Where the art lives:** `dev/tools/atlas pack` writes the blocks and the index into `assets/optimized/Atlas/`
+  (`Art/`, `Index.lua`) from a run's squares, never into `src/`: this folder holds the code only. Since 2026-11-06
+  the run is the world's tiles (`dev/tools/map-layers tiles`, the GPU job `worldtiles`, in
+  `assets/generated/world-tiles`), packed as painted, as the world viewer shows them:
+  `dev/tools/atlas pack --out assets/generated/world-tiles --as-painted` with the game's files of map-layers' run
+  (`--adt`, `--tables`, `--minimap` from `assets/generated/map-layers/state.json`, the first time). A square not
+  painted yet has no block, and the terrain shows there; packed again, the blocks it no longer writes go.
+  `dev/build` makes the addon from both (`BUILD/SaneUI_Atlas/`), and only once the index is there; rsync copies
+  only what changed.
 
 ## Files
 
@@ -60,3 +65,5 @@ Tests: `dev/tests/navigation.lua` (the index, the grid, the level a zoom draws, 
 ## History
 - **2026-10-19:** the module: its format, the index read, what Navigation asks; Navigation offers the view Atlas
   while it is switched on and loads it when the view is first drawn.
+- **2026-11-06:** the world's tiles packed in place of the lab's test pack: 1212 of 1456 squares, 20,977 blocks
+  over the nine levels, 3.4 GB.
