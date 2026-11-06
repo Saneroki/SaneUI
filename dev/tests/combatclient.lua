@@ -109,6 +109,7 @@ function Client.Install(W)
     UnitReaction = function(unit) return Unit(unit).reaction or 5 end
     UnitSelectionColor = function() return 0, 1, 0, 1 end
     UnitCanAttack = function(a, b) return Unit(a == "player" and b or a).foe or false end
+    UnitCanAssist = function(a, b) return not Unit(a == "player" and b or a).foe and not Unit(a == "player" and b or a).enemy end
     UnitIsDeadOrGhost = function(unit) return Unit(unit).dead or false end
     UnitIsConnected = function(unit) return not Unit(unit).offline end
     UnitInParty = function(unit) return unit == "player" or unit:match("^party") ~= nil end
@@ -211,39 +212,7 @@ function Client.Install(W)
             if watching[index] == frame then table.remove(watching, index) end
         end
     end
-    -- The game's attribute driver (RegisterAttributeDriver): the attribute set to the first clause whose conditions
-    -- hold, as it is registered and at every tick; of conditions only [@unit,exists], the one Sane UI drives by.
-    local driven, driving = {}, {} -- [frame] = { attribute, values }; the frames in order
-    local function Resolve(values)
-        for clause in values:gmatch("[^;]+") do
-            local unit, value = clause:match("^%s*%[@([%w]+),exists%]%s*(%S+)%s*$")
-            if unit then
-                if UnitExists(unit) then return value end
-            else
-                return clause:match("^%s*(%S+)%s*$")
-            end
-        end
-    end
-    local function Drive(frame)
-        local attribute, value = driven[frame][1], Resolve(driven[frame][2])
-        if frame:GetAttribute(attribute) == value then return end
-        local combat = W.combat
-        W.combat = false -- the game's own driver touches secure frames in a fight
-        frame:SetAttribute(attribute, value)
-        W.combat = combat
-        local hook = frame:GetScript("OnAttributeChanged") -- the game tells the frame, as it does of any attribute set
-        if hook then hook(frame, attribute, value) end
-    end
-    RegisterAttributeDriver = function(frame, attribute, values)
-        if not driven[frame] then driving[#driving + 1] = frame end
-        driven[frame] = { attribute, values }
-        Drive(frame)
-    end
-    UnregisterAttributeDriver = function(frame) driven[frame] = nil end
     local function Watch()
-        for _, frame in ipairs(driving) do
-            if driven[frame] then Drive(frame) end
-        end
         for _, frame in ipairs({ unpack(watching) }) do -- a copy: a frame registered by a script waits for the next tick
             if watched[frame] then Seen(frame) end
         end

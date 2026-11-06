@@ -2,14 +2,15 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Group
---  The reminders placed on the party and raid frames (Reminders.GROUP, chosen
---  in the window where a bar is): each watched on every member those frames
---  show, your own slot too, its icon on that member's frame (GroupFace.lua,
---  from the health leftwards) while its settings want it, as on a bar: missing
---  or active, the offset, in or out of a fight, resting, only yours. None on
---  the dead and the offline; a party's family (a shout) on your own party
---  only; Members.MOST on a frame at most, in the order made. Off with the
---  reminders, or with the frames' switch (groupBuffs).
+--  The reminders shown on the health bars (Reminders.GROUP, Show on healthbars:
+--  Saneroki, 2026-11-06): each watched on every member the party and raid
+--  frames show, your own slot too, and on your own frame, your target's and
+--  your focus's (Units.lua), its icon on that frame (from the health
+--  leftwards) while its settings want it, as on a bar: missing or active, the
+--  offset, in or out of a fight, resting, only yours. A buff only on a unit you
+--  can help, a debuff on any; none on the dead and the offline; a party's
+--  family (a shout) on your own party only; Members.MOST on a frame at most, in
+--  the order made. Off with the reminders, or with the switch groupBuffs.
 --
 --  In a fight the game hides most auras from addons (ShouldSpellAuraBeSecret;
 --  a spell it never hides is read as ever). Then, for each member by their
@@ -80,20 +81,26 @@ local function Reaches(reminder, unit)
     return not (family and family.party) or Core.Ask(UnitInParty, unit) or Core.Ask(UnitIsUnit, unit, "player")
 end
 
--- The icons of the reminders on the frames that the member's auras and their settings want shown, into list (emptied
--- first); how many, Members.MOST at most.
+-- The icons of the reminders on the health bars that the unit's auras and their settings want shown, into list
+-- (emptied first); how many, Members.MOST at most.
 function Members.Missing(unit, list)
     wipe(list)
     if not On() or Core.Ask(UnitIsDeadOrGhost, unit) or Core.Ask(UnitIsConnected, unit) == false then return 0 end
     local key = Key(unit)
+    local helped = Core.Ask(UnitCanAssist, "player", unit) ~= false
     for _, reminder in ipairs(Reminders.List()) do
         if #list >= Members.MOST then break end
-        if Placed(reminder) and Reaches(reminder, unit)
+        if Placed(reminder) and (reminder.harmful or helped) and Reaches(reminder, unit)
             and Reminders.Wanted(reminder, Look(reminder, unit, key), unit) then
             list[#list + 1] = reminder.icon
         end
     end
     return #list
+end
+
+-- Those icons on a face of the health bars (a member's, or a unit frame's: GroupFace.Icons).
+function Members.Show(face, unit)
+    ns.GroupFace.Icons(face, face.missing, unit and Members.Missing(unit, face.missing) or 0)
 end
 
 -- The icons for a preview: the reminders on the frames, the samples where none is.
@@ -143,9 +150,10 @@ local function Yours(unit, found)
     return found
 end
 
--- Every face of the group frames anew, as the reminders say.
+-- Every face of the health bars anew, as the reminders say: the group frames', the unit frames'.
 function Members.Refresh()
     ns.Group.Each(ns.GroupFace.Buffs)
+    ns.Units.Each(ns.Units.Buffs)
 end
 
 -- A member's auras changed (UNIT_AURA, GroupFace.lua): in a fight a new one of yours is matched to your cast, or kept
@@ -191,9 +199,11 @@ local function Fight()
     wipe(fresh)
     cast = nil
     if not Members.Any() then return end
-    ns.Group.Each(function(face)
-        if face.unit then mine[Key(face.unit)] = Yours(face.unit, {}) end
-    end)
+    local function Snap(face)
+        if face.unit and not face.small then mine[Key(face.unit)] = Yours(face.unit, {}) end
+    end
+    ns.Group.Each(Snap)
+    ns.Units.Each(Snap)
     Members.Refresh()
 end
 

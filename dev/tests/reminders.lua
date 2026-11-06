@@ -540,7 +540,7 @@ Of("Thorns").remind._scripts.OnClick(Of("Thorns").remind)
 reminder = Reminders.List()[1]
 check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.GROUP and reminder.missing and Said("Thorns")
     and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, on the raid frames, its settings shown")
-check(TEXT.reminderColumn == "Show on raid frames", "the column's word")
+check(TEXT.reminderColumn == "Show on healthbars", "the column's word")
 -- Any spell by the search: on the list, chosen; its tick, a reminder; on the party and raid frames.
 W.spells[1126] = { name = "Mark of the Wild" }
 C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end

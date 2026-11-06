@@ -37,9 +37,10 @@ local _, ns = ...
 --  tools' button on just that (GroupTools.lua).
 --
 --  The same face stands on a secure unit button of the game's group headers
---  (Face.Unit: it follows the button's unit), hearing that unit's events, on one
---  beside a party's (face.beside: a member's pet or target, Group.lua; no cog, no
---  aura icons of yours), and
+--  (Face.Unit: it follows the button's unit), hearing that unit's events; small
+--  on one beside a party's (face.small: a member's target or pet, Group.lua; half
+--  as wide and high, its name alone in the middle of the bar in a smaller size,
+--  nothing else on it); and
 --  in Edit Mode's preview as a plain frame filled with made-up values
 --  (Face.Sample). It takes no mouse: the button under it keeps clicks, the
 --  tooltip and @mouseover.
@@ -84,14 +85,16 @@ Face.READY = { ready = rawget(_G, "READY_CHECK_READY_TEXTURE_RAID") or "UI-LFG-R
                waiting = rawget(_G, "READY_CHECK_WAITING_TEXTURE_RAID") or "UI-LFG-PendingMark-Raid" }
 Face.READY_HOLD = rawget(_G, "CUF_READY_CHECK_DECAY_TIME") or 11
 
--- The icons over the name: from the health (on your own slot the cog) leftwards.
-local function Roomed(face, right)
-    local start = right + Face.GAP
+-- The icons over the name: from the health (on your own slot the cog) leftwards. A face of the unit frames has them
+-- too (Units.lua), at its own size (face.iconSize).
+function Face.Roomed(face, right)
+    local start, size = right + Face.GAP, face.iconSize or Face.ICON
     for index, icon in ipairs(face.icons) do
         icon:ClearAllPoints()
-        icon:SetPoint("RIGHT", face.floating, "RIGHT", -(start + (index - 1) * (Face.ICON + Face.ICON_GAP)), 0)
+        icon:SetPoint("RIGHT", face.floating, "RIGHT", -(start + (index - 1) * (size + Face.ICON_GAP)), 0)
     end
 end
+local Roomed = Face.Roomed
 
 -- The big icons as high as the frame lets them be; one that shows that wide too.
 function Face.Big(face, height)
@@ -134,7 +137,7 @@ local OnSizeChanged = ns.Guard(Face.Fit)
 
 -- A face on parent, each layer on a frame of its own one level above the last, as a unit frame's: the outline, then the
 -- bars, then the words. sample: a plain one for the preview, which never shows a live unit.
-function Face.Make(parent, sample)
+function Face.Make(parent, sample, small)
     local face = CreateFrame("Frame", nil, parent)
     local level = Plain(face:GetFrameLevel()) or 1
     local edges = CreateFrame("Frame", nil, face)
@@ -189,17 +192,23 @@ function Face.Make(parent, sample)
     role:Hide()
     face.role = role
     face.icons, face.missing, face.roomed = {}, {}, Roomed
+    if small then -- the name alone, smaller, in the middle; no health in words (no room for it taken)
+        face.small, face.noHealth = true, 0
+        local file, _, flags = face.name:GetFont()
+        if file then face.name:SetFont(file, Text.SMALL, flags) end
+        face.name:SetJustifyH("CENTER")
+    end
     face:SetScript("OnSizeChanged", OnSizeChanged)
     return face
 end
 
--- Those icons over the name (count of them).
-local function Icons(face, list, count)
+-- Those icons over the name (count of them); a face of the unit frames' too.
+function Face.Icons(face, list, count)
     for index = 1, math.max(count, #face.icons) do
         local icon = face.icons[index]
         if not icon then
             icon = face.floating:CreateTexture(nil, "OVERLAY")
-            icon:SetSize(Face.ICON, Face.ICON)
+            icon:SetSize(face.iconSize or Face.ICON, face.iconSize or Face.ICON)
             icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
             face.icons[index] = icon
         end
@@ -208,11 +217,13 @@ local function Icons(face, list, count)
     end
     Roomed(face, face.room.right)
 end
+local Icons = Face.Icons
 
--- Your reminders on these frames that the unit's auras want shown, as far as can be told (Reminders/Group.lua); none
--- beside a party, where a pet or a foe stands.
+-- Your reminders on the health bars that the unit's auras want shown, as far as can be told (Reminders/Group.lua);
+-- none on a small face.
 local function Buffs(face, unit)
-    Icons(face, face.missing, face.beside and 0 or ns.GroupReminders.Missing(unit, face.missing))
+    if face.small then return end
+    ns.GroupReminders.Show(face, unit)
 end
 
 -- The same for the face's unit, if it has one (every face anew, when a reminder changed).
@@ -363,7 +374,7 @@ end
 local function Yours(face, mine)
     face.mine = mine
     face.cog:SetShown(mine)
-    face.noHealth = mine and Face.ICON + Face.GAP or nil
+    face.noHealth = mine and Face.ICON + Face.GAP or face.small and 0 or nil
 end
 
 -- The unit's name; on your own slot the word for your group in its place.
@@ -373,10 +384,19 @@ local function Name(face, unit)
 end
 
 -- Everything for the face's unit, as the game says it now.
+-- A small face's all: its bar in its colour, fainter out of reach, its name.
+local function Small(face, unit)
+    face.tint = TintOf(unit)
+    Health(face, unit)
+    Range(face, unit)
+    Text.Name(face, unit)
+end
+
 function Face.Fill(face)
     local unit = face.unit
     if ns.off or not unit or not Core.Ask(UnitExists, unit) then return end
-    Yours(face, not face.beside and Core.Ask(UnitIsUnit, unit, "player") == true)
+    if face.small then return Small(face, unit) end
+    Yours(face, Core.Ask(UnitIsUnit, unit, "player") == true)
     face.tint = TintOf(unit)
     Health(face, unit)
     face.marks:Set(unit)
@@ -412,7 +432,9 @@ end
 local function Heard(face, event, _, info)
     local unit = face.unit
     if ns.off or not unit then return end
-    if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+    if face.small then
+        if event ~= "UNIT_AURA" then Face.Fill(face) end
+    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
         Health(face, unit)
         Text.Health(face, unit)
         face.marks:Heard(unit)
@@ -455,6 +477,13 @@ end
 -- role, mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's
 -- answer), rez, aggro, word (Dead, Offline), colour (theirs), class (a player's), reaction (a creature's) }.
 function Face.Sample(face, sample)
+    if face.small then
+        Colour(face, Face.Tint(sample.class ~= nil, sample.class, sample.reaction))
+        face.health:SetMinMaxValues(0, 1)
+        face.health:SetValue(sample.health)
+        face.name:SetText(sample.name)
+        return
+    end
     face.marks:Sample(sample)
     Yours(face, sample.you == true)
     Colour(face, sample.colour or Face.Tint(sample.class ~= nil, sample.class, sample.reaction))

@@ -15,7 +15,9 @@ local _, ns = ...
 --  under your focus's; under yours your pet, its power under its row. Directly
 --  above each health bar its unit's cast while it casts (Cast.lua), over that
 --  on your own frame the game's timers on you, your breath over the health bar
---  itself (Timers.lua).
+--  itself (Timers.lua). Floating over the name, from the health leftwards, the
+--  icons of your auras shown on the health bars (Reminders/Group.lua, as on the
+--  party and raid frames), read at each fill and at each UNIT_AURA of its unit.
 --
 --  Each frame and each row is the game's secure unit button
 --  (SecureUnitButtonTemplate): a click targets the unit, a right click opens
@@ -62,6 +64,7 @@ Units.POWER = Units.HEIGHT / 2      -- a power bar's height under it
 Units.ROW = 18   -- a row's height under them
 Units.ROW_POWER = Units.ROW / 2 -- a row's power bar under it, half its height as a frame's is
 Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
+Units.ICON = 16  -- an aura's icon over the name, square
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
 -- right, your focus above it; by the button's top: the health bar's, the same whatever height the button has), and its
@@ -88,7 +91,7 @@ Units.PLAYER_PARTS = { "PlayerFrameContainer", "PlayerFrameContent" }
 -- What each face hears of its unit.
 Units.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
                  "UNIT_NAME_UPDATE", "UNIT_LEVEL", "UNIT_FACTION", "UNIT_FLAGS", "UNIT_CLASSIFICATION_CHANGED",
-                 "UNIT_CONNECTION", "UNIT_THREAT_LIST_UPDATE", "UNIT_THREAT_SITUATION_UPDATE" }
+                 "UNIT_CONNECTION", "UNIT_THREAT_LIST_UPDATE", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_AURA" }
 Units.AGGRO = 2 -- the first of the game's threat kinds that is having aggro
 
 local box -- the hidden frame the game's target and focus frames stand in while ours show
@@ -119,6 +122,21 @@ local function Row(face)
     ns.UnitText.Row(face, unit, face.rowSample and ns.TEXT.samples[face.rowUnit] or nil)
 end
 
+-- Your auras on the health bars over the face, as its unit has them (Reminders/Group.lua); none on a sample.
+local function Buffs(face)
+    if ns.off or not face.icons then return end
+    local real = not face.sample and Core.Ask(UnitExists, face.unit)
+    ns.GroupReminders.Show(face, real and face.unit or nil)
+end
+Units.Buffs = Buffs
+
+-- Every frame's face, each with its fn.
+function Units.Each(fn)
+    for _, kind in ipairs(Units.KINDS) do
+        if kind.button then fn(kind.button.face) end
+    end
+end
+
 -- Everything for the face's unit as the game says it now; in Edit Mode, a frame whose unit is not there shows your
 -- own as a sample, named for what it stands for.
 local function Fill(face)
@@ -133,6 +151,7 @@ local function Fill(face)
     Threat(face)
     Row(face)
     ns.UnitAuras.Set(face, unit)
+    Buffs(face)
 end
 
 local function Heard(face, event)
@@ -152,6 +171,9 @@ local function Heard(face, event)
         ns.UnitText.Level(face, unit)
     elseif event == "UNIT_THREAT_LIST_UPDATE" or event == "UNIT_THREAT_SITUATION_UPDATE" then
         Threat(face)
+    elseif event == "UNIT_AURA" then
+        ns.GroupReminders.Heard(unit) -- in a fight: a new aura of yours, for your cast
+        Buffs(face)
     else -- friend or foe, its rank, online
         Fill(face)
     end
@@ -240,6 +262,10 @@ local function Make(kind)
     ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW,
                             rowPower = kind.row.power and Units.ROW_POWER or nil })
     ns.UnitText.Make(face)
+    face.floating = CreateFrame("Frame", nil, face) -- over the words: your auras' icons
+    face.floating:SetAllPoints(face)
+    face.floating:SetFrameLevel((Core.Plain(face.top:GetFrameLevel()) or 1) + 1)
+    face.icons, face.missing, face.iconSize, face.roomed = {}, {}, Units.ICON, ns.GroupFace.Roomed
     ns.UnitAuras.Make(face)
     ns.UnitCast.Make(face, Units.ROW)
     if kind.bars then ns.UnitTimers.Make(face, Units.POWER) end

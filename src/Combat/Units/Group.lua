@@ -33,15 +33,15 @@ local _, ns = ...
 --  group's tools (GroupTools.lua).
 --
 --  Beside a party of five or less (Saneroki, 2026-11-06; the switch Pets and
---  targets beside a party), a column more, as a raid's second group would stand:
---  beside each member their combat pet, or what they target where they have
---  none, on a secure unit button of our own whose unit the game's attribute
---  driver sets (Group.Beside: [@partypet1,exists] partypet1; party1target), so it
---  follows a pet called or gone in a fight too; the game's unit watch shows it
---  while its unit is there, a state driver hides the column in a raid. The game
---  tells nothing of a member's target, so those faces are read every Group.READ
---  seconds while they show. The header lists a party in its own order, you and
---  then party1 to party4, so the column lines up slot by slot.
+--  targets beside a party), right of each member's frame, two small ones, each
+--  half its width and height: what that member targets above, their combat pet
+--  under it, each its name alone (GroupFace's small face). Each is a secure unit
+--  button of our own on a fixed unit (Group.Beside: party1target, partypet1; you:
+--  target, pet), shown by the game's unit watch while that unit is there, so a
+--  pet called or gone in a fight comes and goes too; a state driver hides them
+--  all in a raid. The game tells nothing of a member's target, so those faces
+--  are read every Group.READ seconds while they show. The header lists a party
+--  in its own order, you and then party1 to party4, so they line up slot by slot.
 --
 --  In Edit Mode the live frames rest and the preview shows: plain frames of the
 --  same look (GroupFace.lua) laid out by the same sizes, with random health,
@@ -111,11 +111,10 @@ function Group.Filled()
     return columns
 end
 
--- What stands beside a party's slot (1 you, then party1 to party4): the member's pet, else their target.
+-- What stands beside a party's slot (1 you, then party1 to party4): the unit of that member's target, of their pet.
 function Group.Beside(slot)
-    if slot == 1 then return "[@pet,exists] pet; target" end
-    local member = slot - 1
-    return ("[@partypet%d,exists] partypet%d; party%dtarget"):format(member, member, member)
+    if slot == 1 then return "target", "pet" end
+    return ("party%dtarget"):format(slot - 1), ("partypet%d"):format(slot - 1)
 end
 
 -- Whether the column beside a party is wanted now: switched on, in a party.
@@ -123,9 +122,9 @@ local function Besides()
     return ns.options.groupBeside ~= false and Core.Ask(IsInGroup) == true and not Core.Ask(IsInRaid)
 end
 
--- How many columns the window holds now: those your group fills, and the one beside a party.
+-- How many columns the window holds now: those your group fills, and the half one beside a party.
 function Group.Columns()
-    return Group.Filled() + (Besides() and 1 or 0)
+    return Group.Filled() + (Besides() and 0.5 or 0)
 end
 
 -- A button of a header: its unit followed by our face.
@@ -134,9 +133,9 @@ local function UnitChanged(button, name, value)
 end
 local OnAttributeChanged = ns.Guard(UnitChanged)
 
-local function Dress(button)
+local function Dress(button, small)
     ns.Units.Clicks(button)
-    button.face = Face.Make(button)
+    button.face = Face.Make(button, nil, small)
     button.face:SetAllPoints(button)
     ns.Units.Marks(button.face)
     button:HookScript("OnAttributeChanged", OnAttributeChanged)
@@ -201,20 +200,27 @@ Group.Each = EachFace
 
 local Shown = ns.Guard(function(button) Face.Fill(button.face) end)
 
--- The column beside a party: a protected frame, a secure unit button per slot, each with our face, its unit set by
--- the game's attribute driver and shown by its unit watch; there once whole. Out of a fight.
+-- A small secure unit button beside a party, on that unit, with our small face, shown by the game's unit watch.
+local function Little(column, unit)
+    local button = CreateFrame("Button", nil, column, "SecureUnitButtonTemplate")
+    button:SetAttribute("unit", unit)
+    Dress(button, true)
+    button:HookScript("OnShow", Shown) -- a target come: its unit's token is the same, so nothing else tells the face
+    RegisterUnitWatch(button)
+    column[#column + 1] = button
+    return button
+end
+
+-- The column beside a party: a protected frame, each slot's target and pet (column.targets, column.pets; all of them
+-- in its list); there once whole. Out of a fight.
 local function Beside()
     if beside then return end
     local column = CreateFrame("Frame", nil, live, "SecureFrameTemplate")
     column:SetAllPoints(live)
+    column.targets, column.pets = {}, {}
     for slot = 1, Group.PER_GROUP do
-        local button = CreateFrame("Button", nil, column, "SecureUnitButtonTemplate")
-        Dress(button)
-        button.face.beside = true
-        button:HookScript("OnShow", Shown) -- a target come: its unit's token is the same, so nothing else tells the face
-        RegisterAttributeDriver(button, "unit", Group.Beside(slot))
-        RegisterUnitWatch(button)
-        column[slot] = button
+        local target, pet = Group.Beside(slot)
+        column.targets[slot], column.pets[slot] = Little(column, target), Little(column, pet)
     end
     beside = column
 end
@@ -253,10 +259,15 @@ local function Layout()
         end
         header:SetAttribute("yOffset", Group.GAP) -- arranged anew for the new size
     end
-    for slot, button in ipairs(beside or {}) do
-        button:ClearAllPoints()
-        button:SetPoint("BOTTOMLEFT", live, "BOTTOMLEFT", wide + Group.GAP, (slot - 1) * (high + Group.GAP))
-        button:SetSize(wide, high)
+    local half, low = math.floor(wide / 2), math.floor(high / 2)
+    for slot = 1, beside and Group.PER_GROUP or 0 do
+        local bottom = (slot - 1) * (high + Group.GAP)
+        for _, button in ipairs({ beside.targets[slot], beside.pets[slot] }) do
+            button:ClearAllPoints()
+            button:SetSize(half, low)
+        end
+        beside.targets[slot]:SetPoint("BOTTOMLEFT", live, "BOTTOMLEFT", wide + Group.GAP, bottom + high - low)
+        beside.pets[slot]:SetPoint("BOTTOMLEFT", live, "BOTTOMLEFT", wide + Group.GAP, bottom)
     end
 end
 
@@ -300,11 +311,12 @@ local function Roll(icons)
     return sample
 end
 
--- What a made-up member has beside them in a party: a pet (green) half the time, else a foe they target.
+-- What a made-up member has beside them in a party: often a foe they target, now and then a pet (green).
 local function RollBeside()
-    local pet = Chance(0.5)
-    return { name = Pick(pet and NAMES.pets or NAMES.foes), health = 0.3 + math.random() * 0.7,
-             most = math.random(1, 8) * 1000, icons = {}, reaction = not pet and 2 or nil }
+    local found = {}
+    if Chance(0.6) then found.target = { name = Pick(NAMES.foes), health = 0.3 + math.random() * 0.7, reaction = 2 } end
+    if Chance(0.4) then found.pet = { name = Pick(NAMES.pets), health = 0.3 + math.random() * 0.7 } end
+    return found
 end
 
 -- That many samples, rolled anew only when their number changes.
@@ -314,7 +326,7 @@ local function Rolled(count)
         wipe(samples)
         for index = 1, count do
             samples[index] = Roll(icons)
-            samples[index].beside = RollBeside()
+            samples[index].beside = samples[index].word and {} or RollBeside() -- the dead and offline target nothing
         end
         if samples[1] then samples[1].you = true end
     end
@@ -326,7 +338,7 @@ local function Preview()
     local count = math.min(tonumber(ns.options.groupPreview) or 0, Group.GROUPS * Group.PER_GROUP)
     local width, height, unit = Limits()
     local aside = ns.options.groupBeside ~= false and count > 0 and count <= Group.PER_GROUP
-    local wide, high = Group.Size(math.ceil(count / Group.PER_GROUP) + (aside and 1 or 0), width, height, unit)
+    local wide, high = Group.Size(math.ceil(count / Group.PER_GROUP) + (aside and 0.5 or 0), width, height, unit)
     for index, sample in ipairs(Rolled(count)) do
         sample.raid = count > Group.PER_GROUP
         local face = faces[index]
@@ -342,24 +354,31 @@ local function Preview()
         Face.Fit(face) -- the sample's words read how narrow it is
         Face.Sample(face, sample)
         face:Show()
-        local other = besideFaces[index]
-        if aside then
-            if not other then
-                other = Face.Make(preview, true)
-                besideFaces[index] = other
+        local others = besideFaces[index] or {}
+        besideFaces[index] = others
+        for _, which in ipairs({ "target", "pet" }) do
+            local other, made = others[which], aside and sample.beside[which]
+            if made and not other then
+                other = Face.Make(preview, true, true)
+                others[which] = other
             end
-            other:ClearAllPoints()
-            other:SetPoint("BOTTOMLEFT", face, "BOTTOMRIGHT", Group.GAP, 0)
-            other:SetSize(wide, high)
-            Face.Fit(other)
-            Face.Sample(other, sample.beside)
-            other:Show()
-        elseif other then
-            other:Hide()
+            if made then
+                other:ClearAllPoints()
+                other:SetPoint(which == "target" and "TOPLEFT" or "BOTTOMLEFT", face,
+                               which == "target" and "TOPRIGHT" or "BOTTOMRIGHT", Group.GAP, 0)
+                other:SetSize(math.floor(wide / 2), math.floor(high / 2))
+                Face.Fit(other)
+                Face.Sample(other, made)
+                other:Show()
+            elseif other then
+                other:Hide()
+            end
         end
     end
     for index = count + 1, #faces do faces[index]:Hide() end
-    for index = count + 1, #besideFaces do besideFaces[index]:Hide() end
+    for index = count + 1, #besideFaces do
+        for _, other in pairs(besideFaces[index]) do other:Hide() end
+    end
     preview:Show()
 end
 

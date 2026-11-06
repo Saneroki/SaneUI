@@ -234,8 +234,8 @@ function Reminders.Update()
     for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
 end
 
--- A menu's line for an aura ({ id, name, icon, harmful, unit }): Show on raid frames, ticked while it has a reminder
--- (there or on a bar); a click makes one on the party and raid frames, or deletes it. Its settings are Edit auras',
+-- A menu's line for an aura ({ id, name, icon, harmful, unit }): Show on healthbars, ticked while it has a reminder
+-- (there or on a bar); a click makes one on the health bars, or deletes it. Its settings are Edit auras',
 -- the menu's last line (Units/Lists.lua).
 function Reminders.Entry(root, spell)
     if ns.options.reminders == false then return end

@@ -21,8 +21,8 @@ lies over your health bar, in the game's bubbles, half see-through, the game's o
 cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone. Its experience and stance bars are gone, and its menu bar shows only while the mouse is on it; its alert *You have unopened items in your collection*, once closed, stays closed until more come. At rest your unit frames and the action bars are out of sight: they show with the mouse on them, while your health or your resource is not full, in a fight and in a group.
 
 Your party and your raid are one frame of ours, in place of the game's two: unit frames edge to edge, up to forty, in the
-nameplates' look, each player's health in their class's colour, sized to fit the limits you set in Edit Mode; beside a party
-of five or less a column with each member's combat pet, or their target where they have none. On every health bar of ours, these and the unit frames, you see
+nameplates' look, each player's health in their class's colour, sized to fit the limits you set in Edit Mode; right of each
+member of a party of five or less two small frames, half as wide and high: what they target, and their combat pet. On every health bar of ours, these and the unit frames, you see
 barriers, maximum health lost for a while, and what can be dispelled (Core's health marks, on the nameplates too).
 
 Around the mouse, only while they run, two see-through rings: the global cooldown and your cast, a bright line with a soft glow leading
@@ -34,10 +34,10 @@ it; the mouse on it brings its buttons.
 
 Click a buff or debuff, or right click a spell in the spellbook, and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
-with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or tick *Show on raid frames*: its
-icon then shows on the party and raid frames, or on an invisible aura bar placed in Edit Mode, while its settings want it; a
-bar is as wide as what shows on it, and you make as many bars as you like. On the party and raid frames its icon then
-shows on each member's frame while they lack it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
+with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or tick *Show on healthbars*: its
+icon then shows on the health bars of your unit frames and the party and raid frames, or on an invisible aura bar placed in
+Edit Mode, while its settings want it; a bar is as wide as what shows on it, and you make as many bars as you like. On the
+health bars its icon then shows on each frame whose unit lacks it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -57,7 +57,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - Each spell as in the game's book: its icon in the game's frame (round for a passive), name and rank, a
     spell still to learn greyed with the level it comes at or *Trainable*, the cooldown, the glow of a spell on
     none of your action bars, a pet ability's autocast, the tooltip.
-  - **Click** to cast it, **right click** for its menu, as a buff's (below, *Your buffs and debuffs*: *Show on raid frames* and your marks of its aura; on a pet ability it switches its autocast), **drag** it onto an action
+  - **Click** to cast it, **right click** for its menu, as a buff's (below, *Your buffs and debuffs*: *Show on healthbars* and your marks of its aura; on a pet ability it switches its autocast), **drag** it onto an action
     bar, **Shift-click** to link it in chat (or to pick it up, as your game's modified clicks say).
   - **In a fight** the book shows, pages and drags as always, but a click does not cast (it says so): cast from
     your action bars then. After the fight, a click casts again.
@@ -115,7 +115,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     for every aura's setup, its marks and where its icon shows (Saneroki: "one Edit Auras window where I can handle all the aura
     configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
     icon), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
-    *Hide from unit frames* and *Prioritize on unit frames*, and last *Show on raid frames* (below, *Aura icons*). Click a
+    *Hide from unit frames* and *Prioritize on unit frames*, and last *Show on healthbars* (below, *Aura icons*). Click a
     line to choose it: its icon's settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
     order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
@@ -179,10 +179,10 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   frames*, off: the game's). It fills from its bottom left corner: you and your party going up, five to a column, then a
   column to the right for each group of a raid, up to forty, the units edge to edge. Nothing is drawn around it in play: only the
   unit frames show; in Edit Mode it has the box every window has. A player's health is in their class's colour (*Class
-  colours*; off: green). In a party of five or less a column stands right of the members, where a raid's second group would
-  (*Pets and targets beside a party*): beside each of you their combat pet, or what they target where they have none
-  (beside you your pet, else your target), the same frames as a member's, a foe yellow or red by how it stands to you, a pet
-  green; it follows a pet called or gone in a fight too, and is not there in a raid. Each unit: the raid marker and the name on the left with as much room as
+  colours*; off: green). In a party of five or less, right of each member's frame, two small ones, each half as wide and high (*Pets and
+  targets beside a party*): what that member targets above, their combat pet under it, each with its name alone in the middle
+  of its bar (beside you your target and your pet); a foe yellow or red by how it stands to you, a pet green. Each shows while
+  it is there, a pet called or gone in a fight too; a click targets it. Not in a raid. Each unit: the raid marker and the name on the left with as much room as
   there is; a tiny mark of a tank's or healer's role in the top left corner, a shield or a plus without a ring, centred on the raid marker's place, in front of the bar and
   behind the name and raid marker (by the role the game was told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the ready check while one runs and its result for a while after, the
   game's icon of a resurrection on its way, the type icon of a dispellable debuff (the game's, a green drop for poison and so on), each moving aside for the one before it; how much health is left on the right ("85%";
@@ -190,7 +190,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
   tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
   tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each aura you show
-  on these frames whose settings want it, four at most (*Aura icons on the frames*, below, *Aura icons*: a buff or HoT the member is
+  on these frames whose settings want it, four at most (*Aura icons on the health bars*, below, *Aura icons*: a buff or HoT the member is
   missing, say). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
@@ -203,7 +203,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   game's rule. Esc or its close button closes it. *Restrict pings* and the game's filters for its own raid frames are not in it.
 - **Its sizes and preview:** in Edit Mode, click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
   and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
-  markers, ready checks, aggro, the dead and offline, your auras' icons, a pet or a foe beside a party, barriers, lost health and dispels; they stay the same while you
+  markers, ready checks, aggro, the dead and offline, your auras' icons, a foe and a pet beside a party's members, barriers, lost health and dispels; they stay the same while you
   slide the sizes. A slot is a fifth of the max height high, whoever is there, so five fill the window even with three in the party. It is as
   wide as the max unit width (at first as wide as your unit frames), and only where the columns in use would not fit into the max width do all
   share that width evenly. Sizes change out of a fight: in one, a member who joins shows at the size in use.
@@ -248,7 +248,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - **In a fight** the game hides these numbers from addons: they show, but the list goes by the places on the game's
     own list. On a boss it hides threat too: there you see the share alone, and threat is neither added up nor sorted.
 - **Your buffs and debuffs** (the page's tick *Marks and menu on the game's list*): the game's own lists at the top of the
-  screen stay, with your marks on them. **Click** one for its menu: *Show on raid frames*, and a tick each:
+  screen stay, with your marks on them. **Click** one for its menu: *Show on healthbars*, and a tick each:
   - **Important:** the game's golden animated outline around it, as on a spell it wants you to see; on the unit frames it comes first, with the same outline.
   - **Unimportant:** faded to 25% of its strength; never on the unit frames.
   - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
@@ -263,12 +263,12 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - **In a fight** the game hides what a button shows: an aura you had before the fight keeps its mark, and its menu opens,
     where the game tells its instance; what came during the fight the menu cannot name, and says so. Where the game does not
     tell the instance, the list shows plain from its first change until the fight ends.
-- **Aura icons** (Saneroki: *Show on raid frames*, once *Reminders*, then *Track*; the page's tick *Aura icons and bars*; set
-  in *Edit auras*, `/sane auras`, `/sane reminders`):
+- **Aura icons** (Saneroki: *Show on healthbars*, once *Reminders*, then *Track*, then *Show on raid frames*; the page's tick
+  *Aura icons and bars*; set in *Edit auras*, `/sane auras`, `/sane reminders`):
   - **Showing one:** in *Edit auras* search any spell (any class's, an enemy's, an item's, or its number), and tick its
-    *Show on raid frames*; or click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame
-    (out of a fight), or right click a spell in the spellbook, and tick *Show on raid frames* in its menu. It shows on the
-    party and raid frames at once; its settings are under *Edit auras*' list (the menu's *Edit auras...*). Unticking it,
+    *Show on healthbars*; or click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame
+    (out of a fight), or right click a spell in the spellbook, and tick *Show on healthbars* in its menu. It shows on the
+    health bars at once; its settings are under *Edit auras*' list (the menu's *Edit auras...*). Unticking it,
     or the line's X, takes it off.
   - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar or *Party and raid frames*, with
     *New bar* (the aura on it) and *Delete bar*; *Watch on* you, your target or your focus (one made in the window:
@@ -280,10 +280,11 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
     your blessings for a blessing (which starts with *Only yours*).
-  - **On the party and raid frames** (the place *Party and raid frames*, last in the dropdowns; the switch *Aura icons on
-    the frames* on the page's group section): the aura is watched on every member the frames show, your own slot too, and
-    its icon floats over that member's name, from the health leftwards, four at most in the order made. Not on the dead or
-    the offline; a shout on your own party only. The class buffs no longer show by themselves: show each one
+  - **On the health bars** (the place *Health bars*, last in the dropdowns; the switch *Aura icons on the health bars* on
+    the page's group section): the aura is watched on your own frame, your target's and your focus's, and on every member
+    the party and raid frames show, your own slot too, and its icon floats over that frame's name, from the health leftwards,
+    four at most in the order made. A buff only on a unit you can help (none on a foe you target), a debuff on any. Not on
+    the dead or the offline; a shout on your own party only. The class buffs no longer show by themselves: show each one
     you want there.
   - **The bars:** one at first, more by *New bar*, each with its own aura icons (*Shows on* moves one to another).
     *Delete bar* deletes the chosen aura's bar and puts what it held on the first bar left; the last bar stays.
@@ -613,11 +614,12 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   BOTTOMLEFT to the last one's BOTTOMRIGHT with `minWidth` 0.1, so an empty group takes no room, in a fight too; they are told
   `template` `SecureUnitButtonTemplate` and make their buttons themselves (a `startingIndex` of -4, then 1: `header[1]`..`[5]`), built
   when you are first in a group, out of a fight. `Group.Size(columns, rows, width, height, unit)` is the sum for a unit's size,
-  `Group.Filled()` what the group fills, `Group.Columns()` with the column beside a party (`groupBeside`, in a party only):
-  `beside`, a `SecureFrameTemplate` shown by the state driver `Group.BESIDE_SHOWN`, five `SecureUnitButtonTemplate`s placed
-  by `Layout` beside the header's slots (a party's header lists you, then party1 to party4, in that order), each `unit` set by
-  `RegisterAttributeDriver` to `Group.Beside(slot)` (`[@partypet1,exists] partypet1; party1target`) and shown by
-  `RegisterUnitWatch`, its face `face.beside` (no cog, no aura icons), filled as it shows and, a target's, every `Group.READ`
+  `Group.Filled()` what the group fills, `Group.Columns()` with the half column beside a party (`groupBeside`, in a party
+  only): `beside`, a `SecureFrameTemplate` shown by the state driver `Group.BESIDE_SHOWN`, two `SecureUnitButtonTemplate`s
+  per slot (`beside.targets`, `beside.pets`) on fixed units, `Group.Beside(slot)` (`party1target`, `partypet1`; you `target`,
+  `pet`), placed by `Layout` right of the header's slots (a party's header lists you, then party1 to party4, in that order),
+  the target in the top half, the pet in the bottom one, each half a slot wide and high, shown by `RegisterUnitWatch`; their
+  faces small (`Face.Make(button, nil, true)`: the name alone, `UnitText.SMALL`, centred), filled as they show and, a target's, every `Group.READ`
   seconds (no unit event names `party1target`). `GROUP_ROSTER_UPDATE` lays out again after a fight. Preview: `Face.Make(preview, true)`
   plain frames, `Roll` once per count. The game's `PartyFrame` (which holds `CompactPartyFrame`), `CompactRaidFrameContainer` and
   `CompactRaidFrameManager` stand in a hidden frame (`Core.Lend`). A ready check's result stays `Face.READY_HOLD` seconds (the game's
@@ -640,7 +642,10 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   `face.roomed` places your buffs' icons after each layout. `face.tint` (`Face.Tint`, at each fill): a player's class colour from the
   game's `RAID_CLASS_COLORS` (`groupClass`), a creature's by `UnitReaction` (4 `UnitBar.CALM`, under it `Face.HOSTILE`, the game's
   `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`.
-- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `bar == Reminders.GROUP` (0, no bar's number). `GroupFace`'s
+- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `bar == Reminders.GROUP` (0, no bar's number), *Show on
+  healthbars*. `GroupReminders.Show(face, unit)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's, and a unit
+  frame's (`Units.lua`: `face.floating` over the words, `Units.ICON`, at each fill and its unit's `UNIT_AURA`, in `Units.EVENTS`;
+  `Units.Each`); a buff only where `UnitCanAssist`. `GroupFace`'s
   `Buffs` asks `GroupReminders.Missing(unit, list)` on a fill, on `UNIT_AURA` (out of a fight only one that may change what is seen:
   `Buffed`), and `GroupReminders.Refresh` asks every face (`Group.Each`) when a reminder changes, a fight begins, resting changes, and
   each `GroupReminders.EVERY` second while one has an offset. What is known is kept per reminder and member GUID
@@ -736,7 +741,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
-| `Units/Group.lua` | The one window for party and raid: the game's secure group headers, the column beside a party (pets, else targets), sizes, Edit Mode's settings and preview |
+| `Units/Group.lua` | The one window for party and raid: the game's secure group headers, beside a party each member's target and pet, sizes, Edit Mode's settings and preview |
 | `BarsWindow.lua` | The action bars as windows of the full screen, seated, so that nothing lies over them |
 | `ErrorText.lua` | The game's red error text off, by a switch |
 | `Macros/` | Sane Macros: macros and sequences, keys and bar buttons, the + list, the checks ([its README](Macros/README.md)) |
@@ -755,6 +760,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-06:** *Show on healthbars* (first *Show on raid frames*): an aura's icon on your unit frames and the party and raid frames; beside each member of a party their target and their pet, small, their names alone (Saneroki).
 - **2026-11-06:** in a party a column beside it with each member's pet, else their target; the party and raid frames' health in class colours (Saneroki).
 - **2026-11-06:** *Reminder* is now *Show on raid frames* wherever you read it (first *Track*): the column, the menu's tick, *Aura bar*, *Aura icons* (Saneroki); one made shows on the party and raid frames.
 - **2026-11-06:** one window, *Edit auras*, for every aura's marks and its reminder (Saneroki: "merge the Reminder and edit aura window"); any spell searched there can be a reminder.

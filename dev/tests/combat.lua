@@ -600,6 +600,17 @@ do
     Reminders.Apply()
     check(Shows(first.face, 136078) and Shows(second.face, 136078) and Shows(third.face, 136078),
         "on the frames: its icon on each member without it, your own slot too")
+    local own, aimed = ns.Units.KINDS[1].button.face, ns.Units.KINDS[2].button.face
+    check(Shows(own, 136078) and own.icons[1]._parent == own.floating and own.icons[1]._width == ns.Units.ICON,
+        "and on your own unit frame, over its name")
+    units.target = { name = "Tess", surname = "Brook", player = true, class = "PRIEST", health = 500, most = 1000 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(Shows(aimed, 136078), "on your target's frame, a friend without it")
+    units.target = { name = "Kobold Miner", level = 22, health = 40, most = 120, foe = true, reaction = 2 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(not Shows(aimed, 136078), "a buff never on a foe's")
+    units.target = nil
+    W.Fire("PLAYER_TARGET_CHANGED")
     check(second.face.icons[1]._parent == second.face.floating and second.face.name._width == roomBefore,
         "floating over the name, which keeps its room")
     check(Members.Icons()[1] == 136078, "and in Edit Mode's preview")
@@ -730,44 +741,54 @@ do
     check(second.face.health._barColor[1] == green and third.face.health._barColor[1] == green, "Class colours off: green")
     Core.Set(ns.name, "groupClass", true)
 
-    -- Beside a party: each member's pet, else their target, in a column where a raid's second group would stand.
-    local column, besides = nil, {}
+    -- Beside a party: right of each member, what they target above and their pet under it, each half as wide and high.
+    local column, targets, pets = nil, {}, {}
     for frame, driver in pairs(W.drivers) do
         if driver.values == Group.BESIDE_SHOWN then column = frame end
     end
     check(column and column._parent == live and W.drivers[column].state == "visibility",
         "in a party a column beside it, which the game's driver hides in a raid")
     for _, widget in ipairs(W.frames) do
-        if widget._parent == column and widget._template == "SecureUnitButtonTemplate" then besides[#besides + 1] = widget end
+        if widget._parent == column and widget._template == "SecureUnitButtonTemplate" then
+            local unit = widget:GetAttribute("unit")
+            if unit:find("target$") then targets[#targets + 1] = widget else pets[#pets + 1] = widget end
+        end
     end
-    check(#besides == 5 and besides[1]:GetAttribute("unit") == "target" and besides[2]:GetAttribute("unit") == "party1target"
-        and besides[5]:GetAttribute("unit") == "party4target", "a button beside each slot, you first: no pets, their targets")
-    check(not besides[2]._shown and not besides[3]._shown, "no target either: nothing shows there")
-    check(Group.Beside(3) == "[@partypet2,exists] partypet2; party2target", "the game's driver: the pet while there is one")
+    check(#targets == 5 and #pets == 5 and targets[1]:GetAttribute("unit") == "target" and pets[1]:GetAttribute("unit") == "pet"
+        and targets[2]:GetAttribute("unit") == "party1target" and pets[3]:GetAttribute("unit") == "partypet2",
+        "beside each slot, you first, a member's target and their pet")
+    check(not targets[2]._shown and not pets[2]._shown, "no target and no pet: nothing shows there")
+    local wide, high = first._width, first._height
+    local function Place(button) return button._points[1] end
+    check(Place(targets[2])[2] == live and Place(targets[2])[4] == wide + Group.GAP
+        and Place(targets[2])[5] == (high + Group.GAP) + high - math.floor(high / 2)
+        and Place(pets[2])[4] == wide + Group.GAP and Place(pets[2])[5] == high + Group.GAP
+        and targets[2]._width == math.floor(wide / 2) and targets[2]._height == math.floor(high / 2)
+        and pets[2]._width == math.floor(wide / 2), "right of its member: the target above, the pet under it, each half as wide and high")
     units.partypet1 = { name = "Wolf", health = 300, most = 600 }
-    units.party2target = { name = "Hogger", level = 11, enemy = true, reaction = 2, health = 800, most = 1000 }
     fight.Watch()
-    check(besides[2]:GetAttribute("unit") == "partypet1" and besides[2]._shown and besides[2].face.name._text == "Wolf"
-        and besides[2].face.value._text == "50%" and besides[2].face.health._barColor[1] == green,
-        "a pet called: beside its master, its health, green")
-    check(besides[3]:GetAttribute("unit") == "party2target" and besides[3]._shown and besides[3].face.name._text == "Hogger"
-        and besides[3].face.health._barColor[1] == Face.HOSTILE[1], "a member's target where they have no pet, a foe in red")
-    local point = besides[2]._points[1]
-    check(point[2] == live and point[4] == first._width + Group.GAP and point[5] == first._height + Group.GAP
-        and besides[2]._width == first._width and besides[2]._height == first._height,
-        "each beside its member's slot, at the members' size")
-    check(not besides[1].face.cog._shown and #besides[3].face.icons == 0, "no cog and no aura icons there")
-    units.party2target.health = 400
+    local wolf = pets[2].face
+    check(pets[2]._shown and wolf.small and wolf.name._text == "Wolf" and (wolf.value._text or "") == ""
+        and wolf.health._value == 300 and wolf.health._barColor[1] == green and not targets[2]._shown,
+        "a pet called: under its master's target's place, its name alone, its health, green; no target there")
+    check(not wolf.raid._shown and not wolf.role._shown and not wolf.cog._shown and not wolf.power._shown
+        and #wolf.icons == 0, "nothing else on it")
+    units.party1target = { name = "Hogger", level = 11, enemy = true, foe = true, reaction = 2, health = 800, most = 1000 }
+    fight.Watch()
+    local hogger = targets[2].face
+    check(targets[2]._shown and hogger.name._text == "Hogger" and hogger.health._barColor[1] == Face.HOSTILE[1]
+        and pets[2]._shown, "and what the member targets above it, a foe in red: both")
+    units.party1target.health = 400
     W.Wait(Group.READ + 0.01)
-    check(besides[3].face.value._text == "40%", "the game tells nothing of a target: read again now and then")
+    check(hogger.health._value == 400, "the game tells nothing of a target: read again now and then")
     units.partypet1 = nil
     fight.Watch()
-    check(besides[2]:GetAttribute("unit") == "party1target" and not besides[2]._shown, "the pet gone: its master's target, none")
+    check(not pets[2]._shown and targets[2]._shown, "the pet gone: only the target")
     Core.Set(ns.name, "groupBeside", false)
     check(not column._shown and W.drivers[column] == nil, "the switch off: no column")
     Core.Set(ns.name, "groupBeside", true)
     check(W.drivers[column] and W.drivers[column].values == Group.BESIDE_SHOWN, "on again")
-    units.party2target = nil
+    units.party1target = nil
     fight.Watch()
 
     -- A raid of forty: eight columns; a frame too narrow for its health gives that room to the name.
@@ -845,17 +866,24 @@ do
     window.options.set("groupPreview", 12)
     check(ns.options.groupPreview == 12, "what the dialog sets is the module's")
     Core.Selection.Clear()
+    math.randomseed(7)
     Core.Set(ns.name, "groupPreview", 5)
-    local shown, beside = 0, nil
+    local members, small, placed = 0, 0, true
     for _, widget in ipairs(W.frames) do
         if widget.marks and widget._parent == host and widget._shown then
-            shown = shown + 1
-            local point = widget._points[1]
-            if point and point[2] == faces[1] then beside = widget end
+            if widget.small then
+                small = small + 1
+                local point = widget._points[1]
+                placed = placed and (point[3] == "TOPRIGHT" or point[3] == "BOTTOMRIGHT") and point[2].marks ~= nil
+                    and not point[2].small and widget._width == math.floor(point[2]._width / 2)
+                    and widget._height == math.floor(point[2]._height / 2)
+            else
+                members = members + 1
+            end
         end
     end
-    check(shown == 10 and beside and beside._points[1][3] == "BOTTOMRIGHT" and beside._width == faces[1]._width,
-        "a party previewed: a pet or a foe beside each, as in the game")
+    check(members == 5 and small > 0 and placed,
+        "a party previewed: beside the members a foe they target and a pet, half as wide and high, as in the game")
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(W.drivers[live] and W.drivers[live].values == Group.SHOWN and not host._shown, "after Edit Mode: the live frames again")
 
