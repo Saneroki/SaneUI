@@ -6,8 +6,9 @@
 -- slot, a choice to make, a quest that costs money), the clicks (the left going round the words and never answering,
 -- the right giving what needs no choosing and never a reward), the words waiting at reading speed 0, Speed Leveling's
 -- quest givers (its own file) doing their quests beside the talk, the interface faded out and back with the game's
--- questions, error lines and the rewards' tooltips kept in sight, Space bound only while a talk shows, and the
--- settings. The look and the face can only be judged in the game.
+-- questions, error lines and the rewards' tooltips kept in sight, Space bound only while a talk shows, an NPC's only
+-- service taken at once (a trainer's unlearning beside it; not with Shift, a quest there, a choice, right after a
+-- quest; the talk after all when nothing opens), and the settings. The look and the face can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/lore.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -653,6 +654,72 @@ check(UIParent:GetAlpha() == 1, "and the interface is back")
 gossip.options = { { name = "Fly.", orderIndex = 1, selectOptionWhenOnlyOption = true } }
 W.Fire("GOSSIP_SHOW")
 check(not talkRoot:IsShown(), "an only option the game takes by itself shows nothing")
+W.Fire("GOSSIP_CLOSED")
+W.Wait(ns.Service.AFTER)
+Frames(1)
+
+-- An NPC's only service opens at once (Service.lua): the option taken, no talk, the game's window still held.
+local VENDOR, TAXI, TRAINER, UNLEARN, CHAT = 132060, 132057, 132058, 132059, 132053
+local function Served(options, before)
+    GossipFrame:Show()
+    gossip.options = options
+    said = {}
+    if before then before() end
+    W.Fire("GOSSIP_SHOW")
+    local took, shown = said[1], talkRoot:IsShown()
+    GossipFrame:Hide()
+    W.Fire("GOSSIP_CLOSED", took ~= nil)
+    W.Wait(1)
+    Frames(1)
+    return took, shown
+end
+check(ns.options.service == true, "Straight to the service is on at first")
+local took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR } })
+check(took == "option 1" and not shown, "a vendor that has nothing else for you: its goods at once, no talk")
+check(GossipFrame:GetParent() == holder, "the game's gossip window stayed held meanwhile")
+took = Served({ { name = "I need a ride.", orderIndex = 1, icon = TAXI } })
+check(took == "option 1", "a flight master: its map at once")
+took = Served({ { name = "I wish to unlearn my talents.", orderIndex = 1, icon = UNLEARN },
+                { name = "I seek more training.", orderIndex = 2, icon = TRAINER } })
+check(took == "option 2", "a trainer: its lessons, the unlearning beside them taken for no choice")
+took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR },
+                       { name = "I need a ride.", orderIndex = 2, icon = TAXI } })
+check(took == nil and shown, "two services: the talk, the choice yours")
+took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR },
+                       { name = "Tell me of the woods.", orderIndex = 2, icon = CHAT } })
+check(took == nil and shown, "a service beside a word to say: the talk")
+took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR, status = 2 } })
+check(took == nil and shown, "a service locked: the talk, which tells why")
+gossip.available = { { title = "Wolves Across the Border", questID = 33, isTrivial = false, frequency = 0 } }
+took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR } })
+check(took == nil and shown, "a quest there: the talk")
+gossip.available = {}
+local VENDING = { { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR } }
+took, shown = Served(VENDING, function() IsShiftKeyDown = function() return true end end)
+IsShiftKeyDown = function() return false end
+check(took == nil and shown, "Shift held as the talk opens: the talk and its choices")
+took, shown = Served(VENDING, function() W.Fire("QUEST_FINISHED") end)
+check(took == nil and shown, "the talk that opens again after a quest at that NPC stays a talk")
+W.Wait(ns.Service.AFTER)
+check(Served(VENDING) == "option 1", "a while later the service is taken again")
+-- The game does not move on from the option taken: the talk shows after all.
+GossipFrame:Show()
+said = {}
+W.Fire("GOSSIP_SHOW")
+check(said[1] == "option 1" and not talkRoot:IsShown(), "taken, waiting for the game")
+W.Wait(ns.Service.WAIT)
+check(talkRoot:IsShown(), "nothing opened: the talk after all")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED")
+W.Wait(1)
+Frames(1)
+SaneUI.Core.Set(ns.name, "talk", false)
+check(Served(VENDING) == "option 1", "with the game's own windows too")
+SaneUI.Core.Set(ns.name, "talk", true)
+SaneUI.Core.Set(ns.name, "service", false)
+took, shown = Served(VENDING)
+check(took == nil and shown, "the switch off: the talk")
+SaneUI.Core.Set(ns.name, "service", true)
 
 -------------------------------------------------------------------------------
 --  The settings

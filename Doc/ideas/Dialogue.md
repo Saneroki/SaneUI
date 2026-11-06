@@ -206,10 +206,19 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 | Words go on by themselves | on |
 | Reading speed (words a minute; 0: never by themselves) | 0 |
 | Space goes on | on |
+| Straight to the service (an NPC's only service at once; Shift: the talk) | on |
 
 - **Moving the talk:** in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`): still to come.
 
 ## Decided
+
+Saneroki, 2026-11-06:
+
+- **Straight to the service:** talking to an NPC whose gossip is only "I need a ride" or "Show me your wares" opens
+  that window at once, without Speed Leveling; Shift shows the choices (`src/Lore/Service.lua`). Claude's picks, for
+  Saneroki to change: the services by the game's own icons (vendor, flight master, trainer, banker, auction house,
+  battlemaster, tabard, charter), a trainer's unlearning may stand beside one, never with a quest there, two services
+  or a word to say beside it, nor in the talk that opens again after a quest handed in there; on at first.
 
 Saneroki, 2026-10-30:
 

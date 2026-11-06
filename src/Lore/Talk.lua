@@ -26,7 +26,8 @@ local _, ns = ...
 --  Left to the game's own: a talk while Talks as a scene is off, one begun in a
 --  fight, gossip with a window of its own (the game's custom gossip frames), an
 --  only option the game takes by itself, an offer the game turns into a popup
---  in its quest tracker (from an item, an area). A fight ends ours (the game
+--  in its quest tracker (from an item, an area). Before any talk, an NPC's
+--  only service is taken (Service.lua). A fight ends ours (the game
 --  says so before it locks): the talk is closed, the interface back at once.
 --  Another kind of window opening (a vendor, a trainer) ends it too. Esc ends it.
 --
@@ -398,7 +399,9 @@ local function Refresh()
 end
 local refresh = Core.Later(Refresh, 0.1)
 
-local function GossipShow(kit)
+-- again: the service taken for this gossip did not open (Service.lua), the talk shows after all.
+local function GossipShow(kit, again)
+    if not again and ns.Service.Take(kit, GossipShow) then return end -- its window comes; the game's stays held
     checkGossip()
     if not Ours("gossip") then return end
     local gossip = Gossip()

@@ -11,7 +11,8 @@ them. While you talk the rest of the interface fades out; the rewards' tooltips,
 lines stay in sight. Each reward says, without its tooltip, what it is (Leather · Chest, Plate · Legs, a weapon's
 kind, a ring by its slot), whether you can use it, what a vendor pays for it and what it changes against what you
 wear (item level, stats). The words wait for you: a left click turns them, a right click accepts or says goodbye,
-Space goes on. A fight ends the talk; the game's own windows are back whenever Lore steps aside or fails.
+Space goes on. An NPC that has only its service for you (a vendor, a flight master, a trainer) opens it at once, with
+no talk; Shift shows the talk. A fight ends the talk; the game's own windows are back whenever Lore steps aside or fails.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Lore* under *Sane UI* in the game's addon list (the game needs a
@@ -64,6 +65,12 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
   another window (a vendor, a trainer, a flight map), that window opens and the talk goes.
 - **In a fight:** the talk ends when the fight begins and the interface is back at once. A talk begun in a fight
   is the game's own window.
+- **Straight to the service:** a vendor, a flight master, a trainer, a banker, the auction house, a battlemaster,
+  a tabard or charter vendor that has nothing else for you (no quest to take, hand in or go on with, no other choice
+  but a trainer's unlearning) opens its window at once, without the talk; as a scene or in the game's own windows
+  alike, with Speed Leveling or without it. Hold Shift as you talk to them for the talk and its choices. Two services
+  (an innkeeper's home and goods), a word to say beside the service, a quest there, and the talk that opens again
+  after a quest handed in there stay a talk.
 - **Left to the game:** gossip that has a window of its own in the game, an only option the game takes by itself,
   and an offer the game turns into a popup in its quest tracker (from an item, an area).
 - **Settings** (Lore's page, section *Talks*):
@@ -77,6 +84,7 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
   | *Words go on by themselves* | on |
   | *Reading speed* (words a minute; 0: the words never go on by themselves) | 0 |
   | *Space goes on* | on |
+  | *Straight to the service* (an NPC's only service at once; Shift: the talk) | on |
 
 ## Technical details
 - **The game's windows held, never changed** (`Native.lua`): `GossipFrame` and `QuestFrame` get a hidden frame of
@@ -117,6 +125,16 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
   `ShoppingTooltip1` and `2` only while the mouse is on one of the talk's rewards, so the clear frames under the
   mouse show no tooltip. Sane UI's tooltip panels (Tooltips) follow their tooltip's setting. The clear frames still
   take the mouse where the talk does not lie over them.
+- **Straight to the service** (`Service.lua`): Talk's `GOSSIP_SHOW` asks `Service.Take` first. An option's kind is
+  the game's own icon of it (`option.icon`, `Interface\GossipFrame\*GossipIcon`): vendor, taxi, trainer, banker,
+  auction house, battlemaster, tabard, petition are services, the unlearn icon may stand beside one. Taken with the
+  game's `C_GossipInfo.SelectOptionByIndex(orderIndex)` when there are no quests (`GetNumAvailableQuests`,
+  `GetNumActiveQuests`), exactly one service whose `status` is `Available`, nothing else but the unlearning; not with
+  `IsShiftKeyDown()`, within `Service.AFTER` seconds of a `QUEST_FINISHED` at that NPC (`UnitGUID("npc")`), for a
+  custom gossip frame, or for an only option the game takes itself. The game's gossip window is left as it is (held
+  with the scene on, so nothing comes into sight; with the game's own windows it shows until the server answers).
+  When neither `GOSSIP_CLOSED` nor another interaction (`PLAYER_INTERACTION_MANAGER_FRAME_SHOW`) comes within
+  `Service.WAIT`, the talk shows after all.
 - **Space** (`Keys.lua`): `SetOverrideBindingClick` on a button of ours (`SaneUILoreContinue`) while the talk shows,
   `ClearOverrideBindings` when it ends; never in a fight (the talk ends before the lock).
 - **Esc** ends the talk through Core's one stand-in in `UISpecialFrames` (`Core.Escape`).
@@ -145,7 +163,8 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
   answers' order, Continue, the words waiting at speed 0 and going on at a raised one, the clicks (the left going
   round, the right on every screen, no reward taken and nothing paid by it, a double click), Speed Leveling's own
   `Quests.lua` beside the talk, the rewards read (kinds, slots, value, changes, an empty slot, a bow's slot), a choice,
-  a quest that costs money, a fight, a talk left to the game, a vendor's window, the settings, Retail, standing down.
+  a quest that costs money, a fight, a talk left to the game, a vendor's window, an NPC's only service taken (and
+  each case that stays a talk), the settings, Retail, standing down.
 
 ## Files
 | File | What it does |
@@ -160,6 +179,7 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
 | `Answers.lua` | The answers beside the words |
 | `Quest.lua` | The quest under the words: objectives, what it asks for, rewards |
 | `Keys.lua` | Space goes on while the talk shows |
+| `Service.lua` | Straight to an NPC's only service, no talk before it; Shift shows the talk |
 | `Talk.lua` | The talk as the game tells it, Continue, the answers' calls, fights |
 | `Fonts/Expressway.ttf` | The words' font (from `assets/optimized/Lore/Fonts/`) |
 
@@ -175,3 +195,5 @@ Space goes on. A fight ends the talk; the game's own windows are back whenever L
 - 2026-10-30: the words wait for you (Saneroki asked: reading speed 0 at first, so the quest text never moves on by
   itself; a left click cycles through it; a right click accepts, or closes the window on the goodbye screen; Speed
   Leveling's taking and handing in go on as before).
+- 2026-11-06: straight to the service (Saneroki asked: past the gossip window of "I need a ride" and "Show me your
+  wares" without Speed Leveling; Shift shows the choices).

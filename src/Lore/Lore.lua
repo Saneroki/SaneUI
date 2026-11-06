@@ -27,6 +27,8 @@ local ADDON, ns = ...
 --    Quest.lua    under the words: a quest's objectives, what it asks for, its
 --                 rewards to choose from and to get
 --    Keys.lua     Space goes on while the talk shows
+--    Service.lua  straight to an NPC's only service (a vendor's goods, a flight
+--                 master's map), with no talk before it; Shift shows the talk
 --    Talk.lua     the talk as the game tells it (gossip, a quest's greeting,
 --                 offer, progress, reward): the words a paragraph at a time, the
 --                 answers, what Continue does
@@ -58,6 +60,8 @@ ns.TEXT = {
     speedTip = "How many words a minute you read, for the words that go on by themselves. 0: they never do.",
     space = "Space goes on",
     spaceTip = "While a talk shows, Space shows the next paragraph; on the last one it does what needs no choosing: it accepts the quest offered, hands in a quest whose reward is chosen (or that has one or none to choose), takes the only answer there is, or says goodbye. Space jumps again once the talk ends.",
+    service = "Straight to the service",
+    serviceTip = "Talking to a vendor, a flight master, a trainer, a banker, the auction house or a battlemaster that has nothing else for you (no quest, no other choice), its window opens at once, without the talk before it; as a scene or in the game's own windows alike. Hold Shift as you talk to them for the talk and its choices. Never in the talk that opens again after a quest handed in there.",
 
     -- The answers (Talk.lua).
     goodbye = Game("GOODBYE", "Goodbye"),
@@ -102,6 +106,7 @@ local OPTIONS = {
     { key = "speed", default = 0, min = 0, max = 500, step = 10, text = ns.TEXT.speed, tip = ns.TEXT.speedTip,
       parent = "onward" },
     { key = "space", default = true, text = ns.TEXT.space, tip = ns.TEXT.spaceTip, parent = "talk" },
+    { key = "service", default = true, text = ns.TEXT.service, tip = ns.TEXT.serviceTip },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "talk" then
@@ -128,5 +133,6 @@ function ns.OnLoad()
 end
 
 function ns.OnLogin()
+    ns.Service.Start()
     ns.Talk.Start()
 end

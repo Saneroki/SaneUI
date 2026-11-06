@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Straight to the service: a vendor, flight master, trainer or banker
+  that has nothing else for you opens its window at once, without the
+  talk before it. Hold Shift as you talk to them to see the talk and its
+  choices (Lore, on by default).
 - Reminders on your party and raid frames: give a reminder the place
   Party and raid frames (/sane reminders) and its icon shows on each
   member who lacks it, your Mark of the Wild or your Rejuvenation, say.

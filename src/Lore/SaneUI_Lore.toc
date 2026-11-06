@@ -25,5 +25,7 @@ Answers.lua
 Quest.lua
 # Space goes on while the talk shows
 Keys.lua
+# Straight to an NPC's only service (a vendor's goods, a flight master's map), with no talk before it
+Service.lua
 # The talk as the game tells it, and what each answer does
 Talk.lua
