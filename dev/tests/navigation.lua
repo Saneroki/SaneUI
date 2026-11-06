@@ -382,6 +382,22 @@ minimap._clicks = true
 function minimap:SetMouseClickEnabled(on) self._clicks = on end
 function minimap:IsMouseClickEnabled() return self._clicks end
 function minimap:PingLocation(x, y) self._ping, self._pings = { x, y }, (self._pings or 0) + 1 end
+-- Its own areas (the engine's quest, bonus objective and dig site blobs): each part's alpha as last set.
+minimap._areas = {}
+for _, name in ipairs({ "SetQuestBlobInsideAlpha", "SetQuestBlobOutsideAlpha", "SetQuestBlobRingAlpha",
+    "SetTaskBlobInsideAlpha", "SetTaskBlobOutsideAlpha", "SetTaskBlobRingAlpha",
+    "SetArchBlobInsideAlpha", "SetArchBlobOutsideAlpha", "SetArchBlobRingAlpha" }) do
+    minimap[name] = function(self, alpha) self._areas[name] = alpha end
+end
+-- Whether every part of its own areas stands at that alpha (a field: the main chunk has no room for more locals).
+function minimap._AreasAt(alpha)
+    local count = 0
+    for _, set in pairs(minimap._areas) do
+        if set ~= alpha then return false end
+        count = count + 1
+    end
+    return count == 9
+end
 minimap.ZoomIn = W.NewWidget("Button", nil, minimap)
 minimap.ZoomIn._mouse = true
 local backdrop = W.NewWidget("Frame", "MinimapBackdrop", minimap)
@@ -1155,6 +1171,7 @@ check(minimap:IsMouseClickEnabled() == false,
     "its left and right clicks go through to our map")
 check(ground == false and ignoreRotation == true and backdrop._alpha == 0 and minimap.ZoomIn._alpha == 0 and not minimap.ZoomIn._mouse,
     "its ground off, its rotation ignored, its border and zoom buttons out of sight")
+check(minimap._AreasAt(0), "its own quest areas and the ring round its edge off with its ground: ours lie under it")
 check(cluster._alpha == 0 and not cluster._mouse and not cluster.ZoneTextButton._mouse and cluster.Selection._mouse,
     "the rest of the game's minimap out of sight and without clicks, but Edit Mode's selection")
 check(minimap._zoom == 2 and Window.small.native == 2, "the small view starts at the step the player had")
@@ -1877,6 +1894,7 @@ end)()
     check(minimap._shown and ground == true and minimap._zoom == step and not Canvas.Laid()
         and Count(Shown(), 801, 804) == 0 and Overviews(Shown(), 0) == 0,
         "in an instance: the game's minimap alone, its own ground on, at the view's step; nothing of ours but the sea")
+    check(minimap._AreasAt(Hybrid.AREA), "there its own quest areas too")
     IsInGroup = function() return true end
     tracker._scripts.OnUpdate(tracker, 0.016)
     local blips = 0
@@ -4378,6 +4396,7 @@ check(not Window.handle.edge.away, "back in its corner")
 Core.Set(ns.name, "nativeMinimap", true)
 check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and minimap:IsMouseClickEnabled()
     and ground == true and ignoreRotation == false and configs > 0, "Show the game's minimap: its place, wheel, clicks, ground, rotation and mask back")
+check(minimap._AreasAt(Hybrid.AREA), "and its own quest areas")
 check(W.stray:GetParent() == minimap and W.stray._points[1][1] == "TOPLEFT" and W.stray._points[1][2] == minimap
     and W.stray._scale == 1 and W.stray._alpha == 1, "and the other addon's button back on it, where, as large and as seen as its addon had it")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,

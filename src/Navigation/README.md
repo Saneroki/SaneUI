@@ -94,7 +94,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   scrolls on a screen lower than it. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
   experience for you any more), *Quests for later* (once you meet what they ask), *Done quests*, *Quest areas* and *Quest objectives*. Its
   first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
-  shows around you (players, tracked herbs and ore, quest areas), on the small map and on the full map too, there
+  shows around you (players, tracked herbs and ore), on the small map and on the full map too, there
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
@@ -165,7 +165,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   you face. While you turn the camera with the left mouse button they wait, until you ride on a moment or turn with
   the right button. They never touch the map pin.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
-  shades it on its map.
+  shades it on its map, lightly, its edge clear; on the small map too, in place of the game's minimap's own.
 - **Quest objectives:** where your quests' open objectives really are, not only their area: of each quest in your log
   that Sane UI's data holds, a pin at every spawn it knows of what is asked: the quest log's sword on a creature to
   kill, its sack on what gives an item to loot and on an object to use, the game's speech bubble on someone to speak
@@ -442,7 +442,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   into) over each zone in view, as large as its box, for the quest under the mouse in the log or the one the
   arrow leads to. Placed at once, drawn on the next frame: the engine shades into the frame's rectangle as it
   stands when asked, and a frame just placed or sized has its new one only once the game has laid it out (drawn
-  at once, the area stood where the zoom before had put it).
+  at once, the area stood where the zoom before had put it). Filled at `Areas.FILL_ALPHA` 64, half the game's map's
+  128 (over our darker ground that stood solid), the edge at its 192, times the pin filter's opacity. The game's
+  minimap draws none of its own while our map lies under it (`Hybrid.AREAS`: its quest, bonus objective and dig site
+  areas' fill, edge and ring at 0 with its ground off, `Hybrid.AREA` again with its ground on): its ring round its
+  edge, made for the round minimap, stood as a white circle inside the square, whole or in part.
 - **Dungeons** (`Dungeons.lua`): the maps of kind *Dungeon* under the world map (`C_Map.GetMapChildrenInfo`), one
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
@@ -938,6 +942,12 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-06, quest areas on the small map ours alone, lighter:** Saneroki saw a white circle on the small map,
+  "sometimes shows, sometimes not and sometimes only partly", with the quest areas, and an area "way to opaque.
+  Much more solid than it normally is"; "I thought we replaced the native blobs with our own so we have more control
+  over it?" Ours drew the quest's area under the game's minimap, and the game's minimap drew its own over it: its
+  outline and the ring round its edge (the circle). Now its own are off while our map lies under it (`Hybrid.AREAS`,
+  back with its ground: in an instance, given back), and ours fill at half the game's map's alpha.
 - **2026-11-06, indoor maps in Ironforge and the Undercity:** Saneroki: inside Ironforge the map showed the zone,
   "just the top of the mountain", not its halls; "Maps that are indoor including ironforge need to always show the
   indoor map ontop the zonemap". The indoor layer went by the game's `IsIndoors`, which is false wherever one may ride

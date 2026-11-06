@@ -29,6 +29,9 @@ local _, ns = ...
 --                   Ping); the mouse's moves stay the game's, for its tooltips
 --      indoors      a cave, a building: its own ground stays off as outdoors (it would draw the
 --                   indoor plan on black over our map, Saneroki 2026-10-20); our map and its dots show
+--      quest areas  its own (quests', bonus objectives', dig sites') are off with its ground: our own
+--                   lie under it (Areas.lua), and its ring round its edge, made for the round minimap,
+--                   stood as a circle inside the square (Saneroki, 2026-11-06); on with its ground again
 --      an instance  a dungeon, a raid, a battleground: the game tells no place of the player in our
 --                   planes, so its minimap alone is the map there, with its own ground, at the view's
 --                   step (the game's own while the view has none), whatever the pin filter says; our
@@ -63,6 +66,12 @@ Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks
 Hybrid.ROOM = 0.5 -- the full map: its square takes at most so much of the canvas' shorter side
 Hybrid.HOME = 2 -- the step a middle click comes back to the player at (Canvas.Home): the game's middle one, its dots
                 -- in sight around you, neither its nearest nor its widest
+-- The game's minimap's own areas, each part's alpha (the engine's: the game's code sets none): 0 while our map lies
+-- under it, Hybrid.AREA (the top of the scale, the engine's own) wherever its ground shows and when given back.
+Hybrid.AREAS = { "SetQuestBlobInsideAlpha", "SetQuestBlobOutsideAlpha", "SetQuestBlobRingAlpha",
+                 "SetTaskBlobInsideAlpha", "SetTaskBlobOutsideAlpha", "SetTaskBlobRingAlpha",
+                 "SetArchBlobInsideAlpha", "SetArchBlobOutsideAlpha", "SetArchBlobRingAlpha" }
+Hybrid.AREA = 255
 local WAIT = "navigation: minimap" -- what waits for the fight's end
 
 local taken, saved, canvas, hooked
@@ -77,13 +86,19 @@ local function Parts()
     return rawget(_G, "Minimap"), rawget(_G, "MinimapCluster"), rawget(_G, "MinimapBackdrop")
 end
 
--- Its own ground drawn (on) or not, where this client lets us say so; asked of the game only when it changes.
+-- Its own ground drawn (on) or not, where this client lets us say so, and its own areas with it (Hybrid.AREAS);
+-- asked of the game only when it changes.
 local function Ground(on)
     on = on and true or false
     if on == ground then return end
     ground = on
     local draw = rawget(_G, "C_Minimap") and C_Minimap.SetDrawGroundTextures
     if draw then draw(on) end
+    local minimap = Parts()
+    for _, name in ipairs(Hybrid.AREAS) do
+        local set = minimap and minimap[name]
+        if set then Core.Ask(set, minimap, on and Hybrid.AREA or 0) end
+    end
 end
 
 -- The radius of a zoom step, read from the game while the minimap stands at that step.

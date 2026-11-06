@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Quest areas on the small map are Sane UI's alone and lighter: the
+  game's minimap no longer draws its own over them, nor the white ring
+  that showed round them.
 - Indoor maps now show in Ironforge's halls, the Undercity and the other
   halls and tunnels you may ride through, over the zone's map, instead of
   the mountain or the ruins above them.

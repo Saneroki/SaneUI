@@ -18,7 +18,8 @@ local _, ns = ...
 --  frame's end after a change of its scale (QuestBlobPinMixin:OnCanvasScaleChanged):
 --  drawn at once, the area stood where the zoom before had put it.
 --
---  The game's minimap draws the areas near the player by itself (Hybrid.lua).
+--  The game's minimap draws none of its own over our map (Hybrid.lua, Hybrid.AREAS): these are the areas
+--  in the small view too.
 --  Should this client not make the frame for us, there are no areas, said once.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -28,7 +29,8 @@ ns.Areas = Areas
 
 Areas.FILL = "Interface\\WorldMap\\UI-QuestBlob-Inside"   -- the game's own, as its map draws them
 Areas.BORDER = "Interface\\WorldMap\\UI-QuestBlob-Outside"
-Areas.FILL_ALPHA, Areas.BORDER_ALPHA = 128, 192
+Areas.FILL_ALPHA, Areas.BORDER_ALPHA = 64, 192 -- the game's map fills at 128 over its paper; over our darker ground
+                                               -- that stood solid (Saneroki, 2026-11-06): half, the edge as its
 
 local layer, holder
 local frames = {} -- [uiMapID] = its area frame, made when first needed
