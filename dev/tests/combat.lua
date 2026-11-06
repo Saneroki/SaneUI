@@ -302,7 +302,7 @@ if RETAIL then
     check(Core.Lent(game), "(the game's window seated as the module stands down)")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "the bottom edge no longer fills the screen; no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no tracking bars",
+        and ns.GIVEN_BACK == "the bottom edge no longer fills the screen; no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no aura icons or bars",
         "standing down: the quest marks go, and what is told says so")
     check(not Core.Lent(game) and game:IsShown() and not click._shown and not frame._shown,
         "the game's window given back, open, the click and the window gone")
@@ -719,6 +719,57 @@ do
                                                                                                           instances
     C_Secrets, UnitGUID, C_Spell.GetSpellName = nil, guidOf, spellName
 
+    -- Class colours: a player's health in their class's colour; off, green as on the unit frames.
+    RAID_CLASS_COLORS = { PRIEST = { r = 1, g = 1, b = 1 }, WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
+    wipe(Face.CLASS)
+    Face.Fill(second.face)
+    Face.Fill(third.face)
+    check(second.face.health._barColor[2] == 1 and third.face.health._barColor[1] == 0.78
+        and third.face.health._barColor[2] == 0.61, "class colours: the priest white, the warrior brown")
+    Core.Set(ns.name, "groupClass", false)
+    check(second.face.health._barColor[1] == green and third.face.health._barColor[1] == green, "Class colours off: green")
+    Core.Set(ns.name, "groupClass", true)
+
+    -- Beside a party: each member's pet, else their target, in a column where a raid's second group would stand.
+    local column, besides = nil, {}
+    for frame, driver in pairs(W.drivers) do
+        if driver.values == Group.BESIDE_SHOWN then column = frame end
+    end
+    check(column and column._parent == live and W.drivers[column].state == "visibility",
+        "in a party a column beside it, which the game's driver hides in a raid")
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == column and widget._template == "SecureUnitButtonTemplate" then besides[#besides + 1] = widget end
+    end
+    check(#besides == 5 and besides[1]:GetAttribute("unit") == "target" and besides[2]:GetAttribute("unit") == "party1target"
+        and besides[5]:GetAttribute("unit") == "party4target", "a button beside each slot, you first: no pets, their targets")
+    check(not besides[2]._shown and not besides[3]._shown, "no target either: nothing shows there")
+    check(Group.Beside(3) == "[@partypet2,exists] partypet2; party2target", "the game's driver: the pet while there is one")
+    units.partypet1 = { name = "Wolf", health = 300, most = 600 }
+    units.party2target = { name = "Hogger", level = 11, enemy = true, reaction = 2, health = 800, most = 1000 }
+    fight.Watch()
+    check(besides[2]:GetAttribute("unit") == "partypet1" and besides[2]._shown and besides[2].face.name._text == "Wolf"
+        and besides[2].face.value._text == "50%" and besides[2].face.health._barColor[1] == green,
+        "a pet called: beside its master, its health, green")
+    check(besides[3]:GetAttribute("unit") == "party2target" and besides[3]._shown and besides[3].face.name._text == "Hogger"
+        and besides[3].face.health._barColor[1] == Face.HOSTILE[1], "a member's target where they have no pet, a foe in red")
+    local point = besides[2]._points[1]
+    check(point[2] == live and point[4] == first._width + Group.GAP and point[5] == first._height + Group.GAP
+        and besides[2]._width == first._width and besides[2]._height == first._height,
+        "each beside its member's slot, at the members' size")
+    check(not besides[1].face.cog._shown and #besides[3].face.icons == 0, "no cog and no aura icons there")
+    units.party2target.health = 400
+    W.Wait(Group.READ + 0.01)
+    check(besides[3].face.value._text == "40%", "the game tells nothing of a target: read again now and then")
+    units.partypet1 = nil
+    fight.Watch()
+    check(besides[2]:GetAttribute("unit") == "party1target" and not besides[2]._shown, "the pet gone: its master's target, none")
+    Core.Set(ns.name, "groupBeside", false)
+    check(not column._shown and W.drivers[column] == nil, "the switch off: no column")
+    Core.Set(ns.name, "groupBeside", true)
+    check(W.drivers[column] and W.drivers[column].values == Group.BESIDE_SHOWN, "on again")
+    units.party2target = nil
+    fight.Watch()
+
     -- A raid of forty: eight columns; a frame too narrow for its health gives that room to the name.
     raid, members = true, 40
     GetRaidRosterInfo = function(index) return "x", 0, math.ceil(index / 5) end
@@ -768,12 +819,12 @@ do
     check(window and window.box and drawn[window.box], "in Edit Mode it has the box every window has")
     local host, faces = nil, {}
     for _, widget in ipairs(W.frames) do
-        if widget.marks and widget._parent._parent == window.frame then
+        if widget.marks and widget._parent._parent == window.frame and widget._shown then
             host = widget._parent
             faces[#faces + 1] = widget
         end
     end
-    check(#faces == 40, "forty units for forty")
+    check(#faces == 40, "forty units for forty, no column beside them in a raid")
     local last = faces[40]
     check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
         "the last at the top of the eighth column, touching its neighbours")
@@ -795,6 +846,16 @@ do
     check(ns.options.groupPreview == 12, "what the dialog sets is the module's")
     Core.Selection.Clear()
     Core.Set(ns.name, "groupPreview", 5)
+    local shown, beside = 0, nil
+    for _, widget in ipairs(W.frames) do
+        if widget.marks and widget._parent == host and widget._shown then
+            shown = shown + 1
+            local point = widget._points[1]
+            if point and point[2] == faces[1] then beside = widget end
+        end
+    end
+    check(shown == 10 and beside and beside._points[1][3] == "BOTTOMRIGHT" and beside._width == faces[1]._width,
+        "a party previewed: a pet or a foe beside each, as in the game")
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(W.drivers[live] and W.drivers[live].values == Group.SHOWN and not host._shown, "after Edit Mode: the live frames again")
 

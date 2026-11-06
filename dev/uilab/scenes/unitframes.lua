@@ -48,6 +48,7 @@ end
 RegisterUnitWatch = function(frame) frame:Show() end
 UnregisterUnitWatch = function() end
 RegisterStateDriver, UnregisterStateDriver = function() end, function() end
+RegisterAttributeDriver, UnregisterAttributeDriver = function() end, function() end
 SecureHandlerSetFrameRef = function() end
 ClearOverrideBindings, SetOverrideBinding, GetBindingKey = function() end, function() end, function() end
 

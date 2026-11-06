@@ -14,6 +14,7 @@ end
 SecureHandlerSetFrameRef = function() end
 RegisterUnitWatch, UnregisterUnitWatch = function(frame) frame:Show() end, function() end
 RegisterStateDriver, UnregisterStateDriver = function() end, function() end
+RegisterAttributeDriver, UnregisterAttributeDriver = function() end, function() end
 ClearOverrideBindings, SetOverrideBinding, SetOverrideBindingClick = function() end, function() end, function() end
 SecureCmdOptionParse = function() return nil end
 GetBindingKey = function() end

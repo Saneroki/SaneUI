@@ -117,15 +117,17 @@ function Reminders.Named(name)
     return nil
 end
 
--- The reminder of that aura, made if it has none: a buff shown when it is missing, a debuff on you when it is there,
--- a debuff on another (yours on a foe) when it is missing; only yours counting where its family says so (a blessing).
-function Reminders.Make(spell)
+-- The reminder of that aura, made if it has none, on bar (a bar's number or GROUP; nil: the first bar): a buff shown
+-- when it is missing, a debuff on you or the party and raid frames when it is there, a debuff on another (yours on a
+-- foe) when it is missing; only yours counting where its family says so (a blessing).
+function Reminders.Make(spell, bar)
     local reminder = Reminders.Find(spell)
     if reminder then return reminder end
-    local stays = spell.harmful and spell.unit == "player"
+    bar = bar or Reminders.Bars()[1]
+    local stays = spell.harmful and (spell.unit == "player" or bar == Reminders.GROUP)
     local family = families[spell.name]
     reminder = { id = spell.id, name = spell.name, icon = spell.icon, harmful = spell.harmful, unit = spell.unit,
-                 bar = Reminders.Bars()[1], missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false,
+                 bar = bar, missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false,
                  own = family and family.own or false }
     table.insert(Reminders.List(), reminder)
     Reminders.Apply()
@@ -232,13 +234,17 @@ function Reminders.Update()
     for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
 end
 
--- A menu's lines for an aura ({ id, name, icon, harmful, unit }): make its reminder or open the one it has, delete it.
+-- A menu's line for an aura ({ id, name, icon, harmful, unit }): Show on raid frames, ticked while it has a reminder
+-- (there or on a bar); a click makes one on the party and raid frames, or deletes it. Its settings are Edit auras',
+-- the menu's last line (Units/Lists.lua).
 function Reminders.Entry(root, spell)
     if ns.options.reminders == false then return end
-    local reminder = Reminders.Find(spell)
-    local word = reminder and ns.TEXT.reminderEdit or ns.TEXT.reminderCreate
-    root:CreateButton(word, ns.Guard(function() ns.ReminderEditor.Open(Reminders.Make(spell)) end))
-    if reminder then root:CreateButton(ns.TEXT.reminderDelete, ns.Guard(function() Reminders.Take(reminder) end)) end
+    root:CreateCheckbox(ns.TEXT.reminderCreate, ns.Guard(function() return Reminders.Named(spell.name) ~= nil end),
+        ns.Guard(function()
+            local reminder = Reminders.Named(spell.name)
+            if reminder then return Reminders.Take(reminder) end
+            Reminders.Make(spell, Reminders.GROUP)
+        end))
 end
 
 -- Your own cast of a spell a reminder watches, where the game tells it in a fight: the aura is there, for how long

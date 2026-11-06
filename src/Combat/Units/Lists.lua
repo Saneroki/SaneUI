@@ -23,7 +23,8 @@ local _, ns = ...
 --  by name, each with its red X in front (off the list, every mark and its
 --  reminder), its icon, name and number, a tick for each mark in the columns
 --  Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit
---  frames, and last Reminder: one made or deleted (Reminders/). A spell stays on
+--  frames, and last Show on raid frames: a reminder made or deleted (Reminders/:
+--  on the party and raid frames, or an aura bar its settings choose). A spell stays on
 --  the list with no tick, until its X (auraKept). A line clicked is chosen, and
 --  under the list stand its reminder's settings (Reminders/Editor.lua). Over it a
 --  search box: as you type, suggestions under it in groups, each class's auras,
@@ -259,12 +260,12 @@ local function Spell(row)
     return { id = row.id, name = row.name, icon = Icon(row.id), harmful = harmful, unit = harmful and "target" or "player" }
 end
 
--- A line's tick Reminder: its reminder made, or deleted; the line chosen.
+-- A line's tick Show on raid frames: its reminder made there, or deleted; the line chosen.
 local function Remind(row, on)
     local reminder = ns.Reminders.Named(row.name)
     chosen = row.name
     if on and not reminder then
-        ns.Reminders.Make(Spell(row))
+        ns.Reminders.Make(Spell(row), ns.Reminders.GROUP)
     elseif not on and reminder then
         ns.Reminders.Take(reminder)
     end

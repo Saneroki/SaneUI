@@ -8,11 +8,15 @@ The bigger changes of each version, newest first.
 ------------------
 - Routes never use your hearthstone. When it would get you to the
   map pin sooner, the chat tells you once, with the minutes it saves.
-- Edit auras: one window for every aura's setup, its marks and its
-  tracking (/sane auras, /sane reminders, or the button on the Tracked
-  auras settings). Search any spell, tick its Track, and set where its
-  icon shows and on whom right under the list. What was called a
-  reminder is now tracking an aura.
+- Party frames: beside each member of a party their combat pet, or what
+  they target where they have none, in a column where a raid's second
+  group would stand. The party and raid frames show each player's health
+  in their class's colour.
+- Edit auras: one window for every aura's setup, its marks and its icon
+  on the raid frames (/sane auras, /sane reminders, or the button on the
+  Aura icons settings). Search any spell, tick its Show on raid frames,
+  and set where its icon shows and on whom right under the list. What was
+  called a reminder is now Show on raid frames.
 - Aura lists (/sane auras): one list of every aura you set up, a tick
   for each mark and the X in front to take it off, and a search over
   every class's auras, the enemies' and food, potions and items, grouped
@@ -22,8 +26,8 @@ The bigger changes of each version, newest first.
   that has no quest for you opens its window at once, without the talk
   before it. Hold Shift as you talk to them to see the talk and its
   choices (Lore, on by default).
-- Tracked auras on your party and raid frames: track an aura on the
-  Party and raid frames (/sane auras) and its icon shows on each
+- Aura icons on your party and raid frames: tick an aura's Show on raid
+  frames (/sane auras) and its icon shows on each
   member who lacks it, your Mark of the Wild or your Rejuvenation, say.
   Only yours counts your own cast alone. In a fight a HoT that runs out
   shows at once, and one you cast on someone goes from their frame. The

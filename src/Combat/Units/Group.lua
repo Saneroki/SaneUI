@@ -32,6 +32,17 @@ local _, ns = ...
 --  one of them, with the group's word for a name and a cog that opens the
 --  group's tools (GroupTools.lua).
 --
+--  Beside a party of five or less (Saneroki, 2026-11-06; the switch Pets and
+--  targets beside a party), a column more, as a raid's second group would stand:
+--  beside each member their combat pet, or what they target where they have
+--  none, on a secure unit button of our own whose unit the game's attribute
+--  driver sets (Group.Beside: [@partypet1,exists] partypet1; party1target), so it
+--  follows a pet called or gone in a fight too; the game's unit watch shows it
+--  while its unit is there, a state driver hides the column in a raid. The game
+--  tells nothing of a member's target, so those faces are read every Group.READ
+--  seconds while they show. The header lists a party in its own order, you and
+--  then party1 to party4, so the column lines up slot by slot.
+--
 --  In Edit Mode the live frames rest and the preview shows: plain frames of the
 --  same look (GroupFace.lua) laid out by the same sizes, with random health,
 --  mana, roles, raid markers, reminders' icons, barriers, lost health, dispels,
@@ -45,6 +56,7 @@ local _, ns = ...
 --  parents given back exactly. Off, or standing down, the game's are back.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
+local Plain = Core.Plain
 local Face = ns.GroupFace
 local Group = {}
 ns.Group = Group
@@ -54,6 +66,8 @@ Group.GAP = 0           -- between two units: they stand edge to edge (Saneroki,
 Group.LEAST_WIDTH, Group.LEAST_HEIGHT = 40, 14
 Group.GAME = { "PartyFrame", "CompactRaidFrameContainer", "CompactRaidFrameManager" } -- the game's frames ours stand in for
 Group.SHOWN = "[group] show; hide"                         -- when the live frames show
+Group.BESIDE_SHOWN = "[group:raid] hide; [group] show; hide" -- when the column beside a party shows
+Group.READ = 0.25 -- seconds between two reads of the members' targets beside a party
 -- What can be chosen in Edit Mode (each also an option of the module, Combat.lua).
 Group.SETTINGS = {
     { key = "groupWidth", min = 100, max = 2000, step = 10 },
@@ -64,6 +78,7 @@ Group.SETTINGS = {
 
 local holder, window, live, preview, box -- the window, the live frames' parent, the preview's parent, the game's hidden frame
 local headers, samples, faces, lends = {}, {}, {}, nil -- the headers; the rolled previews; their faces; what is lent
+local beside, besideFaces, reading = nil, {}, nil -- the column beside a party, its buttons by slot; its preview's; the reads
 local built = false -- the headers have their buttons
 local holdCount = 0 -- ready checks ended: only the last one's result is taken away
 
@@ -94,6 +109,23 @@ function Group.Filled()
         end
     end
     return columns
+end
+
+-- What stands beside a party's slot (1 you, then party1 to party4): the member's pet, else their target.
+function Group.Beside(slot)
+    if slot == 1 then return "[@pet,exists] pet; target" end
+    local member = slot - 1
+    return ("[@partypet%d,exists] partypet%d; party%dtarget"):format(member, member, member)
+end
+
+-- Whether the column beside a party is wanted now: switched on, in a party.
+local function Besides()
+    return ns.options.groupBeside ~= false and Core.Ask(IsInGroup) == true and not Core.Ask(IsInRaid)
+end
+
+-- How many columns the window holds now: those your group fills, and the one beside a party.
+function Group.Columns()
+    return Group.Filled() + (Besides() and 1 or 0)
 end
 
 -- A button of a header: its unit followed by our face.
@@ -155,7 +187,7 @@ local function Mine()
     ns.GroupTools.Over(slot, Face.INSET + Face.ICON / 2)
 end
 
--- Every live face, each with its fn.
+-- Every live face, each with its fn: the members', then those beside a party.
 local function EachFace(fn, ...)
     for _, header in ipairs(headers) do
         for child = 1, Group.PER_GROUP do
@@ -163,18 +195,68 @@ local function EachFace(fn, ...)
             if button and button.face then fn(button.face, ...) end
         end
     end
+    for _, button in ipairs(beside or {}) do fn(button.face, ...) end
 end
 Group.Each = EachFace
 
--- Every live unit at the size the group calls for. Out of a fight.
+local Shown = ns.Guard(function(button) Face.Fill(button.face) end)
+
+-- The column beside a party: a protected frame, a secure unit button per slot, each with our face, its unit set by
+-- the game's attribute driver and shown by its unit watch; there once whole. Out of a fight.
+local function Beside()
+    if beside then return end
+    local column = CreateFrame("Frame", nil, live, "SecureFrameTemplate")
+    column:SetAllPoints(live)
+    for slot = 1, Group.PER_GROUP do
+        local button = CreateFrame("Button", nil, column, "SecureUnitButtonTemplate")
+        Dress(button)
+        button.face.beside = true
+        button:HookScript("OnShow", Shown) -- a target come: its unit's token is the same, so nothing else tells the face
+        RegisterAttributeDriver(button, "unit", Group.Beside(slot))
+        RegisterUnitWatch(button)
+        column[slot] = button
+    end
+    beside = column
+end
+
+-- The members' targets beside a party read anew: the game tells nothing of them.
+local function Read()
+    for _, button in ipairs(beside or {}) do
+        local face = button.face
+        if face.unit and face.unit:find("target$") and Plain(face:IsVisible()) == true then Face.Fill(face) end
+    end
+end
+
+-- The column shown in a party, or away; the reads with it. Out of a fight.
+local function Aside(on)
+    if on then
+        Beside()
+        RegisterStateDriver(beside, "visibility", Group.BESIDE_SHOWN)
+        reading = reading or C_Timer.NewTicker(Group.READ, ns.Guard(Read))
+    elseif beside then
+        UnregisterStateDriver(beside, "visibility")
+        beside:Hide()
+    end
+    if not on and reading then
+        reading:Cancel()
+        reading = nil
+    end
+end
+
+-- Every live unit at the size the group calls for, the column beside a party next to the first. Out of a fight.
 local function Layout()
     local width, height, unit = Limits()
-    local wide, high = Group.Size(Group.Filled(), width, height, unit)
+    local wide, high = Group.Size(Group.Columns(), width, height, unit)
     for _, header in ipairs(headers) do
         for child = 1, Group.PER_GROUP do
             if header[child] then header[child]:SetSize(wide, high) end
         end
         header:SetAttribute("yOffset", Group.GAP) -- arranged anew for the new size
+    end
+    for slot, button in ipairs(beside or {}) do
+        button:ClearAllPoints()
+        button:SetPoint("BOTTOMLEFT", live, "BOTTOMLEFT", wide + Group.GAP, (slot - 1) * (high + Group.GAP))
+        button:SetSize(wide, high)
     end
 end
 
@@ -186,6 +268,10 @@ end
 local function Chance(share)
     return math.random() < share
 end
+Group.CLASSES = { -- the classes a made-up player is of, by the role it may have
+    TANK = { "WARRIOR", "PALADIN", "DRUID" }, HEALER = { "PRIEST", "PALADIN", "SHAMAN", "DRUID" },
+    NONE = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" },
+}
 local function Roll(icons)
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
@@ -193,6 +279,7 @@ local function Roll(icons)
         sample.mana = 0.1 + math.random() * 0.9
         sample.role = Pick({ "TANK", "HEALER" })
     end
+    sample.class = Pick(Group.CLASSES[sample.role or "NONE"])
     if Chance(0.2) then sample.mark = math.random(1, 8) end
     if Chance(0.2) then sample.barrier = math.min(0.1 + math.random() * 0.3, 1 - sample.health) end
     if Chance(0.15) then sample.lost = 0.1 + math.random() * 0.3 end
@@ -213,12 +300,22 @@ local function Roll(icons)
     return sample
 end
 
+-- What a made-up member has beside them in a party: a pet (green) half the time, else a foe they target.
+local function RollBeside()
+    local pet = Chance(0.5)
+    return { name = Pick(pet and NAMES.pets or NAMES.foes), health = 0.3 + math.random() * 0.7,
+             most = math.random(1, 8) * 1000, icons = {}, reaction = not pet and 2 or nil }
+end
+
 -- That many samples, rolled anew only when their number changes.
 local function Rolled(count)
     if #samples ~= count then
         local icons = ns.GroupReminders.Icons()
         wipe(samples)
-        for index = 1, count do samples[index] = Roll(icons) end
+        for index = 1, count do
+            samples[index] = Roll(icons)
+            samples[index].beside = RollBeside()
+        end
         if samples[1] then samples[1].you = true end
     end
     return samples
@@ -228,7 +325,8 @@ end
 local function Preview()
     local count = math.min(tonumber(ns.options.groupPreview) or 0, Group.GROUPS * Group.PER_GROUP)
     local width, height, unit = Limits()
-    local wide, high = Group.Size(math.ceil(count / Group.PER_GROUP), width, height, unit)
+    local aside = ns.options.groupBeside ~= false and count > 0 and count <= Group.PER_GROUP
+    local wide, high = Group.Size(math.ceil(count / Group.PER_GROUP) + (aside and 1 or 0), width, height, unit)
     for index, sample in ipairs(Rolled(count)) do
         sample.raid = count > Group.PER_GROUP
         local face = faces[index]
@@ -244,8 +342,24 @@ local function Preview()
         Face.Fit(face) -- the sample's words read how narrow it is
         Face.Sample(face, sample)
         face:Show()
+        local other = besideFaces[index]
+        if aside then
+            if not other then
+                other = Face.Make(preview, true)
+                besideFaces[index] = other
+            end
+            other:ClearAllPoints()
+            other:SetPoint("BOTTOMLEFT", face, "BOTTOMRIGHT", Group.GAP, 0)
+            other:SetSize(wide, high)
+            Face.Fit(other)
+            Face.Sample(other, sample.beside)
+            other:Show()
+        elseif other then
+            other:Hide()
+        end
     end
     for index = count + 1, #faces do faces[index]:Hide() end
+    for index = count + 1, #besideFaces do besideFaces[index]:Hide() end
     preview:Show()
 end
 
@@ -302,6 +416,7 @@ local function Rest()
     if not live then return end
     UnregisterStateDriver(live, "visibility")
     live:Hide()
+    Aside(false)
     ns.GroupTools.Hide()
 end
 
@@ -324,6 +439,7 @@ local function Apply()
     preview:Hide()
     if not Core.Ask(IsInGroup) then return Rest() end
     Headers()
+    Aside(Besides())
     ns.GroupTools.Build(live)
     Layout()
     EachFace(Face.Fill)

@@ -153,18 +153,22 @@ local menu = Click(thorns)
 check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.reminderCreate and menu[3].text == TEXT.auraImportant
     and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraFramesShow
     and menu[7].text == TEXT.auraFramesHide and menu[8].text == TEXT.auraLists,
-    "a left click: its menu, the spell, Create reminder, the marks")
+    "a left click: its menu, the spell, Show on raid frames, the marks")
+check(menu[2].checked() == false, "not shown there yet: no tick")
 menu[2].fn()
 local list = Reminders.List()
 local reminder = list[1]
-check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player" and reminder.bar == 1,
-    "the reminder is made, on bar 1, of your own aura")
+check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player"
+    and reminder.bar == Reminders.GROUP, "ticked: the reminder is made, on the party and raid frames, of your own aura")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
 menu = Click(thorns)
-check(menu[2].text == TEXT.reminderEdit and menu[3].text == TEXT.reminderDelete,
-    "made once: the menu then opens it, or deletes it")
+check(menu[2].text == TEXT.reminderCreate and menu[2].checked() == true, "made once: the menu ticks it")
 menu[2].fn()
-check(#Reminders.List() == 1, "and makes no other")
+check(#Reminders.List() == 0, "clicked again: deleted")
+Click(thorns)[2].fn()
+reminder = Reminders.List()[1]
+check(#Reminders.List() == 1 and reminder.bar == Reminders.GROUP, "and made again")
+reminder.bar = Reminders.Bars()[1] -- on its bar for what follows
 
 -------------------------------------------------------------------------------
 --  The marks on the game's list
@@ -252,7 +256,8 @@ secret = true
 Rebuilt()
 check(thorns.Icon._alpha == 0, "in a fight it stays by its instance")
 local inFight = Click(thorns)
-check(inFight[1].title == "Thorns" and inFight[2].text == TEXT.reminderEdit, "and its menu opens: it was on before the fight")
+check(inFight[1].title == "Thorns" and inFight[2].text == TEXT.reminderCreate and inFight[2].checked() == true,
+    "and its menu opens: it was on before the fight")
 inFight = Click(bear)
 inFight[3].fn()
 check(ns.options.auraWhite[5487] == "Bear" and Glows(bear), "and marks it in the fight")
@@ -533,8 +538,9 @@ check(#Reminders.List() == 0 and Of("Thorns") and Said(TEXT.reminderPick), "unti
 Of("Thorns").remind:SetChecked(true)
 Of("Thorns").remind._scripts.OnClick(Of("Thorns").remind)
 reminder = Reminders.List()[1]
-check(reminder and reminder.name == "Thorns" and reminder.unit == "player" and reminder.missing and Said("Thorns")
-    and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, a buff on you, its settings shown")
+check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.GROUP and reminder.missing and Said("Thorns")
+    and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, on the raid frames, its settings shown")
+check(TEXT.reminderColumn == "Show on raid frames", "the column's word")
 -- Any spell by the search: on the list, chosen; its tick, a reminder; on the party and raid frames.
 W.spells[1126] = { name = "Mark of the Wild" }
 C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
@@ -550,9 +556,9 @@ check(markLine and markLine.mark._shown and not markLine.remind:GetChecked() and
 markLine.remind:SetChecked(true)
 markLine.remind._scripts.OnClick(markLine.remind)
 local mark = Reminders.Named("Mark of the Wild")
-check(mark and mark.id == 1126 and mark.bar == Reminders.Bars()[1], "its Reminder ticked: made, on the first bar")
-menus[1]._items[2].fn()
-check(mark.bar == Reminders.GROUP, "and put on the party and raid frames")
+check(mark and mark.id == 1126 and mark.bar == Reminders.GROUP, "its Show on raid frames ticked: made there")
+menus[1]._items[1].fn()
+check(mark.bar == Reminders.Bars()[1], "and put on an aura bar instead")
 -- Its X: off the list, every mark and its reminder.
 local take
 for _, widget in ipairs(W.frames) do

@@ -87,7 +87,7 @@ ns.TEXT = {
     auraFramesHide = "Hide from unit frames",
     buffList = "Your buffs and debuffs",
     buffListOn = "Marks and menu on the game's list",
-    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Track this aura, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Prioritize on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
+    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Show on raid frames, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Prioritize on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
     auraLists = "Edit auras...",
     auraFight = "In a fight the game keeps this aura from addons: after it",
     listsTitle = "Edit auras",
@@ -124,8 +124,12 @@ ns.TEXT = {
     groupGround = "Ground",
     groupMenu = "Group menu",
     groupLeave = Core.Word("PARTY_LEAVE", "Leave Group"),
-    groupBuffs = "Tracked auras on the frames",
-    groupBuffsTip = "On the party and raid frames, the icons of the auras you track there: in Edit auras (/sane auras) tick an aura's Track and set Shows on to Party and raid frames, and its icon shows on each member's frame while its settings want it, a buff they are missing, say. A group's version counts for the one (a Gift of the Wild for a Mark of the Wild); Only yours counts your own cast alone, for your HoTs. In a fight the game hides most auras from addons: one that runs out or is taken off shows at once, one you cast on someone goes, the rest is read again when the fight ends.",
+    groupBeside = "Pets and targets beside a party",
+    groupBesideTip = "In a party of five or less, a column right of the members, where a raid's second group would stand: beside each of you their combat pet, or what they target where they have none (beside you your pet, else your target). The same frames as a member's, a click targets it, the pet called or gone in a fight too. Not in a raid.",
+    groupClass = "Class colours",
+    groupClassTip = "The health of every player on the party and raid frames in their class's colour; a foe beside a party yellow or red by how it stands to you, a pet green. Off: green, as on the unit frames.",
+    groupBuffs = "Aura icons on the frames",
+    groupBuffsTip = "On the party and raid frames, the icons of the auras you show there: in Edit auras (/sane auras) tick an aura's Show on raid frames, and its icon shows on each member's frame while its settings want it, a buff they are missing, say. A group's version counts for the one (a Gift of the Wild for a Mark of the Wild); Only yours counts your own cast alone, for your HoTs. In a fight the game hides most auras from addons: one that runs out or is taken off shows at once, one you cast on someone goes, the rest is read again when the fight ends.",
     groupWidth = "Max width",
     groupHeight = "Max height",
     groupUnitWidth = "Max unit width",
@@ -133,6 +137,8 @@ ns.TEXT = {
     groupSamples = {
         first = { "Aldren", "Brisa", "Caelum", "Dorin", "Elsbeth", "Fenrick", "Gwyn", "Halden", "Ilsa", "Joren", "Kestra", "Lorcan" },
         last = { "Ashford", "Brightwater", "Crowley", "Dunmere", "Everhart", "Fallowfield", "Greymoor", "Hollow" },
+        pets = { "Wolf", "Imp", "Voidwalker", "Cat", "Boar", "Raptor" },
+        foes = { "Kobold Miner", "Murloc Raider", "Gnoll Brute", "Forest Spider", "Defias Bandit", "Young Wolf" },
     },
     samples = { player = "You", target = Core.Word("TARGET", "Target"), focus = Core.Word("FOCUS", "Focus"),
                 targettarget = "Target's target", focustarget = "Focus's target", pet = Core.Word("PET", "Pet"),
@@ -191,18 +197,17 @@ ns.TEXT = {
     meterSaveLater = "Your fight is saved as %s when it is over: the game hides its numbers until then.",
     meterLoad = "Load",
     meterBack = "Back to the fights",
-    reminders = "Tracked auras",
-    remindersOn = "Tracking bars",
-    remindersTip = "Track an aura and its icon shows while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out: on an invisible tracking bar, as wide as what shows on it and placed in Edit Mode, or on the party and raid frames, on each member's. Click a buff or debuff, or right click a spell in the spellbook, and choose Track this aura; or open Edit auras (/sane auras), search any spell and tick its Track. There each tracked aura gets its bar (make as many as you like) or the party and raid frames. Off: no bars, nothing on the frames.",
+    reminders = "Aura icons",
+    remindersOn = "Aura icons and bars",
+    remindersTip = "Show an aura on the raid frames and its icon shows on each member's frame while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. Click a buff or debuff, or right click a spell in the spellbook, and tick Show on raid frames; or open Edit auras (/sane auras), search any spell and tick it there. Under the list its settings can put it on an invisible aura bar instead, on you, your target or your focus: as wide as what shows on it, placed in Edit Mode, as many bars as you like. Off: no icons, no bars.",
     aurasOpen = "Edit auras",
-    aurasOpenTip = "Every aura's setup in one window: search any class's spells, an enemy's or an item's, and tick what it should be, Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, and Track: its icon on a tracking bar or the party and raid frames, its settings under the list.",
-    reminderCreate = "Track this aura",
-    reminderEdit = "Edit tracking",
-    reminderBar = "Tracking bar %d",
+    aurasOpenTip = "Every aura's setup in one window: search any class's spells, an enemy's or an item's, and tick what it should be, Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, and Show on raid frames: its icon on the party and raid frames or an aura bar, its settings under the list.",
+    reminderCreate = "Show on raid frames",
+    reminderBar = "Aura bar %d",
     reminderNewBar = "New bar",
     reminderDeleteBar = "Delete bar",
-    reminderColumn = "Track",
-    reminderPick = "Click an aura's line for its tracking settings here; tick its Track to show its icon on a tracking bar or on the party and raid frames.",
+    reminderColumn = "Show on raid frames",
+    reminderPick = "Click an aura's line for its settings here; tick its Show on raid frames to show its icon on the party and raid frames, or on an aura bar.",
     reminderWatch = "Watch on",
     reminderUnits = { player = "You", target = "Your target", focus = "Your focus" },
     reminderOnGroup = "On each member of your party or raid",
@@ -215,7 +220,6 @@ ns.TEXT = {
     reminderRest = "Don't show in resting areas",
     reminderOwn = "Only yours",
     reminderEarly = "Offset time (seconds)",
-    reminderDelete = "Stop tracking",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -240,7 +244,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the bottom edge no longer fills the screen; " .. (ns.Serves()
     and "your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no tracking bars"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no aura icons or bars"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -266,6 +270,8 @@ local OPTIONS = {
     { key = "auraKept", default = {} }, -- every spell on the lists' window, with a mark or none, until its X
     { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip, header = ns.TEXT.group },
     { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip },
+    { key = "groupClass", default = true, text = ns.TEXT.groupClass, tip = ns.TEXT.groupClassTip },
+    { key = "groupBeside", default = true, text = ns.TEXT.groupBeside, tip = ns.TEXT.groupBesideTip },
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
     { key = "groupWidth", default = 960, min = 100, max = 2000 },
     { key = "groupHeight", default = 140, min = 30, max = 800 },
@@ -350,13 +356,13 @@ function ns.OnLoad()
     ns.Macros.Load()
 end
 
-Core.Command("auras", "Edit auras: every aura's marks and tracking (/sane auras rejuv searches)", function(rest)
+Core.Command("auras", "Edit auras: every aura's marks and where its icon shows (/sane auras rejuv searches)", function(rest)
     if type(rest) == "string" and rest:find("%S") then return ns.Guarded(ns.AuraLists.Open, rest) end
     ns.Guarded(ns.AuraLists.Toggle)
 end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
-Core.Command("reminders", "Edit auras, for the buffs and debuffs you track", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("reminders", "Edit auras, for the buffs and debuffs shown on raid frames and aura bars", function() ns.Guarded(ns.AuraLists.Toggle) end)
 
 function ns.OnLogin()
     ns.Window.Build()

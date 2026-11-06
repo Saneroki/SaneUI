@@ -24,8 +24,11 @@ local _, ns = ...
 --            are and go on behind them
 --    bottom  the mana of a tank or healer, a line inside the bar as on a
 --            nameplate, so the frame is no taller for it
---  and on it Core's barrier and lost maximum health. Green for everyone, as every
---  unit frame; a dead unit's bar full and red, an offline one's full and grey.
+--  and on it Core's barrier and lost maximum health. A player's health in their
+--  class's colour (Saneroki, 2026-11-06; the switch Class colours, else green as
+--  every unit frame), a creature beside a party by how it stands to you (neutral
+--  yellow, hostile red), a pet green; a dead unit's bar full and red, an offline
+--  one's full and grey.
 --  Its border is black, solid red while the unit has an enemy's aggro.
 --
 --  Your own slot is a frame like all the others, with all of that (Saneroki,
@@ -34,7 +37,9 @@ local _, ns = ...
 --  tools' button on just that (GroupTools.lua).
 --
 --  The same face stands on a secure unit button of the game's group headers
---  (Face.Unit: it follows the button's unit), hearing that unit's events, and
+--  (Face.Unit: it follows the button's unit), hearing that unit's events, on one
+--  beside a party's (face.beside: a member's pet or target, Group.lua; no cog, no
+--  aura icons of yours), and
 --  in Edit Mode's preview as a plain frame filled with made-up values
 --  (Face.Sample). It takes no mouse: the button under it keeps clicks, the
 --  tooltip and @mouseover.
@@ -62,6 +67,10 @@ Face.AGGRO = 2       -- the first of the game's threat kinds that is having aggr
 Face.AGGRO_BORDER = { 1, 0, 0, 1 }  -- solid, saturated
 Face.DEAD = { 0.8, 0, 0 }
 Face.OFFLINE = { 0.5, 0.5, 0.5 }
+Face.CLASS = {} -- [a class's file name] = { r, g, b }: the game's colour of that class, read when first asked
+local hostile = (rawget(_G, "FACTION_BAR_COLORS") or {})[2] -- the game's colour of a hostile standing
+Face.HOSTILE = type(hostile) == "table" and type(hostile.r) == "number" and { hostile.r, hostile.g, hostile.b }
+    or { 0.8, 0.13, 0.13 }
 Face.COG = "questlog-icon-setting"  -- the game's cog, as Core's windows have it
 Face.REZ = "RaidFrame-Icon-Rez"     -- the game's raid frames' icon of an incoming resurrection
 Face.ROLES = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer" } -- the game's plain marks, without a ring
@@ -200,9 +209,10 @@ local function Icons(face, list, count)
     Roomed(face, face.room.right)
 end
 
--- Your reminders on these frames that the unit's auras want shown, as far as can be told (Reminders/Group.lua).
+-- Your reminders on these frames that the unit's auras want shown, as far as can be told (Reminders/Group.lua); none
+-- beside a party, where a pet or a foe stands.
 local function Buffs(face, unit)
-    Icons(face, face.missing, ns.GroupReminders.Missing(unit, face.missing))
+    Icons(face, face.missing, face.beside and 0 or ns.GroupReminders.Missing(unit, face.missing))
 end
 
 -- The same for the face's unit, if it has one (every face anew, when a reminder changed).
@@ -275,11 +285,38 @@ local function Colour(face, colour)
     face.health:SetStatusBarColor(colour[1], colour[2], colour[3])
 end
 
--- The bar: its health in green, or full, red for the dead and grey for who is offline.
+-- That class's colour as the game has it, or nil.
+local function ClassColour(class)
+    if Face.CLASS[class] then return Face.CLASS[class] end
+    local colours = rawget(_G, "RAID_CLASS_COLORS")
+    local game = type(class) == "string" and colours and colours[class]
+    if type(game) ~= "table" or type(game.r) ~= "number" then return nil end
+    Face.CLASS[class] = { game.r, game.g, game.b }
+    return Face.CLASS[class]
+end
+
+-- A health's colour: a player's class's (the switch Class colours on), a creature's by its standing to you (a reaction
+-- of 4 neutral, under it hostile), the rest green.
+function Face.Tint(player, class, reaction)
+    if player and (ns.options or {}).groupClass ~= false then
+        local colour = ClassColour(class)
+        if colour then return colour end
+    end
+    if reaction == 4 then return Bar.CALM end
+    if type(reaction) == "number" and reaction < 4 then return Face.HOSTILE end
+    return Bar.GREEN
+end
+
+local function TintOf(unit)
+    local _, class = Core.Ask(UnitClass, unit)
+    return Face.Tint(Core.Ask(UnitIsPlayer, unit) == true, class, Core.Ask(UnitReaction, unit, "player"))
+end
+
+-- The bar: its health in its colour (Face.Tint), or full, red for the dead and grey for who is offline.
 local function Health(face, unit)
     local offline = Core.Ask(UnitIsConnected, unit) == false
     local gone = offline or Core.Ask(UnitIsDeadOrGhost, unit) == true
-    Colour(face, offline and Face.OFFLINE or gone and Face.DEAD or Bar.GREEN)
+    Colour(face, offline and Face.OFFLINE or gone and Face.DEAD or face.tint or Bar.GREEN)
     if gone then
         face.health:SetMinMaxValues(0, 1)
         face.health:SetValue(1)
@@ -339,7 +376,8 @@ end
 function Face.Fill(face)
     local unit = face.unit
     if ns.off or not unit or not Core.Ask(UnitExists, unit) then return end
-    Yours(face, Core.Ask(UnitIsUnit, unit, "player") == true)
+    Yours(face, not face.beside and Core.Ask(UnitIsUnit, unit, "player") == true)
+    face.tint = TintOf(unit)
     Health(face, unit)
     face.marks:Set(unit)
     Power(face, unit)
@@ -415,11 +453,11 @@ end
 
 -- Made-up values instead of a unit (the preview): sample = { you (your own slot), raid, name, health (a share), most, mana (a share, or nil),
 -- role, mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's
--- answer), rez, aggro, word (Dead, Offline), colour }.
+-- answer), rez, aggro, word (Dead, Offline), colour (theirs), class (a player's), reaction (a creature's) }.
 function Face.Sample(face, sample)
     face.marks:Sample(sample)
     Yours(face, sample.you == true)
-    Colour(face, sample.colour or Bar.GREEN)
+    Colour(face, sample.colour or Face.Tint(sample.class ~= nil, sample.class, sample.reaction))
     face.health:SetMinMaxValues(0, 1)
     face.health:SetValue(sample.colour and 1 or sample.health)
     face.power:SetShown(sample.mana ~= nil)
