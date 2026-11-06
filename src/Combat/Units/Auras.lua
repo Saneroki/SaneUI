@@ -19,7 +19,7 @@ local _, ns = ...
 --  And before them, in front of the rest and with the game's golden outline, the ones you
 --  marked Important (what no longer fits a line goes up: the kinds stay clear of
 --  each other); never the ones marked Unimportant (Lists.lua keeps the lists).
---  Your marks of the unit frames alone go over those: Show on unit frames in
+--  Your marks of the unit frames alone go over those: Prioritize on unit frames in
 --  front of the rest without a glow, Hide from unit frames never.
 --
 --  Out of a fight ours show them (AuraRow.lua), which the mouse can reach. In a
@@ -182,7 +182,7 @@ function Auras.Each(fn)
     for _, face in ipairs(faces) do ns.Safe("unit frame auras", fn, face) end
 end
 
--- What your marks say of the unit frames: the important (glowing), those of Show on unit frames, what never shows. The
+-- What your marks say of the unit frames: the important (glowing), those of Prioritize on unit frames, what never shows. The
 -- marks of the unit frames alone go first: Hide takes an important one off, Show brings an unimportant one, no glow.
 function Auras.Sets()
     local white, black, shown, hide = Lists()

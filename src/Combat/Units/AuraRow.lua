@@ -34,7 +34,7 @@ local function Read(unit, filter, order)
     return type(list) == "table" and list or {}
 end
 
--- What shows of a kind: the important, those marked Show on unit frames, then the rest, each at most the kind's most.
+-- What shows of a kind: the important, those marked Prioritize on unit frames, then the rest, each at most the kind's most.
 -- Returns them, and the set of the important.
 local function Pick(face, kind)
     local first, second, never = Auras.Sets()

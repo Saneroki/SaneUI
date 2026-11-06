@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Aura lists (/sane auras): one list of every aura you set up, a tick
+  for each mark and the X in front to take it off, and a search over
+  every class's auras, the enemies' and food, potions and items, grouped
+  by class as you type. Show on unit frames is now called Prioritize on
+  unit frames.
 - Straight to the service: a vendor, flight master, trainer or banker
   that has nothing else for you opens its window at once, without the
   talk before it. Hold Shift as you talk to them to see the talk and its

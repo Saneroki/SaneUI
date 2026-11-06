@@ -79,22 +79,31 @@ ns.TEXT = {
     unitRest = "Hide the unit frames at rest",
     unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
     unitAuras = "Auras on the frames",
-    unitAurasTip = "The auras that matter most above a frame: four buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Show on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
+    unitAurasTip = "The auras that matter most above a frame: four buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Prioritize on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
     auraImportant = "Important",
     auraUnimportant = "Unimportant",
     auraHidden = "Hidden",
-    auraFramesShow = "Show on unit frames",
+    auraFramesShow = "Prioritize on unit frames",
     auraFramesHide = "Hide from unit frames",
     buffList = "Your buffs and debuffs",
     buffListOn = "Marks and menu on the game's list",
-    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Create reminder, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Show on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
+    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Create reminder, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Prioritize on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
     auraLists = "Aura lists...",
     auraFight = "In a fight the game keeps this aura from addons: after it",
     listsTitle = "Aura lists",
-    listsInput = "A spell's number, or its name (one of your own):",
-    listsEmpty = "None yet.",
+    listsInput = "Search any class's auras, an enemy's or an item's, or type a spell's number:",
+    listsEmpty = "None yet. Search for an aura above, or click one on your frames or a spell in the spellbook.",
     listsPut = "%s: %s.",
-    listsUnknown = "The game does not know that spell here by its name: type its number, or click its icon.",
+    listsAdded = "%s is on the list: tick what it should be.",
+    listsThere = "%s is on the list already.",
+    listsGone = "%s is off the list and every mark.",
+    searchEnemies = "Enemies",
+    searchItems = "Food, potions, items and the world",
+    searchNumber = "By its number",
+    searchYours = "Your spells",
+    searchMore = "%s (%d)",
+    searchReading = "Reading every class's spells...",
+    searchNothing = "Nothing found.",
     listsRule = "On the unit frames the game lets these act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
     unitBarrier = "Barriers",
     unitBarrierTip = "What absorbs damage on a unit, in the game's shield art on its health bar: after the health while it fits, against the bar's right end when it does not. On your unit frames and your party and raid frames.",
@@ -251,6 +260,7 @@ local OPTIONS = {
     { key = "auraHidden", default = {} }, -- those out of sight in the game's list (Units/BuffList.lua)
     { key = "auraShow", default = {} }, -- first on the unit frames, nothing else about them changed
     { key = "auraHide", default = {} }, -- never on the unit frames, nothing else about them changed
+    { key = "auraKept", default = {} }, -- every spell on the lists' window, with a mark or none, until its X
     { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip, header = ns.TEXT.group },
     { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip },
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
@@ -336,7 +346,10 @@ function ns.OnLoad()
     ns.Macros.Load()
 end
 
-Core.Command("auras", "your aura lists: how they look, and on the unit frames", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("auras", "your aura lists: how they look, and on the unit frames (/sane auras rejuv searches)", function(rest)
+    if type(rest) == "string" and rest:find("%S") then return ns.Guarded(ns.AuraLists.Open, rest) end
+    ns.Guarded(ns.AuraLists.Toggle)
+end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
 Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.Guarded(ns.ReminderEditor.Toggle) end)

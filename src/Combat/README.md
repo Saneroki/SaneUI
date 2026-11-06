@@ -33,7 +33,7 @@ it; the mouse on it brings its buttons.
 
 Click a buff or debuff, or right click a spell in the spellbook, and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
-with no glow or fade, *Show on unit frames* or *Hide from unit frames*. Or choose *Create reminder*: its
+with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or choose *Create reminder*: its
 icon then shows on an invisible reminder bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
 shows on it, and you make as many bars as you like. Or give the reminder the place *Party and raid frames*: its icon then
 shows on each member's frame while they lack it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
@@ -110,9 +110,14 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
-    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Show on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window with the lists side by side: type a
-    spell's number (or a name of one of your own spells) and choose a list, or take a spell off with its X;
-    `/sane auras` opens it too. The game lets the lists act here on the buffs of you, your group and friendly units and
+    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window
+    with one long list of every aura you set up: in front of each its red X (off the list and every mark), then its icon,
+    name and number, and a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*, *Hide from unit
+    frames* and *Prioritize on unit frames*. A spell stays on the list with no tick until its X. Over the list a search:
+    type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
+    order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
+    first; click one, or Enter for the first, and it is on the list, lit, to tick. A spell's number finds that spell.
+    `/sane auras` opens it too, `/sane auras rejuv` with that searched. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (in a fight, that is; out of one your marks act on all of them).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health, in the light yellow the nameplates give a neutral creature, and its
@@ -239,7 +244,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - **Important:** the game's golden animated outline around it, as on a spell it wants you to see; on the unit frames it comes first, with the same outline.
   - **Unimportant:** faded to 25% of its strength; never on the unit frames.
   - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
-  - **Show on unit frames**, **Hide from unit frames:** the unit frames alone: first there without a glow, or never there,
+  - **Prioritize on unit frames**, **Hide from unit frames:** the unit frames alone: first there without a glow, or never there,
     the list as it is. They go over the three above: *Important* + *Hide*: a glow in the list, not on the frames;
     *Unimportant* + *Show*: faded in the list, first on the frames, no glow. Hidden can have either.
   - A mark goes by the aura's name, so any rank of it. Click the tick again to take it off, or use `/sane auras`.
@@ -495,7 +500,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     come back rounded, and icons at exactly the line's width lost the last) is its widest line (`SetFlowLayoutMaximumLineSize`):
     what your list adds goes up, not sideways into the next kind. Groups of the kind's `most`, without spacing: `listed` (the filter
     `HARMFUL` or `HELPFUL` with `includeSpellIDs` = Important, off while that list is empty, its icons with a glow, so a
-    fight needs no telling which is which), `shown` (Show on unit frames, no glow) and `auto` (the kind's
+    fight needs no telling which is which), `shown` (Prioritize on unit frames, no glow) and `auto` (the kind's
     filter for a foe or a friend, `SetAuraGroupFilterString` as the unit changes, its sort `UnitFrameDebuff` or
     `BigDefensive`, `excludeSpellIDs` = what those two hold and what never shows; control only what never shows: Unimportant and Hide, less Show). The game applies those candidate filters
     itself, in a fight too, where it lets addons tell spells apart (`AuraContainerUtil.CanApplyIdentityCandidateFilters`).
@@ -512,10 +517,21 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     focus fills it a frame later; `PLAYER_REGEN_*` and `ADDON_RESTRICTION_STATE_CHANGED` swap row and containers
     (`Auras.Set` at `face.auraAsked`). `Auras.Set` sets each container's unit (`none` while ours show), `UpdateAllAuras` at every fill.
   - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden`, and `auraShow`, `auraHide` (`{ [spell number] = name }`), one list of
-    each side per spell (`Lists.SIDE`; `Put`, `Take`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; the window a `Core.Window` panel (`auraListsPlace`, not
-    sizable, no full screen): the box (`InputBoxTemplate`; a number by `C_Spell.GetSpellName`, a name by
-    `C_Spell.GetSpellInfo`), a button per list, the lists in scroll areas, each line with
-    icon, name, number and the game's close button, the rule under them. `/sane auras` (`Core.Command`).
+    each side per spell (`Lists.SIDE`; `Put`, `Take`, `Unmark(which, name)`, `Forget(name)`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; and `auraKept`, the window's own list: every spell put on a mark or picked
+    in the search, with a mark or none, until its X (`Forget`: off every list). The window a `Core.Window` panel (`auraListsPlace`, not
+    sizable, no full screen): one scroll list of every name on any of them (`Rows`), each line the game's close button
+    (its template stands at frame level 510: set to its line's), icon, name, number and a `UICheckButtonTemplate` per mark
+    in `Lists.COLUMNS` (Hidden, Unimportant, Important, Hide, Prioritize), their words over the columns; the search box
+    (`InputBoxTemplate`, searched `Lists.WAIT` after the last key) and under it the suggestions, a frame of their own
+    over the list (`Lists.FIND`: 16 lines at most, each group its title and its best, at least `per`); Enter takes the
+    first, Escape empties it. `Open(text)` searches at once. `/sane auras [words]` (`Core.Command`).
+  - `AuraSearch.lua` (`ns.AuraSearch`): what the search finds, read once at the first search from Core's sets: each class
+    (`Classes`, 1 to `CLASSES`) its class lines' spells (`SkillLines` by `byClass`, kind `class`) that put an aura on
+    (`Spells`' effects with an aura; one without effects counts), the enemies' (`CreatureSpells`) and the items' (`Auras`)
+    by Data's jobs, a part per frame out of a fight; one entry per name in a group. `Find(text, done)`: `Core.Fuzzy.Filter`
+    over the names, then the groups by their best rank, your own class first where two are as good; a spell's number
+    first (`C_Spell.GetSpellName`); without the sets (Retail for now) a name finds a spell of your own (`C_Spell.GetSpellInfo`).
+    While the sets are read `done` gets what the game found with `reading`, then again. `Lit(entry, text)` the name with what was typed in gold.
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
     children `TotemFrame` and the class bars stay the game's; `PetFrame` (which the game's layout re-parents) alpha 0
@@ -687,7 +703,8 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
-| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Show on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and their window (`/sane auras`) |
+| `Units/AuraSearch.lua` | What the aura lists' search finds: every class's auras, the enemies', the items', from Core's sets, in groups |
+| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and their window (`/sane auras`): one list with a tick per mark, the search |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: the game's outline, fade, hidden last, the left click |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
@@ -713,6 +730,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Reminders/Editor.lua` | The window: your bars and the party and raid frames, the reminders there and the settings of the one chosen |
 
 ## History
+- **2026-11-06:** the aura lists one long list, a tick per mark in Saneroki's order and the red X in front of the name, and a search over every class's auras, the enemies' and the items', in groups (Saneroki: "can I search for all spells across classes and maybe even enemies?"); *Show on unit frames* is *Prioritize on unit frames*.
 - **2026-11-06:** reminders on the party and raid frames, in place of the fixed buffs of your class (Saneroki: "add those buffs or spells or hots to the party bar manually"); *Only yours*; a group's version counts for the one.
 - **2026-11-06:** a Sane Macro on a bar button acts as the game's buttons do: a spell or item dropped or clicked onto it takes its place, and dragged with the pick-up key it goes to another button or off the bars (Saneroki: it could not be removed).
 - **2026-11-06:** the menu bar's alert *You have unopened items in your collection*, once closed, stays closed until more come (Saneroki: it came back at every login).

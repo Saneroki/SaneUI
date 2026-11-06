@@ -1793,24 +1793,32 @@ do
     ns.AuraLists.Menu(top, nil)
     check(W.menus[1][1].title == ns.TEXT.auraFight and W.menus[1][2].text == ns.TEXT.auraLists,
         "an aura the game keeps from addons: only the lists' window")
-    -- The window: the lists side by side, a spell added by its number, taken off by its X.
+    -- The window: one list, a spell found by its number and put on it by Enter, ticked Important, taken off again.
+    -- Its search and its ticks in full: auralists.lua.
     W.menus[1][2].fn()
     local lists = ns.AuraLists
     W.spells[1459] = { name = "Arcane Intellect" }
     local box
     for _, widget in ipairs(W.frames) do if widget._kind == "EditBox" and widget._template == "InputBoxTemplate" then box = widget end end
     box:SetText("1459")
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(1)
     box._scripts.OnEnterPressed(box)
-    check(ns.options.auraWhite[1459] == "Arcane Intellect" and mine.buffs._groups.listed.candidates.includeSpellIDs[1459],
-        "typed by its number, Enter: Important")
     local line
     for _, widget in ipairs(W.frames) do
-        if widget.entry and widget.entry.id == 1459 and widget._shown then line = widget end
+        if widget.row and widget.row.id == 1459 and widget._shown then line = widget end
     end
-    check(line and line.name._text == "Arcane Intellect" and line.number._text == 1459, "listed with its name and number")
+    check(line and line.name._text == "Arcane Intellect" and line.number._text == 1459 and ns.options.auraKept[1459]
+          and not ns.options.auraWhite[1459], "found by its number, Enter: on the list with its name and number, no mark yet")
+    line.ticks.white:SetChecked(true)
+    line.ticks.white._scripts.OnClick(line.ticks.white)
+    check(ns.options.auraWhite[1459] == "Arcane Intellect" and mine.buffs._groups.listed.candidates.includeSpellIDs[1459],
+        "its tick Important: first on the unit frames")
     box:SetText("Nonsense")
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(1)
     box._scripts.OnEnterPressed(box)
-    check(ns.options.auraWhite.Nonsense == nil, "a name the game does not know: nothing added")
+    check(ns.options.auraKept.Nonsense == nil and ns.options.auraWhite.Nonsense == nil, "a name nothing knows: nothing added")
     lists.Take("white", 1459)
     lists.Take("black", 7386)
     check(next(ns.options.auraWhite) == nil and next(ns.options.auraBlack) == nil and debuffs._groups.auto.candidates == nil,

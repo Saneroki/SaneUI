@@ -16,6 +16,7 @@
 #   meter.lua       the Combat module's threat and damage meter: its place, the list, the bars, pages, saved fights, threat,
 #                   and a fight with the numbers hidden by the game
 #   reminders.lua   the Combat module's reminders: the right click on auras, the bars, what shows when, a fight with hidden auras
+#   auralists.lua   the Combat module's aura lists: one list with a tick per mark, the search over every class's, the enemies' and the items' auras
 #   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
 #   loot.lua        the Loot module: its window and rules, the master looter's menu, full bags, roll cards, the feed
 #   economy.lua     the Economy module: what to buy and sell right now, the server asked item by item, a purchase and a post
@@ -83,6 +84,7 @@ lua dev/tests/book.lua
 lua dev/tests/meter.lua
 lua dev/tests/talents.lua
 lua dev/tests/reminders.lua
+lua dev/tests/auralists.lua
 lua dev/tests/nameplates.lua
 lua dev/tests/loot.lua
 lua dev/tests/economy.lua
