@@ -66,11 +66,12 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
 - **In a fight:** the talk ends when the fight begins and the interface is back at once. A talk begun in a fight
   is the game's own window.
 - **Straight to the service:** a vendor, a flight master, a trainer, a banker, the auction house, a battlemaster,
-  a tabard or charter vendor that has nothing else for you (no quest to take, hand in or go on with, no other choice
-  but a trainer's unlearning) opens its window at once, without the talk; as a scene or in the game's own windows
-  alike, with Speed Leveling or without it. Hold Shift as you talk to them for the talk and its choices. Two services
-  (an innkeeper's home and goods), a word to say beside the service, a quest there, and the talk that opens again
-  after a quest handed in there stay a talk.
+  a tabard or charter vendor that has no quest for you (none to take, hand in or go on with) and no other service
+  opens its window at once, without the talk, even with something to talk about or a trainer's unlearning beside it;
+  as a scene or in the game's own windows alike, with Speed Leveling or without it. Hold Shift as you talk to them
+  for the talk and its choices. Two services (an innkeeper's home and goods), an option the game marks *(Quest)*, a
+  quest there, and the talk that opens again after a quest handed in there stay a talk; so does an option Speed
+  Leveling's guide takes there.
 - **Left to the game:** gossip that has a window of its own in the game, an only option the game takes by itself,
   and an offer the game turns into a popup in its quest tracker (from an item, an area).
 - **Settings** (Lore's page, section *Talks*):
@@ -127,11 +128,15 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   take the mouse where the talk does not lie over them.
 - **Straight to the service** (`Service.lua`): Talk's `GOSSIP_SHOW` asks `Service.Take` first. An option's kind is
   the game's own icon of it (`option.icon`, `Interface\GossipFrame\*GossipIcon`): vendor, taxi, trainer, banker,
-  auction house, battlemaster, tabard, petition are services, the unlearn icon may stand beside one. Taken with the
-  game's `C_GossipInfo.SelectOptionByIndex(orderIndex)` when there are no quests (`GetNumAvailableQuests`,
-  `GetNumActiveQuests`), exactly one service whose `status` is `Available`, nothing else but the unlearning; not with
-  `IsShiftKeyDown()`, within `Service.AFTER` seconds of a `QUEST_FINISHED` at that NPC (`UnitGUID("npc")`), for a
-  custom gossip frame, or for an only option the game takes itself. The game's gossip window is left as it is (held
+  auction house, battlemaster, tabard, petition are services; the talk icons (gossip, chat bubble) and the unlearn
+  icon may stand beside one, an option with the `QuestLabelPrepend` flag never. Taken with the game's
+  `C_GossipInfo.SelectOptionByIndex(orderIndex)` a frame after `GOSSIP_SHOW` (`Core.Later`) when there are no quests
+  (`GetNumAvailableQuests`, `GetNumActiveQuests`) and exactly one service whose `status` is `Available`; not when the
+  gossip was answered in between (`hooksecurefunc` on `C_GossipInfo`'s `SelectOption`, `SelectOptionByIndex`,
+  `SelectAvailableQuest`, `SelectActiveQuest`, `CloseGossip` counts every answer, by anyone: Speed Leveling's guide
+  answers in the event itself), not with `IsShiftKeyDown()`, within `Service.AFTER` (5) seconds of a
+  `QUEST_FINISHED` at that NPC (`UnitGUID("npc")`), for a custom gossip frame, or for an only option the game takes
+  itself. The game's gossip window is left as it is (held
   with the scene on, so nothing comes into sight; with the game's own windows it shows until the server answers).
   When neither `GOSSIP_CLOSED` nor another interaction (`PLAYER_INTERACTION_MANAGER_FRAME_SHOW`) comes within
   `Service.WAIT`, the talk shows after all.
@@ -163,8 +168,9 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   answers' order, Continue, the words waiting at speed 0 and going on at a raised one, the clicks (the left going
   round, the right on every screen, no reward taken and nothing paid by it, a double click), Speed Leveling's own
   `Quests.lua` beside the talk, the rewards read (kinds, slots, value, changes, an empty slot, a bow's slot), a choice,
-  a quest that costs money, a fight, a talk left to the game, a vendor's window, an NPC's only service taken (and
-  each case that stays a talk), the settings, Retail, standing down.
+  a quest that costs money, a fight, a talk left to the game, a vendor's window, an NPC's only service taken (beside
+  a word to say too, and each case that stays a talk, an answer given in between), the settings, Retail, standing
+  down.
 
 ## Files
 | File | What it does |
@@ -196,4 +202,5 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   itself; a left click cycles through it; a right click accepts, or closes the window on the goodbye screen; Speed
   Leveling's taking and handing in go on as before).
 - 2026-11-06: straight to the service (Saneroki asked: past the gossip window of "I need a ride" and "Show me your
-  wares" without Speed Leveling; Shift shows the choices).
+  wares" without Speed Leveling; Shift shows the choices). The same day, "Skip those too": a word to say beside the
+  service no longer keeps the talk.

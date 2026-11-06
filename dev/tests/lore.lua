@@ -7,8 +7,9 @@
 -- the right giving what needs no choosing and never a reward), the words waiting at reading speed 0, Speed Leveling's
 -- quest givers (its own file) doing their quests beside the talk, the interface faded out and back with the game's
 -- questions, error lines and the rewards' tooltips kept in sight, Space bound only while a talk shows, an NPC's only
--- service taken at once (a trainer's unlearning beside it; not with Shift, a quest there, a choice, right after a
--- quest; the talk after all when nothing opens), and the settings. The look and the face can only be judged in the game.
+-- service taken at once (a word to say or a trainer's unlearning beside it; not with Shift, a quest there, an option
+-- marked as a quest's, two services, right after a quest, nor over an answer given meanwhile; the talk after all
+-- when nothing opens), and the settings. The look and the face can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/lore.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -666,6 +667,7 @@ local function Served(options, before)
     said = {}
     if before then before() end
     W.Fire("GOSSIP_SHOW")
+    W.Wait(0)
     local took, shown = said[1], talkRoot:IsShown()
     GossipFrame:Hide()
     W.Fire("GOSSIP_CLOSED", took ~= nil)
@@ -685,9 +687,14 @@ check(took == "option 2", "a trainer: its lessons, the unlearning beside them ta
 took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR },
                        { name = "I need a ride.", orderIndex = 2, icon = TAXI } })
 check(took == nil and shown, "two services: the talk, the choice yours")
+took, shown = Served({ { name = "Tell me of the woods.", orderIndex = 1, icon = CHAT },
+                       { name = "Let me browse your goods.", orderIndex = 2, icon = VENDOR } })
+check(took == "option 2" and not shown, "a service beside a word to say: the service all the same")
+Enum.GossipOptionRecFlags = Enum.GossipOptionRecFlags or { QuestLabelPrepend = 1 }
 took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR },
-                       { name = "Tell me of the woods.", orderIndex = 2, icon = CHAT } })
-check(took == nil and shown, "a service beside a word to say: the talk")
+                       { name = "I have the package.", orderIndex = 2, icon = CHAT,
+                         flags = Enum.GossipOptionRecFlags.QuestLabelPrepend } })
+check(took == nil and shown, "beside an option the game marks as a quest's: the talk")
 took, shown = Served({ { name = "Let me browse your goods.", orderIndex = 1, icon = VENDOR, status = 2 } })
 check(took == nil and shown, "a service locked: the talk, which tells why")
 gossip.available = { { title = "Wolves Across the Border", questID = 33, isTrivial = false, frequency = 0 } }
@@ -702,10 +709,26 @@ took, shown = Served(VENDING, function() W.Fire("QUEST_FINISHED") end)
 check(took == nil and shown, "the talk that opens again after a quest at that NPC stays a talk")
 W.Wait(ns.Service.AFTER)
 check(Served(VENDING) == "option 1", "a while later the service is taken again")
+-- Something else answers the gossip in the same moment (a guide naming an option there): left to it.
+gossip.options = { { name = "Tell me of the woods.", orderIndex = 1, icon = CHAT },
+                   { name = "Let me browse your goods.", orderIndex = 2, icon = VENDOR } }
+GossipFrame:Show()
+said = {}
+W.Fire("GOSSIP_SHOW")
+C_GossipInfo.SelectOptionByIndex(1)
+W.Wait(0)
+check(#said == 1 and said[1] == "option 1", "answered by something else: the service not taken over it")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
+gossip.options = VENDING
 -- The game does not move on from the option taken: the talk shows after all.
 GossipFrame:Show()
 said = {}
 W.Fire("GOSSIP_SHOW")
+check(#said == 0 and not talkRoot:IsShown(), "taken a moment later")
+W.Wait(0)
 check(said[1] == "option 1" and not talkRoot:IsShown(), "taken, waiting for the game")
 W.Wait(ns.Service.WAIT)
 check(talkRoot:IsShown(), "nothing opened: the talk after all")

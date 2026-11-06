@@ -12,8 +12,8 @@ The bigger changes of each version, newest first.
   by class as you type. Show on unit frames is now called Prioritize on
   unit frames.
 - Straight to the service: a vendor, flight master, trainer or banker
-  that has nothing else for you opens its window at once, without the
-  talk before it. Hold Shift as you talk to them to see the talk and its
+  that has no quest for you opens its window at once, without the talk
+  before it. Hold Shift as you talk to them to see the talk and its
   choices (Lore, on by default).
 - Reminders on your party and raid frames: give a reminder the place
   Party and raid frames (/sane reminders) and its icon shows on each

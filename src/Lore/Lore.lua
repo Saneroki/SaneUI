@@ -61,7 +61,7 @@ ns.TEXT = {
     space = "Space goes on",
     spaceTip = "While a talk shows, Space shows the next paragraph; on the last one it does what needs no choosing: it accepts the quest offered, hands in a quest whose reward is chosen (or that has one or none to choose), takes the only answer there is, or says goodbye. Space jumps again once the talk ends.",
     service = "Straight to the service",
-    serviceTip = "Talking to a vendor, a flight master, a trainer, a banker, the auction house or a battlemaster that has nothing else for you (no quest, no other choice), its window opens at once, without the talk before it; as a scene or in the game's own windows alike. Hold Shift as you talk to them for the talk and its choices. Never in the talk that opens again after a quest handed in there.",
+    serviceTip = "Talking to a vendor, a flight master, a trainer, a banker, the auction house or a battlemaster that has no quest for you and no other service, its window opens at once, without the talk before it, even with something to talk about beside it; as a scene or in the game's own windows alike. Hold Shift as you talk to them for the talk and its choices. Never in the talk that opens again after a quest handed in there.",
 
     -- The answers (Talk.lua).
     goodbye = Game("GOODBYE", "Goodbye"),
