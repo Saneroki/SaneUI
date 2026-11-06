@@ -581,8 +581,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   texture in the `ARTWORK` layer, else its normal texture (`Strays.Picture`), cut inside its frame where it shows its
   whole file (`Satchel.TRIM`) and cut round (`Satchel.ROUND`); the ring and background the common buttons have lie in
   other layers and stay out. Hooks after its `SetPoint` and `SetAlpha` put it back whenever its addon places it
-  again or shows it (a drag, its own update, a fade). Looked for at the login, 2 and 10 seconds after, a second after each addon that loads, and as the
-  satchel opens. Given back exactly when the game's minimap is the game's again (`Hybrid.Update` tells it) or the
+  again or shows it (a drag, its own update, a fade). Looked for at the login, on the next frame (the buttons addons make
+  at the login itself, held before another addon that gathers minimap buttons takes them off the minimap a second
+  later: `Strays.AGAIN`), 2 and 10 seconds after, a second after each addon that loads, and as the satchel opens. Given back exactly when the game's minimap is the game's again (`Hybrid.Update` tells it) or the
   module stands down. Its name in the satchel is its addon's title in the addon list (no colours). The game's addon
   compartment (`AddonCompartmentFrame.registeredAddons`, both games): each addon a cell of its own, its click
   `entry.func(nil, { buttonName })` and the mouse's coming and going its own, as the game's menu calls them, behind
@@ -948,6 +949,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-06, a button made at the login in the satchel:** Saneroki found no button of the guild addon Sane UI knows
+  in the satchel. That addon makes its button only at the login, and another addon of his gathers minimap buttons
+  into a bar of its own a second after the login; the satchel looked again only after three seconds (its 2 seconds
+  went through a second's wait), so that bar had it first and it was no longer on the minimap. Now the satchel also
+  looks on the next frame after the login, and its 2 and 10 seconds are 2 and 10 (`Strays.AGAIN`).
 - **2026-11-06, the hearthstone told, not taken:** Saneroki stood in the middle of Stormwind with the map pin in
   Darkshore: the line in Darkshore was right, but "it shows the blue route from the middle of the city where I
   stand"; he expected "a golden route to the ship, a blue ship line and a golden route in darkdshore from the boat

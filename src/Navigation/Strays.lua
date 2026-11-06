@@ -39,7 +39,9 @@ local Strays = {}
 ns.Strays = Strays
 
 Strays.LARGEST = 64       -- a button no larger than this either way: a larger frame on the minimap is no button
-Strays.AGAIN = { 2, 10 }  -- seconds after the login it looks again: addons that make their buttons late
+Strays.AGAIN = { 0, 2, 10 } -- seconds after the login it looks again: the next frame first, for the buttons addons make
+                             -- at the login itself (held before another addon that gathers minimap buttons takes them
+                             -- off the minimap: it looks a second later), then for addons that make theirs late
 
 local held = {}       -- [button] = what it was: parent, points, scale, strata, level, mouse; and its addon, title
 local spots = {}      -- [button] = the frame it is laid on now (a cell), or the hidden home
@@ -241,8 +243,7 @@ end
 function Strays.Start()
     home = CreateFrame("Frame", nil, UIParent)
     home:Hide()
-    local again = Core.Later(function() ns.Guarded(Strays.Look) end, 1)
-    ns.On("ADDON_LOADED", again)
-    for _, after in ipairs(Strays.AGAIN) do C_Timer.After(after, ns.Guard(again)) end
+    ns.On("ADDON_LOADED", Core.Later(function() ns.Guarded(Strays.Look) end, 1))
+    for _, after in ipairs(Strays.AGAIN) do C_Timer.After(after, ns.Guard(Strays.Look)) end
     Strays.Update()
 end

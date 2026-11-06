@@ -792,6 +792,19 @@ local ns = W.LoadAddon(root, "Navigation", "SaneUI_Navigation")
 W.Fire("ADDON_LOADED", "SaneUI_Navigation")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Navigation == ns and not ns.off, "the module is made and started")
+-- A button another addon makes in its own login handler, after Navigation's: held on the next frame, before another
+-- addon that gathers minimap buttons looks a second later and takes it off the minimap (Strays.AGAIN).
+;(function()
+    local late = W.NewWidget("Button", "LateAddonButton", minimap)
+    late:SetSize(32, 32)
+    late._mouse = true
+    rawset(_G, "LateAddonButton", late)
+    W.insecure.LateAddonButton, W.late = "LateAddon", late
+    W.Wait(0)
+    check(late:GetParent() ~= minimap and not late:GetParent()._shown,
+        "a button another addon makes at the login itself is held on the next frame, out of sight")
+    late:Hide() -- its addon hides it: left out of the satchel the rest of the run
+end)()
 
 -------------------------------------------------------------------------------
 --  Retail from the start: the game's own map tree, one map at a time (Camera.Retail.lua)
@@ -1885,7 +1898,7 @@ end)()
 ;(function()
     local sane
     for _, widget in ipairs(W.frames) do
-        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn then sane = widget end
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late then sane = widget end
     end
     check(sane and not sane._shown and minimap._shown, "inside our map the game's minimap carries no button Sane UI")
     local step = minimap._zoom
@@ -4404,7 +4417,7 @@ check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse a
 ;(function()
     local sane
     for _, widget in ipairs(W.frames) do
-        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn then sane = widget end
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late then sane = widget end
     end
     check(sane and sane._shown and minimap._shown, "the game's own minimap again: its button Sane UI on it, back to ours")
 end)()
