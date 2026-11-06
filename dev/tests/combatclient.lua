@@ -111,6 +111,7 @@ function Client.Install(W)
     UnitCanAttack = function(a, b) return Unit(a == "player" and b or a).foe or false end
     UnitIsDeadOrGhost = function(unit) return Unit(unit).dead or false end
     UnitIsConnected = function(unit) return not Unit(unit).offline end
+    UnitInParty = function(unit) return unit == "player" or unit:match("^party") ~= nil end
     UnitThreatSituation = function() return W.threat end
     UnitDetailedThreatSituation = function(_, unit) return Unit(unit).tanking end
     GetRaidTargetIndex = function(unit) return Unit(unit).raid end

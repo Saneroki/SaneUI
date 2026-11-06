@@ -316,7 +316,7 @@ end
 --  Your party and raid
 -------------------------------------------------------------------------------
 do
-    local Group, Face, Buffs = ns.Group, ns.GroupFace, ns.GroupBuffs
+    local Group, Face, Members = ns.Group, ns.GroupFace, ns.GroupReminders
     local deadOf, onlineOf = UnitIsDeadOrGhost, UnitIsConnected -- back as they were at the end: the tests after these use them
     local Marks = Core.HealthMarks
     check(Group.GAP == 0, "units stand edge to edge, no gap between them")
@@ -557,50 +557,167 @@ do
     check(not second.face.ready._shown and second.face.ready._width == Core.HealthMarks.NONE and first.face.cog._shown,
         "then it goes, and takes no room")
 
-    -- Your buffs: a family counts from anyone, and a fight leaves them as they were.
-    local auras = {}
-    C_UnitAuras.GetAuraDataBySpellName = function(unit, name) return auras[unit] and auras[unit][name] end
+    -- Your reminders on the frames: a family counts from anyone, Only yours your own cast; in a fight what was known.
+    local Reminders = ns.Reminders
+    local auras = {} -- [a unit] = { [a name] = its data, mine: yours }
+    local readAura, duration, instances = C_UnitAuras.GetAuraDataBySpellName, C_UnitAuras.GetAuraDuration,
+                                          C_UnitAuras.GetUnitAuraInstanceIDs
+    local guidOf, inParty, spellName = UnitGUID, UnitInParty, C_Spell and C_Spell.GetSpellName
+    local secret = false
+    C_UnitAuras.GetAuraDataBySpellName = function(unit, name, filter)
+        if secret then return nil end
+        local data = auras[unit] and auras[unit][name]
+        if data and filter:find("PLAYER", 1, true) and not data.mine then return nil end
+        return data
+    end
+    C_UnitAuras.GetAuraDuration = function(unit, id) -- the game fails on an instance that is gone
+        for _, data in pairs(auras[unit] or {}) do
+            if data.auraInstanceID == id then return {} end
+        end
+        error("invalid aura instance")
+    end
+    C_UnitAuras.GetUnitAuraInstanceIDs = function(unit, filter)
+        local ids = {}
+        for _, data in pairs(auras[unit] or {}) do
+            if data.mine or not filter:find("PLAYER", 1, true) then ids[#ids + 1] = data.auraInstanceID end
+        end
+        return ids
+    end
+    C_Secrets = { ShouldAurasBeSecret = function() return secret end, ShouldSpellAuraBeSecret = function() return secret end }
+    UnitGUID = function(unit) return "Player-1-" .. unit end
     C_Spell = C_Spell or {}
-    local spellInfo = C_Spell.GetSpellInfo
-    C_Spell.GetSpellInfo = function(name) if name == "Power Word: Fortitude" then return { iconID = 135987 } end end
-    local class = UnitClass
-    UnitClass = function(unit) if unit == "player" then return "Priest", "PRIEST" end return class(unit) end
-    Buffs.Learn()
-    check(Buffs.Any() and Buffs.Icons()[1] == 135987, "what you know of your class's buffs")
-    local list = {}
-    check(Buffs.Missing("party1", list) == 1 and list[1] == 135987, "a member without it is missing it")
-    auras.party1 = { ["Prayer of Fortitude"] = {} }
-    check(Buffs.Missing("party1", list) == 0, "the group's version counts")
-    auras.party1 = nil
-    Face.Fill(second.face)
+    C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
+    local function Shows(face, icon)
+        for _, texture in ipairs(face.icons) do
+            if texture._shown and texture._texture == icon then return true end
+        end
+        return false
+    end
     local roomBefore = second.face.name._width
-    Face.Fill(second.face)
-    check(second.face.icons[1]._shown and second.face.icons[1]._texture == 135987 and second.face.name._width == roomBefore
-        and second.face.icons[1]._parent == second.face.floating, "the icon floats over the name, which keeps its room")
-    auras.party1 = { ["Power Word: Fortitude"] = {} }
-    local fighting = InCombatLockdown
-    InCombatLockdown = function() return true end
-    check(Buffs.Missing("party1", list) == nil, "in a fight auras are hidden: nothing is told")
-    second.face:GetScript("OnEvent")(second.face, "UNIT_AURA", "party1")
-    check(second.face.icons[1]._shown, "and the icon stays as it was")
-    InCombatLockdown = fighting
-    second.face:GetScript("OnEvent")(second.face, "UNIT_AURA", "party1")
-    check(not second.face.icons[1]._shown, "after it, it is read again")
+    local mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
+    check(not Shows(second.face, 136078) and not mark.own, "on a bar: nothing on the frames")
+    mark.bar = Reminders.GROUP
+    Reminders.Apply()
+    check(Shows(first.face, 136078) and Shows(second.face, 136078) and Shows(third.face, 136078),
+        "on the frames: its icon on each member without it, your own slot too")
+    check(second.face.icons[1]._parent == second.face.floating and second.face.name._width == roomBefore,
+        "floating over the name, which keeps its room")
+    check(Members.Icons()[1] == 136078, "and in Edit Mode's preview")
+    auras.party1 = { ["Gift of the Wild"] = { auraInstanceID = 31 } }
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = true })
+    check(not Shows(second.face, 136078) and Shows(third.face, 136078), "the group's version counts for it, from anyone")
+    mark.own = true
+    Reminders.Apply()
+    check(Shows(second.face, 136078), "only yours: another's does not count")
+    auras.party1["Gift of the Wild"].mine = true
+    Members.Refresh()
+    check(not Shows(second.face, 136078), "and yours does")
+    mark.own = false
     -- An update that only refreshed what is there is not read again; one that added a buff or took an aura away is.
     auras.party1 = nil
-    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, updatedAuraInstanceIDs = { 7 } })
-    check(not second.face.icons[1]._shown, "an aura refreshed: not read again")
-    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, removedAuraInstanceIDs = { 7 } })
-    check(second.face.icons[1]._shown, "an aura gone: read again, the buff is missing")
-    auras.party1 = { ["Power Word: Fortitude"] = {} }
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, updatedAuraInstanceIDs = { 31 } })
+    check(not Shows(second.face, 136078), "an aura refreshed: not read again")
+    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, removedAuraInstanceIDs = { 31 } })
+    check(Shows(second.face, 136078), "an aura gone: read again, the buff is missing")
+    auras.party1 = { ["Mark of the Wild"] = { auraInstanceID = 32 } }
     on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, addedAuras = { { isHelpful = false } } })
-    check(second.face.icons[1]._shown, "a debuff added: not read again")
+    check(Shows(second.face, 136078), "a debuff added: not read again")
     on(second.face, "UNIT_AURA", "party1", { isFullUpdate = false, addedAuras = { { isHelpful = true } } })
-    check(not second.face.icons[1]._shown, "a buff added: read again, it has it")
-    on(second.face, "UNIT_AURA", "party1", { isFullUpdate = true })
-    check(not second.face.icons[1]._shown and not ns.off, "all of them anew: read again")
-    UnitClass, C_Spell.GetSpellInfo = class, spellInfo
-    Buffs.Learn()
+    check(not Shows(second.face, 136078) and not ns.off, "a buff added: read again, it has it")
+    -- A blessing: only yours from the start; a shout: your own party only; the dead and the offline: none.
+    local might = Reminders.Make({ id = 19740, name = "Blessing of Might", icon = 135906, harmful = false, unit = "player" })
+    check(might.own, "a blessing: only yours counts from the start")
+    Reminders.Take(might)
+    local shout = Reminders.Make({ id = 6673, name = "Battle Shout", icon = 132333, harmful = false, unit = "player" })
+    shout.bar = Reminders.GROUP
+    UnitInParty = function(unit) return unit == "party1" end
+    Reminders.Apply()
+    check(Shows(first.face, 132333) and Shows(second.face, 132333) and not Shows(third.face, 132333),
+        "a shout: on your own party only")
+    UnitInParty = inParty
+    Reminders.Take(shout)
+    UnitIsDeadOrGhost = function(unit) return unit == "party2" end
+    Members.Refresh()
+    check(not Shows(third.face, 136078) and Shows(second.face, 136078) == false, "none on the dead")
+    UnitIsDeadOrGhost = function() return false end
+    UnitIsConnected = function(unit) return unit ~= "party2" end
+    Members.Refresh()
+    check(not Shows(third.face, 136078), "nor on the offline")
+    UnitIsConnected = function() return true end
+    Members.Refresh()
+    local extra = {}
+    for index, name in ipairs({ "Thorns", "Regrowth", "Renew", "Fear Ward" }) do
+        extra[index] = Reminders.Make({ id = 900 + index, name = name, icon = 900 + index, harmful = false, unit = "player" })
+        extra[index].bar = Reminders.GROUP
+    end
+    Reminders.Apply()
+    local count = 0
+    for _, texture in ipairs(third.face.icons) do
+        if texture._shown then count = count + 1 end
+    end
+    check(count == Members.MOST and Shows(third.face, 136078) and not Shows(third.face, 904), "at most four, the first made first")
+    for _, reminder in ipairs(extra) do Reminders.Take(reminder) end
+    Reminders.Take(mark)
+    check(not Shows(third.face, 136078) and Members.Icons() == Members.SAMPLES, "deleted: gone, and the preview's samples")
+
+    -- Your HoT in a fight the game hides it in: what was known, a HoT gone at once, your cast matched to its new aura.
+    local rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
+    rejuv.bar, rejuv.own = Reminders.GROUP, true
+    auras.party1 = { Rejuvenation = { auraInstanceID = 41, mine = true, expirationTime = W.clock + 30 } }
+    auras.party2 = {}
+    Reminders.Apply()
+    check(not Shows(second.face, 136081) and Shows(third.face, 136081), "your HoT: shown on whom it is not")
+    W.Combat(true)
+    secret = true
+    on(second.face, "UNIT_AURA", "party1", W.Secret())
+    check(not Shows(second.face, 136081), "in a fight the game hides it: known from before, still there")
+    auras.party1 = {}
+    on(second.face, "UNIT_AURA", "party1", W.Secret())
+    check(Shows(second.face, 136081), "it ran out in the fight: the game tells that much, it shows at once")
+    auras.party2 = { Rejuvenation = { auraInstanceID = 42, mine = true } }
+    on(third.face, "UNIT_AURA", "party2", W.Secret())
+    check(Shows(third.face, 136081), "a new aura of yours and no cast: which one is not known")
+    W.spells[774] = { name = "Rejuvenation" }
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 774)
+    check(not Shows(third.face, 136081) and Shows(second.face, 136081), "your cast of it right after: that member has it")
+    W.Wait(1)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 774)
+    auras.party1 = { Rejuvenation = { auraInstanceID = 43, mine = true } }
+    on(second.face, "UNIT_AURA", "party1", W.Secret())
+    check(not Shows(second.face, 136081), "the cast first, then its aura: the same")
+    auras.party2 = { Rejuvenation = { auraInstanceID = 42, mine = true }, Thorns = { auraInstanceID = 44, mine = true } }
+    W.Wait(1)
+    auras.party2.Rejuvenation = nil
+    on(third.face, "UNIT_AURA", "party2", W.Secret())
+    check(Shows(third.face, 136081), "an aura of yours long after the cast is not its, and the HoT gone shows")
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", W.Secret())
+    check(Shows(third.face, 136081), "a cast the game hides tells nothing")
+    secret = false
+    auras.party2 = { Rejuvenation = { auraInstanceID = 45, mine = true } }
+    W.Combat(false)
+    W.Wait(0)
+    check(not Shows(third.face, 136081) and not Shows(second.face, 136081), "after the fight every frame is read again")
+    -- The offset: shown already that long before it runs out, by a look each second.
+    auras.party2.Rejuvenation.expirationTime = W.clock + 20
+    rejuv.early = 5
+    Reminders.Apply()
+    check(not Shows(third.face, 136081), "20 seconds left, offset 5: not yet")
+    W.Wait(16)
+    check(Shows(third.face, 136081), "4 left: shown already, with no aura's event")
+    Reminders.Take(rejuv)
+    check(not Shows(third.face, 136081), "deleted: gone")
+    auras.party2 = {}
+    Core.Set(ns.name, "groupBuffs", false)
+    rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
+    rejuv.bar = Reminders.GROUP
+    Reminders.Apply()
+    check(not Shows(third.face, 136081) and not Members.Any(), "the frames' switch off: none")
+    Core.Set(ns.name, "groupBuffs", true)
+    check(Shows(third.face, 136081), "on again")
+    Reminders.Take(rejuv)
+    C_UnitAuras.GetAuraDataBySpellName, C_UnitAuras.GetAuraDuration, C_UnitAuras.GetUnitAuraInstanceIDs = readAura, duration,
+                                                                                                          instances
+    C_Secrets, UnitGUID, C_Spell.GetSpellName = nil, guidOf, spellName
 
     -- A raid of forty: eight columns; a frame too narrow for its health gives that room to the name.
     raid, members = true, 40

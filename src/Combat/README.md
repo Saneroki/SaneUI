@@ -35,7 +35,8 @@ Click a buff or debuff, or right click a spell in the spellbook, and mark it: *I
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
 with no glow or fade, *Show on unit frames* or *Hide from unit frames*. Or choose *Create reminder*: its
 icon then shows on an invisible reminder bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
-shows on it, and you make as many bars as you like.
+shows on it, and you make as many bars as you like. Or give the reminder the place *Party and raid frames*: its icon then
+shows on each member's frame while they lack it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -175,10 +176,9 @@ shows on it, and you make as many bars as you like.
   nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
   one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
   tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
-  tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each of your class's buffs it
-  is missing (*Your missing buffs*: any priest's Fortitude counts, the
-  group versions too; of a paladin's blessings only your own; a shout only in your own party; in a fight they stay as they were,
-  as the game hides auras then). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
+  tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each of your reminders
+  placed on these frames that wants it, four at most (*Your reminders on the frames*, below, *Reminders*: a buff or HoT the member is
+  missing, say). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
 - **The group's tools:** your own slot among the frames is a frame like all the others, with its health, marks, buffs and everything else.
@@ -190,7 +190,7 @@ shows on it, and you make as many bars as you like.
   game's rule. Esc or its close button closes it. *Restrict pings* and the game's filters for its own raid frames are not in it.
 - **Its sizes and preview:** in Edit Mode, click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
   and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
-  markers, ready checks, aggro, the dead and offline, missing buffs, barriers, lost health and dispels; they stay the same while you
+  markers, ready checks, aggro, the dead and offline, your reminders' icons, barriers, lost health and dispels; they stay the same while you
   slide the sizes. A slot is a fifth of the max height high, whoever is there, so five fill the window even with three in the party. It is as
   wide as the max unit width (at first as wide as your unit frames), and only where the columns in use would not fit into the max width do all
   share that width evenly. Sizes change out of a fight: in one, a member who joins shows at the size in use.
@@ -254,18 +254,27 @@ shows on it, and you make as many bars as you like.
   - **Making one:** click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of a
     fight), or right click a spell in the spellbook, and choose *Create reminder*; the window opens on it. An aura with a reminder says *Edit reminder*
     and *Delete reminder*.
-  - **Its settings**, each at once: which bar; *Display when missing*; *Display when active*; *Offset time*, with
-    missing: so many seconds before it runs out it shows already, with the seconds left on the icon; *Combat*: in and
-    out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting areas*. Never while you
-    are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on you or on the
-    unit it was made on (your target, your focus).
+  - **Its settings**, each at once: which bar, or *Party and raid frames*; *Display when missing*; *Display when active*;
+    *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
+    (on a bar); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
+    areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help). Never
+    while you are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on you or on the
+    unit it was made on (your target, your focus). A group's version counts for the one: a Gift of the Wild for a Mark of
+    the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
+    your blessings for a blessing (which starts with *Only yours*).
+  - **On the party and raid frames** (the place *Party and raid frames*, last in the dropdowns; the switch *Your reminders on
+    the frames* on the page's group section): the reminder watches every member the frames show, your own slot too, and
+    its icon floats over that member's name, from the health leftwards, four at most in the order made. Not on the dead or
+    the offline; a shout on your own party only. The class buffs no longer show by themselves: make a reminder of each one
+    you want there.
   - **The bars:** one at first, more by *New bar* in the window, each with its own reminders (the dropdown on top shows a
     bar's, *Bar* moves a reminder to another). *Delete bar* puts its reminders on the first bar left; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
     every bar stands with all it holds. Nothing on them takes the mouse.
   - **In a fight** the game hides most auras from addons. What was on stays known: when it goes the reminder shows at once
     and the offset counts on. What comes during a fight the game does not tell, except your own cast where it lets that
-    through; else a reminder that shows stays until the fight ends.
+    through; on the party and raid frames your cast goes with the member who gets a new aura of yours that moment, so a
+    Rejuvenation you cast on the tank takes its icon off the tank's frame. Else a reminder that shows stays until the fight ends.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -590,9 +599,14 @@ shows on it, and you make as many bars as you like.
   the button's `unit` attribute (`OnAttributeChanged`, in a fight too) and registers that unit's events. `face.compact` and `face.bare`
   are told to `UnitText.Health`; `MakeLine` takes its tighter inset and gap; `face.floating`, a frame over the words, holds the icons, and
   `face.roomed` places your buffs' icons after each layout.
-- **Your buffs (`Units/GroupBuffs.lua`):** `Buffs.CLASSES`, families of names (English clients), found as yours by `C_Spell.GetSpellInfo`
-  of a name. `Buffs.Missing` reads `C_UnitAuras.GetAuraDataBySpellName`, out of a fight only (`Core.Restricted`): `nil` there, and
-  everyone is read again at `PLAYER_REGEN_ENABLED`.
+- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `bar == Reminders.GROUP` (0, no bar's number). `GroupFace`'s
+  `Buffs` asks `GroupReminders.Missing(unit, list)` on a fill, on `UNIT_AURA` (out of a fight only one that may change what is seen:
+  `Buffed`), and `GroupReminders.Refresh` asks every face (`Group.Each`) when a reminder changes, a fight begins, resting changes, and
+  each `GroupReminders.EVERY` second while one has an offset. What is known is kept per reminder and member GUID
+  (`Reminders.Known`, the bars' own look). In a fight `GroupReminders.Heard` keeps the instance numbers of your buffs on each member
+  (`C_UnitAuras.GetUnitAuraInstanceIDs(unit, "HELPFUL|PLAYER")`, taken at `PLAYER_REGEN_DISABLED`, not secret); a new one within
+  `GroupReminders.WINDOW` of your `UNIT_SPELLCAST_SUCCEEDED` of a name watched, before or after it, is that aura: on, its instance
+  known, so `GetAuraDuration` tells when it goes.
 
 - **The threat and damage meter** (`Meter/`): the combat log is closed to addons (`C_CombatLog.IsCombatLogRestricted`), so
   the numbers are the game's own meter's (`C_DamageMeter`, the same in both games). `Read.Fight(where, types, people)` reads one
@@ -619,8 +633,9 @@ shows on it, and you make as many bars as you like.
   - **In sight:** `Wanted()` (the full screen, Edit Mode, a saved fight, or both Hide ticks satisfied). With *Show on mouseover*
     the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
 - **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. `Reminders.Update` runs on a ticker every
-  `Reminders.EVERY` seconds, only while there are reminders and the setting is on: it looks at each aura
-  (`C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks) and hands each bar what shows. `Hidden` asks
+  `Reminders.EVERY` seconds, only while there are reminders on bars and the setting is on: it looks at each aura
+  (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
+  with *Only yours*) and hands each bar what shows. `Hidden` asks
   `C_Secrets.ShouldAurasBeSecret` and `ShouldSpellAuraBeSecret`, `Core.Restricted` where they are not there. Hidden, `Look`
   keeps the last plain look: `auraInstanceID` and the end; `GetAuraDuration` is not secret and fails on an instance gone
   (*RequiresValidUnitAuraInstance*), which `Core.Ask` turns to `nil`: the aura went. Past its end and still there it was
@@ -677,7 +692,6 @@ shows on it, and you make as many bars as you like.
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
-| `Units/GroupBuffs.lua` | Which of your own buffs a member of your party or raid is missing |
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, sizes, Edit Mode's settings and preview |
@@ -693,11 +707,13 @@ shows on it, and you make as many bars as you like.
 | `Meter/Row.lua` | One character: their line and a bar per thing shown |
 | `Meter/Controls.lua` | The buttons at the end of the first line, and the flyouts |
 | `Meter/Meter.lua` | The window: its two places, the list of whole rows, grown down or up, when it shows, the game's meter out of sight, the looks in a fight |
-| `Reminders/Reminders.lua` | The reminders and bars: kept per character, what is known of an aura, in a fight too, whether one shows, the looks |
+| `Reminders/Reminders.lua` | The reminders and bars: kept per character, the families of names, what is known of an aura, in a fight too, whether one shows, the looks |
+| `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
+| `Reminders/Editor.lua` | The window: your bars and the party and raid frames, the reminders there and the settings of the one chosen |
 
 ## History
+- **2026-11-06:** reminders on the party and raid frames, in place of the fixed buffs of your class (Saneroki: "add those buffs or spells or hots to the party bar manually"); *Only yours*; a group's version counts for the one.
 - **2026-11-06:** a Sane Macro on a bar button acts as the game's buttons do: a spell or item dropped or clicked onto it takes its place, and dragged with the pick-up key it goes to another button or off the bars (Saneroki: it could not be removed).
 - **2026-11-06:** the menu bar's alert *You have unopened items in your collection*, once closed, stays closed until more come (Saneroki: it came back at every login).
 - **2026-11-02:** the unit frames' auras out of a fight on icons of ours, as the game runs no addon's script on its own (Saneroki: tooltip and clicks).

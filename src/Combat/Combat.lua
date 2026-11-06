@@ -115,8 +115,8 @@ ns.TEXT = {
     groupGround = "Ground",
     groupMenu = "Group menu",
     groupLeave = Core.Word("PARTY_LEAVE", "Leave Group"),
-    groupBuffs = "Your missing buffs",
-    groupBuffsTip = "On the party and raid frames, an icon for each buff of your class a unit is missing: yours or the same from anyone (a paladin's blessings: only yours). In a fight the game hides auras from addons, so they stay as they were until it ends.",
+    groupBuffs = "Your reminders on the frames",
+    groupBuffsTip = "On the party and raid frames, the icons of your reminders placed there: give a reminder the place Party and raid frames in /sane reminders, and its icon shows on each member's frame while its settings want it, a buff they are missing, say. A group's version counts for the one (a Gift of the Wild for a Mark of the Wild); Only yours counts your own cast alone, for your HoTs. In a fight the game hides most auras from addons: one that runs out or is taken off shows at once, one you cast on someone goes, the rest is read again when the fight ends.",
     groupWidth = "Max width",
     groupHeight = "Max height",
     groupUnitWidth = "Max unit width",
@@ -184,7 +184,7 @@ ns.TEXT = {
     meterBack = "Back to the fights",
     reminders = "Reminders",
     remindersOn = "Reminder bars",
-    remindersTip = "Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. /sane reminders opens the list, with your bars: make as many as you like, and give each spell its bar. Off: no bars.",
+    remindersTip = "Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. /sane reminders opens the list, with your bars: make as many as you like, and give each spell its bar, or the party and raid frames, where it shows on each member's frame. Off: no bars, nothing on the frames.",
     reminderCreate = "Create reminder",
     reminderEdit = "Edit reminder",
     reminderBar = "Reminder bar %d",
@@ -193,12 +193,15 @@ ns.TEXT = {
     reminderNone = "None yet. Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder.",
     reminderOnYou = "On you",
     reminderOnOther = "On the unit it was made on",
+    reminderOnGroup = "On each member of your party or raid",
+    reminderGroup = "Party and raid frames",
     reminderOnBar = "Bar",
     reminderMissing = "Display when missing",
     reminderActive = "Display when active",
     reminderWhen = "Combat",
     reminderCombat = { any = "In and out of combat", out = "Only show outside of combat", ["in"] = "Only show inside of combat" },
     reminderRest = "Don't show in resting areas",
+    reminderOwn = "Only yours",
     reminderEarly = "Offset time (seconds)",
     reminderDelete = "Delete reminder",
 }
@@ -304,7 +307,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
     if key == "buffList" then ns.Guarded(ns.BuffList.Style) end
-    if key == "reminders" then ns.Guarded(ns.Reminders.Apply) end
+    if key == "reminders" or key == "groupBuffs" then ns.Guarded(ns.Reminders.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the

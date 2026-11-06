@@ -453,7 +453,7 @@ local function Kind(kind, template)
     return found
 end
 local ticks, menus = Kind("CheckButton", "UICheckButtonTemplate"), Kind("DropdownButton", "WowStyle1DropdownTemplate")
-check(#ticks == 3 and #menus == 3, "three ticks and three dropdowns: the bar looked at, its bar, combat")
+check(#ticks == 4 and #menus == 3, "four ticks and three dropdowns: the bar looked at, its bar, combat")
 check(ticks[1]:GetChecked() == true and ticks[2]:GetChecked() == false, "as the reminder is set")
 ticks[2]:SetChecked(true)
 ticks[2]._scripts.OnClick(ticks[2])
@@ -469,7 +469,23 @@ check(takeBar._disabled, "one bar: it cannot be deleted")
 newBar._scripts.OnClick(newBar)
 check(#Reminders.Bars() == 2 and not takeBar._disabled, "a new bar by its button")
 ns.ReminderEditor.Open(reminder)
-check(#menus[2]._items == 2 and #menus[1]._items == 2, "a line for each bar, in both dropdowns")
+check(#menus[2]._items == 3 and #menus[1]._items == 3 and menus[2]._items[3].text == TEXT.reminderGroup,
+    "a line for each bar, in both dropdowns, and the party and raid frames last")
+menus[2]._items[3].fn()
+check(reminder.bar == Reminders.GROUP and takeBar._disabled, "on the frames: no bar of it to delete")
+ns.ReminderEditor.Open(reminder)
+local said
+for _, widget in ipairs(W.frames) do
+    if widget._kind == "FontString" and widget._text == TEXT.reminderOnGroup then said = true end
+end
+check(said, "and the window says where it watches")
+Update()
+check(row._width == 1, "and it is off its bar")
+ticks[4]:SetChecked(true)
+ticks[4]._scripts.OnClick(ticks[4])
+check(reminder.own == true, "only yours, ticked")
+ticks[4]:SetChecked(false)
+ticks[4]._scripts.OnClick(ticks[4])
 menus[2]._items[2].fn()
 check(reminder.bar == Reminders.Bars()[2], "on the new bar")
 takeBar._scripts.OnClick(takeBar)

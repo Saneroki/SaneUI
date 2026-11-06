@@ -13,8 +13,9 @@ local _, ns = ...
 --            the raid marker
 --    right   how much health is left ("85%"); nothing on a frame too narrow for
 --            that as well (Face.BARE), so the name gets it; Dead or Offline always
---    over it an icon for each of your buffs the unit is missing (GroupBuffs.lua),
---            from the health leftwards; from the left, big so they are easy to
+--    over it an icon for each of your reminders on these frames that wants it
+--            (Reminders/Group.lua: a buff the unit is missing, say), from the
+--            health leftwards; from the left, big so they are easy to
 --            see (Face.Big), the ready check while one runs and its result for
 --            a while after it (Face.READY_HOLD), the game's icon of an incoming
 --            resurrection and the type icon of a dispellable debuff (Core's
@@ -52,8 +53,8 @@ ns.GroupFace = Face
 Face.LINE, Face.LINE_MOST = 1 / 5, 8 -- the power line's height, a share of the bar's, and the most on a tall slot
 Face.INSET, Face.GAP = 3, 2 -- the words from the bar's ends, and between two pieces
 Face.BARE = 80       -- narrower than this: no health at all, the name has it all
-Face.ICON = 14       -- one of your buffs' icons, and the cog, square
-Face.ICON_GAP = 1    -- between two of your buffs' icons
+Face.ICON = 14       -- one of your reminders' icons, and the cog, square
+Face.ICON_GAP = 1    -- between two of your reminders' icons
 Face.BIG_OFF, Face.BIG_MOST = 4, 32 -- the big icons are that much lower than the frame, and at most that high
 Face.ROLE = 10       -- the role's mark, square
 Face.FAR = 0.45      -- how solid a unit out of your reach is
@@ -199,15 +200,15 @@ local function Icons(face, list, count)
     Roomed(face, face.room.right)
 end
 
--- Your buffs the unit is missing, as far as can be told: what a fight hides stays as it was.
+-- Your reminders on these frames that the unit's auras want shown, as far as can be told (Reminders/Group.lua).
 local function Buffs(face, unit)
-    local on = (ns.options or {}).groupBuffs ~= false and ns.GroupBuffs.Any()
-    local count = 0
-    if on then
-        count = ns.GroupBuffs.Missing(unit, face.missing)
-        if not count then return end
-    end
-    Icons(face, face.missing, count)
+    Icons(face, face.missing, ns.GroupReminders.Missing(unit, face.missing))
+end
+
+-- The same for the face's unit, if it has one (every face anew, when a reminder changed).
+function Face.Buffs(face)
+    if ns.off or not face.unit then return end
+    Buffs(face, face.unit)
 end
 
 -- The unit's role, as far as the game tells it: the one it was assigned, or TANK for a raid's main tank.
@@ -353,7 +354,7 @@ function Face.Fill(face)
     Buffs(face, unit)
 end
 
--- Whether an aura update (UNIT_AURA's info) may have changed which of your buffs the unit has: all of them anew, a
+-- Whether an aura update (UNIT_AURA's info) may have changed what your reminders see on the unit: all of them anew, a
 -- helpful aura added (which one is not looked at), or any aura gone (what kind it was is not told); not one that only
 -- refreshed what is there (a stack, a duration). An answer the game hides counts as a change.
 local function Buffed(info)
@@ -388,7 +389,9 @@ local function Heard(face, event, _, info)
     elseif event == "INCOMING_RESURRECT_CHANGED" then
         Rez(face, unit)
     elseif event == "UNIT_AURA" then
-        if ns.GroupBuffs.Any() and not Core.Restricted() and Buffed(info) then Buffs(face, unit) end
+        if not ns.GroupReminders.Any() then return end
+        ns.GroupReminders.Heard(unit) -- in a fight: a new aura of yours, for your cast
+        if Core.Restricted() or Buffed(info) then Buffs(face, unit) end
     elseif event == "UNIT_NAME_UPDATE" then
         Name(face, unit)
     else -- gone offline, come back, dead or alive

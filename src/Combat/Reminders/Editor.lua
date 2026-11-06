@@ -2,16 +2,17 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Editor
---  The little window of your reminders (/sane reminders): on top your bars, one
---  to look at, a new one, deleting that one (its reminders go to the first bar
---  left, the last bar stays); under them on the left that bar's reminders, on
---  the right the settings of the one chosen, each taking effect at once.
+--  The little window of your reminders (/sane reminders): on top your bars and
+--  the party and raid frames, one to look at, a new bar, deleting the bar
+--  looked at (its reminders go to the first bar left, the last bar stays);
+--  under them on the left the reminders there, on the right the settings of the
+--  one chosen, each taking effect at once.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Editor = {}
 ns.ReminderEditor = Editor
 
-Editor.WIDTH, Editor.HEIGHT = 520, 370
+Editor.WIDTH, Editor.HEIGHT = 520, 400
 Editor.INSET = 12
 Editor.LIST = 190 -- the list's width
 Editor.LINE = 26  -- a reminder's line
@@ -23,15 +24,15 @@ Editor.COMBAT = { "any", "out", "in" }
 local frame, window, list, child, empty, panel, head, face, bar, combat, early, viewed, takeBar
 local ticks, lines = {}, {}
 local chosen  -- the reminder whose settings show
-local looking -- the bar whose reminders show
+local looking -- the bar whose reminders show (Reminders.GROUP: those on the party and raid frames)
 
 local Fill
 
--- A setting of the reminder chosen changed: it counts now.
+-- A setting of the reminder chosen changed: it counts now, on its bar or the frames.
 local function Set(key, value)
     if not chosen then return end
     chosen[key] = value
-    ns.Reminders.Update()
+    ns.Reminders.Apply()
     Fill()
 end
 
@@ -59,10 +60,10 @@ local function Lines()
     child:SetHeight(math.max(#reminders * Editor.LINE, 1))
 end
 
--- Which bar is looked at, and with it which reminder is chosen.
+-- Which bar is looked at (or the party and raid frames), and with it which reminder is chosen.
 local function Look(number)
     local bars = ns.Reminders.Bars()
-    looking = tContains(bars, number) and number or bars[1]
+    looking = (number == ns.Reminders.GROUP or tContains(bars, number)) and number or bars[1]
     if not chosen or chosen.bar ~= looking then chosen = On(looking)[1] end
 end
 
@@ -70,12 +71,13 @@ function Fill()
     if not frame then return end
     Lines()
     viewed:GenerateMenu()
-    takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil)
+    takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil and looking ~= ns.Reminders.GROUP)
     panel:SetShown(chosen ~= nil)
     if not chosen then return end
     face:SetTexture(chosen.icon)
     head:SetText(chosen.name)
-    panel.on:SetText(ns.TEXT[chosen.unit == "player" and "reminderOnYou" or "reminderOnOther"])
+    local on = chosen.bar == ns.Reminders.GROUP and "reminderOnGroup" or chosen.unit == "player" and "reminderOnYou"
+    panel.on:SetText(ns.TEXT[on or "reminderOnOther"])
     for key, tick in pairs(ticks) do tick:SetChecked(chosen[key] and true or false) end
     bar:GenerateMenu()
     combat:GenerateMenu()
@@ -116,10 +118,11 @@ local function Tick(key, row, word)
     ticks[key] = tick
 end
 
--- The bars' words for a dropdown: { word, number } each, by the bar's place among them.
+-- The bars' words for a dropdown: { word, number } each, by the bar's place among them; the party and raid frames last.
 local function Bars()
     local entries = {}
     for place, number in ipairs(ns.Reminders.Bars()) do entries[place] = { ns.TEXT.reminderBar:format(place), number } end
+    entries[#entries + 1] = { ns.TEXT.reminderGroup, ns.Reminders.GROUP }
     return entries
 end
 
@@ -228,9 +231,10 @@ local function Build()
     for index, value in ipairs(Editor.COMBAT) do combats[index] = { ns.TEXT.reminderCombat[value], value } end
     combat = Choice("combat", 4, ns.TEXT.reminderWhen, combats)
     Tick("noRest", 5, ns.TEXT.reminderRest)
+    Tick("own", 6, ns.TEXT.reminderOwn)
 
     local label = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    label:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -6 * Editor.ROW - 6)
+    label:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -7 * Editor.ROW - 6)
     label:SetText(ns.TEXT.reminderEarly)
     early = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
     early:SetSize(50, 22)

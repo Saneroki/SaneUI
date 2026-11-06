@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Reminders on your party and raid frames: give a reminder the place
+  Party and raid frames (/sane reminders) and its icon shows on each
+  member who lacks it, your Mark of the Wild or your Rejuvenation, say.
+  Only yours counts your own cast alone. In a fight a HoT that runs out
+  shows at once, and one you cast on someone goes from their frame. The
+  buffs of your class no longer show there by themselves.
 - Someone joining your group no longer breaks Sane UI's party frames,
   bars and unit frames, which then gave way to the game's own.
 - Quest areas on the small map are Sane UI's alone and lighter: the

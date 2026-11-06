@@ -34,7 +34,7 @@ local _, ns = ...
 --
 --  In Edit Mode the live frames rest and the preview shows: plain frames of the
 --  same look (GroupFace.lua) laid out by the same sizes, with random health,
---  mana, roles, raid markers, missing buffs, barriers, lost health, dispels,
+--  mana, roles, raid markers, reminders' icons, barriers, lost health, dispels,
 --  ready checks, aggro, the dead and the offline, a resurrection on its way, and
 --  your own slot first.
 --  They are rolled when their number changes, not as sizes change, so what you
@@ -164,6 +164,7 @@ local function EachFace(fn, ...)
         end
     end
 end
+Group.Each = EachFace
 
 -- Every live unit at the size the group calls for. Out of a fight.
 local function Layout()
@@ -215,7 +216,7 @@ end
 -- That many samples, rolled anew only when their number changes.
 local function Rolled(count)
     if #samples ~= count then
-        local icons = ns.GroupBuffs.Icons()
+        local icons = ns.GroupReminders.Icons()
         wipe(samples)
         for index = 1, count do samples[index] = Roll(icons) end
         if samples[1] then samples[1].you = true end
@@ -364,7 +365,6 @@ local function ReadyEnded()
 end
 
 function Group.Start()
-    ns.GroupBuffs.Learn()
     -- The group changed: every face reads its slot anew at once (a header gives a slot the same token whoever fills it,
     -- and no event of the unit's tells of its new member; a fight holds the rest back), then the sizes and the driver.
     local Applied = Core.Later(Group.Apply)
@@ -379,10 +379,6 @@ function Group.Start()
     ns.On("READY_CHECK_CONFIRM", ReadyCheck)
     ns.On("READY_CHECK_FINISHED", ReadyEnded)
     ns.On("PARTY_LEADER_CHANGED", Core.Later(function() ns.Guarded(ns.GroupTools.Refresh) end))
-    ns.On("SPELLS_CHANGED", Core.Later(function()
-        ns.GroupBuffs.Learn()
-        Again()
-    end))
     ns.On("UI_SCALE_CHANGED", Core.Later(Group.Apply))
     Core.EditMode.Watch(ns.Guard(Group.Apply))
     Group.Apply()
