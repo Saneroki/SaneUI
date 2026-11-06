@@ -38,6 +38,7 @@ function methods:GetFrameLevel() return self._level or 1 end
 function methods:RegisterForClicks(...) self._clicks = { ... } end
 function methods:IsProtected() return self._protected or false end
 function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
+function methods:SetNormalAtlas(atlas) self._atlas = atlas end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
 function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
 function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
@@ -354,6 +355,44 @@ for _ = 1, 20 do
     end
 end
 check(not controls._shown and not frame.drag._shown, "gone with the mouse")
+
+-- Lock window, last in the cog's flyout and on the page Combat: neither the first line nor a grip moves or sizes it then,
+-- in either look; Edit Mode still arranges it.
+local cog
+for _, widget in ipairs(W.frames) do
+    if widget._parent == controls and rawget(widget, "_atlas") == ns.MeterControls.COG then cog = widget end
+end
+cog:GetScript("OnClick")(cog)
+local lock = W.menus[#W.menus][#W.menus[#W.menus]]
+check(lock.text == ns.TEXT.meterLocked and not lock.checked(lock.data), "Lock window, last in the cog's flyout, off at first")
+check(handle.grip._shown, "unlocked, its corner has the grip")
+lock.fn(lock.data)
+check(ns.options.meterLocked and lock.checked(lock.data), "ticked there, it is locked")
+frame._mouseOver = true
+frame:GetScript("OnEnter")(frame)
+check(frame.drag._shown and not handle:Draggable(), "locked, the first line still takes a right click but moves nothing")
+frame.drag:GetScript("OnDragStart")(frame.drag)
+check(not handle.moving, "a drag there begins nothing")
+check(not handle.grip._shown, "and its corner has no grip to size it by, the mouse on it or not")
+if not RETAIL then
+    Meter.Dress(true)
+    check(not handle:Draggable() and not handle.grip._shown, "on the full screen it is locked too")
+    Meter.Dress(false)
+end
+EventRegistry:TriggerEvent("EditMode.Enter")
+check(handle.grip._shown and handle.usable(), "Edit Mode still moves and sizes it, as the game's own meter")
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(not handle.grip._shown and not handle:Draggable(), "and once it closes it is locked again")
+Set("meterLocked", false)
+check(handle.grip._shown and handle:Draggable(), "unlocked: the line moves it and the grip sizes it again")
+frame._mouseOver = false
+for _ = 1, 20 do
+    for _, widget in ipairs(W.frames) do
+        local update = widget._shown and widget._scripts and widget._scripts.OnUpdate
+        if update then update(widget, 0.1) end
+    end
+end
+check(not controls._shown, "the mouse gone, so are the buttons")
 
 -------------------------------------------------------------------------------
 --  A character's own bars

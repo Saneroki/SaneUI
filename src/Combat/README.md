@@ -225,6 +225,9 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   - **Where:** at first at the very top of the screen, right of the quest log's first place. On Combat's full screen in
     its top left corner, each with its own place and size, kept. In Edit Mode, or with the mouse on it: drag the first
     line to move it, as the quest log's title bar does, it docks at the edges too; its corner's grip sizes it.
+  - **Lock window** (last in the cog's flyout, and on the page Combat under the meter, off at first): it stays where it
+    is and at its size, on the screen and on the full screen; the first line no longer moves it and its corner has no
+    grip. Edit Mode still moves and sizes it, as it arranges the game's own meter.
   - **The list:** a line per character with the class's icon, level, item level (`-` until it could be read: the game
     gives it only near a player, out of a fight) and name, and under it the bars. You stand on top, always in sight;
     only as many as fit whole show, and the mouse wheel over the window takes the others one at a time under your line. In the screen's
@@ -670,7 +673,9 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   for (`Core.Inspect`); at rest only `Core.Later` after the game's events. A fight is `Fights.Fighting()`, from the game's
   two events: as `PLAYER_REGEN_DISABLED` comes `InCombatLockdown()` still says no. A saved fight: `store.meterFights`, plain numbers.
   Hover: `Core.Hover` (motion only, so every click goes on); the wheel on the window while the list is longer than its room;
-  the first line's `drag` frame shows only on hover, `window:DragBy` (Core).
+  the first line's `drag` frame shows only on hover, `window:DragBy` (Core). *Lock window* (`meterLocked`) is the window's
+  `usable` (`Free`): false while locked but in Edit Mode, so Core's `Draggable` and the hover grip say no (`Grip` hides it,
+  `Meter.Apply` asks again by `handle:Hover`), while Edit Mode's box and grip still work.
   - **Which bars:** `Shows.Of(person)`: the ticks, but for `store.meterPeople[guid] = { [kind] = true or false }`, only what
     differs from the ticks; a saved fight keeps each GUID so its people have theirs. So rows differ in height: the list's extent is
     a calculator, `Fit` takes whole rows from `first` (the wheel moves it, a character a notch), and the scroll box is exactly as
@@ -760,6 +765,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-06:** the meter's *Lock window*: neither moved nor sized out of Edit Mode (Saneroki: "lock it in its settings so it is fixed and doesn't let you drag to resize or move it").
 - **2026-11-06:** *Show on healthbars* (first *Show on raid frames*): an aura's icon on your unit frames and the party and raid frames; beside each member of a party their target and their pet, small, their names alone (Saneroki).
 - **2026-11-06:** in a party a column beside it with each member's pet, else their target; the party and raid frames' health in class colours (Saneroki).
 - **2026-11-06:** *Reminder* is now *Show on raid frames* wherever you read it (first *Track*): the column, the menu's tick, *Aura bar*, *Aura icons* (Saneroki); one made shows on the party and raid frames.

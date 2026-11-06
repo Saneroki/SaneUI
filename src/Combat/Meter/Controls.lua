@@ -7,7 +7,8 @@ local _, ns = ...
 --      < 3 >    the arrows page through the fights, the number the page
 --      note     the flyout Saved fights: this fight saved under a name of your own, each
 --               saved fight to load or delete
---      cog      the flyout with the ticks, and Order by, a flyout of its own; under them when it shows
+--      cog      the flyout with the ticks, and Order by, a flyout of its own; under them when it shows,
+--               and last Lock window (the page Combat has it too)
 --  A right click on a name opens that character's own flyout: which bars they have, whatever the window's ticks say.
 --  The flyouts are the game's menus (Blizzard_Menu).
 -------------------------------------------------------------------------------
@@ -66,6 +67,8 @@ local function Ticks(_, root)
     for _, key in ipairs(Controls.WHEN) do
         root:CreateCheckbox(ns.TEXT.meterTicks[key], IsOn, Flip, key)
     end
+    root:CreateDivider()
+    root:CreateCheckbox(ns.TEXT.meterLocked, IsOn, Flip, "meterLocked")
 end
 
 -- One character's own bars: what the checkbox shows is what they have.

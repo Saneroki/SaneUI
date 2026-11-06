@@ -21,7 +21,10 @@ local _, ns = ...
 --  There is nothing else to it: no title bar, no background, and clicks go through
 --  all of it. Only while the mouse is on it the buttons stand at the right end of the
 --  first line (Controls.lua), the first line drags the window and its corner's grip
---  sizes it (Core's grip = "hover"). Edit Mode's box moves and sizes it too.
+--  sizes it (Core's grip = "hover"). Edit Mode's box moves and sizes it too. Lock window
+--  (the cog's, and on the page Combat) holds it in both looks: then neither the line nor
+--  a grip is there to move or size it, but Edit Mode's box still is, as Edit Mode
+--  arranges the game's own meter (Free).
 --
 --  In the screen's top half the list hangs from the window's top and grows down, in the
 --  bottom half it stands on the window's bottom and grows up.
@@ -276,6 +279,12 @@ local function Sided()
     block:SetPoint(up and "BOTTOMRIGHT" or "TOPRIGHT")
 end
 
+-- Whether it may be moved and sized now (Core's usable): not while locked, but in Edit Mode, where the game's own meter
+-- is arranged too.
+local function Free()
+    return Core.EditMode.active or not ns.options.meterLocked
+end
+
 -- The mouse came or left: all that stands only for it.
 local function Hovered(on)
     hovered = on
@@ -312,10 +321,11 @@ local function Hold(on)
     end
 end
 
--- As the settings say: shown or not, drawn anew.
+-- As the settings say: shown or not, drawn anew, its grip there or gone as Lock window has it.
 function Meter.Apply()
     if not frame then return end
     Hold(ns.options.meter and not ns.off)
+    handle:Hover(hovered)
     Again()
     Watching()
 end
@@ -355,7 +365,7 @@ function Meter.Build()
     handle = Core.Window.New(frame, {
         store = ns.store, key = KEY[false], title = ns.TEXT.meter, first = FIRST[false],
         dock = true, dragDocked = true, sizable = true, grip = "hover",
-        minWidth = Meter.LEAST_WIDTH, minHeight = Meter.LEAST_HEIGHT,
+        minWidth = Meter.LEAST_WIDTH, minHeight = Meter.LEAST_HEIGHT, usable = Free,
         docked = function() ns.Guarded(Sided) end,
     })
     Meter.handle = handle

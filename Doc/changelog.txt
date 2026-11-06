@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Threat and damage meter: Lock window, in its cog and on the page
+  Combat, keeps it where it is and at its size.
 - Quest timers: a timed quest's time left counts down at the top of the
   quest log, and stays in sight while the log is hidden at rest or
   switched off.

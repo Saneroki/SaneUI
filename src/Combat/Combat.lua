@@ -170,8 +170,10 @@ ns.TEXT = {
     mouseCast = "Your cast",
     mouseCastTip = "The outer ring, in your class's colour, fills while you cast and empties while you channel, a bright line with a soft glow at its head. Interrupted, it goes at once.",
     meter = "Threat and damage meter",
-    meterTip = "Your party or raid, you on top, each with their class, level, item level and name and a bar each for threat, damage, healing and interrupts. No background, and clicks go through it. With the mouse on it the buttons show at the end of the first line, that line drags it and its corner sizes it; the mouse wheel scrolls the others; a right click on a name chooses that character's own bars. At first out of sight out of a fight and alone, and the mouse on its place brings it. Instead of the game's own damage meter.",
+    meterTip = "Your party or raid, you on top, each with their class, level, item level and name and a bar each for threat, damage, healing and interrupts. No background, and clicks go through it. With the mouse on it the buttons show at the end of the first line, that line drags it and its corner sizes it, unless it is locked; the mouse wheel scrolls the others; a right click on a name chooses that character's own bars. At first out of sight out of a fight and alone, and the mouse on its place brings it. Instead of the game's own damage meter.",
     meterPin = "The threat and damage meter on or off: here and on the screen.",
+    meterLocked = "Lock window",
+    meterLockedTip = "The meter stays where it is and at its size, on the screen and on the full screen: its first line no longer moves it and its corner no longer sizes it. Also in the cog of its first line. Edit Mode still arranges it, as it does the game's own meter.",
     meterKinds = { threat = "Threat", damage = "Damage", healing = "Healing", interrupts = "Interrupts" },
     meterTicks = { meterMine = "My self on top", meterThreat = "Show Threat", meterDamage = "Show Damage",
                    meterHealing = "Show Healing", meterInterrupts = "Show Interrupts",
@@ -291,6 +293,7 @@ local OPTIONS = {
       header = ns.TEXT.mouseRings, headerTip = ns.TEXT.mouseRingsTip },
     { key = "mouseCast", default = true, text = ns.TEXT.mouseCast, tip = ns.TEXT.mouseCastTip },
     { key = "meter", default = true, text = ns.TEXT.meter, tip = ns.TEXT.meterTip, header = ns.TEXT.meter },
+    { key = "meterLocked", default = false, text = ns.TEXT.meterLocked, tip = ns.TEXT.meterLockedTip }, -- in its flyout too
     -- Chosen in the meter's own flyout (Meter/Controls.lua).
     { key = "meterMine", default = true },
     { key = "meterThreat", default = true },
