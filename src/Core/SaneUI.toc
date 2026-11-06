@@ -63,6 +63,8 @@ Switches.lua
 Ways.lua
 # The herbs and ore in sight now, for a module that leads the player, from the one that finds them
 Sight.lua
+# What a spellbook shows beyond the game's spells, from the module that knows it, for the one whose book shows it
+Spellbook.lua
 # The stats as players write them (Str, Stam, Crit), for every view that names one
 Stats.lua
 # Whether an item would make the character better, for the loot, the bags and quest rewards

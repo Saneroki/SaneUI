@@ -19,6 +19,12 @@ local _, ns = ...
 --
 --  A search (Data.Search) finds entries of every tab by their name or rank,
 --  each tab's finds under its name, as the game's search results show them.
+--
+--  What a module offers beyond the game's spells (Core.Spellbook: Abilities'
+--  spells still to learn, Saneroki, 2026-11-06) comes in too: its entries after
+--  a tab's own and in its sections under them, its finds in each tab's, its
+--  Home tab in front of the others. Such an entry is { future = entry }, drawn
+--  by the offer's own frame (Book.lua); the offer's Home tab is { home = true }.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -71,9 +77,13 @@ local function PetSpells()
     return nil
 end
 
--- The tabs there are now, each { key, name, icon, bank, first, count }: the skill lines', then the pet's.
+-- The tabs there are now, each { key, name, icon, bank, first, count } (a skill line's with its line, the index):
+-- the offer's Home first (Core.Spellbook), the skill lines', then the pet's.
 function Data.Tabs()
     local tabs = {}
+    local offer = Core.Spellbook.Offer()
+    local home = offer and offer.Home
+    if home then tabs[1] = { key = "home", home = true, name = home.name, icon = home.icon, tip = home.tip } end
     local player, pet = Banks()
     local general = Enum_("SpellBookSkillLineIndex", "General") or 1
     for index = 1, Ask("GetNumSpellBookSkillLines") or 0 do
@@ -84,7 +94,7 @@ function Data.Tabs()
                 local class = Ask("GetClassSkillLineInfo")
                 icon = type(class) == "table" and class.iconID or icon
             end
-            tabs[#tabs + 1] = { key = "line" .. index, name = line.name, icon = icon, bank = player,
+            tabs[#tabs + 1] = { key = "line" .. index, line = index, name = line.name, icon = icon, bank = player,
                                 first = (line.itemIndexOffset or 0) + 1, count = line.numSpellBookItems or 0 }
         end
     end
@@ -104,6 +114,7 @@ end
 -- A tab's entries the game's book would show.
 local function Entries(tab, searching, match)
     local entries = {}
+    if not tab.bank then return entries end -- the offer's Home: a page of its own
     for slot = tab.first, tab.first + tab.count - 1 do
         if Shown(slot, tab.bank, searching) and (not match or match(slot, tab.bank)) then
             entries[#entries + 1] = Entry(slot, tab.bank, true)
@@ -112,17 +123,56 @@ local function Entries(tab, searching, match)
     return entries
 end
 
--- A tab's groups for the pages: one, under its name.
-function Data.Groups(tab)
+-- The player's skill lines, in the book's order (the offer's sections ask for them).
+local function Lines(tabs)
+    local lines = {}
+    for _, tab in ipairs(tabs) do
+        if tab.line then lines[#lines + 1] = tab.line end
+    end
+    return lines
+end
+
+-- The offer's entries, each an element of the pages after those in the list.
+local function Future(list, entries)
+    for _, entry in ipairs(type(entries) == "table" and entries or {}) do list[#list + 1] = { future = entry } end
+    return list
+end
+
+-- The game's options for its book, which the offer's entries follow too.
+local function Showing()
+    return GetCVarBool("ShowAllSpellRanks") and true or false, GetCVarBool("spellBookHidePassives") and true or false
+end
+
+-- A tab's groups for the pages: its spells under its name, the offer's after them; then the offer's sections, each
+-- under its heading. tabs: the tabs there are (Data.Tabs, read anew without).
+function Data.Groups(tab, tabs)
     local entries = Entries(tab)
-    if #entries == 0 then return {} end
-    return { { header = { text = tab.name }, elements = entries } }
+    local offer = Core.Spellbook.Offer()
+    local sections = {}
+    if offer and tab.line then
+        local ranks, passives = Showing()
+        if offer.Spells then Future(entries, offer.Spells(tab.line, ranks)) end
+        if offer.Sections then
+            local made = offer.Sections(tab.line, Lines(tabs or Data.Tabs()), passives, ranks)
+            for _, section in ipairs(type(made) == "table" and made or {}) do
+                local elements = Future({}, section.entries)
+                if #elements > 0 then sections[#sections + 1] = { header = { text = section.text }, elements = elements } end
+            end
+        end
+    end
+    local groups = {}
+    if #entries > 0 then groups[1] = { header = { text = tab.name }, elements = entries } end
+    for _, group in ipairs(sections) do groups[#groups + 1] = group end
+    return groups
 end
 
 -- What a search finds in every tab: each tab's finds under its name. The words are looked for in an entry's
 -- name and rank, without regard to case.
 function Data.Search(tabs, text)
     local wanted = (text or ""):lower()
+    local offer = Core.Spellbook.Offer()
+    local futures = offer and offer.Search and offer.Search(wanted, Lines(tabs), (Showing())) or nil
+    futures = type(futures) == "table" and futures or {}
     local function Match(slot, bank)
         local info = Ask("GetSpellBookItemInfo", slot, bank)
         if type(info) ~= "table" then return false end
@@ -134,6 +184,7 @@ function Data.Search(tabs, text)
     local groups = {}
     for _, tab in ipairs(tabs) do
         local entries = Entries(tab, true, Match)
+        if tab.line then Future(entries, futures[tab.line]) end
         if #entries > 0 then groups[#groups + 1] = { header = { text = tab.name }, elements = entries } end
     end
     return groups

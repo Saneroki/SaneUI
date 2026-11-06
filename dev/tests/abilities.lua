@@ -193,7 +193,8 @@ D.Class("MAGE", function()
 end)
 
 for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1", "FormBar", "Spacing",
-                        "Book/Layout", "Book/Item", "Book/Drag", "Book/Book", "Book/Home", "Book/Window", "Book/Menu" }) do
+                        "Book/Layout", "Book/Item", "Book/Drag", "Book/Book", "Book/Home", "Book/Window", "Book/Menu",
+                        "Book/Offer" }) do
     load(file)
 end
 W.Fire("ADDON_LOADED", "SaneUI_Abilities")
@@ -1524,6 +1525,99 @@ check(H.IsOpen(), "and Home is one click away")
 H.Close()
 tabSystem.selectedTabID = 3
 
+-- Combat's spellbook, through Core: the same spells still to learn, Home, the menu's lines -----------------
+do -- its own locals: the main chunk has room for no more
+    local offer = Core.Spellbook.Offer()
+    check(offer and offer.Home and offer.Home.name == "Home" and offer.Switch.text == "Show unlearned spells",
+        "the module offers its spells still to learn, Home and its switch to a book of Sane UI's own")
+    local lines = { 1, 2, 3, 4 }
+    local blinkTab = entry("Blink").tab
+    local own = offer.Spells(blinkTab, false)
+    local inOrder = true
+    for index = 2, #own do inOrder = inOrder and not L.ByLevel({ entry = own[index] }, { entry = own[index - 1] }) end
+    check(names(own):find("Blink") and inOrder and not names(own):find("Staves") and not names(own):find("Arcane Mind"),
+        "a tab: its spells still to learn in the book's order, no passive spell or skill among them")
+    local function texts(sections)
+        local out = {}
+        for index, section in ipairs(sections) do out[index] = section.text .. ":" .. names(section.entries) end
+        return table.concat(out, " | ")
+    end
+    local general = texts(offer.Sections(1, lines, false, false))
+    check(general:find("^Passive spells to learn:") and general:find("Skills to learn:Staves$"),
+        "General: the passive spells and the skills to learn, each a section")
+    check(texts(offer.Sections(1, lines, true, false)) == "Skills to learn:Staves", "the passive spells' section not while the game hides passives")
+    check(texts(offer.Sections(3, lines, false, false)) == "", "a class tab after the first: no section of its own")
+    local found = offer.Search("staves", lines, false)
+    check(found[1] and names(found[1]) == "Staves" and names(offer.Search("blink", lines, false)[blinkTab]) == "Blink",
+        "a search: each find in the tab it is listed in")
+    ns.options.showHidden = false
+    check(#offer.Spells(blinkTab, false) == 0 and #offer.Sections(1, lines, false, false) == 0
+        and next(offer.Search("blink", lines, false)) == nil, "Show unlearned spells off: none of them")
+    ns.options.showHidden = true
+    -- Home on another book's pages, in that book's headings.
+    local other = CreateFrame("Frame", nil, UIParent)
+    local otherLeft, otherRight = CreateFrame("Frame", nil, other), CreateFrame("Frame", nil, other)
+    local function OtherHeader(parent)
+        local header = CreateFrame("Frame", nil, parent)
+        header.Text = header:CreateFontString(nil, "ARTWORK")
+        header.otherBook = true
+        return header
+    end
+    W.level = 12 -- the trainer has the third rank of Fireball again
+    ns.QueueUpdate(true, 0)
+    W.Wait(1)
+    local surface = offer.Home.Surface(other, OtherHeader)
+    offer.Home.Draw(surface, otherLeft, otherRight)
+    local function otherRow(name)
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == other and widget.entry and widget:IsShown() and widget.entry.name == name then return widget end
+        end
+    end
+    local wandRow, trainRow = otherRow("Conjure Wand"), nil
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == other and widget.entry and widget:IsShown() and widget.entry.state == "trainable" then trainRow = widget end
+    end
+    check(surface.headers.train.otherBook and surface.headers.train:IsShown() and surface.headers.train.Text:GetText():find("trainer")
+        and trainRow and at(trainRow) == otherLeft and wandRow and at(wandRow) == otherRight,
+        "Home on another book: the trainer's spells on its left page under that book's heading, the quests on its right")
+    offer.Home.Draw(surface, otherLeft, nil)
+    check(at(otherRow("Conjure Wand")) == otherLeft, "one page shown there: both sections on it")
+    W.level = 10
+    ns.QueueUpdate(true, 0)
+    W.Wait(1)
+    ns.options.home = false
+    check(offer.Home.First() == false, "whether that book opens on Home: the switch's")
+    ns.options.home = true
+    check(offer.Home.First() == true, "(on again)")
+    -- Its entries: the module's own, a drag from one reserves, and it ends with the entry gone.
+    local grey = offer.Make(other)
+    offer.Set(grey, entry("Blink"), 216)
+    check(grey.entry == entry("Blink") and grey:GetWidth() == 216 and grey.Name:GetText() == "Blink", "an entry of the module's own, drawn at that book's width")
+    grey.Button:GetScript("OnDragStart")(grey.Button)
+    check(ns.Drag.Held() == entry("Blink") and ns.Drag.Source() == grey.Button, "dragged: carried to the bars, as from the game's book")
+    grey.Button:Hide()
+    check(not ns.Drag.Held(), "its entry hidden (that book closed): the drag ends")
+    grey:Hide()
+    -- The menu's lines there: none that waits for the game's pages, none that is the game's book's alone.
+    local items = {}
+    offer.Menu(W.Description(items))
+    local lineTexts = {}
+    for _, item in ipairs(items) do lineTexts[#lineTexts + 1] = item.text or item.title or "-" end
+    lineTexts = table.concat(lineTexts, "|")
+    check(lineTexts:find("Show unlearned spells") and lineTexts:find("Open the spellbook on its Home page")
+        and not lineTexts:find("Compact spellbook pages") and not lineTexts:find("Move and resize the spellbook")
+        and lineTexts:find("Show reservations on the action bars"), "the menu's lines there: the book's that serve it, then the bars'")
+    offer.Switch.Set(false)
+    check(ns.options.showHidden == false and offer.Switch.On() == false, "the switch beside its pages sets Show unlearned spells")
+    offer.Switch.Set(true)
+    local told = 0
+    Core.Spellbook.Watch(function() told = told + 1 end)
+    ns.Fire("REFRESH")
+    ns.Fire("REFRESH")
+    W.Wait(0)
+    check(told == 1, "what the module draws anew, that book is told to, once a frame")
+end
+
 -- Compact pages that follow the window's size ---------------------------------------------------
 searching, activeTab = false, tabs[2]
 ns.options.compact = true
@@ -2441,6 +2535,7 @@ ns.Ghosts.Hide, ns.Book.StandDown = hideGhosts, standDown
 check(#W.caught == 1, "(the game's error window gets it too: the stand-in shows Lua errors)")
 W.caught = nil
 check(ns.off and not ns.Book.Armed() and not barGhost:IsShown(), "an error no step caught leaves the spellbook to the game and takes the ghosts off the bars")
+check(Core.Spellbook.Offer() == nil, "and Combat's spellbook to the game's spells alone: no offer while the module is off")
 check(bookGiven and not ns.Drag.Held() and not carried:IsShown() and not gold:IsShown() and W.trainerFilter.unavailable == false
     and printedMatch("problem in Abilities: giving back"),
     "also when one step of giving back fails: the carried spell is let go (its gold frame too), the trainer's filter put back, the book given back")

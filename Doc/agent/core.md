@@ -42,6 +42,7 @@ end (`dev/build`, from `assets/data/`).
 | `Switches.lua` | Quick switches the modules offer: `Core.Offer(key, switch)`, `Switches()`, `OnSwitches(fn)`, `SwitchChanged` |
 | `Ways.lua` | The way to a place, between a leader and a finder: `Core.Ways.Serve`/`Aim`/`Ahead` (Speed Leveling's arrow by Navigation's routes) |
 | `Sight.lua` | Herbs and ore in sight now: `Core.Sight.Serve`/`Nodes` (Navigation's Found, for Speed Leveling's detours) |
+| `Spellbook.lua` | What a spellbook shows beyond the game's spells: `Core.Spellbook.Serve(module, offer)`/`Offer`/`Changed`/`Watch` (Abilities' spells still to learn, Home and menu lines in Combat's book; the offer's parts in the file's header) |
 | `Stats.lua` | The stats' short words: `Core.StatWord`, `StatLine` |
 | `Upgrade.lua` | Whether an item would make the character better: `Core.Upgrade(link, id)`, `WeighWith(fn)` |
 | `Bindings.lua`, `Bindings.xml` | `BINDING_HEADER_SANEUI`, `BINDING_NAME_SANEUI_OPTIONS`; the key `SANEUI_OPTIONS` → `Core.Config.Open`; a module's keys stand in the same section |

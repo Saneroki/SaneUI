@@ -290,15 +290,17 @@ function I.Create(parent)
         ShowTooltip(owner)
     end))
     button:SetScript("OnLeave", ns.Guard(function(self) HideTooltip(self:GetParent()) end))
+    -- Hidden (its book closed, another page): its tooltip goes, and a drag taken from it ends, as in the game's book.
     button:SetScript("OnHide", ns.Guard(function(self)
         if GameTooltip:GetOwner() == self then HideTooltip(self:GetParent()) end
+        if ns.Drag.Source() == self then ns.Drag.Cancel() end
     end))
     button:SetScript("OnClick", ns.Guard(OnClick))
     button:SetScript("OnDragStart", ns.Guard(function(self)
         local entry = self:GetParent().entry
         if entry and not entry.passive then
             GameTooltip:Hide()
-            ns.Drag.Start(entry)
+            ns.Drag.Start(entry, self)
         end
     end))
     button:SetScript("OnDragStop", ns.Guard(function() ns.Drag.Stop() end))

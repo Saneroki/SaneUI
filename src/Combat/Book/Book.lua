@@ -25,6 +25,16 @@ local _, ns = ...
 --  A click casts out of a fight, by the game's secure buttons over the icons
 --  (Casts.lua); a drag puts a spell on an action bar, as in the game's book.
 --
+--  What a module offers beyond the game's spells (Core.Spellbook; Saneroki,
+--  2026-11-06: Abilities' spells still to learn, its weapon skills, Home and
+--  reservations) stands in it too: the offer's entries among the tab's, in
+--  frames the offer makes and draws (its look, tooltip, drag and clicks), no
+--  secure button over them; its Home tab first, whose page the offer draws on
+--  the book's views (a pane of ours, shown only while Home is chosen), the book
+--  opening on it while the offer says so; its lines in the settings menu; its
+--  switch beside the page controls. It is drawn anew whenever the offer says
+--  it changed (Core.Spellbook.Watch).
+--
 --  Events only while it is shown, a burst laid out once (Core.Later): what the
 --  book holds anew on SPELLS_CHANGED, LEARNED_SPELL_IN_SKILL_LINE, the pet
 --  changing; the entries on the page anew on cooldowns, shapeshift forms, the
@@ -55,11 +65,12 @@ Book.TEXT = {
 }
 
 local holder, pages, views, pager, row, settings, empty, body -- what is built once (Build)
+local homePane, homeSurface, toggle                           -- the offer's Home page and its switch (Build)
 local tabs, chosen, search = {}, nil, ""                       -- the tabs there are, the one shown, the search
 local spreads = {}                                             -- the views of what is shown (Layout.Split)
 local two = true                                               -- both pages, or one
 local shown = false
-local items, headers, buttons                                  -- pools: entries, headings, tab buttons
+local items, headers, buttons, futures                         -- pools: entries, headings, tab buttons, the offer's
 
 local function Colour(name, r, g, b)
     local colour = rawget(_G, name)
@@ -75,11 +86,16 @@ local function Pages()
     return math.max(math.ceil(#spreads / PerPage()), 1)
 end
 
+-- The offer's Home is the page shown: its tab chosen, no search on.
+local function OnHome()
+    return search == "" and chosen == "home"
+end
+
 -------------------------------------------------------------------------------
 --  The page shown
 -------------------------------------------------------------------------------
-local function Header(_, index)
-    local header = CreateFrame("Frame", nil, holder)
+local function MakeHeader(parent)
+    local header = CreateFrame("Frame", nil, parent)
     local spec = Book.HEADER
     local text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Huge2")
     text:SetJustifyH("LEFT")
@@ -100,6 +116,32 @@ local function Header(_, index)
     return header
 end
 
+-- A heading for the offer's Home page, in the book's look, as wide as a view.
+local function HomeHeader(parent)
+    local header = MakeHeader(parent)
+    header:SetSize(Layout.WIDTH, Layout.HEADER)
+    header:Hide()
+    return header
+end
+
+-- A frame of the offer's for one of its entries; a blank one where it makes none (its module stood down meanwhile).
+local function MakeFuture()
+    local offer = Core.Spellbook.Offer()
+    return offer and offer.Make and offer.Make(holder) or CreateFrame("Frame", nil, holder)
+end
+
+-- The offer's switch beside the page controls, as it is now: not on Home.
+local function Switch()
+    if not toggle then return end
+    local offer = Core.Spellbook.Offer()
+    local switch = offer and offer.Switch
+    toggle:SetShown(switch ~= nil and not OnHome())
+    if switch then
+        toggle.Text:SetText(switch.text or "")
+        toggle:SetChecked(switch.On() and true or false)
+    end
+end
+
 -- The secure buttons over the entries the page shows, above the panel (out of a fight).
 local function Cover()
     if not (shown and body) then return Casts.Clear() end
@@ -109,12 +151,14 @@ local function Cover()
 end
 local Recover = Core.Later(function() ns.Safe("spellbook", Cover) end) -- once the page stands where it goes
 
--- The views of a page in the book's views, each element in its place.
+-- The views of a page in the book's views, each element in its place; or the offer's Home on them.
 local function ShowPage()
     if not holder then return end
     local page = pager and pager:GetCurrentPage() or 1
+    local offer = Core.Spellbook.Offer()
     items:Begin()
     headers:Begin()
+    futures:Begin()
     for index = 1, 2 do
         local view = views[index]
         view:SetShown(index <= PerPage())
@@ -123,9 +167,12 @@ local function ShowPage()
             Layout.Place(spread)
             for _, element in ipairs(spread) do
                 local frame
+                local future = element.kind == "entry" and element.data.future
                 if element.kind == "header" then
                     frame = headers:Take()
                     frame.Text:SetText(element.data.text or "")
+                elseif future then
+                    if offer and offer.Set then frame = futures:Take() end
                 elseif element.kind == "entry" then
                     frame = items:Take()
                 end
@@ -135,14 +182,27 @@ local function ShowPage()
                     frame:SetPoint("TOPLEFT", view, "TOPLEFT", element.x, -element.y)
                     frame:SetSize(element.width, element.height)
                     frame:Show()
-                    if element.kind == "entry" then Item.Set(frame, element.data) end
+                    if future then
+                        offer.Set(frame, future, element.width)
+                    elseif element.kind == "entry" then
+                        Item.Set(frame, element.data)
+                    end
                 end
             end
         end
     end
     items:Done()
     headers:Done()
-    empty:SetShown(#spreads == 0 or (#spreads == 1 and #spreads[1] == 0))
+    futures:Done()
+    local home = OnHome() and offer and offer.Home
+    homePane:SetShown(home and true or false)
+    if home then
+        homeSurface = homeSurface or home.Surface(homePane, HomeHeader)
+        if homeSurface then home.Draw(homeSurface, views[1], PerPage() == 2 and views[2] or nil) end
+    end
+    empty:SetShown(not home and (#spreads == 0 or (#spreads == 1 and #spreads[1] == 0)))
+    if pager then pager:SetShown(not home) end
+    Switch()
     Recover()
 end
 
@@ -161,8 +221,10 @@ local function Fill(keepPage)
     local groups
     if search ~= "" then
         groups = Data.Search(tabs, search)
+    elseif tab and tab.home then
+        groups = {} -- the offer's Home draws its own page (ShowPage)
     else
-        groups = tab and Data.Groups(tab) or {}
+        groups = tab and Data.Groups(tab, tabs) or {}
     end
     spreads = #groups > 0 and Layout.Split(groups) or {}
     Book.Tabs()
@@ -228,6 +290,7 @@ local TabEnter = ns.Guard(function(tab)
     if not tab.name then return end
     GameTooltip:SetOwner(tab, "ANCHOR_RIGHT", -12, -6)
     GameTooltip:SetText(tab.name, 1, 1, 1)
+    if tab.tip then GameTooltip:AddLine(tab.tip, nil, nil, nil, true) end
     GameTooltip:Show()
 end)
 local TabLeave = ns.Guard(function(tab) if GameTooltip:GetOwner() == tab then GameTooltip:Hide() end end)
@@ -267,7 +330,7 @@ function Book.Tabs()
     buttons:Begin()
     for _, each in ipairs(tabs) do
         local tab = buttons:Take()
-        tab.key, tab.name = each.key, each.name
+        tab.key, tab.name, tab.tip = each.key, each.name, each.tip
         tab.Icon:SetTexture(each.icon)
         local on = search == "" and each.key == chosen
         tab.Frame:SetShown(not on)
@@ -291,11 +354,35 @@ local ToggleHidePassives = ns.Guard(function() Flip("spellBookHidePassives") end
 local AllRanks = ns.Guard(function() return GetCVarBool("ShowAllSpellRanks") end)
 local ToggleAllRanks = ns.Guard(function() Flip("ShowAllSpellRanks") end)
 
+-- The game's two, then the offer's lines (Core.Spellbook).
 local Menu = ns.Guard(function(_, root)
     root:CreateCheckbox(Book.TEXT.passives, HidePassives, ToggleHidePassives)
     local class = Core.class
     if class ~= "ROGUE" and class ~= "WARRIOR" then root:CreateCheckbox(Book.TEXT.ranks, AllRanks, ToggleAllRanks) end
+    local offer = Core.Spellbook.Offer()
+    if offer and offer.Menu then offer.Menu(root) end
 end)
+
+-- The offer's switch: set through the offer, which says when what it shows changed (the book is drawn anew then).
+local ToggleClick = ns.Guard(function(box)
+    local offer = Core.Spellbook.Offer()
+    local switch = offer and offer.Switch
+    if not switch then return end
+    local on = box:GetChecked() and true or false
+    Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
+    switch.Set(on)
+    box:SetChecked(switch.On() and true or false)
+end)
+local ToggleEnter = ns.Guard(function(box)
+    local offer = Core.Spellbook.Offer()
+    local switch = offer and offer.Switch
+    if not switch then return end
+    GameTooltip:SetOwner(box, "ANCHOR_RIGHT")
+    GameTooltip:SetText(switch.text or "", 1, 1, 1)
+    if switch.tip then GameTooltip:AddLine(switch.tip, nil, nil, nil, true) end
+    GameTooltip:Show()
+end)
+local ToggleLeave = ns.Guard(function(box) if GameTooltip:GetOwner() == box then GameTooltip:Hide() end end)
 
 -------------------------------------------------------------------------------
 --  The part
@@ -366,6 +453,21 @@ function Book_.Build(panel)
         pages.OnPageChanged = ns.Guard(function() ShowPage() end)
         pager = controls
         pager:UpdateControls()
+        -- The offer's switch, left of the controls, its words left of its box (shown while there is one: Switch).
+        local made, box = pcall(CreateFrame, "CheckButton", nil, pages, "UICheckButtonTemplate")
+        if made and box then
+            box:SetSize(24, 24)
+            box:SetPoint("RIGHT", controls, "LEFT", -14, 0)
+            box.Text:ClearAllPoints()
+            box.Text:SetPoint("RIGHT", box, "LEFT", -2, 0)
+            box.Text:SetFontObject("SystemFont_Med3")
+            box.Text:SetTextColor(Colour("SPELLBOOK_FONT_COLOR", 0.24, 0.15, 0.06))
+            box:SetScript("OnClick", ToggleClick)
+            box:SetScript("OnEnter", ToggleEnter)
+            box:SetScript("OnLeave", ToggleLeave)
+            box:Hide()
+            toggle = box
+        end
     else
         ns.Report("spellbook", "this client has no paging controls for addons; the book shows its first page only")
     end
@@ -377,9 +479,15 @@ function Book_.Build(panel)
         settings = dropdown
     end
 
+    -- The offer's Home: a pane over the views, its page drawn by the offer (shown only while Home is chosen).
+    homePane = CreateFrame("Frame", nil, pages)
+    homePane:SetAllPoints(pages)
+    homePane:Hide()
+
     items = Core.Pool(function() return Item.Make(holder) end)
-    headers = Core.Pool(Header)
+    headers = Core.Pool(function() return MakeHeader(holder) end)
     buttons = Core.Pool(Tab)
+    futures = Core.Pool(MakeFuture)
 end
 
 -- One page or both: both while they can be at least Book.TWO of one page's size; then scaled to fit the body
@@ -440,6 +548,10 @@ function Book_.Show(on)
     end
     if on then
         if InCombatLockdown() then Casts.Fight() else Casts.Peace() end
+        -- Opened, it shows the offer's Home first while the offer says so (a key's tab is chosen after: Window.lua).
+        local offer = Core.Spellbook.Offer()
+        local home = offer and offer.Home
+        if home and home.First and home.First() and search == "" then chosen = "home" end
         Fill(true)
     else
         Casts.Clear()
@@ -464,6 +576,11 @@ function Book_.Leave()
     Book_.Show(false)
     Core.AfterCombat("Combat: spellbook casts", Casts.Clear)
 end
+
+-- What the offer shows changed: drawn anew while the book is shown, else when it is.
+Core.Spellbook.Watch(function()
+    if holder and shown then Refill() end
+end)
 
 Book.Part = Book_
 ns.Board.Part("spellbook", ns.TEXT.spellbook, { math.floor(Book.NARROW * 0.4), math.floor(Book.HIGH * 0.4) }, Book_,

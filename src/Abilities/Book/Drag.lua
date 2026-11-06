@@ -18,6 +18,7 @@ local holder  -- the icon that follows the mouse
 local hint    -- the gold frame around the button you are over
 local held    -- the entry being carried
 local from    -- the slot it was taken from, when it is a reservation carried to another button
+local source  -- the spellbook entry it was taken from (Item.lua): hidden, it ends the drag
 local buttons = {} -- every action button, looked for again when a drag starts (Buttons.lua)
 
 -- A button under the mouse, shown or hidden (a bar hides its empty buttons when "always show
@@ -115,11 +116,11 @@ local function Build()
     end))
 end
 
-function D.Start(entry)
+function D.Start(entry, button)
     if GetCursorInfo() then return end -- the real cursor is busy
     if not holder then Build() end
     buttons = ns.Buttons.All(true)
-    held = entry
+    held, source = entry, button
     holder.icon:SetTexture(S.Icon(entry))
     holder:Show()
 end
@@ -135,7 +136,7 @@ end
 -- Also when the module stood down (ns.GiveBack): the gold frame goes here too, not only by the
 -- icon's OnHide, a guarded script that does nothing then.
 function D.Cancel()
-    held, from = nil, nil
+    held, from, source = nil, nil, nil
     if holder then holder:Hide() end
     if hint then hint:Hide() end
 end
@@ -174,4 +175,9 @@ end
 
 function D.Held()
     return held
+end
+
+-- The spellbook entry the carried spell was taken from, while it is carried.
+function D.Source()
+    return held and source or nil
 end

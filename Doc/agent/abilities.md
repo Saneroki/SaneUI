@@ -75,7 +75,13 @@ providers or frame fields can taint casting and action bars. The workaround is d
 - `Book/Window.lua` uses Core mover/sizer for `PlayerSpellsFrame`; reapplies saved dimensions only
   while our book is armed and the spellbook is shown, outside combat, and not while the window is lent to
   another module (`Core.Lent`: seated on Combat's full screen). Talents keep native sizing.
-  `Book/Menu.lua` appends via `Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", ...)`.
+  `Book/Menu.lua` appends via `Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", ...)`; `ns.BookMenu(root)` is the same
+  lines for a book of our own (no compact/window, nothing waits for `Book.Armed`).
+- `Book/Offer.lua` (Forever) serves `Core.Spellbook` for Combat's spellbook: `Spells`/`Sections`/`Search` from
+  `Sources` (`S.Matching` for the search), `Make`/`Set` = `Item.Create`/`Item.Set` (style nil), `Home` =
+  `Home.Offer` (`Surface(parent, Header)`, `Draw(surface, left, right)`, the same `Groups` as on the game's book),
+  `Menu` = `ns.BookMenu`, `Switch` = `showHidden`. All `ns.Guard`ed; `REFRESH` → `Core.Spellbook.Changed`; `GiveBack`
+  calls it too. A grey entry's `OnHide` ends a drag taken from it (`Drag.Source`).
 
 `Book.StandDown` restores column/pager, scales and placement as far as possible; Home/window hear
 `BOOK_PAGES`. What a fight holds up asks `Core.AfterCombat` once under its own key (update, layout,

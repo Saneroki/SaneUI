@@ -6,7 +6,9 @@ local _, ns = ...
 --  the top right of the spellbook).
 --
 --  Menu.ModifyMenu is the game's own door for this: an addon may append lines
---  to a menu without its code mixing with the game's lines above them.
+--  to a menu without its code mixing with the game's lines above them. The
+--  same lines go into another book's menu through Core (ns.BookMenu, Offer.lua:
+--  Combat's spellbook), there without the two that are the game's book's alone.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local TEXT = ns.TEXT
@@ -33,14 +35,15 @@ local function Checkbox(root, key, enabled)
     if not box then return box end
     if enabled and box.SetEnabled then box:SetEnabled(enabled) end
     if box.SetTooltip then
-        tooltips[key] = tooltips[key] or ns.Guard(function(tooltip)
+        local made = enabled and key or key .. "/always" -- a line that waits for nothing says no reason why
+        tooltips[made] = tooltips[made] or ns.Guard(function(tooltip)
             GameTooltip_SetTitle(tooltip, text)
             if tip then GameTooltip_AddNormalLine(tooltip, tip) end
             if enabled and not enabled() then
                 GameTooltip_AddErrorLine(tooltip, TEXT.pagesGame:format(ns.Book.Why() or ""))
             end
         end)
-        box:SetTooltip(tooltips[key])
+        box:SetTooltip(tooltips[made])
     end
     return box
 end
@@ -74,9 +77,11 @@ local function Layouts(root)
     end
 end
 
--- The book's own lines, and the divider under them.
-local function BookLines(root)
-    Checkbox(root, "showHidden", PagesOurs)
+-- The book's own lines, and the divider under them. own: a book of Sane UI's (Combat's), whose pages are
+-- always ours: no line waits for the game's pages, and compact pages and moving are the game's book's.
+local function BookLines(root, own)
+    local wait = not own and PagesOurs or nil
+    Checkbox(root, "showHidden", wait)
 
     -- The game offers this line itself, except to warriors and rogues: their ranks replace
     -- each other, so the game has no old ranks to show. The ranks still to come are worth it.
@@ -88,9 +93,11 @@ local function BookLines(root)
         if box and box.SetTooltip then box:SetTooltip(AllRanksTip) end
     end
 
-    Checkbox(root, "home", PagesOurs)
-    Checkbox(root, "compact", PagesOurs)
-    Checkbox(root, "window", PagesOurs)
+    Checkbox(root, "home", wait)
+    if not own then
+        Checkbox(root, "compact", PagesOurs)
+        Checkbox(root, "window", PagesOurs)
+    end
     root:CreateDivider()
 end
 
@@ -110,11 +117,11 @@ end
 
 -- First the book, then the bars, as on the options page. The book's lines are Forever's: in Retail
 -- the spellbook's pages are the game's own (Abilities.lua, at the top), and the bars' lines follow the title.
-local function Extend(_, root)
+local function Lines(root, own)
     if not ns.char then return end
     root:CreateDivider()
     root:CreateTitle(Core.TITLE)
-    if Core.FOREVER then BookLines(root) end
+    if Core.FOREVER then BookLines(root, own) end
 
     Checkbox(root, "ghosts")
     Checkbox(root, "announce")
@@ -125,6 +132,11 @@ local function Extend(_, root)
 
     Layouts(root)
 end
+
+local function Extend(_, root) Lines(root, false) end
+
+-- The same lines in a book of Sane UI's own (Offer.lua).
+function ns.BookMenu(root) Lines(root, true) end
 
 if Menu and Menu.ModifyMenu then
     Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", ns.Guard(Extend))

@@ -64,6 +64,15 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   - At the top right the game's own settings for its book: *Hide passives*, and *Show all ranks* (not for
     rogues and warriors); they change the game's book too. The full screen's search box finds spells of every
     tab. Flyouts are shown as their spells, one by one (as the game's book with *Use flyouts* off).
+  - **With Abilities on** (Saneroki, 2026-11-06): the spells you have not learned yet, in grey, after each tab's own,
+    what your trainer teaches you now first; in General *Passive spells to learn* and *Skills to learn* (the weapon
+    skills a weapon master teaches), in the first class tab *Other spells to learn*. **Drag** a grey spell onto an
+    action bar button to reserve it until you learn it (the clock on both), **right click** it for its menu,
+    **Shift-click** to link it. The first tab is **Home** (the hearthstone): what your trainer teaches you now with
+    the cost, and the spells that come from quests under their level; the book opens on it while Abilities' *Open the
+    spellbook on its Home page* is on. The search finds grey spells too. Beside the page controls the checkbox *Show
+    unlearned spells*; the settings menu has Abilities' lines under the game's two. All of it as Abilities' README
+    tells it (*In Combat's spellbook*).
 - **The talents:** your three talent trees as the game's window shows them in this client, at its size and in
   its art, scaled to fit. Each tree's head shows the points spent in it, the box at the top right your unspent
   points. **Click** a talent to learn a rank, **right click** to take one back (**Shift**: with the talents that
@@ -333,11 +342,22 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     pages anew on `SPELLS_CHANGED`, `LEARNED_SPELL_IN_SKILL_LINE`, `PLAYER_SPECIALIZATION_CHANGED`, `UNIT_PET`; the
     page's entries on `SPELL_UPDATE_COOLDOWN`, `ACTIONBAR_SLOT_CHANGED`, `CURSOR_CHANGED`,
     `UPDATE_SHAPESHIFT_FORM`, `PET_BAR_UPDATE`; the secure buttons with `PLAYER_REGEN_DISABLED`/`_ENABLED`.
+    The offer's entries (`Core.Spellbook`) in a pool of the offer's frames (`Make(holder)`, `Set(frame, entry,
+    width)`; a blank frame should it make none), placed as ours, no secure button over them (`Casts.Cover` takes our
+    entries only); its Home on `homePane` (over the views, shown only while Home is chosen: hidden by us, whatever
+    the offer can still do), `Surface(homePane, HomeHeader)` once and `Draw(surface, view1, view2 or nil)`, the page
+    controls and the switch hidden there; Home chosen at each `Show(true)` while `Home.First()` (a key's tab is
+    chosen after it, `Window.lua`); `Menu(root)` after the game's two lines; `Switch` a `UICheckButtonTemplate` left
+    of the page controls (`Set`, then `On()` read back). `Core.Spellbook.Watch`: drawn anew while shown.
   - `Data.lua`: the tabs as the game's Camelot book makes them (`C_SpellBook.GetNumSpellBookSkillLines`,
     `GetSpellBookSkillLineInfo`, not `shouldHide`; General with `GetClassSkillLineInfo`'s icon; the pet's while
     `HasPetSpells` and `PetHasSpellbook`, `GetPetIcon`), each one group under its name; the game's filter
     (`SpellBookFrameMixin:ShouldDisplaySpellBookItem`) with flyouts loose; `Data.Search` over name and rank in
-    every tab.
+    every tab. With an offer (`Core.Spellbook.Offer()`: Abilities' `Book/Offer.lua`, Forever) its Home tab first
+    (`{ key = "home", home = true }`, no bank), a skill line's tab with its `line`; `Data.Groups(tab, tabs)` adds the
+    offer's `Spells(line, showRanks)` after the tab's own and each of `Sections(line, lines, hidePassives, showRanks)`
+    as a group under its heading; `Data.Search` adds `Search(words, lines, showRanks)[line]` to each tab's finds. Such
+    an element is `{ future = entry }`; the CVars `ShowAllSpellRanks`, `spellBookHidePassives` are passed on.
   - `Layout.lua`: the game's paging rules (`PagedContentFrameBaseMixin:ProcessElement`, the condensed vertical
     grid), with Camelot's numbers: views 680 x 590, three columns 15 apart, rows 10 apart, headings and entries
     60 high, groups 20 apart, column by column in `ceil(n / 3)` rows, never a heading alone at a view's foot.
@@ -767,6 +787,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-06:** with Abilities on, the spellbook shows its spells still to learn in grey, the weapon skills, Home first, the reservations by drag, the checkbox *Show unlearned spells* and its menu lines, through Core (`Core.Spellbook`) (Saneroki: "it looks like it is not part of the combat fullscreen").
 - **2026-11-06:** the meter is never on or over Combat's full screen, and its button on the full screen's bar is gone (Saneroki: "The meeter should not show in or over the full screen").
 - **2026-11-06:** the meter's *Lock window*: neither moved nor sized out of Edit Mode (Saneroki: "lock it in its settings so it is fixed and doesn't let you drag to resize or move it").
 - **2026-11-06:** *Show on healthbars* (first *Show on raid frames*): an aura's icon on your unit frames and the party and raid frames; beside each member of a party their target and their pet, small, their names alone (Saneroki).

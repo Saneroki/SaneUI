@@ -7,7 +7,8 @@ The module for your spells and abilities (it was called *Spellbook*; it will do 
 Your normal spellbook (P) also lists the spells you have **not learned yet**, in grey, in the tab where
 they will end up. Drag a grey spell onto an action bar button: the button is *reserved* and becomes the
 real spell the moment you learn it. A **Home** page, the first tab of the spellbook, says what your
-trainer can teach you right now and which spells you get from quests.
+trainer can teach you right now and which spells you get from quests. **Combat's spellbook** on its full screen,
+which your spellbook key opens there, shows all of it too: the grey spells, the weapon skills, Home, the reservations.
 **Action Bar 1 keeps the page you chose:** no stance, form or stealth changes it, and bars 6 to 8 stand beside
 its pages, so every page and bar holds buttons of its own. **A druid's Bar 6 swaps with the form:** Bar 9 in Bear
 Form, Bar 10 in Cat, Aquatic and Travel Form, with arrows and a checkbox beside it. **The buttons of every bar touch,**
@@ -110,6 +111,16 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   on top of each other or side by side, and bars snapped by a corner have their first buttons in line: drag a bar
   against another and let go. Your layout keeps the game's place, so with the switch off they stand as the game
   snaps them. Bars in the game's own places keep its spacing, and one moved by the arrow keys stays where you put it.
+- **In Combat's spellbook** (Saneroki, 2026-11-06; on the full screen of the module *Combat*, which your spellbook key
+  opens while Combat's switch *Your spellbook and talents keys open ours* is on): the same grey spells in each tab after
+  its own, with the same third line and the two marks; in General the sections *Passive spells to learn* and *Skills to
+  learn* (the weapon skills); in the first class tab *Other spells to learn*. Drag a grey spell onto an action bar
+  button of the full screen to reserve it, right-click it for its menu, Shift-click to link it, as above. **Home** is the
+  first tab there (the hearthstone), its page as above, and the book opens on it while *Open the spellbook on its Home
+  page* is on. The full screen's search finds the grey spells too, each in its tab. Beside the page buttons the checkbox
+  *Show unlearned spells*; in its settings menu (the arrow at its top right) the module's lines under the book's own:
+  the same as in the game's book, without *Compact spellbook pages* and *Move and resize the spellbook*, which are the
+  game's book's. These need neither the switch *Sane UI lays out the spellbook pages* nor the game's book opened once.
 - **Link a spell in chat:** Shift-click it (grey ones too).
 - **Visit your class trainer once.** Not needed for the list, but his window says which spellbook tab
   each spell belongs to. Until then a few new spells sit under *Other spells to learn* in the first class tab.
@@ -198,6 +209,19 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   2. After each time the game draws a tab, the module moves those entries to their place on the real
      pages, with its own grey entries in between. Entries of other pages wait far off the screen.
   3. The game's page buttons are moved off the screen; the module shows its own.
+- **The grey entries in Combat's spellbook (`Book/Offer.lua`).** In Forever the module serves Core's spellbook offer
+  (`Core.Spellbook.Serve`): Combat's book asks it for a tab's spells still to learn (`S.Unlearned`, in `Layout.ByLevel`'s
+  order), for its sections (General: `S.UnlearnedPassives` unless the game hides passives, `S.UnlearnedSkills`; the
+  first class tab of the lines it names: `S.Unlearned(nil)`), and for a search's finds by tab (`S.Matching`: a passive
+  spell or a skill in General, one without a tab in the first class tab). It lays them out among its own and draws each
+  in a frame of this module's (`Item.Create`, `Item.Set` without a style: the game's colours), so the tooltip, the
+  marks, the drag (`Drag.Start(entry, button)`; the drag ends when that entry hides, `Drag.Source`) and the menu are
+  this module's. Home draws on that book's two views (`Home.Offer`: `Surface(parent, Header)` once, on a pane the book
+  shows only while Home is chosen, `Draw(surface, left, right)` at the game's sizes, the same `Groups` and layout as on
+  the game's book); the menu's lines are `ns.BookMenu` (`Menu.lua`'s, without compact pages and moving, and without
+  waiting for the game's pages); the checkbox is `Switch` (`showHidden` through `Core.Set`). Each part runs behind
+  `ns.Guard`; every `REFRESH` tells the book (`Core.Spellbook.Changed`, once a frame); giving back tells it too, and
+  `Offer()` is nil while the module is off.
 - **Why so careful ("taint"):** casting from the spellbook only works while nothing an addon wrote is
   read on the way. One addon-written value in the spellbook's page number or data breaks casting until
   `/reload` and can block the action bars in combat. So the module writes no value on any Blizzard frame
@@ -397,9 +421,13 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `Book/Home.lua` | The Home tab and its page |
 | `Book/Window.lua` | Moving the spellbook, giving it a size, keeping both |
 | `Book/Menu.lua` | The module's lines in the spellbook's options menu |
+| `Book/Offer.lua` | The spells still to learn, Home and the menu's lines for Combat's spellbook, through Core (`Core.Spellbook`) |
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-06 — Combat's spellbook on its full screen shows what the game's book shows here: the grey spells, the weapon
+  skills, Home, the reservations by drag, the clock and quest marks, the checkbox and the menu's lines; through Core
+  (`Book/Offer.lua`, `Core.Spellbook`), so neither module needs the other.
 - 2026-11-06 — A druid's Action Bar 6 swaps with the form: Bar 9 in Bear Form, Bar 10 in Cat, Aquatic and Travel Form,
   Bar 6 as a human and in Moonkin Form. Beside it the bar's number, arrows up and down that turn it through 6, 9 and 10
   without a change of form, and a checkbox whether it swaps (ticked at first). Replaces the switch of 2026-11-01 that

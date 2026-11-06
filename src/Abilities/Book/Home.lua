@@ -31,7 +31,7 @@ local TITLE = Core.Word("HOME", TEXT.home)
 
 local book, paged      -- the game's frames
 local tab, cover, pane -- ours: the Home tab, the stand-in over the game's selected tab, the page
-local headers, empties, more = {}, {}, nil
+local surface          -- what is drawn on that page (Surface)
 local tabRow           -- the row of the game's tabs, moved to make room for Home (Core.Lend)
 local SHIFT = 46       -- one tab and the gap after it
 local SEARCH_WIDTH, SEARCH_GAP = 300, 10 -- the game's search box: its widest, and its room from the tabs
@@ -96,15 +96,9 @@ local function Text(parent, font)
     return text
 end
 
--- The page's parts, made when first needed and used again (Core.Pool): the rows, and the small
--- headings of the quest section ("Level 10").
-local rows = Core.Pool(function() return I.Create(pane) end)
-local levels = Core.Pool(function() return Text(pane, "SystemFont_Large") end)
-
--- Two sections, laid out by the spellbook's own rule (Layout.lua): one on each page of the open
--- book, one under the other in the small spellbook. The quest rewards stand under the level
--- you get them at. What does not fit is counted, not shown.
-local function Fill()
+-- What Home lists: what the trainer teaches now, with the total, and the quest rewards under the level
+-- you get them at; and how many those are.
+local function Groups()
     local train, quests, total = {}, {}, 0
     for _, entry in ipairs(S.All()) do
         if entry.quest then
@@ -132,16 +126,37 @@ local function Fill()
         end
         last.items[#last.items + 1] = item
     end
+    return trainGroup, questGroups, #train + #quests
+end
 
-    -- The pages are Book.lua's: their size, how much fits, and how large an entry is drawn
-    -- (no metrics before it first drew: then the game's own).
-    local scale, metrics, pageHeight, rightAnchor, rightX, cellWidth = B.Layout()
-    metrics = metrics or {}
+-- What Home draws on one book's pages, made once for that book: the rows, the small headings of the quest
+-- section ("Level 10"), made when first needed and used again (Core.Pool); the two headings, made by
+-- Header(parent) in that book's look; the words of an empty section; the count of what did not fit.
+local function Surface(parent, Header)
+    local made = { headers = {}, empties = {} }
+    made.rows = Core.Pool(function() return I.Create(parent) end)
+    made.levels = Core.Pool(function() return Text(parent, "SystemFont_Large") end)
+    for _, key in ipairs({ "train", "quest" }) do
+        made.headers[key] = Header(parent)
+        made.empties[key] = Text(parent)
+    end
+    made.more = Text(parent)
+    return made
+end
+
+-- Two sections, laid out by the spellbook's own rule (Layout.lua): one on each page of the open
+-- book, one under the other in the small spellbook (place.right nil). The quest rewards stand under
+-- the level you get them at. What does not fit is counted, not shown.
+-- place: left and right, the frames of the two pages (right also as the left one moved by rightX), the
+-- scale entries are drawn at, the metrics (Layout.Paginate), a page's height and an entry's width.
+local function Draw(on, place)
+    local trainGroup, questGroups, count = Groups()
+    local scale, metrics, pageHeight = place.scale or 1, place.metrics or {}, place.pageHeight or L.VIEW_HEIGHT
+    local cellWidth, left = place.cellWidth or L.CELL_WIDTH, place.left
     local showRanks = GetCVarBool("ShowAllSpellRanks") and true or false -- once, not per row
-    local left = paged.ViewFrames[1]
     local width = cellWidth * scale
     local pages
-    if (paged.viewsPerPage or 2) < 2 or not rightAnchor then
+    if not place.right then
         local all = { trainGroup }
         for _, group in ipairs(questGroups) do all[#all + 1] = group end
         pages = { L.Paginate(all, width, pageHeight, metrics)[1] }
@@ -150,11 +165,12 @@ local function Fill()
     end
 
     local used, shown = 0, {}
+    local rows, levels, headers, empties = on.rows, on.levels, on.headers, on.empties
     rows:Begin()
     levels:Begin()
     for index, view in ipairs(pages) do
         local anchor, dx = left, 0
-        if index == 2 then anchor, dx = rightAnchor, rightX end
+        if index == 2 then anchor, dx = place.right, place.rightX or 0 end
         for _, cell in ipairs(view) do
             local item = cell.item
             local x = cell.x + dx
@@ -196,7 +212,8 @@ local function Fill()
             empty:SetText(group.none)
         end
     end
-    local hidden = #train + #quests - used
+    local hidden = count - used
+    local more = on.more
     more:ClearAllPoints()
     more:SetPoint("TOPLEFT", left, "TOPLEFT", 8, -(pageHeight - 14))
     more:SetShown(hidden > 0)
@@ -205,6 +222,24 @@ local function Fill()
     end
     H.shown = used -- for the tests and /sane ab debug
 end
+
+-- Home on the game's book: its pages are Book.lua's, their size, how much fits, and how large an entry is
+-- drawn (no metrics before it first drew: then the game's own).
+local function Fill()
+    local scale, metrics, pageHeight, rightAnchor, rightX, cellWidth = B.Layout()
+    local two = (paged.viewsPerPage or 2) >= 2 and rightAnchor
+    Draw(surface, { left = paged.ViewFrames[1], right = two and rightAnchor or nil, rightX = rightX, scale = scale,
+                    metrics = metrics, pageHeight = pageHeight, cellWidth = cellWidth })
+end
+
+-- Home in another book than the game's (Offer.lua, Core.Spellbook): its own page there, at the game's sizes. That
+-- book shows the surface's frame only while Home is chosen.
+H.Offer = {
+    icon = ICON, name = TITLE, tip = TEXT.homeTip,
+    First = function() return ns.options.home and true or false end,
+    Surface = Surface,
+    Draw = function(on, left, right) Draw(on, { left = left, right = right }) end,
+}
 
 -------------------------------------------------------------------------------
 --  On and off
@@ -271,11 +306,7 @@ local function Setup()
     pane:SetAllPoints(paged)
     pane:SetFrameLevel(paged:GetFrameLevel() + 20)
     pane:Hide()
-    for _, key in ipairs({ "train", "quest" }) do
-        headers[key] = B.Header(pane)
-        empties[key] = Text(pane)
-    end
-    more = Text(pane)
+    surface = Surface(pane, B.Header)
 
     tab = MakeTab(book)
     tab.Icon:SetTexture(ICON)

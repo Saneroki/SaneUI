@@ -528,6 +528,17 @@ function S.UnlearnedSkills()
     return Pick(function(entry) return entry.skill end, true)
 end
 
+-- The spells still to learn whose name or rank holds the words, passive spells and skills too: what a search
+-- of a book finds (Offer.lua). words: in lower case.
+function S.Matching(words, showRanks)
+    return Pick(function(entry)
+        for _, text in ipairs({ entry.name, entry.sub }) do
+            if type(text) == "string" and text:lower():find(words, 1, true) then return true end
+        end
+        return false
+    end, showRanks)
+end
+
 -- An unlearned spell by its ID, for links and menus.
 function S.UnlearnedByID(id)
     Fresh()

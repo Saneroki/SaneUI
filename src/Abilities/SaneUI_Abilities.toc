@@ -49,3 +49,5 @@ Book\Book.lua
 Book\Home.lua
 Book\Window.lua
 Book\Menu.lua
+# The spells still to learn, the Home page and the menu's lines for a spellbook of Sane UI's own (Combat's), through Core
+Book\Offer.lua

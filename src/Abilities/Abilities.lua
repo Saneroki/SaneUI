@@ -177,7 +177,7 @@ local TEXT = ns.TEXT
 local OPTIONS = {
     { key = "book", default = true, text = "Sane UI lays out the spellbook pages",
       header = "Spellbook", headerTip = "The game's spellbook, laid out by Sane UI.",
-      tip = "Needed for the grey spells, the Home page, compact pages and moving or resizing. Off: the game draws its pages itself after /reload, a way out if they ever look wrong." },
+      tip = "Needed in the game's spellbook for the grey spells, the Home page, compact pages and moving or resizing; Combat's spellbook on its full screen shows the grey spells and Home without it. Off: the game draws its pages itself after /reload, a way out if they ever look wrong." },
     { key = "showHidden", default = true, text = "Show unlearned spells", parent = "book",
       tip = "The spells you have not learned yet are listed in grey, in the tab they will be in. Drag one onto an action bar button to reserve that button for it." },
     { key = "home", default = true, text = "Open the spellbook on its Home page", parent = "book",
@@ -524,6 +524,8 @@ function ns.GiveBack()
     if ns.Drag then ns.Safe("giving back", ns.Drag.Cancel) end
     if ns.Sources then ns.Safe("giving back", ns.Sources.TrainerClosed) end
     if ns.Book then ns.Safe("giving back", ns.Book.StandDown, TEXT.why.problem) end
+    -- Combat's spellbook shows the game's spells alone again (Book/Offer.lua: no offer while the module is off).
+    if Core.Spellbook then ns.Safe("giving back", Core.Spellbook.Changed) end
     if ns.Bar1 then ns.Safe("giving back", ns.Bar1.Apply) end
     if ns.FormBar then ns.Safe("giving back", ns.FormBar.Apply) end
     if ns.Spacing then ns.Safe("giving back", ns.Spacing.Apply) end

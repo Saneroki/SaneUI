@@ -38,7 +38,8 @@ Decided (Saneroki, 2026-10-16):
   sheet does for the game's: the game's sizes, art, words and behaviour, rewritten in our code, the game's
   templates used where they do not touch its own window. Both are Combat's (this replaces the plan of a
   spellbook window in Abilities, `Doc/ideas/Windows.md`); Abilities' future spells and reservations come into
-  this book later, through Core. The game's own window goes back to the game, untouched: not seated, not
+  this book through Core (built 2026-11-06: `Core.Spellbook`, Abilities' `Book/Offer.lua`: the grey spells, the
+  weapon skills, Home, reservations by drag, its checkbox and menu lines). The game's own window goes back to the game, untouched: not seated, not
   hidden; the game's spellbook and talents keys open ours.
   - **The spellbook casts out of fights only** (Saneroki, 2026-10-20): a click casts through a secure button of
     the game's (`SecureActionButtonTemplate`), which stands on UIParent over the entry, not in our window (a

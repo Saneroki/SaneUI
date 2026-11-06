@@ -390,6 +390,96 @@ local same = #after == #before and #W.frames == made
 for index, entry in ipairs(before) do same = same and after[index] == entry end
 check(same and #Covers() == 0, "deaf while hidden: the entries as they were, nothing made, no secure buttons")
 
+-------------------------------------------------------------------------------
+--  What a module offers beyond the game's spells (Core.Spellbook: Abilities' spells still to learn, its Home)
+-------------------------------------------------------------------------------
+local futures, homeDrawn, asked = {}, nil, {}
+local first, unlearned = true, true
+local blink = { name = "Blink", level = 20 }
+local sword = { name = "One-Handed Swords", skill = true }
+local ward = { name = "Frost Ward", level = 22 }
+local offering = {} -- the module that serves it: standing until its off
+local offer = {
+    Spells = function(line, ranks)
+        asked.ranks = ranks
+        return line == 2 and { blink } or {}
+    end,
+    Sections = function(line, lines, hidePassives)
+        asked.lines, asked.passives = table.concat(lines, " "), hidePassives
+        return line == 1 and { { text = "Skills to learn", entries = { sword } } } or {}
+    end,
+    Search = function(words) return words == "ward" and { [2] = { ward } } or {} end,
+    Make = function(parent)
+        local frame = CreateFrame("Frame", nil, parent)
+        futures[#futures + 1] = frame
+        return frame
+    end,
+    Set = function(frame, entry, width) frame.future, frame.drawnWidth = entry, width end,
+    Home = {
+        icon = 77, name = "Home", tip = "What you can learn now.", First = function() return first end,
+        Surface = function(parent, Header) return { parent = parent, header = Header(parent) } end,
+        Draw = function(surface, left, right) homeDrawn = { surface = surface, left = left, right = right } end,
+    },
+    Menu = function(root) root:CreateCheckbox("Show unlearned spells", function() return unlearned end, function() end) end,
+    Switch = { text = "Show unlearned spells", tip = "Grey.", On = function() return unlearned end,
+               Set = function(on) unlearned = on end },
+}
+Core.Spellbook.Serve(offering, offer)
+W.Wait(0)
+tabs = Data.Tabs()
+check(tabs[1].key == "home" and tabs[1].home and tabs[1].icon == 77 and tabs[2].line == 1 and tabs[3].line == 2
+    and tabs[4].key == "pet", "the offer's Home first, then the skill lines with their index, the pet's last")
+local groups = Data.Groups(tabs[3], tabs)
+check(#groups == 1 and #groups[1].elements == 4 and groups[1].elements[3].slot == 6 and groups[1].elements[4].future == blink
+    and asked.ranks == false, "a tab: its spells, then the offer's still to learn, as the game's option for ranks says")
+groups = Data.Groups(tabs[2], tabs)
+check(#groups == 2 and groups[2].header.text == "Skills to learn" and groups[2].elements[1].future == sword
+    and asked.lines == "1 2" and asked.passives == false, "the offer's sections under the tab's spells, asked with your skill lines")
+found = Data.Search(tabs, "Ward")
+check(#found == 1 and found[1].header.text == "Frost" and found[1].elements[1].future == ward,
+    "a search: the offer's finds in their tab, asked in lower case")
+
+Part.Show(true)
+W.Wait(0)
+local function Shown(list)
+    local out = {}
+    for _, frame in ipairs(list) do if frame:IsShown() then out[#out + 1] = frame end end
+    return out
+end
+local toggle, dropdown
+for _, widget in ipairs(W.frames) do
+    if widget._template == "UICheckButtonTemplate" then toggle = widget end
+    if widget._template == "UIPanelArrowDropdownButtonTemplate" then dropdown = widget end
+end
+bar = Tabs()
+check(Book.Chosen() == "home" and bar[1].Lit:IsShown() and bar[1].Icon._texture == 77 and homeDrawn and homeDrawn.right
+    and homeDrawn.surface.parent:IsShown() and homeDrawn.surface.header._width == Layout.WIDTH,
+    "opened, the book shows the offer's Home first, on both pages, its headings in the book's look")
+check(#Entries() == 0 and #Covers() == 0 and not toggle:IsShown(), "on Home: none of the tab's spells, no secure button, no switch")
+bar[3]:GetScript("OnClick")(bar[3])
+W.Wait(0)
+local drawn = Shown(futures)
+check(not homeDrawn.surface.parent:IsShown() and #drawn == 1 and drawn[1].future == blink
+    and math.abs(drawn[1].drawnWidth - (Layout.WIDTH - 2 * Layout.X_PAD) / 3) < 1e-6,
+    "another tab: Home's page hidden, the offer's entry among the tab's, in a frame of the offer's at a cell's width")
+check(#Covers() == 2, "secure buttons over the learned spells only, none over the offer's")
+check(toggle:IsShown() and toggle:GetChecked() and toggle.Text._text == "Show unlearned spells", "the offer's switch beside the pages")
+toggle:SetChecked(false)
+toggle:GetScript("OnClick")(toggle)
+check(unlearned == false and not toggle:GetChecked(), "clicked, set through the offer")
+dropdown:GenerateMenu()
+check(dropdown._items[#dropdown._items].text == "Show unlearned spells", "the offer's lines in the book's settings menu")
+Part.Show(false)
+first = false
+Part.Show(true)
+W.Wait(0)
+check(Book.Chosen() == "line2", "the offer saying no: the book opens on the tab you left")
+offering.off = true -- its module stood down
+Core.Spellbook.Changed()
+W.Wait(0)
+check(#Shown(futures) == 0 and #Tabs() == 3 and Book.Chosen() == "line2", "the offer gone: drawn anew, the game's spells alone")
+Part.Show(false)
+
 -- In Retail, whose book is not the one ours is made after (its art, no flyouts' spells loose in it: Combat.lua,
 -- ns.Serves): ours is not there, the game's spellbook stays.
 W.Play("retail")

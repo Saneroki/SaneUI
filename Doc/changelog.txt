@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Spellbook: Combat's spellbook on the full screen shows the spells
+  you have not learned yet in grey, the weapon skills to learn and the
+  Home page of what your trainer teaches now. Drag a grey spell onto an
+  action bar button to keep it for that spell.
 - Fixed: WoW: Forever crashed in the Ruins of Lordaeron while Sane UI
   was on: its profiles set water detail to its finest. Sane UI now
   leaves water detail to the game's own graphics menu.
