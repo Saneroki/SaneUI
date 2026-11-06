@@ -7,8 +7,8 @@ The bigger changes of each version, newest first.
 0.3.0 (2026-10-14)
 ------------------
 - Fixed: WoW: Forever crashed in the Ruins of Lordaeron while Sane UI
-  was on. Sane UI no longer changes your graphics settings (view
-  distance, grass, shadows, water, world preload).
+  was on. Sane UI no longer changes your view distance, horizon or
+  world preload.
 - Threat and damage meter: Lock window, in its cog and on the page
   Combat, keeps it where it is and at its size. It no longer shows on
   or over the full screen.
@@ -286,9 +286,9 @@ The bigger changes of each version, newest first.
   the game's defaults, as a fresh install, each character its own.
   A profile holds everything: key bindings, Edit Mode layouts, all
   game settings, where windows stand, the addons switched on.
-  Accountwide and Speedleveling set 115 frames a second and the
-  camera's farthest zoom for you; what you change afterwards stays
-  yours. The graphics stay as the game's own menu sets them.
+  Accountwide and Speedleveling set our recommended grass, shadows
+  and water, 115 frames a second and the camera's farthest zoom for
+  you; what you change afterwards stays yours.
 - Speed Leveling: nothing holds you up. Loot takes everything by
   default, the game no longer asks before equipping or destroying,
   the key runs you to the corpses around you and opens them, and

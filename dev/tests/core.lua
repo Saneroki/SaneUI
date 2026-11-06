@@ -1688,8 +1688,8 @@ do
         and wide.from == Core.GAME and fast.from == Core.GAME, "both hold our recommended CVars, as this game's")
     local drawn
     for _, name in ipairs(Core.Presets.WORLD) do drawn = drawn or wide.named[name] or fast.named[name] end
-    check(#Core.Presets.WORLD == 13 and drawn == nil,
-        "but none that draws or loads the world: those stay the game's (they crashed Forever's client)")
+    check(#Core.Presets.WORLD == 5 and drawn == nil and wide.named.shadowMode == "4" and fast.named.groundEffectDensity == "256",
+        "the world's grass, shadows and water, but not how far it shows nor how it loads: those stay the game's")
     check(wide.named.ffxDeath == "1" and fast.named.ffxDeath == "0" and fast.named.maxFPS == "115" and fast.solo == nil,
         "where they differ Accountwide names the game's own value: a character on it is not left with Speedleveling's")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,

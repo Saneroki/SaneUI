@@ -22,12 +22,20 @@ local Core = SaneUI.Core
 local Presets = { VERSION = 4, profiles = {} }
 Core.Presets = Presets
 
--- What both Accountwide and Speedleveling hold. None of the CVars that set how the world is drawn and loaded: the
--- view distance, horizon, grass, weather, shadows, ambient occlusion, water and world preload stay the game's, as
--- its graphics menu sets them. Ours (farclip 10000, grass 256 out to 500, shadows 4, SSAO 4, water 3, preload off)
--- crashed Forever's client in the Ruins of Lordaeron, written at the login or already in Config.wtf, the addon off
--- (Saneroki, 2026-11-06).
+-- What both Accountwide and Speedleveling hold. Not the view distance, the horizon or the world preload: those
+-- stay the game's, as its graphics menu sets them. With ours too (farclip and horizonClip 10000, horizonStart 6000,
+-- preload off) Forever's client crashed in the Ruins of Lordaeron, written at the login or already in Config.wtf,
+-- the addon off (Saneroki, 2026-11-06); the rest came back to find out whether it was these.
 local RECOMMENDED = {
+    -- How much the world shows.
+    groundEffectDensity = "256",     -- the most grass and flowers
+    groundEffectDist = "500",        -- out to 500 yards round you
+    groundEffectFade = "500",        -- and fading out only at that edge
+    weatherDensity = "3",            -- the most rain and snow
+    shadowMode = "4",                -- the finest shadows
+    shadowTextureSize = "2048",      -- without jagged edges
+    SSAO = "4",                      -- the most ambient occlusion
+    waterDetail = "3",               -- the finest water
     -- The frame rate, in front, behind and aimed at.
     maxFPS = "115", useMaxFPS = "1",
     maxFPSBk = "115", useMaxFPSBk = "1",
@@ -37,10 +45,8 @@ local RECOMMENDED = {
     screenshotQuality = "10",
 }
 
--- The CVars that draw and load the world: never in a preset (dev/tests/core.lua holds it).
-Presets.WORLD = { "farclip", "horizonClip", "horizonStart", "groundEffectDensity", "groundEffectDist", "groundEffectFade",
-                  "weatherDensity", "shadowMode", "shadowTextureSize", "SSAO", "waterDetail", "worldPreloadNonCritical",
-                  "worldPreloadHighResTextures" }
+-- The CVars of how far the world shows and how it loads: never in a preset (dev/tests/core.lua holds it).
+Presets.WORLD = { "farclip", "horizonClip", "horizonStart", "worldPreloadNonCritical", "worldPreloadHighResTextures" }
 
 -- Where the two differ Accountwide names the game's own value: several of these are kept by the computer, not the
 -- character, and a character on it must not be left with what one on Speedleveling set.
